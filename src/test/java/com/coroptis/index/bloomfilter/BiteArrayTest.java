@@ -41,6 +41,32 @@ public class BiteArrayTest {
         boolean result = bitArray.get(5);
 
         // Assert
+        assertFalse(result);
+    }
+
+    @Test
+    void testGet_doesnt_change_value_1() {
+        // Arrange
+        BitArray bitArray = new BitArray(10);
+        bitArray.setBit(5);
+
+        // Act
+        boolean result = bitArray.get(5);
+
+        // Assert
+        assertEquals((byte) 0b00100000, bitArray.getByteArray()[0]);
+        assertFalse(result);
+    }
+    @Test
+    void testGet_doesnt_change_value_0() {
+        // Arrange
+        BitArray bitArray = new BitArray(10);
+
+        // Act
+        boolean result = bitArray.get(5);
+
+        // Assert
+        assertEquals((byte) 0b00000000, bitArray.getByteArray()[0]);
         assertTrue(result);
     }
 
