@@ -16,15 +16,16 @@ import org.apache.commons.codec.digest.MurmurHash3;
 public class Hash {
 
     private final BitArray bits;
-    
-        private final int numHashFunctions;
 
-    Hash(final BitArray bits, final int numHashFunctions){
-this.bits = Objects.requireNonNull(bits);
-if(numHashFunctions<=0){
-throw new IllegalArgumentException(String.format("Number of hash function cant be '%s'",numHashFunctions));    
-}
-this.numHashFunctions=numHashFunctions;
+    private final int numHashFunctions;
+
+    Hash(final BitArray bits, final int numHashFunctions) {
+        this.bits = Objects.requireNonNull(bits);
+        if (numHashFunctions <= 0) {
+            throw new IllegalArgumentException(String.format(
+                    "Number of hash function cant be '%s'", numHashFunctions));
+        }
+        this.numHashFunctions = numHashFunctions;
     }
 
     public boolean store(final byte[] item) {
@@ -56,7 +57,8 @@ this.numHashFunctions=numHashFunctions;
             if (combinedHash < 0) {
                 combinedHash = ~combinedHash;
             }
-            System.out.println(combinedHash + " "+ bitSize + "  " + ((int) (combinedHash % bitSize)));
+            System.out.println(combinedHash + " " + bitSize + "  "
+                    + ((int) (combinedHash % bitSize)));
             bitsChanged |= bits.get((int) (combinedHash % bitSize));
         }
         return bitsChanged;

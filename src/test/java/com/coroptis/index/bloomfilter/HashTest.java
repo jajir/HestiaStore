@@ -7,15 +7,16 @@ import org.junit.jupiter.api.Test;
 public class HashTest {
     @Test
     void testStore_simple() throws Exception {
-        Hash hash = new Hash(new BitArray(10),3);
-        
+        Hash hash = new Hash(new BitArray(10), 3);
+
         boolean ret = hash.store("ahoj".getBytes());
 
         assertTrue(ret);
     }
-        @Test
+
+    @Test
     void testIsNotStored_simple() throws Exception {
-        Hash hash = new Hash(new BitArray(10),10);
+        Hash hash = new Hash(new BitArray(10), 10);
 
         assertTrue(hash.isNotStored("ahoj".getBytes()));
         hash.store("ahoj".getBytes());
@@ -23,10 +24,10 @@ public class HashTest {
         assertTrue(hash.isNotStored("kachna".getBytes()));
     }
 
-
-        @Test
+    @Test
     void testConstructor_InvalidNumberOfHashFunctions() throws Exception {
-        assertThrows(IllegalArgumentException.class, () -> new Hash(new BitArray(10),0));
+        assertThrows(IllegalArgumentException.class,
+                () -> new Hash(new BitArray(10), 0));
     }
 
 }

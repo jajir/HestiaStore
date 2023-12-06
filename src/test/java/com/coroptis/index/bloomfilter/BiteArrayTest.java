@@ -28,7 +28,8 @@ public class BiteArrayTest {
         BitArray bitArray = new BitArray(10);
 
         // Act and Assert
-        assertThrows(IndexOutOfBoundsException.class, () -> bitArray.setBit(-1));
+        assertThrows(IndexOutOfBoundsException.class,
+                () -> bitArray.setBit(-1));
     }
 
     @Test
@@ -57,6 +58,7 @@ public class BiteArrayTest {
         assertEquals((byte) 0b00100000, bitArray.getByteArray()[0]);
         assertFalse(result);
     }
+
     @Test
     void testGet_doesnt_change_value_0() {
         // Arrange

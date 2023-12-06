@@ -1,18 +1,15 @@
 package com.coroptis.index.bloomfilter;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
 import java.util.Arrays;
 
 public class BitArray {
-    
+
     private final byte[] byteArray;
-    
+
     public BitArray(final int length) {
         byteArray = new byte[length];
     }
-    
+
     public boolean setBit(final int index) {
         if (index < 0 || index >= byteArray.length * 8) {
             throw new IndexOutOfBoundsException("Invalid index");
@@ -46,7 +43,7 @@ public class BitArray {
         return oldValue != newValue;
     }
 
-    public int bitSize(){
+    public int bitSize() {
         return byteArray.length * 8;
     }
 
