@@ -14,33 +14,34 @@ import com.coroptis.index.datatype.TypeDescriptorString;
 
 public class ScarceIndexCacheTest {
 
-private final TypeDescriptorString tds = new TypeDescriptorString();
+    private final TypeDescriptorString tds = new TypeDescriptorString();
 
-        @Test
+    @Test
     public void test_constructor_null() throws Exception {
-    assertThrows(NullPointerException.class,
-    () -> new ScarceIndexCache<>(null));
+        assertThrows(NullPointerException.class,
+                () -> new ScarceIndexCache<>(null));
     }
 
-        @Test
+    @Test
     public void test_empty_index() throws Exception {
-    final ScarceIndexCache<String> cache = makeCache(Collections.emptyList());
+        final ScarceIndexCache<String> cache = makeCache(
+                Collections.emptyList());
         assertNull(cache.findSegmentId("a"));
         assertNull(cache.findSegmentId("aaaaaaaaaaaaaaaaa"));
         assertNull(cache.findSegmentId("zzz"));
 
         cache.sanityCheck();
         assertEquals(0, cache.getKeyCount());
-       assertNull(cache.getMaxKey());
-       assertNull(cache.getMinKey());
+        assertNull(cache.getMaxKey());
+        assertNull(cache.getMinKey());
         assertEquals(0, cache.getSegmentsAsStream().count());
     }
 
-
-        @Test
+    @Test
     public void test_simple_index() throws Exception {
-    final ScarceIndexCache<String> cache = makeCache(List.of(Pair.of("bbb", 1), Pair.of("ccc", 2), Pair.of("ddd", 3),
-    Pair.of("eee", 4), Pair.of("fff", 5)));
+        final ScarceIndexCache<String> cache = makeCache(
+                List.of(Pair.of("bbb", 1), Pair.of("ccc", 2), Pair.of("ddd", 3),
+                        Pair.of("eee", 4), Pair.of("fff", 5)));
         assertEquals(1, cache.findSegmentId("bbb"));
         assertEquals(1, cache.findSegmentId("bbbb"));
         assertEquals(2, cache.findSegmentId("ccc"));
@@ -55,14 +56,12 @@ private final TypeDescriptorString tds = new TypeDescriptorString();
         assertEquals(5, cache.getSegmentsAsStream().count());
     }
 
-
-
-        private ScarceIndexCache<String> makeCache(
+    private ScarceIndexCache<String> makeCache(
             final List<Pair<String, Integer>> pairs) {
-    ScarceIndexCache<String> cache = new ScarceIndexCache<>(tds);
+        ScarceIndexCache<String> cache = new ScarceIndexCache<>(tds);
 
-            pairs.forEach(cache::put);
-      
+        pairs.forEach(cache::put);
+
         return cache;
     }
 

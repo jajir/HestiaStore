@@ -23,7 +23,7 @@ public class PairIteratorToSpliterator<K, V>
         Objects.requireNonNull(keyTypeDescriptor,
                 "Key type descriptor must not be null");
         this.pairComparator = new PairComparator<>(
-                keyTypeDescriptor.getComparator()  );
+                keyTypeDescriptor.getComparator());
     }
 
     @Override

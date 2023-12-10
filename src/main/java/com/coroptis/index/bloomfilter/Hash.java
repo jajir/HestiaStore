@@ -28,9 +28,16 @@ public class Hash {
         this.numHashFunctions = numHashFunctions;
     }
 
-    public boolean store(final byte[] item) {
-        int h1 = MurmurHash3.hash32x86(item, 0, item.length, 0);
-        int h2 = MurmurHash3.hash32x86(item, 0, item.length, h1);
+    public boolean store(final byte[] data) {
+        if (data == null) {
+            throw new NullPointerException("No data");
+        }
+        if (data.length == 0) {
+            throw new IllegalArgumentException("Zero size of byte array");
+        }
+
+        int h1 = MurmurHash3.hash32x86(data, 0, data.length, 0);
+        int h2 = MurmurHash3.hash32x86(data, 0, data.length, h1);
 
         long bitSize = bits.bitSize();
         boolean bitsChanged = false;
@@ -45,9 +52,25 @@ public class Hash {
         return bitsChanged;
     }
 
-    public boolean isNotStored(final byte[] item) {
-        int h1 = MurmurHash3.hash32x86(item, 0, item.length, 0);
-        int h2 = MurmurHash3.hash32x86(item, 0, item.length, h1);
+    /**
+     * When function return that record is not stored in index. When function
+     * replay that data are stored in index there is chance that record is not
+     * in index.
+     * 
+     * @param data required data
+     * @return return <code>true</code> when it's sure that data are not in
+     *         index. Otherwise return <code>false</code>.
+     */
+    public boolean isNotStored(final byte[] data) {
+        if (data == null) {
+            throw new NullPointerException("No data");
+        }
+        if (data.length == 0) {
+            throw new IllegalArgumentException("Zero size of byte array");
+        }
+
+        int h1 = MurmurHash3.hash32x86(data, 0, data.length, 0);
+        int h2 = MurmurHash3.hash32x86(data, 0, data.length, h1);
 
         long bitSize = bits.bitSize();
         boolean bitsChanged = false;
@@ -62,6 +85,10 @@ public class Hash {
             bitsChanged |= bits.get((int) (combinedHash % bitSize));
         }
         return bitsChanged;
+    }
+
+    public byte[] getData() {
+        return bits.getByteArray();
     }
 
 }

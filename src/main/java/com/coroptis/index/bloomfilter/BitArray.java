@@ -1,6 +1,7 @@
 package com.coroptis.index.bloomfilter;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 public class BitArray {
 
@@ -8,6 +9,10 @@ public class BitArray {
 
     public BitArray(final int length) {
         byteArray = new byte[length];
+    }
+
+    public BitArray(final byte[] data) {
+        byteArray = Objects.requireNonNull(data, "Data are null");
     }
 
     public boolean setBit(final int index) {
