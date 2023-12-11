@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairReader;
-import com.coroptis.index.basic.ValueMerger;
+import com.coroptis.index.ValueMerger;
 import com.coroptis.index.cache.UniqueCache;
 import com.coroptis.index.sstfile.PairComparator;
 import com.coroptis.index.unsorteddatafile.UnsortedDataFile;

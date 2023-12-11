@@ -5,7 +5,7 @@ import java.util.Objects;
 
 import com.coroptis.index.PairReader;
 import com.coroptis.index.PairWriter;
-import com.coroptis.index.basic.ValueMerger;
+import com.coroptis.index.ValueMerger;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
 

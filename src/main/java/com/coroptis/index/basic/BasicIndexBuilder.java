@@ -1,5 +1,6 @@
 package com.coroptis.index.basic;
 
+import com.coroptis.index.ValueMerger;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
 

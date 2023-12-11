@@ -3,8 +3,8 @@ package com.coroptis.index.partiallysorteddatafile;
 import java.util.Comparator;
 import java.util.Objects;
 
+import com.coroptis.index.ValueMerger;
 import com.coroptis.index.basic.BasicIndex;
-import com.coroptis.index.basic.ValueMerger;
 
 public class PartiallySortedDataFileBuilder<K, V> {
 

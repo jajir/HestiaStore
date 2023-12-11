@@ -5,9 +5,9 @@ import java.util.Objects;
 
 import com.coroptis.index.CloseableResource;
 import com.coroptis.index.Pair;
+import com.coroptis.index.ValueMerger;
 import com.coroptis.index.basic.BasicIndex;
 import com.coroptis.index.basic.SortSupport;
-import com.coroptis.index.basic.ValueMerger;
 import com.coroptis.index.cache.UniqueCache;
 import com.coroptis.index.sstfile.SstFile;
 import com.coroptis.index.sstfile.SstFileWriter;

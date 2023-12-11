@@ -7,6 +7,7 @@ import java.util.stream.Stream;
 
 import com.coroptis.index.IndexException;
 import com.coroptis.index.Pair;
+import com.coroptis.index.ValueMerger;
 import com.coroptis.index.datatype.ConvertorFromBytes;
 import com.coroptis.index.datatype.ConvertorToBytes;
 import com.coroptis.index.datatype.TypeDescriptor;

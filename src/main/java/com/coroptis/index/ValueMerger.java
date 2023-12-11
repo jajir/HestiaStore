@@ -1,8 +1,6 @@
-package com.coroptis.index.basic;
+package com.coroptis.index;
 
 import java.util.Objects;
-
-import com.coroptis.index.Pair;
 
 /**
  * Allows to merge two key value pairs into one.

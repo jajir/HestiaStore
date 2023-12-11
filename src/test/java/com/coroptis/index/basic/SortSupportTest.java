@@ -9,6 +9,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import com.coroptis.index.ValueMerger;
 import com.coroptis.index.directory.Directory;
 
 public class SortSupportTest {

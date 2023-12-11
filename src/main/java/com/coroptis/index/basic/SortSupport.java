@@ -11,6 +11,7 @@ import java.util.stream.StreamSupport;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
+import com.coroptis.index.ValueMerger;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.sstfile.SstFile;
 import com.coroptis.index.sstfile.SstFileWriter;

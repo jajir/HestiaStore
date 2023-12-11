@@ -6,6 +6,7 @@ import java.util.function.Consumer;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
+import com.coroptis.index.ValueMerger;
 import com.coroptis.index.partiallysorteddatafile.PartiallySortedDataFileWriter;
 import com.coroptis.index.unsorteddatafile.UnsortedDataFile;
 

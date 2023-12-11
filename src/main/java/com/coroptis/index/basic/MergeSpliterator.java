@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
+import com.coroptis.index.ValueMerger;
 
 public class MergeSpliterator<K, V> implements Spliterator<Pair<K, V>> {
 
