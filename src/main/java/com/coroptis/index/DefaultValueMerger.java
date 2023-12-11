@@ -1,6 +1,4 @@
-package com.coroptis.index.basic;
-
-import com.coroptis.index.ValueMerger;
+package com.coroptis.index;
 
 /**
  * Default implementation suppose that key value pairs are always same.
