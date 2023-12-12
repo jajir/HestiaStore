@@ -25,7 +25,6 @@ public class SstIndexImpl<K, V> implements Index<K, V>, CloseableResource {
     private final Logger logger = LoggerFactory.getLogger(SstIndexImpl.class);
 
     private final SsstIndexConf conf;
-    private final Directory directory;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final UniqueCache<K, V> cache;
@@ -39,7 +38,7 @@ public class SstIndexImpl<K, V> implements Index<K, V>, CloseableResource {
     public SstIndexImpl(final Directory directory,
             TypeDescriptor<K> keyTypeDescriptor,
             TypeDescriptor<V> valueTypeDescriptor, final SsstIndexConf conf) {
-        this.directory = Objects.requireNonNull(directory);
+        Objects.requireNonNull(directory);
         this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
         this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
         this.conf = Objects.requireNonNull(conf);

@@ -13,10 +13,15 @@ public class SstIndexBuilder<K, V> {
     private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT = 10_000_000;
     private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_CACHE = 1_000_000;
 
+    private final static int DEFAULT_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS = 1_000;
+    private final static int DEFAULT_BLOOM_FILTER_INDEX_SIZE_IN_BYTES = 10_000;
+
     private long maxNumberOfKeysInSegmentCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
     private int maxNumberOfKeysInSegmentIndexPage = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_INDEX_PAGE;
     private int maxNumberOfKeysInCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_CACHE;
     private int maxNumberOfKeysInSegment = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT;
+    private int bloomFilterNumberOfHashFunctions = DEFAULT_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS;
+    private int bloomFilterIndexSizeInBytes = DEFAULT_BLOOM_FILTER_INDEX_SIZE_IN_BYTES;
 
     private Directory directory;
     private TypeDescriptor<K> keyTypeDescriptor;
@@ -67,11 +72,24 @@ public class SstIndexBuilder<K, V> {
         return this;
     }
 
+    public SstIndexBuilder<K, V> withBloomFilterNumberOfHashFunctions(
+            final int bloomFilterNumberOfHashFunctions) {
+        this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
+        return this;
+    }
+
+    public SstIndexBuilder<K, V> withBloomFilterIndexSizeInBytes(
+            final int bloomFilterIndexSizeInBytes) {
+        this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
+        return this;
+    }
+
     public SstIndexImpl<K, V> build() {
         final SsstIndexConf conf = new SsstIndexConf(
                 maxNumberOfKeysInSegmentCache,
                 maxNumberOfKeysInSegmentIndexPage, maxNumberOfKeysInCache,
-                maxNumberOfKeysInSegment);
+                maxNumberOfKeysInSegment, bloomFilterNumberOfHashFunctions,
+                bloomFilterIndexSizeInBytes);
         return new SstIndexImpl<>(directory, keyTypeDescriptor,
                 valueTypeDescriptor, conf);
     }

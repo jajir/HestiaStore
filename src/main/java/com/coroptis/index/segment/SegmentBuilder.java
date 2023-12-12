@@ -12,12 +12,17 @@ public class SegmentBuilder<K, V> {
 
     private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_INDEX_PAGE = 1000;
 
+    private final static int DEFAULT_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS = 1_000;
+    private final static int DEFAULT_BLOOM_FILTER_INDEX_SIZE_IN_BYTES = 10_000;
+
     private Directory directory;
     private SegmentId id;
     private TypeDescriptor<K> keyTypeDescriptor;
     private TypeDescriptor<V> valueTypeDescriptor;
     private long maxNumberOfKeysInSegmentCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
     private int maxNumberOfKeysInIndexPage = DEFAULT_MAX_NUMBER_OF_KEYS_IN_INDEX_PAGE;
+    private int bloomFilterNumberOfHashFunctions = DEFAULT_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS;
+    private int bloomFilterIndexSizeInBytes = DEFAULT_BLOOM_FILTER_INDEX_SIZE_IN_BYTES;
 
     SegmentBuilder() {
 
@@ -64,10 +69,23 @@ public class SegmentBuilder<K, V> {
         return this;
     }
 
+    public SegmentBuilder<K, V> withBloomFilterNumberOfHashFunctions(
+            final int bloomFilterNumberOfHashFunctions) {
+        this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
+        return this;
+    }
+
+    public SegmentBuilder<K, V> withBloomFilterIndexSizeInBytes(
+            final int bloomFilterIndexSizeInBytes) {
+        this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
+        return this;
+    }
+
     public Segment<K, V> build() {
         return new Segment<>(directory, id, maxNumberOfKeysInSegmentCache,
                 keyTypeDescriptor, valueTypeDescriptor,
-                maxNumberOfKeysInIndexPage);
+                maxNumberOfKeysInIndexPage, bloomFilterNumberOfHashFunctions,
+                bloomFilterIndexSizeInBytes);
     }
 
 }

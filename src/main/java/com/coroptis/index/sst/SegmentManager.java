@@ -54,7 +54,12 @@ public class SegmentManager<K, V> {
                         conf.getMaxNumberOfKeysInSegmentCache())
                 .withMaxNumberOfKeysInIndexPage(
                         conf.getMaxNumberOfKeysInSegmentIndexPage())
-                .withValueTypeDescriptor(valueTypeDescriptor).build();
+                .withValueTypeDescriptor(valueTypeDescriptor)
+                .withBloomFilterNumberOfHashFunctions(
+                        conf.getBloomFilterNumberOfHashFunctions())
+                .withBloomFilterIndexSizeInBytes(
+                        conf.getBloomFilterIndexSizeInBytes())
+                .build();
         return out;
     }
 

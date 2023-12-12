@@ -46,7 +46,7 @@ public class SstIndexTest {
         });
 
         index1.close();
-        assertEquals(17, numberOfFilesInDirectoryP(directory));
+        assertEquals(21, numberOfFilesInDirectoryP(directory));
 
         final SstIndexImpl<Integer, String> index2 = makeSstIndex();
         data.stream().forEach(pair -> {

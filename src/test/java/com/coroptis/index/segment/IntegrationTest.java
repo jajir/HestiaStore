@@ -47,7 +47,7 @@ public class IntegrationTest {
         assertEquals(0, stats.getNumberOfKeysInScarceIndex());
 
         assertNull(seg.get(1));
-        assertEquals(4, numberOfFilesInDirectory(directory));
+        assertEquals(5, numberOfFilesInDirectory(directory));
 
     }
 
@@ -83,7 +83,7 @@ public class IntegrationTest {
         assertEquals("c", seg.get(4));
         assertEquals("d", seg.get(5));
 
-        assertEquals(4, numberOfFilesInDirectoryP(directory));
+        assertEquals(5, numberOfFilesInDirectoryP(directory));
     }
 
     @ParameterizedTest
@@ -123,7 +123,7 @@ public class IntegrationTest {
         assertEquals("a", smaller.get(2));
         assertEquals("b", smaller.get(3));
 
-        assertEquals(8, numberOfFilesInDirectoryP(directory));
+        assertEquals(10, numberOfFilesInDirectoryP(directory));
     }
 
     @Test

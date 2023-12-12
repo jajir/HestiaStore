@@ -10,6 +10,8 @@ import com.coroptis.index.CloseableResource;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.PairReader;
+import com.coroptis.index.bloomfilter.BloomFilter;
+import com.coroptis.index.bloomfilter.BloomFilterWriter;
 import com.coroptis.index.cache.UniqueCache;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
@@ -31,6 +33,7 @@ public class Segment<K, V> implements CloseableResource {
     private final static String SCARCE_FILE_NAME_EXTENSION = ".scarce";
     private final static String CACHE_FILE_NAME_EXTENSION = ".cache";
     private final static String TEMP_FILE_NAME_EXTENSION = ".tmp";
+    private final static String BOOM_FILTER_FILE_NAME_EXTENSION = ".bloom-filter";
     private final Directory directory;
     private final SegmentId id;
     private final long maxNumberOfKeysInSegmentCache;
@@ -40,6 +43,9 @@ public class Segment<K, V> implements CloseableResource {
     private final ScarceIndex<K> scarceIndex;
     private final SegmentStatsManager segmentStatsManager;
     private final int maxNumberOfKeysInIndexPage;
+    private final int bloomFilterNumberOfHashFunctions;
+    private final int bloomFilterIndexSizeInBytes;
+    private final BloomFilter<K> bloomFilter;
 
     public static <M, N> SegmentBuilder<M, N> builder() {
         return new SegmentBuilder<>();
@@ -49,7 +55,9 @@ public class Segment<K, V> implements CloseableResource {
             final long maxNumeberOfKeysInSegmentCache,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
-            final int maxNumberOfKeysInIndexPage) {
+            final int maxNumberOfKeysInIndexPage,
+            final int bloomFilterNumberOfHashFunctions,
+            final int bloomFilterIndexSizeInBytes) {
         this.directory = Objects.requireNonNull(directory);
         this.id = Objects.requireNonNull(id);
         this.maxNumberOfKeysInSegmentCache = maxNumeberOfKeysInSegmentCache;
@@ -61,6 +69,15 @@ public class Segment<K, V> implements CloseableResource {
                 .withKeyTypeDescriptor(keyTypeDescriptor).build();
         this.segmentStatsManager = new SegmentStatsManager(directory, id);
         this.maxNumberOfKeysInIndexPage = maxNumberOfKeysInIndexPage;
+        this.bloomFilter = BloomFilter.<K>builder()
+                .withBloomFilterFileName(getBloomFilterFileName())
+                .withConvertorToBytes(keyTypeDescriptor.getConvertorToBytes())
+                .withDirectory(directory)
+                .withIndexSizeInBytes(bloomFilterIndexSizeInBytes)
+                .withNumberOfHashFunctions(bloomFilterNumberOfHashFunctions)
+                .build();
+        this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
+        this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
     }
 
     private UniqueCache<K, V> loadCache() {
@@ -101,6 +118,10 @@ public class Segment<K, V> implements CloseableResource {
 
     private String getScarceFileName() {
         return id.getName() + SCARCE_FILE_NAME_EXTENSION;
+    }
+
+    private String getBloomFilterFileName() {
+        return id.getName() + BOOM_FILTER_FILE_NAME_EXTENSION;
     }
 
     private String getIndexFileName() {
@@ -230,10 +251,19 @@ public class Segment<K, V> implements CloseableResource {
         return new SegmentWriter<>(this);
     }
 
+    public BloomFilterWriter<K> openBloomFilterWriter() {
+        return bloomFilter.openWriter();
+    }
+
     public V get(final K key) {
         final V out = cache.get(key);
         if (valueTypeDescriptor.isTombstone(out)) {
             return null;
+        }
+        if (out == null) {
+            if (bloomFilter.isNotStored(key)) {
+                return null;
+            }
         }
         if (out == null) {
             final Integer position = scarceIndex.get(key);
@@ -274,6 +304,9 @@ public class Segment<K, V> implements CloseableResource {
                 .withMaxNumberOfKeysInSegmentCache(
                         maxNumberOfKeysInSegmentCache)
                 .withMaxNumberOfKeysInIndexPage(maxNumberOfKeysInIndexPage)
+                .withBloomFilterIndexSizeInBytes(bloomFilterIndexSizeInBytes)
+                .withBloomFilterNumberOfHashFunctions(
+                        bloomFilterNumberOfHashFunctions)
                 .build();
         final Iterable<Pair<K, V>> iterable = getStream()::iterator;
         final Iterator<Pair<K, V>> iterator = iterable.iterator();

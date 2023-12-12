@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairWriter;
+import com.coroptis.index.bloomfilter.BloomFilterWriter;
 import com.coroptis.index.scarceindex.ScarceIndexWriter;
 import com.coroptis.index.sstfile.SstFileWriter;
 
@@ -17,18 +18,21 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
     private final AtomicLong cx = new AtomicLong(0L);
     private final ScarceIndexWriter<K> scarceWriter;
     private final SstFileWriter<K, V> indexWriter;
+    private final BloomFilterWriter<K> bloomFilterWriter;
     private Pair<K, V> previousPair = null;
 
     SegmentFullWriter(final Segment<K, V> segment) {
         this.segment = Objects.requireNonNull(segment);
         this.scarceWriter = segment.getTempScarceIndex().openWriter();
         this.indexWriter = segment.getTempIndexFile().openWriter();
-
+        bloomFilterWriter = segment.openBloomFilterWriter();
     }
 
     @Override
     public void put(final Pair<K, V> pair) {
         Objects.requireNonNull(pair);
+        
+        bloomFilterWriter.write(pair.getKey());
 
         if (previousPair != null) {
             final long i = cx.getAndIncrement();
@@ -57,6 +61,7 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
         scarceWriter.close();
         indexWriter.close();
         segment.finishFullWrite(cx.get());
+        bloomFilterWriter.close();
     }
 
 }

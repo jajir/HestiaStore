@@ -16,14 +16,21 @@ public class SsstIndexConf {
     private final int maxNumberOfKeysInCache;
     private final int maxNumberOfKeysInSegment;
 
+    private final int bloomFilterNumberOfHashFunctions;
+    private final int bloomFilterIndexSizeInBytes;
+
     SsstIndexConf(final long maxNumberOfKeysInSegmentCache,
             final int maxNumberOfKeysInSegmentIndexPage,
             final int maxNumberOfKeysInCache,
-            final int maxNumberOfKeysInSegment) {
+            final int maxNumberOfKeysInSegment,
+            final int bloomFilterNumberOfHashFunctions,
+            final int bloomFilterIndexSizeInBytes) {
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
         this.maxNumberOfKeysInSegmentIndexPage = maxNumberOfKeysInSegmentIndexPage;
         this.maxNumberOfKeysInCache = maxNumberOfKeysInCache;
         this.maxNumberOfKeysInSegment = maxNumberOfKeysInSegment;
+        this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
+        this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
     }
 
     public long getMaxNumberOfKeysInSegmentCache() {
@@ -40,6 +47,14 @@ public class SsstIndexConf {
 
     public int getMaxNumberOfKeysInSegment() {
         return maxNumberOfKeysInSegment;
+    }
+
+    public int getBloomFilterNumberOfHashFunctions() {
+        return bloomFilterNumberOfHashFunctions;
+    }
+
+    public int getBloomFilterIndexSizeInBytes() {
+        return bloomFilterIndexSizeInBytes;
     }
 
 }

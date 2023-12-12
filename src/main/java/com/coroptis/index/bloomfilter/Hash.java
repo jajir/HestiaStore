@@ -80,8 +80,6 @@ public class Hash {
             if (combinedHash < 0) {
                 combinedHash = ~combinedHash;
             }
-            System.out.println(combinedHash + " " + bitSize + "  "
-                    + ((int) (combinedHash % bitSize)));
             bitsChanged |= bits.get((int) (combinedHash % bitSize));
         }
         return bitsChanged;
