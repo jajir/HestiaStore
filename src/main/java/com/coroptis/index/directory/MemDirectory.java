@@ -62,4 +62,9 @@ public class MemDirectory implements Directory {
         return data.containsKey(fileName);
     }
 
+    @Override
+    public FileLock getLock(final String fileName) {
+        return new MemFileLock(this, fileName);
+    }
+
 }

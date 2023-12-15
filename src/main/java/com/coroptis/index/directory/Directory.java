@@ -45,4 +45,13 @@ public interface Directory {
 
     void renameFile(String currentFileName, String newFileName);
 
+    /**
+     * Get file lock. If given file already exist, it means that file is locked
+     * and returned object will be in state lock.
+     * 
+     * @param fileName required lock file names
+     * @return file lock object
+     */
+    FileLock getLock(String fileName);
+
 }

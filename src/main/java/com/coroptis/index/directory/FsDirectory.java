@@ -79,4 +79,9 @@ public class FsDirectory implements Directory {
         return Arrays.stream(directory.list());
     }
 
+    @Override
+    public FileLock getLock(String fileName) {
+        return new FsFileLock(this, fileName);
+    }
+
 }

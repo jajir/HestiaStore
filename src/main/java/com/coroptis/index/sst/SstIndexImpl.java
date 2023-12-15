@@ -9,7 +9,6 @@ import java.util.stream.StreamSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.coroptis.index.CloseableResource;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.cache.UniqueCache;
@@ -20,7 +19,7 @@ import com.coroptis.index.segment.Segment;
 import com.coroptis.index.segment.SegmentId;
 import com.coroptis.index.sstfile.PairComparator;
 
-public class SstIndexImpl<K, V> implements Index<K, V>, CloseableResource {
+public class SstIndexImpl<K, V> implements Index<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(SstIndexImpl.class);
 
@@ -30,15 +29,13 @@ public class SstIndexImpl<K, V> implements Index<K, V>, CloseableResource {
     private final UniqueCache<K, V> cache;
     private final SegmentCache<K> segmentCache;
     private final SegmentManager<K, V> segmentManager;
-
-    public static <M, N> SstIndexBuilder<M, N> builder() {
-        return new SstIndexBuilder<>();
-    }
+    private IndexState<K, V> indexState;
 
     public SstIndexImpl(final Directory directory,
             TypeDescriptor<K> keyTypeDescriptor,
             TypeDescriptor<V> valueTypeDescriptor, final SsstIndexConf conf) {
         Objects.requireNonNull(directory);
+        indexState = new IndexStateNew<>(directory);
         this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
         this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
         this.conf = Objects.requireNonNull(conf);
@@ -47,15 +44,12 @@ public class SstIndexImpl<K, V> implements Index<K, V>, CloseableResource {
         this.segmentCache = new SegmentCache<>(directory, keyTypeDescriptor);
         this.segmentManager = new SegmentManager<>(directory, keyTypeDescriptor,
                 valueTypeDescriptor, conf, 10);
-    }
-
-    public void put(final Pair<K, V> pair) {
-        Objects.requireNonNull(pair, "Pair cant be null");
-        put(pair.getKey(), pair.getValue());
+        indexState.onReady(this);
     }
 
     @Override
     public void put(final K key, final V value) {
+        indexState.tryPerformOperation();
         Objects.requireNonNull(key, "Key cant be null");
         Objects.requireNonNull(value, "Value cant be null");
 
@@ -116,7 +110,9 @@ public class SstIndexImpl<K, V> implements Index<K, V>, CloseableResource {
                 keyTypeDescriptor, valueTypeDescriptor);
     }
 
+    @Override
     public Stream<Pair<K, V>> getStream() {
+        indexState.tryPerformOperation();
         return StreamSupport.stream(new PairIteratorToSpliterator<K, V>(
                 openIterator(), keyTypeDescriptor), false);
     }
@@ -145,7 +141,9 @@ public class SstIndexImpl<K, V> implements Index<K, V>, CloseableResource {
         return segmentManager.getSegment(segmentId);
     }
 
+    @Override
     public void forceCompact() {
+        indexState.tryPerformOperation();
         compact();
     }
 
@@ -173,6 +171,7 @@ public class SstIndexImpl<K, V> implements Index<K, V>, CloseableResource {
 
     @Override
     public V get(final K key) {
+        indexState.tryPerformOperation();
         Objects.requireNonNull(key, "Key cant be null");
 
         V out = cache.get(key);
@@ -190,6 +189,7 @@ public class SstIndexImpl<K, V> implements Index<K, V>, CloseableResource {
 
     @Override
     public void delete(final K key) {
+        indexState.tryPerformOperation();
         Objects.requireNonNull(key, "Key cant be null");
 
         cache.put(Pair.of(key, valueTypeDescriptor.getTombstone()));
@@ -198,6 +198,11 @@ public class SstIndexImpl<K, V> implements Index<K, V>, CloseableResource {
     @Override
     public void close() {
         compact();
+        indexState.onClose(this);
+    }
+
+    public void setIndexState(final IndexState<K, V> indexState) {
+        this.indexState = Objects.requireNonNull(indexState);
     }
 
 }

@@ -81,4 +81,9 @@ public class FsZipDirectory implements Directory {
         return file.exists();
     }
 
+    @Override
+    public FileLock getLock(final String fileName) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
 }

@@ -5,7 +5,7 @@ import java.util.Objects;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
 
-public class SstIndexBuilder<K, V> {
+public class IndexBuilder<K, V> {
 
     private final static long DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = 200_000;
     private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_INDEX_PAGE = 5_000;
@@ -27,58 +27,58 @@ public class SstIndexBuilder<K, V> {
     private TypeDescriptor<K> keyTypeDescriptor;
     private TypeDescriptor<V> valueTypeDescriptor;
 
-    SstIndexBuilder() {
+    IndexBuilder() {
 
     }
 
-    public SstIndexBuilder<K, V> withDirectory(final Directory directory) {
+    public IndexBuilder<K, V> withDirectory(final Directory directory) {
         this.directory = Objects.requireNonNull(directory);
         return this;
     }
 
-    public SstIndexBuilder<K, V> withKeyTypeDescriptor(
+    public IndexBuilder<K, V> withKeyTypeDescriptor(
             final TypeDescriptor<K> keyTypeDescriptor) {
         this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
         return this;
     }
 
-    public SstIndexBuilder<K, V> withValueTypeDescriptor(
+    public IndexBuilder<K, V> withValueTypeDescriptor(
             final TypeDescriptor<V> valueTypeDescriptor) {
         this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
         return this;
     }
 
-    public SstIndexBuilder<K, V> withMaxNumberOfKeysInSegmentCache(
+    public IndexBuilder<K, V> withMaxNumberOfKeysInSegmentCache(
             long maxNumberOfKeysInSegmentCache) {
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
         return this;
     }
 
-    public SstIndexBuilder<K, V> withMaxNumberOfKeysInSegmentIndexPage(
+    public IndexBuilder<K, V> withMaxNumberOfKeysInSegmentIndexPage(
             int maxNumberOfKeysInSegmentIndexPage) {
         this.maxNumberOfKeysInSegmentIndexPage = maxNumberOfKeysInSegmentIndexPage;
         return this;
     }
 
-    public SstIndexBuilder<K, V> withMaxNumberOfKeysInCache(
+    public IndexBuilder<K, V> withMaxNumberOfKeysInCache(
             int maxNumberOfKeysInCache) {
         this.maxNumberOfKeysInCache = maxNumberOfKeysInCache;
         return this;
     }
 
-    public SstIndexBuilder<K, V> withMaxNumberOfKeysInSegment(
+    public IndexBuilder<K, V> withMaxNumberOfKeysInSegment(
             int maxNumberOfKeysInSegment) {
         this.maxNumberOfKeysInSegment = maxNumberOfKeysInSegment;
         return this;
     }
 
-    public SstIndexBuilder<K, V> withBloomFilterNumberOfHashFunctions(
+    public IndexBuilder<K, V> withBloomFilterNumberOfHashFunctions(
             final int bloomFilterNumberOfHashFunctions) {
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         return this;
     }
 
-    public SstIndexBuilder<K, V> withBloomFilterIndexSizeInBytes(
+    public IndexBuilder<K, V> withBloomFilterIndexSizeInBytes(
             final int bloomFilterIndexSizeInBytes) {
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
         return this;

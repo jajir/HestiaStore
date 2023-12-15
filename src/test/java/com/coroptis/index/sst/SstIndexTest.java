@@ -29,7 +29,7 @@ public class SstIndexTest {
     @Test
     void testBasic() throws Exception {
 
-        final SstIndexImpl<Integer, String> index1 = makeSstIndex();
+        final Index<Integer, String> index1 = makeSstIndex();
 
         final List<Pair<Integer, String>> data = List.of(Pair.of(1, "bbb"),
                 Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(4, "ddf"),
@@ -87,7 +87,7 @@ public class SstIndexTest {
 
     @Test
     void test_merging_values_from_cache_and_segment() throws Exception {
-        final SstIndexImpl<Integer, String> index1 = makeSstIndex();
+        final Index<Integer, String> index1 = makeSstIndex();
         final List<Pair<Integer, String>> data = List.of(Pair.of(1, "bbb"),
                 Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(4, "ddf"),
                 Pair.of(5, "ddg"), Pair.of(6, "ddh"), Pair.of(7, "ddi"),
@@ -108,7 +108,7 @@ public class SstIndexTest {
      */
     @Test
     void test_repeated_read() throws Exception {
-        final SstIndexImpl<Integer, String> index1 = makeSstIndex();
+        final Index<Integer, String> index1 = makeSstIndex();
         final List<Pair<Integer, String>> data = List.of(Pair.of(1, "bbb"),
                 Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(4, "ddf"),
                 Pair.of(5, "ddg"), Pair.of(6, "ddh"), Pair.of(7, "ddi"),
@@ -131,7 +131,7 @@ public class SstIndexTest {
      */
     @Test
     void test_read_from_reopend_index() throws Exception {
-        final SstIndexImpl<Integer, String> index1 = makeSstIndex();
+        final Index<Integer, String> index1 = makeSstIndex();
         final List<Pair<Integer, String>> data = List.of(Pair.of(1, "bbb"),
                 Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(4, "ddf"),
                 Pair.of(5, "ddg"), Pair.of(6, "ddh"), Pair.of(7, "ddi"),
@@ -140,7 +140,7 @@ public class SstIndexTest {
         data.stream().forEach(index1::put);
         index1.close();
 
-        final SstIndexImpl<Integer, String> index2 = makeSstIndex();
+        final Index<Integer, String> index2 = makeSstIndex();
         final List<Pair<Integer, String>> list1 = index2.getStream()
                 .collect(Collectors.toList());
         final List<Pair<Integer, String>> list2 = index2.getStream()
@@ -150,7 +150,7 @@ public class SstIndexTest {
     }
 
     private SstIndexImpl<Integer, String> makeSstIndex() {
-        return SstIndexImpl.<Integer, String>builder().withDirectory(directory)
+        return Index.<Integer, String>builder().withDirectory(directory)
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tds) //
                 .withMaxNumberOfKeysInSegment(4) //
