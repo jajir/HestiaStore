@@ -124,13 +124,42 @@ public class SstIndexTest {
         assertEquals(data.size(), list2.size());
     }
 
+    /**
+     * Verify that data could be read from index after index is closed and new one is opened.
+     * 
+     * @throws Exception
+     */
+    @Test
+    void test_read_from_reopend_index() throws Exception {
+        final SstIndexImpl<Integer, String> index1 = makeSstIndex();
+        final List<Pair<Integer, String>> data = List.of(Pair.of(1, "bbb"),
+                Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(4, "ddf"),
+                Pair.of(5, "ddg"), Pair.of(6, "ddh"), Pair.of(7, "ddi"),
+                Pair.of(8, "ddj"), Pair.of(9, "ddk"), Pair.of(10, "ddl"),
+                Pair.of(11, "ddm"));
+        data.stream().forEach(index1::put);
+        index1.close();
+
+        final SstIndexImpl<Integer, String> index2 = makeSstIndex();
+        final List<Pair<Integer, String>> list1 = index2.getStream()
+                .collect(Collectors.toList());
+        final List<Pair<Integer, String>> list2 = index2.getStream()
+                .collect(Collectors.toList());
+        assertEquals(data.size(), list1.size());
+        assertEquals(data.size(), list2.size());
+    }
+
     private SstIndexImpl<Integer, String> makeSstIndex() {
         return SstIndexImpl.<Integer, String>builder().withDirectory(directory)
-                .withKeyTypeDescriptor(tdi).withValueTypeDescriptor(tds)
-                .withMaxNumberOfKeysInSegment(4)
-                .withMaxNumberOfKeysInSegmentCache(1)
-                .withMaxNumberOfKeysInSegmentIndexPage(2)
-                .withMaxNumberOfKeysInCache(2).build();
+                .withKeyTypeDescriptor(tdi) //
+                .withValueTypeDescriptor(tds) //
+                .withMaxNumberOfKeysInSegment(4) //
+                .withMaxNumberOfKeysInSegmentCache(1) //
+                .withMaxNumberOfKeysInSegmentIndexPage(2) //
+                .withMaxNumberOfKeysInCache(2) //
+                .withBloomFilterIndexSizeInBytes(1000) //
+                .withBloomFilterNumberOfHashFunctions(4) //
+                .build();
     }
 
     private int numberOfFilesInDirectoryP(final Directory directory) {
