@@ -15,7 +15,8 @@
 		<log4j.version>2.15.1</log4j.version>
 		<java.version>11</java.version>
 	</properties>
-	<description>Allows to quickly sort larg ammount of data and quickly search through it.</description>
+	<!-- mvn jdeps:jdkinternals -->
+	<description>Allows to quickly sort large ammount of data and quickly search through it.</description>
 	<dependencies>
 		<dependency>
 			<groupId>org.slf4j</groupId>
