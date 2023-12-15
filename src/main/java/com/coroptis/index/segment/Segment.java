@@ -256,15 +256,23 @@ public class Segment<K, V> implements CloseableResource {
     }
 
     public V get(final K key) {
+        // look in cache
         final V out = cache.get(key);
         if (valueTypeDescriptor.isTombstone(out)) {
             return null;
         }
+
+        // look in bloom filter
         if (out == null) {
             if (bloomFilter.isNotStored(key)) {
+                /*
+                 * It;s sure that key is not in index.
+                 */
                 return null;
             }
         }
+
+        // look in index file
         if (out == null) {
             final Integer position = scarceIndex.get(key);
             if (position == null) {

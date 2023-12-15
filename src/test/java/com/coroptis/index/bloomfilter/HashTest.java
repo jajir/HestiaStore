@@ -57,6 +57,30 @@ public class HashTest {
     }
 
     @Test
+    void testSmallSize() throws Exception {
+        Hash hash = new Hash(new BitArray(1), 1);
+
+        hash.store("a".getBytes());
+        hash.store("b".getBytes());
+        hash.store("c".getBytes());
+        hash.store("d".getBytes());
+
+        // I'm sure this group is in index
+        assertFalse(hash.isNotStored("a".getBytes()));
+        assertFalse(hash.isNotStored("b".getBytes()));
+        assertFalse(hash.isNotStored("c".getBytes()));
+        assertFalse(hash.isNotStored("d".getBytes()));
+
+        // this group have false positive
+        assertTrue(hash.isNotStored("e".getBytes()));
+        assertTrue(hash.isNotStored("f".getBytes()));
+        assertTrue(hash.isNotStored("g".getBytes()));
+        assertFalse(hash.isNotStored("h".getBytes()));
+        assertTrue(hash.isNotStored("i".getBytes()));
+        assertFalse(hash.isNotStored("j".getBytes()));
+    }
+
+    @Test
     void testConstructor_InvalidNumberOfHashFunctions() throws Exception {
         assertThrows(IllegalArgumentException.class,
                 () -> new Hash(new BitArray(10), 0));
