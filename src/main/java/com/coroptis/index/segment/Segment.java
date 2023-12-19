@@ -339,8 +339,7 @@ public class Segment<K, V> implements CloseableResource {
 
     @Override
     public void close() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'close'");
+        //Do intentionally nothing.
     }
 
     public SegmentId getId() {

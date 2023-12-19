@@ -68,7 +68,7 @@ public class MergeSpliterator<K, V> implements Spliterator<Pair<K, V>> {
                     if (cmp == 0) {
                         if (!valueTypeDescriptor
                                 .isTombstone(pCache.getValue())) {
-                            consumer.accept(pSst);
+                            consumer.accept(pCache);
                         }
                         sstFile.next();
                         cache.next();
