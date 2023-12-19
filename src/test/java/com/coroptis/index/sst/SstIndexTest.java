@@ -158,7 +158,7 @@ public class SstIndexTest {
      * @throws Exception
      */
     @Test
-    void test_storing_of_modified_data_after_close() throws Exception {
+    void test_storing_of_modified_data_after_index_close() throws Exception {
         // generate data
         final List<String> values = List.of("aaa", "bbb", "ccc", "ddd", "eee",
                 "fff");
