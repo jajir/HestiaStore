@@ -1,10 +1,12 @@
 package com.coroptis.index.sst;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -125,7 +127,8 @@ public class SstIndexTest {
     }
 
     /**
-     * Verify that data could be read from index after index is closed and new one is opened.
+     * Verify that data could be read from index after index is closed and new
+     * one is opened.
      * 
      * @throws Exception
      */
@@ -147,6 +150,68 @@ public class SstIndexTest {
                 .collect(Collectors.toList());
         assertEquals(data.size(), list1.size());
         assertEquals(data.size(), list2.size());
+    }
+
+    /**
+     * Verify that changed data are correctly stored.
+     * 
+     * @throws Exception
+     */
+    @Test
+    void test_storing_of_modified_data_after_close() throws Exception {
+        // generate data
+        final List<String> values = List.of("aaa", "bbb", "ccc", "ddd", "eee",
+                "fff");
+        final List<Pair<Integer, String>> data = IntStream
+                .range(0, values.size() - 1)
+                .mapToObj(i -> Pair.of(i, values.get(i)))
+                .collect(Collectors.toList());
+        final List<Pair<Integer, String>> updatedData = IntStream
+                .range(0, values.size() - 1)
+                .mapToObj(i -> Pair.of(i, values.get(i + 1)))
+                .collect(Collectors.toList());
+
+        final Index<Integer, String> index1 = makeSstIndex();
+        data.stream().forEach(index1::put);
+        verifyDataIndex(index1, data);
+        index1.close();
+
+        final Index<Integer, String> index2 = makeSstIndex();
+        updatedData.stream().forEach(index2::put);
+        verifyDataIndex(index2, updatedData);
+        index2.close();
+    }
+
+    private void verifyDataIndex(final Index<Integer, String> index,
+            final List<Pair<Integer, String>> data) {
+        final List<Pair<Integer, String>> indexData = index.getStream()
+                .collect(Collectors.toList());
+        assertEquals(data.size(), indexData.size());
+        for (int i = 0; i < data.size(); i++) {
+            final Pair<Integer, String> pairData = data.get(i);
+            final Pair<Integer, String> pairIndex = indexData.get(i);
+            assertEquals(pairData.getKey(), pairIndex.getKey());
+            assertEquals(pairData.getValue(), pairIndex.getValue());
+        }
+    }
+
+    /**
+     * Verify that data could be read from index after index is closed and new
+     * one is opened.
+     * 
+     * @throws Exception
+     */
+    @Test
+    void test_read_from_unclosed_index() throws Exception {
+        final Index<Integer, String> index1 = makeSstIndex();
+        final List<Pair<Integer, String>> data = List.of(Pair.of(1, "bbb"),
+                Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(4, "ddf"),
+                Pair.of(5, "ddg"), Pair.of(6, "ddh"), Pair.of(7, "ddi"),
+                Pair.of(8, "ddj"), Pair.of(9, "ddk"), Pair.of(10, "ddl"),
+                Pair.of(11, "ddm"));
+        data.stream().forEach(index1::put);
+
+        assertThrows(IllegalStateException.class, () -> makeSstIndex());
     }
 
     private SstIndexImpl<Integer, String> makeSstIndex() {
