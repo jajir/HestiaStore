@@ -22,17 +22,16 @@ public class SegmentConsistencyTest {
 
     private final Logger logger = LoggerFactory
             .getLogger(SegmentConsistencyTest.class);
-       final List<String> values = List.of("aaa", "bbb", "ccc", "ddd", "eee",
-                "fff");
-        final List<Pair<Integer, String>> data = IntStream
-                .range(0, values.size() - 1)
-                .mapToObj(i -> Pair.of(i, values.get(i)))
-                .collect(Collectors.toList());
-        final List<Pair<Integer, String>> updatedData = IntStream
-                .range(0, values.size() - 1)
-                .mapToObj(i -> Pair.of(i, values.get(i + 1)))
-                .collect(Collectors.toList());
-
+    final List<String> values = List.of("aaa", "bbb", "ccc", "ddd", "eee",
+            "fff");
+    final List<Pair<Integer, String>> data = IntStream
+            .range(0, values.size() - 1)
+            .mapToObj(i -> Pair.of(i, values.get(i)))
+            .collect(Collectors.toList());
+    final List<Pair<Integer, String>> updatedData = IntStream
+            .range(0, values.size() - 1)
+            .mapToObj(i -> Pair.of(i, values.get(i + 1)))
+            .collect(Collectors.toList());
 
     private final TypeDescriptorString tds = new TypeDescriptorString();
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
@@ -41,25 +40,27 @@ public class SegmentConsistencyTest {
     void test_writing_updated_values() throws Exception {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
-        final Segment<Integer, String> seg1= makeSegment(directory, id);
-        try( final SegmentWriter<Integer,String> writer =seg1.openWriter()){
-            data.forEach(writer::put);            
+        final Segment<Integer, String> seg1 = makeSegment(directory, id);
+        try (final SegmentWriter<Integer, String> writer = seg1.openWriter()) {
+            data.forEach(writer::put);
         }
         verifyDataIndex(seg1, data);
         seg1.close();
 
-        final Segment<Integer, String> seg2= makeSegment(directory, id);
-        try( final SegmentWriter<Integer,String> writer =seg2.openWriter()){
+        final Segment<Integer, String> seg2 = makeSegment(directory, id);
+        try (final SegmentWriter<Integer, String> writer = seg2.openWriter()) {
             updatedData.forEach(writer::put);
         }
         verifyDataIndex(seg2, updatedData);
         seg2.close();
     }
 
-    private Segment<Integer, String> makeSegment(final Directory directory, final SegmentId id){
+    private Segment<Integer, String> makeSegment(final Directory directory,
+            final SegmentId id) {
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()
-        .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
-        .withValueTypeDescriptor(tds).withMaxNumberOfKeysInIndexPage(2).withMaxNumberOfKeysInSegmentCache(3).build();
+                .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
+                .withValueTypeDescriptor(tds).withMaxNumberOfKeysInIndexPage(2)
+                .withMaxNumberOfKeysInSegmentCache(3).build();
         return seg;
     }
 

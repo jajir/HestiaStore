@@ -31,7 +31,7 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
     @Override
     public void put(final Pair<K, V> pair) {
         Objects.requireNonNull(pair);
-        
+
         bloomFilterWriter.write(pair.getKey());
 
         if (previousPair != null) {

@@ -6,6 +6,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.coroptis.index.CloseableResource;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
@@ -29,6 +32,7 @@ import com.coroptis.index.sstfile.SstFileWriter;
  */
 public class Segment<K, V> implements CloseableResource {
 
+    private final Logger logger = LoggerFactory.getLogger(Segment.class);
     private final static String INDEX_FILE_NAME_EXTENSION = ".index";
     private final static String SCARCE_FILE_NAME_EXTENSION = ".scarce";
     private final static String CACHE_FILE_NAME_EXTENSION = ".cache";
@@ -60,6 +64,7 @@ public class Segment<K, V> implements CloseableResource {
             final int bloomFilterIndexSizeInBytes) {
         this.directory = Objects.requireNonNull(directory);
         this.id = Objects.requireNonNull(id);
+        logger.debug("Initializing segment '{}'", this.id);
         this.maxNumberOfKeysInSegmentCache = maxNumeberOfKeysInSegmentCache;
         this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
         this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
@@ -339,7 +344,8 @@ public class Segment<K, V> implements CloseableResource {
 
     @Override
     public void close() {
-        //Do intentionally nothing.
+        logger.debug("Closing segment '{}'", this.id);
+        // Do intentionally nothing.
     }
 
     public SegmentId getId() {
