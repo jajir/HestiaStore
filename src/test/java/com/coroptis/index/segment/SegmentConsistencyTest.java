@@ -1,27 +1,21 @@
 package com.coroptis.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Answers.values;
 
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
 import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.MemDirectory;
-import com.coroptis.index.sst.Index;
 
 public class SegmentConsistencyTest {
 
-    private final Logger logger = LoggerFactory
-            .getLogger(SegmentConsistencyTest.class);
     final List<String> values = List.of("aaa", "bbb", "ccc", "ddd", "eee",
             "fff");
     final List<Pair<Integer, String>> data = IntStream
