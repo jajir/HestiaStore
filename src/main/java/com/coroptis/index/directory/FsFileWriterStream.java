@@ -19,6 +19,9 @@ public class FsFileWriterStream implements FileWriter {
     FsFileWriterStream(final File file, final Directory.Access access) {
         try {
             final Path path = file.toPath();
+            if (file.exists()) {
+                file.delete();
+            }
             final OutputStream os = Files.newOutputStream(path,
                     Directory.Access.APPEND == access
                             ? StandardOpenOption.APPEND
