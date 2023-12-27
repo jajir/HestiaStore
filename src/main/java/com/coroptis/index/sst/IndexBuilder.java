@@ -12,6 +12,7 @@ public class IndexBuilder<K, V> {
 
     private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT = 10_000_000;
     private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_CACHE = 1_000_000;
+    private final static int DEFAULT_MAX_NUMBER_OF_SEGMENTS_IN_CACHE = 10;
 
     private final static int DEFAULT_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS = 1_000;
     private final static int DEFAULT_BLOOM_FILTER_INDEX_SIZE_IN_BYTES = 10_000;
@@ -20,6 +21,7 @@ public class IndexBuilder<K, V> {
     private int maxNumberOfKeysInSegmentIndexPage = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_INDEX_PAGE;
     private int maxNumberOfKeysInCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_CACHE;
     private int maxNumberOfKeysInSegment = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT;
+    private int maxNumberOfSegmentsInCache = DEFAULT_MAX_NUMBER_OF_SEGMENTS_IN_CACHE;
     private int bloomFilterNumberOfHashFunctions = DEFAULT_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS;
     private int bloomFilterIndexSizeInBytes = DEFAULT_BLOOM_FILTER_INDEX_SIZE_IN_BYTES;
 
@@ -49,26 +51,32 @@ public class IndexBuilder<K, V> {
     }
 
     public IndexBuilder<K, V> withMaxNumberOfKeysInSegmentCache(
-            long maxNumberOfKeysInSegmentCache) {
+            final long maxNumberOfKeysInSegmentCache) {
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
         return this;
     }
 
     public IndexBuilder<K, V> withMaxNumberOfKeysInSegmentIndexPage(
-            int maxNumberOfKeysInSegmentIndexPage) {
+            final int maxNumberOfKeysInSegmentIndexPage) {
         this.maxNumberOfKeysInSegmentIndexPage = maxNumberOfKeysInSegmentIndexPage;
         return this;
     }
 
     public IndexBuilder<K, V> withMaxNumberOfKeysInCache(
-            int maxNumberOfKeysInCache) {
+            final int maxNumberOfKeysInCache) {
         this.maxNumberOfKeysInCache = maxNumberOfKeysInCache;
         return this;
     }
 
     public IndexBuilder<K, V> withMaxNumberOfKeysInSegment(
-            int maxNumberOfKeysInSegment) {
+            final int maxNumberOfKeysInSegment) {
         this.maxNumberOfKeysInSegment = maxNumberOfKeysInSegment;
+        return this;
+    }
+
+    public IndexBuilder<K, V> setMaxNumberOfSegmentsInCache(
+            final int maxNumberOfSegmentsInCache) {
+        this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
         return this;
     }
 
@@ -88,8 +96,8 @@ public class IndexBuilder<K, V> {
         final SsstIndexConf conf = new SsstIndexConf(
                 maxNumberOfKeysInSegmentCache,
                 maxNumberOfKeysInSegmentIndexPage, maxNumberOfKeysInCache,
-                maxNumberOfKeysInSegment, bloomFilterNumberOfHashFunctions,
-                bloomFilterIndexSizeInBytes);
+                maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache,
+                bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes);
         return new SstIndexImpl<>(directory, keyTypeDescriptor,
                 valueTypeDescriptor, conf);
     }

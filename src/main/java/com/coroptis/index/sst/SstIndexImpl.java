@@ -43,7 +43,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                 this.keyTypeDescriptor.getComparator());
         this.segmentCache = new SegmentCache<>(directory, keyTypeDescriptor);
         this.segmentManager = new SegmentManager<>(directory, keyTypeDescriptor,
-                valueTypeDescriptor, conf, 10);
+                valueTypeDescriptor, conf);
         indexState.onReady(this);
     }
 

@@ -25,5 +25,11 @@ public interface Index<K, V> extends CloseableResource {
 
     void forceCompact();
 
+    /**
+     * Went through all records. In fact read all index data. Doesn't use
+     * indexes and caches in segments.
+     * 
+     * @return stream of all data.
+     */
     Stream<Pair<K, V>> getStream();
 }

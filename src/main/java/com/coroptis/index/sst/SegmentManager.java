@@ -21,13 +21,12 @@ public class SegmentManager<K, V> {
 
     SegmentManager(final Directory directory,
             TypeDescriptor<K> keyTypeDescriptor,
-            TypeDescriptor<V> valueTypeDescriptor, final SsstIndexConf conf,
-            final int maxNumberOfSegmentsInCache) {
+            TypeDescriptor<V> valueTypeDescriptor, final SsstIndexConf conf) {
         this.directory = Objects.requireNonNull(directory);
         this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
         this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
         this.conf = Objects.requireNonNull(conf);
-        cache = new CacheLru<>(maxNumberOfSegmentsInCache,
+        cache = new CacheLru<>(conf.getMaxNumberOfSegmentsInCache(),
                 (segmenId, segment) -> {
                     segment.close();
                 });
