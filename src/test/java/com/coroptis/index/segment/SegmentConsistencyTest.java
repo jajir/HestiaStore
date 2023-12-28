@@ -2,6 +2,7 @@ package com.coroptis.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -9,6 +10,7 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 
 import com.coroptis.index.Pair;
+import com.coroptis.index.PairIterator;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
 import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
@@ -30,6 +32,11 @@ public class SegmentConsistencyTest {
     private final TypeDescriptorString tds = new TypeDescriptorString();
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
 
+    /**
+     * Test that updated data are correctly stored into index.
+     * 
+     * @throws Exception
+     */
     @Test
     void test_writing_updated_values() throws Exception {
         final Directory directory = new MemDirectory();
@@ -60,8 +67,7 @@ public class SegmentConsistencyTest {
 
     private void verifyDataIndex(final Segment<Integer, String> index,
             final List<Pair<Integer, String>> data) {
-        final List<Pair<Integer, String>> indexData = index.getStream()
-                .collect(Collectors.toList());
+        final List<Pair<Integer, String>> indexData = toList(index);
         assertEquals(data.size(), indexData.size());
         for (int i = 0; i < data.size(); i++) {
             final Pair<Integer, String> pairData = data.get(i);
@@ -69,6 +75,17 @@ public class SegmentConsistencyTest {
             assertEquals(pairData.getKey(), pairIndex.getKey());
             assertEquals(pairData.getValue(), pairIndex.getValue());
         }
+    }
+
+    private List<Pair<Integer, String>> toList(
+            final Segment<Integer, String> index) {
+        try (final PairIterator<Integer, String> iterator = index
+                .openIterator()) {
+            final List<Pair<Integer, String>> data = new ArrayList<>();
+            iterator.forEachRemaining(data::add);
+            return data;
+        }
+
     }
 
 }

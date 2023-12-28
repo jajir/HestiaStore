@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.coroptis.index.Pair;
+import com.coroptis.index.PairIterator;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
 import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
@@ -38,7 +39,7 @@ public class IntegrationTest {
 
         seg.forceCompact();
 
-        final List<Pair<Integer, String>> list = toList(seg.getStream());
+        final List<Pair<Integer, String>> list = toList(seg.openIterator());
         assertEquals(0, list.size());
         final SegmentStats stats = seg.getStats();
         assertEquals(0, stats.getNumberOfKeys());
@@ -67,7 +68,7 @@ public class IntegrationTest {
 
         assertEquals(4, seg.getStats().getNumberOfKeys());
 
-        final List<Pair<Integer, String>> list = toList(seg.getStream());
+        final List<Pair<Integer, String>> list = toList(seg.openIterator());
         assertEquals(Pair.of(2, "a"), list.get(0));
         assertEquals(Pair.of(3, "b"), list.get(1));
         assertEquals(Pair.of(4, "c"), list.get(2));
@@ -103,12 +104,13 @@ public class IntegrationTest {
         final SegmentId segId = SegmentId.of(3);
         final Segment<Integer, String> smaller = seg.split(segId);
 
-        final List<Pair<Integer, String>> list1 = toList(seg.getStream());
+        final List<Pair<Integer, String>> list1 = toList(seg.openIterator());
         assertEquals(Pair.of(4, "c"), list1.get(0));
         assertEquals(Pair.of(5, "d"), list1.get(1));
         assertEquals(2, list1.size());
 
-        final List<Pair<Integer, String>> list2 = toList(smaller.getStream());
+        final List<Pair<Integer, String>> list2 = toList(
+                smaller.openIterator());
         assertEquals(Pair.of(2, "a"), list2.get(0));
         assertEquals(Pair.of(3, "b"), list2.get(1));
         assertEquals(2, list2.size());
@@ -148,7 +150,7 @@ public class IntegrationTest {
         assertEquals(4, seg.getStats().getNumberOfKeysInCache());
         assertEquals(0, seg.getStats().getNumberOfKeysInIndex());
 
-        final List<Pair<Integer, String>> list = toList(seg.getStream());
+        final List<Pair<Integer, String>> list = toList(seg.openIterator());
         assertEquals(Pair.of(2, "a"), list.get(0));
         assertEquals(Pair.of(3, "bb"), list.get(1));
         assertEquals(Pair.of(4, "c"), list.get(2));
@@ -184,7 +186,7 @@ public class IntegrationTest {
         assertEquals(4, seg.getStats().getNumberOfKeysInCache());
         assertEquals(0, seg.getStats().getNumberOfKeysInIndex());
 
-        final List<Pair<Integer, String>> list = toList(seg.getStream());
+        final List<Pair<Integer, String>> list = toList(seg.openIterator());
         assertEquals(Pair.of(2, "a"), list.get(0));
         assertEquals(Pair.of(3, "bb"), list.get(1));
         assertEquals(Pair.of(4, "c"), list.get(2));
@@ -217,11 +219,65 @@ public class IntegrationTest {
             writer.put(Pair.of(5, TypeDescriptorString.TOMBSTONE_VALUE));
         }
 
+        /**
+         * There is a error in computing number of keys in cache. There are 3
+         * keys, because one is deleted.
+         */
         assertEquals(4, seg.getStats().getNumberOfKeys());
         assertEquals(4, seg.getStats().getNumberOfKeysInCache());
         assertEquals(0, seg.getStats().getNumberOfKeysInIndex());
 
-        final List<Pair<Integer, String>> list = toList(seg.getStream());
+        final List<Pair<Integer, String>> list = toList(seg.openIterator());
+        assertEquals(Pair.of(2, "a"), list.get(0));
+        assertEquals(Pair.of(3, "bb"), list.get(1));
+        assertEquals(Pair.of(4, "c"), list.get(2));
+        assertEquals(3, list.size());
+
+        assertNull(seg.get(5));
+        assertEquals("a", seg.get(2));
+        assertEquals("bb", seg.get(3));
+        assertEquals("c", seg.get(4));
+    }
+
+    /**
+     * This test could be used for manual verification that all open files are
+     * closed. Should be done by adding debug breakpoint into
+     * {@link MergeSpliterator#tryAdvance(java.util.function.Consumer)} than
+     * check number of open files from command line.
+     * 
+     * 
+     * 
+     * Directory should be following: <code><pre>
+     * new FsDirectory(new File("./target/tmp/"));
+     * </pre></code>
+     * 
+     * @throws Exception
+     */
+    @Test
+    void test_write_unordered_tombstone_with_forceCompact() throws Exception {
+        final Directory directory = new MemDirectory();
+        final SegmentId id = SegmentId.of(27);
+        final Segment<Integer, String> seg = Segment.<Integer, String>builder()
+                .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
+                .withValueTypeDescriptor(tds).build();
+
+        try (final SegmentWriter<Integer, String> writer = seg.openWriter()) {
+            writer.put(Pair.of(5, "d"));
+            writer.put(Pair.of(3, "b"));
+            writer.put(Pair.of(5, "dd"));
+            writer.put(Pair.of(2, "a"));
+            writer.put(Pair.of(3, "bb"));
+            writer.put(Pair.of(4, "c"));
+            writer.put(Pair.of(5, "ddd"));
+            writer.put(Pair.of(5, TypeDescriptorString.TOMBSTONE_VALUE));
+        }
+        seg.forceCompact();
+
+        assertEquals(3, seg.getStats().getNumberOfKeys());
+        assertEquals(0, seg.getStats().getNumberOfKeysInCache());
+        assertEquals(3, seg.getStats().getNumberOfKeysInIndex());
+
+        final List<Pair<Integer, String>> list = toList(seg.openIterator());
         assertEquals(Pair.of(2, "a"), list.get(0));
         assertEquals(Pair.of(3, "bb"), list.get(1));
         assertEquals(Pair.of(4, "c"), list.get(2));
@@ -272,9 +328,13 @@ public class IntegrationTest {
     }
 
     private List<Pair<Integer, String>> toList(
-            final Stream<Pair<Integer, String>> stream) {
+            final PairIterator<Integer, String> iterator) {
         final ArrayList<Pair<Integer, String>> out = new ArrayList<>();
-        stream.forEach(out::add);
+        while (iterator.hasNext()) {
+            out.add(iterator.next());
+
+        }
+        iterator.close();
         return out;
     }
 

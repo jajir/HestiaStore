@@ -1,10 +1,7 @@
 package com.coroptis.index.segment;
 
-import java.util.Iterator;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -205,13 +202,6 @@ public class Segment<K, V> implements CloseableResource {
         }
     }
 
-    public Stream<Pair<K, V>> getStream() {
-        return StreamSupport
-                .stream(new MergeSpliterator<>(getIndexSstFile().openIterator(),
-                        getCache().getSortedIterator(), keyTypeDescriptor,
-                        valueTypeDescriptor), false);
-    }
-
     public PairIterator<K, V> openIterator() {
         return new MergeIterator<K, V>(getIndexSstFile().openIterator(),
                 getCache().getSortedIterator(), keyTypeDescriptor,
@@ -226,7 +216,11 @@ public class Segment<K, V> implements CloseableResource {
 
     public void forceCompact() {
         try (final SegmentFullWriter<K, V> writer = openFullWriter()) {
-            getStream().forEach(writer::put);
+            try (final PairIterator<K, V> iterator = openIterator()) {
+                while (iterator.hasNext()) {
+                    writer.put(iterator.next());
+                }
+            }
         }
     }
 
@@ -321,21 +315,23 @@ public class Segment<K, V> implements CloseableResource {
                 .withBloomFilterNumberOfHashFunctions(
                         bloomFilterNumberOfHashFunctions)
                 .build();
-        final Iterable<Pair<K, V>> iterable = getStream()::iterator;
-        final Iterator<Pair<K, V>> iterator = iterable.iterator();
-        try (final SegmentFullWriter<K, V> writer = lowerSegment
-                .openFullWriter()) {
-            while (cx < half && iterator.hasNext()) {
-                cx++;
-                final Pair<K, V> pair = iterator.next();
-                writer.put(pair);
-            }
-        }
 
-        try (final SegmentFullWriter<K, V> writer = openFullWriter()) {
-            while (iterator.hasNext()) {
-                final Pair<K, V> pair = iterator.next();
-                writer.put(pair);
+        try (final PairIterator<K, V> iterator = openIterator()) {
+
+            try (final SegmentFullWriter<K, V> writer = lowerSegment
+                    .openFullWriter()) {
+                while (cx < half && iterator.hasNext()) {
+                    cx++;
+                    final Pair<K, V> pair = iterator.next();
+                    writer.put(pair);
+                }
+            }
+
+            try (final SegmentFullWriter<K, V> writer = openFullWriter()) {
+                while (iterator.hasNext()) {
+                    final Pair<K, V> pair = iterator.next();
+                    writer.put(pair);
+                }
             }
         }
 

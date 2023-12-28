@@ -37,15 +37,16 @@ public class BloomFilter<K> {
         this.indexSizeInBytes = indexSizeInBytes;
         this.numberOfHashFunctions = numberOfHashFunctions;
         if (isExists()) {
-            final FileReader reader = directory
-                    .getFileReader(bloomFilterFileName);
-            final byte[] data = new byte[indexSizeInBytes];
-            if (indexSizeInBytes != reader.read(data)) {
-                throw new IllegalStateException(String.format(
-                        "Bloom filter data from file '%s' wasn't loaded",
-                        bloomFilterFileName));
+            try (final FileReader reader = directory
+                    .getFileReader(bloomFilterFileName)) {
+                final byte[] data = new byte[indexSizeInBytes];
+                if (indexSizeInBytes != reader.read(data)) {
+                    throw new IllegalStateException(String.format(
+                            "Bloom filter data from file '%s' wasn't loaded",
+                            bloomFilterFileName));
+                }
+                hash = new Hash(new BitArray(data), numberOfHashFunctions);
             }
-            hash = new Hash(new BitArray(data), numberOfHashFunctions);
         } else {
             hash = null;
         }
