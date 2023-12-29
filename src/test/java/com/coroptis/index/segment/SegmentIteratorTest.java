@@ -1,10 +1,12 @@
 package com.coroptis.index.segment;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
+import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
 import com.coroptis.index.datatype.TypeDescriptorString;
@@ -23,7 +25,7 @@ public class SegmentIteratorTest {
         final Segment<Integer, String> segment = Segment
                 .<Integer, String>builder().withDirectory(directory).withId(id)
                 .withKeyTypeDescriptor(tdi).withValueTypeDescriptor(tds)
-                .withMaxNumberOfKeysInSegmentCache(5)
+                .withMaxNumberOfKeysInSegmentCache(0)
                 .withMaxNumberOfKeysInIndexPage(3).build();
         try (final SegmentWriter<Integer, String> writer = segment
                 .openWriter()) {
@@ -35,18 +37,19 @@ public class SegmentIteratorTest {
         try (PairIterator<Integer, String> iterator = segment.openIterator()) {
             assertTrue(iterator.readCurrent().isEmpty());
             assertTrue(iterator.hasNext());
-            iterator.next();
+            assertEquals(Pair.of(1, "a"), iterator.next()); 
             try (final SegmentWriter<Integer, String> writer = segment
                     .openWriter()) {
                 writer.put(4, "d");
                 writer.put(5, "e");
             }
-            segment.forceCompact();
             assertTrue(iterator.readCurrent().isPresent());
             /**
              * There should not be next element, because operation forceCompact
              * force index to rewrite physical SST data file.
              */
+            assertTrue(iterator.hasNext());
+            assertEquals(Pair.of(2, "b"), iterator.next()); 
             assertFalse(iterator.hasNext());
         }
     }

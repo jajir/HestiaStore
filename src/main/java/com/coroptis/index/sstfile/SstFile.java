@@ -3,6 +3,8 @@ package com.coroptis.index.sstfile;
 import java.util.Comparator;
 import java.util.Objects;
 
+import com.coroptis.index.OptimisticLock;
+import com.coroptis.index.OptimisticLockObjectVersionProvider;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.PairIteratorReader;
 import com.coroptis.index.PairReader;
@@ -80,6 +82,14 @@ public class SstFile<K, V> {
     public PairIterator<K, V> openIterator() {
         final PairIterator<K, V> iterator = new PairIteratorReader<>(
                 openReader());
+        return iterator;
+    }
+
+    @SuppressWarnings("resource")
+    public PairIterator<K, V> openIterator(
+            final OptimisticLockObjectVersionProvider versionProvider) {
+        final PairIterator<K, V> iterator = new PairIteratorReader<>(
+                openReader(), new OptimisticLock(versionProvider));
         return iterator;
     }
 

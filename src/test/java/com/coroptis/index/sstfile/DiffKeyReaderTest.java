@@ -3,11 +3,11 @@ package com.coroptis.index.sstfile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
-import org.mockito.Matchers;
 import org.mockito.invocation.InvocationOnMock;
 
 import com.coroptis.index.IndexException;
@@ -37,7 +37,7 @@ public class DiffKeyReaderTest {
                 tds.getConvertorFromBytes());
 
         when(fileReader.read()).thenReturn(3).thenReturn(5);
-        when(fileReader.read(Matchers.eq(new byte[5])))
+        when(fileReader.read(eq(new byte[5])))
                 .thenAnswer(invocation -> {
                     loadStringToByteArray(invocation, "prase");
                     return 5;
@@ -51,7 +51,7 @@ public class DiffKeyReaderTest {
                 tds.getConvertorFromBytes());
 
         when(fileReader.read()).thenReturn(0).thenReturn(5);
-        when(fileReader.read(Matchers.eq(new byte[5])))
+        when(fileReader.read(eq(new byte[5])))
                 .thenAnswer(invocation -> {
                     loadStringToByteArray(invocation, "prase");
                     return 5;
@@ -67,7 +67,7 @@ public class DiffKeyReaderTest {
                 tds.getConvertorFromBytes());
 
         when(fileReader.read()).thenReturn(0).thenReturn(5);
-        when(fileReader.read(Matchers.eq(new byte[5])))
+        when(fileReader.read(eq(new byte[5])))
                 .thenAnswer(invocation -> {
                     return 3;
                 });
@@ -80,7 +80,7 @@ public class DiffKeyReaderTest {
                 tds.getConvertorFromBytes());
 
         when(fileReader.read()).thenReturn(0).thenReturn(5);
-        when(fileReader.read(Matchers.eq(new byte[5])))
+        when(fileReader.read(eq(new byte[5])))
                 .thenAnswer(invocation -> {
                     loadStringToByteArray(invocation, "prase");
                     return 5;
@@ -89,7 +89,7 @@ public class DiffKeyReaderTest {
         assertEquals("prase", ret1);
 
         when(fileReader.read()).thenReturn(3).thenReturn(5);
-        when(fileReader.read(Matchers.eq(new byte[5])))
+        when(fileReader.read(eq(new byte[5])))
                 .thenAnswer(invocation -> {
                     loadStringToByteArray(invocation, "lesni");
                     return 5;
@@ -105,7 +105,7 @@ public class DiffKeyReaderTest {
                 tds.getConvertorFromBytes());
 
         when(fileReader.read()).thenReturn(0).thenReturn(5);
-        when(fileReader.read(Matchers.eq(new byte[5])))
+        when(fileReader.read(eq(new byte[5])))
                 .thenAnswer(invocation -> {
                     loadStringToByteArray(invocation, "prase");
                     return 5;
@@ -124,7 +124,7 @@ public class DiffKeyReaderTest {
                 tds.getConvertorFromBytes());
 
         when(fileReader.read()).thenReturn(0).thenReturn(5);
-        when(fileReader.read(Matchers.eq(new byte[5])))
+        when(fileReader.read(eq(new byte[5])))
                 .thenAnswer(invocation -> {
                     loadStringToByteArray(invocation, "prase");
                     return 5;
@@ -133,7 +133,7 @@ public class DiffKeyReaderTest {
         assertEquals("prase", ret1);
 
         when(fileReader.read()).thenReturn(3).thenReturn(5);
-        when(fileReader.read(Matchers.eq(new byte[5])))
+        when(fileReader.read(eq(new byte[5])))
                 .thenAnswer(invocation -> {
 //                    loadStringToByteArray(invocation, "lesni");
                     return 3;

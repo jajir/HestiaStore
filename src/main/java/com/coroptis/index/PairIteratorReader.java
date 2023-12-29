@@ -7,7 +7,8 @@ import java.util.Optional;
 
 /**
  * Allows to use {@link PairReader} as {@link Iterator}. Some operations like
- * data merging it makes a lot easier.
+ * data merging it makes a lot easier. It support optimistic locking of source
+ * reader.
  * 
  * @author honza
  *
@@ -20,10 +21,18 @@ public class PairIteratorReader<K, V> implements PairIterator<K, V> {
 
     private Pair<K, V> current = null;
 
+    private final OptimisticLock lock;
+
     public PairIteratorReader(final PairReader<K, V> reader) {
+        this(reader, null);
+    }
+
+    public PairIteratorReader(final PairReader<K, V> reader,
+            final OptimisticLock optimisticLock) {
         this.reader = Objects.requireNonNull(reader,
                 "Pair reader can't be null.");
         current = reader.read();
+        this.lock = optimisticLock;
     }
 
     public Optional<Pair<K, V>> readCurrent() {
@@ -32,7 +41,15 @@ public class PairIteratorReader<K, V> implements PairIterator<K, V> {
 
     @Override
     public boolean hasNext() {
-        return current != null;
+        if (lock == null) {
+            return current != null;
+        } else {
+            if (lock.isLocked()) {
+                return false;
+            } else {
+                return current != null;
+            }
+        }
     }
 
     @Override

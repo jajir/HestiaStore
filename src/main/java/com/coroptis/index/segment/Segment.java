@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.coroptis.index.CloseableResource;
+import com.coroptis.index.OptimisticLockObjectVersionProvider;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.PairReader;
@@ -27,7 +28,8 @@ import com.coroptis.index.sstfile.SstFileWriter;
  * @param <K>
  * @param <V>
  */
-public class Segment<K, V> implements CloseableResource {
+public class Segment<K, V>
+        implements CloseableResource, OptimisticLockObjectVersionProvider {
 
     private final Logger logger = LoggerFactory.getLogger(Segment.class);
     private final static String INDEX_FILE_NAME_EXTENSION = ".index";
@@ -47,6 +49,7 @@ public class Segment<K, V> implements CloseableResource {
     private final int bloomFilterNumberOfHashFunctions;
     private final int bloomFilterIndexSizeInBytes;
     private final BloomFilter<K> bloomFilter;
+    private int segmentVersion = 0;
 
     public static <M, N> SegmentBuilder<M, N> builder() {
         return new SegmentBuilder<>();
@@ -203,7 +206,7 @@ public class Segment<K, V> implements CloseableResource {
     }
 
     public PairIterator<K, V> openIterator() {
-        return new MergeIterator<K, V>(getIndexSstFile().openIterator(),
+        return new MergeIterator<K, V>(getIndexSstFile().openIterator(this),
                 getCache().getSortedIterator(), keyTypeDescriptor,
                 valueTypeDescriptor);
     }
@@ -215,6 +218,7 @@ public class Segment<K, V> implements CloseableResource {
     }
 
     public void forceCompact() {
+        segmentVersion++;
         try (final SegmentFullWriter<K, V> writer = openFullWriter()) {
             try (final PairIterator<K, V> iterator = openIterator()) {
                 while (iterator.hasNext()) {
@@ -301,6 +305,7 @@ public class Segment<K, V> implements CloseableResource {
 
     public Segment<K, V> split(final SegmentId segmentId) {
         Objects.requireNonNull(segmentId);
+        segmentVersion++;
         long cx = 0;
         long half = getStats().getNumberOfKeys() / 2;
 
@@ -346,6 +351,11 @@ public class Segment<K, V> implements CloseableResource {
 
     public SegmentId getId() {
         return id;
+    }
+
+    @Override
+    public int getVersion() {
+        return segmentVersion;
     }
 
 }
