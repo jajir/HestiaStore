@@ -205,4 +205,8 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         this.indexState = Objects.requireNonNull(indexState);
     }
 
+    SegmentManager<K, V> getSegmentManager() {
+        return segmentManager;
+    }
+
 }

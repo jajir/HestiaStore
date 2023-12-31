@@ -8,7 +8,10 @@ import java.util.Optional;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
+import com.coroptis.index.segment.Segment;
+import com.coroptis.index.segment.SegmentFiles;
 import com.coroptis.index.segment.SegmentId;
+import com.coroptis.index.segment.SegmentReader;
 
 /**
  * Iterate through all segments in sst. It ignore main cache intentionally.
@@ -38,9 +41,32 @@ class SegmentsIterator<K, V> implements PairIterator<K, V> {
             currentIterator.close();
         }
         if (!ids.isEmpty()) {
-            currentIterator = sstIndex.openSegmentIterator(ids.remove(0));
-            if (currentIterator.hasNext()) {
-                nextPair = currentIterator.next();
+            final SegmentId segmentId = ids.remove(0);
+            // is segment in memory?
+            final SegmentManager<K, V> segmentManager = sstIndex
+                    .getSegmentManager();
+            if (segmentManager.isInCache(segmentId)) {
+                currentIterator = sstIndex.openSegmentIterator(segmentId);
+                if (currentIterator.hasNext()) {
+                    nextPair = currentIterator.next();
+                }
+            } else {
+                final SegmentFiles<K, V> segmentFiles = segmentManager
+                        .getSegmentFiles(segmentId);
+                final SegmentReader<K, V> segmentReader = new SegmentReader<>(
+                        segmentFiles);
+                currentIterator = segmentReader.openIterator(() -> {
+                    if (segmentManager.isInCache(segmentId)) {
+                        final Segment<K, V> segment = segmentManager
+                                .getSegment(segmentId);
+                        return segment.getVersion();
+                    } else {
+                        return 0;
+                    }
+                });
+                if (currentIterator.hasNext()) {
+                    nextPair = currentIterator.next();
+                }
             }
         }
     }

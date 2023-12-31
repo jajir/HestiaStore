@@ -8,6 +8,7 @@ import com.coroptis.index.cache.CacheLru;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.segment.Segment;
+import com.coroptis.index.segment.SegmentFiles;
 import com.coroptis.index.segment.SegmentId;
 
 public class SegmentManager<K, V> {
@@ -42,6 +43,18 @@ public class SegmentManager<K, V> {
         } else {
             return oSegment.get();
         }
+    }
+
+    boolean isInCache(final SegmentId segmentId) {
+        Objects.requireNonNull(segmentId, "Segment id is required");
+        final Optional<Segment<K, V>> oSegment = cache.get(segmentId);
+        return oSegment.isPresent();
+    }
+
+    SegmentFiles<K, V> getSegmentFiles(final SegmentId segmentId) {
+        Objects.requireNonNull(segmentId, "Segment id is required");
+        return new SegmentFiles<K, V>(directory, segmentId, keyTypeDescriptor,
+                valueTypeDescriptor);
     }
 
     private Segment<K, V> instantiateSegment(final SegmentId segmentId) {

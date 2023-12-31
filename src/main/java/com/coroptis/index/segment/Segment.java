@@ -18,7 +18,6 @@ import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.scarceindex.ScarceIndex;
 import com.coroptis.index.sstfile.SstFile;
-import com.coroptis.index.sstfile.SstFileStreamer;
 import com.coroptis.index.sstfile.SstFileWriter;
 
 /**
@@ -32,16 +31,7 @@ public class Segment<K, V>
         implements CloseableResource, OptimisticLockObjectVersionProvider {
 
     private final Logger logger = LoggerFactory.getLogger(Segment.class);
-    private final static String INDEX_FILE_NAME_EXTENSION = ".index";
-    private final static String SCARCE_FILE_NAME_EXTENSION = ".scarce";
-    private final static String CACHE_FILE_NAME_EXTENSION = ".cache";
-    private final static String TEMP_FILE_NAME_EXTENSION = ".tmp";
-    private final static String BOOM_FILTER_FILE_NAME_EXTENSION = ".bloom-filter";
-    private final Directory directory;
-    private final SegmentId id;
     private final long maxNumberOfKeysInSegmentCache;
-    private final TypeDescriptor<K> keyTypeDescriptor;
-    private final TypeDescriptor<V> valueTypeDescriptor;
     private final UniqueCache<K, V> cache;
     private final ScarceIndex<K> scarceIndex;
     private final SegmentStatsManager segmentStatsManager;
@@ -49,6 +39,7 @@ public class Segment<K, V>
     private final int bloomFilterNumberOfHashFunctions;
     private final int bloomFilterIndexSizeInBytes;
     private final BloomFilter<K> bloomFilter;
+    private final SegmentFiles<K, V> segmentFiles;
     private int segmentVersion = 0;
 
     public static <M, N> SegmentBuilder<M, N> builder() {
@@ -62,20 +53,20 @@ public class Segment<K, V>
             final int maxNumberOfKeysInIndexPage,
             final int bloomFilterNumberOfHashFunctions,
             final int bloomFilterIndexSizeInBytes) {
-        this.directory = Objects.requireNonNull(directory);
-        this.id = Objects.requireNonNull(id);
-        logger.debug("Initializing segment '{}'", this.id);
+        this.segmentFiles = new SegmentFiles<>(directory, id, keyTypeDescriptor,
+                valueTypeDescriptor);
+        logger.debug("Initializing segment '{}'", segmentFiles.getId());
         this.maxNumberOfKeysInSegmentCache = maxNumeberOfKeysInSegmentCache;
-        this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
-        this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
-        this.cache = loadCache();
+        this.cache = UniqueCache.<K, V>builder()
+                .withKeyComparator(getKeyTypeDescriptor().getComparator())
+                .withSstFile(segmentFiles.getCacheSstFile()).build();
         this.scarceIndex = ScarceIndex.<K>builder().withDirectory(directory)
-                .withFileName(getScarceFileName())
+                .withFileName(segmentFiles.getScarceFileName())
                 .withKeyTypeDescriptor(keyTypeDescriptor).build();
         this.segmentStatsManager = new SegmentStatsManager(directory, id);
         this.maxNumberOfKeysInIndexPage = maxNumberOfKeysInIndexPage;
         this.bloomFilter = BloomFilter.<K>builder()
-                .withBloomFilterFileName(getBloomFilterFileName())
+                .withBloomFilterFileName(segmentFiles.getBloomFilterFileName())
                 .withConvertorToBytes(keyTypeDescriptor.getConvertorToBytes())
                 .withDirectory(directory)
                 .withIndexSizeInBytes(bloomFilterIndexSizeInBytes)
@@ -85,14 +76,8 @@ public class Segment<K, V>
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
     }
 
-    private UniqueCache<K, V> loadCache() {
-        final UniqueCache<K, V> out = new UniqueCache<>(
-                keyTypeDescriptor.getComparator());
-        try (final SstFileStreamer<K, V> fileStreamer = getCacheSstFile()
-                .openStreamer()) {
-            fileStreamer.stream().forEach(pair -> out.put(pair));
-        }
-        return out;
+    private TypeDescriptor<K> getKeyTypeDescriptor() {
+        return segmentFiles.getKeyTypeDescriptor();
     }
 
     public K getMaxKey() {
@@ -107,61 +92,12 @@ public class Segment<K, V>
         return maxNumberOfKeysInIndexPage;
     }
 
-    private String getCacheFileName() {
-        return id.getName() + CACHE_FILE_NAME_EXTENSION;
-    }
-
-    private String getTempIndexFileName() {
-        return id.getName() + TEMP_FILE_NAME_EXTENSION
-                + INDEX_FILE_NAME_EXTENSION;
-    }
-
-    private String getTempScarceFileName() {
-        return id.getName() + TEMP_FILE_NAME_EXTENSION
-                + SCARCE_FILE_NAME_EXTENSION;
-    }
-
-    private String getScarceFileName() {
-        return id.getName() + SCARCE_FILE_NAME_EXTENSION;
-    }
-
-    private String getBloomFilterFileName() {
-        return id.getName() + BOOM_FILTER_FILE_NAME_EXTENSION;
-    }
-
-    private String getIndexFileName() {
-        return id.getName() + INDEX_FILE_NAME_EXTENSION;
-    }
-
     public SegmentStats getStats() {
         return segmentStatsManager.getSegmentStats();
     }
 
-    private SstFile<K, V> getCacheSstFile() {
-        return new SstFile<>(directory, getCacheFileName(),
-                valueTypeDescriptor.getTypeWriter(),
-                valueTypeDescriptor.getTypeReader(),
-                keyTypeDescriptor.getComparator(),
-                keyTypeDescriptor.getConvertorFromBytes(),
-                keyTypeDescriptor.getConvertorToBytes());
-    }
-
-    private SstFile<K, V> getIndexSstFile() {
-        return new SstFile<>(directory, getIndexFileName(),
-                valueTypeDescriptor.getTypeWriter(),
-                valueTypeDescriptor.getTypeReader(),
-                keyTypeDescriptor.getComparator(),
-                keyTypeDescriptor.getConvertorFromBytes(),
-                keyTypeDescriptor.getConvertorToBytes());
-    }
-
     SstFile<K, V> getTempIndexFile() {
-        return new SstFile<>(directory, getTempIndexFileName(),
-                valueTypeDescriptor.getTypeWriter(),
-                valueTypeDescriptor.getTypeReader(),
-                keyTypeDescriptor.getComparator(),
-                keyTypeDescriptor.getConvertorFromBytes(),
-                keyTypeDescriptor.getConvertorToBytes());
+        return segmentFiles.getTempIndexFile();
     }
 
     UniqueCache<K, V> getCache() {
@@ -178,17 +114,19 @@ public class Segment<K, V>
         } else {
             flushCache();
         }
-        if (!directory.isFileExists(getScarceFileName())) {
-            directory.touch(getScarceFileName());
+        if (!segmentFiles.getDirectory()
+                .isFileExists(segmentFiles.getScarceFileName())) {
+            segmentFiles.getDirectory().touch(segmentFiles.getScarceFileName());
         }
-        if (!directory.isFileExists(getIndexFileName())) {
-            directory.touch(getIndexFileName());
+        if (!segmentFiles.getDirectory()
+                .isFileExists(segmentFiles.getIndexFileName())) {
+            segmentFiles.getDirectory().touch(segmentFiles.getIndexFileName());
         }
     }
 
     private void flushCache() {
         final AtomicLong cx = new AtomicLong(0);
-        try (final SstFileWriter<K, V> writer = getCacheSstFile()
+        try (final SstFileWriter<K, V> writer = segmentFiles.getCacheSstFile()
                 .openWriter()) {
             cache.getStream().forEach(pair -> {
                 writer.put(pair);
@@ -206,15 +144,19 @@ public class Segment<K, V>
     }
 
     public PairIterator<K, V> openIterator() {
-        return new MergeIterator<K, V>(getIndexSstFile().openIterator(this),
-                getCache().getSortedIterator(), keyTypeDescriptor,
-                valueTypeDescriptor);
+        return new MergeIterator<K, V>(
+                segmentFiles.getIndexSstFile().openIterator(this),
+                getCache().getSortedIterator(),
+                segmentFiles.getKeyTypeDescriptor(),
+                segmentFiles.getValueTypeDescriptor());
     }
 
     ScarceIndex<K> getTempScarceIndex() {
-        return ScarceIndex.<K>builder().withDirectory(directory)
-                .withFileName(getTempScarceFileName())
-                .withKeyTypeDescriptor(keyTypeDescriptor).build();
+        return ScarceIndex.<K>builder()
+                .withDirectory(segmentFiles.getDirectory())
+                .withFileName(segmentFiles.getTempScarceFileName())
+                .withKeyTypeDescriptor(segmentFiles.getKeyTypeDescriptor())
+                .build();
     }
 
     public void forceCompact() {
@@ -231,8 +173,12 @@ public class Segment<K, V>
     void finishFullWrite(final long numberOfKeysInMainIndex) {
         cache.clear();
         flushCache();
-        directory.renameFile(getTempIndexFileName(), getIndexFileName());
-        directory.renameFile(getTempScarceFileName(), getScarceFileName());
+        segmentFiles.getDirectory().renameFile(
+                segmentFiles.getTempIndexFileName(),
+                segmentFiles.getIndexFileName());
+        segmentFiles.getDirectory().renameFile(
+                segmentFiles.getTempScarceFileName(),
+                segmentFiles.getScarceFileName());
         scarceIndex.loadCache();
         segmentStatsManager.setNumberOfKeysInCache(0);
         segmentStatsManager.setNumberOfKeysInIndex(numberOfKeysInMainIndex);
@@ -261,7 +207,7 @@ public class Segment<K, V>
     public V get(final K key) {
         // look in cache
         final V out = cache.get(key);
-        if (valueTypeDescriptor.isTombstone(out)) {
+        if (segmentFiles.getValueTypeDescriptor().isTombstone(out)) {
             return null;
         }
 
@@ -281,12 +227,12 @@ public class Segment<K, V>
             if (position == null) {
                 return null;
             }
-            try (final PairReader<K, V> fileReader = getIndexSstFile()
-                    .openReader(position)) {
+            try (final PairReader<K, V> fileReader = segmentFiles
+                    .getIndexSstFile().openReader(position)) {
                 for (int i = 0; i < getMaxNumberOfKeysInIndexPage(); i++) {
                     final Pair<K, V> pair = fileReader.read();
-                    final int cmp = keyTypeDescriptor.getComparator()
-                            .compare(pair.getKey(), key);
+                    final int cmp = segmentFiles.getKeyTypeDescriptor()
+                            .getComparator().compare(pair.getKey(), key);
                     if (cmp == 0) {
                         return pair.getValue();
                     }
@@ -310,9 +256,9 @@ public class Segment<K, V>
         long half = getStats().getNumberOfKeys() / 2;
 
         final Segment<K, V> lowerSegment = Segment.<K, V>builder()
-                .withDirectory(directory).withId(segmentId)
-                .withKeyTypeDescriptor(this.keyTypeDescriptor)
-                .withValueTypeDescriptor(this.valueTypeDescriptor)
+                .withDirectory(segmentFiles.getDirectory()).withId(segmentId)
+                .withKeyTypeDescriptor(segmentFiles.getKeyTypeDescriptor())
+                .withValueTypeDescriptor(segmentFiles.getValueTypeDescriptor())
                 .withMaxNumberOfKeysInSegmentCache(
                         maxNumberOfKeysInSegmentCache)
                 .withMaxNumberOfKeysInIndexPage(maxNumberOfKeysInIndexPage)
@@ -345,12 +291,12 @@ public class Segment<K, V>
 
     @Override
     public void close() {
-        logger.debug("Closing segment '{}'", this.id);
+        logger.debug("Closing segment '{}'", segmentFiles.getId());
         // Do intentionally nothing.
     }
 
     public SegmentId getId() {
-        return id;
+        return segmentFiles.getId();
     }
 
     @Override

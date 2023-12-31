@@ -24,6 +24,10 @@ public class UniqueCache<K, V> {
 
     private final Comparator<K> keyComparator;
     private final TreeMap<K, V> map;
+    
+    public static <M, N> UniqueCacheBuilder<M, N> builder() {
+        return new UniqueCacheBuilder<>();
+    }
 
     public UniqueCache(final Comparator<K> keyComparator) {
         this.keyComparator = Objects.requireNonNull(keyComparator);
