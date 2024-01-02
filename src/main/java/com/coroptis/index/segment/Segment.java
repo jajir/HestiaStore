@@ -40,7 +40,7 @@ public class Segment<K, V>
     private final int bloomFilterIndexSizeInBytes;
     private final BloomFilter<K> bloomFilter;
     private final SegmentFiles<K, V> segmentFiles;
-    private int segmentVersion = 0;
+    private final VersionController versionController;
 
     public static <M, N> SegmentBuilder<M, N> builder() {
         return new SegmentBuilder<>();
@@ -52,7 +52,8 @@ public class Segment<K, V>
             final TypeDescriptor<V> valueTypeDescriptor,
             final int maxNumberOfKeysInIndexPage,
             final int bloomFilterNumberOfHashFunctions,
-            final int bloomFilterIndexSizeInBytes) {
+            final int bloomFilterIndexSizeInBytes,
+            VersionController versionController) {
         this.segmentFiles = new SegmentFiles<>(directory, id, keyTypeDescriptor,
                 valueTypeDescriptor);
         logger.debug("Initializing segment '{}'", segmentFiles.getId());
@@ -72,6 +73,8 @@ public class Segment<K, V>
                 .withIndexSizeInBytes(bloomFilterIndexSizeInBytes)
                 .withNumberOfHashFunctions(bloomFilterNumberOfHashFunctions)
                 .build();
+        this.versionController = Objects.requireNonNull(versionController,
+                "Version controller is required");
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
     }
@@ -160,7 +163,7 @@ public class Segment<K, V>
     }
 
     public void forceCompact() {
-        segmentVersion++;
+        versionController.changeVersion();
         try (final SegmentFullWriter<K, V> writer = openFullWriter()) {
             try (final PairIterator<K, V> iterator = openIterator()) {
                 while (iterator.hasNext()) {
@@ -251,7 +254,7 @@ public class Segment<K, V>
 
     public Segment<K, V> split(final SegmentId segmentId) {
         Objects.requireNonNull(segmentId);
-        segmentVersion++;
+        versionController.changeVersion();
         long cx = 0;
         long half = getStats().getNumberOfKeys() / 2;
 
@@ -291,6 +294,7 @@ public class Segment<K, V>
 
     @Override
     public void close() {
+        bloomFilter.logStats();
         logger.debug("Closing segment '{}'", segmentFiles.getId());
         // Do intentionally nothing.
     }
@@ -301,7 +305,7 @@ public class Segment<K, V>
 
     @Override
     public int getVersion() {
-        return segmentVersion;
+        return versionController.getVersion();
     }
 
 }

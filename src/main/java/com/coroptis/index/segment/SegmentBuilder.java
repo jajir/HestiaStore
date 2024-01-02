@@ -23,6 +23,7 @@ public class SegmentBuilder<K, V> {
     private int maxNumberOfKeysInIndexPage = DEFAULT_MAX_NUMBER_OF_KEYS_IN_INDEX_PAGE;
     private int bloomFilterNumberOfHashFunctions = DEFAULT_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS;
     private int bloomFilterIndexSizeInBytes = DEFAULT_BLOOM_FILTER_INDEX_SIZE_IN_BYTES;
+    private VersionController versionController;
 
     SegmentBuilder() {
 
@@ -81,11 +82,20 @@ public class SegmentBuilder<K, V> {
         return this;
     }
 
+    public SegmentBuilder<K, V> withVersionController(
+            VersionController versionController) {
+        this.versionController = versionController;
+        return this;
+    }
+
     public Segment<K, V> build() {
+        if (versionController == null) {
+            versionController = new VersionController();
+        }
         return new Segment<>(directory, id, maxNumberOfKeysInSegmentCache,
                 keyTypeDescriptor, valueTypeDescriptor,
                 maxNumberOfKeysInIndexPage, bloomFilterNumberOfHashFunctions,
-                bloomFilterIndexSizeInBytes);
+                bloomFilterIndexSizeInBytes, versionController);
     }
 
 }
