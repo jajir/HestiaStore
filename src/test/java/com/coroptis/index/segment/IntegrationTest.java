@@ -35,7 +35,9 @@ public class IntegrationTest {
     @MethodSource("segmentProvider")
     void test_empty_segment_stats(final TypeDescriptorInteger tdi,
             final TypeDescriptorString tds, final Directory directory,
-            final Segment<Integer, String> seg) throws Exception {
+            final Segment<Integer, String> seg,
+            final int expectedNumberKeysInScarceIndex,
+            int expectedNumberOfFiles) throws Exception {
 
         seg.forceCompact();
 
@@ -46,8 +48,11 @@ public class IntegrationTest {
         assertEquals(0, stats.getNumberOfKeysInCache());
         assertEquals(0, stats.getNumberOfKeysInIndex());
         assertEquals(0, stats.getNumberOfKeysInScarceIndex());
-
         assertNull(seg.get(1));
+        /*
+         * Number of file's is constantly 5 because all cache data are flushed
+         * to main index and to bloom filter file.
+         */
         assertEquals(5, numberOfFilesInDirectory(directory));
 
     }
@@ -57,7 +62,8 @@ public class IntegrationTest {
     void test_simple(final TypeDescriptorInteger tdi,
             final TypeDescriptorString tds, final Directory directory,
             final Segment<Integer, String> seg,
-            final int expectedNumberKeysInScarceIndex) throws Exception {
+            final int expectedNumberKeysInScarceIndex,
+            final int expectedNumberOfFiles) throws Exception {
 
         try (final SegmentWriter<Integer, String> writer = seg.openWriter()) {
             writer.put(Pair.of(2, "a"));
@@ -68,6 +74,7 @@ public class IntegrationTest {
 
         assertEquals(4, seg.getStats().getNumberOfKeys());
 
+        // Verify that all data could be read
         final List<Pair<Integer, String>> list = toList(seg.openIterator());
         assertEquals(Pair.of(2, "a"), list.get(0));
         assertEquals(Pair.of(3, "b"), list.get(1));
@@ -78,13 +85,15 @@ public class IntegrationTest {
         assertEquals(expectedNumberKeysInScarceIndex,
                 seg.getStats().getNumberOfKeysInScarceIndex());
 
+        // Assert that all data could be found
         assertNull(seg.get(6));
         assertEquals("a", seg.get(2));
         assertEquals("b", seg.get(3));
         assertEquals("c", seg.get(4));
         assertEquals("d", seg.get(5));
 
-        assertEquals(5, numberOfFilesInDirectoryP(directory));
+        assertEquals(expectedNumberOfFiles,
+                numberOfFilesInDirectoryP(directory));
     }
 
     @ParameterizedTest
@@ -92,7 +101,8 @@ public class IntegrationTest {
     void test_split(final TypeDescriptorInteger tdi,
             final TypeDescriptorString tds, final Directory directory,
             final Segment<Integer, String> seg,
-            final int expectedNumberKeysInScarceIndex) throws Exception {
+            final int expectedNumberKeysInScarceIndex,
+            final int expectedNumberOfFiles) throws Exception {
 
         try (final SegmentWriter<Integer, String> writer = seg.openWriter()) {
             writer.put(Pair.of(2, "a"));
@@ -308,7 +318,7 @@ public class IntegrationTest {
                                 .withKeyTypeDescriptor(tdi)
                                 .withValueTypeDescriptor(tds)
                                 .withMaxNumberOfKeysInSegmentCache(10).build(),
-                        0),
+                        0, 4),
                 arguments(tdi, tds, directory,
                         Segment.<Integer, String>builder()
                                 .withDirectory(directory).withId(id)
@@ -316,7 +326,7 @@ public class IntegrationTest {
                                 .withValueTypeDescriptor(tds)
                                 .withMaxNumberOfKeysInSegmentCache(1)
                                 .withMaxNumberOfKeysInIndexPage(1).build(),
-                        4),
+                        4, 5),
                 arguments(tdi, tds, directory,
                         Segment.<Integer, String>builder()
                                 .withDirectory(directory).withId(id)
@@ -324,7 +334,7 @@ public class IntegrationTest {
                                 .withValueTypeDescriptor(tds)
                                 .withMaxNumberOfKeysInSegmentCache(2)
                                 .withMaxNumberOfKeysInIndexPage(2).build(),
-                        3));
+                        3, 5));
     }
 
     private List<Pair<Integer, String>> toList(

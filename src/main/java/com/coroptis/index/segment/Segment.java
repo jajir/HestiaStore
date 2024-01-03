@@ -17,7 +17,6 @@ import com.coroptis.index.cache.UniqueCache;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.scarceindex.ScarceIndex;
-import com.coroptis.index.sstfile.SstFile;
 import com.coroptis.index.sstfile.SstFileWriter;
 
 /**
@@ -99,10 +98,6 @@ public class Segment<K, V>
         return segmentStatsManager.getSegmentStats();
     }
 
-    SstFile<K, V> getTempIndexFile() {
-        return segmentFiles.getTempIndexFile();
-    }
-
     UniqueCache<K, V> getCache() {
         return cache;
     }
@@ -154,14 +149,6 @@ public class Segment<K, V>
                 segmentFiles.getValueTypeDescriptor());
     }
 
-    ScarceIndex<K> getTempScarceIndex() {
-        return ScarceIndex.<K>builder()
-                .withDirectory(segmentFiles.getDirectory())
-                .withFileName(segmentFiles.getTempScarceFileName())
-                .withKeyTypeDescriptor(segmentFiles.getKeyTypeDescriptor())
-                .build();
-    }
-
     public void forceCompact() {
         versionController.changeVersion();
         try (final SegmentFullWriter<K, V> writer = openFullWriter()) {
@@ -196,7 +183,7 @@ public class Segment<K, V>
      * compacting.
      */
     SegmentFullWriter<K, V> openFullWriter() {
-        return new SegmentFullWriter<K, V>(this);
+        return new SegmentFullWriter<K, V>(this, segmentFiles);
     }
 
     public SegmentWriter<K, V> openWriter() {

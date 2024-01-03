@@ -21,10 +21,12 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
     private final BloomFilterWriter<K> bloomFilterWriter;
     private Pair<K, V> previousPair = null;
 
-    SegmentFullWriter(final Segment<K, V> segment) {
+    SegmentFullWriter(final Segment<K, V> segment,
+            SegmentFiles<K, V> segmentFiles) {
         this.segment = Objects.requireNonNull(segment);
-        this.scarceWriter = segment.getTempScarceIndex().openWriter();
-        this.indexWriter = segment.getTempIndexFile().openWriter();
+        Objects.requireNonNull(segmentFiles);
+        this.scarceWriter = segmentFiles.getTempScarceIndex().openWriter();
+        this.indexWriter = segmentFiles.getTempIndexFile().openWriter();
         bloomFilterWriter = segment.openBloomFilterWriter();
     }
 

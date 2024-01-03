@@ -5,6 +5,11 @@ import java.util.Objects;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.Props;
 
+/**
+ * 
+ * @author honza
+ *
+ */
 public class SegmentStatsManager {
 
     private final static String NUMBER_OF_KEYS_IN_CACHE = "numberOfKeysInCache";

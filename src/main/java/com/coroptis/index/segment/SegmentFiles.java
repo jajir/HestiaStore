@@ -4,6 +4,7 @@ import java.util.Objects;
 
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
+import com.coroptis.index.scarceindex.ScarceIndex;
 import com.coroptis.index.sstfile.SstFile;
 
 /**
@@ -87,6 +88,14 @@ public class SegmentFiles<K, V> {
                 keyTypeDescriptor.getComparator(),
                 keyTypeDescriptor.getConvertorFromBytes(),
                 keyTypeDescriptor.getConvertorToBytes());
+    }
+
+    ScarceIndex<K> getTempScarceIndex() {
+        return ScarceIndex.<K>builder()//
+                .withDirectory(getDirectory())//
+                .withFileName(getTempScarceFileName())//
+                .withKeyTypeDescriptor(getKeyTypeDescriptor())//
+                .build();
     }
 
     Directory getDirectory() {

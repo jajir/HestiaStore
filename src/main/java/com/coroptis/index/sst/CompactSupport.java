@@ -17,24 +17,25 @@ public class CompactSupport<K, V> {
     private final Logger logger = LoggerFactory.getLogger(CompactSupport.class);
 
     private final List<Pair<K, V>> toSameSegment = new ArrayList<>();
-    private final SegmentCache<K> scarceIndexFile;
-    private final SstIndexImpl<K, V> fastIndex;
+    private final SegmentCache<K> segmentCache;
+    private final SegmentManager<K, V> segmentManager;
     private SegmentId currentSegmentId = null;
+
     /**
      * List of segment's ids eligible for compacting.
      */
     private List<SegmentId> eligibleSegments = new ArrayList<>();
 
-    CompactSupport(final SstIndexImpl<K, V> fastIndex,
-            final SegmentCache<K> scarceIndexFile) {
-        this.fastIndex = fastIndex;
-        this.scarceIndexFile = scarceIndexFile;
+    CompactSupport(final SegmentManager<K, V> segmentManager,
+            final SegmentCache<K> segmentCache) {
+        this.segmentManager = Objects.requireNonNull(segmentManager);
+        this.segmentCache = Objects.requireNonNull(segmentCache);
     }
 
     public void compact(final Pair<K, V> pair) {
         Objects.requireNonNull(pair);
         final K segmentKey = pair.getKey();
-        final SegmentId segmentId = scarceIndexFile
+        final SegmentId segmentId = segmentCache
                 .insertKeyToSegment(segmentKey);
         if (currentSegmentId == null) {
             currentSegmentId = segmentId;
@@ -63,7 +64,8 @@ public class CompactSupport<K, V> {
     private void flushToCurrentSegment() {
         logger.debug("Flushing '{}' key value pairs into segment '{}'.",
                 toSameSegment.size(), currentSegmentId);
-        final Segment<K, V> segment = fastIndex.getSegment(currentSegmentId);
+        final Segment<K, V> segment = segmentManager
+                .getSegment(currentSegmentId);
         try (final SegmentWriter<K, V> writer = segment.openWriter()) {
             toSameSegment.forEach(writer::put);
         }
