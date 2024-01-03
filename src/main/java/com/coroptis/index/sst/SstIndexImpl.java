@@ -27,7 +27,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final UniqueCache<K, V> cache;
-    private final SegmentCache<K> segmentCache;
+    private final KeySegmentCache<K> keySegmentCache;
     private final SegmentManager<K, V> segmentManager;
     private IndexState<K, V> indexState;
 
@@ -41,7 +41,8 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         this.conf = Objects.requireNonNull(conf);
         this.cache = new UniqueCache<K, V>(
                 this.keyTypeDescriptor.getComparator());
-        this.segmentCache = new SegmentCache<>(directory, keyTypeDescriptor);
+        this.keySegmentCache = new KeySegmentCache<>(directory,
+                keyTypeDescriptor);
         this.segmentManager = new SegmentManager<>(directory, keyTypeDescriptor,
                 valueTypeDescriptor, conf);
         indexState.onReady(this);
@@ -68,7 +69,8 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     }
 
     public List<SegmentId> getSegmentIds() {
-        return segmentCache.getSegmentsAsStream().map(pair -> pair.getValue())
+        return keySegmentCache.getSegmentsAsStream()
+                .map(pair -> pair.getValue())
                 .collect(Collectors.toUnmodifiableList());
     }
 
@@ -122,7 +124,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                 "Cache compacting of '{}' key value pairs in cache started.",
                 cache.size());
         final CompactSupport<K, V> support = new CompactSupport<>(
-                segmentManager, segmentCache);
+                segmentManager, keySegmentCache);
         cache.getStream()
                 .sorted(new PairComparator<>(keyTypeDescriptor.getComparator()))
                 .forEach(support::compact);
@@ -131,7 +133,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         segmentIds.stream().map(this::getSegment)
                 .forEach(this::optionallySplit);
         cache.clear();
-        segmentCache.flush();
+        keySegmentCache.flush();
         logger.debug(
                 "Cache compacting is done. Cache contains '{}' key value pairs.",
                 cache.size());
@@ -159,9 +161,9 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                 .getMaxNumberOfKeysInSegment()) {
             final SegmentId segmentId = segment.getId();
             logger.debug("Splitting of '{}' started.", segmentId);
-            final SegmentId newSegmentId = segmentCache.findNewSegmentId();
+            final SegmentId newSegmentId = keySegmentCache.findNewSegmentId();
             final Segment<K, V> splitted = segment.split(newSegmentId);
-            segmentCache.insertSegment(splitted.getMaxKey(), newSegmentId);
+            keySegmentCache.insertSegment(splitted.getMaxKey(), newSegmentId);
             logger.debug("Splitting of segment '{}' to '{}' is done.",
                     segmentId, newSegmentId);
             return true;
@@ -176,7 +178,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
 
         V out = cache.get(key);
         if (out == null) {
-            final SegmentId id = segmentCache.findSegmentId(key);
+            final SegmentId id = keySegmentCache.findSegmentId(key);
             if (id == null) {
                 return null;
             }

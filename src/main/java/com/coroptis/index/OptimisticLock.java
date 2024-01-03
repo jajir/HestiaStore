@@ -13,7 +13,8 @@ public class OptimisticLock {
     private final OptimisticLockObjectVersionProvider versionProvider;
     private final int initialObjectVersion;
 
-    public OptimisticLock(final OptimisticLockObjectVersionProvider versionProvider) {
+    public OptimisticLock(
+            final OptimisticLockObjectVersionProvider versionProvider) {
         this.versionProvider = Objects.requireNonNull(versionProvider);
         this.initialObjectVersion = versionProvider.getVersion();
     }

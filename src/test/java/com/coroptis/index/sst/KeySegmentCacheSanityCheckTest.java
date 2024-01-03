@@ -12,7 +12,7 @@ import com.coroptis.index.segment.SegmentId;
 import com.coroptis.index.sstfile.SstFile;
 import com.coroptis.index.sstfile.SstFileWriter;
 
-public class SegmentCacheSanityCheckTest {
+public class KeySegmentCacheSanityCheckTest {
     private final TypeDescriptorString stringTd = new TypeDescriptorString();
     private final TypeDescriptorSegmentId integerTd = new TypeDescriptorSegmentId();
     private final Directory directory = new MemDirectory();
@@ -40,8 +40,8 @@ public class SegmentCacheSanityCheckTest {
         }
 
         assertThrows(IllegalStateException.class, () -> {
-            try (final SegmentCache<String> fif = new SegmentCache<>(directory,
-                    stringTd)) {
+            try (final KeySegmentCache<String> fif = new KeySegmentCache<>(
+                    directory, stringTd)) {
             }
         }, "Unable to load scarce index, sanity check failed.");
 

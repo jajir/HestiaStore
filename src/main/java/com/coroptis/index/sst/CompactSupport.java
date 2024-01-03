@@ -17,7 +17,7 @@ public class CompactSupport<K, V> {
     private final Logger logger = LoggerFactory.getLogger(CompactSupport.class);
 
     private final List<Pair<K, V>> toSameSegment = new ArrayList<>();
-    private final SegmentCache<K> segmentCache;
+    private final KeySegmentCache<K> keySegmentCache;
     private final SegmentManager<K, V> segmentManager;
     private SegmentId currentSegmentId = null;
 
@@ -27,15 +27,15 @@ public class CompactSupport<K, V> {
     private List<SegmentId> eligibleSegments = new ArrayList<>();
 
     CompactSupport(final SegmentManager<K, V> segmentManager,
-            final SegmentCache<K> segmentCache) {
+            final KeySegmentCache<K> keySegmentCache) {
         this.segmentManager = Objects.requireNonNull(segmentManager);
-        this.segmentCache = Objects.requireNonNull(segmentCache);
+        this.keySegmentCache = Objects.requireNonNull(keySegmentCache);
     }
 
     public void compact(final Pair<K, V> pair) {
         Objects.requireNonNull(pair);
         final K segmentKey = pair.getKey();
-        final SegmentId segmentId = segmentCache
+        final SegmentId segmentId = keySegmentCache
                 .insertKeyToSegment(segmentKey);
         if (currentSegmentId == null) {
             currentSegmentId = segmentId;

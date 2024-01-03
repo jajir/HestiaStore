@@ -37,7 +37,7 @@ public class SegmentIteratorTest {
         try (PairIterator<Integer, String> iterator = segment.openIterator()) {
             assertTrue(iterator.readCurrent().isEmpty());
             assertTrue(iterator.hasNext());
-            assertEquals(Pair.of(1, "a"), iterator.next()); 
+            assertEquals(Pair.of(1, "a"), iterator.next());
             try (final SegmentWriter<Integer, String> writer = segment
                     .openWriter()) {
                 writer.put(4, "d");
@@ -49,7 +49,7 @@ public class SegmentIteratorTest {
              * force index to rewrite physical SST data file.
              */
             assertTrue(iterator.hasNext());
-            assertEquals(Pair.of(2, "b"), iterator.next()); 
+            assertEquals(Pair.of(2, "b"), iterator.next());
             assertFalse(iterator.hasNext());
         }
     }

@@ -34,7 +34,7 @@ public class BloomFilterStats {
         if (bloomFilterCalls == 0) {
             return 0;
         }
-        return (int) (keyIsNotStored / (float)bloomFilterCalls * 100);
+        return (int) (keyIsNotStored / (float) bloomFilterCalls * 100);
     }
 
     void logStats() {

@@ -33,9 +33,10 @@ import com.coroptis.index.sstfile.SstFileWriter;
  *
  * @param <K>
  */
-public class SegmentCache<K> implements CloseableResource {
+public class KeySegmentCache<K> implements CloseableResource {
 
-    private final Logger logger = LoggerFactory.getLogger(SegmentCache.class);
+    private final Logger logger = LoggerFactory
+            .getLogger(KeySegmentCache.class);
 
     private final static TypeDescriptorSegmentId tdSegId = new TypeDescriptorSegmentId();
 
@@ -51,7 +52,7 @@ public class SegmentCache<K> implements CloseableResource {
     private final Comparator<K> keyComparator;
     private boolean isDirty = false;
 
-    SegmentCache(final Directory directory,
+    KeySegmentCache(final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor) {
         Objects.requireNonNull(directory, "Directory object is null.");
         Objects.requireNonNull(keyTypeDescriptor,

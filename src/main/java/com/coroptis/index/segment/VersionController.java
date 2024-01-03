@@ -11,7 +11,7 @@ import com.coroptis.index.OptimisticLockObjectVersionProvider;
 public class VersionController implements OptimisticLockObjectVersionProvider {
 
     private int segmentVersion = 0;
-    
+
     public void changeVersion() {
         segmentVersion++;
     }
