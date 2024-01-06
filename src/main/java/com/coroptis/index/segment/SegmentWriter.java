@@ -4,7 +4,7 @@ import java.util.Objects;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairWriter;
-import com.coroptis.index.cache.UniqueCache;
+import com.coroptis.index.segmentcache.SegmentCache;
 
 /**
  * Allow to write new data to index.
@@ -18,7 +18,7 @@ import com.coroptis.index.cache.UniqueCache;
 public class SegmentWriter<K, V> implements PairWriter<K, V> {
 
     private final Segment<K, V> segment;
-    private final UniqueCache<K, V> cache;
+    private final SegmentCache<K, V> cache;
 
     SegmentWriter(final Segment<K, V> segment) {
         this.segment = Objects.requireNonNull(segment);

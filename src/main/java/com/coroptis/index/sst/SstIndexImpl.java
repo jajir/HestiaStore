@@ -124,7 +124,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                 "Cache compacting of '{}' key value pairs in cache started.",
                 cache.size());
         final CompactSupport<K, V> support = new CompactSupport<>(
-                segmentManager, keySegmentCache);
+                segmentManager, keySegmentCache,conf.getMaxNumberOfKeysInSegmentCache());
         cache.getStream()
                 .sorted(new PairComparator<>(keyTypeDescriptor.getComparator()))
                 .forEach(support::compact);

@@ -17,6 +17,7 @@ import com.coroptis.index.cache.UniqueCache;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.scarceindex.ScarceIndex;
+import com.coroptis.index.segmentcache.SegmentCache;
 import com.coroptis.index.sstfile.SstFileWriter;
 
 /**
@@ -31,7 +32,7 @@ public class Segment<K, V>
 
     private final Logger logger = LoggerFactory.getLogger(Segment.class);
     private final long maxNumberOfKeysInSegmentCache;
-    private final UniqueCache<K, V> cache;
+    private final SegmentCache<K, V> cache;
     private final ScarceIndex<K> scarceIndex;
     private final SegmentStatsManager segmentStatsManager;
     private final int maxNumberOfKeysInIndexPage;
@@ -57,9 +58,7 @@ public class Segment<K, V>
                 valueTypeDescriptor);
         logger.debug("Initializing segment '{}'", segmentFiles.getId());
         this.maxNumberOfKeysInSegmentCache = maxNumeberOfKeysInSegmentCache;
-        this.cache = UniqueCache.<K, V>builder()
-                .withKeyComparator(getKeyTypeDescriptor().getComparator())
-                .withSstFile(segmentFiles.getCacheSstFile()).build();
+        this.cache = new SegmentCache<>(keyTypeDescriptor,segmentFiles);
         this.scarceIndex = ScarceIndex.<K>builder().withDirectory(directory)
                 .withFileName(segmentFiles.getScarceFileName())
                 .withKeyTypeDescriptor(keyTypeDescriptor).build();
@@ -78,10 +77,6 @@ public class Segment<K, V>
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
     }
 
-    private TypeDescriptor<K> getKeyTypeDescriptor() {
-        return segmentFiles.getKeyTypeDescriptor();
-    }
-
     public K getMaxKey() {
         return scarceIndex.getMaxKey();
     }
@@ -98,7 +93,7 @@ public class Segment<K, V>
         return segmentStatsManager.getSegmentStats();
     }
 
-    UniqueCache<K, V> getCache() {
+    public SegmentCache<K, V> getCache() {
         return cache;
     }
 
@@ -123,15 +118,7 @@ public class Segment<K, V>
     }
 
     private void flushCache() {
-        final AtomicLong cx = new AtomicLong(0);
-        try (final SstFileWriter<K, V> writer = segmentFiles.getCacheSstFile()
-                .openWriter()) {
-            cache.getStream().forEach(pair -> {
-                writer.put(pair);
-                cx.incrementAndGet();
-            });
-        }
-        segmentStatsManager.setNumberOfKeysInCache(cx.get());
+        segmentStatsManager.setNumberOfKeysInCache(cache.flushCache());
         segmentStatsManager.flush();
     }
 

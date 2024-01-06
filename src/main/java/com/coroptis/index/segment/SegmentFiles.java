@@ -63,7 +63,7 @@ public class SegmentFiles<K, V> {
         return id.getName() + INDEX_FILE_NAME_EXTENSION;
     }
 
-    SstFile<K, V> getCacheSstFile() {
+    public SstFile<K, V> getCacheSstFile() {
         return new SstFile<>(directory, getCacheFileName(),
                 valueTypeDescriptor.getTypeWriter(),
                 valueTypeDescriptor.getTypeReader(),
@@ -102,11 +102,11 @@ public class SegmentFiles<K, V> {
         return directory;
     }
 
-    SegmentId getId() {
+    public SegmentId getId() {
         return id;
     }
 
-    TypeDescriptor<K> getKeyTypeDescriptor() {
+    public TypeDescriptor<K> getKeyTypeDescriptor() {
         return keyTypeDescriptor;
     }
 

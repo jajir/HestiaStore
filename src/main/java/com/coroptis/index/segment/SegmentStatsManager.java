@@ -20,7 +20,7 @@ public class SegmentStatsManager {
     private final SegmentId id;
     private final Props props;
 
-    SegmentStatsManager(final Directory directory, final SegmentId id) {
+    public SegmentStatsManager(final Directory directory, final SegmentId id) {
         Objects.requireNonNull(directory);
         this.id = Objects.requireNonNull(id);
         this.props = new Props(directory, getPropertiesFilename());
@@ -55,7 +55,7 @@ public class SegmentStatsManager {
                 numberOfKeysInScarceIndex);
     }
 
-    void flush() {
+    public void flush() {
         props.writeData();
     }
 

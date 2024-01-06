@@ -45,13 +45,13 @@ public class SegmentManager<K, V> {
         }
     }
 
-    boolean isInCache(final SegmentId segmentId) {
+    public boolean isInCache(final SegmentId segmentId) {
         Objects.requireNonNull(segmentId, "Segment id is required");
         final Optional<Segment<K, V>> oSegment = cache.get(segmentId);
         return oSegment.isPresent();
     }
 
-    SegmentFiles<K, V> getSegmentFiles(final SegmentId segmentId) {
+    public SegmentFiles<K, V> getSegmentFiles(final SegmentId segmentId) {
         Objects.requireNonNull(segmentId, "Segment id is required");
         return new SegmentFiles<K, V>(directory, segmentId, keyTypeDescriptor,
                 valueTypeDescriptor);
@@ -73,6 +73,10 @@ public class SegmentManager<K, V> {
                         conf.getBloomFilterIndexSizeInBytes())
                 .build();
         return out;
+    }
+
+    Directory getDirectory() {
+        return directory;
     }
 
 }
