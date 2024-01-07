@@ -6,7 +6,6 @@ import com.coroptis.index.Pair;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.segmentcache.SegmentCache;
-import com.coroptis.index.segmentcache.SegmentCacheWriter;
 
 /**
  * This implementation expect that segment cache is not loaded into memory.
@@ -16,7 +15,7 @@ import com.coroptis.index.segmentcache.SegmentCacheWriter;
  * @param <K>
  * @param <V>
  */
-public class SegmentCacheWriterFinal<K, V> implements SegmentCacheWriter<K, V> {
+public class SegmentCacheWriterFinal<K, V> {
 
     private final SegmentCache<K, V> segmentCache;
     private final SegmentStatsManager segmentStatsManager;
@@ -34,7 +33,6 @@ public class SegmentCacheWriterFinal<K, V> implements SegmentCacheWriter<K, V> {
         this.segmentCompacter = Objects.requireNonNull(segmentCompacter);
     }
 
-    @Override
     public PairWriter<K, V> openWriter() {
         return new PairWriter<K, V>() {
 

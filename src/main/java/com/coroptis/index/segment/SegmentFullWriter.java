@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairWriter;
+import com.coroptis.index.bloomfilter.BloomFilter;
 import com.coroptis.index.bloomfilter.BloomFilterWriter;
 import com.coroptis.index.scarceindex.ScarceIndexWriter;
 import com.coroptis.index.sstfile.SstFileWriter;
@@ -14,20 +15,22 @@ import com.coroptis.index.sstfile.SstFileWriter;
  */
 public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
 
-    private final Segment<K, V> segment;
     private final AtomicLong cx = new AtomicLong(0L);
     private final ScarceIndexWriter<K> scarceWriter;
     private final SstFileWriter<K, V> indexWriter;
     private final BloomFilterWriter<K> bloomFilterWriter;
+    private final int maxNumberOfKeysInIndexPage;
     private Pair<K, V> previousPair = null;
 
-    SegmentFullWriter(final Segment<K, V> segment,
-            SegmentFiles<K, V> segmentFiles) {
-        this.segment = Objects.requireNonNull(segment);
+    SegmentFullWriter(final BloomFilter<K> bloomFilter,
+            SegmentFiles<K, V> segmentFiles,
+            final int maxNumberOfKeysInIndexPage) {
+        this.maxNumberOfKeysInIndexPage = Objects
+                .requireNonNull(maxNumberOfKeysInIndexPage);
         Objects.requireNonNull(segmentFiles);
         this.scarceWriter = segmentFiles.getTempScarceIndex().openWriter();
         this.indexWriter = segmentFiles.getTempIndexFile().openWriter();
-        bloomFilterWriter = segment.openBloomFilterWriter();
+        bloomFilterWriter = bloomFilter.openWriter();
     }
 
     @Override
@@ -41,7 +44,7 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
             /*
              * Write first pair end every nth pair.
              */
-            if (i % segment.getMaxNumberOfKeysInIndexPage() == 0) {
+            if (i % maxNumberOfKeysInIndexPage == 0) {
                 final int position = indexWriter.put(previousPair, true);
                 scarceWriter.put(Pair.of(previousPair.getKey(), position));
             } else {
