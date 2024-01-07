@@ -1,7 +1,6 @@
 package com.coroptis.index.segment;
 
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,15 +9,12 @@ import com.coroptis.index.CloseableResource;
 import com.coroptis.index.OptimisticLockObjectVersionProvider;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
-import com.coroptis.index.PairReader;
 import com.coroptis.index.bloomfilter.BloomFilter;
 import com.coroptis.index.bloomfilter.BloomFilterWriter;
-import com.coroptis.index.cache.UniqueCache;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.scarceindex.ScarceIndex;
 import com.coroptis.index.segmentcache.SegmentCache;
-import com.coroptis.index.sstfile.SstFileWriter;
 
 /**
  * 
@@ -41,6 +37,7 @@ public class Segment<K, V>
     private final BloomFilter<K> bloomFilter;
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
+    private final SegmentSearcherManager<K, V> segmentSearcherManager;
 
     public static <M, N> SegmentBuilder<M, N> builder() {
         return new SegmentBuilder<>();
@@ -58,7 +55,7 @@ public class Segment<K, V>
                 valueTypeDescriptor);
         logger.debug("Initializing segment '{}'", segmentFiles.getId());
         this.maxNumberOfKeysInSegmentCache = maxNumeberOfKeysInSegmentCache;
-        this.cache = new SegmentCache<>(keyTypeDescriptor,segmentFiles);
+        this.cache = new SegmentCache<>(keyTypeDescriptor, segmentFiles);
         this.scarceIndex = ScarceIndex.<K>builder().withDirectory(directory)
                 .withFileName(segmentFiles.getScarceFileName())
                 .withKeyTypeDescriptor(keyTypeDescriptor).build();
@@ -75,6 +72,11 @@ public class Segment<K, V>
                 "Version controller is required");
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
+
+        this.segmentSearcherManager = new SegmentSearcherManager<>(directory,
+                id, keyTypeDescriptor, valueTypeDescriptor,
+                maxNumberOfKeysInIndexPage, bloomFilterNumberOfHashFunctions,
+                bloomFilterIndexSizeInBytes, versionController);
     }
 
     public K getMaxKey() {
@@ -181,51 +183,15 @@ public class Segment<K, V>
         return bloomFilter.openWriter();
     }
 
+    @Deprecated
     public V get(final K key) {
-        // look in cache
-        final V out = cache.get(key);
-        if (segmentFiles.getValueTypeDescriptor().isTombstone(out)) {
-            return null;
-        }
-
-        // look in bloom filter
-        if (out == null) {
-            if (bloomFilter.isNotStored(key)) {
-                /*
-                 * It;s sure that key is not in index.
-                 */
-                return null;
-            }
-        }
-
-        // look in index file
-        if (out == null) {
-            final Integer position = scarceIndex.get(key);
-            if (position == null) {
-                return null;
-            }
-            try (final PairReader<K, V> fileReader = segmentFiles
-                    .getIndexSstFile().openReader(position)) {
-                for (int i = 0; i < getMaxNumberOfKeysInIndexPage(); i++) {
-                    final Pair<K, V> pair = fileReader.read();
-                    final int cmp = segmentFiles.getKeyTypeDescriptor()
-                            .getComparator().compare(pair.getKey(), key);
-                    if (cmp == 0) {
-                        return pair.getValue();
-                    }
-                    /**
-                     * Keys are in ascending order. When searched key is smaller
-                     * than key read from sorted data than key is not found.
-                     */
-                    if (cmp > 0) {
-                        return null;
-                    }
-                }
-            }
-        }
-        return out;
+        return segmentSearcherManager.getSearcher().get(key);
     }
-
+    
+    public SegmentSearcher<K, V> openSearcher(){
+        return segmentSearcherManager.getSearcher();
+    }
+    
     public Segment<K, V> split(final SegmentId segmentId) {
         Objects.requireNonNull(segmentId);
         versionController.changeVersion();

@@ -48,7 +48,10 @@ public class IntegrationTest {
         assertEquals(0, stats.getNumberOfKeysInCache());
         assertEquals(0, stats.getNumberOfKeysInIndex());
         assertEquals(0, stats.getNumberOfKeysInScarceIndex());
-        assertNull(seg.get(1));
+        try (final SegmentSearcher<Integer, String> searcher = seg
+                .openSearcher()) {
+            assertNull(searcher.get(1));
+        }
         /*
          * Number of file's is constantly 5 because all cache data are flushed
          * to main index and to bloom filter file.
@@ -86,11 +89,14 @@ public class IntegrationTest {
                 seg.getStats().getNumberOfKeysInScarceIndex());
 
         // Assert that all data could be found
-        assertNull(seg.get(6));
-        assertEquals("a", seg.get(2));
-        assertEquals("b", seg.get(3));
-        assertEquals("c", seg.get(4));
-        assertEquals("d", seg.get(5));
+        try (final SegmentSearcher<Integer, String> searcher = seg
+                .openSearcher()) {
+            assertNull(searcher.get(6));
+            assertEquals("a", searcher.get(2));
+            assertEquals("b", searcher.get(3));
+            assertEquals("c", searcher.get(4));
+            assertEquals("d", searcher.get(5));
+        }
 
         assertEquals(expectedNumberOfFiles,
                 numberOfFilesInDirectoryP(directory));
@@ -125,15 +131,21 @@ public class IntegrationTest {
         assertEquals(Pair.of(3, "b"), list2.get(1));
         assertEquals(2, list2.size());
 
-        assertNull(seg.get(2));
-        assertNull(seg.get(3));
-        assertEquals("c", seg.get(4));
-        assertEquals("d", seg.get(5));
+        try (final SegmentSearcher<Integer, String> searcher = seg
+                .openSearcher()) {
+            assertNull(searcher.get(2));
+            assertNull(searcher.get(3));
+            assertEquals("c", searcher.get(4));
+            assertEquals("d", searcher.get(5));
+        }
 
-        assertNull(smaller.get(4));
-        assertNull(smaller.get(5));
-        assertEquals("a", smaller.get(2));
-        assertEquals("b", smaller.get(3));
+        try (final SegmentSearcher<Integer, String> searcher = smaller
+                .openSearcher()) {
+            assertNull(searcher.get(4));
+            assertNull(searcher.get(5));
+            assertEquals("a", searcher.get(2));
+            assertEquals("b", searcher.get(3));
+        }
 
         assertEquals(10, numberOfFilesInDirectoryP(directory));
     }
@@ -167,11 +179,14 @@ public class IntegrationTest {
         assertEquals(Pair.of(5, "ddd"), list.get(3));
         assertEquals(4, list.size());
 
-        assertNull(seg.get(6));
-        assertEquals("a", seg.get(2));
-        assertEquals("bb", seg.get(3));
-        assertEquals("c", seg.get(4));
-        assertEquals("ddd", seg.get(5));
+        try (final SegmentSearcher<Integer, String> searcher = seg
+                .openSearcher()) {
+            assertNull(searcher.get(6));
+            assertEquals("a", searcher.get(2));
+            assertEquals("bb", searcher.get(3));
+            assertEquals("c", searcher.get(4));
+            assertEquals("ddd", searcher.get(5));
+        }
     }
 
     @Test
@@ -203,11 +218,14 @@ public class IntegrationTest {
         assertEquals(Pair.of(5, "ddd"), list.get(3));
         assertEquals(4, list.size());
 
-        assertNull(seg.get(6));
-        assertEquals("a", seg.get(2));
-        assertEquals("bb", seg.get(3));
-        assertEquals("c", seg.get(4));
-        assertEquals("ddd", seg.get(5));
+        try (final SegmentSearcher<Integer, String> searcher = seg
+                .openSearcher()) {
+            assertNull(searcher.get(6));
+            assertEquals("a", searcher.get(2));
+            assertEquals("bb", searcher.get(3));
+            assertEquals("c", searcher.get(4));
+            assertEquals("ddd", searcher.get(5));
+        }
     }
 
     @Test
@@ -243,10 +261,13 @@ public class IntegrationTest {
         assertEquals(Pair.of(4, "c"), list.get(2));
         assertEquals(3, list.size());
 
-        assertNull(seg.get(5));
-        assertEquals("a", seg.get(2));
-        assertEquals("bb", seg.get(3));
-        assertEquals("c", seg.get(4));
+        try (final SegmentSearcher<Integer, String> searcher = seg
+                .openSearcher()) {
+            assertNull(searcher.get(5));
+            assertEquals("a", searcher.get(2));
+            assertEquals("bb", searcher.get(3));
+            assertEquals("c", searcher.get(4));
+        }
     }
 
     /**
@@ -293,10 +314,13 @@ public class IntegrationTest {
         assertEquals(Pair.of(4, "c"), list.get(2));
         assertEquals(3, list.size());
 
-        assertNull(seg.get(5));
-        assertEquals("a", seg.get(2));
-        assertEquals("bb", seg.get(3));
-        assertEquals("c", seg.get(4));
+        try (final SegmentSearcher<Integer, String> searcher = seg
+                .openSearcher()) {
+            assertNull(searcher.get(5));
+            assertEquals("a", searcher.get(2));
+            assertEquals("bb", searcher.get(3));
+            assertEquals("c", searcher.get(4));
+        }
     }
 
     /**

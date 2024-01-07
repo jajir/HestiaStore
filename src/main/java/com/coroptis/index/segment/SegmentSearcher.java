@@ -32,17 +32,12 @@ public class SegmentSearcher<K, V> implements CloseableResource {
     private final BloomFilter<K> bloomFilter;
     private final SegmentFiles<K, V> segmentFiles;
 
-    public static <M, N> SegmentBuilder<M, N> builder() {
-        return new SegmentBuilder<>();
-    }
-
     public SegmentSearcher(final Directory directory, final SegmentId id,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final int maxNumberOfKeysInIndexPage,
             final int bloomFilterNumberOfHashFunctions,
-            final int bloomFilterIndexSizeInBytes,
-            VersionController versionController) {
+            final int bloomFilterIndexSizeInBytes) {
         this.segmentFiles = new SegmentFiles<>(directory, id, keyTypeDescriptor,
                 valueTypeDescriptor);
         logger.debug("Initializing segment '{}'", segmentFiles.getId());
@@ -122,10 +117,6 @@ public class SegmentSearcher<K, V> implements CloseableResource {
         bloomFilter.logStats();
         logger.debug("Closing segment '{}'", segmentFiles.getId());
         // Do intentionally nothing.
-    }
-
-    public SegmentId getId() {
-        return segmentFiles.getId();
     }
 
 }

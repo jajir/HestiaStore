@@ -19,7 +19,7 @@ public class OptimisticLock {
         this.initialObjectVersion = versionProvider.getVersion();
     }
 
-    boolean isLocked() {
+    public boolean isLocked() {
         return initialObjectVersion != versionProvider.getVersion();
     }
 
