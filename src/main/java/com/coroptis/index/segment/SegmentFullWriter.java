@@ -62,8 +62,12 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
         }
         scarceWriter.close();
         indexWriter.close();
-        segment.finishFullWrite(cx.get());
         bloomFilterWriter.close();
+    }
+
+    @Deprecated
+    public long getCount() {
+        return cx.get();
     }
 
 }

@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
+import com.coroptis.index.PairWriter;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
 import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
@@ -68,7 +69,7 @@ public class IntegrationTest {
             final int expectedNumberKeysInScarceIndex,
             final int expectedNumberOfFiles) throws Exception {
 
-        try (final SegmentWriter<Integer, String> writer = seg.openWriter()) {
+        try (final PairWriter<Integer, String> writer = seg.openWriter()) {
             writer.put(Pair.of(2, "a"));
             writer.put(Pair.of(3, "b"));
             writer.put(Pair.of(4, "c"));
@@ -110,7 +111,7 @@ public class IntegrationTest {
             final int expectedNumberKeysInScarceIndex,
             final int expectedNumberOfFiles) throws Exception {
 
-        try (final SegmentWriter<Integer, String> writer = seg.openWriter()) {
+        try (final PairWriter<Integer, String> writer = seg.openWriter()) {
             writer.put(Pair.of(2, "a"));
             writer.put(Pair.of(3, "b"));
             writer.put(Pair.of(4, "c"));
@@ -121,15 +122,15 @@ public class IntegrationTest {
         final Segment<Integer, String> smaller = seg.split(segId);
 
         final List<Pair<Integer, String>> list1 = toList(seg.openIterator());
+        assertEquals(2, list1.size());
         assertEquals(Pair.of(4, "c"), list1.get(0));
         assertEquals(Pair.of(5, "d"), list1.get(1));
-        assertEquals(2, list1.size());
 
         final List<Pair<Integer, String>> list2 = toList(
                 smaller.openIterator());
+        assertEquals(2, list2.size());
         assertEquals(Pair.of(2, "a"), list2.get(0));
         assertEquals(Pair.of(3, "b"), list2.get(1));
-        assertEquals(2, list2.size());
 
         try (final SegmentSearcher<Integer, String> searcher = seg
                 .openSearcher()) {
@@ -158,7 +159,7 @@ public class IntegrationTest {
                 .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
                 .withValueTypeDescriptor(tds).build();
 
-        try (final SegmentWriter<Integer, String> writer = seg.openWriter()) {
+        try (final PairWriter<Integer, String> writer = seg.openWriter()) {
             writer.put(Pair.of(2, "a"));
             writer.put(Pair.of(3, "b"));
             writer.put(Pair.of(3, "bb"));
@@ -173,11 +174,11 @@ public class IntegrationTest {
         assertEquals(0, seg.getStats().getNumberOfKeysInIndex());
 
         final List<Pair<Integer, String>> list = toList(seg.openIterator());
+        assertEquals(4, list.size());
         assertEquals(Pair.of(2, "a"), list.get(0));
         assertEquals(Pair.of(3, "bb"), list.get(1));
         assertEquals(Pair.of(4, "c"), list.get(2));
         assertEquals(Pair.of(5, "ddd"), list.get(3));
-        assertEquals(4, list.size());
 
         try (final SegmentSearcher<Integer, String> searcher = seg
                 .openSearcher()) {
@@ -197,7 +198,7 @@ public class IntegrationTest {
                 .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
                 .withValueTypeDescriptor(tds).build();
 
-        try (final SegmentWriter<Integer, String> writer = seg.openWriter()) {
+        try (final PairWriter<Integer, String> writer = seg.openWriter()) {
             writer.put(Pair.of(5, "d"));
             writer.put(Pair.of(3, "b"));
             writer.put(Pair.of(5, "dd"));
@@ -212,11 +213,11 @@ public class IntegrationTest {
         assertEquals(0, seg.getStats().getNumberOfKeysInIndex());
 
         final List<Pair<Integer, String>> list = toList(seg.openIterator());
+        assertEquals(4, list.size());
         assertEquals(Pair.of(2, "a"), list.get(0));
         assertEquals(Pair.of(3, "bb"), list.get(1));
         assertEquals(Pair.of(4, "c"), list.get(2));
         assertEquals(Pair.of(5, "ddd"), list.get(3));
-        assertEquals(4, list.size());
 
         try (final SegmentSearcher<Integer, String> searcher = seg
                 .openSearcher()) {
@@ -236,7 +237,7 @@ public class IntegrationTest {
                 .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
                 .withValueTypeDescriptor(tds).build();
 
-        try (final SegmentWriter<Integer, String> writer = seg.openWriter()) {
+        try (final PairWriter<Integer, String> writer = seg.openWriter()) {
             writer.put(Pair.of(5, "d"));
             writer.put(Pair.of(3, "b"));
             writer.put(Pair.of(5, "dd"));
@@ -256,10 +257,10 @@ public class IntegrationTest {
         assertEquals(0, seg.getStats().getNumberOfKeysInIndex());
 
         final List<Pair<Integer, String>> list = toList(seg.openIterator());
+        assertEquals(3, list.size());
         assertEquals(Pair.of(2, "a"), list.get(0));
         assertEquals(Pair.of(3, "bb"), list.get(1));
         assertEquals(Pair.of(4, "c"), list.get(2));
-        assertEquals(3, list.size());
 
         try (final SegmentSearcher<Integer, String> searcher = seg
                 .openSearcher()) {
@@ -292,7 +293,7 @@ public class IntegrationTest {
                 .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
                 .withValueTypeDescriptor(tds).build();
 
-        try (final SegmentWriter<Integer, String> writer = seg.openWriter()) {
+        try (final PairWriter<Integer, String> writer = seg.openWriter()) {
             writer.put(Pair.of(5, "d"));
             writer.put(Pair.of(3, "b"));
             writer.put(Pair.of(5, "dd"));
@@ -309,10 +310,10 @@ public class IntegrationTest {
         assertEquals(3, seg.getStats().getNumberOfKeysInIndex());
 
         final List<Pair<Integer, String>> list = toList(seg.openIterator());
+        assertEquals(3, list.size());
         assertEquals(Pair.of(2, "a"), list.get(0));
         assertEquals(Pair.of(3, "bb"), list.get(1));
         assertEquals(Pair.of(4, "c"), list.get(2));
-        assertEquals(3, list.size());
 
         try (final SegmentSearcher<Integer, String> searcher = seg
                 .openSearcher()) {
@@ -334,15 +335,12 @@ public class IntegrationTest {
         final SegmentId id = SegmentId.of(27);
         final TypeDescriptorString tds = new TypeDescriptorString();
         final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
-        return Stream.of(
-
-                arguments(tdi, tds, directory,
-                        Segment.<Integer, String>builder()
-                                .withDirectory(directory).withId(id)
-                                .withKeyTypeDescriptor(tdi)
-                                .withValueTypeDescriptor(tds)
-                                .withMaxNumberOfKeysInSegmentCache(10).build(),
-                        0, 4),
+        return Stream.of(arguments(tdi, tds, directory,
+                Segment.<Integer, String>builder().withDirectory(directory)
+                        .withId(id).withKeyTypeDescriptor(tdi)
+                        .withValueTypeDescriptor(tds)
+                        .withMaxNumberOfKeysInSegmentCache(10).build(),
+                0, 2),
                 arguments(tdi, tds, directory,
                         Segment.<Integer, String>builder()
                                 .withDirectory(directory).withId(id)
@@ -366,7 +364,6 @@ public class IntegrationTest {
         final ArrayList<Pair<Integer, String>> out = new ArrayList<>();
         while (iterator.hasNext()) {
             out.add(iterator.next());
-
         }
         iterator.close();
         return out;

@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
+import com.coroptis.index.PairWriter;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
 import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
@@ -42,14 +43,14 @@ public class SegmentConsistencyTest {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
         final Segment<Integer, String> seg1 = makeSegment(directory, id);
-        try (final SegmentWriter<Integer, String> writer = seg1.openWriter()) {
+        try (final PairWriter<Integer, String> writer = seg1.openWriter()) {
             data.forEach(writer::put);
         }
         verifyDataIndex(seg1, data);
         seg1.close();
 
         final Segment<Integer, String> seg2 = makeSegment(directory, id);
-        try (final SegmentWriter<Integer, String> writer = seg2.openWriter()) {
+        try (final PairWriter<Integer, String> writer = seg2.openWriter()) {
             updatedData.forEach(writer::put);
         }
         verifyDataIndex(seg2, updatedData);

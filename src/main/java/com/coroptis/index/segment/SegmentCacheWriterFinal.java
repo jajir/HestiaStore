@@ -1,13 +1,12 @@
-package com.coroptis.index.segmentcache;
+package com.coroptis.index.segment;
 
 import java.util.Objects;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.datatype.TypeDescriptor;
-import com.coroptis.index.segment.SegmentFiles;
-import com.coroptis.index.segment.SegmentStatsManager;
-import com.coroptis.index.segment.VersionController;
+import com.coroptis.index.segmentcache.SegmentCache;
+import com.coroptis.index.segmentcache.SegmentCacheWriter;
 
 /**
  * This implementation expect that segment cache is not loaded into memory.
@@ -17,21 +16,22 @@ import com.coroptis.index.segment.VersionController;
  * @param <K>
  * @param <V>
  */
-public class SegmentCacheWriterPlain<K, V> implements SegmentCacheWriter<K, V> {
+public class SegmentCacheWriterFinal<K, V> implements SegmentCacheWriter<K, V> {
 
     private final SegmentCache<K, V> segmentCache;
-
     private final SegmentStatsManager segmentStatsManager;
-
     private final VersionController versionController;
+    private final SegmentCompacter<K, V> segmentCompacter;
 
-    public SegmentCacheWriterPlain(final SegmentFiles<K, V> segmentFiles,
+    public SegmentCacheWriterFinal(final SegmentFiles<K, V> segmentFiles,
             final TypeDescriptor<K> keyTypeDescriptor,
             final SegmentStatsManager segmentStatsManager,
-            final VersionController versionController) {
+            final VersionController versionController,
+            final SegmentCompacter<K, V> segmentCompacter) {
         this.segmentStatsManager = Objects.requireNonNull(segmentStatsManager);
         this.segmentCache = new SegmentCache<>(keyTypeDescriptor, segmentFiles);
         this.versionController = Objects.requireNonNull(versionController);
+        this.segmentCompacter = Objects.requireNonNull(segmentCompacter);
     }
 
     @Override
@@ -43,9 +43,7 @@ public class SegmentCacheWriterPlain<K, V> implements SegmentCacheWriter<K, V> {
                 final int keysInCache = segmentCache.flushCache();
                 segmentStatsManager.setNumberOfKeysInCache(keysInCache);
                 segmentStatsManager.flush();
-
-                // TODO optionally compact segment
-
+                segmentCompacter.optionallyCompact();
                 versionController.changeVersion();
             }
 

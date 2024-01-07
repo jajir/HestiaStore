@@ -10,12 +10,7 @@ import org.slf4j.LoggerFactory;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.segment.Segment;
-import com.coroptis.index.segment.SegmentFiles;
 import com.coroptis.index.segment.SegmentId;
-import com.coroptis.index.segment.SegmentStatsManager;
-import com.coroptis.index.segment.SegmentWriter;
-import com.coroptis.index.segmentcache.SegmentCacheManager;
-import com.coroptis.index.segmentcache.SegmentCompacter;
 
 public class CompactSupport<K, V> {
 
@@ -72,29 +67,13 @@ public class CompactSupport<K, V> {
     private void flushToCurrentSegment() {
         logger.debug("Flushing '{}' key value pairs into segment '{}'.",
                 toSameSegment.size(), currentSegmentId);
+        // FIXME it ignore cache
 //        if (segmentManager.isInCache(currentSegmentId)) {
-//            final Segment<K, V> segment = segmentManager
-//                    .getSegment(currentSegmentId);
-//            try (final SegmentWriter<K, V> writer = segment.openWriter()) {
-//                toSameSegment.forEach(writer::put);
-//            }
-//        } else {
-            final SegmentFiles<K, V> segmentFiles = segmentManager
-                    .getSegmentFiles(currentSegmentId);
-            final SegmentStatsManager segmentStatsManager = new SegmentStatsManager(
-                    segmentManager.getDirectory(), currentSegmentId);
-            final SegmentCacheManager<K, V> segmentCacheManager = new SegmentCacheManager<>(
-                    segmentManager, segmentFiles, segmentStatsManager);
-            try (final PairWriter<K, V> writer = segmentCacheManager
-                    .openWriter()) {
-                toSameSegment.forEach(writer::put);
-            }
-
-            final SegmentCompacter<K, V> segmentCompacter = new SegmentCompacter<>(
-                    segmentStatsManager, maxNumberOfKeysInSegmentCache,
-                    segmentManager, segmentFiles.getId());
-            segmentCompacter.flush();
-//        }
+        final Segment<K, V> segment = segmentManager
+                .getSegment(currentSegmentId);
+        try (final PairWriter<K, V> writer = segment.openWriter()) {
+            toSameSegment.forEach(writer::put);
+        }
         eligibleSegments.add(currentSegmentId);
         toSameSegment.clear();
         logger.debug("Flushing to segment '{}' was done.", currentSegmentId);

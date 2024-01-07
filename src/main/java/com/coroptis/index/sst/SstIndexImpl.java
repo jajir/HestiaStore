@@ -17,6 +17,7 @@ import com.coroptis.index.directory.Directory;
 import com.coroptis.index.segment.MergeIterator;
 import com.coroptis.index.segment.Segment;
 import com.coroptis.index.segment.SegmentId;
+import com.coroptis.index.segment.SegmentSearcher;
 import com.coroptis.index.sstfile.PairComparator;
 
 public class SstIndexImpl<K, V> implements Index<K, V> {
@@ -124,7 +125,8 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                 "Cache compacting of '{}' key value pairs in cache started.",
                 cache.size());
         final CompactSupport<K, V> support = new CompactSupport<>(
-                segmentManager, keySegmentCache,conf.getMaxNumberOfKeysInSegmentCache());
+                segmentManager, keySegmentCache,
+                conf.getMaxNumberOfKeysInSegmentCache());
         cache.getStream()
                 .sorted(new PairComparator<>(keyTypeDescriptor.getComparator()))
                 .forEach(support::compact);
@@ -183,7 +185,9 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                 return null;
             }
             final Segment<K, V> seg = getSegment(id);
-            return seg.get(key);
+            try (final SegmentSearcher<K, V> searcher = seg.openSearcher()) {
+                return searcher.get(key);
+            }
         }
 
         return out;

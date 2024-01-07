@@ -9,12 +9,14 @@ import com.coroptis.index.CloseableResource;
 import com.coroptis.index.OptimisticLockObjectVersionProvider;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
+import com.coroptis.index.PairWriter;
 import com.coroptis.index.bloomfilter.BloomFilter;
 import com.coroptis.index.bloomfilter.BloomFilterWriter;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.scarceindex.ScarceIndex;
 import com.coroptis.index.segmentcache.SegmentCache;
+import com.coroptis.index.segmentcache.SegmentCacheWriter;
 
 /**
  * 
@@ -23,14 +25,13 @@ import com.coroptis.index.segmentcache.SegmentCache;
  * @param <K>
  * @param <V>
  */
-public class Segment<K, V>
-        implements CloseableResource, OptimisticLockObjectVersionProvider {
+public class Segment<K, V> implements CloseableResource, SegmentCompacter<K, V>,
+        OptimisticLockObjectVersionProvider {
 
     private final Logger logger = LoggerFactory.getLogger(Segment.class);
     private final long maxNumberOfKeysInSegmentCache;
     private final SegmentCache<K, V> cache;
     private final ScarceIndex<K> scarceIndex;
-    private final SegmentStatsManager segmentStatsManager;
     private final int maxNumberOfKeysInIndexPage;
     private final int bloomFilterNumberOfHashFunctions;
     private final int bloomFilterIndexSizeInBytes;
@@ -38,6 +39,7 @@ public class Segment<K, V>
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
     private final SegmentSearcherManager<K, V> segmentSearcherManager;
+    private final SegmentStatsController segmentStatsController;
 
     public static <M, N> SegmentBuilder<M, N> builder() {
         return new SegmentBuilder<>();
@@ -59,7 +61,6 @@ public class Segment<K, V>
         this.scarceIndex = ScarceIndex.<K>builder().withDirectory(directory)
                 .withFileName(segmentFiles.getScarceFileName())
                 .withKeyTypeDescriptor(keyTypeDescriptor).build();
-        this.segmentStatsManager = new SegmentStatsManager(directory, id);
         this.maxNumberOfKeysInIndexPage = maxNumberOfKeysInIndexPage;
         this.bloomFilter = BloomFilter.<K>builder()
                 .withBloomFilterFileName(segmentFiles.getBloomFilterFileName())
@@ -72,6 +73,9 @@ public class Segment<K, V>
                 "Version controller is required");
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
+
+        this.segmentStatsController = new SegmentStatsController(directory, id,
+                versionController);
 
         this.segmentSearcherManager = new SegmentSearcherManager<>(directory,
                 id, keyTypeDescriptor, valueTypeDescriptor,
@@ -92,7 +96,8 @@ public class Segment<K, V>
     }
 
     public SegmentStats getStats() {
-        return segmentStatsManager.getSegmentStats();
+        return segmentStatsController.getSegmentStatsManager()
+                .getSegmentStats();
     }
 
     public SegmentCache<K, V> getCache() {
@@ -120,36 +125,43 @@ public class Segment<K, V>
     }
 
     private void flushCache() {
+        SegmentStatsManager segmentStatsManager = segmentStatsController
+                .getSegmentStatsManager();
         segmentStatsManager.setNumberOfKeysInCache(cache.flushCache());
         segmentStatsManager.flush();
     }
 
-    void optionallyCompact() {
-        if (cache.size() > maxNumberOfKeysInSegmentCache) {
+    @Override
+    public void optionallyCompact() {
+        if (segmentStatsController.getSegmentStatsManager().getSegmentStats()
+                .getNumberOfKeysInCache() > maxNumberOfKeysInSegmentCache) {
             forceCompact();
         }
     }
 
     public PairIterator<K, V> openIterator() {
-        return new MergeIterator<K, V>(
-                segmentFiles.getIndexSstFile().openIterator(this),
-                getCache().getSortedIterator(),
-                segmentFiles.getKeyTypeDescriptor(),
-                segmentFiles.getValueTypeDescriptor());
+        // TODO this naive implementation ignores possible in memory cache.
+        return new SegmentReader<>(segmentFiles)
+                .openIterator(versionController);
     }
 
+    @Override
     public void forceCompact() {
         versionController.changeVersion();
-        try (final SegmentFullWriter<K, V> writer = openFullWriter()) {
+        long cx = 0;
+        try (final SegmentFullWriter<K, V> writer = new SegmentFullWriter<K, V>(
+                this, segmentFiles)) {
             try (final PairIterator<K, V> iterator = openIterator()) {
                 while (iterator.hasNext()) {
                     writer.put(iterator.next());
+                    cx++;
                 }
             }
         }
+        finishFullWrite(cx);
     }
 
-    void finishFullWrite(final long numberOfKeysInMainIndex) {
+    private void finishFullWrite(final long numberOfKeysInMainIndex) {
         cache.clear();
         flushCache();
         segmentFiles.getDirectory().renameFile(
@@ -159,6 +171,8 @@ public class Segment<K, V>
                 segmentFiles.getTempScarceFileName(),
                 segmentFiles.getScarceFileName());
         scarceIndex.loadCache();
+        SegmentStatsManager segmentStatsManager = segmentStatsController
+                .getSegmentStatsManager();
         segmentStatsManager.setNumberOfKeysInCache(0);
         segmentStatsManager.setNumberOfKeysInIndex(numberOfKeysInMainIndex);
         segmentStatsManager
@@ -175,8 +189,12 @@ public class Segment<K, V>
         return new SegmentFullWriter<K, V>(this, segmentFiles);
     }
 
-    public SegmentWriter<K, V> openWriter() {
-        return new SegmentWriter<>(this);
+    public PairWriter<K, V> openWriter() {
+        SegmentCacheWriter<K, V> writer = new SegmentCacheWriterFinal<>(
+                segmentFiles, segmentFiles.getKeyTypeDescriptor(),
+                segmentStatsController.getSegmentStatsManager(),
+                versionController, this);
+        return writer.openWriter();
     }
 
     public BloomFilterWriter<K> openBloomFilterWriter() {
@@ -185,13 +203,14 @@ public class Segment<K, V>
 
     @Deprecated
     public V get(final K key) {
-        return segmentSearcherManager.getSearcher().get(key);
+        throw new NoSuchMethodError();
+//        return segmentSearcherManager.getSearcher().get(key);
     }
-    
-    public SegmentSearcher<K, V> openSearcher(){
+
+    public SegmentSearcher<K, V> openSearcher() {
         return segmentSearcherManager.getSearcher();
     }
-    
+
     public Segment<K, V> split(final SegmentId segmentId) {
         Objects.requireNonNull(segmentId);
         versionController.changeVersion();
@@ -220,13 +239,18 @@ public class Segment<K, V>
                     writer.put(pair);
                 }
             }
+            lowerSegment.finishFullWrite(cx);
 
+            cx = 0;
             try (final SegmentFullWriter<K, V> writer = openFullWriter()) {
                 while (iterator.hasNext()) {
+                    cx++;
                     final Pair<K, V> pair = iterator.next();
                     writer.put(pair);
                 }
             }
+            finishFullWrite(cx);
+
         }
 
         return lowerSegment;
@@ -234,7 +258,7 @@ public class Segment<K, V>
 
     @Override
     public void close() {
-        bloomFilter.logStats();
+//        bloomFilter.logStats();
         logger.debug("Closing segment '{}'", segmentFiles.getId());
         // Do intentionally nothing.
     }

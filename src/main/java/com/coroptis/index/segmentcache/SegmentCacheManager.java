@@ -44,7 +44,8 @@ public class SegmentCacheManager<K, V> {
                     segmentStatsManager);
         } else {
             writer = new SegmentCacheWriterPlain<>(segmentFiles,
-                    segmentFiles.getKeyTypeDescriptor(), segmentStatsManager);
+                    segmentFiles.getKeyTypeDescriptor(), segmentStatsManager,
+                    null);
         }
         return writer.openWriter();
     }
