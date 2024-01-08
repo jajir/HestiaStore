@@ -61,7 +61,7 @@ public class SegmentCache<K, V> {
      * @return number of stored keys
      */
     public int flushCache() {
-        final AtomicLong cx = new AtomicLong(0);
+        final AtomicLong cx = new AtomicLong(0L);
         try (final SstFileWriter<K, V> writer = segmentFiles.getCacheSstFile()
                 .openWriter()) {
             cache.getStream().forEach(pair -> {
