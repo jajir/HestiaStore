@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import com.coroptis.index.CloseableResource;
 import com.coroptis.index.OptimisticLockObjectVersionProvider;
-import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.bloomfilter.BloomFilter;
@@ -113,8 +112,8 @@ public class Segment<K, V>
     }
 
     public PairWriter<K, V> openWriter() {
-        SegmentCacheWriterFinal<K, V> writer = new SegmentCacheWriterFinal<>(
-                segmentFiles, segmentFiles.getKeyTypeDescriptor(),
+        final SegmentWriter<K, V> writer = new SegmentWriter<>(segmentFiles,
+                segmentFiles.getKeyTypeDescriptor(),
                 segmentStatsController.getSegmentStatsManager(),
                 versionController, segmentCompacter);
         return writer.openWriter();
@@ -127,36 +126,10 @@ public class Segment<K, V>
     public Segment<K, V> split(final SegmentId segmentId) {
         Objects.requireNonNull(segmentId);
         versionController.changeVersion();
-        long cx = 0;
-        long half = getStats().getNumberOfKeys() / 2;
 
-        final Segment<K, V> lowerSegment = Segment.<K, V>builder()
-                .withDirectory(segmentFiles.getDirectory()).withId(segmentId)
-                .withKeyTypeDescriptor(segmentFiles.getKeyTypeDescriptor())
-                .withValueTypeDescriptor(segmentFiles.getValueTypeDescriptor())
-                .withSegmentConf(segmentConf).build();
-
-        try (final PairIterator<K, V> iterator = openIterator()) {
-
-            try (final SegmentFullWriter<K, V> writer = lowerSegment
-                    .openFullWriter()) {
-                while (cx < half && iterator.hasNext()) {
-                    cx++;
-                    final Pair<K, V> pair = iterator.next();
-                    writer.put(pair);
-                }
-            }
-
-            try (final SegmentFullWriter<K, V> writer = openFullWriter()) {
-                while (iterator.hasNext()) {
-                    final Pair<K, V> pair = iterator.next();
-                    writer.put(pair);
-                }
-            }
-
-        }
-
-        return lowerSegment;
+        final SegmentSplitter<K, V> segmentSplitter = new SegmentSplitter<>(
+                segmentFiles, segmentConf, versionController);
+        return segmentSplitter.split(segmentId);
     }
 
     @Override

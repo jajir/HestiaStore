@@ -30,13 +30,19 @@ public class SegmentCompacter<K, V> {
                 .openIterator(versionController);
     }
 
-    public void optionallyCompact() {
+    /**
+     * 
+     * @return return <code>true</code> when segment was compacted.
+     */
+    public boolean optionallyCompact() {
         final SegmentStats stats = segmentStatsController
                 .getSegmentStatsManager().getSegmentStats();
         if (stats.getNumberOfKeysInCache() > segmentConf
                 .getMaxNumberOfKeysInSegmentCache()) {
             forceCompact();
+            return true;
         }
+        return false;
     }
 
     public void forceCompact() {

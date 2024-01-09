@@ -11,7 +11,14 @@ import com.coroptis.index.scarceindex.ScarceIndexWriter;
 import com.coroptis.index.sstfile.SstFileWriter;
 
 /**
- * Allows to rewrite whole main SST index file and build new scarce index.
+ * Allows to rewrite whole segment context including:
+ * <ul>
+ * <li>Main segment SST file</li>
+ * <li>Scarce index</li>
+ * <li>Build new bloom filter</li>
+ * <li>clean cache</li>
+ * <ul>
+ * .
  */
 public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
 

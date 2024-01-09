@@ -7,21 +7,23 @@ import com.coroptis.index.PairWriter;
 import com.coroptis.index.datatype.TypeDescriptor;
 
 /**
- * This implementation expect that segment cache is not loaded into memory.
+ * Allows to add data to segment. When searcher is in memory and number of added
+ * keys doesn't exceed limit than it could work without invalidating cache and
+ * searcher object..
  * 
  * @author honza
  *
  * @param <K>
  * @param <V>
  */
-public class SegmentCacheWriterFinal<K, V> {
+public class SegmentWriter<K, V> {
 
     private final SegmentCache<K, V> segmentCache;
     private final SegmentStatsManager segmentStatsManager;
     private final VersionController versionController;
     private final SegmentCompacter<K, V> segmentCompacter;
 
-    public SegmentCacheWriterFinal(final SegmentFiles<K, V> segmentFiles,
+    public SegmentWriter(final SegmentFiles<K, V> segmentFiles,
             final TypeDescriptor<K> keyTypeDescriptor,
             final SegmentStatsManager segmentStatsManager,
             final VersionController versionController,
@@ -40,8 +42,9 @@ public class SegmentCacheWriterFinal<K, V> {
                 final int keysInCache = segmentCache.flushCache();
                 segmentStatsManager.setNumberOfKeysInCache(keysInCache);
                 segmentStatsManager.flush();
-                segmentCompacter.optionallyCompact();
-                versionController.changeVersion();
+                if (segmentCompacter.optionallyCompact()) {
+                    versionController.changeVersion();
+                }
             }
 
             @Override
