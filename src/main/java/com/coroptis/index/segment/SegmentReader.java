@@ -35,7 +35,7 @@ public class SegmentReader<K, V> {
 
     public PairIterator<K, V> openIterator(
             final OptimisticLockObjectVersionProvider versionProvider) {
-        // Read segment cache int list.
+        // Read segment cache into in memory list.
         final List<Pair<K, V>> pairs = new ArrayList<>();
         try (final PairIterator<K, V> iterator = segmentFiles.getCacheSstFile()
                 .openIterator()) {

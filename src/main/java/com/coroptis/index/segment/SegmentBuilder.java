@@ -24,6 +24,8 @@ public class SegmentBuilder<K, V> {
     private int bloomFilterNumberOfHashFunctions = DEFAULT_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS;
     private int bloomFilterIndexSizeInBytes = DEFAULT_BLOOM_FILTER_INDEX_SIZE_IN_BYTES;
     private VersionController versionController;
+    private SegmentConf segmentConf;
+    private SegmentFiles<K, V> segmentFiles;
 
     SegmentBuilder() {
 
@@ -31,6 +33,17 @@ public class SegmentBuilder<K, V> {
 
     public SegmentBuilder<K, V> withDirectory(final Directory directory) {
         this.directory = Objects.requireNonNull(directory);
+        return this;
+    }
+
+    public SegmentBuilder<K, V> withSegmentConf(final SegmentConf segmentConf) {
+        this.segmentConf = Objects.requireNonNull(segmentConf);
+        return this;
+    }
+
+    public SegmentBuilder<K, V> withSegmentFiles(
+            final SegmentFiles<K, V> segmentFiles) {
+        this.segmentFiles = Objects.requireNonNull(segmentFiles);
         return this;
     }
 
@@ -92,10 +105,17 @@ public class SegmentBuilder<K, V> {
         if (versionController == null) {
             versionController = new VersionController();
         }
-        return new Segment<>(directory, id, maxNumberOfKeysInSegmentCache,
-                keyTypeDescriptor, valueTypeDescriptor,
-                maxNumberOfKeysInIndexPage, bloomFilterNumberOfHashFunctions,
-                bloomFilterIndexSizeInBytes, versionController);
+        if (segmentConf == null) {
+            segmentConf = new SegmentConf(maxNumberOfKeysInSegmentCache,
+                    maxNumberOfKeysInIndexPage,
+                    bloomFilterNumberOfHashFunctions,
+                    bloomFilterIndexSizeInBytes);
+        }
+        if (segmentFiles == null) {
+            segmentFiles = new SegmentFiles<>(directory, id, keyTypeDescriptor,
+                    valueTypeDescriptor);
+        }
+        return new Segment<>(segmentFiles, segmentConf, versionController);
     }
 
 }

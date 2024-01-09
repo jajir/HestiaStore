@@ -5,6 +5,8 @@ import com.coroptis.index.OptimisticLockObjectVersionProvider;
 /**
  * Holds information about segment version.
  * 
+ * Allows to create optimistic lock.
+ * 
  * @author honza
  *
  */

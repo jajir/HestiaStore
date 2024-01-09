@@ -5,7 +5,6 @@ import java.util.Objects;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.datatype.TypeDescriptor;
-import com.coroptis.index.segmentcache.SegmentCache;
 
 /**
  * This implementation expect that segment cache is not loaded into memory.

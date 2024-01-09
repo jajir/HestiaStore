@@ -11,10 +11,7 @@ import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.bloomfilter.BloomFilter;
-import com.coroptis.index.datatype.TypeDescriptor;
-import com.coroptis.index.directory.Directory;
 import com.coroptis.index.scarceindex.ScarceIndex;
-import com.coroptis.index.segmentcache.SegmentCache;
 
 /**
  * 
@@ -23,58 +20,44 @@ import com.coroptis.index.segmentcache.SegmentCache;
  * @param <K>
  * @param <V>
  */
-public class Segment<K, V> implements CloseableResource, SegmentCompacter<K, V>,
-        OptimisticLockObjectVersionProvider {
+public class Segment<K, V>
+        implements CloseableResource, OptimisticLockObjectVersionProvider {
 
     private final Logger logger = LoggerFactory.getLogger(Segment.class);
-    private final Directory directory;
-    private final TypeDescriptor<K> keyTypeDescriptor;
-    private final long maxNumberOfKeysInSegmentCache;
-    private final int maxNumberOfKeysInIndexPage;
-    private final int bloomFilterNumberOfHashFunctions;
-    private final int bloomFilterIndexSizeInBytes;
+    private final SegmentConf segmentConf;
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
     private final SegmentSearcherManager<K, V> segmentSearcherManager;
     private final SegmentStatsController segmentStatsController;
+    private final SegmentCompacter<K, V> segmentCompacter;
 
     public static <M, N> SegmentBuilder<M, N> builder() {
         return new SegmentBuilder<>();
     }
 
-    public Segment(final Directory directory, final SegmentId id,
-            final long maxNumeberOfKeysInSegmentCache,
-            final TypeDescriptor<K> keyTypeDescriptor,
-            final TypeDescriptor<V> valueTypeDescriptor,
-            final int maxNumberOfKeysInIndexPage,
-            final int bloomFilterNumberOfHashFunctions,
-            final int bloomFilterIndexSizeInBytes,
-            VersionController versionController) {
-        this.segmentFiles = new SegmentFiles<>(directory, id, keyTypeDescriptor,
-                valueTypeDescriptor);
+    public Segment(final SegmentFiles<K, V> segmentFiles,
+            final SegmentConf segmentConf,
+            final VersionController versionController) {
+        this.segmentConf = Objects.requireNonNull(segmentConf);
+        this.segmentFiles = Objects.requireNonNull(segmentFiles);
         logger.debug("Initializing segment '{}'", segmentFiles.getId());
-        this.directory = Objects.requireNonNull(directory);
-        this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
-        this.maxNumberOfKeysInSegmentCache = maxNumeberOfKeysInSegmentCache;
-        this.maxNumberOfKeysInIndexPage = maxNumberOfKeysInIndexPage;
         this.versionController = Objects.requireNonNull(versionController,
                 "Version controller is required");
-        this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
-        this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
-
-        this.segmentStatsController = new SegmentStatsController(directory, id,
+        this.segmentStatsController = new SegmentStatsController(
+                segmentFiles.getDirectory(), segmentFiles.getId(),
                 versionController);
-
-        this.segmentSearcherManager = new SegmentSearcherManager<>(directory,
-                id, keyTypeDescriptor, valueTypeDescriptor,
-                maxNumberOfKeysInIndexPage, bloomFilterNumberOfHashFunctions,
-                bloomFilterIndexSizeInBytes, versionController);
+        this.segmentSearcherManager = new SegmentSearcherManager<>(segmentFiles,
+                segmentConf, versionController);
+        this.segmentCompacter = new SegmentCompacter<>(segmentFiles,
+                segmentConf, versionController);
     }
 
     private ScarceIndex<K> getScarceIndex() {
-        return ScarceIndex.<K>builder().withDirectory(directory)
+        return ScarceIndex.<K>builder()
+                .withDirectory(segmentFiles.getDirectory())
                 .withFileName(segmentFiles.getScarceFileName())
-                .withKeyTypeDescriptor(keyTypeDescriptor).build();
+                .withKeyTypeDescriptor(segmentFiles.getKeyTypeDescriptor())
+                .build();
     }
 
     // FIXME remove it
@@ -94,44 +77,8 @@ public class Segment<K, V> implements CloseableResource, SegmentCompacter<K, V>,
                 .getSegmentStats();
     }
 
-    private SegmentCache<K, V> makeCache() {
-        return new SegmentCache<>(keyTypeDescriptor, segmentFiles);
-    }
-
-    /**
-     * It's called after writing is done. It ensure that all data are stored in
-     * directory.
-     */
-    public void flush() {
-        final SegmentCache<K, V> sc = makeCache();
-        if (sc.size() > maxNumberOfKeysInSegmentCache) {
-            forceCompact();
-        } else {
-            flushCache(sc);
-        }
-        if (!segmentFiles.getDirectory()
-                .isFileExists(segmentFiles.getScarceFileName())) {
-            segmentFiles.getDirectory().touch(segmentFiles.getScarceFileName());
-        }
-        if (!segmentFiles.getDirectory()
-                .isFileExists(segmentFiles.getIndexFileName())) {
-            segmentFiles.getDirectory().touch(segmentFiles.getIndexFileName());
-        }
-    }
-
-    private void flushCache(final SegmentCache<K, V> segmentCache) {
-        SegmentStatsManager segmentStatsManager = segmentStatsController
-                .getSegmentStatsManager();
-        segmentStatsManager.setNumberOfKeysInCache(segmentCache.flushCache());
-        segmentStatsManager.flush();
-    }
-
-    @Override
     public void optionallyCompact() {
-        if (segmentStatsController.getSegmentStatsManager().getSegmentStats()
-                .getNumberOfKeysInCache() > maxNumberOfKeysInSegmentCache) {
-            forceCompact();
-        }
+        segmentCompacter.optionallyCompact();
     }
 
     public PairIterator<K, V> openIterator() {
@@ -140,16 +87,8 @@ public class Segment<K, V> implements CloseableResource, SegmentCompacter<K, V>,
                 .openIterator(versionController);
     }
 
-    @Override
     public void forceCompact() {
-        versionController.changeVersion();
-        try (final SegmentFullWriter<K, V> writer = openFullWriter()) {
-            try (final PairIterator<K, V> iterator = openIterator()) {
-                while (iterator.hasNext()) {
-                    writer.put(iterator.next());
-                }
-            }
-        }
+        segmentCompacter.forceCompact();
     }
 
     /**
@@ -157,23 +96,27 @@ public class Segment<K, V> implements CloseableResource, SegmentCompacter<K, V>,
      * direct writer to scarce index and main sst file. It's useful for
      * compacting.
      */
-    private SegmentFullWriter<K, V> openFullWriter() {
+    SegmentFullWriter<K, V> openFullWriter() {
         final BloomFilter<K> bloomFilter = BloomFilter.<K>builder()
                 .withBloomFilterFileName(segmentFiles.getBloomFilterFileName())
-                .withConvertorToBytes(keyTypeDescriptor.getConvertorToBytes())
-                .withDirectory(directory)
-                .withIndexSizeInBytes(bloomFilterIndexSizeInBytes)
-                .withNumberOfHashFunctions(bloomFilterNumberOfHashFunctions)
+                .withConvertorToBytes(segmentFiles.getKeyTypeDescriptor()
+                        .getConvertorToBytes())
+                .withDirectory(segmentFiles.getDirectory())
+                .withIndexSizeInBytes(
+                        segmentConf.getBloomFilterIndexSizeInBytes())
+                .withNumberOfHashFunctions(
+                        segmentConf.getBloomFilterNumberOfHashFunctions())
                 .build();
         return new SegmentFullWriter<K, V>(bloomFilter, segmentFiles,
-                segmentStatsController, maxNumberOfKeysInIndexPage);
+                segmentStatsController,
+                segmentConf.getMaxNumberOfKeysInIndexPage());
     }
 
     public PairWriter<K, V> openWriter() {
         SegmentCacheWriterFinal<K, V> writer = new SegmentCacheWriterFinal<>(
                 segmentFiles, segmentFiles.getKeyTypeDescriptor(),
                 segmentStatsController.getSegmentStatsManager(),
-                versionController, this);
+                versionController, segmentCompacter);
         return writer.openWriter();
     }
 
@@ -191,13 +134,7 @@ public class Segment<K, V> implements CloseableResource, SegmentCompacter<K, V>,
                 .withDirectory(segmentFiles.getDirectory()).withId(segmentId)
                 .withKeyTypeDescriptor(segmentFiles.getKeyTypeDescriptor())
                 .withValueTypeDescriptor(segmentFiles.getValueTypeDescriptor())
-                .withMaxNumberOfKeysInSegmentCache(
-                        maxNumberOfKeysInSegmentCache)
-                .withMaxNumberOfKeysInIndexPage(maxNumberOfKeysInIndexPage)
-                .withBloomFilterIndexSizeInBytes(bloomFilterIndexSizeInBytes)
-                .withBloomFilterNumberOfHashFunctions(
-                        bloomFilterNumberOfHashFunctions)
-                .build();
+                .withSegmentConf(segmentConf).build();
 
         try (final PairIterator<K, V> iterator = openIterator()) {
 

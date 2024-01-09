@@ -8,7 +8,6 @@ import com.coroptis.index.PairWriter;
 import com.coroptis.index.bloomfilter.BloomFilter;
 import com.coroptis.index.bloomfilter.BloomFilterWriter;
 import com.coroptis.index.scarceindex.ScarceIndexWriter;
-import com.coroptis.index.segmentcache.SegmentCache;
 import com.coroptis.index.sstfile.SstFileWriter;
 
 /**

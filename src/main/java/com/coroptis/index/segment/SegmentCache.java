@@ -1,4 +1,4 @@
-package com.coroptis.index.segmentcache;
+package com.coroptis.index.segment;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
@@ -7,7 +7,6 @@ import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.cache.UniqueCache;
 import com.coroptis.index.datatype.TypeDescriptor;
-import com.coroptis.index.segment.SegmentFiles;
 import com.coroptis.index.sstfile.SstFileWriter;
 
 /**
