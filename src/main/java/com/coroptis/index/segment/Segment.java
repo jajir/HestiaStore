@@ -26,7 +26,6 @@ public class Segment<K, V>
     private final SegmentConf segmentConf;
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
-    private final SegmentSearcherManager<K, V> segmentSearcherManager;
     private final SegmentStatsController segmentStatsController;
     private final SegmentCompacter<K, V> segmentCompacter;
 
@@ -45,8 +44,6 @@ public class Segment<K, V>
         this.segmentStatsController = new SegmentStatsController(
                 segmentFiles.getDirectory(), segmentFiles.getId(),
                 versionController);
-        this.segmentSearcherManager = new SegmentSearcherManager<>(segmentFiles,
-                segmentConf, versionController);
         this.segmentCompacter = new SegmentCompacter<>(segmentFiles,
                 segmentConf, versionController);
     }
@@ -120,7 +117,8 @@ public class Segment<K, V>
     }
 
     public SegmentSearcher<K, V> openSearcher() {
-        return segmentSearcherManager.getSearcher();
+        return new SegmentSearcher<>(segmentFiles, segmentConf,
+                versionController);
     }
 
     public Segment<K, V> split(final SegmentId segmentId) {

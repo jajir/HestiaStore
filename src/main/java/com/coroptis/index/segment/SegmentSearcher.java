@@ -6,10 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.coroptis.index.CloseableResource;
-import com.coroptis.index.Pair;
-import com.coroptis.index.PairReader;
-import com.coroptis.index.bloomfilter.BloomFilter;
-import com.coroptis.index.scarceindex.ScarceIndex;
+import com.coroptis.index.OptimisticLock;
+import com.coroptis.index.OptimisticLockObjectVersionProvider;
 
 /**
  * Object use in memory cache and bloom filter. Only one instance for one
@@ -25,95 +23,64 @@ import com.coroptis.index.scarceindex.ScarceIndex;
 public class SegmentSearcher<K, V> implements CloseableResource {
 
     private final Logger logger = LoggerFactory.getLogger(Segment.class);
-    private final SegmentCache<K, V> cache;
-    private final ScarceIndex<K> scarceIndex;
-    private final BloomFilter<K> bloomFilter;
     private final SegmentFiles<K, V> segmentFiles;
     private final SegmentConf segmentConf;
+    private final OptimisticLockObjectVersionProvider versionProvider;
+
+    private SegmentSearcherCore<K, V> searcherCore;
+    private OptimisticLock lock;
 
     public SegmentSearcher(final SegmentFiles<K, V> segmentFiles,
-            final SegmentConf segmentConf) {
+            final SegmentConf segmentConf,
+            final OptimisticLockObjectVersionProvider versionProvider) {
+        logger.debug("Opening segment '{}' searched", segmentFiles.getId());
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.segmentConf = Objects.requireNonNull(segmentConf);
-        logger.debug("Initializing segment '{}'", segmentFiles.getId());
-        this.cache = new SegmentCache<>(segmentFiles.getKeyTypeDescriptor(),
-                segmentFiles);
-        this.scarceIndex = ScarceIndex.<K>builder()
-                .withDirectory(segmentFiles.getDirectory())
-                .withFileName(segmentFiles.getScarceFileName())
-                .withKeyTypeDescriptor(segmentFiles.getKeyTypeDescriptor())
-                .build();
-        this.bloomFilter = BloomFilter.<K>builder()
-                .withBloomFilterFileName(segmentFiles.getBloomFilterFileName())
-                .withConvertorToBytes(segmentFiles.getKeyTypeDescriptor()
-                        .getConvertorToBytes())
-                .withDirectory(segmentFiles.getDirectory())
-                .withIndexSizeInBytes(
-                        segmentConf.getBloomFilterIndexSizeInBytes())
-                .withNumberOfHashFunctions(
-                        segmentConf.getBloomFilterNumberOfHashFunctions())
-                .build();
+        this.versionProvider = Objects.requireNonNull(versionProvider);
+        optionallyrefreshCoreSearcher();
+    }
+
+    private void optionallyrefreshCoreSearcher() {
+        if (lock == null) {
+            lock = new OptimisticLock(versionProvider);
+            optionallyCloseSearcherCore();
+        }
+        if (lock.isLocked()) {
+            optionallyCloseSearcherCore();
+        }
+        if (searcherCore == null) {
+            logger.debug("Opening segment '{}' searched", segmentFiles.getId());
+            searcherCore = new SegmentSearcherCore<>(segmentFiles, segmentConf);
+        }
+    }
+
+    private void optionallyCloseSearcherCore() {
+        if (searcherCore == null) {
+            return;
+        }
+        searcherCore.getBloomFilter().logStats();
+        logger.debug("Closing segment '{}' searcher", segmentFiles.getId());
+        searcherCore = null;
     }
 
     public K getMaxKey() {
-        return scarceIndex.getMaxKey();
+        optionallyrefreshCoreSearcher();
+        return searcherCore.getMaxKey();
     }
 
     public K getMinKey() {
-        return scarceIndex.getMinKey();
+        optionallyrefreshCoreSearcher();
+        return searcherCore.getMinKey();
     }
 
     public V get(final K key) {
-        // look in cache
-        final V out = cache.get(key);
-        if (segmentFiles.getValueTypeDescriptor().isTombstone(out)) {
-            return null;
-        }
-
-        // look in bloom filter
-        if (out == null) {
-            if (bloomFilter.isNotStored(key)) {
-                /*
-                 * It;s sure that key is not in index.
-                 */
-                return null;
-            }
-        }
-
-        // look in index file
-        if (out == null) {
-            final Integer position = scarceIndex.get(key);
-            if (position == null) {
-                return null;
-            }
-            try (final PairReader<K, V> fileReader = segmentFiles
-                    .getIndexSstFile().openReader(position)) {
-                for (int i = 0; i < segmentConf
-                        .getMaxNumberOfKeysInIndexPage(); i++) {
-                    final Pair<K, V> pair = fileReader.read();
-                    final int cmp = segmentFiles.getKeyTypeDescriptor()
-                            .getComparator().compare(pair.getKey(), key);
-                    if (cmp == 0) {
-                        return pair.getValue();
-                    }
-                    /**
-                     * Keys are in ascending order. When searched key is smaller
-                     * than key read from sorted data than key is not found.
-                     */
-                    if (cmp > 0) {
-                        return null;
-                    }
-                }
-            }
-        }
-        return out;
+        optionallyrefreshCoreSearcher();
+        return searcherCore.get(key);
     }
 
     @Override
     public void close() {
-        bloomFilter.logStats();
-        logger.debug("Closing segment '{}'", segmentFiles.getId());
-        // Do intentionally nothing.
+        optionallyCloseSearcherCore();
     }
 
 }
