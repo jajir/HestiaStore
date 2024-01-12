@@ -6,15 +6,15 @@ import com.coroptis.index.OptimisticLock;
 import com.coroptis.index.OptimisticLockObjectVersionProvider;
 import com.coroptis.index.directory.Directory;
 
-public class SegmentStatsController {
+public class SegmentPropertiesController {
 
     private final Directory directory;
     private final SegmentId id;
     private final OptimisticLockObjectVersionProvider versionProvider;
     private OptimisticLock lock;
-    private SegmentStatsManager segmentStatsManager;
+    private SegmentPropertiesManager segmentStatsManager;
 
-    SegmentStatsController(final Directory directory, final SegmentId id,
+    SegmentPropertiesController(final Directory directory, final SegmentId id,
             final OptimisticLockObjectVersionProvider versionProvider) {
         this.directory = Objects.requireNonNull(directory);
         this.id = Objects.requireNonNull(id);
@@ -22,12 +22,12 @@ public class SegmentStatsController {
         lock = new OptimisticLock(versionProvider);
     }
 
-    public SegmentStatsManager getSegmentStatsManager() {
+    public SegmentPropertiesManager getSegmentStatsManager() {
         if (lock.isLocked()) {
             segmentStatsManager = null;
         }
         if (segmentStatsManager == null) {
-            segmentStatsManager = new SegmentStatsManager(directory, id);
+            segmentStatsManager = new SegmentPropertiesManager(directory, id);
             lock = new OptimisticLock(versionProvider);
         }
         return segmentStatsManager;

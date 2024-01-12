@@ -19,13 +19,13 @@ import com.coroptis.index.datatype.TypeDescriptor;
 public class SegmentWriter<K, V> {
 
     private final SegmentCache<K, V> segmentCache;
-    private final SegmentStatsManager segmentStatsManager;
+    private final SegmentPropertiesManager segmentStatsManager;
     private final VersionController versionController;
     private final SegmentCompacter<K, V> segmentCompacter;
 
     public SegmentWriter(final SegmentFiles<K, V> segmentFiles,
             final TypeDescriptor<K> keyTypeDescriptor,
-            final SegmentStatsManager segmentStatsManager,
+            final SegmentPropertiesManager segmentStatsManager,
             final VersionController versionController,
             final SegmentCompacter<K, V> segmentCompacter) {
         this.segmentStatsManager = Objects.requireNonNull(segmentStatsManager);

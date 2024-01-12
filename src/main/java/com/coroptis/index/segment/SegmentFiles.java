@@ -19,7 +19,7 @@ public class SegmentFiles<K, V> {
 
     private final static String INDEX_FILE_NAME_EXTENSION = ".index";
     private final static String SCARCE_FILE_NAME_EXTENSION = ".scarce";
-    private final static String CACHE_FILE_NAME_EXTENSION = ".cache";
+    final static String CACHE_FILE_NAME_EXTENSION = ".cache";
     private final static String TEMP_FILE_NAME_EXTENSION = ".tmp";
     private final static String BOOM_FILTER_FILE_NAME_EXTENSION = ".bloom-filter";
 
