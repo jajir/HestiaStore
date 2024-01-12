@@ -36,7 +36,7 @@ public class SegmentCompacter<K, V> {
      */
     public boolean optionallyCompact() {
         final SegmentStats stats = segmentStatsController
-                .getSegmentStatsManager().getSegmentStats();
+                .getSegmentPropertiesManager().getSegmentStats();
         if (stats.getNumberOfKeysInCache() > segmentConf
                 .getMaxNumberOfKeysInSegmentCache()) {
             forceCompact();

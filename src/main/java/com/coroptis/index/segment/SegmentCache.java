@@ -7,6 +7,7 @@ import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.cache.UniqueCache;
 import com.coroptis.index.datatype.TypeDescriptor;
+import com.coroptis.index.sstfile.SstFileStreamer;
 import com.coroptis.index.sstfile.SstFileWriter;
 
 /**
@@ -26,11 +27,20 @@ public class SegmentCache<K, V> {
     private final SegmentFiles<K, V> segmentFiles;
 
     public SegmentCache(final TypeDescriptor<K> keyTypeDescriptor,
-            final SegmentFiles<K, V> segmentFiles) {
+            final SegmentFiles<K, V> segmentFiles,
+            final SegmentPropertiesManager segmentPropertiesManager) {
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.cache = UniqueCache.<K, V>builder()
                 .withKeyComparator(keyTypeDescriptor.getComparator())
                 .withSstFile(segmentFiles.getCacheSstFile()).build();
+        segmentPropertiesManager.getCacheDeltaFileNames()
+                .forEach(segmentDeltaFileName -> {
+                    try (final SstFileStreamer<K, V> fileStreamer = segmentFiles
+                            .getCacheSstFile(segmentDeltaFileName)
+                            .openStreamer()) {
+                        fileStreamer.stream().forEach(pair -> cache.put(pair));
+                    }
+                });
     }
 
     public void put(final Pair<K, V> pair) {

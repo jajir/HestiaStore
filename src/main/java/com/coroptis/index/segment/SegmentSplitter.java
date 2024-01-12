@@ -33,7 +33,7 @@ public class SegmentSplitter<K, V> {
     }
 
     private SegmentStats getStats() {
-        return segmentStatsController.getSegmentStatsManager()
+        return segmentStatsController.getSegmentPropertiesManager()
                 .getSegmentStats();
     }
 

@@ -26,7 +26,7 @@ public class Segment<K, V>
     private final SegmentConf segmentConf;
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
-    private final SegmentPropertiesController segmentStatsController;
+    private final SegmentPropertiesController segmentPropertiesController;
     private final SegmentCompacter<K, V> segmentCompacter;
 
     public static <M, N> SegmentBuilder<M, N> builder() {
@@ -41,7 +41,7 @@ public class Segment<K, V>
         logger.debug("Initializing segment '{}'", segmentFiles.getId());
         this.versionController = Objects.requireNonNull(versionController,
                 "Version controller is required");
-        this.segmentStatsController = new SegmentPropertiesController(
+        this.segmentPropertiesController = new SegmentPropertiesController(
                 segmentFiles.getDirectory(), segmentFiles.getId(),
                 versionController);
         this.segmentCompacter = new SegmentCompacter<>(segmentFiles,
@@ -69,7 +69,7 @@ public class Segment<K, V>
     }
 
     public SegmentStats getStats() {
-        return segmentStatsController.getSegmentStatsManager()
+        return segmentPropertiesController.getSegmentPropertiesManager()
                 .getSegmentStats();
     }
 
@@ -104,21 +104,21 @@ public class Segment<K, V>
                         segmentConf.getBloomFilterNumberOfHashFunctions())
                 .build();
         return new SegmentFullWriter<K, V>(bloomFilter, segmentFiles,
-                segmentStatsController,
+                segmentPropertiesController,
                 segmentConf.getMaxNumberOfKeysInIndexPage());
     }
 
     public PairWriter<K, V> openWriter() {
         final SegmentWriter<K, V> writer = new SegmentWriter<>(segmentFiles,
                 segmentFiles.getKeyTypeDescriptor(),
-                segmentStatsController.getSegmentStatsManager(),
+                segmentPropertiesController.getSegmentPropertiesManager(),
                 versionController, segmentCompacter);
         return writer.openWriter();
     }
 
     public SegmentSearcher<K, V> openSearcher() {
         return new SegmentSearcher<>(segmentFiles, segmentConf,
-                versionController);
+                versionController, segmentPropertiesController);
     }
 
     public Segment<K, V> split(final SegmentId segmentId) {

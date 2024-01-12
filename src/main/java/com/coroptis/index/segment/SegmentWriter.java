@@ -30,7 +30,8 @@ public class SegmentWriter<K, V> {
             final SegmentCompacter<K, V> segmentCompacter) {
         this.segmenPropertiesManager = Objects
                 .requireNonNull(segmentStatsManager);
-        this.segmentCache = new SegmentCache<>(keyTypeDescriptor, segmentFiles);
+        this.segmentCache = new SegmentCache<>(keyTypeDescriptor, segmentFiles,
+                segmenPropertiesManager);
         this.versionController = Objects.requireNonNull(versionController);
         this.segmentCompacter = Objects.requireNonNull(segmentCompacter);
     }

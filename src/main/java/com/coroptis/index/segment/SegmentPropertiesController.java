@@ -22,7 +22,7 @@ public class SegmentPropertiesController {
         lock = new OptimisticLock(versionProvider);
     }
 
-    public SegmentPropertiesManager getSegmentStatsManager() {
+    public SegmentPropertiesManager getSegmentPropertiesManager() {
         if (lock.isLocked()) {
             segmenPropertiesManager = null;
         }

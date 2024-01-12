@@ -61,6 +61,7 @@ public class SegmentPropertiesManager {
                 + SegmentFiles.CACHE_FILE_NAME_EXTENSION;
     }
 
+    //TODO add sorting from 0 to n.
     public List<String> getCacheDeltaFileNames() {
         final List<String> out = new ArrayList<>();
         int lastOne = props.getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);

@@ -27,11 +27,12 @@ public class SegmentSearcherCore<K, V> {
     private final SegmentConf segmentConf;
 
     public SegmentSearcherCore(final SegmentFiles<K, V> segmentFiles,
-            final SegmentConf segmentConf) {
+            final SegmentConf segmentConf,
+            final SegmentPropertiesManager segmentPropertiesManager) {
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.segmentConf = Objects.requireNonNull(segmentConf);
         this.cache = new SegmentCache<>(segmentFiles.getKeyTypeDescriptor(),
-                segmentFiles);
+                segmentFiles, segmentPropertiesManager);
         this.scarceIndex = ScarceIndex.<K>builder()
                 .withDirectory(segmentFiles.getDirectory())
                 .withFileName(segmentFiles.getScarceFileName())

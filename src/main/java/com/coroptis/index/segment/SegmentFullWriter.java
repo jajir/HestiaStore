@@ -94,13 +94,14 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
 
         // clean cache
         final SegmentCache<K, V> sc = new SegmentCache<>(
-                segmentFiles.getKeyTypeDescriptor(), segmentFiles);
+                segmentFiles.getKeyTypeDescriptor(), segmentFiles,
+                segmentStatsController.getSegmentPropertiesManager());
         sc.clear();
         sc.flushCache();
 
         // update segment statistics
         final SegmentPropertiesManager segmenPropertiesManager = segmentStatsController
-                .getSegmentStatsManager();
+                .getSegmentPropertiesManager();
         segmenPropertiesManager.setNumberOfKeysInCache(0);
         segmenPropertiesManager.setNumberOfKeysInIndex(keyCounter.get());
         segmenPropertiesManager

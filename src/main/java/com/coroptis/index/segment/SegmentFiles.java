@@ -72,6 +72,15 @@ public class SegmentFiles<K, V> {
                 keyTypeDescriptor.getConvertorToBytes());
     }
 
+    SstFile<K, V> getCacheSstFile(final String fileName) {
+        return new SstFile<>(directory, fileName,
+                valueTypeDescriptor.getTypeWriter(),
+                valueTypeDescriptor.getTypeReader(),
+                keyTypeDescriptor.getComparator(),
+                keyTypeDescriptor.getConvertorFromBytes(),
+                keyTypeDescriptor.getConvertorToBytes());
+    }
+
     SstFile<K, V> getIndexSstFile() {
         return new SstFile<>(directory, getIndexFileName(),
                 valueTypeDescriptor.getTypeWriter(),
