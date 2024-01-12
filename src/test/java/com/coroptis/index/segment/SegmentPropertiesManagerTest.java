@@ -28,7 +28,7 @@ public class SegmentPropertiesManagerTest {
         props.setNumberOfKeysInCache(87);
         props.setNumberOfKeysInScarceIndex(132);
         props.setNumberOfKeysInIndex(1023);
-
+        //TDO
         stats = props.getSegmentStats();
         assertEquals(1110, stats.getNumberOfKeys());
         assertEquals(87, stats.getNumberOfKeysInCache());
