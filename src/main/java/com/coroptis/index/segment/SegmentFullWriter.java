@@ -23,7 +23,7 @@ import com.coroptis.index.sstfile.SstFileWriter;
 public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
 
     private final SegmentFiles<K, V> segmentFiles;
-    private final SegmentStatsController segmentStatsController;
+    private final SegmentPropertiesController segmentStatsController;
     private final int maxNumberOfKeysInIndexPage;
 
     private final AtomicLong scarceIndexKeyCounter = new AtomicLong(0L);
@@ -35,7 +35,7 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
 
     SegmentFullWriter(final BloomFilter<K> bloomFilter,
             final SegmentFiles<K, V> segmentFiles,
-            final SegmentStatsController segmentStatsController,
+            final SegmentPropertiesController segmentStatsController,
             final int maxNumberOfKeysInIndexPage) {
         this.maxNumberOfKeysInIndexPage = Objects
                 .requireNonNull(maxNumberOfKeysInIndexPage);
@@ -99,7 +99,7 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
         sc.flushCache();
 
         // update segment statistics
-        final SegmentStatsManager segmentStatsManager = segmentStatsController
+        final SegmentPropertiesManager segmentStatsManager = segmentStatsController
                 .getSegmentStatsManager();
         segmentStatsManager.setNumberOfKeysInCache(0);
         segmentStatsManager.setNumberOfKeysInIndex(keyCounter.get());

@@ -18,7 +18,7 @@ public class SegmentSplitter<K, V> {
     private final SegmentConf segmentConf;
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
-    private final SegmentStatsController segmentStatsController;
+    private final SegmentPropertiesController segmentStatsController;
 
     public SegmentSplitter(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
@@ -27,7 +27,7 @@ public class SegmentSplitter<K, V> {
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.versionController = Objects.requireNonNull(versionController,
                 "Version controller is required");
-        this.segmentStatsController = new SegmentStatsController(
+        this.segmentStatsController = new SegmentPropertiesController(
                 segmentFiles.getDirectory(), segmentFiles.getId(),
                 versionController);
     }

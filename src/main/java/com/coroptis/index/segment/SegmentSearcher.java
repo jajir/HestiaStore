@@ -49,7 +49,7 @@ public class SegmentSearcher<K, V> implements CloseableResource {
             optionallyCloseSearcherCore();
         }
         if (searcherCore == null) {
-            logger.debug("Opening segment '{}' searched", segmentFiles.getId());
+            logger.debug("Opening segment '{}' searcher", segmentFiles.getId());
             searcherCore = new SegmentSearcherCore<>(segmentFiles, segmentConf);
         }
     }

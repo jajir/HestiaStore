@@ -10,7 +10,7 @@ public class SegmentCompacter<K, V> {
     private final SegmentConf segmentConf;
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
-    private final SegmentStatsController segmentStatsController;
+    private final SegmentPropertiesController segmentStatsController;
 
     public SegmentCompacter(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
@@ -19,7 +19,7 @@ public class SegmentCompacter<K, V> {
         this.segmentConf = Objects.requireNonNull(segmentConf);
         this.versionController = Objects.requireNonNull(versionController,
                 "Version controller is required");
-        this.segmentStatsController = new SegmentStatsController(
+        this.segmentStatsController = new SegmentPropertiesController(
                 segmentFiles.getDirectory(), segmentFiles.getId(),
                 versionController);
     }

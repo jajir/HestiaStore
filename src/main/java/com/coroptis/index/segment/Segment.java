@@ -26,7 +26,7 @@ public class Segment<K, V>
     private final SegmentConf segmentConf;
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
-    private final SegmentStatsController segmentStatsController;
+    private final SegmentPropertiesController segmentStatsController;
     private final SegmentCompacter<K, V> segmentCompacter;
 
     public static <M, N> SegmentBuilder<M, N> builder() {
@@ -41,7 +41,7 @@ public class Segment<K, V>
         logger.debug("Initializing segment '{}'", segmentFiles.getId());
         this.versionController = Objects.requireNonNull(versionController,
                 "Version controller is required");
-        this.segmentStatsController = new SegmentStatsController(
+        this.segmentStatsController = new SegmentPropertiesController(
                 segmentFiles.getDirectory(), segmentFiles.getId(),
                 versionController);
         this.segmentCompacter = new SegmentCompacter<>(segmentFiles,
