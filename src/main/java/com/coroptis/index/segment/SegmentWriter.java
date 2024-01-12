@@ -19,7 +19,7 @@ import com.coroptis.index.datatype.TypeDescriptor;
 public class SegmentWriter<K, V> {
 
     private final SegmentCache<K, V> segmentCache;
-    private final SegmentPropertiesManager segmentStatsManager;
+    private final SegmentPropertiesManager segmenPropertiesManager;
     private final VersionController versionController;
     private final SegmentCompacter<K, V> segmentCompacter;
 
@@ -28,7 +28,8 @@ public class SegmentWriter<K, V> {
             final SegmentPropertiesManager segmentStatsManager,
             final VersionController versionController,
             final SegmentCompacter<K, V> segmentCompacter) {
-        this.segmentStatsManager = Objects.requireNonNull(segmentStatsManager);
+        this.segmenPropertiesManager = Objects
+                .requireNonNull(segmentStatsManager);
         this.segmentCache = new SegmentCache<>(keyTypeDescriptor, segmentFiles);
         this.versionController = Objects.requireNonNull(versionController);
         this.segmentCompacter = Objects.requireNonNull(segmentCompacter);
@@ -40,8 +41,8 @@ public class SegmentWriter<K, V> {
             @Override
             public void close() {
                 final int keysInCache = segmentCache.flushCache();
-                segmentStatsManager.setNumberOfKeysInCache(keysInCache);
-                segmentStatsManager.flush();
+                segmenPropertiesManager.setNumberOfKeysInCache(keysInCache);
+                segmenPropertiesManager.flush();
                 if (segmentCompacter.optionallyCompact()) {
                     versionController.changeVersion();
                 }

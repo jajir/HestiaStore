@@ -99,13 +99,13 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
         sc.flushCache();
 
         // update segment statistics
-        final SegmentPropertiesManager segmentStatsManager = segmentStatsController
+        final SegmentPropertiesManager segmenPropertiesManager = segmentStatsController
                 .getSegmentStatsManager();
-        segmentStatsManager.setNumberOfKeysInCache(0);
-        segmentStatsManager.setNumberOfKeysInIndex(keyCounter.get());
-        segmentStatsManager
+        segmenPropertiesManager.setNumberOfKeysInCache(0);
+        segmenPropertiesManager.setNumberOfKeysInIndex(keyCounter.get());
+        segmenPropertiesManager
                 .setNumberOfKeysInScarceIndex(scarceIndexKeyCounter.get());
-        segmentStatsManager.flush();
+        segmenPropertiesManager.flush();
 
     }
 

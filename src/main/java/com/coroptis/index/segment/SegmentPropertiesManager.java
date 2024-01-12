@@ -23,7 +23,8 @@ public class SegmentPropertiesManager {
     private final SegmentId id;
     private final Props props;
 
-    public SegmentPropertiesManager(final Directory directory, final SegmentId id) {
+    public SegmentPropertiesManager(final Directory directory,
+            final SegmentId id) {
         Objects.requireNonNull(directory);
         this.id = Objects.requireNonNull(id);
         this.props = new Props(directory, getPropertiesFilename());
@@ -39,14 +40,14 @@ public class SegmentPropertiesManager {
                 props.getLong(NUMBER_OF_KEYS_IN_SCARCE_INDEX));
     }
 
-    public void clearCacheDeltaFileNamesCouter(){
+    public void clearCacheDeltaFileNamesCouter() {
         props.setInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, 0);
         props.writeData();
     }
 
-    public String getAndIncreaseDeltaFileName(){
+    public String getAndIncreaseDeltaFileName() {
         int lastOne = props.getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);
-        props.setInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, lastOne+1);
+        props.setInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, lastOne + 1);
         props.writeData();
         return getDeltaString(lastOne);
     }
@@ -56,13 +57,14 @@ public class SegmentPropertiesManager {
         while (name.length() < 3) {
             name = "0" + name;
         }
-        return id.getName()+"-delta-" + name + SegmentFiles.CACHE_FILE_NAME_EXTENSION;
+        return id.getName() + "-delta-" + name
+                + SegmentFiles.CACHE_FILE_NAME_EXTENSION;
     }
 
-    public List<String> getCacheDeltaFileNames(){
+    public List<String> getCacheDeltaFileNames() {
         final List<String> out = new ArrayList<>();
         int lastOne = props.getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);
-        for(int i=0;i<lastOne;i++){
+        for (int i = 0; i < lastOne; i++) {
             out.add(getDeltaString(i));
         }
         return out;

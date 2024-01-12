@@ -12,7 +12,7 @@ public class SegmentPropertiesController {
     private final SegmentId id;
     private final OptimisticLockObjectVersionProvider versionProvider;
     private OptimisticLock lock;
-    private SegmentPropertiesManager segmentStatsManager;
+    private SegmentPropertiesManager segmenPropertiesManager;
 
     SegmentPropertiesController(final Directory directory, final SegmentId id,
             final OptimisticLockObjectVersionProvider versionProvider) {
@@ -24,13 +24,14 @@ public class SegmentPropertiesController {
 
     public SegmentPropertiesManager getSegmentStatsManager() {
         if (lock.isLocked()) {
-            segmentStatsManager = null;
+            segmenPropertiesManager = null;
         }
-        if (segmentStatsManager == null) {
-            segmentStatsManager = new SegmentPropertiesManager(directory, id);
+        if (segmenPropertiesManager == null) {
+            segmenPropertiesManager = new SegmentPropertiesManager(directory,
+                    id);
             lock = new OptimisticLock(versionProvider);
         }
-        return segmentStatsManager;
+        return segmenPropertiesManager;
 
     }
 
