@@ -104,6 +104,10 @@ public class SegmentSearcherCore<K, V> {
         return out;
     }
 
+    void addPairIntoCache(final Pair<K, V> pair) {
+        cache.put(pair);
+    }
+
     BloomFilter<K> getBloomFilter() {
         return bloomFilter;
     }

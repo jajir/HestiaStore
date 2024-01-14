@@ -24,10 +24,10 @@ import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.MemDirectory;
 
-public class IntegrationTest {
+public class SegmentIntegrationTest {
 
     private final Logger logger = LoggerFactory
-            .getLogger(IntegrationTest.class);
+            .getLogger(SegmentIntegrationTest.class);
 
     private final TypeDescriptorString tds = new TypeDescriptorString();
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();

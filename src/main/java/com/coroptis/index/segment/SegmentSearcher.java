@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import com.coroptis.index.CloseableResource;
 import com.coroptis.index.OptimisticLock;
 import com.coroptis.index.OptimisticLockObjectVersionProvider;
+import com.coroptis.index.Pair;
 
 /**
  * Object use in memory cache and bloom filter. Only one instance for one
@@ -43,6 +44,18 @@ public class SegmentSearcher<K, V> implements CloseableResource {
         optionallyrefreshCoreSearcher();
     }
 
+    /**
+     * This method allows into in memory segment searched add some data.
+     * 
+     * @param pair
+     */
+    void addPairIntoCache(final Pair<K, V> pair) {
+        if (searcherCore == null) {
+            return;
+        }
+        searcherCore.addPairIntoCache(pair);
+    }
+
     private void optionallyrefreshCoreSearcher() {
         if (lock == null) {
             lock = new OptimisticLock(versionProvider);
@@ -52,7 +65,8 @@ public class SegmentSearcher<K, V> implements CloseableResource {
             optionallyCloseSearcherCore();
         }
         if (searcherCore == null) {
-            logger.debug("Opening searcher for segment '{}'", segmentFiles.getId());
+            logger.debug("Opening searcher for segment '{}'",
+                    segmentFiles.getId());
             searcherCore = new SegmentSearcherCore<>(segmentFiles, segmentConf,
                     segmentPropertiesController.getSegmentPropertiesManager());
         }

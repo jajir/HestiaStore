@@ -47,15 +47,27 @@ public class SegmentCompacter<K, V> {
     }
 
     /**
+     * Provide information if segment should be compacted. Method doesn't
+     * perform compact operation.
+     * 
+     * @param numberOfKeysInLastDeltaFile required number of keys in last delta
+     *                                    cache file
+     * @return return <code>true</code> when segment should be compacted
+     */
+    public boolean shouldBeCompacted(final long numberOfKeysInLastDeltaFile) {
+        final SegmentStats stats = segmentPropertiesController
+                .getSegmentPropertiesManager().getSegmentStats();
+        return stats.getNumberOfKeysInCache()
+                + numberOfKeysInLastDeltaFile > segmentConf
+                        .getMaxNumberOfKeysInSegmentCache();
+    }
+
+    /**
      * 
      * @return return <code>true</code> when segment was compacted.
      */
     public boolean optionallyCompact(final long numberOfKeysInLastDeltaFile) {
-        final SegmentStats stats = segmentPropertiesController
-                .getSegmentPropertiesManager().getSegmentStats();
-        if (stats.getNumberOfKeysInCache()
-                + numberOfKeysInLastDeltaFile > segmentConf
-                        .getMaxNumberOfKeysInSegmentCache()) {
+        if (shouldBeCompacted(numberOfKeysInLastDeltaFile)) {
             forceCompact();
             return true;
         }

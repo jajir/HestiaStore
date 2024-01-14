@@ -16,7 +16,7 @@ import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.FsDirectory;
 
-public class IntegerationTest {
+public class SimpleDataFileIntegerationTest {
 
     private final TypeDescriptorInteger intTd = new TypeDescriptorInteger();
     private final TypeDescriptorString stringTd = new TypeDescriptorString();
