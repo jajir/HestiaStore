@@ -18,7 +18,7 @@ public class SegmentSplitter<K, V> {
     private final SegmentConf segmentConf;
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
-    private final SegmentPropertiesController segmentStatsController;
+    private final SegmentPropertiesController segmentPropertiesController;
 
     public SegmentSplitter(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
@@ -27,19 +27,19 @@ public class SegmentSplitter<K, V> {
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.versionController = Objects.requireNonNull(versionController,
                 "Version controller is required");
-        this.segmentStatsController = new SegmentPropertiesController(
+        this.segmentPropertiesController = new SegmentPropertiesController(
                 segmentFiles.getDirectory(), segmentFiles.getId(),
                 versionController);
     }
 
     private SegmentStats getStats() {
-        return segmentStatsController.getSegmentPropertiesManager()
+        return segmentPropertiesController.getSegmentPropertiesManager()
                 .getSegmentStats();
     }
 
     private PairIterator<K, V> openIterator() {
-        // TODO this naive implementation ignores possible in memory cache.
-        return new SegmentReader<>(segmentFiles)
+        return new SegmentReader<>(segmentFiles,
+                segmentPropertiesController.getSegmentPropertiesManager())
                 .openIterator(versionController);
     }
 
@@ -60,7 +60,7 @@ public class SegmentSplitter<K, V> {
                         segmentConf.getBloomFilterNumberOfHashFunctions())
                 .build();
         return new SegmentFullWriter<K, V>(bloomFilter, segmentFiles,
-                segmentStatsController,
+                segmentPropertiesController,
                 segmentConf.getMaxNumberOfKeysInIndexPage());
     }
 

@@ -1,14 +1,12 @@
 package com.coroptis.index.segment;
 
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicLong;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.cache.UniqueCache;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.sstfile.SstFileStreamer;
-import com.coroptis.index.sstfile.SstFileWriter;
 
 /**
  * Represents segment cache containing changes in segment.
@@ -26,10 +24,14 @@ public class SegmentCache<K, V> {
 
     private final SegmentFiles<K, V> segmentFiles;
 
+    private final SegmentPropertiesManager segmentPropertiesManager;
+
     public SegmentCache(final TypeDescriptor<K> keyTypeDescriptor,
             final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentPropertiesManager) {
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
+        this.segmentPropertiesManager = Objects
+                .requireNonNull(segmentPropertiesManager);
         this.cache = UniqueCache.<K, V>builder()
                 .withKeyComparator(keyTypeDescriptor.getComparator())
                 .withSstFile(segmentFiles.getCacheSstFile()).build();
@@ -54,6 +56,12 @@ public class SegmentCache<K, V> {
 
     public void clear() {
         cache.clear();
+        segmentPropertiesManager.getCacheDeltaFileNames()
+                .forEach(segmentCacheDeltaFile -> {
+                    segmentFiles.deleteFile(segmentCacheDeltaFile);
+                });
+        segmentFiles.optionallyDeleteFile(segmentFiles.getCacheFileName());
+        segmentPropertiesManager.clearCacheDeltaFileNamesCouter();
     }
 
     public V get(final K key) {
@@ -62,23 +70,6 @@ public class SegmentCache<K, V> {
 
     public PairIterator<K, V> getSortedIterator() {
         return cache.getSortedIterator();
-    }
-
-    /**
-     * Store cache content to file system.
-     * 
-     * @return number of stored keys
-     */
-    public int flushCache() {
-        final AtomicLong cx = new AtomicLong(0L);
-        try (final SstFileWriter<K, V> writer = segmentFiles.getCacheSstFile()
-                .openWriter()) {
-            cache.getStream().forEach(pair -> {
-                writer.put(pair);
-                cx.incrementAndGet();
-            });
-        }
-        return cx.intValue();
     }
 
 }

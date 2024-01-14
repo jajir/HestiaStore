@@ -48,7 +48,7 @@ public class SstIndexTest {
         });
 
         index1.close();
-        assertEquals(21, numberOfFilesInDirectoryP(directory));
+        assertEquals(17, numberOfFilesInDirectoryP(directory));
 
         final SstIndexImpl<Integer, String> index2 = makeSstIndex();
         data.stream().forEach(pair -> {
@@ -229,7 +229,7 @@ public class SstIndexTest {
 
     private int numberOfFilesInDirectoryP(final Directory directory) {
         final AtomicInteger cx = new AtomicInteger(0);
-        directory.getFileNames().forEach(fileName -> {
+        directory.getFileNames().sorted().forEach(fileName -> {
             logger.debug("Found file name {}", fileName);
             cx.incrementAndGet();
         });

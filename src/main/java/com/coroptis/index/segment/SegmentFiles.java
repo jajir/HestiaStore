@@ -122,4 +122,17 @@ public class SegmentFiles<K, V> {
     TypeDescriptor<V> getValueTypeDescriptor() {
         return valueTypeDescriptor;
     }
+
+    void deleteFile(final String fileName) {
+        if (!directory.deleteFile(fileName)) {
+            throw new IllegalStateException(String.format(
+                    "Unable to delete file '%s' in directory '%s'", fileName,
+                    directory));
+        }
+    }
+
+    void optionallyDeleteFile(final String fileName) {
+        directory.deleteFile(fileName);
+    }
+
 }

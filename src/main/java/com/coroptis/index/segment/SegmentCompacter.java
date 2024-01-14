@@ -10,7 +10,7 @@ public class SegmentCompacter<K, V> {
     private final SegmentConf segmentConf;
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
-    private final SegmentPropertiesController segmentStatsController;
+    private final SegmentPropertiesController segmentPropertiesController;
 
     public SegmentCompacter(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
@@ -19,14 +19,15 @@ public class SegmentCompacter<K, V> {
         this.segmentConf = Objects.requireNonNull(segmentConf);
         this.versionController = Objects.requireNonNull(versionController,
                 "Version controller is required");
-        this.segmentStatsController = new SegmentPropertiesController(
+        this.segmentPropertiesController = new SegmentPropertiesController(
                 segmentFiles.getDirectory(), segmentFiles.getId(),
                 versionController);
     }
 
     private PairIterator<K, V> openIterator() {
         // TODO this naive implementation ignores possible in memory cache.
-        return new SegmentReader<>(segmentFiles)
+        return new SegmentReader<>(segmentFiles,
+                segmentPropertiesController.getSegmentPropertiesManager())
                 .openIterator(versionController);
     }
 
@@ -35,7 +36,7 @@ public class SegmentCompacter<K, V> {
      * @return return <code>true</code> when segment was compacted.
      */
     public boolean optionallyCompact() {
-        final SegmentStats stats = segmentStatsController
+        final SegmentStats stats = segmentPropertiesController
                 .getSegmentPropertiesManager().getSegmentStats();
         if (stats.getNumberOfKeysInCache() > segmentConf
                 .getMaxNumberOfKeysInSegmentCache()) {
@@ -73,7 +74,7 @@ public class SegmentCompacter<K, V> {
                         segmentConf.getBloomFilterNumberOfHashFunctions())
                 .build();
         return new SegmentFullWriter<K, V>(bloomFilter, segmentFiles,
-                segmentStatsController,
+                segmentPropertiesController,
                 segmentConf.getMaxNumberOfKeysInIndexPage());
     }
 }

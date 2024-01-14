@@ -7,7 +7,6 @@ import java.util.Objects;
 import com.coroptis.index.OptimisticLockObjectVersionProvider;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
-import com.coroptis.index.PairIteratorList;
 
 /**
  * Perform full segment data read from data files. Class ignores possibility,
@@ -28,26 +27,27 @@ import com.coroptis.index.PairIteratorList;
 public class SegmentReader<K, V> {
 
     private final SegmentFiles<K, V> segmentFiles;
+    private final SegmentPropertiesManager segmentPropertiesManager;
 
-    public SegmentReader(final SegmentFiles<K, V> segmentFiles) {
+    public SegmentReader(final SegmentFiles<K, V> segmentFiles,
+            final SegmentPropertiesManager segmentPropertiesManager) {
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
+        this.segmentPropertiesManager = Objects
+                .requireNonNull(segmentPropertiesManager);
     }
 
     public PairIterator<K, V> openIterator(
             final OptimisticLockObjectVersionProvider versionProvider) {
         // Read segment cache into in memory list.
+        final SegmentCache<K, V> segmentCache = new SegmentCache<>(
+                segmentFiles.getKeyTypeDescriptor(), segmentFiles,
+                segmentPropertiesManager);
         final List<Pair<K, V>> pairs = new ArrayList<>();
-        try (final PairIterator<K, V> iterator = segmentFiles.getCacheSstFile()
-                .openIterator()) {
-            while (iterator.hasNext()) {
-                pairs.add(iterator.next());
-            }
-        }
 
         // merge cache with main data
         return new MergeIterator<K, V>(
                 segmentFiles.getIndexSstFile().openIterator(versionProvider),
-                new PairIteratorList<>(pairs),
+                segmentCache.getSortedIterator(),
                 segmentFiles.getKeyTypeDescriptor(),
                 segmentFiles.getValueTypeDescriptor());
     }

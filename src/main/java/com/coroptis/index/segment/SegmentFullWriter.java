@@ -97,7 +97,6 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
                 segmentFiles.getKeyTypeDescriptor(), segmentFiles,
                 segmentStatsController.getSegmentPropertiesManager());
         sc.clear();
-        sc.flushCache();
 
         // update segment statistics
         final SegmentPropertiesManager segmenPropertiesManager = segmentStatsController

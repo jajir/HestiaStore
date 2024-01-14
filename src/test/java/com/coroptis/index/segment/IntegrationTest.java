@@ -54,10 +54,10 @@ public class IntegrationTest {
             assertNull(searcher.get(1));
         }
         /*
-         * Number of file's is constantly 5 because all cache data are flushed
+         * Number of file's is constantly 4 because all cache data are flushed
          * to main index and to bloom filter file.
          */
-        assertEquals(5, numberOfFilesInDirectory(directory));
+        assertEquals(4, numberOfFilesInDirectory(directory));
 
     }
 
@@ -148,7 +148,7 @@ public class IntegrationTest {
             assertEquals("b", searcher.get(3));
         }
 
-        assertEquals(10, numberOfFilesInDirectoryP(directory));
+        assertEquals(8, numberOfFilesInDirectoryP(directory));
     }
 
     @Test
@@ -331,32 +331,35 @@ public class IntegrationTest {
      * @return
      */
     static Stream<Arguments> segmentProvider() {
-        final Directory directory = new MemDirectory();
-        final SegmentId id = SegmentId.of(27);
+        final Directory dir1 = new MemDirectory();
+        final Directory dir2 = new MemDirectory();
+        final Directory dir3 = new MemDirectory();
+        final SegmentId id1 = SegmentId.of(29);
+        final SegmentId id2 = SegmentId.of(23);
+        final SegmentId id3 = SegmentId.of(17);
         final TypeDescriptorString tds = new TypeDescriptorString();
         final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
-        return Stream.of(arguments(tdi, tds, directory,
-                Segment.<Integer, String>builder().withDirectory(directory)
-                        .withId(id).withKeyTypeDescriptor(tdi)
-                        .withValueTypeDescriptor(tds)
-                        .withMaxNumberOfKeysInSegmentCache(10).build(),
-                0, 2),
-                arguments(tdi, tds, directory,
-                        Segment.<Integer, String>builder()
-                                .withDirectory(directory).withId(id)
-                                .withKeyTypeDescriptor(tdi)
+        return Stream.of(
+                arguments(tdi, tds, dir1,
+                        Segment.<Integer, String>builder().withDirectory(dir1)
+                                .withId(id1).withKeyTypeDescriptor(tdi)
+                                .withValueTypeDescriptor(tds)
+                                .withMaxNumberOfKeysInSegmentCache(10).build(),
+                        0, 2),
+                arguments(tdi, tds, dir2,
+                        Segment.<Integer, String>builder().withDirectory(dir2)
+                                .withId(id2).withKeyTypeDescriptor(tdi)
                                 .withValueTypeDescriptor(tds)
                                 .withMaxNumberOfKeysInSegmentCache(1)
                                 .withMaxNumberOfKeysInIndexPage(1).build(),
-                        4, 5),
-                arguments(tdi, tds, directory,
-                        Segment.<Integer, String>builder()
-                                .withDirectory(directory).withId(id)
-                                .withKeyTypeDescriptor(tdi)
+                        4, 4),
+                arguments(tdi, tds, dir3,
+                        Segment.<Integer, String>builder().withDirectory(dir3)
+                                .withId(id3).withKeyTypeDescriptor(tdi)
                                 .withValueTypeDescriptor(tds)
                                 .withMaxNumberOfKeysInSegmentCache(2)
                                 .withMaxNumberOfKeysInIndexPage(2).build(),
-                        3, 5));
+                        3, 4));
     }
 
     private List<Pair<Integer, String>> toList(

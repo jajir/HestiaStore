@@ -78,8 +78,8 @@ public class Segment<K, V>
     }
 
     public PairIterator<K, V> openIterator() {
-        // TODO this naive implementation ignores possible in memory cache.
-        return new SegmentReader<>(segmentFiles)
+        return new SegmentReader<>(segmentFiles,
+                segmentPropertiesController.getSegmentPropertiesManager())
                 .openIterator(versionController);
     }
 

@@ -48,6 +48,11 @@ public class MemDirectory implements Directory {
     }
 
     @Override
+    public String toString() {
+        return "MemDirectory{" + "}";
+    }
+
+    @Override
     public boolean deleteFile(final String fileName) {
         return data.remove(fileName) != null;
     }

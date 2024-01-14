@@ -84,4 +84,9 @@ public class FsDirectory implements Directory {
         return new FsFileLock(this, fileName);
     }
 
+    @Override
+    public String toString() {
+        return "FsDirectory{directory=" + directory.getPath() + "}";
+    }
+
 }
