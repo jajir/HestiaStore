@@ -110,7 +110,6 @@ public class Segment<K, V>
 
     public PairWriter<K, V> openWriter() {
         final SegmentWriter<K, V> writer = new SegmentWriter<>(segmentFiles,
-                segmentFiles.getKeyTypeDescriptor(),
                 segmentPropertiesController.getSegmentPropertiesManager(),
                 versionController, segmentCompacter);
         return writer.openWriter();

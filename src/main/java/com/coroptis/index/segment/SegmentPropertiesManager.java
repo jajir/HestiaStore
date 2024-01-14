@@ -61,7 +61,11 @@ public class SegmentPropertiesManager {
                 + SegmentFiles.CACHE_FILE_NAME_EXTENSION;
     }
 
-    // TODO add sorting from 0 to n.
+    /**
+     * Prepare cache delta file names. File names are ascending ordered.
+     * 
+     * @return return sorted cache delta filenames.
+     */
     public List<String> getCacheDeltaFileNames() {
         final List<String> out = new ArrayList<>();
         int lastOne = props.getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);
@@ -75,9 +79,18 @@ public class SegmentPropertiesManager {
         props.setLong(NUMBER_OF_KEYS_IN_CACHE, numberOfKeysInCache);
     }
 
-    public void incrementNumberOfKeysInCache() {
+    public void increaseNumberOfKeysInCache(final int howMuchKeys) {
+        if (howMuchKeys < 0) {
+            throw new IllegalArgumentException(String.format(
+                    "Unable to increase numebr of keys in cache about value '%s'",
+                    howMuchKeys));
+        }
         props.setLong(NUMBER_OF_KEYS_IN_CACHE,
-                props.getLong(NUMBER_OF_KEYS_IN_CACHE) + 1);
+                props.getLong(NUMBER_OF_KEYS_IN_CACHE) + howMuchKeys);
+    }
+
+    public void incrementNumberOfKeysInCache() {
+        increaseNumberOfKeysInCache(1);
     }
 
     public void setNumberOfKeysInIndex(final long numberOfKeysInIndex) {
@@ -88,6 +101,10 @@ public class SegmentPropertiesManager {
             final long numberOfKeysInScarceIndex) {
         props.setLong(NUMBER_OF_KEYS_IN_SCARCE_INDEX,
                 numberOfKeysInScarceIndex);
+    }
+
+    public long getNumberOfKeysInCache() {
+        return getSegmentStats().getNumberOfKeysInCache();
     }
 
     public void flush() {

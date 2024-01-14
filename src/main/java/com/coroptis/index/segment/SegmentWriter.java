@@ -5,7 +5,6 @@ import java.util.Objects;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.cache.UniqueCache;
-import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.sstfile.SstFileWriter;
 
 /**
@@ -21,22 +20,21 @@ import com.coroptis.index.sstfile.SstFileWriter;
 public class SegmentWriter<K, V> {
 
     private final UniqueCache<K, V> segmentCache;
-    private final SegmentPropertiesManager segmenPropertiesManager;
+    private final SegmentPropertiesManager segmentPropertiesManager;
     private final VersionController versionController;
     private final SegmentCompacter<K, V> segmentCompacter;
     private final SegmentFiles<K, V> segmentFiles;
 
     public SegmentWriter(final SegmentFiles<K, V> segmentFiles,
-            final TypeDescriptor<K> keyTypeDescriptor,
             final SegmentPropertiesManager segmentPropertiesManager,
             final VersionController versionController,
             final SegmentCompacter<K, V> segmentCompacter) {
-        this.segmenPropertiesManager = Objects
+        this.segmentPropertiesManager = Objects
                 .requireNonNull(segmentPropertiesManager);
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
 
         this.segmentCache = new UniqueCache<>(
-                keyTypeDescriptor.getComparator());
+                segmentFiles.getKeyTypeDescriptor().getComparator());
 
         this.versionController = Objects.requireNonNull(versionController);
         this.segmentCompacter = Objects.requireNonNull(segmentCompacter);
@@ -44,21 +42,22 @@ public class SegmentWriter<K, V> {
 
     public PairWriter<K, V> openWriter() {
         return new PairWriter<K, V>() {
-
+            
+            private long cx = 0;
+            
             @Override
             public void close() {
                 versionController.changeVersion();
 
                 // increase number of keys in cache
                 final int keysInCache = segmentCache.size();
-                segmenPropertiesManager.setNumberOfKeysInCache(
-                        segmenPropertiesManager.getSegmentStats()
-                                .getNumberOfKeysInCache() + keysInCache);
-                segmenPropertiesManager.flush();
+                segmentPropertiesManager
+                        .increaseNumberOfKeysInCache(keysInCache);
+                segmentPropertiesManager.flush();
 
                 // store cache
                 try (final SstFileWriter<K, V> writer = segmentFiles
-                        .getCacheSstFile(segmenPropertiesManager
+                        .getCacheSstFile(segmentPropertiesManager
                                 .getAndIncreaseDeltaFileName())
                         .openWriter()) {
                     segmentCache.getStream().forEach(pair -> {
@@ -75,6 +74,8 @@ public class SegmentWriter<K, V> {
             @Override
             public void put(final Pair<K, V> pair) {
                 segmentCache.put(pair);
+                segmentCompacter.optionallyCompact(cx);
+                cx++;
             }
         };
     }

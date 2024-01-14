@@ -46,6 +46,22 @@ public class SegmentCompacter<K, V> {
         return false;
     }
 
+    /**
+     * 
+     * @return return <code>true</code> when segment was compacted.
+     */
+    public boolean optionallyCompact(final long numberOfKeysInLastDeltaFile) {
+        final SegmentStats stats = segmentPropertiesController
+                .getSegmentPropertiesManager().getSegmentStats();
+        if (stats.getNumberOfKeysInCache()
+                + numberOfKeysInLastDeltaFile > segmentConf
+                        .getMaxNumberOfKeysInSegmentCache()) {
+            forceCompact();
+            return true;
+        }
+        return false;
+    }
+
     public void forceCompact() {
         versionController.changeVersion();
         try (final SegmentFullWriter<K, V> writer = openFullWriter()) {

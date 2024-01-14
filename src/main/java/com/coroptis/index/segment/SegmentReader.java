@@ -1,11 +1,8 @@
 package com.coroptis.index.segment;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 import com.coroptis.index.OptimisticLockObjectVersionProvider;
-import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 
 /**
@@ -42,7 +39,6 @@ public class SegmentReader<K, V> {
         final SegmentCache<K, V> segmentCache = new SegmentCache<>(
                 segmentFiles.getKeyTypeDescriptor(), segmentFiles,
                 segmentPropertiesManager);
-        final List<Pair<K, V>> pairs = new ArrayList<>();
 
         // merge cache with main data
         return new MergeIterator<K, V>(
