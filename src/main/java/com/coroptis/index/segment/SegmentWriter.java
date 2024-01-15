@@ -21,7 +21,6 @@ public class SegmentWriter<K, V> {
 
     private final UniqueCache<K, V> uniqueCache;
     private final SegmentPropertiesManager segmentPropertiesManager;
-    private final VersionController versionController;
     private final SegmentCompacter<K, V> segmentCompacter;
     private final SegmentFiles<K, V> segmentFiles;
 
@@ -29,15 +28,12 @@ public class SegmentWriter<K, V> {
 
     public SegmentWriter(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentPropertiesManager,
-            final VersionController versionController,
             final SegmentCompacter<K, V> segmentCompacter) {
-        this(segmentFiles, segmentPropertiesManager, versionController,
-                segmentCompacter, null);
+        this(segmentFiles, segmentPropertiesManager, segmentCompacter, null);
     }
 
     public SegmentWriter(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentPropertiesManager,
-            final VersionController versionController,
             final SegmentCompacter<K, V> segmentCompacter,
             SegmentSearcher<K, V> segmentSearcher) {
         this.segmentPropertiesManager = Objects
@@ -47,7 +43,6 @@ public class SegmentWriter<K, V> {
         this.uniqueCache = new UniqueCache<>(
                 segmentFiles.getKeyTypeDescriptor().getComparator());
 
-        this.versionController = Objects.requireNonNull(versionController);
         this.segmentCompacter = Objects.requireNonNull(segmentCompacter);
     }
 
@@ -58,16 +53,9 @@ public class SegmentWriter<K, V> {
 
             @Override
             public void close() {
-                if (segmentSearcher == null) {
-                    versionController.changeVersion();
-                }
-
                 closeWritingToCache();
 
-                if (segmentCompacter.optionallyCompact()) {
-                    versionController.changeVersion();
-                }
-
+                segmentCompacter.optionallyCompact();
             }
 
             @Override
@@ -81,7 +69,6 @@ public class SegmentWriter<K, V> {
                     cx = 0;
                     segmentSearcher = null;
                     closeWritingToCache();
-                    versionController.changeVersion();
                     segmentCompacter.forceCompact();
                 }
             }

@@ -1,6 +1,5 @@
 package com.coroptis.index.segment;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,8 +27,6 @@ public class SegmentWriterTest {
     private final static Pair<Integer, String> PAIR_3 = Pair.of(3, "ccc");
 
     private final TypeDescriptor<Integer> tdi = new TypeDescriptorInteger();
-
-    private VersionController versionController;
 
     @Mock
     private SegmentFiles<Integer, String> segmentFiles;
@@ -59,7 +56,7 @@ public class SegmentWriterTest {
     public void test_basic_writing() throws Exception {
         when(segmentFiles.getKeyTypeDescriptor()).thenReturn(tdi);
         final SegmentWriter<Integer, String> segmentWriter = new SegmentWriter<>(
-                segmentFiles, segmentPropertiesManager, versionController,
+                segmentFiles, segmentPropertiesManager, 
                 segmentCompacter);
         
         
@@ -92,15 +89,13 @@ public class SegmentWriterTest {
         verify(segmentCompacter).shouldBeCompacted(2);
         verify(segmentCompacter).shouldBeCompacted(3);
         
-        //Verify that segment version was increased 
-        assertEquals(1,versionController.getVersion());
     }
 
     @Test
     public void test_compact_during_writing() throws Exception {
         when(segmentFiles.getKeyTypeDescriptor()).thenReturn(tdi);
         final SegmentWriter<Integer, String> segmentWriter = new SegmentWriter<>(
-                segmentFiles, segmentPropertiesManager, versionController,
+                segmentFiles, segmentPropertiesManager,
                 segmentCompacter);
 
         //first  delta file
@@ -145,13 +140,10 @@ public class SegmentWriterTest {
         verify(segmentCompacter,times(2)).shouldBeCompacted(1);
         verify(segmentCompacter).shouldBeCompacted(2);
         
-        //Verify that segment version was increased 
-        assertEquals(2,versionController.getVersion());
     }
 
     @BeforeEach
     void beforeEeachTest() {
-        versionController = new VersionController();
     }
 
 }
