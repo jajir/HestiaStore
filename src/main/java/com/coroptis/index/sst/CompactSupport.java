@@ -19,7 +19,6 @@ public class CompactSupport<K, V> {
     private final List<Pair<K, V>> toSameSegment = new ArrayList<>();
     private final KeySegmentCache<K> keySegmentCache;
     private final SegmentManager<K, V> segmentManager;
-    private final long maxNumberOfKeysInSegmentCache;
     private SegmentId currentSegmentId = null;
 
     /**
@@ -28,11 +27,9 @@ public class CompactSupport<K, V> {
     private List<SegmentId> eligibleSegments = new ArrayList<>();
 
     CompactSupport(final SegmentManager<K, V> segmentManager,
-            final KeySegmentCache<K> keySegmentCache,
-            final long maxNumberOfKeysInSegmentCache) {
+            final KeySegmentCache<K> keySegmentCache) {
         this.segmentManager = Objects.requireNonNull(segmentManager);
         this.keySegmentCache = Objects.requireNonNull(keySegmentCache);
-        this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
     }
 
     public void compact(final Pair<K, V> pair) {

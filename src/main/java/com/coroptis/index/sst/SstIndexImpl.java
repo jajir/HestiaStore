@@ -125,8 +125,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                 "Cache compacting of '{}' key value pairs in cache started.",
                 cache.size());
         final CompactSupport<K, V> support = new CompactSupport<>(
-                segmentManager, keySegmentCache,
-                conf.getMaxNumberOfKeysInSegmentCache());
+                segmentManager, keySegmentCache);
         cache.getStream()
                 .sorted(new PairComparator<>(keyTypeDescriptor.getComparator()))
                 .forEach(support::compact);
@@ -159,8 +158,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
      */
     private boolean optionallySplit(final Segment<K, V> segment) {
         Objects.requireNonNull(segment, "Segment is required");
-        if (segment.getStats().getNumberOfKeys() > conf
-                .getMaxNumberOfKeysInSegment()) {
+        if (segment.getNumberOfKeys() > conf.getMaxNumberOfKeysInSegment()) {
             final SegmentId segmentId = segment.getId();
             logger.debug("Splitting of '{}' started.", segmentId);
             final SegmentId newSegmentId = keySegmentCache.findNewSegmentId();

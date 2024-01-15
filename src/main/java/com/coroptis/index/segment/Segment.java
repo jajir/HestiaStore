@@ -70,6 +70,10 @@ public class Segment<K, V>
     public SegmentStats getStats() {
         return segmentPropertiesManager.getSegmentStats();
     }
+    
+    public long getNumberOfKeys() {
+        return segmentPropertiesManager.getSegmentStats().getNumberOfKeys();
+    }
 
     public void optionallyCompact() {
         segmentCompacter.optionallyCompact();
