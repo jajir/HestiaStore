@@ -84,11 +84,11 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     public Stream<Pair<K, V>> getSegmentStream(final SegmentId segmentId) {
         Objects.requireNonNull(segmentId, "SegmentId can't be null.");
         final Segment<K, V> seg = getSegment(segmentId);
-        final PairIterator<K, V> limitedSegment = new LimitedPairIterator<>(
-                cache.getSortedIterator(), keyTypeDescriptor.getComparator(),
-                seg.getMinKey(), seg.getMaxKey());
+//        final PairIterator<K, V> limitedSegment = new LimitedPairIterator<>(
+//                cache.getSortedIterator(), keyTypeDescriptor.getComparator(),
+//                seg.getMinKey(), seg.getMaxKey());
         final PairIterator<K, V> out = new MergeIterator<K, V>(
-                seg.openIterator(), limitedSegment, keyTypeDescriptor,
+                seg.openIterator(), cache.getSortedIterator(), keyTypeDescriptor,
                 valueTypeDescriptor);
         return StreamSupport.stream(
                 new PairIteratorToSpliterator<K, V>(out, keyTypeDescriptor),
