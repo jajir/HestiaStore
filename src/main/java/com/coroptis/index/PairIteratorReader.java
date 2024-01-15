@@ -5,6 +5,9 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Allows to use {@link PairReader} as {@link Iterator}. Some operations like
  * data merging it makes a lot easier. It support optimistic locking of source
@@ -17,6 +20,8 @@ import java.util.Optional;
  */
 public class PairIteratorReader<K, V> implements PairIterator<K, V> {
 
+    private final Logger logger = LoggerFactory
+            .getLogger(PairIteratorReader.class);
     private final PairReader<K, V> reader;
 
     private Pair<K, V> current = null;
@@ -45,6 +50,7 @@ public class PairIteratorReader<K, V> implements PairIterator<K, V> {
             return current != null;
         } else {
             if (lock.isLocked()) {
+                logger.debug("Closing reader because data was changed");
                 return false;
             } else {
                 return current != null;

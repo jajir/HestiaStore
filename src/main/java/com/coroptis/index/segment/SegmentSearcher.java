@@ -62,11 +62,13 @@ public class SegmentSearcher<K, V> implements CloseableResource {
             optionallyCloseSearcherCore();
         }
         if (lock.isLocked()) {
+            logger.debug(
+                    "Closing segment searcher '{}', because segment was changed",
+                    segmentFiles.getId());
             optionallyCloseSearcherCore();
         }
         if (searcherCore == null) {
-            logger.debug("Opening searcher for segment '{}'",
-                    segmentFiles.getId());
+            logger.debug("Opening segment searcher '{}'", segmentFiles.getId());
             searcherCore = new SegmentSearcherCore<>(segmentFiles, segmentConf,
                     segmentPropertiesManager);
         }
@@ -77,7 +79,7 @@ public class SegmentSearcher<K, V> implements CloseableResource {
             return;
         }
         searcherCore.getBloomFilter().logStats();
-        logger.debug("Closing searcher for segment '{}'", segmentFiles.getId());
+        logger.debug("Closing segment searcher '{}'", segmentFiles.getId());
         searcherCore = null;
     }
 

@@ -77,7 +77,7 @@ public class SegmentCompacter<K, V> {
     }
 
     public void forceCompact() {
-        logger.debug("Start of compacting segment {}", segmentFiles.getId());
+        logger.debug("Start of compacting '{}'", segmentFiles.getId());
         versionController.changeVersion();
         try (final SegmentFullWriter<K, V> writer = openFullWriter()) {
             try (final PairIterator<K, V> iterator = openIterator()) {
@@ -86,7 +86,7 @@ public class SegmentCompacter<K, V> {
                 }
             }
         }
-        logger.debug("End of compacting segment {}", segmentFiles.getId());
+        logger.debug("End of compacting '{}'", segmentFiles.getId());
     }
 
     /**

@@ -2,6 +2,9 @@ package com.coroptis.index.segment;
 
 import java.util.Objects;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.bloomfilter.BloomFilter;
@@ -15,6 +18,8 @@ import com.coroptis.index.bloomfilter.BloomFilter;
  */
 public class SegmentSplitter<K, V> {
 
+    private final Logger logger = LoggerFactory
+            .getLogger(SegmentSplitter.class);
     private final SegmentConf segmentConf;
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
@@ -64,6 +69,7 @@ public class SegmentSplitter<K, V> {
 
     public Segment<K, V> split(final SegmentId segmentId) {
         Objects.requireNonNull(segmentId);
+        logger.debug("Start of splitting '{}'", segmentFiles.getId());
         versionController.changeVersion();
         long cx = 0;
         long half = getStats().getNumberOfKeys() / 2;
@@ -93,7 +99,8 @@ public class SegmentSplitter<K, V> {
             }
 
         }
-
+        logger.debug("End of splitting '{}', '{}' was created",
+                segmentFiles.getId(), lowerSegment.getId());
         return lowerSegment;
     }
 
