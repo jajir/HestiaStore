@@ -352,14 +352,14 @@ public class SegmentIntegrationTest {
                                 .withValueTypeDescriptor(tds)
                                 .withMaxNumberOfKeysInSegmentCache(1)
                                 .withMaxNumberOfKeysInIndexPage(1).build(),
-                        4, 4),
+                        4, 5),
                 arguments(tdi, tds, dir3,
                         Segment.<Integer, String>builder().withDirectory(dir3)
                                 .withId(id3).withKeyTypeDescriptor(tdi)
                                 .withValueTypeDescriptor(tds)
                                 .withMaxNumberOfKeysInSegmentCache(2)
                                 .withMaxNumberOfKeysInIndexPage(2).build(),
-                        3, 4));
+                        2, 5));
     }
 
     private List<Pair<Integer, String>> toList(

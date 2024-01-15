@@ -26,7 +26,7 @@ public class Segment<K, V>
     private final SegmentConf segmentConf;
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
-    private final SegmentPropertiesController segmentPropertiesController;
+    private final SegmentPropertiesManager segmentPropertiesManager;
     private final SegmentCompacter<K, V> segmentCompacter;
 
     public static <M, N> SegmentBuilder<M, N> builder() {
@@ -41,11 +41,10 @@ public class Segment<K, V>
         logger.debug("Initializing segment '{}'", segmentFiles.getId());
         this.versionController = Objects.requireNonNull(versionController,
                 "Version controller is required");
-        this.segmentPropertiesController = new SegmentPropertiesController(
-                segmentFiles.getDirectory(), segmentFiles.getId(),
-                versionController);
+        this.segmentPropertiesManager = new SegmentPropertiesManager(
+                segmentFiles.getDirectory(), getId());
         this.segmentCompacter = new SegmentCompacter<>(segmentFiles,
-                segmentConf, versionController);
+                segmentConf, versionController, segmentPropertiesManager);
     }
 
     private ScarceIndex<K> getScarceIndex() {
@@ -69,8 +68,7 @@ public class Segment<K, V>
     }
 
     public SegmentStats getStats() {
-        return segmentPropertiesController.getSegmentPropertiesManager()
-                .getSegmentStats();
+        return segmentPropertiesManager.getSegmentStats();
     }
 
     public void optionallyCompact() {
@@ -78,8 +76,7 @@ public class Segment<K, V>
     }
 
     public PairIterator<K, V> openIterator() {
-        return new SegmentReader<>(segmentFiles,
-                segmentPropertiesController.getSegmentPropertiesManager())
+        return new SegmentReader<>(segmentFiles, segmentPropertiesManager)
                 .openIterator(versionController);
     }
 
@@ -104,20 +101,19 @@ public class Segment<K, V>
                         segmentConf.getBloomFilterNumberOfHashFunctions())
                 .build();
         return new SegmentFullWriter<K, V>(bloomFilter, segmentFiles,
-                segmentPropertiesController,
+                segmentPropertiesManager,
                 segmentConf.getMaxNumberOfKeysInIndexPage());
     }
 
     public PairWriter<K, V> openWriter() {
         final SegmentWriter<K, V> writer = new SegmentWriter<>(segmentFiles,
-                segmentPropertiesController.getSegmentPropertiesManager(),
-                versionController, segmentCompacter);
+                segmentPropertiesManager, versionController, segmentCompacter);
         return writer.openWriter();
     }
 
     public SegmentSearcher<K, V> openSearcher() {
         return new SegmentSearcher<>(segmentFiles, segmentConf,
-                versionController, segmentPropertiesController);
+                versionController, segmentPropertiesManager);
     }
 
     public Segment<K, V> split(final SegmentId segmentId) {
@@ -125,7 +121,8 @@ public class Segment<K, V>
         versionController.changeVersion();
 
         final SegmentSplitter<K, V> segmentSplitter = new SegmentSplitter<>(
-                segmentFiles, segmentConf, versionController);
+                segmentFiles, segmentConf, versionController,
+                segmentPropertiesManager);
         return segmentSplitter.split(segmentId);
     }
 

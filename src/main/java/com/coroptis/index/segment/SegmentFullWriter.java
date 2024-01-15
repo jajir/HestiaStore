@@ -23,7 +23,7 @@ import com.coroptis.index.sstfile.SstFileWriter;
 public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
 
     private final SegmentFiles<K, V> segmentFiles;
-    private final SegmentPropertiesController segmentStatsController;
+    private final SegmentPropertiesManager segmentPropertiesManager;
     private final int maxNumberOfKeysInIndexPage;
 
     private final AtomicLong scarceIndexKeyCounter = new AtomicLong(0L);
@@ -35,12 +35,12 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
 
     SegmentFullWriter(final BloomFilter<K> bloomFilter,
             final SegmentFiles<K, V> segmentFiles,
-            final SegmentPropertiesController segmentStatsController,
+            final SegmentPropertiesManager segmentStatsManager,
             final int maxNumberOfKeysInIndexPage) {
         this.maxNumberOfKeysInIndexPage = Objects
                 .requireNonNull(maxNumberOfKeysInIndexPage);
-        this.segmentStatsController = Objects
-                .requireNonNull(segmentStatsController);
+        this.segmentPropertiesManager = Objects
+                .requireNonNull(segmentStatsManager);
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.scarceWriter = segmentFiles.getTempScarceIndex().openWriter();
         this.indexWriter = segmentFiles.getTempIndexFile().openWriter();
@@ -95,17 +95,15 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
         // clean cache
         final SegmentCache<K, V> sc = new SegmentCache<>(
                 segmentFiles.getKeyTypeDescriptor(), segmentFiles,
-                segmentStatsController.getSegmentPropertiesManager());
+                segmentPropertiesManager);
         sc.clear();
 
         // update segment statistics
-        final SegmentPropertiesManager segmenPropertiesManager = segmentStatsController
-                .getSegmentPropertiesManager();
-        segmenPropertiesManager.setNumberOfKeysInCache(0);
-        segmenPropertiesManager.setNumberOfKeysInIndex(keyCounter.get());
-        segmenPropertiesManager
+        segmentPropertiesManager.setNumberOfKeysInCache(0);
+        segmentPropertiesManager.setNumberOfKeysInIndex(keyCounter.get());
+        segmentPropertiesManager
                 .setNumberOfKeysInScarceIndex(scarceIndexKeyCounter.get());
-        segmenPropertiesManager.flush();
+        segmentPropertiesManager.flush();
 
     }
 

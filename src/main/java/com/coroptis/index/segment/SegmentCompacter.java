@@ -2,32 +2,36 @@ package com.coroptis.index.segment;
 
 import java.util.Objects;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.bloomfilter.BloomFilter;
 
 public class SegmentCompacter<K, V> {
 
+    private final Logger logger = LoggerFactory
+            .getLogger(SegmentCompacter.class);
     private final SegmentConf segmentConf;
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
-    private final SegmentPropertiesController segmentPropertiesController;
+    private final SegmentPropertiesManager segmentPropertiesManager;
 
     public SegmentCompacter(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
-            final VersionController versionController) {
+            final VersionController versionController,
+            final SegmentPropertiesManager segmentPropertiesManager) {
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.segmentConf = Objects.requireNonNull(segmentConf);
         this.versionController = Objects.requireNonNull(versionController,
                 "Version controller is required");
-        this.segmentPropertiesController = new SegmentPropertiesController(
-                segmentFiles.getDirectory(), segmentFiles.getId(),
-                versionController);
+        this.segmentPropertiesManager = Objects
+                .requireNonNull(segmentPropertiesManager);
     }
 
     private PairIterator<K, V> openIterator() {
         // TODO this naive implementation ignores possible in memory cache.
-        return new SegmentReader<>(segmentFiles,
-                segmentPropertiesController.getSegmentPropertiesManager())
+        return new SegmentReader<>(segmentFiles, segmentPropertiesManager)
                 .openIterator(versionController);
     }
 
@@ -36,8 +40,7 @@ public class SegmentCompacter<K, V> {
      * @return return <code>true</code> when segment was compacted.
      */
     public boolean optionallyCompact() {
-        final SegmentStats stats = segmentPropertiesController
-                .getSegmentPropertiesManager().getSegmentStats();
+        final SegmentStats stats = segmentPropertiesManager.getSegmentStats();
         if (stats.getNumberOfKeysInCache() > segmentConf
                 .getMaxNumberOfKeysInSegmentCache()) {
             forceCompact();
@@ -55,8 +58,7 @@ public class SegmentCompacter<K, V> {
      * @return return <code>true</code> when segment should be compacted
      */
     public boolean shouldBeCompacted(final long numberOfKeysInLastDeltaFile) {
-        final SegmentStats stats = segmentPropertiesController
-                .getSegmentPropertiesManager().getSegmentStats();
+        final SegmentStats stats = segmentPropertiesManager.getSegmentStats();
         return stats.getNumberOfKeysInCache()
                 + numberOfKeysInLastDeltaFile > segmentConf
                         .getMaxNumberOfKeysInSegmentCache();
@@ -75,6 +77,7 @@ public class SegmentCompacter<K, V> {
     }
 
     public void forceCompact() {
+        logger.debug("Start of compacting segment {}", segmentFiles.getId());
         versionController.changeVersion();
         try (final SegmentFullWriter<K, V> writer = openFullWriter()) {
             try (final PairIterator<K, V> iterator = openIterator()) {
@@ -83,6 +86,7 @@ public class SegmentCompacter<K, V> {
                 }
             }
         }
+        logger.debug("End of compacting segment {}", segmentFiles.getId());
     }
 
     /**
@@ -102,7 +106,7 @@ public class SegmentCompacter<K, V> {
                         segmentConf.getBloomFilterNumberOfHashFunctions())
                 .build();
         return new SegmentFullWriter<K, V>(bloomFilter, segmentFiles,
-                segmentPropertiesController,
+                segmentPropertiesManager,
                 segmentConf.getMaxNumberOfKeysInIndexPage());
     }
 }

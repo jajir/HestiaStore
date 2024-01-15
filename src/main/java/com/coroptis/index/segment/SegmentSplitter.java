@@ -18,28 +18,26 @@ public class SegmentSplitter<K, V> {
     private final SegmentConf segmentConf;
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
-    private final SegmentPropertiesController segmentPropertiesController;
+    private final SegmentPropertiesManager segmentPropertiesManager;
 
     public SegmentSplitter(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
-            final VersionController versionController) {
+            final VersionController versionController,
+            final SegmentPropertiesManager segmentPropertiesManager) {
         this.segmentConf = Objects.requireNonNull(segmentConf);
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.versionController = Objects.requireNonNull(versionController,
                 "Version controller is required");
-        this.segmentPropertiesController = new SegmentPropertiesController(
-                segmentFiles.getDirectory(), segmentFiles.getId(),
-                versionController);
+        this.segmentPropertiesManager = Objects
+                .requireNonNull(segmentPropertiesManager);
     }
 
     private SegmentStats getStats() {
-        return segmentPropertiesController.getSegmentPropertiesManager()
-                .getSegmentStats();
+        return segmentPropertiesManager.getSegmentStats();
     }
 
     private PairIterator<K, V> openIterator() {
-        return new SegmentReader<>(segmentFiles,
-                segmentPropertiesController.getSegmentPropertiesManager())
+        return new SegmentReader<>(segmentFiles, segmentPropertiesManager)
                 .openIterator(versionController);
     }
 
@@ -60,7 +58,7 @@ public class SegmentSplitter<K, V> {
                         segmentConf.getBloomFilterNumberOfHashFunctions())
                 .build();
         return new SegmentFullWriter<K, V>(bloomFilter, segmentFiles,
-                segmentPropertiesController,
+                segmentPropertiesManager,
                 segmentConf.getMaxNumberOfKeysInIndexPage());
     }
 
