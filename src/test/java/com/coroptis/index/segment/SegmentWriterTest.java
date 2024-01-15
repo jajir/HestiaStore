@@ -139,7 +139,62 @@ public class SegmentWriterTest {
         verify(segmentCompacter, times(1)).forceCompact();;
         verify(segmentCompacter,times(2)).shouldBeCompacted(1);
         verify(segmentCompacter).shouldBeCompacted(2);
+    }
+
+    @Test
+    public void test_compact_during_writing_with_searcher() throws Exception {
+        when(segmentFiles.getKeyTypeDescriptor()).thenReturn(tdi);
+        final SegmentWriter<Integer, String> segmentWriter = new SegmentWriter<>(
+                segmentFiles, segmentPropertiesManager,
+                segmentCompacter);
+
+        //first  delta file
+        when(segmentPropertiesManager
+                .getAndIncreaseDeltaFileName()).thenReturn(SEGMENT_CACHE_DELTA_FILE_1);
+        when(segmentFiles.getCacheSstFile(SEGMENT_CACHE_DELTA_FILE_1)).thenReturn(sstFile1);
+        when(sstFile1.openWriter()).thenReturn(sstFileWriter1);
         
+
+        when(segmentCompacter.optionallyCompact()).thenReturn(false);
+        when(segmentCompacter.shouldBeCompacted(1)).thenReturn(false);
+        //when second pair is added segment cache is compacted
+        when(segmentCompacter.shouldBeCompacted(2)).thenReturn(true);
+        when(segmentCompacter.shouldBeCompacted(1)).thenReturn(false);
+        try(final PairWriter<Integer, String> writer= segmentWriter.openWriter(segmentSearcher)){
+            writer.put(PAIR_1);
+            writer.put(PAIR_2);
+            writer.put(PAIR_3);
+            
+            //second delta file
+            when(segmentPropertiesManager
+                    .getAndIncreaseDeltaFileName()).thenReturn(SEGMENT_CACHE_DELTA_FILE_2);
+            when(segmentFiles.getCacheSstFile(SEGMENT_CACHE_DELTA_FILE_2)).thenReturn(sstFile2);
+            when(sstFile2.openWriter()).thenReturn(sstFileWriter2);
+        }
+        
+        //verify that writing to cache delta file name was done 
+        verify(sstFileWriter1).put(PAIR_1);
+        verify(sstFileWriter1).put(PAIR_2);
+        verify(sstFileWriter2).put(PAIR_3);
+        
+        //verify that segment searcher was called just until compacting
+        verify(segmentSearcher).addPairIntoCache(PAIR_1);
+        verify(segmentSearcher).addPairIntoCache(PAIR_2);
+        verify(segmentSearcher, times(0)).addPairIntoCache(PAIR_3);
+        
+
+        //verify that segment properties are updated 1
+        verify(segmentPropertiesManager).increaseNumberOfKeysInCache(2);
+        verify(segmentPropertiesManager,times(2)).flush();
+        
+        //verify that segment properties are updated 2
+        verify(segmentPropertiesManager).increaseNumberOfKeysInCache(1);
+        
+        //Verify that segment compacter was correctly called
+        verify(segmentCompacter, times(1)).optionallyCompact();
+        verify(segmentCompacter, times(1)).forceCompact();;
+        verify(segmentCompacter,times(2)).shouldBeCompacted(1);
+        verify(segmentCompacter).shouldBeCompacted(2);
     }
 
     @BeforeEach
