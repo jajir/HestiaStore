@@ -47,6 +47,12 @@ public class SegmentWriter<K, V> {
     }
 
     public PairWriter<K, V> openWriter() {
+        return openWriter(null);
+    }
+
+    public PairWriter<K, V> openWriter(
+            final SegmentSearcher<K, V> newSegmentSearcher) {
+        this.segmentSearcher = newSegmentSearcher;
         return new PairWriter<K, V>() {
 
             private long cx = 0;
