@@ -35,10 +35,15 @@ public class SegmentReader<K, V> {
 
     public PairIterator<K, V> openIterator(
             final OptimisticLockObjectVersionProvider versionProvider) {
+        return openIterator(versionProvider, null);
+    }
+
+    public PairIterator<K, V> openIterator(
+            final OptimisticLockObjectVersionProvider versionProvider,
+            final SegmentSearcher<K, V> segmentSearcher) {
         // Read segment cache into in memory list.
-        final SegmentCache<K, V> segmentCache = new SegmentCache<>(
-                segmentFiles.getKeyTypeDescriptor(), segmentFiles,
-                segmentPropertiesManager);
+        final SegmentCache<K, V> segmentCache = getSegmentCache(
+                segmentSearcher);
 
         // merge cache with main data
         return new MergeIterator<K, V>(
@@ -46,6 +51,18 @@ public class SegmentReader<K, V> {
                 segmentCache.getSortedIterator(),
                 segmentFiles.getKeyTypeDescriptor(),
                 segmentFiles.getValueTypeDescriptor());
+    }
+
+    private SegmentCache<K, V> getSegmentCache(
+            final SegmentSearcher<K, V> segmentSearcher) {
+        if (segmentSearcher == null) {
+            return new SegmentCache<>(segmentFiles.getKeyTypeDescriptor(),
+                    segmentFiles, segmentPropertiesManager);
+
+        }
+        return segmentSearcher.getSegmentCache()
+                .orElse(new SegmentCache<>(segmentFiles.getKeyTypeDescriptor(),
+                        segmentFiles, segmentPropertiesManager));
     }
 
 }

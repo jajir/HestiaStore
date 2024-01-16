@@ -119,7 +119,8 @@ public class SegmentIntegrationTest {
         }
 
         final SegmentId segId = SegmentId.of(3);
-        final Segment<Integer, String> smaller = seg.split(segId);
+        final SegmentSplitter.Result<Integer, String> result = seg.split(segId);
+        final Segment<Integer, String> smaller = result.getSegment();
 
         final List<Pair<Integer, String>> list1 = toList(seg.openIterator());
         assertEquals(2, list1.size());

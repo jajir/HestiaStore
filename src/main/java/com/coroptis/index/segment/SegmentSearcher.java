@@ -1,6 +1,7 @@
 package com.coroptis.index.segment;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,6 +55,16 @@ public class SegmentSearcher<K, V> implements CloseableResource {
             return;
         }
         searcherCore.addPairIntoCache(pair);
+    }
+
+    Optional<SegmentCache<K, V>> getSegmentCache() {
+        if (lock.isLocked()) {
+            return Optional.empty();
+        }
+        if (searcherCore == null) {
+            return Optional.empty();
+        }
+        return Optional.of(searcherCore.getCache());
     }
 
     private void optionallyrefreshCoreSearcher() {

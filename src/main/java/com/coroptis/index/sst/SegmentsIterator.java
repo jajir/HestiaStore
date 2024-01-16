@@ -22,14 +22,19 @@ import com.coroptis.index.segment.SegmentId;
  */
 class SegmentsIterator<K, V> implements PairIterator<K, V> {
 
-    private final SstIndexImpl<K, V> sstIndex;
+    private final SegmentManager<K, V> segmentManager;
+    private final SegmentSearcherCache<K, V> segmentSearcherCache;
     private final List<SegmentId> ids;
     private Pair<K, V> currentPair = null;
     private Pair<K, V> nextPair = null;
     private PairIterator<K, V> currentIterator = null;
 
-    SegmentsIterator(final SstIndexImpl<K, V> sstIndex) {
-        this.sstIndex = Objects.requireNonNull(sstIndex);
+    SegmentsIterator(final SstIndexImpl<K, V> sstIndex,
+            final SegmentManager<K, V> segmentManager,
+            final SegmentSearcherCache<K, V> segmentSearcherCache) {
+        this.segmentManager = Objects.requireNonNull(segmentManager);
+        this.segmentSearcherCache = Objects
+                .requireNonNull(segmentSearcherCache);
         ids = new ArrayList<>(sstIndex.getSegmentIds());
         nextSegmentIterator();
     }
@@ -40,22 +45,11 @@ class SegmentsIterator<K, V> implements PairIterator<K, V> {
         }
         if (!ids.isEmpty()) {
             final SegmentId segmentId = ids.remove(0);
-            // is segment in memory?
-            final SegmentManager<K, V> segmentManager = sstIndex
-                    .getSegmentManager();
-            if (segmentManager.isInCache(segmentId)) {
-                currentIterator = sstIndex.openSegmentIterator(segmentId);
-                if (currentIterator.hasNext()) {
-                    nextPair = currentIterator.next();
-                }
-            } else {
-                // FIXME verify that it's memory fine.
-                final Segment<K, V> segment = segmentManager
-                        .getSegment(segmentId);
-                currentIterator = segment.openIterator();
-                if (currentIterator.hasNext()) {
-                    nextPair = currentIterator.next();
-                }
+            final Segment<K, V> segment = segmentManager.getSegment(segmentId);
+            currentIterator = segment.openIterator(segmentSearcherCache
+                    .getOptionalSegmenSearcher(segmentId).orElse(null));
+            if (currentIterator.hasNext()) {
+                nextPair = currentIterator.next();
             }
         }
     }

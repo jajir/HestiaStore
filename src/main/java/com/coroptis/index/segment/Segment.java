@@ -70,7 +70,7 @@ public class Segment<K, V>
     public SegmentStats getStats() {
         return segmentPropertiesManager.getSegmentStats();
     }
-    
+
     public long getNumberOfKeys() {
         return segmentPropertiesManager.getSegmentStats().getNumberOfKeys();
     }
@@ -80,8 +80,13 @@ public class Segment<K, V>
     }
 
     public PairIterator<K, V> openIterator() {
+        return openIterator(null);
+    }
+
+    public PairIterator<K, V> openIterator(
+            final SegmentSearcher<K, V> segmentSearcher) {
         return new SegmentReader<>(segmentFiles, segmentPropertiesManager)
-                .openIterator(versionController);
+                .openIterator(versionController, segmentSearcher);
     }
 
     public void forceCompact() {
@@ -110,9 +115,14 @@ public class Segment<K, V>
     }
 
     public PairWriter<K, V> openWriter() {
+        return openWriter(null);
+    }
+
+    public PairWriter<K, V> openWriter(
+            final SegmentSearcher<K, V> segmentSearcher) {
         final SegmentWriter<K, V> writer = new SegmentWriter<>(segmentFiles,
                 segmentPropertiesManager, segmentCompacter);
-        return writer.openWriter();
+        return writer.openWriter(segmentSearcher);
     }
 
     public SegmentSearcher<K, V> openSearcher() {
@@ -120,7 +130,7 @@ public class Segment<K, V>
                 versionController, segmentPropertiesManager);
     }
 
-    public Segment<K, V> split(final SegmentId segmentId) {
+    public SegmentSplitter.Result<K, V> split(final SegmentId segmentId) {
         Objects.requireNonNull(segmentId);
         versionController.changeVersion();
 
@@ -144,6 +154,10 @@ public class Segment<K, V>
     @Override
     public int getVersion() {
         return versionController.getVersion();
+    }
+
+    public SegmentFiles<K, V> getSegmentFiles() {
+        return segmentFiles;
     }
 
 }

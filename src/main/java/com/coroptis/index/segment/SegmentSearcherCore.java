@@ -112,4 +112,8 @@ public class SegmentSearcherCore<K, V> {
         return bloomFilter;
     }
 
+    SegmentCache<K, V> getCache() {
+        return cache;
+    }
+
 }

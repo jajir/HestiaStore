@@ -18,6 +18,7 @@ import com.coroptis.index.segment.MergeIterator;
 import com.coroptis.index.segment.Segment;
 import com.coroptis.index.segment.SegmentId;
 import com.coroptis.index.segment.SegmentSearcher;
+import com.coroptis.index.segment.SegmentSplitter;
 import com.coroptis.index.sstfile.PairComparator;
 
 public class SstIndexImpl<K, V> implements Index<K, V> {
@@ -30,6 +31,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     private final UniqueCache<K, V> cache;
     private final KeySegmentCache<K> keySegmentCache;
     private final SegmentManager<K, V> segmentManager;
+    private final SegmentSearcherCache<K, V> segmentSearcherCache;
     private IndexState<K, V> indexState;
 
     public SstIndexImpl(final Directory directory,
@@ -46,6 +48,8 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                 keyTypeDescriptor);
         this.segmentManager = new SegmentManager<>(directory, keyTypeDescriptor,
                 valueTypeDescriptor, conf);
+        this.segmentSearcherCache = new SegmentSearcherCache<>(conf,
+                segmentManager);
         indexState.onReady(this);
     }
 
@@ -88,8 +92,8 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
 //                cache.getSortedIterator(), keyTypeDescriptor.getComparator(),
 //                seg.getMinKey(), seg.getMaxKey());
         final PairIterator<K, V> out = new MergeIterator<K, V>(
-                seg.openIterator(), cache.getSortedIterator(), keyTypeDescriptor,
-                valueTypeDescriptor);
+                seg.openIterator(), cache.getSortedIterator(),
+                keyTypeDescriptor, valueTypeDescriptor);
         return StreamSupport.stream(
                 new PairIteratorToSpliterator<K, V>(out, keyTypeDescriptor),
                 false);
@@ -108,7 +112,8 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     }
 
     public PairIterator<K, V> openIterator() {
-        final PairIterator<K, V> segments = new SegmentsIterator<>(this);
+        final PairIterator<K, V> segments = new SegmentsIterator<>(this,
+                segmentManager, segmentSearcherCache);
         return new MergeIterator<K, V>(segments, cache.getSortedIterator(),
                 keyTypeDescriptor, valueTypeDescriptor);
     }
@@ -125,7 +130,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                 "Cache compacting of '{}' key value pairs in cache started.",
                 cache.size());
         final CompactSupport<K, V> support = new CompactSupport<>(
-                segmentManager, keySegmentCache);
+                segmentManager, keySegmentCache, segmentSearcherCache);
         cache.getStream()
                 .sorted(new PairComparator<>(keyTypeDescriptor.getComparator()))
                 .forEach(support::compact);
@@ -162,8 +167,9 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
             final SegmentId segmentId = segment.getId();
             logger.debug("Splitting of '{}' started.", segmentId);
             final SegmentId newSegmentId = keySegmentCache.findNewSegmentId();
-            final Segment<K, V> splitted = segment.split(newSegmentId);
-            keySegmentCache.insertSegment(splitted.getMaxKey(), newSegmentId);
+            final SegmentSplitter.Result<K, V> result = segment
+                    .split(newSegmentId);
+            keySegmentCache.insertSegment(result.getMaxKey(), newSegmentId);
             logger.debug("Splitting of segment '{}' to '{}' is done.",
                     segmentId, newSegmentId);
             return true;
@@ -176,19 +182,18 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         indexState.tryPerformOperation();
         Objects.requireNonNull(key, "Key cant be null");
 
-        V out = cache.get(key);
+        final V out = cache.get(key);
         if (out == null) {
             final SegmentId id = keySegmentCache.findSegmentId(key);
             if (id == null) {
                 return null;
             }
-            final Segment<K, V> seg = getSegment(id);
-            try (final SegmentSearcher<K, V> searcher = seg.openSearcher()) {
-                return searcher.get(key);
-            }
+            final SegmentSearcher<K, V> segmentSearcher = segmentSearcherCache
+                    .getSegmenSearcher(id);
+            return segmentSearcher.get(key);
+        } else {
+            return out;
         }
-
-        return out;
     }
 
     @Override
