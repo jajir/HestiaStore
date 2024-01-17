@@ -132,8 +132,6 @@ public class Segment<K, V>
 
     public SegmentSplitter.Result<K, V> split(final SegmentId segmentId) {
         Objects.requireNonNull(segmentId);
-        versionController.changeVersion();
-
         final SegmentSplitter<K, V> segmentSplitter = new SegmentSplitter<>(
                 segmentFiles, segmentConf, versionController,
                 segmentPropertiesManager);
@@ -142,9 +140,7 @@ public class Segment<K, V>
 
     @Override
     public void close() {
-//        bloomFilter.logStats();
         logger.debug("Closing segment '{}'", segmentFiles.getId());
-        // Do intentionally nothing.
     }
 
     public SegmentId getId() {

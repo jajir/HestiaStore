@@ -15,7 +15,7 @@ import com.coroptis.index.directory.Props;
 public class SegmentPropertiesManager {
 
     private final static String NUMBER_OF_KEYS_IN_CACHE = "numberOfKeysInCache";
-    private final static String NUMBER_OF_KEYS_IN_INDEX = "numberOfKeysInIndex";
+    private final static String NUMBER_OF_KEYS_IN_MAIN_INDEX = "numberOfKeysInMainIndex";
     private final static String NUMBER_OF_KEYS_IN_SCARCE_INDEX = "numberOfKeysInScarceIndex";
     private final static String NUMBER_OF_SEGMENT_CACHE_DELTA_FILES = "numberOfSegmentDeltaFiles";
     private final static String PROPERTIES_FILENAME_EXTENSION = ".properties";
@@ -36,7 +36,7 @@ public class SegmentPropertiesManager {
 
     public SegmentStats getSegmentStats() {
         return new SegmentStats(props.getLong(NUMBER_OF_KEYS_IN_CACHE),
-                props.getLong(NUMBER_OF_KEYS_IN_INDEX),
+                props.getLong(NUMBER_OF_KEYS_IN_MAIN_INDEX),
                 props.getLong(NUMBER_OF_KEYS_IN_SCARCE_INDEX));
     }
 
@@ -94,7 +94,7 @@ public class SegmentPropertiesManager {
     }
 
     public void setNumberOfKeysInIndex(final long numberOfKeysInIndex) {
-        props.setLong(NUMBER_OF_KEYS_IN_INDEX, numberOfKeysInIndex);
+        props.setLong(NUMBER_OF_KEYS_IN_MAIN_INDEX, numberOfKeysInIndex);
     }
 
     public void setNumberOfKeysInScarceIndex(

@@ -7,7 +7,6 @@ import java.util.Objects;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.segment.Segment;
-import com.coroptis.index.segment.SegmentFiles;
 import com.coroptis.index.segment.SegmentId;
 
 public class SegmentManager<K, V> {
@@ -20,8 +19,9 @@ public class SegmentManager<K, V> {
     private final TypeDescriptor<V> valueTypeDescriptor;
 
     SegmentManager(final Directory directory,
-            TypeDescriptor<K> keyTypeDescriptor,
-            TypeDescriptor<V> valueTypeDescriptor, final SsstIndexConf conf) {
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final SsstIndexConf conf) {
         this.directory = Objects.requireNonNull(directory);
         this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
         this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
@@ -36,18 +36,6 @@ public class SegmentManager<K, V> {
             segments.put(segmentId, out);
         }
         return out;
-    }
-
-    @Deprecated
-    public boolean isInCache(final SegmentId segmentId) {
-        Objects.requireNonNull(segmentId, "Segment id is required");
-        return true;
-    }
-
-    @Deprecated
-    public SegmentFiles<K, V> getSegmentFiles(final SegmentId segmentId) {
-        Objects.requireNonNull(segmentId, "Segment id is required");
-        return getSegment(segmentId).getSegmentFiles();
     }
 
     private Segment<K, V> instantiateSegment(final SegmentId segmentId) {
