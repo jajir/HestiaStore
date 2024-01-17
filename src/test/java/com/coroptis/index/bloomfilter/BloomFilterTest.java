@@ -38,7 +38,7 @@ public class BloomFilterTest {
         assertTrue(bf.isNotStored("Milan"));
 
         // verify statistics
-        bf.logStats();
+        bf.getStatsString();
         final BloomFilterStats stats = bf.getStatistics();
         assertEquals(5, stats.getBloomFilterCalls());
         assertEquals(1, stats.getKeyIsNotStored());
@@ -55,7 +55,7 @@ public class BloomFilterTest {
                 .withNumberOfHashFunctions(10).build();
 
         // verify statistics
-        bf.logStats();
+        bf.getStatsString();
         final BloomFilterStats stats = bf.getStatistics();
         assertEquals(0, stats.getBloomFilterCalls());
         assertEquals(0, stats.getKeyIsNotStored());

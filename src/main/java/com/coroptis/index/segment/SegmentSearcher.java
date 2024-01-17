@@ -89,7 +89,7 @@ public class SegmentSearcher<K, V> implements CloseableResource {
         if (searcherCore == null) {
             return;
         }
-        searcherCore.getBloomFilter().logStats();
+        logger.debug(searcherCore.getBloomFilter().getStatsString());
         logger.debug("Closing segment searcher '{}'", segmentFiles.getId());
         searcherCore = null;
     }

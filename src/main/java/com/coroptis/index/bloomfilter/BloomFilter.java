@@ -98,8 +98,8 @@ public class BloomFilter<K> {
         return bloomFilterStats;
     }
 
-    public void logStats() {
-        bloomFilterStats.logStats();
+    public String getStatsString() {
+        return bloomFilterStats.getStatsString();
     }
 
 }

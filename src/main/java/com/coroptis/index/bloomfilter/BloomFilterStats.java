@@ -1,8 +1,5 @@
 package com.coroptis.index.bloomfilter;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * Holds basic bloom filter statistics, it allows analyze cache hit ratio:
  * 
@@ -15,9 +12,6 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class BloomFilterStats {
-
-    private final Logger logger = LoggerFactory
-            .getLogger(BloomFilterStats.class);
 
     private long keyIsNotStored = 0;
 
@@ -37,9 +31,9 @@ public class BloomFilterStats {
         return (int) (keyIsNotStored / (float) bloomFilterCalls * 100);
     }
 
-    void logStats() {
-        logger.debug(
-                "Bloom filter was called {} times and key was not stored in {} casses it's {}% ratio.",
+    String getStatsString() {
+        return String.format("Bloom filter was called %s times "
+                + "and key was not stored in %s casses it's %s%% ratio.",
                 bloomFilterCalls, keyIsNotStored, getRatio());
     }
 
