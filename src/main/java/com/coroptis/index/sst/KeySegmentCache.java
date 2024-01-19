@@ -2,10 +2,12 @@ package com.coroptis.index.sst;
 
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -158,6 +160,11 @@ public class KeySegmentCache<K> implements CloseableResource {
     public Stream<Pair<K, SegmentId>> getSegmentsAsStream() {
         return list.entrySet().stream()
                 .map(entry -> Pair.of(entry.getKey(), entry.getValue()));
+    }
+
+    public List<SegmentId> getSegmentIds() {
+        return list.entrySet().stream().map(entry -> entry.getValue())
+                .collect(Collectors.toList());
     }
 
     public void flush() {

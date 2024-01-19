@@ -1,6 +1,5 @@
 package com.coroptis.index.sst;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -29,13 +28,13 @@ class SegmentsIterator<K, V> implements PairIterator<K, V> {
     private Pair<K, V> nextPair = null;
     private PairIterator<K, V> currentIterator = null;
 
-    SegmentsIterator(final SstIndexImpl<K, V> sstIndex,
+    SegmentsIterator(final List<SegmentId> ids,
             final SegmentManager<K, V> segmentManager,
             final SegmentSearcherCache<K, V> segmentSearcherCache) {
         this.segmentManager = Objects.requireNonNull(segmentManager);
         this.segmentSearcherCache = Objects
                 .requireNonNull(segmentSearcherCache);
-        ids = new ArrayList<>(sstIndex.getSegmentIds());
+        this.ids = Objects.requireNonNull(ids);
         nextSegmentIterator();
     }
 

@@ -2,7 +2,6 @@ package com.coroptis.index.sst;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -73,32 +72,6 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         }
     }
 
-    public List<SegmentId> getSegmentIds() {
-        return keySegmentCache.getSegmentsAsStream()
-                .map(pair -> pair.getValue())
-                .collect(Collectors.toUnmodifiableList());
-    }
-
-    /**
-     * This is correct way to obtain data from segment.
-     * 
-     * @param segmentId required segment id
-     * @return
-     */
-    public Stream<Pair<K, V>> getSegmentStream(final SegmentId segmentId) {
-        Objects.requireNonNull(segmentId, "SegmentId can't be null.");
-        final Segment<K, V> seg = segmentManager.getSegment(segmentId);
-//        final PairIterator<K, V> limitedSegment = new LimitedPairIterator<>(
-//                cache.getSortedIterator(), keyTypeDescriptor.getComparator(),
-//                seg.getMinKey(), seg.getMaxKey());
-        final PairIterator<K, V> out = new MergeIterator<K, V>(
-                seg.openIterator(), cache.getSortedIterator(),
-                keyTypeDescriptor, valueTypeDescriptor);
-        return StreamSupport.stream(
-                new PairIteratorToSpliterator<K, V>(out, keyTypeDescriptor),
-                false);
-    }
-
     /**
      * return segment iterator. It doesn't count with mein cache.
      * 
@@ -112,8 +85,9 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     }
 
     public PairIterator<K, V> openIterator() {
-        final PairIterator<K, V> segments = new SegmentsIterator<>(this,
-                segmentManager, segmentSearcherCache);
+        final PairIterator<K, V> segments = new SegmentsIterator<>(
+                keySegmentCache.getSegmentIds(), segmentManager,
+                segmentSearcherCache);
         return new MergeIterator<K, V>(segments, cache.getSortedIterator(),
                 keyTypeDescriptor, valueTypeDescriptor);
     }
