@@ -87,7 +87,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
      */
     public Stream<Pair<K, V>> getSegmentStream(final SegmentId segmentId) {
         Objects.requireNonNull(segmentId, "SegmentId can't be null.");
-        final Segment<K, V> seg = getSegment(segmentId);
+        final Segment<K, V> seg = segmentManager.getSegment(segmentId);
 //        final PairIterator<K, V> limitedSegment = new LimitedPairIterator<>(
 //                cache.getSortedIterator(), keyTypeDescriptor.getComparator(),
 //                seg.getMinKey(), seg.getMaxKey());
@@ -107,7 +107,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
      */
     PairIterator<K, V> openSegmentIterator(final SegmentId segmentId) {
         Objects.requireNonNull(segmentId, "SegmentId can't be null.");
-        final Segment<K, V> seg = getSegment(segmentId);
+        final Segment<K, V> seg = segmentManager.getSegment(segmentId);
         return seg.openIterator();
     }
 
@@ -136,17 +136,13 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                 .forEach(support::compact);
         support.compactRest();
         List<SegmentId> segmentIds = support.getEligibleSegmentIds();
-        segmentIds.stream().map(this::getSegment)
+        segmentIds.stream().map(segmentManager::getSegment)
                 .forEach(this::optionallySplit);
         cache.clear();
         keySegmentCache.flush();
         logger.debug(
                 "Cache compacting is done. Cache contains '{}' key value pairs.",
                 cache.size());
-    }
-
-    Segment<K, V> getSegment(final SegmentId segmentId) {
-        return segmentManager.getSegment(segmentId);
     }
 
     @Override
