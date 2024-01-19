@@ -2,8 +2,9 @@ package com.coroptis.index.cache;
 
 import java.util.Comparator;
 
+import com.coroptis.index.Pair;
+import com.coroptis.index.PairReader;
 import com.coroptis.index.sstfile.SstFile;
-import com.coroptis.index.sstfile.SstFileStreamer;
 
 /**
  * Class allows to instantiate unique cache and fill it with data.
@@ -34,9 +35,11 @@ public class UniqueCacheBuilder<K, V> {
 
     public UniqueCache<K, V> build() {
         final UniqueCache<K, V> out = new UniqueCache<>(keyComparator);
-        try (final SstFileStreamer<K, V> fileStreamer = sstFile
-                .openStreamer()) {
-            fileStreamer.stream().forEach(pair -> out.put(pair));
+        try (final PairReader<K, V> fileStreamer = sstFile.openReader()) {
+            Pair<K, V> pair = null;
+            while ((pair = fileStreamer.read()) != null) {
+                out.put(pair);
+            }
         }
         return out;
     }

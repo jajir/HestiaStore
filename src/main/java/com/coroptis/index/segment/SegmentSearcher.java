@@ -77,6 +77,7 @@ public class SegmentSearcher<K, V> implements CloseableResource {
                     "Closing segment searcher '{}', because segment was changed",
                     segmentFiles.getId());
             optionallyCloseSearcherCore();
+            lock = new OptimisticLock(versionProvider);
         }
         if (searcherCore == null) {
             logger.debug("Opening segment searcher '{}'", segmentFiles.getId());

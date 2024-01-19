@@ -84,7 +84,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         return seg.openIterator();
     }
 
-    public PairIterator<K, V> openIterator() {
+    private PairIterator<K, V> openIterator() {
         final PairIterator<K, V> segments = new SegmentsIterator<>(
                 keySegmentCache.getSegmentIds(), segmentManager,
                 segmentSearcherCache);
@@ -109,7 +109,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                 .sorted(new PairComparator<>(keyTypeDescriptor.getComparator()))
                 .forEach(support::compact);
         support.compactRest();
-        List<SegmentId> segmentIds = support.getEligibleSegmentIds();
+        final List<SegmentId> segmentIds = support.getEligibleSegmentIds();
         segmentIds.stream().map(segmentManager::getSegment)
                 .forEach(this::optionallySplit);
         cache.clear();
@@ -122,6 +122,10 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     @Override
     public void forceCompact() {
         indexState.tryPerformOperation();
+        keySegmentCache.getSegmentIds().forEach(segmentId -> {
+            final Segment<K, V> seg = segmentManager.getSegment(segmentId);
+            seg.forceCompact();
+        });
         compact();
     }
 
