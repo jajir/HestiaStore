@@ -47,7 +47,7 @@ public class SstIndexIteratorTest {
         assertEquals(data.size(), index1.getStream().count());
     }
 
-    private SstIndexImpl<Integer, String> makeSstIndex() {
+    private Index<Integer, String> makeSstIndex() {
         return Index.<Integer, String>builder().withDirectory(directory)
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tds) //

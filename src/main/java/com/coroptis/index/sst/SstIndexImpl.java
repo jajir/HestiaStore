@@ -2,6 +2,7 @@ package com.coroptis.index.sst;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -97,6 +98,13 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         indexState.tryPerformOperation();
         return StreamSupport.stream(new PairIteratorToSpliterator<K, V>(
                 openIterator(), keyTypeDescriptor), false);
+    }
+
+    public Stream<Pair<K, V>> getStreamSynchronized(final ReentrantLock lock) {
+        indexState.tryPerformOperation();
+        return StreamSupport.stream(new PairIteratorToSpliterator<K, V>(
+                new PairIteratorSynchronized<>(openIterator(), lock),
+                keyTypeDescriptor), false);
     }
 
     private void compact() {

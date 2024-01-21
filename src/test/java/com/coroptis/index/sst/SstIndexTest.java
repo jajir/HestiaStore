@@ -54,7 +54,7 @@ public class SstIndexTest {
         index1.close();
         assertEquals(17, numberOfFilesInDirectoryP(directory));
 
-        final SstIndexImpl<Integer, String> index2 = makeSstIndex();
+        final Index<Integer, String> index2 = makeSstIndex();
         data.stream().forEach(pair -> {
             final String value = index2.get(pair.getKey());
             assertEquals(pair.getValue(), value);
@@ -212,7 +212,7 @@ public class SstIndexTest {
         assertThrows(IllegalStateException.class, () -> makeSstIndex());
     }
 
-    private SstIndexImpl<Integer, String> makeSstIndex() {
+    private Index<Integer, String> makeSstIndex() {
         return Index.<Integer, String>builder().withDirectory(directory)
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tds) //
