@@ -10,7 +10,6 @@ import com.coroptis.index.OptimisticLockObjectVersionProvider;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.bloomfilter.BloomFilter;
-import com.coroptis.index.scarceindex.ScarceIndex;
 
 /**
  * 
@@ -45,26 +44,6 @@ public class Segment<K, V>
                 segmentFiles.getDirectory(), getId());
         this.segmentCompacter = new SegmentCompacter<>(segmentFiles,
                 segmentConf, versionController, segmentPropertiesManager);
-    }
-
-    private ScarceIndex<K> getScarceIndex() {
-        return ScarceIndex.<K>builder()
-                .withDirectory(segmentFiles.getDirectory())
-                .withFileName(segmentFiles.getScarceFileName())
-                .withKeyTypeDescriptor(segmentFiles.getKeyTypeDescriptor())
-                .build();
-    }
-
-    // FIXME remove it
-    @Deprecated
-    public K getMaxKey() {
-        return getScarceIndex().getMaxKey();
-    }
-
-    // FIXME remove it
-    @Deprecated
-    public K getMinKey() {
-        return getScarceIndex().getMinKey();
     }
 
     public SegmentStats getStats() {
