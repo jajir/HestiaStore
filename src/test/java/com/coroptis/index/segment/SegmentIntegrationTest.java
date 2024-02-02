@@ -345,6 +345,7 @@ public class SegmentIntegrationTest {
                         Segment.<Integer, String>builder().withDirectory(dir1)
                                 .withId(id1).withKeyTypeDescriptor(tdi)
                                 .withValueTypeDescriptor(tds)
+                                .withMaxNumberOfKeysInSegmentMemory(10)
                                 .withMaxNumberOfKeysInSegmentCache(10).build(),
                         0, 2),
                 arguments(tdi, tds, dir2,
@@ -352,6 +353,7 @@ public class SegmentIntegrationTest {
                                 .withId(id2).withKeyTypeDescriptor(tdi)
                                 .withValueTypeDescriptor(tds)
                                 .withMaxNumberOfKeysInSegmentCache(1)
+                                .withMaxNumberOfKeysInSegmentMemory(1)
                                 .withMaxNumberOfKeysInIndexPage(1).build(),
                         4, 5),
                 arguments(tdi, tds, dir3,
@@ -359,6 +361,7 @@ public class SegmentIntegrationTest {
                                 .withId(id3).withKeyTypeDescriptor(tdi)
                                 .withValueTypeDescriptor(tds)
                                 .withMaxNumberOfKeysInSegmentCache(2)
+                                .withMaxNumberOfKeysInSegmentMemory(2)
                                 .withMaxNumberOfKeysInIndexPage(2).build(),
                         2, 5));
     }

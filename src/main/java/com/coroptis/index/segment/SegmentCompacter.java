@@ -30,7 +30,6 @@ public class SegmentCompacter<K, V> {
     }
 
     private PairIterator<K, V> openIterator() {
-        // TODO this naive implementation ignores possible in memory cache.
         return new SegmentReader<>(segmentFiles, segmentPropertiesManager)
                 .openIterator(versionController);
     }
@@ -62,6 +61,13 @@ public class SegmentCompacter<K, V> {
         return stats.getNumberOfKeysInCache()
                 + numberOfKeysInLastDeltaFile > segmentConf
                         .getMaxNumberOfKeysInSegmentCache();
+    }
+
+    public boolean shouldBeCompactedDuringWriting(final long numberOfKeysInLastDeltaFile) {
+        final SegmentStats stats = segmentPropertiesManager.getSegmentStats();
+        return stats.getNumberOfKeysInCache()
+                + numberOfKeysInLastDeltaFile > segmentConf
+                        .getMaxNumberOfKeysInSegmentMemory();
     }
 
     /**

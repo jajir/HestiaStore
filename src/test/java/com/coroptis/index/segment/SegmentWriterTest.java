@@ -65,9 +65,9 @@ public class SegmentWriterTest {
         when(segmentFiles.getCacheSstFile(SEGMENT_CACHE_DELTA_FILE_1)).thenReturn(sstFile1);
         when(sstFile1.openWriter()).thenReturn(sstFileWriter1);
         when(segmentCompacter.optionallyCompact()).thenReturn(false);
-        when(segmentCompacter.shouldBeCompacted(1)).thenReturn(false);
-        when(segmentCompacter.shouldBeCompacted(2)).thenReturn(false);
-        when(segmentCompacter.shouldBeCompacted(3)).thenReturn(false);
+        when(segmentCompacter.shouldBeCompactedDuringWriting(1)).thenReturn(false);
+        when(segmentCompacter.shouldBeCompactedDuringWriting(2)).thenReturn(false);
+        when(segmentCompacter.shouldBeCompactedDuringWriting(3)).thenReturn(false);
         try(final PairWriter<Integer, String> writer= segmentWriter.openWriter()){
             writer.put(PAIR_1);
             writer.put(PAIR_2);
@@ -85,9 +85,9 @@ public class SegmentWriterTest {
         
         //Verify that segment compacter was correctly called
         verify(segmentCompacter, times(1)).optionallyCompact();
-        verify(segmentCompacter).shouldBeCompacted(1);
-        verify(segmentCompacter).shouldBeCompacted(2);
-        verify(segmentCompacter).shouldBeCompacted(3);
+        verify(segmentCompacter).shouldBeCompactedDuringWriting(1);
+        verify(segmentCompacter).shouldBeCompactedDuringWriting(2);
+        verify(segmentCompacter).shouldBeCompactedDuringWriting(3);
         
     }
 
@@ -106,10 +106,10 @@ public class SegmentWriterTest {
         
 
         when(segmentCompacter.optionallyCompact()).thenReturn(false);
-        when(segmentCompacter.shouldBeCompacted(1)).thenReturn(false);
+        when(segmentCompacter.shouldBeCompactedDuringWriting(1)).thenReturn(false);
         //when second pair is added segment cache is compacted
-        when(segmentCompacter.shouldBeCompacted(2)).thenReturn(true);
-        when(segmentCompacter.shouldBeCompacted(1)).thenReturn(false);
+        when(segmentCompacter.shouldBeCompactedDuringWriting(2)).thenReturn(true);
+        when(segmentCompacter.shouldBeCompactedDuringWriting(1)).thenReturn(false);
         try(final PairWriter<Integer, String> writer= segmentWriter.openWriter()){
             writer.put(PAIR_1);
             writer.put(PAIR_2);
@@ -137,8 +137,8 @@ public class SegmentWriterTest {
         //Verify that segment compacter was correctly called
         verify(segmentCompacter, times(1)).optionallyCompact();
         verify(segmentCompacter, times(1)).forceCompact();;
-        verify(segmentCompacter,times(2)).shouldBeCompacted(1);
-        verify(segmentCompacter).shouldBeCompacted(2);
+        verify(segmentCompacter,times(2)).shouldBeCompactedDuringWriting(1);
+        verify(segmentCompacter).shouldBeCompactedDuringWriting(2);
     }
 
     @Test
@@ -156,10 +156,10 @@ public class SegmentWriterTest {
         
 
         when(segmentCompacter.optionallyCompact()).thenReturn(false);
-        when(segmentCompacter.shouldBeCompacted(1)).thenReturn(false);
+        when(segmentCompacter.shouldBeCompactedDuringWriting(1)).thenReturn(false);
         //when second pair is added segment cache is compacted
-        when(segmentCompacter.shouldBeCompacted(2)).thenReturn(true);
-        when(segmentCompacter.shouldBeCompacted(1)).thenReturn(false);
+        when(segmentCompacter.shouldBeCompactedDuringWriting(2)).thenReturn(true);
+        when(segmentCompacter.shouldBeCompactedDuringWriting(1)).thenReturn(false);
         try(final PairWriter<Integer, String> writer= segmentWriter.openWriter(segmentSearcher)){
             writer.put(PAIR_1);
             writer.put(PAIR_2);
@@ -193,8 +193,8 @@ public class SegmentWriterTest {
         //Verify that segment compacter was correctly called
         verify(segmentCompacter, times(1)).optionallyCompact();
         verify(segmentCompacter, times(1)).forceCompact();;
-        verify(segmentCompacter,times(2)).shouldBeCompacted(1);
-        verify(segmentCompacter).shouldBeCompacted(2);
+        verify(segmentCompacter,times(2)).shouldBeCompactedDuringWriting(1);
+        verify(segmentCompacter).shouldBeCompactedDuringWriting(2);
     }
 
     @BeforeEach
