@@ -12,8 +12,9 @@ public class SegmentBuilder<K, V> {
 
     private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_INDEX_PAGE = 1000;
 
-    private final static int DEFAULT_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS = 1_000;
+    private final static int DEFAULT_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS = 6;
     private final static int DEFAULT_BLOOM_FILTER_INDEX_SIZE_IN_BYTES = 10_000;
+    private final static int DEFAUL_MAX_NUMBER_OF_KEYS_IN_SEGMENT_MEMORY = Integer.MAX_VALUE;
 
     private Directory directory;
     private SegmentId id;
@@ -23,6 +24,7 @@ public class SegmentBuilder<K, V> {
     private int maxNumberOfKeysInIndexPage = DEFAULT_MAX_NUMBER_OF_KEYS_IN_INDEX_PAGE;
     private int bloomFilterNumberOfHashFunctions = DEFAULT_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS;
     private int bloomFilterIndexSizeInBytes = DEFAULT_BLOOM_FILTER_INDEX_SIZE_IN_BYTES;
+    private long maxNumberOfKeysInSegmentMemory = DEFAUL_MAX_NUMBER_OF_KEYS_IN_SEGMENT_MEMORY;
     private VersionController versionController;
     private SegmentConf segmentConf;
     private SegmentFiles<K, V> segmentFiles;
@@ -83,6 +85,13 @@ public class SegmentBuilder<K, V> {
         return this;
     }
 
+    public SegmentBuilder<K, V> withMaxNumberOfKeysInSegmentMemory(
+            final long maxNumberOfKeysInSegmentMemory) {
+        this.maxNumberOfKeysInSegmentMemory = Objects
+                .requireNonNull(maxNumberOfKeysInSegmentMemory);
+        return this;
+    }
+
     public SegmentBuilder<K, V> withBloomFilterNumberOfHashFunctions(
             final int bloomFilterNumberOfHashFunctions) {
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
@@ -109,7 +118,7 @@ public class SegmentBuilder<K, V> {
             segmentConf = new SegmentConf(maxNumberOfKeysInSegmentCache,
                     maxNumberOfKeysInIndexPage,
                     bloomFilterNumberOfHashFunctions,
-                    bloomFilterIndexSizeInBytes);
+                    bloomFilterIndexSizeInBytes,maxNumberOfKeysInSegmentMemory);
         }
         if (segmentFiles == null) {
             segmentFiles = new SegmentFiles<>(directory, id, keyTypeDescriptor,

@@ -71,7 +71,7 @@ public class SegmentWriter<K, V> {
                 if (segmentSearcher != null) {
                     segmentSearcher.addPairIntoCache(pair);
                 }
-                if (segmentCompacter.shouldBeCompacted(cx)) {
+                if (segmentCompacter.shouldBeCompactedDuringWriting(cx)) {
                     cx = 0;
                     segmentSearcher = null;
                     closeWritingToCache();
