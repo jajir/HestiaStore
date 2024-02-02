@@ -63,7 +63,8 @@ public class SegmentCompacter<K, V> {
                         .getMaxNumberOfKeysInSegmentCache();
     }
 
-    public boolean shouldBeCompactedDuringWriting(final long numberOfKeysInLastDeltaFile) {
+    public boolean shouldBeCompactedDuringWriting(
+            final long numberOfKeysInLastDeltaFile) {
         final SegmentStats stats = segmentPropertiesManager.getSegmentStats();
         return stats.getNumberOfKeysInCache()
                 + numberOfKeysInLastDeltaFile > segmentConf

@@ -2,7 +2,6 @@ package com.coroptis.index.simpledatafile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Comparator;
@@ -23,8 +22,6 @@ public class MergedPairReaderTest {
 
     @Mock
     private PairReader<Integer, String> reader2;
-
-    // FIXME there is used same mock instance in all tests
 
     @Test
     public void test_reader2_is_empty() throws Exception {

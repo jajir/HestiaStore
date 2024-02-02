@@ -118,7 +118,8 @@ public class SegmentBuilder<K, V> {
             segmentConf = new SegmentConf(maxNumberOfKeysInSegmentCache,
                     maxNumberOfKeysInIndexPage,
                     bloomFilterNumberOfHashFunctions,
-                    bloomFilterIndexSizeInBytes,maxNumberOfKeysInSegmentMemory);
+                    bloomFilterIndexSizeInBytes,
+                    maxNumberOfKeysInSegmentMemory);
         }
         if (segmentFiles == null) {
             segmentFiles = new SegmentFiles<>(directory, id, keyTypeDescriptor,
