@@ -2,6 +2,7 @@ package com.coroptis.index.segment;
 
 import java.util.Objects;
 
+import com.coroptis.index.CloseableResource;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairReader;
 import com.coroptis.index.bloomfilter.BloomFilter;
@@ -18,7 +19,7 @@ import com.coroptis.index.scarceindex.ScarceIndex;
  * @param <K>
  * @param <V>
  */
-public class SegmentSearcherCore<K, V> {
+public class SegmentSearcherCore<K, V> implements CloseableResource {
 
     private final SegmentCache<K, V> cache;
     private final ScarceIndex<K> scarceIndex;
@@ -114,6 +115,12 @@ public class SegmentSearcherCore<K, V> {
 
     SegmentCache<K, V> getCache() {
         return cache;
+    }
+
+    @Override
+    public void close() {
+        // TODO Auto-generated method stub
+        
     }
 
 }
