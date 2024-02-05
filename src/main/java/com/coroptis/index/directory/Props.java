@@ -49,7 +49,7 @@ public class Props {
         if (properties.getProperty(propertyKey) == null) {
             return 0;
         }
-        return Integer.valueOf(properties.getProperty(propertyKey));
+        return Integer.parseInt(properties.getProperty(propertyKey));
     }
 
     public void setLong(final String propertyKey, final long value) {
@@ -60,7 +60,7 @@ public class Props {
         if (properties.getProperty(propertyKey) == null) {
             return 0L;
         }
-        return Long.valueOf(properties.getProperty(propertyKey));
+        return Long.parseLong(properties.getProperty(propertyKey));
     }
 
     public void writeData() {
