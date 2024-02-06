@@ -26,7 +26,7 @@ public class MemFileReader implements FileReader {
     }
 
     @Override
-    public int read(byte[] bytes) {
+    public int read(final byte[] bytes) {
         if (position < data.length) {
             // at least one byte will be read
             int newPosition = position + bytes.length;
@@ -42,8 +42,12 @@ public class MemFileReader implements FileReader {
         }
     }
 
-    @Override
-    public void skip(long position) {
+    protected void setPosition(final long position) {
         this.position = (int) position;
+    }
+
+    @Override
+    public void skip(final long newPosition) {
+        this.position = this.position + (int) newPosition;
     }
 }

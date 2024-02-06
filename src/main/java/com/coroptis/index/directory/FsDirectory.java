@@ -89,4 +89,9 @@ public class FsDirectory implements Directory {
         return "FsDirectory{directory=" + directory.getPath() + "}";
     }
 
+    @Override
+    public FileReaderSeekable getFileReaderSeekable(final String fileName) {
+        return new FsFileReaderSeekable(getFile(fileName));
+    }
+
 }

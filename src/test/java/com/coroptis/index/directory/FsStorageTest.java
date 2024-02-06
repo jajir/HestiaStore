@@ -1,133 +1,54 @@
 package com.coroptis.index.directory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class FsStorageTest {
 
     private final static String FILE_NAME = "pok.txt";
 
-    private final static String TEXT = "Ahoj lidi!";
+    private final static byte[] TEXT_LONG = ("This code stores a reference to an "
+            + "externally mutable object into the internal "
+            + "representation of the object.  If instances are accessed "
+            + "by untrusted code, and unchecked changes to the mutable "
+            + "object would compromise security or other important "
+            + "properties, you will need to do something different. "
+            + "Storing a copy of the object is better approach in many "
+            + "situations.").getBytes();
 
-    private final static String TEXT_LONG = "Ahoj vsichni lidi!";
-
-    @Test
-    public void test_read_write_text_fs() throws Exception {
-        Directory dir = new FsDirectory(new File("./target/pok"));
-        test_read_write_text(dir);
-    }
-
-    @Test
-    public void test_read_write_text_mem() throws Exception {
-        Directory dir = new MemDirectory();
-        test_read_write_text(dir);
-    }
+    @TempDir
+    protected File tempDir;
 
     @Test
-    public void test_read_write_end_of_file_reached_mem() throws Exception {
-        Directory dir = new MemDirectory();
-        test_read_long_bytes(dir);
-    }
+    public void test_seek() throws Exception {
+        final Directory dir = new FsDirectory(tempDir);
 
-    @Test
-    public void test_read_write_end_of_file_reached_fs() throws Exception {
-        Directory dir = new FsDirectory(new File("./target/pok"));
-        test_read_long_bytes(dir);
-    }
-
-    @Test
-    public void test_overwrite_data_fs() throws Exception {
-        Directory dir = new FsDirectory(new File("./target/pok"));
-        test_overwrite_file(dir);
-    }
-
-    @Test
-    public void test_overwrite_data_mem() throws Exception {
-        Directory dir = new MemDirectory();
-        test_overwrite_file(dir);
-    }
-
-    @Test
-    public void test_create_empty_file_fs() throws Exception {
-        Directory dir = new FsDirectory(new File("./target/pok"));
-        test_create_empty_file_file(dir);
-    }
-
-    @Test
-    public void test_create_empty_file_mem() throws Exception {
-        Directory dir = new MemDirectory();
-        test_create_empty_file_file(dir);
-    }
-
-    private void test_overwrite_file(final Directory dir) {
         // Write data
         try (final FileWriter fw = dir.getFileWriter(FILE_NAME)) {
-            fw.write(TEXT.getBytes());
+            fw.write(TEXT_LONG);
         }
 
-        // write empty file
-        try (final FileWriter fw = dir.getFileWriter(FILE_NAME)) {
+        // Read data and verify seek operation
+        try (final FileReaderSeekable fr = dir
+                .getFileReaderSeekable(FILE_NAME)) {
+            fr.seek(54);
+            assertEquals("object", readStr(fr, 6));
+
+            // seek back and verify data
+            fr.seek(10);
+            assertEquals("stores", readStr(fr, 6));
         }
 
-        // assert no data are read
-        try (final FileReader fr = dir.getFileReader(FILE_NAME)) {
-            byte[] bytes = new byte[TEXT_LONG.getBytes().length];
-
-            final int loadedBytes = fr.read(bytes);
-            assertEquals(-1, loadedBytes);
-        }
     }
 
-    private void test_create_empty_file_file(final Directory dir) {
-        // optionally delete file
-        if (dir.isFileExists(FILE_NAME)) {
-            dir.deleteFile(FILE_NAME);
-        }
-        // write empty file
-        try (final FileWriter fw = dir.getFileWriter(FILE_NAME)) {
-        }
-
-        // assert no data are read, but file exists
-        assertTrue(dir.isFileExists(FILE_NAME));
-        try (final FileReader fr = dir.getFileReader(FILE_NAME)) {
-            byte[] bytes = new byte[TEXT_LONG.getBytes().length];
-
-            final int loadedBytes = fr.read(bytes);
-            assertEquals(-1, loadedBytes);
-        }
-    }
-
-    private void test_read_long_bytes(final Directory dir) {
-        try (final FileWriter fw = dir.getFileWriter(FILE_NAME)) {
-            fw.write(TEXT.getBytes());
-        }
-
-        try (final FileReader fr = dir.getFileReader(FILE_NAME)) {
-            byte[] bytes = new byte[TEXT_LONG.getBytes().length];
-
-            final int loadedBytes = fr.read(bytes);
-            assertEquals(10, loadedBytes);
-        }
-    }
-
-    private void test_read_write_text(final Directory dir) {
-        try (final FileWriter fw = dir.getFileWriter(FILE_NAME)) {
-            fw.write(TEXT.getBytes());
-        }
-
-        try (final FileReader fr = dir.getFileReader(FILE_NAME)) {
-            byte[] bytes = new byte[TEXT.getBytes().length];
-            final int loadedBytes = fr.read(bytes);
-
-            String pok = new String(bytes);
-            assertEquals(TEXT, pok);
-            assertEquals(TEXT.getBytes().length, loadedBytes);
-        }
-
+    private String readStr(final FileReaderSeekable fr, final int length) {
+        final byte[] bytes = new byte[length];
+        fr.read(bytes);
+        return new String(bytes);
     }
 
 }

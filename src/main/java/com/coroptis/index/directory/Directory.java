@@ -11,6 +11,8 @@ public interface Directory {
 
     FileReader getFileReader(String fileName);
 
+    FileReaderSeekable getFileReaderSeekable(String fileName);
+
     /**
      * Opens writer to file. When file already exists than method override it.
      * 

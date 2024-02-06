@@ -72,4 +72,9 @@ public class MemDirectory implements Directory {
         return new MemFileLock(this, fileName);
     }
 
+    @Override
+    public FileReaderSeekable getFileReaderSeekable(final String fileName) {
+        return new MemFileReaderSeekable(data.get(fileName));
+    }
+
 }

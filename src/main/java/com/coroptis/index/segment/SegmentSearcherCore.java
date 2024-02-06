@@ -120,7 +120,7 @@ public class SegmentSearcherCore<K, V> implements CloseableResource {
     @Override
     public void close() {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

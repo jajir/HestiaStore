@@ -1,6 +1,6 @@
 package com.coroptis.index.directory;
 
-public interface FileReaderSeakable extends FileReader {
+public interface FileReaderSeekable extends FileReader {
 
     /**
      * Allows to set position for file reading on specific byte.
