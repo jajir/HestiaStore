@@ -74,6 +74,11 @@ public class MemDirectory implements Directory {
 
     @Override
     public FileReaderSeekable getFileReaderSeekable(final String fileName) {
+        final byte[] fileData = data.get(fileName);
+        if (fileData == null) {
+            throw new IllegalArgumentException(
+                    String.format("No such file '%s'.", fileName));
+        }
         return new MemFileReaderSeekable(data.get(fileName));
     }
 

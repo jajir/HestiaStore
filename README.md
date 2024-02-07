@@ -23,3 +23,10 @@ Mockito requires reflective access to non-public parts in a Java module. It coul
 ```
 --add-opens=java.base/java.lang=ALL-UNNAMED
 ```
+
+## How to get segment disk size
+
+On apple try:
+```
+diskutil  info /Volumes/LaCie
+```

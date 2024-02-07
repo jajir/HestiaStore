@@ -1,5 +1,7 @@
 package com.coroptis.index.directory;
 
+import java.util.Objects;
+
 public class MemFileReader implements FileReader {
 
     private final byte[] data;
@@ -7,6 +9,7 @@ public class MemFileReader implements FileReader {
     private int position;
 
     MemFileReader(final byte[] data) {
+        Objects.requireNonNull(data);
         this.data = data;
         position = 0;
     }
@@ -40,6 +43,10 @@ public class MemFileReader implements FileReader {
         } else {
             return -1;
         }
+    }
+
+    protected int getDataLength() {
+        return data.length;
     }
 
     protected void setPosition(final long position) {
