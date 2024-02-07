@@ -9,6 +9,7 @@ import com.coroptis.index.PairIterator;
 import com.coroptis.index.PairIteratorReader;
 import com.coroptis.index.PairReader;
 import com.coroptis.index.PairReaderEmpty;
+import com.coroptis.index.PairSeekableReader;
 import com.coroptis.index.datatype.ConvertorFromBytes;
 import com.coroptis.index.datatype.ConvertorToBytes;
 import com.coroptis.index.datatype.TypeReader;
@@ -76,6 +77,16 @@ public class SstFile<K, V> {
                 valueReader, directory.getFileReader(fileName));
         reader.skip(position);
         return reader;
+    }
+
+    public PairSeekableReader<K, V> openSeekableReader() {
+        if (!directory.isFileExists(fileName)) {
+            return new PairReaderEmpty<>();
+        }
+        final DiffKeyReader<K> diffKeyReader = new DiffKeyReader<K>(
+                keyConvertorFromBytes);
+        return new PairSeekableReaderImpl<>(diffKeyReader, valueReader,
+                directory.getFileReaderSeekable(fileName));
     }
 
     @SuppressWarnings("resource")

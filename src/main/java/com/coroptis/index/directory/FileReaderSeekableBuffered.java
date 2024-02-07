@@ -29,8 +29,7 @@ public class FileReaderSeekableBuffered implements FileReaderSeekable {
 
     @Override
     public void skip(final long position) {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException("Not implementet");
     }
 
     @Override

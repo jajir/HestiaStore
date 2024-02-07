@@ -18,7 +18,7 @@ public class SstFileWriter<K, V> implements PairWriter<K, V> {
 
     private final DiffKeyWriter<K> diffKeyWriter;
 
-    private int position;
+    private long position;
 
     public SstFileWriter(final Directory directory, final String fileName,
             final ConvertorToBytes<K> keyConvertorToBytes,
@@ -40,14 +40,14 @@ public class SstFileWriter<K, V> implements PairWriter<K, V> {
      *                  without shared part with previous key.
      * @return position of end of record.
      */
-    public int put(final Pair<K, V> pair, final boolean fullWrite) {
+    public long put(final Pair<K, V> pair, final boolean fullWrite) {
         final int diffKeyLength = diffKeyWriter.write(writer, pair.getKey(),
                 fullWrite);
 
         final int writenBytesInValue = valueWriter.write(writer,
                 pair.getValue());
 
-        int lastPosition = position;
+        long lastPosition = position;
         position = position + diffKeyLength + writenBytesInValue;
         return lastPosition;
     }

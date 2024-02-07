@@ -59,8 +59,9 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
              * Write first pair end every nth pair.
              */
             if (i % maxNumberOfKeysInIndexPage == 0) {
-                final int position = indexWriter.put(previousPair, true);
-                scarceWriter.put(Pair.of(previousPair.getKey(), position));
+                final long position = indexWriter.put(previousPair, true);
+                scarceWriter
+                        .put(Pair.of(previousPair.getKey(), (int) position));
                 scarceIndexKeyCounter.incrementAndGet();
             } else {
                 indexWriter.put(previousPair);
@@ -74,8 +75,8 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
     public void close() {
         if (previousPair != null) {
             // write last pair to scarce index
-            final int position = indexWriter.put(previousPair, true);
-            scarceWriter.put(Pair.of(previousPair.getKey(), position));
+            final long position = indexWriter.put(previousPair, true);
+            scarceWriter.put(Pair.of(previousPair.getKey(), (int) position));
             keyCounter.getAndIncrement();
             scarceIndexKeyCounter.incrementAndGet();
         }

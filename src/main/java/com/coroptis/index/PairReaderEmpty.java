@@ -10,7 +10,7 @@ package com.coroptis.index;
  * @param<K> key type
  * @param <V> value type
  */
-public class PairReaderEmpty<K, V> implements PairReader<K, V> {
+public class PairReaderEmpty<K, V> implements PairSeekableReader<K, V> {
 
     /**
      * It return just null.
@@ -23,6 +23,11 @@ public class PairReaderEmpty<K, V> implements PairReader<K, V> {
 
     @Override
     public void close() {
+        // Intentionally do nothing
+    }
+
+    @Override
+    public void seek(long position) {
         // Intentionally do nothing
     }
 
