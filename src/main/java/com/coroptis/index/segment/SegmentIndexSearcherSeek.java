@@ -7,14 +7,14 @@ import com.coroptis.index.Pair;
 import com.coroptis.index.PairReader;
 import com.coroptis.index.sstfile.SstFile;
 
-public class SegmentIndexSearcherDefault<K, V>
+public class SegmentIndexSearcherSeek<K, V>
         implements SegmentIndexSearcher<K, V> {
 
     private final SstFile<K, V> segmenIndexFile;
     private final int maxNumberOfKeysInIndexPage;
     private final Comparator<K> keyTypeComparator;
 
-    SegmentIndexSearcherDefault(final SstFile<K, V> segmenIndexFile,
+    SegmentIndexSearcherSeek(final SstFile<K, V> segmenIndexFile,
             final int maxNumberOfKeysInIndexPage,
             final Comparator<K> keyTypeComparator) {
         this.segmenIndexFile = Objects.requireNonNull(segmenIndexFile);
@@ -25,11 +25,10 @@ public class SegmentIndexSearcherDefault<K, V>
 
     @Override
     public void close() {
-        // do intentionally nothing
     }
 
     @Override
-    public V search(final K key, long startPosition) {
+    public V search(K key, long startPosition) {
         try (final PairReader<K, V> fileReader = segmenIndexFile
                 .openReader(startPosition)) {
             for (int i = 0; i < maxNumberOfKeysInIndexPage; i++) {

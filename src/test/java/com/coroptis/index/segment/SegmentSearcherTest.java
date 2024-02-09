@@ -39,6 +39,9 @@ public class SegmentSearcherTest {
     private SstFile<Integer, String> sstFile;
 
     @Mock
+    private SegmentIndexSearcherSupplier<Integer, String> segmentIndexSearcherSupplier;
+
+    @Mock
     private PairReader<Integer, String> pairReader;
 
     @Mock
@@ -50,7 +53,7 @@ public class SegmentSearcherTest {
         prepareOpeningSearcher();
         try (final SegmentSearcher<Integer, String> searcher = new SegmentSearcher<>(
                 segmentFiles, segmentConf, versionProvider,
-                segmentPropertiesManager)) {
+                segmentPropertiesManager, segmentIndexSearcherSupplier)) {
 
             assertEquals("hello", searcher.get(37));
             assertEquals(null, searcher.get(5));
@@ -69,7 +72,7 @@ public class SegmentSearcherTest {
 
         try (final SegmentSearcher<Integer, String> searcher = new SegmentSearcher<>(
                 segmentFiles, segmentConf, versionProvider,
-                segmentPropertiesManager)) {
+                segmentPropertiesManager, segmentIndexSearcherSupplier)) {
 
             assertEquals("hello", searcher.get(37));
             when(pairReader.read()).thenReturn(Pair.of(17, "duck"))

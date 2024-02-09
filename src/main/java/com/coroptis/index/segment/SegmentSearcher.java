@@ -29,6 +29,7 @@ public class SegmentSearcher<K, V> implements CloseableResource {
     private final SegmentConf segmentConf;
     private final OptimisticLockObjectVersionProvider versionProvider;
     private final SegmentPropertiesManager segmentPropertiesManager;
+    private final SegmentIndexSearcherSupplier<K, V> segmentIndexSearcherSupplier;
 
     private SegmentSearcherCore<K, V> searcherCore;
     private OptimisticLock lock;
@@ -36,12 +37,15 @@ public class SegmentSearcher<K, V> implements CloseableResource {
     public SegmentSearcher(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
             final OptimisticLockObjectVersionProvider versionProvider,
-            final SegmentPropertiesManager segmentPropertiesManager) {
+            final SegmentPropertiesManager segmentPropertiesManager,
+            final SegmentIndexSearcherSupplier<K, V> segmentIndexSearcherSupplier) {
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.segmentConf = Objects.requireNonNull(segmentConf);
         this.versionProvider = Objects.requireNonNull(versionProvider);
         this.segmentPropertiesManager = Objects
                 .requireNonNull(segmentPropertiesManager);
+        this.segmentIndexSearcherSupplier = Objects
+                .requireNonNull(segmentIndexSearcherSupplier);
         optionallyrefreshCoreSearcher();
     }
 
@@ -82,7 +86,8 @@ public class SegmentSearcher<K, V> implements CloseableResource {
         if (searcherCore == null) {
             logger.debug("Opening segment searcher '{}'", segmentFiles.getId());
             searcherCore = new SegmentSearcherCore<>(segmentFiles, segmentConf,
-                    segmentPropertiesManager);
+                    segmentPropertiesManager,
+                    segmentIndexSearcherSupplier.get());
         }
     }
 

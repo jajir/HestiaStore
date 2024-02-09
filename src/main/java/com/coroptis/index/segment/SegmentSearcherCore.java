@@ -4,7 +4,6 @@ import java.util.Objects;
 
 import com.coroptis.index.CloseableResource;
 import com.coroptis.index.Pair;
-import com.coroptis.index.PairReader;
 import com.coroptis.index.bloomfilter.BloomFilter;
 import com.coroptis.index.scarceindex.ScarceIndex;
 
@@ -25,13 +24,13 @@ public class SegmentSearcherCore<K, V> implements CloseableResource {
     private final ScarceIndex<K> scarceIndex;
     private final BloomFilter<K> bloomFilter;
     private final SegmentFiles<K, V> segmentFiles;
-    private final SegmentConf segmentConf;
+    private final SegmentIndexSearcher<K, V> segmentIndexSearcher;
 
     public SegmentSearcherCore(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
-            final SegmentPropertiesManager segmentPropertiesManager) {
+            final SegmentPropertiesManager segmentPropertiesManager,
+            final SegmentIndexSearcher<K, V> segmentIndexSearcher) {
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
-        this.segmentConf = Objects.requireNonNull(segmentConf);
         this.cache = new SegmentCache<>(segmentFiles.getKeyTypeDescriptor(),
                 segmentFiles, segmentPropertiesManager);
         this.scarceIndex = ScarceIndex.<K>builder()
@@ -49,6 +48,8 @@ public class SegmentSearcherCore<K, V> implements CloseableResource {
                 .withNumberOfHashFunctions(
                         segmentConf.getBloomFilterNumberOfHashFunctions())
                 .build();
+        this.segmentIndexSearcher = Objects
+                .requireNonNull(segmentIndexSearcher);
     }
 
     public K getMaxKey() {
@@ -82,25 +83,7 @@ public class SegmentSearcherCore<K, V> implements CloseableResource {
             if (position == null) {
                 return null;
             }
-            try (final PairReader<K, V> fileReader = segmentFiles
-                    .getIndexSstFile().openReader(position)) {
-                for (int i = 0; i < segmentConf
-                        .getMaxNumberOfKeysInIndexPage(); i++) {
-                    final Pair<K, V> pair = fileReader.read();
-                    final int cmp = segmentFiles.getKeyTypeDescriptor()
-                            .getComparator().compare(pair.getKey(), key);
-                    if (cmp == 0) {
-                        return pair.getValue();
-                    }
-                    /**
-                     * Keys are in ascending order. When searched key is smaller
-                     * than key read from sorted data than key is not found.
-                     */
-                    if (cmp > 0) {
-                        return null;
-                    }
-                }
-            }
+            return segmentIndexSearcher.search(key, position);
         }
         return out;
     }
@@ -119,8 +102,7 @@ public class SegmentSearcherCore<K, V> implements CloseableResource {
 
     @Override
     public void close() {
-        // TODO Auto-generated method stub
-
+        segmentIndexSearcher.close();
     }
 
 }
