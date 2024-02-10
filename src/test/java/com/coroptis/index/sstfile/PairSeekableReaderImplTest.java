@@ -32,7 +32,7 @@ public class PairSeekableReaderImplTest {
                 tdi.getTypeWriter(), tdi.getTypeReader(), tds.getComparator(),
                 tds.getConvertorFromBytes(), tds.getConvertorToBytes());
         long position = 0;
-        try (final SstFileWriter<String, Integer> writer = sst.openWriter()) {
+        try (SstFileWriter<String, Integer> writer = sst.openWriter()) {
             writer.put(P1);
             writer.put(P2);
             writer.put(P3);
@@ -41,7 +41,7 @@ public class PairSeekableReaderImplTest {
             writer.put(P6);
         }
 
-        try (final PairSeekableReader<String, Integer> reader = sst
+        try (PairSeekableReader<String, Integer> reader = sst
                 .openSeekableReader()) {
             // verify reading from the beginning
             verifyEquals(P1, reader.read());

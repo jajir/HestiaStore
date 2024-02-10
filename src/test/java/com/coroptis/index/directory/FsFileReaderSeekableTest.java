@@ -76,16 +76,16 @@ public class FsFileReaderSeekableTest {
 
     private void test_overwrite_file(final Directory dir) {
         // Write data
-        try (final FileWriter fw = dir.getFileWriter(FILE_NAME)) {
+        try (FileWriter fw = dir.getFileWriter(FILE_NAME)) {
             fw.write(TEXT.getBytes());
         }
 
         // write empty file
-        try (final FileWriter fw = dir.getFileWriter(FILE_NAME)) {
+        try (FileWriter fw = dir.getFileWriter(FILE_NAME)) {
         }
 
         // assert no data are read
-        try (final FileReader fr = dir.getFileReader(FILE_NAME)) {
+        try (FileReader fr = dir.getFileReader(FILE_NAME)) {
             byte[] bytes = new byte[TEXT_LONG.length];
 
             final int loadedBytes = fr.read(bytes);
@@ -99,12 +99,12 @@ public class FsFileReaderSeekableTest {
             dir.deleteFile(FILE_NAME);
         }
         // write empty file
-        try (final FileWriter fw = dir.getFileWriter(FILE_NAME)) {
+        try (FileWriter fw = dir.getFileWriter(FILE_NAME)) {
         }
 
         // assert no data are read, but file exists
         assertTrue(dir.isFileExists(FILE_NAME));
-        try (final FileReader fr = dir.getFileReader(FILE_NAME)) {
+        try (FileReader fr = dir.getFileReader(FILE_NAME)) {
             byte[] bytes = new byte[TEXT_LONG.length];
 
             final int loadedBytes = fr.read(bytes);
@@ -113,11 +113,11 @@ public class FsFileReaderSeekableTest {
     }
 
     private void test_read_long_bytes(final Directory dir) {
-        try (final FileWriter fw = dir.getFileWriter(FILE_NAME)) {
+        try (FileWriter fw = dir.getFileWriter(FILE_NAME)) {
             fw.write(TEXT.getBytes());
         }
 
-        try (final FileReader fr = dir.getFileReader(FILE_NAME)) {
+        try (FileReader fr = dir.getFileReader(FILE_NAME)) {
             byte[] bytes = new byte[TEXT_LONG.length];
 
             final int loadedBytes = fr.read(bytes);
@@ -126,11 +126,11 @@ public class FsFileReaderSeekableTest {
     }
 
     private void test_read_write_text(final Directory dir) {
-        try (final FileWriter fw = dir.getFileWriter(FILE_NAME)) {
+        try (FileWriter fw = dir.getFileWriter(FILE_NAME)) {
             fw.write(TEXT.getBytes());
         }
 
-        try (final FileReader fr = dir.getFileReader(FILE_NAME)) {
+        try (FileReader fr = dir.getFileReader(FILE_NAME)) {
             byte[] bytes = new byte[TEXT.getBytes().length];
             final int loadedBytes = fr.read(bytes);
 

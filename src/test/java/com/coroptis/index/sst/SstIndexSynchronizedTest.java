@@ -16,7 +16,7 @@ public class SstIndexSynchronizedTest {
 
     @Test
     public void test_locking_get() throws Exception {
-        try (final SstIndexSynchronized<Integer, String> synchIndex = new SstIndexSynchronized<>(
+        try (SstIndexSynchronized<Integer, String> synchIndex = new SstIndexSynchronized<>(
                 index)) {
             when(index.get(3)).thenReturn("hello");
             assertEquals("hello", synchIndex.get(3));

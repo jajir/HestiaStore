@@ -30,7 +30,7 @@ public class SegmentIndexSearcherDefault<K, V>
 
     @Override
     public V search(final K key, long startPosition) {
-        try (final PairReader<K, V> fileReader = segmenIndexFile
+        try (PairReader<K, V> fileReader = segmenIndexFile
                 .openReader(startPosition)) {
             for (int i = 0; i < maxNumberOfKeysInIndexPage; i++) {
                 final Pair<K, V> pair = fileReader.read();

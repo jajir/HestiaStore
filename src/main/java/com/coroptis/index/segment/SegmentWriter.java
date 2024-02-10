@@ -87,9 +87,8 @@ public class SegmentWriter<K, V> {
                 segmentPropertiesManager.flush();
 
                 // store cache
-                try (final SstFileWriter<K, V> writer = segmentFiles
-                        .getCacheSstFile(segmentPropertiesManager
-                                .getAndIncreaseDeltaFileName())
+                try (SstFileWriter<K, V> writer = segmentFiles.getCacheSstFile(
+                        segmentPropertiesManager.getAndIncreaseDeltaFileName())
                         .openWriter()) {
                     uniqueCache.getStream().forEach(pair -> {
                         writer.put(pair);

@@ -30,7 +30,7 @@ public class CacheSortedReader<K, V> implements PairReader<K, V> {
             final Comparator<K> keyComparator) {
         logger.debug("Initilizing of sorter cache reader started.");
         final UniqueCache<K, V> cache = new UniqueCache<>(keyComparator);
-        try (final UnsortedDataFileStreamer<K, V> streamer = unsortedDataFile
+        try (UnsortedDataFileStreamer<K, V> streamer = unsortedDataFile
                 .openStreamer()) {
             streamer.stream().forEach(cache::put);
         }

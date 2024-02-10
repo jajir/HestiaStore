@@ -76,8 +76,7 @@ public class CompactSupport<K, V> {
                 .orElse(null);
         final Segment<K, V> segment = segmentManager
                 .getSegment(currentSegmentId);
-        try (final PairWriter<K, V> writer = segment
-                .openWriter(segmentSearcher)) {
+        try (PairWriter<K, V> writer = segment.openWriter(segmentSearcher)) {
             toSameSegment.forEach(writer::put);
         }
         eligibleSegments.add(currentSegmentId);

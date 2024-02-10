@@ -28,7 +28,7 @@ public class SegmentIteratorTest {
                 .withKeyTypeDescriptor(tdi).withValueTypeDescriptor(tds)
                 .withMaxNumberOfKeysInSegmentCache(0)
                 .withMaxNumberOfKeysInIndexPage(3).build();
-        try (final PairWriter<Integer, String> writer = segment.openWriter()) {
+        try (PairWriter<Integer, String> writer = segment.openWriter()) {
             writer.put(1, "a");
             writer.put(2, "b");
             writer.put(3, "c");
@@ -38,8 +38,7 @@ public class SegmentIteratorTest {
             assertTrue(iterator.readCurrent().isEmpty());
             assertTrue(iterator.hasNext());
             assertEquals(Pair.of(1, "a"), iterator.next());
-            try (final PairWriter<Integer, String> writer = segment
-                    .openWriter()) {
+            try (PairWriter<Integer, String> writer = segment.openWriter()) {
                 writer.put(4, "d");
                 writer.put(5, "e");
             }

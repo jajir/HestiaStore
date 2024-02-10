@@ -37,7 +37,7 @@ public class SegmentCache<K, V> {
                 .withSstFile(segmentFiles.getCacheSstFile()).build();
         segmentPropertiesManager.getCacheDeltaFileNames()
                 .forEach(segmentDeltaFileName -> {
-                    try (final SstFileStreamer<K, V> fileStreamer = segmentFiles
+                    try (SstFileStreamer<K, V> fileStreamer = segmentFiles
                             .getCacheSstFile(segmentDeltaFileName)
                             .openStreamer()) {
                         fileStreamer.stream().forEach(pair -> cache.put(pair));

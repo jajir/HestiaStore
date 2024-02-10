@@ -65,7 +65,7 @@ public class Props {
 
     public void writeData() {
         final byte buff[] = convertPropsToByteArray();
-        try (final FileWriter fileWriter = directory.getFileWriter(fileName,
+        try (FileWriter fileWriter = directory.getFileWriter(fileName,
                 Access.OVERWRITE)) {
             fileWriter.write(buff);
         }
@@ -83,7 +83,7 @@ public class Props {
 
     private byte[] readEntireFile(final Directory directory,
             final String fileName) {
-        try (final FileReader fileReader = directory.getFileReader(fileName)) {
+        try (FileReader fileReader = directory.getFileReader(fileName)) {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
             byte buff[] = new byte[128];
             int readedBytes = fileReader.read(buff);

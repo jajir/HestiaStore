@@ -72,10 +72,9 @@ public class SimpleDataFile<K, V> {
      */
     public void compact() {
         long cx = 0;
-        try (final PairReaderIterator<K, V> iterator = new PairReaderIterator<>(
+        try (PairReaderIterator<K, V> iterator = new PairReaderIterator<>(
                 openReader())) {
-            try (final SstFileWriter<K, V> writer = getTempFile()
-                    .openWriter()) {
+            try (SstFileWriter<K, V> writer = getTempFile().openWriter()) {
                 while (iterator.hasNext()) {
                     writer.put(iterator.next());
                     cx++;
@@ -131,7 +130,7 @@ public class SimpleDataFile<K, V> {
         long cx = 0;
         long half = getStats().getTotalNumberOfPairs() / 2;
         K maxLowerIndexKey = null;
-        try (final PairIterator<K, V> iterator = new PairIteratorReader<>(
+        try (PairIterator<K, V> iterator = new PairIteratorReader<>(
                 openReader())) {
             final SimpleDataFile<K, V> sdfLower = new SimpleDataFile<>(
                     directory, smallerDataFileName, keyTypeDescriptor,
@@ -140,8 +139,7 @@ public class SimpleDataFile<K, V> {
 
             // read bigger half and store it to current simple data file.
             cx = 0;
-            try (final SstFileWriter<K, V> writer = getTempFile()
-                    .openWriter()) {
+            try (SstFileWriter<K, V> writer = getTempFile().openWriter()) {
                 while (iterator.hasNext()) {
                     writer.put(iterator.next());
                     cx++;
@@ -208,7 +206,7 @@ public class SimpleDataFile<K, V> {
             long howManyToCopy) {
         K maxLowerIndexKey = null;
         long cx = 0;
-        try (final SstFileWriter<K, V> writer = getSortedFile(getMainFileName())
+        try (SstFileWriter<K, V> writer = getSortedFile(getMainFileName())
                 .openWriter()) {
             while (cx < howManyToCopy) {
                 final Pair<K, V> pair = iterator.next();

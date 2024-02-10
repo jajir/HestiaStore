@@ -30,7 +30,7 @@ public class KeySegmentCacheSanityCheckTest {
                 stringTd.getConvertorFromBytes(),
                 stringTd.getConvertorToBytes());
 
-        try (final SstFileWriter<String, SegmentId> writer = sdf.openWriter()) {
+        try (SstFileWriter<String, SegmentId> writer = sdf.openWriter()) {
             writer.put(Pair.of("aaa", SegmentId.of(1)));
             writer.put(Pair.of("bbb", SegmentId.of(2)));
             writer.put(Pair.of("ccc", SegmentId.of(3)));
@@ -40,8 +40,8 @@ public class KeySegmentCacheSanityCheckTest {
         }
 
         assertThrows(IllegalStateException.class, () -> {
-            try (final KeySegmentCache<String> fif = new KeySegmentCache<>(
-                    directory, stringTd)) {
+            try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
+                    stringTd)) {
             }
         }, "Unable to load scarce index, sanity check failed.");
 

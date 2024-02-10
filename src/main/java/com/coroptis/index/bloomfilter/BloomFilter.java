@@ -40,7 +40,7 @@ public class BloomFilter<K> {
         this.numberOfHashFunctions = numberOfHashFunctions;
         this.bloomFilterStats = new BloomFilterStats();
         if (isExists()) {
-            try (final FileReader reader = directory
+            try (FileReader reader = directory
                     .getFileReader(bloomFilterFileName)) {
                 final byte[] data = new byte[indexSizeInBytes];
                 if (indexSizeInBytes != reader.read(data)) {
@@ -64,8 +64,7 @@ public class BloomFilter<K> {
     void setNewHash(final Hash newHash) {
         Objects.requireNonNull(newHash, "New hash can't be null");
         this.hash = newHash;
-        try (final FileWriter writer = directory
-                .getFileWriter(bloomFilterFileName)) {
+        try (FileWriter writer = directory.getFileWriter(bloomFilterFileName)) {
             writer.write(hash.getData());
         }
 

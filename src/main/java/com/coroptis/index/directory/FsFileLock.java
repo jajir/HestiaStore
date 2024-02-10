@@ -24,7 +24,7 @@ public class FsFileLock implements FileLock {
             throw new IllegalStateException(String.format(
                     "Can't lock already locked file '%s'.", lockFileName));
         }
-        try (final FileWriter writer = directory.getFileWriter(lockFileName)) {
+        try (FileWriter writer = directory.getFileWriter(lockFileName)) {
             writer.write((byte) 0xFF);
         }
     }

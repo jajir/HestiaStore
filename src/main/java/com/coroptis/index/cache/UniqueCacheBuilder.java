@@ -35,9 +35,9 @@ public class UniqueCacheBuilder<K, V> {
 
     public UniqueCache<K, V> build() {
         final UniqueCache<K, V> out = new UniqueCache<>(keyComparator);
-        try (final PairReader<K, V> fileStreamer = sstFile.openReader()) {
+        try (PairReader<K, V> pairReader = sstFile.openReader()) {
             Pair<K, V> pair = null;
-            while ((pair = fileStreamer.read()) != null) {
+            while ((pair = pairReader.read()) != null) {
                 out.put(pair);
             }
         }

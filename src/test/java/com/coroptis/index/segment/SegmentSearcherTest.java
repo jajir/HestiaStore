@@ -56,7 +56,7 @@ public class SegmentSearcherTest {
         when(segmentIndexSearcherSupplier.get())
                 .thenReturn(segmentIndexSearcher);
         prepareOpeningSearcher();
-        try (final SegmentSearcher<Integer, String> searcher = new SegmentSearcher<>(
+        try (SegmentSearcher<Integer, String> searcher = new SegmentSearcher<>(
                 segmentFiles, segmentConf, versionProvider,
                 segmentPropertiesManager, segmentIndexSearcherSupplier)) {
             assertEquals("hello", searcher.get(37));
@@ -76,7 +76,7 @@ public class SegmentSearcherTest {
                 .thenReturn(segmentIndexSearcher);
         prepareOpeningSearcher();
 
-        try (final SegmentSearcher<Integer, String> searcher = new SegmentSearcher<>(
+        try (SegmentSearcher<Integer, String> searcher = new SegmentSearcher<>(
                 segmentFiles, segmentConf, versionProvider,
                 segmentPropertiesManager, segmentIndexSearcherSupplier)) {
 

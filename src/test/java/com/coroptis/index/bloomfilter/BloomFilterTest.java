@@ -24,7 +24,7 @@ public class BloomFilterTest {
                 .withDirectory(directory).withIndexSizeInBytes(100)
                 .withNumberOfHashFunctions(10).build();
 
-        try (final BloomFilterWriter<String> writer = bf.openWriter()) {
+        try (BloomFilterWriter<String> writer = bf.openWriter()) {
             assertTrue(writer.write("ahoj"));
             assertTrue(writer.write("znenku"));
             assertTrue(writer.write("karle"));

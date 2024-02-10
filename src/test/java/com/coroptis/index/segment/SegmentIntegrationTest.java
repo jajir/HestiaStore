@@ -49,8 +49,7 @@ public class SegmentIntegrationTest {
         assertEquals(0, stats.getNumberOfKeysInCache());
         assertEquals(0, stats.getNumberOfKeysInIndex());
         assertEquals(0, stats.getNumberOfKeysInScarceIndex());
-        try (final SegmentSearcher<Integer, String> searcher = seg
-                .openSearcher()) {
+        try (SegmentSearcher<Integer, String> searcher = seg.openSearcher()) {
             assertNull(searcher.get(1));
         }
         /*
@@ -69,7 +68,7 @@ public class SegmentIntegrationTest {
             final int expectedNumberKeysInScarceIndex,
             final int expectedNumberOfFiles) throws Exception {
 
-        try (final PairWriter<Integer, String> writer = seg.openWriter()) {
+        try (PairWriter<Integer, String> writer = seg.openWriter()) {
             writer.put(Pair.of(2, "a"));
             writer.put(Pair.of(3, "b"));
             writer.put(Pair.of(4, "c"));
@@ -90,8 +89,7 @@ public class SegmentIntegrationTest {
                 seg.getStats().getNumberOfKeysInScarceIndex());
 
         // Assert that all data could be found
-        try (final SegmentSearcher<Integer, String> searcher = seg
-                .openSearcher()) {
+        try (SegmentSearcher<Integer, String> searcher = seg.openSearcher()) {
             assertNull(searcher.get(6));
             assertEquals("a", searcher.get(2));
             assertEquals("b", searcher.get(3));
@@ -111,7 +109,7 @@ public class SegmentIntegrationTest {
             final int expectedNumberKeysInScarceIndex,
             final int expectedNumberOfFiles) throws Exception {
 
-        try (final PairWriter<Integer, String> writer = seg.openWriter()) {
+        try (PairWriter<Integer, String> writer = seg.openWriter()) {
             writer.put(Pair.of(2, "a"));
             writer.put(Pair.of(3, "b"));
             writer.put(Pair.of(4, "c"));
@@ -133,15 +131,14 @@ public class SegmentIntegrationTest {
         assertEquals(Pair.of(2, "a"), list2.get(0));
         assertEquals(Pair.of(3, "b"), list2.get(1));
 
-        try (final SegmentSearcher<Integer, String> searcher = seg
-                .openSearcher()) {
+        try (SegmentSearcher<Integer, String> searcher = seg.openSearcher()) {
             assertNull(searcher.get(2));
             assertNull(searcher.get(3));
             assertEquals("c", searcher.get(4));
             assertEquals("d", searcher.get(5));
         }
 
-        try (final SegmentSearcher<Integer, String> searcher = smaller
+        try (SegmentSearcher<Integer, String> searcher = smaller
                 .openSearcher()) {
             assertNull(searcher.get(4));
             assertNull(searcher.get(5));
@@ -160,7 +157,7 @@ public class SegmentIntegrationTest {
                 .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
                 .withValueTypeDescriptor(tds).build();
 
-        try (final PairWriter<Integer, String> writer = seg.openWriter()) {
+        try (PairWriter<Integer, String> writer = seg.openWriter()) {
             writer.put(Pair.of(2, "a"));
             writer.put(Pair.of(3, "b"));
             writer.put(Pair.of(3, "bb"));
@@ -181,8 +178,7 @@ public class SegmentIntegrationTest {
         assertEquals(Pair.of(4, "c"), list.get(2));
         assertEquals(Pair.of(5, "ddd"), list.get(3));
 
-        try (final SegmentSearcher<Integer, String> searcher = seg
-                .openSearcher()) {
+        try (SegmentSearcher<Integer, String> searcher = seg.openSearcher()) {
             assertNull(searcher.get(6));
             assertEquals("a", searcher.get(2));
             assertEquals("bb", searcher.get(3));
@@ -199,7 +195,7 @@ public class SegmentIntegrationTest {
                 .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
                 .withValueTypeDescriptor(tds).build();
 
-        try (final PairWriter<Integer, String> writer = seg.openWriter()) {
+        try (PairWriter<Integer, String> writer = seg.openWriter()) {
             writer.put(Pair.of(5, "d"));
             writer.put(Pair.of(3, "b"));
             writer.put(Pair.of(5, "dd"));
@@ -220,8 +216,7 @@ public class SegmentIntegrationTest {
         assertEquals(Pair.of(4, "c"), list.get(2));
         assertEquals(Pair.of(5, "ddd"), list.get(3));
 
-        try (final SegmentSearcher<Integer, String> searcher = seg
-                .openSearcher()) {
+        try (SegmentSearcher<Integer, String> searcher = seg.openSearcher()) {
             assertNull(searcher.get(6));
             assertEquals("a", searcher.get(2));
             assertEquals("bb", searcher.get(3));
@@ -238,7 +233,7 @@ public class SegmentIntegrationTest {
                 .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
                 .withValueTypeDescriptor(tds).build();
 
-        try (final PairWriter<Integer, String> writer = seg.openWriter()) {
+        try (PairWriter<Integer, String> writer = seg.openWriter()) {
             writer.put(Pair.of(5, "d"));
             writer.put(Pair.of(3, "b"));
             writer.put(Pair.of(5, "dd"));
@@ -263,8 +258,7 @@ public class SegmentIntegrationTest {
         assertEquals(Pair.of(3, "bb"), list.get(1));
         assertEquals(Pair.of(4, "c"), list.get(2));
 
-        try (final SegmentSearcher<Integer, String> searcher = seg
-                .openSearcher()) {
+        try (SegmentSearcher<Integer, String> searcher = seg.openSearcher()) {
             assertNull(searcher.get(5));
             assertEquals("a", searcher.get(2));
             assertEquals("bb", searcher.get(3));
@@ -294,7 +288,7 @@ public class SegmentIntegrationTest {
                 .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
                 .withValueTypeDescriptor(tds).build();
 
-        try (final PairWriter<Integer, String> writer = seg.openWriter()) {
+        try (PairWriter<Integer, String> writer = seg.openWriter()) {
             writer.put(Pair.of(5, "d"));
             writer.put(Pair.of(3, "b"));
             writer.put(Pair.of(5, "dd"));
@@ -316,8 +310,7 @@ public class SegmentIntegrationTest {
         assertEquals(Pair.of(3, "bb"), list.get(1));
         assertEquals(Pair.of(4, "c"), list.get(2));
 
-        try (final SegmentSearcher<Integer, String> searcher = seg
-                .openSearcher()) {
+        try (SegmentSearcher<Integer, String> searcher = seg.openSearcher()) {
             assertNull(searcher.get(5));
             assertEquals("a", searcher.get(2));
             assertEquals("bb", searcher.get(3));

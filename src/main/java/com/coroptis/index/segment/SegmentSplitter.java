@@ -109,9 +109,9 @@ public class SegmentSplitter<K, V> {
 
         K minKey = null;
         K maxKey = null;
-        try (final PairIterator<K, V> iterator = openIterator()) {
+        try (PairIterator<K, V> iterator = openIterator()) {
 
-            try (final SegmentFullWriter<K, V> writer = lowerSegment
+            try (SegmentFullWriter<K, V> writer = lowerSegment
                     .openFullWriter()) {
                 while (cx < half && iterator.hasNext()) {
                     cx++;
@@ -124,7 +124,7 @@ public class SegmentSplitter<K, V> {
                 }
             }
 
-            try (final SegmentFullWriter<K, V> writer = openFullWriter()) {
+            try (SegmentFullWriter<K, V> writer = openFullWriter()) {
                 while (iterator.hasNext()) {
                     final Pair<K, V> pair = iterator.next();
                     writer.put(pair);

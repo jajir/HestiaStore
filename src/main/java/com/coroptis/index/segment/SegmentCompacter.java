@@ -86,8 +86,8 @@ public class SegmentCompacter<K, V> {
     public void forceCompact() {
         logger.debug("Start of compacting '{}'", segmentFiles.getId());
         versionController.changeVersion();
-        try (final SegmentFullWriter<K, V> writer = openFullWriter()) {
-            try (final PairIterator<K, V> iterator = openIterator()) {
+        try (SegmentFullWriter<K, V> writer = openFullWriter()) {
+            try (PairIterator<K, V> iterator = openIterator()) {
                 while (iterator.hasNext()) {
                     writer.put(iterator.next());
                 }

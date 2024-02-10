@@ -67,7 +67,7 @@ public class KeySegmentCache<K> implements CloseableResource {
                 keyTypeDescriptor.getConvertorFromBytes(),
                 keyTypeDescriptor.getConvertorToBytes());
         this.list = new TreeMap<>(keyComparator);
-        try (final PairIterator<K, SegmentId> reader = sdf.openIterator()) {
+        try (PairIterator<K, SegmentId> reader = sdf.openIterator()) {
             while (reader.hasNext()) {
                 final Pair<K, SegmentId> pair = reader.next();
                 list.put(pair.getKey(), pair.getValue());
@@ -169,7 +169,7 @@ public class KeySegmentCache<K> implements CloseableResource {
 
     public void flush() {
         if (isDirty) {
-            try (final SstFileWriter<K, SegmentId> writer = sdf.openWriter()) {
+            try (SstFileWriter<K, SegmentId> writer = sdf.openWriter()) {
                 list.forEach((k, v) -> writer.put(Pair.of(k, v)));
             }
         }

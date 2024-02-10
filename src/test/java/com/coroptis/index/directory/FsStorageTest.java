@@ -28,13 +28,12 @@ public class FsStorageTest {
         final Directory dir = new FsDirectory(tempDir);
 
         // Write data
-        try (final FileWriter fw = dir.getFileWriter(FILE_NAME)) {
+        try (FileWriter fw = dir.getFileWriter(FILE_NAME)) {
             fw.write(TEXT_LONG);
         }
 
         // Read data and verify seek operation
-        try (final FileReaderSeekable fr = dir
-                .getFileReaderSeekable(FILE_NAME)) {
+        try (FileReaderSeekable fr = dir.getFileReaderSeekable(FILE_NAME)) {
             fr.seek(54);
             assertEquals("object", readStr(fr, 6));
 

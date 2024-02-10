@@ -22,8 +22,8 @@ public class SimpleIndexTest {
     @Test
     public void read_incorrect_insert_order_mem() throws Exception {
         final Directory directory = new MemDirectory();
-        try (final SstFileWriter<String, Byte> siw = new SstFileWriter<>(
-                directory, FILE_NAME, stringTd.getConvertorToBytes(),
+        try (SstFileWriter<String, Byte> siw = new SstFileWriter<>(directory,
+                FILE_NAME, stringTd.getConvertorToBytes(),
                 Comparator.naturalOrder(), byteTd.getTypeWriter())) {
             assertEquals(0,
                     siw.put(new Pair<String, Byte>("aaabbb", (byte) 1), true));
@@ -35,7 +35,7 @@ public class SimpleIndexTest {
 
     @Test
     public void test_invalidOrder() throws Exception {
-        try (final SstFileWriter<String, Byte> siw = new SstFileWriter<>(
+        try (SstFileWriter<String, Byte> siw = new SstFileWriter<>(
                 new MemDirectory(), FILE_NAME, stringTd.getConvertorToBytes(),
                 Comparator.naturalOrder(), byteTd.getTypeWriter())) {
             siw.put(new Pair<String, Byte>("aaa", (byte) 0));
@@ -47,7 +47,7 @@ public class SimpleIndexTest {
 
     @Test
     public void test_duplicatedValue() throws Exception {
-        try (final SstFileWriter<String, Byte> siw = new SstFileWriter<>(
+        try (SstFileWriter<String, Byte> siw = new SstFileWriter<>(
                 new MemDirectory(), FILE_NAME, stringTd.getConvertorToBytes(),
                 Comparator.naturalOrder(), byteTd.getTypeWriter())) {
             siw.put(new Pair<String, Byte>("aaa", (byte) 0));
@@ -59,7 +59,7 @@ public class SimpleIndexTest {
 
     @Test
     public void test_null_key() throws Exception {
-        try (final SstFileWriter<String, Byte> siw = new SstFileWriter<>(
+        try (SstFileWriter<String, Byte> siw = new SstFileWriter<>(
                 new MemDirectory(), FILE_NAME, stringTd.getConvertorToBytes(),
                 Comparator.naturalOrder(), byteTd.getTypeWriter())) {
 

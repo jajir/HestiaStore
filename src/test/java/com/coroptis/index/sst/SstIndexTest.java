@@ -237,8 +237,7 @@ public class SstIndexTest {
     private List<Pair<Integer, String>> getSegmentData(final int segmentId) {
         final Segment<Integer, String> seg = makeSegment(segmentId);
         final List<Pair<Integer, String>> out = new ArrayList<>();
-        try (final PairIterator<Integer, String> iterator = seg
-                .openIterator()) {
+        try (PairIterator<Integer, String> iterator = seg.openIterator()) {
             while (iterator.hasNext()) {
                 out.add(iterator.next());
             }

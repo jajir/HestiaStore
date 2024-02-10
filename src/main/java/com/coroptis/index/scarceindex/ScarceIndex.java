@@ -70,10 +70,10 @@ public class ScarceIndex<K> {
     public void loadCache() {
         ScarceIndexCache<K> tmp = new ScarceIndexCache<>(keyTypeDescriptor);
         if (directory.isFileExists(fileName)) {
-            try (final PairIterator<K, Integer> reader = sstFile
+            try (PairIterator<K, Integer> pairIterator = sstFile
                     .openIterator()) {
-                while (reader.hasNext()) {
-                    final Pair<K, Integer> pair = reader.next();
+                while (pairIterator.hasNext()) {
+                    final Pair<K, Integer> pair = pairIterator.next();
                     tmp.put(pair);
                 }
             }
