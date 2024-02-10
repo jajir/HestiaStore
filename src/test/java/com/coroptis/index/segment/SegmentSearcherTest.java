@@ -42,6 +42,9 @@ public class SegmentSearcherTest {
     private SegmentIndexSearcherSupplier<Integer, String> segmentIndexSearcherSupplier;
 
     @Mock
+    private SegmentIndexSearcher<Integer, String> segmentIndexSearcher;
+
+    @Mock
     private PairReader<Integer, String> pairReader;
 
     @Mock
@@ -49,12 +52,13 @@ public class SegmentSearcherTest {
 
     @Test
     public void test_simple_get_by_key() throws Exception {
-        final TestVersionProvider versionProvider = new TestVersionProvider();
+        final MockVersionProvider versionProvider = new MockVersionProvider();
+        when(segmentIndexSearcherSupplier.get())
+                .thenReturn(segmentIndexSearcher);
         prepareOpeningSearcher();
         try (final SegmentSearcher<Integer, String> searcher = new SegmentSearcher<>(
                 segmentFiles, segmentConf, versionProvider,
                 segmentPropertiesManager, segmentIndexSearcherSupplier)) {
-
             assertEquals("hello", searcher.get(37));
             assertEquals(null, searcher.get(5));
             assertEquals("hello", searcher.get(37));
@@ -67,7 +71,9 @@ public class SegmentSearcherTest {
 
     @Test
     public void test_optimistic_lock_invalidating() throws Exception {
-        final TestVersionProvider versionProvider = new TestVersionProvider();
+        final MockVersionProvider versionProvider = new MockVersionProvider();
+        when(segmentIndexSearcherSupplier.get())
+                .thenReturn(segmentIndexSearcher);
         prepareOpeningSearcher();
 
         try (final SegmentSearcher<Integer, String> searcher = new SegmentSearcher<>(
@@ -102,7 +108,7 @@ public class SegmentSearcherTest {
                 .thenReturn("segment-00007.bloom-filter");        
     }
 
-    static class TestVersionProvider
+    static class MockVersionProvider
             implements OptimisticLockObjectVersionProvider {
 
         private int version;

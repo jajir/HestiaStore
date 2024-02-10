@@ -105,7 +105,7 @@ public class Segment<K, V>
     }
 
     public SegmentSearcher<K, V> openSearcher() {
-        final SegmentIndexSearcherSupplier<K, V> supplier = new SegmentIndexSearcherDefaultSupplier<>(
+        final SegmentIndexSearcherSupplier<K, V> supplier = new SegmentIndexSearcherSeekSupplier<>(
                 segmentFiles, segmentConf);
         return new SegmentSearcher<>(segmentFiles, segmentConf,
                 versionController, segmentPropertiesManager, supplier);
