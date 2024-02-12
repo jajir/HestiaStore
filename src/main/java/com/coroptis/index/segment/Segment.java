@@ -69,7 +69,9 @@ public class Segment<K, V>
     }
 
     public void forceCompact() {
-        segmentCompacter.forceCompact();
+        if (segmentPropertiesManager.getCacheDeltaFileNames().size() > 0) {
+            segmentCompacter.forceCompact();
+        }
     }
 
     /**
@@ -105,7 +107,7 @@ public class Segment<K, V>
     }
 
     public SegmentSearcher<K, V> openSearcher() {
-        final SegmentIndexSearcherSupplier<K, V> supplier = new SegmentIndexSearcherSeekSupplier<>(
+        final SegmentIndexSearcherSupplier<K, V> supplier = new SegmentIndexSearcherDefaultSupplier<>(
                 segmentFiles, segmentConf);
         return new SegmentSearcher<>(segmentFiles, segmentConf,
                 versionController, segmentPropertiesManager, supplier);

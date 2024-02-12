@@ -130,11 +130,11 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     @Override
     public void forceCompact() {
         indexState.tryPerformOperation();
+        compact();
         keySegmentCache.getSegmentIds().forEach(segmentId -> {
             final Segment<K, V> seg = segmentManager.getSegment(segmentId);
             seg.forceCompact();
         });
-        compact();
     }
 
     /**
