@@ -53,10 +53,9 @@ public class SegmentIntegrationTest {
             assertNull(searcher.get(1));
         }
         /*
-         * Number of file's is constantly 4 because all cache data are flushed
-         * to main index and to bloom filter file.
+         * Number of file's is constantly 0, because of forceCompact method doesn't run, because there are no canges in delta files.
          */
-        assertEquals(4, numberOfFilesInDirectory(directory));
+        assertEquals(0, numberOfFilesInDirectory(directory));
 
     }
 
