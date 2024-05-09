@@ -53,7 +53,8 @@ public class SegmentIntegrationTest {
             assertNull(searcher.get(1));
         }
         /*
-         * Number of file's is constantly 0, because of forceCompact method doesn't run, because there are no canges in delta files.
+         * Number of file's is constantly 0, because of forceCompact method doesn't run,
+         * because there are no canges in delta files.
          */
         assertEquals(0, numberOfFilesInDirectory(directory));
 
