@@ -50,8 +50,8 @@ public class LogBuilder<K, V> {
         return this;
     }
 
-    public Log<K, V> build() {
-        return new Log<>(directory, fileName, keyWriter, valueWriter, keyReader,
+    public LogImpl<K, V> build() {
+        return new LogImpl<>(directory, fileName, keyWriter, valueWriter, keyReader,
                 valueReader);
     }
 }

@@ -1,52 +1,43 @@
 package com.coroptis.index.log;
 
-import java.util.Objects;
+import java.util.stream.Stream;
 
-import com.coroptis.index.datatype.TypeReader;
-import com.coroptis.index.datatype.TypeWriter;
-import com.coroptis.index.directory.Directory;
+import com.coroptis.index.Pair;
 
 /**
- * Unsorted key value pairs log file.
+ * Write Ahead Log. Supporting basic operations:
+ * <ul>
+ * <li>POST - Create or update data record</li>
+ * <li>DEKLETE - Delete data record</li>
+ * </ul>
  * 
  * @author honza
  *
  * @param <K> key type
  * @param <V> value type
  */
-public class Log<K, V> {
+public interface Log<K, V> {
 
     /**
-     * Log data will be stored in directory in filename 'filename' + '.' +
-     * 'log'. For example 'segment-00012.log'.
+     * Log post operation.
+     * 
+     * @param key   required key
+     * @param value required value
      */
-    private final static String LOG_FILE_EXTENSION = "log";
+    void post(K key, V value);
 
-    private final Directory directory;
+    /**
+     * Log delete operation.
+     * 
+     * @param key required key
+     */
+    void delete(K key);
 
-    private final String fileName;
-
-    private final TypeWriter<K> keyWriter;
-
-    private final TypeWriter<V> valueWriter;
-
-    private final TypeReader<K> keyReader;
-
-    private final TypeReader<V> valueReader;
-
-    public static <M, N> LogBuilder<M, N> builder() {
-        return new LogBuilder<M, N>();
-    }
-
-    public Log(final Directory directory, final String fileName,
-            final TypeWriter<K> keyWriter, final TypeWriter<V> valueWriter,
-            final TypeReader<K> keyReader, final TypeReader<V> valueReader) {
-        this.directory = Objects.requireNonNull(directory);
-        this.fileName = Objects.requireNonNull(fileName);
-        this.keyWriter = Objects.requireNonNull(keyWriter);
-        this.valueWriter = Objects.requireNonNull(valueWriter);
-        this.keyReader = Objects.requireNonNull(keyReader);
-        this.valueReader = Objects.requireNonNull(valueReader);
-    }
+    /**
+     * Provide stream over all data from older log record to lastest one.
+     * 
+     * @return stream containing all logged data
+     */
+    Stream<Pair<K, V>> getStream();
 
 }
