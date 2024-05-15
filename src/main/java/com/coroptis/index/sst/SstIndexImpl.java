@@ -14,12 +14,16 @@ import com.coroptis.index.PairIterator;
 import com.coroptis.index.cache.UniqueCache;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
+import com.coroptis.index.log.Log;
+import com.coroptis.index.log.LogWriter;
+import com.coroptis.index.log.LoggedKey;
 import com.coroptis.index.segment.MergeIterator;
 import com.coroptis.index.segment.Segment;
 import com.coroptis.index.segment.SegmentId;
 import com.coroptis.index.segment.SegmentSearcher;
 import com.coroptis.index.segment.SegmentSplitter;
 import com.coroptis.index.sstfile.PairComparator;
+import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
 
 public class SstIndexImpl<K, V> implements Index<K, V> {
 
@@ -32,14 +36,17 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     private final KeySegmentCache<K> keySegmentCache;
     private final SegmentManager<K, V> segmentManager;
     private final SegmentSearcherCache<K, V> segmentSearcherCache;
+    private final Log<K,V> log;
+    private final LogWriter<K,V> logWriter;
     private IndexState<K, V> indexState;
 
     public SstIndexImpl(final Directory directory,
             TypeDescriptor<K> keyTypeDescriptor,
-            TypeDescriptor<V> valueTypeDescriptor, final SsstIndexConf conf) {
+            TypeDescriptor<V> valueTypeDescriptor, final SsstIndexConf conf, final Log<K,V> log) {
         Objects.requireNonNull(directory);
         indexState = new IndexStateNew<>(directory);
         this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
+        this.log = Objects.requireNonNull(log);
         this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
         this.conf = Objects.requireNonNull(conf);
         this.cache = new UniqueCache<K, V>(
@@ -50,6 +57,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                 valueTypeDescriptor, conf);
         this.segmentSearcherCache = new SegmentSearcherCache<>(conf,
                 segmentManager);
+                this.logWriter=log.openWriter();
         indexState.onReady(this);
     }
 
@@ -64,7 +72,9 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                     "Can't insert thombstone value '%s' into index", value));
         }
 
-        // TODO add key value pair into WAL
+        
+        // add key value pair into WAL
+        logWriter.post(key, value);
 
         cache.put(Pair.of(key, value));
 
@@ -183,13 +193,21 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         indexState.tryPerformOperation();
         Objects.requireNonNull(key, "Key cant be null");
 
+        logWriter.delete(key, valueTypeDescriptor.getTombstone());
+
         cache.put(Pair.of(key, valueTypeDescriptor.getTombstone()));
+    }
+
+    @Override
+    public UnsortedDataFileStreamer<LoggedKey<K>, V> getLogStreamer(){
+        return log.openStreamer();
     }
 
     @Override
     public void close() {
         compact();
         indexState.onClose(this);
+        logWriter.close();
     }
 
     public void setIndexState(final IndexState<K, V> indexState) {

@@ -4,6 +4,7 @@ import java.util.Objects;
 
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
+import com.coroptis.index.log.Log;
 
 public class IndexBuilder<K, V> {
 
@@ -30,6 +31,7 @@ public class IndexBuilder<K, V> {
     private Directory directory;
     private TypeDescriptor<K> keyTypeDescriptor;
     private TypeDescriptor<V> valueTypeDescriptor;
+    private boolean useFullLog = false;
 
     IndexBuilder() {
 
@@ -100,14 +102,32 @@ public class IndexBuilder<K, V> {
         return this;
     }
 
+    public IndexBuilder<K, V> withUseFullLog(
+            final boolean useFullLog) {
+        this.useFullLog = useFullLog;
+        return this;
+    }
+
     public Index<K, V> build() {
         final SsstIndexConf conf = new SsstIndexConf(
                 maxNumberOfKeysInSegmentCache,
                 maxNumberOfKeysInSegmentIndexPage, maxNumberOfKeysInCache,
                 maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache,
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes);
+        
+        Log<K,V> log = null;
+        if(useFullLog){
+            log= Log.<K,V>builder().withDirectory(directory)
+                .withFileName("log")
+                .withKeyTypeDescriptor(keyTypeDescriptor)
+                .withValueReader(valueTypeDescriptor.getTypeReader())
+                .withValueWriter(valueTypeDescriptor.getTypeWriter())
+                .build();
+        }else{
+            log = Log.<K,V>builder().buildEmpty();
+        }
         final SstIndexImpl<K, V> index = new SstIndexImpl<>(directory,
-                keyTypeDescriptor, valueTypeDescriptor, conf);
+                keyTypeDescriptor, valueTypeDescriptor, conf,log);
         if (isIndexSynchronized) {
             return new SstIndexSynchronized<>(index);
         } else {

@@ -5,6 +5,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
 import com.coroptis.index.Pair;
+import com.coroptis.index.log.LoggedKey;
+import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
 
 public class SstIndexSynchronized<K, V> implements Index<K, V> {
 
@@ -75,4 +77,13 @@ public class SstIndexSynchronized<K, V> implements Index<K, V> {
         }
     }
 
+        @Override
+    public UnsortedDataFileStreamer<LoggedKey<K>, V> getLogStreamer(){
+        lock.lock();
+        try {
+            return index.getLogStreamer();
+        } finally {
+            lock.unlock();
+        }
+    }
 }

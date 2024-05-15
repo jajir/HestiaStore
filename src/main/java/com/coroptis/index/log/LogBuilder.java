@@ -48,4 +48,9 @@ public class LogBuilder<K, V> {
         return new LogImpl<>(directory, fileName, keyTypeDescriptor, valueWriter,
                 valueReader);
     }
+
+    public LogEmptyImpl<K, V> buildEmpty() {
+        return new LogEmptyImpl<>();
+    }
+    
 }
