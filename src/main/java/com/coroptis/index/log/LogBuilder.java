@@ -2,6 +2,7 @@ package com.coroptis.index.log;
 
 import java.util.Objects;
 
+import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.datatype.TypeReader;
 import com.coroptis.index.datatype.TypeWriter;
 import com.coroptis.index.directory.Directory;
@@ -12,11 +13,9 @@ public class LogBuilder<K, V> {
 
     private String fileName;
 
-    private TypeWriter<K> keyWriter;
+    private TypeDescriptor<K> keyTypeDescriptor;
 
     private TypeWriter<V> valueWriter;
-
-    private TypeReader<K> keyReader;
 
     private TypeReader<V> valueReader;
 
@@ -30,18 +29,13 @@ public class LogBuilder<K, V> {
         return this;
     }
 
-    public LogBuilder<K, V> withKeyWriter(final TypeWriter<K> keyWriter) {
-        this.keyWriter = Objects.requireNonNull(keyWriter);
+    public LogBuilder<K, V> withKeyTypeDescriptor(final TypeDescriptor<K> keyTypeDescriptor) {
+        this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
         return this;
     }
 
     public LogBuilder<K, V> withValueWriter(final TypeWriter<V> valueWriter) {
         this.valueWriter = Objects.requireNonNull(valueWriter);
-        return this;
-    }
-
-    public LogBuilder<K, V> withKeyReader(final TypeReader<K> keyReader) {
-        this.keyReader = Objects.requireNonNull(keyReader);
         return this;
     }
 
@@ -51,7 +45,7 @@ public class LogBuilder<K, V> {
     }
 
     public LogImpl<K, V> build() {
-        return new LogImpl<>(directory, fileName, keyWriter, valueWriter, keyReader,
+        return new LogImpl<>(directory, fileName, keyTypeDescriptor, valueWriter,
                 valueReader);
     }
 }

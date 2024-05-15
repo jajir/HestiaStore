@@ -2,51 +2,64 @@ package com.coroptis.index.log;
 
 import java.util.Objects;
 
+import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.datatype.TypeReader;
 import com.coroptis.index.datatype.TypeWriter;
 import com.coroptis.index.directory.Directory;
+import com.coroptis.index.unsorteddatafile.UnsortedDataFile;
+import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
 
-/**
- * Unsorted key value pairs log file.
- * 
- * @author honza
- *
- * @param <K> key type
- * @param <V> value type
- */
-public class LogImpl<K, V> {
+public class LogImpl<K, V> implements Log<K, V> {
 
     /**
      * Log data will be stored in directory in filename 'filename' + '.' +
-     * 'log'. For example 'segment-00012.log'.
+     * 'log'. For example 'log-0012.log'.
      */
-    private final static String LOG_FILE_EXTENSION = "log";
+    private final static String LOG_FILE_EXTENSION = ".log";
 
-    private final Directory directory;
+    private final UnsortedDataFile<LoggedKey<K>, V> log;
 
-    private final String fileName;
+    public LogImpl(final Directory directory,
+            final String fileName,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeWriter<V> valueWriter,
+            final TypeReader<V> valueReader) {
 
-    private final TypeWriter<K> keyWriter;
+        Objects.requireNonNull(directory);
+        Objects.requireNonNull(fileName);
+        Objects.requireNonNull(keyTypeDescriptor);
+        Objects.requireNonNull(valueWriter);
+        Objects.requireNonNull(valueReader);
 
-    private final TypeWriter<V> valueWriter;
+        TypeDescriptorLoggedKey<K> tdlk = new TypeDescriptorLoggedKey<>(keyTypeDescriptor);
 
-    private final TypeReader<K> keyReader;
-
-    private final TypeReader<V> valueReader;
-
-    public static <M, N> LogBuilder<M, N> builder() {
-        return new LogBuilder<M, N>();
+        this.log = new UnsortedDataFile<>(
+                directory, fileName + LOG_FILE_EXTENSION, tdlk.getTypeWriter(), valueWriter,
+                tdlk.getTypeReader(), valueReader);
     }
 
-    public LogImpl(final Directory directory, final String fileName,
-            final TypeWriter<K> keyWriter, final TypeWriter<V> valueWriter,
-            final TypeReader<K> keyReader, final TypeReader<V> valueReader) {
-        this.directory = Objects.requireNonNull(directory);
-        this.fileName = Objects.requireNonNull(fileName);
-        this.keyWriter = Objects.requireNonNull(keyWriter);
-        this.valueWriter = Objects.requireNonNull(valueWriter);
-        this.keyReader = Objects.requireNonNull(keyReader);
-        this.valueReader = Objects.requireNonNull(valueReader);
+    public LogWriter<K, V> openWriter() {
+        return new LogWriter<K, V>() {
+
+            @Override
+            public void delete(final K key, final V value) {
+                // it's intentionally empty
+            }
+
+            @Override
+            public void post(final K key, final V value) {
+                // it's intentionally empty
+            }
+
+            @Override
+            public void close() {
+                // it's intentionally empty
+            }
+
+        };
     }
 
+    public UnsortedDataFileStreamer<LoggedKey<K>, V> openStreamer() {
+        return log.openStreamer();
+    }
 }
