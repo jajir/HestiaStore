@@ -30,3 +30,15 @@ On apple try:
 ```
 diskutil  info /Volumes/LaCie
 ```
+
+## How to deploy new version
+
+* Make sure that code compile and all test are passing.
+* Prepare personal github access token. With right to deploy.
+* Replace `TOKEN` in file `TOKEN` with your personal github token.
+* Execute: 
+```
+mvn --settings settings.xml deploy
+```
+
+it's done.
