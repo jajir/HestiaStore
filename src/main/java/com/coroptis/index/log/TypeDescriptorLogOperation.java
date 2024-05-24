@@ -11,6 +11,8 @@ import com.coroptis.index.datatype.TypeWriter;
 
 public class TypeDescriptorLogOperation implements TypeDescriptor<LogOperation> {
 
+    private final byte END_OF_FILE = -1;
+
     private final static TypeDescriptorByte TDB = new TypeDescriptorByte();
 
     @Override
@@ -27,7 +29,13 @@ public class TypeDescriptorLogOperation implements TypeDescriptor<LogOperation> 
 
     @Override
     public TypeReader<LogOperation> getTypeReader() {
-        return inputStream -> LogOperation.fromByte((byte) inputStream.read());
+        return inputStream -> {
+            byte b = (byte) inputStream.read();
+            if(b == END_OF_FILE){
+                return null;
+            }
+            return LogOperation.fromByte(b);
+        };
     }
 
     @Override

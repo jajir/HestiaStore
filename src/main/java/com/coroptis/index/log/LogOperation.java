@@ -28,8 +28,13 @@ public enum LogOperation {
         }
     }
 
+    @Override
+    public String toString() {
+        return String.format("Logged[operation='%s']", code);
+    }
+
     private static class Constants {
-        private final static byte POST_CODE = (byte) 1;
-        private final static byte DELETE_CODE = (byte) 2;
+        private final static byte POST_CODE = (byte) 80; // ASCII value for 'P'
+        private final static byte DELETE_CODE = (byte) 68;// ASCII value for 'D'
     }
 }

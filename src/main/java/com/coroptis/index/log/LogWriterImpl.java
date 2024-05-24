@@ -16,10 +16,6 @@ public class LogWriterImpl<K, V> implements LogWriter<K, V> {
 
     private final PairWriter<LoggedKey<K>, V> writer;
 
-    public static <M, N> LogBuilder<M, N> builder() {
-        return new LogBuilder<M, N>();
-    }
-
     public LogWriterImpl(final PairWriter<LoggedKey<K>, V> writer) {
         this.writer = Objects.requireNonNull(writer);
     }

@@ -206,8 +206,8 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     @Override
     public void close() {
         compact();
-        indexState.onClose(this);
         logWriter.close();
+        indexState.onClose(this);
     }
 
     public void setIndexState(final IndexState<K, V> indexState) {

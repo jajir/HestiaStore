@@ -43,7 +43,11 @@ public class TypeDescriptorLoggedKey<K> implements TypeDescriptor<LoggedKey<K>> 
     @Override
     public TypeReader<LoggedKey<K>> getTypeReader() {
         return inputStream -> {
-            return LoggedKey.of(TDLO.getTypeReader().read(inputStream), tdKey.getTypeReader().read(inputStream));
+            final LogOperation logOperation = TDLO.getTypeReader().read(inputStream);
+            if (logOperation == null) {
+                return null;
+            }
+            return LoggedKey.of(logOperation, tdKey.getTypeReader().read(inputStream));
         };
     }
 

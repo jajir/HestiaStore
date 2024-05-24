@@ -39,24 +39,7 @@ public class LogImpl<K, V> implements Log<K, V> {
     }
 
     public LogWriter<K, V> openWriter() {
-        return new LogWriter<K, V>() {
-
-            @Override
-            public void delete(final K key, final V value) {
-                // it's intentionally empty
-            }
-
-            @Override
-            public void post(final K key, final V value) {
-                // it's intentionally empty
-            }
-
-            @Override
-            public void close() {
-                // it's intentionally empty
-            }
-
-        };
+        return new LogWriterImpl<>(log.openWriter());
     }
 
     public UnsortedDataFileStreamer<LoggedKey<K>, V> openStreamer() {
