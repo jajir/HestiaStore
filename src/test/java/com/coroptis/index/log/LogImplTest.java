@@ -2,7 +2,6 @@ package com.coroptis.index.log;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.File;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -14,7 +13,7 @@ import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
 import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
-import com.coroptis.index.directory.FsDirectory;
+import com.coroptis.index.directory.MemDirectory;
 import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
 
 /**
@@ -36,19 +35,18 @@ public class LogImplTest {
         logWriter.delete(3, tds.getTombstone());
         logWriter.close();
 
-        assertEquals(1,directory.getFileNames().count());
+        assertEquals(1, directory.getFileNames().count());
 
         assertEquals(4, log.openStreamer().stream().count());
         try (final UnsortedDataFileStreamer<LoggedKey<Integer>, String> streamer = log.openStreamer()) {
             final List<Pair<LoggedKey<Integer>, String>> list = streamer.stream().collect(Collectors.toList());
             final Pair<LoggedKey<Integer>, String> p1 = list.get(0);
-            assertEquals(LoggedKey.of(LogOperation.POST,3), p1.getKey());
+            assertEquals(LoggedKey.of(LogOperation.POST, 3), p1.getKey());
         }
     }
 
     @BeforeEach
     public void prepareData() {
-        // directory = new MemDirectory();
-        directory = new FsDirectory(new File("/tmp/checker/"));
+        directory = new MemDirectory();
     }
 }
