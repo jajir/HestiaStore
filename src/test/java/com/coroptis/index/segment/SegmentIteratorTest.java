@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
+import com.coroptis.index.PairWriter;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
 import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
@@ -27,8 +28,7 @@ public class SegmentIteratorTest {
                 .withKeyTypeDescriptor(tdi).withValueTypeDescriptor(tds)
                 .withMaxNumberOfKeysInSegmentCache(0)
                 .withMaxNumberOfKeysInIndexPage(3).build();
-        try (final SegmentWriter<Integer, String> writer = segment
-                .openWriter()) {
+        try (PairWriter<Integer, String> writer = segment.openWriter()) {
             writer.put(1, "a");
             writer.put(2, "b");
             writer.put(3, "c");
@@ -37,9 +37,8 @@ public class SegmentIteratorTest {
         try (PairIterator<Integer, String> iterator = segment.openIterator()) {
             assertTrue(iterator.readCurrent().isEmpty());
             assertTrue(iterator.hasNext());
-            assertEquals(Pair.of(1, "a"), iterator.next()); 
-            try (final SegmentWriter<Integer, String> writer = segment
-                    .openWriter()) {
+            assertEquals(Pair.of(1, "a"), iterator.next());
+            try (PairWriter<Integer, String> writer = segment.openWriter()) {
                 writer.put(4, "d");
                 writer.put(5, "e");
             }
@@ -49,7 +48,7 @@ public class SegmentIteratorTest {
              * force index to rewrite physical SST data file.
              */
             assertTrue(iterator.hasNext());
-            assertEquals(Pair.of(2, "b"), iterator.next()); 
+            assertEquals(Pair.of(2, "b"), iterator.next());
             assertFalse(iterator.hasNext());
         }
     }

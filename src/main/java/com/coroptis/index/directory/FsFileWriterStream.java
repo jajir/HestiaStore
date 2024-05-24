@@ -8,6 +8,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.coroptis.index.IndexException;
 
 public class FsFileWriterStream implements FileWriter {
@@ -16,11 +19,14 @@ public class FsFileWriterStream implements FileWriter {
 
     private static final int BUFFER_SIZE = 1024 * 1 * 4;
 
+    private final Logger logger = LoggerFactory
+            .getLogger(FsFileWriterStream.class);
+
     FsFileWriterStream(final File file, final Directory.Access access) {
         try {
             final Path path = file.toPath();
-            if (file.exists()) {
-                file.delete();
+            if (file.exists() && !file.delete()) {
+                logger.warn("Unable to delete file '{}'", file.getName());
             }
             final OutputStream os = Files.newOutputStream(path,
                     Directory.Access.APPEND == access

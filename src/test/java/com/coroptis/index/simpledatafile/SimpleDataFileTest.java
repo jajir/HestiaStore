@@ -26,7 +26,7 @@ public class SimpleDataFileTest {
         assertEquals(0, sdf.getStats().getNumberOfPairsInCache());
         assertEquals(0, sdf.getStats().getNumberOfPairsInMainFile());
 
-        try (final PairWriter<Integer, String> writer = sdf.openCacheWriter()) {
+        try (PairWriter<Integer, String> writer = sdf.openCacheWriter()) {
             writer.put(Pair.of(3, "kachna"));
             writer.put(Pair.of(1, "prase"));
             writer.put(Pair.of(5, "osel"));
@@ -50,7 +50,7 @@ public class SimpleDataFileTest {
         assertEquals(0, sdf.getStats().getNumberOfPairsInCache());
         assertEquals(0, sdf.getStats().getNumberOfPairsInMainFile());
 
-        try (final PairWriter<Integer, String> writer = sdf.openCacheWriter()) {
+        try (PairWriter<Integer, String> writer = sdf.openCacheWriter()) {
             writer.put(Pair.of(3, "kachna"));
             writer.put(Pair.of(1, "prase"));
             writer.put(Pair.of(5, "osel"));
@@ -59,7 +59,7 @@ public class SimpleDataFileTest {
         assertEquals(3, sdf.getStats().getNumberOfPairsInCache());
         assertEquals(0, sdf.getStats().getNumberOfPairsInMainFile());
 
-        try (final PairWriter<Integer, String> writer = sdf.openCacheWriter()) {
+        try (PairWriter<Integer, String> writer = sdf.openCacheWriter()) {
             writer.put(Pair.of(16, "kun"));
             writer.put(Pair.of(13, "liska"));
             writer.put(Pair.of(17, "nartoun"));
@@ -68,7 +68,7 @@ public class SimpleDataFileTest {
         assertEquals(6, sdf.getStats().getNumberOfPairsInCache());
         assertEquals(0, sdf.getStats().getNumberOfPairsInMainFile());
 
-        try (final PairReader<Integer, String> reader = sdf.openReader()) {
+        try (PairReader<Integer, String> reader = sdf.openReader()) {
             assertEquals(Pair.of(1, "prase"), reader.read());
             assertEquals(Pair.of(3, "kachna"), reader.read());
             assertEquals(Pair.of(5, "osel"), reader.read());

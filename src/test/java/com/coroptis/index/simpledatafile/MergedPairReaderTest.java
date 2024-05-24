@@ -2,25 +2,26 @@ package com.coroptis.index.simpledatafile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Comparator;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairReader;
 
+@ExtendWith(MockitoExtension.class)
 public class MergedPairReaderTest {
 
-    @SuppressWarnings("unchecked")
-    private final PairReader<Integer, String> reader1 = mock(PairReader.class);
+    @Mock
+    private PairReader<Integer, String> reader1;
 
-    @SuppressWarnings("unchecked")
-    private final PairReader<Integer, String> reader2 = mock(PairReader.class);
-
-    // FIXME there is used same mock instance in all tests
+    @Mock
+    private PairReader<Integer, String> reader2;
 
     @Test
     public void test_reader2_is_empty() throws Exception {

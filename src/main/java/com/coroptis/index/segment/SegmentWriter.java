@@ -4,34 +4,99 @@ import java.util.Objects;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairWriter;
-import com.coroptis.index.bloomfilter.BloomFilterWriter;
 import com.coroptis.index.cache.UniqueCache;
+import com.coroptis.index.sstfile.SstFileWriter;
 
 /**
+ * Allows to add data to segment. When searcher is in memory and number of added
+ * keys doesn't exceed limit than it could work without invalidating cache and
+ * searcher object..
+ * 
+ * @author honza
+ *
+ * @param <K>
+ * @param <V>
  */
-public class SegmentWriter<K, V> implements PairWriter<K, V> {
+public class SegmentWriter<K, V> {
 
-    private final Segment<K, V> segment;
-    private final UniqueCache<K, V> cache;
-    private final BloomFilterWriter<K> bloomFilterWriter;
+    private final UniqueCache<K, V> uniqueCache;
+    private final SegmentPropertiesManager segmentPropertiesManager;
+    private final SegmentCompacter<K, V> segmentCompacter;
+    private final SegmentFiles<K, V> segmentFiles;
 
-    SegmentWriter(final Segment<K, V> segment) {
-        this.segment = Objects.requireNonNull(segment);
-        this.cache = Objects.requireNonNull(segment.getCache());
-        bloomFilterWriter = segment.openBloomFilterWriter();
+    private SegmentSearcher<K, V> segmentSearcher = null;
+
+    public SegmentWriter(final SegmentFiles<K, V> segmentFiles,
+            final SegmentPropertiesManager segmentPropertiesManager,
+            final SegmentCompacter<K, V> segmentCompacter) {
+        this(segmentFiles, segmentPropertiesManager, segmentCompacter, null);
     }
 
-    @Override
-    public void put(final Pair<K, V> pair) {
-        Objects.requireNonNull(pair);
-        cache.put(pair);
-        bloomFilterWriter.write(pair.getKey());
+    public SegmentWriter(final SegmentFiles<K, V> segmentFiles,
+            final SegmentPropertiesManager segmentPropertiesManager,
+            final SegmentCompacter<K, V> segmentCompacter,
+            SegmentSearcher<K, V> segmentSearcher) {
+        this.segmentPropertiesManager = Objects
+                .requireNonNull(segmentPropertiesManager);
+        this.segmentFiles = Objects.requireNonNull(segmentFiles);
+
+        this.uniqueCache = new UniqueCache<>(
+                segmentFiles.getKeyTypeDescriptor().getComparator());
+
+        this.segmentCompacter = Objects.requireNonNull(segmentCompacter);
     }
 
-    @Override
-    public void close() {
-        segment.flush();
-        bloomFilterWriter.close();
+    public PairWriter<K, V> openWriter() {
+        return openWriter(null);
+    }
+
+    public PairWriter<K, V> openWriter(
+            final SegmentSearcher<K, V> newSegmentSearcher) {
+        this.segmentSearcher = newSegmentSearcher;
+        return new PairWriter<K, V>() {
+
+            private long cx = 0;
+
+            @Override
+            public void close() {
+                closeWritingToCache();
+
+                segmentCompacter.optionallyCompact();
+            }
+
+            @Override
+            public void put(final Pair<K, V> pair) {
+                uniqueCache.put(pair);
+                cx++;
+                if (segmentSearcher != null) {
+                    segmentSearcher.addPairIntoCache(pair);
+                }
+                if (segmentCompacter.shouldBeCompactedDuringWriting(cx)) {
+                    cx = 0;
+                    segmentSearcher = null;
+                    closeWritingToCache();
+                    segmentCompacter.forceCompact();
+                }
+            }
+
+            private void closeWritingToCache() {
+                // increase number of keys in cache
+                final int keysInCache = uniqueCache.size();
+                segmentPropertiesManager
+                        .increaseNumberOfKeysInCache(keysInCache);
+                segmentPropertiesManager.flush();
+
+                // store cache
+                try (SstFileWriter<K, V> writer = segmentFiles.getCacheSstFile(
+                        segmentPropertiesManager.getAndIncreaseDeltaFileName())
+                        .openWriter()) {
+                    uniqueCache.getStream().forEach(pair -> {
+                        writer.put(pair);
+                    });
+                }
+                uniqueCache.clear();
+            }
+        };
     }
 
 }

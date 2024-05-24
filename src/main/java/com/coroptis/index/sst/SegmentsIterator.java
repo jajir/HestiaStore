@@ -1,6 +1,5 @@
 package com.coroptis.index.sst;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -8,6 +7,7 @@ import java.util.Optional;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
+import com.coroptis.index.segment.Segment;
 import com.coroptis.index.segment.SegmentId;
 
 /**
@@ -21,15 +21,20 @@ import com.coroptis.index.segment.SegmentId;
  */
 class SegmentsIterator<K, V> implements PairIterator<K, V> {
 
-    private final SstIndexImpl<K, V> sstIndex;
+    private final SegmentManager<K, V> segmentManager;
+    private final SegmentSearcherCache<K, V> segmentSearcherCache;
     private final List<SegmentId> ids;
     private Pair<K, V> currentPair = null;
     private Pair<K, V> nextPair = null;
     private PairIterator<K, V> currentIterator = null;
 
-    SegmentsIterator(final SstIndexImpl<K, V> sstIndex) {
-        this.sstIndex = Objects.requireNonNull(sstIndex);
-        ids = new ArrayList<>(sstIndex.getSegmentIds());
+    SegmentsIterator(final List<SegmentId> ids,
+            final SegmentManager<K, V> segmentManager,
+            final SegmentSearcherCache<K, V> segmentSearcherCache) {
+        this.segmentManager = Objects.requireNonNull(segmentManager);
+        this.segmentSearcherCache = Objects
+                .requireNonNull(segmentSearcherCache);
+        this.ids = Objects.requireNonNull(ids);
         nextSegmentIterator();
     }
 
@@ -38,7 +43,10 @@ class SegmentsIterator<K, V> implements PairIterator<K, V> {
             currentIterator.close();
         }
         if (!ids.isEmpty()) {
-            currentIterator = sstIndex.openSegmentIterator(ids.remove(0));
+            final SegmentId segmentId = ids.remove(0);
+            final Segment<K, V> segment = segmentManager.getSegment(segmentId);
+            currentIterator = segment.openIterator(segmentSearcherCache
+                    .getOptionalSegmenSearcher(segmentId).orElse(null));
             if (currentIterator.hasNext()) {
                 nextPair = currentIterator.next();
             }

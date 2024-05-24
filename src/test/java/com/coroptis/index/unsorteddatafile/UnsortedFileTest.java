@@ -32,21 +32,20 @@ public class UnsortedFileTest {
                 tdi.getTypeReader(), tds.getTypeReader());
         assertNotNull(unsorted);
 
-        try (final PairWriter<Integer, String> writer = unsorted.openWriter()) {
+        try (PairWriter<Integer, String> writer = unsorted.openWriter()) {
             writer.put(Pair.of(4, "here"));
             writer.put(Pair.of(-12, "we"));
             writer.put(Pair.of(98, "go"));
         }
 
-        try (final PairIterator<Integer, String> reader = unsorted
-                .openIterator()) {
+        try (PairIterator<Integer, String> reader = unsorted.openIterator()) {
             while (reader.hasNext()) {
                 logger.debug(reader.readCurrent().get().toString());
                 reader.next();
             }
         }
 
-        try (final UnsortedDataFileStreamer<Integer, String> streamer = unsorted
+        try (UnsortedDataFileStreamer<Integer, String> streamer = unsorted
                 .openStreamer()) {
             streamer.stream().forEach(pair -> {
                 logger.debug(pair.toString());
@@ -62,7 +61,7 @@ public class UnsortedFileTest {
                 tdi.getTypeReader(), tds.getTypeReader());
         assertNotNull(unsorted);
 
-        try (final UnsortedDataFileStreamer<Integer, String> streamer = unsorted
+        try (UnsortedDataFileStreamer<Integer, String> streamer = unsorted
                 .openStreamer()) {
             final long count = streamer.stream().count();
             assertEquals(0, count);

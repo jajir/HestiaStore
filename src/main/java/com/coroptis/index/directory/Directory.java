@@ -5,11 +5,13 @@ import java.util.stream.Stream;
 
 public interface Directory {
 
-    public static enum Access {
+    enum Access {
         APPEND, OVERWRITE
     }
 
     FileReader getFileReader(String fileName);
+
+    FileReaderSeekable getFileReaderSeekable(String fileName);
 
     /**
      * Opens writer to file. When file already exists than method override it.

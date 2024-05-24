@@ -5,6 +5,8 @@ import java.util.stream.Stream;
 
 import com.coroptis.index.CloseableResource;
 import com.coroptis.index.Pair;
+import com.coroptis.index.log.LoggedKey;
+import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
 
 public interface Index<K, V> extends CloseableResource {
 
@@ -32,4 +34,6 @@ public interface Index<K, V> extends CloseableResource {
      * @return stream of all data.
      */
     Stream<Pair<K, V>> getStream();
+
+     UnsortedDataFileStreamer<LoggedKey<K>, V> getLogStreamer();
 }

@@ -49,7 +49,7 @@ public class Props {
         if (properties.getProperty(propertyKey) == null) {
             return 0;
         }
-        return Integer.valueOf(properties.getProperty(propertyKey));
+        return Integer.parseInt(properties.getProperty(propertyKey));
     }
 
     public void setLong(final String propertyKey, final long value) {
@@ -60,12 +60,12 @@ public class Props {
         if (properties.getProperty(propertyKey) == null) {
             return 0L;
         }
-        return Long.valueOf(properties.getProperty(propertyKey));
+        return Long.parseLong(properties.getProperty(propertyKey));
     }
 
     public void writeData() {
         final byte buff[] = convertPropsToByteArray();
-        try (final FileWriter fileWriter = directory.getFileWriter(fileName,
+        try (FileWriter fileWriter = directory.getFileWriter(fileName,
                 Access.OVERWRITE)) {
             fileWriter.write(buff);
         }
@@ -83,7 +83,7 @@ public class Props {
 
     private byte[] readEntireFile(final Directory directory,
             final String fileName) {
-        try (final FileReader fileReader = directory.getFileReader(fileName)) {
+        try (FileReader fileReader = directory.getFileReader(fileName)) {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
             byte buff[] = new byte[128];
             int readedBytes = fileReader.read(buff);

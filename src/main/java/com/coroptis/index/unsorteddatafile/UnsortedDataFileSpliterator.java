@@ -4,12 +4,12 @@ import java.util.Objects;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 
-import com.coroptis.index.CloseableResource;
+import com.coroptis.index.CloseableSpliterator;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairReader;
 
 public class UnsortedDataFileSpliterator<K, V>
-        implements Spliterator<Pair<K, V>>, CloseableResource {
+        implements CloseableSpliterator<K,V> {
 
     private final PairReader<K, V> pairReader;
 

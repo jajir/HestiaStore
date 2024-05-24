@@ -15,6 +15,8 @@ public class BloomFilter<K> {
 
     private final ConvertorToBytes<K> convertorToBytes;
 
+    private final BloomFilterStats bloomFilterStats;
+
     private final int numberOfHashFunctions;
 
     private final int indexSizeInBytes;
@@ -36,8 +38,9 @@ public class BloomFilter<K> {
                 "Convertor to bytes is required");
         this.indexSizeInBytes = indexSizeInBytes;
         this.numberOfHashFunctions = numberOfHashFunctions;
+        this.bloomFilterStats = new BloomFilterStats();
         if (isExists()) {
-            try (final FileReader reader = directory
+            try (FileReader reader = directory
                     .getFileReader(bloomFilterFileName)) {
                 final byte[] data = new byte[indexSizeInBytes];
                 if (indexSizeInBytes != reader.read(data)) {
@@ -61,8 +64,7 @@ public class BloomFilter<K> {
     void setNewHash(final Hash newHash) {
         Objects.requireNonNull(newHash, "New hash can't be null");
         this.hash = newHash;
-        try (final FileWriter writer = directory
-                .getFileWriter(bloomFilterFileName)) {
+        try (FileWriter writer = directory.getFileWriter(bloomFilterFileName)) {
             writer.write(hash.getData());
         }
 
@@ -72,12 +74,31 @@ public class BloomFilter<K> {
         return directory.isFileExists(bloomFilterFileName);
     }
 
+    /**
+     * Get information if key is not stored in index. False doesn't mean that
+     * key is stored in index it means that it's not sure.
+     * 
+     * @param key
+     * @return Return <code>true</code> when it's sure that record is not stored
+     *         in index. Otherwise return <code>false</false>
+     */
     public boolean isNotStored(final K key) {
         if (hash == null) {
-            return true;
+            bloomFilterStats.increment(false);
+            return false;
         } else {
-            return hash.isNotStored(convertorToBytes.toBytes(key));
+            final boolean out = hash.isNotStored(convertorToBytes.toBytes(key));
+            bloomFilterStats.increment(out);
+            return out;
         }
+    }
+
+    public BloomFilterStats getStatistics() {
+        return bloomFilterStats;
+    }
+
+    public String getStatsString() {
+        return bloomFilterStats.getStatsString();
     }
 
 }

@@ -4,6 +4,7 @@ import java.util.Objects;
 
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
+import com.coroptis.index.log.Log;
 
 public class IndexBuilder<K, V> {
 
@@ -16,6 +17,7 @@ public class IndexBuilder<K, V> {
 
     private final static int DEFAULT_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS = 1_000;
     private final static int DEFAULT_BLOOM_FILTER_INDEX_SIZE_IN_BYTES = 10_000;
+    private final static boolean DEFAULT_INDEX_SYNCHRONIZED = false;
 
     private long maxNumberOfKeysInSegmentCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
     private int maxNumberOfKeysInSegmentIndexPage = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_INDEX_PAGE;
@@ -24,10 +26,12 @@ public class IndexBuilder<K, V> {
     private int maxNumberOfSegmentsInCache = DEFAULT_MAX_NUMBER_OF_SEGMENTS_IN_CACHE;
     private int bloomFilterNumberOfHashFunctions = DEFAULT_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS;
     private int bloomFilterIndexSizeInBytes = DEFAULT_BLOOM_FILTER_INDEX_SIZE_IN_BYTES;
+    private boolean isIndexSynchronized = DEFAULT_INDEX_SYNCHRONIZED;
 
     private Directory directory;
     private TypeDescriptor<K> keyTypeDescriptor;
     private TypeDescriptor<V> valueTypeDescriptor;
+    private boolean useFullLog = false;
 
     IndexBuilder() {
 
@@ -86,20 +90,49 @@ public class IndexBuilder<K, V> {
         return this;
     }
 
+    public IndexBuilder<K, V> withIsIndexSynchronized(
+            final boolean isIndexSynchronized) {
+        this.isIndexSynchronized = isIndexSynchronized;
+        return this;
+    }
+
     public IndexBuilder<K, V> withBloomFilterIndexSizeInBytes(
             final int bloomFilterIndexSizeInBytes) {
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
         return this;
     }
 
-    public SstIndexImpl<K, V> build() {
+    public IndexBuilder<K, V> withUseFullLog(
+            final boolean useFullLog) {
+        this.useFullLog = useFullLog;
+        return this;
+    }
+
+    public Index<K, V> build() {
         final SsstIndexConf conf = new SsstIndexConf(
                 maxNumberOfKeysInSegmentCache,
                 maxNumberOfKeysInSegmentIndexPage, maxNumberOfKeysInCache,
                 maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache,
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes);
-        return new SstIndexImpl<>(directory, keyTypeDescriptor,
-                valueTypeDescriptor, conf);
+        
+        Log<K,V> log = null;
+        if(useFullLog){
+            log= Log.<K,V>builder().withDirectory(directory)
+                .withFileName("log")
+                .withKeyTypeDescriptor(keyTypeDescriptor)
+                .withValueReader(valueTypeDescriptor.getTypeReader())
+                .withValueWriter(valueTypeDescriptor.getTypeWriter())
+                .build();
+        }else{
+            log = Log.<K,V>builder().buildEmpty();
+        }
+        final SstIndexImpl<K, V> index = new SstIndexImpl<>(directory,
+                keyTypeDescriptor, valueTypeDescriptor, conf,log);
+        if (isIndexSynchronized) {
+            return new SstIndexSynchronized<>(index);
+        } else {
+            return index;
+        }
     }
 
 }

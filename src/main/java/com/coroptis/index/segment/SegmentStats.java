@@ -8,7 +8,7 @@ package com.coroptis.index.segment;
  * @author honza
  *
  */
-public class SegmentStats {
+class SegmentStats {
 
     private final long numberOfKeysInCache;
     private final long numberOfKeysInIndex;

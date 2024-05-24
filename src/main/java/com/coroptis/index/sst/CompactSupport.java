@@ -3,38 +3,45 @@ package com.coroptis.index.sst;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.coroptis.index.Pair;
+import com.coroptis.index.PairWriter;
 import com.coroptis.index.segment.Segment;
 import com.coroptis.index.segment.SegmentId;
-import com.coroptis.index.segment.SegmentWriter;
+import com.coroptis.index.segment.SegmentSearcher;
 
 public class CompactSupport<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(CompactSupport.class);
 
     private final List<Pair<K, V>> toSameSegment = new ArrayList<>();
-    private final SegmentCache<K> scarceIndexFile;
-    private final SstIndexImpl<K, V> fastIndex;
+    private final KeySegmentCache<K> keySegmentCache;
+    private final SegmentManager<K, V> segmentManager;
+    private final SegmentSearcherCache<K, V> segmentSearcherCache;
     private SegmentId currentSegmentId = null;
+
     /**
      * List of segment's ids eligible for compacting.
      */
     private List<SegmentId> eligibleSegments = new ArrayList<>();
 
-    CompactSupport(final SstIndexImpl<K, V> fastIndex,
-            final SegmentCache<K> scarceIndexFile) {
-        this.fastIndex = fastIndex;
-        this.scarceIndexFile = scarceIndexFile;
+    CompactSupport(final SegmentManager<K, V> segmentManager,
+            final KeySegmentCache<K> keySegmentCache,
+            final SegmentSearcherCache<K, V> segmentSearcherCache) {
+        this.segmentManager = Objects.requireNonNull(segmentManager);
+        this.keySegmentCache = Objects.requireNonNull(keySegmentCache);
+        this.segmentSearcherCache = Objects
+                .requireNonNull(segmentSearcherCache);
     }
 
     public void compact(final Pair<K, V> pair) {
         Objects.requireNonNull(pair);
         final K segmentKey = pair.getKey();
-        final SegmentId segmentId = scarceIndexFile
+        final SegmentId segmentId = keySegmentCache
                 .insertKeyToSegment(segmentKey);
         if (currentSegmentId == null) {
             currentSegmentId = segmentId;
@@ -63,8 +70,13 @@ public class CompactSupport<K, V> {
     private void flushToCurrentSegment() {
         logger.debug("Flushing '{}' key value pairs into segment '{}'.",
                 toSameSegment.size(), currentSegmentId);
-        final Segment<K, V> segment = fastIndex.getSegment(currentSegmentId);
-        try (final SegmentWriter<K, V> writer = segment.openWriter()) {
+        final Optional<SegmentSearcher<K, V>> oSegmenSearcher = segmentSearcherCache
+                .getOptionalSegmenSearcher(currentSegmentId);
+        final SegmentSearcher<K, V> segmentSearcher = oSegmenSearcher
+                .orElse(null);
+        final Segment<K, V> segment = segmentManager
+                .getSegment(currentSegmentId);
+        try (PairWriter<K, V> writer = segment.openWriter(segmentSearcher)) {
             toSameSegment.forEach(writer::put);
         }
         eligibleSegments.add(currentSegmentId);

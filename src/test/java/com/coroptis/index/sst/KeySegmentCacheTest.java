@@ -19,10 +19,10 @@ import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.MemDirectory;
 import com.coroptis.index.segment.SegmentId;
 
-public class SegmentCacheTest {
+public class KeySegmentCacheTest {
 
     private final Logger logger = LoggerFactory
-            .getLogger(SegmentCacheTest.class);
+            .getLogger(KeySegmentCacheTest.class);
 
     private final TypeDescriptorString stringTd = new TypeDescriptorString();
 
@@ -31,17 +31,17 @@ public class SegmentCacheTest {
     @BeforeEach
     public void prepareData() {
         directory = new MemDirectory();
-        try (final SegmentCache<String> fif = new SegmentCache<>(directory,
+        try (KeySegmentCache<String> cache = new KeySegmentCache<>(directory,
                 stringTd)) {
-            fif.insertSegment("ahoj", SegmentId.of(1));
-            fif.insertSegment("betka", SegmentId.of(2));
-            fif.insertSegment("cukrar", SegmentId.of(3));
-            fif.insertSegment("dikobraz", SegmentId.of(4));
+            cache.insertSegment("ahoj", SegmentId.of(1));
+            cache.insertSegment("betka", SegmentId.of(2));
+            cache.insertSegment("cukrar", SegmentId.of(3));
+            cache.insertSegment("dikobraz", SegmentId.of(4));
             /*
              * Inserting of new higher key, should not add segment. In should
              * update key in higher segment key.
              */
-            assertEquals(4, fif.insertKeyToSegment("kachna").getId());
+            assertEquals(4, cache.insertKeyToSegment("kachna").getId());
         }
     }
 
@@ -53,7 +53,7 @@ public class SegmentCacheTest {
     @Test
     public void test_constructor_empty_directory() throws Exception {
         assertThrows(NullPointerException.class, () -> {
-            try (final SegmentCache<String> fif = new SegmentCache<>(null,
+            try (KeySegmentCache<String> fif = new KeySegmentCache<>(null,
                     stringTd)) {
             }
         });
@@ -62,7 +62,7 @@ public class SegmentCacheTest {
     @Test
     public void test_constructor_empty_keyTypeDescriptor() throws Exception {
         assertThrows(NullPointerException.class, () -> {
-            try (final SegmentCache<String> fif = new SegmentCache<>(directory,
+            try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                     null)) {
             }
         });
@@ -70,7 +70,7 @@ public class SegmentCacheTest {
 
     @Test
     public void test_insertSegment_duplicate_segmentId() throws Exception {
-        try (final SegmentCache<String> fif = new SegmentCache<>(directory,
+        try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                 stringTd)) {
             assertThrows(IllegalArgumentException.class,
                     () -> fif.insertSegment("aaa", SegmentId.of(1)),
@@ -80,7 +80,7 @@ public class SegmentCacheTest {
 
     @Test
     public void test_insertKeyToSegment_higher_segment() throws Exception {
-        try (final SegmentCache<String> fif = new SegmentCache<>(directory,
+        try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                 stringTd)) {
             assertEquals(4, fif.insertKeyToSegment("zzz").getId());
             assertEquals(4, fif.findSegmentId("zzz").getId());
@@ -96,7 +96,7 @@ public class SegmentCacheTest {
 
     @Test
     public void test_insetSegment_normal() throws Exception {
-        try (final SegmentCache<String> fif = new SegmentCache<>(directory,
+        try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                 stringTd)) {
             assertEquals(4, fif.insertKeyToSegment("zzz").getId());
             assertEquals(4, fif.findSegmentId("zzz").getId());
@@ -112,7 +112,7 @@ public class SegmentCacheTest {
 
     @Test
     public void test_getSegmentsAsStream_print_data() throws Exception {
-        try (final SegmentCache<String> fif = new SegmentCache<>(directory,
+        try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                 stringTd)) {
             fif.getSegmentsAsStream().forEach(p -> {
                 logger.debug("Segment '{}'", p.toString());
@@ -122,7 +122,7 @@ public class SegmentCacheTest {
 
     @Test
     public void test_getSegmentsAsStream_number_of_segments() throws Exception {
-        try (final SegmentCache<String> fif = new SegmentCache<>(directory,
+        try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                 stringTd)) {
             assertEquals(4, fif.getSegmentsAsStream().count());
         }
@@ -130,7 +130,7 @@ public class SegmentCacheTest {
 
     @Test
     public void test_getSegmentsAsStream_correct_page_order() throws Exception {
-        try (final SegmentCache<String> fif = new SegmentCache<>(directory,
+        try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                 stringTd)) {
             /*
              * Verify that pages are returned as sorted stream.
@@ -146,7 +146,7 @@ public class SegmentCacheTest {
 
     @Test
     public void test_findSegmentId() throws Exception {
-        try (final SegmentCache<String> fif = new SegmentCache<>(directory,
+        try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                 stringTd)) {
             assertEquals(3, fif.findSegmentId("cuketa").getId());
             assertEquals(3, fif.findSegmentId("bziknout").getId());

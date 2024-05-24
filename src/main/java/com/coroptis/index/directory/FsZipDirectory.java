@@ -86,4 +86,9 @@ public class FsZipDirectory implements Directory {
         throw new UnsupportedOperationException("Not implemented");
     }
 
+    @Override
+    public FileReaderSeekable getFileReaderSeekable(final String fileName) {
+        throw new UnsupportedOperationException();
+    }
+
 }

@@ -83,7 +83,7 @@ public class ScarceIndexTest {
                 List.of(Pair.of("bbb", 1), Pair.of("ccc", 2), Pair.of("ddd", 3),
                         Pair.of("eee", 4), Pair.of("fff", 5)));
 
-        try (final ScarceIndexWriter<String> writer = index.openWriter()) {
+        try (ScarceIndexWriter<String> writer = index.openWriter()) {
             writer.put(Pair.of("bbb", 1));
         }
 
@@ -99,7 +99,7 @@ public class ScarceIndexTest {
                 .withDirectory(directory).withFileName(FILE_NAME)
                 .withKeyTypeDescriptor(stringTd).build();
 
-        try (final ScarceIndexWriter<String> writer = index.openWriter()) {
+        try (ScarceIndexWriter<String> writer = index.openWriter()) {
             pairs.forEach(writer::put);
         }
 

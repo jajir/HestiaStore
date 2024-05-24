@@ -2,10 +2,12 @@ package com.coroptis.index.sst;
 
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -33,9 +35,10 @@ import com.coroptis.index.sstfile.SstFileWriter;
  *
  * @param <K>
  */
-public class SegmentCache<K> implements CloseableResource {
+public class KeySegmentCache<K> implements CloseableResource {
 
-    private final Logger logger = LoggerFactory.getLogger(SegmentCache.class);
+    private final Logger logger = LoggerFactory
+            .getLogger(KeySegmentCache.class);
 
     private final static TypeDescriptorSegmentId tdSegId = new TypeDescriptorSegmentId();
 
@@ -51,7 +54,7 @@ public class SegmentCache<K> implements CloseableResource {
     private final Comparator<K> keyComparator;
     private boolean isDirty = false;
 
-    SegmentCache(final Directory directory,
+    KeySegmentCache(final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor) {
         Objects.requireNonNull(directory, "Directory object is null.");
         Objects.requireNonNull(keyTypeDescriptor,
@@ -64,7 +67,7 @@ public class SegmentCache<K> implements CloseableResource {
                 keyTypeDescriptor.getConvertorFromBytes(),
                 keyTypeDescriptor.getConvertorToBytes());
         this.list = new TreeMap<>(keyComparator);
-        try (final PairIterator<K, SegmentId> reader = sdf.openIterator()) {
+        try (PairIterator<K, SegmentId> reader = sdf.openIterator()) {
             while (reader.hasNext()) {
                 final Pair<K, SegmentId> pair = reader.next();
                 list.put(pair.getKey(), pair.getValue());
@@ -159,9 +162,14 @@ public class SegmentCache<K> implements CloseableResource {
                 .map(entry -> Pair.of(entry.getKey(), entry.getValue()));
     }
 
+    public List<SegmentId> getSegmentIds() {
+        return list.entrySet().stream().map(entry -> entry.getValue())
+                .collect(Collectors.toList());
+    }
+
     public void flush() {
         if (isDirty) {
-            try (final SstFileWriter<K, SegmentId> writer = sdf.openWriter()) {
+            try (SstFileWriter<K, SegmentId> writer = sdf.openWriter()) {
                 list.forEach((k, v) -> writer.put(Pair.of(k, v)));
             }
         }

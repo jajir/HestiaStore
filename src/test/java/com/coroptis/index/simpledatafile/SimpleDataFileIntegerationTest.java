@@ -16,7 +16,7 @@ import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.FsDirectory;
 
-public class IntegerationTest {
+public class SimpleDataFileIntegerationTest {
 
     private final TypeDescriptorInteger intTd = new TypeDescriptorInteger();
     private final TypeDescriptorString stringTd = new TypeDescriptorString();
@@ -40,20 +40,19 @@ public class IntegerationTest {
                 directory, "sdf", intTd, stringTd, (k, v1, v2) -> v2);
 
         // write keys
-        try (final PairWriter<Integer, String> writer = sdf.openCacheWriter()) {
+        try (PairWriter<Integer, String> writer = sdf.openCacheWriter()) {
             for (int i = 0; i < keys1 + keys2; i++) {
                 writer.put(Pair.of(i, STR2));
             }
         }
         sdf.compact();
 
-        try (final PairReader<Integer, String> reader = sdf.openReader()) {
+        try (PairReader<Integer, String> reader = sdf.openReader()) {
             for (int i = 0; i < keys1; i++) {
                 assertEquals(i, reader.read().getKey());
             }
 
-            try (final PairWriter<Integer, String> writer = sdf
-                    .openCacheWriter()) {
+            try (PairWriter<Integer, String> writer = sdf.openCacheWriter()) {
                 for (int i = 0; i < moreKeys; i++) {
                     writer.put(Pair.of(-i, STR2));
                 }

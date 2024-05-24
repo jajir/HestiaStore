@@ -48,6 +48,11 @@ public class MemDirectory implements Directory {
     }
 
     @Override
+    public String toString() {
+        return "MemDirectory{" + "}";
+    }
+
+    @Override
     public boolean deleteFile(final String fileName) {
         return data.remove(fileName) != null;
     }
@@ -65,6 +70,16 @@ public class MemDirectory implements Directory {
     @Override
     public FileLock getLock(final String fileName) {
         return new MemFileLock(this, fileName);
+    }
+
+    @Override
+    public FileReaderSeekable getFileReaderSeekable(final String fileName) {
+        final byte[] fileData = data.get(fileName);
+        if (fileData == null) {
+            throw new IllegalArgumentException(
+                    String.format("No such file '%s'.", fileName));
+        }
+        return new MemFileReaderSeekable(data.get(fileName));
     }
 
 }

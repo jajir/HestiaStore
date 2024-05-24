@@ -2,7 +2,7 @@ package com.coroptis.index.sst;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -14,10 +14,16 @@ import com.coroptis.index.PairIterator;
 import com.coroptis.index.cache.UniqueCache;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
+import com.coroptis.index.log.Log;
+import com.coroptis.index.log.LogWriter;
+import com.coroptis.index.log.LoggedKey;
 import com.coroptis.index.segment.MergeIterator;
 import com.coroptis.index.segment.Segment;
 import com.coroptis.index.segment.SegmentId;
+import com.coroptis.index.segment.SegmentSearcher;
+import com.coroptis.index.segment.SegmentSplitter;
 import com.coroptis.index.sstfile.PairComparator;
+import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
 
 public class SstIndexImpl<K, V> implements Index<K, V> {
 
@@ -27,23 +33,31 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final UniqueCache<K, V> cache;
-    private final SegmentCache<K> segmentCache;
+    private final KeySegmentCache<K> keySegmentCache;
     private final SegmentManager<K, V> segmentManager;
+    private final SegmentSearcherCache<K, V> segmentSearcherCache;
+    private final Log<K,V> log;
+    private final LogWriter<K,V> logWriter;
     private IndexState<K, V> indexState;
 
     public SstIndexImpl(final Directory directory,
             TypeDescriptor<K> keyTypeDescriptor,
-            TypeDescriptor<V> valueTypeDescriptor, final SsstIndexConf conf) {
+            TypeDescriptor<V> valueTypeDescriptor, final SsstIndexConf conf, final Log<K,V> log) {
         Objects.requireNonNull(directory);
         indexState = new IndexStateNew<>(directory);
         this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
+        this.log = Objects.requireNonNull(log);
         this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
         this.conf = Objects.requireNonNull(conf);
         this.cache = new UniqueCache<K, V>(
                 this.keyTypeDescriptor.getComparator());
-        this.segmentCache = new SegmentCache<>(directory, keyTypeDescriptor);
+        this.keySegmentCache = new KeySegmentCache<>(directory,
+                keyTypeDescriptor);
         this.segmentManager = new SegmentManager<>(directory, keyTypeDescriptor,
                 valueTypeDescriptor, conf);
+        this.segmentSearcherCache = new SegmentSearcherCache<>(conf,
+                segmentManager);
+                this.logWriter=log.openWriter();
         indexState.onReady(this);
     }
 
@@ -58,38 +72,15 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                     "Can't insert thombstone value '%s' into index", value));
         }
 
-        // TODO add key value pair into WAL
+        
+        // add key value pair into WAL
+        logWriter.post(key, value);
 
         cache.put(Pair.of(key, value));
 
         if (cache.size() > conf.getMaxNumberOfKeysInCache()) {
             compact();
         }
-    }
-
-    public List<SegmentId> getSegmentIds() {
-        return segmentCache.getSegmentsAsStream().map(pair -> pair.getValue())
-                .collect(Collectors.toUnmodifiableList());
-    }
-
-    /**
-     * This is correct way to obtain data from segment.
-     * 
-     * @param segmentId required segment id
-     * @return
-     */
-    public Stream<Pair<K, V>> getSegmentStream(final SegmentId segmentId) {
-        Objects.requireNonNull(segmentId, "SegmentId can't be null.");
-        final Segment<K, V> seg = getSegment(segmentId);
-        final PairIterator<K, V> limitedSegment = new LimitedPairIterator<>(
-                cache.getSortedIterator(), keyTypeDescriptor.getComparator(),
-                seg.getMinKey(), seg.getMaxKey());
-        final PairIterator<K, V> out = new MergeIterator<K, V>(
-                seg.openIterator(), limitedSegment, keyTypeDescriptor,
-                valueTypeDescriptor);
-        return StreamSupport.stream(
-                new PairIteratorToSpliterator<K, V>(out, keyTypeDescriptor),
-                false);
     }
 
     /**
@@ -100,12 +91,14 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
      */
     PairIterator<K, V> openSegmentIterator(final SegmentId segmentId) {
         Objects.requireNonNull(segmentId, "SegmentId can't be null.");
-        final Segment<K, V> seg = getSegment(segmentId);
+        final Segment<K, V> seg = segmentManager.getSegment(segmentId);
         return seg.openIterator();
     }
 
-    public PairIterator<K, V> openIterator() {
-        final PairIterator<K, V> segments = new SegmentsIterator<>(this);
+    private PairIterator<K, V> openIterator() {
+        final PairIterator<K, V> segments = new SegmentsIterator<>(
+                keySegmentCache.getSegmentIds(), segmentManager,
+                segmentSearcherCache);
         return new MergeIterator<K, V>(segments, cache.getSortedIterator(),
                 keyTypeDescriptor, valueTypeDescriptor);
     }
@@ -117,34 +110,41 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                 openIterator(), keyTypeDescriptor), false);
     }
 
+    public Stream<Pair<K, V>> getStreamSynchronized(final ReentrantLock lock) {
+        indexState.tryPerformOperation();
+        return StreamSupport.stream(new PairIteratorToSpliterator<K, V>(
+                new PairIteratorSynchronized<>(openIterator(), lock),
+                keyTypeDescriptor), false);
+    }
+
     private void compact() {
         logger.debug(
                 "Cache compacting of '{}' key value pairs in cache started.",
                 cache.size());
-        final CompactSupport<K, V> support = new CompactSupport<>(this,
-                segmentCache);
+        final CompactSupport<K, V> support = new CompactSupport<>(
+                segmentManager, keySegmentCache, segmentSearcherCache);
         cache.getStream()
                 .sorted(new PairComparator<>(keyTypeDescriptor.getComparator()))
                 .forEach(support::compact);
         support.compactRest();
-        List<SegmentId> segmentIds = support.getEligibleSegmentIds();
-        segmentIds.stream().map(this::getSegment)
+        final List<SegmentId> segmentIds = support.getEligibleSegmentIds();
+        segmentIds.stream().map(segmentManager::getSegment)
                 .forEach(this::optionallySplit);
         cache.clear();
-        segmentCache.flush();
+        keySegmentCache.flush();
         logger.debug(
                 "Cache compacting is done. Cache contains '{}' key value pairs.",
                 cache.size());
-    }
-
-    Segment<K, V> getSegment(final SegmentId segmentId) {
-        return segmentManager.getSegment(segmentId);
     }
 
     @Override
     public void forceCompact() {
         indexState.tryPerformOperation();
         compact();
+        keySegmentCache.getSegmentIds().forEach(segmentId -> {
+            final Segment<K, V> seg = segmentManager.getSegment(segmentId);
+            seg.forceCompact();
+        });
     }
 
     /**
@@ -155,13 +155,13 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
      */
     private boolean optionallySplit(final Segment<K, V> segment) {
         Objects.requireNonNull(segment, "Segment is required");
-        if (segment.getStats().getNumberOfKeys() > conf
-                .getMaxNumberOfKeysInSegment()) {
+        if (segment.getNumberOfKeys() > conf.getMaxNumberOfKeysInSegment()) {
             final SegmentId segmentId = segment.getId();
             logger.debug("Splitting of '{}' started.", segmentId);
-            final SegmentId newSegmentId = segmentCache.findNewSegmentId();
-            final Segment<K, V> splitted = segment.split(newSegmentId);
-            segmentCache.insertSegment(splitted.getMaxKey(), newSegmentId);
+            final SegmentId newSegmentId = keySegmentCache.findNewSegmentId();
+            final SegmentSplitter.Result<K, V> result = segment
+                    .split(newSegmentId);
+            keySegmentCache.insertSegment(result.getMaxKey(), newSegmentId);
             logger.debug("Splitting of segment '{}' to '{}' is done.",
                     segmentId, newSegmentId);
             return true;
@@ -174,17 +174,18 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         indexState.tryPerformOperation();
         Objects.requireNonNull(key, "Key cant be null");
 
-        V out = cache.get(key);
+        final V out = cache.get(key);
         if (out == null) {
-            final SegmentId id = segmentCache.findSegmentId(key);
+            final SegmentId id = keySegmentCache.findSegmentId(key);
             if (id == null) {
                 return null;
             }
-            final Segment<K, V> seg = getSegment(id);
-            return seg.get(key);
+            final SegmentSearcher<K, V> segmentSearcher = segmentSearcherCache
+                    .getSegmenSearcher(id);
+            return segmentSearcher.get(key);
+        } else {
+            return out;
         }
-
-        return out;
     }
 
     @Override
@@ -192,12 +193,20 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         indexState.tryPerformOperation();
         Objects.requireNonNull(key, "Key cant be null");
 
+        logWriter.delete(key, valueTypeDescriptor.getTombstone());
+
         cache.put(Pair.of(key, valueTypeDescriptor.getTombstone()));
+    }
+
+    @Override
+    public UnsortedDataFileStreamer<LoggedKey<K>, V> getLogStreamer(){
+        return log.openStreamer();
     }
 
     @Override
     public void close() {
         compact();
+        logWriter.close();
         indexState.onClose(this);
     }
 
