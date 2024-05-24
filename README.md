@@ -38,7 +38,7 @@ diskutil  info /Volumes/LaCie
 * Replace `TOKEN` in file `TOKEN` with your personal github token.
 * Execute: 
 ```
-mvn --settings settings.xml deploy
+mvn --settings settings.xml clean deploy
 ```
 
 it's done.
