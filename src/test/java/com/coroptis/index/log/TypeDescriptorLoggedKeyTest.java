@@ -21,31 +21,37 @@ public class TypeDescriptorLoggedKeyTest {
 
     @Test
     public void test_integer_read_write() throws Exception {
-        final TypeDescriptorLoggedKey<Integer> tdlk = new TypeDescriptorLoggedKey<>(tdi);
+        final TypeDescriptorLoggedKey<Integer> tdlk = new TypeDescriptorLoggedKey<>(
+                tdi);
 
         final LoggedKey<Integer> k1 = tdlk.getConvertorFromBytes()
-                .fromBytes(tdlk.getConvertorToBytes().toBytes(LoggedKey.<Integer>of(LogOperation.POST, 87)));
+                .fromBytes(tdlk.getConvertorToBytes()
+                        .toBytes(LoggedKey.<Integer>of(LogOperation.POST, 87)));
         assertEquals(87, k1.getKey());
         assertEquals(LogOperation.POST, k1.getLogOperation());
     }
 
     @Test
     public void test_string_read_write() throws Exception {
-        final TypeDescriptorLoggedKey<String> tdlk = new TypeDescriptorLoggedKey<>(tds);
+        final TypeDescriptorLoggedKey<String> tdlk = new TypeDescriptorLoggedKey<>(
+                tds);
 
         final LoggedKey<String> k1 = tdlk.getConvertorFromBytes()
-                .fromBytes(tdlk.getConvertorToBytes().toBytes(LoggedKey.<String>of(LogOperation.POST, "aaa")));
+                .fromBytes(tdlk.getConvertorToBytes().toBytes(
+                        LoggedKey.<String>of(LogOperation.POST, "aaa")));
         assertEquals("aaa", k1.getKey());
         assertEquals(LogOperation.POST, k1.getLogOperation());
     }
 
     @Test
     public void test_string_read_write_tombstone() throws Exception {
-        final TypeDescriptorLoggedKey<String> tdlk = new TypeDescriptorLoggedKey<>(tds);
+        final TypeDescriptorLoggedKey<String> tdlk = new TypeDescriptorLoggedKey<>(
+                tds);
 
         final LoggedKey<String> k1 = tdlk.getConvertorFromBytes()
                 .fromBytes(tdlk.getConvertorToBytes()
-                        .toBytes(LoggedKey.<String>of(LogOperation.POST, TypeDescriptorString.TOMBSTONE_VALUE)));
+                        .toBytes(LoggedKey.<String>of(LogOperation.POST,
+                                TypeDescriptorString.TOMBSTONE_VALUE)));
         assertEquals(TypeDescriptorString.TOMBSTONE_VALUE, k1.getKey());
         assertEquals(LogOperation.POST, k1.getLogOperation());
     }
@@ -55,7 +61,8 @@ public class TypeDescriptorLoggedKeyTest {
 
     @Test
     public void test_read_null() throws Exception {
-        final TypeDescriptorLoggedKey<String> tdlk = new TypeDescriptorLoggedKey<>(tds);
+        final TypeDescriptorLoggedKey<String> tdlk = new TypeDescriptorLoggedKey<>(
+                tds);
         when(fileReader.read()).thenReturn(-1);
         final LoggedKey<String> k = tdlk.getTypeReader().read(fileReader);
 

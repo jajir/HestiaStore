@@ -24,7 +24,8 @@ public enum LogOperation {
         } else if (b == Constants.DELETE_CODE) {
             return DELETE;
         } else {
-            throw new IllegalArgumentException(String.format("Unable to extract log operation from byte '%s'", b));
+            throw new IllegalArgumentException(String.format(
+                    "Unable to extract log operation from byte '%s'", b));
         }
     }
 

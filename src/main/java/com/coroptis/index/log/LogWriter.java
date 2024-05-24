@@ -1,9 +1,6 @@
 package com.coroptis.index.log;
 
-import java.util.stream.Stream;
-
 import com.coroptis.index.CloseableResource;
-import com.coroptis.index.Pair;
 
 /**
  * Write Ahead Log. Supporting basic operations:

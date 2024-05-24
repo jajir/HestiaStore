@@ -37,6 +37,7 @@ public class LoggedKey<K> {
         return Objects.hash(key, logOperation);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean equals(Object obj) {
         if (this == obj)

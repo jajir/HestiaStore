@@ -27,7 +27,8 @@ public class LogImplTest {
 
     @Test
     void test_log_constructor() {
-        Log<Integer, String> log = new LogImpl<>(directory, "log", tdi, tds.getTypeWriter(), tds.getTypeReader());
+        Log<Integer, String> log = new LogImpl<>(directory, "log", tdi,
+                tds.getTypeWriter(), tds.getTypeReader());
         LogWriter<Integer, String> logWriter = log.openWriter();
         logWriter.post(3, "aaa");
         logWriter.post(6, "bbb");
@@ -38,8 +39,10 @@ public class LogImplTest {
         assertEquals(1, directory.getFileNames().count());
 
         assertEquals(4, log.openStreamer().stream().count());
-        try (final UnsortedDataFileStreamer<LoggedKey<Integer>, String> streamer = log.openStreamer()) {
-            final List<Pair<LoggedKey<Integer>, String>> list = streamer.stream().collect(Collectors.toList());
+        try (final UnsortedDataFileStreamer<LoggedKey<Integer>, String> streamer = log
+                .openStreamer()) {
+            final List<Pair<LoggedKey<Integer>, String>> list = streamer
+                    .stream().collect(Collectors.toList());
             final Pair<LoggedKey<Integer>, String> p1 = list.get(0);
             assertEquals(LoggedKey.of(LogOperation.POST, 3), p1.getKey());
         }

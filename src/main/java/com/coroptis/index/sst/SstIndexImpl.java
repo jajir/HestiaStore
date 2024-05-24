@@ -36,13 +36,14 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     private final KeySegmentCache<K> keySegmentCache;
     private final SegmentManager<K, V> segmentManager;
     private final SegmentSearcherCache<K, V> segmentSearcherCache;
-    private final Log<K,V> log;
-    private final LogWriter<K,V> logWriter;
+    private final Log<K, V> log;
+    private final LogWriter<K, V> logWriter;
     private IndexState<K, V> indexState;
 
     public SstIndexImpl(final Directory directory,
             TypeDescriptor<K> keyTypeDescriptor,
-            TypeDescriptor<V> valueTypeDescriptor, final SsstIndexConf conf, final Log<K,V> log) {
+            TypeDescriptor<V> valueTypeDescriptor, final SsstIndexConf conf,
+            final Log<K, V> log) {
         Objects.requireNonNull(directory);
         indexState = new IndexStateNew<>(directory);
         this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
@@ -57,7 +58,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                 valueTypeDescriptor, conf);
         this.segmentSearcherCache = new SegmentSearcherCache<>(conf,
                 segmentManager);
-                this.logWriter=log.openWriter();
+        this.logWriter = log.openWriter();
         indexState.onReady(this);
     }
 
@@ -72,7 +73,6 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                     "Can't insert thombstone value '%s' into index", value));
         }
 
-        
         // add key value pair into WAL
         logWriter.post(key, value);
 
@@ -199,7 +199,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     }
 
     @Override
-    public UnsortedDataFileStreamer<LoggedKey<K>, V> getLogStreamer(){
+    public UnsortedDataFileStreamer<LoggedKey<K>, V> getLogStreamer() {
         return log.openStreamer();
     }
 

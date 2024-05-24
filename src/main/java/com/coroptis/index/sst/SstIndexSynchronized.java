@@ -77,8 +77,8 @@ public class SstIndexSynchronized<K, V> implements Index<K, V> {
         }
     }
 
-        @Override
-    public UnsortedDataFileStreamer<LoggedKey<K>, V> getLogStreamer(){
+    @Override
+    public UnsortedDataFileStreamer<LoggedKey<K>, V> getLogStreamer() {
         lock.lock();
         try {
             return index.getLogStreamer();

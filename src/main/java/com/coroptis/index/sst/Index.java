@@ -35,5 +35,5 @@ public interface Index<K, V> extends CloseableResource {
      */
     Stream<Pair<K, V>> getStream();
 
-     UnsortedDataFileStreamer<LoggedKey<K>, V> getLogStreamer();
+    UnsortedDataFileStreamer<LoggedKey<K>, V> getLogStreamer();
 }

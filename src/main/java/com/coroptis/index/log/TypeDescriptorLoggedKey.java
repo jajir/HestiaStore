@@ -9,7 +9,8 @@ import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.datatype.TypeReader;
 import com.coroptis.index.datatype.TypeWriter;
 
-public class TypeDescriptorLoggedKey<K> implements TypeDescriptor<LoggedKey<K>> {
+public class TypeDescriptorLoggedKey<K>
+        implements TypeDescriptor<LoggedKey<K>> {
 
     private final TypeDescriptorLogOperation TDLO = new TypeDescriptorLogOperation();
 
@@ -22,7 +23,8 @@ public class TypeDescriptorLoggedKey<K> implements TypeDescriptor<LoggedKey<K>> 
     @Override
     public ConvertorToBytes<LoggedKey<K>> getConvertorToBytes() {
         return b -> {
-            final byte[] f1 = TDLO.getConvertorToBytes().toBytes(b.getLogOperation());
+            final byte[] f1 = TDLO.getConvertorToBytes()
+                    .toBytes(b.getLogOperation());
             final byte[] f2 = tdKey.getConvertorToBytes().toBytes(b.getKey());
             final byte[] out = new byte[1 + f2.length];
             out[0] = f1[0];
@@ -36,18 +38,21 @@ public class TypeDescriptorLoggedKey<K> implements TypeDescriptor<LoggedKey<K>> 
         return bytes -> {
             final byte[] f2 = new byte[bytes.length - 1];
             System.arraycopy(bytes, 1, f2, 0, bytes.length - 1);
-            return LoggedKey.of(LogOperation.fromByte(bytes[0]), tdKey.getConvertorFromBytes().fromBytes(f2));
+            return LoggedKey.of(LogOperation.fromByte(bytes[0]),
+                    tdKey.getConvertorFromBytes().fromBytes(f2));
         };
     }
 
     @Override
     public TypeReader<LoggedKey<K>> getTypeReader() {
         return inputStream -> {
-            final LogOperation logOperation = TDLO.getTypeReader().read(inputStream);
+            final LogOperation logOperation = TDLO.getTypeReader()
+                    .read(inputStream);
             if (logOperation == null) {
                 return null;
             }
-            return LoggedKey.of(logOperation, tdKey.getTypeReader().read(inputStream));
+            return LoggedKey.of(logOperation,
+                    tdKey.getTypeReader().read(inputStream));
         };
     }
 
@@ -62,9 +67,11 @@ public class TypeDescriptorLoggedKey<K> implements TypeDescriptor<LoggedKey<K>> 
     @Override
     public Comparator<LoggedKey<K>> getComparator() {
         return (i1, i2) -> {
-            final int out = tdKey.getComparator().compare(i1.getKey(), i2.getKey());
+            final int out = tdKey.getComparator().compare(i1.getKey(),
+                    i2.getKey());
             if (out == 0) {
-                return TDLO.getComparator().compare(i1.getLogOperation(), i2.getLogOperation());
+                return TDLO.getComparator().compare(i1.getLogOperation(),
+                        i2.getLogOperation());
             }
             return out;
         };

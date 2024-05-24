@@ -1,12 +1,5 @@
 package com.coroptis.index.log;
 
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-
-import com.coroptis.index.CloseableResource;
-import com.coroptis.index.CloseableSpliterator;
-import com.coroptis.index.Pair;
-import com.coroptis.index.PairWriter;
 import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
 
 public class LogEmptyImpl<K, V> implements Log<K, V> {

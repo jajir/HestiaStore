@@ -13,17 +13,15 @@ public class LogImpl<K, V> implements Log<K, V> {
 
     /**
      * Log data will be stored in directory in filename 'filename' + '.' +
-     * 'log'. For example 'log-0012.log'.
+     * 'unsorted'. For example 'log-0012.unsorted'.
      */
-    private final static String LOG_FILE_EXTENSION = ".log";
+    private final static String LOG_FILE_EXTENSION = ".unsorted";
 
     private final UnsortedDataFile<LoggedKey<K>, V> log;
 
-    public LogImpl(final Directory directory,
-            final String fileName,
+    public LogImpl(final Directory directory, final String fileName,
             final TypeDescriptor<K> keyTypeDescriptor,
-            final TypeWriter<V> valueWriter,
-            final TypeReader<V> valueReader) {
+            final TypeWriter<V> valueWriter, final TypeReader<V> valueReader) {
 
         Objects.requireNonNull(directory);
         Objects.requireNonNull(fileName);
@@ -31,11 +29,12 @@ public class LogImpl<K, V> implements Log<K, V> {
         Objects.requireNonNull(valueWriter);
         Objects.requireNonNull(valueReader);
 
-        TypeDescriptorLoggedKey<K> tdlk = new TypeDescriptorLoggedKey<>(keyTypeDescriptor);
+        TypeDescriptorLoggedKey<K> tdlk = new TypeDescriptorLoggedKey<>(
+                keyTypeDescriptor);
 
-        this.log = new UnsortedDataFile<>(
-                directory, fileName + LOG_FILE_EXTENSION, tdlk.getTypeWriter(), valueWriter,
-                tdlk.getTypeReader(), valueReader);
+        this.log = new UnsortedDataFile<>(directory,
+                fileName + LOG_FILE_EXTENSION, tdlk.getTypeWriter(),
+                valueWriter, tdlk.getTypeReader(), valueReader);
     }
 
     public LogWriter<K, V> openWriter() {

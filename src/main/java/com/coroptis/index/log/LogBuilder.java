@@ -29,7 +29,8 @@ public class LogBuilder<K, V> {
         return this;
     }
 
-    public LogBuilder<K, V> withKeyTypeDescriptor(final TypeDescriptor<K> keyTypeDescriptor) {
+    public LogBuilder<K, V> withKeyTypeDescriptor(
+            final TypeDescriptor<K> keyTypeDescriptor) {
         this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
         return this;
     }
@@ -45,12 +46,12 @@ public class LogBuilder<K, V> {
     }
 
     public LogImpl<K, V> build() {
-        return new LogImpl<>(directory, fileName, keyTypeDescriptor, valueWriter,
-                valueReader);
+        return new LogImpl<>(directory, fileName, keyTypeDescriptor,
+                valueWriter, valueReader);
     }
 
     public LogEmptyImpl<K, V> buildEmpty() {
         return new LogEmptyImpl<>();
     }
-    
+
 }

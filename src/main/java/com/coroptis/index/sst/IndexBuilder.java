@@ -102,8 +102,7 @@ public class IndexBuilder<K, V> {
         return this;
     }
 
-    public IndexBuilder<K, V> withUseFullLog(
-            final boolean useFullLog) {
+    public IndexBuilder<K, V> withUseFullLog(final boolean useFullLog) {
         this.useFullLog = useFullLog;
         return this;
     }
@@ -114,20 +113,20 @@ public class IndexBuilder<K, V> {
                 maxNumberOfKeysInSegmentIndexPage, maxNumberOfKeysInCache,
                 maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache,
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes);
-        
-        Log<K,V> log = null;
-        if(useFullLog){
-            log= Log.<K,V>builder().withDirectory(directory)
-                .withFileName("log")
-                .withKeyTypeDescriptor(keyTypeDescriptor)
-                .withValueReader(valueTypeDescriptor.getTypeReader())
-                .withValueWriter(valueTypeDescriptor.getTypeWriter())
-                .build();
-        }else{
-            log = Log.<K,V>builder().buildEmpty();
+
+        Log<K, V> log = null;
+        if (useFullLog) {
+            log = Log.<K, V>builder().withDirectory(directory)
+                    .withFileName("log")
+                    .withKeyTypeDescriptor(keyTypeDescriptor)
+                    .withValueReader(valueTypeDescriptor.getTypeReader())
+                    .withValueWriter(valueTypeDescriptor.getTypeWriter())
+                    .build();
+        } else {
+            log = Log.<K, V>builder().buildEmpty();
         }
         final SstIndexImpl<K, V> index = new SstIndexImpl<>(directory,
-                keyTypeDescriptor, valueTypeDescriptor, conf,log);
+                keyTypeDescriptor, valueTypeDescriptor, conf, log);
         if (isIndexSynchronized) {
             return new SstIndexSynchronized<>(index);
         } else {

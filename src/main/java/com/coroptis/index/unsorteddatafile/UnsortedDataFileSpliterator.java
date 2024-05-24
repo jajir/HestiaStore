@@ -9,7 +9,7 @@ import com.coroptis.index.Pair;
 import com.coroptis.index.PairReader;
 
 public class UnsortedDataFileSpliterator<K, V>
-        implements CloseableSpliterator<K,V> {
+        implements CloseableSpliterator<K, V> {
 
     private final PairReader<K, V> pairReader;
 

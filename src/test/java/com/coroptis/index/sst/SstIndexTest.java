@@ -85,6 +85,7 @@ public class SstIndexTest {
         assertEquals(3, pairs4.size());
 
     }
+
     @Test
     void test_fullLog() throws Exception {
 
@@ -97,12 +98,12 @@ public class SstIndexTest {
                 Pair.of(11, "ddm"));
         data.stream().forEach(index1::put);
 
-        //reopen index to make sure all log data at flushed at the disk
+        // reopen index to make sure all log data at flushed at the disk
         index1.close();
         index1 = makeSstIndex(true);
 
-        final List<Pair<LoggedKey<Integer>, String>> list = index1.getLogStreamer().stream()
-                .collect(Collectors.toList());
+        final List<Pair<LoggedKey<Integer>, String>> list = index1
+                .getLogStreamer().stream().collect(Collectors.toList());
         assertEquals(data.size(), list.size());
     }
 
