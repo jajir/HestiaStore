@@ -8,7 +8,8 @@ public class LoggedKey<K> {
 
     private final K key;
 
-    public final static <M> LoggedKey<M> of(final LogOperation logOperation, final M key) {
+    public final static <M> LoggedKey<M> of(final LogOperation logOperation,
+            final M key) {
         return new LoggedKey<M>(logOperation, key);
     }
 
@@ -27,20 +28,26 @@ public class LoggedKey<K> {
 
     @Override
     public String toString() {
-        return String.format("LoggedKey[operation='%s',key='%s']", logOperation.name(), key);
+        return String.format("LoggedKey[operation='%s',key='%s']",
+                logOperation.name(), key);
     }
 
     @Override
     public int hashCode() {
-        // TODO Auto-generated method stub
-        return super.hashCode();
+        return Objects.hash(key, logOperation);
     }
 
     @Override
     public boolean equals(Object obj) {
-        
-        // TODO Auto-generated method stub
-        return super.equals(obj);
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        final LoggedKey<K> other = (LoggedKey<K>) obj;
+        return Objects.equals(key, other.key)
+                && logOperation == other.logOperation;
     }
 
 }
