@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.coroptis.index.IndexException;
+import com.coroptis.index.directory.Directory.Access;
 
 public class FsFileWriterStream implements FileWriter {
 
@@ -25,7 +26,7 @@ public class FsFileWriterStream implements FileWriter {
     FsFileWriterStream(final File file, final Directory.Access access) {
         try {
             final Path path = file.toPath();
-            if (file.exists() && !file.delete()) {
+            if (access==Access.OVERWRITE && file.exists() && !file.delete()) {
                 logger.warn("Unable to delete file '{}'", file.getName());
             }
             final OutputStream os = Files.newOutputStream(path,

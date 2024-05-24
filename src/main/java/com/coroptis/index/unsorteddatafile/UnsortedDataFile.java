@@ -56,8 +56,19 @@ public class UnsortedDataFile<K, V> {
     }
 
     public PairWriter<K, V> openWriter() {
+        return openWriter(Access.OVERWRITE);
+    }
+
+    public PairWriter<K, V> openWriter(final Access access) {
+        Objects.requireNonNull(access);
+        Access used = null;
+        if(directory.isFileExists(fileName)){
+            used = access;             
+        }else{
+            used = Access.OVERWRITE;    
+        }
         final UnsortedDataFileWriter<K, V> writer = new UnsortedDataFileWriter<>(
-                directory, fileName, keyWriter, valueWriter, Access.OVERWRITE);
+                directory, fileName, keyWriter, valueWriter, used);
         return writer;
     }
 

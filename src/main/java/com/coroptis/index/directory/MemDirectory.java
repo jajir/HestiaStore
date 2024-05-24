@@ -1,5 +1,6 @@
 package com.coroptis.index.directory;
 
+import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -40,6 +41,9 @@ public class MemDirectory implements Directory {
             data.put(fileName, bytes);
         } else {
             final byte a[] = data.get(fileName);
+            if (a == null) {
+                throw new IndexException(String.format("No such file '%s'", fileName));
+            }
             byte[] c = new byte[a.length + bytes.length];
             System.arraycopy(a, 0, c, 0, a.length);
             System.arraycopy(bytes, 0, c, a.length, bytes.length);

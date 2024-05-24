@@ -26,7 +26,7 @@ public class LogImplTest {
     private final TypeDescriptor<String> tds = new TypeDescriptorString();
 
     @Test
-    void test_log_constructor() {
+    void test_simple_event_logging() {
         Log<Integer, String> log = new LogImpl<>(directory, "log", tdi,
                 tds.getTypeWriter(), tds.getTypeReader());
         LogWriter<Integer, String> logWriter = log.openWriter();
@@ -36,6 +36,27 @@ public class LogImplTest {
         logWriter.delete(3, tds.getTombstone());
         logWriter.close();
 
+        verify_log_data(log);
+    }
+
+    @Test
+    void test_splitted_event_logging() {
+        Log<Integer, String> log = new LogImpl<>(directory, "log", tdi,
+                tds.getTypeWriter(), tds.getTypeReader());
+        final LogWriter<Integer, String> logWriter1 = log.openWriter();
+        logWriter1.post(3, "aaa");
+        logWriter1.post(6, "bbb");
+        logWriter1.close();
+
+        final LogWriter<Integer, String> logWriter2 = log.openWriter();
+        logWriter2.post(9, "ccc");
+        logWriter2.delete(3, tds.getTombstone());
+        logWriter2.close();
+
+        verify_log_data(log);
+    }
+
+    private void verify_log_data(final Log<Integer, String> log) {
         assertEquals(1, directory.getFileNames().count());
 
         assertEquals(4, log.openStreamer().stream().count());
@@ -43,8 +64,17 @@ public class LogImplTest {
                 .openStreamer()) {
             final List<Pair<LoggedKey<Integer>, String>> list = streamer
                     .stream().collect(Collectors.toList());
-            final Pair<LoggedKey<Integer>, String> p1 = list.get(0);
-            assertEquals(LoggedKey.of(LogOperation.POST, 3), p1.getKey());
+            final Pair<LoggedKey<Integer>, String> p0 = list.get(0);
+            assertEquals(LoggedKey.of(LogOperation.POST, 3), p0.getKey());
+
+            final Pair<LoggedKey<Integer>, String> p1 = list.get(1);
+            assertEquals(LoggedKey.of(LogOperation.POST, 6), p1.getKey());
+
+            final Pair<LoggedKey<Integer>, String> p2 = list.get(2);
+            assertEquals(LoggedKey.of(LogOperation.POST, 9), p2.getKey());
+
+            final Pair<LoggedKey<Integer>, String> p3 = list.get(3);
+            assertEquals(LoggedKey.of(LogOperation.DELETE, 3), p3.getKey());
         }
     }
 
