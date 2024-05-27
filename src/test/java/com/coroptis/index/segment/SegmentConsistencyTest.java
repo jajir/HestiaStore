@@ -55,6 +55,7 @@ public class SegmentConsistencyTest {
         }
         verifyDataIndex(seg2, updatedData);
         seg2.close();
+        assertEquals(4, directory.getFileNames().count());
     }
 
     private Segment<Integer, String> makeSegment(final Directory directory,

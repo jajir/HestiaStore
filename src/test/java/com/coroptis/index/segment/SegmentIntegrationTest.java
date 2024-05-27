@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
@@ -32,6 +33,11 @@ public class SegmentIntegrationTest {
     private final TypeDescriptorString tds = new TypeDescriptorString();
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
 
+    private final List<Pair<Integer, String>> testDataSet = Arrays.asList(
+            Pair.of(2, "a"), Pair.of(5, "d"), Pair.of(10, "i"), Pair.of(8, "g"),
+            Pair.of(7, "f"), Pair.of(3, "b"), Pair.of(4, "c"), Pair.of(6, "e"),
+            Pair.of(9, "h"));
+
     @ParameterizedTest
     @MethodSource("segmentProvider")
     void test_empty_segment_stats(final TypeDescriptorInteger tdi,
@@ -42,16 +48,18 @@ public class SegmentIntegrationTest {
 
         seg.forceCompact();
 
-        final List<Pair<Integer, String>> list = toList(seg.openIterator());
-        assertEquals(0, list.size());
+        verifySegmentData(seg, Arrays.asList());
+
         final SegmentStats stats = seg.getStats();
         assertEquals(0, stats.getNumberOfKeys());
         assertEquals(0, stats.getNumberOfKeysInCache());
         assertEquals(0, stats.getNumberOfKeysInIndex());
         assertEquals(0, stats.getNumberOfKeysInScarceIndex());
-        try (SegmentSearcher<Integer, String> searcher = seg.openSearcher()) {
-            assertNull(searcher.get(1));
-        }
+
+        verifySegmentSearch(seg, Arrays.asList(// s
+                Pair.of(1, null) //
+        ));
+
         /*
          * Number of file's is constantly 0, because of forceCompact method
          * doesn't run, because there are no canges in delta files.
@@ -68,37 +76,83 @@ public class SegmentIntegrationTest {
             final int expectedNumberKeysInScarceIndex,
             final int expectedNumberOfFiles) throws Exception {
 
-        try (PairWriter<Integer, String> writer = seg.openWriter()) {
-            writer.put(Pair.of(2, "a"));
-            writer.put(Pair.of(3, "b"));
-            writer.put(Pair.of(4, "c"));
-            writer.put(Pair.of(5, "d"));
-        }
+        writePairs(seg,
+                Arrays.asList(Pair.of(2, "a"), Pair.of(5, "d"),
+                        Pair.of(10, "i"), Pair.of(8, "g"), Pair.of(7, "f"),
+                        Pair.of(3, "b"), Pair.of(4, "c"), Pair.of(6, "e"),
+                        Pair.of(9, "h")));
+        /*
+         * Writing operation is here intentionally duplicated. It verifies, that
+         * index consistency is kept.
+         */
+        writePairs(seg, testDataSet);
 
-        assertEquals(4, seg.getStats().getNumberOfKeys());
+        verifyTestDataSet(seg);
 
-        // Verify that all data could be read
-        final List<Pair<Integer, String>> list = toList(seg.openIterator());
-        assertEquals(Pair.of(2, "a"), list.get(0));
-        assertEquals(Pair.of(3, "b"), list.get(1));
-        assertEquals(Pair.of(4, "c"), list.get(2));
-        assertEquals(Pair.of(5, "d"), list.get(3));
-        assertEquals(4, list.size());
+        /**
+         * It's always 5 because there is always 4 default files in index and
+         * one delta file.
+         */
+        assertEquals(5, numberOfFilesInDirectoryP(directory));
 
+        seg.forceCompact();
+        assertEquals(9, seg.getStats().getNumberOfKeys());
         assertEquals(expectedNumberKeysInScarceIndex,
                 seg.getStats().getNumberOfKeysInScarceIndex());
+    }
 
-        // Assert that all data could be found
-        try (SegmentSearcher<Integer, String> searcher = seg.openSearcher()) {
-            assertNull(searcher.get(6));
-            assertEquals("a", searcher.get(2));
-            assertEquals("b", searcher.get(3));
-            assertEquals("c", searcher.get(4));
-            assertEquals("d", searcher.get(5));
-        }
+    /**
+     * When all data are written in separate delta file, even in this case are
+     * data correctly processed.
+     */
+    @ParameterizedTest
+    @MethodSource("segmentProvider")
+    void test_multipleWrites(final TypeDescriptorInteger tdi,
+            final TypeDescriptorString tds, final Directory directory,
+            final Segment<Integer, String> seg,
+            final int expectedNumberKeysInScarceIndex,
+            final int expectedNumberOfFiles) throws Exception {
+
+        testDataSet.forEach(pair -> {
+            writePairs(seg, Arrays.asList(pair));
+        });
+
+        verifyTestDataSet(seg);
 
         assertEquals(expectedNumberOfFiles,
                 numberOfFilesInDirectoryP(directory));
+
+        seg.forceCompact();
+
+        assertEquals(4, numberOfFilesInDirectoryP(directory));
+        verifyTestDataSet(seg);
+        assertEquals(9, seg.getStats().getNumberOfKeys());
+        assertEquals(expectedNumberKeysInScarceIndex,
+                seg.getStats().getNumberOfKeysInScarceIndex());
+    }
+
+    private void verifyTestDataSet(final Segment<Integer, String> seg) {
+
+        verifySegmentData(seg, Arrays.asList(//
+                Pair.of(2, "a"), //
+                Pair.of(3, "b"), //
+                Pair.of(4, "c"), //
+                Pair.of(5, "d"), //
+                Pair.of(6, "e"), //
+                Pair.of(7, "f"), //
+                Pair.of(8, "g"), //
+                Pair.of(9, "h"), //
+                Pair.of(10, "i")//
+        ));
+
+        verifySegmentSearch(seg, Arrays.asList(// s
+                Pair.of(11, null), //
+                Pair.of(2, "a"), //
+                Pair.of(3, "b"), //
+                Pair.of(4, "c"), //
+                Pair.of(5, "d")//
+        ));
+
     }
 
     @ParameterizedTest
@@ -109,34 +163,29 @@ public class SegmentIntegrationTest {
             final int expectedNumberKeysInScarceIndex,
             final int expectedNumberOfFiles) throws Exception {
 
-        try (PairWriter<Integer, String> writer = seg.openWriter()) {
-            writer.put(Pair.of(2, "a"));
-            writer.put(Pair.of(3, "b"));
-            writer.put(Pair.of(4, "c"));
-            writer.put(Pair.of(5, "d"));
-        }
+        writePairs(seg, Arrays.asList(Pair.of(2, "a"), Pair.of(3, "b"),
+                Pair.of(4, "c"), Pair.of(5, "d")));
 
         final SegmentId segId = SegmentId.of(3);
         final SegmentSplitter.Result<Integer, String> result = seg.split(segId);
         final Segment<Integer, String> smaller = result.getSegment();
 
-        final List<Pair<Integer, String>> list1 = toList(seg.openIterator());
-        assertEquals(2, list1.size());
-        assertEquals(Pair.of(4, "c"), list1.get(0));
-        assertEquals(Pair.of(5, "d"), list1.get(1));
+        verifySegmentData(seg, Arrays.asList(//
+                Pair.of(4, "c"), //
+                Pair.of(5, "d") //
+        ));
 
-        final List<Pair<Integer, String>> list2 = toList(
-                smaller.openIterator());
-        assertEquals(2, list2.size());
-        assertEquals(Pair.of(2, "a"), list2.get(0));
-        assertEquals(Pair.of(3, "b"), list2.get(1));
+        verifySegmentData(smaller, Arrays.asList(//
+                Pair.of(2, "a"), //
+                Pair.of(3, "b") //
+        ));
 
-        try (SegmentSearcher<Integer, String> searcher = seg.openSearcher()) {
-            assertNull(searcher.get(2));
-            assertNull(searcher.get(3));
-            assertEquals("c", searcher.get(4));
-            assertEquals("d", searcher.get(5));
-        }
+        verifySegmentSearch(seg, Arrays.asList(// s
+                Pair.of(2, null), //
+                Pair.of(3, null), //
+                Pair.of(4, "c"), //
+                Pair.of(5, "d") //
+        ));
 
         try (SegmentSearcher<Integer, String> searcher = smaller
                 .openSearcher()) {
@@ -157,34 +206,34 @@ public class SegmentIntegrationTest {
                 .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
                 .withValueTypeDescriptor(tds).build();
 
-        try (PairWriter<Integer, String> writer = seg.openWriter()) {
-            writer.put(Pair.of(2, "a"));
-            writer.put(Pair.of(3, "b"));
-            writer.put(Pair.of(3, "bb"));
-            writer.put(Pair.of(4, "c"));
-            writer.put(Pair.of(5, "d"));
-            writer.put(Pair.of(5, "dd"));
-            writer.put(Pair.of(5, "ddd"));
-        }
+        writePairs(seg, Arrays.asList(//
+                Pair.of(2, "a"), //
+                Pair.of(3, "b"), //
+                Pair.of(3, "bb"), //
+                Pair.of(4, "c"), //
+                Pair.of(5, "d"), //
+                Pair.of(5, "dd"), //
+                Pair.of(5, "ddd")//
+        ));
 
         assertEquals(4, seg.getStats().getNumberOfKeys());
         assertEquals(4, seg.getStats().getNumberOfKeysInCache());
         assertEquals(0, seg.getStats().getNumberOfKeysInIndex());
 
-        final List<Pair<Integer, String>> list = toList(seg.openIterator());
-        assertEquals(4, list.size());
-        assertEquals(Pair.of(2, "a"), list.get(0));
-        assertEquals(Pair.of(3, "bb"), list.get(1));
-        assertEquals(Pair.of(4, "c"), list.get(2));
-        assertEquals(Pair.of(5, "ddd"), list.get(3));
+        verifySegmentData(seg, Arrays.asList(//
+                Pair.of(2, "a"), //
+                Pair.of(3, "bb"), //
+                Pair.of(4, "c"), //
+                Pair.of(5, "ddd") //
+        ));
 
-        try (SegmentSearcher<Integer, String> searcher = seg.openSearcher()) {
-            assertNull(searcher.get(6));
-            assertEquals("a", searcher.get(2));
-            assertEquals("bb", searcher.get(3));
-            assertEquals("c", searcher.get(4));
-            assertEquals("ddd", searcher.get(5));
-        }
+        verifySegmentSearch(seg, Arrays.asList(// s
+                Pair.of(6, null), //
+                Pair.of(2, "a"), //
+                Pair.of(3, "bb"), //
+                Pair.of(4, "c"), //
+                Pair.of(5, "ddd")//
+        ));
     }
 
     @Test
@@ -195,34 +244,34 @@ public class SegmentIntegrationTest {
                 .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
                 .withValueTypeDescriptor(tds).build();
 
-        try (PairWriter<Integer, String> writer = seg.openWriter()) {
-            writer.put(Pair.of(5, "d"));
-            writer.put(Pair.of(3, "b"));
-            writer.put(Pair.of(5, "dd"));
-            writer.put(Pair.of(2, "a"));
-            writer.put(Pair.of(3, "bb"));
-            writer.put(Pair.of(4, "c"));
-            writer.put(Pair.of(5, "ddd"));
-        }
+        writePairs(seg, Arrays.asList(//
+                Pair.of(5, "d"), //
+                Pair.of(3, "b"), //
+                Pair.of(5, "dd"), //
+                Pair.of(2, "a"), //
+                Pair.of(3, "bb"), //
+                Pair.of(4, "c"), //
+                Pair.of(5, "ddd")//
+        ));
 
         assertEquals(4, seg.getStats().getNumberOfKeys());
         assertEquals(4, seg.getStats().getNumberOfKeysInCache());
         assertEquals(0, seg.getStats().getNumberOfKeysInIndex());
 
-        final List<Pair<Integer, String>> list = toList(seg.openIterator());
-        assertEquals(4, list.size());
-        assertEquals(Pair.of(2, "a"), list.get(0));
-        assertEquals(Pair.of(3, "bb"), list.get(1));
-        assertEquals(Pair.of(4, "c"), list.get(2));
-        assertEquals(Pair.of(5, "ddd"), list.get(3));
+        verifySegmentData(seg, Arrays.asList(//
+                Pair.of(2, "a"), //
+                Pair.of(3, "bb"), //
+                Pair.of(4, "c"), //
+                Pair.of(5, "ddd") //
+        ));
 
-        try (SegmentSearcher<Integer, String> searcher = seg.openSearcher()) {
-            assertNull(searcher.get(6));
-            assertEquals("a", searcher.get(2));
-            assertEquals("bb", searcher.get(3));
-            assertEquals("c", searcher.get(4));
-            assertEquals("ddd", searcher.get(5));
-        }
+        verifySegmentSearch(seg, Arrays.asList(//
+                Pair.of(6, null), //
+                Pair.of(2, "a"), //
+                Pair.of(3, "bb"), //
+                Pair.of(4, "c"), //
+                Pair.of(5, "ddd")//
+        ));
     }
 
     @Test
@@ -233,16 +282,16 @@ public class SegmentIntegrationTest {
                 .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
                 .withValueTypeDescriptor(tds).build();
 
-        try (PairWriter<Integer, String> writer = seg.openWriter()) {
-            writer.put(Pair.of(5, "d"));
-            writer.put(Pair.of(3, "b"));
-            writer.put(Pair.of(5, "dd"));
-            writer.put(Pair.of(2, "a"));
-            writer.put(Pair.of(3, "bb"));
-            writer.put(Pair.of(4, "c"));
-            writer.put(Pair.of(5, "ddd"));
-            writer.put(Pair.of(5, TypeDescriptorString.TOMBSTONE_VALUE));
-        }
+        writePairs(seg, Arrays.asList(//
+                Pair.of(5, "d"), //
+                Pair.of(3, "b"), //
+                Pair.of(5, "dd"), //
+                Pair.of(2, "a"), //
+                Pair.of(3, "bb"), //
+                Pair.of(4, "c"), //
+                Pair.of(5, "ddd"), //
+                Pair.of(5, TypeDescriptorString.TOMBSTONE_VALUE)//
+        ));
 
         /**
          * There is a error in computing number of keys in cache. There are 3
@@ -252,18 +301,18 @@ public class SegmentIntegrationTest {
         assertEquals(4, seg.getStats().getNumberOfKeysInCache());
         assertEquals(0, seg.getStats().getNumberOfKeysInIndex());
 
-        final List<Pair<Integer, String>> list = toList(seg.openIterator());
-        assertEquals(3, list.size());
-        assertEquals(Pair.of(2, "a"), list.get(0));
-        assertEquals(Pair.of(3, "bb"), list.get(1));
-        assertEquals(Pair.of(4, "c"), list.get(2));
+        verifySegmentData(seg, Arrays.asList(//
+                Pair.of(2, "a"), //
+                Pair.of(3, "bb"), //
+                Pair.of(4, "c") //
+        ));
 
-        try (SegmentSearcher<Integer, String> searcher = seg.openSearcher()) {
-            assertNull(searcher.get(5));
-            assertEquals("a", searcher.get(2));
-            assertEquals("bb", searcher.get(3));
-            assertEquals("c", searcher.get(4));
-        }
+        verifySegmentSearch(seg, Arrays.asList(// s
+                Pair.of(5, null), //
+                Pair.of(2, "a"), //
+                Pair.of(3, "bb"), //
+                Pair.of(4, "c") //
+        ));
     }
 
     /**
@@ -288,34 +337,34 @@ public class SegmentIntegrationTest {
                 .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
                 .withValueTypeDescriptor(tds).build();
 
-        try (PairWriter<Integer, String> writer = seg.openWriter()) {
-            writer.put(Pair.of(5, "d"));
-            writer.put(Pair.of(3, "b"));
-            writer.put(Pair.of(5, "dd"));
-            writer.put(Pair.of(2, "a"));
-            writer.put(Pair.of(3, "bb"));
-            writer.put(Pair.of(4, "c"));
-            writer.put(Pair.of(5, "ddd"));
-            writer.put(Pair.of(5, TypeDescriptorString.TOMBSTONE_VALUE));
-        }
+        writePairs(seg, Arrays.asList(//
+                Pair.of(5, "d"), //
+                Pair.of(3, "b"), //
+                Pair.of(5, "dd"), //
+                Pair.of(2, "a"), //
+                Pair.of(3, "bb"), //
+                Pair.of(4, "c"), //
+                Pair.of(5, "ddd"), //
+                Pair.of(5, TypeDescriptorString.TOMBSTONE_VALUE)//
+        ));
         seg.forceCompact();
 
         assertEquals(3, seg.getStats().getNumberOfKeys());
         assertEquals(0, seg.getStats().getNumberOfKeysInCache());
         assertEquals(3, seg.getStats().getNumberOfKeysInIndex());
 
-        final List<Pair<Integer, String>> list = toList(seg.openIterator());
-        assertEquals(3, list.size());
-        assertEquals(Pair.of(2, "a"), list.get(0));
-        assertEquals(Pair.of(3, "bb"), list.get(1));
-        assertEquals(Pair.of(4, "c"), list.get(2));
+        verifySegmentData(seg, Arrays.asList(//
+                Pair.of(2, "a"), //
+                Pair.of(3, "bb"), //
+                Pair.of(4, "c") //
+        ));
 
-        try (SegmentSearcher<Integer, String> searcher = seg.openSearcher()) {
-            assertNull(searcher.get(5));
-            assertEquals("a", searcher.get(2));
-            assertEquals("bb", searcher.get(3));
-            assertEquals("c", searcher.get(4));
-        }
+        verifySegmentSearch(seg, Arrays.asList(// s
+                Pair.of(5, null), //
+                Pair.of(2, "a"), //
+                Pair.of(3, "bb"), //
+                Pair.of(4, "c") //
+        ));
     }
 
     /**
@@ -333,40 +382,33 @@ public class SegmentIntegrationTest {
         final SegmentId id3 = SegmentId.of(17);
         final TypeDescriptorString tds = new TypeDescriptorString();
         final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
-        return Stream.of(
-                arguments(tdi, tds, dir1,
-                        Segment.<Integer, String>builder().withDirectory(dir1)
-                                .withId(id1).withKeyTypeDescriptor(tdi)
-                                .withValueTypeDescriptor(tds)
-                                .withMaxNumberOfKeysInSegmentMemory(10)
-                                .withMaxNumberOfKeysInSegmentCache(10).build(),
-                        0, 2),
-                arguments(tdi, tds, dir2,
-                        Segment.<Integer, String>builder().withDirectory(dir2)
-                                .withId(id2).withKeyTypeDescriptor(tdi)
-                                .withValueTypeDescriptor(tds)
-                                .withMaxNumberOfKeysInSegmentCache(1)
-                                .withMaxNumberOfKeysInSegmentMemory(1)
-                                .withMaxNumberOfKeysInIndexPage(1).build(),
-                        4, 5),
-                arguments(tdi, tds, dir3,
-                        Segment.<Integer, String>builder().withDirectory(dir3)
-                                .withId(id3).withKeyTypeDescriptor(tdi)
-                                .withValueTypeDescriptor(tds)
-                                .withMaxNumberOfKeysInSegmentCache(2)
-                                .withMaxNumberOfKeysInSegmentMemory(2)
-                                .withMaxNumberOfKeysInIndexPage(2).build(),
-                        2, 5));
-    }
-
-    private List<Pair<Integer, String>> toList(
-            final PairIterator<Integer, String> iterator) {
-        final ArrayList<Pair<Integer, String>> out = new ArrayList<>();
-        while (iterator.hasNext()) {
-            out.add(iterator.next());
-        }
-        iterator.close();
-        return out;
+        return Stream.of(arguments(tdi, tds, dir1,
+                Segment.<Integer, String>builder().withDirectory(dir1)
+                        .withId(id1).withKeyTypeDescriptor(tdi)
+                        .withValueTypeDescriptor(tds)
+                        .withMaxNumberOfKeysInSegmentMemory(10)
+                        .withMaxNumberOfKeysInSegmentCache(10).build(),
+                2, // expectedNumberKeysInScarceIndex,
+                10 // expectedNumberOfFile
+        ), arguments(tdi, tds, dir2,
+                Segment.<Integer, String>builder().withDirectory(dir2)
+                        .withId(id2).withKeyTypeDescriptor(tdi)
+                        .withValueTypeDescriptor(tds)
+                        .withMaxNumberOfKeysInSegmentCache(1)
+                        .withMaxNumberOfKeysInSegmentMemory(1)
+                        .withMaxNumberOfKeysInIndexPage(1).build(),
+                9, // expectedNumberKeysInScarceIndex
+                6// expectedNumberOfFile
+        ), arguments(tdi, tds, dir3,
+                Segment.<Integer, String>builder().withDirectory(dir3)
+                        .withId(id3).withKeyTypeDescriptor(tdi)
+                        .withValueTypeDescriptor(tds)
+                        .withMaxNumberOfKeysInSegmentCache(2)
+                        .withMaxNumberOfKeysInSegmentMemory(2)
+                        .withMaxNumberOfKeysInIndexPage(2).build(),
+                5, // expectedNumberKeysInScarceIndex
+                5 // expectedNumberOfFile
+        ));
     }
 
     private int numberOfFilesInDirectory(final Directory directory) {
@@ -380,6 +422,80 @@ public class SegmentIntegrationTest {
             cx.incrementAndGet();
         });
         return cx.get();
+    }
+
+    /**
+     * Convert pair iterator data to list
+     * 
+     * @param <M>      key type
+     * @param <N>      value type
+     * @param iterator
+     * @returnlist of pairs with data from list
+     */
+    private <M, N> List<Pair<M, N>> toList(final PairIterator<M, N> iterator) {
+        final ArrayList<Pair<M, N>> out = new ArrayList<>();
+        while (iterator.hasNext()) {
+            out.add(iterator.next());
+        }
+        iterator.close();
+        return out;
+    }
+
+    /**
+     * Simplify filling segment with data.
+     * 
+     * @param <M>   key type
+     * @param <N>   value type
+     * @param seg   required segment
+     * @param pairs required list of pairs
+     */
+    private <M, N> void writePairs(final Segment<M, N> seg,
+            final List<Pair<M, N>> pairs) {
+        try (PairWriter<M, N> writer = seg.openWriter()) {
+            for (final Pair<M, N> pair : pairs) {
+                writer.put(pair);
+            }
+        }
+    }
+
+    /**
+     * Open segment search and verify that found value for given key is equals
+     * to expected value
+     * 
+     * @param <M>   key type
+     * @param <N>   value type
+     * @param seg   required segment
+     * @param pairs required list of pairs of key and expected value
+     */
+    private <M, N> void verifySegmentSearch(final Segment<M, N> seg,
+            final List<Pair<M, N>> pairs) {
+        try (SegmentSearcher<M, N> searcher = seg.openSearcher()) {
+            pairs.forEach(pair -> {
+                final M key = pair.getKey();
+                final N expectedValue = pair.getValue();
+                assertEquals(expectedValue, searcher.get(key));
+            });
+        }
+    }
+
+    /**
+     * Open segment search and verify that found value for given key is equals
+     * to expecetd value
+     * 
+     * @param <M>   key type
+     * @param <N>   value type
+     * @param seg   required segment
+     * @param pairs required list of expected data in segment
+     */
+    private <M, N> void verifySegmentData(final Segment<M, N> seg,
+            final List<Pair<M, N>> pairs) {
+        final List<Pair<M, N>> data = toList(seg.openIterator());
+        assertEquals(pairs.size(), data.size());
+        for (int i = 0; i < pairs.size(); i++) {
+            final Pair<M, N> expectedPair = pairs.get(i);
+            final Pair<M, N> realPair = data.get(i);
+            assertEquals(expectedPair, realPair);
+        }
     }
 
 }
