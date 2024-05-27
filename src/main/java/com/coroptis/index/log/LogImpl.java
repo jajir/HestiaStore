@@ -6,6 +6,7 @@ import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.datatype.TypeReader;
 import com.coroptis.index.datatype.TypeWriter;
 import com.coroptis.index.directory.Directory;
+import com.coroptis.index.directory.Directory.Access;
 import com.coroptis.index.unsorteddatafile.UnsortedDataFile;
 import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
 
@@ -38,7 +39,7 @@ public class LogImpl<K, V> implements Log<K, V> {
     }
 
     public LogWriter<K, V> openWriter() {
-        return new LogWriterImpl<>(log.openWriter());
+        return new LogWriterImpl<>(log.openWriter(Access.APPEND));
     }
 
     public UnsortedDataFileStreamer<LoggedKey<K>, V> openStreamer() {
