@@ -1,13 +1,13 @@
 package com.coroptis.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -37,6 +37,10 @@ public class SegmentIntegrationTest {
             Pair.of(2, "a"), Pair.of(5, "d"), Pair.of(10, "i"), Pair.of(8, "g"),
             Pair.of(7, "f"), Pair.of(3, "b"), Pair.of(4, "c"), Pair.of(6, "e"),
             Pair.of(9, "h"));
+    private final List<Pair<Integer, String>> sortedTestDataSet = testDataSet
+            .stream().sorted((pair1, pair2) -> {
+                return pair1.getKey() - pair2.getKey();
+            }).collect(Collectors.toList());
 
     @ParameterizedTest
     @MethodSource("segmentProvider")
@@ -76,15 +80,11 @@ public class SegmentIntegrationTest {
             final int expectedNumberKeysInScarceIndex,
             final int expectedNumberOfFiles) throws Exception {
 
-        writePairs(seg,
-                Arrays.asList(Pair.of(2, "a"), Pair.of(5, "d"),
-                        Pair.of(10, "i"), Pair.of(8, "g"), Pair.of(7, "f"),
-                        Pair.of(3, "b"), Pair.of(4, "c"), Pair.of(6, "e"),
-                        Pair.of(9, "h")));
         /*
          * Writing operation is here intentionally duplicated. It verifies, that
          * index consistency is kept.
          */
+        writePairs(seg, testDataSet);
         writePairs(seg, testDataSet);
 
         verifyTestDataSet(seg);
@@ -133,17 +133,7 @@ public class SegmentIntegrationTest {
 
     private void verifyTestDataSet(final Segment<Integer, String> seg) {
 
-        verifySegmentData(seg, Arrays.asList(//
-                Pair.of(2, "a"), //
-                Pair.of(3, "b"), //
-                Pair.of(4, "c"), //
-                Pair.of(5, "d"), //
-                Pair.of(6, "e"), //
-                Pair.of(7, "f"), //
-                Pair.of(8, "g"), //
-                Pair.of(9, "h"), //
-                Pair.of(10, "i")//
-        ));
+        verifySegmentData(seg, sortedTestDataSet);
 
         verifySegmentSearch(seg, Arrays.asList(// s
                 Pair.of(11, null), //
@@ -163,6 +153,10 @@ public class SegmentIntegrationTest {
             final int expectedNumberKeysInScarceIndex,
             final int expectedNumberOfFiles) throws Exception {
 
+        // FIXME add commented out lines to test
+
+//        writePairs(seg, Arrays.asList(Pair.of(2, "e"), Pair.of(3, "e"),
+//                Pair.of(4, "e"), Pair.of(5, "e")));
         writePairs(seg, Arrays.asList(Pair.of(2, "a"), Pair.of(3, "b"),
                 Pair.of(4, "c"), Pair.of(5, "d")));
 
@@ -180,20 +174,19 @@ public class SegmentIntegrationTest {
                 Pair.of(3, "b") //
         ));
 
-        verifySegmentSearch(seg, Arrays.asList(// s
+        verifySegmentSearch(seg, Arrays.asList(//
                 Pair.of(2, null), //
                 Pair.of(3, null), //
                 Pair.of(4, "c"), //
                 Pair.of(5, "d") //
         ));
 
-        try (SegmentSearcher<Integer, String> searcher = smaller
-                .openSearcher()) {
-            assertNull(searcher.get(4));
-            assertNull(searcher.get(5));
-            assertEquals("a", searcher.get(2));
-            assertEquals("b", searcher.get(3));
-        }
+        verifySegmentSearch(smaller, Arrays.asList(//
+                Pair.of(2, "a"), //
+                Pair.of(3, "b"), //
+                Pair.of(4, null), //
+                Pair.of(5, null) //
+        ));
 
         assertEquals(8, numberOfFilesInDirectoryP(directory));
     }
@@ -490,7 +483,7 @@ public class SegmentIntegrationTest {
     private <M, N> void verifySegmentData(final Segment<M, N> seg,
             final List<Pair<M, N>> pairs) {
         final List<Pair<M, N>> data = toList(seg.openIterator());
-        assertEquals(pairs.size(), data.size());
+        assertEquals(pairs.size(), data.size(), "Unexpected segment data size");
         for (int i = 0; i < pairs.size(); i++) {
             final Pair<M, N> expectedPair = pairs.get(i);
             final Pair<M, N> realPair = data.get(i);
