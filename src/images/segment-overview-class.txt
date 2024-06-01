@@ -1,0 +1,33 @@
+@startuml
+
+class           Segment {
+  + SegmentId SegmentId
+  + PairIterator openIterator()
+  + void openWriter()
+  + void forceCompact()
+  + SegmentSearcher openSearcher()
+  + PairWriter openWriter()
+  + void optionallyCompact()
+  + SegmentSplitter.Result split()
+}
+
+note right of Segment
+  Entry class for working
+  with segment data.
+end note
+
+class           SegmentId {
+  - int id  
+  + int getId() 
+}
+class           SegmentPropertiesManager
+class           SegmentCompacter
+class           SegmentFiles
+class           SegmentConf
+
+Segment --> SegmentPropertiesManager
+Segment --> SegmentCompacter
+Segment --> SegmentFiles
+Segment --> SegmentConf
+
+@enduml

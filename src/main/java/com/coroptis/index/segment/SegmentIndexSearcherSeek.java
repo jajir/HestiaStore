@@ -7,6 +7,15 @@ import com.coroptis.index.Pair;
 import com.coroptis.index.PairSeekableReader;
 import com.coroptis.index.sstfile.SstFile;
 
+/**
+ * This implementation keep open file and when it search it seek to given place
+ * and read data. It use {@link java.util.RandomAccessFile#seek()}
+ * 
+ * @author honza
+ *
+ * @param <K>
+ * @param <V>
+ */
 public class SegmentIndexSearcherSeek<K, V>
         implements SegmentIndexSearcher<K, V> {
 

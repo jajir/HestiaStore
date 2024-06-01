@@ -153,17 +153,17 @@ public class SegmentIntegrationTest {
             final int expectedNumberKeysInScarceIndex,
             final int expectedNumberOfFiles) throws Exception {
 
-        // FIXME add commented out lines to test
-
-//        writePairs(seg, Arrays.asList(Pair.of(2, "e"), Pair.of(3, "e"),
-//                Pair.of(4, "e"), Pair.of(5, "e")));
+        writePairs(seg, Arrays.asList(Pair.of(2, "e"), Pair.of(3, "e"),
+                Pair.of(4, "e")));
         writePairs(seg, Arrays.asList(Pair.of(2, "a"), Pair.of(3, "b"),
                 Pair.of(4, "c"), Pair.of(5, "d")));
 
         final SegmentId segId = SegmentId.of(3);
         final SegmentSplitter.Result<Integer, String> result = seg.split(segId);
         final Segment<Integer, String> smaller = result.getSegment();
-
+        assertEquals(2, result.getMinKey());
+        assertEquals(3, result.getMaxKey());
+        
         verifySegmentData(seg, Arrays.asList(//
                 Pair.of(4, "c"), //
                 Pair.of(5, "d") //

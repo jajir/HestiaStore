@@ -7,17 +7,25 @@ import com.coroptis.index.Pair;
 import com.coroptis.index.PairReader;
 import com.coroptis.index.sstfile.SstFile;
 
+/**
+ * Searcher for each search open file for read and skip given number of bytes.
+ * 
+ * @author honza
+ *
+ * @param <K>
+ * @param <V>
+ */
 public class SegmentIndexSearcherDefault<K, V>
         implements SegmentIndexSearcher<K, V> {
 
-    private final SstFile<K, V> segmenIndexFile;
+    private final SstFile<K, V> segmentIndexFile;
     private final int maxNumberOfKeysInIndexPage;
     private final Comparator<K> keyTypeComparator;
 
-    SegmentIndexSearcherDefault(final SstFile<K, V> segmenIndexFile,
+    SegmentIndexSearcherDefault(final SstFile<K, V> segmentIndexFile,
             final int maxNumberOfKeysInIndexPage,
             final Comparator<K> keyTypeComparator) {
-        this.segmenIndexFile = Objects.requireNonNull(segmenIndexFile);
+        this.segmentIndexFile = Objects.requireNonNull(segmentIndexFile);
         this.maxNumberOfKeysInIndexPage = Objects
                 .requireNonNull(maxNumberOfKeysInIndexPage);
         this.keyTypeComparator = Objects.requireNonNull(keyTypeComparator);
@@ -30,7 +38,7 @@ public class SegmentIndexSearcherDefault<K, V>
 
     @Override
     public V search(final K key, long startPosition) {
-        try (PairReader<K, V> fileReader = segmenIndexFile
+        try (PairReader<K, V> fileReader = segmentIndexFile
                 .openReader(startPosition)) {
             for (int i = 0; i < maxNumberOfKeysInIndexPage; i++) {
                 final Pair<K, V> pair = fileReader.read();

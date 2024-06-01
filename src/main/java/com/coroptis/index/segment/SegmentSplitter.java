@@ -99,7 +99,15 @@ public class SegmentSplitter<K, V> {
         logger.debug("Start of splitting '{}'", segmentFiles.getId());
         versionController.changeVersion();
         long cx = 0;
-        long half = getStats().getNumberOfKeys() / 2;
+        /*
+         * Real number of key is equals or lower than computed bellow. Keys in
+         * cache could already be in main index file of it can be keys with
+         * tombstone value.
+         */
+        final SegmentCache<K, V> sc = new SegmentCache<>(
+                segmentFiles.getKeyTypeDescriptor(), segmentFiles,
+                segmentPropertiesManager);
+        long half = (getStats().getNumberOfKeysInIndex() + sc.size()) / 2;
 
         final Segment<K, V> lowerSegment = Segment.<K, V>builder()
                 .withDirectory(segmentFiles.getDirectory()).withId(segmentId)
