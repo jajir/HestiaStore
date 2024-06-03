@@ -32,21 +32,22 @@ public class SstIndexTest {
     final TypeDescriptorString tds = new TypeDescriptorString();
     final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
 
+    private final List<Pair<Integer, String>> testData = List.of(Pair.of(1, "bbb"),
+            Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(4, "ddf"),
+            Pair.of(5, "ddg"), Pair.of(6, "ddh"), Pair.of(7, "ddi"),
+            Pair.of(8, "ddj"), Pair.of(9, "ddk"), Pair.of(10, "ddl"),
+            Pair.of(11, "ddm"));
+    
     @Test
     void testBasic() throws Exception {
 
         final Index<Integer, String> index1 = makeSstIndex();
 
-        final List<Pair<Integer, String>> data = List.of(Pair.of(1, "bbb"),
-                Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(4, "ddf"),
-                Pair.of(5, "ddg"), Pair.of(6, "ddh"), Pair.of(7, "ddi"),
-                Pair.of(8, "ddj"), Pair.of(9, "ddk"), Pair.of(10, "ddl"),
-                Pair.of(11, "ddm"));
-        data.stream().forEach(index1::put);
+        testData.stream().forEach(index1::put);
 
         index1.forceCompact();
 
-        data.stream().forEach(pair -> {
+        testData.stream().forEach(pair -> {
             final String value = index1.get(pair.getKey());
             assertEquals(pair.getValue(), value);
         });
@@ -56,7 +57,7 @@ public class SstIndexTest {
         assertEquals(17, numberOfFilesInDirectoryP(directory));
 
         final Index<Integer, String> index2 = makeSstIndex();
-        data.stream().forEach(pair -> {
+        testData.stream().forEach(pair -> {
             final String value = index2.get(pair.getKey());
             assertEquals(pair.getValue(), value);
         });
@@ -91,12 +92,7 @@ public class SstIndexTest {
 
         Index<Integer, String> index1 = makeSstIndex(true);
 
-        final List<Pair<Integer, String>> data = List.of(Pair.of(1, "bbb"),
-                Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(4, "ddf"),
-                Pair.of(5, "ddg"), Pair.of(6, "ddh"), Pair.of(7, "ddi"),
-                Pair.of(8, "ddj"), Pair.of(9, "ddk"), Pair.of(10, "ddl"),
-                Pair.of(11, "ddm"));
-        data.stream().forEach(index1::put);
+        testData.stream().forEach(index1::put);
 
         // reopen index to make sure all log data at flushed at the disk
         index1.close();
@@ -104,22 +100,17 @@ public class SstIndexTest {
 
         final List<Pair<LoggedKey<Integer>, String>> list = index1
                 .getLogStreamer().stream().collect(Collectors.toList());
-        assertEquals(data.size(), list.size());
+        assertEquals(testData.size(), list.size());
     }
 
     @Test
     void test_merging_values_from_cache_and_segment() throws Exception {
         final Index<Integer, String> index1 = makeSstIndex();
-        final List<Pair<Integer, String>> data = List.of(Pair.of(1, "bbb"),
-                Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(4, "ddf"),
-                Pair.of(5, "ddg"), Pair.of(6, "ddh"), Pair.of(7, "ddi"),
-                Pair.of(8, "ddj"), Pair.of(9, "ddk"), Pair.of(10, "ddl"),
-                Pair.of(11, "ddm"));
-        data.stream().forEach(index1::put);
+        testData.stream().forEach(index1::put);
 
         final List<Pair<Integer, String>> list = index1.getStream()
                 .collect(Collectors.toList());
-        assertEquals(data.size(), list.size());
+        assertEquals(testData.size(), list.size());
     }
 
     /**
@@ -131,19 +122,14 @@ public class SstIndexTest {
     @Test
     void test_repeated_read() throws Exception {
         final Index<Integer, String> index1 = makeSstIndex();
-        final List<Pair<Integer, String>> data = List.of(Pair.of(1, "bbb"),
-                Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(4, "ddf"),
-                Pair.of(5, "ddg"), Pair.of(6, "ddh"), Pair.of(7, "ddi"),
-                Pair.of(8, "ddj"), Pair.of(9, "ddk"), Pair.of(10, "ddl"),
-                Pair.of(11, "ddm"));
-        data.stream().forEach(index1::put);
+        testData.stream().forEach(index1::put);
 
         final List<Pair<Integer, String>> list1 = index1.getStream()
                 .collect(Collectors.toList());
         final List<Pair<Integer, String>> list2 = index1.getStream()
                 .collect(Collectors.toList());
-        assertEquals(data.size(), list1.size());
-        assertEquals(data.size(), list2.size());
+        assertEquals(testData.size(), list1.size());
+        assertEquals(testData.size(), list2.size());
     }
 
     /**
@@ -155,12 +141,7 @@ public class SstIndexTest {
     @Test
     void test_read_from_reopend_index() throws Exception {
         final Index<Integer, String> index1 = makeSstIndex();
-        final List<Pair<Integer, String>> data = List.of(Pair.of(1, "bbb"),
-                Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(4, "ddf"),
-                Pair.of(5, "ddg"), Pair.of(6, "ddh"), Pair.of(7, "ddi"),
-                Pair.of(8, "ddj"), Pair.of(9, "ddk"), Pair.of(10, "ddl"),
-                Pair.of(11, "ddm"));
-        data.stream().forEach(index1::put);
+        testData.stream().forEach(index1::put);
         index1.close();
 
         final Index<Integer, String> index2 = makeSstIndex();
@@ -168,8 +149,8 @@ public class SstIndexTest {
                 .collect(Collectors.toList());
         final List<Pair<Integer, String>> list2 = index2.getStream()
                 .collect(Collectors.toList());
-        assertEquals(data.size(), list1.size());
-        assertEquals(data.size(), list2.size());
+        assertEquals(testData.size(), list1.size());
+        assertEquals(testData.size(), list2.size());
     }
 
     /**
@@ -224,12 +205,7 @@ public class SstIndexTest {
     @Test
     void test_read_from_unclosed_index() throws Exception {
         final Index<Integer, String> index1 = makeSstIndex();
-        final List<Pair<Integer, String>> data = List.of(Pair.of(1, "bbb"),
-                Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(4, "ddf"),
-                Pair.of(5, "ddg"), Pair.of(6, "ddh"), Pair.of(7, "ddi"),
-                Pair.of(8, "ddj"), Pair.of(9, "ddk"), Pair.of(10, "ddl"),
-                Pair.of(11, "ddm"));
-        data.stream().forEach(index1::put);
+        testData.stream().forEach(index1::put);
 
         assertThrows(IllegalStateException.class, () -> makeSstIndex());
     }

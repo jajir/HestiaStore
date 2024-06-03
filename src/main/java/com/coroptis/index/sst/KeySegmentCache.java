@@ -24,7 +24,7 @@ import com.coroptis.index.sstfile.SstFileWriter;
 
 /**
  * Provide information about keys and particular segment files. Each key
- * represents one segment. All keys in of index equal or smaller to given key.
+ * represents one segment. All keys segment are equal or smaller to given key.
  * Last key represents higher key in index. When new value in index is entered
  * it should be called {@link #insertKeyToSegment(Object)}. This method update
  * higher key value when it's necessary.
@@ -59,7 +59,6 @@ public class KeySegmentCache<K> implements CloseableResource {
         Objects.requireNonNull(directory, "Directory object is null.");
         Objects.requireNonNull(keyTypeDescriptor,
                 "Key type comparator is null.");
-//        final TypeDescriptorInteger itd = new TypeDescriptorInteger();
         this.keyComparator = Objects
                 .requireNonNull(keyTypeDescriptor.getComparator());
         this.sdf = new SstFile<>(directory, FILE_NAME, tdSegId.getTypeWriter(),

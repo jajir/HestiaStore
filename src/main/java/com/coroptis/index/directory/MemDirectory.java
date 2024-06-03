@@ -1,6 +1,5 @@
 package com.coroptis.index.directory;
 
-import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
