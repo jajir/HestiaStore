@@ -12,7 +12,7 @@ Index is not thread safe.
 
 Index could be in following states:
 
-![Index states](./src/images/index-state-diagram.png)
+![Index states](index-state-diagram.png)
 
 Interruption of process of writing data to index could lead to corruption of entire index.
 
