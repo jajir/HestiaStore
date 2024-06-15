@@ -1,0 +1,12 @@
+@startuml
+
+class Index<K, V> {
+  + void put(Pair<K, V> pair)
+  + put(K key, V value)
+  + V get(K key);
+  + void delete(K key);
+  + void forceCompact();
+  + Stream<Pair<K, V>> getStream();
+}
+
+@enduml

@@ -20,6 +20,8 @@ Index could be in following states:
 
 ![Index states](index-state-diagram.png)
 
+![Index methods](index-class.png)
+
 Interruption of process of writing data to index could lead to corruption of entire index.
 
 ## Development 
@@ -29,6 +31,7 @@ Mockito requires reflective access to non-public parts in a Java module. It coul
 ```
 --add-opens=java.base/java.lang=ALL-UNNAMED
 ```
+
 
 ## How to get segment disk size
 
