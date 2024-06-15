@@ -1,5 +1,7 @@
 # jbindex
 
+Goal is to provide easy to use key value map for billions of records using just one directory and some space.
+
 It's simple fast index. Work with index should be split into phases of:
 
 * Writing data to index. All data that should be stored in index should be send to index.
@@ -7,6 +9,10 @@ It's simple fast index. Work with index should be split into phases of:
 * Search through index. In this phase it's not possible to alter data in index.
 
 Index is not thread safe.
+
+## Useful links
+
+* [Project versioning and how to release snapshot and new version](release.md)
 
 ## Basic work with index
 
@@ -27,18 +33,7 @@ Mockito requires reflective access to non-public parts in a Java module. It coul
 ## How to get segment disk size
 
 On apple try:
+
 ```
 diskutil  info /Volumes/LaCie
 ```
-
-## How to deploy new version
-
-* Make sure that code compile and all test are passing.
-* Prepare personal github access token. With right to deploy.
-* Replace `TOKEN` in file `TOKEN` with your personal github token.
-* Execute: 
-```
-mvn --settings settings.xml clean deploy
-```
-
-it's done.
