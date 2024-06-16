@@ -1,0 +1,811 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+	<!-- Google tag (gtag.js) -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-N4F7QWN0MW"></script>
+	<script>
+		window.dataLayer = window.dataLayer || [];
+		function gtag(){dataLayer.push(arguments);}
+		gtag('js', new Date());
+		gtag('config', 'UA-3368774-6');
+		gtag('config', 'G-N4F7QWN0MW');
+	</script>
+
+	<!-- Google Adsense -->
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8461859034060807"></script>
+
+	<title>PlantText UML Editor</title>
+	<meta charset="UTF-8">
+	<meta name="author" content="Arwen Vaughan" />
+	<meta name="keywords" content="PlantText,PlantUML,UML Design Software,Architect,Unified Modeling Language,Design Patterns,Networking,IT" />
+	<meta name="description" content="PlantText is an online tool that quickly generates images from text. Primarily, it is used to generate UML (Unified Modeling Language) diagrams. It is based on a text language called PlantUML." />
+	<meta name="viewport" content="width=device-width, initial-scale=0.5">
+	
+	<link href="css/styles.min.css?v=21" rel="stylesheet" type="text/css" />
+	<link href="js/jquery-ui-1.8.24/themes/base/minified/jquery-ui.min.css" rel="stylesheet" type="text/css" />
+
+	<script defer type="text/javascript" src="js/jquery-1.5.2/jquery.min.js"></script>
+	<script defer type="text/javascript" src="js/jquery-ui-1.8.24/ui/minified/jquery-ui.min.js"></script>
+
+	<script defer type="text/javascript" src="js/rawdeflate.min.js"></script>
+	<script defer type="text/javascript" src="js/rawinflate.min.js"></script>
+
+	<script defer type="text/javascript" src="js/ace-1.16.0/ace.js"></script>
+	<script defer type="text/javascript" src="js/ace-1.16.0/ext-modelist.js"></script>
+	<script defer type="text/javascript" src="js/ace-1.16.0/ext-language_tools.js"></script>
+	
+	<script defer type="text/javascript" src="js/jwt-decode.min.js"></script>
+
+	<script defer type="text/javascript" src="/js/signalr/dist/browser/signalr.min.js"></script>
+	
+</head>
+<body>
+	<div id="header">
+		<div id="header-left">
+			<img id="logoimage" src="images/blue_gray.png" alt="PlantText" height="30" width="30">
+			<span id="logotext" title="The expert's design tool">PlantText</span><span id="logotextmsg">The expert's design tool</span>
+		</div>
+		<div id="header-middle">
+			<span title="Thanks for logging in.">
+				<label id="welcome-text-label" style="font-size: 14px;"></label>
+			</span>
+			<span title="Twitter - Join us on Twitter!!">
+				<a href="https://twitter.com/PlantText" target="_blank"><img id="logoimage" src="images/twitter.png" alt="Twitter Channel" height="25" width="25"></a>
+			</span>
+		</div>
+		<div id="header-right">
+			<div id="nav">
+				<ul>
+					<li><a class="donate" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=DB42HH5HSNS9J&source=url" target="_blank">Donate</a></li>
+					<li><a href="https://blog.planttext.com/about" target="_blank">About</a></li>
+					<li><a href="https://blog.planttext.com" target="_blank">Blog</a></li>
+				</ul>
+			</div>
+		</div>
+	</div>
+
+	<div id="splash" class="center-text">
+		Loading, please wait...
+	</div>
+	
+	<div id="body" style="display:none;">
+		
+		<form>
+			<div id="loader"></div>
+
+			<div id="fademessage"></div>
+
+			<div id="buttonbar">
+				<div title="Drag and drop this button bar around to anywhere it is convenient for you." class="buttonbar-handle">
+					<img src="/images/grid-four-up-2x.png" alt="Drag handle">
+				</div>
+				<div title="Samples - Look though hundreds of PlantUML samples. And more to come." class="buttonbar-item">
+					<button type="button" class="popupbuttons" onclick="openSamplesDialog(); return false;" style="vertical-align: middle;">
+						<img src="/images/eye-2x.png" alt="Settings">
+					</button>
+				</div>
+				<div title="News - Check back frequently for the lastest PlantText news." class="buttonbar-item">
+					<button type="button" class="popupbuttons" onclick="openNewsDialogButton('planttext_message'); return false;" style="vertical-align: middle;">
+						<img src="/images/bullhorn-2x.png" alt="Latest news">
+					</button>
+				</div>
+				<div title="Settings - All application setting are located here." class="buttonbar-item">
+					<button type="button" class="popupbuttons" onclick="openSettingsDialog(); return false;" style="vertical-align: middle;">
+						<img src="/images/cog-2x.png" alt="Settings">
+					</button>
+				</div>
+				<div title="Help - This is a good place to start if you are new to PlantText." class="buttonbar-item">
+					<button type="button" class="popupbuttons" onclick="openHelpDialog(); return false;" style="vertical-align: middle;">
+						<img src="/images/question-mark-2x.png" alt="About / Help">
+					</button>
+				</div>
+				<hr />
+				<div title="Link Maker - Generate a link or use the links beneath the image." class="buttonbar-item">
+					<button id="scripting-link" type="button" class="popupbuttons" onclick="openScriptingDialog(); return false;" style="vertical-align: middle;">
+						<img src="/images/link-intact-2x.png" alt="Link maker">
+					</button>
+				</div>
+				<div title="PlantUML Server - Change this to any PlantUML server...even your own." class="buttonbar-item">
+					<button id="plantumlserver-link" type="button" class="popupbuttons" onclick="openPlantUmlServerDialog(); return false;" style="vertical-align: middle;">
+						<img src="/images/hard-drive-2x.png" alt="Change PlantUML Server">
+					</button>
+				</div>
+				<div title="Email Diagram - Send the current diagram to your registered email address." class="buttonbar-item">
+					<button id="email-link" type="button" class="popupbuttons" onclick="openSendToEmailDialog(); return false;" style="vertical-align: middle;">
+						<img src="/images/envelope-closed-2x.png" alt="Send diagram to your email">
+					</button>
+				</div>
+				<div title="Web Hook - Send the current diagram to your own web hook." class="buttonbar-item">
+					<button id="webhook-link" type="button" class="popupbuttons" onclick="openWebhookDialog(); return false;" style="vertical-align: middle;">
+						<img src="/images/cloud-upload-2x.png" alt="Send diagram to your web hook">
+					</button>
+				</div>
+				<div id="intelligence-link-div" title="Get a diagram from OpenAI" class="buttonbar-item">
+					<button id="intelligence-link" type="button" class="popupbuttons" onclick="openIntelligenceDialog(); return false;" style="vertical-align: middle;">
+						<img src="/images/puzzle-piece-2x.png" alt="Get a diagram from OpenAI">
+					</button>
+				</div>
+				<div id="chat-link-div" title="Chat - Send messages or ask for help from all curretly logged in PlantText users." class="buttonbar-item">
+					<button id="chat-link" type="button" class="popupbuttons" onclick="openChatDialog(); return false;" style="vertical-align: middle;">
+						<img src="/images/chat-2x.png" alt="Chat">
+					</button>
+				</div>
+				<div id="diagram-manager-link-div" title="Save Diagrams - Work with your diagrams saved on our server." class="buttonbar-item">
+					<button id="diagram-manager-link" type="button" class="popupbuttons" onclick="openDiagramManagerDialog(); return false;" style="vertical-align: middle;">
+						<img src="/images/file-2x.png" alt="Diagram Manager">
+					</button>
+				</div>
+				<div title="Profile - View, edit or delete your PlantText profile." class="buttonbar-item">
+					<button id="identity-link" type="button" class="popupbuttons" onclick="openIdentityDialog(); return false;" style="vertical-align: middle;">
+						<img src="/images/person-2x.png" alt="Edit profile">
+					</button>
+				</div>
+				<div title="Login - Almost all new features require a login!" class="buttonbar-item">
+					<button id="login-link" type="button" class="popupbuttons" onclick="openLoginDialog(); return false;" style="vertical-align: middle;">
+						<img src="/images/account-login-2x.png" alt="Login">
+					</button>
+				</div>
+				<div title="Logout" class="buttonbar-item">
+					<button id="logout-link" type="button" class="popupbuttons" onclick="logoutButton(); return false;" style="vertical-align: middle;">
+						<img src="/images/account-logout-2x.png" alt="Logout">
+					</button>
+				</div>
+			</div>
+
+			<div id="main">
+				
+				<div id="sidebar">
+					<div id="sidebar-manager">
+						<div id="sidebar-manager-left">
+							<span title="Use the File Manager to save and work with files stored in the local browser cache.">
+								<input id="file-menu-button" style="width:100px;" type="button" value="File Manager" onclick="openFileMenu(); return false;">
+							</span>
+							<div style="z-index:4000;" id="file-menu-list" class="file-menu-dropdown-content">
+								<a href="#" onclick="openFileMenuNew(); return false;">New</a>
+								<a href="#" onclick="openFileMenuOpen(); return false;">Open</a>
+								<a href="#" onclick="submitFileMenuSave(); return false;">Save</a>
+								<a href="#" onclick="openFileMenuSaveas(); return false;">Save As...</a>
+								<a href="#" onclick="openImportExportFiles(); return false;">Import / Export</a>
+								<a href="#" onclick="submitFileMenuDelete(); return false;">Delete</a>
+							</div>
+							<span id="file-name-output" title=""></span>
+						</div>
+						<div id="sidebar-manager-right">
+							<span title="Refresh / Save (Alt + Enter)">
+								<input id="refreshbutton" style="width:100px;" type="button" value="Refresh" onclick="refreshFromButton(); return false;">
+							</span>
+						</div>
+					</div>
+					<div id="editor"></div>
+					<div id="bottom-sidebar-manager">
+						<div id="bottom-sidebar-manager-left">
+							<span id="autorefresh-span" title="Saves and refreshes the diagram automatically.">
+								<input id="autorefresh-checkbox" type="checkbox" onclick="toggleAutoRefreshCheckbox();">
+								<label for="autorefresh-checkbox">Refresh</label>
+							</span>
+							<span title="Shrink the image to fit on the page to avoid scrolling.">
+								<input id="autoscaleimage-checkbox" type="checkbox" onclick="toggleAutoScaleImageCheckbox();">
+								<label for="autoscaleimage-checkbox">Scale</label>
+							</span>
+							<span title="Click to open another window for the diagram image. Place it on your second monitor.">
+								<input id="popoutdiagramwindow-checkbox" type="checkbox" onclick="togglePopoutdiagramwindowCheckbox();">
+								<label for="popoutdiagramwindow-checkbox">Popout</label>
+							</span>
+						</div>
+						<div id="bottom-sidebar-manager-right">
+							<span title="Refresh / Save (Alt + Enter)">
+								<input id="refreshbutton2" style="width:100px;" type="button" value="Refresh" onclick="refreshFromButton(); return false;">
+							</span>
+						</div>
+					</div>
+				</div>
+
+				<div id="content">
+					<span title="Right click on the image and select 'Copy image address' to use the link. Or use the links provided below for various types.">
+						<img id="im" src="/images/blue_gray.png" alt="PlantUML Diagram"><br /><br />
+					</span>
+					<div id="bottom-content-manager">
+						<div id="bottom-content-manager-left">
+							<span title="Use these images to open or copy/paste the link you want.">
+								<a id="plantimagelink" target="_blank" href="">PNG</a>&nbsp;|&nbsp;
+								<a id="plantsvglink" target="_blank" href="">SVG</a>&nbsp;|&nbsp;
+								<a id="planttxtlink" target="_blank" href="">TXT</a>&nbsp;|&nbsp;
+								<a id="planteditorlink" target="_blank" href="">Edit</a>
+							</span>
+						</div>
+						<div id="bottom-content-manager-right">
+						</div>
+					</div>
+				</div>
+
+				<div id="scratchblock">
+					<textarea name="scratch-textarea" id="scratch">Scratch area...</textarea>
+				</div>
+
+			</div>
+			
+			<div id="settings-dialog">
+
+				<fieldset class="field-set">
+					<legend>All Users</legend>
+					<div class="container-2-columns">
+						<label>Layout:</label>
+						<input id="layout-portrait" type="radio" name="layout" value="portrait" onclick="clickPortrait();" checked>
+							<label for="layout-portrait">Portrait</label>
+						<input id="layout-landscape" type="radio" name="layout" value="landscape" onclick="clickLandscape();">
+							<label for="layout-landscape">Landscape</label>
+						<br /><br />
+						<span title="Selecting a diagram theme will place a '!theme <name>' tag into the body of your editor.">
+							<label for="diagram-themes">Diagram Theme:</label>
+							<select id="diagram-themes" class="otherdrops" size="1">
+								<option value="_none_" selected="selected">Diagram theme...</option>
+								<option value="amiga">Amiga</option>
+								<option value="aws-orange">AWS Orange</option>
+								<option value="black-knight">Black Knight</option>
+								<option value="bluegray">Blue Gray</option>
+								<option value="blueprint">Blue Print</option>
+								<option value="carbon-gray">Carbon Gray</option>
+								<option value="cerulean">Cerulean</option>
+								<option value="cerulean-outline">Cerulean Outline</option>
+								<option value="cloudscape-design">Cloudscape Design</option>
+								<option value="crt-amber">CRT Amber</option>
+								<option value="crt-green">CRT Green</option>
+								<option value="cyborg">Cyborg</option>
+								<option value="cyborg-outline">Cyborg Outline</option>
+								<option value="hacker">Hacker</option>
+								<option value="lightgray">Lightgray</option>
+								<option value="mars">Mars</option>
+								<option value="materia">Materia</option>
+								<option value="materia-outline">Materia Outline</option>
+								<option value="metal">Metal</option>
+								<option value="mimeograph">Mimeograph</option>
+								<option value="minty">Minty</option>
+								<option value="plain">Plain</option>
+								<option value="reddress-darkblue">Reddress Darkblue</option>
+								<option value="reddress-darkgreen">Reddress Darkgreen</option>
+								<option value="reddress-darkorange">Reddress Darkorange</option>
+								<option value="reddress-darkred">Reddress Darkred</option>
+								<option value="reddress-lightblue">Reddress Lightblue</option>
+								<option value="reddress-lightgreen">Reddress Lightgreen</option>
+								<option value="reddress-lightorange">Reddress Lightorange</option>
+								<option value="reddress-lightred">Reddress Lightred</option>
+								<option value="sandstone">Sandstone</option>
+								<option value="silver">Silver</option>
+								<option value="sketchy">Sketchy</option>
+								<option value="sketchy-outline">Sketchy Outline</option>
+								<option value="spacelab">Spacelab</option>
+								<option value="spacelab-white">Spacelab White</option>
+								<option value="superhero">Superhero</option>
+								<option value="superhero-outline">Superhero Outline</option>
+								<option value="toy">Toy</option>
+								<option value="united">United</option>
+								<option value="vibrant">Vibrant</option>
+							</select>
+						</span><br /><br />
+						<label for="theme">Editor Theme:</label>
+						<select id="theme" class="otherdrops" size="1">
+							<option value="ambiance">Ambiance</option>
+							<option value="chaos">Chaos</option>
+							<option value="chrome">Chrome</option>
+							<option value="clouds">Clouds</option>
+							<option value="clouds_midnight" selected="selected">Clouds Midnight</option>
+							<option value="cobalt">Cobalt</option>
+							<option value="crimson_editor">Chrimson Editor</option>
+							<option value="dawn">Dawn</option>
+							<option value="dracula">Dracula</option>
+							<option value="dreamweaver">Dreamweaver</option>
+							<option value="eclipse">Eclipse</option>
+							<option value="github">GitHub</option>
+							<option value="gob">Gob</option>
+							<option value="gruvbox">Gruv Box</option>
+							<option value="idle_fingers">Idle Filgers</option>
+							<option value="iplastic">I Plastic</option>
+							<option value="katzenmilch">Katzenmilch</option>
+							<option value="kr_theme">Kr Theme</option>
+							<option value="kuroir">Kuroir</option>
+							<option value="merbivore">Merbivore</option>
+							<option value="merbivore_soft">Merbivore Soft</option>
+							<option value="mono_industrial">Mono Industrial</option>
+							<option value="monokai">Monokai</option>
+							<option value="nord_dark">Nord Dark</option>
+							<option value="pastel_on_dark">Pastel on Dark</option>
+							<option value="solarized_dark">Solarized Dark</option>
+							<option value="solarized_light">Solarized Light</option>
+							<option value="sqlserver">SQL Server</option>
+							<option value="terminal">Terminal</option>
+							<option value="textmate">TextMate</option>
+							<option value="tomorrow">Tomorrow</option>
+							<option value="tomorrow_night">Tomorrow Night</option>
+							<option value="tomorrow_night_blue">Tomorrow Night Blue</option>
+							<option value="tomorrow_night_bright">Tomorrow Night Bright</option>
+							<option value="tomorrow_night_eighties">Tomorrow Night 80s</option>
+							<option value="twilight">Twilight</option>
+							<option value="vibrant_ink">Vibrant Ink</option>
+							<option value="xcode">XCode</option>
+						</select>
+						<br /><br />
+						<label>Bindings:</label>
+						<select id="keybinding" class="otherdrops" size="1">
+							<option value="keybinding" selected="selected">Normal</option>
+							<option value="vim">Vim</option>
+							<option value="emacs">Emacs</option>
+							<option value="sublime">Sublime</option>
+							<option value="vscode">VSCode</option>
+						</select>
+						<br /><br />
+						<label>Font Size:</label>
+						<select id="fontsize" class="otherdrops" size="1">
+							<option value="6">6 px</option>
+							<option value="7">7px</option>
+							<option value="8">8px</option>
+							<option value="9">9 px</option>
+							<option value="10">10 px</option>
+							<option value="11">11 px</option>
+							<option value="12" selected="selected">12 px</option>
+							<option value="13">13 px</option>
+							<option value="14">14 px</option>
+							<option value="15">15 px</option>
+							<option value="16">16 px</option>
+							<option value="17">17 px</option>
+							<option value="18">18 px</option>
+							<option value="19">19 px</option>
+							<option value="20">20 px</option>
+							<option value="21">21 px</option>
+							<option value="22">22 px</option>
+							<option value="23">23 px</option>
+							<option value="24">24 px</option>
+							<option value="25">25 px</option>
+							<option value="26">26 px</option>
+							<option value="27">27 px</option>
+							<option value="28">28 px</option>
+							<option value="29">29 px</option>
+							<option value="30">30 px</option>
+							<option value="31">31 px</option>
+							<option value="32">32 px</option>
+						</select>
+						<br /><br />
+						<input id="usesofttabs-checkbox" type="checkbox" onclick="toggleUseSoftTabsCheckbox()">
+							<label for="usesofttabs-checkbox">Use Soft Tabs</label>
+						<select id="tabsize-dropdown" class="otherdrops" size="1">
+							<option value="1">1 space</option>
+							<option value="2" selected="selected">2 space</option>
+							<option value="3">3 space</option>
+							<option value="4">4 space</option>
+							<option value="5">5 space</option>
+							<option value="6">6 space</option>
+						</select>
+						<br /><br />
+						<input id="invisibles" type="checkbox" onclick="toggleVisibles();">
+							<label for="invisibles">Show Invisibles</label><br /><br />
+						<input id="liveautocompletion-checkbox" type="checkbox" onclick="toggleLiveAutocompletionCheckbox();">
+							<label for="liveautocompletion-checkbox">Live Autocompletion</label><br /><br />
+						<input id="indentguide" type="checkbox" onclick="toggleIndentGuide()">
+							<label for="indentguide">Show Indent Guides</label><br /><br />
+						<input id="highlightactiveline-checkbox" type="checkbox" onclick="toggleHighlightActiveLineCheckbox()">
+							<label for="highlightactiveline-checkbox">Highlight Active Line</label><br /><br />
+						<input id="showprintmargin-checkbox" type="checkbox" onclick="toggleShowPrintMarginCheckbox()">
+							<label for="showprintmargin-checkbox">Show Print Margin</label><br /><br />
+						<input id="showscratch-checkbox" type="checkbox" onclick="toggleShowScratchCheckbox();">
+							<label for="showscratch-checkbox">Show Scratch</label><br /><br />
+						<input id="usewrapmode-checkbox" type="checkbox" onclick="toggleUseWrapModeCheckbox()">
+							<label for="usewrapmode-checkbox">Use Wrap Mode</label><br /><br />
+						<input id="identity-delete-local-button" class="otherbuttons" type="button" value="Delete Local Data" onclick="openIdentityDeleteLocalStorageButton(); return false;"><br /><br />
+						<input id="settingsdefault-button" class="otherbuttons" type="button" value="Settings to Defaults" onclick="settingsDefaultButton(); return false;"><br /><br />
+							<label>Keystrokes:</label><br /><br />
+							&nbsp;&nbsp;<label>Alt + Enter = Refresh Diagram</label><br /><br />
+							&nbsp;&nbsp;<label>Ctrl + Space = Trigger Autocompletion</label><br />
+					</div>
+				</fieldset>
+				<br />
+				<fieldset id="settings-dialog-registered-group" class="field-set">
+					<legend>Logged In Users</legend>
+					<div class="container-2-columns">
+						<input id="snippet-checkbox" type="checkbox" onclick="toggleSnippetCheckbox();">
+						<label for="snippet-checkbox">Snippets</label>
+						<select id="snippet-types" class="otherdrops" size="1">
+							<option value="none" selected="selected">None</option>
+							<option value="snippets-activity">Activity</option>
+							<option value="snippets-class" >Class</option>
+							<option value="snippets-component">Component</option>
+						</select><br /><br />
+						<input id="syntaxhighlighting-checkbox" type="checkbox" onclick="toggleSyntaxHighlightingCheckbox();">
+						<label for="syntaxhighlighting-checkbox">Syntax Highlighting</label>
+						<select id="mode" class="otherdrops" size="1">
+							<option value="apache_conf">Apache Conf</option>
+							<option value="csharp">C#</option>
+							<option value="css">CSS</option>
+							<option value="html">HTML</option>
+							<option value="javascript">Javascript</option>
+							<option value="json">JSON</option>
+							<option value="json5">JSON5</option>
+							<option value="matlab">Mat Lab</option>
+							<option value="diagram" selected="selected">PlantUML</option>
+							<option value="python">Python</option>
+							<option value="snippets">Snippets</option>
+							<option value="text">Text</option>
+							<option value="xml">XML</option>
+							<option value="yaml">YAML</option>
+						</select>
+					</div>
+				</fieldset>
+				<br />
+			</div>
+
+			<div id="news-dialog">
+
+				<div id="newsitem"></div>
+				<br /><br />
+				<p style="width: 45px; padding: 10px; align-items: center; background-color: #fff59d;">
+					<a class="donate" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=DB42HH5HSNS9J&source=url" target="_blank">Donate</a>
+				</p>
+
+				<input name="newpopstop" id="newpopstop" type="checkbox" onclick="toggleNewspop('planttext_message')">Stop showing this message.
+
+			</div>
+			
+			<div id="scripting-dialog">
+				<p>
+					Convert raw PlantUML text into a URL. The URL can then be copied into a browser in order to create the diagram image. This URL is useful when trying
+					to put PlantUML diagrams into documents or uploading them to other websites.
+				</p>
+				<select id="scripting-imagetype" class="otherdrops" size="1">
+					<option value="png">PNG</option>
+					<option value="svg">SVG</option>
+					<option value="txt">ASCI Text</option>
+				</select>
+
+				<input id="scriptingbutton" class="otherbuttons" type="button" value="PlantUML to Link" onclick="urlFromPlantUML('scripting-imagetype', 'description', 'scripting-output'); return false;"><br><br>
+
+				<textarea id="scripting-output" rows="8"></textarea>
+
+			</div>
+
+			<div id="help-dialog">
+
+				<div id="helpitem"></div>
+
+			</div>
+
+			<div id="plantumlserver-dialog">
+
+				<p>
+					This application uses a PlantUML server in order to generate the diagrams. If you have problems generating diagrams,
+					please enter a different PlantUML server URL below. These servers have been known to go down from time to time. You
+					can setup a server by reading the information button below. You can enter your own PlantUML server or revert by clicking
+					'Default'."
+				</p>
+
+				<label>PlantUML Server:</label><br>
+				<input class="otherbuttons" id="defaultserver" type="button" value="Default" onclick="defaultFromButton(); return false;">
+				<input type="text" id="plantumlserver" value="" data-lpignore="true" autocomplete="off">
+				<a href="http://plantuml.sourceforge.net/server.html" target="_blank"><img id="infomark" align="middle" src="/images/info-2x.png" alt="PlantUML Server Info"></a><br><br>
+
+				<input id="plantumlserversave-button" class="otherbuttons" type="button" value="Save PlantUML Server" onclick="savePlantUmlServerFromButton(); return false;">
+
+			</div>
+
+			<div id="sendtoemail-dialog">
+				<p>Send the current diagram directly to your email address.</p>
+
+				<label>Name:</label>
+				<input style="width: 55%" type="text" id="sendtoemail-name" data-lpignore="true" autocomplete="off" maxlength="200" value="" placeholder="Enter Diagram Name" required><br /><br />
+
+				<label>URL Type:</label>
+				<select id="sendtoemail-imagetype" class="otherdrops" size="1">
+					<option value="png">PNG</option>
+					<option value="svg">SVG</option>
+					<option value="txt">TXT</option>
+					<option value="edit">Edit</option>
+				</select>
+				<br /><br />
+
+				<input id="sendtoemail-button" class="otherbuttons" type="button" value="Submit" style="width: 150px" onclick="sendToEmailSubmitButton(); return false;"><br><br>
+
+				<div class="messages" id="sendtoemail-message"></div>
+
+			</div>
+
+			<div id="webhook-dialog">
+				<p>
+					Send the current diagram to your own webhook. You can use a number of services
+					including <a href="https://zapier.com/apps/webhook/integrations">Zapier</a>, <a href="https://hook.io/">Hook.io,</a>
+					or <a href="https://ifttt.com/maker_webhooks">IFTTT</a>, to create a webhook.
+					For instance, I use a Zapier webhook to save my diagrams to Google Drive. The webhook must accept
+					the POST verb and JSON data as you see below.
+				</p>
+
+				<label>Name:</label>
+				<input style="width: 55%" type="text" id="webhook-name" value="" maxlength="100" placeholder="Enter Diagram Name" required>&nbsp;
+
+				<label>URL Type:</label>
+				<select id="webhook-imagetype" class="otherdrops" size="1">
+					<option value="png">PNG</option>
+					<option value="svg">SVG</option>
+					<option value="txt">TXT</option>
+					<option value="edit">Edit</option>
+				</select>
+				<br /><br />
+
+				<label>Webhook URL:</label><br />
+				<input style="width: 90%" type="text" id="webhook-hook" placeholder="" required><br /><br />
+
+				<label>Request Text:</label><br>
+				<textarea type="text" id="webhook-request" value="" style="width: 98%; background-color: lightgray;" wrap="soft" rows="10" cols="65" readonly></textarea><br><br>
+
+				<input id="webhook-button" class="otherbuttons" type="button" value="Submit" style="width: 150px" onclick="webhookSubmitButton(); return false;"><br><br>
+
+				<label>Response Text:</label><br>
+				<textarea type="text" id="webhook-response" value="" style="width: 98%; background-color: lightgray;" wrap="soft" rows="8" cols="65" readonly></textarea><br><br>
+
+				<div class="messages" id="webhook-message"></div>
+
+			</div>
+
+			<div id="intelligence-dialog">
+				<p>Get something from Open AI.</p>
+				<label>Question:</label><br>
+				<textarea type="text" id="intelligence-request" value="" style="width: 98%;" wrap="soft" rows="5" cols="65">Generate PlantUML for the abstract factory pattern.</textarea><br><br>
+				<input id="intelligence-button" class="otherbuttons" type="button" value="Submit" style="width: 150px"><br><br>
+				<label>Answer:</label><br>
+				<textarea type="text" id="intelligence-response" value="" style="width: 98%;" wrap="soft" rows="12" cols="65"></textarea><br><br>
+				<div class="messages" id="intelligence-message"></div>
+			</div>
+
+			<div id="chat-dialog">
+				<label>User:</label><label style="width: 490px; color: gray; border-width: 0px" id="chat-user-input"></label><br><br>
+				<label>Message:</label><br>
+				<input type="text" id="chat-message-input" data-lpignore="true" autocomplete="off" style="width: 450px"; /><br><br>
+				<input type="button" id="chat-button" value="Send Message"  /><br><br>
+				<div class="chat-scroll" id="chat-scroll-box">
+					<ul id="chat-messages-list"></ul>
+				</div>
+			</div>
+
+			<div id="samples-dialog">
+				<div id="samples-buttons">
+					<span title="Select a PlantUML diagram category first, then select from the sample items dropdown.">
+						<select class="otherdrops" id="samples-categories">
+							<option value="default">Sample type...</option>
+						</select>
+					</span>
+					<span title="Selecting a sample item will place the PlantUML text into the editor, replacing the existing text.">
+						<select class="otherdrops" id="samples-items">
+							<option value="default">Sample item...</option>
+						</select>
+					</span>
+					<span title="This sends the sample to the editor, replacing any text in the editor.">
+						<input id="samples-editor-button" class="otherbuttons" type="button" value="Replace Diagram" onclick="submitSampleToEditorButton(); return false;">
+					</span>
+					<span title="Closes the samples window.">
+						<input id="samples-close-button" class="otherbuttons" type="button" value="Close" onclick="$('#samples-dialog').dialog('close'); return false;">
+					</span>
+				</div>
+				<div id="#samples-main">
+					<div id="samples-text">
+						<textarea id="samples-response" type="text"  value="" wrap="soft" rows="20" cols="98" style="font-size: 10px;"></textarea>
+					</div>
+					<div id="samples-image">
+						<img id="im-samples" src="/images/blue_gray.png" alt="PlantUML Diagram" style="width: 100%; height: 100%; object-fit: contain;"><br /><br />
+						<a id="plantimagelink-samples" target="_blank" href="">PNG</a>&nbsp;|&nbsp;
+						<a id="plantsvglink-samples" target="_blank" href="">SVG</a>&nbsp;|&nbsp;
+						<a id="planttxtlink-samples" target="_blank" href="">TXT</a>&nbsp;|&nbsp;
+						<a id="planteditorlink-samples" target="_blank" href="">Edit</a>
+					</div>
+				</div>
+			</div>
+
+			<div id="diagram-manager-dialog">
+				<p>This is for working with your files...</p>
+				<input id="diagram-manager-remote" type="radio" name="diagram-manager-mode" value="remote" onclick="clickDiagramManagerRemote();" checked>
+				<label for="diagram-manager-remote">Remote</label>
+				<input id="diagram-manager-local" type="radio" name="diagram-manager-mode" value="local" onclick="clickDiagramManagerLocal();">
+				<label for="diagram-manager-local">Local</label>
+				<div class="container-2-columns">
+					<select id="diagram-manager-open-list" size="10" style="width:200px"></select><br><br>
+					<input id="diagram-manager-new-submit" class="otherbuttons" type="button" value="New" onclick="submitDiagramManagerOpen(); return false;"><br><br>
+					<input id="diagram-manager-open-submit" class="otherbuttons" type="button" value="Open" onclick="submitDiagramManagerOpen(); return false;"><br><br>
+					<input id="diagram-manager-save-submit" class="otherbuttons" type="button" value="Save" onclick="submitDiagramManagerOpen(); return false;"><br><br>
+					<input id="diagram-manager-saveas-submit" class="otherbuttons" type="button" value="Save As..." onclick="submitDiagramManagerOpen(); return false;"><br><br>
+					<input id="diagram-manager-delete-submit" class="otherbuttons" type="button" value="Delete" onclick="submitDiagramManagerOpen(); return false;"><br><br>
+					<input id="diagram-managerimportexport-submit" class="otherbuttons" type="button" value="Import / Export" onclick="submitDiagramManagerImportExport(); return false;"><br><br>
+				</div>
+				<div class="messages" id="diagram-manager-message"></div>
+			</div>
+
+			<div id="login-dialog">
+
+				<p>Welcome to PlantText. Please log in or register below...</p>
+
+				Email:<br>
+				<input style="width: 250px" type="email" name="Email" id="login-email" value="" maxlength="200" placeholder="name@domain.com" pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$" required><br><br>
+
+				Password:<br>
+				<input style="width: 250px" type="password" name="Password" id="login-password" value="" maxlength="500" placeholder="password" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}" required><br><br>
+
+				<input id="login-button" class="otherbuttons" type="button" value="Submit" onclick="loginButton(); return false;"><br><br>
+
+				<a href="" id="register-link" onclick="openRegisterDialog(); return false;">Register</a>&nbsp;|&nbsp;
+
+				<a href="" id="forgot-link" onclick="openForgotDialog(); return false;">Forgot Password</a><br><br>
+
+				<div class="messages" id="login-message"></div><br />
+
+			</div>
+
+			<div id="register-dialog">
+
+				<p>Please enter an active email address and double check that it is correct.</p>
+				<p>Also make sure to enter a password that...</p>
+				<ul>
+					<li>has at least one number</li>
+					<li>has one lowercase letter</li>
+					<li>has one uppercase letter</li>
+					<li>is at least ten characters long</li>
+				</ul>
+
+				First Name:<br>
+				<input style="width: 250px" type="text" name="First Name" id="register-firstname" value="" maxlength="100" required><br><br>
+
+				Last Name:<br>
+				<input style="width: 250px" type="text" name="Last Name" id="register-lastname" value="" maxlength="100" required><br><br>
+
+				Email:<br>
+				<input style="width: 250px" type="email" name="Email" id="register-email" value="" maxlength="200" placeholder="name@domain.com" required><br><br>
+
+				Password:<br>
+				<input style="width: 250px" type="password" name="Password" id="register-password" value="" maxlength="100" placeholder="password" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{10,}" required><br><br>
+
+				Password Again:<br>
+				<input style="width: 250px" type="password" name="Password Again" id="register-password2" value="" maxlength="100" placeholder="password" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{10,}" required><br><br>
+
+				<input id="register-button" class="otherbuttons" type="button" value="Submit" onclick="registerButton(); return false;"><br><br>
+
+				<div class="messages" id="register-message"></div><br />
+
+			</div>
+
+			<div id="identity-dialog">
+
+				<p>
+					Feel free to change your Name or Password below. You cannot change your email address. To delete your account
+					and data, click <a href="" onclick="openIdentityDeleteDialog(); return false;">here</a>.
+				</p>
+
+				Email:<br>
+				<label style="width: 250px; color: gray; border-width: 0px" id="identity-email"></label><br><br>
+
+				First Name:<br>
+				<input name="First Name" id="identity-firstname" style="width: 250px" type="text" value="" maxlength="100" required><br><br>
+
+				Last Name:<br>
+				<input name="Last Name" id="identity-lastname" style="width: 250px" type="text" value="" maxlength="100" required><br><br>
+
+				Current Password:<br>
+				<input name="Current Password" id="identity-password" style="width: 250px" type="password" value="" maxlength="100" placeholder="password" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}" required><br><br>
+
+				New Password:<br>
+				<input name="New Password" id="identity-password-new1" style="width: 250px" type="password" value="" maxlength="100" placeholder="New password" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}" required><br><br>
+
+				New Password Again:<br>
+				<input name="New Password Again" id="identity-password-new2" style="width: 250px" type="password" value="" maxlength="100" placeholder="New password again" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}" required><br><br>
+
+				<input id="identity-button" class="otherbuttons" type="button" value="Submit" onclick="identityUpdateButton(); return false;"><br><br>
+
+				<div class="messages" id="identity-message"></div><br />
+
+			</div>
+
+			<div id="identity-delete-dialog">
+				<p>
+					When you create a user profile in PlantText, we only store your authentication information on our servers. All of your data (settings
+					and diagrams) is stored in your browser's local storage, NOT our server. If you are wanting to delete the local data, please go to the
+					settings window.
+				</p>
+				<p>
+					Warning! This CANNOT be undone. You will need to register again if you wish to login to PlantText. Your data will not
+					best lost by deleting this account because it is stored locally, but your user profile will be deleted from our server.
+				</p>
+				<input id="identity-delete-profile" class="otherbuttons" type="button" value="Delete Server Profile Permanently" onclick="identityDeleteProfileButton(); return false;"><br><br>
+				<div class="messages" id="identity-delete-message"></div><br />
+
+			</div>
+
+			<div id="identity-delete-local-dialog">
+				<p>
+					All of your data (settings and diagrams) is stored in your browser's local storage, NOT our server. Press the button below to accomplish your
+					goal.
+				</p>
+				<p>
+					Warning! This CANNOT be undone. ALL OF YOUR LOCAL DATA (settings and diagrams) will be deleted. If you are a registered user, your user profile will not be affected,
+					but all your local data will be DELETED PERMANENTLY. You may want to use this button if you are on a public computer and need to
+					permanently remove your settings and diagrams for instance. Please make sure to backup your diagrams first though!
+				</p>
+				<input id="identity-delete-local" class="otherbuttons" type="button" value="Delete Local Data Permanently" onclick="identityDeleteLocalStorageButton(); return false;"><br><br>
+				<div class="messages" id="identity-delete-message"></div><br />
+
+			</div>
+
+			<div id="forgot-dialog">
+
+				<p>We will send a validation email to the address associated with your account (not the email address entered below). Check your email and follow the instructions after submitting.</p>
+
+				Confirm Email Address:<br>
+				<input style="width: 250px;" id="forgot-email" type="email" value="" maxlength="200" placeholder="name@domain.com" required><br><br>
+
+				<input id="forgot-button" class="otherbuttons" type="button" value="Submit" onclick="forgotButton(); return false;"><br><br>
+
+				<div class="messages" id="forgot-message"></div><br />
+
+			</div>
+
+			<div id="reset-dialog">
+
+				<p>Please enter the email address associated with this account as well as the new password twice, then press "Save".</p>
+
+				Email:<br>
+				<input style="width: 250px;" id="reset-email" type="email" value="" maxlength="200" placeholder="name@domain.com" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" required><br><br>
+
+				New Password:<br>
+				<input name="New Password" id="reset-password-new1" style="width: 250px" type="password" value="" maxlength="100" placeholder="New password" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}" required><br><br>
+
+				New Password Again:<br>
+				<input name="New Password Again" id="reset-password-new2" style="width: 250px" type="password" value="" maxlength="100" placeholder="New password again" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}" required><br><br>
+
+				<input id="reset-button" class="otherbuttons" type="button" value="Submit" onclick="resetButton(); return false;"><br><br>
+
+				<div class="messages" id="reset-message"></div><br />
+
+			</div>
+
+			<div id="file-menu-new-dialog">
+				<label>Name:</label>
+				<input id="file-menu-new-name" type="text"><br><br>
+				<input id="file-menu-new-submit" class="otherbuttons" type="button" value="New" onclick="submitFileMenuNew(); return false;">
+				<input id="file-menu-new-cancel" class="otherbuttons" type="button" value="Cancel" onclick="submitFileMenuNewCancel(); return false;"><br><br>
+				<div class="messages" id="file-menu-new-message"></div>
+			</div>
+
+			<div id="file-menu-open-dialog">
+				<label>Diagrams:</label><br />
+				<select id="file-menu-open-list" size="10" style="width:300px"></select><br><br>
+				<input id="file-menu-open-submit" class="otherbuttons" type="button" value="Open" onclick="submitFileMenuOpen(); return false;">
+				<input id="file-menu-open-cancel" class="otherbuttons" type="button" value="Cancel" onclick="submitFileMenuOpenCancel(); return false;"><br><br>
+				<div class="messages" id="file-menu-open-message"></div>
+			</div>
+
+			<div id="file-menu-saveas-dialog">
+				<label>Name:</label>
+				<input id="file-menu-saveas-name" type="text"><br><br>
+				<input id="file-menu-saveas-submit" class="otherbuttons" type="button" value="Save As" onclick="submitFileMenuSaveas(); return false;">
+				<input id="file-menu-saveas-cancel" class="otherbuttons" type="button" value="Cancel" onclick="submitFileMenuSaveasCancel(); return false;"><br><br>
+				<div class="messages" id="file-menu-saveas-message"></div>
+			</div>
+
+			<div id="file-menu-xport-dialog">
+				<label>Import:</label>
+				<input id="file-menu-xport-import" type="file" onchange="submitFileMenuXportImport(); return false;"><br><br>
+				<label>Export:</label>
+				<input id="file-menu-xport-export" class="otherbuttons" type="button" value="Browse..." onclick="submitFileMenuXportExport(); return false;">
+			</div>
+
+			<textarea name="description" id="description"></textarea>
+
+		</form>
+
+		<div id="footer">
+			Thanks to <a href="http://www.plantuml.com">PlantUML</a>,
+			<a href="http://www.graphviz.org/">Graphviz</a>,
+			<a href="http://ace.c9.io/">Ace Editor</a>,
+			<a href="https://github.com/johan/js-deflate">Johan Sundstr&ouml;m</a>, and
+			<a href="http://stevenanichols.com/">Steven Nichols</a>. &copy; Copyright 2013 - 2023 <a href="http://www.arwenvaughan.com/">Arwen Vaughan</a> | <a href="http://blog.planttext.com/privacy" target="_blank">Privacy Policy</a>
+		</div>
+
+	</div>
+	
+	<script defer type="text/javascript" src="js/common.min.js?v=21"></script>
+	<script defer type="text/javascript" src="js/plantuml.min.js?v=21"></script>
+	<script defer type="text/javascript" src="/js/realtime.js?v=21"></script>
+	<script defer type="text/javascript" src="js/planttext.min.js?v=21"></script>
+
+</body>
+</html>

@@ -1,13 +1,23 @@
 @startuml
   SegmentSearcher --> SegmentCacheDataProvider: getBloomFilter
   activate SegmentCacheDataProvider
-  SegmentCacheDataProvider --> SegmentCacheDataProvider: In fact call SegmentCacheImpl
-  SegmentCacheDataProvider --> SegmentCache: getSegmentData
+  note right
+  In fact call SegmentCacheDataProviderImpl
+  end note
+  SegmentCacheDataProvider --> SegmentCache: SegmentCache.getSegmentData(SegmentId)
   activate SegmentCache
-  SegmentCache --> SegmentCache: if there is no segmentData \nin cache than create them
+  alt SegmentData are not in cache
+    SegmentCache --> SegmentCache: Create SegmentData \nwith reference to SegmentDataLoader
+  end
   SegmentCache --> SegmentCacheDataProvider: return SegmentData
   deactivate SegmentCache
-  SegmentCacheDataProvider --> SegmentCacheDataProvider: get BloomFilter from SegmentData
+  SegmentCacheDataProvider --> SegmentData: call SegmentData.getBloomFilter()
+  activate SegmentData
+  alt BloomFilter is not loaded
+    SegmentData --> SegmentData: Load BloomFilter \nwith SegmentDataLoader
+  end
+  SegmentData --> SegmentCacheDataProvider: return BloomFilter
+  deactivate SegmentData
   SegmentCacheDataProvider --> SegmentSearcher: return BloomFilter
   deactivate SegmentCacheDataProvider
 @enduml
