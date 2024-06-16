@@ -1,0 +1,36 @@
+@startuml
+
+hide empty attributes
+set separator none
+
+package "com.coroptis.index.segment" <<Frame>> {
+
+  interface SegmentCacheDataProvider {
+    + getDeltaCache()
+    + getBloomFilter()
+    + getScarceIndex()
+    + invalidate()
+  }
+    
+  interface SegmentData {
+    + getDeltaCache()
+    + getBloomFilter()
+    + getScarceIndex()  
+  }
+
+}
+
+package "com.coroptis.index.sst" <<Frame>> {
+  class SegmentCacheDataProviderImpl {
+  }
+  
+  class SegmentDataImpl {
+  }
+  
+  SegmentDataImpl --|> SegmentData
+}
+
+
+SegmentCacheDataProviderImpl --|> SegmentCacheDataProvider
+
+@enduml

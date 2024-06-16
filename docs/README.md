@@ -13,6 +13,7 @@ Index is not thread safe.
 ## Useful links
 
 * [Project versioning and how to release snapshot and new version](release.md)
+* [Segment implementation details](segment.md)
 
 ## Basic work with index
 

@@ -1,0 +1,13 @@
+@startuml
+  SegmentSearcher --> SegmentCacheDataProvider: getBloomFilter
+  activate SegmentCacheDataProvider
+  SegmentCacheDataProvider --> SegmentCacheDataProvider: In fact call SegmentCacheImpl
+  SegmentCacheDataProvider --> SegmentCache: getSegmentData
+  activate SegmentCache
+  SegmentCache --> SegmentCache: if there is no segmentData \nin cache than create them
+  SegmentCache --> SegmentCacheDataProvider: return SegmentData
+  deactivate SegmentCache
+  SegmentCacheDataProvider --> SegmentCacheDataProvider: get BloomFilter from SegmentData
+  SegmentCacheDataProvider --> SegmentSearcher: return BloomFilter
+  deactivate SegmentCacheDataProvider
+@enduml
