@@ -61,7 +61,7 @@ public class SegmentSearcher<K, V> implements CloseableResource {
         searcherCore.addPairIntoCache(pair);
     }
 
-    Optional<SegmentCache<K, V>> getSegmentCache() {
+    Optional<SegmentDeltaCache<K, V>> getSegmentCache() {
         if (lock.isLocked()) {
             return Optional.empty();
         }

@@ -20,7 +20,7 @@ import com.coroptis.index.scarceindex.ScarceIndex;
  */
 public class SegmentSearcherCore<K, V> implements CloseableResource {
 
-    private final SegmentCache<K, V> cache;
+    private final SegmentDeltaCache<K, V> deltaCache;
     private final ScarceIndex<K> scarceIndex;
     private final BloomFilter<K> bloomFilter;
     private final SegmentFiles<K, V> segmentFiles;
@@ -31,7 +31,7 @@ public class SegmentSearcherCore<K, V> implements CloseableResource {
             final SegmentPropertiesManager segmentPropertiesManager,
             final SegmentIndexSearcher<K, V> segmentIndexSearcher) {
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
-        this.cache = new SegmentCache<>(segmentFiles.getKeyTypeDescriptor(),
+        this.deltaCache = new SegmentDeltaCache<>(segmentFiles.getKeyTypeDescriptor(),
                 segmentFiles, segmentPropertiesManager);
         this.scarceIndex = ScarceIndex.<K>builder()
                 .withDirectory(segmentFiles.getDirectory())
@@ -62,7 +62,7 @@ public class SegmentSearcherCore<K, V> implements CloseableResource {
 
     public V get(final K key) {
         // look in cache
-        final V out = cache.get(key);
+        final V out = deltaCache.get(key);
         if (segmentFiles.getValueTypeDescriptor().isTombstone(out)) {
             return null;
         }
@@ -89,15 +89,15 @@ public class SegmentSearcherCore<K, V> implements CloseableResource {
     }
 
     void addPairIntoCache(final Pair<K, V> pair) {
-        cache.put(pair);
+        deltaCache.put(pair);
     }
 
     BloomFilter<K> getBloomFilter() {
         return bloomFilter;
     }
 
-    SegmentCache<K, V> getCache() {
-        return cache;
+    SegmentDeltaCache<K, V> getCache() {
+        return deltaCache;
     }
 
     @Override

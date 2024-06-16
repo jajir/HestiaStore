@@ -95,7 +95,7 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
 
         // clean cache
         //FIXME it requires to load all old data into memory.
-        final SegmentCache<K, V> sc = new SegmentCache<>(
+        final SegmentDeltaCache<K, V> sc = new SegmentDeltaCache<>(
                 segmentFiles.getKeyTypeDescriptor(), segmentFiles,
                 segmentPropertiesManager);
         sc.clear();

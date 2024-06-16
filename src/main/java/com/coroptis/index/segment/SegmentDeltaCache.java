@@ -18,7 +18,7 @@ import com.coroptis.index.sstfile.SstFileStreamer;
  * @param <K>
  * @param <V>
  */
-public class SegmentCache<K, V> {
+public class SegmentDeltaCache<K, V> {
 
     private final UniqueCache<K, V> cache;
 
@@ -26,7 +26,7 @@ public class SegmentCache<K, V> {
 
     private final SegmentPropertiesManager segmentPropertiesManager;
 
-    public SegmentCache(final TypeDescriptor<K> keyTypeDescriptor,
+    public SegmentDeltaCache(final TypeDescriptor<K> keyTypeDescriptor,
             final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentPropertiesManager) {
         this.segmentFiles = Objects.requireNonNull(segmentFiles);

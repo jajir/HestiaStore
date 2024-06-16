@@ -42,26 +42,26 @@ public class SegmentReader<K, V> {
             final OptimisticLockObjectVersionProvider versionProvider,
             final SegmentSearcher<K, V> segmentSearcher) {
         // Read segment cache into in memory list.
-        final SegmentCache<K, V> segmentCache = getSegmentCache(
+        final SegmentDeltaCache<K, V> segmentDeltaCache = getSegmentCache(
                 segmentSearcher);
 
         // merge cache with main data
         return new MergeIterator<K, V>(
                 segmentFiles.getIndexSstFile().openIterator(versionProvider),
-                segmentCache.getSortedIterator(),
+                segmentDeltaCache.getSortedIterator(),
                 segmentFiles.getKeyTypeDescriptor(),
                 segmentFiles.getValueTypeDescriptor());
     }
 
-    private SegmentCache<K, V> getSegmentCache(
+    private SegmentDeltaCache<K, V> getSegmentCache(
             final SegmentSearcher<K, V> segmentSearcher) {
         if (segmentSearcher == null) {
-            return new SegmentCache<>(segmentFiles.getKeyTypeDescriptor(),
+            return new SegmentDeltaCache<>(segmentFiles.getKeyTypeDescriptor(),
                     segmentFiles, segmentPropertiesManager);
 
         }
         return segmentSearcher.getSegmentCache()
-                .orElse(new SegmentCache<>(segmentFiles.getKeyTypeDescriptor(),
+                .orElse(new SegmentDeltaCache<>(segmentFiles.getKeyTypeDescriptor(),
                         segmentFiles, segmentPropertiesManager));
     }
 

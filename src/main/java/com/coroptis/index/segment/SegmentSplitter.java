@@ -104,7 +104,7 @@ public class SegmentSplitter<K, V> {
          * cache could already be in main index file of it can be keys with
          * tombstone value.
          */
-        final SegmentCache<K, V> sc = new SegmentCache<>(
+        final SegmentDeltaCache<K, V> sc = new SegmentDeltaCache<>(
                 segmentFiles.getKeyTypeDescriptor(), segmentFiles,
                 segmentPropertiesManager);
         long half = (getStats().getNumberOfKeysInIndex() + sc.size()) / 2;
