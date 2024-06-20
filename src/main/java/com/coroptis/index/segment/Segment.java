@@ -27,6 +27,7 @@ public class Segment<K, V>
     private final VersionController versionController;
     private final SegmentPropertiesManager segmentPropertiesManager;
     private final SegmentCompacter<K, V> segmentCompacter;
+    private final SegmentCacheDataProvider<K, V> segmentCacheDataProvider;
 
     public static <M, N> SegmentBuilder<M, N> builder() {
         return new SegmentBuilder<>();
@@ -34,14 +35,20 @@ public class Segment<K, V>
 
     public Segment(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
-            final VersionController versionController) {
+            final VersionController versionController,
+            final SegmentPropertiesManager segmentPropertiesManager,
+            final SegmentCacheDataProvider<K, V> segmentCacheDataProvider) {
         this.segmentConf = Objects.requireNonNull(segmentConf);
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         logger.debug("Initializing segment '{}'", segmentFiles.getId());
         this.versionController = Objects.requireNonNull(versionController,
                 "Version controller is required");
-        this.segmentPropertiesManager = new SegmentPropertiesManager(
-                segmentFiles.getDirectory(), getId());
+        this.segmentCacheDataProvider = Objects.requireNonNull(
+                segmentCacheDataProvider,
+                "Segment cached data provider is required");
+        this.segmentPropertiesManager = Objects.requireNonNull(
+                segmentPropertiesManager,
+                "Segment properties manager is required");
         this.segmentCompacter = new SegmentCompacter<>(segmentFiles,
                 segmentConf, versionController, segmentPropertiesManager);
     }
@@ -110,7 +117,8 @@ public class Segment<K, V>
         final SegmentIndexSearcherSupplier<K, V> supplier = new SegmentIndexSearcherDefaultSupplier<>(
                 segmentFiles, segmentConf);
         return new SegmentSearcher<>(segmentFiles, segmentConf,
-                versionController, segmentPropertiesManager, supplier);
+                versionController, segmentPropertiesManager, supplier,
+                segmentCacheDataProvider);
     }
 
     public SegmentSplitter.Result<K, V> split(final SegmentId segmentId) {

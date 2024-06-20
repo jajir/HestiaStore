@@ -48,6 +48,9 @@ public class SegmentSearcherTest {
     private PairReader<Integer, String> pairReader;
 
     @Mock
+    private SegmentCacheDataProvider<Integer, String> segmentCacheDataProvider;
+
+    @Mock
     private Directory directory;
 
     @Test
@@ -58,7 +61,8 @@ public class SegmentSearcherTest {
         prepareOpeningSearcher();
         try (SegmentSearcher<Integer, String> searcher = new SegmentSearcher<>(
                 segmentFiles, segmentConf, versionProvider,
-                segmentPropertiesManager, segmentIndexSearcherSupplier)) {
+                segmentPropertiesManager, segmentIndexSearcherSupplier,
+                segmentCacheDataProvider)) {
             assertEquals("hello", searcher.get(37));
             assertEquals(null, searcher.get(5));
             assertEquals("hello", searcher.get(37));
@@ -78,7 +82,8 @@ public class SegmentSearcherTest {
 
         try (SegmentSearcher<Integer, String> searcher = new SegmentSearcher<>(
                 segmentFiles, segmentConf, versionProvider,
-                segmentPropertiesManager, segmentIndexSearcherSupplier)) {
+                segmentPropertiesManager, segmentIndexSearcherSupplier,
+                segmentCacheDataProvider)) {
 
             assertEquals("hello", searcher.get(37));
             when(pairReader.read()).thenReturn(Pair.of(17, "duck"))

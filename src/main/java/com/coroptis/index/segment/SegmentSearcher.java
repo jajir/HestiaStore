@@ -30,6 +30,7 @@ public class SegmentSearcher<K, V> implements CloseableResource {
     private final OptimisticLockObjectVersionProvider versionProvider;
     private final SegmentPropertiesManager segmentPropertiesManager;
     private final SegmentIndexSearcherSupplier<K, V> segmentIndexSearcherSupplier;
+    private final SegmentCacheDataProvider<K, V> segmentCacheDataProvider;
 
     private SegmentSearcherCore<K, V> searcherCore;
     private OptimisticLock lock;
@@ -38,7 +39,8 @@ public class SegmentSearcher<K, V> implements CloseableResource {
             final SegmentConf segmentConf,
             final OptimisticLockObjectVersionProvider versionProvider,
             final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentIndexSearcherSupplier<K, V> segmentIndexSearcherSupplier) {
+            final SegmentIndexSearcherSupplier<K, V> segmentIndexSearcherSupplier,
+            final SegmentCacheDataProvider<K, V> segmentCacheDataProvider) {
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.segmentConf = Objects.requireNonNull(segmentConf);
         this.versionProvider = Objects.requireNonNull(versionProvider);
@@ -46,6 +48,9 @@ public class SegmentSearcher<K, V> implements CloseableResource {
                 .requireNonNull(segmentPropertiesManager);
         this.segmentIndexSearcherSupplier = Objects
                 .requireNonNull(segmentIndexSearcherSupplier);
+        this.segmentCacheDataProvider = Objects.requireNonNull(
+                segmentCacheDataProvider,
+                "Segment cached data provider is required");
         optionallyrefreshCoreSearcher();
     }
 
@@ -87,7 +92,8 @@ public class SegmentSearcher<K, V> implements CloseableResource {
             logger.debug("Opening segment searcher '{}'", segmentFiles.getId());
             searcherCore = new SegmentSearcherCore<>(segmentFiles, segmentConf,
                     segmentPropertiesManager,
-                    segmentIndexSearcherSupplier.get());
+                    segmentIndexSearcherSupplier.get(),
+                    segmentCacheDataProvider);
         }
     }
 

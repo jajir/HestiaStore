@@ -25,14 +25,20 @@ public class SegmentSearcherCore<K, V> implements CloseableResource {
     private final BloomFilter<K> bloomFilter;
     private final SegmentFiles<K, V> segmentFiles;
     private final SegmentIndexSearcher<K, V> segmentIndexSearcher;
+    private final SegmentCacheDataProvider<K, V> segmentCacheDataProvider;
 
     public SegmentSearcherCore(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
             final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentIndexSearcher<K, V> segmentIndexSearcher) {
+            final SegmentIndexSearcher<K, V> segmentIndexSearcher,
+            final SegmentCacheDataProvider<K, V> segmentCacheDataProvider) {
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
-        this.deltaCache = new SegmentDeltaCache<>(segmentFiles.getKeyTypeDescriptor(),
-                segmentFiles, segmentPropertiesManager);
+        this.segmentCacheDataProvider = Objects.requireNonNull(
+                segmentCacheDataProvider,
+                "Segment cached data provider is required");
+        this.deltaCache = new SegmentDeltaCache<>(
+                segmentFiles.getKeyTypeDescriptor(), segmentFiles,
+                segmentPropertiesManager);
         this.scarceIndex = ScarceIndex.<K>builder()
                 .withDirectory(segmentFiles.getDirectory())
                 .withFileName(segmentFiles.getScarceFileName())
