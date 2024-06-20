@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -32,12 +33,12 @@ public class SstIndexTest {
     final TypeDescriptorString tds = new TypeDescriptorString();
     final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
 
-    private final List<Pair<Integer, String>> testData = List.of(Pair.of(1, "bbb"),
-            Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(4, "ddf"),
-            Pair.of(5, "ddg"), Pair.of(6, "ddh"), Pair.of(7, "ddi"),
-            Pair.of(8, "ddj"), Pair.of(9, "ddk"), Pair.of(10, "ddl"),
-            Pair.of(11, "ddm"));
-    
+    private final List<Pair<Integer, String>> testData = List.of(
+            Pair.of(1, "bbb"), Pair.of(2, "ccc"), Pair.of(3, "dde"),
+            Pair.of(4, "ddf"), Pair.of(5, "ddg"), Pair.of(6, "ddh"),
+            Pair.of(7, "ddi"), Pair.of(8, "ddj"), Pair.of(9, "ddk"),
+            Pair.of(10, "ddl"), Pair.of(11, "ddm"));
+
     @Test
     void testBasic() throws Exception {
 
@@ -47,10 +48,12 @@ public class SstIndexTest {
 
         index1.forceCompact();
 
-        testData.stream().forEach(pair -> {
-            final String value = index1.get(pair.getKey());
-            assertEquals(pair.getValue(), value);
-        });
+        try (final Stream<Pair<Integer, String>> stream = testData.stream()) {
+            stream.forEach(pair -> {
+                final String value = index1.get(pair.getKey());
+                assertEquals(pair.getValue(), value);
+            });
+        }
         index1.forceCompact();
 
         index1.close();
@@ -108,9 +111,12 @@ public class SstIndexTest {
         final Index<Integer, String> index1 = makeSstIndex();
         testData.stream().forEach(index1::put);
 
-        final List<Pair<Integer, String>> list = index1.getStream()
-                .collect(Collectors.toList());
-        assertEquals(testData.size(), list.size());
+        try (final Stream<Pair<Integer, String>> stream = index1.getStream()) {
+            final List<Pair<Integer, String>> list = stream
+                    .collect(Collectors.toList());
+            assertEquals(testData.size(), list.size());
+        }
+
     }
 
     /**

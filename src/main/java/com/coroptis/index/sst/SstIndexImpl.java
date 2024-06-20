@@ -103,11 +103,28 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                 keyTypeDescriptor, valueTypeDescriptor);
     }
 
+    /**
+     * This method should be closed at the end of usage. For example:
+     * 
+     * <pre>
+     * try (final Stream&#60;Pair&#60;Integer, String&#62;&#62; stream = index.getStream()) {
+     *     final List&#60;Pair&#60;Integer, String&#62;&#62; list = stream
+     *             .collect(Collectors.toList());
+     *     // some other code
+     * }
+     * 
+     * </pre>
+     */
     @Override
     public Stream<Pair<K, V>> getStream() {
         indexState.tryPerformOperation();
-        return StreamSupport.stream(new PairIteratorToSpliterator<K, V>(
-                openIterator(), keyTypeDescriptor), false);
+        final PairIterator<K, V> iterator = openIterator();
+        return StreamSupport
+                .stream(new PairIteratorToSpliterator<K, V>(iterator,
+                        keyTypeDescriptor), false)
+                .onClose(() -> {
+                    iterator.close();
+                });
     }
 
     public Stream<Pair<K, V>> getStreamSynchronized(final ReentrantLock lock) {
