@@ -1,3 +1,5 @@
+![example workflow](https://github.com/jajir/jbindex/actions/workflows/maven.yml/badge.svg)
+
 # jbindex
 
 Goal is to provide easy to use key value map for billions of records using just one directory and some space.
