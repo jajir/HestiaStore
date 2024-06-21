@@ -36,46 +36,43 @@ public class SegmentSearcherCore<K, V> implements CloseableResource {
         this.segmentCacheDataProvider = Objects.requireNonNull(
                 segmentCacheDataProvider,
                 "Segment cached data provider is required");
-        this.deltaCache = new SegmentDeltaCache<>(
-                segmentFiles.getKeyTypeDescriptor(), segmentFiles,
-                segmentPropertiesManager);
-        this.scarceIndex = ScarceIndex.<K>builder()
-                .withDirectory(segmentFiles.getDirectory())
-                .withFileName(segmentFiles.getScarceFileName())
-                .withKeyTypeDescriptor(segmentFiles.getKeyTypeDescriptor())
-                .build();
-        this.bloomFilter = BloomFilter.<K>builder()
-                .withBloomFilterFileName(segmentFiles.getBloomFilterFileName())
-                .withConvertorToBytes(segmentFiles.getKeyTypeDescriptor()
-                        .getConvertorToBytes())
-                .withDirectory(segmentFiles.getDirectory())
-                .withIndexSizeInBytes(
-                        segmentConf.getBloomFilterIndexSizeInBytes())
-                .withNumberOfHashFunctions(
-                        segmentConf.getBloomFilterNumberOfHashFunctions())
-                .build();
+        this.deltaCache = segmentCacheDataProvider.getSegmentDeltaCache();
+        this.scarceIndex = segmentCacheDataProvider.getScarceIndex();
+        this.bloomFilter = segmentCacheDataProvider.getBloomFilter();
         this.segmentIndexSearcher = Objects
                 .requireNonNull(segmentIndexSearcher);
     }
 
+    private SegmentDeltaCache<K, V> getDeltaCache() {
+        return deltaCache;
+    };
+
+    private ScarceIndex<K> getScarceIndex() {
+        return scarceIndex;
+    };
+
+    BloomFilter<K> getBloomFilter() {
+        return bloomFilter;
+    }
+
     public K getMaxKey() {
-        return scarceIndex.getMaxKey();
+        return getScarceIndex().getMaxKey();
     }
 
     public K getMinKey() {
-        return scarceIndex.getMinKey();
+        return getScarceIndex().getMinKey();
     }
 
     public V get(final K key) {
         // look in cache
-        final V out = deltaCache.get(key);
+        final V out = getDeltaCache().get(key);
         if (segmentFiles.getValueTypeDescriptor().isTombstone(out)) {
             return null;
         }
 
         // look in bloom filter
         if (out == null) {
-            if (bloomFilter.isNotStored(key)) {
+            if (getBloomFilter().isNotStored(key)) {
                 /*
                  * It;s sure that key is not in index.
                  */
@@ -85,7 +82,7 @@ public class SegmentSearcherCore<K, V> implements CloseableResource {
 
         // look in index file
         if (out == null) {
-            final Integer position = scarceIndex.get(key);
+            final Integer position = getScarceIndex().get(key);
             if (position == null) {
                 return null;
             }
@@ -95,15 +92,12 @@ public class SegmentSearcherCore<K, V> implements CloseableResource {
     }
 
     void addPairIntoCache(final Pair<K, V> pair) {
-        deltaCache.put(pair);
+        getDeltaCache().put(pair);
     }
 
-    BloomFilter<K> getBloomFilter() {
-        return bloomFilter;
-    }
-
+    @Deprecated
     SegmentDeltaCache<K, V> getCache() {
-        return deltaCache;
+        return getDeltaCache();
     }
 
     @Override

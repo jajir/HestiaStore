@@ -121,6 +121,11 @@ public class Segment<K, V>
                 segmentCacheDataProvider);
     }
 
+    public SegmentCacheDataProvider<K, V> getCacheDataProvider() {
+        return new SegmentCacheDataLoader<>(segmentFiles, segmentConf,
+                segmentPropertiesManager);
+    }
+
     public SegmentSplitter.Result<K, V> split(final SegmentId segmentId) {
         Objects.requireNonNull(segmentId);
         final SegmentSplitter<K, V> segmentSplitter = new SegmentSplitter<>(
