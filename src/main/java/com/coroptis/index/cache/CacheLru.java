@@ -68,4 +68,10 @@ public class CacheLru<K, V> implements Cache<K, V> {
         return minKey;
     }
 
+    @Override
+    public void ivalidate(final K key) {
+        Objects.requireNonNull(key);
+        cache.remove(key);
+    }
+
 }
