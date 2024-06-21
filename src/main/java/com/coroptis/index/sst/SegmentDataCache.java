@@ -47,7 +47,7 @@ public class SegmentDataCache<K, V> {
 
     public void invalidate(final SegmentId id) {
         Objects.requireNonNull(id);
-        // FIXME add cache.invalidate method
+        cache.ivalidate(id);
     }
 
 }

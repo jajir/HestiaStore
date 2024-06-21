@@ -121,6 +121,12 @@ public class Segment<K, V>
                 segmentCacheDataProvider);
     }
 
+    /**
+     * Provide object that loads data objects. Shouldn't be used directly withou
+     * caching.
+     * 
+     * @return
+     */
     public SegmentCacheDataProvider<K, V> getCacheDataProvider() {
         return new SegmentCacheDataLoader<>(segmentFiles, segmentConf,
                 segmentPropertiesManager);

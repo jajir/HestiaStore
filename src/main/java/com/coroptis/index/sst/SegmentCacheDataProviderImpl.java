@@ -42,8 +42,7 @@ public class SegmentCacheDataProviderImpl<K, V>
 
     @Override
     public void invalidate() {
-        // TODO Auto-generated method stub
-
+        cache.invalidate(id);
     }
 
 }
