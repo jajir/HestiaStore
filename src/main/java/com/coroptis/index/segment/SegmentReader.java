@@ -31,19 +31,19 @@ public class SegmentReader<K, V> {
     public SegmentReader(final SegmentFiles<K, V> segmentFiles,
             final SegmentDeltaCacheController<K, V> deltaCacheController) {
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
-        this.deltaCacheController = Objects.requireNonNull(
-                deltaCacheController,
+        this.deltaCacheController = Objects.requireNonNull(deltaCacheController,
                 "Segment delta cached controlle is required");
     }
 
     public PairIterator<K, V> openIterator(
             final OptimisticLockObjectVersionProvider versionProvider) {
         return new PairIteratorWithLock<>(
-                new MergeIterator<K, V>(
+                new MergeWithCacheIterator<K, V>(
                         segmentFiles.getIndexSstFile().openIterator(),
-                        deltaCacheController.getSortedIterator(),
                         segmentFiles.getKeyTypeDescriptor(),
-                        segmentFiles.getValueTypeDescriptor()),
+                        segmentFiles.getValueTypeDescriptor(),
+                        deltaCacheController.getDeltaCache().getSortedKeys(),
+                        deltaCacheController),
                 new OptimisticLock(versionProvider));
     }
 
