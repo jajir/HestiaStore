@@ -93,10 +93,7 @@ public class Segment<K, V>
     }
 
     public PairWriter<K, V> openWriter() {
-        final SegmentWriter<K, V> writer = new SegmentWriter<>(segmentFiles,
-                segmentPropertiesManager, segmentCompacter,
-                segmentCacheDataProvider);
-        return writer.openWriter();
+        return new SegmentWriter<>(segmentCompacter, deltaCacheController);
     }
 
     public SegmentSearcher<K, V> openSearcher() {

@@ -8,86 +8,77 @@ import com.coroptis.index.cache.UniqueCache;
 import com.coroptis.index.sstfile.SstFileWriter;
 
 /**
- * Allows to add data to segment. When searcher is in memory and number of added
- * keys doesn't exceed limit than it could work without invalidating cache and
- * searcher object..
+ * Class collect unsorted data for segment sort them and finally write them into
+ * SST delta file.
  * 
  * @author honza
  *
  * @param <K>
  * @param <V>
  */
-public class SegmentDeltaCacheWriter<K, V> {
+public class SegmentDeltaCacheWriter<K, V> implements PairWriter<K, V> {
 
+    /**
+     * Cache will contains data written into this delta file.
+     */
     private final UniqueCache<K, V> uniqueCache;
+
     private final SegmentPropertiesManager segmentPropertiesManager;
-    private final SegmentCompacter<K, V> segmentCompacter;
     private final SegmentFiles<K, V> segmentFiles;
     private final SegmentCacheDataProvider<K, V> segmentCacheDataProvider;
 
+    /**
+     * How many keys was added to delta cache.
+     * 
+     * TODO consider using this number, it could be higher
+     * 
+     * because of this delta file will contains update command or tombstones.
+     */
+    private long cx = 0;
+
     public SegmentDeltaCacheWriter(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentCompacter<K, V> segmentCompacter,
             final SegmentCacheDataProvider<K, V> segmentCacheDataProvider) {
         this.segmentPropertiesManager = Objects
                 .requireNonNull(segmentPropertiesManager);
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
-
         this.uniqueCache = new UniqueCache<>(
                 segmentFiles.getKeyTypeDescriptor().getComparator());
-
-        this.segmentCompacter = Objects.requireNonNull(segmentCompacter);
         this.segmentCacheDataProvider = Objects.requireNonNull(
                 segmentCacheDataProvider,
                 "Segment cached data provider is required");
     }
 
-    public PairWriter<K, V> openWriter() {
-        return new PairWriter<K, V>() {
+    public long getNumberOfKeys() {
+        return cx;
+    }
 
-            private long cx = 0;
+    @Override
+    public void close() {
+        // increase number of keys in cache
+        final int keysInCache = uniqueCache.size();
+        segmentPropertiesManager.increaseNumberOfKeysInCache(keysInCache);
+        segmentPropertiesManager.flush();
 
-            @Override
-            public void close() {
-                closeWritingToCache();
+        // store cache
+        try (final SstFileWriter<K, V> writer = segmentFiles
+                .getCacheSstFile(
+                        segmentPropertiesManager.getAndIncreaseDeltaFileName())
+                .openWriter()) {
+            uniqueCache.getStream().forEach(pair -> {
+                writer.put(pair);
+            });
+        }
+        uniqueCache.clear();
+    }
 
-                segmentCompacter.optionallyCompact();
-            }
-
-            @Override
-            public void put(final Pair<K, V> pair) {
-                uniqueCache.put(pair);
-                cx++;
-                if (segmentCacheDataProvider.isLoaded()) {
-                    segmentCacheDataProvider.getSegmentDeltaCache().put(pair);
-                }
-                if (segmentCompacter.shouldBeCompactedDuringWriting(cx)) {
-                    cx = 0;
-                    segmentCacheDataProvider.invalidate();
-                    closeWritingToCache();
-                    segmentCompacter.forceCompact();
-                }
-            }
-
-            private void closeWritingToCache() {
-                // increase number of keys in cache
-                final int keysInCache = uniqueCache.size();
-                segmentPropertiesManager
-                        .increaseNumberOfKeysInCache(keysInCache);
-                segmentPropertiesManager.flush();
-
-                // store cache
-                try (final SstFileWriter<K, V> writer = segmentFiles
-                        .getCacheSstFile(segmentPropertiesManager
-                                .getAndIncreaseDeltaFileName())
-                        .openWriter()) {
-                    uniqueCache.getStream().forEach(pair -> {
-                        writer.put(pair);
-                    });
-                }
-                uniqueCache.clear();
-            }
-        };
+    @Override
+    public void put(Pair<K, V> pair) {
+        uniqueCache.put(pair);
+        cx++;
+        if (segmentCacheDataProvider.isLoaded()) {
+            segmentCacheDataProvider.getSegmentDeltaCache().put(pair);
+        }
     }
 
 }

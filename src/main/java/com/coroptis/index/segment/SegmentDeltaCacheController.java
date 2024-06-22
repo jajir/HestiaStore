@@ -35,8 +35,13 @@ public class SegmentDeltaCacheController<K, V> {
         return segmentCacheDataProvider.getSegmentDeltaCache();
     }
 
+    public SegmentDeltaCacheWriter<K, V> openWriter() {
+        return new SegmentDeltaCacheWriter<>(segmentFiles,
+                segmentPropertiesManager, segmentCacheDataProvider);
+    }
+
     public void clear() {
-        if(segmentCacheDataProvider.isLoaded()) {
+        if (segmentCacheDataProvider.isLoaded()) {
             getDeltaCache().evictAll();
         }
         segmentPropertiesManager.getCacheDeltaFileNames()

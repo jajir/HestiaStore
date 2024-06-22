@@ -1,6 +1,7 @@
 package com.coroptis.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.util.ArrayList;
@@ -90,10 +91,13 @@ public class SegmentIntegrationTest {
         verifyTestDataSet(seg);
 
         /**
-         * It's always 5 because there is always 4 default files in index and
-         * one delta file.
+         * It's always 4 or 5 because only one or zero delta files could exists.
          */
-        assertEquals(5, numberOfFilesInDirectoryP(directory));
+        if (numberOfFilesInDirectoryP(directory) != 4
+                && numberOfFilesInDirectoryP(directory) != 5) {
+            fail("Invalid number of files "
+                    + numberOfFilesInDirectoryP(directory));
+        }
 
         seg.forceCompact();
         assertEquals(9, seg.getStats().getNumberOfKeys());
@@ -391,7 +395,7 @@ public class SegmentIntegrationTest {
                         .withMaxNumberOfKeysInSegmentMemory(1)
                         .withMaxNumberOfKeysInIndexPage(1).build(),
                 9, // expectedNumberKeysInScarceIndex
-                6// expectedNumberOfFile
+                5// expectedNumberOfFile
         ), arguments(tdi, tds, dir3,
                 Segment.<Integer, String>builder().withDirectory(dir3)
                         .withId(id3).withKeyTypeDescriptor(tdi)
@@ -400,7 +404,7 @@ public class SegmentIntegrationTest {
                         .withMaxNumberOfKeysInSegmentMemory(2)
                         .withMaxNumberOfKeysInIndexPage(2).build(),
                 5, // expectedNumberKeysInScarceIndex
-                5 // expectedNumberOfFile
+                4 // expectedNumberOfFile
         ));
     }
 
