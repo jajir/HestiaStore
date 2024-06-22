@@ -27,8 +27,7 @@ public class SegmentConsistencyTest extends AbstractSegmentTest {
     final SegmentId id = SegmentId.of(29);
 
     /**
-     * Test verify that read operation provide latest values. Even writing to
-     * segment during
+     * Verify that what is written is read correctly back.
      * 
      * @throws Exception
      */
@@ -41,6 +40,12 @@ public class SegmentConsistencyTest extends AbstractSegmentTest {
         }
     }
 
+    /**
+     * Test verify that read operation provide latest values. Even writing to
+     * segment during
+     * 
+     * @throws Exception
+     */
     @Test
     void test_reading_of_updated_values() throws Exception {
         final Segment<Integer, Integer> seg = makeSegment();
