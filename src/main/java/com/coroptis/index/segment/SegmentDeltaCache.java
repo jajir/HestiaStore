@@ -22,16 +22,9 @@ public class SegmentDeltaCache<K, V> {
 
     private final UniqueCache<K, V> cache;
 
-    private final SegmentFiles<K, V> segmentFiles;
-
-    private final SegmentPropertiesManager segmentPropertiesManager;
-
     public SegmentDeltaCache(final TypeDescriptor<K> keyTypeDescriptor,
             final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentPropertiesManager) {
-        this.segmentFiles = Objects.requireNonNull(segmentFiles);
-        this.segmentPropertiesManager = Objects
-                .requireNonNull(segmentPropertiesManager);
         this.cache = UniqueCache.<K, V>builder()
                 .withKeyComparator(keyTypeDescriptor.getComparator())
                 .withSstFile(segmentFiles.getCacheSstFile()).build();
@@ -54,14 +47,8 @@ public class SegmentDeltaCache<K, V> {
         return cache.size();
     }
 
-    public void clear() {
+    public void evictAll() {
         cache.clear();
-        segmentPropertiesManager.getCacheDeltaFileNames()
-                .forEach(segmentCacheDeltaFile -> {
-                    segmentFiles.deleteFile(segmentCacheDeltaFile);
-                });
-        segmentFiles.optionallyDeleteFile(segmentFiles.getCacheFileName());
-        segmentPropertiesManager.clearCacheDeltaFileNamesCouter();
     }
 
     public V get(final K key) {

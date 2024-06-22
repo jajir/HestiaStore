@@ -27,6 +27,7 @@ public class Segment<K, V>
     private final SegmentPropertiesManager segmentPropertiesManager;
     private final SegmentCompacter<K, V> segmentCompacter;
     private final SegmentCacheDataProvider<K, V> segmentCacheDataProvider;
+    private final SegmentDeltaCacheController<K, V> deltaCacheController;
 
     public static <M, N> SegmentBuilder<M, N> builder() {
         return new SegmentBuilder<>();
@@ -48,9 +49,12 @@ public class Segment<K, V>
         this.segmentPropertiesManager = Objects.requireNonNull(
                 segmentPropertiesManager,
                 "Segment properties manager is required");
+        deltaCacheController = new SegmentDeltaCacheController<>(
+                segmentFiles.getKeyTypeDescriptor(), segmentFiles,
+                segmentPropertiesManager, segmentCacheDataProvider);
         this.segmentCompacter = new SegmentCompacter<>(segmentFiles,
                 segmentConf, versionController, segmentPropertiesManager,
-                segmentCacheDataProvider);
+                segmentCacheDataProvider, deltaCacheController);
     }
 
     public SegmentStats getStats() {
@@ -85,7 +89,7 @@ public class Segment<K, V>
         return new SegmentFullWriter<K, V>(segmentFiles,
                 segmentPropertiesManager,
                 segmentConf.getMaxNumberOfKeysInIndexPage(),
-                segmentCacheDataProvider);
+                segmentCacheDataProvider, deltaCacheController);
     }
 
     public PairWriter<K, V> openWriter() {
@@ -118,7 +122,8 @@ public class Segment<K, V>
         Objects.requireNonNull(segmentId);
         final SegmentSplitter<K, V> segmentSplitter = new SegmentSplitter<>(
                 segmentFiles, segmentConf, versionController,
-                segmentPropertiesManager, segmentCacheDataProvider);
+                segmentPropertiesManager, segmentCacheDataProvider,
+                deltaCacheController);
         return segmentSplitter.split(segmentId);
     }
 

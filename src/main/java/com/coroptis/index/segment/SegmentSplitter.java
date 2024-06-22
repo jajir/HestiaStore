@@ -24,6 +24,7 @@ public class SegmentSplitter<K, V> {
     private final VersionController versionController;
     private final SegmentPropertiesManager segmentPropertiesManager;
     private final SegmentCacheDataProvider<K, V> segmentCacheDataProvider;
+    private final SegmentDeltaCacheController<K, V> deltaCacheController;
 
     public static class Result<K, V> {
 
@@ -56,7 +57,8 @@ public class SegmentSplitter<K, V> {
             final SegmentConf segmentConf,
             final VersionController versionController,
             final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentCacheDataProvider<K, V> segmentCacheDataProvider) {
+            final SegmentCacheDataProvider<K, V> segmentCacheDataProvider,
+            final SegmentDeltaCacheController<K, V> deltaCacheController) {
         this.segmentConf = Objects.requireNonNull(segmentConf);
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.versionController = Objects.requireNonNull(versionController,
@@ -66,6 +68,8 @@ public class SegmentSplitter<K, V> {
         this.segmentCacheDataProvider = Objects.requireNonNull(
                 segmentCacheDataProvider,
                 "Segment cached data provider is required");
+        this.deltaCacheController = Objects
+                .requireNonNull(deltaCacheController);
     }
 
     private SegmentStats getStats() {
@@ -86,7 +90,7 @@ public class SegmentSplitter<K, V> {
         return new SegmentFullWriter<K, V>(segmentFiles,
                 segmentPropertiesManager,
                 segmentConf.getMaxNumberOfKeysInIndexPage(),
-                segmentCacheDataProvider);
+                segmentCacheDataProvider, deltaCacheController);
     }
 
     public Result<K, V> split(final SegmentId segmentId) {

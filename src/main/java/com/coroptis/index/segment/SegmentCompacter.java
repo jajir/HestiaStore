@@ -16,12 +16,14 @@ public class SegmentCompacter<K, V> {
     private final VersionController versionController;
     private final SegmentPropertiesManager segmentPropertiesManager;
     private final SegmentCacheDataProvider<K, V> segmentCacheDataProvider;
+    private final SegmentDeltaCacheController<K, V> deltaCacheController;
 
     public SegmentCompacter(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
             final VersionController versionController,
             final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentCacheDataProvider<K, V> segmentCacheDataProvider) {
+            final SegmentCacheDataProvider<K, V> segmentCacheDataProvider,
+            final SegmentDeltaCacheController<K, V> deltaCacheController) {
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.segmentConf = Objects.requireNonNull(segmentConf);
         this.versionController = Objects.requireNonNull(versionController,
@@ -31,6 +33,8 @@ public class SegmentCompacter<K, V> {
         this.segmentCacheDataProvider = Objects.requireNonNull(
                 segmentCacheDataProvider,
                 "Segment cached data provider is required");
+        this.deltaCacheController = Objects.requireNonNull(deltaCacheController,
+                "Delta cache controller is required");
     }
 
     private PairIterator<K, V> openIterator() {
@@ -109,6 +113,6 @@ public class SegmentCompacter<K, V> {
         return new SegmentFullWriter<K, V>(segmentFiles,
                 segmentPropertiesManager,
                 segmentConf.getMaxNumberOfKeysInIndexPage(),
-                segmentCacheDataProvider);
+                segmentCacheDataProvider, deltaCacheController);
     }
 }
