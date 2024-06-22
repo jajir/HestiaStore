@@ -3,7 +3,15 @@ package com.coroptis.index.segment;
 import com.coroptis.index.bloomfilter.BloomFilter;
 import com.coroptis.index.scarceindex.ScarceIndex;
 
-//FIXME add some comment
+/**
+ * Object that hold references to largest object in segment. It allows to put
+ * this object into cache.
+ * 
+ * @author honza
+ *
+ * @param <K>
+ * @param <V>
+ */
 public interface SegmentData<K, V> {
 
     SegmentDeltaCache<K, V> getSegmentDeltaCache();

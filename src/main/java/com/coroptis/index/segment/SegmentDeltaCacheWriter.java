@@ -8,7 +8,7 @@ import com.coroptis.index.cache.UniqueCache;
 import com.coroptis.index.sstfile.SstFileWriter;
 
 /**
- * Class collect unsorted data for segment sort them and finally write them into
+ * Class collect unsorted data, sort them and finally write them into
  * SST delta file.
  * 
  * @author honza
@@ -30,9 +30,8 @@ public class SegmentDeltaCacheWriter<K, V> implements PairWriter<K, V> {
     /**
      * How many keys was added to delta cache.
      * 
-     * TODO consider using this number, it could be higher
-     * 
-     * because of this delta file will contains update command or tombstones.
+     * Consider using this number, it could be higher. Because of this delta
+     * file will contains update command or tombstones.
      */
     private long cx = 0;
 
