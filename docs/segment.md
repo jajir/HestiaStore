@@ -21,3 +21,11 @@ Following image shows references between objects in runtime:
 
 ![Cache related object relations](segment-cache-class2.png)
 
+## Writing to segment
+
+Writing up to some point shouldn't interrupt reading. Putting new pair into segment is here:
+
+![Segment writing sequence diagram](segment-writing-seq.png)
+
+ 
+

@@ -1,23 +1,50 @@
 @startuml
-  SegmentSearcher --> SegmentCacheDataProvider: getBloomFilter
-  activate SegmentCacheDataProvider
-  note right
-  In fact call SegmentCacheDataProviderImpl
-  end note
-  SegmentCacheDataProvider --> SegmentCache: SegmentCache.getSegmentData(SegmentId)
-  activate SegmentCache
-  alt SegmentData are not in cache
-    SegmentCache --> SegmentCache: Create SegmentData \nwith reference to SegmentDataLoader
+  actor User as user
+  participant SegmentWriter as segWriter
+  participant DeltaCacheWriter as dcWriter
+  participant Segment as segment
+
+  user -> segWriter: put(key,value)
+
+  alt delta cache writer is closed
+    'open delta cache writer'
+    segWriter -> dcWriter : open delta cache writer
+    activate dcWriter
+    dcWriter --> segWriter: done
+    deactivate dcWriter
   end
-  SegmentCache --> SegmentCacheDataProvider: return SegmentData
-  deactivate SegmentCache
-  SegmentCacheDataProvider --> SegmentData: call SegmentData.getBloomFilter()
-  activate SegmentData
-  alt BloomFilter is not loaded
-    SegmentData --> SegmentData: Load BloomFilter \nwith SegmentDataLoader
+  
+  'put'
+  segWriter -> dcWriter : put(key,value)
+  activate dcWriter
+  dcWriter --> segWriter: done
+  deactivate dcWriter
+  
+  'isThereSpace'  
+  segWriter -> dcWriter: is there more space in delta cache?
+  activate dcWriter
+  dcWriter --> segWriter: return result
+  deactivate dcWriter
+  
+  alt there si no more space in delta cache
+    'close'
+    segWriter -> dcWriter: close delta cache writer
+    activate dcWriter
+    dcWriter --> segWriter: done
+    deactivate dcWriter
+ 
+    'compact'
+    segWriter -> segment: compact segment
+    activate segment
+    note right
+      There are some other operations
+    end note
+    segment -> dcWriter: evict all, delete files
+    dcWriter --> segment
+    segment --> segWriter: done
+    deactivate segment
   end
-  SegmentData --> SegmentCacheDataProvider: return BloomFilter
-  deactivate SegmentData
-  SegmentCacheDataProvider --> SegmentSearcher: return BloomFilter
-  deactivate SegmentCacheDataProvider
+  
+  segWriter --> user
+
 @enduml
