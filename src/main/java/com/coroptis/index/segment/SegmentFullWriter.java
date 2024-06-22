@@ -5,7 +5,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairWriter;
-import com.coroptis.index.bloomfilter.BloomFilter;
 import com.coroptis.index.bloomfilter.BloomFilterWriter;
 import com.coroptis.index.scarceindex.ScarceIndexWriter;
 import com.coroptis.index.sstfile.SstFileWriter;
@@ -31,12 +30,13 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
     private final ScarceIndexWriter<K> scarceWriter;
     private final SstFileWriter<K, V> indexWriter;
     private final BloomFilterWriter<K> bloomFilterWriter;
+    private final SegmentCacheDataProvider<K, V> segmentCacheDataProvider;
     private Pair<K, V> previousPair = null;
 
-    SegmentFullWriter(final BloomFilter<K> bloomFilter,
-            final SegmentFiles<K, V> segmentFiles,
+    SegmentFullWriter(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentStatsManager,
-            final int maxNumberOfKeysInIndexPage) {
+            final int maxNumberOfKeysInIndexPage,
+            final SegmentCacheDataProvider<K, V> segmentCacheDataProvider) {
         this.maxNumberOfKeysInIndexPage = Objects
                 .requireNonNull(maxNumberOfKeysInIndexPage);
         this.segmentPropertiesManager = Objects
@@ -44,7 +44,12 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.scarceWriter = segmentFiles.getTempScarceIndex().openWriter();
         this.indexWriter = segmentFiles.getTempIndexFile().openWriter();
-        bloomFilterWriter = Objects.requireNonNull(bloomFilter.openWriter());
+        this.segmentCacheDataProvider = Objects.requireNonNull(
+                segmentCacheDataProvider,
+                "Segment cached data provider is required");
+        segmentCacheDataProvider.invalidate();
+        bloomFilterWriter = Objects.requireNonNull(
+                segmentCacheDataProvider.getBloomFilter().openWriter());
     }
 
     @Override
@@ -93,12 +98,7 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
                 segmentFiles.getTempScarceFileName(),
                 segmentFiles.getScarceFileName());
 
-        // clean cache
-        //FIXME it requires to load all old data into memory.
-        final SegmentDeltaCache<K, V> sc = new SegmentDeltaCache<>(
-                segmentFiles.getKeyTypeDescriptor(), segmentFiles,
-                segmentPropertiesManager);
-        sc.clear();
+        deleteDeltaFiles();
 
         // update segment statistics
         segmentPropertiesManager.setNumberOfKeysInCache(0);
@@ -106,7 +106,16 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
         segmentPropertiesManager
                 .setNumberOfKeysInScarceIndex(scarceIndexKeyCounter.get());
         segmentPropertiesManager.flush();
+    }
 
+    // TODO method should be part of deltaCache object
+    public void deleteDeltaFiles() {
+        segmentPropertiesManager.getCacheDeltaFileNames()
+                .forEach(segmentCacheDeltaFile -> {
+                    segmentFiles.deleteFile(segmentCacheDeltaFile);
+                });
+        segmentFiles.optionallyDeleteFile(segmentFiles.getCacheFileName());
+        segmentPropertiesManager.clearCacheDeltaFileNamesCouter();
     }
 
 }

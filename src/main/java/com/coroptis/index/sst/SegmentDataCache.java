@@ -6,6 +6,7 @@ import com.coroptis.index.cache.Cache;
 import com.coroptis.index.cache.CacheLru;
 import com.coroptis.index.segment.Segment;
 import com.coroptis.index.segment.SegmentData;
+import com.coroptis.index.segment.SegmentDataLazyLoaded;
 import com.coroptis.index.segment.SegmentId;
 
 /**
@@ -37,7 +38,7 @@ public class SegmentDataCache<K, V> {
         SegmentData<K, V> out = null;
         if (cache.get(segmentId).isEmpty()) {
             final Segment<K, V> segment = segmentManager.getSegment(segmentId);
-            out = new SegmentDataImpl<>(segment.getCacheDataProvider());
+            out = new SegmentDataLazyLoaded<>(segment.getCacheDataProvider());
             cache.put(segmentId, out);
         } else {
             out = cache.get(segmentId).get();
@@ -48,6 +49,10 @@ public class SegmentDataCache<K, V> {
     public void invalidate(final SegmentId id) {
         Objects.requireNonNull(id);
         cache.ivalidate(id);
+    }
+
+    public boolean isPresent(final SegmentId id) {
+        return cache.get(id).isPresent();
     }
 
 }

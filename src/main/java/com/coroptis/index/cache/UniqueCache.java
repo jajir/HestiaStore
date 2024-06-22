@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
-import com.coroptis.index.PairIteratorReader;
+import com.coroptis.index.PairIteratorFromReader;
 import com.coroptis.index.PairReader;
 import com.coroptis.index.sstfile.PairComparator;
 
@@ -86,7 +86,7 @@ public class UniqueCache<K, V> {
     }
 
     public PairIterator<K, V> getSortedIterator() {
-        final PairIterator<K, V> iterator = new PairIteratorReader<>(
+        final PairIterator<K, V> iterator = new PairIteratorFromReader<>(
                 openSortedClonedReader());
         return iterator;
     }

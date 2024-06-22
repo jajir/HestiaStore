@@ -1,12 +1,9 @@
-package com.coroptis.index.sst;
+package com.coroptis.index.segment;
 
 import java.util.Objects;
 
 import com.coroptis.index.bloomfilter.BloomFilter;
 import com.coroptis.index.scarceindex.ScarceIndex;
-import com.coroptis.index.segment.SegmentCacheDataProvider;
-import com.coroptis.index.segment.SegmentData;
-import com.coroptis.index.segment.SegmentDeltaCache;
 
 /**
  * Provide cached lazy loaded instances of segment data objects.
@@ -16,7 +13,7 @@ import com.coroptis.index.segment.SegmentDeltaCache;
  * @param <K>
  * @param <V>
  */
-public class SegmentDataImpl<K, V> implements SegmentData<K, V> {
+public class SegmentDataLazyLoaded<K, V> implements SegmentData<K, V> {
 
     private final SegmentCacheDataProvider<K, V> dataProvider;
 
@@ -24,7 +21,8 @@ public class SegmentDataImpl<K, V> implements SegmentData<K, V> {
     private BloomFilter<K> bloomFilter;
     private ScarceIndex<K> scarceIndex;
 
-    SegmentDataImpl(final SegmentCacheDataProvider<K, V> dataProvider) {
+    public SegmentDataLazyLoaded(
+            final SegmentCacheDataProvider<K, V> dataProvider) {
         this.dataProvider = Objects.requireNonNull(dataProvider);
     }
 

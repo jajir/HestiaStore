@@ -17,6 +17,7 @@ import com.coroptis.index.segment.SegmentSearcher;
  * @param <K>
  * @param <V>
  */
+@Deprecated
 public class SegmentSearcherCache<K, V> {
 
     final Cache<SegmentId, SegmentSearcher<K, V>> cache;

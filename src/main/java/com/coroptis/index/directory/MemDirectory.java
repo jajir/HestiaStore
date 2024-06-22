@@ -41,7 +41,8 @@ public class MemDirectory implements Directory {
         } else {
             final byte a[] = data.get(fileName);
             if (a == null) {
-                throw new IndexException(String.format("No such file '%s'", fileName));
+                throw new IndexException(
+                        String.format("No such file '%s'", fileName));
             }
             byte[] c = new byte[a.length + bytes.length];
             System.arraycopy(a, 0, c, 0, a.length);

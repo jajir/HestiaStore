@@ -47,8 +47,6 @@ public class SegmentIteratorTest {
              * There should not be next element, because operation forceCompact
              * force index to rewrite physical SST data file.
              */
-            assertTrue(iterator.hasNext());
-            assertEquals(Pair.of(2, "b"), iterator.next());
             assertFalse(iterator.hasNext());
         }
     }

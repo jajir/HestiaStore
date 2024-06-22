@@ -14,14 +14,14 @@ import com.coroptis.index.scarceindex.ScarceIndex;
  * @param <K>
  * @param <V>
  */
-public class SegmentCacheDataLoader<K, V>
+public class SegmentCacheDataDirectLoader<K, V>
         implements SegmentCacheDataProvider<K, V> {
 
     private final SegmentFiles<K, V> segmentFiles;
     private final SegmentConf segmentConf;
     private final SegmentPropertiesManager segmentPropertiesManager;
 
-    SegmentCacheDataLoader(final SegmentFiles<K, V> segmentFiles,
+    SegmentCacheDataDirectLoader(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
             final SegmentPropertiesManager segmentPropertiesManager) {
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
@@ -62,6 +62,15 @@ public class SegmentCacheDataLoader<K, V>
     @Override
     public void invalidate() {
         // intentionally do nothing
+    }
+
+    /**
+     * class always return new instance, so it's always loaded. Method return
+     * <code>true</code>.
+     */
+    @Override
+    public boolean isLoaded() {
+        return true;
     }
 
 }

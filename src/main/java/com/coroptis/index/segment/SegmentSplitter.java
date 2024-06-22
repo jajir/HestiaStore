@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
-import com.coroptis.index.bloomfilter.BloomFilter;
 
 /**
  * 
@@ -24,6 +23,7 @@ public class SegmentSplitter<K, V> {
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
     private final SegmentPropertiesManager segmentPropertiesManager;
+    private final SegmentCacheDataProvider<K, V> segmentCacheDataProvider;
 
     public static class Result<K, V> {
 
@@ -55,13 +55,17 @@ public class SegmentSplitter<K, V> {
     public SegmentSplitter(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
             final VersionController versionController,
-            final SegmentPropertiesManager segmentPropertiesManager) {
+            final SegmentPropertiesManager segmentPropertiesManager,
+            final SegmentCacheDataProvider<K, V> segmentCacheDataProvider) {
         this.segmentConf = Objects.requireNonNull(segmentConf);
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.versionController = Objects.requireNonNull(versionController,
                 "Version controller is required");
         this.segmentPropertiesManager = Objects
                 .requireNonNull(segmentPropertiesManager);
+        this.segmentCacheDataProvider = Objects.requireNonNull(
+                segmentCacheDataProvider,
+                "Segment cached data provider is required");
     }
 
     private SegmentStats getStats() {
@@ -69,7 +73,7 @@ public class SegmentSplitter<K, V> {
     }
 
     private PairIterator<K, V> openIterator() {
-        return new SegmentReader<>(segmentFiles, segmentPropertiesManager)
+        return new SegmentReader<>(segmentFiles, segmentCacheDataProvider)
                 .openIterator(versionController);
     }
 
@@ -79,19 +83,10 @@ public class SegmentSplitter<K, V> {
      * compacting.
      */
     private SegmentFullWriter<K, V> openFullWriter() {
-        final BloomFilter<K> bloomFilter = BloomFilter.<K>builder()
-                .withBloomFilterFileName(segmentFiles.getBloomFilterFileName())
-                .withConvertorToBytes(segmentFiles.getKeyTypeDescriptor()
-                        .getConvertorToBytes())
-                .withDirectory(segmentFiles.getDirectory())
-                .withIndexSizeInBytes(
-                        segmentConf.getBloomFilterIndexSizeInBytes())
-                .withNumberOfHashFunctions(
-                        segmentConf.getBloomFilterNumberOfHashFunctions())
-                .build();
-        return new SegmentFullWriter<K, V>(bloomFilter, segmentFiles,
+        return new SegmentFullWriter<K, V>(segmentFiles,
                 segmentPropertiesManager,
-                segmentConf.getMaxNumberOfKeysInIndexPage());
+                segmentConf.getMaxNumberOfKeysInIndexPage(),
+                segmentCacheDataProvider);
     }
 
     public Result<K, V> split(final SegmentId segmentId) {
@@ -117,9 +112,9 @@ public class SegmentSplitter<K, V> {
 
         K minKey = null;
         K maxKey = null;
-        try (PairIterator<K, V> iterator = openIterator()) {
+        try (final PairIterator<K, V> iterator = openIterator()) {
 
-            try (SegmentFullWriter<K, V> writer = lowerSegment
+            try (final SegmentFullWriter<K, V> writer = lowerSegment
                     .openFullWriter()) {
                 while (cx < half && iterator.hasNext()) {
                     cx++;
@@ -132,7 +127,7 @@ public class SegmentSplitter<K, V> {
                 }
             }
 
-            try (SegmentFullWriter<K, V> writer = openFullWriter()) {
+            try (final SegmentFullWriter<K, V> writer = openFullWriter()) {
                 while (iterator.hasNext()) {
                     final Pair<K, V> pair = iterator.next();
                     writer.put(pair);

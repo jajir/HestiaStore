@@ -26,7 +26,7 @@ public class FsFileWriterStream implements FileWriter {
     FsFileWriterStream(final File file, final Directory.Access access) {
         try {
             final Path path = file.toPath();
-            if (access==Access.OVERWRITE && file.exists() && !file.delete()) {
+            if (access == Access.OVERWRITE && file.exists() && !file.delete()) {
                 logger.warn("Unable to delete file '{}'", file.getName());
             }
             final OutputStream os = Files.newOutputStream(path,

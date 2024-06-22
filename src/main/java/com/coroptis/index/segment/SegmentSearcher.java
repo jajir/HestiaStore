@@ -59,6 +59,7 @@ public class SegmentSearcher<K, V> implements CloseableResource {
      * 
      * @param pair
      */
+    @Deprecated
     void addPairIntoCache(final Pair<K, V> pair) {
         if (searcherCore == null) {
             return;
@@ -66,6 +67,7 @@ public class SegmentSearcher<K, V> implements CloseableResource {
         searcherCore.addPairIntoCache(pair);
     }
 
+    @Deprecated
     Optional<SegmentDeltaCache<K, V>> getSegmentCache() {
         if (lock.isLocked()) {
             return Optional.empty();

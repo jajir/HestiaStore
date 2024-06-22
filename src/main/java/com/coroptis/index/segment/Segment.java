@@ -9,7 +9,6 @@ import com.coroptis.index.CloseableResource;
 import com.coroptis.index.OptimisticLockObjectVersionProvider;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.PairWriter;
-import com.coroptis.index.bloomfilter.BloomFilter;
 
 /**
  * 
@@ -50,7 +49,8 @@ public class Segment<K, V>
                 segmentPropertiesManager,
                 "Segment properties manager is required");
         this.segmentCompacter = new SegmentCompacter<>(segmentFiles,
-                segmentConf, versionController, segmentPropertiesManager);
+                segmentConf, versionController, segmentPropertiesManager,
+                segmentCacheDataProvider);
     }
 
     public SegmentStats getStats() {
@@ -66,13 +66,8 @@ public class Segment<K, V>
     }
 
     public PairIterator<K, V> openIterator() {
-        return openIterator(null);
-    }
-
-    public PairIterator<K, V> openIterator(
-            final SegmentSearcher<K, V> segmentSearcher) {
-        return new SegmentReader<>(segmentFiles, segmentPropertiesManager)
-                .openIterator(versionController, segmentSearcher);
+        return new SegmentReader<>(segmentFiles, segmentCacheDataProvider)
+                .openIterator(versionController);
     }
 
     public void forceCompact() {
@@ -87,30 +82,17 @@ public class Segment<K, V>
      * compacting.
      */
     SegmentFullWriter<K, V> openFullWriter() {
-        final BloomFilter<K> bloomFilter = BloomFilter.<K>builder()
-                .withBloomFilterFileName(segmentFiles.getBloomFilterFileName())
-                .withConvertorToBytes(segmentFiles.getKeyTypeDescriptor()
-                        .getConvertorToBytes())
-                .withDirectory(segmentFiles.getDirectory())
-                .withIndexSizeInBytes(
-                        segmentConf.getBloomFilterIndexSizeInBytes())
-                .withNumberOfHashFunctions(
-                        segmentConf.getBloomFilterNumberOfHashFunctions())
-                .build();
-        return new SegmentFullWriter<K, V>(bloomFilter, segmentFiles,
+        return new SegmentFullWriter<K, V>(segmentFiles,
                 segmentPropertiesManager,
-                segmentConf.getMaxNumberOfKeysInIndexPage());
+                segmentConf.getMaxNumberOfKeysInIndexPage(),
+                segmentCacheDataProvider);
     }
 
     public PairWriter<K, V> openWriter() {
-        return openWriter(null);
-    }
-
-    public PairWriter<K, V> openWriter(
-            final SegmentSearcher<K, V> segmentSearcher) {
         final SegmentWriter<K, V> writer = new SegmentWriter<>(segmentFiles,
-                segmentPropertiesManager, segmentCompacter);
-        return writer.openWriter(segmentSearcher);
+                segmentPropertiesManager, segmentCompacter,
+                segmentCacheDataProvider);
+        return writer.openWriter();
     }
 
     public SegmentSearcher<K, V> openSearcher() {
@@ -128,7 +110,7 @@ public class Segment<K, V>
      * @return
      */
     public SegmentCacheDataProvider<K, V> getCacheDataProvider() {
-        return new SegmentCacheDataLoader<>(segmentFiles, segmentConf,
+        return new SegmentCacheDataDirectLoader<>(segmentFiles, segmentConf,
                 segmentPropertiesManager);
     }
 
@@ -136,7 +118,7 @@ public class Segment<K, V>
         Objects.requireNonNull(segmentId);
         final SegmentSplitter<K, V> segmentSplitter = new SegmentSplitter<>(
                 segmentFiles, segmentConf, versionController,
-                segmentPropertiesManager);
+                segmentPropertiesManager, segmentCacheDataProvider);
         return segmentSplitter.split(segmentId);
     }
 

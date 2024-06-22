@@ -27,11 +27,14 @@ public class SegmentCompacterTest {
     @Mock
     private SegmentPropertiesManager segmentPropertiesManager;
 
+    @Mock
+    private SegmentCacheDataProvider<Integer, String> segmentCacheDataProvider;
+
     @Test
     public void test_basic_operations() throws Exception {
         final SegmentCompacter<Integer, String> sc = new SegmentCompacter<>(
                 segmentFiles, segmentConf, versionController,
-                segmentPropertiesManager);
+                segmentPropertiesManager, segmentCacheDataProvider);
 
         assertNotNull(sc);
     }
@@ -40,7 +43,7 @@ public class SegmentCompacterTest {
     public void test_shouldBeCompacted() throws Exception {
         final SegmentCompacter<Integer, String> sc = new SegmentCompacter<>(
                 segmentFiles, segmentConf, versionController,
-                segmentPropertiesManager);
+                segmentPropertiesManager, segmentCacheDataProvider);
         when(segmentPropertiesManager.getSegmentStats())
                 .thenReturn(new SegmentStats(10, 1000L, 15));
         when(segmentConf.getMaxNumberOfKeysInSegmentCache()).thenReturn(30L,
@@ -56,7 +59,7 @@ public class SegmentCompacterTest {
     public void test_shouldBeCompactedDuringWriting() throws Exception {
         final SegmentCompacter<Integer, String> sc = new SegmentCompacter<>(
                 segmentFiles, segmentConf, versionController,
-                segmentPropertiesManager);
+                segmentPropertiesManager, segmentCacheDataProvider);
         when(segmentPropertiesManager.getSegmentStats())
                 .thenReturn(new SegmentStats(10, 1000L, 15));
         when(segmentConf.getMaxNumberOfKeysInSegmentMemory()).thenReturn(30L,

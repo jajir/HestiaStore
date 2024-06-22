@@ -26,7 +26,7 @@ public class PairIteratorReaderTest {
                 .thenReturn(Pair.of(2, "bbb"))//
                 .thenReturn(Pair.of(3, "ccc"))//
                 .thenReturn(null);
-        final PairIterator<Integer, String> iterator = new PairIteratorReader<>(
+        final PairIterator<Integer, String> iterator = new PairIteratorFromReader<>(
                 reader);
 
         assertTrue(iterator.hasNext());
@@ -44,67 +44,8 @@ public class PairIteratorReaderTest {
     void test_empty_reader() throws Exception {
         when(reader.read())//
                 .thenReturn(null);
-        final PairIterator<Integer, String> iterator = new PairIteratorReader<>(
+        final PairIterator<Integer, String> iterator = new PairIteratorFromReader<>(
                 reader);
-
-        assertFalse(iterator.hasNext());
-        
-        iterator.close();
-    }
-
-    @Test
-    void test_with_lock_unlocked() throws Exception {
-        when(reader.read())//
-                .thenReturn(Pair.of(1, "aaa")) //
-                .thenReturn(Pair.of(2, "bbb"))//
-                .thenReturn(Pair.of(3, "ccc"))//
-                .thenReturn(null);
-        when(provider.getVersion()).thenReturn(4,4,4,4,4,4);
-        final OptimisticLock lock = new OptimisticLock(provider);
-        final PairIterator<Integer, String> iterator = new PairIteratorReader<>(
-                reader,lock);
-
-        assertTrue(iterator.hasNext());
-        assertEquals(Pair.of(1, "aaa"), iterator.next());
-        assertTrue(iterator.hasNext());
-        assertEquals(Pair.of(2, "bbb"), iterator.next());
-        assertTrue(iterator.hasNext());
-        assertEquals(Pair.of(3, "ccc"), iterator.next());
-        assertFalse(iterator.hasNext());
-        
-        iterator.close();
-    }
-
-    @Test
-    void test_with_lock_locked_during_work() throws Exception {
-        when(reader.read())//
-                .thenReturn(Pair.of(1, "aaa")) //
-                .thenReturn(Pair.of(2, "bbb"))//
-                .thenReturn(Pair.of(3, "ccc"))//
-                .thenReturn(null);
-        when(provider.getVersion()).thenReturn(4,4,5,5,5);
-        final OptimisticLock lock = new OptimisticLock(provider);
-        final PairIterator<Integer, String> iterator = new PairIteratorReader<>(
-                reader,lock);
-
-        assertTrue(iterator.hasNext());
-        assertEquals(Pair.of(1, "aaa"), iterator.next());
-        assertFalse(iterator.hasNext());
-        
-        iterator.close();
-    }
-
-    @Test
-    void test_with_lock_locked() throws Exception {
-        when(reader.read())//
-                .thenReturn(Pair.of(1, "aaa")) //
-                .thenReturn(Pair.of(2, "bbb"))//
-                .thenReturn(Pair.of(3, "ccc"))//
-                .thenReturn(null);
-        when(provider.getVersion()).thenReturn(4,3,3,3,3);
-        final OptimisticLock lock = new OptimisticLock(provider);
-        final PairIterator<Integer, String> iterator = new PairIteratorReader<>(
-                reader,lock);
 
         assertFalse(iterator.hasNext());
         

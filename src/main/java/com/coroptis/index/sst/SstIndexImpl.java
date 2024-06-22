@@ -97,8 +97,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
 
     private PairIterator<K, V> openIterator() {
         final PairIterator<K, V> segments = new SegmentsIterator<>(
-                keySegmentCache.getSegmentIds(), segmentManager,
-                segmentSearcherCache);
+                keySegmentCache.getSegmentIds(), segmentManager);
         return new MergeIterator<K, V>(segments, cache.getSortedIterator(),
                 keyTypeDescriptor, valueTypeDescriptor);
     }
@@ -139,7 +138,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                 "Cache compacting of '{}' key value pairs in cache started.",
                 cache.size());
         final CompactSupport<K, V> support = new CompactSupport<>(
-                segmentManager, keySegmentCache, segmentSearcherCache);
+                segmentManager, keySegmentCache);
         cache.getStream()
                 .sorted(new PairComparator<>(keyTypeDescriptor.getComparator()))
                 .forEach(support::compact);

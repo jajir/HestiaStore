@@ -3,7 +3,6 @@ package com.coroptis.index.sst;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +11,6 @@ import com.coroptis.index.Pair;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.segment.Segment;
 import com.coroptis.index.segment.SegmentId;
-import com.coroptis.index.segment.SegmentSearcher;
 
 public class CompactSupport<K, V> {
 
@@ -21,7 +19,6 @@ public class CompactSupport<K, V> {
     private final List<Pair<K, V>> toSameSegment = new ArrayList<>();
     private final KeySegmentCache<K> keySegmentCache;
     private final SegmentManager<K, V> segmentManager;
-    private final SegmentSearcherCache<K, V> segmentSearcherCache;
     private SegmentId currentSegmentId = null;
 
     /**
@@ -30,12 +27,9 @@ public class CompactSupport<K, V> {
     private List<SegmentId> eligibleSegments = new ArrayList<>();
 
     CompactSupport(final SegmentManager<K, V> segmentManager,
-            final KeySegmentCache<K> keySegmentCache,
-            final SegmentSearcherCache<K, V> segmentSearcherCache) {
+            final KeySegmentCache<K> keySegmentCache) {
         this.segmentManager = Objects.requireNonNull(segmentManager);
         this.keySegmentCache = Objects.requireNonNull(keySegmentCache);
-        this.segmentSearcherCache = Objects
-                .requireNonNull(segmentSearcherCache);
     }
 
     public void compact(final Pair<K, V> pair) {
@@ -70,13 +64,9 @@ public class CompactSupport<K, V> {
     private void flushToCurrentSegment() {
         logger.debug("Flushing '{}' key value pairs into segment '{}'.",
                 toSameSegment.size(), currentSegmentId);
-        final Optional<SegmentSearcher<K, V>> oSegmenSearcher = segmentSearcherCache
-                .getOptionalSegmenSearcher(currentSegmentId);
-        final SegmentSearcher<K, V> segmentSearcher = oSegmenSearcher
-                .orElse(null);
         final Segment<K, V> segment = segmentManager
                 .getSegment(currentSegmentId);
-        try (PairWriter<K, V> writer = segment.openWriter(segmentSearcher)) {
+        try (PairWriter<K, V> writer = segment.openWriter()) {
             toSameSegment.forEach(writer::put);
         }
         eligibleSegments.add(currentSegmentId);

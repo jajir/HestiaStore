@@ -2,8 +2,10 @@ package com.coroptis.index.segment;
 
 import java.util.Objects;
 
+import com.coroptis.index.OptimisticLock;
 import com.coroptis.index.OptimisticLockObjectVersionProvider;
 import com.coroptis.index.PairIterator;
+import com.coroptis.index.PairIteratorWithLock;
 
 /**
  * Perform full segment data read from data files. Class ignores possibility,
@@ -24,45 +26,30 @@ import com.coroptis.index.PairIterator;
 public class SegmentReader<K, V> {
 
     private final SegmentFiles<K, V> segmentFiles;
-    private final SegmentPropertiesManager segmentPropertiesManager;
+    private final SegmentCacheDataProvider<K, V> segmentCacheDataProvider;
 
     public SegmentReader(final SegmentFiles<K, V> segmentFiles,
-            final SegmentPropertiesManager segmentPropertiesManager) {
+            final SegmentCacheDataProvider<K, V> segmentCacheDataProvider) {
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
-        this.segmentPropertiesManager = Objects
-                .requireNonNull(segmentPropertiesManager);
+        this.segmentCacheDataProvider = Objects.requireNonNull(
+                segmentCacheDataProvider,
+                "Segment cached data provider is required");
     }
 
     public PairIterator<K, V> openIterator(
             final OptimisticLockObjectVersionProvider versionProvider) {
-        return openIterator(versionProvider, null);
-    }
-
-    public PairIterator<K, V> openIterator(
-            final OptimisticLockObjectVersionProvider versionProvider,
-            final SegmentSearcher<K, V> segmentSearcher) {
         // Read segment cache into in memory list.
-        final SegmentDeltaCache<K, V> segmentDeltaCache = getSegmentCache(
-                segmentSearcher);
+        final SegmentDeltaCache<K, V> segmentDeltaCache = segmentCacheDataProvider
+                .getSegmentDeltaCache();
 
         // merge cache with main data
-        return new MergeIterator<K, V>(
-                segmentFiles.getIndexSstFile().openIterator(versionProvider),
-                segmentDeltaCache.getSortedIterator(),
-                segmentFiles.getKeyTypeDescriptor(),
-                segmentFiles.getValueTypeDescriptor());
-    }
-
-    private SegmentDeltaCache<K, V> getSegmentCache(
-            final SegmentSearcher<K, V> segmentSearcher) {
-        if (segmentSearcher == null) {
-            return new SegmentDeltaCache<>(segmentFiles.getKeyTypeDescriptor(),
-                    segmentFiles, segmentPropertiesManager);
-
-        }
-        return segmentSearcher.getSegmentCache()
-                .orElse(new SegmentDeltaCache<>(segmentFiles.getKeyTypeDescriptor(),
-                        segmentFiles, segmentPropertiesManager));
+        return new PairIteratorWithLock<>(
+                new MergeIterator<K, V>(
+                        segmentFiles.getIndexSstFile().openIterator(),
+                        segmentDeltaCache.getSortedIterator(),
+                        segmentFiles.getKeyTypeDescriptor(),
+                        segmentFiles.getValueTypeDescriptor()),
+                new OptimisticLock(versionProvider));
     }
 
 }

@@ -163,7 +163,7 @@ public class SegmentIntegrationTest {
         final Segment<Integer, String> smaller = result.getSegment();
         assertEquals(2, result.getMinKey());
         assertEquals(3, result.getMaxKey());
-        
+
         verifySegmentData(seg, Arrays.asList(//
                 Pair.of(4, "c"), //
                 Pair.of(5, "d") //
@@ -473,7 +473,7 @@ public class SegmentIntegrationTest {
 
     /**
      * Open segment search and verify that found value for given key is equals
-     * to expecetd value
+     * to expected value
      * 
      * @param <M>   key type
      * @param <N>   value type

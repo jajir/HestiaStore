@@ -3,7 +3,7 @@ package com.coroptis.index.unsorteddatafile;
 import java.util.Objects;
 
 import com.coroptis.index.PairIterator;
-import com.coroptis.index.PairIteratorReader;
+import com.coroptis.index.PairIteratorFromReader;
 import com.coroptis.index.PairReader;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.datatype.TypeReader;
@@ -50,7 +50,7 @@ public class UnsortedDataFile<K, V> {
     }
 
     public PairIterator<K, V> openIterator() {
-        final PairIterator<K, V> iterator = new PairIteratorReader<>(
+        final PairIterator<K, V> iterator = new PairIteratorFromReader<>(
                 openReader());
         return iterator;
     }
@@ -62,10 +62,10 @@ public class UnsortedDataFile<K, V> {
     public PairWriter<K, V> openWriter(final Access access) {
         Objects.requireNonNull(access);
         Access used = null;
-        if(directory.isFileExists(fileName)){
-            used = access;             
-        }else{
-            used = Access.OVERWRITE;    
+        if (directory.isFileExists(fileName)) {
+            used = access;
+        } else {
+            used = Access.OVERWRITE;
         }
         final UnsortedDataFileWriter<K, V> writer = new UnsortedDataFileWriter<>(
                 directory, fileName, keyWriter, valueWriter, used);

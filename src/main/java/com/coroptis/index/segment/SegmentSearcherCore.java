@@ -20,9 +20,6 @@ import com.coroptis.index.scarceindex.ScarceIndex;
  */
 public class SegmentSearcherCore<K, V> implements CloseableResource {
 
-    private final SegmentDeltaCache<K, V> deltaCache;
-    private final ScarceIndex<K> scarceIndex;
-    private final BloomFilter<K> bloomFilter;
     private final SegmentFiles<K, V> segmentFiles;
     private final SegmentIndexSearcher<K, V> segmentIndexSearcher;
     private final SegmentCacheDataProvider<K, V> segmentCacheDataProvider;
@@ -36,23 +33,20 @@ public class SegmentSearcherCore<K, V> implements CloseableResource {
         this.segmentCacheDataProvider = Objects.requireNonNull(
                 segmentCacheDataProvider,
                 "Segment cached data provider is required");
-        this.deltaCache = segmentCacheDataProvider.getSegmentDeltaCache();
-        this.scarceIndex = segmentCacheDataProvider.getScarceIndex();
-        this.bloomFilter = segmentCacheDataProvider.getBloomFilter();
         this.segmentIndexSearcher = Objects
                 .requireNonNull(segmentIndexSearcher);
     }
 
     private SegmentDeltaCache<K, V> getDeltaCache() {
-        return deltaCache;
+        return segmentCacheDataProvider.getSegmentDeltaCache();
     };
 
     private ScarceIndex<K> getScarceIndex() {
-        return scarceIndex;
+        return segmentCacheDataProvider.getScarceIndex();
     };
 
     BloomFilter<K> getBloomFilter() {
-        return bloomFilter;
+        return segmentCacheDataProvider.getBloomFilter();
     }
 
     public K getMaxKey() {

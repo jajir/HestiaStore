@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 import com.coroptis.index.IndexException;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
-import com.coroptis.index.PairIteratorReader;
+import com.coroptis.index.PairIteratorFromReader;
 import com.coroptis.index.PairReader;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.ValueMerger;
@@ -130,7 +130,7 @@ public class SimpleDataFile<K, V> {
         long cx = 0;
         long half = getStats().getTotalNumberOfPairs() / 2;
         K maxLowerIndexKey = null;
-        try (PairIterator<K, V> iterator = new PairIteratorReader<>(
+        try (PairIterator<K, V> iterator = new PairIteratorFromReader<>(
                 openReader())) {
             final SimpleDataFile<K, V> sdfLower = new SimpleDataFile<>(
                     directory, smallerDataFileName, keyTypeDescriptor,

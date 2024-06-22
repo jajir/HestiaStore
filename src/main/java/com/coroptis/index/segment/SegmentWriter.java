@@ -23,19 +23,12 @@ public class SegmentWriter<K, V> {
     private final SegmentPropertiesManager segmentPropertiesManager;
     private final SegmentCompacter<K, V> segmentCompacter;
     private final SegmentFiles<K, V> segmentFiles;
-
-    private SegmentSearcher<K, V> segmentSearcher = null;
-
-    public SegmentWriter(final SegmentFiles<K, V> segmentFiles,
-            final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentCompacter<K, V> segmentCompacter) {
-        this(segmentFiles, segmentPropertiesManager, segmentCompacter, null);
-    }
+    private final SegmentCacheDataProvider<K, V> segmentCacheDataProvider;
 
     public SegmentWriter(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentPropertiesManager,
             final SegmentCompacter<K, V> segmentCompacter,
-            SegmentSearcher<K, V> segmentSearcher) {
+            final SegmentCacheDataProvider<K, V> segmentCacheDataProvider) {
         this.segmentPropertiesManager = Objects
                 .requireNonNull(segmentPropertiesManager);
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
@@ -44,15 +37,12 @@ public class SegmentWriter<K, V> {
                 segmentFiles.getKeyTypeDescriptor().getComparator());
 
         this.segmentCompacter = Objects.requireNonNull(segmentCompacter);
+        this.segmentCacheDataProvider = Objects.requireNonNull(
+                segmentCacheDataProvider,
+                "Segment cached data provider is required");
     }
 
     public PairWriter<K, V> openWriter() {
-        return openWriter(null);
-    }
-
-    public PairWriter<K, V> openWriter(
-            final SegmentSearcher<K, V> newSegmentSearcher) {
-        this.segmentSearcher = newSegmentSearcher;
         return new PairWriter<K, V>() {
 
             private long cx = 0;
@@ -68,12 +58,12 @@ public class SegmentWriter<K, V> {
             public void put(final Pair<K, V> pair) {
                 uniqueCache.put(pair);
                 cx++;
-                if (segmentSearcher != null) {
-                    segmentSearcher.addPairIntoCache(pair);
+                if (segmentCacheDataProvider.isLoaded()) {
+                    segmentCacheDataProvider.getSegmentDeltaCache().put(pair);
                 }
                 if (segmentCompacter.shouldBeCompactedDuringWriting(cx)) {
                     cx = 0;
-                    segmentSearcher = null;
+                    segmentCacheDataProvider.invalidate();
                     closeWritingToCache();
                     segmentCompacter.forceCompact();
                 }
@@ -87,8 +77,9 @@ public class SegmentWriter<K, V> {
                 segmentPropertiesManager.flush();
 
                 // store cache
-                try (SstFileWriter<K, V> writer = segmentFiles.getCacheSstFile(
-                        segmentPropertiesManager.getAndIncreaseDeltaFileName())
+                try (final SstFileWriter<K, V> writer = segmentFiles
+                        .getCacheSstFile(segmentPropertiesManager
+                                .getAndIncreaseDeltaFileName())
                         .openWriter()) {
                     uniqueCache.getStream().forEach(pair -> {
                         writer.put(pair);

@@ -9,13 +9,13 @@ import com.coroptis.index.segment.SegmentData;
 import com.coroptis.index.segment.SegmentDeltaCache;
 import com.coroptis.index.segment.SegmentId;
 
-public class SegmentCacheDataProviderImpl<K, V>
+public class SegmentCacheDataProviderFromMainCache<K, V>
         implements SegmentCacheDataProvider<K, V> {
 
     private final SegmentId id;
     private final SegmentDataCache<K, V> cache;
 
-    SegmentCacheDataProviderImpl(final SegmentId id,
+    SegmentCacheDataProviderFromMainCache(final SegmentId id,
             final SegmentDataCache<K, V> cache) {
         this.id = Objects.requireNonNull(id);
         this.cache = Objects.requireNonNull(cache);
@@ -43,6 +43,11 @@ public class SegmentCacheDataProviderImpl<K, V>
     @Override
     public void invalidate() {
         cache.invalidate(id);
+    }
+
+    @Override
+    public boolean isLoaded() {
+        return cache.isPresent(id);
     }
 
 }

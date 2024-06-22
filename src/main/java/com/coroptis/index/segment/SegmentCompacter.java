@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.coroptis.index.PairIterator;
-import com.coroptis.index.bloomfilter.BloomFilter;
 
 public class SegmentCompacter<K, V> {
 
@@ -16,21 +15,26 @@ public class SegmentCompacter<K, V> {
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
     private final SegmentPropertiesManager segmentPropertiesManager;
+    private final SegmentCacheDataProvider<K, V> segmentCacheDataProvider;
 
     public SegmentCompacter(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
             final VersionController versionController,
-            final SegmentPropertiesManager segmentPropertiesManager) {
+            final SegmentPropertiesManager segmentPropertiesManager,
+            final SegmentCacheDataProvider<K, V> segmentCacheDataProvider) {
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.segmentConf = Objects.requireNonNull(segmentConf);
         this.versionController = Objects.requireNonNull(versionController,
                 "Version controller is required");
         this.segmentPropertiesManager = Objects
                 .requireNonNull(segmentPropertiesManager);
+        this.segmentCacheDataProvider = Objects.requireNonNull(
+                segmentCacheDataProvider,
+                "Segment cached data provider is required");
     }
 
     private PairIterator<K, V> openIterator() {
-        return new SegmentReader<>(segmentFiles, segmentPropertiesManager)
+        return new SegmentReader<>(segmentFiles, segmentCacheDataProvider)
                 .openIterator(versionController);
     }
 
@@ -102,18 +106,9 @@ public class SegmentCompacter<K, V> {
      * compacting.
      */
     private SegmentFullWriter<K, V> openFullWriter() {
-        final BloomFilter<K> bloomFilter = BloomFilter.<K>builder()
-                .withBloomFilterFileName(segmentFiles.getBloomFilterFileName())
-                .withConvertorToBytes(segmentFiles.getKeyTypeDescriptor()
-                        .getConvertorToBytes())
-                .withDirectory(segmentFiles.getDirectory())
-                .withIndexSizeInBytes(
-                        segmentConf.getBloomFilterIndexSizeInBytes())
-                .withNumberOfHashFunctions(
-                        segmentConf.getBloomFilterNumberOfHashFunctions())
-                .build();
-        return new SegmentFullWriter<K, V>(bloomFilter, segmentFiles,
+        return new SegmentFullWriter<K, V>(segmentFiles,
                 segmentPropertiesManager,
-                segmentConf.getMaxNumberOfKeysInIndexPage());
+                segmentConf.getMaxNumberOfKeysInIndexPage(),
+                segmentCacheDataProvider);
     }
 }

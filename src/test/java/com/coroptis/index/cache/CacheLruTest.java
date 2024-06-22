@@ -43,7 +43,6 @@ public class CacheLruTest {
         assertTrue(cache.get(2).isEmpty());
     }
 
-
     @Test
     public void test_invalidate_element() throws Exception {
         Cache<Integer, String> cache = new CacheLru<>(5, (k, v) -> {
