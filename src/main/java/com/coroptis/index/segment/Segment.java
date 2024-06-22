@@ -70,7 +70,7 @@ public class Segment<K, V>
     }
 
     public PairIterator<K, V> openIterator() {
-        return new SegmentReader<>(segmentFiles, segmentCacheDataProvider)
+        return new SegmentReader<>(segmentFiles, deltaCacheController)
                 .openIterator(versionController);
     }
 

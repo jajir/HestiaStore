@@ -26,27 +26,22 @@ import com.coroptis.index.PairIteratorWithLock;
 public class SegmentReader<K, V> {
 
     private final SegmentFiles<K, V> segmentFiles;
-    private final SegmentCacheDataProvider<K, V> segmentCacheDataProvider;
+    private final SegmentDeltaCacheController<K, V> deltaCacheController;
 
     public SegmentReader(final SegmentFiles<K, V> segmentFiles,
-            final SegmentCacheDataProvider<K, V> segmentCacheDataProvider) {
+            final SegmentDeltaCacheController<K, V> deltaCacheController) {
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
-        this.segmentCacheDataProvider = Objects.requireNonNull(
-                segmentCacheDataProvider,
-                "Segment cached data provider is required");
+        this.deltaCacheController = Objects.requireNonNull(
+                deltaCacheController,
+                "Segment delta cached controlle is required");
     }
 
     public PairIterator<K, V> openIterator(
             final OptimisticLockObjectVersionProvider versionProvider) {
-        // Read segment cache into in memory list.
-        final SegmentDeltaCache<K, V> segmentDeltaCache = segmentCacheDataProvider
-                .getSegmentDeltaCache();
-
-        // merge cache with main data
         return new PairIteratorWithLock<>(
                 new MergeIterator<K, V>(
                         segmentFiles.getIndexSstFile().openIterator(),
-                        segmentDeltaCache.getSortedIterator(),
+                        deltaCacheController.getSortedIterator(),
                         segmentFiles.getKeyTypeDescriptor(),
                         segmentFiles.getValueTypeDescriptor()),
                 new OptimisticLock(versionProvider));

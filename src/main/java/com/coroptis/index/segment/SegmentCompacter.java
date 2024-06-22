@@ -38,7 +38,7 @@ public class SegmentCompacter<K, V> {
     }
 
     private PairIterator<K, V> openIterator() {
-        return new SegmentReader<>(segmentFiles, segmentCacheDataProvider)
+        return new SegmentReader<>(segmentFiles, deltaCacheController)
                 .openIterator(versionController);
     }
 

@@ -2,6 +2,7 @@ package com.coroptis.index.segment;
 
 import java.util.Objects;
 
+import com.coroptis.index.PairIterator;
 import com.coroptis.index.datatype.TypeDescriptor;
 
 /**
@@ -52,4 +53,14 @@ public class SegmentDeltaCacheController<K, V> {
         segmentPropertiesManager.clearCacheDeltaFileNamesCouter();
     }
 
+    /**
+     * Iterator will provide correct data event when some data are written to
+     * delta cache.
+     * 
+     * @return
+     */
+    public PairIterator<K, V> getSortedIterator() {
+        return new SegmentDeltaCachePairIterator<>(
+                getDeltaCache().getSortedKeys(), this);
+    }
 }

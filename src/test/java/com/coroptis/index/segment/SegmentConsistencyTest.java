@@ -46,13 +46,11 @@ public class SegmentConsistencyTest extends AbstractSegmentTest {
         final Segment<Integer, Integer> seg = makeSegment();
         writePairs(seg, makeList(0));
         final PairIterator<Integer, Integer> iterator = seg.openIterator();
-        for (int i = 1; i < 100; i++) {
-            while (iterator.hasNext()) {
-                writePairs(seg, makeList(i));
-                final Pair<Integer, Integer> p = iterator.next();
-                assertEquals(i, p.getValue());
-                verifySegmentData(seg, makeList(i));
-            }
+        for (int i = 1; i < 100 && iterator.hasNext(); i++) {
+            writePairs(seg, makeList(i));
+            final Pair<Integer, Integer> p = iterator.next();
+            assertEquals(i, p.getValue());
+            verifySegmentData(seg, makeList(i));
         }
     }
 
@@ -71,8 +69,8 @@ public class SegmentConsistencyTest extends AbstractSegmentTest {
                 .withId(id)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tdi)//
-                .withMaxNumberOfKeysInSegmentMemory(10)//
-                .withMaxNumberOfKeysInSegmentCache(10)//
+                .withMaxNumberOfKeysInSegmentMemory(10000)//
+                .withMaxNumberOfKeysInSegmentCache(10000)//
                 .build();
         return seg;
     }

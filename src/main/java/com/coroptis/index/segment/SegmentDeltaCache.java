@@ -1,5 +1,6 @@
 package com.coroptis.index.segment;
 
+import java.util.List;
 import java.util.Objects;
 
 import com.coroptis.index.Pair;
@@ -55,6 +56,11 @@ public class SegmentDeltaCache<K, V> {
         return cache.get(key);
     }
 
+    public List<K> getSortedKeys() {
+        return cache.getSortedKeys();
+    }
+
+    @Deprecated
     public PairIterator<K, V> getSortedIterator() {
         return cache.getSortedIterator();
     }

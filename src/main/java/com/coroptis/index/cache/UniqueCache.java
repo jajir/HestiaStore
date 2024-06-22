@@ -85,6 +85,13 @@ public class UniqueCache<K, V> {
                 .collect(Collectors.toList());
     }
 
+    public List<K> getSortedKeys() {
+        return map.entrySet().stream()//
+                .map(entry -> entry.getKey())//
+                .sorted(keyComparator)//
+                .collect(Collectors.toList());
+    }
+
     public PairIterator<K, V> getSortedIterator() {
         final PairIterator<K, V> iterator = new PairIteratorFromReader<>(
                 openSortedClonedReader());
