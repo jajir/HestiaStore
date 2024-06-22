@@ -1,5 +1,7 @@
 package com.coroptis.index.segment;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,9 +50,8 @@ public class SegmentConsistencyTest extends AbstractSegmentTest {
             while (iterator.hasNext()) {
                 writePairs(seg, makeList(i));
                 final Pair<Integer, Integer> p = iterator.next();
-//                assertEquals(i, p.getValue());
-                // FIXME enable it
-//                verifySegmentData(seg, makeList(i));
+                assertEquals(i, p.getValue());
+                verifySegmentData(seg, makeList(i));
             }
         }
     }
