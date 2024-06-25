@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
@@ -38,7 +39,7 @@ public class MergeWithCacheIterator<K, V> implements PairIterator<K, V> {
 
     private final Comparator<K> keyComparator;
 
-    private final SegmentDeltaCacheController<K, V> deltaCacheController;
+    private final Function<K,V> cacheValueGetter;
 
     private Pair<K, V> currentPair = null;
     private Pair<K, V> nextMainPair = null;
@@ -48,15 +49,15 @@ public class MergeWithCacheIterator<K, V> implements PairIterator<K, V> {
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final List<K> sortedKeysFromCache,
-            final SegmentDeltaCacheController<K, V> deltaCacheController) {
+            final Function<K,V> cacheValueGetter) {
         this.mainIterator = Objects.requireNonNull(mainIterator);
         this.cacheKeyIterator = Objects.requireNonNull(sortedKeysFromCache)
                 .iterator();
         this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
         Objects.requireNonNull(keyTypeDescriptor);
         this.keyComparator = keyTypeDescriptor.getComparator();
-        this.deltaCacheController = Objects
-                .requireNonNull(deltaCacheController);
+        this.cacheValueGetter = Objects
+                .requireNonNull(cacheValueGetter);
 
         nextMainIterator();
         nextCacheIterator();
@@ -159,7 +160,7 @@ public class MergeWithCacheIterator<K, V> implements PairIterator<K, V> {
     }
 
     private Pair<K, V> getCachedPair(final K cachedKey) {
-        final V value = deltaCacheController.getDeltaCache().get(cachedKey);
+        final V value = cacheValueGetter.apply(cachedKey);
         return Pair.of(cachedKey, value);
     }
 

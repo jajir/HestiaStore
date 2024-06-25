@@ -18,6 +18,7 @@ import com.coroptis.index.log.Log;
 import com.coroptis.index.log.LogWriter;
 import com.coroptis.index.log.LoggedKey;
 import com.coroptis.index.segment.MergeIterator;
+import com.coroptis.index.segment.MergeWithCacheIterator;
 import com.coroptis.index.segment.Segment;
 import com.coroptis.index.segment.SegmentId;
 import com.coroptis.index.segment.SegmentSearcher;
@@ -98,8 +99,12 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     private PairIterator<K, V> openIterator() {
         final PairIterator<K, V> segments = new SegmentsIterator<>(
                 keySegmentCache.getSegmentIds(), segmentManager);
-        return new MergeIterator<K, V>(segments, cache.getSortedIterator(),
-                keyTypeDescriptor, valueTypeDescriptor);
+        return new MergeWithCacheIterator<K, V>(//
+                segments, //
+                keyTypeDescriptor, //
+                valueTypeDescriptor, //
+                cache.getSortedKeys(), //
+                key -> cache.get(key));
     }
 
     /**
