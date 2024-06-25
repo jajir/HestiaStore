@@ -172,17 +172,32 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     private boolean optionallySplit(final Segment<K, V> segment) {
         Objects.requireNonNull(segment, "Segment is required");
         if (segment.getNumberOfKeys() > conf.getMaxNumberOfKeysInSegment()) {
-            final SegmentId segmentId = segment.getId();
-            logger.debug("Splitting of '{}' started.", segmentId);
-            final SegmentId newSegmentId = keySegmentCache.findNewSegmentId();
-            final SegmentSplitter.Result<K, V> result = segment
-                    .split(newSegmentId);
-            keySegmentCache.insertSegment(result.getMaxKey(), newSegmentId);
-            logger.debug("Splitting of segment '{}' to '{}' is done.",
-                    segmentId, newSegmentId);
-            return true;
+            final SegmentSplitter<K, V> segmentSplitter = segment
+                    .getSegmentSplitter();
+            if (segmentSplitter.souldBeCompacteBeforeSplitting()) {
+                segment.forceCompact();
+                if (segment.getNumberOfKeys() > conf
+                        .getMaxNumberOfKeysInSegment()) {
+                    return split(segment, segmentSplitter);
+                }
+            } else {
+                return split(segment, segmentSplitter);
+            }
         }
         return false;
+    }
+
+    private boolean split(final Segment<K, V> segment,
+            final SegmentSplitter<K, V> segmentSplitter) {
+        final SegmentId segmentId = segment.getId();
+        logger.debug("Splitting of '{}' started.", segmentId);
+        final SegmentId newSegmentId = keySegmentCache.findNewSegmentId();
+        final SegmentSplitter.Result<K, V> result = segmentSplitter
+                .split(newSegmentId);
+        keySegmentCache.insertSegment(result.getMaxKey(), newSegmentId);
+        logger.debug("Splitting of segment '{}' to '{}' is done.", segmentId,
+                newSegmentId);
+        return true;
     }
 
     @Override

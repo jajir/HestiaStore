@@ -163,7 +163,8 @@ public class SegmentIntegrationTest {
                 Pair.of(4, "c"), Pair.of(5, "d")));
 
         final SegmentId segId = SegmentId.of(3);
-        final SegmentSplitter.Result<Integer, String> result = seg.split(segId);
+        final SegmentSplitter<Integer,String> splitter = seg.getSegmentSplitter();
+        final SegmentSplitter.Result<Integer, String> result = splitter.split(segId);
         final Segment<Integer, String> smaller = result.getSegment();
         assertEquals(2, result.getMinKey());
         assertEquals(3, result.getMaxKey());

@@ -105,8 +105,8 @@ public class Segment<K, V>
     }
 
     /**
-     * Provide object that loads data objects. Shouldn't be used directly withou
-     * caching.
+     * Provide object that loads data objects. Shouldn't be used directly
+     * without caching.
      * 
      * @return
      */
@@ -115,17 +115,16 @@ public class Segment<K, V>
                 segmentPropertiesManager);
     }
 
-    public SegmentSplitter.Result<K, V> split(final SegmentId segmentId) {
-        Objects.requireNonNull(segmentId);
-        final SegmentSplitter<K, V> segmentSplitter = new SegmentSplitter<>(
-                segmentFiles, segmentConf, versionController,
-                segmentPropertiesManager, segmentCacheDataProvider,
-                deltaCacheController);
-        // FIXME bring segmentSpliter out of segment class.
-        if (segmentSplitter.souldBeCompacteBeforeSplitting()) {
-            segmentCompacter.forceCompact();
-        }
-        return segmentSplitter.split(segmentId);
+    /**
+     * Provide class that helps with segment splitting into two. It should be
+     * used when segment is too big.
+     * 
+     * @return
+     */
+    public SegmentSplitter<K, V> getSegmentSplitter() {
+        return new SegmentSplitter<>(segmentFiles, segmentConf,
+                versionController, segmentPropertiesManager,
+                segmentCacheDataProvider, deltaCacheController);
     }
 
     @Override
