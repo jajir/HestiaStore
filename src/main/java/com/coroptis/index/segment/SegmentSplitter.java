@@ -93,20 +93,50 @@ public class SegmentSplitter<K, V> {
                 segmentCacheDataProvider, deltaCacheController);
     }
 
+//TODO some comment
+    private final float MINIMAL_PERCENTAGE_DIFFERENCE = 90F;
+
+    /**
+     * When number keys in cache is just slightly smaller than number of keys in
+     * main index than segment should be compacted before splitting.
+     * 
+     * When number of keys in main index and delta cache is similar and
+     * operations in delta cache are deletes or updates than split operation
+     * could create one segment empty.
+     * 
+     * FIXME write test for case when delta cache contains delete operations.
+     * 
+     * @return return <code>true</code> when segment should be compacted before
+     *         splitting
+     */
+    public boolean souldBeCompacteBeforeSplitting() {
+        final long countOfkeysInDeltaCache = getSegmentDeltaCache().size();
+        final long countOfKeysInMainIndex = getStats().getNumberOfKeysInIndex();
+        if (countOfKeysInMainIndex == 0) {
+            return false;
+        }
+        final float onePercentageOfMainIndexKeyCount = countOfKeysInMainIndex
+                / 100F;
+        if (countOfkeysInDeltaCache
+                / onePercentageOfMainIndexKeyCount > MINIMAL_PERCENTAGE_DIFFERENCE) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     public Result<K, V> split(final SegmentId segmentId) {
         Objects.requireNonNull(segmentId);
-        logger.debug("Start of splitting '{}'", segmentFiles.getId());
+        logger.debug("Splitting of '{}' started", segmentFiles.getId());
         versionController.changeVersion();
-        long cx = 0;
         /*
          * Real number of key is equals or lower than computed bellow. Keys in
          * cache could already be in main index file of it can be keys with
          * tombstone value.
          */
-        final SegmentDeltaCache<K, V> sc = new SegmentDeltaCache<>(
-                segmentFiles.getKeyTypeDescriptor(), segmentFiles,
-                segmentPropertiesManager);
-        long half = (getStats().getNumberOfKeysInIndex() + sc.size()) / 2;
+        final long estimatedNumberOfKeys = getStats().getNumberOfKeysInIndex()
+                + getSegmentDeltaCache().size();
+        final long half = estimatedNumberOfKeys / 2;
 
         final Segment<K, V> lowerSegment = Segment.<K, V>builder()
                 .withDirectory(segmentFiles.getDirectory()).withId(segmentId)
@@ -116,12 +146,14 @@ public class SegmentSplitter<K, V> {
 
         K minKey = null;
         K maxKey = null;
+        long cxLower = 0;
+        long cxHigher = 0;
         try (final PairIterator<K, V> iterator = openIterator()) {
 
             try (final SegmentFullWriter<K, V> writer = lowerSegment
                     .openFullWriter()) {
-                while (cx < half && iterator.hasNext()) {
-                    cx++;
+                while (cxLower < half && iterator.hasNext()) {
+                    cxLower++;
                     final Pair<K, V> pair = iterator.next();
                     if (minKey == null) {
                         minKey = pair.getKey();
@@ -135,13 +167,28 @@ public class SegmentSplitter<K, V> {
                 while (iterator.hasNext()) {
                     final Pair<K, V> pair = iterator.next();
                     writer.put(pair);
+                    cxHigher++;
                 }
             }
 
         }
-        logger.debug("End of splitting '{}', '{}' was created",
-                segmentFiles.getId(), lowerSegment.getId());
+        logger.debug("Splitting of '{}' finished, '{}' was created. "
+                + "Estimated number of keys was {}, half key was {} and real number of keys was {}.",
+                segmentFiles.getId(), lowerSegment.getId(),
+                estimatedNumberOfKeys, half, cxLower + cxHigher);
+        if (cxLower == 0) {
+            throw new IllegalStateException(
+                    "Splitting failed. Lower segment doesn't contains any data");
+        }
+        if (cxHigher == 0) {
+            throw new IllegalStateException(
+                    "Splitting failed. Higher segment doesn't contains any data");
+        }
         return new Result<>(lowerSegment, minKey, maxKey);
+    }
+
+    private SegmentDeltaCache<K, V> getSegmentDeltaCache() {
+        return deltaCacheController.getDeltaCache();
     }
 
 }

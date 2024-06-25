@@ -121,6 +121,10 @@ public class Segment<K, V>
                 segmentFiles, segmentConf, versionController,
                 segmentPropertiesManager, segmentCacheDataProvider,
                 deltaCacheController);
+        // FIXME bring segmentSpliter out of segment class.
+        if (segmentSplitter.souldBeCompacteBeforeSplitting()) {
+            segmentCompacter.forceCompact();
+        }
         return segmentSplitter.split(segmentId);
     }
 

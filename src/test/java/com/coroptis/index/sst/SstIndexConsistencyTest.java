@@ -39,7 +39,7 @@ public class SstIndexConsistencyTest {
         final Index<Integer, Integer> seg = makeSstIndex();
         for (int i = 0; i < 100; i++) {
             writePairs(seg, makeList(i));
-            verifySegmentData(seg, makeList(i));
+            verifyIndexData(seg, makeList(i));
         }
     }
 
@@ -59,7 +59,7 @@ public class SstIndexConsistencyTest {
                 int cx = acx.incrementAndGet();
                 writePairs(seg, makeList(cx));
                 assertEquals(cx, pair.getValue());
-                verifySegmentData(seg, makeList(cx));
+                verifyIndexData(seg, makeList(cx));
             });
         }
     }
@@ -114,7 +114,7 @@ public class SstIndexConsistencyTest {
      * @param index required segment
      * @param pairs required list of expected data in segment
      */
-    protected <M, N> void verifySegmentData(final Index<M, N> index,
+    protected <M, N> void verifyIndexData(final Index<M, N> index,
             final List<Pair<M, N>> pairs) {
         final List<Pair<M, N>> data = index.getStream()
                 .collect(Collectors.toList());
