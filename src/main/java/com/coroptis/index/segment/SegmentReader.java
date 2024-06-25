@@ -25,26 +25,26 @@ import com.coroptis.index.PairIteratorWithLock;
  */
 public class SegmentReader<K, V> {
 
-    private final SegmentFiles<K, V> segmentFiles;
-    private final SegmentDeltaCacheController<K, V> deltaCacheController;
+        private final SegmentFiles<K, V> segmentFiles;
+        private final SegmentDeltaCacheController<K, V> deltaCacheController;
 
-    public SegmentReader(final SegmentFiles<K, V> segmentFiles,
-            final SegmentDeltaCacheController<K, V> deltaCacheController) {
-        this.segmentFiles = Objects.requireNonNull(segmentFiles);
-        this.deltaCacheController = Objects.requireNonNull(deltaCacheController,
-                "Segment delta cached controlle is required");
-    }
+        public SegmentReader(final SegmentFiles<K, V> segmentFiles,
+                        final SegmentDeltaCacheController<K, V> deltaCacheController) {
+                this.segmentFiles = Objects.requireNonNull(segmentFiles);
+                this.deltaCacheController = Objects.requireNonNull(deltaCacheController,
+                                "Segment delta cached controlle is required");
+        }
 
-    public PairIterator<K, V> openIterator(
-            final OptimisticLockObjectVersionProvider versionProvider) {
-        return new PairIteratorWithLock<>(
-                new MergeWithCacheIterator<K, V>(
-                        segmentFiles.getIndexSstFile().openIterator(),
-                        segmentFiles.getKeyTypeDescriptor(),
-                        segmentFiles.getValueTypeDescriptor(),
-                        deltaCacheController.getDeltaCache().getSortedKeys(),
-                        deltaCacheController),
-                new OptimisticLock(versionProvider));
-    }
+        public PairIterator<K, V> openIterator(
+                        final OptimisticLockObjectVersionProvider versionProvider) {
+                return new PairIteratorWithLock<>(
+                                new MergeWithCacheIterator<K, V>(
+                                                segmentFiles.getIndexSstFile().openIterator(),
+                                                segmentFiles.getKeyTypeDescriptor(),
+                                                segmentFiles.getValueTypeDescriptor(),
+                                                deltaCacheController.getDeltaCache().getSortedKeys(),
+                                                key -> deltaCacheController.getDeltaCache().get(key)),
+                                new OptimisticLock(versionProvider));
+        }
 
 }
