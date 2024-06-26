@@ -28,7 +28,7 @@ public class SegmentCompacterTest {
     private SegmentPropertiesManager segmentPropertiesManager;
 
     @Mock
-    private SegmentCacheDataProvider<Integer, String> segmentCacheDataProvider;
+    private SegmentDataProvider<Integer, String> segmentCacheDataProvider;
 
     @Mock
     private SegmentDeltaCacheController<Integer, String> deltaCacheController;

@@ -28,7 +28,7 @@ public class SegmentBuilder<K, V> {
     private VersionController versionController;
     private SegmentConf segmentConf;
     private SegmentFiles<K, V> segmentFiles;
-    private SegmentCacheDataProvider<K, V> segmentCacheDataProvider;
+    private SegmentDataProvider<K, V> segmentCacheDataProvider;
 
     SegmentBuilder() {
 
@@ -112,7 +112,7 @@ public class SegmentBuilder<K, V> {
     }
 
     public SegmentBuilder<K, V> withVersionCacheDataProvider(
-            final SegmentCacheDataProvider<K, V> segmentCacheDataProvider) {
+            final SegmentDataProvider<K, V> segmentCacheDataProvider) {
         this.segmentCacheDataProvider = segmentCacheDataProvider;
         return this;
     }
@@ -135,9 +135,9 @@ public class SegmentBuilder<K, V> {
         final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
                 segmentFiles.getDirectory(), id);
         if (segmentCacheDataProvider == null) {
-            SegmentCacheDataDirectLoader<K, V> directLoader = new SegmentCacheDataDirectLoader<>(
+            SegmentDataDirectLoader<K, V> directLoader = new SegmentDataDirectLoader<>(
                     segmentFiles, segmentConf, segmentPropertiesManager);
-            segmentCacheDataProvider = new SegmentCacheDataProviderSimple<>(
+            segmentCacheDataProvider = new SegmentDataProviderSimple<>(
                     directLoader);
         }
         return new Segment<>(segmentFiles, segmentConf, versionController,

@@ -17,13 +17,13 @@ public class SegmentDeltaCacheController<K, V> {
 
     private final SegmentFiles<K, V> segmentFiles;
     private final SegmentPropertiesManager segmentPropertiesManager;
-    private final SegmentCacheDataProvider<K, V> segmentCacheDataProvider;
+    private final SegmentDataProvider<K, V> segmentCacheDataProvider;
 
     public SegmentDeltaCacheController(
             final TypeDescriptor<K> keyTypeDescriptor,
             final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentCacheDataProvider<K, V> segmentCacheDataProvider) {
+            final SegmentDataProvider<K, V> segmentCacheDataProvider) {
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.segmentPropertiesManager = Objects
                 .requireNonNull(segmentPropertiesManager);

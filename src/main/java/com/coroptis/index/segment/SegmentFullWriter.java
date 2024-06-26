@@ -36,7 +36,7 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
     SegmentFullWriter(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentStatsManager,
             final int maxNumberOfKeysInIndexPage,
-            final SegmentCacheDataProvider<K, V> segmentCacheDataProvider,
+            final SegmentDataProvider<K, V> segmentCacheDataProvider,
             final SegmentDeltaCacheController<K, V> deltaCacheController) {
         this.maxNumberOfKeysInIndexPage = Objects
                 .requireNonNull(maxNumberOfKeysInIndexPage);

@@ -7,7 +7,7 @@ import java.util.Objects;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.segment.Segment;
-import com.coroptis.index.segment.SegmentCacheDataProvider;
+import com.coroptis.index.segment.SegmentDataProvider;
 import com.coroptis.index.segment.SegmentId;
 
 public class SegmentManager<K, V> {
@@ -44,7 +44,7 @@ public class SegmentManager<K, V> {
 
     private Segment<K, V> instantiateSegment(final SegmentId segmentId) {
         Objects.requireNonNull(segmentId, "Segment id is required");
-        SegmentCacheDataProvider<K, V> dataProvider = new SegmentCacheDataProviderFromMainCache<>(
+        SegmentDataProvider<K, V> dataProvider = new SegmentDataProviderFromMainCache<>(
                 segmentId, this, segmentDataCache);
         final Segment<K, V> out = Segment.<K, V>builder()
                 .withDirectory(directory).withId(segmentId)

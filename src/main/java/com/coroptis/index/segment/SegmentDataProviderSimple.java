@@ -13,14 +13,14 @@ import com.coroptis.index.scarceindex.ScarceIndex;
  * @param <K>
  * @param <V>
  */
-public class SegmentCacheDataProviderSimple<K, V>
-        implements SegmentCacheDataProvider<K, V> {
+public class SegmentDataProviderSimple<K, V>
+        implements SegmentDataProvider<K, V> {
 
-    private final SegmentCacheDataDirectLoader<K, V> dataLoader;
+    private final SegmentDataDirectLoader<K, V> dataLoader;
     private SegmentDataLazyLoaded<K, V> dataImpl;
 
-    SegmentCacheDataProviderSimple(
-            final SegmentCacheDataDirectLoader<K, V> dataLoader) {
+    SegmentDataProviderSimple(
+            final SegmentDataDirectLoader<K, V> dataLoader) {
         this.dataLoader = Objects.requireNonNull(dataLoader);
         invalidate();
     }

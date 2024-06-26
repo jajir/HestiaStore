@@ -15,14 +15,14 @@ import com.coroptis.index.scarceindex.ScarceIndex;
  */
 public class SegmentDataLazyLoaded<K, V> implements SegmentData<K, V> {
 
-    private final SegmentCacheDataProvider<K, V> dataProvider;
+    private final SegmentDataProvider<K, V> dataProvider;
 
     private SegmentDeltaCache<K, V> deltaCache;
     private BloomFilter<K> bloomFilter;
     private ScarceIndex<K> scarceIndex;
 
     public SegmentDataLazyLoaded(
-            final SegmentCacheDataProvider<K, V> dataProvider) {
+            final SegmentDataProvider<K, V> dataProvider) {
         this.dataProvider = Objects.requireNonNull(dataProvider);
     }
 

@@ -25,7 +25,7 @@ public class SegmentDeltaCacheWriter<K, V> implements PairWriter<K, V> {
 
     private final SegmentPropertiesManager segmentPropertiesManager;
     private final SegmentFiles<K, V> segmentFiles;
-    private final SegmentCacheDataProvider<K, V> segmentCacheDataProvider;
+    private final SegmentDataProvider<K, V> segmentCacheDataProvider;
 
     /**
      * How many keys was added to delta cache.
@@ -37,7 +37,7 @@ public class SegmentDeltaCacheWriter<K, V> implements PairWriter<K, V> {
 
     public SegmentDeltaCacheWriter(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentCacheDataProvider<K, V> segmentCacheDataProvider) {
+            final SegmentDataProvider<K, V> segmentCacheDataProvider) {
         this.segmentPropertiesManager = Objects
                 .requireNonNull(segmentPropertiesManager);
         this.segmentFiles = Objects.requireNonNull(segmentFiles);

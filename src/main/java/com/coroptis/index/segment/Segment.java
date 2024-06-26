@@ -26,7 +26,7 @@ public class Segment<K, V>
     private final VersionController versionController;
     private final SegmentPropertiesManager segmentPropertiesManager;
     private final SegmentCompacter<K, V> segmentCompacter;
-    private final SegmentCacheDataProvider<K, V> segmentCacheDataProvider;
+    private final SegmentDataProvider<K, V> segmentCacheDataProvider;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
 
     public static <M, N> SegmentBuilder<M, N> builder() {
@@ -37,7 +37,7 @@ public class Segment<K, V>
             final SegmentConf segmentConf,
             final VersionController versionController,
             final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentCacheDataProvider<K, V> segmentCacheDataProvider) {
+            final SegmentDataProvider<K, V> segmentCacheDataProvider) {
         this.segmentConf = Objects.requireNonNull(segmentConf);
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         logger.debug("Initializing segment '{}'", segmentFiles.getId());
@@ -105,13 +105,13 @@ public class Segment<K, V>
     }
 
     /**
-     * Provide object that loads data objects. Shouldn't be used directly
+     * Provide new instances of objects. Shouldn't be used directly
      * without caching.
      * 
      * @return
      */
-    public SegmentCacheDataProvider<K, V> getCacheDataProvider() {
-        return new SegmentCacheDataDirectLoader<>(segmentFiles, segmentConf,
+    public SegmentDataProvider<K, V> getDataBuilder() {
+        return new SegmentDataDirectLoader<>(segmentFiles, segmentConf,
                 segmentPropertiesManager);
     }
 

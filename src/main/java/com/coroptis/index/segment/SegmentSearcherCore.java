@@ -22,13 +22,13 @@ public class SegmentSearcherCore<K, V> implements CloseableResource {
 
     private final SegmentFiles<K, V> segmentFiles;
     private final SegmentIndexSearcher<K, V> segmentIndexSearcher;
-    private final SegmentCacheDataProvider<K, V> segmentCacheDataProvider;
+    private final SegmentDataProvider<K, V> segmentCacheDataProvider;
 
     public SegmentSearcherCore(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
             final SegmentPropertiesManager segmentPropertiesManager,
             final SegmentIndexSearcher<K, V> segmentIndexSearcher,
-            final SegmentCacheDataProvider<K, V> segmentCacheDataProvider) {
+            final SegmentDataProvider<K, V> segmentCacheDataProvider) {
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.segmentCacheDataProvider = Objects.requireNonNull(
                 segmentCacheDataProvider,
