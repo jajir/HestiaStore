@@ -25,7 +25,7 @@ public interface Index<K, V> extends CloseableResource {
 
     void delete(K key);
 
-    void forceCompact();
+    void compact();
 
     /**
      * Went through all records. In fact read all index data. Doesn't use

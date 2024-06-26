@@ -58,10 +58,10 @@ public class SstIndexSynchronized<K, V> implements Index<K, V> {
     }
 
     @Override
-    public void forceCompact() {
+    public void compact() {
         lock.lock();
         try {
-            index.forceCompact();
+            index.compact();
         } finally {
             lock.unlock();
         }

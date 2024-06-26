@@ -78,7 +78,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         cache.put(Pair.of(key, value));
 
         if (cache.size() > conf.getMaxNumberOfKeysInCache()) {
-            compact();
+            flushCache();
         }
     }
 
@@ -136,7 +136,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                 keyTypeDescriptor), false);
     }
 
-    private void compact() {
+    private void flushCache() {
         logger.debug(
                 "Cache compacting of '{}' key value pairs in cache started.",
                 cache.size());
@@ -157,9 +157,9 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     }
 
     @Override
-    public void forceCompact() {
+    public void compact() {
         indexState.tryPerformOperation();
-        compact();
+        flushCache();
         keySegmentCache.getSegmentIds().forEach(segmentId -> {
             final Segment<K, V> seg = segmentManager.getSegment(segmentId);
             seg.forceCompact();
@@ -241,7 +241,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
 
     @Override
     public void close() {
-        compact();
+        flushCache();
         logWriter.close();
         indexState.onClose(this);
     }
