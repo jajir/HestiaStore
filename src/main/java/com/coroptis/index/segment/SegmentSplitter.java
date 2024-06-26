@@ -138,6 +138,7 @@ public class SegmentSplitter<K, V> {
                 + getSegmentDeltaCache().size();
         final long half = estimatedNumberOfKeys / 2;
 
+        // TODO delegate it to segment manager
         final Segment<K, V> lowerSegment = Segment.<K, V>builder()
                 .withDirectory(segmentFiles.getDirectory()).withId(segmentId)
                 .withKeyTypeDescriptor(segmentFiles.getKeyTypeDescriptor())

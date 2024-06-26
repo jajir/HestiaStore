@@ -1,12 +1,11 @@
 package com.coroptis.index.sst;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import com.coroptis.index.cache.Cache;
 import com.coroptis.index.cache.CacheLru;
-import com.coroptis.index.segment.Segment;
 import com.coroptis.index.segment.SegmentData;
-import com.coroptis.index.segment.SegmentDataLazyLoaded;
 import com.coroptis.index.segment.SegmentId;
 
 /**
@@ -21,11 +20,7 @@ public class SegmentDataCache<K, V> {
 
     final Cache<SegmentId, SegmentData<K, V>> cache;
 
-    private final SegmentManager<K, V> segmentManager;
-
-    SegmentDataCache(final SsstIndexConf conf,
-            final SegmentManager<K, V> segmentManager) {
-        this.segmentManager = Objects.requireNonNull(segmentManager);
+    SegmentDataCache(final SsstIndexConf conf) {
         cache = new CacheLru<>(conf.getMaxNumberOfSegmentsInCache(),
                 (segmenId, segmentData) -> {
                     // intentionally do nothing
@@ -33,17 +28,18 @@ public class SegmentDataCache<K, V> {
                 });
     }
 
-    public SegmentData<K, V> getSegmenData(final SegmentId segmentId) {
+    public Optional<SegmentData<K, V>> getSegmentData(
+            final SegmentId segmentId) {
         Objects.requireNonNull(segmentId);
-        SegmentData<K, V> out = null;
         if (cache.get(segmentId).isEmpty()) {
-            final Segment<K, V> segment = segmentManager.getSegment(segmentId);
-            out = new SegmentDataLazyLoaded<>(segment.getCacheDataProvider());
-            cache.put(segmentId, out);
+            return Optional.empty();
         } else {
-            out = cache.get(segmentId).get();
+            return Optional.of(cache.get(segmentId).get());
         }
-        return out;
+    }
+
+    public void put(final SegmentId segmentId, SegmentData<K, V> segmentData) {
+        cache.put(segmentId, segmentData);
     }
 
     public void invalidate(final SegmentId id) {

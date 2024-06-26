@@ -6,7 +6,7 @@ import com.coroptis.index.PairIterator;
 import com.coroptis.index.datatype.TypeDescriptor;
 
 /**
- * Provide ultimate access to delta cache and relaret operations
+ * Provide ultimate access to delta cache and related operations
  * 
  * @author honza
  *

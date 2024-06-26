@@ -28,10 +28,14 @@ public class SegmentManagerTest {
     @Mock
     private SsstIndexConf conf;
 
+    @Mock
+    private SegmentDataCache<Integer, String> segmentDataCache;
+
     @Test
     void test_getting_same_segmentId() throws Exception {
         final SegmentManager<Integer, String> segmentManager = new SegmentManager<>(
-                directory, keyTypeDescriptor, valueTypeDescriptor, conf);
+                directory, keyTypeDescriptor, valueTypeDescriptor, conf,
+                segmentDataCache);
 
         final Segment<Integer, String> s1 = segmentManager
                 .getSegment(SegmentId.of(1));

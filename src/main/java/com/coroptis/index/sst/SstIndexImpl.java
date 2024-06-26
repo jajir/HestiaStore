@@ -17,7 +17,6 @@ import com.coroptis.index.directory.Directory;
 import com.coroptis.index.log.Log;
 import com.coroptis.index.log.LogWriter;
 import com.coroptis.index.log.LoggedKey;
-import com.coroptis.index.segment.MergeIterator;
 import com.coroptis.index.segment.MergeWithCacheIterator;
 import com.coroptis.index.segment.Segment;
 import com.coroptis.index.segment.SegmentId;
@@ -36,7 +35,6 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     private final UniqueCache<K, V> cache;
     private final KeySegmentCache<K> keySegmentCache;
     private final SegmentManager<K, V> segmentManager;
-    private final SegmentSearcherCache<K, V> segmentSearcherCache;
     private final Log<K, V> log;
     private final LogWriter<K, V> logWriter;
     private IndexState<K, V> indexState;
@@ -55,10 +53,10 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                 this.keyTypeDescriptor.getComparator());
         this.keySegmentCache = new KeySegmentCache<>(directory,
                 keyTypeDescriptor);
+        final SegmentDataCache<K, V> segmentDataCache = new SegmentDataCache<>(
+                conf);
         this.segmentManager = new SegmentManager<>(directory, keyTypeDescriptor,
-                valueTypeDescriptor, conf);
-        this.segmentSearcherCache = new SegmentSearcherCache<>(conf,
-                segmentManager);
+                valueTypeDescriptor, conf, segmentDataCache);
         this.logWriter = log.openWriter();
         indexState.onReady(this);
     }
@@ -216,9 +214,11 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
             if (id == null) {
                 return null;
             }
-            final SegmentSearcher<K, V> segmentSearcher = segmentSearcherCache
-                    .getSegmenSearcher(id);
-            return segmentSearcher.get(key);
+            final Segment<K, V> segment = segmentManager.getSegment(id);
+            try (final SegmentSearcher<K, V> segmentSearcher = segment
+                    .openSearcher()) {
+                return segmentSearcher.get(key);
+            }
         } else {
             return out;
         }
