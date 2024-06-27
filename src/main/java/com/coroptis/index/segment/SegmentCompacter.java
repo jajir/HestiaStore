@@ -15,14 +15,14 @@ public class SegmentCompacter<K, V> {
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
     private final SegmentPropertiesManager segmentPropertiesManager;
-    private final SegmentCacheDataProvider<K, V> segmentCacheDataProvider;
+    private final SegmentDataProvider<K, V> segmentCacheDataProvider;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
 
     public SegmentCompacter(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
             final VersionController versionController,
             final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentCacheDataProvider<K, V> segmentCacheDataProvider,
+            final SegmentDataProvider<K, V> segmentCacheDataProvider,
             final SegmentDeltaCacheController<K, V> deltaCacheController) {
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.segmentConf = Objects.requireNonNull(segmentConf);

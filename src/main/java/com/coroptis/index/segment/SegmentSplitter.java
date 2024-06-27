@@ -23,7 +23,7 @@ public class SegmentSplitter<K, V> {
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
     private final SegmentPropertiesManager segmentPropertiesManager;
-    private final SegmentCacheDataProvider<K, V> segmentCacheDataProvider;
+    private final SegmentDataProvider<K, V> segmentCacheDataProvider;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
 
     public static class Result<K, V> {
@@ -57,7 +57,7 @@ public class SegmentSplitter<K, V> {
             final SegmentConf segmentConf,
             final VersionController versionController,
             final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentCacheDataProvider<K, V> segmentCacheDataProvider,
+            final SegmentDataProvider<K, V> segmentCacheDataProvider,
             final SegmentDeltaCacheController<K, V> deltaCacheController) {
         this.segmentConf = Objects.requireNonNull(segmentConf);
         this.segmentFiles = Objects.requireNonNull(segmentFiles);

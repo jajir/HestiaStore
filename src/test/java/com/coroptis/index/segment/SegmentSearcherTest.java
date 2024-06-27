@@ -44,7 +44,7 @@ public class SegmentSearcherTest {
     private PairReader<Integer, String> pairReader;
 
     @Mock
-    private SegmentCacheDataProvider<Integer, String> segmentCacheDataProvider;
+    private SegmentDataProvider<Integer, String> segmentCacheDataProvider;
 
     @Mock
     private SegmentDeltaCache<Integer, String> deltaCache;

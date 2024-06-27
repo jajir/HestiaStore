@@ -46,7 +46,7 @@ public class SstIndexTest {
 
         testData.stream().forEach(index1::put);
 
-        index1.forceCompact();
+        index1.compact();
 
         try (final Stream<Pair<Integer, String>> stream = testData.stream()) {
             stream.forEach(pair -> {
@@ -54,7 +54,7 @@ public class SstIndexTest {
                 assertEquals(pair.getValue(), value);
             });
         }
-        index1.forceCompact();
+        index1.compact();
 
         index1.close();
         assertEquals(17, numberOfFilesInDirectoryP(directory));

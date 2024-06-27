@@ -37,7 +37,7 @@ public class SstIndexIteratorTest {
                 Pair.of(8, "ddj"), Pair.of(9, "ddk"), Pair.of(10, "ddl"),
                 Pair.of(11, "ddm"));
         data.stream().forEach(index1::put);
-        index1.forceCompact();
+        index1.compact();
         logger.debug("verify that after that point no segment "
                 + "is loaded into memory.");
         index1.getStream().forEach(pair -> {

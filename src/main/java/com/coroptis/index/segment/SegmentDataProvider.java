@@ -12,7 +12,7 @@ import com.coroptis.index.scarceindex.ScarceIndex;
  * @param <K>
  * @param <V>
  */
-public interface SegmentCacheDataProvider<K, V> {
+public interface SegmentDataProvider<K, V> {
 
     /**
      * Provide information if data are loaded into memory.
