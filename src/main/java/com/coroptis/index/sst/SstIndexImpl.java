@@ -97,18 +97,6 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         final PairIterator<K, V> segmentIterator = new SegmentsIterator<>(
                 keySegmentCache.getSegmentIds(), segmentManager);
         return segmentIterator;
-//        return new MergeWithCacheIterator<K, V>(//
-//                segmentIterator, //
-//                keyTypeDescriptor, //
-//                valueTypeDescriptor, //
-//                cache.getSortedKeys(), //
-//                key -> {
-//                    final V out = cache.get(key);
-//                    if (out == null) {
-//                        return get(key);
-//                    }
-//                    return out;
-//                });
     }
 
     /**
