@@ -27,6 +27,8 @@ public interface Index<K, V> extends CloseableResource {
 
     void compact();
 
+    void flush();
+
     /**
      * Went through all records. In fact read all index data. Doesn't use
      * indexes and caches in segments.

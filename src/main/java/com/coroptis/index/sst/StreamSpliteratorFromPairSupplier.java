@@ -6,20 +6,20 @@ import java.util.Spliterator;
 import java.util.function.Consumer;
 
 import com.coroptis.index.Pair;
-import com.coroptis.index.PairIterator;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.sstfile.PairComparator;
 
-public class PairIteratorToSpliterator<K, V>
+public class StreamSpliteratorFromPairSupplier<K, V>
         implements Spliterator<Pair<K, V>> {
 
-    private final PairIterator<K, V> pairIterator;
+    private final PairSupplier<K, V> pairSpplier;
 
     private final PairComparator<K, V> pairComparator;
 
-    public PairIteratorToSpliterator(final PairIterator<K, V> pairIterator,
+    public StreamSpliteratorFromPairSupplier(
+            final PairSupplier<K, V> pairSupplier,
             final TypeDescriptor<K> keyTypeDescriptor) {
-        this.pairIterator = Objects.requireNonNull(pairIterator);
+        this.pairSpplier = Objects.requireNonNull(pairSupplier);
         Objects.requireNonNull(keyTypeDescriptor,
                 "Key type descriptor must not be null");
         this.pairComparator = new PairComparator<>(
@@ -28,12 +28,12 @@ public class PairIteratorToSpliterator<K, V>
 
     @Override
     public boolean tryAdvance(final Consumer<? super Pair<K, V>> action) {
-        if (pairIterator.hasNext()) {
-            action.accept(pairIterator.next());
-            return true;
-        } else {
-            pairIterator.close();
+        final Pair<K, V> pair = pairSpplier.get();
+        if (pair == null) {
             return false;
+        } else {
+            action.accept(pair);
+            return true;
         }
     }
 

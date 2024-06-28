@@ -36,10 +36,11 @@ public class SstIndexConsistencyTest {
      */
     @Test
     void test_basic_consistency() throws Exception {
-        final Index<Integer, Integer> seg = makeSstIndex();
+        final Index<Integer, Integer> index = makeIndex();
         for (int i = 0; i < 100; i++) {
-            writePairs(seg, makeList(i));
-            verifyIndexData(seg, makeList(i));
+            writePairs(index, makeList(i));
+            index.flush();
+            verifyIndexData(index, makeList(i));
         }
     }
 
@@ -51,7 +52,7 @@ public class SstIndexConsistencyTest {
      */
     @Test
     void test_reading_of_updated_values() throws Exception {
-        final Index<Integer, Integer> index = makeSstIndex();
+        final Index<Integer, Integer> index = makeIndex();
         writePairs(index, makeList(0));
         try (final Stream<Pair<Integer, Integer>> stream = index.getStream()) {
             final AtomicInteger acx = new AtomicInteger();
@@ -64,7 +65,7 @@ public class SstIndexConsistencyTest {
         }
     }
 
-    private Index<Integer, Integer> makeSstIndex() {
+    private Index<Integer, Integer> makeIndex() {
         return makeSstIndex(false);
     }
 

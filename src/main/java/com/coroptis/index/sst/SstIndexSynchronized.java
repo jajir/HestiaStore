@@ -86,4 +86,15 @@ public class SstIndexSynchronized<K, V> implements Index<K, V> {
             lock.unlock();
         }
     }
+
+    @Override
+    public void flush() {
+        lock.lock();
+        try {
+            index.flush();
+        } finally {
+            lock.unlock();
+        }
+
+    }
 }

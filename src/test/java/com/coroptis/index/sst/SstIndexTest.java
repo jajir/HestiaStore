@@ -110,7 +110,8 @@ public class SstIndexTest {
     void test_merging_values_from_cache_and_segment() throws Exception {
         final Index<Integer, String> index1 = makeSstIndex();
         testData.stream().forEach(index1::put);
-
+        index1.flush();
+        
         try (final Stream<Pair<Integer, String>> stream = index1.getStream()) {
             final List<Pair<Integer, String>> list = stream
                     .collect(Collectors.toList());
@@ -129,7 +130,8 @@ public class SstIndexTest {
     void test_repeated_read() throws Exception {
         final Index<Integer, String> index1 = makeSstIndex();
         testData.stream().forEach(index1::put);
-
+        index1.flush();
+        
         final List<Pair<Integer, String>> list1 = index1.getStream()
                 .collect(Collectors.toList());
         final List<Pair<Integer, String>> list2 = index1.getStream()
@@ -180,6 +182,7 @@ public class SstIndexTest {
 
         final Index<Integer, String> index1 = makeSstIndex();
         data.stream().forEach(index1::put);
+        index1.flush();
         verifyDataIndex(index1, data);
         index1.close();
 

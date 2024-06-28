@@ -17,7 +17,6 @@ import com.coroptis.index.directory.Directory;
 import com.coroptis.index.log.Log;
 import com.coroptis.index.log.LogWriter;
 import com.coroptis.index.log.LoggedKey;
-import com.coroptis.index.segment.MergeWithCacheIterator;
 import com.coroptis.index.segment.Segment;
 import com.coroptis.index.segment.SegmentId;
 import com.coroptis.index.segment.SegmentSearcher;
@@ -95,20 +94,21 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     }
 
     private PairIterator<K, V> openIterator() {
-        final PairIterator<K, V> segments = new SegmentsIterator<>(
+        final PairIterator<K, V> segmentIterator = new SegmentsIterator<>(
                 keySegmentCache.getSegmentIds(), segmentManager);
-        return new MergeWithCacheIterator<K, V>(//
-                segments, //
-                keyTypeDescriptor, //
-                valueTypeDescriptor, //
-                cache.getSortedKeys(), //
-                key -> {
-                    final V out = cache.get(key);
-                    if (out == null) {
-                        return get(key);
-                    }
-                    return out;
-                });
+        return segmentIterator;
+//        return new MergeWithCacheIterator<K, V>(//
+//                segmentIterator, //
+//                keyTypeDescriptor, //
+//                valueTypeDescriptor, //
+//                cache.getSortedKeys(), //
+//                key -> {
+//                    final V out = cache.get(key);
+//                    if (out == null) {
+//                        return get(key);
+//                    }
+//                    return out;
+//                });
     }
 
     /**
@@ -127,12 +127,13 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     public Stream<Pair<K, V>> getStream() {
         indexState.tryPerformOperation();
         final PairIterator<K, V> iterator = openIterator();
-        return StreamSupport
-                .stream(new PairIteratorToSpliterator<K, V>(iterator,
-                        keyTypeDescriptor), false)
-                .onClose(() -> {
-                    iterator.close();
-                });
+        final PairSupplier<K, V> supplier = new PairSupplierRefreshedFromCache<>(
+                new PairSupplierFromIterator<>(iterator), cache);
+        final StreamSpliteratorFromPairSupplier<K, V> spliterator = new StreamSpliteratorFromPairSupplier<>(
+                supplier, keyTypeDescriptor);
+        return StreamSupport.stream(spliterator, false).onClose(() -> {
+            iterator.close();
+        });
     }
 
     public Stream<Pair<K, V>> getStreamSynchronized(final ReentrantLock lock) {
@@ -254,6 +255,11 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
 
     public void setIndexState(final IndexState<K, V> indexState) {
         this.indexState = Objects.requireNonNull(indexState);
+    }
+
+    @Override
+    public void flush() {
+        flushCache();
     }
 
 }

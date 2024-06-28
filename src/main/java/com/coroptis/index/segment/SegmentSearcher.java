@@ -47,7 +47,7 @@ public class SegmentSearcher<K, V> implements CloseableResource {
         this.segmentPropertiesManager = Objects
                 .requireNonNull(segmentPropertiesManager);
         this.segmentIndexSearcherSupplier = Objects
-                .requireNonNull(segmentIndexSearcherSupplier);
+                .requireNonNull(segmentIndexSearcherSupplier);  
         this.segmentCacheDataProvider = Objects.requireNonNull(
                 segmentCacheDataProvider,
                 "Segment cached data provider is required");
