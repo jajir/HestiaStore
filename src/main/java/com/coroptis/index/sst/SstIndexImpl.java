@@ -102,7 +102,13 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                 keyTypeDescriptor, //
                 valueTypeDescriptor, //
                 cache.getSortedKeys(), //
-                key -> cache.get(key));
+                key -> {
+                    final V out = cache.get(key);
+                    if (out == null) {
+                        return get(key);
+                    }
+                    return out;
+                });
     }
 
     /**
