@@ -9,6 +9,7 @@ import java.util.stream.StreamSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.coroptis.index.F;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.cache.UniqueCache;
@@ -147,7 +148,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         keySegmentCache.flush();
         logger.debug(
                 "Cache compacting is done. Cache contains '{}' key value pairs.",
-                cache.size());
+                F.fmt(cache.size()));
     }
 
     @Override

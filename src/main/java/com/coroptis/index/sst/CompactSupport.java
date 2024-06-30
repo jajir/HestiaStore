@@ -7,6 +7,7 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.coroptis.index.F;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.segment.Segment;
@@ -63,7 +64,7 @@ public class CompactSupport<K, V> {
 
     private void flushToCurrentSegment() {
         logger.debug("Flushing '{}' key value pairs into segment '{}'.",
-                toSameSegment.size(), currentSegmentId);
+                F.fmt(toSameSegment.size()), currentSegmentId);
         final Segment<K, V> segment = segmentManager
                 .getSegment(currentSegmentId);
         try (PairWriter<K, V> writer = segment.openWriter()) {

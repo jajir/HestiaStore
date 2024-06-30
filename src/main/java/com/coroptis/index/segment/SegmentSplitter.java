@@ -5,6 +5,7 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.coroptis.index.F;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 
@@ -176,7 +177,8 @@ public class SegmentSplitter<K, V> {
         logger.debug("Splitting of '{}' finished, '{}' was created. "
                 + "Estimated number of keys was {}, half key was {} and real number of keys was {}.",
                 segmentFiles.getId(), lowerSegment.getId(),
-                estimatedNumberOfKeys, half, cxLower + cxHigher);
+                F.fmt(estimatedNumberOfKeys), F.fmt(half),
+                F.fmt(cxLower + cxHigher));
         if (cxLower == 0) {
             throw new IllegalStateException(
                     "Splitting failed. Lower segment doesn't contains any data");
