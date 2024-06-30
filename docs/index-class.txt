@@ -5,7 +5,8 @@ class Index<K, V> {
   + put(K key, V value)
   + V get(K key);
   + void delete(K key);
-  + void forceCompact();
+  + void compact();
+  + void flush();
   + Stream<Pair<K, V>> getStream();
 }
 

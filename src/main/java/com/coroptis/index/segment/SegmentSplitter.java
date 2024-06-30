@@ -174,8 +174,10 @@ public class SegmentSplitter<K, V> {
             }
 
         }
-        logger.debug("Splitting of '{}' finished, '{}' was created. "
-                + "Estimated number of keys was {}, half key was {} and real number of keys was {}.",
+        logger.debug(
+                "Splitting of '{}' finished, '{}' was created. "
+                        + "Estimated number of keys was '{}', "
+                        + "half key was '{}' and real number of keys was '{}'.",
                 segmentFiles.getId(), lowerSegment.getId(),
                 F.fmt(estimatedNumberOfKeys), F.fmt(half),
                 F.fmt(cxLower + cxHigher));
