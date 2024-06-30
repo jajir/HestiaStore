@@ -38,33 +38,26 @@ public class Segment<K, V>
             final SegmentConf segmentConf,
             final VersionController versionController,
             final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentDataProvider<K, V> segmentCacheDataProvider) {
+            final SegmentDataProvider<K, V> segmentDataProvider,
+            final SegmentSearcher<K, V> segmentSearcher) {
         this.segmentConf = Objects.requireNonNull(segmentConf);
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         logger.debug("Initializing segment '{}'", segmentFiles.getId());
         this.versionController = Objects.requireNonNull(versionController,
                 "Version controller is required");
         this.segmentCacheDataProvider = Objects.requireNonNull(
-                segmentCacheDataProvider,
+                segmentDataProvider,
                 "Segment cached data provider is required");
         this.segmentPropertiesManager = Objects.requireNonNull(
                 segmentPropertiesManager,
                 "Segment properties manager is required");
         deltaCacheController = new SegmentDeltaCacheController<>(
                 segmentFiles.getKeyTypeDescriptor(), segmentFiles,
-                segmentPropertiesManager, segmentCacheDataProvider);
+                segmentPropertiesManager, segmentDataProvider);
         this.segmentCompacter = new SegmentCompacter<>(segmentFiles,
                 segmentConf, versionController, segmentPropertiesManager,
-                segmentCacheDataProvider, deltaCacheController);
-
-        // TODO make this objects outside of this one
-        final SegmentIndexSearcherSupplier<K, V> supplier = new SegmentIndexSearcherDefaultSupplier<>(
-                segmentFiles, segmentConf);
-        this.segmentSearcher = new SegmentSearcher<K, V>(
-                segmentFiles.getValueTypeDescriptor(), segmentConf,
-                segmentPropertiesManager, supplier.get(),
-                segmentCacheDataProvider);
-
+                segmentDataProvider, deltaCacheController);
+        this.segmentSearcher = Objects.requireNonNull(segmentSearcher);
     }
 
     public SegmentStats getStats() {

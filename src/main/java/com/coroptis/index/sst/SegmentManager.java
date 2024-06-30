@@ -58,7 +58,7 @@ public class SegmentManager<K, V> {
                         conf.getBloomFilterNumberOfHashFunctions())
                 .withBloomFilterIndexSizeInBytes(
                         conf.getBloomFilterIndexSizeInBytes())
-                .withVersionCacheDataProvider(dataProvider).build();
+                .withSegmentDataProvider(dataProvider).build();
         return out;
     }
 

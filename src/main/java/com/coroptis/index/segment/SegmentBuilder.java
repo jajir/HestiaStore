@@ -28,7 +28,7 @@ public class SegmentBuilder<K, V> {
     private VersionController versionController;
     private SegmentConf segmentConf;
     private SegmentFiles<K, V> segmentFiles;
-    private SegmentDataProvider<K, V> segmentCacheDataProvider;
+    private SegmentDataProvider<K, V> segmentDataProvider;
 
     SegmentBuilder() {
 
@@ -111,9 +111,9 @@ public class SegmentBuilder<K, V> {
         return this;
     }
 
-    public SegmentBuilder<K, V> withVersionCacheDataProvider(
-            final SegmentDataProvider<K, V> segmentCacheDataProvider) {
-        this.segmentCacheDataProvider = segmentCacheDataProvider;
+    public SegmentBuilder<K, V> withSegmentDataProvider(
+            final SegmentDataProvider<K, V> segmentDataProvider) {
+        this.segmentDataProvider = segmentDataProvider;
         return this;
     }
 
@@ -134,14 +134,19 @@ public class SegmentBuilder<K, V> {
         }
         final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
                 segmentFiles.getDirectory(), id);
-        if (segmentCacheDataProvider == null) {
+        if (segmentDataProvider == null) {
             SegmentDataDirectLoader<K, V> directLoader = new SegmentDataDirectLoader<>(
                     segmentFiles, segmentConf, segmentPropertiesManager);
-            segmentCacheDataProvider = new SegmentDataProviderSimple<>(
-                    directLoader);
+            segmentDataProvider = new SegmentDataProviderSimple<>(directLoader);
         }
+        final SegmentIndexSearcherSupplier<K, V> supplier = new SegmentIndexSearcherDefaultSupplier<>(
+                segmentFiles, segmentConf);
+        final SegmentSearcher<K, V> segmentSearcher = new SegmentSearcher<K, V>(
+                segmentFiles.getValueTypeDescriptor(), segmentConf,
+                segmentPropertiesManager, supplier.get(), segmentDataProvider);
+
         return new Segment<>(segmentFiles, segmentConf, versionController,
-                segmentPropertiesManager, segmentCacheDataProvider);
+                segmentPropertiesManager, segmentDataProvider, segmentSearcher);
     }
 
 }
