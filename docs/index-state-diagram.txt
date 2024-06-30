@@ -1,11 +1,14 @@
 @startuml
 
 'Index state diagram
-[*] --> Search
 
-Search --> Write
-Write --> Search
-Write : Writing of data and sorting them
-Search --> [*]
+New: Put new data into index
+Ready: Ready to work
+Close: Resources are freed
+
+[*] --> New: Open Index
+New --> Ready: Lock resources
+Ready --> Close: Free all resources
+Close --> [*]
 
 @enduml

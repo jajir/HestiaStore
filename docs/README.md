@@ -21,20 +21,34 @@ Index is not thread safe.
 
 Index could be in following states:
 
-![Index states](index-state-diagram.png)
-
 ![Index methods](index-class.png)
+
+Index should be created with builder, which make index instance. For example:
+
+```java
+return Index.<Integer, String>builder().withDirectory(directory)
+        .withKeyTypeDescriptor(tdi) //
+        .withValueTypeDescriptor(tds) //
+        .withMaxNumberOfKeysInSegment(1000_000) //
+        .withMaxNumberOfKeysInSegmentCache(1000) //
+        .withMaxNumberOfKeysInSegmentIndexPage(1000) //
+        .withMaxNumberOfKeysInCache(100_000) //
+        .withBloomFilterIndexSizeInBytes(1000) //
+        .withBloomFilterNumberOfHashFunctions(4) //
+        .build();
+```
+
+![Index states](index-state-diagram.png)
 
 Interruption of process of writing data to index could lead to corruption of entire index.
 
-## Development 
+## Development
 
 Mockito requires reflective access to non-public parts in a Java module. It could be manually open by passing following parameter as jvm parameter:
 
 ```
 --add-opens=java.base/java.lang=ALL-UNNAMED
 ```
-
 
 ## How to get segment disk size
 
