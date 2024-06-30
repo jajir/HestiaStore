@@ -28,6 +28,7 @@ public class Segment<K, V>
     private final SegmentCompacter<K, V> segmentCompacter;
     private final SegmentDataProvider<K, V> segmentCacheDataProvider;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
+    private final SegmentSearcher<K, V> segmentSearcher;
 
     public static <M, N> SegmentBuilder<M, N> builder() {
         return new SegmentBuilder<>();
@@ -55,6 +56,15 @@ public class Segment<K, V>
         this.segmentCompacter = new SegmentCompacter<>(segmentFiles,
                 segmentConf, versionController, segmentPropertiesManager,
                 segmentCacheDataProvider, deltaCacheController);
+
+        // TODO make this objects outside of this one
+        final SegmentIndexSearcherSupplier<K, V> supplier = new SegmentIndexSearcherDefaultSupplier<>(
+                segmentFiles, segmentConf);
+        this.segmentSearcher = new SegmentSearcher<K, V>(
+                segmentFiles.getValueTypeDescriptor(), segmentConf,
+                segmentPropertiesManager, supplier.get(),
+                segmentCacheDataProvider);
+
     }
 
     public SegmentStats getStats() {
@@ -96,17 +106,22 @@ public class Segment<K, V>
         return new SegmentWriter<>(segmentCompacter, deltaCacheController);
     }
 
-    public SegmentSearcher<K, V> openSearcher() {
+    @Deprecated
+    public SegmentSearcherOL<K, V> openSearcher() {
         final SegmentIndexSearcherSupplier<K, V> supplier = new SegmentIndexSearcherDefaultSupplier<>(
                 segmentFiles, segmentConf);
-        return new SegmentSearcher<>(segmentFiles, segmentConf,
+        return new SegmentSearcherOL<>(segmentFiles, segmentConf,
                 versionController, segmentPropertiesManager, supplier,
                 segmentCacheDataProvider);
     }
 
+    public V get(final K key) {
+        return segmentSearcher.get(key);
+    }
+
     /**
-     * Provide new instances of objects. Shouldn't be used directly
-     * without caching.
+     * Provide new instances of objects. Shouldn't be used directly without
+     * caching.
      * 
      * @return
      */

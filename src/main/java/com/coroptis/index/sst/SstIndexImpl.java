@@ -19,7 +19,6 @@ import com.coroptis.index.log.LogWriter;
 import com.coroptis.index.log.LoggedKey;
 import com.coroptis.index.segment.Segment;
 import com.coroptis.index.segment.SegmentId;
-import com.coroptis.index.segment.SegmentSearcher;
 import com.coroptis.index.segment.SegmentSplitter;
 import com.coroptis.index.sstfile.PairComparator;
 import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
@@ -210,10 +209,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                 return null;
             }
             final Segment<K, V> segment = segmentManager.getSegment(id);
-            try (final SegmentSearcher<K, V> segmentSearcher = segment
-                    .openSearcher()) {
-                return segmentSearcher.get(key);
-            }
+            return segment.get(key);
         } else {
             return out;
         }

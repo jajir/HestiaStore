@@ -1,15 +1,11 @@
 package com.coroptis.index.segment;
 
 import java.util.Objects;
-import java.util.Optional;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.coroptis.index.CloseableResource;
-import com.coroptis.index.OptimisticLock;
-import com.coroptis.index.OptimisticLockObjectVersionProvider;
-import com.coroptis.index.Pair;
+import com.coroptis.index.bloomfilter.BloomFilter;
+import com.coroptis.index.datatype.TypeDescriptor;
+import com.coroptis.index.scarceindex.ScarceIndex;
 
 /**
  * Object use in memory cache and bloom filter. Only one instance for one
@@ -24,108 +20,66 @@ import com.coroptis.index.Pair;
  */
 public class SegmentSearcher<K, V> implements CloseableResource {
 
-    private final Logger logger = LoggerFactory.getLogger(Segment.class);
-    private final SegmentFiles<K, V> segmentFiles;
-    private final SegmentConf segmentConf;
-    private final OptimisticLockObjectVersionProvider versionProvider;
-    private final SegmentPropertiesManager segmentPropertiesManager;
-    private final SegmentIndexSearcherSupplier<K, V> segmentIndexSearcherSupplier;
+    private final TypeDescriptor<V> valueTypeDescriptor;
+    private final SegmentIndexSearcher<K, V> segmentIndexSearcher;
     private final SegmentDataProvider<K, V> segmentCacheDataProvider;
 
-    private SegmentSearcherCore<K, V> searcherCore;
-    private OptimisticLock lock;
-
-    public SegmentSearcher(final SegmentFiles<K, V> segmentFiles,
+    public SegmentSearcher(final TypeDescriptor<V> valueTypeDescriptor,
             final SegmentConf segmentConf,
-            final OptimisticLockObjectVersionProvider versionProvider,
             final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentIndexSearcherSupplier<K, V> segmentIndexSearcherSupplier,
-            final SegmentDataProvider<K, V> segmentCacheDataProvider) {
-        this.segmentFiles = Objects.requireNonNull(segmentFiles);
-        this.segmentConf = Objects.requireNonNull(segmentConf);
-        this.versionProvider = Objects.requireNonNull(versionProvider);
-        this.segmentPropertiesManager = Objects
-                .requireNonNull(segmentPropertiesManager);
-        this.segmentIndexSearcherSupplier = Objects
-                .requireNonNull(segmentIndexSearcherSupplier);  
+            final SegmentIndexSearcher<K, V> segmentIndexSearcher,
+            final SegmentDataProvider<K, V> segmentDataProvider) {
+        this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
         this.segmentCacheDataProvider = Objects.requireNonNull(
-                segmentCacheDataProvider,
+                segmentDataProvider,
                 "Segment cached data provider is required");
-        optionallyrefreshCoreSearcher();
+        this.segmentIndexSearcher = Objects
+                .requireNonNull(segmentIndexSearcher);
     }
 
-    /**
-     * This method allows into in memory segment searched add some data.
-     * 
-     * @param pair
-     */
-    @Deprecated
-    void addPairIntoCache(final Pair<K, V> pair) {
-        if (searcherCore == null) {
-            return;
-        }
-        searcherCore.addPairIntoCache(pair);
-    }
+    private SegmentDeltaCache<K, V> getDeltaCache() {
+        return segmentCacheDataProvider.getSegmentDeltaCache();
+    };
 
-    @Deprecated
-    Optional<SegmentDeltaCache<K, V>> getSegmentCache() {
-        if (lock.isLocked()) {
-            return Optional.empty();
-        }
-        if (searcherCore == null) {
-            return Optional.empty();
-        }
-        return Optional.of(searcherCore.getCache());
-    }
+    private ScarceIndex<K> getScarceIndex() {
+        return segmentCacheDataProvider.getScarceIndex();
+    };
 
-    private void optionallyrefreshCoreSearcher() {
-        if (lock == null) {
-            lock = new OptimisticLock(versionProvider);
-            optionallyCloseSearcherCore();
-        }
-        if (lock.isLocked()) {
-            logger.debug(
-                    "Closing segment searcher '{}', because segment was changed",
-                    segmentFiles.getId());
-            optionallyCloseSearcherCore();
-            lock = new OptimisticLock(versionProvider);
-        }
-        if (searcherCore == null) {
-            logger.debug("Opening segment searcher '{}'", segmentFiles.getId());
-            searcherCore = new SegmentSearcherCore<>(segmentFiles, segmentConf,
-                    segmentPropertiesManager,
-                    segmentIndexSearcherSupplier.get(),
-                    segmentCacheDataProvider);
-        }
-    }
-
-    private void optionallyCloseSearcherCore() {
-        if (searcherCore == null) {
-            return;
-        }
-        logger.debug(searcherCore.getBloomFilter().getStatsString());
-        logger.debug("Closing segment searcher '{}'", segmentFiles.getId());
-        searcherCore = null;
-    }
-
-    public K getMaxKey() {
-        optionallyrefreshCoreSearcher();
-        return searcherCore.getMaxKey();
-    }
-
-    public K getMinKey() {
-        optionallyrefreshCoreSearcher();
-        return searcherCore.getMinKey();
+    private BloomFilter<K> getBloomFilter() {
+        return segmentCacheDataProvider.getBloomFilter();
     }
 
     public V get(final K key) {
-        optionallyrefreshCoreSearcher();
-        return searcherCore.get(key);
+        // look in cache
+        final V out = getDeltaCache().get(key);
+        if (valueTypeDescriptor.isTombstone(out)) {
+            return null;
+        }
+
+        // look in bloom filter
+        if (out == null) {
+            if (getBloomFilter().isNotStored(key)) {
+                /*
+                 * It;s sure that key is not in index.
+                 */
+                return null;
+            }
+        }
+
+        // look in index file
+        if (out == null) {
+            final Integer position = getScarceIndex().get(key);
+            if (position == null) {
+                return null;
+            }
+            return segmentIndexSearcher.search(key, position);
+        }
+        return out;
     }
 
     @Override
     public void close() {
-        optionallyCloseSearcherCore();
+        segmentIndexSearcher.close();
     }
 
 }

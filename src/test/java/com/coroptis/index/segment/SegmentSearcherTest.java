@@ -69,7 +69,7 @@ public class SegmentSearcherTest {
         when(segmentCacheDataProvider.getBloomFilter()).thenReturn(bloomFilter);
         when(segmentCacheDataProvider.getScarceIndex()).thenReturn(scarceIndex);
         when(segmentIndexSearcher.search(37, 0)).thenReturn("hello");
-        try (SegmentSearcher<Integer, String> searcher = new SegmentSearcher<>(
+        try (SegmentSearcherOL<Integer, String> searcher = new SegmentSearcherOL<>(
                 segmentFiles, segmentConf, versionProvider,
                 segmentPropertiesManager, segmentIndexSearcherSupplier,
                 segmentCacheDataProvider)) {

@@ -49,14 +49,6 @@ public class SegmentSearcherCore<K, V> implements CloseableResource {
         return segmentCacheDataProvider.getBloomFilter();
     }
 
-    public K getMaxKey() {
-        return getScarceIndex().getMaxKey();
-    }
-
-    public K getMinKey() {
-        return getScarceIndex().getMinKey();
-    }
-
     public V get(final K key) {
         // look in cache
         final V out = getDeltaCache().get(key);
