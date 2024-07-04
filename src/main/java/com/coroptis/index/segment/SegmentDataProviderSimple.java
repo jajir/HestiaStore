@@ -41,6 +41,9 @@ public class SegmentDataProviderSimple<K, V>
 
     @Override
     public void invalidate() {
+        if (dataImpl != null) {
+            dataImpl.close();
+        }
         dataImpl = new SegmentDataLazyLoaded<>(dataLoader);
     }
 

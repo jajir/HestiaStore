@@ -6,9 +6,9 @@ import java.util.Optional;
 import com.coroptis.index.bloomfilter.BloomFilter;
 import com.coroptis.index.scarceindex.ScarceIndex;
 import com.coroptis.index.segment.Segment;
-import com.coroptis.index.segment.SegmentDataProvider;
 import com.coroptis.index.segment.SegmentData;
 import com.coroptis.index.segment.SegmentDataLazyLoaded;
+import com.coroptis.index.segment.SegmentDataProvider;
 import com.coroptis.index.segment.SegmentDeltaCache;
 import com.coroptis.index.segment.SegmentId;
 
@@ -57,6 +57,7 @@ public class SegmentDataProviderFromMainCache<K, V>
 
     @Override
     public void invalidate() {
+        cache.getSegmentData(id).ifPresent(SegmentData::close);
         cache.invalidate(id);
     }
 

@@ -20,4 +20,10 @@ public interface SegmentData<K, V> {
 
     ScarceIndex<K> getScarceIndex();
 
+    /**
+     * When object will not be used. It should be called. Methods allows to
+     * close all resources.
+     */
+    void close();
+
 }

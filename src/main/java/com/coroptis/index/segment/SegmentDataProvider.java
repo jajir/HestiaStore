@@ -30,6 +30,8 @@ public interface SegmentDataProvider<K, V> {
     /**
      * Invalidate object in memory. Could be used in both scenarios: to free
      * some memory of to evict obsolete data.
+     *
+     * internally it will close all resources.
      */
     void invalidate();
 }
