@@ -39,7 +39,7 @@ public class MergeWithCacheIterator<K, V> implements PairIterator<K, V> {
 
     private final Comparator<K> keyComparator;
 
-    private final Function<K,V> cacheValueGetter;
+    private final Function<K, V> cacheValueGetter;
 
     private Pair<K, V> currentPair = null;
     private Pair<K, V> nextMainPair = null;
@@ -49,15 +49,14 @@ public class MergeWithCacheIterator<K, V> implements PairIterator<K, V> {
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final List<K> sortedKeysFromCache,
-            final Function<K,V> cacheValueGetter) {
+            final Function<K, V> cacheValueGetter) {
         this.mainIterator = Objects.requireNonNull(mainIterator);
         this.cacheKeyIterator = Objects.requireNonNull(sortedKeysFromCache)
                 .iterator();
         this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
         Objects.requireNonNull(keyTypeDescriptor);
         this.keyComparator = keyTypeDescriptor.getComparator();
-        this.cacheValueGetter = Objects
-                .requireNonNull(cacheValueGetter);
+        this.cacheValueGetter = Objects.requireNonNull(cacheValueGetter);
 
         nextMainIterator();
         nextCacheIterator();

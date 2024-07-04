@@ -65,13 +65,11 @@ public abstract class AbstractSegmentTest {
      */
     protected <M, N> void verifySegmentSearch(final Segment<M, N> seg,
             final List<Pair<M, N>> pairs) {
-        try (SegmentSearcherOL<M, N> searcher = seg.openSearcher()) {
-            pairs.forEach(pair -> {
-                final M key = pair.getKey();
-                final N expectedValue = pair.getValue();
-                assertEquals(expectedValue, searcher.get(key));
-            });
-        }
+        pairs.forEach(pair -> {
+            final M key = pair.getKey();
+            final N expectedValue = pair.getValue();
+            assertEquals(expectedValue, seg.get(key));
+        });
     }
 
     /**

@@ -8,8 +8,8 @@ import com.coroptis.index.cache.UniqueCache;
 import com.coroptis.index.sstfile.SstFileWriter;
 
 /**
- * Class collect unsorted data, sort them and finally write them into
- * SST delta file.
+ * Class collect unsorted data, sort them and finally write them into SST delta
+ * file.
  * 
  * @author honza
  *

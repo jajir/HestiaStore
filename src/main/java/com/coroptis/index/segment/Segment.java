@@ -99,15 +99,6 @@ public class Segment<K, V>
         return new SegmentWriter<>(segmentCompacter, deltaCacheController);
     }
 
-    @Deprecated
-    public SegmentSearcherOL<K, V> openSearcher() {
-        final SegmentIndexSearcherSupplier<K, V> supplier = new SegmentIndexSearcherDefaultSupplier<>(
-                segmentFiles, segmentConf);
-        return new SegmentSearcherOL<>(segmentFiles, segmentConf,
-                versionController, segmentPropertiesManager, supplier,
-                segmentCacheDataProvider);
-    }
-
     public V get(final K key) {
         return segmentSearcher.get(key);
     }

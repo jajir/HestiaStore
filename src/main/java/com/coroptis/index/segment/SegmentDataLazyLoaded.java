@@ -21,8 +21,7 @@ public class SegmentDataLazyLoaded<K, V> implements SegmentData<K, V> {
     private BloomFilter<K> bloomFilter;
     private ScarceIndex<K> scarceIndex;
 
-    public SegmentDataLazyLoaded(
-            final SegmentDataProvider<K, V> dataProvider) {
+    public SegmentDataLazyLoaded(final SegmentDataProvider<K, V> dataProvider) {
         this.dataProvider = Objects.requireNonNull(dataProvider);
     }
 
