@@ -7,13 +7,14 @@ public class SsstIndexConf {
      */
 
     private final long maxNumberOfKeysInSegmentCache;
+    private final long maxNumberOfKeysInSegmentCacheDuringFlushing;
     private final int maxNumberOfKeysInSegmentIndexPage;
 
     /*
      * SST index configuration
      */
 
-    private final int maxNumberOfKeysInCache;
+    private final int maxNumberOfKeysInSCache;
     private final int maxNumberOfKeysInSegment;
     private final int maxNumberOfSegmentsInCache;
 
@@ -21,6 +22,7 @@ public class SsstIndexConf {
     private final int bloomFilterIndexSizeInBytes;
 
     SsstIndexConf(final long maxNumberOfKeysInSegmentCache,
+            final long maxNumberOfKeysInSegmentCacheDuringFlushing,
             final int maxNumberOfKeysInSegmentIndexPage,
             final int maxNumberOfKeysInCache,
             final int maxNumberOfKeysInSegment,
@@ -28,8 +30,9 @@ public class SsstIndexConf {
             final int bloomFilterNumberOfHashFunctions,
             final int bloomFilterIndexSizeInBytes) {
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
+        this.maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInSegmentCacheDuringFlushing;
         this.maxNumberOfKeysInSegmentIndexPage = maxNumberOfKeysInSegmentIndexPage;
-        this.maxNumberOfKeysInCache = maxNumberOfKeysInCache;
+        this.maxNumberOfKeysInSCache = maxNumberOfKeysInCache;
         this.maxNumberOfKeysInSegment = maxNumberOfKeysInSegment;
         this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
@@ -45,7 +48,7 @@ public class SsstIndexConf {
     }
 
     public long getMaxNumberOfKeysInCache() {
-        return maxNumberOfKeysInCache;
+        return maxNumberOfKeysInSCache;
     }
 
     public int getMaxNumberOfKeysInSegment() {
@@ -62,6 +65,10 @@ public class SsstIndexConf {
 
     public int getMaxNumberOfSegmentsInCache() {
         return maxNumberOfSegmentsInCache;
+    }
+
+    long getMaxNumberOfKeysInSegmentCacheDuringFlushing() {
+        return maxNumberOfKeysInSegmentCacheDuringFlushing;
     }
 
 }

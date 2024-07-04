@@ -71,6 +71,27 @@ public class SegmentCompacter<K, V> {
                         .getMaxNumberOfKeysInSegmentCache();
     }
 
+    /**
+     * Provide information if segment should be compacted. Method doesn't
+     * perform compact operation.
+     * 
+     * Method should be used during flushing data from main cache. In that case
+     * could be in cache delta index mode data that is total limit. It prevent
+     * index from repeating compacting.
+     * 
+     * @param numberOfKeysInLastDeltaFile required number of keys in last delta
+     *                                    cache file
+     * @return return <code>true</code> when segment should be compacted even
+     *         during flushing.
+     */
+    public boolean shouldBeCompactedDuringFlushing(
+            final long numberOfKeysInLastDeltaFile) {
+        final SegmentStats stats = segmentPropertiesManager.getSegmentStats();
+        return stats.getNumberOfKeysInCache()
+                + numberOfKeysInLastDeltaFile > segmentConf
+                        .getMaxNumberOfKeysInSegmentCacheDuringFlushing();
+    }
+
     public boolean shouldBeCompactedDuringWriting(
             final long numberOfKeysInLastDeltaFile) {
         final SegmentStats stats = segmentPropertiesManager.getSegmentStats();

@@ -9,6 +9,8 @@ public class SegmentBuilder<K, V> {
 
     private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = 1000
             * 1000 * 10;
+    private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE
+            * 5;
 
     private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_INDEX_PAGE = 1000;
 
@@ -21,6 +23,7 @@ public class SegmentBuilder<K, V> {
     private TypeDescriptor<K> keyTypeDescriptor;
     private TypeDescriptor<V> valueTypeDescriptor;
     private long maxNumberOfKeysInSegmentCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
+    private long maxNumberOfKeysInSegmentCacheDuringFlushing = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING;
     private int maxNumberOfKeysInIndexPage = DEFAULT_MAX_NUMBER_OF_KEYS_IN_INDEX_PAGE;
     private int bloomFilterNumberOfHashFunctions = DEFAULT_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS;
     private int bloomFilterIndexSizeInBytes = DEFAULT_BLOOM_FILTER_INDEX_SIZE_IN_BYTES;
@@ -79,6 +82,13 @@ public class SegmentBuilder<K, V> {
         return this;
     }
 
+    public SegmentBuilder<K, V> withMaxNumberOfKeysInSegmentCacheDuringFlushing(
+            final long maxNumberOfKeysInSegmentCacheDuringFlushing) {
+        this.maxNumberOfKeysInSegmentCacheDuringFlushing = Objects
+                .requireNonNull(maxNumberOfKeysInSegmentCacheDuringFlushing);
+        return this;
+    }
+
     public SegmentBuilder<K, V> withMaxNumberOfKeysInIndexPage(
             final int maxNumberOfKeysInIndexPage) {
         this.maxNumberOfKeysInIndexPage = Objects
@@ -123,6 +133,7 @@ public class SegmentBuilder<K, V> {
         }
         if (segmentConf == null) {
             segmentConf = new SegmentConf(maxNumberOfKeysInSegmentCache,
+                    maxNumberOfKeysInSegmentCacheDuringFlushing,
                     maxNumberOfKeysInIndexPage,
                     bloomFilterNumberOfHashFunctions,
                     bloomFilterIndexSizeInBytes,

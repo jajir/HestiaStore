@@ -32,9 +32,9 @@ public class SegmentWriterTest {
     public void test_basic_writing() throws Exception {
         when(deltaCacheController.openWriter()).thenReturn(deltaCacheWriter);
         when(deltaCacheWriter.getNumberOfKeys()).thenReturn(1L,2L,3L);
-        when(segmentCompacter.shouldBeCompacted(1)).thenReturn(false);
-        when(segmentCompacter.shouldBeCompacted(2)).thenReturn(false);
-        when(segmentCompacter.shouldBeCompacted(3)).thenReturn(false);
+        when(segmentCompacter.shouldBeCompactedDuringFlushing(1)).thenReturn(false);
+        when(segmentCompacter.shouldBeCompactedDuringFlushing(2)).thenReturn(false);
+        when(segmentCompacter.shouldBeCompactedDuringFlushing(3)).thenReturn(false);
         try(final PairWriter<Integer, String> writer= new SegmentWriter<>(
                 segmentCompacter,deltaCacheController)){
             writer.put(PAIR_1);
@@ -48,18 +48,18 @@ public class SegmentWriterTest {
         verify(deltaCacheWriter).put(PAIR_3);
         
 
-        verify(segmentCompacter).shouldBeCompacted(1);
-        verify(segmentCompacter).shouldBeCompacted(2);
-        verify(segmentCompacter).shouldBeCompacted(3);
+        verify(segmentCompacter).shouldBeCompactedDuringFlushing(1);
+        verify(segmentCompacter).shouldBeCompactedDuringFlushing(2);
+        verify(segmentCompacter).shouldBeCompactedDuringFlushing(3);
     }
 
     @Test
     public void test_compact_during_writing() throws Exception {
         when(deltaCacheController.openWriter()).thenReturn(deltaCacheWriter);
         when(deltaCacheWriter.getNumberOfKeys()).thenReturn(1L,2L,3L);
-        when(segmentCompacter.shouldBeCompacted(1)).thenReturn(false);
-        when(segmentCompacter.shouldBeCompacted(2)).thenReturn(true);
-        when(segmentCompacter.shouldBeCompacted(3)).thenReturn(false);
+        when(segmentCompacter.shouldBeCompactedDuringFlushing(1)).thenReturn(false);
+        when(segmentCompacter.shouldBeCompactedDuringFlushing(2)).thenReturn(true);
+        when(segmentCompacter.shouldBeCompactedDuringFlushing(3)).thenReturn(false);
         try(final PairWriter<Integer, String> writer= new SegmentWriter<>(
                 segmentCompacter,deltaCacheController)){
             writer.put(PAIR_1);
@@ -73,9 +73,9 @@ public class SegmentWriterTest {
         verify(deltaCacheWriter).put(PAIR_3);
         
 
-        verify(segmentCompacter).shouldBeCompacted(1);
-        verify(segmentCompacter).shouldBeCompacted(2);
-        verify(segmentCompacter).shouldBeCompacted(3);
+        verify(segmentCompacter).shouldBeCompactedDuringFlushing(1);
+        verify(segmentCompacter).shouldBeCompactedDuringFlushing(2);
+        verify(segmentCompacter).shouldBeCompactedDuringFlushing(3);
 
         verify(segmentCompacter, times(1)).forceCompact();;
     }

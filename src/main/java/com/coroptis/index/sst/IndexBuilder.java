@@ -9,6 +9,7 @@ import com.coroptis.index.log.Log;
 public class IndexBuilder<K, V> {
 
     private final static long DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = 200_000;
+    private final static long DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING = -1;
     private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_INDEX_PAGE = 5_000;
 
     private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT = 10_000_000;
@@ -20,6 +21,7 @@ public class IndexBuilder<K, V> {
     private final static boolean DEFAULT_INDEX_SYNCHRONIZED = false;
 
     private long maxNumberOfKeysInSegmentCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
+    private long maxNumberOfKeysInSegmentCacheDuringFlushing = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING;
     private int maxNumberOfKeysInSegmentIndexPage = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_INDEX_PAGE;
     private int maxNumberOfKeysInCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_CACHE;
     private int maxNumberOfKeysInSegment = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT;
@@ -108,8 +110,12 @@ public class IndexBuilder<K, V> {
     }
 
     public Index<K, V> build() {
+        if (maxNumberOfKeysInSegmentCacheDuringFlushing == DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING) {
+            maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInCache;
+        }
         final SsstIndexConf conf = new SsstIndexConf(
                 maxNumberOfKeysInSegmentCache,
+                maxNumberOfKeysInSegmentCacheDuringFlushing,
                 maxNumberOfKeysInSegmentIndexPage, maxNumberOfKeysInCache,
                 maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache,
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes);

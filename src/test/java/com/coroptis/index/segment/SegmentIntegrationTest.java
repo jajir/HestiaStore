@@ -396,7 +396,7 @@ public class SegmentIntegrationTest {
                         .withMaxNumberOfKeysInSegmentMemory(1)
                         .withMaxNumberOfKeysInIndexPage(1).build(),
                 9, // expectedNumberKeysInScarceIndex
-                5// expectedNumberOfFile
+                4// expectedNumberOfFile
         ), arguments(tdi, tds, dir3,
                 Segment.<Integer, String>builder().withDirectory(dir3)
                         .withId(id3).withKeyTypeDescriptor(tdi)
@@ -405,7 +405,7 @@ public class SegmentIntegrationTest {
                         .withMaxNumberOfKeysInSegmentMemory(2)
                         .withMaxNumberOfKeysInIndexPage(2).build(),
                 5, // expectedNumberKeysInScarceIndex
-                4 // expectedNumberOfFile
+                5 // expectedNumberOfFile
         ));
     }
 

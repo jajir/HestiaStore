@@ -3,17 +3,20 @@ package com.coroptis.index.segment;
 public class SegmentConf {
 
     private final long maxNumberOfKeysInSegmentCache;
+    private final long maxNumberOfKeysInSegmentCacheDuringFlushing;
     private final int maxNumberOfKeysInIndexPage;
     private final int bloomFilterNumberOfHashFunctions;
     private final int bloomFilterIndexSizeInBytes;
     private final long maxNumberOfKeysInSegmentMemory;
 
     public SegmentConf(final long maxNumeberOfKeysInSegmentCache,
+            final long maxNumberOfKeysInSegmentCacheDuringFlushing,
             final int maxNumberOfKeysInIndexPage,
             final int bloomFilterNumberOfHashFunctions,
             final int bloomFilterIndexSizeInBytes,
             final long maxNumberOfKeysInSegmentMemory) {
         this.maxNumberOfKeysInSegmentCache = maxNumeberOfKeysInSegmentCache;
+        this.maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInSegmentCacheDuringFlushing;
         this.maxNumberOfKeysInIndexPage = maxNumberOfKeysInIndexPage;
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
@@ -38,5 +41,9 @@ public class SegmentConf {
 
     int getBloomFilterIndexSizeInBytes() {
         return bloomFilterIndexSizeInBytes;
+    }
+
+    long getMaxNumberOfKeysInSegmentCacheDuringFlushing() {
+        return maxNumberOfKeysInSegmentCacheDuringFlushing;
     }
 }

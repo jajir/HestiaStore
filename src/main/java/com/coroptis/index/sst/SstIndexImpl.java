@@ -134,7 +134,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     private void flushCache() {
         logger.debug(
                 "Cache compacting of '{}' key value pairs in cache started.",
-                cache.size());
+                F.fmt(cache.size()));
         final CompactSupport<K, V> support = new CompactSupport<>(
                 segmentManager, keySegmentCache);
         cache.getStream()
