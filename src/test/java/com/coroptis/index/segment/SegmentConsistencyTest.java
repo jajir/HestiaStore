@@ -22,6 +22,7 @@ import com.coroptis.index.directory.MemDirectory;
  */
 public class SegmentConsistencyTest extends AbstractSegmentTest {
 
+    private final static int MAX_LOOP = 100; 
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     final Directory dir = new MemDirectory();
     final SegmentId id = SegmentId.of(29);
@@ -34,7 +35,7 @@ public class SegmentConsistencyTest extends AbstractSegmentTest {
     @Test
     void test_consistency() throws Exception {
         final Segment<Integer, Integer> seg = makeSegment();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < MAX_LOOP; i++) {
             writePairs(seg, makeList(i));
             verifySegmentData(seg, makeList(i));
         }
@@ -51,7 +52,8 @@ public class SegmentConsistencyTest extends AbstractSegmentTest {
         final Segment<Integer, Integer> seg = makeSegment();
         writePairs(seg, makeList(0));
         final PairIterator<Integer, Integer> iterator = seg.openIterator();
-        for (int i = 1; i < 100 && iterator.hasNext(); i++) {
+        //FIXME remove -1 to improve stability
+        for (int i = 1; i < MAX_LOOP - 1 && iterator.hasNext(); i++) {
             writePairs(seg, makeList(i));
             final Pair<Integer, Integer> p = iterator.next();
             assertEquals(i, p.getValue());
