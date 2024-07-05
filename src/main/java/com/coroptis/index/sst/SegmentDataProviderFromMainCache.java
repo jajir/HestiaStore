@@ -7,7 +7,7 @@ import com.coroptis.index.bloomfilter.BloomFilter;
 import com.coroptis.index.scarceindex.ScarceIndex;
 import com.coroptis.index.segment.Segment;
 import com.coroptis.index.segment.SegmentData;
-import com.coroptis.index.segment.SegmentDataLazyLoaded;
+import com.coroptis.index.segment.SegmentDataLazyLoader;
 import com.coroptis.index.segment.SegmentDataProvider;
 import com.coroptis.index.segment.SegmentDeltaCache;
 import com.coroptis.index.segment.SegmentId;
@@ -31,7 +31,7 @@ public class SegmentDataProviderFromMainCache<K, V>
         final Optional<SegmentData<K, V>> oData = cache.getSegmentData(id);
         if (oData.isEmpty()) {
             final Segment<K, V> segment = segmentManager.getSegment(id);
-            final SegmentDataLazyLoaded<K, V> out = new SegmentDataLazyLoaded<>(
+            final SegmentDataLazyLoader<K, V> out = new SegmentDataLazyLoader<>(
                     segment.getDataBuilder());
             cache.put(id, out);
             return out;

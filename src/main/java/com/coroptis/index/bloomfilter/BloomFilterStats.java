@@ -1,5 +1,7 @@
 package com.coroptis.index.bloomfilter;
 
+import com.coroptis.index.F;
+
 /**
  * Holds basic bloom filter statistics, it allows analyze cache hit ratio:
  * 
@@ -34,7 +36,7 @@ public class BloomFilterStats {
     String getStatsString() {
         return String.format("Bloom filter was called %s times "
                 + "and key was not stored in %s casses it's %s%% ratio.",
-                bloomFilterCalls, keyIsNotStored, getRatio());
+                F.fmt(bloomFilterCalls), F.fmt(keyIsNotStored), getRatio());
     }
 
     long getKeyIsNotStored() {

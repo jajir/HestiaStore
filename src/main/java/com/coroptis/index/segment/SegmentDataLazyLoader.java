@@ -16,17 +16,17 @@ import com.coroptis.index.scarceindex.ScarceIndex;
  * @param <K>
  * @param <V>
  */
-public class SegmentDataLazyLoaded<K, V> implements SegmentData<K, V> {
+public class SegmentDataLazyLoader<K, V> implements SegmentData<K, V> {
 
     private final Logger logger = LoggerFactory
-            .getLogger(SegmentDataLazyLoaded.class);
+            .getLogger(SegmentDataLazyLoader.class);
     private final SegmentDataProvider<K, V> dataProvider;
 
     private SegmentDeltaCache<K, V> deltaCache;
     private BloomFilter<K> bloomFilter;
     private ScarceIndex<K> scarceIndex;
 
-    public SegmentDataLazyLoaded(final SegmentDataProvider<K, V> dataProvider) {
+    public SegmentDataLazyLoader(final SegmentDataProvider<K, V> dataProvider) {
         this.dataProvider = Objects.requireNonNull(dataProvider);
     }
 

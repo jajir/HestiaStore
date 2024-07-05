@@ -17,7 +17,7 @@ public class SegmentDataProviderSimple<K, V>
         implements SegmentDataProvider<K, V> {
 
     private final SegmentDataDirectLoader<K, V> dataLoader;
-    private SegmentDataLazyLoaded<K, V> dataImpl;
+    private SegmentDataLazyLoader<K, V> dataImpl;
 
     SegmentDataProviderSimple(final SegmentDataDirectLoader<K, V> dataLoader) {
         this.dataLoader = Objects.requireNonNull(dataLoader);
@@ -44,7 +44,7 @@ public class SegmentDataProviderSimple<K, V>
         if (dataImpl != null) {
             dataImpl.close();
         }
-        dataImpl = new SegmentDataLazyLoaded<>(dataLoader);
+        dataImpl = new SegmentDataLazyLoader<>(dataLoader);
     }
 
     /**
