@@ -20,11 +20,11 @@ public class Stats {
     }
 
     void incGetCx() {
-        putCx++;
+        getCx++;
     }
 
     void incDeleteCx() {
-        putCx++;
+        deleteCx++;
     }
 
     public long getPutCx() {
