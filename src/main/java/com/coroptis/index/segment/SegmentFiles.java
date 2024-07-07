@@ -77,7 +77,6 @@ public class SegmentFiles<K, V> {
                         keyTypeDescriptor.getConvertorToBytes()) //
                 .withValueReader(valueTypeDescriptor.getTypeReader())//
                 .withValueWriter(valueTypeDescriptor.getTypeWriter())//
-                .withFileReadingBufferSize(indexBufferSize)//
                 .build();
     }
 
@@ -106,6 +105,21 @@ public class SegmentFiles<K, V> {
                         keyTypeDescriptor.getConvertorToBytes()) //
                 .withValueReader(valueTypeDescriptor.getTypeReader())//
                 .withValueWriter(valueTypeDescriptor.getTypeWriter())//
+                .build();
+    }
+
+    SstFile<K, V> getIndexSstFileForIteration() {
+        return SstFile.<K, V>builder() //
+                .withDirectory(directory) //
+                .withFileName(getIndexFileName())//
+                .withKeyComparator(keyTypeDescriptor.getComparator()) //
+                .withKeyConvertorFromBytes(
+                        keyTypeDescriptor.getConvertorFromBytes())//
+                .withKeyConvertorToBytes(
+                        keyTypeDescriptor.getConvertorToBytes()) //
+                .withValueReader(valueTypeDescriptor.getTypeReader())//
+                .withValueWriter(valueTypeDescriptor.getTypeWriter())//
+                .withFileReadingBufferSize(indexBufferSize)//
                 .build();
     }
 

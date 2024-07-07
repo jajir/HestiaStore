@@ -41,7 +41,7 @@ public class SegmentReader<K, V> {
             final OptimisticLockObjectVersionProvider versionProvider) {
         return new PairIteratorWithLock<>(
                 new MergeWithCacheIterator<K, V>(
-                        segmentFiles.getIndexSstFile().openIterator(),
+                        segmentFiles.getIndexSstFileForIteration().openIterator(),
                         segmentFiles.getKeyTypeDescriptor(),
                         segmentFiles.getValueTypeDescriptor(),
                         deltaCacheController.getDeltaCache().getSortedKeys(),
