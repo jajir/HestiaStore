@@ -13,13 +13,11 @@ public class FsFileReaderStream implements FileReader {
 
     private final BufferedInputStream bis;
 
-    private final static int BUFFER_SIZE = 1024 * 1 * 4;
-
-    FsFileReaderStream(final File file) {
+    FsFileReaderStream(final File file, final int bufferSize) {
         try {
             final Path path = file.toPath();
             final InputStream fin = Files.newInputStream(path);
-            bis = new BufferedInputStream(fin, BUFFER_SIZE);
+            bis = new BufferedInputStream(fin, bufferSize);
         } catch (IOException e) {
             throw new IndexException(e.getMessage(), e);
         }

@@ -10,6 +10,8 @@ public interface Directory {
     }
 
     FileReader getFileReader(String fileName);
+    
+    FileReader getFileReader(String fileName, int bufferSize);
 
     FileReaderSeekable getFileReaderSeekable(String fileName);
 

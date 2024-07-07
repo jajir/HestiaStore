@@ -35,6 +35,12 @@ public class FsZipDirectory implements Directory {
     }
 
     @Override
+    public FileReader getFileReader(final String fileName,
+            final int bufferSize) {
+        return getFileReader(fileName);
+    }
+
+    @Override
     public void renameFile(final String currentFileName,
             final String newFileName) {
         final File file = getFile(currentFileName);

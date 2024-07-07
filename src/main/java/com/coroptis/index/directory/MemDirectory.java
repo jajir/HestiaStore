@@ -20,6 +20,12 @@ public class MemDirectory implements Directory {
     }
 
     @Override
+    public FileReader getFileReader(final String fileName,
+            final int bufferSize) {
+        return getFileReader(fileName);
+    }
+
+    @Override
     public FileWriter getFileWriter(final String fileName,
             final Access access) {
         return new MemFileWriter(fileName, this, access);

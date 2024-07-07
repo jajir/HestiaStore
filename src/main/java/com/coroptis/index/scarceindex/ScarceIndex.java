@@ -57,12 +57,17 @@ public class ScarceIndex<K> {
                 "File name object is null.");
         this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor,
                 "Key type descriptor object is null.");
-        this.sstFile = new SstFile<>(directory, fileName,
-                typeDescriptorInteger.getTypeWriter(),
-                typeDescriptorInteger.getTypeReader(),
-                keyTypeDescriptor.getComparator(),
-                keyTypeDescriptor.getConvertorFromBytes(),
-                keyTypeDescriptor.getConvertorToBytes());
+        this.sstFile = SstFile.<K, Integer>builder() //
+                .withDirectory(directory) //
+                .withFileName(fileName)//
+                .withKeyComparator(keyTypeDescriptor.getComparator()) //
+                .withKeyConvertorFromBytes(
+                        keyTypeDescriptor.getConvertorFromBytes())//
+                .withKeyConvertorToBytes(
+                        keyTypeDescriptor.getConvertorToBytes()) //
+                .withValueReader(typeDescriptorInteger.getTypeReader())//
+                .withValueWriter(typeDescriptorInteger.getTypeWriter())//
+                .build();
         this.cache = new ScarceIndexCache<>(keyTypeDescriptor);
         loadCache();
     }

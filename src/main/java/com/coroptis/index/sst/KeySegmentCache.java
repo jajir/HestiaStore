@@ -61,10 +61,18 @@ public class KeySegmentCache<K> implements CloseableResource {
                 "Key type comparator is null.");
         this.keyComparator = Objects
                 .requireNonNull(keyTypeDescriptor.getComparator());
-        this.sdf = new SstFile<>(directory, FILE_NAME, tdSegId.getTypeWriter(),
-                tdSegId.getTypeReader(), keyTypeDescriptor.getComparator(),
-                keyTypeDescriptor.getConvertorFromBytes(),
-                keyTypeDescriptor.getConvertorToBytes());
+        this.sdf = SstFile.<K, SegmentId>builder() //
+                .withDirectory(directory) //
+                .withFileName(FILE_NAME)//
+                .withKeyComparator(keyTypeDescriptor.getComparator()) //
+                .withKeyConvertorFromBytes(
+                        keyTypeDescriptor.getConvertorFromBytes())//
+                .withKeyConvertorToBytes(
+                        keyTypeDescriptor.getConvertorToBytes()) //
+                .withValueReader(tdSegId.getTypeReader())//
+                .withValueWriter(tdSegId.getTypeWriter())//
+                .build();
+
         this.list = new TreeMap<>(keyComparator);
         try (PairIterator<K, SegmentId> reader = sdf.openIterator()) {
             while (reader.hasNext()) {

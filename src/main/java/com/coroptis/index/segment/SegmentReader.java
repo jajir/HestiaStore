@@ -35,6 +35,8 @@ public class SegmentReader<K, V> {
                 "Segment delta cached controlle is required");
     }
 
+    // FIXME remove class, it's just constructor wrapper
+
     public PairIterator<K, V> openIterator(
             final OptimisticLockObjectVersionProvider versionProvider) {
         return new PairIteratorWithLock<>(

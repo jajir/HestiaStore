@@ -11,9 +11,13 @@ import com.coroptis.index.directory.Directory;
 
 public class SstFileBuilder<K, V> {
 
+    private final int DELAULT_FILE_READING_BUFFER_SIZE = 1024 * 4;
+
     private Directory directory;
 
     private String fileName;
+
+    private int fileReadingBufferSize = DELAULT_FILE_READING_BUFFER_SIZE;
 
     private TypeWriter<V> valueWriter;
 
@@ -32,6 +36,13 @@ public class SstFileBuilder<K, V> {
 
     public SstFileBuilder<K, V> withFileName(final String file) {
         this.fileName = Objects.requireNonNull(file);
+        return this;
+    }
+
+    public SstFileBuilder<K, V> withFileReadingBufferSize(
+            final int fileReadingBufferSize) {
+        this.fileReadingBufferSize = Objects
+                .requireNonNull(fileReadingBufferSize);
         return this;
     }
 
@@ -68,7 +79,8 @@ public class SstFileBuilder<K, V> {
 
     public SstFile<K, V> build() {
         return new SstFile<>(directory, fileName, valueWriter, valueReader,
-                keyComparator, keyConvertorFromBytes, keyConvertorToBytes);
+                keyComparator, keyConvertorFromBytes, keyConvertorToBytes,
+                fileReadingBufferSize);
     }
 
 }

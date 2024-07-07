@@ -28,7 +28,7 @@ public class KeySegmentCacheSanityCheckTest {
                 "index.map", integerTd.getTypeWriter(),
                 integerTd.getTypeReader(), stringTd.getComparator(),
                 stringTd.getConvertorFromBytes(),
-                stringTd.getConvertorToBytes());
+                stringTd.getConvertorToBytes(),1024);
 
         try (SstFileWriter<String, SegmentId> writer = sdf.openWriter()) {
             writer.put(Pair.of("aaa", SegmentId.of(1)));

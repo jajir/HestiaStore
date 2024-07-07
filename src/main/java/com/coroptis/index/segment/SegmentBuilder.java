@@ -18,6 +18,8 @@ public class SegmentBuilder<K, V> {
     private final static int DEFAULT_BLOOM_FILTER_INDEX_SIZE_IN_BYTES = 10_000;
     private final static int DEFAUL_MAX_NUMBER_OF_KEYS_IN_SEGMENT_MEMORY = Integer.MAX_VALUE;
 
+    private final static int DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES = 1024 * 4;
+
     private Directory directory;
     private SegmentId id;
     private TypeDescriptor<K> keyTypeDescriptor;
@@ -32,6 +34,7 @@ public class SegmentBuilder<K, V> {
     private SegmentConf segmentConf;
     private SegmentFiles<K, V> segmentFiles;
     private SegmentDataProvider<K, V> segmentDataProvider;
+    private int indexBufferSizeInBytes = DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES;
 
     SegmentBuilder() {
 
@@ -127,6 +130,12 @@ public class SegmentBuilder<K, V> {
         return this;
     }
 
+    public SegmentBuilder<K, V> withIndexBufferSizeInBytes(
+            final int indexBufferSizeInBytes) {
+        this.indexBufferSizeInBytes = indexBufferSizeInBytes;
+        return this;
+    }
+
     public Segment<K, V> build() {
         if (versionController == null) {
             versionController = new VersionController();
@@ -141,7 +150,7 @@ public class SegmentBuilder<K, V> {
         }
         if (segmentFiles == null) {
             segmentFiles = new SegmentFiles<>(directory, id, keyTypeDescriptor,
-                    valueTypeDescriptor);
+                    valueTypeDescriptor, indexBufferSizeInBytes);
         }
         final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
                 segmentFiles.getDirectory(), id);

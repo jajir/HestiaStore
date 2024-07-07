@@ -57,6 +57,7 @@ public class SstIndexIteratorTest {
                 .withMaxNumberOfKeysInCache(1) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
+                .withIndexBufferSizeInBytes(1024)//
                 .build();
     }
 

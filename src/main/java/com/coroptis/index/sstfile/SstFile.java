@@ -20,6 +20,8 @@ public class SstFile<K, V> {
 
     private final String fileName;
 
+    private final int fileReadingBufferSize;
+
     private final TypeWriter<V> valueWriter;
 
     private final TypeReader<V> valueReader;
@@ -38,7 +40,8 @@ public class SstFile<K, V> {
             final TypeWriter<V> valueWriter, final TypeReader<V> valueReader,
             final Comparator<K> keyComparator,
             final ConvertorFromBytes<K> keyConvertorFromBytes,
-            final ConvertorToBytes<K> keyConvertorToBytes) {
+            final ConvertorToBytes<K> keyConvertorToBytes,
+            final int fileReadingBufferSize) {
         this.directory = Objects.requireNonNull(directory);
         this.fileName = Objects.requireNonNull(fileName);
         this.valueWriter = Objects.requireNonNull(valueWriter);
@@ -47,18 +50,7 @@ public class SstFile<K, V> {
         this.keyConvertorFromBytes = Objects
                 .requireNonNull(keyConvertorFromBytes);
         this.keyConvertorToBytes = Objects.requireNonNull(keyConvertorToBytes);
-    }
-
-    public SstFileStreamer<K, V> openStreamer() {
-        final SstFileStreamer<K, V> streamer = new SstFileStreamer<>(
-                openReader(), keyComparator);
-        return streamer;
-    }
-
-    public SstFileStreamer<K, V> openStreamerFromPosition(final long position) {
-        final SstFileStreamer<K, V> streamer = new SstFileStreamer<>(
-                openReader(position), keyComparator);
-        return streamer;
+        this.fileReadingBufferSize = fileReadingBufferSize;
     }
 
     public PairReader<K, V> openReader() {
@@ -72,7 +64,8 @@ public class SstFile<K, V> {
         final DiffKeyReader<K> diffKeyReader = new DiffKeyReader<K>(
                 keyConvertorFromBytes);
         final SstFileReader<K, V> reader = new SstFileReader<>(diffKeyReader,
-                valueReader, directory.getFileReader(fileName));
+                valueReader,
+                directory.getFileReader(fileName, fileReadingBufferSize));
         reader.skip(position);
         return reader;
     }

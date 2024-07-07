@@ -27,14 +27,17 @@ public class SegmentFiles<K, V> {
     private final SegmentId id;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
+    private final int indexBufferSize;
 
     public SegmentFiles(final Directory directory, final SegmentId id,
             final TypeDescriptor<K> keyTypeDescriptor,
-            final TypeDescriptor<V> valueTypeDescriptor) {
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final int indexBufferSize) {
         this.directory = Objects.requireNonNull(directory);
         this.id = Objects.requireNonNull(id);
         this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
         this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
+        this.indexBufferSize = indexBufferSize;
     }
 
     String getCacheFileName() {
@@ -64,39 +67,60 @@ public class SegmentFiles<K, V> {
     }
 
     SstFile<K, V> getCacheSstFile() {
-        return new SstFile<>(directory, getCacheFileName(),
-                valueTypeDescriptor.getTypeWriter(),
-                valueTypeDescriptor.getTypeReader(),
-                keyTypeDescriptor.getComparator(),
-                keyTypeDescriptor.getConvertorFromBytes(),
-                keyTypeDescriptor.getConvertorToBytes());
+        return SstFile.<K, V>builder() //
+                .withDirectory(directory) //
+                .withFileName(getCacheFileName())//
+                .withKeyComparator(keyTypeDescriptor.getComparator()) //
+                .withKeyConvertorFromBytes(
+                        keyTypeDescriptor.getConvertorFromBytes())//
+                .withKeyConvertorToBytes(
+                        keyTypeDescriptor.getConvertorToBytes()) //
+                .withValueReader(valueTypeDescriptor.getTypeReader())//
+                .withValueWriter(valueTypeDescriptor.getTypeWriter())//
+                .withFileReadingBufferSize(indexBufferSize)//
+                .build();
     }
 
     SstFile<K, V> getCacheSstFile(final String fileName) {
-        return new SstFile<>(directory, fileName,
-                valueTypeDescriptor.getTypeWriter(),
-                valueTypeDescriptor.getTypeReader(),
-                keyTypeDescriptor.getComparator(),
-                keyTypeDescriptor.getConvertorFromBytes(),
-                keyTypeDescriptor.getConvertorToBytes());
+        return SstFile.<K, V>builder() //
+                .withDirectory(directory) //
+                .withFileName(fileName)//
+                .withKeyComparator(keyTypeDescriptor.getComparator()) //
+                .withKeyConvertorFromBytes(
+                        keyTypeDescriptor.getConvertorFromBytes())//
+                .withKeyConvertorToBytes(
+                        keyTypeDescriptor.getConvertorToBytes()) //
+                .withValueReader(valueTypeDescriptor.getTypeReader())//
+                .withValueWriter(valueTypeDescriptor.getTypeWriter())//
+                .build();
     }
 
     SstFile<K, V> getIndexSstFile() {
-        return new SstFile<>(directory, getIndexFileName(),
-                valueTypeDescriptor.getTypeWriter(),
-                valueTypeDescriptor.getTypeReader(),
-                keyTypeDescriptor.getComparator(),
-                keyTypeDescriptor.getConvertorFromBytes(),
-                keyTypeDescriptor.getConvertorToBytes());
+        return SstFile.<K, V>builder() //
+                .withDirectory(directory) //
+                .withFileName(getIndexFileName())//
+                .withKeyComparator(keyTypeDescriptor.getComparator()) //
+                .withKeyConvertorFromBytes(
+                        keyTypeDescriptor.getConvertorFromBytes())//
+                .withKeyConvertorToBytes(
+                        keyTypeDescriptor.getConvertorToBytes()) //
+                .withValueReader(valueTypeDescriptor.getTypeReader())//
+                .withValueWriter(valueTypeDescriptor.getTypeWriter())//
+                .build();
     }
 
     SstFile<K, V> getTempIndexFile() {
-        return new SstFile<>(directory, getTempIndexFileName(),
-                valueTypeDescriptor.getTypeWriter(),
-                valueTypeDescriptor.getTypeReader(),
-                keyTypeDescriptor.getComparator(),
-                keyTypeDescriptor.getConvertorFromBytes(),
-                keyTypeDescriptor.getConvertorToBytes());
+        return SstFile.<K, V>builder() //
+                .withDirectory(directory) //
+                .withFileName(getTempIndexFileName())//
+                .withKeyComparator(keyTypeDescriptor.getComparator()) //
+                .withKeyConvertorFromBytes(
+                        keyTypeDescriptor.getConvertorFromBytes())//
+                .withKeyConvertorToBytes(
+                        keyTypeDescriptor.getConvertorToBytes()) //
+                .withValueReader(valueTypeDescriptor.getTypeReader())//
+                .withValueWriter(valueTypeDescriptor.getTypeWriter())//
+                .build();
     }
 
     ScarceIndex<K> getTempScarceIndex() {

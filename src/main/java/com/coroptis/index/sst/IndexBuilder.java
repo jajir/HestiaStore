@@ -20,6 +20,8 @@ public class IndexBuilder<K, V> {
     private final static int DEFAULT_BLOOM_FILTER_INDEX_SIZE_IN_BYTES = 10_000;
     private final static boolean DEFAULT_INDEX_SYNCHRONIZED = false;
 
+    private final static int DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES = 1024 * 4;
+
     private long maxNumberOfKeysInSegmentCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
     private long maxNumberOfKeysInSegmentCacheDuringFlushing = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING;
     private int maxNumberOfKeysInSegmentIndexPage = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_INDEX_PAGE;
@@ -29,6 +31,8 @@ public class IndexBuilder<K, V> {
     private int bloomFilterNumberOfHashFunctions = DEFAULT_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS;
     private int bloomFilterIndexSizeInBytes = DEFAULT_BLOOM_FILTER_INDEX_SIZE_IN_BYTES;
     private boolean isIndexSynchronized = DEFAULT_INDEX_SYNCHRONIZED;
+
+    private int indexBufferSizeInBytes = DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES;
 
     private Directory directory;
     private TypeDescriptor<K> keyTypeDescriptor;
@@ -104,6 +108,12 @@ public class IndexBuilder<K, V> {
         return this;
     }
 
+    public IndexBuilder<K, V> withIndexBufferSizeInBytes(
+            final int indexBufferSizeInBytes) {
+        this.indexBufferSizeInBytes = indexBufferSizeInBytes;
+        return this;
+    }
+
     public IndexBuilder<K, V> withUseFullLog(final boolean useFullLog) {
         this.useFullLog = useFullLog;
         return this;
@@ -118,7 +128,8 @@ public class IndexBuilder<K, V> {
                 maxNumberOfKeysInSegmentCacheDuringFlushing,
                 maxNumberOfKeysInSegmentIndexPage, maxNumberOfKeysInCache,
                 maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache,
-                bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes);
+                bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
+                indexBufferSizeInBytes);
 
         Log<K, V> log = null;
         if (useFullLog) {

@@ -30,7 +30,7 @@ public class PairSeekableReaderImplTest {
         final Directory dir = new MemDirectory();
         final SstFile<String, Integer> sst = new SstFile<>(dir, FILE_NAME,
                 tdi.getTypeWriter(), tdi.getTypeReader(), tds.getComparator(),
-                tds.getConvertorFromBytes(), tds.getConvertorToBytes());
+                tds.getConvertorFromBytes(), tds.getConvertorToBytes(),1024);
         long position = 0;
         try (SstFileWriter<String, Integer> writer = sst.openWriter()) {
             writer.put(P1);

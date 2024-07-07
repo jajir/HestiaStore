@@ -20,6 +20,7 @@ public class SsstIndexConf {
 
     private final int bloomFilterNumberOfHashFunctions;
     private final int bloomFilterIndexSizeInBytes;
+    private final int indexBufferSizeInBytes;
 
     SsstIndexConf(final long maxNumberOfKeysInSegmentCache,
             final long maxNumberOfKeysInSegmentCacheDuringFlushing,
@@ -28,7 +29,8 @@ public class SsstIndexConf {
             final int maxNumberOfKeysInSegment,
             final int maxNumberOfSegmentsInCache,
             final int bloomFilterNumberOfHashFunctions,
-            final int bloomFilterIndexSizeInBytes) {
+            final int bloomFilterIndexSizeInBytes,
+            final int indexBufferSizeInBytes) {
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
         this.maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInSegmentCacheDuringFlushing;
         this.maxNumberOfKeysInSegmentIndexPage = maxNumberOfKeysInSegmentIndexPage;
@@ -37,38 +39,43 @@ public class SsstIndexConf {
         this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
+        this.indexBufferSizeInBytes = indexBufferSizeInBytes;
     }
 
-    public long getMaxNumberOfKeysInSegmentCache() {
+    long getMaxNumberOfKeysInSegmentCache() {
         return maxNumberOfKeysInSegmentCache;
     }
 
-    public int getMaxNumberOfKeysInSegmentIndexPage() {
+    int getMaxNumberOfKeysInSegmentIndexPage() {
         return maxNumberOfKeysInSegmentIndexPage;
     }
 
-    public long getMaxNumberOfKeysInCache() {
+    long getMaxNumberOfKeysInCache() {
         return maxNumberOfKeysInSCache;
     }
 
-    public int getMaxNumberOfKeysInSegment() {
+    int getMaxNumberOfKeysInSegment() {
         return maxNumberOfKeysInSegment;
     }
 
-    public int getBloomFilterNumberOfHashFunctions() {
+    int getBloomFilterNumberOfHashFunctions() {
         return bloomFilterNumberOfHashFunctions;
     }
 
-    public int getBloomFilterIndexSizeInBytes() {
+    int getBloomFilterIndexSizeInBytes() {
         return bloomFilterIndexSizeInBytes;
     }
 
-    public int getMaxNumberOfSegmentsInCache() {
+    int getMaxNumberOfSegmentsInCache() {
         return maxNumberOfSegmentsInCache;
     }
 
     long getMaxNumberOfKeysInSegmentCacheDuringFlushing() {
         return maxNumberOfKeysInSegmentCacheDuringFlushing;
+    }
+
+    int getIndexBufferSizeInBytes() {
+        return indexBufferSizeInBytes;
     }
 
 }
