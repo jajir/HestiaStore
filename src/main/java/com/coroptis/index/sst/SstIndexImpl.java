@@ -36,6 +36,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     private final SegmentManager<K, V> segmentManager;
     private final Log<K, V> log;
     private final LogWriter<K, V> logWriter;
+    private final Stats stats = new Stats();
     private IndexState<K, V> indexState;
 
     public SstIndexImpl(final Directory directory,
@@ -65,6 +66,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         indexState.tryPerformOperation();
         Objects.requireNonNull(key, "Key cant be null");
         Objects.requireNonNull(value, "Value cant be null");
+        stats.incPutCx();
 
         if (valueTypeDescriptor.isTombstone(value)) {
             throw new IllegalArgumentException(String.format(
@@ -202,6 +204,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     public V get(final K key) {
         indexState.tryPerformOperation();
         Objects.requireNonNull(key, "Key cant be null");
+        stats.incGetCx();
 
         final V out = cache.get(key);
         if (out == null) {
@@ -220,6 +223,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     public void delete(final K key) {
         indexState.tryPerformOperation();
         Objects.requireNonNull(key, "Key cant be null");
+        stats.incDeleteCx();
 
         logWriter.delete(key, valueTypeDescriptor.getTombstone());
 
@@ -236,6 +240,10 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         flushCache();
         logWriter.close();
         indexState.onClose(this);
+        logger.debug(String.format(
+                "Index is closing, where was %s gets, %s puts and %s deletes.",
+                F.fmt(stats.getGetCx()), F.fmt(stats.getPutCx()),
+                F.fmt(stats.getDeleteCx())));
     }
 
     public void setIndexState(final IndexState<K, V> indexState) {
