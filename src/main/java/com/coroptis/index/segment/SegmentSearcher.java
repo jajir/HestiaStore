@@ -60,7 +60,7 @@ public class SegmentSearcher<K, V> implements CloseableResource {
         if (out == null) {
             if (getBloomFilter().isNotStored(key)) {
                 /*
-                 * It;s sure that key is not in index.
+                 * It's sure that key is not in index.
                  */
                 return null;
             }
@@ -72,7 +72,12 @@ public class SegmentSearcher<K, V> implements CloseableResource {
             if (position == null) {
                 return null;
             }
-            return segmentIndexSearcher.search(key, position);
+            final V value = segmentIndexSearcher.search(key, position);
+            if (value == null) {
+                getBloomFilter().incrementFalsePositive();
+                return null;
+            }
+            return value;
         }
         return out;
     }

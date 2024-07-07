@@ -101,4 +101,8 @@ public class BloomFilter<K> {
         return bloomFilterStats.getStatsString();
     }
 
+    public void incrementFalsePositive() {
+        bloomFilterStats.incrementFalsePositive();
+    }
+
 }

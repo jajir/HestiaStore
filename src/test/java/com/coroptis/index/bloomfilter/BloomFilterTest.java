@@ -5,11 +5,16 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.MemDirectory;
 
 public class BloomFilterTest {
+
+    private final Logger logger = LoggerFactory
+            .getLogger(BloomFilterTest.class);
 
     private final TypeDescriptorString STD = new TypeDescriptorString();
 
@@ -32,17 +37,21 @@ public class BloomFilterTest {
         }
 
         assertFalse(bf.isNotStored("ahoj"));
+        assertFalse(bf.isNotStored("ahoj"));
         assertFalse(bf.isNotStored("znenku"));
         assertFalse(bf.isNotStored("karle"));
+        bf.incrementFalsePositive();
         assertFalse(bf.isNotStored("kachna"));
         assertTrue(bf.isNotStored("Milan"));
 
         // verify statistics
         bf.getStatsString();
         final BloomFilterStats stats = bf.getStatistics();
-        assertEquals(5, stats.getBloomFilterCalls());
+        assertEquals(6, stats.getBloomFilterCalls());
         assertEquals(1, stats.getKeyIsNotStored());
-        assertEquals(20, stats.getRatio());
+        assertEquals(5, stats.getKeyWasStored());
+        assertEquals(16, stats.getRatio());
+        logger.debug(stats.getStatsString());
     }
 
     @Test
