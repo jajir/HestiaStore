@@ -4,6 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,21 +23,15 @@ public class BloomFilterTest {
 
     private final String FILE_NAME = "segment-00880.bloomFilter";
 
+    private MemDirectory directory = new MemDirectory();
+
+    private final List<String> TEST_DATA_KEYS = Arrays.asList("ahoj", "znenku",
+            "karle", "kachna");
+
     @Test
     void test_basic_functionality() {
-        final MemDirectory directory = new MemDirectory();
-        final BloomFilter<String> bf = BloomFilter.<String>builder()
-                .withBloomFilterFileName(FILE_NAME)
-                .withConvertorToBytes(STD.getConvertorToBytes())
-                .withDirectory(directory).withIndexSizeInBytes(100)
-                .withNumberOfHashFunctions(10).build();
-
-        try (BloomFilterWriter<String> writer = bf.openWriter()) {
-            assertTrue(writer.write("ahoj"));
-            assertTrue(writer.write("znenku"));
-            assertTrue(writer.write("karle"));
-            assertTrue(writer.write("kachna"));
-        }
+        final BloomFilter<String> bf = makeBloomFilter();
+        writeToFilter(bf, TEST_DATA_KEYS);
 
         assertFalse(bf.isNotStored("ahoj"));
         assertFalse(bf.isNotStored("ahoj"));
@@ -55,21 +52,34 @@ public class BloomFilterTest {
     }
 
     @Test
-    void test_default_result() {
-        final MemDirectory directory = new MemDirectory();
-        final BloomFilter<String> bf = BloomFilter.<String>builder()
-                .withBloomFilterFileName(FILE_NAME)
-                .withConvertorToBytes(STD.getConvertorToBytes())
-                .withDirectory(directory).withIndexSizeInBytes(100)
-                .withNumberOfHashFunctions(10).build();
+    void test_empty_filter_stats() {
+        final BloomFilter<String> bf = makeBloomFilter();
+        writeToFilter(bf, TEST_DATA_KEYS);
 
         // verify statistics
-        bf.getStatsString();
         final BloomFilterStats stats = bf.getStatistics();
         assertEquals(0, stats.getBloomFilterCalls());
         assertEquals(0, stats.getKeyIsNotStored());
         assertEquals(0, stats.getRatio());
 
-        assertFalse(bf.isNotStored("hello"));
+        logger.debug(stats.getStatsString());
+        assertEquals("Bloom filter was not used.", stats.getStatsString());
     }
+
+    private BloomFilter<String> makeBloomFilter() {
+        return BloomFilter.<String>builder().withBloomFilterFileName(FILE_NAME)
+                .withConvertorToBytes(STD.getConvertorToBytes())
+                .withDirectory(directory).withIndexSizeInBytes(100)
+                .withNumberOfHashFunctions(10).build();
+    }
+
+    private void writeToFilter(final BloomFilter<String> bf,
+            final List<String> testData) {
+        try (final BloomFilterWriter<String> writer = bf.openWriter()) {
+            testData.forEach(key -> {
+                assertTrue(writer.write(key));
+            });
+        }
+    }
+
 }

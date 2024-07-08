@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 import com.coroptis.index.IndexException;
 
@@ -16,7 +17,8 @@ public class FsFileReaderStream implements FileReader {
     FsFileReaderStream(final File file, final int bufferSize) {
         try {
             final Path path = file.toPath();
-            final InputStream fin = Files.newInputStream(path);
+            final InputStream fin = Files.newInputStream(path,
+                    StandardOpenOption.READ);
             bis = new BufferedInputStream(fin, bufferSize);
         } catch (IOException e) {
             throw new IndexException(e.getMessage(), e);

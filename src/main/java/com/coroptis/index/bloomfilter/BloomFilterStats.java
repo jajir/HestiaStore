@@ -36,6 +36,9 @@ public class BloomFilterStats {
     }
 
     String getStatsString() {
+        if (bloomFilterCalls == 0) {
+            return "Bloom filter was not used.";
+        }
         return String.format("Bloom filter was used %s times "
                 + "and key was not stored in %s times, it's %s%% ratio. "
                 + "Probability of false positive is %.3f%%",
