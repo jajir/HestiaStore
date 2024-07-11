@@ -43,6 +43,9 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
             TypeDescriptor<K> keyTypeDescriptor,
             TypeDescriptor<V> valueTypeDescriptor, final SsstIndexConf conf,
             final Log<K, V> log) {
+        if (directory == null) {
+            throw new IllegalArgumentException("Directory was no spicified.");
+        }
         Objects.requireNonNull(directory);
         indexState = new IndexStateNew<>(directory);
         this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);

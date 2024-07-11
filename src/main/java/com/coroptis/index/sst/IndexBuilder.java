@@ -28,6 +28,7 @@ public class IndexBuilder<K, V> {
     private int maxNumberOfKeysInCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_CACHE;
     private int maxNumberOfKeysInSegment = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT;
     private int maxNumberOfSegmentsInCache = DEFAULT_MAX_NUMBER_OF_SEGMENTS_IN_CACHE;
+
     private int bloomFilterNumberOfHashFunctions = DEFAULT_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS;
     private int bloomFilterIndexSizeInBytes = DEFAULT_BLOOM_FILTER_INDEX_SIZE_IN_BYTES;
     private boolean isIndexSynchronized = DEFAULT_INDEX_SYNCHRONIZED;
@@ -35,6 +36,8 @@ public class IndexBuilder<K, V> {
     private int indexBufferSizeInBytes = DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES;
 
     private Directory directory;
+    private Class<K> keyClass;
+    private Class<V> valueClass;
     private TypeDescriptor<K> keyTypeDescriptor;
     private TypeDescriptor<V> valueTypeDescriptor;
     private boolean useFullLog = false;
@@ -50,13 +53,47 @@ public class IndexBuilder<K, V> {
 
     public IndexBuilder<K, V> withKeyTypeDescriptor(
             final TypeDescriptor<K> keyTypeDescriptor) {
+        if (this.keyClass != null) {
+            throw new IllegalArgumentException("KeyClass was alreade set");
+        }
         this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
         return this;
     }
 
     public IndexBuilder<K, V> withValueTypeDescriptor(
             final TypeDescriptor<V> valueTypeDescriptor) {
+        if (this.valueClass != null) {
+            throw new IllegalArgumentException("ValueClass was alreade set");
+        }
         this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
+        return this;
+    }
+
+    public IndexBuilder<K, V> withKeyClass(final Class<K> keyClass) {
+        if (this.keyClass != null) {
+            throw new IllegalArgumentException("KeyClass was alreade set");
+        }
+        if (this.keyTypeDescriptor != null) {
+            throw new IllegalArgumentException(
+                    "Key type descriptor was alreade set. Just one should be defined.");
+        }
+        this.keyClass = Objects.requireNonNull(keyClass);
+        this.keyTypeDescriptor = DataTypeDescriptorRegistry
+                .getTypeDescriptor(this.keyClass);
+        return this;
+    }
+
+    public IndexBuilder<K, V> withValueClass(final Class<V> valueClass) {
+        if (this.valueClass != null) {
+            throw new IllegalArgumentException("ValueClass was alreade set");
+        }
+        if (this.valueTypeDescriptor != null) {
+            throw new IllegalArgumentException(
+                    "Value type descriptor was alreade set. Just one should be defined.");
+        }
+        this.valueClass = Objects.requireNonNull(valueClass);
+        this.valueTypeDescriptor = DataTypeDescriptorRegistry
+                .getTypeDescriptor(this.valueClass);
         return this;
     }
 

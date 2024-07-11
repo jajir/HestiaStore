@@ -40,6 +40,13 @@ public class SsstIndexConf {
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
         this.indexBufferSizeInBytes = indexBufferSizeInBytes;
+
+        if (indexBufferSizeInBytes % 1024 != 0) {
+            throw new IllegalArgumentException(String.format(
+                    "Parameter 'indexBufferSizeInBytes' vith value '%s'"
+                            + " can't be divided by 1024 without reminder",
+                    indexBufferSizeInBytes));
+        }
     }
 
     long getMaxNumberOfKeysInSegmentCache() {
