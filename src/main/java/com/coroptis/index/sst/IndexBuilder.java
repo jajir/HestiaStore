@@ -167,7 +167,14 @@ public class IndexBuilder<K, V> {
                 maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache,
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
                 indexBufferSizeInBytes);
-
+        if (keyTypeDescriptor == null) {
+            throw new IllegalArgumentException("Key type descriptor is null. "
+                    + "Set key type descriptor of key class.");
+        }
+        if (valueTypeDescriptor == null) {
+            throw new IllegalArgumentException("Value type descriptor is null. "
+                    + "Set value type descriptor of value class.");
+        }
         Log<K, V> log = null;
         if (useFullLog) {
             log = Log.<K, V>builder().withDirectory(directory)
