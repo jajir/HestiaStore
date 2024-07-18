@@ -41,6 +41,20 @@ public class IndexBuilderTest {
                 ex.getMessage());
     }
 
+
+    @Test
+    void test_key_type_with_missing_definition() throws Exception {
+        final Exception ex = assertThrows(IllegalStateException.class,
+                () -> Index.<Byte, String>builder().withDirectory(directory).withKeyClass(Byte.class)
+                        .withValueClass(String.class).build());
+
+        assertEquals(
+                "There is not data type descriptor in registry "
+                +"for class 'class java.lang.Byte'",
+                ex.getMessage());
+    }
+
+
     @Test
     void test_key_type_definition_after_key_class() throws Exception {
         final Exception ex = assertThrows(IllegalArgumentException.class,
