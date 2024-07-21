@@ -1,6 +1,7 @@
 package com.coroptis.index.sst;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
@@ -41,6 +42,8 @@ public class IndexBuilder<K, V> {
     private TypeDescriptor<K> keyTypeDescriptor;
     private TypeDescriptor<V> valueTypeDescriptor;
     private boolean useFullLog = false;
+    private boolean customConfWasUsed = false;
+    private String memoryConf = null;
 
     IndexBuilder() {
 
@@ -53,47 +56,23 @@ public class IndexBuilder<K, V> {
 
     public IndexBuilder<K, V> withKeyTypeDescriptor(
             final TypeDescriptor<K> keyTypeDescriptor) {
-        if (this.keyClass != null) {
-            throw new IllegalArgumentException("KeyClass was alreade set");
-        }
         this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
         return this;
     }
 
     public IndexBuilder<K, V> withValueTypeDescriptor(
             final TypeDescriptor<V> valueTypeDescriptor) {
-        if (this.valueClass != null) {
-            throw new IllegalArgumentException("ValueClass was alreade set");
-        }
         this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
         return this;
     }
 
     public IndexBuilder<K, V> withKeyClass(final Class<K> keyClass) {
-        if (this.keyClass != null) {
-            throw new IllegalArgumentException("KeyClass was alreade set");
-        }
-        if (this.keyTypeDescriptor != null) {
-            throw new IllegalArgumentException(
-                    "Key type descriptor was alreade set. Just one should be defined.");
-        }
         this.keyClass = Objects.requireNonNull(keyClass);
-        this.keyTypeDescriptor = DataTypeDescriptorRegistry
-                .getTypeDescriptor(this.keyClass);
         return this;
     }
 
     public IndexBuilder<K, V> withValueClass(final Class<V> valueClass) {
-        if (this.valueClass != null) {
-            throw new IllegalArgumentException("ValueClass was alreade set");
-        }
-        if (this.valueTypeDescriptor != null) {
-            throw new IllegalArgumentException(
-                    "Value type descriptor was alreade set. Just one should be defined.");
-        }
         this.valueClass = Objects.requireNonNull(valueClass);
-        this.valueTypeDescriptor = DataTypeDescriptorRegistry
-                .getTypeDescriptor(this.valueClass);
         return this;
     }
 
@@ -127,6 +106,12 @@ public class IndexBuilder<K, V> {
         return this;
     }
 
+    public IndexBuilder<K, V> setMaxNumberOfKeysInSegmentCacheDuringFlushing(
+            final int maxNumberOfKeysInSegmentCacheDuringFlushing) {
+        this.maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInSegmentCacheDuringFlushing;
+        return this;
+    }
+
     public IndexBuilder<K, V> withBloomFilterNumberOfHashFunctions(
             final int bloomFilterNumberOfHashFunctions) {
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
@@ -151,14 +136,66 @@ public class IndexBuilder<K, V> {
         return this;
     }
 
+    public IndexBuilder<K, V> withCustomConf() {
+        this.customConfWasUsed = true;
+        return this;
+    }
+
+    public IndexBuilder<K, V> withConf(final String memoryConfiguration) {
+        this.memoryConf = memoryConfiguration;
+        return this;
+    }
+
     public IndexBuilder<K, V> withUseFullLog(final boolean useFullLog) {
         this.useFullLog = useFullLog;
         return this;
     }
 
     public Index<K, V> build() {
+        if (keyClass == null) {
+            throw new IllegalArgumentException("Key class wasn't specified");
+        }
+        if (valueClass == null) {
+            throw new IllegalArgumentException("Value class wasn't specified");
+        }
+        if (keyTypeDescriptor == null) {
+            this.keyTypeDescriptor = DataTypeDescriptorRegistry
+                    .getTypeDescriptor(this.keyClass);
+        }
+        if (valueTypeDescriptor == null) {
+            this.valueTypeDescriptor = DataTypeDescriptorRegistry
+                    .getTypeDescriptor(this.valueClass);
+        }
         if (maxNumberOfKeysInSegmentCacheDuringFlushing == DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING) {
             maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInCache;
+        }
+
+        if (!customConfWasUsed) {
+            final Optional<BuilderConfiguration> oConf = BuilderConfigurationRegistry
+                    .get(keyClass, memoryConf);
+            if (oConf.isPresent()) {
+                final BuilderConfiguration conf = oConf.get();
+                maxNumberOfKeysInSegmentCache = conf
+                        .getMaxNumberOfKeysInSegmentCache();
+                maxNumberOfKeysInSegmentCacheDuringFlushing = conf
+                        .getMaxNumberOfKeysInSegmentCacheDuringFlushing();
+                maxNumberOfKeysInSegmentIndexPage = conf
+                        .getMaxNumberOfKeysInSegmentIndexPage();
+                maxNumberOfKeysInCache = conf.getMaxNumberOfKeysInCache();
+                maxNumberOfKeysInSegment = conf.getMaxNumberOfKeysInSegment();
+                maxNumberOfSegmentsInCache = conf
+                        .getMaxNumberOfSegmentsInCache();
+                indexBufferSizeInBytes = conf.getIndexBufferSizeInBytes();
+                bloomFilterIndexSizeInBytes = conf
+                        .getBloomFilterIndexSizeInBytes();
+                bloomFilterNumberOfHashFunctions = conf
+                        .getBloomFilterNumberOfHashFunctions();
+            } else {
+                throw new IllegalStateException(String.format(
+                        "Configuration for key class '%s' "
+                                + "and memory configuration '%s' was not specified.",
+                        keyClass.getName(), memoryConf));
+            }
         }
         final SsstIndexConf conf = new SsstIndexConf(
                 maxNumberOfKeysInSegmentCache,

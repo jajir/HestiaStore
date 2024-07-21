@@ -43,4 +43,14 @@ public class BuilderConfigurationInteger implements BuilderConfiguration {
         return 1024 * 1024;
     }
 
+    @Override
+    public int getBloomFilterNumberOfHashFunctions() {
+        return 2;
+    }
+
+    @Override
+    public int getBloomFilterIndexSizeInBytes() {
+        return 100_000;
+    }
+
 }

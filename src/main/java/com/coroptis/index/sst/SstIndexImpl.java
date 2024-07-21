@@ -258,4 +258,14 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         flushCache();
     }
 
+    /**
+     * It's for junit testing. It's only way how to get to configuration values
+     * set by builder.
+     * 
+     * @return
+     */
+    SsstIndexConf getConf() {
+        return conf;
+    }
+
 }

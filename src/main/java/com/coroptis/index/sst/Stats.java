@@ -38,5 +38,5 @@ public class Stats {
     public long getDeleteCx() {
         return deleteCx;
     }
-    
+
 }

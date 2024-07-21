@@ -13,23 +13,76 @@ import java.util.Optional;
  */
 public class BuilderConfigurationRegistry {
 
-    private final static Map<Class<?>, BuilderConfiguration> confs = new HashMap<>();
+    /**
+     * memory attribute could be null.
+     * 
+     * @author honza
+     *
+     */
+    public static class Key {
 
-    static {
-        addTypeConf(Integer.class, new BuilderConfigurationInteger());
-        addTypeConf(Long.class, new BuilderConfigurationInteger());
+        private final Class<?> clazz;
+
+        private final String memory;
+
+        public final static Key of(final Class<?> clazz, final String memory) {
+            return new Key(clazz, memory);
+        }
+
+        private Key(final Class<?> clazz, final String memory) {
+            this.clazz = Objects.requireNonNull(clazz);
+            this.memory = memory;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(clazz, memory);
+        }
+
+        @Override
+        public boolean equals(final Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            final Key other = (Key) obj;
+            return Objects.equals(clazz, other.clazz)
+                    && Objects.equals(memory, other.memory);
+        }
+
     }
 
-    public static final <T> void addTypeConf(final Class<T> clazz,
+    private final static Map<Key, BuilderConfiguration> confs = new HashMap<>();
+
+    static {
+        addTypeDefaultConf(Integer.class, new BuilderConfigurationInteger());
+        addTypeDefaultConf(Long.class, new BuilderConfigurationInteger());
+    }
+
+    public static final <T> void addTypeDefaultConf(final Class<T> clazz,
             final BuilderConfiguration typeConfiguration) {
         Objects.requireNonNull(clazz);
         Objects.requireNonNull(typeConfiguration);
-        confs.put(clazz, typeConfiguration);
+        add(clazz, null, typeConfiguration);
     }
 
-    public static final <T> Optional<BuilderConfiguration> getTypeCofiguration(
-            final Class<T> clazz) {
+    public static final <T> void add(final Class<T> clazz, final String memory,
+            final BuilderConfiguration typeConfiguration) {
         Objects.requireNonNull(clazz);
-        return Optional.ofNullable(confs.get(clazz));
+        Objects.requireNonNull(typeConfiguration);
+        confs.put(Key.of(clazz, memory), typeConfiguration);
+    }
+
+    public static final <T> Optional<BuilderConfiguration> get(
+            final Class<T> clazz) {
+        return get(clazz, null);
+    }
+
+    public static final <T> Optional<BuilderConfiguration> get(
+            final Class<T> clazz, final String memory) {
+        Objects.requireNonNull(clazz, "Class can't be null");
+        return Optional.ofNullable(confs.get(Key.of(clazz, memory)));
     }
 }

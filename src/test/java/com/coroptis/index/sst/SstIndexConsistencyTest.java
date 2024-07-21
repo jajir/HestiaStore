@@ -70,9 +70,13 @@ public class SstIndexConsistencyTest {
     }
 
     private Index<Integer, Integer> makeSstIndex(boolean withLog) {
-        return Index.<Integer, Integer>builder().withDirectory(directory)
+        return Index.<Integer, Integer>builder()//
+                .withDirectory(directory)//
+                .withKeyClass(Integer.class)//
+                .withValueClass(Integer.class)//
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tdi) //
+                .withCustomConf()//
                 .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(10000) //
                 .withMaxNumberOfKeysInSegmentIndexPage(1000) //

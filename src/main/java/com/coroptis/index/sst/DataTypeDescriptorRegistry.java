@@ -45,10 +45,11 @@ public class DataTypeDescriptorRegistry {
             final Class<T> clazz) {
         Objects.requireNonNull(clazz);
         return DataTypeDescriptorRegistry.getTypeDescriptorO(clazz)
-                .orElseThrow(() -> new IllegalStateException(String.format(
-                        "There is not data type descriptor"
-                                + " in registry for class '%s'",
-                        clazz)));
+                .orElseThrow(
+                        () -> new IllegalStateException(String.format(
+                                "There is not data type descriptor"
+                                        + " in registry for class '%s'",
+                                clazz)));
 
     }
 

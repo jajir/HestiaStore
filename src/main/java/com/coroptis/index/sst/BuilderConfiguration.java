@@ -22,4 +22,8 @@ public interface BuilderConfiguration {
 
     int getIndexBufferSizeInBytes();
 
+    int getBloomFilterNumberOfHashFunctions();
+
+    int getBloomFilterIndexSizeInBytes();
+
 }

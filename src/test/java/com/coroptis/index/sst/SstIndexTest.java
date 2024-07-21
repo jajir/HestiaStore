@@ -224,9 +224,13 @@ public class SstIndexTest {
     }
 
     private Index<Integer, String> makeSstIndex(boolean withLog) {
-        return Index.<Integer, String>builder().withDirectory(directory)
+        return Index.<Integer, String>builder()//
+                .withDirectory(directory)//
+                .withKeyClass(Integer.class)//
+                .withValueClass(String.class)//
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tds) //
+                .withCustomConf()//
                 .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(1) //
                 .withMaxNumberOfKeysInSegmentIndexPage(2) //
