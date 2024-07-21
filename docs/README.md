@@ -26,15 +26,10 @@ Index could be in following states:
 Index should be created with builder, which make index instance. For example:
 
 ```java
-return Index.<Integer, String>builder().withDirectory(directory)
-        .withKeyTypeDescriptor(tdi) //
-        .withValueTypeDescriptor(tds) //
-        .withMaxNumberOfKeysInSegment(1000_000) //
-        .withMaxNumberOfKeysInSegmentCache(1000) //
-        .withMaxNumberOfKeysInSegmentIndexPage(1000) //
-        .withMaxNumberOfKeysInCache(100_000) //
-        .withBloomFilterIndexSizeInBytes(1000) //
-        .withBloomFilterNumberOfHashFunctions(4) //
+final Index<Integer, String> index = Index.<Integer, String>builder()
+        .withDirectory(directory)
+        .withKeyClass(Integer.class)
+        .withValueClass(String.class)
         .build();
 ```
 
