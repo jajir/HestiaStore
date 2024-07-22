@@ -2,9 +2,9 @@
 
 'Index state diagram
 
-New: Put new data into index
+New: Index preparing data, Index is not available
 Ready: Ready to work
-Close: Resources are freed
+Close: Resources are freed, index is not available
 
 [*] --> New: Open Index
 New --> Ready: Lock resources
