@@ -38,4 +38,9 @@ public interface Cache<K, V> {
      */
     void ivalidate(K key);
 
+    /**
+     * Allows to invalidate all cache elements.
+     */
+    void invalidateAll();
+
 }

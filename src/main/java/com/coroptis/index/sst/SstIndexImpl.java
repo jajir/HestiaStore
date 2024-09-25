@@ -243,6 +243,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         flushCache();
         logWriter.close();
         indexState.onClose(this);
+        segmentManager.close();
         logger.debug(String.format(
                 "Index is closing, where was %s gets, %s puts and %s deletes.",
                 F.fmt(stats.getGetCx()), F.fmt(stats.getPutCx()),
