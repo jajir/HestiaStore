@@ -1,6 +1,7 @@
 # Segment implementation
 
 Segment is core part of index. It represents one string sorted table file with:
+
 * Partial consistency - iterator stop working or return consistent data
 * Support Writing changes into delta files
 * Bloom filter for faster evaluating if key is in index
@@ -28,6 +29,7 @@ If last `put(C,3)` lead to index compacting than iterator couldn't provide corre
 ## Caching of segment data
 
 In segment following object are cached:
+
 * SegmentDeltaCache - contains changed key value pair from segment
 * BloomFilter - bloom filter data
 * ScarceIndex - scarce index data
@@ -49,6 +51,3 @@ Following image shows references between objects in runtime:
 Writing up to some point shouldn't interrupt reading. Putting new pair into segment is here:
 
 ![Segment writing sequence diagram](./images/segment-writing-seq.png)
-
- 
-
