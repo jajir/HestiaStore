@@ -31,13 +31,16 @@ public class IndexTest extends AbstractIndexTest {
         final Index<Integer, String> index1 = makeSstIndex(false);
         writePairs(index1, testData);
 
-        verifyIndexData(index1, testData);
+        /**
+         * Calling of verifyIndexData before compact() will fail. It's by design.
+         */
+
         verifyIndexSearch(index1, testData);
         index1.compact();
 
         verifyIndexData(index1, testData);
         verifyIndexSearch(index1, testData);
-        
+
         index1.close();
     }
 

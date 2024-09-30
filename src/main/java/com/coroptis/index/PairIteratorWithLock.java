@@ -3,8 +3,12 @@ package com.coroptis.index;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class PairIteratorWithLock<K, V> implements PairIterator<K, V> {
 
+    private final Logger logger = LoggerFactory.getLogger(PairIteratorWithLock.class);
     private final PairIterator<K, V> iterator;
     private final OptimisticLock lock;
 
@@ -19,6 +23,7 @@ public class PairIteratorWithLock<K, V> implements PairIterator<K, V> {
     @Override
     public boolean hasNext() {
         if (lock.isLocked()) {
+            logger.debug("Skipping reading data from segment, it's locked");
             return false;
         } else {
             return iterator.hasNext();
