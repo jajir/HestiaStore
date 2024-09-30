@@ -34,21 +34,21 @@ In segment following object are cached:
 
 When in segment is needed for example BloomFilter that it obtained like this:
 
-![Sequence of call when cached data are required](segment-cache-seq.png)
+![Sequence of call when cached data are required](./images/segment-cache-seq.png)
 
 Object `SegmentData` could contains objects `SegmentDeltaCache`, `BloomFilter` and `ScarceIndex`. All of them are lazy loaded from `SegmentDataLoader`. Segment data and segment data loaders have interface and it's implementation in different packages. Main reason is to avoid dependency from `com.coroptis.index.segment` package to `com.coroptis.index.sst` package.
 
-![Implementations from sst package](segment-cache-class1.png)
+![Implementations from sst package](./images/segment-cache-class1.png)
 
 Following image shows references between objects in runtime:
 
-![Cache related object relations](segment-cache-class2.png)
+![Cache related object relations](./images/segment-cache-class2.png)
 
 ## Writing to segment
 
 Writing up to some point shouldn't interrupt reading. Putting new pair into segment is here:
 
-![Segment writing sequence diagram](segment-writing-seq.png)
+![Segment writing sequence diagram](./images/segment-writing-seq.png)
 
  
 

@@ -21,7 +21,7 @@ Index is not thread safe.
 
 Index could be in following states:
 
-![Index methods](index-class.png)
+![Index methods](./images/index-class.png)
 
 Index should be created with builder, which make index instance. For example:
 
@@ -33,7 +33,7 @@ final Index<Integer, String> index = Index.<Integer, String>builder()
         .build();
 ```
 
-![Index states](index-state-diagram.png)
+![Index states](./images/index-state-diagram.png)
 
 Interruption of process of writing data to index could lead to corruption of entire index.
 
