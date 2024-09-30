@@ -11,7 +11,7 @@ Segment is core part of index. It represents one string sorted table file with:
 
 operations like write and get should be always consistent. What is written is read. Iteration behave differently. better than provide old data it stop providing any data. Generally it should work like this:
 
-```
+```text
   put(A,1)
   put(B,1)
   put(C,1)
