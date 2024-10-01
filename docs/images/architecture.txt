@@ -10,21 +10,22 @@ node "Index" as index {
   interface "Index API" as api
   component [Index cache] as indexCache
   node "Segments" {
-    component segment1
-    component segment2
+    component "Segment 1" as segment1
+    component "Segment 2" as segment2
   }
 } 
 
 database "File system\n" as fs {
-    [segment files 1]
-    [segment files 2]
+    component "Segment files 1" as files1
+    component "Segment files 2" as files2
 }
 
 
 
 api -down-> Segments
-index -down-> fs
 user --( api
 api --> indexCache
+segment1 --> files1
+segment2 --> files2
 
 @enduml
