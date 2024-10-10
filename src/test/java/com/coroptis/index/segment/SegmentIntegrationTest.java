@@ -306,6 +306,45 @@ public class SegmentIntegrationTest extends AbstractSegmentTest {
         ));
     }
 
+    @Test
+    void test_write_delete_operations() throws Exception {
+        final Directory directory = new MemDirectory();
+        final SegmentId id = SegmentId.of(27);
+        final Segment<Integer, String> seg = Segment.<Integer, String>builder()
+                .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
+                .withValueTypeDescriptor(tds).build();
+
+        writePairs(seg, Arrays.asList(//
+                Pair.of(2, "a"), //
+                Pair.of(2, tds.getTombstone()), //
+                Pair.of(3, "b"), //
+                Pair.of(3, "bb"), //
+                Pair.of(3, tds.getTombstone()), //
+                Pair.of(4, "c"), //
+                Pair.of(4, tds.getTombstone()), //
+                Pair.of(5, "d"), //
+                Pair.of(5, "dd"), //
+                Pair.of(5, "ddd"),//
+                Pair.of(5, tds.getTombstone()) //
+        ));
+
+        assertEquals(4, seg.getStats().getNumberOfKeys());
+        assertEquals(4, seg.getStats().getNumberOfKeysInCache());
+        assertEquals(0, seg.getStats().getNumberOfKeysInIndex());
+
+        verifySegmentData(seg, Arrays.asList(//
+        ));
+
+        verifySegmentSearch(seg, Arrays.asList(// s
+                Pair.of(2, null), //
+                Pair.of(3, null), //
+                Pair.of(4, null), //
+                Pair.of(5, null), //
+                Pair.of(6, null)//
+        ));
+    }
+
+
     /**
      * This test could be used for manual verification that all open files are
      * closed. Should be done by adding debug breakpoint into

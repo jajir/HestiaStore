@@ -218,7 +218,11 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
             final Segment<K, V> segment = segmentManager.getSegment(id);
             return segment.get(key);
         } else {
-            return out;
+            if (valueTypeDescriptor.isTombstone(out)){
+                return null;
+            }else{
+                return out;
+            }
         }
     }
 

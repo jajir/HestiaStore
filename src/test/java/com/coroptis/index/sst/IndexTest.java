@@ -1,5 +1,9 @@
 package com.coroptis.index.sst;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -42,6 +46,28 @@ public class IndexTest extends AbstractIndexTest {
         verifyIndexSearch(index1, testData);
 
         index1.close();
+    }
+
+    @Test
+    void test_duplicated_operations() throws Exception {
+        final Index<Integer, String> index1 = makeSstIndex(false);
+        for (int i = 0; i < 100; i++) {
+            index1.put(i, "kachna");
+            index1.delete(i);
+        }
+        index1.compact();
+        verifyIndexData(index1, new ArrayList<>());
+    }
+
+    @Test
+    void test_add_delete_search_operations() throws Exception {
+        final Index<Integer, String> index1 = makeSstIndex(false);
+        for (int i = 0; i < 100; i++) {
+            index1.put(i, "kachna");
+            assertEquals("kachna", index1.get(i));
+            index1.delete(i);
+            assertNull(index1.get(i));
+        }
     }
 
     private Index<Integer, String> makeSstIndex(boolean withLog) {
