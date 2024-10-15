@@ -22,7 +22,6 @@ public class PairSupplierRefreshedFromCache<K, V>
 
     @Override
     public Pair<K, V> get() {
-        boolean readNextOne = true;
         while(true){
             final Pair<K, V> pair = pairSupplier.get();
             if (pair == null) {
