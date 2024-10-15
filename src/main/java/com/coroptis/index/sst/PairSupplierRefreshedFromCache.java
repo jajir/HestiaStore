@@ -38,19 +38,6 @@ public class PairSupplierRefreshedFromCache<K, V>
                 return Pair.of(pair.getKey(), value);
             }
         }
-
-        // final Pair<K, V> pair = pairSupplier.get();
-        // if (pair == null) {
-        //     return null;
-        // }
-        // final V value = cache.get(pair.getKey());
-        // if (value == null) {
-        //     return pair;
-        // }
-        // if(valueTypeDescriptor.isTombstone(value)){
-        //     return pairSupplier.get();
-        // }
-        // return Pair.of(pair.getKey(), value);
     }
 
 }
