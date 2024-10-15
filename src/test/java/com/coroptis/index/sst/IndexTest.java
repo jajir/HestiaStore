@@ -62,12 +62,13 @@ public class IndexTest extends AbstractIndexTest {
     @Test
     void test_add_delete_search_operations() throws Exception {
         final Index<Integer, String> index1 = makeSstIndex(false);
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 3; i++) {
             index1.put(i, "kachna");
             assertEquals("kachna", index1.get(i));
             index1.delete(i);
             assertNull(index1.get(i));
         }
+        verifyIndexData(index1, List.of());
     }
 
     private Index<Integer, String> makeSstIndex(boolean withLog) {

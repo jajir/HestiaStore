@@ -306,6 +306,29 @@ public class SegmentIntegrationTest extends AbstractSegmentTest {
         ));
     }
 
+    @ParameterizedTest
+    @MethodSource("segmentProvider")
+    void test_write_delete_repeat_operations(final TypeDescriptorInteger tdi,
+            final TypeDescriptorString tds, final Directory directory,
+            final Segment<Integer, String> seg,
+            final int expectedNumberKeysInScarceIndex,
+            final int expectedNumberOfFiles) throws Exception {
+        for (int i = 0; i < 100; i++) {
+                int a = i * 3;
+        int b = i * 3 + 1;
+            writePairs(seg, Arrays.asList(//
+                Pair.of(a, "a"), //
+                Pair.of(b, "b") //
+            ));
+            writePairs(seg, Arrays.asList(//
+                Pair.of(a, tds.getTombstone()), //
+                Pair.of(b, tds.getTombstone()) //
+            ));
+            verifySegmentData(seg, Arrays.asList(//
+            ));
+        }
+    }
+
     @Test
     void test_write_delete_operations() throws Exception {
         final Directory directory = new MemDirectory();

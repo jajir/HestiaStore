@@ -87,6 +87,8 @@ public class Segment<K, V>
      * Method should be called just from inside of this package. Method open
      * direct writer to scarce index and main sst file. It's useful for
      * compacting.
+     * 
+     * Writer should be opend and closed as one atomic operation. 
      */
     SegmentFullWriter<K, V> openFullWriter() {
         return new SegmentFullWriter<K, V>(segmentFiles,
