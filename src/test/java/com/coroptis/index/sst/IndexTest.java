@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
@@ -32,43 +34,78 @@ public class IndexTest extends AbstractIndexTest {
 
     @Test
     void testBasic() throws Exception {
-        final Index<Integer, String> index1 = makeSstIndex(false);
-        writePairs(index1, testData);
+        final Index<Integer, String> index = makeSstIndex(false);
+        writePairs(index, testData);
 
         /**
          * Calling of verifyIndexData before compact() will fail. It's by design.
          */
 
-        verifyIndexSearch(index1, testData);
-        index1.compact();
+        verifyIndexSearch(index, testData);
+        index.compact();
 
-        verifyIndexData(index1, testData);
-        verifyIndexSearch(index1, testData);
+        verifyIndexData(index, testData);
+        verifyIndexSearch(index, testData);
 
-        index1.close();
+        index.close();
     }
 
     @Test
     void test_duplicated_operations() throws Exception {
-        final Index<Integer, String> index1 = makeSstIndex(false);
+        final Index<Integer, String> index = makeSstIndex(false);
         for (int i = 0; i < 100; i++) {
-            index1.put(i, "kachna");
-            index1.delete(i);
+            index.put(i, "kachna");
+            index.delete(i);
         }
-        index1.compact();
-        verifyIndexData(index1, new ArrayList<>());
+        index.compact();
+        verifyIndexData(index, new ArrayList<>());
     }
 
     @Test
-    void test_add_delete_search_operations() throws Exception {
-        final Index<Integer, String> index1 = makeSstIndex(false);
-        for (int i = 0; i < 3; i++) {
-            index1.put(i, "kachna");
-            assertEquals("kachna", index1.get(i));
-            index1.delete(i);
-            assertNull(index1.get(i));
+    void test_delete_search_operations() throws Exception {
+        final Index<Integer, String> index = makeSstIndex(false);
+        for (int i = 0; i < 300; i++) {
+            index.put(i, "kachna");
+            assertEquals("kachna", index.get(i));
+            index.delete(i);
+            assertNull(index.get(i));
+            verifyIndexData(index, List.of());
         }
-        verifyIndexData(index1, List.of());
+        verifyIndexData(index, List.of());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {1, 3, 5, 15, 100, 102})
+    void test_adds_and_deletes_operations_no_compacting(final int iterations) throws Exception {
+        final Index<Integer, String> index = makeSstIndex(false);
+        for (int i = 0; i < iterations; i++) {
+            index.put(i, "kachna");
+            assertEquals("kachna", index.get(i));
+        }
+        assertEquals(iterations, index.getStream().count());
+        for (int i = 0; i < iterations; i++) {
+            index.delete(i);
+            assertNull(index.get(i));
+        }
+        verifyIndexData(index, List.of());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {1, 3, 5, 15, 100, 102})
+    void test_adds_and_deletes_operations_with_compacting(final int iterations) throws Exception {
+        final Index<Integer, String> index = makeSstIndex(false);
+        for (int i = 0; i < iterations; i++) {
+            index.put(i, "kachna");
+            assertEquals("kachna", index.get(i));
+        }
+        index.compact();        
+        assertEquals(iterations, index.getStream().count());
+        for (int i = 0; i < iterations; i++) {
+            index.delete(i);
+            assertNull(index.get(i));
+        }
+        index.compact();
+        verifyIndexData(index, List.of());
     }
 
     private Index<Integer, String> makeSstIndex(boolean withLog) {
