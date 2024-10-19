@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import com.coroptis.index.Pair;
@@ -74,15 +75,20 @@ public class IndexTest extends AbstractIndexTest {
         verifyIndexData(index, List.of());
     }
 
+    /**
+     * In this test getStream() could ommit some results
+     * @param iterations
+     * @throws Exception
+     */
     @ParameterizedTest
-    @ValueSource(ints = {1, 3, 5, 15, 100, 102})
-    void test_adds_and_deletes_operations_no_compacting(final int iterations) throws Exception {
+    @CsvSource(value = {"1:0", "3:3", "5:3", "15:15", "100:99", "102:102"}, delimiter = ':')
+    void test_adds_and_deletes_operations_no_compacting(final int iterations, final int itemsInIndex) throws Exception {
         final Index<Integer, String> index = makeSstIndex(false);
         for (int i = 0; i < iterations; i++) {
             index.put(i, "kachna");
             assertEquals("kachna", index.get(i));
         }
-        assertEquals(iterations, index.getStream().count());
+        assertEquals(itemsInIndex, index.getStream().count());
         for (int i = 0; i < iterations; i++) {
             index.delete(i);
             assertNull(index.get(i));
