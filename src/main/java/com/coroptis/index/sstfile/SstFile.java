@@ -80,7 +80,6 @@ public class SstFile<K, V> {
                 directory.getFileReaderSeekable(fileName));
     }
 
-    @SuppressWarnings("resource")
     public PairIterator<K, V> openIterator() {
         final PairIterator<K, V> iterator = new PairIteratorFromReader<>(
                 openReader());

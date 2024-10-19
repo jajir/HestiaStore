@@ -29,25 +29,26 @@ public class LimitedPairIteratorTest {
                 Pair.of(8, "ddj"), Pair.of(9, "ddk"), Pair.of(10, "ddl"),
                 Pair.of(11, "ddm"));
 
-        final PairIterator<Integer, String> iterator = new LimitedPairIterator<Integer, String>(
+        try(final PairIterator<Integer, String> iterator = new LimitedPairIterator<Integer, String>(
                 new PairIteratorList<Integer, String>(data),
-                tdi.getComparator(), 5, 7);
+                tdi.getComparator(), 5, 7)){
 
-        assertTrue(iterator.hasNext());
-        assertTrue(iterator.readCurrent().isEmpty());
-        assertEquals(Pair.of(5, "ddg"), iterator.next());
-        assertEquals(Pair.of(5, "ddg"), iterator.readCurrent().get());
+                assertTrue(iterator.hasNext());
+                assertTrue(iterator.readCurrent().isEmpty());
+                assertEquals(Pair.of(5, "ddg"), iterator.next());
+                assertEquals(Pair.of(5, "ddg"), iterator.readCurrent().get());
 
-        assertTrue(iterator.hasNext());
-        assertEquals(Pair.of(6, "ddh"), iterator.next());
-        assertEquals(Pair.of(6, "ddh"), iterator.readCurrent().get());
+                assertTrue(iterator.hasNext());
+                assertEquals(Pair.of(6, "ddh"), iterator.next());
+                assertEquals(Pair.of(6, "ddh"), iterator.readCurrent().get());
 
-        assertTrue(iterator.hasNext());
-        assertEquals(Pair.of(7, "ddi"), iterator.next());
-        assertEquals(Pair.of(7, "ddi"), iterator.readCurrent().get());
+                assertTrue(iterator.hasNext());
+                assertEquals(Pair.of(7, "ddi"), iterator.next());
+                assertEquals(Pair.of(7, "ddi"), iterator.readCurrent().get());
 
-        assertFalse(iterator.hasNext());
-        assertEquals(Pair.of(7, "ddi"), iterator.readCurrent().get());
+                assertFalse(iterator.hasNext());
+                assertEquals(Pair.of(7, "ddi"), iterator.readCurrent().get());
+        }
     }
 
     @Test
@@ -59,21 +60,22 @@ public class LimitedPairIteratorTest {
                 Pair.of(8, "ddj"), Pair.of(9, "ddk"), Pair.of(10, "ddl"),
                 Pair.of(11, "ddm"));
 
-        final PairIterator<Integer, String> iterator = new LimitedPairIterator<Integer, String>(
+        try(final PairIterator<Integer, String> iterator = new LimitedPairIterator<Integer, String>(
                 new PairIteratorList<Integer, String>(data),
-                tdi.getComparator(), 1, 2);
+                tdi.getComparator(), 1, 2)){
 
-        assertTrue(iterator.hasNext());
-        assertTrue(iterator.readCurrent().isEmpty());
-        assertEquals(Pair.of(1, "bbb"), iterator.next());
-        assertEquals(Pair.of(1, "bbb"), iterator.readCurrent().get());
+                assertTrue(iterator.hasNext());
+                assertTrue(iterator.readCurrent().isEmpty());
+                assertEquals(Pair.of(1, "bbb"), iterator.next());
+                assertEquals(Pair.of(1, "bbb"), iterator.readCurrent().get());
 
-        assertTrue(iterator.hasNext());
-        assertEquals(Pair.of(2, "ccc"), iterator.next());
-        assertEquals(Pair.of(2, "ccc"), iterator.readCurrent().get());
+                assertTrue(iterator.hasNext());
+                assertEquals(Pair.of(2, "ccc"), iterator.next());
+                assertEquals(Pair.of(2, "ccc"), iterator.readCurrent().get());
 
-        assertFalse(iterator.hasNext());
-        assertEquals(Pair.of(2, "ccc"), iterator.readCurrent().get());
+                assertFalse(iterator.hasNext());
+                assertEquals(Pair.of(2, "ccc"), iterator.readCurrent().get());
+        }
     }
 
     @Test
@@ -85,21 +87,22 @@ public class LimitedPairIteratorTest {
                 Pair.of(8, "ddj"), Pair.of(9, "ddk"), Pair.of(10, "ddl"),
                 Pair.of(11, "ddm"));
 
-        final PairIterator<Integer, String> iterator = new LimitedPairIterator<Integer, String>(
+        try(final PairIterator<Integer, String> iterator = new LimitedPairIterator<Integer, String>(
                 new PairIteratorList<Integer, String>(data),
-                tdi.getComparator(), 10, 11);
+                tdi.getComparator(), 10, 11)){
 
-        assertTrue(iterator.hasNext());
-        assertTrue(iterator.readCurrent().isEmpty());
-        assertEquals(Pair.of(10, "ddl"), iterator.next());
-        assertEquals(Pair.of(10, "ddl"), iterator.readCurrent().get());
+                assertTrue(iterator.hasNext());
+                assertTrue(iterator.readCurrent().isEmpty());
+                assertEquals(Pair.of(10, "ddl"), iterator.next());
+                assertEquals(Pair.of(10, "ddl"), iterator.readCurrent().get());
 
-        assertTrue(iterator.hasNext());
-        assertEquals(Pair.of(11, "ddm"), iterator.next());
-        assertEquals(Pair.of(11, "ddm"), iterator.readCurrent().get());
+                assertTrue(iterator.hasNext());
+                assertEquals(Pair.of(11, "ddm"), iterator.next());
+                assertEquals(Pair.of(11, "ddm"), iterator.readCurrent().get());
 
-        assertFalse(iterator.hasNext());
-        assertEquals(Pair.of(11, "ddm"), iterator.readCurrent().get());
+                assertFalse(iterator.hasNext());
+                assertEquals(Pair.of(11, "ddm"), iterator.readCurrent().get());
+        }
     }
 
     @Test
@@ -111,21 +114,22 @@ public class LimitedPairIteratorTest {
                 Pair.of(8, "ddj"), Pair.of(9, "ddk"), Pair.of(10, "ddl"),
                 Pair.of(11, "ddm"));
 
-        final PairIterator<Integer, String> iterator = new LimitedPairIterator<Integer, String>(
+        try(final PairIterator<Integer, String> iterator = new LimitedPairIterator<Integer, String>(
                 new PairIteratorList<Integer, String>(data),
-                tdi.getComparator(), -101, 2);
+                tdi.getComparator(), -101, 2)){
 
-        assertTrue(iterator.hasNext());
-        assertTrue(iterator.readCurrent().isEmpty());
-        assertEquals(Pair.of(1, "bbb"), iterator.next());
-        assertEquals(Pair.of(1, "bbb"), iterator.readCurrent().get());
+                assertTrue(iterator.hasNext());
+                assertTrue(iterator.readCurrent().isEmpty());
+                assertEquals(Pair.of(1, "bbb"), iterator.next());
+                assertEquals(Pair.of(1, "bbb"), iterator.readCurrent().get());
 
-        assertTrue(iterator.hasNext());
-        assertEquals(Pair.of(2, "ccc"), iterator.next());
-        assertEquals(Pair.of(2, "ccc"), iterator.readCurrent().get());
+                assertTrue(iterator.hasNext());
+                assertEquals(Pair.of(2, "ccc"), iterator.next());
+                assertEquals(Pair.of(2, "ccc"), iterator.readCurrent().get());
 
-        assertFalse(iterator.hasNext());
-        assertEquals(Pair.of(2, "ccc"), iterator.readCurrent().get());
+                assertFalse(iterator.hasNext());
+                assertEquals(Pair.of(2, "ccc"), iterator.readCurrent().get());
+        }
     }
 
     @Test
@@ -137,21 +141,22 @@ public class LimitedPairIteratorTest {
                 Pair.of(8, "ddj"), Pair.of(9, "ddk"), Pair.of(10, "ddl"),
                 Pair.of(11, "ddm"));
 
-        final PairIterator<Integer, String> iterator = new LimitedPairIterator<Integer, String>(
+        try(final PairIterator<Integer, String> iterator = new LimitedPairIterator<Integer, String>(
                 new PairIteratorList<Integer, String>(data),
-                tdi.getComparator(), 10, 9867);
+                tdi.getComparator(), 10, 9867)){
 
-        assertTrue(iterator.hasNext());
-        assertTrue(iterator.readCurrent().isEmpty());
-        assertEquals(Pair.of(10, "ddl"), iterator.next());
-        assertEquals(Pair.of(10, "ddl"), iterator.readCurrent().get());
+                assertTrue(iterator.hasNext());
+                assertTrue(iterator.readCurrent().isEmpty());
+                assertEquals(Pair.of(10, "ddl"), iterator.next());
+                assertEquals(Pair.of(10, "ddl"), iterator.readCurrent().get());
 
-        assertTrue(iterator.hasNext());
-        assertEquals(Pair.of(11, "ddm"), iterator.next());
-        assertEquals(Pair.of(11, "ddm"), iterator.readCurrent().get());
+                assertTrue(iterator.hasNext());
+                assertEquals(Pair.of(11, "ddm"), iterator.next());
+                assertEquals(Pair.of(11, "ddm"), iterator.readCurrent().get());
 
-        assertFalse(iterator.hasNext());
-        assertEquals(Pair.of(11, "ddm"), iterator.readCurrent().get());
+                assertFalse(iterator.hasNext());
+                assertEquals(Pair.of(11, "ddm"), iterator.readCurrent().get());
+        }
     }
 
     @Test
@@ -163,28 +168,30 @@ public class LimitedPairIteratorTest {
                 Pair.of(8, "ddj"), Pair.of(9, "ddk"), Pair.of(10, "ddl"),
                 Pair.of(11, "ddm"));
 
-        final PairIterator<Integer, String> iterator = new LimitedPairIterator<Integer, String>(
+        try(final PairIterator<Integer, String> iterator = new LimitedPairIterator<Integer, String>(
                 new PairIteratorList<Integer, String>(data),
-                tdi.getComparator(), 10, 10);
+                tdi.getComparator(), 10, 10)){
 
-        assertTrue(iterator.hasNext());
-        assertTrue(iterator.readCurrent().isEmpty());
-        assertEquals(Pair.of(10, "ddl"), iterator.next());
-        assertEquals(Pair.of(10, "ddl"), iterator.readCurrent().get());
+                assertTrue(iterator.hasNext());
+                assertTrue(iterator.readCurrent().isEmpty());
+                assertEquals(Pair.of(10, "ddl"), iterator.next());
+                assertEquals(Pair.of(10, "ddl"), iterator.readCurrent().get());
 
-        assertFalse(iterator.hasNext());
-        assertEquals(Pair.of(10, "ddl"), iterator.readCurrent().get());
+                assertFalse(iterator.hasNext());
+                assertEquals(Pair.of(10, "ddl"), iterator.readCurrent().get());
+        }
     }
 
     @Test
     void test_no_data_elements() throws Exception {
 
-        final PairIterator<Integer, String> limited = new LimitedPairIterator<Integer, String>(
+        try(final PairIterator<Integer, String> limited = new LimitedPairIterator<Integer, String>(
                 new PairIteratorList<Integer, String>(Collections.emptyList()),
-                tdi.getComparator(), 10, 9867);
+                tdi.getComparator(), 10, 9867)){
 
-        assertFalse(limited.hasNext());
-        assertTrue(limited.readCurrent().isEmpty());
+                assertFalse(limited.hasNext());
+                assertTrue(limited.readCurrent().isEmpty());
+        }
     }
 
     @Test
@@ -196,12 +203,13 @@ public class LimitedPairIteratorTest {
                 Pair.of(8, "ddj"), Pair.of(9, "ddk"), Pair.of(10, "ddl"),
                 Pair.of(11, "ddm"));
 
-        final PairIterator<Integer, String> iterator = new LimitedPairIterator<Integer, String>(
+        try(final PairIterator<Integer, String> iterator = new LimitedPairIterator<Integer, String>(
                 new PairIteratorList<Integer, String>(data),
-                tdi.getComparator(), -110, -90);
+                tdi.getComparator(), -110, -90)){
 
-        assertFalse(iterator.hasNext());
-        assertTrue(iterator.readCurrent().isEmpty());
+                assertFalse(iterator.hasNext());
+                assertTrue(iterator.readCurrent().isEmpty());
+        }
     }
 
     @Test
@@ -213,18 +221,20 @@ public class LimitedPairIteratorTest {
                 Pair.of(8, "ddj"), Pair.of(9, "ddk"), Pair.of(10, "ddl"),
                 Pair.of(11, "ddm"));
 
-        final PairIterator<Integer, String> iterator = new LimitedPairIterator<Integer, String>(
+        try(final PairIterator<Integer, String> iterator = new LimitedPairIterator<Integer, String>(
                 new PairIteratorList<Integer, String>(data),
-                tdi.getComparator(), 10, 11);
+                tdi.getComparator(), 10, 11)){
 
-        assertTrue(iterator.hasNext());
-        iterator.next();
-        iterator.next();
-        assertThrows(NoSuchElementException.class, () -> {
-            iterator.next();
-        }, "There no next element.");
+                assertTrue(iterator.hasNext());
+                iterator.next();
+                iterator.next();
+                assertThrows(NoSuchElementException.class, () -> {
+                iterator.next();
+                }, "There no next element.");
+        }
     }
 
+    @SuppressWarnings("resource")
     @Test
     void test_unordered_min_max() throws Exception {
         assertThrows(IllegalArgumentException.class, () -> {

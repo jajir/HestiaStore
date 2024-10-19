@@ -42,10 +42,11 @@ public class PairIteratorListTest {
 
     @Test
     void test_empty_list() throws Exception {
-        final PairIterator<Integer, String> iterator = new PairIteratorList<>(
-                Collections.emptyList());
+        try(final PairIterator<Integer, String> iterator = new PairIteratorList<>(
+                Collections.emptyList())){
 
-        assertFalse(iterator.hasNext());
-        assertTrue(iterator.readCurrent().isEmpty());
+            assertFalse(iterator.hasNext());
+            assertTrue(iterator.readCurrent().isEmpty());
+        }
     }
 }
