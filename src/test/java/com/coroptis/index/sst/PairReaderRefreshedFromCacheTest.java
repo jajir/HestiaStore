@@ -16,7 +16,7 @@ import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.datatype.TypeDescriptorString;
 
 @ExtendWith(MockitoExtension.class)
-public class PairSupplierRefreshedFromCacheTest {
+public class PairReaderRefreshedFromCacheTest {
 
     private final static Pair<Integer, String> pair2 = Pair.of(2,"bbb");
     private final static Pair<Integer, String> pair3 = Pair.of(3,"ccc");
@@ -32,7 +32,7 @@ public class PairSupplierRefreshedFromCacheTest {
 
     @Test
     void test_get_from_segment_and_not_in_cache() {
-        final PairSupplierRefreshedFromCache<Integer, String> supplier = new PairSupplierRefreshedFromCache<>(
+        final PairReaderRefreshedFromCache<Integer, String> supplier = new PairReaderRefreshedFromCache<>(
                 segmentReader,
                 cache, std);
         
@@ -44,7 +44,7 @@ public class PairSupplierRefreshedFromCacheTest {
 
     @Test
     void test_get_from_segment_and_updated_in_cache() {
-        final PairSupplierRefreshedFromCache<Integer, String> supplier = new PairSupplierRefreshedFromCache<>(
+        final PairReaderRefreshedFromCache<Integer, String> supplier = new PairReaderRefreshedFromCache<>(
                 segmentReader,
                 cache,std);
         
@@ -56,7 +56,7 @@ public class PairSupplierRefreshedFromCacheTest {
 
     @Test
     void test_get_not_in_segment() {
-        final PairSupplierRefreshedFromCache<Integer, String> supplier = new PairSupplierRefreshedFromCache<>(
+        final PairReaderRefreshedFromCache<Integer, String> supplier = new PairReaderRefreshedFromCache<>(
                 segmentReader,
                 cache, std);
         
@@ -68,7 +68,7 @@ public class PairSupplierRefreshedFromCacheTest {
     
     @Test
     void test_get_from_segment_and_deleted_in_cache_not_other_pair_in_segment() {
-        final PairSupplierRefreshedFromCache<Integer, String> supplier = new PairSupplierRefreshedFromCache<>(
+        final PairReaderRefreshedFromCache<Integer, String> supplier = new PairReaderRefreshedFromCache<>(
                 segmentReader,
                 cache, std);
         
@@ -80,7 +80,7 @@ public class PairSupplierRefreshedFromCacheTest {
     
     @Test
     void test_two_pairs_are_deleted_third_is_ok() {
-        final PairSupplierRefreshedFromCache<Integer, String> supplier = new PairSupplierRefreshedFromCache<>(
+        final PairReaderRefreshedFromCache<Integer, String> supplier = new PairReaderRefreshedFromCache<>(
                 segmentReader,
                 cache, std);
         
@@ -93,7 +93,7 @@ public class PairSupplierRefreshedFromCacheTest {
     }
     @Test
     void test_three_pairs_are_deleted() {
-        final PairSupplierRefreshedFromCache<Integer, String> supplier = new PairSupplierRefreshedFromCache<>(
+        final PairReaderRefreshedFromCache<Integer, String> supplier = new PairReaderRefreshedFromCache<>(
                 segmentReader,
                 cache, std);
         

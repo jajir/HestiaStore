@@ -121,7 +121,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     public Stream<Pair<K, V>> getStream() {
         indexState.tryPerformOperation();
         final PairIterator<K, V> iterator = openIterator();
-        final PairReader<K, V> reader = new PairSupplierRefreshedFromCache<>(
+        final PairReader<K, V> reader = new PairReaderRefreshedFromCache<>(
                 new PairSupplierFromIterator<>(iterator), cache, valueTypeDescriptor);
         final StreamSpliteratorFromPairSupplier<K, V> spliterator = new StreamSpliteratorFromPairSupplier<>(
                 reader, keyTypeDescriptor);
