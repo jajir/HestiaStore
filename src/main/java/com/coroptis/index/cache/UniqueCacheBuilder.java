@@ -3,7 +3,7 @@ package com.coroptis.index.cache;
 import java.util.Comparator;
 
 import com.coroptis.index.Pair;
-import com.coroptis.index.PairReader;
+import com.coroptis.index.CloseablePairReader;
 import com.coroptis.index.sstfile.SstFile;
 
 /**
@@ -35,7 +35,7 @@ public class UniqueCacheBuilder<K, V> {
 
     public UniqueCache<K, V> build() {
         final UniqueCache<K, V> out = new UniqueCache<>(keyComparator);
-        try (PairReader<K, V> pairReader = sstFile.openReader()) {
+        try (CloseablePairReader<K, V> pairReader = sstFile.openReader()) {
             Pair<K, V> pair = null;
             while ((pair = pairReader.read()) != null) {
                 out.put(pair);

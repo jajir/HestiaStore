@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import com.coroptis.index.Pair;
-import com.coroptis.index.PairReader;
+import com.coroptis.index.CloseablePairReader;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
 import com.coroptis.index.datatype.TypeDescriptorString;
@@ -47,7 +47,7 @@ public class SimpleDataFileIntegerationTest {
         }
         sdf.compact();
 
-        try (PairReader<Integer, String> reader = sdf.openReader()) {
+        try (CloseablePairReader<Integer, String> reader = sdf.openReader()) {
             for (int i = 0; i < keys1; i++) {
                 assertEquals(i, reader.read().getKey());
             }

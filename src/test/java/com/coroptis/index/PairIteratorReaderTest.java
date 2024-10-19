@@ -14,7 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class PairIteratorReaderTest {
 
     @Mock
-    private PairReader<Integer, String> reader;
+    private CloseablePairReader<Integer, String> reader;
 
     @Mock
     private OptimisticLockObjectVersionProvider provider;

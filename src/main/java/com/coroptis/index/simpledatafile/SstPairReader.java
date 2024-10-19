@@ -5,7 +5,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import com.coroptis.index.Pair;
-import com.coroptis.index.PairReader;
+import com.coroptis.index.CloseablePairReader;
 
 /**
  * Pair reader with dirty flag. When some other process set dirty flag to true
@@ -16,11 +16,11 @@ import com.coroptis.index.PairReader;
  * @param <K>
  * @param <V>
  */
-public class SstPairReader<K, V> implements PairReader<K, V> {
+public class SstPairReader<K, V> implements CloseablePairReader<K, V> {
 
     private final SimpleDataFile<K, V> sdf;
     private final Comparator<K> keyComparator;
-    private PairReader<K, V> currentReader;
+    private CloseablePairReader<K, V> currentReader;
     private boolean isDirty = false;
     private Pair<K, V> lastReadedPair;
     private Consumer<SstPairReader<K, V>> onCloseConsumer;

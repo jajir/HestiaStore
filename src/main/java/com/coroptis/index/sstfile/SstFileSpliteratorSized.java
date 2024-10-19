@@ -6,17 +6,17 @@ import java.util.Spliterator;
 import java.util.function.Consumer;
 
 import com.coroptis.index.Pair;
-import com.coroptis.index.PairReader;
+import com.coroptis.index.CloseablePairReader;
 
 public class SstFileSpliteratorSized<K, V> implements Spliterator<Pair<K, V>> {
 
-    private final PairReader<K, V> pairReader;
+    private final CloseablePairReader<K, V> pairReader;
 
     private final PairComparator<K, V> pairComparator;
 
     private final long estimateSize;
 
-    public SstFileSpliteratorSized(final PairReader<K, V> pairReader,
+    public SstFileSpliteratorSized(final CloseablePairReader<K, V> pairReader,
             final PairComparator<K, V> pairComparator,
             final long estimateSize) {
         this.pairReader = Objects.requireNonNull(pairReader);

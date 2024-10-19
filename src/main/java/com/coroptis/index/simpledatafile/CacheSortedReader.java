@@ -9,14 +9,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.coroptis.index.Pair;
-import com.coroptis.index.PairReader;
+import com.coroptis.index.CloseablePairReader;
 import com.coroptis.index.ValueMerger;
 import com.coroptis.index.cache.UniqueCache;
 import com.coroptis.index.sstfile.PairComparator;
 import com.coroptis.index.unsorteddatafile.UnsortedDataFile;
 import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
 
-public class CacheSortedReader<K, V> implements PairReader<K, V> {
+public class CacheSortedReader<K, V> implements CloseablePairReader<K, V> {
 
     private final Logger logger = LoggerFactory
             .getLogger(CacheSortedReader.class);

@@ -5,7 +5,7 @@ import java.util.Objects;
 
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.PairIteratorFromReader;
-import com.coroptis.index.PairReader;
+import com.coroptis.index.CloseablePairReader;
 import com.coroptis.index.PairReaderEmpty;
 import com.coroptis.index.PairSeekableReader;
 import com.coroptis.index.datatype.ConvertorFromBytes;
@@ -53,11 +53,11 @@ public class SstFile<K, V> {
         this.fileReadingBufferSize = fileReadingBufferSize;
     }
 
-    public PairReader<K, V> openReader() {
+    public CloseablePairReader<K, V> openReader() {
         return openReader(0);
     }
 
-    public PairReader<K, V> openReader(final long position) {
+    public CloseablePairReader<K, V> openReader(final long position) {
         if (!directory.isFileExists(fileName)) {
             return new PairReaderEmpty<>();
         }

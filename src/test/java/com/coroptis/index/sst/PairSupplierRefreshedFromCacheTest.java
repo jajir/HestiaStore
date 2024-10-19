@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coroptis.index.Pair;
+import com.coroptis.index.PairReader;
 import com.coroptis.index.cache.UniqueCache;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.datatype.TypeDescriptorString;
@@ -24,7 +25,7 @@ public class PairSupplierRefreshedFromCacheTest {
     private final static TypeDescriptor<String> std = new TypeDescriptorString();
 
     @Mock
-    private PairSupplier<Integer, String> segmentSupplier;
+    private PairReader<Integer, String> segmentReader;
 
     @Mock
     private UniqueCache<Integer, String> cache;
@@ -32,76 +33,76 @@ public class PairSupplierRefreshedFromCacheTest {
     @Test
     void test_get_from_segment_and_not_in_cache() {
         final PairSupplierRefreshedFromCache<Integer, String> supplier = new PairSupplierRefreshedFromCache<>(
-                segmentSupplier,
+                segmentReader,
                 cache, std);
         
-        when(segmentSupplier.get()).thenReturn(pair2);
+        when(segmentReader.read()).thenReturn(pair2);
         when(cache.get(2)).thenReturn(null);
 
-        assertEquals(pair2, supplier.get());
+        assertEquals(pair2, supplier.read());
     }
 
     @Test
     void test_get_from_segment_and_updated_in_cache() {
         final PairSupplierRefreshedFromCache<Integer, String> supplier = new PairSupplierRefreshedFromCache<>(
-                segmentSupplier,
+                segmentReader,
                 cache,std);
         
-        when(segmentSupplier.get()).thenReturn(pair2);
+        when(segmentReader.read()).thenReturn(pair2);
         when(cache.get(2)).thenReturn("eee");
 
-        assertEquals(Pair.of(2, "eee"), supplier.get());
+        assertEquals(Pair.of(2, "eee"), supplier.read());
     }
 
     @Test
     void test_get_not_in_segment() {
         final PairSupplierRefreshedFromCache<Integer, String> supplier = new PairSupplierRefreshedFromCache<>(
-                segmentSupplier,
+                segmentReader,
                 cache, std);
         
-        when(segmentSupplier.get()).thenReturn(null);
+        when(segmentReader.read()).thenReturn(null);
 
-        assertNull(supplier.get());
+        assertNull(supplier.read());
     }
 
     
     @Test
     void test_get_from_segment_and_deleted_in_cache_not_other_pair_in_segment() {
         final PairSupplierRefreshedFromCache<Integer, String> supplier = new PairSupplierRefreshedFromCache<>(
-                segmentSupplier,
+                segmentReader,
                 cache, std);
         
-        when(segmentSupplier.get()).thenReturn(pair2).thenReturn(null);
+        when(segmentReader.read()).thenReturn(pair2).thenReturn(null);
         when(cache.get(2)).thenReturn(std.getTombstone());
 
-        assertNull(supplier.get());
+        assertNull(supplier.read());
     }
     
     @Test
     void test_two_pairs_are_deleted_third_is_ok() {
         final PairSupplierRefreshedFromCache<Integer, String> supplier = new PairSupplierRefreshedFromCache<>(
-                segmentSupplier,
+                segmentReader,
                 cache, std);
         
-        when(segmentSupplier.get()).thenReturn(pair2).thenReturn(pair3).thenReturn(pair4);
+        when(segmentReader.read()).thenReturn(pair2).thenReturn(pair3).thenReturn(pair4);
         when(cache.get(2)).thenReturn(std.getTombstone());
         when(cache.get(3)).thenReturn(std.getTombstone());
         when(cache.get(4)).thenReturn(null);
         
-        assertEquals(pair4, supplier.get());
+        assertEquals(pair4, supplier.read());
     }
     @Test
     void test_three_pairs_are_deleted() {
         final PairSupplierRefreshedFromCache<Integer, String> supplier = new PairSupplierRefreshedFromCache<>(
-                segmentSupplier,
+                segmentReader,
                 cache, std);
         
-        when(segmentSupplier.get()).thenReturn(pair2).thenReturn(pair3).thenReturn(pair4).thenReturn(null);
+        when(segmentReader.read()).thenReturn(pair2).thenReturn(pair3).thenReturn(pair4).thenReturn(null);
         when(cache.get(2)).thenReturn(std.getTombstone());
         when(cache.get(3)).thenReturn(std.getTombstone());
         when(cache.get(4)).thenReturn(std.getTombstone());
 
-        assertNull(supplier.get());
+        assertNull(supplier.read());
     }
 
 }

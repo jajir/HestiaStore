@@ -1,7 +1,7 @@
 package com.coroptis.index;
 
 public interface PairSeekableReader<K, V>
-        extends PairReader<K, V>, CloseableResource {
+        extends CloseablePairReader<K, V> {
 
     void seek(long position);
 

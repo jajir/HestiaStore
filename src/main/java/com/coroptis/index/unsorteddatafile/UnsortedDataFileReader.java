@@ -3,11 +3,11 @@ package com.coroptis.index.unsorteddatafile;
 import java.util.Objects;
 
 import com.coroptis.index.Pair;
-import com.coroptis.index.PairReader;
+import com.coroptis.index.CloseablePairReader;
 import com.coroptis.index.datatype.TypeReader;
 import com.coroptis.index.directory.FileReader;
 
-public class UnsortedDataFileReader<K, V> implements PairReader<K, V> {
+public class UnsortedDataFileReader<K, V> implements CloseablePairReader<K, V> {
 
     private final TypeReader<K> keyTypeReader;
     private final TypeReader<V> valueTypeReader;

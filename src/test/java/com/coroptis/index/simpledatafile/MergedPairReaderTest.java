@@ -12,16 +12,16 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coroptis.index.Pair;
-import com.coroptis.index.PairReader;
+import com.coroptis.index.CloseablePairReader;
 
 @ExtendWith(MockitoExtension.class)
 public class MergedPairReaderTest {
 
     @Mock
-    private PairReader<Integer, String> reader1;
+    private CloseablePairReader<Integer, String> reader1;
 
     @Mock
-    private PairReader<Integer, String> reader2;
+    private CloseablePairReader<Integer, String> reader2;
 
     @Test
     public void test_reader2_is_empty() throws Exception {

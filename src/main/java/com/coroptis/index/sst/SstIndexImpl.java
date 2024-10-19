@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import com.coroptis.index.F;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
+import com.coroptis.index.PairReader;
 import com.coroptis.index.cache.UniqueCache;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
@@ -120,10 +121,10 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     public Stream<Pair<K, V>> getStream() {
         indexState.tryPerformOperation();
         final PairIterator<K, V> iterator = openIterator();
-        final PairSupplier<K, V> supplier = new PairSupplierRefreshedFromCache<>(
+        final PairReader<K, V> reader = new PairSupplierRefreshedFromCache<>(
                 new PairSupplierFromIterator<>(iterator), cache, valueTypeDescriptor);
         final StreamSpliteratorFromPairSupplier<K, V> spliterator = new StreamSpliteratorFromPairSupplier<>(
-                supplier, keyTypeDescriptor);
+                reader, keyTypeDescriptor);
         return StreamSupport.stream(spliterator, false).onClose(() -> {
             iterator.close();
         });

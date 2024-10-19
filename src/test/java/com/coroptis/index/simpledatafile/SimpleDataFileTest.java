@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
 import com.coroptis.index.Pair;
-import com.coroptis.index.PairReader;
+import com.coroptis.index.CloseablePairReader;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
 import com.coroptis.index.datatype.TypeDescriptorString;
@@ -68,7 +68,7 @@ public class SimpleDataFileTest {
         assertEquals(6, sdf.getStats().getNumberOfPairsInCache());
         assertEquals(0, sdf.getStats().getNumberOfPairsInMainFile());
 
-        try (PairReader<Integer, String> reader = sdf.openReader()) {
+        try (CloseablePairReader<Integer, String> reader = sdf.openReader()) {
             assertEquals(Pair.of(1, "prase"), reader.read());
             assertEquals(Pair.of(3, "kachna"), reader.read());
             assertEquals(Pair.of(5, "osel"), reader.read());

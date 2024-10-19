@@ -6,7 +6,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Allows to use {@link PairReader} as {@link Iterator}. Some operations like
+ * Allows to use {@link CloseablePairReader} as {@link Iterator}. Some operations like
  * data merging it makes a lot easier. It support optimistic locking of source
  * reader.
  * 
@@ -17,11 +17,11 @@ import java.util.Optional;
  */
 public class PairIteratorFromReader<K, V> implements PairIterator<K, V> {
 
-    private final PairReader<K, V> reader;
+    private final CloseablePairReader<K, V> reader;
 
     private Pair<K, V> current = null;
 
-    public PairIteratorFromReader(final PairReader<K, V> reader) {
+    public PairIteratorFromReader(final CloseablePairReader<K, V> reader) {
         this.reader = Objects.requireNonNull(reader,
                 "Pair reader can't be null.");
         current = reader.read();

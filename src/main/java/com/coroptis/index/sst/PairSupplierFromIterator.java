@@ -4,8 +4,9 @@ import java.util.Objects;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
+import com.coroptis.index.PairReader;
 
-public class PairSupplierFromIterator<K, V> implements PairSupplier<K, V> {
+public class PairSupplierFromIterator<K, V> implements PairReader<K, V> {
 
     private final PairIterator<K, V> pairIterator;
 
@@ -14,7 +15,7 @@ public class PairSupplierFromIterator<K, V> implements PairSupplier<K, V> {
     }
 
     @Override
-    public Pair<K, V> get() {
+    public Pair<K, V> read() {
         if (pairIterator.hasNext()) {
             return pairIterator.next();
         } else {

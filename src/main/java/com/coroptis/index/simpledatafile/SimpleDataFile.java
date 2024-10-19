@@ -9,7 +9,7 @@ import com.coroptis.index.IndexException;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.PairIteratorFromReader;
-import com.coroptis.index.PairReader;
+import com.coroptis.index.CloseablePairReader;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.ValueMerger;
 import com.coroptis.index.datatype.TypeDescriptor;
@@ -96,11 +96,11 @@ public class SimpleDataFile<K, V> {
      * 
      * @return reader with all data
      */
-    public PairReader<K, V> openReader() {
+    public CloseablePairReader<K, V> openReader() {
         logger.debug("Opening of '{}' for reading started.", fileName);
         final CacheSortedReader<K, V> reader1 = new CacheSortedReader<>(
                 valueMerger, getCacheFile(), keyTypeDescriptor.getComparator());
-        final PairReader<K, V> reader2 = getMainFile().openReader();
+        final CloseablePairReader<K, V> reader2 = getMainFile().openReader();
         final MergedPairReader<K, V> mergedPairReader = new MergedPairReader<>(
                 reader1, reader2, valueMerger,
                 keyTypeDescriptor.getComparator());

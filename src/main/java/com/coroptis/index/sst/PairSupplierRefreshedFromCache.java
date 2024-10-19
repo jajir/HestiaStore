@@ -3,27 +3,28 @@ package com.coroptis.index.sst;
 import java.util.Objects;
 
 import com.coroptis.index.Pair;
+import com.coroptis.index.PairReader;
 import com.coroptis.index.cache.UniqueCache;
 import com.coroptis.index.datatype.TypeDescriptor;
 
 public class PairSupplierRefreshedFromCache<K, V>
-        implements PairSupplier<K, V> {
+        implements PairReader<K, V> {
 
-    private final PairSupplier<K, V> pairSupplier;
+    private final PairReader<K, V> pairReader;
     private final UniqueCache<K, V> cache;
     private final TypeDescriptor<V> valueTypeDescriptor;
 
-    PairSupplierRefreshedFromCache(final PairSupplier<K, V> pairSupplier,
+    PairSupplierRefreshedFromCache(final PairReader<K, V> pairReader,
             final UniqueCache<K, V> cache, final TypeDescriptor<V> valueTypeDescriptor) {
-        this.pairSupplier = Objects.requireNonNull(pairSupplier);
+        this.pairReader = Objects.requireNonNull(pairReader);
         this.cache = Objects.requireNonNull(cache);
         this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
     }
 
     @Override
-    public Pair<K, V> get() {
+    public Pair<K, V> read() {
         while(true){
-            final Pair<K, V> pair = pairSupplier.get();
+            final Pair<K, V> pair = pairReader.read();
             if (pair == null) {
                 return null;
             }
