@@ -6,14 +6,13 @@ Here is described basic index concepts. This page explain you how to correctly c
 
 ## Operation consistency
 
-In one case method `getStream()` could return inconsistent result. Soemtimes getStream() could omit some results. Here are cases:
+The `getStream()` method can sometimes return inconsistent results, occasionally omitting some items. This can occur in the following scenarios:
 
-* When segment is compacted. When data from segment are streamed and during this process some new keys are added to this segment than segment stop provide another keys. In that case stream operation continue in next segment or ends when there is no more segment to prosess.
+* Segment Compaction: If data is being streamed from a segment and new keys are added to that segment during the process, the segment may stop providing additional keys. In this case, the stream operation will either continue with the next segment or terminate if no more segments are available.
+* Adding New Keys: If a completely new key is added to the index and is only present in the main index cache, it will not be returned.
 
-* When new key is added. When completly new key is added to index and this key is just in main index cache. In that case will not be returned.
+To prevent these issues, you should call `compact()` before invoking `getStream()` and ensure no new keys are added during streaming.
 
-Both cases could be prevented by calling `compact()` before calling `getStream()` and make sure that new keys are not added during streaming.
+Updating values in the index using `put()` or deleting keys using `delete()` does not cause inconsistencies. Updated values will be returned, and deleted keys will be excluded from the stream.
 
-Update some value in index by caling `put()` or delete `delete()` doesn't break anythning. Updated value will returned and deleted key not will be returned from stream.
-
-Other operations like `get()` are always consistent.
+Other operations, like `get()`, remain consistently reliable.
