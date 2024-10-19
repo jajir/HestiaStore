@@ -4,7 +4,7 @@ import java.util.Comparator;
 import java.util.Objects;
 
 import com.coroptis.index.Pair;
-import com.coroptis.index.PairReader;
+import com.coroptis.index.CloseablePairReader;
 import com.coroptis.index.sstfile.SstFile;
 
 /**
@@ -38,7 +38,7 @@ public class SegmentIndexSearcherDefault<K, V>
 
     @Override
     public V search(final K key, long startPosition) {
-        try (PairReader<K, V> fileReader = segmentIndexFile
+        try (CloseablePairReader<K, V> fileReader = segmentIndexFile
                 .openReader(startPosition)) {
             for (int i = 0; i < maxNumberOfKeysInIndexPage; i++) {
                 final Pair<K, V> pair = fileReader.read();

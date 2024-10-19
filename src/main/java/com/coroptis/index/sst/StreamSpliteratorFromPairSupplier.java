@@ -6,20 +6,21 @@ import java.util.Spliterator;
 import java.util.function.Consumer;
 
 import com.coroptis.index.Pair;
+import com.coroptis.index.PairReader;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.sstfile.PairComparator;
 
 public class StreamSpliteratorFromPairSupplier<K, V>
         implements Spliterator<Pair<K, V>> {
 
-    private final PairSupplier<K, V> pairSpplier;
+    private final PairReader<K, V> pairReader;
 
     private final PairComparator<K, V> pairComparator;
 
     public StreamSpliteratorFromPairSupplier(
-            final PairSupplier<K, V> pairSupplier,
+            final PairReader<K, V> pairReader,
             final TypeDescriptor<K> keyTypeDescriptor) {
-        this.pairSpplier = Objects.requireNonNull(pairSupplier);
+        this.pairReader = Objects.requireNonNull(pairReader);
         Objects.requireNonNull(keyTypeDescriptor,
                 "Key type descriptor must not be null");
         this.pairComparator = new PairComparator<>(
@@ -28,7 +29,7 @@ public class StreamSpliteratorFromPairSupplier<K, V>
 
     @Override
     public boolean tryAdvance(final Consumer<? super Pair<K, V>> action) {
-        final Pair<K, V> pair = pairSpplier.get();
+        final Pair<K, V> pair = pairReader.read();
         if (pair == null) {
             return false;
         } else {

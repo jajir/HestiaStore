@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import com.coroptis.index.F;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
+import com.coroptis.index.PairReader;
 import com.coroptis.index.cache.UniqueCache;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
@@ -120,10 +121,10 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     public Stream<Pair<K, V>> getStream() {
         indexState.tryPerformOperation();
         final PairIterator<K, V> iterator = openIterator();
-        final PairSupplier<K, V> supplier = new PairSupplierRefreshedFromCache<>(
-                new PairSupplierFromIterator<>(iterator), cache);
+        final PairReader<K, V> reader = new PairReaderRefreshedFromCache<>(
+                new PairSupplierFromIterator<>(iterator), cache, valueTypeDescriptor);
         final StreamSpliteratorFromPairSupplier<K, V> spliterator = new StreamSpliteratorFromPairSupplier<>(
-                supplier, keyTypeDescriptor);
+                reader, keyTypeDescriptor);
         return StreamSupport.stream(spliterator, false).onClose(() -> {
             iterator.close();
         });
@@ -218,7 +219,11 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
             final Segment<K, V> segment = segmentManager.getSegment(id);
             return segment.get(key);
         } else {
-            return out;
+            if (valueTypeDescriptor.isTombstone(out)){
+                return null;
+            }else{
+                return out;
+            }
         }
     }
 
@@ -243,6 +248,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         flushCache();
         logWriter.close();
         indexState.onClose(this);
+        segmentManager.close();
         logger.debug(String.format(
                 "Index is closing, where was %s gets, %s puts and %s deletes.",
                 F.fmt(stats.getGetCx()), F.fmt(stats.getPutCx()),

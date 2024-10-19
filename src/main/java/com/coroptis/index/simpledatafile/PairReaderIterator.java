@@ -6,15 +6,15 @@ import java.util.Optional;
 
 import com.coroptis.index.CloseableResource;
 import com.coroptis.index.Pair;
-import com.coroptis.index.PairReader;
+import com.coroptis.index.CloseablePairReader;
 
 public class PairReaderIterator<K, V>
         implements Iterator<Pair<K, V>>, CloseableResource {
 
-    private final PairReader<K, V> pairFileReader;
+    private final CloseablePairReader<K, V> pairFileReader;
     private Pair<K, V> pair;
 
-    public PairReaderIterator(final PairReader<K, V> pairFileReader) {
+    public PairReaderIterator(final CloseablePairReader<K, V> pairFileReader) {
         this.pairFileReader = Objects.requireNonNull(pairFileReader);
         tryReadNext();
     }

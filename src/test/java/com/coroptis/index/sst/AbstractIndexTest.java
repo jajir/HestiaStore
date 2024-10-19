@@ -1,38 +1,35 @@
-package com.coroptis.index.segment;
+package com.coroptis.index.sst;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.coroptis.index.Pair;
-import com.coroptis.index.PairIterator;
-import com.coroptis.index.PairWriter;
 import com.coroptis.index.directory.Directory;
 
-public abstract class AbstractSegmentTest {
+public abstract class AbstractIndexTest {
 
     private final Logger logger = LoggerFactory
-            .getLogger(AbstractSegmentTest.class);
+            .getLogger(AbstractIndexTest.class);
 
     /**
-     * Simplify filling segment with data.
+     * Simplify filling index with data.
      * 
      * @param <M>   key type
      * @param <N>   value type
-     * @param seg   required segment
+     * @param seg   required index
      * @param pairs required list of pairs
      */
-    protected <M, N> void writePairs(final Segment<M, N> seg,
+    protected <M, N> void writePairs(final Index<M, N> index,
             final List<Pair<M, N>> pairs) {
-        try (PairWriter<M, N> writer = seg.openWriter()) {
-            for (final Pair<M, N> pair : pairs) {
-                writer.put(pair);
-            }
+        for (final Pair<M, N> pair : pairs) {
+            index.put(pair);
         }
     }
 
@@ -45,11 +42,9 @@ public abstract class AbstractSegmentTest {
      * @returnlist of pairs with data from list
      */
     protected <M, N> List<Pair<M, N>> toList(
-            final PairIterator<M, N> iterator) {
+            final Stream<Pair<M, N>> iterator) {
         final ArrayList<Pair<M, N>> out = new ArrayList<>();
-        while (iterator.hasNext()) {
-            out.add(iterator.next());
-        }
+        iterator.forEach(pair -> out.add(pair));
         iterator.close();
         return out;
     }
@@ -63,41 +58,28 @@ public abstract class AbstractSegmentTest {
      * @param seg   required segment
      * @param pairs required list of pairs of key and expected value
      */
-    protected <M, N> void verifySegmentSearch(final Segment<M, N> seg,
+    protected <M, N> void verifyIndexSearch(final Index<M, N> index,
             final List<Pair<M, N>> pairs) {
         pairs.forEach(pair -> {
             final M key = pair.getKey();
             final N expectedValue = pair.getValue();
-            assertEquals(expectedValue, seg.get(key));
+            assertEquals(expectedValue, index.get(key));
         });
     }
 
     /**
-     * Open segment search and verify that found value for given key is equals
+     * Open index search and verify that found value for given key is equals
      * to expecetd value
      * 
      * @param <M>   key type
      * @param <N>   value type
-     * @param seg   required segment
-     * @param pairs required list of expected data in segment
+     * @param seg   required index
+     * @param pairs required list of expected data in index
      */
-    protected <M, N> void verifySegmentData(final Segment<M, N> seg,
+    protected <M, N> void verifyIndexData(final Index<M, N> index,
             final List<Pair<M, N>> pairs) {
-        verifyIteratorData(seg.openIterator(), pairs);
-    }
-
-    /**
-     * Verify that data from iterator are same as expecetd values
-     * 
-     * @param <M>          key type
-     * @param <N>          value type
-     * @param pairIterator required pair iterator
-     * @param pairs        required list of expected data in segment
-     */
-    protected <M, N> void verifyIteratorData(final PairIterator<M, N> pairIterator,
-            final List<Pair<M, N>> pairs) {
-        final List<Pair<M, N>> data = toList(pairIterator);
-        assertEquals(pairs.size(), data.size(), "Unexpected segment data size");
+        final List<Pair<M, N>> data = toList(index.getStream());
+        assertEquals(pairs.size(), data.size(), "Unexpected number of pairs in index");
         for (int i = 0; i < pairs.size(); i++) {
             final Pair<M, N> expectedPair = pairs.get(i);
             final Pair<M, N> realPair = data.get(i);

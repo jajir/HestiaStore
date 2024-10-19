@@ -68,4 +68,8 @@ public class SegmentManager<K, V> {
         return directory;
     }
 
+    public void close(){
+        segmentDataCache.invalidateAll();
+    }
+
 }

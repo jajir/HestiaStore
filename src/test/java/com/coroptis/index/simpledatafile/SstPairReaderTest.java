@@ -12,7 +12,7 @@ import static org.mockito.Mockito.when;
 import org.junit.jupiter.api.Test;
 
 import com.coroptis.index.Pair;
-import com.coroptis.index.PairReader;
+import com.coroptis.index.CloseablePairReader;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
 
 public class SstPairReaderTest {
@@ -22,10 +22,10 @@ public class SstPairReaderTest {
             SimpleDataFile.class);
 
     @SuppressWarnings("unchecked")
-    private final PairReader<Integer, String> reader = mock(PairReader.class);
+    private final CloseablePairReader<Integer, String> reader = mock(CloseablePairReader.class);
 
     @SuppressWarnings("unchecked")
-    private final PairReader<Integer, String> reader2 = mock(PairReader.class);
+    private final CloseablePairReader<Integer, String> reader2 = mock(CloseablePairReader.class);
 
     private final TypeDescriptorInteger intTd = new TypeDescriptorInteger();
 

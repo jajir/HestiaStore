@@ -41,7 +41,7 @@ public class SegmentBuilder<K, V> {
     }
 
     public SegmentBuilder<K, V> withDirectory(final Directory directory) {
-        this.directory = Objects.requireNonNull(directory);
+        this.directory = Objects.requireNonNull(directory,"Directory can't be null");
         return this;
     }
 

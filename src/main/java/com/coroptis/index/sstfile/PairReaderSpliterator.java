@@ -6,15 +6,15 @@ import java.util.Spliterator;
 import java.util.function.Consumer;
 
 import com.coroptis.index.Pair;
-import com.coroptis.index.PairReader;
+import com.coroptis.index.CloseablePairReader;
 
 public class PairReaderSpliterator<K, V> implements Spliterator<Pair<K, V>> {
 
-    private final PairReader<K, V> pairReader;
+    private final CloseablePairReader<K, V> pairReader;
 
     private final PairComparator<K, V> pairComparator;
 
-    public PairReaderSpliterator(final PairReader<K, V> pairReader,
+    public PairReaderSpliterator(final CloseablePairReader<K, V> pairReader,
             final PairComparator<K, V> pairComparator) {
         this.pairReader = Objects.requireNonNull(pairReader);
         this.pairComparator = Objects.requireNonNull(pairComparator,

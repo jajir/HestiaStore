@@ -4,7 +4,7 @@ import java.util.Objects;
 
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.PairIteratorFromReader;
-import com.coroptis.index.PairReader;
+import com.coroptis.index.CloseablePairReader;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.datatype.TypeReader;
 import com.coroptis.index.datatype.TypeWriter;
@@ -82,7 +82,7 @@ public class UnsortedDataFile<K, V> {
         }
     }
 
-    public PairReader<K, V> openReader() {
+    public CloseablePairReader<K, V> openReader() {
         final UnsortedDataFileReader<K, V> out = new UnsortedDataFileReader<>(
                 keyReader, valueReader, getFileReader());
         return out;

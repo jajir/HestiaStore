@@ -6,14 +6,14 @@ import java.util.function.Consumer;
 
 import com.coroptis.index.CloseableSpliterator;
 import com.coroptis.index.Pair;
-import com.coroptis.index.PairReader;
+import com.coroptis.index.CloseablePairReader;
 
 public class UnsortedDataFileSpliterator<K, V>
         implements CloseableSpliterator<K, V> {
 
-    private final PairReader<K, V> pairReader;
+    private final CloseablePairReader<K, V> pairReader;
 
-    public UnsortedDataFileSpliterator(final PairReader<K, V> pairReader) {
+    public UnsortedDataFileSpliterator(final CloseablePairReader<K, V> pairReader) {
         this.pairReader = Objects.requireNonNull(pairReader);
     }
 

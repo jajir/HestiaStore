@@ -10,12 +10,12 @@ import java.util.Objects;
  * @param<K> key type
  * @param <V> value type
  */
-public class PairReaderWithLock<K, V> implements PairReader<K, V> {
+public class PairReaderWithLock<K, V> implements CloseablePairReader<K, V> {
 
-    private final PairReader<K, V> reader;
+    private final CloseablePairReader<K, V> reader;
     private final OptimisticLock optimisticLock;
 
-    public PairReaderWithLock(final PairReader<K, V> reader,
+    public PairReaderWithLock(final CloseablePairReader<K, V> reader,
             final OptimisticLock optimisticLock) {
         this.reader = Objects.requireNonNull(reader,
                 "Pair reader can't be null.");

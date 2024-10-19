@@ -3,7 +3,7 @@ package com.coroptis.index.simpledatafile;
 import java.util.Comparator;
 import java.util.Objects;
 
-import com.coroptis.index.PairReader;
+import com.coroptis.index.CloseablePairReader;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.ValueMerger;
 import com.coroptis.index.datatype.TypeDescriptor;
@@ -47,7 +47,7 @@ public class SortedStringTable<K, V> {
         sdf.compact();
     }
 
-    public PairReader<K, V> openReader() {
+    public CloseablePairReader<K, V> openReader() {
         final SstPairReader<K, V> out = new SstPairReader<>(sdf, keyComparator);
         readersManager.register(out);
         return sdf.openReader();

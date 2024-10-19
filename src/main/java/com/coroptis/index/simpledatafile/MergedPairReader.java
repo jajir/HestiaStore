@@ -4,18 +4,18 @@ import java.util.Comparator;
 import java.util.Objects;
 
 import com.coroptis.index.Pair;
-import com.coroptis.index.PairReader;
+import com.coroptis.index.CloseablePairReader;
 import com.coroptis.index.ValueMerger;
 
-public class MergedPairReader<K, V> implements PairReader<K, V> {
+public class MergedPairReader<K, V> implements CloseablePairReader<K, V> {
 
     private final PairReaderIterator<K, V> iterator1;
     private final PairReaderIterator<K, V> iterator2;
     private final Comparator<K> keyComparator;
     private final ValueMerger<K, V> valueMerger;
 
-    public MergedPairReader(final PairReader<K, V> reader1,
-            final PairReader<K, V> reader2, final ValueMerger<K, V> valueMerger,
+    public MergedPairReader(final CloseablePairReader<K, V> reader1,
+            final CloseablePairReader<K, V> reader2, final ValueMerger<K, V> valueMerger,
             final Comparator<K> keyComparator) {
         this.iterator1 = new PairReaderIterator<>(reader1);
         this.iterator2 = new PairReaderIterator<>(reader2);

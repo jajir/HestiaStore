@@ -71,7 +71,16 @@ public class CacheLru<K, V> implements Cache<K, V> {
     @Override
     public void ivalidate(final K key) {
         Objects.requireNonNull(key);
-        cache.remove(key);
+        final CacheLruElement<V> value = cache.remove(key);
+        if (value != null) {
+            evictedElement.accept(key, value.getValue());
+        }
+    }
+
+    @Override
+    public void invalidateAll() {
+        cache.forEach((k, v) -> evictedElement.accept(k, v.getValue()));
+        cache.clear();
     }
 
 }

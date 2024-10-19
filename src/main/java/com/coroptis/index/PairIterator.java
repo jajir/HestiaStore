@@ -19,8 +19,11 @@ public interface PairIterator<K, V>
     /**
      * Get currently read key value pair without moving to next.
      * 
+     * FIXME #27 it should be removed, it return second time pair, that could be stale
+     * 
      * @return key value pair
      */
+    @Deprecated
     Optional<Pair<K, V>> readCurrent();
 
 }
