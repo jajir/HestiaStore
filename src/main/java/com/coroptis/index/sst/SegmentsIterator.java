@@ -3,7 +3,6 @@ package com.coroptis.index.sst;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
@@ -66,11 +65,6 @@ class SegmentsIterator<K, V> implements PairIterator<K, V> {
             nextSegmentIterator();
         }
         return currentPair;
-    }
-
-    @Override
-    public Optional<Pair<K, V>> readCurrent() {
-        return Optional.ofNullable(currentPair);
     }
 
     @Override

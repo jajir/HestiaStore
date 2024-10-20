@@ -34,20 +34,15 @@ public class LimitedPairIteratorTest {
                 tdi.getComparator(), 5, 7)){
 
                 assertTrue(iterator.hasNext());
-                assertTrue(iterator.readCurrent().isEmpty());
                 assertEquals(Pair.of(5, "ddg"), iterator.next());
-                assertEquals(Pair.of(5, "ddg"), iterator.readCurrent().get());
 
                 assertTrue(iterator.hasNext());
                 assertEquals(Pair.of(6, "ddh"), iterator.next());
-                assertEquals(Pair.of(6, "ddh"), iterator.readCurrent().get());
 
                 assertTrue(iterator.hasNext());
                 assertEquals(Pair.of(7, "ddi"), iterator.next());
-                assertEquals(Pair.of(7, "ddi"), iterator.readCurrent().get());
 
                 assertFalse(iterator.hasNext());
-                assertEquals(Pair.of(7, "ddi"), iterator.readCurrent().get());
         }
     }
 
@@ -65,16 +60,12 @@ public class LimitedPairIteratorTest {
                 tdi.getComparator(), 1, 2)){
 
                 assertTrue(iterator.hasNext());
-                assertTrue(iterator.readCurrent().isEmpty());
                 assertEquals(Pair.of(1, "bbb"), iterator.next());
-                assertEquals(Pair.of(1, "bbb"), iterator.readCurrent().get());
 
                 assertTrue(iterator.hasNext());
                 assertEquals(Pair.of(2, "ccc"), iterator.next());
-                assertEquals(Pair.of(2, "ccc"), iterator.readCurrent().get());
 
                 assertFalse(iterator.hasNext());
-                assertEquals(Pair.of(2, "ccc"), iterator.readCurrent().get());
         }
     }
 
@@ -92,16 +83,12 @@ public class LimitedPairIteratorTest {
                 tdi.getComparator(), 10, 11)){
 
                 assertTrue(iterator.hasNext());
-                assertTrue(iterator.readCurrent().isEmpty());
                 assertEquals(Pair.of(10, "ddl"), iterator.next());
-                assertEquals(Pair.of(10, "ddl"), iterator.readCurrent().get());
 
                 assertTrue(iterator.hasNext());
                 assertEquals(Pair.of(11, "ddm"), iterator.next());
-                assertEquals(Pair.of(11, "ddm"), iterator.readCurrent().get());
 
                 assertFalse(iterator.hasNext());
-                assertEquals(Pair.of(11, "ddm"), iterator.readCurrent().get());
         }
     }
 
@@ -119,16 +106,12 @@ public class LimitedPairIteratorTest {
                 tdi.getComparator(), -101, 2)){
 
                 assertTrue(iterator.hasNext());
-                assertTrue(iterator.readCurrent().isEmpty());
                 assertEquals(Pair.of(1, "bbb"), iterator.next());
-                assertEquals(Pair.of(1, "bbb"), iterator.readCurrent().get());
 
                 assertTrue(iterator.hasNext());
                 assertEquals(Pair.of(2, "ccc"), iterator.next());
-                assertEquals(Pair.of(2, "ccc"), iterator.readCurrent().get());
 
                 assertFalse(iterator.hasNext());
-                assertEquals(Pair.of(2, "ccc"), iterator.readCurrent().get());
         }
     }
 
@@ -146,16 +129,12 @@ public class LimitedPairIteratorTest {
                 tdi.getComparator(), 10, 9867)){
 
                 assertTrue(iterator.hasNext());
-                assertTrue(iterator.readCurrent().isEmpty());
                 assertEquals(Pair.of(10, "ddl"), iterator.next());
-                assertEquals(Pair.of(10, "ddl"), iterator.readCurrent().get());
 
                 assertTrue(iterator.hasNext());
                 assertEquals(Pair.of(11, "ddm"), iterator.next());
-                assertEquals(Pair.of(11, "ddm"), iterator.readCurrent().get());
 
                 assertFalse(iterator.hasNext());
-                assertEquals(Pair.of(11, "ddm"), iterator.readCurrent().get());
         }
     }
 
@@ -173,12 +152,9 @@ public class LimitedPairIteratorTest {
                 tdi.getComparator(), 10, 10)){
 
                 assertTrue(iterator.hasNext());
-                assertTrue(iterator.readCurrent().isEmpty());
                 assertEquals(Pair.of(10, "ddl"), iterator.next());
-                assertEquals(Pair.of(10, "ddl"), iterator.readCurrent().get());
 
                 assertFalse(iterator.hasNext());
-                assertEquals(Pair.of(10, "ddl"), iterator.readCurrent().get());
         }
     }
 
@@ -190,7 +166,6 @@ public class LimitedPairIteratorTest {
                 tdi.getComparator(), 10, 9867)){
 
                 assertFalse(limited.hasNext());
-                assertTrue(limited.readCurrent().isEmpty());
         }
     }
 
@@ -208,7 +183,6 @@ public class LimitedPairIteratorTest {
                 tdi.getComparator(), -110, -90)){
 
                 assertFalse(iterator.hasNext());
-                assertTrue(iterator.readCurrent().isEmpty());
         }
     }
 

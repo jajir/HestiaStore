@@ -1,7 +1,6 @@
 package com.coroptis.index.sst;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.coroptis.index.Pair;
@@ -43,16 +42,6 @@ public class PairIteratorSynchronized<K, V> implements PairIterator<K, V> {
         lock.lock();
         try {
             iterator.close();
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    @Override
-    public Optional<Pair<K, V>> readCurrent() {
-        lock.lock();
-        try {
-            return iterator.readCurrent();
         } finally {
             lock.unlock();
         }

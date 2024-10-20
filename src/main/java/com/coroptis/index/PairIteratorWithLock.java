@@ -1,7 +1,6 @@
 package com.coroptis.index;
 
 import java.util.Objects;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,11 +37,6 @@ public class PairIteratorWithLock<K, V> implements PairIterator<K, V> {
     @Override
     public void close() {
         iterator.close();
-    }
-
-    @Override
-    public Optional<Pair<K, V>> readCurrent() {
-        return iterator.readCurrent();
     }
 
 }

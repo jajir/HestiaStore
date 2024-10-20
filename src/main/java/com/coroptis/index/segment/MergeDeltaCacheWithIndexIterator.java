@@ -5,7 +5,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
@@ -170,11 +169,6 @@ public class MergeDeltaCacheWithIndexIterator<K, V> implements PairIterator<K, V
                 nextCacheIterator();
             }
         }
-    }
-
-    @Override
-    public Optional<Pair<K, V>> readCurrent() {
-        return Optional.empty();
     }
 
 }

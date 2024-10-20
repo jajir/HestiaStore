@@ -3,7 +3,6 @@ package com.coroptis.index.sst;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
@@ -16,7 +15,6 @@ public class LimitedPairIterator<K, V> implements PairIterator<K, V> {
     private final K maxKey;
 
     private Pair<K, V> nextPair = null;
-    private Pair<K, V> currentPair = null;
 
     LimitedPairIterator(final PairIterator<K, V> iterator,
             final Comparator<K> keyComparator, final K minKey, final K maxKey) {
@@ -62,21 +60,12 @@ public class LimitedPairIterator<K, V> implements PairIterator<K, V> {
                 nextPair = null;
             }
         }
-        currentPair = out;
         return out;
     }
 
     @Override
     public void close() {
         iterator.close();
-    }
-
-    @Override
-    public Optional<Pair<K, V>> readCurrent() {
-        if (currentPair == null) {
-            return Optional.empty();
-        }
-        return Optional.of(currentPair);
     }
 
     private boolean isInRange(final Pair<K, V> pair) {
