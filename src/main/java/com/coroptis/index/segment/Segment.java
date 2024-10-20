@@ -53,8 +53,7 @@ public class Segment<K, V>
         this.segmentPropertiesManager = Objects.requireNonNull(
                 segmentPropertiesManager,
                 "Segment properties manager is required");
-        deltaCacheController = new SegmentDeltaCacheController<>(
-                segmentFiles.getKeyTypeDescriptor(), segmentFiles,
+        deltaCacheController = new SegmentDeltaCacheController<>(segmentFiles,
                 segmentPropertiesManager, segmentDataProvider);
         this.segmentCompacter = new SegmentCompacter<>(this, segmentFiles,
                 segmentConf, versionController, segmentPropertiesManager,

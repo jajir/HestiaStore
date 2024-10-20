@@ -124,7 +124,7 @@ public class TypeDescriptorLong implements TypeDescriptor<Long> {
 
     @Override
     public Comparator<Long> getComparator() {
-        return (i1, i2) -> i1 == i2 ? 0 : i1 < i2 ? -1 : 1;
+        return (i1, i2) ->  i1.compareTo(i2);
     }
 
     @Override

@@ -10,7 +10,7 @@ public enum LogOperation {
 
     private final byte code;
 
-    private LogOperation(final byte code) {
+    LogOperation(final byte code) {
         this.code = code;
     }
 

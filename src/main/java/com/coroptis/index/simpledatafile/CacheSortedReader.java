@@ -8,9 +8,8 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.coroptis.index.Pair;
 import com.coroptis.index.CloseablePairReader;
-import com.coroptis.index.ValueMerger;
+import com.coroptis.index.Pair;
 import com.coroptis.index.cache.UniqueCache;
 import com.coroptis.index.sstfile.PairComparator;
 import com.coroptis.index.unsorteddatafile.UnsortedDataFile;
@@ -25,8 +24,7 @@ public class CacheSortedReader<K, V> implements CloseablePairReader<K, V> {
 
     private int indexToReturn = 0;
 
-    CacheSortedReader(final ValueMerger<K, V> merger,
-            final UnsortedDataFile<K, V> unsortedDataFile,
+    CacheSortedReader(final UnsortedDataFile<K, V> unsortedDataFile,
             final Comparator<K> keyComparator) {
         logger.debug("Initilizing of sorter cache reader started.");
         final UniqueCache<K, V> cache = new UniqueCache<>(keyComparator);

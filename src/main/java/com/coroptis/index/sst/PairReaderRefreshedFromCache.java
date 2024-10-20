@@ -32,9 +32,7 @@ public class PairReaderRefreshedFromCache<K, V>
             if (value == null) {
                 return pair;
             }
-            if(valueTypeDescriptor.isTombstone(value)){
-                //nextRound
-            }else{
+            if(!valueTypeDescriptor.isTombstone(value)){
                 return Pair.of(pair.getKey(), value);
             }
         }

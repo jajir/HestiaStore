@@ -11,7 +11,7 @@ import com.coroptis.index.directory.Directory;
 
 public class SstFileBuilder<K, V> {
 
-    private final int DELAULT_FILE_READING_BUFFER_SIZE = 1024 * 4;
+    private final static int DELAULT_FILE_READING_BUFFER_SIZE = 1024 * 4;
 
     private Directory directory;
 

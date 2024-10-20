@@ -37,9 +37,15 @@ public class FsFileReaderSeekable implements FileReaderSeekable {
     }
 
     @Override
-    public void skip(final long position) {
+    public void skip(final long bytesToSkip) {
         try {
-            raf.skipBytes((int) position);
+            int skippedBytes = raf.skipBytes((int) bytesToSkip);
+            if (skippedBytes != bytesToSkip) {
+                throw new IndexException(String.format(
+                        "In file should be '%s' bytes skipped but "
+                                + "actually was skipped '%s' bytes.",
+                        bytesToSkip, skippedBytes));
+            }
         } catch (IOException e) {
             throw new IndexException(e.getMessage(), e);
         }

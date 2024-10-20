@@ -10,7 +10,7 @@ import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
 
 public interface Index<K, V> extends CloseableResource {
 
-    public static <M, N> IndexBuilder<M, N> builder() {
+    static <M, N> IndexBuilder<M, N> builder() {
         return new IndexBuilder<>();
     }
 

@@ -99,7 +99,7 @@ public class SimpleDataFile<K, V> {
     public CloseablePairReader<K, V> openReader() {
         logger.debug("Opening of '{}' for reading started.", fileName);
         final CacheSortedReader<K, V> reader1 = new CacheSortedReader<>(
-                valueMerger, getCacheFile(), keyTypeDescriptor.getComparator());
+                getCacheFile(), keyTypeDescriptor.getComparator());
         final CloseablePairReader<K, V> reader2 = getMainFile().openReader();
         final MergedPairReader<K, V> mergedPairReader = new MergedPairReader<>(
                 reader1, reader2, valueMerger,

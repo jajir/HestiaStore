@@ -12,7 +12,7 @@ import com.coroptis.index.datatype.TypeWriter;
 public class TypeDescriptorLogOperation
         implements TypeDescriptor<LogOperation> {
 
-    private final byte END_OF_FILE = -1;
+    private final static byte END_OF_FILE = -1;
 
     private final static TypeDescriptorByte TDB = new TypeDescriptorByte();
 

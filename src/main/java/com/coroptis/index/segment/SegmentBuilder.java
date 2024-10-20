@@ -41,7 +41,8 @@ public class SegmentBuilder<K, V> {
     }
 
     public SegmentBuilder<K, V> withDirectory(final Directory directory) {
-        this.directory = Objects.requireNonNull(directory,"Directory can't be null");
+        this.directory = Objects.requireNonNull(directory,
+                "Directory can't be null");
         return this;
     }
 
@@ -162,8 +163,8 @@ public class SegmentBuilder<K, V> {
         final SegmentIndexSearcherSupplier<K, V> supplier = new SegmentIndexSearcherDefaultSupplier<>(
                 segmentFiles, segmentConf);
         final SegmentSearcher<K, V> segmentSearcher = new SegmentSearcher<K, V>(
-                segmentFiles.getValueTypeDescriptor(), segmentConf,
-                segmentPropertiesManager, supplier.get(), segmentDataProvider);
+                segmentFiles.getValueTypeDescriptor(), supplier.get(),
+                segmentDataProvider);
 
         return new Segment<>(segmentFiles, segmentConf, versionController,
                 segmentPropertiesManager, segmentDataProvider, segmentSearcher);

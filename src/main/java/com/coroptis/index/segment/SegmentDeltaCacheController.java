@@ -3,7 +3,6 @@ package com.coroptis.index.segment;
 import java.util.Objects;
 
 import com.coroptis.index.PairIterator;
-import com.coroptis.index.datatype.TypeDescriptor;
 
 /**
  * Provide ultimate access to delta cache and related operations
@@ -19,9 +18,7 @@ public class SegmentDeltaCacheController<K, V> {
     private final SegmentPropertiesManager segmentPropertiesManager;
     private final SegmentDataProvider<K, V> segmentCacheDataProvider;
 
-    public SegmentDeltaCacheController(
-            final TypeDescriptor<K> keyTypeDescriptor,
-            final SegmentFiles<K, V> segmentFiles,
+    public SegmentDeltaCacheController(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentPropertiesManager,
             final SegmentDataProvider<K, V> segmentCacheDataProvider) {
         this.segmentFiles = Objects.requireNonNull(segmentFiles);

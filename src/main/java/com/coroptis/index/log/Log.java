@@ -4,7 +4,7 @@ import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
 
 public interface Log<K, V> {
 
-    public static <M, N> LogBuilder<M, N> builder() {
+    static <M, N> LogBuilder<M, N> builder() {
         return new LogBuilder<M, N>();
     }
 

@@ -25,8 +25,6 @@ public class SegmentSearcher<K, V> implements CloseableResource {
     private final SegmentDataProvider<K, V> segmentCacheDataProvider;
 
     public SegmentSearcher(final TypeDescriptor<V> valueTypeDescriptor,
-            final SegmentConf segmentConf,
-            final SegmentPropertiesManager segmentPropertiesManager,
             final SegmentIndexSearcher<K, V> segmentIndexSearcher,
             final SegmentDataProvider<K, V> segmentDataProvider) {
         this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
@@ -39,11 +37,11 @@ public class SegmentSearcher<K, V> implements CloseableResource {
 
     private SegmentDeltaCache<K, V> getDeltaCache() {
         return segmentCacheDataProvider.getSegmentDeltaCache();
-    };
+    }
 
     private ScarceIndex<K> getScarceIndex() {
         return segmentCacheDataProvider.getScarceIndex();
-    };
+    }
 
     private BloomFilter<K> getBloomFilter() {
         return segmentCacheDataProvider.getBloomFilter();
@@ -57,13 +55,11 @@ public class SegmentSearcher<K, V> implements CloseableResource {
         }
 
         // look in bloom filter
-        if (out == null) {
-            if (getBloomFilter().isNotStored(key)) {
-                /*
-                 * It's sure that key is not in index.
-                 */
-                return null;
-            }
+        if (out == null && getBloomFilter().isNotStored(key)) {
+            /*
+             * It's sure that key is not in index.
+             */
+            return null;
         }
 
         // look in index file
