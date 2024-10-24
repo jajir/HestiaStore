@@ -11,23 +11,23 @@ Segment is core part of index. It represents one string sorted table file with:
 
 operations like write and get should be always consistent. What is written is read. Iteration behave differently. better than provide old data it stop providing any data.
 
-Let's have a followin key value pais in main index:
+Let's have a followin key value pairs in main index:
 ```text
 <a, 20 >
 <b, 30 >
 <c, 40 >
 ```
 
-In segment cache are followin pairs:
+In segment cache are following pairs:
 ```text
 <a, 25>
 <e, 28>
 <b, tombstone>
 ```
 
-Thansegment will return followin data:
+When user will iterate throught segment data, there will be followin cases:
 
-### Case 1 standar read
+### Case 1 - Read data
 
 ```text
 iterator.read() --> <a, 25>
@@ -35,57 +35,39 @@ iterator.read() --> <c, 40>
 iterator.read() --> <e, 28>
 ```
 
-### Case 2 - Change
+### Case 2 - Change existing pair
 
 ```text
 iterator.read() --> <a, 25>
-index.write(c, 10)
+segment.write(c, 10)
 iterator.read() --> <c, 10>
 iterator.read() --> <e, 28>
 ```
 
-### Case 3 - Add
+### Case 3 - Add new pair
 
 ```text
 iterator.read() --> <a, 25>
-index.write(d, 10)
+segment.write(d, 10)
 iterator.read() --> <c, 40>
 iterator.read() --> <e, 28>
 ```
 
-### Case 4 - Delete
+### Case 4 - Delete key
 
 ```text
 iterator.read() --> <a, 25>
-index.delete(c)
+segment.delete(c)
 iterator.read() --> <e, 28>
 ```
 
-### Case 5 - Compact
+### Case 5 - Compact segment after adding
 
 ```text
 iterator.read() --> <a, 25>
-index.write(c, 10)
+segment.write(c, 10)
 iterator.read() --> null
 ```
-
-
- Generally it should work like this:
-
-```text
-  put(A,1)
-  put(B,1)
-  put(C,1)
-  iterator = getSegmentIetrator
-  iterator.next() --> [A,1]
-  put(B,2)
-  put(C,2)
-  iterator.next() --> [B,2]
-  put(C,3)
-  iterator.next() --> null
-```
-
-If last `put(C,3)` lead to index compacting than iterator couldn't provide correct value. So iterator better stop providing any values.
 
 ## Caching of segment data
 
