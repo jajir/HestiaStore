@@ -9,7 +9,68 @@ Segment is core part of index. It represents one string sorted table file with:
 
 ## Segment put/get and iterate consistency
 
-operations like write and get should be always consistent. What is written is read. Iteration behave differently. better than provide old data it stop providing any data. Generally it should work like this:
+operations like write and get should be always consistent. What is written is read. Iteration behave differently. better than provide old data it stop providing any data.
+
+Let's have a followin key value pais in main index:
+```text
+<a, 20 >
+<b, 30 >
+<c, 40 >
+```
+
+In segment cache are followin pairs:
+```text
+<a, 25>
+<e, 28>
+<b, tombstone>
+```
+
+Thansegment will return followin data:
+
+### Case 1 standar read
+
+```text
+iterator.read() --> <a, 25>
+iterator.read() --> <c, 40>
+iterator.read() --> <e, 28>
+```
+
+### Case 2 - Change
+
+```text
+iterator.read() --> <a, 25>
+index.write(c, 10)
+iterator.read() --> <c, 10>
+iterator.read() --> <e, 28>
+```
+
+### Case 3 - Add
+
+```text
+iterator.read() --> <a, 25>
+index.write(d, 10)
+iterator.read() --> <c, 40>
+iterator.read() --> <e, 28>
+```
+
+### Case 4 - Delete
+
+```text
+iterator.read() --> <a, 25>
+index.delete(c)
+iterator.read() --> <e, 28>
+```
+
+### Case 5 - Compact
+
+```text
+iterator.read() --> <a, 25>
+index.write(c, 10)
+iterator.read() --> null
+```
+
+
+ Generally it should work like this:
 
 ```text
   put(A,1)
@@ -48,6 +109,9 @@ Following image shows references between objects in runtime:
 
 ## Writing to segment
 
-Writing up to some point shouldn't interrupt reading. Putting new pair into segment is here:
+Opening segment writer immediatelly close all segment readers. When writing operation add key that is in index but is not in cache this value will not returned updated. 
+
+Putting new pair into segment is here:
 
 ![Segment writing sequence diagram](./images/segment-writing-seq.png)
+
