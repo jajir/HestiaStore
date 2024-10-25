@@ -1,6 +1,7 @@
 package com.coroptis.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,6 +61,8 @@ public class SegmentConsistencyTest extends AbstractSegmentTest {
      * Test verify that read operation provide latest values. Even writing to
      * segment during iterating.
      * 
+     * In each iteration is written new data and than read back.
+     * 
      * @throws Exception
      */
     @Test
@@ -69,6 +72,7 @@ public class SegmentConsistencyTest extends AbstractSegmentTest {
         for (int i = 1; i < MAX_LOOP && iterator.hasNext(); i++) {
             writePairs(seg, makeList(i));
             final Pair<Integer, Integer> p = iterator.next();
+            assertNotNull(p);
             assertEquals(i, p.getValue());
             verifySegmentData(seg, makeList(i));
         }
