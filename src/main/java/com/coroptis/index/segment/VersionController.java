@@ -16,6 +16,9 @@ public class VersionController implements OptimisticLockObjectVersionProvider {
 
     public void changeVersion() {
         segmentVersion++;
+        if (segmentVersion == Integer.MAX_VALUE) {
+            throw new IllegalStateException("Segment version reached maximum value");
+        }
     }
 
     @Override
