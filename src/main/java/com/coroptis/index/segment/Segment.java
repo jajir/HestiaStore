@@ -98,6 +98,7 @@ public class Segment<K, V>
     }
 
     public PairWriter<K, V> openWriter() {
+        versionController.changeVersion();
         return new SegmentWriter<>(segmentCompacter, deltaCacheController);
     }
 

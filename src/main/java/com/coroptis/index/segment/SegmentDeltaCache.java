@@ -66,6 +66,11 @@ public class SegmentDeltaCache<K, V> {
         return cache.getSortedKeys();
     }
 
+    public List<Pair<K, V>> getAsSortedList(){
+        return cache.getAsSortedList();
+    }
+    
+
     @Deprecated
     public PairIterator<K, V> getSortedIterator() {
         return cache.getSortedIterator();

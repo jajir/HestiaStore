@@ -83,7 +83,20 @@ public abstract class AbstractSegmentTest {
      */
     protected <M, N> void verifySegmentData(final Segment<M, N> seg,
             final List<Pair<M, N>> pairs) {
-        final List<Pair<M, N>> data = toList(seg.openIterator());
+        verifyIteratorData(seg.openIterator(), pairs);
+    }
+
+    /**
+     * Verify that data from iterator are same as expecetd values
+     * 
+     * @param <M>          key type
+     * @param <N>          value type
+     * @param pairIterator required pair iterator
+     * @param pairs        required list of expected data in segment
+     */
+    protected <M, N> void verifyIteratorData(final PairIterator<M, N> pairIterator,
+            final List<Pair<M, N>> pairs) {
+        final List<Pair<M, N>> data = toList(pairIterator);
         assertEquals(pairs.size(), data.size(), "Unexpected segment data size");
         for (int i = 0; i < pairs.size(); i++) {
             final Pair<M, N> expectedPair = pairs.get(i);

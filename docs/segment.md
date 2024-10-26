@@ -35,39 +35,15 @@ iterator.read() --> <c, 40>
 iterator.read() --> <e, 28>
 ```
 
-### Case 2 - Change existing pair
-
-```text
-iterator.read() --> <a, 25>
-segment.write(c, 10)
-iterator.read() --> <c, 10>
-iterator.read() --> <e, 28>
-```
-
-### Case 3 - Add new pair
-
-```text
-iterator.read() --> <a, 25>
-segment.write(d, 10)
-iterator.read() --> <c, 40>
-iterator.read() --> <e, 28>
-```
-
-### Case 4 - Delete key
-
-```text
-iterator.read() --> <a, 25>
-segment.delete(c)
-iterator.read() --> <e, 28>
-```
-
-### Case 5 - Compact segment after adding
+### Case 2 - Compact segment after adding
 
 ```text
 iterator.read() --> <a, 25>
 segment.write(c, 10)
 iterator.read() --> null
 ```
+
+Any segment write operation will break segment iterator. It's easier way to secure segment consistency.  
 
 ## Caching of segment data
 

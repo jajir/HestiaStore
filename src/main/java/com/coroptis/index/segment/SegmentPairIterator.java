@@ -39,14 +39,16 @@ public class SegmentPairIterator<K, V> {
 
         public PairIterator<K, V> openIterator(
                         final OptimisticLockObjectVersionProvider versionProvider) {
+
+                final PairIterator<K, V> mergedPairIterator = new MergeDeltaCacheWithIndexIterator<>(
+                                segmentFiles.getIndexSstFileForIteration()
+                                                .openIterator(),
+                                segmentFiles.getKeyTypeDescriptor(),
+                                segmentFiles.getValueTypeDescriptor(),
+                                deltaCacheController.getDeltaCache().getAsSortedList());
+
                 return new PairIteratorWithLock<>(
-                                new MergeWithCacheIterator<K, V>(
-                                                segmentFiles.getIndexSstFileForIteration()
-                                                                .openIterator(),
-                                                segmentFiles.getKeyTypeDescriptor(),
-                                                segmentFiles.getValueTypeDescriptor(),
-                                                deltaCacheController.getDeltaCache().getSortedKeys(),
-                                                key -> deltaCacheController.getDeltaCache().get(key)),
+                                mergedPairIterator,
                                 new OptimisticLock(versionProvider));
         }
 

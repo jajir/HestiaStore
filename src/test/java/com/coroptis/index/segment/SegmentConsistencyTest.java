@@ -1,7 +1,9 @@
 package com.coroptis.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,24 +60,28 @@ public class SegmentConsistencyTest extends AbstractSegmentTest {
     }
 
     /**
-     * Test verify that read operation provide latest values. Even writing to
-     * segment during iterating.
-     * 
-     * In each iteration is written new data and than read back.
      * 
      * @throws Exception
      */
     @Test
-    void test_reading_of_updated_values() throws Exception {
+    void test_iterator_should_close_after_data_update() throws Exception {
         writePairs(seg, makeList(0));
         final PairIterator<Integer, Integer> iterator = seg.openIterator();
-        for (int i = 1; i < MAX_LOOP && iterator.hasNext(); i++) {
-            writePairs(seg, makeList(i));
-            final Pair<Integer, Integer> p = iterator.next();
-            assertNotNull(p);
-            assertEquals(i, p.getValue());
-            verifySegmentData(seg, makeList(i));
-        }
+        assertTrue(iterator.hasNext());
+        assertEquals(Pair.of(0, 0), iterator.next());
+
+        assertTrue(iterator.hasNext());
+        assertEquals(Pair.of(1, 0), iterator.next());
+
+        assertTrue(iterator.hasNext());
+        assertEquals(Pair.of(2, 0), iterator.next());
+
+        assertTrue(iterator.hasNext());
+        assertEquals(Pair.of(3, 0), iterator.next());
+
+        writePairs(seg, makeList(8));
+
+        assertFalse(iterator.hasNext());
     }
 
     private List<Pair<Integer, Integer>> makeList(final int no) {
