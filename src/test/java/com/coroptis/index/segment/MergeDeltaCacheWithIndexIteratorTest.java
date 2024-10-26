@@ -125,7 +125,6 @@ class MergeDeltaCacheWithIndexIteratorTest extends AbstractSegmentTest {
         verifyIteratorData(iterator, Arrays.asList());
     }
 
-    @SuppressWarnings("unused")
     private MergeDeltaCacheWithIndexIterator<String, Integer> makeIterator(List<Pair<String, Integer>> indexFile,
             List<Pair<String, Integer>> deltaCache) {
         final PairIteratorList<String, Integer> iteratorIndex = new PairIteratorList<>(indexFile.iterator());

@@ -11,6 +11,7 @@ public class SegmentCompacter<K, V> {
 
     private final Logger logger = LoggerFactory
             .getLogger(SegmentCompacter.class);
+    private final Segment<K, V> segment;
     private final SegmentConf segmentConf;
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
@@ -18,12 +19,13 @@ public class SegmentCompacter<K, V> {
     private final SegmentDataProvider<K, V> segmentCacheDataProvider;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
 
-    public SegmentCompacter(final SegmentFiles<K, V> segmentFiles,
+    public SegmentCompacter(final Segment<K, V> segment, final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
             final VersionController versionController,
             final SegmentPropertiesManager segmentPropertiesManager,
             final SegmentDataProvider<K, V> segmentCacheDataProvider,
             final SegmentDeltaCacheController<K, V> deltaCacheController) {
+        this.segment = Objects.requireNonNull(segment);
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.segmentConf = Objects.requireNonNull(segmentConf);
         this.versionController = Objects.requireNonNull(versionController,
@@ -35,11 +37,6 @@ public class SegmentCompacter<K, V> {
                 "Segment cached data provider is required");
         this.deltaCacheController = Objects.requireNonNull(deltaCacheController,
                 "Delta cache controller is required");
-    }
-
-    private PairIterator<K, V> openIterator() {
-        return new SegmentPairIterator<>(segmentFiles, deltaCacheController)
-                .openIterator(versionController);
     }
 
     /**
@@ -116,7 +113,7 @@ public class SegmentCompacter<K, V> {
         logger.debug("Start of compacting '{}'", segmentFiles.getId());
         versionController.changeVersion();
         try (SegmentFullWriter<K, V> writer = openFullWriter()) {
-            try (PairIterator<K, V> iterator = openIterator()) {
+            try (PairIterator<K, V> iterator = segment.openIterator()) {
                 while (iterator.hasNext()) {
                     writer.put(iterator.next());
                 }

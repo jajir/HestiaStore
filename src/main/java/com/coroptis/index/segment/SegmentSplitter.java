@@ -20,6 +20,7 @@ public class SegmentSplitter<K, V> {
 
     private final Logger logger = LoggerFactory
             .getLogger(SegmentSplitter.class);
+    private final Segment<K, V> segment;
     private final SegmentConf segmentConf;
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
@@ -54,12 +55,13 @@ public class SegmentSplitter<K, V> {
 
     }
 
-    public SegmentSplitter(final SegmentFiles<K, V> segmentFiles,
+    public SegmentSplitter(final Segment<K, V> segment, final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
             final VersionController versionController,
             final SegmentPropertiesManager segmentPropertiesManager,
             final SegmentDataProvider<K, V> segmentCacheDataProvider,
             final SegmentDeltaCacheController<K, V> deltaCacheController) {
+        this.segment = Objects.requireNonNull(segment);
         this.segmentConf = Objects.requireNonNull(segmentConf);
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.versionController = Objects.requireNonNull(versionController,
@@ -77,11 +79,6 @@ public class SegmentSplitter<K, V> {
         return segmentPropertiesManager.getSegmentStats();
     }
 
-    private PairIterator<K, V> openIterator() {
-        return new SegmentPairIterator<>(segmentFiles, deltaCacheController)
-                .openIterator(versionController);
-    }
-
     /**
      * Method should be called just from inside of this package. Method open
      * direct writer to scarce index and main sst file. It's useful for
@@ -94,7 +91,7 @@ public class SegmentSplitter<K, V> {
                 segmentCacheDataProvider, deltaCacheController);
     }
 
-//TODO some comment
+    // TODO some comment
     private final float MINIMAL_PERCENTAGE_DIFFERENCE = 90F;
 
     /**
@@ -150,7 +147,7 @@ public class SegmentSplitter<K, V> {
         K maxKey = null;
         long cxLower = 0;
         long cxHigher = 0;
-        try (final PairIterator<K, V> iterator = openIterator()) {
+        try (final PairIterator<K, V> iterator = segment.openIterator()) {
 
             try (final SegmentFullWriter<K, V> writer = lowerSegment
                     .openFullWriter()) {

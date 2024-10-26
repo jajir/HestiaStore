@@ -6,8 +6,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.coroptis.index.CloseableResource;
+import com.coroptis.index.OptimisticLock;
 import com.coroptis.index.OptimisticLockObjectVersionProvider;
 import com.coroptis.index.PairIterator;
+import com.coroptis.index.PairIteratorWithLock;
 import com.coroptis.index.PairWriter;
 
 /**
@@ -54,7 +56,7 @@ public class Segment<K, V>
         deltaCacheController = new SegmentDeltaCacheController<>(
                 segmentFiles.getKeyTypeDescriptor(), segmentFiles,
                 segmentPropertiesManager, segmentDataProvider);
-        this.segmentCompacter = new SegmentCompacter<>(segmentFiles,
+        this.segmentCompacter = new SegmentCompacter<>(this, segmentFiles,
                 segmentConf, versionController, segmentPropertiesManager,
                 segmentDataProvider, deltaCacheController);
         this.segmentSearcher = Objects.requireNonNull(segmentSearcher);
@@ -73,8 +75,15 @@ public class Segment<K, V>
     }
 
     public PairIterator<K, V> openIterator() {
-        return new SegmentPairIterator<>(segmentFiles, deltaCacheController)
-                .openIterator(versionController);
+        final PairIterator<K, V> mergedPairIterator = new MergeDeltaCacheWithIndexIterator<>(
+                segmentFiles.getIndexSstFileForIteration()
+                        .openIterator(),
+                segmentFiles.getKeyTypeDescriptor(),
+                segmentFiles.getValueTypeDescriptor(),
+                deltaCacheController.getDeltaCache().getAsSortedList());
+        return new PairIteratorWithLock<>(
+                mergedPairIterator,
+                new OptimisticLock(versionController));
     }
 
     public void forceCompact() {
@@ -88,7 +97,7 @@ public class Segment<K, V>
      * direct writer to scarce index and main sst file. It's useful for
      * compacting.
      * 
-     * Writer should be opend and closed as one atomic operation. 
+     * Writer should be opend and closed as one atomic operation.
      */
     SegmentFullWriter<K, V> openFullWriter() {
         return new SegmentFullWriter<K, V>(segmentFiles,
@@ -124,7 +133,7 @@ public class Segment<K, V>
      * @return
      */
     public SegmentSplitter<K, V> getSegmentSplitter() {
-        return new SegmentSplitter<>(segmentFiles, segmentConf,
+        return new SegmentSplitter<>(this, segmentFiles, segmentConf,
                 versionController, segmentPropertiesManager,
                 segmentCacheDataProvider, deltaCacheController);
     }
