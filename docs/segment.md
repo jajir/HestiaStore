@@ -35,7 +35,7 @@ iterator.read() --> <c, 40>
 iterator.read() --> <e, 28>
 ```
 
-### Case 2 - Compact segment after adding
+### Case 2 - Change data
 
 ```text
 iterator.read() --> <a, 25>
