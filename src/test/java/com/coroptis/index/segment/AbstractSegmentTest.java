@@ -9,12 +9,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.coroptis.index.AbstractDataTest;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.directory.Directory;
 
-public abstract class AbstractSegmentTest {
+public abstract class AbstractSegmentTest extends AbstractDataTest {
 
     private final Logger logger = LoggerFactory
             .getLogger(AbstractSegmentTest.class);
@@ -34,24 +35,6 @@ public abstract class AbstractSegmentTest {
                 writer.put(pair);
             }
         }
-    }
-
-    /**
-     * Convert pair iterator data to list
-     * 
-     * @param <M>      key type
-     * @param <N>      value type
-     * @param iterator
-     * @returnlist of pairs with data from list
-     */
-    protected <M, N> List<Pair<M, N>> toList(
-            final PairIterator<M, N> iterator) {
-        final ArrayList<Pair<M, N>> out = new ArrayList<>();
-        while (iterator.hasNext()) {
-            out.add(iterator.next());
-        }
-        iterator.close();
-        return out;
     }
 
     /**
