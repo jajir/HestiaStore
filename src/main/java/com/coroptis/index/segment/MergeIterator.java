@@ -3,7 +3,6 @@ package com.coroptis.index.segment;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
@@ -12,6 +11,8 @@ import com.coroptis.index.datatype.TypeDescriptor;
 /**
  * Allows to create final stream of data from cache and SST. Tombstones are
  * applied.
+ * 
+ * FIXME: Remove this class
  * 
  * @author honza
  *
@@ -149,14 +150,6 @@ public class MergeIterator<K, V> implements PairIterator<K, V> {
     public void close() {
         mainIterator.close();
         cacheIterator.close();
-    }
-
-    @Override
-    public Optional<Pair<K, V>> readCurrent() {
-        if (currentPair == null) {
-            return Optional.empty();
-        }
-        return Optional.of(currentPair);
     }
 
 }

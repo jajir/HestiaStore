@@ -4,7 +4,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
@@ -43,11 +42,6 @@ public class SegmentDeltaCachePairIterator<K, V> implements PairIterator<K, V> {
             // intentionally do nothing, just move forward
         });
         currentKey = null;
-    }
-
-    @Override
-    public Optional<Pair<K, V>> readCurrent() {
-        return Optional.ofNullable(getCurrentPair());
     }
 
     private SegmentDeltaCache<K, V> getDeltaSegmentCache() {

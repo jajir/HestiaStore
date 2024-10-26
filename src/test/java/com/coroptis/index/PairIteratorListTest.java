@@ -19,34 +19,27 @@ public class PairIteratorListTest {
         try (PairIterator<Integer, String> iterator = new PairIteratorList<>(
                 data)) {
             assertTrue(iterator.hasNext());
-            assertTrue(iterator.readCurrent().isEmpty());
             assertEquals(Pair.of(1, "bbb"), iterator.next());
-            assertEquals(Pair.of(1, "bbb"), iterator.readCurrent().get());
 
             assertTrue(iterator.hasNext());
             assertEquals(Pair.of(2, "ccc"), iterator.next());
-            assertEquals(Pair.of(2, "ccc"), iterator.readCurrent().get());
 
             assertTrue(iterator.hasNext());
             assertEquals(Pair.of(3, "dde"), iterator.next());
-            assertEquals(Pair.of(3, "dde"), iterator.readCurrent().get());
 
             assertTrue(iterator.hasNext());
             assertEquals(Pair.of(11, "ddm"), iterator.next());
-            assertEquals(Pair.of(11, "ddm"), iterator.readCurrent().get());
 
             assertFalse(iterator.hasNext());
-            assertEquals(Pair.of(11, "ddm"), iterator.readCurrent().get());
         }
     }
 
     @Test
     void test_empty_list() throws Exception {
-        try(final PairIterator<Integer, String> iterator = new PairIteratorList<>(
-                Collections.emptyList())){
+        try (final PairIterator<Integer, String> iterator = new PairIteratorList<>(
+                Collections.emptyList())) {
 
             assertFalse(iterator.hasNext());
-            assertTrue(iterator.readCurrent().isEmpty());
         }
     }
 }

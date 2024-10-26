@@ -33,28 +33,21 @@ public class MergeIteratorTest {
                 new PairIteratorList<>(mainData),
                 new PairIteratorList<>(cacheData), tdi, tds)) {
             assertTrue(iterator.hasNext());
-            assertTrue(iterator.readCurrent().isEmpty());
             assertEquals(Pair.of(1, "bbb"), iterator.next());
-            assertEquals(Pair.of(1, "bbb"), iterator.readCurrent().get());
 
             assertTrue(iterator.hasNext());
             assertEquals(Pair.of(2, "ccc"), iterator.next());
-            assertEquals(Pair.of(2, "ccc"), iterator.readCurrent().get());
 
             assertTrue(iterator.hasNext());
             assertEquals(Pair.of(3, "ddi"), iterator.next());
-            assertEquals(Pair.of(3, "ddi"), iterator.readCurrent().get());
 
             assertTrue(iterator.hasNext());
             assertEquals(Pair.of(6, "ddh"), iterator.next());
-            assertEquals(Pair.of(6, "ddh"), iterator.readCurrent().get());
 
             assertTrue(iterator.hasNext());
             assertEquals(Pair.of(11, "ddm"), iterator.next());
-            assertEquals(Pair.of(11, "ddm"), iterator.readCurrent().get());
 
             assertFalse(iterator.hasNext());
-            assertEquals(Pair.of(11, "ddm"), iterator.readCurrent().get());
         }
     }
 
@@ -70,16 +63,12 @@ public class MergeIteratorTest {
                 new PairIteratorList<>(mainData),
                 new PairIteratorList<>(cacheData), tdi, tds)) {
             assertTrue(iterator.hasNext());
-            assertTrue(iterator.readCurrent().isEmpty());
             assertEquals(Pair.of(3, "ddi"), iterator.next());
-            assertEquals(Pair.of(3, "ddi"), iterator.readCurrent().get());
 
             assertTrue(iterator.hasNext());
             assertEquals(Pair.of(11, "ddm"), iterator.next());
-            assertEquals(Pair.of(11, "ddm"), iterator.readCurrent().get());
 
             assertFalse(iterator.hasNext());
-            assertEquals(Pair.of(11, "ddm"), iterator.readCurrent().get());
         }
     }
 
@@ -95,20 +84,15 @@ public class MergeIteratorTest {
                 new PairIteratorList<>(mainData),
                 new PairIteratorList<>(cacheData), tdi, tds)) {
             assertTrue(iterator.hasNext());
-            assertTrue(iterator.readCurrent().isEmpty());
             assertEquals(Pair.of(1, "bbb"), iterator.next());
-            assertEquals(Pair.of(1, "bbb"), iterator.readCurrent().get());
 
             assertTrue(iterator.hasNext());
             assertEquals(Pair.of(2, "ccc"), iterator.next());
-            assertEquals(Pair.of(2, "ccc"), iterator.readCurrent().get());
 
             assertTrue(iterator.hasNext());
             assertEquals(Pair.of(6, "ddh"), iterator.next());
-            assertEquals(Pair.of(6, "ddh"), iterator.readCurrent().get());
 
             assertFalse(iterator.hasNext());
-            assertEquals(Pair.of(6, "ddh"), iterator.readCurrent().get());
         }
     }
 
@@ -124,16 +108,12 @@ public class MergeIteratorTest {
                 new PairIteratorList<>(mainData),
                 new PairIteratorList<>(cacheData), tdi, tds)) {
             assertTrue(iterator.hasNext());
-            assertTrue(iterator.readCurrent().isEmpty());
             assertEquals(Pair.of(1, "bbb"), iterator.next());
-            assertEquals(Pair.of(1, "bbb"), iterator.readCurrent().get());
 
             assertTrue(iterator.hasNext());
             assertEquals(Pair.of(3, "ddi"), iterator.next());
-            assertEquals(Pair.of(3, "ddi"), iterator.readCurrent().get());
 
             assertFalse(iterator.hasNext());
-            assertEquals(Pair.of(3, "ddi"), iterator.readCurrent().get());
 
             assertThrows(NoSuchElementException.class, () -> {
                 iterator.next();
@@ -154,16 +134,12 @@ public class MergeIteratorTest {
                 new PairIteratorList<>(mainData),
                 new PairIteratorList<>(cacheData), tdi, tds)) {
             assertTrue(iterator.hasNext());
-            assertTrue(iterator.readCurrent().isEmpty());
             assertEquals(Pair.of(1, "bbb"), iterator.next());
-            assertEquals(Pair.of(1, "bbb"), iterator.readCurrent().get());
 
             assertTrue(iterator.hasNext());
             assertEquals(Pair.of(2, "hhh"), iterator.next());
-            assertEquals(Pair.of(2, "hhh"), iterator.readCurrent().get());
 
             assertFalse(iterator.hasNext());
-            assertEquals(Pair.of(2, "hhh"), iterator.readCurrent().get());
         }
     }
 
@@ -180,12 +156,9 @@ public class MergeIteratorTest {
                 new PairIteratorList<>(mainData),
                 new PairIteratorList<>(cacheData), tdi, tds)) {
             assertTrue(iterator.hasNext());
-            assertTrue(iterator.readCurrent().isEmpty());
             assertEquals(Pair.of(1, "bbb"), iterator.next());
-            assertEquals(Pair.of(1, "bbb"), iterator.readCurrent().get());
 
             assertFalse(iterator.hasNext());
-            assertEquals(Pair.of(1, "bbb"), iterator.readCurrent().get());
         }
     }
 
@@ -202,15 +175,11 @@ public class MergeIteratorTest {
                 new PairIteratorList<>(mainData),
                 new PairIteratorList<>(cacheData), tdi, tds)) {
             assertTrue(iterator.hasNext());
-            assertTrue(iterator.readCurrent().isEmpty());
             assertEquals(Pair.of(1, "bbb"), iterator.next());
-            assertEquals(Pair.of(1, "bbb"), iterator.readCurrent().get());
 
             assertEquals(Pair.of(4, "rrr"), iterator.next());
-            assertEquals(Pair.of(4, "rrr"), iterator.readCurrent().get());
 
             assertFalse(iterator.hasNext());
-            assertEquals(Pair.of(4, "rrr"), iterator.readCurrent().get());
         }
     }
 
@@ -228,12 +197,9 @@ public class MergeIteratorTest {
                 new PairIteratorList<>(mainData),
                 new PairIteratorList<>(cacheData), tdi, tds)) {
             assertTrue(iterator.hasNext());
-            assertTrue(iterator.readCurrent().isEmpty());
             assertEquals(Pair.of(2, "ooo"), iterator.next());
-            assertEquals(Pair.of(2, "ooo"), iterator.readCurrent().get());
 
             assertFalse(iterator.hasNext());
-            assertEquals(Pair.of(2, "ooo"), iterator.readCurrent().get());
         }
     }
 

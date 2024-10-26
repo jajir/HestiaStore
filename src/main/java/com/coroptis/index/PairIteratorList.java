@@ -3,7 +3,6 @@ package com.coroptis.index;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 public class PairIteratorList<K, V> implements PairIterator<K, V> {
 
@@ -35,14 +34,6 @@ public class PairIteratorList<K, V> implements PairIterator<K, V> {
         /*
          * There is nothing to close.
          */
-    }
-
-    @Override
-    public Optional<Pair<K, V>> readCurrent() {
-        if (currentPair == null) {
-            return Optional.empty();
-        }
-        return Optional.of(currentPair);
     }
 
 }

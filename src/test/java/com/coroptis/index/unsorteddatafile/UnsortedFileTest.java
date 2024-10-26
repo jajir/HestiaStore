@@ -40,8 +40,8 @@ public class UnsortedFileTest {
 
         try (PairIterator<Integer, String> reader = unsorted.openIterator()) {
             while (reader.hasNext()) {
-                logger.debug(reader.readCurrent().get().toString());
-                reader.next();
+                final Pair<Integer, String> current = reader.next();
+                logger.debug(current.toString());
             }
         }
 

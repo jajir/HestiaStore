@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Test;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
-import com.coroptis.index.PairWriter;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
 import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;

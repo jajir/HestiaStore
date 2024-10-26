@@ -5,7 +5,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Function;
 
 import com.coroptis.index.Pair;
@@ -169,14 +168,6 @@ public class MergeWithCacheIterator<K, V> implements PairIterator<K, V> {
         cacheKeyIterator.forEachRemaining(i -> {
             // intentionally do nothing
         });
-    }
-
-    @Override
-    public Optional<Pair<K, V>> readCurrent() {
-        if (currentPair == null) {
-            return Optional.empty();
-        }
-        return Optional.of(currentPair);
     }
 
 }
