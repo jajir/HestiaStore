@@ -75,14 +75,12 @@ public class Segment<K, V>
 
     public PairIterator<K, V> openIterator() {
         final PairIterator<K, V> mergedPairIterator = new MergeDeltaCacheWithIndexIterator<>(
-                segmentFiles.getIndexSstFileForIteration()
-                        .openIterator(),
+                segmentFiles.getIndexSstFileForIteration().openIterator(),
                 segmentFiles.getKeyTypeDescriptor(),
                 segmentFiles.getValueTypeDescriptor(),
                 deltaCacheController.getDeltaCache().getAsSortedList());
-        return new PairIteratorWithLock<>(
-                mergedPairIterator,
-                new OptimisticLock(versionController));
+        return new PairIteratorWithLock<>(mergedPairIterator,
+                new OptimisticLock(versionController), getId().toString());
     }
 
     public void forceCompact() {

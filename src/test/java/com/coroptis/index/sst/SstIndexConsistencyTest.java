@@ -1,14 +1,13 @@
 package com.coroptis.index.sst;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
@@ -23,7 +22,9 @@ import com.coroptis.index.segment.SegmentId;
  * @author honza
  *
  */
-public class SstIndexConsistencyTest {
+public class SstIndexConsistencyTest extends AbstractIndexTest {
+    private final Logger logger = LoggerFactory
+            .getLogger(SstIndexConsistencyTest.class);
 
     final Directory directory = new MemDirectory();
     final SegmentId id = SegmentId.of(27);
@@ -59,17 +60,13 @@ public class SstIndexConsistencyTest {
             stream.forEach(pair -> {
                 int cx = acx.incrementAndGet();
                 writePairs(index, makeList(cx));
-                System.out.println(cx + " " + pair.toString());
+                logger.debug(cx + " " + pair.toString());
                 verifyIndexData(index, makeList(cx));
             });
         }
     }
 
     private Index<Integer, Integer> makeIndex() {
-        return makeSstIndex(false);
-    }
-
-    private Index<Integer, Integer> makeSstIndex(boolean withLog) {
         return Index.<Integer, Integer>builder()//
                 .withDirectory(directory)//
                 .withKeyClass(Integer.class)//
@@ -83,52 +80,16 @@ public class SstIndexConsistencyTest {
                 .withMaxNumberOfKeysInCache(2) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
-                .withUseFullLog(withLog) //
+                .withUseFullLog(false) //
                 .build();
     }
 
-    private List<Pair<Integer, Integer>> makeList(final int no) {
+    protected List<Pair<Integer, Integer>> makeList(final int no) {
         final List<Pair<Integer, Integer>> out = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             out.add(Pair.of(i, no));
         }
         return out;
-    }
-
-    /**
-     * Simplify filling segment with data.
-     * 
-     * @param <M>   key type
-     * @param <N>   value type
-     * @param seg   required segment
-     * @param pairs required list of pairs
-     */
-    protected <M, N> void writePairs(final Index<M, N> index,
-            final List<Pair<M, N>> pairs) {
-        for (final Pair<M, N> pair : pairs) {
-            index.put(pair);
-        }
-    }
-
-    /**
-     * Open segment search and verify that found value for given key is equals
-     * to expecetd value
-     * 
-     * @param <M>   key type
-     * @param <N>   value type
-     * @param index required segment
-     * @param pairs required list of expected data in segment
-     */
-    protected <M, N> void verifyIndexData(final Index<M, N> index,
-            final List<Pair<M, N>> pairs) {
-        final List<Pair<M, N>> data = index.getStream()
-                .collect(Collectors.toList());
-        assertEquals(pairs.size(), data.size(), "Unexpected segment data size");
-        for (int i = 0; i < pairs.size(); i++) {
-            final Pair<M, N> expectedPair = pairs.get(i);
-            final Pair<M, N> realPair = data.get(i);
-            assertEquals(expectedPair, realPair);
-        }
     }
 
 }

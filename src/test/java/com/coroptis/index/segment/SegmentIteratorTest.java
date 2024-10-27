@@ -8,7 +8,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.coroptis.index.Pair;
@@ -48,8 +47,7 @@ public class SegmentIteratorTest extends AbstractSegmentTest {
     @BeforeEach
     void setUp() {
         directory = new MemDirectory();
-        segment = Segment
-                .<String, Integer>builder()//
+        segment = Segment.<String, Integer>builder()//
                 .withDirectory(directory)//
                 .withId(id)//
                 .withKeyTypeDescriptor(tds)//
@@ -62,8 +60,8 @@ public class SegmentIteratorTest extends AbstractSegmentTest {
         segment.forceCompact();
         writePairs(segment, deltaCache);
         /*
-         * Now Content of main sst index file and delta cache should be as described in
-         * documentation
+         * Now Content of main sst index file and delta cache should be as
+         * described in documentation
          */
     }
 
@@ -74,77 +72,18 @@ public class SegmentIteratorTest extends AbstractSegmentTest {
     }
 
     @Test
-    @Disabled
-    void test_case_2_change_existing_pair() {
-        try(final PairIterator<String, Integer> iterator = segment.openIterator()) {
-            assertTrue(iterator.hasNext());
-            assertEquals(Pair.of("a",25), iterator.next());
-
-            //write <c, 10>
-            writePairs(segment,    Arrays.asList(Pair.of("c", 10)));
-
-            assertTrue(iterator.hasNext());
-            assertEquals(Pair.of("c",10), iterator.next());
-
-            assertTrue(iterator.hasNext());
-            assertEquals(Pair.of("e",28), iterator.next());
-
-            assertFalse(iterator.hasNext());
-        }
-    }
-
-    @Test
-    @Disabled
-    void test_case_3_add_pair() {
-        try(final PairIterator<String, Integer> iterator = segment.openIterator()) {
-            assertTrue(iterator.hasNext());
-            assertEquals(Pair.of("a",25), iterator.next());
-
-            //write <c, 10>
-            writePairs(segment,   Arrays.asList(Pair.of("d", 10)));
-
-            assertTrue(iterator.hasNext());
-            assertEquals(Pair.of("c",40), iterator.next());
-
-            assertTrue(iterator.hasNext());
-            assertEquals(Pair.of("e",28), iterator.next());
-
-            assertFalse(iterator.hasNext());
-        }
-    }
-
-    
-    @Test
-    @Disabled
-    void test_case_4_delete_pair() {
-        try(final PairIterator<String, Integer> iterator = segment.openIterator()) {
-            assertTrue(iterator.hasNext());
-            assertEquals(Pair.of("a",25), iterator.next());
-
-            //delete <c>
-            writePairs(segment,    Arrays.asList(Pair.of("c", tdi.getTombstone())));
-
-            assertTrue(iterator.hasNext());
-            assertEquals(Pair.of("e",28), iterator.next());
-
-            assertFalse(iterator.hasNext());
-        }
-    }
-
-
-    @Test
     void test_case_5_compact_after_addding_pair() {
-        try(final PairIterator<String, Integer> iterator = segment.openIterator()) {
+        try (final PairIterator<String, Integer> iterator = segment
+                .openIterator()) {
             assertTrue(iterator.hasNext());
-            assertEquals(Pair.of("a",25), iterator.next());
+            assertEquals(Pair.of("a", 25), iterator.next());
 
-            //write <c, 10>
-            writePairs(segment,    Arrays.asList(Pair.of("c", 10)));
+            // write <c, 10>
+            writePairs(segment, Arrays.asList(Pair.of("c", 10)));
             segment.forceCompact();
 
             assertFalse(iterator.hasNext());
         }
     }
-
 
 }
