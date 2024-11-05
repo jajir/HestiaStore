@@ -1,14 +1,25 @@
 package com.coroptis.index.bloomfilter;
 
+import java.util.Objects;
+
 import com.coroptis.index.datatype.ConvertorToBytes;
 import com.coroptis.index.directory.Directory;
 
 public class BloomFilterBuilder<K> {
+
+    private final static double DEFAULT_PROBABILITY_OF_FALSE_POSITIVE = 0.01;
+
     private Directory directory;
     private String bloomFilterFileName;
-    private int numberOfHashFunctions;
-    private int indexSizeInBytes;
     private ConvertorToBytes<K> convertorToBytes;
+    private Long numberOfKeys = null;
+    private Integer numberOfHashFunctions = null;
+    private Integer indexSizeInBytes = null;
+    private double probabilityOfFalsePositive = DEFAULT_PROBABILITY_OF_FALSE_POSITIVE;
+
+    BloomFilterBuilder() {
+
+    }
 
     public BloomFilterBuilder<K> withDirectory(final Directory directory) {
         this.directory = directory;
@@ -28,7 +39,7 @@ public class BloomFilterBuilder<K> {
     }
 
     public BloomFilterBuilder<K> withIndexSizeInBytes(
-            final int indexSizeInBytes) {
+            final Integer indexSizeInBytes) {
         this.indexSizeInBytes = indexSizeInBytes;
         return this;
     }
@@ -39,7 +50,35 @@ public class BloomFilterBuilder<K> {
         return this;
     }
 
+    public BloomFilterBuilder<K> withNumberOfKeys(final Long numberOfKeys) {
+        this.numberOfKeys = numberOfKeys;
+        return this;
+    }
+
+    public BloomFilterBuilder<K> withProbabilityOfFalsePositive(
+            final Double probabilityOfFalsePositive) {
+        this.probabilityOfFalsePositive = probabilityOfFalsePositive;
+        return this;
+    }
+
     public BloomFilter<K> build() {
+        Objects.requireNonNull(directory, "Directory is not set.");
+        Objects.requireNonNull(bloomFilterFileName,
+                "Bloom filter file name is not set.");
+        Objects.requireNonNull(convertorToBytes,
+                "Convertor to bytes is not set.");
+        if (numberOfKeys == null && indexSizeInBytes == null) { 
+            throw new IllegalStateException("Number of keys is not set.");
+        }
+        if (indexSizeInBytes == null) {
+            indexSizeInBytes = -(int) (numberOfKeys
+                    * Math.log(probabilityOfFalsePositive)
+                    / Math.pow(Math.log(2), 2));
+        }
+        if (numberOfHashFunctions == null) {
+            numberOfHashFunctions = (int) Math.ceil(indexSizeInBytes / (double)numberOfKeys
+                    * Math.log(2));
+        }
         return new BloomFilter<>(directory, bloomFilterFileName,
                 numberOfHashFunctions, indexSizeInBytes, convertorToBytes);
     }

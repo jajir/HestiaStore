@@ -105,4 +105,12 @@ public class BloomFilter<K> {
         bloomFilterStats.incrementFalsePositive();
     }
 
+    public long getNumberOfHashFunctions() {
+        return numberOfHashFunctions;
+    }
+
+    public long getIndexSizeInBytes() {
+        return indexSizeInBytes;
+    }
+
 }
