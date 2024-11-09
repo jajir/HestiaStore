@@ -35,11 +35,14 @@ public class Hash {
         if (data.length == 0) {
             throw new IllegalArgumentException("Zero size of byte array");
         }
+        final long bitSize = bits.bitSize();
+        if (bitSize == 0) {
+            return true;
+        }
 
         int h1 = MurmurHash3.hash32x86(data, 0, data.length, 0);
         int h2 = MurmurHash3.hash32x86(data, 0, data.length, h1);
 
-        long bitSize = bits.bitSize();
         boolean bitsChanged = false;
         for (int i = 1; i <= numHashFunctions; i++) {
             int combinedHash = h1 + (i * h2);
@@ -68,11 +71,15 @@ public class Hash {
         if (data.length == 0) {
             throw new IllegalArgumentException("Zero size of byte array");
         }
+        long bitSize = bits.bitSize();
+        if (bitSize == 0) {
+            // if there are no bits set, then the data is not stored
+            return false;
+        }
 
         int h1 = MurmurHash3.hash32x86(data, 0, data.length, 0);
         int h2 = MurmurHash3.hash32x86(data, 0, data.length, h1);
 
-        long bitSize = bits.bitSize();
         boolean bitsChanged = false;
         for (int i = 1; i <= numHashFunctions; i++) {
             int combinedHash = h1 + (i * h2);

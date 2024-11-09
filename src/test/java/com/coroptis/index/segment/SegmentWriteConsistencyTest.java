@@ -61,9 +61,14 @@ public class SegmentWriteConsistencyTest {
     private Segment<Integer, String> makeSegment(final Directory directory,
             final SegmentId id) {
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()
-                .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
-                .withValueTypeDescriptor(tds).withMaxNumberOfKeysInIndexPage(2)
-                .withMaxNumberOfKeysInSegmentCache(3).build();
+                .withDirectory(directory)//
+                .withId(id)//
+                .withKeyTypeDescriptor(tdi)//
+                .withValueTypeDescriptor(tds)//
+                .withMaxNumberOfKeysInIndexPage(2)//
+                .withMaxNumberOfKeysInSegmentCache(3)//
+                .withBloomFilterIndexSizeInBytes(0)//
+                .build();
         return seg;
     }
 

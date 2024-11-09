@@ -8,6 +8,8 @@ package com.coroptis.index.sst;
  */
 public interface BuilderConfiguration {
 
+    final static double DEFAULT_PROBABILITY_OF_FALSE_POSITIVE = 0.01;
+
     long getMaxNumberOfKeysInSegmentCache();
 
     long getMaxNumberOfKeysInSegmentCacheDuringFlushing();
@@ -24,6 +26,11 @@ public interface BuilderConfiguration {
 
     int getBloomFilterNumberOfHashFunctions();
 
+    default double getBloomFilterProbabilityOfFalsePositive() {
+        return DEFAULT_PROBABILITY_OF_FALSE_POSITIVE;
+    }
+
     int getBloomFilterIndexSizeInBytes();
+
 
 }

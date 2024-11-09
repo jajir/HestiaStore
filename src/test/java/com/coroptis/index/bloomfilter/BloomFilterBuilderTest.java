@@ -48,6 +48,47 @@ public class BloomFilterBuilderTest {
         assertEquals(1024L, bf.getIndexSizeInBytes());
     }
 
+    @Test
+    void test_with_indexSizeInBytes_is_zero() {
+        final BloomFilter<String> bf = BloomFilter.<String>builder()//
+                .withDirectory(directory)//
+                .withBloomFilterFileName("test.bf")//
+                .withConvertorToBytes(tds.getConvertorToBytes())//
+                .withIndexSizeInBytes(0)//
+                .withNumberOfHashFunctions(2)//
+                .build();
+        assertNotNull(bf);
+        assertEquals(2, bf.getNumberOfHashFunctions());
+        assertEquals(0L, bf.getIndexSizeInBytes());
+    }
+
+    @Test
+    void test_with_indexSizeInBytes_is_zero_numberOfHashFunctions_null() {
+        final BloomFilter<String> bf = BloomFilter.<String>builder()//
+                .withDirectory(directory)//
+                .withBloomFilterFileName("test.bf")//
+                .withConvertorToBytes(tds.getConvertorToBytes())//
+                .withIndexSizeInBytes(0)//
+                .build();
+        assertNotNull(bf);
+        assertEquals(1, bf.getNumberOfHashFunctions());
+        assertEquals(0L, bf.getIndexSizeInBytes());
+    }
+
+    @Test
+    void test_with_probabilityOfFalsePositive_is_null_() {
+        final BloomFilter<String> bf = BloomFilter.<String>builder()//
+                .withDirectory(directory)//
+                .withBloomFilterFileName("test.bf")//
+                .withConvertorToBytes(tds.getConvertorToBytes())//
+                .withIndexSizeInBytes(1024)//
+                .withNumberOfHashFunctions(2)//
+                .withProbabilityOfFalsePositive(null)//
+                .build();
+        assertNotNull(bf);
+        assertEquals(2, bf.getNumberOfHashFunctions());
+        assertEquals(1024L, bf.getIndexSizeInBytes());
+    }
 
     @Test
     void test_without_numberOfHashFunctions() {

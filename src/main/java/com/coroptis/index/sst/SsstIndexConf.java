@@ -18,8 +18,10 @@ public class SsstIndexConf {
     private final int maxNumberOfKeysInSegment;
     private final int maxNumberOfSegmentsInCache;
 
-    private final int bloomFilterNumberOfHashFunctions;
-    private final int bloomFilterIndexSizeInBytes;
+    private final Integer bloomFilterNumberOfHashFunctions;
+    private final Integer bloomFilterIndexSizeInBytes;
+    private final Double bloomFilterProbabilityOfFalsePositive;
+
     private final int indexBufferSizeInBytes;
 
     SsstIndexConf(final long maxNumberOfKeysInSegmentCache,
@@ -28,8 +30,9 @@ public class SsstIndexConf {
             final int maxNumberOfKeysInCache,
             final int maxNumberOfKeysInSegment,
             final int maxNumberOfSegmentsInCache,
-            final int bloomFilterNumberOfHashFunctions,
-            final int bloomFilterIndexSizeInBytes,
+            final Integer bloomFilterNumberOfHashFunctions,
+            final Integer bloomFilterIndexSizeInBytes,
+            final Double bloomFilterProbabilityOfFalsePositive,
             final int indexBufferSizeInBytes) {
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
         this.maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInSegmentCacheDuringFlushing;
@@ -39,6 +42,7 @@ public class SsstIndexConf {
         this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
+        this.bloomFilterProbabilityOfFalsePositive = bloomFilterProbabilityOfFalsePositive;
         this.indexBufferSizeInBytes = indexBufferSizeInBytes;
 
         if (indexBufferSizeInBytes % 1024 != 0) {
@@ -65,12 +69,16 @@ public class SsstIndexConf {
         return maxNumberOfKeysInSegment;
     }
 
-    int getBloomFilterNumberOfHashFunctions() {
+    Integer getBloomFilterNumberOfHashFunctions() {
         return bloomFilterNumberOfHashFunctions;
     }
 
-    int getBloomFilterIndexSizeInBytes() {
+    Integer getBloomFilterIndexSizeInBytes() {
         return bloomFilterIndexSizeInBytes;
+    }
+
+    public Double getBloomFilterProbabilityOfFalsePositive() {
+        return bloomFilterProbabilityOfFalsePositive;
     }
 
     int getMaxNumberOfSegmentsInCache() {

@@ -33,7 +33,7 @@ public class BloomFilterBuilder<K> {
     }
 
     public BloomFilterBuilder<K> withNumberOfHashFunctions(
-            final int numberOfHashFunctions) {
+            final Integer numberOfHashFunctions) {
         this.numberOfHashFunctions = numberOfHashFunctions;
         return this;
     }
@@ -57,7 +57,9 @@ public class BloomFilterBuilder<K> {
 
     public BloomFilterBuilder<K> withProbabilityOfFalsePositive(
             final Double probabilityOfFalsePositive) {
-        this.probabilityOfFalsePositive = probabilityOfFalsePositive;
+        if (probabilityOfFalsePositive != null) {
+            this.probabilityOfFalsePositive = probabilityOfFalsePositive;
+        }
         return this;
     }
 
@@ -67,7 +69,7 @@ public class BloomFilterBuilder<K> {
                 "Bloom filter file name is not set.");
         Objects.requireNonNull(convertorToBytes,
                 "Convertor to bytes is not set.");
-        if (numberOfKeys == null && indexSizeInBytes == null) { 
+        if (numberOfKeys == null && indexSizeInBytes == null) {
             throw new IllegalStateException("Number of keys is not set.");
         }
         if (indexSizeInBytes == null) {
@@ -76,8 +78,12 @@ public class BloomFilterBuilder<K> {
                     / Math.pow(Math.log(2), 2));
         }
         if (numberOfHashFunctions == null) {
-            numberOfHashFunctions = (int) Math.ceil(indexSizeInBytes / (double)numberOfKeys
-                    * Math.log(2));
+            if (numberOfKeys == null || numberOfKeys == 1) {
+                numberOfHashFunctions = 1;
+            } else {
+                numberOfHashFunctions = (int) Math.ceil(
+                        indexSizeInBytes / (double) numberOfKeys * Math.log(2));
+            }
         }
         return new BloomFilter<>(directory, bloomFilterFileName,
                 numberOfHashFunctions, indexSizeInBytes, convertorToBytes);
