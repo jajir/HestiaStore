@@ -39,6 +39,7 @@ key class can be set with method `withKeyClass()`. A class object representing t
 * Integer
 * Long
 * String
+* Byte
 
 If a different class is used, the key type descriptor must be set using the `withKeyTypeDescriptor()` method from the builder. When new class should be used than `com.coroptis.index.datatype.TypeDescriptor` interface should be implemented.
 
