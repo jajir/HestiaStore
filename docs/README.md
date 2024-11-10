@@ -15,7 +15,7 @@ Index is not thread safe.
 ## Useful links
 
 * [Overall index architecture](architecture.md)
-* [index configaration](configuration.md)
+* [Index configuration](configuration.md)
 * [Project versioning and how to release snapshot and new version](release.md)
 * [Segment implementation details](segment.md)
 
