@@ -189,6 +189,56 @@ public class BloomFilterBuilderTest {
         assertEquals("Directory is not set.", e.getMessage());
     }
 
+    @Test
+    void test_probabilityOfFalsePositive_is_zero() {
+        final Exception e = assertThrows(IllegalStateException.class,
+                () -> makeFilter(0.0));
+
+        assertNotNull(e);
+        assertEquals("Probability of false positive must be greater than zero.",
+                e.getMessage());
+    }
+
+    @Test
+    void test_probabilityOfFalsePositive_is_less_than_zero() {
+        final Exception e = assertThrows(IllegalStateException.class,
+                () -> makeFilter(-10.0));
+
+        assertNotNull(e);
+        assertEquals("Probability of false positive must be greater than zero.",
+                e.getMessage());
+    }
+
+    @Test
+    void test_probabilityOfFalsePositive_is_one() {
+        final BloomFilter<String> filter = makeFilter(1.0);
+
+        assertNotNull(filter);
+    }
+
+    @Test
+    void test_probabilityOfFalsePositive_is_greater_than_one() {
+        final Exception e = assertThrows(IllegalStateException.class,
+                () -> makeFilter(10.0));
+
+        assertNotNull(e);
+        assertEquals(
+                "Probability of false positive must be less than one or equal to one.",
+                e.getMessage());
+    }
+
+    private BloomFilter<String> makeFilter(
+            final Double probabilityOfFalsePositive) {
+        return BloomFilter.<String>builder()//
+                .withDirectory(directory)//
+                .withConvertorToBytes(tds.getConvertorToBytes())//
+                .withBloomFilterFileName("test.bf")//
+                .withProbabilityOfFalsePositive(probabilityOfFalsePositive)//
+                .withNumberOfKeys(10001L)//
+                .withNumberOfHashFunctions(2)//
+                .build();
+    }
+
     @BeforeEach
     void setup() {
         directory = new MemDirectory();

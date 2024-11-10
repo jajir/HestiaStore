@@ -72,6 +72,14 @@ public class BloomFilterBuilder<K> {
         if (numberOfKeys == null && indexSizeInBytes == null) {
             throw new IllegalStateException("Number of keys is not set.");
         }
+        if (probabilityOfFalsePositive <= 0) {
+            throw new IllegalStateException(
+                    "Probability of false positive must be greater than zero.");
+        }
+        if (probabilityOfFalsePositive > 1) {
+            throw new IllegalStateException(
+                    "Probability of false positive must be less than one or equal to one.");
+        }
         if (indexSizeInBytes == null) {
             indexSizeInBytes = -(int) (numberOfKeys
                     * Math.log(probabilityOfFalsePositive)
