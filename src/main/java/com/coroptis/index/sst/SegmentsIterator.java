@@ -47,7 +47,8 @@ class SegmentsIterator<K, V> implements PairIterator<K, V> {
         }
         if (position < ids.size()) {
             final SegmentId segmentId = ids.get(position);
-            logger.debug("Processing segment {} od {}", segmentId, ids.size());
+            logger.debug("Starting processing segment '{}' which is {} of {}",
+                    segmentId, position, ids.size());
             position++;
             final Segment<K, V> segment = segmentManager.getSegment(segmentId);
             currentIterator = segment.openIterator();
