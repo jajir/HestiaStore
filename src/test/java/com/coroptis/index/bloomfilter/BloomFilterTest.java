@@ -2,6 +2,7 @@ package com.coroptis.index.bloomfilter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -66,11 +67,71 @@ public class BloomFilterTest {
         assertEquals("Bloom filter was not used.", stats.getStatsString());
     }
 
+    @Test
+    void test_zero_hashFuntions() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> BloomFilter.<String>builder()//
+                        .withBloomFilterFileName(FILE_NAME)//
+                        .withConvertorToBytes(STD.getConvertorToBytes())//
+                        .withDirectory(directory)//
+                        .withIndexSizeInBytes(0)//
+                        .withNumberOfHashFunctions(0)//
+                        .build());
+
+        assertEquals("Number of hash function cant be '0'", e.getMessage());
+    }
+
+    @Test
+    void test_zero_keys() {
+        final BloomFilter<String> bf = BloomFilter.<String>builder()//
+                .withBloomFilterFileName(FILE_NAME)//
+                .withConvertorToBytes(STD.getConvertorToBytes())//
+                .withDirectory(directory)//
+                .withIndexSizeInBytes(0)//
+                .withNumberOfHashFunctions(3)//
+                .build();
+
+        writeToFilter(bf, TEST_DATA_KEYS);
+
+        // any key should be not be stored in filter, so it could be in index
+        assertFalse(bf.isNotStored("ahoj"));
+        assertFalse(bf.isNotStored("ahoj"));
+        assertFalse(bf.isNotStored("znenku"));
+        assertFalse(bf.isNotStored("karle"));
+        assertFalse(bf.isNotStored("kachna"));
+    }
+
+    @Test
+    void test_zero_keys_write_keys() {
+        final BloomFilterBuilder<String> builder = BloomFilter.<String>builder()
+                .withBloomFilterFileName(FILE_NAME)//
+                .withConvertorToBytes(STD.getConvertorToBytes())//
+                .withDirectory(directory)//
+                .withIndexSizeInBytes(0)//
+                .withNumberOfHashFunctions(3)//
+        ;
+
+        final BloomFilter<String> bf1 = builder.build();
+        writeToFilter(bf1, TEST_DATA_KEYS);
+
+        final BloomFilter<String> bf2 = builder.build();
+
+        // any key should be not be stored in filter, so it could be in index
+        assertFalse(bf2.isNotStored("ahoj"));
+        assertFalse(bf2.isNotStored("ahoj"));
+        assertFalse(bf2.isNotStored("znenku"));
+        assertFalse(bf2.isNotStored("karle"));
+        assertFalse(bf2.isNotStored("kachna"));
+    }
+
     private BloomFilter<String> makeBloomFilter() {
-        return BloomFilter.<String>builder().withBloomFilterFileName(FILE_NAME)
-                .withConvertorToBytes(STD.getConvertorToBytes())
-                .withDirectory(directory).withIndexSizeInBytes(100)
-                .withNumberOfHashFunctions(10).build();
+        return BloomFilter.<String>builder()//
+                .withBloomFilterFileName(FILE_NAME)//
+                .withConvertorToBytes(STD.getConvertorToBytes())//
+                .withDirectory(directory)//
+                .withIndexSizeInBytes(100)//
+                .withNumberOfHashFunctions(10)//
+                .build();
     }
 
     private void writeToFilter(final BloomFilter<String> bf,

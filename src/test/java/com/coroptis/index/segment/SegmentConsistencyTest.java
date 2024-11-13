@@ -34,14 +34,14 @@ public class SegmentConsistencyTest extends AbstractSegmentTest {
     @BeforeEach
     void setUp() {
         dir = new MemDirectory();
-        seg = Segment
-                .<Integer, Integer>builder()//
+        seg = Segment.<Integer, Integer>builder()//
                 .withDirectory(dir)//
                 .withId(id)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tdi)//
                 .withMaxNumberOfKeysInSegmentMemory(10000)//
                 .withMaxNumberOfKeysInSegmentCache(10000)//
+                .withBloomFilterIndexSizeInBytes(0)//
                 .build();
     }
 

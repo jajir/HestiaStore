@@ -59,6 +59,7 @@ public class BuilderConfigurationRegistry {
     static {
         addTypeDefaultConf(Integer.class, new BuilderConfigurationInteger());
         addTypeDefaultConf(Long.class, new BuilderConfigurationInteger());
+        addTypeDefaultConf(String.class, new BuilderConfigurationString());
     }
 
     public static final <T> void addTypeDefaultConf(final Class<T> clazz,

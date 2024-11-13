@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.segment.Segment;
@@ -20,11 +23,16 @@ import com.coroptis.index.segment.SegmentId;
  */
 class SegmentsIterator<K, V> implements PairIterator<K, V> {
 
+    private final Logger logger = LoggerFactory
+            .getLogger(SegmentsIterator.class);
+
     private final SegmentManager<K, V> segmentManager;
     private final List<SegmentId> ids;
     private Pair<K, V> currentPair = null;
     private Pair<K, V> nextPair = null;
     private PairIterator<K, V> currentIterator = null;
+
+    private int position = 0;
 
     SegmentsIterator(final List<SegmentId> ids,
             final SegmentManager<K, V> segmentManager) {
@@ -37,8 +45,10 @@ class SegmentsIterator<K, V> implements PairIterator<K, V> {
         if (currentIterator != null) {
             currentIterator.close();
         }
-        if (!ids.isEmpty()) {
-            final SegmentId segmentId = ids.remove(0);
+        if (position < ids.size()) {
+            final SegmentId segmentId = ids.get(position);
+            logger.debug("Processing segment {} od {}", segmentId, ids.size());
+            position++;
             final Segment<K, V> segment = segmentManager.getSegment(segmentId);
             currentIterator = segment.openIterator();
             if (currentIterator.hasNext()) {

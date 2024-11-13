@@ -54,6 +54,7 @@ public class SegmentIteratorTest extends AbstractSegmentTest {
                 .withValueTypeDescriptor(tdi)//
                 .withMaxNumberOfKeysInSegmentMemory(10)//
                 .withMaxNumberOfKeysInSegmentCache(10)//
+                .withBloomFilterIndexSizeInBytes(0)//
                 .build();
 
         writePairs(segment, indexFile);

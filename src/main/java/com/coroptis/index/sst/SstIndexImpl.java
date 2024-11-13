@@ -41,9 +41,9 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     private IndexState<K, V> indexState;
 
     public SstIndexImpl(final Directory directory,
-            TypeDescriptor<K> keyTypeDescriptor,
-            TypeDescriptor<V> valueTypeDescriptor, final SsstIndexConf conf,
-            final Log<K, V> log) {
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final SsstIndexConf conf, final Log<K, V> log) {
         if (directory == null) {
             throw new IllegalArgumentException("Directory was no spicified.");
         }
@@ -122,7 +122,8 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         indexState.tryPerformOperation();
         final PairIterator<K, V> iterator = openIterator();
         final PairReader<K, V> reader = new PairReaderRefreshedFromCache<>(
-                new PairSupplierFromIterator<>(iterator), cache, valueTypeDescriptor);
+                new PairSupplierFromIterator<>(iterator), cache,
+                valueTypeDescriptor);
         final StreamSpliteratorFromPairSupplier<K, V> spliterator = new StreamSpliteratorFromPairSupplier<>(
                 reader, keyTypeDescriptor);
         return StreamSupport.stream(spliterator, false).onClose(() -> {
@@ -219,9 +220,9 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
             final Segment<K, V> segment = segmentManager.getSegment(id);
             return segment.get(key);
         } else {
-            if (valueTypeDescriptor.isTombstone(out)){
+            if (valueTypeDescriptor.isTombstone(out)) {
                 return null;
-            }else{
+            } else {
                 return out;
             }
         }

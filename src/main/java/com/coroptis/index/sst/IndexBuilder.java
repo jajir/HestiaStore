@@ -17,8 +17,6 @@ public class IndexBuilder<K, V> {
     private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_CACHE = 1_000_000;
     private final static int DEFAULT_MAX_NUMBER_OF_SEGMENTS_IN_CACHE = 10;
 
-    private final static int DEFAULT_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS = 1_000;
-    private final static int DEFAULT_BLOOM_FILTER_INDEX_SIZE_IN_BYTES = 10_000;
     private final static boolean DEFAULT_INDEX_SYNCHRONIZED = false;
 
     private final static int DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES = 1024 * 4;
@@ -30,8 +28,9 @@ public class IndexBuilder<K, V> {
     private int maxNumberOfKeysInSegment = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT;
     private int maxNumberOfSegmentsInCache = DEFAULT_MAX_NUMBER_OF_SEGMENTS_IN_CACHE;
 
-    private int bloomFilterNumberOfHashFunctions = DEFAULT_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS;
-    private int bloomFilterIndexSizeInBytes = DEFAULT_BLOOM_FILTER_INDEX_SIZE_IN_BYTES;
+    private Integer bloomFilterNumberOfHashFunctions;
+    private Integer bloomFilterIndexSizeInBytes;
+    private Double bloomFilterProbabilityOfFalsePositive = null;
     private boolean isIndexSynchronized = DEFAULT_INDEX_SYNCHRONIZED;
 
     private int indexBufferSizeInBytes = DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES;
@@ -118,6 +117,12 @@ public class IndexBuilder<K, V> {
         return this;
     }
 
+    public IndexBuilder<K, V> withBloomFilterProbabilityOfFalsePositive(
+            final Double probabilityOfFalsePositive) {
+        this.bloomFilterProbabilityOfFalsePositive = probabilityOfFalsePositive;
+        return this;
+    }
+
     public IndexBuilder<K, V> withIsIndexSynchronized(
             final boolean isIndexSynchronized) {
         this.isIndexSynchronized = isIndexSynchronized;
@@ -190,6 +195,8 @@ public class IndexBuilder<K, V> {
                         .getBloomFilterIndexSizeInBytes();
                 bloomFilterNumberOfHashFunctions = conf
                         .getBloomFilterNumberOfHashFunctions();
+                bloomFilterProbabilityOfFalsePositive = conf
+                        .getBloomFilterProbabilityOfFalsePositive();
             } else {
                 throw new IllegalStateException(String.format(
                         "Configuration for key class '%s' "
@@ -203,7 +210,7 @@ public class IndexBuilder<K, V> {
                 maxNumberOfKeysInSegmentIndexPage, maxNumberOfKeysInCache,
                 maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache,
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
-                indexBufferSizeInBytes);
+                bloomFilterProbabilityOfFalsePositive, indexBufferSizeInBytes);
         if (keyTypeDescriptor == null) {
             throw new IllegalArgumentException("Key type descriptor is null. "
                     + "Set key type descriptor of key class.");

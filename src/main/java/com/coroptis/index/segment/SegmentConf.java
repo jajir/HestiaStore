@@ -5,21 +5,25 @@ public class SegmentConf {
     private final long maxNumberOfKeysInSegmentCache;
     private final long maxNumberOfKeysInSegmentCacheDuringFlushing;
     private final int maxNumberOfKeysInIndexPage;
-    private final int bloomFilterNumberOfHashFunctions;
-    private final int bloomFilterIndexSizeInBytes;
+    private final Integer bloomFilterNumberOfHashFunctions;
+    private final Integer bloomFilterIndexSizeInBytes;
+    private final Double bloomFilterProbabilityOfFalsePositive;
+
     private final long maxNumberOfKeysInSegmentMemory;
 
     public SegmentConf(final long maxNumeberOfKeysInSegmentCache,
             final long maxNumberOfKeysInSegmentCacheDuringFlushing,
             final int maxNumberOfKeysInIndexPage,
-            final int bloomFilterNumberOfHashFunctions,
-            final int bloomFilterIndexSizeInBytes,
+            final Integer bloomFilterNumberOfHashFunctions,
+            final Integer bloomFilterIndexSizeInBytes,
+            final Double bloomFilterProbabilityOfFalsePositive,
             final long maxNumberOfKeysInSegmentMemory) {
         this.maxNumberOfKeysInSegmentCache = maxNumeberOfKeysInSegmentCache;
         this.maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInSegmentCacheDuringFlushing;
         this.maxNumberOfKeysInIndexPage = maxNumberOfKeysInIndexPage;
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
+        this.bloomFilterProbabilityOfFalsePositive = bloomFilterProbabilityOfFalsePositive;
         this.maxNumberOfKeysInSegmentMemory = maxNumberOfKeysInSegmentMemory;
     }
 
@@ -31,16 +35,20 @@ public class SegmentConf {
         return maxNumberOfKeysInSegmentMemory;
     }
 
-    int getMaxNumberOfKeysInIndexPage() {
+    Integer getMaxNumberOfKeysInIndexPage() {
         return maxNumberOfKeysInIndexPage;
     }
 
-    int getBloomFilterNumberOfHashFunctions() {
+    Integer getBloomFilterNumberOfHashFunctions() {
         return bloomFilterNumberOfHashFunctions;
     }
 
-    int getBloomFilterIndexSizeInBytes() {
+    Integer getBloomFilterIndexSizeInBytes() {
         return bloomFilterIndexSizeInBytes;
+    }
+
+    public Double getBloomFilterProbabilityOfFalsePositive() {
+        return bloomFilterProbabilityOfFalsePositive;
     }
 
     long getMaxNumberOfKeysInSegmentCacheDuringFlushing() {

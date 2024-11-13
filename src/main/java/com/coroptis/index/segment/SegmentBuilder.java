@@ -14,8 +14,6 @@ public class SegmentBuilder<K, V> {
 
     private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_INDEX_PAGE = 1000;
 
-    private final static int DEFAULT_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS = 6;
-    private final static int DEFAULT_BLOOM_FILTER_INDEX_SIZE_IN_BYTES = 10_000;
     private final static int DEFAUL_MAX_NUMBER_OF_KEYS_IN_SEGMENT_MEMORY = Integer.MAX_VALUE;
 
     private final static int DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES = 1024 * 4;
@@ -27,8 +25,9 @@ public class SegmentBuilder<K, V> {
     private long maxNumberOfKeysInSegmentCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
     private long maxNumberOfKeysInSegmentCacheDuringFlushing = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING;
     private int maxNumberOfKeysInIndexPage = DEFAULT_MAX_NUMBER_OF_KEYS_IN_INDEX_PAGE;
-    private int bloomFilterNumberOfHashFunctions = DEFAULT_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS;
-    private int bloomFilterIndexSizeInBytes = DEFAULT_BLOOM_FILTER_INDEX_SIZE_IN_BYTES;
+    private Integer bloomFilterNumberOfHashFunctions;
+    private Integer bloomFilterIndexSizeInBytes;
+    private Double bloomFilterProbabilityOfFalsePositive = null;
     private long maxNumberOfKeysInSegmentMemory = DEFAUL_MAX_NUMBER_OF_KEYS_IN_SEGMENT_MEMORY;
     private VersionController versionController;
     private SegmentConf segmentConf;
@@ -119,6 +118,12 @@ public class SegmentBuilder<K, V> {
         return this;
     }
 
+    public SegmentBuilder<K, V> withBloomFilterProbabilityOfFalsePositive(
+            final Double probabilityOfFalsePositive) {
+        this.bloomFilterProbabilityOfFalsePositive = probabilityOfFalsePositive;
+        return this;
+    }
+
     public SegmentBuilder<K, V> withVersionController(
             final VersionController versionController) {
         this.versionController = versionController;
@@ -147,6 +152,7 @@ public class SegmentBuilder<K, V> {
                     maxNumberOfKeysInIndexPage,
                     bloomFilterNumberOfHashFunctions,
                     bloomFilterIndexSizeInBytes,
+                    bloomFilterProbabilityOfFalsePositive,
                     maxNumberOfKeysInSegmentMemory);
         }
         if (segmentFiles == null) {

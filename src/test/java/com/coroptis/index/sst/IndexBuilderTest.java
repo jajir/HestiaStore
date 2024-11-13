@@ -92,9 +92,12 @@ public class IndexBuilderTest {
     @Test
     void test_conf_missing_specific_type_configuration() throws Exception {
         final Exception ex = assertThrows(IllegalStateException.class,
-                () -> Index.<Long, String>builder().withDirectory(directory)
-                        .withKeyClass(Long.class).withValueClass(String.class)
-                        .withConf("11.5G").build());
+                () -> Index.<Long, String>builder()//
+                .withDirectory(directory)//
+                        .withKeyClass(Long.class)//
+                        .withValueClass(String.class) //
+                        .withConf("11.5G")//
+                        .build());
 
         assertEquals(
                 "Configuration for key class 'java.lang.Long' "
