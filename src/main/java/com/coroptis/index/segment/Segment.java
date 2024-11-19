@@ -31,6 +31,7 @@ public class Segment<K, V>
     private final SegmentDataProvider<K, V> segmentCacheDataProvider;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
     private final SegmentSearcher<K, V> segmentSearcher;
+    private final SegmentManager<K, V> segmentManager;
 
     public static <M, N> SegmentBuilder<M, N> builder() {
         return new SegmentBuilder<>();
@@ -41,7 +42,8 @@ public class Segment<K, V>
             final VersionController versionController,
             final SegmentPropertiesManager segmentPropertiesManager,
             final SegmentDataProvider<K, V> segmentDataProvider,
-            final SegmentSearcher<K, V> segmentSearcher) {
+            final SegmentSearcher<K, V> segmentSearcher,
+            final SegmentManager<K, V> segmentManager) {
         this.segmentConf = Objects.requireNonNull(segmentConf);
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         logger.debug("Initializing segment '{}'", segmentFiles.getId());
@@ -59,6 +61,8 @@ public class Segment<K, V>
                 segmentConf, versionController, segmentPropertiesManager,
                 segmentDataProvider, deltaCacheController);
         this.segmentSearcher = Objects.requireNonNull(segmentSearcher);
+        this.segmentManager = Objects.requireNonNull(segmentManager,
+                "Segment manager is required");
     }
 
     public SegmentStats getStats() {
@@ -130,9 +134,8 @@ public class Segment<K, V>
      * @return
      */
     public SegmentSplitter<K, V> getSegmentSplitter() {
-        return new SegmentSplitter<>(this, segmentFiles, segmentConf,
-                versionController, segmentPropertiesManager,
-                segmentCacheDataProvider, deltaCacheController);
+        return new SegmentSplitter<>(this, segmentFiles, versionController,
+                segmentPropertiesManager, deltaCacheController, segmentManager);
     }
 
     @Override

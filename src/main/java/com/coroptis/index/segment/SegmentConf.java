@@ -27,6 +27,16 @@ public class SegmentConf {
         this.maxNumberOfKeysInSegmentMemory = maxNumberOfKeysInSegmentMemory;
     }
 
+    public SegmentConf(final SegmentConf segmentConf) {
+        this.maxNumberOfKeysInSegmentCache = segmentConf.maxNumberOfKeysInSegmentCache;
+        this.maxNumberOfKeysInSegmentCacheDuringFlushing = segmentConf.maxNumberOfKeysInSegmentCacheDuringFlushing;
+        this.maxNumberOfKeysInIndexPage = segmentConf.maxNumberOfKeysInIndexPage;
+        this.bloomFilterNumberOfHashFunctions = segmentConf.bloomFilterNumberOfHashFunctions;
+        this.bloomFilterIndexSizeInBytes = segmentConf.bloomFilterIndexSizeInBytes;
+        this.bloomFilterProbabilityOfFalsePositive = segmentConf.bloomFilterProbabilityOfFalsePositive;
+        this.maxNumberOfKeysInSegmentMemory = segmentConf.maxNumberOfKeysInSegmentMemory;
+    }
+
     long getMaxNumberOfKeysInSegmentCache() {
         return maxNumberOfKeysInSegmentCache;
     }

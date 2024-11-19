@@ -11,8 +11,6 @@ import com.coroptis.index.PairIterator;
 
 /**
  * 
- * @author honza
- *
  * @param <K>
  * @param <V>
  */
@@ -21,110 +19,54 @@ public class SegmentSplitter<K, V> {
     private final Logger logger = LoggerFactory
             .getLogger(SegmentSplitter.class);
     private final Segment<K, V> segment;
-    private final SegmentConf segmentConf;
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
     private final SegmentPropertiesManager segmentPropertiesManager;
-    private final SegmentDataProvider<K, V> segmentCacheDataProvider;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
+    private final SegmentManager<K, V> segmentManager;
 
-    public static class Result<K, V> {
-
-        private final Segment<K, V> segment;
-        private final K maxKey;
-        private final K minKey;
-
-        private Result(final Segment<K, V> segment, final K minKey,
-                final K maxKey) {
-            this.segment = Objects.requireNonNull(segment);
-            this.minKey = Objects.requireNonNull(minKey);
-            this.maxKey = Objects.requireNonNull(maxKey);
-        }
-
-        public Segment<K, V> getSegment() {
-            return segment;
-        }
-
-        public K getMaxKey() {
-            return maxKey;
-        }
-
-        public K getMinKey() {
-            return minKey;
-        }
-
-    }
-
-    public SegmentSplitter(final Segment<K, V> segment, final SegmentFiles<K, V> segmentFiles,
-            final SegmentConf segmentConf,
+    public SegmentSplitter(final Segment<K, V> segment,
+            final SegmentFiles<K, V> segmentFiles,
             final VersionController versionController,
             final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentDataProvider<K, V> segmentCacheDataProvider,
-            final SegmentDeltaCacheController<K, V> deltaCacheController) {
+            final SegmentDeltaCacheController<K, V> deltaCacheController,
+            final SegmentManager<K, V> segmentManager) {
         this.segment = Objects.requireNonNull(segment);
-        this.segmentConf = Objects.requireNonNull(segmentConf);
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.versionController = Objects.requireNonNull(versionController,
                 "Version controller is required");
         this.segmentPropertiesManager = Objects
                 .requireNonNull(segmentPropertiesManager);
-        this.segmentCacheDataProvider = Objects.requireNonNull(
-                segmentCacheDataProvider,
-                "Segment cached data provider is required");
         this.deltaCacheController = Objects
                 .requireNonNull(deltaCacheController);
+        this.segmentManager = Objects.requireNonNull(segmentManager);
     }
 
     private SegmentStats getStats() {
         return segmentPropertiesManager.getSegmentStats();
     }
 
-    /**
-     * Method should be called just from inside of this package. Method open
-     * direct writer to scarce index and main sst file. It's useful for
-     * compacting.
-     */
     private SegmentFullWriter<K, V> openFullWriter() {
-        return new SegmentFullWriter<K, V>(segmentFiles,
-                segmentPropertiesManager,
-                segmentConf.getMaxNumberOfKeysInIndexPage(),
-                segmentCacheDataProvider, deltaCacheController);
+        return segmentManager.createSegmentFullWriter();
     }
 
-    // TODO some comment
     private final float MINIMAL_PERCENTAGE_DIFFERENCE = 90F;
 
-    /**
-     * When number keys in cache is just slightly smaller than number of keys in
-     * main index than segment should be compacted before splitting.
-     * 
-     * When number of keys in main index and delta cache is similar and
-     * operations in delta cache are deletes or updates than split operation
-     * could create one segment empty.
-     * 
-     * FIXME write test for case when delta cache contains delete operations.
-     * 
-     * @return return <code>true</code> when segment should be compacted before
-     *         splitting
-     */
-    public boolean souldBeCompacteBeforeSplitting() {
-        final long countOfkeysInDeltaCache = getSegmentDeltaCache().size();
+    public boolean shouldBeCompactedBeforeSplitting() {
+        final long countOfkeysInDeltaCache = deltaCacheController
+                .getDeltaCacheSize();
         final long countOfKeysInMainIndex = getStats().getNumberOfKeysInIndex();
         if (countOfKeysInMainIndex == 0) {
             return false;
         }
         final float onePercentageOfMainIndexKeyCount = countOfKeysInMainIndex
                 / 100F;
-        if (countOfkeysInDeltaCache
-                / onePercentageOfMainIndexKeyCount > MINIMAL_PERCENTAGE_DIFFERENCE) {
-            return true;
-        } else {
-            return false;
-        }
+        return countOfkeysInDeltaCache
+                / onePercentageOfMainIndexKeyCount > MINIMAL_PERCENTAGE_DIFFERENCE;
     }
 
-    public Result<K, V> split(final SegmentId segmentId) {
-        Objects.requireNonNull(segmentId);
+    public SegmentSplitterResult<K, V> split(final SegmentId segmentId) {
+        Objects.requireNonNull(segmentId, "Segment id is required");
         logger.debug("Splitting of '{}' started", segmentFiles.getId());
         versionController.changeVersion();
         /*
@@ -133,15 +75,10 @@ public class SegmentSplitter<K, V> {
          * tombstone value.
          */
         final long estimatedNumberOfKeys = getStats().getNumberOfKeysInIndex()
-                + getSegmentDeltaCache().size();
+                + deltaCacheController.getDeltaCacheSize();
         final long half = estimatedNumberOfKeys / 2;
 
-        // TODO delegate it to segment manager
-        final Segment<K, V> lowerSegment = Segment.<K, V>builder()
-                .withDirectory(segmentFiles.getDirectory()).withId(segmentId)
-                .withKeyTypeDescriptor(segmentFiles.getKeyTypeDescriptor())
-                .withValueTypeDescriptor(segmentFiles.getValueTypeDescriptor())
-                .withSegmentConf(segmentConf).build();
+        final Segment<K, V> lowerSegment = segmentManager.createSegment(segmentId);
 
         K minKey = null;
         K maxKey = null;
@@ -186,11 +123,7 @@ public class SegmentSplitter<K, V> {
             throw new IllegalStateException(
                     "Splitting failed. Higher segment doesn't contains any data");
         }
-        return new Result<>(lowerSegment, minKey, maxKey);
-    }
-
-    private SegmentDeltaCache<K, V> getSegmentDeltaCache() {
-        return deltaCacheController.getDeltaCache();
+        return new SegmentSplitterResult<>(lowerSegment, minKey, maxKey);
     }
 
 }

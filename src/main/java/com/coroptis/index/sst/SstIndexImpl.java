@@ -22,6 +22,7 @@ import com.coroptis.index.log.LoggedKey;
 import com.coroptis.index.segment.Segment;
 import com.coroptis.index.segment.SegmentId;
 import com.coroptis.index.segment.SegmentSplitter;
+import com.coroptis.index.segment.SegmentSplitterResult;
 import com.coroptis.index.sstfile.PairComparator;
 import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
 
@@ -179,7 +180,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         if (segment.getNumberOfKeys() > conf.getMaxNumberOfKeysInSegment()) {
             final SegmentSplitter<K, V> segmentSplitter = segment
                     .getSegmentSplitter();
-            if (segmentSplitter.souldBeCompacteBeforeSplitting()) {
+            if (segmentSplitter.shouldBeCompactedBeforeSplitting()) {
                 segment.forceCompact();
                 if (segment.getNumberOfKeys() > conf
                         .getMaxNumberOfKeysInSegment()) {
@@ -197,7 +198,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         final SegmentId segmentId = segment.getId();
         logger.debug("Splitting of '{}' started.", segmentId);
         final SegmentId newSegmentId = keySegmentCache.findNewSegmentId();
-        final SegmentSplitter.Result<K, V> result = segmentSplitter
+        final SegmentSplitterResult<K, V> result = segmentSplitter
                 .split(newSegmentId);
         keySegmentCache.insertSegment(result.getMaxKey(), newSegmentId);
         logger.debug("Splitting of segment '{}' to '{}' is done.", segmentId,

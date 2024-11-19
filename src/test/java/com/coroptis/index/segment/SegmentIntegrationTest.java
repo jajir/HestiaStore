@@ -162,7 +162,7 @@ public class SegmentIntegrationTest extends AbstractSegmentTest {
                 final SegmentId segId = SegmentId.of(3);
                 final SegmentSplitter<Integer, String> splitter = seg
                                 .getSegmentSplitter();
-                final SegmentSplitter.Result<Integer, String> result = splitter
+                final SegmentSplitterResult<Integer, String> result = splitter
                                 .split(segId);
                 final Segment<Integer, String> smaller = result.getSegment();
                 assertEquals(2, result.getMinKey());
