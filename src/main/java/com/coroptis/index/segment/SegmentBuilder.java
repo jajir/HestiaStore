@@ -171,9 +171,15 @@ public class SegmentBuilder<K, V> {
         final SegmentSearcher<K, V> segmentSearcher = new SegmentSearcher<K, V>(
                 segmentFiles.getValueTypeDescriptor(), supplier.get(),
                 segmentDataProvider);
+        final SegmentManager<K, V> segmentManager = new SegmentManager<>(
+                segmentFiles, segmentPropertiesManager, segmentConf,
+                segmentDataProvider,
+                new SegmentDeltaCacheController<>(segmentFiles,
+                        segmentPropertiesManager, segmentDataProvider));
 
         return new Segment<>(segmentFiles, segmentConf, versionController,
-                segmentPropertiesManager, segmentDataProvider, segmentSearcher);
+                segmentPropertiesManager, segmentDataProvider, segmentSearcher,
+                segmentManager);
     }
 
 }

@@ -35,8 +35,8 @@ public class SegmentManagerTest {
         @Test
         void test_getting_same_segmentId() throws Exception {
                 final SegmentManager<Integer, String> segmentManager = new SegmentManager<>(
-                                directory, keyTypeDescriptor, valueTypeDescriptor, conf,
-                                segmentDataCache);
+                                directory, keyTypeDescriptor,
+                                valueTypeDescriptor, conf, segmentDataCache);
 
                 final Segment<Integer, String> s1 = segmentManager
                                 .getSegment(SegmentId.of(1));
@@ -47,8 +47,8 @@ public class SegmentManagerTest {
                 assertNotNull(s1);
 
                 /*
-                 * Verify that first object was cached and second time just returned
-                 * from map.
+                 * Verify that first object was cached and second time just
+                 * returned from map.
                  */
                 assertSame(s1, s2);
         }
@@ -56,8 +56,8 @@ public class SegmentManagerTest {
         @Test
         void test_close() throws Exception {
                 final SegmentManager<Integer, String> segmentManager = new SegmentManager<>(
-                                directory, keyTypeDescriptor, valueTypeDescriptor, conf,
-                                segmentDataCache);
+                                directory, keyTypeDescriptor,
+                                valueTypeDescriptor, conf, segmentDataCache);
                 segmentManager.close();
 
                 verify(segmentDataCache).invalidateAll();

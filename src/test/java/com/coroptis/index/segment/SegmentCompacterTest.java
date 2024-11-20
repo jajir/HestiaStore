@@ -16,65 +16,53 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class SegmentCompacterTest {
 
-        @Mock
-        private Segment<Integer, String> segment;
+    @Mock
+    private Segment<Integer, String> segment;
 
-        @Mock
-        private SegmentFiles<Integer, String> segmentFiles;
+    @Mock
+    private SegmentFiles<Integer, String> segmentFiles;
 
-        @Mock
-        private SegmentConf segmentConf;
+    @Mock
+    private SegmentConf segmentConf;
 
-        @Mock
-        private VersionController versionController;
+    @Mock
+    private VersionController versionController;
 
-        @Mock
-        private SegmentPropertiesManager segmentPropertiesManager;
+    @Mock
+    private SegmentPropertiesManager segmentPropertiesManager;
 
-        @Mock
-        private SegmentDataProvider<Integer, String> segmentCacheDataProvider;
+    private SegmentCompacter<Integer, String> sc;
 
-        @Mock
-        private SegmentDeltaCacheController<Integer, String> deltaCacheController;
+    @BeforeEach
+    void setUp() {
+        sc = new SegmentCompacter<>(segment, segmentFiles, segmentConf, versionController, segmentPropertiesManager);
+    }
 
-        private SegmentCompacter<Integer, String> sc;
+    @Test
+    public void test_basic_operations() throws Exception {
+        assertNotNull(sc);
+    }
 
-        @BeforeEach
-        void setUp() {
-                sc = new SegmentCompacter<>(segment, segmentFiles, segmentConf, versionController,
-                                segmentPropertiesManager, segmentCacheDataProvider,
-                                deltaCacheController);
-        }
+    @Test
+    public void test_shouldBeCompacted() throws Exception {
+        when(segmentPropertiesManager.getSegmentStats()).thenReturn(new SegmentStats(10, 1000L, 15));
+        when(segmentConf.getMaxNumberOfKeysInSegmentCache()).thenReturn(30L, 20L);
 
-        @Test
-        public void test_basic_operations() throws Exception {
-                assertNotNull(sc);
-        }
+        assertFalse(sc.shouldBeCompacted(10));
+        assertTrue(sc.shouldBeCompacted(25));
 
-        @Test
-        public void test_shouldBeCompacted() throws Exception {
-                when(segmentPropertiesManager.getSegmentStats())
-                                .thenReturn(new SegmentStats(10, 1000L, 15));
-                when(segmentConf.getMaxNumberOfKeysInSegmentCache()).thenReturn(30L,
-                                20L);
+        verify(segmentConf, never()).getMaxNumberOfKeysInSegmentMemory();
+    }
 
-                assertFalse(sc.shouldBeCompacted(10));
-                assertTrue(sc.shouldBeCompacted(25));
+    @Test
+    public void test_shouldBeCompactedDuringWriting() throws Exception {
+        when(segmentPropertiesManager.getSegmentStats()).thenReturn(new SegmentStats(10, 1000L, 15));
+        when(segmentConf.getMaxNumberOfKeysInSegmentMemory()).thenReturn(30L, 20L);
 
-                verify(segmentConf, never()).getMaxNumberOfKeysInSegmentMemory();
-        }
+        assertFalse(sc.shouldBeCompactedDuringWriting(10));
+        assertTrue(sc.shouldBeCompactedDuringWriting(25));
 
-        @Test
-        public void test_shouldBeCompactedDuringWriting() throws Exception {
-                when(segmentPropertiesManager.getSegmentStats())
-                                .thenReturn(new SegmentStats(10, 1000L, 15));
-                when(segmentConf.getMaxNumberOfKeysInSegmentMemory()).thenReturn(30L,
-                                20L);
-
-                assertFalse(sc.shouldBeCompactedDuringWriting(10));
-                assertTrue(sc.shouldBeCompactedDuringWriting(25));
-
-                verify(segmentConf, never()).getMaxNumberOfKeysInSegmentCache();
-        }
+        verify(segmentConf, never()).getMaxNumberOfKeysInSegmentCache();
+    }
 
 }

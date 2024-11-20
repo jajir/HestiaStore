@@ -33,6 +33,10 @@ public class SegmentDeltaCacheController<K, V> {
         return segmentCacheDataProvider.getSegmentDeltaCache();
     }
 
+    public int getDeltaCacheSize() {
+        return getDeltaCache().size();
+    }
+
     public SegmentDeltaCacheWriter<K, V> openWriter() {
         return new SegmentDeltaCacheWriter<>(segmentFiles,
                 segmentPropertiesManager, segmentCacheDataProvider);

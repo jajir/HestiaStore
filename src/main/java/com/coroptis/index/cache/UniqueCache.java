@@ -98,15 +98,12 @@ public class UniqueCache<K, V> {
         return iterator;
     }
 
-    // TODO openSortedClonedReader or getStream are not consistent. Sort al
-    // methods
-
     /**
-     * It's unsorted.
+     * It's sorted.
      * 
      * @return
      */
-    public CloseablePairReader<K, V> openSortedClonedReader() {
+    private CloseablePairReader<K, V> openSortedClonedReader() {
         return new UniqueCacheReader<>(getAsSortedList().iterator());
     }
 
