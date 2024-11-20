@@ -16,15 +16,11 @@ public class SegmentCompacter<K, V> {
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
     private final SegmentPropertiesManager segmentPropertiesManager;
-    private final SegmentDataProvider<K, V> segmentCacheDataProvider;
-    private final SegmentDeltaCacheController<K, V> deltaCacheController;
 
     public SegmentCompacter(final Segment<K, V> segment, final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
             final VersionController versionController,
-            final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentDataProvider<K, V> segmentCacheDataProvider,
-            final SegmentDeltaCacheController<K, V> deltaCacheController) {
+            final SegmentPropertiesManager segmentPropertiesManager) {
         this.segment = Objects.requireNonNull(segment);
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.segmentConf = Objects.requireNonNull(segmentConf);
@@ -32,11 +28,6 @@ public class SegmentCompacter<K, V> {
                 "Version controller is required");
         this.segmentPropertiesManager = Objects
                 .requireNonNull(segmentPropertiesManager);
-        this.segmentCacheDataProvider = Objects.requireNonNull(
-                segmentCacheDataProvider,
-                "Segment cached data provider is required");
-        this.deltaCacheController = Objects.requireNonNull(deltaCacheController,
-                "Delta cache controller is required");
     }
 
     /**
@@ -112,7 +103,7 @@ public class SegmentCompacter<K, V> {
     public void forceCompact() {
         logger.debug("Start of compacting '{}'", segmentFiles.getId());
         versionController.changeVersion();
-        try (SegmentFullWriter<K, V> writer = openFullWriter()) {
+        try (SegmentFullWriter<K, V> writer = segment.openFullWriter()) {
             try (PairIterator<K, V> iterator = segment.openIterator()) {
                 while (iterator.hasNext()) {
                     writer.put(iterator.next());
@@ -122,15 +113,4 @@ public class SegmentCompacter<K, V> {
         logger.debug("End of compacting '{}'", segmentFiles.getId());
     }
 
-    /**
-     * Method should be called just from inside of this package. Method open
-     * direct writer to scarce index and main sst file. It's useful for
-     * compacting.
-     */
-    private SegmentFullWriter<K, V> openFullWriter() {
-        return new SegmentFullWriter<K, V>(segmentFiles,
-                segmentPropertiesManager,
-                segmentConf.getMaxNumberOfKeysInIndexPage(),
-                segmentCacheDataProvider, deltaCacheController);
-    }
 }

@@ -2,6 +2,9 @@ package com.coroptis.index.segment;
 
 import java.util.Objects;
 
+/**
+ * Class is responsible for creating new objects with complex segment dependencies.
+ */
 public class SegmentManager<K, V> {
 
     private final SegmentFiles<K, V> segmentFiles;
@@ -25,6 +28,11 @@ public class SegmentManager<K, V> {
                 .requireNonNull(deltaCacheController);
     }
 
+    /**
+     * Allows to re-write all data in segment.
+     * 
+     * @return segment writer object
+     */
     public SegmentFullWriter<K, V> createSegmentFullWriter() {
         return new SegmentFullWriter<>(segmentFiles, segmentPropertiesManager,
                 segmentConf.getMaxNumberOfKeysInIndexPage(),

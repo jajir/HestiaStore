@@ -28,7 +28,6 @@ public class Segment<K, V>
     private final VersionController versionController;
     private final SegmentPropertiesManager segmentPropertiesManager;
     private final SegmentCompacter<K, V> segmentCompacter;
-    private final SegmentDataProvider<K, V> segmentCacheDataProvider;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
     private final SegmentSearcher<K, V> segmentSearcher;
     private final SegmentManager<K, V> segmentManager;
@@ -49,8 +48,7 @@ public class Segment<K, V>
         logger.debug("Initializing segment '{}'", segmentFiles.getId());
         this.versionController = Objects.requireNonNull(versionController,
                 "Version controller is required");
-        this.segmentCacheDataProvider = Objects.requireNonNull(
-                segmentDataProvider,
+        Objects.requireNonNull(segmentDataProvider,
                 "Segment cached data provider is required");
         this.segmentPropertiesManager = Objects.requireNonNull(
                 segmentPropertiesManager,
@@ -58,8 +56,7 @@ public class Segment<K, V>
         deltaCacheController = new SegmentDeltaCacheController<>(segmentFiles,
                 segmentPropertiesManager, segmentDataProvider);
         this.segmentCompacter = new SegmentCompacter<>(this, segmentFiles,
-                segmentConf, versionController, segmentPropertiesManager,
-                segmentDataProvider, deltaCacheController);
+                segmentConf, versionController, segmentPropertiesManager);
         this.segmentSearcher = Objects.requireNonNull(segmentSearcher);
         this.segmentManager = Objects.requireNonNull(segmentManager,
                 "Segment manager is required");
@@ -95,16 +92,14 @@ public class Segment<K, V>
 
     /**
      * Method should be called just from inside of this package. Method open
-     * direct writer to scarce index and main sst file. It's useful for
-     * compacting.
+     * direct writer to scarce index and main sst file.
      * 
      * Writer should be opend and closed as one atomic operation.
+     * 
+     * @return return segment writer object
      */
     SegmentFullWriter<K, V> openFullWriter() {
-        return new SegmentFullWriter<K, V>(segmentFiles,
-                segmentPropertiesManager,
-                segmentConf.getMaxNumberOfKeysInIndexPage(),
-                segmentCacheDataProvider, deltaCacheController);
+        return segmentManager.createSegmentFullWriter();
     }
 
     public PairWriter<K, V> openWriter() {
