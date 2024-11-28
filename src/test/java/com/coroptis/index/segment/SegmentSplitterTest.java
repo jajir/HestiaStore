@@ -27,6 +27,8 @@ class SegmentSplitterTest {
 
     private final static Pair<String, String> PAIR2 = Pair.of("key2", "value2");
 
+    private final static Pair<String, String> PAIR3 = Pair.of("key3", "value3");
+
     @Mock
     private Segment<String, String> segment;
 
@@ -70,23 +72,23 @@ class SegmentSplitterTest {
     }
 
     @Test
-    void test_shouldBeCompactedBeforeSplitting_yes() {
-        when(deltaCacheController.getDeltaCacheSize()).thenReturn(901);
-        when(segmentPropertiesManager.getSegmentStats())
-                .thenReturn(segmentStats);
-        when(segmentStats.getNumberOfKeysInIndex()).thenReturn(1000L);
+    void test_shouldBeCompactedBeforeSplitting_yes_lowEstimatedNumberOfKeys() {
+            when(segmentPropertiesManager.getSegmentStats())
+                    .thenReturn(segmentStats);
+            when(segmentStats.getNumberOfKeysInIndex()).thenReturn(2L);
+        when(deltaCacheController.getDeltaCacheSizeWithoutTombstones()).thenReturn(1);
 
-        assertTrue(splitter.shouldBeCompactedBeforeSplitting());
+        assertTrue(splitter.shouldBeCompactedBeforeSplitting(1000));
     }
 
     @Test
     void test_shouldBeCompactedBeforeSplitting_no() {
-        when(deltaCacheController.getDeltaCacheSize()).thenReturn(100);
-        when(segmentPropertiesManager.getSegmentStats())
-                .thenReturn(segmentStats);
-        when(segmentStats.getNumberOfKeysInIndex()).thenReturn(1000L);
+            when(segmentPropertiesManager.getSegmentStats())
+                    .thenReturn(segmentStats);
+            when(segmentStats.getNumberOfKeysInIndex()).thenReturn(1000L);
+        when(deltaCacheController.getDeltaCacheSizeWithoutTombstones()).thenReturn(100);
 
-        assertFalse(splitter.shouldBeCompactedBeforeSplitting());
+        assertFalse(splitter.shouldBeCompactedBeforeSplitting(1000));
     }
 
     @Test
@@ -102,13 +104,13 @@ class SegmentSplitterTest {
     void test_split() {
         when(segmentPropertiesManager.getSegmentStats())
                 .thenReturn(segmentStats);
-        when(segmentStats.getNumberOfKeysInIndex()).thenReturn(1L);
-        when(deltaCacheController.getDeltaCacheSize()).thenReturn(1);
+        when(segmentStats.getNumberOfKeysInIndex()).thenReturn(2L);
+        when(deltaCacheController.getDeltaCacheSizeWithoutTombstones()).thenReturn(2);
 
         // main iterator behaviour
         when(segment.openIterator()).thenReturn(segmentIterator);
-        when(segmentIterator.hasNext()).thenReturn(true, true, false);
-        when(segmentIterator.next()).thenReturn(PAIR1, PAIR2);
+        when(segmentIterator.hasNext()).thenReturn(true, true,true, false);
+        when(segmentIterator.next()).thenReturn(PAIR1, PAIR2, PAIR3);
 
         // mock writing lower part to new segment
         when(segmentManager.createSegment(SEGMENT_ID)).thenReturn(lowerSegment);
@@ -123,10 +125,24 @@ class SegmentSplitterTest {
 
         assertNotNull(result);
         verify(lowerSegmentFullWriter, times(1)).put(PAIR1);
+        verify(lowerSegmentFullWriter, times(1)).put(PAIR2);
         verify(lowerSegmentFullWriter, times(1)).close();
-        verify(segmentFullWriter, times(1)).put(PAIR2);
+        verify(segmentFullWriter, times(1)).put(PAIR3);
         verify(segmentFullWriter, times(1)).close();
         verify(versionController, times(1)).changeVersion();
         verify(segmentIterator, times(1)).close();
+    }
+
+    @Test
+    void test_split_half_is_zero() {
+        when(segmentPropertiesManager.getSegmentStats())
+                .thenReturn(segmentStats);
+        when(segmentStats.getNumberOfKeysInIndex()).thenReturn(0L);
+        when(deltaCacheController.getDeltaCacheSizeWithoutTombstones()).thenReturn(1);
+
+        final Exception err = assertThrows(IllegalStateException.class,
+                () -> splitter.split(SEGMENT_ID));
+        assertEquals("Splitting failed. Number of keys is too low.",
+                err.getMessage());
     }
 }

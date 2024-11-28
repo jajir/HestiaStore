@@ -34,6 +34,7 @@ public class SegmentBuilder<K, V> {
     private SegmentFiles<K, V> segmentFiles;
     private SegmentDataProvider<K, V> segmentDataProvider;
     private int indexBufferSizeInBytes = DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES;
+    private SegmentPropertiesManager segmentPropertiesManager = null;
 
     SegmentBuilder() {
 
@@ -142,6 +143,12 @@ public class SegmentBuilder<K, V> {
         return this;
     }
 
+    public SegmentBuilder<K, V> withSegmentPropertiesManager(
+            final SegmentPropertiesManager segmentPropertiesManager) {
+        this.segmentPropertiesManager = segmentPropertiesManager;
+        return this;
+    }
+
     public Segment<K, V> build() {
         if (versionController == null) {
             versionController = new VersionController();
@@ -159,12 +166,17 @@ public class SegmentBuilder<K, V> {
             segmentFiles = new SegmentFiles<>(directory, id, keyTypeDescriptor,
                     valueTypeDescriptor, indexBufferSizeInBytes);
         }
-        final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
-                segmentFiles.getDirectory(), id);
+        if (segmentPropertiesManager == null) {
+            segmentPropertiesManager = new SegmentPropertiesManager(
+                    segmentFiles.getDirectory(), id);
+        }
         if (segmentDataProvider == null) {
-            SegmentDataDirectLoader<K, V> directLoader = new SegmentDataDirectLoader<>(
+            final SegmentDataSupplier<K, V> segmentDataSupplier = new SegmentDataSupplier<>(
                     segmentFiles, segmentConf, segmentPropertiesManager);
-            segmentDataProvider = new SegmentDataProviderSimple<>(directLoader);
+            final SegmentDataFactory<K, V> segmentDataFactory = new SegmentDataFactoryImpl<>(
+                    segmentDataSupplier);
+            segmentDataProvider = new SegmentDataProviderSimple<>(
+                    segmentDataFactory);
         }
         final SegmentIndexSearcherSupplier<K, V> supplier = new SegmentIndexSearcherDefaultSupplier<>(
                 segmentFiles, segmentConf);

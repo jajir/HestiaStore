@@ -14,14 +14,13 @@ import com.coroptis.index.scarceindex.ScarceIndex;
  * @param <K>
  * @param <V>
  */
-public class SegmentDataDirectLoader<K, V>
-                implements SegmentDataProvider<K, V> {
+public class SegmentDataSupplier<K, V> {
 
         private final SegmentFiles<K, V> segmentFiles;
         private final SegmentConf segmentConf;
         private final SegmentPropertiesManager segmentPropertiesManager;
 
-        SegmentDataDirectLoader(final SegmentFiles<K, V> segmentFiles,
+        public SegmentDataSupplier(final SegmentFiles<K, V> segmentFiles,
                         final SegmentConf segmentConf,
                         final SegmentPropertiesManager segmentPropertiesManager) {
                 this.segmentFiles = Objects.requireNonNull(segmentFiles);
@@ -30,14 +29,12 @@ public class SegmentDataDirectLoader<K, V>
                                 .requireNonNull(segmentPropertiesManager);
         }
 
-        @Override
         public SegmentDeltaCache<K, V> getSegmentDeltaCache() {
                 return new SegmentDeltaCache<>(
                                 segmentFiles.getKeyTypeDescriptor(),
                                 segmentFiles, segmentPropertiesManager);
         }
 
-        @Override
         public BloomFilter<K> getBloomFilter() {
                 return BloomFilter.<K>builder()
                                 .withBloomFilterFileName(segmentFiles
@@ -55,7 +52,6 @@ public class SegmentDataDirectLoader<K, V>
                                 .build();
         }
 
-        @Override
         public ScarceIndex<K> getScarceIndex() {
                 return ScarceIndex.<K>builder()
                                 .withDirectory(segmentFiles.getDirectory())
@@ -63,20 +59,6 @@ public class SegmentDataDirectLoader<K, V>
                                 .withKeyTypeDescriptor(segmentFiles
                                                 .getKeyTypeDescriptor())
                                 .build();
-        }
-
-        @Override
-        public void invalidate() {
-                // intentionally do nothing
-        }
-
-        /**
-         * class always return new instance, so it's always loaded. Method
-         * return <code>true</code>.
-         */
-        @Override
-        public boolean isLoaded() {
-                return true;
         }
 
 }

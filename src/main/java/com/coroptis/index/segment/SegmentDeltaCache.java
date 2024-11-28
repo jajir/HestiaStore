@@ -21,11 +21,14 @@ import com.coroptis.index.sstfile.SstFile;
  */
 public class SegmentDeltaCache<K, V> {
 
+    private final SegmentFiles<K, V> segmentFiles;
+
     private final UniqueCache<K, V> cache;
 
     public SegmentDeltaCache(final TypeDescriptor<K> keyTypeDescriptor,
             final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentPropertiesManager) {
+        this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.cache = UniqueCache.<K, V>builder()
                 .withKeyComparator(keyTypeDescriptor.getComparator())
                 .withSstFile(segmentFiles.getCacheSstFile()).build();
@@ -54,6 +57,14 @@ public class SegmentDeltaCache<K, V> {
         return cache.size();
     }
 
+    public int sizeWithoutTombstones() {
+        final TypeDescriptor<V> valueTypeDescriptor = segmentFiles
+                .getValueTypeDescriptor();
+        return (int) cache.getStream().filter(
+                pair -> !valueTypeDescriptor.isTombstone(pair.getValue()))
+                .count();
+    }
+
     public void evictAll() {
         cache.clear();
     }
@@ -66,10 +77,9 @@ public class SegmentDeltaCache<K, V> {
         return cache.getSortedKeys();
     }
 
-    public List<Pair<K, V>> getAsSortedList(){
+    public List<Pair<K, V>> getAsSortedList() {
         return cache.getAsSortedList();
     }
-    
 
     @Deprecated
     public PairIterator<K, V> getSortedIterator() {

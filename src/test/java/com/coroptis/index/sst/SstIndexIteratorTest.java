@@ -64,13 +64,13 @@ public class SstIndexIteratorTest {
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tds) //
                 .withCustomConf()//
-                .withMaxNumberOfKeysInSegment(2) //
+                .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(1) //
                 .withMaxNumberOfKeysInSegmentIndexPage(1) //
                 .withMaxNumberOfKeysInCache(1) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
-                .withIndexBufferSizeInBytes(1024)//
+                .withFileReadingBufferSizeInBytes(1024)//
                 .build();
     }
 

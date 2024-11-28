@@ -22,7 +22,7 @@ public class SsstIndexConf {
     private final Integer bloomFilterIndexSizeInBytes;
     private final Double bloomFilterProbabilityOfFalsePositive;
 
-    private final int indexBufferSizeInBytes;
+    private final int fileReadingBufferSizeInBytes;
 
     SsstIndexConf(final long maxNumberOfKeysInSegmentCache,
             final long maxNumberOfKeysInSegmentCacheDuringFlushing,
@@ -33,7 +33,7 @@ public class SsstIndexConf {
             final Integer bloomFilterNumberOfHashFunctions,
             final Integer bloomFilterIndexSizeInBytes,
             final Double bloomFilterProbabilityOfFalsePositive,
-            final int indexBufferSizeInBytes) {
+            final int fileReadingBufferSizeInBytes) {
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
         this.maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInSegmentCacheDuringFlushing;
         this.maxNumberOfKeysInSegmentIndexPage = maxNumberOfKeysInSegmentIndexPage;
@@ -43,13 +43,13 @@ public class SsstIndexConf {
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
         this.bloomFilterProbabilityOfFalsePositive = bloomFilterProbabilityOfFalsePositive;
-        this.indexBufferSizeInBytes = indexBufferSizeInBytes;
+        this.fileReadingBufferSizeInBytes = fileReadingBufferSizeInBytes;
 
-        if (indexBufferSizeInBytes % 1024 != 0) {
+        if (fileReadingBufferSizeInBytes % 1024 != 0) {
             throw new IllegalArgumentException(String.format(
                     "Parameter 'indexBufferSizeInBytes' vith value '%s'"
                             + " can't be divided by 1024 without reminder",
-                    indexBufferSizeInBytes));
+                    fileReadingBufferSizeInBytes));
         }
     }
 
@@ -89,8 +89,8 @@ public class SsstIndexConf {
         return maxNumberOfKeysInSegmentCacheDuringFlushing;
     }
 
-    int getIndexBufferSizeInBytes() {
-        return indexBufferSizeInBytes;
+    int getFileReadingBufferSizeInBytes() {
+        return fileReadingBufferSizeInBytes;
     }
 
 }

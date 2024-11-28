@@ -48,14 +48,12 @@ public class SegmentCompacter<K, V> {
      * Provide information if segment should be compacted. Method doesn't
      * perform compact operation.
      * 
-     * @param numberOfKeysInLastDeltaFile required number of keys in last delta
-     *                                    cache file
      * @return return <code>true</code> when segment should be compacted
      */
-    public boolean shouldBeCompacted(final long numberOfKeysInLastDeltaFile) {
+    public boolean shouldBeCompacted(final long i) {
         final SegmentStats stats = segmentPropertiesManager.getSegmentStats();
         return stats.getNumberOfKeysInCache()
-                + numberOfKeysInLastDeltaFile > segmentConf
+                 > segmentConf
                         .getMaxNumberOfKeysInSegmentCache();
     }
 
@@ -85,15 +83,17 @@ public class SegmentCompacter<K, V> {
         final SegmentStats stats = segmentPropertiesManager.getSegmentStats();
         return stats.getNumberOfKeysInCache()
                 + numberOfKeysInLastDeltaFile > segmentConf
-                        .getMaxNumberOfKeysInSegmentMemory();
+                        .getMaxNumberOfKeysInSegmentCache();
+                    //FIXME remove getMaxNumberOfKeysInSegmentMemory, it's useless
     }
 
     /**
      * 
      * @return return <code>true</code> when segment was compacted.
      */
+    @Deprecated
     public boolean optionallyCompact(final long numberOfKeysInLastDeltaFile) {
-        if (shouldBeCompacted(numberOfKeysInLastDeltaFile)) {
+        if (shouldBeCompacted(0)) {
             forceCompact();
             return true;
         }

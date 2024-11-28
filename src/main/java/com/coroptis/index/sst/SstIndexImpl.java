@@ -46,7 +46,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
             final TypeDescriptor<V> valueTypeDescriptor,
             final SsstIndexConf conf, final Log<K, V> log) {
         if (directory == null) {
-            throw new IllegalArgumentException("Directory was no spicified.");
+            throw new IllegalArgumentException("Directory was no specified.");
         }
         Objects.requireNonNull(directory);
         indexState = new IndexStateNew<>(directory);
@@ -180,7 +180,8 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         if (segment.getNumberOfKeys() > conf.getMaxNumberOfKeysInSegment()) {
             final SegmentSplitter<K, V> segmentSplitter = segment
                     .getSegmentSplitter();
-            if (segmentSplitter.shouldBeCompactedBeforeSplitting()) {
+            if (segmentSplitter.shouldBeCompactedBeforeSplitting(
+                    conf.getMaxNumberOfKeysInSegment())) {
                 segment.forceCompact();
                 if (segment.getNumberOfKeys() > conf
                         .getMaxNumberOfKeysInSegment()) {

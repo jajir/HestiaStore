@@ -19,7 +19,7 @@ public class IndexBuilder<K, V> {
 
     private final static boolean DEFAULT_INDEX_SYNCHRONIZED = false;
 
-    private final static int DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES = 1024 * 4;
+    private final static int DEFAULT_FILE_READING_BUFEER_SIZE_IN_BYTES = 1024 * 4;
 
     private long maxNumberOfKeysInSegmentCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
     private long maxNumberOfKeysInSegmentCacheDuringFlushing = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING;
@@ -33,7 +33,7 @@ public class IndexBuilder<K, V> {
     private Double bloomFilterProbabilityOfFalsePositive = null;
     private boolean isIndexSynchronized = DEFAULT_INDEX_SYNCHRONIZED;
 
-    private int indexBufferSizeInBytes = DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES;
+    private int fileReadingBufferSizeInBytes = DEFAULT_FILE_READING_BUFEER_SIZE_IN_BYTES;
 
     private Directory directory;
     private Class<K> keyClass;
@@ -135,9 +135,9 @@ public class IndexBuilder<K, V> {
         return this;
     }
 
-    public IndexBuilder<K, V> withIndexBufferSizeInBytes(
-            final int indexBufferSizeInBytes) {
-        this.indexBufferSizeInBytes = indexBufferSizeInBytes;
+    public IndexBuilder<K, V> withFileReadingBufferSizeInBytes(
+            final int fileReadingBufferSizeInBytes) {
+        this.fileReadingBufferSizeInBytes = fileReadingBufferSizeInBytes;
         return this;
     }
 
@@ -174,6 +174,10 @@ public class IndexBuilder<K, V> {
         if (maxNumberOfKeysInSegmentCacheDuringFlushing == DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING) {
             maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInCache;
         }
+        if (maxNumberOfKeysInSegment < 4) {
+            throw new IllegalArgumentException(
+                    "Max number of keys in segment must be at least 4.");
+        }
 
         if (!customConfWasUsed) {
             final Optional<BuilderConfiguration> oConf = BuilderConfigurationRegistry
@@ -190,7 +194,7 @@ public class IndexBuilder<K, V> {
                 maxNumberOfKeysInSegment = conf.getMaxNumberOfKeysInSegment();
                 maxNumberOfSegmentsInCache = conf
                         .getMaxNumberOfSegmentsInCache();
-                indexBufferSizeInBytes = conf.getIndexBufferSizeInBytes();
+                fileReadingBufferSizeInBytes = conf.getIndexBufferSizeInBytes();
                 bloomFilterIndexSizeInBytes = conf
                         .getBloomFilterIndexSizeInBytes();
                 bloomFilterNumberOfHashFunctions = conf
@@ -210,7 +214,7 @@ public class IndexBuilder<K, V> {
                 maxNumberOfKeysInSegmentIndexPage, maxNumberOfKeysInCache,
                 maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache,
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
-                bloomFilterProbabilityOfFalsePositive, indexBufferSizeInBytes);
+                bloomFilterProbabilityOfFalsePositive, fileReadingBufferSizeInBytes);
         if (keyTypeDescriptor == null) {
             throw new IllegalArgumentException("Key type descriptor is null. "
                     + "Set key type descriptor of key class.");

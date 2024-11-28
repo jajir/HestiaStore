@@ -122,7 +122,7 @@ public class IndexJunitTest extends AbstractIndexTest {
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tds) //
                 .withCustomConf()//
-                .withMaxNumberOfKeysInSegment(2) //
+                .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(1) //
                 .withMaxNumberOfKeysInSegmentIndexPage(2) //
                 .withMaxNumberOfKeysInCache(2) //

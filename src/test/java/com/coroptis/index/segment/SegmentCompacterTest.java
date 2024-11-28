@@ -45,7 +45,7 @@ public class SegmentCompacterTest {
 
     @Test
     public void test_shouldBeCompacted() throws Exception {
-        when(segmentPropertiesManager.getSegmentStats()).thenReturn(new SegmentStats(10, 1000L, 15));
+        when(segmentPropertiesManager.getSegmentStats()).thenReturn(new SegmentStats(25, 1000L, 15));
         when(segmentConf.getMaxNumberOfKeysInSegmentCache()).thenReturn(30L, 20L);
 
         assertFalse(sc.shouldBeCompacted(10));
@@ -57,12 +57,10 @@ public class SegmentCompacterTest {
     @Test
     public void test_shouldBeCompactedDuringWriting() throws Exception {
         when(segmentPropertiesManager.getSegmentStats()).thenReturn(new SegmentStats(10, 1000L, 15));
-        when(segmentConf.getMaxNumberOfKeysInSegmentMemory()).thenReturn(30L, 20L);
+        when(segmentConf.getMaxNumberOfKeysInSegmentCache()).thenReturn(30L, 20L);
 
         assertFalse(sc.shouldBeCompactedDuringWriting(10));
         assertTrue(sc.shouldBeCompactedDuringWriting(25));
-
-        verify(segmentConf, never()).getMaxNumberOfKeysInSegmentCache();
     }
 
 }

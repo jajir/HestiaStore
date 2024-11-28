@@ -1,6 +1,8 @@
 package com.coroptis.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -354,7 +356,8 @@ public class SegmentIntegrationTest extends AbstractSegmentTest {
                                 .withDirectory(directory).withId(id)
                                 .withKeyTypeDescriptor(tdi)
                                 .withBloomFilterIndexSizeInBytes(0)//
-                                .withValueTypeDescriptor(tds).build();
+                                .withValueTypeDescriptor(tds)//
+                                .build();
 
                 writePairs(seg, Arrays.asList(//
                                 Pair.of(2, "a"), //
@@ -385,6 +388,96 @@ public class SegmentIntegrationTest extends AbstractSegmentTest {
                                 Pair.of(6, null)//
                 ));
         }
+
+        @Test
+        void test_split_just_tombstones() {
+                final Directory directory = new MemDirectory();
+                final SegmentId id = SegmentId.of(27);
+                final Segment<Integer, String> seg = Segment
+                                .<Integer, String>builder()//
+                                .withDirectory(directory)//
+                                .withId(id)//
+                                .withMaxNumberOfKeysInSegmentCache(13)//
+                                .withMaxNumberOfKeysInIndexPage(3)//
+                                .withMaxNumberOfKeysInSegmentMemory(13)//
+                                .withKeyTypeDescriptor(tdi)//
+                                .withBloomFilterIndexSizeInBytes(0)//
+                                .withValueTypeDescriptor(tds)//
+                                .build();
+
+                writePairs(seg, Arrays.asList(//
+                                Pair.of(25, "d"), //
+                                Pair.of(15, "d"), //
+                                Pair.of(1, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(2, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(3, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(4, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(5, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(6, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(7, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(8, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(9, TypeDescriptorString.TOMBSTONE_VALUE)//
+                ));
+                final SegmentSplitter<Integer, String> segSplitter = seg
+                                .getSegmentSplitter();
+                assertTrue(segSplitter.shouldBeCompactedBeforeSplitting(10));
+
+                final Exception err = assertThrows(IllegalStateException.class,
+                                () -> seg.getSegmentSplitter()
+                                                .split(SegmentId.of(37)));
+                assertEquals("Splitting failed. Number of keys is too low.",
+                                err.getMessage());
+                // final SegmentSplitterResult<Integer, String> result = seg
+                // .getSegmentSplitter().split(SegmentId.of(37));
+                // assertNotNull(result);
+        }
+
+        @Test
+        void test_write_to_unloaded_segment() {
+                final Directory directory = new MemDirectory();
+                final SegmentId id = SegmentId.of(27);
+                final Segment<Integer, String> seg = Segment
+                                .<Integer, String>builder()//
+                                .withDirectory(directory)//
+                                .withId(id)//
+                                .withMaxNumberOfKeysInSegmentCache(13)//
+                                .withMaxNumberOfKeysInIndexPage(3)//
+                                .withMaxNumberOfKeysInSegmentMemory(13)//
+                                .withKeyTypeDescriptor(tdi)//
+                                .withBloomFilterIndexSizeInBytes(0)//
+                                .withSegmentDataProvider(null)
+                                .withValueTypeDescriptor(tds)//
+                                .build();
+
+                writePairs(seg, Arrays.asList(//
+                                Pair.of(25, "d"), //
+                                Pair.of(15, "d"), //
+                                Pair.of(1, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(2, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(3, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(4, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(5, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(6, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(7, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(8, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(9, TypeDescriptorString.TOMBSTONE_VALUE)//
+                ));
+                final SegmentSplitter<Integer, String> segSplitter = seg
+                                .getSegmentSplitter();
+                assertTrue(segSplitter.shouldBeCompactedBeforeSplitting(10));
+
+                final Exception err = assertThrows(IllegalStateException.class,
+                                () -> seg.getSegmentSplitter()
+                                                .split(SegmentId.of(37)));
+                assertEquals("Splitting failed. Number of keys is too low.",
+                                err.getMessage());
+                // final SegmentSplitterResult<Integer, String> result = seg
+                // .getSegmentSplitter().split(SegmentId.of(37));
+                // assertNotNull(result);
+                //FIXME add test for segment,unload data write data and verify that is still unloaded
+        }
+
+
 
         /**
          * This test could be used for manual verification that all open files
@@ -480,7 +573,7 @@ public class SegmentIntegrationTest extends AbstractSegmentTest {
                                 .withBloomFilterIndexSizeInBytes(0)//
                                 .build(), //
                                 9, // expectedNumberKeysInScarceIndex
-                                4// expectedNumberOfFile
+                                5// expectedNumberOfFile
                 ), arguments(tdi, tds, dir3, Segment.<Integer, String>builder()//
                                 .withDirectory(dir3)//
                                 .withId(id3)//
@@ -492,7 +585,7 @@ public class SegmentIntegrationTest extends AbstractSegmentTest {
                                 .withBloomFilterIndexSizeInBytes(0)//
                                 .build(), //
                                 5, // expectedNumberKeysInScarceIndex
-                                5 // expectedNumberOfFile
+                                4 // expectedNumberOfFile
                 ));
         }
 
