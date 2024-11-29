@@ -19,7 +19,7 @@ import com.coroptis.index.directory.MemDirectory;
  * Test insert random key value pairs than randomly change them and finally
  * verify the correctness of data.
  */
-public class IndexTest {
+public class IntegrationRandomDataTest {
 
     final Directory directory = new MemDirectory();
     final TypeDescriptorString tds = new TypeDescriptorString();

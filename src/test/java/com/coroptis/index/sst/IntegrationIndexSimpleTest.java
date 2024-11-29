@@ -24,9 +24,9 @@ import com.coroptis.index.log.LoggedKey;
 import com.coroptis.index.segment.Segment;
 import com.coroptis.index.segment.SegmentId;
 
-public class SstIndexTest {
+public class IntegrationIndexSimpleTest {
 
-    private final Logger logger = LoggerFactory.getLogger(SstIndexTest.class);
+    private final Logger logger = LoggerFactory.getLogger(IntegrationIndexSimpleTest.class);
 
     final Directory directory = new MemDirectory();
     final SegmentId id = SegmentId.of(27);

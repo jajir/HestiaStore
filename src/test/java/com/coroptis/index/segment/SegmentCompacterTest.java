@@ -35,7 +35,8 @@ public class SegmentCompacterTest {
 
     @BeforeEach
     void setUp() {
-        sc = new SegmentCompacter<>(segment, segmentFiles, segmentConf, versionController, segmentPropertiesManager);
+        sc = new SegmentCompacter<>(segment, segmentFiles, segmentConf,
+                versionController, segmentPropertiesManager);
     }
 
     @Test
@@ -45,8 +46,10 @@ public class SegmentCompacterTest {
 
     @Test
     public void test_shouldBeCompacted() throws Exception {
-        when(segmentPropertiesManager.getSegmentStats()).thenReturn(new SegmentStats(25, 1000L, 15));
-        when(segmentConf.getMaxNumberOfKeysInSegmentCache()).thenReturn(30L, 20L);
+        when(segmentPropertiesManager.getSegmentStats())
+                .thenReturn(new SegmentStats(25, 1000L, 15));
+        when(segmentConf.getMaxNumberOfKeysInSegmentCache()).thenReturn(30L,
+                20L);
 
         assertFalse(sc.shouldBeCompacted(10));
         assertTrue(sc.shouldBeCompacted(25));
@@ -56,8 +59,10 @@ public class SegmentCompacterTest {
 
     @Test
     public void test_shouldBeCompactedDuringWriting() throws Exception {
-        when(segmentPropertiesManager.getSegmentStats()).thenReturn(new SegmentStats(10, 1000L, 15));
-        when(segmentConf.getMaxNumberOfKeysInSegmentCache()).thenReturn(30L, 20L);
+        when(segmentPropertiesManager.getSegmentStats())
+                .thenReturn(new SegmentStats(10, 1000L, 15));
+        when(segmentConf.getMaxNumberOfKeysInSegmentCache()).thenReturn(30L,
+                20L);
 
         assertFalse(sc.shouldBeCompactedDuringWriting(10));
         assertTrue(sc.shouldBeCompactedDuringWriting(25));

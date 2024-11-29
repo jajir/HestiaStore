@@ -22,7 +22,7 @@ import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.MemDirectory;
 
-public class SegmentIntegrationTest extends AbstractSegmentTest {
+public class IntegrationSegmentTest extends AbstractSegmentTest {
 
         private final TypeDescriptorString tds = new TypeDescriptorString();
         private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();

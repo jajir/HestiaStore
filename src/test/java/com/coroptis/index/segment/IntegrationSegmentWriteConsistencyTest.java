@@ -17,7 +17,7 @@ import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.MemDirectory;
 
-public class SegmentWriteConsistencyTest {
+public class IntegrationSegmentWriteConsistencyTest {
 
     final List<String> values = List.of("aaa", "bbb", "ccc", "ddd", "eee",
             "fff");
