@@ -4,18 +4,16 @@ hide empty attributes
 set separator none
 
 package "com.coroptis.index.segment" <<Frame>> {
-  class SegmentSearcher
-  class SegmentDataLoader
+  interface SegmentData
+  class SegmentDataFactory
+  class SegmentDataProviderSimple
 }
+SegmentDataFactory --> SegmentData
+SegmentDataProviderSimple --> SegmentDataFactory
 
 package "com.coroptis.index.sst" <<Frame>> {
-  class SegmentCacheDataProviderImpl
-  class SegmentDataImpl
-  class SegmentCache
+  class SegmentDataProviderFromMainCache
 }
 
-SegmentSearcher --> SegmentCacheDataProviderImpl: SegmentCacheDataProviderImpl.getBloomFilter()
-SegmentCacheDataProviderImpl --> SegmentCache: SegmentCache.getSegmentData()
-SegmentCache --> SegmentDataImpl: SegmentDataImpl.getBloomFilter()
-SegmentDataImpl --> SegmentDataLoader: SegmentDataLoader.loadBloomFilter()
+SegmentDataProviderFromMainCache --> SegmentDataFactory
 @enduml

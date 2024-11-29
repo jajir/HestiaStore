@@ -21,7 +21,8 @@ public class SegmentDataProviderSimple<K, V>
 
     SegmentDataProviderSimple(
             final SegmentDataFactory<K, V> segmentDataFactory) {
-        this.segmentDataFactory = Objects.requireNonNull(segmentDataFactory);
+        this.segmentDataFactory = Objects.requireNonNull(segmentDataFactory,
+                "segmentDataFactory cannot be null");
     }
 
     @Override

@@ -1,36 +1,42 @@
 @startuml
-
-hide empty attributes
-set separator none
-
-package "com.coroptis.index.segment" <<Frame>> {
-
-  interface SegmentCacheDataProvider {
-    + getDeltaCache()
-    + getBloomFilter()
-    + getScarceIndex()
-    + invalidate()
+ 
+skin rose
+ 
+title Relationships - Class Diagram
+ 
+package segment{
+ 
+  class SegmentDataSupplier {
+    +getBloomFilter()
+    +getScarseIndex()
+    +getDeltaCache()
   }
-    
+ 
   interface SegmentData {
-    + getDeltaCache()
-    + getBloomFilter()
-    + getScarceIndex()  
+    +getBloomFilter()
+    +getScarseIndex()
+    +getDeltaCache()
+    +close()
   }
-
-}
-
-package "com.coroptis.index.sst" <<Frame>> {
-  class SegmentCacheDataProviderImpl {
+ 
+  class SegmentDataLazyLoading {
+ 
   }
-  
-  class SegmentDataImpl {
+ 
+  SegmentDataLazyLoading --|> SegmentData
+  SegmentDataLazyLoading --> SegmentDataSupplier
+ 
+  interface SegmentDataFactory {
+    +SegmentData getSegmentData()
   }
-  
-  SegmentDataImpl --|> SegmentData
-}
-
-
-SegmentCacheDataProviderImpl --|> SegmentCacheDataProvider
-
+ 
+  SegmentDataFactory --> SegmentData
+ 
+  SegmentDataFactoryImpl --|> SegmentDataFactory
+ 
+  }
+ 
+  SegmentDataFactoryImpl --> SegmentDataLazyLoading
+ 
 @enduml
+ 

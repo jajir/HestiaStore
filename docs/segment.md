@@ -53,15 +53,14 @@ In segment following object are cached:
 * BloomFilter - bloom filter data
 * ScarceIndex - scarce index data
 
-When in segment is needed for example BloomFilter that it obtained like this:
+There are few classes that provide lazy loading of segment data a flexibility to cache segment data. Segment data are managed by following classes: 
 
-![Sequence of call when cached data are required](./images/segment-cache-seq.png)
+![Sequence of call when cached data are required](./images/segment-cache-class1.png)
 
-Object `SegmentData` could contains objects `SegmentDeltaCache`, `BloomFilter` and `ScarceIndex`. All of them are lazy loaded from `SegmentDataLoader`. Segment data and segment data loaders have interface and it's implementation in different packages. Main reason is to avoid dependency from `com.coroptis.index.segment` package to `com.coroptis.index.sst` package.
+Object `SegmentData` could contains objects `SegmentDeltaCache`, `BloomFilter` and `ScarceIndex`. All of them are lazy loaded by `SegmentDataSupplier`. For closer class description look at source code.
 
-![Implementations from sst package](./images/segment-cache-class1.png)
 
-Following image shows references between objects in runtime:
+The following image shows that `SegmentDatafactory` can be referenced from `SegmentDataProviderSimple`, which is the simplest implementation that merely holds segment data from the factory. The class `SegmentDataProviderFromMainCache` interacts with the main index cache where the segment data is stored. Data may be evicted from the cache without any notification.
 
 ![Cache related object relations](./images/segment-cache-class2.png)
 
