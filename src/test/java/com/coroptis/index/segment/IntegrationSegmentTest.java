@@ -1,6 +1,7 @@
 package com.coroptis.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -21,6 +22,7 @@ import com.coroptis.index.datatype.TypeDescriptorInteger;
 import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.MemDirectory;
+import com.coroptis.index.sst.SegmentDataProviderFromMainCache;
 
 public class IntegrationSegmentTest extends AbstractSegmentTest {
 
@@ -435,49 +437,89 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
         @Test
         void test_write_to_unloaded_segment() {
                 final Directory directory = new MemDirectory();
-                final SegmentId id = SegmentId.of(27);
+                final SegmentId segmentId = SegmentId.of(27);
+
+                SegmentConf segmentConf = new SegmentConf(13L, 17L, 3, 0, 0,
+                                0.0, 13L);
+                // FIXME meaning of last parameter is not clear
+
+                final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
+                                directory, segmentId);
+
+                final SegmentFiles<Integer, String> segmentFiles = new SegmentFiles<>(
+                                directory, segmentId, tdi, tds, 1024);
+
+                final SegmentDataSupplier<Integer, String> segmentDataSupplier = new SegmentDataSupplier<>(
+                                segmentFiles, segmentConf,
+                                segmentPropertiesManager);
+
+                final SegmentDataFactory<Integer, String> segmentDataFactory = new SegmentDataFactoryImpl<>(
+                                segmentDataSupplier);
+
+                final SegmentDataProviderSimple<Integer, String> dataProvider = new SegmentDataProviderSimple<>(
+                                segmentDataFactory);
+
                 final Segment<Integer, String> seg = Segment
                                 .<Integer, String>builder()//
                                 .withDirectory(directory)//
-                                .withId(id)//
+                                .withId(segmentId)//
+                                .withSegmentDataProvider(dataProvider)//
+                                .withSegmentConf(segmentConf)//
+                                .withSegmentFiles(segmentFiles)//
+                                .withSegmentPropertiesManager(
+                                                segmentPropertiesManager)//
+                                .withSegmentDataProvider(dataProvider)//
                                 .withMaxNumberOfKeysInSegmentCache(13)//
                                 .withMaxNumberOfKeysInIndexPage(3)//
                                 .withMaxNumberOfKeysInSegmentMemory(13)//
                                 .withKeyTypeDescriptor(tdi)//
                                 .withBloomFilterIndexSizeInBytes(0)//
-                                .withSegmentDataProvider(null)
                                 .withValueTypeDescriptor(tds)//
                                 .build();
 
+                assertFalse(dataProvider.isLoaded());
+
                 writePairs(seg, Arrays.asList(//
-                                Pair.of(25, "d"), //
-                                Pair.of(15, "d"), //
-                                Pair.of(1, TypeDescriptorString.TOMBSTONE_VALUE), //
-                                Pair.of(2, TypeDescriptorString.TOMBSTONE_VALUE), //
-                                Pair.of(3, TypeDescriptorString.TOMBSTONE_VALUE), //
-                                Pair.of(4, TypeDescriptorString.TOMBSTONE_VALUE), //
-                                Pair.of(5, TypeDescriptorString.TOMBSTONE_VALUE), //
-                                Pair.of(6, TypeDescriptorString.TOMBSTONE_VALUE), //
-                                Pair.of(7, TypeDescriptorString.TOMBSTONE_VALUE), //
-                                Pair.of(8, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(11, "aaa"), //
+                                Pair.of(12, "aab"), //
+                                Pair.of(13, "aac"), //
+                                Pair.of(14, "aad"), //
+                                Pair.of(15, "aae"), //
+                                Pair.of(16, "aaf"), //
+                                Pair.of(17, "aag"), //
+                                Pair.of(18, "aah"), //
+                                Pair.of(19, "aai"), //
+                                Pair.of(20, "aaj"), //
+                                Pair.of(21, "aak"), //
+                                Pair.of(22, "aal"), //
                                 Pair.of(9, TypeDescriptorString.TOMBSTONE_VALUE)//
                 ));
-                final SegmentSplitter<Integer, String> segSplitter = seg
-                                .getSegmentSplitter();
-                assertTrue(segSplitter.shouldBeCompactedBeforeSplitting(10));
+                /**
+                 * Writing to segment which doesn't require compaction doesn't
+                 * load segmrnt data.
+                 */
+                assertFalse(dataProvider.isLoaded());
 
-                final Exception err = assertThrows(IllegalStateException.class,
-                                () -> seg.getSegmentSplitter()
-                                                .split(SegmentId.of(37)));
-                assertEquals("Splitting failed. Number of keys is too low.",
-                                err.getMessage());
-                // final SegmentSplitterResult<Integer, String> result = seg
-                // .getSegmentSplitter().split(SegmentId.of(37));
-                // assertNotNull(result);
-                //FIXME add test for segment,unload data write data and verify that is still unloaded
+                verifySegmentSearch(seg, Arrays.asList(// s
+                                Pair.of(9, null), //
+                                Pair.of(12, "aab"), //
+                                Pair.of(13, "aac"), //
+                                Pair.of(14, "aad"), //
+                                Pair.of(15, "aae") //
+                ));
+
+                /**
+                 * Index search shoud lead to load segment data.
+                 */
+                assertTrue(dataProvider.isLoaded());
+
+                /**
+                 * Force unloading segment data
+                 */
+                dataProvider.invalidate();
+
+                assertFalse(dataProvider.isLoaded());
         }
-
-
 
         /**
          * This test could be used for manual verification that all open files
