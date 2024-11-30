@@ -53,8 +53,8 @@ public class SegmentSplitter<K, V> {
     private final float MINIMAL_PERCENTAGE_DIFFERENCE = 0.9F;
 
     /**
-     * Method checks if segment should be compacted before splitting. Itprevent
-     * situation when delata cache is fullof thombstones and because of that
+     * Method checks if segment should be compacted before splitting. It prevent
+     * situation when delta cache is full of thombstones and because of that
      * segment is not eligible for splitting.
      *
      * 
