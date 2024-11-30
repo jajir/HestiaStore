@@ -56,7 +56,8 @@ public class SegmentSplitter<K, V> {
      * Method checks if segment should be compacted before splitting. It prevent
      * situation when delta cache is full of thombstones and because of that
      * segment is not eligible for splitting.
-     *
+     * 
+     * It lead to loading of delta cache into memory.
      * 
      * @return Return <code>true</code> if segment should be compacted before
      *         splitting.
@@ -143,6 +144,8 @@ public class SegmentSplitter<K, V> {
      * Real number of key is equals or lower than computed bellow. Keys in cache
      * could already be in main index file of it can be keys with tombstone
      * value.
+     * 
+     * It lead to loading of delta cache into memory.
      * 
      * @return return estimated number of keys in segment
      */

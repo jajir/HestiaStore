@@ -177,14 +177,13 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
      */
     private boolean optionallySplit(final Segment<K, V> segment) {
         Objects.requireNonNull(segment, "Segment is required");
-        if (segment.getNumberOfKeys() > conf.getMaxNumberOfKeysInSegment()) {
+        if (shouldBeSplit(segment)) {
             final SegmentSplitter<K, V> segmentSplitter = segment
                     .getSegmentSplitter();
             if (segmentSplitter.shouldBeCompactedBeforeSplitting(
                     conf.getMaxNumberOfKeysInSegment())) {
                 segment.forceCompact();
-                if (segment.getNumberOfKeys() > conf
-                        .getMaxNumberOfKeysInSegment()) {
+                if (shouldBeSplit(segment) {
                     return split(segment, segmentSplitter);
                 }
             } else {
@@ -193,6 +192,10 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         }
         return false;
     }
+
+    private boolean shouldBeSplit(final Segment<K, V> segment) {
+        return segment.getNumberOfKeys() > conf.getMaxNumberOfKeysInSegment();
+    }   
 
     private boolean split(final Segment<K, V> segment,
             final SegmentSplitter<K, V> segmentSplitter) {
