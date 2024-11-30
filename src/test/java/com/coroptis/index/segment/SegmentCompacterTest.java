@@ -3,8 +3,6 @@ package com.coroptis.index.segment;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -45,27 +43,44 @@ public class SegmentCompacterTest {
     }
 
     @Test
-    public void test_shouldBeCompacted() throws Exception {
+    public void test_shouldBeCompactedDuringWriting_yes() throws Exception {
         when(segmentPropertiesManager.getSegmentStats())
-                .thenReturn(new SegmentStats(25, 1000L, 15));
-        when(segmentConf.getMaxNumberOfKeysInSegmentCache()).thenReturn(30L,
-                20L);
+                .thenReturn(new SegmentStats(10, 1000L, 15));
+        when(segmentConf.getMaxNumberOfKeysInDeltaCacheDuringWriting())
+                .thenReturn(20L);
 
-        assertFalse(sc.shouldBeCompacted(10));
-        assertTrue(sc.shouldBeCompacted(25));
-
-        verify(segmentConf, never()).getMaxNumberOfKeysInSegmentMemory();
+        assertTrue(sc.shouldBeCompactedDuringWriting(25));
     }
 
     @Test
-    public void test_shouldBeCompactedDuringWriting() throws Exception {
+    public void test_shouldBeCompactedDuringWriting_no() throws Exception {
         when(segmentPropertiesManager.getSegmentStats())
                 .thenReturn(new SegmentStats(10, 1000L, 15));
-        when(segmentConf.getMaxNumberOfKeysInSegmentCache()).thenReturn(30L,
-                20L);
+        when(segmentConf.getMaxNumberOfKeysInDeltaCacheDuringWriting())
+                .thenReturn(30L);
 
         assertFalse(sc.shouldBeCompactedDuringWriting(10));
-        assertTrue(sc.shouldBeCompactedDuringWriting(25));
     }
+
+    @Test
+    public void test_shouldBeCompacted_yes() throws Exception {
+        when(segmentPropertiesManager.getSegmentStats())
+                .thenReturn(new SegmentStats(31, 1000L, 15));
+        when(segmentConf.getMaxNumberOfKeysInDeltaCache())
+                .thenReturn(30L);
+
+        assertTrue(sc.shouldBeCompacted());
+    }
+
+    @Test
+    public void test_shouldBeCompacted_no() throws Exception {
+        when(segmentPropertiesManager.getSegmentStats())
+                .thenReturn(new SegmentStats(31, 1000L, 15));
+        when(segmentConf.getMaxNumberOfKeysInDeltaCache())
+                .thenReturn(35L);
+
+        assertFalse(sc.shouldBeCompacted());
+    }
+
 
 }

@@ -10,19 +10,19 @@ package com.coroptis.index.segment;
  */
 class SegmentStats {
 
-    private final long numberOfKeysInCache;
+    private final long numberOfKeysInDeltaCache;
     private final long numberOfKeysInIndex;
     private final long numberOfKeysInScarceIndex;
 
-    SegmentStats(final long numberOfKeysInCache, final long numberOfKeysInIndex,
+    SegmentStats(final long numberOfKeysInDeltaCache, final long numberOfKeysInIndex,
             final long numberOfKeysInScarceIndex) {
-        this.numberOfKeysInCache = numberOfKeysInCache;
+        this.numberOfKeysInDeltaCache = numberOfKeysInDeltaCache;
         this.numberOfKeysInIndex = numberOfKeysInIndex;
         this.numberOfKeysInScarceIndex = numberOfKeysInScarceIndex;
     }
 
-    public long getNumberOfKeysInCache() {
-        return numberOfKeysInCache;
+    public long getNumberOfKeysInDeltaCache() {
+        return numberOfKeysInDeltaCache;
     }
 
     public long getNumberOfKeysInIndex() {
@@ -30,7 +30,7 @@ class SegmentStats {
     }
 
     public long getNumberOfKeys() {
-        return getNumberOfKeysInCache() + getNumberOfKeysInIndex();
+        return getNumberOfKeysInDeltaCache() + getNumberOfKeysInIndex();
     }
 
     public long getNumberOfKeysInScarceIndex() {

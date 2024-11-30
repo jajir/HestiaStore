@@ -22,7 +22,6 @@ import com.coroptis.index.datatype.TypeDescriptorInteger;
 import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.MemDirectory;
-import com.coroptis.index.sst.SegmentDataProviderFromMainCache;
 
 public class IntegrationSegmentTest extends AbstractSegmentTest {
 
@@ -53,7 +52,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
 
                 final SegmentStats stats = seg.getStats();
                 assertEquals(0, stats.getNumberOfKeys());
-                assertEquals(0, stats.getNumberOfKeysInCache());
+                assertEquals(0, stats.getNumberOfKeysInDeltaCache());
                 assertEquals(0, stats.getNumberOfKeysInIndex());
                 assertEquals(0, stats.getNumberOfKeysInScarceIndex());
 
@@ -221,7 +220,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                 ));
 
                 assertEquals(4, seg.getStats().getNumberOfKeys());
-                assertEquals(4, seg.getStats().getNumberOfKeysInCache());
+                assertEquals(4, seg.getStats().getNumberOfKeysInDeltaCache());
                 assertEquals(0, seg.getStats().getNumberOfKeysInIndex());
 
                 verifySegmentData(seg, Arrays.asList(//
@@ -262,7 +261,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                 ));
 
                 assertEquals(4, seg.getStats().getNumberOfKeys());
-                assertEquals(4, seg.getStats().getNumberOfKeysInCache());
+                assertEquals(4, seg.getStats().getNumberOfKeysInDeltaCache());
                 assertEquals(0, seg.getStats().getNumberOfKeysInIndex());
 
                 verifySegmentData(seg, Arrays.asList(//
@@ -307,7 +306,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                  * are 3 keys, because one is deleted.
                  */
                 assertEquals(4, seg.getStats().getNumberOfKeys());
-                assertEquals(4, seg.getStats().getNumberOfKeysInCache());
+                assertEquals(4, seg.getStats().getNumberOfKeysInDeltaCache());
                 assertEquals(0, seg.getStats().getNumberOfKeysInIndex());
 
                 verifySegmentData(seg, Arrays.asList(//
@@ -376,7 +375,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                 ));
 
                 assertEquals(4, seg.getStats().getNumberOfKeys());
-                assertEquals(4, seg.getStats().getNumberOfKeysInCache());
+                assertEquals(4, seg.getStats().getNumberOfKeysInDeltaCache());
                 assertEquals(0, seg.getStats().getNumberOfKeysInIndex());
 
                 verifySegmentData(seg, Arrays.asList(//
@@ -560,7 +559,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                 seg.forceCompact();
 
                 assertEquals(3, seg.getStats().getNumberOfKeys());
-                assertEquals(0, seg.getStats().getNumberOfKeysInCache());
+                assertEquals(0, seg.getStats().getNumberOfKeysInDeltaCache());
                 assertEquals(3, seg.getStats().getNumberOfKeysInIndex());
 
                 verifySegmentData(seg, Arrays.asList(//

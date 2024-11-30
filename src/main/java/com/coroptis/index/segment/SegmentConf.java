@@ -2,8 +2,8 @@ package com.coroptis.index.segment;
 
 public class SegmentConf {
 
-    private final long maxNumberOfKeysInSegmentCache;
-    private final long maxNumberOfKeysInSegmentCacheDuringFlushing;
+    private final long maxNumberOfKeysInSegmentDeltaCache;
+    private final long maxNumberOfKeysInDeltaCacheDuringWriting;
     private final int maxNumberOfKeysInIndexPage;
     private final Integer bloomFilterNumberOfHashFunctions;
     private final Integer bloomFilterIndexSizeInBytes;
@@ -11,15 +11,15 @@ public class SegmentConf {
 
     private final long maxNumberOfKeysInSegmentMemory;
 
-    public SegmentConf(final long maxNumeberOfKeysInSegmentCache,
+    public SegmentConf(final long maxNumeberOfKeysInSegmentDeltaCache,
             final long maxNumberOfKeysInSegmentCacheDuringFlushing,
             final int maxNumberOfKeysInIndexPage,
             final Integer bloomFilterNumberOfHashFunctions,
             final Integer bloomFilterIndexSizeInBytes,
             final Double bloomFilterProbabilityOfFalsePositive,
             final long maxNumberOfKeysInSegmentMemory) {
-        this.maxNumberOfKeysInSegmentCache = maxNumeberOfKeysInSegmentCache;
-        this.maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInSegmentCacheDuringFlushing;
+        this.maxNumberOfKeysInSegmentDeltaCache = maxNumeberOfKeysInSegmentDeltaCache;
+        this.maxNumberOfKeysInDeltaCacheDuringWriting = maxNumberOfKeysInSegmentCacheDuringFlushing;
         this.maxNumberOfKeysInIndexPage = maxNumberOfKeysInIndexPage;
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
@@ -28,8 +28,8 @@ public class SegmentConf {
     }
 
     public SegmentConf(final SegmentConf segmentConf) {
-        this.maxNumberOfKeysInSegmentCache = segmentConf.maxNumberOfKeysInSegmentCache;
-        this.maxNumberOfKeysInSegmentCacheDuringFlushing = segmentConf.maxNumberOfKeysInSegmentCacheDuringFlushing;
+        this.maxNumberOfKeysInSegmentDeltaCache = segmentConf.maxNumberOfKeysInSegmentDeltaCache;
+        this.maxNumberOfKeysInDeltaCacheDuringWriting = segmentConf.maxNumberOfKeysInDeltaCacheDuringWriting;
         this.maxNumberOfKeysInIndexPage = segmentConf.maxNumberOfKeysInIndexPage;
         this.bloomFilterNumberOfHashFunctions = segmentConf.bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = segmentConf.bloomFilterIndexSizeInBytes;
@@ -37,10 +37,17 @@ public class SegmentConf {
         this.maxNumberOfKeysInSegmentMemory = segmentConf.maxNumberOfKeysInSegmentMemory;
     }
 
-    long getMaxNumberOfKeysInSegmentCache() {
-        return maxNumberOfKeysInSegmentCache;
+    /**
+     * Provide number of keys in delta cache. Real number of keys in delta cache
+     * is smaller or equal to this number.
+     * 
+     * @return return number of keys in delta cache
+     */
+    long getMaxNumberOfKeysInDeltaCache() {
+        return maxNumberOfKeysInSegmentDeltaCache;
     }
 
+    @Deprecated
     long getMaxNumberOfKeysInSegmentMemory() {
         return maxNumberOfKeysInSegmentMemory;
     }
@@ -61,7 +68,13 @@ public class SegmentConf {
         return bloomFilterProbabilityOfFalsePositive;
     }
 
-    long getMaxNumberOfKeysInSegmentCacheDuringFlushing() {
-        return maxNumberOfKeysInSegmentCacheDuringFlushing;
+    /**
+     * Provide number of keys in delta cache during writing. This value should
+     * be at least 2 * maxNumberOfKeysInDeltaCache
+     * 
+     * @return
+     */
+    long getMaxNumberOfKeysInDeltaCacheDuringWriting() {
+        return maxNumberOfKeysInDeltaCacheDuringWriting;
     }
 }
