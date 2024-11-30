@@ -9,22 +9,18 @@ public class SegmentConf {
     private final Integer bloomFilterIndexSizeInBytes;
     private final Double bloomFilterProbabilityOfFalsePositive;
 
-    private final long maxNumberOfKeysInSegmentMemory;
-
     public SegmentConf(final long maxNumeberOfKeysInSegmentDeltaCache,
             final long maxNumberOfKeysInSegmentCacheDuringFlushing,
             final int maxNumberOfKeysInIndexPage,
             final Integer bloomFilterNumberOfHashFunctions,
             final Integer bloomFilterIndexSizeInBytes,
-            final Double bloomFilterProbabilityOfFalsePositive,
-            final long maxNumberOfKeysInSegmentMemory) {
+            final Double bloomFilterProbabilityOfFalsePositive) {
         this.maxNumberOfKeysInSegmentDeltaCache = maxNumeberOfKeysInSegmentDeltaCache;
         this.maxNumberOfKeysInDeltaCacheDuringWriting = maxNumberOfKeysInSegmentCacheDuringFlushing;
         this.maxNumberOfKeysInIndexPage = maxNumberOfKeysInIndexPage;
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
         this.bloomFilterProbabilityOfFalsePositive = bloomFilterProbabilityOfFalsePositive;
-        this.maxNumberOfKeysInSegmentMemory = maxNumberOfKeysInSegmentMemory;
     }
 
     public SegmentConf(final SegmentConf segmentConf) {
@@ -34,7 +30,6 @@ public class SegmentConf {
         this.bloomFilterNumberOfHashFunctions = segmentConf.bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = segmentConf.bloomFilterIndexSizeInBytes;
         this.bloomFilterProbabilityOfFalsePositive = segmentConf.bloomFilterProbabilityOfFalsePositive;
-        this.maxNumberOfKeysInSegmentMemory = segmentConf.maxNumberOfKeysInSegmentMemory;
     }
 
     /**
@@ -45,11 +40,6 @@ public class SegmentConf {
      */
     long getMaxNumberOfKeysInDeltaCache() {
         return maxNumberOfKeysInSegmentDeltaCache;
-    }
-
-    @Deprecated
-    long getMaxNumberOfKeysInSegmentMemory() {
-        return maxNumberOfKeysInSegmentMemory;
     }
 
     Integer getMaxNumberOfKeysInIndexPage() {

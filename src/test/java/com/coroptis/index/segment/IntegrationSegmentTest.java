@@ -400,7 +400,6 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                                 .withId(id)//
                                 .withMaxNumberOfKeysInSegmentCache(13)//
                                 .withMaxNumberOfKeysInIndexPage(3)//
-                                .withMaxNumberOfKeysInSegmentMemory(13)//
                                 .withKeyTypeDescriptor(tdi)//
                                 .withBloomFilterIndexSizeInBytes(0)//
                                 .withValueTypeDescriptor(tds)//
@@ -428,9 +427,6 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                                                 .split(SegmentId.of(37)));
                 assertEquals("Splitting failed. Number of keys is too low.",
                                 err.getMessage());
-                // final SegmentSplitterResult<Integer, String> result = seg
-                // .getSegmentSplitter().split(SegmentId.of(37));
-                // assertNotNull(result);
         }
 
         @Test
@@ -439,8 +435,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                 final SegmentId segmentId = SegmentId.of(27);
 
                 SegmentConf segmentConf = new SegmentConf(13L, 17L, 3, 0, 0,
-                                0.0, 13L);
-                // FIXME meaning of last parameter is not clear
+                                0.0);
 
                 final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
                                 directory, segmentId);
@@ -470,7 +465,6 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                                 .withSegmentDataProvider(dataProvider)//
                                 .withMaxNumberOfKeysInSegmentCache(13)//
                                 .withMaxNumberOfKeysInIndexPage(3)//
-                                .withMaxNumberOfKeysInSegmentMemory(13)//
                                 .withKeyTypeDescriptor(tdi)//
                                 .withBloomFilterIndexSizeInBytes(0)//
                                 .withValueTypeDescriptor(tds)//
@@ -597,7 +591,6 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                                 .withId(id1)//
                                 .withKeyTypeDescriptor(tdi)//
                                 .withValueTypeDescriptor(tds)//
-                                .withMaxNumberOfKeysInSegmentMemory(10)//
                                 .withMaxNumberOfKeysInSegmentCache(10) //
                                 .withBloomFilterIndexSizeInBytes(0)//
                                 .build(), //
@@ -609,7 +602,6 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                                 .withKeyTypeDescriptor(tdi)//
                                 .withValueTypeDescriptor(tds)//
                                 .withMaxNumberOfKeysInSegmentCache(1)//
-                                .withMaxNumberOfKeysInSegmentMemory(1)//
                                 .withMaxNumberOfKeysInIndexPage(1)//
                                 .withBloomFilterIndexSizeInBytes(0)//
                                 .build(), //
@@ -621,7 +613,6 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                                 .withKeyTypeDescriptor(tdi)//
                                 .withValueTypeDescriptor(tds)//
                                 .withMaxNumberOfKeysInSegmentCache(2)//
-                                .withMaxNumberOfKeysInSegmentMemory(2)//
                                 .withMaxNumberOfKeysInIndexPage(2)//
                                 .withBloomFilterIndexSizeInBytes(0)//
                                 .build(), //

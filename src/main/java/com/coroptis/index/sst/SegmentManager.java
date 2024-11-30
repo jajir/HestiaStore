@@ -60,9 +60,7 @@ public class SegmentManager<K, V> {
                                 conf.getMaxNumberOfKeysInSegmentIndexPage(),
                                 conf.getBloomFilterNumberOfHashFunctions(),
                                 conf.getBloomFilterIndexSizeInBytes(),
-                                conf.getBloomFilterProbabilityOfFalsePositive(),
-                                conf.getMaxNumberOfKeysInSegmentCache());
-                // FIXME meaning of last parameter is not clear
+                                conf.getBloomFilterProbabilityOfFalsePositive());
 
                 final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
                                 directory, segmentId);
@@ -80,7 +78,8 @@ public class SegmentManager<K, V> {
                                 segmentDataSupplier);
 
                 final SegmentDataProvider<K, V> dataProvider = new SegmentDataProviderFromMainCache<>(
-                                segmentId, segmentDataCache, segmentDataFactory);
+                                segmentId, segmentDataCache,
+                                segmentDataFactory);
 
                 final Segment<K, V> out = Segment.<K, V>builder()
                                 .withDirectory(directory).withId(segmentId)
@@ -88,7 +87,8 @@ public class SegmentManager<K, V> {
                                 .withSegmentDataProvider(dataProvider)//
                                 .withSegmentConf(segmentConf)//
                                 .withSegmentFiles(segmentFiles)//
-                                .withSegmentPropertiesManager(segmentPropertiesManager)//
+                                .withSegmentPropertiesManager(
+                                                segmentPropertiesManager)//
                                 .withMaxNumberOfKeysInSegmentCache(conf
                                                 .getMaxNumberOfKeysInSegmentCache())
                                 .withMaxNumberOfKeysInIndexPage(conf
