@@ -183,7 +183,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
             if (segmentSplitter.shouldBeCompactedBeforeSplitting(
                     conf.getMaxNumberOfKeysInSegment())) {
                 segment.forceCompact();
-                if (shouldBeSplit(segment) {
+                if (shouldBeSplit(segment)) {
                     return split(segment, segmentSplitter);
                 }
             } else {
