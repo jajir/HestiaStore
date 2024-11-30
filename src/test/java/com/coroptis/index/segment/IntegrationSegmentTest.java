@@ -422,6 +422,9 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                                 .getSegmentSplitter();
                 assertTrue(segSplitter.shouldBeCompactedBeforeSplitting(10));
 
+                /**
+                 * Verify that split is not possible
+                 */
                 final Exception err = assertThrows(IllegalStateException.class,
                                 () -> seg.getSegmentSplitter()
                                                 .split(SegmentId.of(37)));
