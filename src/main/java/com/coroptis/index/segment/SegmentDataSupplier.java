@@ -49,6 +49,8 @@ public class SegmentDataSupplier<K, V> {
                                                 .getBloomFilterNumberOfHashFunctions())
                                 .withProbabilityOfFalsePositive(segmentConf
                                                 .getBloomFilterProbabilityOfFalsePositive())
+                                .withRelatedObjectName(
+                                                segmentFiles.getSegmentIdName())
                                 .build();
         }
 

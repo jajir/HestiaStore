@@ -2,9 +2,7 @@ package com.coroptis.index.segment;
 
 import java.util.Objects;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.coroptis.index.CloseableResource;
 import com.coroptis.index.bloomfilter.BloomFilter;
 import com.coroptis.index.scarceindex.ScarceIndex;
 
@@ -16,10 +14,9 @@ import com.coroptis.index.scarceindex.ScarceIndex;
  * @param <K>
  * @param <V>
  */
-public class SegmentDataLazyLoaded<K, V> implements SegmentData<K, V> {
+public class SegmentDataLazyLoaded<K, V>
+        implements SegmentData<K, V>, CloseableResource {
 
-    private final Logger logger = LoggerFactory
-            .getLogger(SegmentDataLazyLoaded.class);
     private final SegmentDataSupplier<K, V> segmentDataSupplier;
 
     private SegmentDeltaCache<K, V> deltaCache;
@@ -58,7 +55,7 @@ public class SegmentDataLazyLoaded<K, V> implements SegmentData<K, V> {
     @Override
     public void close() {
         if (bloomFilter != null) {
-            logger.debug(bloomFilter.getStatsString());
+            bloomFilter.close();
             bloomFilter = null;
         }
         if (deltaCache != null) {
