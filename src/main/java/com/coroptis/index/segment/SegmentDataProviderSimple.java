@@ -6,45 +6,50 @@ import com.coroptis.index.bloomfilter.BloomFilter;
 import com.coroptis.index.scarceindex.ScarceIndex;
 
 /**
- * This provider, lazy load cached data objects.
+ * Provider of segment data. It's support invalidate segment data in memory.
  * 
  * @author honza
  *
- * @param <K>
- * @param <V>
+ * @param <K> key type
+ * @param <V> value type
  */
 public class SegmentDataProviderSimple<K, V>
         implements SegmentDataProvider<K, V> {
 
-    private final SegmentDataDirectLoader<K, V> dataLoader;
-    private SegmentDataLazyLoader<K, V> dataImpl;
+    private final SegmentDataFactory<K, V> segmentDataFactory;
+    private SegmentData<K, V> segmentData;
 
-    SegmentDataProviderSimple(final SegmentDataDirectLoader<K, V> dataLoader) {
-        this.dataLoader = Objects.requireNonNull(dataLoader);
-        invalidate();
+    SegmentDataProviderSimple(
+            final SegmentDataFactory<K, V> segmentDataFactory) {
+        this.segmentDataFactory = Objects.requireNonNull(segmentDataFactory,
+                "segmentDataFactory cannot be null");
     }
 
     @Override
     public SegmentDeltaCache<K, V> getSegmentDeltaCache() {
-        return dataImpl.getSegmentDeltaCache();
+        return getSegmentData().getSegmentDeltaCache();
     }
 
     @Override
     public BloomFilter<K> getBloomFilter() {
-        return dataImpl.getBloomFilter();
+        return getSegmentData().getBloomFilter();
     }
 
     @Override
     public ScarceIndex<K> getScarceIndex() {
-        return dataImpl.getScarceIndex();
+        return getSegmentData().getScarceIndex();
     }
 
     @Override
     public void invalidate() {
-        if (dataImpl != null) {
-            dataImpl.close();
+        segmentData = null;
+    }
+
+    private SegmentData<K, V> getSegmentData() {
+        if (segmentData == null) {
+            segmentData = segmentDataFactory.getSegmentData();
         }
-        dataImpl = new SegmentDataLazyLoader<>(dataLoader);
+        return segmentData;
     }
 
     /**
@@ -53,7 +58,7 @@ public class SegmentDataProviderSimple<K, V>
      */
     @Override
     public boolean isLoaded() {
-        return true;
+        return segmentData != null;
     }
 
 }

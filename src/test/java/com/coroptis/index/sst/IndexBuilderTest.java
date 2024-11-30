@@ -73,7 +73,7 @@ public class IndexBuilderTest {
                         .withValueClass(String.class)//
                         .build());
 
-        assertEquals("Directory was no spicified.", ex.getMessage());
+        assertEquals("Directory was no specified.", ex.getMessage());
     }
 
     @Test
@@ -87,6 +87,19 @@ public class IndexBuilderTest {
 
         assertEquals("There is not data type descriptor in registry"
                 + " for class 'class java.lang.Byte'", ex.getMessage());
+    }
+
+    @Test
+    void test_MaxNumberOfKeysInSegment_is_3() throws Exception {
+        final Exception ex = assertThrows(IllegalArgumentException.class,
+                () -> Index.<Long, String>builder()//
+                        .withDirectory(directory)//
+                        .withKeyClass(Long.class)//
+                        .withValueClass(String.class)//
+                        .withMaxNumberOfKeysInSegment(3)//
+                        .build());
+
+        assertEquals("Max number of keys in segment must be at least 4.", ex.getMessage());
     }
 
     @Test
@@ -118,7 +131,7 @@ public class IndexBuilderTest {
         assertEquals(5_000_000, conf.getMaxNumberOfKeysInCache());
         assertEquals(10_000_000, conf.getMaxNumberOfKeysInSegment());
         assertEquals(10, conf.getMaxNumberOfSegmentsInCache());
-        assertEquals(1_048_576, conf.getIndexBufferSizeInBytes());
+        assertEquals(1_048_576, conf.getFileReadingBufferSizeInBytes());
         assertEquals(100_000, conf.getBloomFilterIndexSizeInBytes());
         assertEquals(2, conf.getBloomFilterNumberOfHashFunctions());
     }
@@ -131,7 +144,7 @@ public class IndexBuilderTest {
                         .withDirectory(directory)//
                         .withKeyClass(Long.class)//
                         .withValueClass(String.class)//
-                        .withIndexBufferSizeInBytes(1000)//
+                        .withFileReadingBufferSizeInBytes(1000)//
                         .withCustomConf()//
                         .build());
 
@@ -154,7 +167,7 @@ public class IndexBuilderTest {
                 .withMaxNumberOfKeysInSegment(44)//
                 .withMaxNumberOfKeysInCache(55)//
                 .setMaxNumberOfSegmentsInCache(66)//
-                .withIndexBufferSizeInBytes(1024)//
+                .withFileReadingBufferSizeInBytes(1024)//
                 .withBloomFilterIndexSizeInBytes(77)//
                 .withBloomFilterNumberOfHashFunctions(88)//
                 .build();
@@ -165,7 +178,7 @@ public class IndexBuilderTest {
         assertEquals(55, conf.getMaxNumberOfKeysInCache());
         assertEquals(44, conf.getMaxNumberOfKeysInSegment());
         assertEquals(66, conf.getMaxNumberOfSegmentsInCache());
-        assertEquals(1024, conf.getIndexBufferSizeInBytes());
+        assertEquals(1024, conf.getFileReadingBufferSizeInBytes());
         assertEquals(77, conf.getBloomFilterIndexSizeInBytes());
         assertEquals(88, conf.getBloomFilterNumberOfHashFunctions());
     }

@@ -13,7 +13,7 @@ import com.coroptis.index.Pair;
 import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.MemDirectory;
 
-public class ScarceIndexTest {
+public class IntegrationScarceIndexTest {
 
     private final static String FILE_NAME = "pok.dat";
     private final TypeDescriptorString stringTd = new TypeDescriptorString();

@@ -2,9 +2,7 @@ package com.coroptis.index.segment;
 
 import java.util.Objects;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.coroptis.index.CloseableResource;
 import com.coroptis.index.bloomfilter.BloomFilter;
 import com.coroptis.index.scarceindex.ScarceIndex;
 
@@ -16,24 +14,24 @@ import com.coroptis.index.scarceindex.ScarceIndex;
  * @param <K>
  * @param <V>
  */
-public class SegmentDataLazyLoader<K, V> implements SegmentData<K, V> {
+public class SegmentDataLazyLoaded<K, V>
+        implements SegmentData<K, V>, CloseableResource {
 
-    private final Logger logger = LoggerFactory
-            .getLogger(SegmentDataLazyLoader.class);
-    private final SegmentDataProvider<K, V> dataProvider;
+    private final SegmentDataSupplier<K, V> segmentDataSupplier;
 
     private SegmentDeltaCache<K, V> deltaCache;
     private BloomFilter<K> bloomFilter;
     private ScarceIndex<K> scarceIndex;
 
-    public SegmentDataLazyLoader(final SegmentDataProvider<K, V> dataProvider) {
-        this.dataProvider = Objects.requireNonNull(dataProvider);
+    public SegmentDataLazyLoaded(
+            final SegmentDataSupplier<K, V> segmentDataSupplier) {
+        this.segmentDataSupplier = Objects.requireNonNull(segmentDataSupplier);
     }
 
     @Override
     public SegmentDeltaCache<K, V> getSegmentDeltaCache() {
         if (deltaCache == null) {
-            deltaCache = dataProvider.getSegmentDeltaCache();
+            deltaCache = segmentDataSupplier.getSegmentDeltaCache();
         }
         return deltaCache;
     }
@@ -41,7 +39,7 @@ public class SegmentDataLazyLoader<K, V> implements SegmentData<K, V> {
     @Override
     public BloomFilter<K> getBloomFilter() {
         if (bloomFilter == null) {
-            bloomFilter = dataProvider.getBloomFilter();
+            bloomFilter = segmentDataSupplier.getBloomFilter();
         }
         return bloomFilter;
     }
@@ -49,7 +47,7 @@ public class SegmentDataLazyLoader<K, V> implements SegmentData<K, V> {
     @Override
     public ScarceIndex<K> getScarceIndex() {
         if (scarceIndex == null) {
-            scarceIndex = dataProvider.getScarceIndex();
+            scarceIndex = segmentDataSupplier.getScarceIndex();
         }
         return scarceIndex;
     }
@@ -57,7 +55,7 @@ public class SegmentDataLazyLoader<K, V> implements SegmentData<K, V> {
     @Override
     public void close() {
         if (bloomFilter != null) {
-            logger.debug(bloomFilter.getStatsString());
+            bloomFilter.close();
             bloomFilter = null;
         }
         if (deltaCache != null) {

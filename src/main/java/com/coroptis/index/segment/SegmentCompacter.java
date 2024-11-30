@@ -7,6 +7,10 @@ import org.slf4j.LoggerFactory;
 
 import com.coroptis.index.PairIterator;
 
+/**
+ * Class is responsible for compacting segment. It also verify if segment should
+ * be compacted.
+ */
 public class SegmentCompacter<K, V> {
 
     private final Logger logger = LoggerFactory
@@ -17,7 +21,8 @@ public class SegmentCompacter<K, V> {
     private final VersionController versionController;
     private final SegmentPropertiesManager segmentPropertiesManager;
 
-    public SegmentCompacter(final Segment<K, V> segment, final SegmentFiles<K, V> segmentFiles,
+    public SegmentCompacter(final Segment<K, V> segment,
+            final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
             final VersionController versionController,
             final SegmentPropertiesManager segmentPropertiesManager) {
@@ -31,13 +36,13 @@ public class SegmentCompacter<K, V> {
     }
 
     /**
+     * Optionally compact segment. Method check if segment should be compacted
+     * and if should be than it compact it.
      * 
      * @return return <code>true</code> when segment was compacted.
      */
     public boolean optionallyCompact() {
-        final SegmentStats stats = segmentPropertiesManager.getSegmentStats();
-        if (stats.getNumberOfKeysInCache() > segmentConf
-                .getMaxNumberOfKeysInSegmentCache()) {
+        if (shouldBeCompacted()) {
             forceCompact();
             return true;
         }
@@ -45,59 +50,35 @@ public class SegmentCompacter<K, V> {
     }
 
     /**
-     * Provide information if segment should be compacted. Method doesn't
-     * perform compact operation.
+     * Provide information if segment should be compacted. Method doesn't load
+     * segment data intomemory.
      * 
-     * @param numberOfKeysInLastDeltaFile required number of keys in last delta
-     *                                    cache file
      * @return return <code>true</code> when segment should be compacted
      */
-    public boolean shouldBeCompacted(final long numberOfKeysInLastDeltaFile) {
+    public boolean shouldBeCompacted() {
         final SegmentStats stats = segmentPropertiesManager.getSegmentStats();
-        return stats.getNumberOfKeysInCache()
-                + numberOfKeysInLastDeltaFile > segmentConf
-                        .getMaxNumberOfKeysInSegmentCache();
+        return stats.getNumberOfKeysInDeltaCache() > segmentConf
+                .getMaxNumberOfKeysInDeltaCache();
     }
 
     /**
-     * Provide information if segment should be compacted. Method doesn't
-     * perform compact operation.
+     * Provide information if segment should be compacted.
      * 
-     * Method should be used during flushing data from main cache. In that case
-     * could be in cache delta index mode data that is total limit. It prevent
-     * index from repeating compacting.
+     * Method should be used during writing data to segment. During writing to
+     * segmrnt is's reasonable to have more datat in deta chache than usually
+     * and compact once after all data writing.
      * 
      * @param numberOfKeysInLastDeltaFile required number of keys in last delta
      *                                    cache file
      * @return return <code>true</code> when segment should be compacted even
-     *         during flushing.
+     *         during writing.
      */
-    public boolean shouldBeCompactedDuringFlushing(
-            final long numberOfKeysInLastDeltaFile) {
-        final SegmentStats stats = segmentPropertiesManager.getSegmentStats();
-        return stats.getNumberOfKeysInCache()
-                + numberOfKeysInLastDeltaFile > segmentConf
-                        .getMaxNumberOfKeysInSegmentCacheDuringFlushing();
-    }
-
     public boolean shouldBeCompactedDuringWriting(
             final long numberOfKeysInLastDeltaFile) {
         final SegmentStats stats = segmentPropertiesManager.getSegmentStats();
-        return stats.getNumberOfKeysInCache()
+        return stats.getNumberOfKeysInDeltaCache()
                 + numberOfKeysInLastDeltaFile > segmentConf
-                        .getMaxNumberOfKeysInSegmentMemory();
-    }
-
-    /**
-     * 
-     * @return return <code>true</code> when segment was compacted.
-     */
-    public boolean optionallyCompact(final long numberOfKeysInLastDeltaFile) {
-        if (shouldBeCompacted(numberOfKeysInLastDeltaFile)) {
-            forceCompact();
-            return true;
-        }
-        return false;
+                        .getMaxNumberOfKeysInDeltaCacheDuringWriting();
     }
 
     public void forceCompact() {

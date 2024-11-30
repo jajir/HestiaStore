@@ -16,10 +16,10 @@ import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.MemDirectory;
 
-public class UnsortedFileTest {
+public class IntegrationUnsortedDataFileTest {
 
     private final Logger logger = LoggerFactory
-            .getLogger(UnsortedFileTest.class);
+            .getLogger(IntegrationUnsortedDataFileTest.class);
 
     private final TypeDescriptor<Integer> tdi = new TypeDescriptorInteger();
     private final TypeDescriptor<String> tds = new TypeDescriptorString();

@@ -43,7 +43,6 @@ public class BloomFilterTest {
         assertTrue(bf.isNotStored("Milan"));
 
         // verify statistics
-        bf.getStatsString();
         final BloomFilterStats stats = bf.getStatistics();
         assertEquals(6, stats.getBloomFilterCalls());
         assertEquals(1, stats.getKeyIsNotStored());
@@ -76,6 +75,7 @@ public class BloomFilterTest {
                         .withDirectory(directory)//
                         .withIndexSizeInBytes(0)//
                         .withNumberOfHashFunctions(0)//
+                        .withRelatedObjectName("segment-00323")//
                         .build());
 
         assertEquals("Number of hash function cant be '0'", e.getMessage());
@@ -89,6 +89,7 @@ public class BloomFilterTest {
                 .withDirectory(directory)//
                 .withIndexSizeInBytes(0)//
                 .withNumberOfHashFunctions(3)//
+                .withRelatedObjectName("segment-00323")//
                 .build();
 
         writeToFilter(bf, TEST_DATA_KEYS);
@@ -108,6 +109,7 @@ public class BloomFilterTest {
                 .withConvertorToBytes(STD.getConvertorToBytes())//
                 .withDirectory(directory)//
                 .withIndexSizeInBytes(0)//
+                .withRelatedObjectName("segment-00323")//
                 .withNumberOfHashFunctions(3)//
         ;
 
@@ -131,6 +133,7 @@ public class BloomFilterTest {
                 .withDirectory(directory)//
                 .withIndexSizeInBytes(100)//
                 .withNumberOfHashFunctions(10)//
+                .withRelatedObjectName("segment-00323")//
                 .build();
     }
 

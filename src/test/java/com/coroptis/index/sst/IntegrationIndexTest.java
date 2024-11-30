@@ -21,7 +21,7 @@ import com.coroptis.index.segment.SegmentId;
 /**
  * Basic index integrations tests.
  */
-public class IndexJunitTest extends AbstractIndexTest {
+public class IntegrationIndexTest extends AbstractIndexTest {
     final Directory directory = new MemDirectory();
     final SegmentId id = SegmentId.of(27);
     final TypeDescriptorString tds = new TypeDescriptorString();
@@ -122,7 +122,7 @@ public class IndexJunitTest extends AbstractIndexTest {
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tds) //
                 .withCustomConf()//
-                .withMaxNumberOfKeysInSegment(2) //
+                .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(1) //
                 .withMaxNumberOfKeysInSegmentIndexPage(2) //
                 .withMaxNumberOfKeysInCache(2) //

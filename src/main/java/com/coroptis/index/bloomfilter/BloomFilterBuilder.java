@@ -16,6 +16,7 @@ public class BloomFilterBuilder<K> {
     private Integer numberOfHashFunctions = null;
     private Integer indexSizeInBytes = null;
     private double probabilityOfFalsePositive = DEFAULT_PROBABILITY_OF_FALSE_POSITIVE;
+    private String relatedObjectName;
 
     BloomFilterBuilder() {
 
@@ -63,6 +64,12 @@ public class BloomFilterBuilder<K> {
         return this;
     }
 
+    public BloomFilterBuilder<K> withRelatedObjectName(
+            final String relatedObjectName) {
+        this.relatedObjectName = relatedObjectName;
+        return this;
+    }
+
     public BloomFilter<K> build() {
         Objects.requireNonNull(directory, "Directory is not set.");
         Objects.requireNonNull(bloomFilterFileName,
@@ -94,7 +101,8 @@ public class BloomFilterBuilder<K> {
             }
         }
         return new BloomFilter<>(directory, bloomFilterFileName,
-                numberOfHashFunctions, indexSizeInBytes, convertorToBytes);
+                numberOfHashFunctions, indexSizeInBytes, convertorToBytes,
+                relatedObjectName);
     }
 
 }

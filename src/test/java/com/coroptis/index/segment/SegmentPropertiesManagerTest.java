@@ -21,7 +21,7 @@ public class SegmentPropertiesManagerTest {
         // Verify that new object is empty
         SegmentStats stats = props.getSegmentStats();
         assertEquals(0, stats.getNumberOfKeys());
-        assertEquals(0, stats.getNumberOfKeysInCache());
+        assertEquals(0, stats.getNumberOfKeysInDeltaCache());
         assertEquals(0, stats.getNumberOfKeysInIndex());
         assertEquals(0, stats.getNumberOfKeysInScarceIndex());
 
@@ -42,7 +42,7 @@ public class SegmentPropertiesManagerTest {
         // verify that data are correctly read
         stats = props.getSegmentStats();
         assertEquals(1110, stats.getNumberOfKeys());
-        assertEquals(87, stats.getNumberOfKeysInCache());
+        assertEquals(87, stats.getNumberOfKeysInDeltaCache());
         assertEquals(1023, stats.getNumberOfKeysInIndex());
         assertEquals(132, stats.getNumberOfKeysInScarceIndex());
 
@@ -83,21 +83,21 @@ public class SegmentPropertiesManagerTest {
 
     @Test
     public void test_increase_numberOfKeysInCache() throws Exception {
-        assertEquals(0, props.getNumberOfKeysInCache());
+        assertEquals(0, props.getNumberOfKeysInDeltaCache());
 
         // verify increment by one
         props.incrementNumberOfKeysInCache();
-        assertEquals(1, props.getNumberOfKeysInCache());
+        assertEquals(1, props.getNumberOfKeysInDeltaCache());
 
         // verify increment by 7
-        props.increaseNumberOfKeysInCache(7);
-        assertEquals(8, props.getNumberOfKeysInCache());
+        props.increaseNumberOfKeysInDeltaCache(7);
+        assertEquals(8, props.getNumberOfKeysInDeltaCache());
 
         // Verify that negative value is not allowed
         assertThrows(IllegalArgumentException.class,
-                () -> props.increaseNumberOfKeysInCache(-2));
+                () -> props.increaseNumberOfKeysInDeltaCache(-2));
 
-        assertEquals(8, props.getNumberOfKeysInCache());
+        assertEquals(8, props.getNumberOfKeysInDeltaCache());
     }
 
     @BeforeEach

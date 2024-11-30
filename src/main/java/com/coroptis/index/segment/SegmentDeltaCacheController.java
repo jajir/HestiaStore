@@ -33,6 +33,10 @@ public class SegmentDeltaCacheController<K, V> {
         return segmentCacheDataProvider.getSegmentDeltaCache();
     }
 
+    public int getDeltaCacheSizeWithoutTombstones() {
+        return getDeltaCache().sizeWithoutTombstones();
+    }
+
     public int getDeltaCacheSize() {
         return getDeltaCache().size();
     }

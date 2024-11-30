@@ -13,7 +13,7 @@ import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.MemDirectory;
 
-public class PairSeekableReaderImplTest {
+public class IntegrationSstFileTest {
 
     private final static String FILE_NAME = "pok.index";
     private final TypeDescriptor<Integer> tdi = new TypeDescriptorInteger();

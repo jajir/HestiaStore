@@ -14,7 +14,7 @@ import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.MemDirectory;
 
-public class IndexIteratorConsistencyTest extends AbstractIndexTest {
+public class IntegrationIteratorTest extends AbstractIndexTest {
 
     private final TypeDescriptorString tds = new TypeDescriptorString();
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();

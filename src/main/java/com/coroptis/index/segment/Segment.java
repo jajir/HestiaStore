@@ -112,17 +112,6 @@ public class Segment<K, V>
     }
 
     /**
-     * Provide new instances of objects. Shouldn't be used directly without
-     * caching.
-     * 
-     * @return
-     */
-    public SegmentDataProvider<K, V> getDataBuilder() {
-        return new SegmentDataDirectLoader<>(segmentFiles, segmentConf,
-                segmentPropertiesManager);
-    }
-
-    /**
      * Provide class that helps with segment splitting into two. It should be
      * used when segment is too big.
      * 
@@ -150,5 +139,13 @@ public class Segment<K, V>
     public SegmentFiles<K, V> getSegmentFiles() {
         return segmentFiles;
     }
+
+    public SegmentConf getSegmentConf() {
+        return segmentConf;
+    }
+
+    public SegmentPropertiesManager getSegmentPropertiesManager() {
+        return segmentPropertiesManager;
+    }   
 
 }

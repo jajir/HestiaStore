@@ -14,8 +14,6 @@ public class SegmentBuilder<K, V> {
 
     private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_INDEX_PAGE = 1000;
 
-    private final static int DEFAUL_MAX_NUMBER_OF_KEYS_IN_SEGMENT_MEMORY = Integer.MAX_VALUE;
-
     private final static int DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES = 1024 * 4;
 
     private Directory directory;
@@ -28,12 +26,12 @@ public class SegmentBuilder<K, V> {
     private Integer bloomFilterNumberOfHashFunctions;
     private Integer bloomFilterIndexSizeInBytes;
     private Double bloomFilterProbabilityOfFalsePositive = null;
-    private long maxNumberOfKeysInSegmentMemory = DEFAUL_MAX_NUMBER_OF_KEYS_IN_SEGMENT_MEMORY;
     private VersionController versionController;
     private SegmentConf segmentConf;
     private SegmentFiles<K, V> segmentFiles;
     private SegmentDataProvider<K, V> segmentDataProvider;
     private int indexBufferSizeInBytes = DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES;
+    private SegmentPropertiesManager segmentPropertiesManager = null;
 
     SegmentBuilder() {
 
@@ -99,13 +97,6 @@ public class SegmentBuilder<K, V> {
         return this;
     }
 
-    public SegmentBuilder<K, V> withMaxNumberOfKeysInSegmentMemory(
-            final long maxNumberOfKeysInSegmentMemory) {
-        this.maxNumberOfKeysInSegmentMemory = Objects
-                .requireNonNull(maxNumberOfKeysInSegmentMemory);
-        return this;
-    }
-
     public SegmentBuilder<K, V> withBloomFilterNumberOfHashFunctions(
             final int bloomFilterNumberOfHashFunctions) {
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
@@ -142,6 +133,12 @@ public class SegmentBuilder<K, V> {
         return this;
     }
 
+    public SegmentBuilder<K, V> withSegmentPropertiesManager(
+            final SegmentPropertiesManager segmentPropertiesManager) {
+        this.segmentPropertiesManager = segmentPropertiesManager;
+        return this;
+    }
+
     public Segment<K, V> build() {
         if (versionController == null) {
             versionController = new VersionController();
@@ -152,19 +149,23 @@ public class SegmentBuilder<K, V> {
                     maxNumberOfKeysInIndexPage,
                     bloomFilterNumberOfHashFunctions,
                     bloomFilterIndexSizeInBytes,
-                    bloomFilterProbabilityOfFalsePositive,
-                    maxNumberOfKeysInSegmentMemory);
+                    bloomFilterProbabilityOfFalsePositive);
         }
         if (segmentFiles == null) {
             segmentFiles = new SegmentFiles<>(directory, id, keyTypeDescriptor,
                     valueTypeDescriptor, indexBufferSizeInBytes);
         }
-        final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
-                segmentFiles.getDirectory(), id);
+        if (segmentPropertiesManager == null) {
+            segmentPropertiesManager = new SegmentPropertiesManager(
+                    segmentFiles.getDirectory(), id);
+        }
         if (segmentDataProvider == null) {
-            SegmentDataDirectLoader<K, V> directLoader = new SegmentDataDirectLoader<>(
+            final SegmentDataSupplier<K, V> segmentDataSupplier = new SegmentDataSupplier<>(
                     segmentFiles, segmentConf, segmentPropertiesManager);
-            segmentDataProvider = new SegmentDataProviderSimple<>(directLoader);
+            final SegmentDataFactory<K, V> segmentDataFactory = new SegmentDataFactoryImpl<>(
+                    segmentDataSupplier);
+            segmentDataProvider = new SegmentDataProviderSimple<>(
+                    segmentDataFactory);
         }
         final SegmentIndexSearcherSupplier<K, V> supplier = new SegmentIndexSearcherDefaultSupplier<>(
                 segmentFiles, segmentConf);

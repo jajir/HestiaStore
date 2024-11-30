@@ -22,9 +22,9 @@ import com.coroptis.index.segment.SegmentId;
  * @author honza
  *
  */
-public class SstIndexConsistencyTest extends AbstractIndexTest {
+public class IntegrationIndexConsistencyTest extends AbstractIndexTest {
     private final Logger logger = LoggerFactory
-            .getLogger(SstIndexConsistencyTest.class);
+            .getLogger(IntegrationIndexConsistencyTest.class);
 
     final Directory directory = new MemDirectory();
     final SegmentId id = SegmentId.of(27);

@@ -5,7 +5,7 @@ import com.coroptis.index.scarceindex.ScarceIndex;
 
 /**
  * Provide access to main data object that are considerably large in memory.
- * Implementations could use some sort of cache to minimize memory impact.
+ * Implementations use some sort of cache to minimize memory impact.
  * 
  * @author honza
  *

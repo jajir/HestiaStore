@@ -153,6 +153,10 @@ public class SegmentFiles<K, V> {
         return id;
     }
 
+    public String getSegmentIdName(){
+        return id.getName();
+    }
+
     TypeDescriptor<K> getKeyTypeDescriptor() {
         return keyTypeDescriptor;
     }

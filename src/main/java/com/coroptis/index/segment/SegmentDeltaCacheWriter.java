@@ -52,11 +52,15 @@ public class SegmentDeltaCacheWriter<K, V> implements PairWriter<K, V> {
         return cx;
     }
 
+    /**
+     * Finally writes data to segment delta file and update numbed of keys in
+     * delta cache.
+     */
     @Override
     public void close() {
         // increase number of keys in cache
         final int keysInCache = uniqueCache.size();
-        segmentPropertiesManager.increaseNumberOfKeysInCache(keysInCache);
+        segmentPropertiesManager.increaseNumberOfKeysInDeltaCache(keysInCache);
         segmentPropertiesManager.flush();
 
         // store cache

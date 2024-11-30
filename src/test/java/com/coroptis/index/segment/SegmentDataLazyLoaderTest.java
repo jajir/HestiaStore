@@ -17,7 +17,7 @@ import com.coroptis.index.scarceindex.ScarceIndex;
 public class SegmentDataLazyLoaderTest {
 
     @Mock
-    private SegmentDataProvider<Integer, String> provider;
+    private SegmentDataSupplier<Integer, String> supplier;
 
     @Mock
     private BloomFilter<Integer> bloomFilter;
@@ -30,57 +30,57 @@ public class SegmentDataLazyLoaderTest {
 
     @Test
     public void test_close_not_initialized() throws Exception {
-        SegmentDataLazyLoader<Integer, String> loader = new SegmentDataLazyLoader<>(provider);
+        SegmentDataLazyLoaded<Integer, String> loader = new SegmentDataLazyLoaded<>(supplier);
         loader.close();
 
-        verify(provider, times(0)).getBloomFilter();
-        verify(provider, times(0)).getScarceIndex();
-        verify(provider, times(0)).getSegmentDeltaCache();
+        verify(supplier, times(0)).getBloomFilter();
+        verify(supplier, times(0)).getScarceIndex();
+        verify(supplier, times(0)).getSegmentDeltaCache();
     }
 
     @Test
     public void test_init_and_close_bloom_filter() throws Exception {
-        SegmentDataLazyLoader<Integer, String> loader = new SegmentDataLazyLoader<>(provider);
-        when(provider.getBloomFilter()).thenReturn(bloomFilter);
+        SegmentDataLazyLoaded<Integer, String> loader = new SegmentDataLazyLoaded<>(supplier);
+        when(supplier.getBloomFilter()).thenReturn(bloomFilter);
 
         assertEquals(bloomFilter, loader.getBloomFilter());
         assertEquals(bloomFilter, loader.getBloomFilter());
         assertEquals(bloomFilter, loader.getBloomFilter());
         loader.close();
 
-        verify(provider, times(1)).getBloomFilter();
-        verify(provider, times(0)).getScarceIndex();
-        verify(provider, times(0)).getSegmentDeltaCache();
+        verify(supplier, times(1)).getBloomFilter();
+        verify(supplier, times(0)).getScarceIndex();
+        verify(supplier, times(0)).getSegmentDeltaCache();
     }
 
     @Test
     public void test_init_and_close_scarce_index() throws Exception {
-        SegmentDataLazyLoader<Integer, String> loader = new SegmentDataLazyLoader<>(provider);
-        when(provider.getScarceIndex()).thenReturn(scarceIndex);
+        SegmentDataLazyLoaded<Integer, String> loader = new SegmentDataLazyLoaded<>(supplier);
+        when(supplier.getScarceIndex()).thenReturn(scarceIndex);
 
         assertEquals(scarceIndex, loader.getScarceIndex());
         assertEquals(scarceIndex, loader.getScarceIndex());
         assertEquals(scarceIndex, loader.getScarceIndex());
         loader.close();
 
-        verify(provider, times(0)).getBloomFilter();
-        verify(provider, times(1)).getScarceIndex();
-        verify(provider, times(0)).getSegmentDeltaCache();
+        verify(supplier, times(0)).getBloomFilter();
+        verify(supplier, times(1)).getScarceIndex();
+        verify(supplier, times(0)).getSegmentDeltaCache();
     }
 
     @Test
     public void test_init_and_close_segment_delta_cache() throws Exception {
-        SegmentDataLazyLoader<Integer, String> loader = new SegmentDataLazyLoader<>(provider);
-        when(provider.getSegmentDeltaCache()).thenReturn(segmentDeltaCache);
+        SegmentDataLazyLoaded<Integer, String> loader = new SegmentDataLazyLoaded<>(supplier);
+        when(supplier.getSegmentDeltaCache()).thenReturn(segmentDeltaCache);
 
         assertEquals(segmentDeltaCache, loader.getSegmentDeltaCache());
         assertEquals(segmentDeltaCache, loader.getSegmentDeltaCache());
         assertEquals(segmentDeltaCache, loader.getSegmentDeltaCache());
         loader.close();
 
-        verify(provider, times(0)).getBloomFilter();
-        verify(provider, times(0)).getScarceIndex();
-        verify(provider, times(1)).getSegmentDeltaCache();
+        verify(supplier, times(0)).getBloomFilter();
+        verify(supplier, times(0)).getScarceIndex();
+        verify(supplier, times(1)).getSegmentDeltaCache();
         verify(segmentDeltaCache, times(1)).evictAll();
     }
 

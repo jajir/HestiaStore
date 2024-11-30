@@ -15,10 +15,10 @@ import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.MemDirectory;
 
-public class SstIndexIteratorTest {
+public class IntegrationIndexIteratorTest {
 
     private final Logger logger = LoggerFactory
-            .getLogger(SstIndexIteratorTest.class);
+            .getLogger(IntegrationIndexIteratorTest.class);
 
     private final Directory directory = new MemDirectory();
     private final TypeDescriptorString tds = new TypeDescriptorString();
@@ -64,13 +64,13 @@ public class SstIndexIteratorTest {
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tds) //
                 .withCustomConf()//
-                .withMaxNumberOfKeysInSegment(2) //
+                .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(1) //
                 .withMaxNumberOfKeysInSegmentIndexPage(1) //
                 .withMaxNumberOfKeysInCache(1) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
-                .withIndexBufferSizeInBytes(1024)//
+                .withFileReadingBufferSizeInBytes(1024)//
                 .build();
     }
 

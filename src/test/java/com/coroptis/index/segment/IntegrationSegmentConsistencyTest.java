@@ -23,7 +23,7 @@ import com.coroptis.index.directory.MemDirectory;
  * @author honza
  *
  */
-public class SegmentConsistencyTest extends AbstractSegmentTest {
+public class IntegrationSegmentConsistencyTest extends AbstractSegmentTest {
 
     private final static int MAX_LOOP = 100;
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
@@ -39,7 +39,6 @@ public class SegmentConsistencyTest extends AbstractSegmentTest {
                 .withId(id)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tdi)//
-                .withMaxNumberOfKeysInSegmentMemory(10000)//
                 .withMaxNumberOfKeysInSegmentCache(10000)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .build();

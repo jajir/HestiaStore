@@ -21,7 +21,7 @@ import com.coroptis.index.directory.MemDirectory;
  * This test case verify high level segment contract describe in exmples in
  * documentation.
  */
-public class SegmentIteratorTest extends AbstractSegmentTest {
+public class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
 
     private final TypeDescriptorString tds = new TypeDescriptorString();
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
@@ -52,7 +52,6 @@ public class SegmentIteratorTest extends AbstractSegmentTest {
                 .withId(id)//
                 .withKeyTypeDescriptor(tds)//
                 .withValueTypeDescriptor(tdi)//
-                .withMaxNumberOfKeysInSegmentMemory(10)//
                 .withMaxNumberOfKeysInSegmentCache(10)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .build();

@@ -1,6 +1,9 @@
 package com.coroptis.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -20,7 +23,7 @@ import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.MemDirectory;
 
-public class SegmentIntegrationTest extends AbstractSegmentTest {
+public class IntegrationSegmentTest extends AbstractSegmentTest {
 
         private final TypeDescriptorString tds = new TypeDescriptorString();
         private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
@@ -49,7 +52,7 @@ public class SegmentIntegrationTest extends AbstractSegmentTest {
 
                 final SegmentStats stats = seg.getStats();
                 assertEquals(0, stats.getNumberOfKeys());
-                assertEquals(0, stats.getNumberOfKeysInCache());
+                assertEquals(0, stats.getNumberOfKeysInDeltaCache());
                 assertEquals(0, stats.getNumberOfKeysInIndex());
                 assertEquals(0, stats.getNumberOfKeysInScarceIndex());
 
@@ -217,7 +220,7 @@ public class SegmentIntegrationTest extends AbstractSegmentTest {
                 ));
 
                 assertEquals(4, seg.getStats().getNumberOfKeys());
-                assertEquals(4, seg.getStats().getNumberOfKeysInCache());
+                assertEquals(4, seg.getStats().getNumberOfKeysInDeltaCache());
                 assertEquals(0, seg.getStats().getNumberOfKeysInIndex());
 
                 verifySegmentData(seg, Arrays.asList(//
@@ -258,7 +261,7 @@ public class SegmentIntegrationTest extends AbstractSegmentTest {
                 ));
 
                 assertEquals(4, seg.getStats().getNumberOfKeys());
-                assertEquals(4, seg.getStats().getNumberOfKeysInCache());
+                assertEquals(4, seg.getStats().getNumberOfKeysInDeltaCache());
                 assertEquals(0, seg.getStats().getNumberOfKeysInIndex());
 
                 verifySegmentData(seg, Arrays.asList(//
@@ -303,7 +306,7 @@ public class SegmentIntegrationTest extends AbstractSegmentTest {
                  * are 3 keys, because one is deleted.
                  */
                 assertEquals(4, seg.getStats().getNumberOfKeys());
-                assertEquals(4, seg.getStats().getNumberOfKeysInCache());
+                assertEquals(4, seg.getStats().getNumberOfKeysInDeltaCache());
                 assertEquals(0, seg.getStats().getNumberOfKeysInIndex());
 
                 verifySegmentData(seg, Arrays.asList(//
@@ -354,7 +357,8 @@ public class SegmentIntegrationTest extends AbstractSegmentTest {
                                 .withDirectory(directory).withId(id)
                                 .withKeyTypeDescriptor(tdi)
                                 .withBloomFilterIndexSizeInBytes(0)//
-                                .withValueTypeDescriptor(tds).build();
+                                .withValueTypeDescriptor(tds)//
+                                .build();
 
                 writePairs(seg, Arrays.asList(//
                                 Pair.of(2, "a"), //
@@ -371,7 +375,7 @@ public class SegmentIntegrationTest extends AbstractSegmentTest {
                 ));
 
                 assertEquals(4, seg.getStats().getNumberOfKeys());
-                assertEquals(4, seg.getStats().getNumberOfKeysInCache());
+                assertEquals(4, seg.getStats().getNumberOfKeysInDeltaCache());
                 assertEquals(0, seg.getStats().getNumberOfKeysInIndex());
 
                 verifySegmentData(seg, Arrays.asList(//
@@ -384,6 +388,133 @@ public class SegmentIntegrationTest extends AbstractSegmentTest {
                                 Pair.of(5, null), //
                                 Pair.of(6, null)//
                 ));
+        }
+
+        @Test
+        void test_split_just_tombstones() {
+                final Directory directory = new MemDirectory();
+                final SegmentId id = SegmentId.of(27);
+                final Segment<Integer, String> seg = Segment
+                                .<Integer, String>builder()//
+                                .withDirectory(directory)//
+                                .withId(id)//
+                                .withMaxNumberOfKeysInSegmentCache(13)//
+                                .withMaxNumberOfKeysInIndexPage(3)//
+                                .withKeyTypeDescriptor(tdi)//
+                                .withBloomFilterIndexSizeInBytes(0)//
+                                .withValueTypeDescriptor(tds)//
+                                .build();
+
+                writePairs(seg, Arrays.asList(//
+                                Pair.of(25, "d"), //
+                                Pair.of(15, "d"), //
+                                Pair.of(1, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(2, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(3, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(4, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(5, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(6, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(7, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(8, TypeDescriptorString.TOMBSTONE_VALUE), //
+                                Pair.of(9, TypeDescriptorString.TOMBSTONE_VALUE)//
+                ));
+                final SegmentSplitter<Integer, String> segSplitter = seg
+                                .getSegmentSplitter();
+                assertTrue(segSplitter.shouldBeCompactedBeforeSplitting(10));
+
+                /**
+                 * Verify that split is not possible
+                 */
+                final Exception err = assertThrows(IllegalStateException.class,
+                                () -> seg.getSegmentSplitter()
+                                                .split(SegmentId.of(37)));
+                assertEquals("Splitting failed. Number of keys is too low.",
+                                err.getMessage());
+        }
+
+        @Test
+        void test_write_to_unloaded_segment() {
+                final Directory directory = new MemDirectory();
+                final SegmentId segmentId = SegmentId.of(27);
+
+                SegmentConf segmentConf = new SegmentConf(13L, 17L, 3, 0, 0,
+                                0.0);
+
+                final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
+                                directory, segmentId);
+
+                final SegmentFiles<Integer, String> segmentFiles = new SegmentFiles<>(
+                                directory, segmentId, tdi, tds, 1024);
+
+                final SegmentDataSupplier<Integer, String> segmentDataSupplier = new SegmentDataSupplier<>(
+                                segmentFiles, segmentConf,
+                                segmentPropertiesManager);
+
+                final SegmentDataFactory<Integer, String> segmentDataFactory = new SegmentDataFactoryImpl<>(
+                                segmentDataSupplier);
+
+                final SegmentDataProviderSimple<Integer, String> dataProvider = new SegmentDataProviderSimple<>(
+                                segmentDataFactory);
+
+                final Segment<Integer, String> seg = Segment
+                                .<Integer, String>builder()//
+                                .withDirectory(directory)//
+                                .withId(segmentId)//
+                                .withSegmentDataProvider(dataProvider)//
+                                .withSegmentConf(segmentConf)//
+                                .withSegmentFiles(segmentFiles)//
+                                .withSegmentPropertiesManager(
+                                                segmentPropertiesManager)//
+                                .withSegmentDataProvider(dataProvider)//
+                                .withMaxNumberOfKeysInSegmentCache(13)//
+                                .withMaxNumberOfKeysInIndexPage(3)//
+                                .withKeyTypeDescriptor(tdi)//
+                                .withBloomFilterIndexSizeInBytes(0)//
+                                .withValueTypeDescriptor(tds)//
+                                .build();
+
+                assertFalse(dataProvider.isLoaded());
+
+                writePairs(seg, Arrays.asList(//
+                                Pair.of(11, "aaa"), //
+                                Pair.of(12, "aab"), //
+                                Pair.of(13, "aac"), //
+                                Pair.of(14, "aad"), //
+                                Pair.of(15, "aae"), //
+                                Pair.of(16, "aaf"), //
+                                Pair.of(17, "aag"), //
+                                Pair.of(18, "aah"), //
+                                Pair.of(19, "aai"), //
+                                Pair.of(20, "aaj"), //
+                                Pair.of(21, "aak"), //
+                                Pair.of(22, "aal"), //
+                                Pair.of(9, TypeDescriptorString.TOMBSTONE_VALUE)//
+                ));
+                /**
+                 * Writing to segment which doesn't require compaction doesn't
+                 * load segmrnt data.
+                 */
+                assertFalse(dataProvider.isLoaded());
+
+                verifySegmentSearch(seg, Arrays.asList(// s
+                                Pair.of(9, null), //
+                                Pair.of(12, "aab"), //
+                                Pair.of(13, "aac"), //
+                                Pair.of(14, "aad"), //
+                                Pair.of(15, "aae") //
+                ));
+
+                /**
+                 * Index search shoud lead to load segment data.
+                 */
+                assertTrue(dataProvider.isLoaded());
+
+                /**
+                 * Force unloading segment data
+                 */
+                dataProvider.invalidate();
+
+                assertFalse(dataProvider.isLoaded());
         }
 
         /**
@@ -425,7 +556,7 @@ public class SegmentIntegrationTest extends AbstractSegmentTest {
                 seg.forceCompact();
 
                 assertEquals(3, seg.getStats().getNumberOfKeys());
-                assertEquals(0, seg.getStats().getNumberOfKeysInCache());
+                assertEquals(0, seg.getStats().getNumberOfKeysInDeltaCache());
                 assertEquals(3, seg.getStats().getNumberOfKeysInIndex());
 
                 verifySegmentData(seg, Arrays.asList(//
@@ -463,7 +594,6 @@ public class SegmentIntegrationTest extends AbstractSegmentTest {
                                 .withId(id1)//
                                 .withKeyTypeDescriptor(tdi)//
                                 .withValueTypeDescriptor(tds)//
-                                .withMaxNumberOfKeysInSegmentMemory(10)//
                                 .withMaxNumberOfKeysInSegmentCache(10) //
                                 .withBloomFilterIndexSizeInBytes(0)//
                                 .build(), //
@@ -475,24 +605,22 @@ public class SegmentIntegrationTest extends AbstractSegmentTest {
                                 .withKeyTypeDescriptor(tdi)//
                                 .withValueTypeDescriptor(tds)//
                                 .withMaxNumberOfKeysInSegmentCache(1)//
-                                .withMaxNumberOfKeysInSegmentMemory(1)//
                                 .withMaxNumberOfKeysInIndexPage(1)//
                                 .withBloomFilterIndexSizeInBytes(0)//
                                 .build(), //
                                 9, // expectedNumberKeysInScarceIndex
-                                4// expectedNumberOfFile
+                                5// expectedNumberOfFile
                 ), arguments(tdi, tds, dir3, Segment.<Integer, String>builder()//
                                 .withDirectory(dir3)//
                                 .withId(id3)//
                                 .withKeyTypeDescriptor(tdi)//
                                 .withValueTypeDescriptor(tds)//
                                 .withMaxNumberOfKeysInSegmentCache(2)//
-                                .withMaxNumberOfKeysInSegmentMemory(2)//
                                 .withMaxNumberOfKeysInIndexPage(2)//
                                 .withBloomFilterIndexSizeInBytes(0)//
                                 .build(), //
                                 5, // expectedNumberKeysInScarceIndex
-                                5 // expectedNumberOfFile
+                                4 // expectedNumberOfFile
                 ));
         }
 

@@ -50,35 +50,49 @@ public class SegmentSplitter<K, V> {
         return segmentManager.createSegmentFullWriter();
     }
 
-    private final float MINIMAL_PERCENTAGE_DIFFERENCE = 90F;
+    private final float MINIMAL_PERCENTAGE_DIFFERENCE = 0.9F;
 
-    public boolean shouldBeCompactedBeforeSplitting() {
-        final long countOfkeysInDeltaCache = deltaCacheController
-                .getDeltaCacheSize();
-        final long countOfKeysInMainIndex = getStats().getNumberOfKeysInIndex();
-        if (countOfKeysInMainIndex == 0) {
-            return false;
+    /**
+     * Method checks if segment should be compacted before splitting. It prevent
+     * situation when delta cache is full of thombstones and because of that
+     * segment is not eligible for splitting.
+     * 
+     * It lead to loading of delta cache into memory.
+     * 
+     * @return Return <code>true</code> if segment should be compacted before
+     *         splitting.
+     */
+    public boolean shouldBeCompactedBeforeSplitting(
+            long maxNumberOfKeysInSegment) {
+        final long estimatedNumberOfKeys = getEstimatedNumberOfKeys();
+        if (estimatedNumberOfKeys <= 3) {
+            return true;
         }
-        final float onePercentageOfMainIndexKeyCount = countOfKeysInMainIndex
-                / 100F;
-        return countOfkeysInDeltaCache
-                / onePercentageOfMainIndexKeyCount > MINIMAL_PERCENTAGE_DIFFERENCE;
+        if (estimatedNumberOfKeys < maxNumberOfKeysInSegment
+                * MINIMAL_PERCENTAGE_DIFFERENCE) {
+            /**
+             * It seems that number of keys in segment after compacting will be
+             * lower about 10% to maximam allowed number of key in segment. So
+             * splitting is not necessary.
+             */
+            return true;
+        }
+        return false;
     }
 
     public SegmentSplitterResult<K, V> split(final SegmentId segmentId) {
         Objects.requireNonNull(segmentId, "Segment id is required");
         logger.debug("Splitting of '{}' started", segmentFiles.getId());
         versionController.changeVersion();
-        /*
-         * Real number of key is equals or lower than computed bellow. Keys in
-         * cache could already be in main index file of it can be keys with
-         * tombstone value.
-         */
-        final long estimatedNumberOfKeys = getStats().getNumberOfKeysInIndex()
-                + deltaCacheController.getDeltaCacheSize();
-        final long half = estimatedNumberOfKeys / 2;
 
-        final Segment<K, V> lowerSegment = segmentManager.createSegment(segmentId);
+        final long estimatedNumberOfKeys = getEstimatedNumberOfKeys();
+        final long half = estimatedNumberOfKeys / 2;
+        if (half <= 1) {
+            throw new IllegalStateException(
+                    "Splitting failed. Number of keys is too low.");
+        }
+        final Segment<K, V> lowerSegment = segmentManager
+                .createSegment(segmentId);
 
         K minKey = null;
         K maxKey = null;
@@ -124,6 +138,20 @@ public class SegmentSplitter<K, V> {
                     "Splitting failed. Higher segment doesn't contains any data");
         }
         return new SegmentSplitterResult<>(lowerSegment, minKey, maxKey);
+    }
+
+    /*
+     * Real number of key is equals or lower than computed bellow. Keys in cache
+     * could already be in main index file of it can be keys with tombstone
+     * value.
+     * 
+     * It lead to loading of delta cache into memory.
+     * 
+     * @return return estimated number of keys in segment
+     */
+    private long getEstimatedNumberOfKeys() {
+        return getStats().getNumberOfKeysInIndex()
+                + deltaCacheController.getDeltaCacheSizeWithoutTombstones();
     }
 
 }

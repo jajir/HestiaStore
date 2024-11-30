@@ -36,19 +36,16 @@ public class SegmentWriter<K, V> implements PairWriter<K, V> {
     public void close() {
         if (deltaCacheWriter != null) {
             deltaCacheWriter.close();
-            if (segmentCompacter
-                    .shouldBeCompacted(deltaCacheWriter.getNumberOfKeys())) {
-                deltaCacheWriter = null;
-                segmentCompacter.forceCompact();
-            }
+            deltaCacheWriter = null;
+            segmentCompacter.optionallyCompact();
         }
     }
 
     @Override
-    public void put(Pair<K, V> pair) {
+    public void put(final Pair<K, V> pair) {
         optionallyOpenDeltaCacheWriter();
         deltaCacheWriter.put(pair);
-        if (segmentCompacter.shouldBeCompactedDuringFlushing(
+        if (segmentCompacter.shouldBeCompactedDuringWriting(
                 deltaCacheWriter.getNumberOfKeys())) {
             deltaCacheWriter.close();
             deltaCacheWriter = null;

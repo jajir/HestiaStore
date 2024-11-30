@@ -2,12 +2,18 @@ package com.coroptis.index.bloomfilter;
 
 import java.util.Objects;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.coroptis.index.CloseableResource;
 import com.coroptis.index.datatype.ConvertorToBytes;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.FileReader;
 import com.coroptis.index.directory.FileWriter;
 
-public class BloomFilter<K> {
+public class BloomFilter<K> implements CloseableResource {
+
+    private final Logger logger = LoggerFactory.getLogger(BloomFilter.class);
 
     private final Directory directory;
 
@@ -21,6 +27,8 @@ public class BloomFilter<K> {
 
     private final int indexSizeInBytes;
 
+    private final String relatedObjectName;
+
     private Hash hash;
 
     public static <M> BloomFilterBuilder<M> builder() {
@@ -29,13 +37,16 @@ public class BloomFilter<K> {
 
     BloomFilter(final Directory directory, final String bloomFilterFileName,
             final int numberOfHashFunctions, final int indexSizeInBytes,
-            final ConvertorToBytes<K> convertorToBytes) {
+            final ConvertorToBytes<K> convertorToBytes,
+            final String relatedObjectName) {
         this.directory = Objects.requireNonNull(directory,
                 "Directory is required");
         this.bloomFilterFileName = Objects.requireNonNull(bloomFilterFileName,
                 "Bloom filter file name is required");
         this.convertorToBytes = Objects.requireNonNull(convertorToBytes,
                 "Convertor to bytes is required");
+        this.relatedObjectName = Objects.requireNonNull(relatedObjectName,
+                "Bloom filter related object name is required");
         this.indexSizeInBytes = indexSizeInBytes;
         this.numberOfHashFunctions = numberOfHashFunctions;
         this.bloomFilterStats = new BloomFilterStats();
@@ -59,6 +70,7 @@ public class BloomFilter<K> {
         } else {
             hash = null;
         }
+        logger.debug("Opening bloom filter for '{}'", relatedObjectName);
     }
 
     public BloomFilterWriter<K> openWriter() {
@@ -103,10 +115,6 @@ public class BloomFilter<K> {
         return bloomFilterStats;
     }
 
-    public String getStatsString() {
-        return bloomFilterStats.getStatsString();
-    }
-
     public void incrementFalsePositive() {
         bloomFilterStats.incrementFalsePositive();
     }
@@ -117,6 +125,12 @@ public class BloomFilter<K> {
 
     public long getIndexSizeInBytes() {
         return indexSizeInBytes;
+    }
+
+    @Override
+    public void close() {
+        logger.debug("Closing bloom filter for '{}'. {}", relatedObjectName,
+                bloomFilterStats.getStatsString());
     }
 
 }

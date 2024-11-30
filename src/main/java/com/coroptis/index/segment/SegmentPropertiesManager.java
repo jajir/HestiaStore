@@ -14,7 +14,7 @@ import com.coroptis.index.directory.Props;
  */
 public class SegmentPropertiesManager {
 
-    private final static String NUMBER_OF_KEYS_IN_CACHE = "numberOfKeysInCache";
+    private final static String NUMBER_OF_KEYS_IN_DELTA_CACHE = "numberOfKeysInDeltaCache";
     private final static String NUMBER_OF_KEYS_IN_MAIN_INDEX = "numberOfKeysInMainIndex";
     private final static String NUMBER_OF_KEYS_IN_SCARCE_INDEX = "numberOfKeysInScarceIndex";
     private final static String NUMBER_OF_SEGMENT_CACHE_DELTA_FILES = "numberOfSegmentDeltaFiles";
@@ -35,7 +35,7 @@ public class SegmentPropertiesManager {
     }
 
     public SegmentStats getSegmentStats() {
-        return new SegmentStats(props.getLong(NUMBER_OF_KEYS_IN_CACHE),
+        return new SegmentStats(props.getLong(NUMBER_OF_KEYS_IN_DELTA_CACHE),
                 props.getLong(NUMBER_OF_KEYS_IN_MAIN_INDEX),
                 props.getLong(NUMBER_OF_KEYS_IN_SCARCE_INDEX));
     }
@@ -76,21 +76,21 @@ public class SegmentPropertiesManager {
     }
 
     public void setNumberOfKeysInCache(final long numberOfKeysInCache) {
-        props.setLong(NUMBER_OF_KEYS_IN_CACHE, numberOfKeysInCache);
+        props.setLong(NUMBER_OF_KEYS_IN_DELTA_CACHE, numberOfKeysInCache);
     }
 
-    public void increaseNumberOfKeysInCache(final int howMuchKeys) {
+    public void increaseNumberOfKeysInDeltaCache(final int howMuchKeys) {
         if (howMuchKeys < 0) {
             throw new IllegalArgumentException(String.format(
                     "Unable to increase numebr of keys in cache about value '%s'",
                     howMuchKeys));
         }
-        props.setLong(NUMBER_OF_KEYS_IN_CACHE,
-                props.getLong(NUMBER_OF_KEYS_IN_CACHE) + howMuchKeys);
+        props.setLong(NUMBER_OF_KEYS_IN_DELTA_CACHE,
+                props.getLong(NUMBER_OF_KEYS_IN_DELTA_CACHE) + howMuchKeys);
     }
 
     public void incrementNumberOfKeysInCache() {
-        increaseNumberOfKeysInCache(1);
+        increaseNumberOfKeysInDeltaCache(1);
     }
 
     public void setNumberOfKeysInIndex(final long numberOfKeysInIndex) {
@@ -103,8 +103,8 @@ public class SegmentPropertiesManager {
                 numberOfKeysInScarceIndex);
     }
 
-    public long getNumberOfKeysInCache() {
-        return getSegmentStats().getNumberOfKeysInCache();
+    public long getNumberOfKeysInDeltaCache() {
+        return getSegmentStats().getNumberOfKeysInDeltaCache();
     }
 
     public void flush() {
