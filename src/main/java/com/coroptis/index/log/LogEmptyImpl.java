@@ -30,4 +30,10 @@ public class LogEmptyImpl<K, V> implements Log<K, V> {
         return new UnsortedDataFileStreamer<LoggedKey<K>, V>(null);
     }
 
+    @Override
+    public void rotate() {
+        throw new UnsupportedOperationException(
+                "Unimplemented method 'rotate'");
+    }
+
 }

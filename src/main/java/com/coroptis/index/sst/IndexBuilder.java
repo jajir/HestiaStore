@@ -228,8 +228,7 @@ public class IndexBuilder<K, V> {
             log = Log.<K, V>builder().withDirectory(directory)
                     .withFileName("log")
                     .withKeyTypeDescriptor(keyTypeDescriptor)
-                    .withValueReader(valueTypeDescriptor.getTypeReader())
-                    .withValueWriter(valueTypeDescriptor.getTypeWriter())
+                    .withValueTypeDescriptor(valueTypeDescriptor)
                     .build();
         } else {
             log = Log.<K, V>builder().buildEmpty();

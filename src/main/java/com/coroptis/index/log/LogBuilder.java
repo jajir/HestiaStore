@@ -15,9 +15,7 @@ public class LogBuilder<K, V> {
 
     private TypeDescriptor<K> keyTypeDescriptor;
 
-    private TypeWriter<V> valueWriter;
-
-    private TypeReader<V> valueReader;
+    private TypeDescriptor<V> valueTypeDescriptor;
 
     public LogBuilder<K, V> withDirectory(final Directory directory) {
         this.directory = Objects.requireNonNull(directory);
@@ -35,19 +33,15 @@ public class LogBuilder<K, V> {
         return this;
     }
 
-    public LogBuilder<K, V> withValueWriter(final TypeWriter<V> valueWriter) {
-        this.valueWriter = Objects.requireNonNull(valueWriter);
-        return this;
-    }
-
-    public LogBuilder<K, V> withValueReader(final TypeReader<V> valueReader) {
-        this.valueReader = Objects.requireNonNull(valueReader);
+    public LogBuilder<K, V> withValueTypeDescriptor(
+            final TypeDescriptor<V> valueTypeDescriptor) {
+        this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
         return this;
     }
 
     public LogImpl<K, V> build() {
         return new LogImpl<>(directory, fileName, keyTypeDescriptor,
-                valueWriter, valueReader);
+                valueTypeDescriptor);
     }
 
     public LogEmptyImpl<K, V> buildEmpty() {

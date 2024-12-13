@@ -19,7 +19,7 @@ import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
 /**
  * Verify basic logging functionality.
  */
-public class LogImplTest {
+public class IntegrationLogTest {
 
     private Directory directory;
     private final TypeDescriptor<Integer> tdi = new TypeDescriptorInteger();
@@ -27,8 +27,7 @@ public class LogImplTest {
 
     @Test
     void test_simple_event_logging() {
-        Log<Integer, String> log = new LogImpl<>(directory, "log", tdi,
-                tds.getTypeWriter(), tds.getTypeReader());
+        Log<Integer, String> log = new LogImpl<>(directory, "log", tdi, tds);
         LogWriter<Integer, String> logWriter = log.openWriter();
         logWriter.post(3, "aaa");
         logWriter.post(6, "bbb");
@@ -41,8 +40,7 @@ public class LogImplTest {
 
     @Test
     void test_splitted_event_logging() {
-        Log<Integer, String> log = new LogImpl<>(directory, "log", tdi,
-                tds.getTypeWriter(), tds.getTypeReader());
+        Log<Integer, String> log = new LogImpl<>(directory, "log", tdi, tds);
         final LogWriter<Integer, String> logWriter1 = log.openWriter();
         logWriter1.post(3, "aaa");
         logWriter1.post(6, "bbb");

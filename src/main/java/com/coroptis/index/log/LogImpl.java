@@ -22,20 +22,20 @@ public class LogImpl<K, V> implements Log<K, V> {
 
     public LogImpl(final Directory directory, final String fileName,
             final TypeDescriptor<K> keyTypeDescriptor,
-            final TypeWriter<V> valueWriter, final TypeReader<V> valueReader) {
+            final TypeDescriptor<V> valueTypeDescriptor) {
 
         Objects.requireNonNull(directory);
         Objects.requireNonNull(fileName);
         Objects.requireNonNull(keyTypeDescriptor);
-        Objects.requireNonNull(valueWriter);
-        Objects.requireNonNull(valueReader);
+        Objects.requireNonNull(valueTypeDescriptor);
 
         TypeDescriptorLoggedKey<K> tdlk = new TypeDescriptorLoggedKey<>(
                 keyTypeDescriptor);
 
         this.log = new UnsortedDataFile<>(directory,
                 fileName + LOG_FILE_EXTENSION, tdlk.getTypeWriter(),
-                valueWriter, tdlk.getTypeReader(), valueReader);
+                valueTypeDescriptor.getTypeWriter(), tdlk.getTypeReader(),
+                valueTypeDescriptor.getTypeReader());
     }
 
     public LogWriter<K, V> openWriter() {
@@ -45,4 +45,11 @@ public class LogImpl<K, V> implements Log<K, V> {
     public UnsortedDataFileStreamer<LoggedKey<K>, V> openStreamer() {
         return log.openStreamer();
     }
+
+    @Override
+    public void rotate() {
+        throw new UnsupportedOperationException(
+                "Unimplemented method 'rotate'");
+    }
+
 }

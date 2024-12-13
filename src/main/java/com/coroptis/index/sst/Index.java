@@ -27,6 +27,9 @@ public interface Index<K, V> extends CloseableResource {
 
     void compact();
 
+    /**
+     * Flush all data to disk. When WAL is used then it starts new file.
+     */
     void flush();
 
     /**

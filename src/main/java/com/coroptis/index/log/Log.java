@@ -21,4 +21,9 @@ public interface Log<K, V> {
      * @return
      */
     LogWriter<K, V> openWriter();
+
+    /**
+     * 
+     */
+    void rotate();
 }
