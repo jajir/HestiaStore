@@ -32,6 +32,12 @@ public class MemDirectory implements Directory {
     }
 
     @Override
+    public FileWriter getFileWriter(final String fileName, final Access access,
+            final int bufferSize) {
+        return getFileWriter(fileName, access);
+    }
+
+    @Override
     public void renameFile(final String currentFileName,
             final String newFileName) {
         if (data.containsKey(currentFileName)) {

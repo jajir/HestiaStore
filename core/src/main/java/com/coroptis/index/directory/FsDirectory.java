@@ -58,6 +58,15 @@ public class FsDirectory implements Directory {
     }
 
     @Override
+    public FileWriter getFileWriter(final String fileName, final Access access,
+            final int bufferSize) {
+        Objects.requireNonNull(fileName, "File name can't be null.");
+        return new FsFileWriterStream(getFile(fileName),
+                Objects.requireNonNull(access, "Access name can't be null."),
+                bufferSize);
+    }
+
+    @Override
     public void renameFile(final String currentFileName,
             final String newFileName) {
         final File file = getFile(currentFileName);

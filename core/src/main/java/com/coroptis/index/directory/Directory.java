@@ -43,6 +43,8 @@ public interface Directory {
 
     FileWriter getFileWriter(String fileName, Access access);
 
+    FileWriter getFileWriter(String fileName, Access access, int bufferSize);
+
     boolean deleteFile(String fileName);
 
     Stream<String> getFileNames();

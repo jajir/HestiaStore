@@ -17,12 +17,12 @@ public class UnsortedDataFileWriter<K, V> implements PairWriter<K, V> {
 
     public UnsortedDataFileWriter(final Directory directory,
             final String fileName, final TypeWriter<K> keyWriter,
-            final TypeWriter<V> valueWriter, final Access access) {
+            final TypeWriter<V> valueWriter, final Access access, final int bufferSize) {
         this.keyWriter = Objects.requireNonNull(keyWriter);
         this.valueWriter = Objects.requireNonNull(valueWriter);
         Objects.requireNonNull(directory);
         Objects.requireNonNull(fileName);
-        fileWriter = directory.getFileWriter(fileName, access);
+        fileWriter = directory.getFileWriter(fileName, access, bufferSize);
     }
 
     @Override
