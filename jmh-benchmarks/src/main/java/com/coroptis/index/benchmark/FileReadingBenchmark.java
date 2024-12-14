@@ -73,11 +73,6 @@ public class FileReadingBenchmark {
     }
 
     @Benchmark
-    public String testReadDataWithBuffer0KB() {
-        return testRound(0);
-    }
-
-    @Benchmark
     public String testReadDataWithBuffer1KB() {
         return testRound(1024);
     }
