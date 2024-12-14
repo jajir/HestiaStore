@@ -3,10 +3,10 @@
 Follow this steps:
 * Go to `jmh-benchmarks`
 * Create pacakge containing all benchmarks data
-* Execute it
+* Execute it, with temp directory in `target` directory
 
 ```bash
 cd jmh-benchmarks
 mvn package
-java -jar target/benchmarks.jar
+java -Ddir=./target/ -jar target/jmh-benchmarks.jar
 ```

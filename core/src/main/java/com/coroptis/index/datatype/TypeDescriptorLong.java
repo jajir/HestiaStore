@@ -72,7 +72,7 @@ public class TypeDescriptorLong implements TypeDescriptor<Long> {
     @Override
     public TypeReader<Long> getTypeReader() {
         return fileReader -> {
-            final byte[] bytes = new byte[4];
+            final byte[] bytes = new byte[8];
             if (fileReader.read(bytes) == -1) {
                 return null;
             }
@@ -84,7 +84,7 @@ public class TypeDescriptorLong implements TypeDescriptor<Long> {
     public TypeWriter<Long> getTypeWriter() {
         return (writer, object) -> {
             writer.write(getBytes(object));
-            return 4;
+            return 8;
         };
     }
 

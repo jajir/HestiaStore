@@ -7,6 +7,9 @@ import java.util.Comparator;
 
 import org.junit.jupiter.api.Test;
 
+import com.coroptis.index.directory.Directory;
+import com.coroptis.index.directory.MemDirectory;
+
 public class TypeDescriptorLongTest {
 
     private final TypeDescriptorLong ti = new TypeDescriptorLong();
@@ -28,6 +31,16 @@ public class TypeDescriptorLongTest {
         final Long ret = fromBytes.fromBytes(bytes);
         assertEquals(number, ret, String
                 .format("Expected '%s' byt returned was '%s'", number, ret));
+    }
+
+    @Test
+    public void test_writer() throws Exception {
+        Directory dir = new MemDirectory();
+
+        int ret = ti.getTypeWriter().write(dir.getFileWriter("test"),
+                Long.MIN_VALUE);
+
+        assertEquals(8, ret);
     }
 
     @Test

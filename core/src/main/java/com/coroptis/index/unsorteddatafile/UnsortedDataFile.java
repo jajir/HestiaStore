@@ -2,9 +2,9 @@ package com.coroptis.index.unsorteddatafile;
 
 import java.util.Objects;
 
+import com.coroptis.index.CloseablePairReader;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.PairIteratorFromReader;
-import com.coroptis.index.CloseablePairReader;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.datatype.TypeReader;
 import com.coroptis.index.datatype.TypeWriter;
@@ -55,6 +55,12 @@ public class UnsortedDataFile<K, V> {
         return iterator;
     }
 
+    public PairIterator<K, V> openIterator(int bufferSize) {
+        final PairIterator<K, V> iterator = new PairIteratorFromReader<>(
+                openReader(bufferSize));
+        return iterator;
+    }
+
     public PairWriter<K, V> openWriter() {
         return openWriter(Access.OVERWRITE);
     }
@@ -88,8 +94,18 @@ public class UnsortedDataFile<K, V> {
         return out;
     }
 
+    public CloseablePairReader<K, V> openReader(int bufferSize) {
+        final UnsortedDataFileReader<K, V> out = new UnsortedDataFileReader<>(
+                keyReader, valueReader, getFileReader(bufferSize));
+        return out;
+    }
+
     private FileReader getFileReader() {
         return directory.getFileReader(fileName);
+    }
+
+    private FileReader getFileReader(int bufferSize) {
+        return directory.getFileReader(fileName, bufferSize);
     }
 
 }
