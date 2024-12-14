@@ -82,6 +82,12 @@ public class FsZipDirectory implements Directory {
     }
 
     @Override
+    public FileWriter getFileWriter(final String fileName, final Access access,
+            final int bufferSize) {
+        return getFileWriter(fileName, access);
+    }
+
+    @Override
     public boolean isFileExists(final String fileName) {
         final File file = getFile(fileName);
         return file.exists();

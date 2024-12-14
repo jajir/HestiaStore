@@ -24,6 +24,11 @@ public class FsFileWriterStream implements FileWriter {
             .getLogger(FsFileWriterStream.class);
 
     FsFileWriterStream(final File file, final Directory.Access access) {
+        this(file, access, BUFFER_SIZE);
+    }
+
+    FsFileWriterStream(final File file, final Directory.Access access,
+            final int bufferSize) {
         try {
             final Path path = file.toPath();
             if (access == Access.OVERWRITE && file.exists() && !file.delete()) {
@@ -33,7 +38,7 @@ public class FsFileWriterStream implements FileWriter {
                     Directory.Access.APPEND == access
                             ? StandardOpenOption.APPEND
                             : StandardOpenOption.CREATE);
-            this.fio = new BufferedOutputStream(os, BUFFER_SIZE);
+            this.fio = new BufferedOutputStream(os, bufferSize);
         } catch (IOException e) {
             throw new IndexException(e.getMessage(), e);
         }
