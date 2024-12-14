@@ -3,15 +3,13 @@ package com.coroptis.index.log;
 import java.util.Objects;
 
 import com.coroptis.index.datatype.TypeDescriptor;
-import com.coroptis.index.datatype.TypeReader;
-import com.coroptis.index.datatype.TypeWriter;
 import com.coroptis.index.directory.Directory;
-
+/**
+ * Fluent builder for creating new instance of {@link LogImpl}.
+ */
 public class LogBuilder<K, V> {
 
     private Directory directory;
-
-    private String fileName;
 
     private TypeDescriptor<K> keyTypeDescriptor;
 
@@ -19,11 +17,6 @@ public class LogBuilder<K, V> {
 
     public LogBuilder<K, V> withDirectory(final Directory directory) {
         this.directory = Objects.requireNonNull(directory);
-        return this;
-    }
-
-    public LogBuilder<K, V> withFileName(final String file) {
-        this.fileName = Objects.requireNonNull(file);
         return this;
     }
 
@@ -40,8 +33,14 @@ public class LogBuilder<K, V> {
     }
 
     public LogImpl<K, V> build() {
-        return new LogImpl<>(directory, fileName, keyTypeDescriptor,
+        final LogFileNamesManager logFileNamesManager = new LogFileNamesManager(
+                directory);
+        final LogFilesManager<K, V> logFilesManager = new LogFilesManager<>(
+                directory, new TypeDescriptorLoggedKey<>(keyTypeDescriptor),
                 valueTypeDescriptor);
+        final LogWriter<K, V> logWriter = new LogWriter<>(logFileNamesManager,
+                logFilesManager);
+        return new LogImpl<>(logWriter, logFileNamesManager, logFilesManager);
     }
 
     public LogEmptyImpl<K, V> buildEmpty() {

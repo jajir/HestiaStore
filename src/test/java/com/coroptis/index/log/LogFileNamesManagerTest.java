@@ -15,7 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.coroptis.index.directory.Directory;
 
 @ExtendWith(MockitoExtension.class)
-public class LogFilesManagerTest {
+public class LogFileNamesManagerTest {
 
     @Mock
     private Directory directory;
@@ -26,7 +26,7 @@ public class LogFilesManagerTest {
     @Test
     void test_getNewLogFileName_file_list() {
         when(directory.getFileNames()).thenReturn(data.stream());
-        final LogFilesManager manager = new LogFilesManager(directory);
+        final LogFileNamesManager manager = new LogFileNamesManager(directory);
 
         assertEquals("wal-00045.log", manager.getNewLogFileName());
     }
@@ -35,7 +35,7 @@ public class LogFilesManagerTest {
     void test_getNewLogFileName_max_number_of_logFiles() {
         when(directory.getFileNames())
                 .thenReturn(List.of("wal-99999.log").stream());
-        final LogFilesManager manager = new LogFilesManager(directory);
+        final LogFileNamesManager manager = new LogFileNamesManager(directory);
 
         final Exception e = assertThrows(IllegalStateException.class,
                 () -> manager.getNewLogFileName());
@@ -47,7 +47,7 @@ public class LogFilesManagerTest {
     void test_getNewLogFileName_firstFile() {
         when(directory.getFileNames())
                 .thenReturn(new ArrayList<String>().stream());
-        final LogFilesManager manager = new LogFilesManager(directory);
+        final LogFileNamesManager manager = new LogFileNamesManager(directory);
 
         assertEquals("wal-00000.log", manager.getNewLogFileName());
     }

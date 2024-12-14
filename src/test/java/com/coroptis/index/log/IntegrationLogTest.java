@@ -27,35 +27,43 @@ public class IntegrationLogTest {
 
     @Test
     void test_simple_event_logging() {
-        Log<Integer, String> log = new LogImpl<>(directory, "log", tdi, tds);
-        LogWriter<Integer, String> logWriter = log.openWriter();
-        logWriter.post(3, "aaa");
-        logWriter.post(6, "bbb");
-        logWriter.post(9, "ccc");
-        logWriter.delete(3, tds.getTombstone());
-        logWriter.close();
+        Log<Integer, String> log = Log.<Integer, String>builder()//
+                .withDirectory(directory)//
+                .withKeyTypeDescriptor(tdi)//
+                .withValueTypeDescriptor(tds)//
+                .build();
+        log.post(3, "aaa");
+        log.post(6, "bbb");
+        log.post(9, "ccc");
+        log.delete(3, tds.getTombstone());
+        log.rotate();
 
+        assertEquals(1, directory.getFileNames().count(),
+                " 1 file should be created");
         verify_log_data(log);
     }
 
     @Test
-    void test_splitted_event_logging() {
-        Log<Integer, String> log = new LogImpl<>(directory, "log", tdi, tds);
-        final LogWriter<Integer, String> logWriter1 = log.openWriter();
-        logWriter1.post(3, "aaa");
-        logWriter1.post(6, "bbb");
-        logWriter1.close();
+    void test_retated_log_events_are_logged() {
+        Log<Integer, String> log = Log.<Integer, String>builder()//
+                .withDirectory(directory)//
+                .withKeyTypeDescriptor(tdi)//
+                .withValueTypeDescriptor(tds)//
+                .build();
+        log.post(3, "aaa");
+        log.post(6, "bbb");
+        log.rotate();
 
-        final LogWriter<Integer, String> logWriter2 = log.openWriter();
-        logWriter2.post(9, "ccc");
-        logWriter2.delete(3, tds.getTombstone());
-        logWriter2.close();
+        log.post(9, "ccc");
+        log.delete(3, tds.getTombstone());
+        log.rotate();
 
+        assertEquals(2, directory.getFileNames().count(),
+                " 2 file should be created");
         verify_log_data(log);
     }
 
     private void verify_log_data(final Log<Integer, String> log) {
-        assertEquals(1, directory.getFileNames().count());
 
         assertEquals(4, log.openStreamer().stream().count());
         try (final UnsortedDataFileStreamer<LoggedKey<Integer>, String> streamer = log

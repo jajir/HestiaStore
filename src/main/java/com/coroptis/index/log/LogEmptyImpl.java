@@ -5,35 +5,28 @@ import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
 public class LogEmptyImpl<K, V> implements Log<K, V> {
 
     @Override
-    public LogWriter<K, V> openWriter() {
-        return new LogWriter<K, V>() {
-
-            @Override
-            public void post(K key, V value) {
-                // Intentionally do nothing
-            }
-
-            @Override
-            public void delete(K key, V value) {
-                // Intentionally do nothing
-            }
-
-            @Override
-            public void close() {
-                // Intentionally do nothing
-            }
-        };
-    }
-
-    @Override
     public UnsortedDataFileStreamer<LoggedKey<K>, V> openStreamer() {
         return new UnsortedDataFileStreamer<LoggedKey<K>, V>(null);
     }
 
     @Override
     public void rotate() {
-        throw new UnsupportedOperationException(
-                "Unimplemented method 'rotate'");
+        // Do nothing
+    }
+
+    @Override
+    public void post(final K key, final V value) {
+        // Do nothing
+    }
+
+    @Override
+    public void delete(final K key, final V value) {
+        // Do nothing
+    }
+
+    @Override
+    public void close() {
+        // Do nothing
     }
 
 }

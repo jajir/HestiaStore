@@ -12,11 +12,11 @@ import com.coroptis.index.PairWriter;
  * @param <K> key type
  * @param <V> value type
  */
-public class LogWriterImpl<K, V> implements LogWriter<K, V> {
+public class LogUnsortedFileWriterImpl<K, V> implements LogUnsortedFileWriter<K, V> {
 
     private final PairWriter<LoggedKey<K>, V> writer;
 
-    public LogWriterImpl(final PairWriter<LoggedKey<K>, V> writer) {
+    public LogUnsortedFileWriterImpl(final PairWriter<LoggedKey<K>, V> writer) {
         this.writer = Objects.requireNonNull(writer);
     }
 

@@ -1,55 +1,42 @@
 package com.coroptis.index.log;
 
-import com.coroptis.index.directory.Directory;
-
-import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
-/**
- * Responsible for managing log files.
- */
-public class LogFilesManager {
-    private final static String LOG_FILE_EXTENSION = ".log";
-    private final static String LOG_FILE_PREFIX = "wal-";
-    private final static int MAX_LOG_FILE_NUMBER = 99999;
+import com.coroptis.index.CloseablePairReader;
+import com.coroptis.index.datatype.TypeDescriptor;
+import com.coroptis.index.directory.Directory;
+import com.coroptis.index.unsorteddatafile.UnsortedDataFile;
+
+public class LogFilesManager<K, V> {
 
     private final Directory directory;
+    private final TypeDescriptor<LoggedKey<K>> keyTypeDescriptor;
+    private final TypeDescriptor<V> valueTypeDescriptor;
 
-    public LogFilesManager(Directory directory) {
+    LogFilesManager(final Directory directory,
+            final TypeDescriptor<LoggedKey<K>> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor) {
         this.directory = Objects.requireNonNull(directory);
+        this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
+        this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
     }
 
-    String getNewLogFileName() {
-        final List<String> fileNames= getSortedLogFiles();
-        if(fileNames.isEmpty()  ){
-            return makeLogFileName(0);  
-          }
-        int last = extractIndex(fileNames.get(fileNames.size()-1));
-        return makeLogFileName(last + 1);   
+    UnsortedDataFile<LoggedKey<K>, V> getLogFile(final String name) {
+        final UnsortedDataFile<LoggedKey<K>, V> out = UnsortedDataFile
+                .<LoggedKey<K>, V>builder()//
+                .withDirectory(directory)//
+                .withFileName(name)//
+                .withKeyWriter(keyTypeDescriptor.getTypeWriter())//
+                .withKeyReader(keyTypeDescriptor.getTypeReader())//
+                .withValueWriter(valueTypeDescriptor.getTypeWriter())//
+                .withValueReader(valueTypeDescriptor.getTypeReader())//
+                .build();
+        return out;
     }
 
-    private List<String> getSortedLogFiles() {
-        return directory.getFileNames()
-                .filter(f -> f.startsWith(LOG_FILE_PREFIX))
-                .filter(f -> f.endsWith(LOG_FILE_EXTENSION))
-                .sorted()
-                .collect(Collectors.toList());
-    }
-
-    int extractIndex(final String fileName) {
-        return Integer.parseInt(fileName.substring(LOG_FILE_PREFIX.length(), fileName.length() - LOG_FILE_EXTENSION.length()));
-    }
-
-    private String makeLogFileName(final int index) {
-        if (index > MAX_LOG_FILE_NUMBER) {
-            throw new IllegalStateException("Max number of log files reached");
-        }
-        String no = String.valueOf(index);
-        while (no.length() < 5) {
-            no = "0" + no;
-        }
-        return LOG_FILE_PREFIX + no + LOG_FILE_EXTENSION;
+    CloseablePairReader<LoggedKey<K>, V> openReader(final String name) {
+        UnsortedDataFile<LoggedKey<K>, V> log = getLogFile(name);
+        return log.openReader();
     }
 
 }

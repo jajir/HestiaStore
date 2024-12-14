@@ -17,7 +17,6 @@ import com.coroptis.index.cache.UniqueCache;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.log.Log;
-import com.coroptis.index.log.LogWriter;
 import com.coroptis.index.log.LoggedKey;
 import com.coroptis.index.segment.Segment;
 import com.coroptis.index.segment.SegmentId;
@@ -37,7 +36,6 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     private final KeySegmentCache<K> keySegmentCache;
     private final SegmentManager<K, V> segmentManager;
     private final Log<K, V> log;
-    private final LogWriter<K, V> logWriter;
     private final Stats stats = new Stats();
     private IndexState<K, V> indexState;
 
@@ -62,7 +60,6 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                 conf);
         this.segmentManager = new SegmentManager<>(directory, keyTypeDescriptor,
                 valueTypeDescriptor, conf, segmentDataCache);
-        this.logWriter = log.openWriter();
         indexState.onReady(this);
     }
 
@@ -79,7 +76,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         }
 
         // add key value pair into WAL
-        logWriter.post(key, value);
+        log.post(key, value);
 
         cache.put(Pair.of(key, value));
 
@@ -154,6 +151,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                 .forEach(this::optionallySplit);
         cache.clear();
         keySegmentCache.flush();
+        log.rotate();
         logger.debug(
                 "Cache compacting is done. Cache contains '{}' key value pairs.",
                 F.fmt(cache.size()));
@@ -239,7 +237,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         Objects.requireNonNull(key, "Key cant be null");
         stats.incDeleteCx();
 
-        logWriter.delete(key, valueTypeDescriptor.getTombstone());
+        log.delete(key, valueTypeDescriptor.getTombstone());
 
         cache.put(Pair.of(key, valueTypeDescriptor.getTombstone()));
     }
@@ -252,7 +250,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     @Override
     public void close() {
         flushCache();
-        logWriter.close();
+        log.close();
         indexState.onClose(this);
         segmentManager.close();
         logger.debug(String.format(

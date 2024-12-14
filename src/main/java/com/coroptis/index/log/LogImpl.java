@@ -2,54 +2,50 @@ package com.coroptis.index.log;
 
 import java.util.Objects;
 
-import com.coroptis.index.datatype.TypeDescriptor;
-import com.coroptis.index.datatype.TypeReader;
-import com.coroptis.index.datatype.TypeWriter;
-import com.coroptis.index.directory.Directory;
-import com.coroptis.index.directory.Directory.Access;
-import com.coroptis.index.unsorteddatafile.UnsortedDataFile;
 import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
 
 public class LogImpl<K, V> implements Log<K, V> {
 
-    /**
-     * Log data will be stored in directory in filename 'filename' + '.' +
-     * 'unsorted'. For example 'log-0012.unsorted'.
-     */
-    private final static String LOG_FILE_EXTENSION = ".unsorted";
+    private final LogWriter<K, V> logWriter;
+    private final LogFileNamesManager logFileNamesManager;
+    private final LogFilesManager<K, V> logFilesManager;
 
-    private final UnsortedDataFile<LoggedKey<K>, V> log;
-
-    public LogImpl(final Directory directory, final String fileName,
-            final TypeDescriptor<K> keyTypeDescriptor,
-            final TypeDescriptor<V> valueTypeDescriptor) {
-
-        Objects.requireNonNull(directory);
-        Objects.requireNonNull(fileName);
-        Objects.requireNonNull(keyTypeDescriptor);
-        Objects.requireNonNull(valueTypeDescriptor);
-
-        TypeDescriptorLoggedKey<K> tdlk = new TypeDescriptorLoggedKey<>(
-                keyTypeDescriptor);
-
-        this.log = new UnsortedDataFile<>(directory,
-                fileName + LOG_FILE_EXTENSION, tdlk.getTypeWriter(),
-                valueTypeDescriptor.getTypeWriter(), tdlk.getTypeReader(),
-                valueTypeDescriptor.getTypeReader());
-    }
-
-    public LogWriter<K, V> openWriter() {
-        return new LogWriterImpl<>(log.openWriter(Access.APPEND));
+    public LogImpl(final LogWriter<K, V> logWriter,
+            final LogFileNamesManager logFileNamesManager,
+            final LogFilesManager<K, V> logFilesManager) {
+        this.logWriter = Objects.requireNonNull(logWriter,
+                "logWriter must not be null");
+        this.logFileNamesManager = Objects.requireNonNull(logFileNamesManager,
+                "logFileNamesManager must not be null");
+        this.logFilesManager = Objects.requireNonNull(logFilesManager,
+                "logFilesManager must not be null");
     }
 
     public UnsortedDataFileStreamer<LoggedKey<K>, V> openStreamer() {
-        return log.openStreamer();
+        final UnsortedDataFileStreamer<LoggedKey<K>, V> streamer = new UnsortedDataFileStreamer<>(
+                new LogFilesSpliterator<>(logFilesManager,
+                        logFileNamesManager.getSortedLogFiles()));
+        return streamer;
     }
 
     @Override
     public void rotate() {
-        throw new UnsupportedOperationException(
-                "Unimplemented method 'rotate'");
+        logWriter.rotate();
+    }
+
+    @Override
+    public void post(final K key, final V value) {
+        logWriter.post(key, value);
+    }
+
+    @Override
+    public void delete(final K key, final V value) {
+        logWriter.delete(key, value);
+    }
+
+    @Override
+    public void close() {
+        logWriter.close();
     }
 
 }

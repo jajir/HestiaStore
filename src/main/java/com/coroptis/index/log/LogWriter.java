@@ -1,35 +1,50 @@
 package com.coroptis.index.log;
 
-import com.coroptis.index.CloseableResource;
+import java.util.Objects;
 
-/**
- * Write Ahead Log. Supporting basic operations:
- * <ul>
- * <li>POST - Create or update data record</li>
- * <li>DEKLETE - Delete data record</li>
- * </ul>
- * 
- * @author honza
- *
- * @param <K> key type
- * @param <V> value type
- */
-public interface LogWriter<K, V> extends CloseableResource {
+import com.coroptis.index.directory.Directory.Access;
+import com.coroptis.index.unsorteddatafile.UnsortedDataFile;
 
-    /**
-     * Log post operation.
-     * 
-     * @param key   required key
-     * @param value required value
-     */
-    void post(K key, V value);
+public class LogWriter<K, V> {
 
-    /**
-     * Log delete operation.
-     * 
-     * @param key   required key
-     * @param value required value, it should be thomstone value
-     */
-    void delete(K key, V value);
+    private final LogFileNamesManager logFileNamessManager;
+    private final LogFilesManager<K, V> logFilesManager;
+
+    private LogUnsortedFileWriter<K, V> writer;
+
+    LogWriter(final LogFileNamesManager logFileNamesManager,
+            final LogFilesManager<K, V> logFilesManager) {
+        this.logFileNamessManager = Objects.requireNonNull(logFileNamesManager);
+        this.logFilesManager = Objects.requireNonNull(logFilesManager);
+    }
+
+    void post(final K key, final V value) {
+        getWriter().post(key, value);
+    }
+
+    void delete(final K key, final V value) {
+        getWriter().delete(key, value);
+    }
+
+    private LogUnsortedFileWriter<K, V> getWriter() {
+        if (writer == null) {
+            UnsortedDataFile<LoggedKey<K>, V> log = logFilesManager
+                    .getLogFile(logFileNamessManager.getNewLogFileName());
+            writer = new LogUnsortedFileWriterImpl<>(
+                    log.openWriter(Access.OVERWRITE));
+        }
+        return writer;
+    }
+
+    void close() {
+        if (writer != null) {
+            writer.close();
+            writer = null;
+        }
+    }
+
+    void rotate() {
+        close();
+    }
 
 }

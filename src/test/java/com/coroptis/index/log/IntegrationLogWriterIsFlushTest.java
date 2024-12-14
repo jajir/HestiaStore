@@ -28,14 +28,11 @@ public class IntegrationLogWriterIsFlushTest {
                 .withDirectory(directory)//
                 .withKeyTypeDescriptor(tdl)//
                 .withValueTypeDescriptor(tds)//
-                .withFileName("null")// 
                 .build();
 
-        try (LogWriter<Long, String> writer = index.openWriter()) {
-            writer.post(1L, "aaa");
-            writer.post(2L, "bbb");
-            writer.post(3L, "ccc");
-        }
+            index.post(1L, "aaa");
+            index.post(2L, "bbb");
+            index.post(3L, "ccc");
     }
 
 }

@@ -19,7 +19,8 @@ public class IndexBuilder<K, V> {
 
     private final static boolean DEFAULT_INDEX_SYNCHRONIZED = false;
 
-    private final static int DEFAULT_FILE_READING_BUFEER_SIZE_IN_BYTES = 1024 * 4;
+    private final static int DEFAULT_FILE_READING_BUFEER_SIZE_IN_BYTES = 1024
+            * 4;
 
     private long maxNumberOfKeysInSegmentCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
     private long maxNumberOfKeysInSegmentCacheDuringFlushing = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING;
@@ -214,7 +215,8 @@ public class IndexBuilder<K, V> {
                 maxNumberOfKeysInSegmentIndexPage, maxNumberOfKeysInCache,
                 maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache,
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
-                bloomFilterProbabilityOfFalsePositive, fileReadingBufferSizeInBytes);
+                bloomFilterProbabilityOfFalsePositive,
+                fileReadingBufferSizeInBytes);
         if (keyTypeDescriptor == null) {
             throw new IllegalArgumentException("Key type descriptor is null. "
                     + "Set key type descriptor of key class.");
@@ -225,10 +227,10 @@ public class IndexBuilder<K, V> {
         }
         Log<K, V> log = null;
         if (useFullLog) {
-            log = Log.<K, V>builder().withDirectory(directory)
-                    .withFileName("log")
-                    .withKeyTypeDescriptor(keyTypeDescriptor)
-                    .withValueTypeDescriptor(valueTypeDescriptor)
+            log = Log.<K, V>builder()//
+                    .withDirectory(directory)//
+                    .withKeyTypeDescriptor(keyTypeDescriptor)//
+                    .withValueTypeDescriptor(valueTypeDescriptor)//
                     .build();
         } else {
             log = Log.<K, V>builder().buildEmpty();
