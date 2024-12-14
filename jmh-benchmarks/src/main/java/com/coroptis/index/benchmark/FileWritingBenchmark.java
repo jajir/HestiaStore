@@ -18,8 +18,6 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.coroptis.index.Pair;
-import com.coroptis.index.PairIterator;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.datatype.TypeDescriptorLong;
@@ -36,15 +34,15 @@ import com.coroptis.index.unsorteddatafile.UnsortedDataFile;
 @Measurement(iterations = 4, time = 1, timeUnit = TimeUnit.SECONDS)
 @Fork(1) // Use 1 fork (JVM instance)
 @Threads(1)
-public class FileReadingBenchmark {
+public class FileWritingBenchmark {
 
     private final Logger logger = LoggerFactory
             .getLogger(FileReadingBenchmark.class);
     private final static String PROPERTY_DIRECTORY = "dir";
     private final static String FILE_NAME = "test.unsorted";
     private final static Random RANDOM = new Random();
-    private final static DataProvider dataProvider = new DataProvider();    
-    private final static int NUMBER_OF_TESTING_PAIRS = 10_000;
+    private final static DataProvider dataProvider = new DataProvider();
+    private final static int NUMBER_OF_TESTING_PAIRS = 100_000;
     private final static TypeDescriptor<String> TYPE_DESCRIPTOR_STRING = new TypeDescriptorString();
     private final static TypeDescriptor<Long> TYPE_DESCRIPTOR_LONG = new TypeDescriptorLong();
 
@@ -69,66 +67,52 @@ public class FileReadingBenchmark {
                 .withValueWriter(TYPE_DESCRIPTOR_LONG.getTypeWriter())//
                 .withValueReader(TYPE_DESCRIPTOR_LONG.getTypeReader())//
                 .build();
-
-        // prepare data
-        try (PairWriter<String, Long> pairWriter = testFile
-                .openWriter(Access.OVERWRITE)) {
-            for (int i = 0; i < NUMBER_OF_TESTING_PAIRS; i++) {
-                pairWriter.put(dataProvider.generateRandomString(), RANDOM.nextLong());
-            }
-        }
     }
 
     @Benchmark
-    public String testReadDataWithBuffer_01KB() {
+    public String testWriteDataWithBuffer_01KB() {
         return testRound(1024);
     }
 
     @Benchmark
-    public String testReadDataWithBuffer_02KB() {
-        return testRound(2*1024);
+    public String testWriteDataWithBuffer_02KB() {
+        return testRound(2 * 1024);
     }
 
     @Benchmark
-    public String testReadDataWithBuffer_04KB() {
-        return testRound(4*1024);
+    public String testWriteDataWithBuffer_04KB() {
+        return testRound(4 * 1024);
     }
 
     @Benchmark
-    public String testReadDataWithBuffer_08KB() {
-        return testRound(8*1024);
+    public String testWriteDataWithBuffer_08KB() {
+        return testRound(8 * 1024);
     }
 
     @Benchmark
     public String testReadDataWithBuffer_16KB() {
-        return testRound(16*1024);
+        return testRound(16 * 1024);
     }
 
     @Benchmark
     public String testReadDataWithBuffer_32KB() {
-        return testRound(32*1024);
+        return testRound(32 * 1024);
     }
 
     @Benchmark
     public String testReadDataWithBuffer_64KB() {
-        return testRound(64*1024);
+        return testRound(64 * 1024);
     }
 
     private String testRound(final int bufferSize) {
         long result = 0;
-        try (PairIterator<String, Long> pairIterator = testFile
-                .openIterator(bufferSize)) {
-            while (pairIterator.hasNext()) {
-                final Pair<String, Long> pair = pairIterator.next();
-                if (pair == null) {
-                    throw new IllegalStateException("Pair is null");
-                }
-                if (pair.getKey() == null) {
-                    throw new IllegalStateException("Key is null");
-                }
-                if (pair.getValue() == null) {
-                    throw new IllegalStateException("Value is null");
-                }
+
+        // prepare data
+        try (PairWriter<String, Long> pairWriter = testFile
+                .openWriter(Access.OVERWRITE, bufferSize)) {
+            for (int i = 0; i < NUMBER_OF_TESTING_PAIRS; i++) {
+                pairWriter.put(dataProvider.generateRandomString(),
+                        RANDOM.nextLong());
                 result++;
             }
         }
