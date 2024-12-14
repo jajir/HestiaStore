@@ -57,20 +57,3 @@ index.nextElement(); // --> fail
 ```
 
 last operation will fail because there is not possible to find next element because `<k1,v1>` was deleted. To prevent this problem index cache is not used during index streaming. If all index content should be streamed than before streaming should be `compact()` method and during streaming data shouldn't be changed.
-
-
-## Development
-
-Mockito requires reflective access to non-public parts in a Java module. It could be manually open by passing following parameter as jvm parameter:
-
-```
---add-opens=java.base/java.lang=ALL-UNNAMED
-```
-
-## How to get segment disk size
-
-On apple try:
-
-```
-diskutil  info /Volumes/LaCie
-```
