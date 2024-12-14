@@ -42,7 +42,7 @@ public class FileWritingBenchmark {
     private final static String FILE_NAME = "test.unsorted";
     private final static Random RANDOM = new Random();
     private final static DataProvider dataProvider = new DataProvider();
-    private final static int NUMBER_OF_TESTING_PAIRS = 100_000;
+    private final static int NUMBER_OF_TESTING_PAIRS = 400_000;
     private final static TypeDescriptor<String> TYPE_DESCRIPTOR_STRING = new TypeDescriptorString();
     private final static TypeDescriptor<Long> TYPE_DESCRIPTOR_LONG = new TypeDescriptorLong();
 
@@ -70,22 +70,22 @@ public class FileWritingBenchmark {
     }
 
     @Benchmark
-    public String testWriteDataWithBuffer_01KB() {
+    public String testReadDataWithBuffer_01KB() {
         return testRound(1024);
     }
 
     @Benchmark
-    public String testWriteDataWithBuffer_02KB() {
+    public String testReadDataWithBuffer_02KB() {
         return testRound(2 * 1024);
     }
 
     @Benchmark
-    public String testWriteDataWithBuffer_04KB() {
+    public String testReadDataWithBuffer_04KB() {
         return testRound(4 * 1024);
     }
 
     @Benchmark
-    public String testWriteDataWithBuffer_08KB() {
+    public String testReadDataWithBuffer_08KB() {
         return testRound(8 * 1024);
     }
 

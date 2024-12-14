@@ -44,7 +44,7 @@ public class FileReadingBenchmark {
     private final static String FILE_NAME = "test.unsorted";
     private final static Random RANDOM = new Random();
     private final static DataProvider dataProvider = new DataProvider();    
-    private final static int NUMBER_OF_TESTING_PAIRS = 10_000;
+    private final static int NUMBER_OF_TESTING_PAIRS = 400_000;
     private final static TypeDescriptor<String> TYPE_DESCRIPTOR_STRING = new TypeDescriptorString();
     private final static TypeDescriptor<Long> TYPE_DESCRIPTOR_LONG = new TypeDescriptorLong();
 
