@@ -70,7 +70,7 @@ public class IntegrationIndexIteratorTest {
                 .withMaxNumberOfKeysInCache(1) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
-                .withFileReadingBufferSizeInBytes(1024)//
+                .withDiskIoBufferSizeInBytes(1024)//
                 .build();
     }
 

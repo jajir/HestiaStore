@@ -50,7 +50,8 @@ public class ScarceIndex<K> {
     }
 
     ScarceIndex(final Directory directory, final String fileName,
-            final TypeDescriptor<K> keyTypeDescriptor) {
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final int diskIoBufferSize) {
         this.directory = Objects.requireNonNull(directory,
                 "Directory object is null.");
         this.fileName = Objects.requireNonNull(fileName,
@@ -67,6 +68,7 @@ public class ScarceIndex<K> {
                         keyTypeDescriptor.getConvertorToBytes()) //
                 .withValueReader(typeDescriptorInteger.getTypeReader())//
                 .withValueWriter(typeDescriptorInteger.getTypeWriter())//
+                .withDiskIoBufferSize(diskIoBufferSize) //
                 .build();
         this.cache = new ScarceIndexCache<>(keyTypeDescriptor);
         loadCache();

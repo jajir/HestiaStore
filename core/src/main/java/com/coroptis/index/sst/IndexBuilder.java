@@ -19,7 +19,7 @@ public class IndexBuilder<K, V> {
 
     private final static boolean DEFAULT_INDEX_SYNCHRONIZED = false;
 
-    private final static int DEFAULT_FILE_READING_BUFEER_SIZE_IN_BYTES = 1024
+    private final static int DEFAULT_DISK_IO_BUFFER_SIZE_IN_BYTES = 1024
             * 4;
 
     private long maxNumberOfKeysInSegmentCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
@@ -34,7 +34,7 @@ public class IndexBuilder<K, V> {
     private Double bloomFilterProbabilityOfFalsePositive = null;
     private boolean isIndexSynchronized = DEFAULT_INDEX_SYNCHRONIZED;
 
-    private int fileReadingBufferSizeInBytes = DEFAULT_FILE_READING_BUFEER_SIZE_IN_BYTES;
+    private int diskIoBufferSizeInBytes = DEFAULT_DISK_IO_BUFFER_SIZE_IN_BYTES;
 
     private Directory directory;
     private Class<K> keyClass;
@@ -136,9 +136,9 @@ public class IndexBuilder<K, V> {
         return this;
     }
 
-    public IndexBuilder<K, V> withFileReadingBufferSizeInBytes(
-            final int fileReadingBufferSizeInBytes) {
-        this.fileReadingBufferSizeInBytes = fileReadingBufferSizeInBytes;
+    public IndexBuilder<K, V> withDiskIoBufferSizeInBytes(
+            final int diskIoBufferSizeInBytes) {
+        this.diskIoBufferSizeInBytes = diskIoBufferSizeInBytes;
         return this;
     }
 
@@ -195,7 +195,7 @@ public class IndexBuilder<K, V> {
                 maxNumberOfKeysInSegment = conf.getMaxNumberOfKeysInSegment();
                 maxNumberOfSegmentsInCache = conf
                         .getMaxNumberOfSegmentsInCache();
-                fileReadingBufferSizeInBytes = conf.getIndexBufferSizeInBytes();
+                diskIoBufferSizeInBytes = conf.getIndexBufferSizeInBytes();
                 bloomFilterIndexSizeInBytes = conf
                         .getBloomFilterIndexSizeInBytes();
                 bloomFilterNumberOfHashFunctions = conf
@@ -216,7 +216,7 @@ public class IndexBuilder<K, V> {
                 maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache,
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
                 bloomFilterProbabilityOfFalsePositive,
-                fileReadingBufferSizeInBytes);
+                diskIoBufferSizeInBytes);
         if (keyTypeDescriptor == null) {
             throw new IllegalArgumentException("Key type descriptor is null. "
                     + "Set key type descriptor of key class.");

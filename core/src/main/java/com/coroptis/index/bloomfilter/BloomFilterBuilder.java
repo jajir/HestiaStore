@@ -8,6 +8,7 @@ import com.coroptis.index.directory.Directory;
 public class BloomFilterBuilder<K> {
 
     private final static double DEFAULT_PROBABILITY_OF_FALSE_POSITIVE = 0.01;
+    private final static int DEFAULT_DISK_IO_BUFFER_SIZE = 2 * 1024;
 
     private Directory directory;
     private String bloomFilterFileName;
@@ -17,6 +18,7 @@ public class BloomFilterBuilder<K> {
     private Integer indexSizeInBytes = null;
     private double probabilityOfFalsePositive = DEFAULT_PROBABILITY_OF_FALSE_POSITIVE;
     private String relatedObjectName;
+    private int diskIoBufferSize = DEFAULT_DISK_IO_BUFFER_SIZE;
 
     BloomFilterBuilder() {
 
@@ -70,6 +72,12 @@ public class BloomFilterBuilder<K> {
         return this;
     }
 
+    public BloomFilterBuilder<K> withDiskIoBufferSize(
+            final int diskIoBufferSize) {
+        this.diskIoBufferSize = diskIoBufferSize;
+        return this;
+    }
+
     public BloomFilter<K> build() {
         Objects.requireNonNull(directory, "Directory is not set.");
         Objects.requireNonNull(bloomFilterFileName,
@@ -102,7 +110,7 @@ public class BloomFilterBuilder<K> {
         }
         return new BloomFilter<>(directory, bloomFilterFileName,
                 numberOfHashFunctions, indexSizeInBytes, convertorToBytes,
-                relatedObjectName);
+                relatedObjectName, diskIoBufferSize);
     }
 
 }

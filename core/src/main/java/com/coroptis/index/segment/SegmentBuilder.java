@@ -30,7 +30,7 @@ public class SegmentBuilder<K, V> {
     private SegmentConf segmentConf;
     private SegmentFiles<K, V> segmentFiles;
     private SegmentDataProvider<K, V> segmentDataProvider;
-    private int indexBufferSizeInBytes = DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES;
+    private int diskIoBufferSize = DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES;
     private SegmentPropertiesManager segmentPropertiesManager = null;
 
     SegmentBuilder() {
@@ -127,9 +127,9 @@ public class SegmentBuilder<K, V> {
         return this;
     }
 
-    public SegmentBuilder<K, V> withIndexBufferSizeInBytes(
-            final int indexBufferSizeInBytes) {
-        this.indexBufferSizeInBytes = indexBufferSizeInBytes;
+    public SegmentBuilder<K, V> withDiskIoBufferSize(
+            final int diskIoBufferSize) {
+        this.diskIoBufferSize = diskIoBufferSize;
         return this;
     }
 
@@ -149,11 +149,11 @@ public class SegmentBuilder<K, V> {
                     maxNumberOfKeysInIndexPage,
                     bloomFilterNumberOfHashFunctions,
                     bloomFilterIndexSizeInBytes,
-                    bloomFilterProbabilityOfFalsePositive);
+                    bloomFilterProbabilityOfFalsePositive, diskIoBufferSize);
         }
         if (segmentFiles == null) {
             segmentFiles = new SegmentFiles<>(directory, id, keyTypeDescriptor,
-                    valueTypeDescriptor, indexBufferSizeInBytes);
+                    valueTypeDescriptor, diskIoBufferSize);
         }
         if (segmentPropertiesManager == null) {
             segmentPropertiesManager = new SegmentPropertiesManager(

@@ -60,7 +60,8 @@ public class SegmentManager<K, V> {
                                 conf.getMaxNumberOfKeysInSegmentIndexPage(),
                                 conf.getBloomFilterNumberOfHashFunctions(),
                                 conf.getBloomFilterIndexSizeInBytes(),
-                                conf.getBloomFilterProbabilityOfFalsePositive());
+                                conf.getBloomFilterProbabilityOfFalsePositive(),
+                                conf.getDiskIoBufferSize());
 
                 final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
                                 directory, segmentId);
@@ -68,7 +69,7 @@ public class SegmentManager<K, V> {
                 final SegmentFiles<K, V> segmentFiles = new SegmentFiles<>(
                                 directory, segmentId, keyTypeDescriptor,
                                 valueTypeDescriptor,
-                                conf.getFileReadingBufferSizeInBytes());
+                                conf.getDiskIoBufferSize());
 
                 final SegmentDataSupplier<K, V> segmentDataSupplier = new SegmentDataSupplier<>(
                                 segmentFiles, segmentConf,
@@ -99,8 +100,8 @@ public class SegmentManager<K, V> {
                                 .withBloomFilterIndexSizeInBytes(conf
                                                 .getBloomFilterIndexSizeInBytes())
                                 .withSegmentDataProvider(dataProvider)
-                                .withIndexBufferSizeInBytes(conf
-                                                .getFileReadingBufferSizeInBytes())
+                                .withDiskIoBufferSize(
+                                                conf.getDiskIoBufferSize())
                                 .build();
                 return out;
         }

@@ -439,7 +439,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                 final SegmentId segmentId = SegmentId.of(27);
 
                 SegmentConf segmentConf = new SegmentConf(13L, 17L, 3, 0, 0,
-                                0.0);
+                                0.0, 1024);
 
                 final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
                                 directory, segmentId);
@@ -578,6 +578,11 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
          * Test could be verified that search in disk data is perform correctly
          * and buffers have correct size.
          * 
+         * 
+         * Easiest way how to verify that is to add debug breakpoint into
+         * DirectoryMem methods for gettin read and writer objecs. It's easy to
+         * spot, that correct value was set buffer have strange value 3KB.
+         * 
          * @throws Exception
          */
         @Test
@@ -591,7 +596,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                                 .withBloomFilterIndexSizeInBytes(0)//
                                 .withMaxNumberOfKeysInIndexPage(3)//
                                 .withMaxNumberOfKeysInSegmentCache(5)//
-                                .withIndexBufferSizeInBytes(2 * 1024)
+                                .withDiskIoBufferSize(3 * 1024)
                                 .withValueTypeDescriptor(tds).build();
 
                 try (PairWriter<Integer, String> writer = seg.openWriter()) {
@@ -630,7 +635,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                                 .withValueTypeDescriptor(tds)//
                                 .withMaxNumberOfKeysInSegmentCache(10) //
                                 .withBloomFilterIndexSizeInBytes(0)//
-                                .withIndexBufferSizeInBytes(1 * 1024)//
+                                .withDiskIoBufferSize(1 * 1024)//
                                 .build(), //
                                 2, // expectedNumberKeysInScarceIndex,
                                 10 // expectedNumberOfFile
@@ -642,7 +647,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                                 .withMaxNumberOfKeysInSegmentCache(1)//
                                 .withMaxNumberOfKeysInIndexPage(1)//
                                 .withBloomFilterIndexSizeInBytes(0)//
-                                .withIndexBufferSizeInBytes(2 * 1024)//
+                                .withDiskIoBufferSize(2 * 1024)//
                                 .build(), //
                                 9, // expectedNumberKeysInScarceIndex
                                 5// expectedNumberOfFile
@@ -654,7 +659,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                                 .withMaxNumberOfKeysInSegmentCache(2)//
                                 .withMaxNumberOfKeysInIndexPage(2)//
                                 .withBloomFilterIndexSizeInBytes(0)//
-                                .withIndexBufferSizeInBytes(4 * 1024)//
+                                .withDiskIoBufferSize(4 * 1024)//
                                 .build(), //
                                 5, // expectedNumberKeysInScarceIndex
                                 4 // expectedNumberOfFile

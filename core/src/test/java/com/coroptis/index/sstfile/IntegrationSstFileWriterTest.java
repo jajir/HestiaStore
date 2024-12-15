@@ -15,6 +15,7 @@ import com.coroptis.index.directory.MemDirectory;
 
 public class IntegrationSstFileWriterTest {
 
+    private final static int DISK_IO_BUFFER_SIZE = 1024;
     private final static String FILE_NAME = "pok.dat";
     private final TypeDescriptorByte byteTd = new TypeDescriptorByte();
     private final TypeDescriptorString stringTd = new TypeDescriptorString();
@@ -24,7 +25,8 @@ public class IntegrationSstFileWriterTest {
         final Directory directory = new MemDirectory();
         try (SstFileWriter<String, Byte> siw = new SstFileWriter<>(directory,
                 FILE_NAME, stringTd.getConvertorToBytes(),
-                Comparator.naturalOrder(), byteTd.getTypeWriter())) {
+                Comparator.naturalOrder(), byteTd.getTypeWriter(),
+                DISK_IO_BUFFER_SIZE)) {
             assertEquals(0,
                     siw.put(new Pair<String, Byte>("aaabbb", (byte) 1), true));
             assertThrows(IllegalArgumentException.class, () -> {
@@ -37,7 +39,8 @@ public class IntegrationSstFileWriterTest {
     public void test_invalidOrder() throws Exception {
         try (SstFileWriter<String, Byte> siw = new SstFileWriter<>(
                 new MemDirectory(), FILE_NAME, stringTd.getConvertorToBytes(),
-                Comparator.naturalOrder(), byteTd.getTypeWriter())) {
+                Comparator.naturalOrder(), byteTd.getTypeWriter(),
+                DISK_IO_BUFFER_SIZE)) {
             siw.put(new Pair<String, Byte>("aaa", (byte) 0));
             siw.put(new Pair<String, Byte>("abbb", (byte) 1));
             assertThrows(IllegalArgumentException.class,
@@ -49,7 +52,8 @@ public class IntegrationSstFileWriterTest {
     public void test_duplicatedValue() throws Exception {
         try (SstFileWriter<String, Byte> siw = new SstFileWriter<>(
                 new MemDirectory(), FILE_NAME, stringTd.getConvertorToBytes(),
-                Comparator.naturalOrder(), byteTd.getTypeWriter())) {
+                Comparator.naturalOrder(), byteTd.getTypeWriter(),
+                DISK_IO_BUFFER_SIZE)) {
             siw.put(new Pair<String, Byte>("aaa", (byte) 0));
             siw.put(new Pair<String, Byte>("abbb", (byte) 1));
             assertThrows(IllegalArgumentException.class,
@@ -61,7 +65,8 @@ public class IntegrationSstFileWriterTest {
     public void test_null_key() throws Exception {
         try (SstFileWriter<String, Byte> siw = new SstFileWriter<>(
                 new MemDirectory(), FILE_NAME, stringTd.getConvertorToBytes(),
-                Comparator.naturalOrder(), byteTd.getTypeWriter())) {
+                Comparator.naturalOrder(), byteTd.getTypeWriter(),
+                DISK_IO_BUFFER_SIZE)) {
 
             assertThrows(NullPointerException.class,
                     () -> siw.put(new Pair<String, Byte>(null, (byte) 0)));

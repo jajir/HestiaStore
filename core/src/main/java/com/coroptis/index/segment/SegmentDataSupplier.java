@@ -51,6 +51,8 @@ public class SegmentDataSupplier<K, V> {
                                                 .getBloomFilterProbabilityOfFalsePositive())
                                 .withRelatedObjectName(
                                                 segmentFiles.getSegmentIdName())
+                                .withDiskIoBufferSize(segmentConf
+                                                .getDiskIoBufferSize())
                                 .build();
         }
 
@@ -60,6 +62,8 @@ public class SegmentDataSupplier<K, V> {
                                 .withFileName(segmentFiles.getScarceFileName())
                                 .withKeyTypeDescriptor(segmentFiles
                                                 .getKeyTypeDescriptor())
+                                .withDiskIoBufferSize(segmentConf
+                                                .getDiskIoBufferSize())
                                 .build();
         }
 

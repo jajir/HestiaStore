@@ -22,7 +22,11 @@ public class MemDirectory implements Directory {
     @Override
     public FileReader getFileReader(final String fileName,
             final int bufferSize) {
-        return getFileReader(fileName);
+        if (!data.containsKey(fileName)) {
+            throw new IndexException(
+                    String.format("There is no file '%s'", fileName));
+        }
+        return new MemFileReader(data.get(fileName));
     }
 
     @Override
@@ -34,7 +38,7 @@ public class MemDirectory implements Directory {
     @Override
     public FileWriter getFileWriter(final String fileName, final Access access,
             final int bufferSize) {
-        return getFileWriter(fileName, access);
+        return new MemFileWriter(fileName, this, access);
     }
 
     @Override

@@ -22,7 +22,7 @@ public class SsstIndexConf {
     private final Integer bloomFilterIndexSizeInBytes;
     private final Double bloomFilterProbabilityOfFalsePositive;
 
-    private final int fileReadingBufferSizeInBytes;
+    private final int diskIoBufferSize;
 
     SsstIndexConf(final long maxNumberOfKeysInSegmentCache,
             final long maxNumberOfKeysInSegmentCacheDuringFlushing,
@@ -33,7 +33,7 @@ public class SsstIndexConf {
             final Integer bloomFilterNumberOfHashFunctions,
             final Integer bloomFilterIndexSizeInBytes,
             final Double bloomFilterProbabilityOfFalsePositive,
-            final int fileReadingBufferSizeInBytes) {
+            final int diskIoBufferSize) {
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
         this.maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInSegmentCacheDuringFlushing;
         this.maxNumberOfKeysInSegmentIndexPage = maxNumberOfKeysInSegmentIndexPage;
@@ -43,13 +43,13 @@ public class SsstIndexConf {
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
         this.bloomFilterProbabilityOfFalsePositive = bloomFilterProbabilityOfFalsePositive;
-        this.fileReadingBufferSizeInBytes = fileReadingBufferSizeInBytes;
+        this.diskIoBufferSize = diskIoBufferSize;
 
-        if (fileReadingBufferSizeInBytes % 1024 != 0) {
+        if (diskIoBufferSize % 1024 != 0) {
             throw new IllegalArgumentException(String.format(
                     "Parameter 'indexBufferSizeInBytes' vith value '%s'"
                             + " can't be divided by 1024 without reminder",
-                    fileReadingBufferSizeInBytes));
+                    diskIoBufferSize));
         }
     }
 
@@ -89,8 +89,8 @@ public class SsstIndexConf {
         return maxNumberOfKeysInSegmentCacheDuringFlushing;
     }
 
-    int getFileReadingBufferSizeInBytes() {
-        return fileReadingBufferSizeInBytes;
+    int getDiskIoBufferSize() {
+        return diskIoBufferSize;
     }
 
 }

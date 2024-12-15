@@ -27,17 +27,17 @@ public class SegmentFiles<K, V> {
     private final SegmentId id;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
-    private final int indexBufferSize;
+    private final int diskIoBufferSize;
 
     public SegmentFiles(final Directory directory, final SegmentId id,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
-            final int indexBufferSize) {
+            final int diskIoBufferSize) {
         this.directory = Objects.requireNonNull(directory);
         this.id = Objects.requireNonNull(id);
         this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
         this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
-        this.indexBufferSize = indexBufferSize;
+        this.diskIoBufferSize = diskIoBufferSize;
     }
 
     String getCacheFileName() {
@@ -77,6 +77,7 @@ public class SegmentFiles<K, V> {
                         keyTypeDescriptor.getConvertorToBytes()) //
                 .withValueReader(valueTypeDescriptor.getTypeReader())//
                 .withValueWriter(valueTypeDescriptor.getTypeWriter())//
+                .withDiskIoBufferSize(diskIoBufferSize)//
                 .build();
     }
 
@@ -91,6 +92,7 @@ public class SegmentFiles<K, V> {
                         keyTypeDescriptor.getConvertorToBytes()) //
                 .withValueReader(valueTypeDescriptor.getTypeReader())//
                 .withValueWriter(valueTypeDescriptor.getTypeWriter())//
+                .withDiskIoBufferSize(diskIoBufferSize)//
                 .build();
     }
 
@@ -105,6 +107,7 @@ public class SegmentFiles<K, V> {
                         keyTypeDescriptor.getConvertorToBytes()) //
                 .withValueReader(valueTypeDescriptor.getTypeReader())//
                 .withValueWriter(valueTypeDescriptor.getTypeWriter())//
+                .withDiskIoBufferSize(diskIoBufferSize)//
                 .build();
     }
 
@@ -119,7 +122,7 @@ public class SegmentFiles<K, V> {
                         keyTypeDescriptor.getConvertorToBytes()) //
                 .withValueReader(valueTypeDescriptor.getTypeReader())//
                 .withValueWriter(valueTypeDescriptor.getTypeWriter())//
-                .withDiskIoBufferSize(indexBufferSize)//
+                .withDiskIoBufferSize(diskIoBufferSize)//
                 .build();
     }
 
@@ -134,6 +137,7 @@ public class SegmentFiles<K, V> {
                         keyTypeDescriptor.getConvertorToBytes()) //
                 .withValueReader(valueTypeDescriptor.getTypeReader())//
                 .withValueWriter(valueTypeDescriptor.getTypeWriter())//
+                .withDiskIoBufferSize(diskIoBufferSize)//
                 .build();
     }
 
@@ -142,6 +146,7 @@ public class SegmentFiles<K, V> {
                 .withDirectory(getDirectory())//
                 .withFileName(getTempScarceFileName())//
                 .withKeyTypeDescriptor(getKeyTypeDescriptor())//
+                .withDiskIoBufferSize(diskIoBufferSize)
                 .build();
     }
 
@@ -153,7 +158,7 @@ public class SegmentFiles<K, V> {
         return id;
     }
 
-    public String getSegmentIdName(){
+    public String getSegmentIdName() {
         return id.getName();
     }
 

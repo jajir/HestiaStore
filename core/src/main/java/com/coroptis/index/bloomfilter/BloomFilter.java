@@ -31,6 +31,8 @@ public class BloomFilter<K> implements CloseableResource {
 
     private Hash hash;
 
+    private final int diskIoBufferSize;
+
     public static <M> BloomFilterBuilder<M> builder() {
         return new BloomFilterBuilder<>();
     }
@@ -38,7 +40,7 @@ public class BloomFilter<K> implements CloseableResource {
     BloomFilter(final Directory directory, final String bloomFilterFileName,
             final int numberOfHashFunctions, final int indexSizeInBytes,
             final ConvertorToBytes<K> convertorToBytes,
-            final String relatedObjectName) {
+            final String relatedObjectName, final int diskIoBufferSize) {
         this.directory = Objects.requireNonNull(directory,
                 "Directory is required");
         this.bloomFilterFileName = Objects.requireNonNull(bloomFilterFileName,
@@ -50,13 +52,14 @@ public class BloomFilter<K> implements CloseableResource {
         this.indexSizeInBytes = indexSizeInBytes;
         this.numberOfHashFunctions = numberOfHashFunctions;
         this.bloomFilterStats = new BloomFilterStats();
+        this.diskIoBufferSize = diskIoBufferSize;
         if (numberOfHashFunctions <= 0) {
             throw new IllegalArgumentException(
                     String.format("Number of hash function cant be '0'"));
         }
         if (isExists() && indexSizeInBytes > 0) {
             try (FileReader reader = directory
-                    .getFileReader(bloomFilterFileName)) {
+                    .getFileReader(bloomFilterFileName, diskIoBufferSize)) {
                 final byte[] data = new byte[indexSizeInBytes];
                 final int readed = reader.read(data);
                 if (indexSizeInBytes != readed) {
@@ -82,7 +85,8 @@ public class BloomFilter<K> implements CloseableResource {
     void setNewHash(final Hash newHash) {
         Objects.requireNonNull(newHash, "New hash can't be null");
         this.hash = newHash;
-        try (FileWriter writer = directory.getFileWriter(bloomFilterFileName)) {
+        try (FileWriter writer = directory.getFileWriter(bloomFilterFileName,
+                Directory.Access.OVERWRITE, diskIoBufferSize)) {
             writer.write(hash.getData());
         }
 

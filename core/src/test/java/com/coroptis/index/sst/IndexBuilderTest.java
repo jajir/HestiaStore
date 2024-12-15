@@ -131,7 +131,7 @@ public class IndexBuilderTest {
         assertEquals(5_000_000, conf.getMaxNumberOfKeysInCache());
         assertEquals(10_000_000, conf.getMaxNumberOfKeysInSegment());
         assertEquals(10, conf.getMaxNumberOfSegmentsInCache());
-        assertEquals(1_048_576, conf.getFileReadingBufferSizeInBytes());
+        assertEquals(1_048_576, conf.getDiskIoBufferSize());
         assertEquals(100_000, conf.getBloomFilterIndexSizeInBytes());
         assertEquals(2, conf.getBloomFilterNumberOfHashFunctions());
     }
@@ -144,7 +144,7 @@ public class IndexBuilderTest {
                         .withDirectory(directory)//
                         .withKeyClass(Long.class)//
                         .withValueClass(String.class)//
-                        .withFileReadingBufferSizeInBytes(1000)//
+                        .withDiskIoBufferSizeInBytes(1000)//
                         .withCustomConf()//
                         .build());
 
@@ -167,7 +167,7 @@ public class IndexBuilderTest {
                 .withMaxNumberOfKeysInSegment(44)//
                 .withMaxNumberOfKeysInCache(55)//
                 .setMaxNumberOfSegmentsInCache(66)//
-                .withFileReadingBufferSizeInBytes(1024)//
+                .withDiskIoBufferSizeInBytes(1024)//
                 .withBloomFilterIndexSizeInBytes(77)//
                 .withBloomFilterNumberOfHashFunctions(88)//
                 .build();
@@ -178,7 +178,7 @@ public class IndexBuilderTest {
         assertEquals(55, conf.getMaxNumberOfKeysInCache());
         assertEquals(44, conf.getMaxNumberOfKeysInSegment());
         assertEquals(66, conf.getMaxNumberOfSegmentsInCache());
-        assertEquals(1024, conf.getFileReadingBufferSizeInBytes());
+        assertEquals(1024, conf.getDiskIoBufferSize());
         assertEquals(77, conf.getBloomFilterIndexSizeInBytes());
         assertEquals(88, conf.getBloomFilterNumberOfHashFunctions());
     }

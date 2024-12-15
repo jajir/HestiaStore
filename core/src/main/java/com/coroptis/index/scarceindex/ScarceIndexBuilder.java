@@ -7,11 +7,15 @@ import com.coroptis.index.directory.Directory;
 
 public class ScarceIndexBuilder<K> {
 
+    private static final int DEFAULT_DISK_IO_BUFFER_SIZE = 4 * 1024;
+
     private TypeDescriptor<K> keyTypeDescriptor;
 
     private Directory directory;
 
     private String fileName;
+
+    private int diskIoBufferSize = DEFAULT_DISK_IO_BUFFER_SIZE;
 
     ScarceIndexBuilder() {
         // just keep constructor with limited visibility
@@ -33,8 +37,15 @@ public class ScarceIndexBuilder<K> {
         return this;
     }
 
+    public ScarceIndexBuilder<K> withDiskIoBufferSize(
+            final int diskIoBufferSize) {
+        this.diskIoBufferSize = diskIoBufferSize;
+        return this;
+    }
+
     public ScarceIndex<K> build() {
-        return new ScarceIndex<K>(directory, fileName, keyTypeDescriptor);
+        return new ScarceIndex<K>(directory, fileName, keyTypeDescriptor,
+                diskIoBufferSize);
     }
 
 }

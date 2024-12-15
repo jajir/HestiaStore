@@ -8,19 +8,22 @@ public class SegmentConf {
     private final Integer bloomFilterNumberOfHashFunctions;
     private final Integer bloomFilterIndexSizeInBytes;
     private final Double bloomFilterProbabilityOfFalsePositive;
+    private final Integer diskIoBufferSize;
 
     public SegmentConf(final long maxNumeberOfKeysInSegmentDeltaCache,
             final long maxNumberOfKeysInSegmentCacheDuringFlushing,
             final int maxNumberOfKeysInIndexPage,
             final Integer bloomFilterNumberOfHashFunctions,
             final Integer bloomFilterIndexSizeInBytes,
-            final Double bloomFilterProbabilityOfFalsePositive) {
+            final Double bloomFilterProbabilityOfFalsePositive,
+            final Integer diskIoBufferSize) {
         this.maxNumberOfKeysInSegmentDeltaCache = maxNumeberOfKeysInSegmentDeltaCache;
         this.maxNumberOfKeysInDeltaCacheDuringWriting = maxNumberOfKeysInSegmentCacheDuringFlushing;
         this.maxNumberOfKeysInIndexPage = maxNumberOfKeysInIndexPage;
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
         this.bloomFilterProbabilityOfFalsePositive = bloomFilterProbabilityOfFalsePositive;
+        this.diskIoBufferSize = diskIoBufferSize;
     }
 
     public SegmentConf(final SegmentConf segmentConf) {
@@ -30,6 +33,7 @@ public class SegmentConf {
         this.bloomFilterNumberOfHashFunctions = segmentConf.bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = segmentConf.bloomFilterIndexSizeInBytes;
         this.bloomFilterProbabilityOfFalsePositive = segmentConf.bloomFilterProbabilityOfFalsePositive;
+        this.diskIoBufferSize = segmentConf.diskIoBufferSize;
     }
 
     /**
@@ -66,5 +70,9 @@ public class SegmentConf {
      */
     long getMaxNumberOfKeysInDeltaCacheDuringWriting() {
         return maxNumberOfKeysInDeltaCacheDuringWriting;
+    }
+
+    public Integer getDiskIoBufferSize() {
+        return diskIoBufferSize;
     }
 }
