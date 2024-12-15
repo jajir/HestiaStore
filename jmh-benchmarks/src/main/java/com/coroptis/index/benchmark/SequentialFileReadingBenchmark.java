@@ -36,10 +36,10 @@ import com.coroptis.index.unsorteddatafile.UnsortedDataFile;
 @Measurement(iterations = 4, time = 1, timeUnit = TimeUnit.SECONDS)
 @Fork(1) // Use 1 fork (JVM instance)
 @Threads(1)
-public class FileReadingBenchmark {
+public class SequentialFileReadingBenchmark {
 
     private final Logger logger = LoggerFactory
-            .getLogger(FileReadingBenchmark.class);
+            .getLogger(SequentialFileReadingBenchmark.class);
     private final static String PROPERTY_DIRECTORY = "dir";
     private final static String FILE_NAME = "test.unsorted";
     private final static Random RANDOM = new Random();
@@ -80,37 +80,37 @@ public class FileReadingBenchmark {
     }
 
     @Benchmark
-    public String testReadDataWithBuffer_01KB() {
+    public String test_with_buffer_01KB() {
         return testRound(1024);
     }
 
     @Benchmark
-    public String testReadDataWithBuffer_02KB() {
+    public String test_with_buffer_02KB() {
         return testRound(2*1024);
     }
 
     @Benchmark
-    public String testReadDataWithBuffer_04KB() {
+    public String test_with_buffer_04KB() {
         return testRound(4*1024);
     }
 
     @Benchmark
-    public String testReadDataWithBuffer_08KB() {
+    public String test_with_buffer_08KB() {
         return testRound(8*1024);
     }
 
     @Benchmark
-    public String testReadDataWithBuffer_16KB() {
+    public String test_with_buffer_16KB() {
         return testRound(16*1024);
     }
 
     @Benchmark
-    public String testReadDataWithBuffer_32KB() {
+    public String test_with_buffer_32KB() {
         return testRound(32*1024);
     }
 
     @Benchmark
-    public String testReadDataWithBuffer_64KB() {
+    public String test_with_buffer_64KB() {
         return testRound(64*1024);
     }
 
