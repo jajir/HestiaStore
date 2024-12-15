@@ -27,9 +27,14 @@ public class IntegrationUnsortedDataFileTest {
     @Test
     public void test_in_mem_unsorted_index() throws Exception {
         final Directory dir = new MemDirectory();
-        final UnsortedDataFile<Integer, String> unsorted = new UnsortedDataFile<>(
-                dir, "duck", tdi.getTypeWriter(), tds.getTypeWriter(),
-                tdi.getTypeReader(), tds.getTypeReader());
+        final UnsortedDataFile<Integer, String> unsorted = UnsortedDataFile
+                .<Integer, String>builder().withDirectory(dir)//
+                .withFileName("duck")//
+                .withKeyWriter(tdi.getTypeWriter())//
+                .withValueWriter(tds.getTypeWriter())//
+                .withKeyReader(tdi.getTypeReader())//
+                .withValueReader(tds.getTypeReader())//
+                .build();
         assertNotNull(unsorted);
 
         try (PairWriter<Integer, String> writer = unsorted.openWriter()) {
@@ -56,9 +61,14 @@ public class IntegrationUnsortedDataFileTest {
     @Test
     public void test_stream_non_exesting_file() throws Exception {
         final Directory dir = new MemDirectory();
-        final UnsortedDataFile<Integer, String> unsorted = new UnsortedDataFile<>(
-                dir, "giraffe", tdi.getTypeWriter(), tds.getTypeWriter(),
-                tdi.getTypeReader(), tds.getTypeReader());
+        final UnsortedDataFile<Integer, String> unsorted = UnsortedDataFile
+                .<Integer, String>builder().withDirectory(dir)//
+                .withFileName("giraffe")//
+                .withKeyWriter(tdi.getTypeWriter())//
+                .withValueWriter(tds.getTypeWriter())//
+                .withKeyReader(tdi.getTypeReader())//
+                .withValueReader(tds.getTypeReader())//
+                .build();
         assertNotNull(unsorted);
 
         try (UnsortedDataFileStreamer<Integer, String> streamer = unsorted

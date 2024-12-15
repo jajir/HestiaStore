@@ -20,7 +20,7 @@ public class SstFile<K, V> {
 
     private final String fileName;
 
-    private final int fileReadingBufferSize;
+    private final int diskIoBufferSize;
 
     private final TypeWriter<V> valueWriter;
 
@@ -41,7 +41,7 @@ public class SstFile<K, V> {
             final Comparator<K> keyComparator,
             final ConvertorFromBytes<K> keyConvertorFromBytes,
             final ConvertorToBytes<K> keyConvertorToBytes,
-            final int fileReadingBufferSize) {
+            final int diskIoBufferSize) {
         this.directory = Objects.requireNonNull(directory);
         this.fileName = Objects.requireNonNull(fileName);
         this.valueWriter = Objects.requireNonNull(valueWriter);
@@ -50,7 +50,7 @@ public class SstFile<K, V> {
         this.keyConvertorFromBytes = Objects
                 .requireNonNull(keyConvertorFromBytes);
         this.keyConvertorToBytes = Objects.requireNonNull(keyConvertorToBytes);
-        this.fileReadingBufferSize = fileReadingBufferSize;
+        this.diskIoBufferSize = diskIoBufferSize;
     }
 
     public CloseablePairReader<K, V> openReader() {
@@ -65,7 +65,7 @@ public class SstFile<K, V> {
                 keyConvertorFromBytes);
         final SstFileReader<K, V> reader = new SstFileReader<>(diffKeyReader,
                 valueReader,
-                directory.getFileReader(fileName, fileReadingBufferSize));
+                directory.getFileReader(fileName, diskIoBufferSize));
         reader.skip(position);
         return reader;
     }
@@ -88,7 +88,7 @@ public class SstFile<K, V> {
 
     public SstFileWriter<K, V> openWriter() {
         final SstFileWriter<K, V> writer = new SstFileWriter<>(directory,
-                fileName, keyConvertorToBytes, keyComparator, valueWriter);
+                fileName, keyConvertorToBytes, keyComparator, valueWriter, diskIoBufferSize);
         return writer;
     }
 

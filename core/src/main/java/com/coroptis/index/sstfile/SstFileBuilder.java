@@ -17,7 +17,7 @@ public class SstFileBuilder<K, V> {
 
     private String fileName;
 
-    private int fileReadingBufferSize = DELAULT_FILE_READING_BUFFER_SIZE;
+    private int diskIoBufferSize = DELAULT_FILE_READING_BUFFER_SIZE;
 
     private TypeWriter<V> valueWriter;
 
@@ -39,10 +39,10 @@ public class SstFileBuilder<K, V> {
         return this;
     }
 
-    public SstFileBuilder<K, V> withFileReadingBufferSize(
-            final int fileReadingBufferSize) {
-        this.fileReadingBufferSize = Objects
-                .requireNonNull(fileReadingBufferSize);
+    public SstFileBuilder<K, V> withDiskIoBufferSize(
+            final int diskIoBufferSize) {
+        this.diskIoBufferSize = Objects
+                .requireNonNull(diskIoBufferSize);
         return this;
     }
 
@@ -80,7 +80,7 @@ public class SstFileBuilder<K, V> {
     public SstFile<K, V> build() {
         return new SstFile<>(directory, fileName, valueWriter, valueReader,
                 keyComparator, keyConvertorFromBytes, keyConvertorToBytes,
-                fileReadingBufferSize);
+                diskIoBufferSize);
     }
 
 }

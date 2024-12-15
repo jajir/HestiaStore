@@ -18,6 +18,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import com.coroptis.index.Pair;
+import com.coroptis.index.PairWriter;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
 import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
@@ -574,6 +575,39 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
         }
 
         /**
+         * Test could be verified that search in disk data is perform correctly
+         * and buffers have correct size.
+         * 
+         * @throws Exception
+         */
+        @Test
+        void test_search_on_disk() throws Exception {
+                final Directory directory = new MemDirectory();
+                final SegmentId id = SegmentId.of(27);
+                final Segment<Integer, String> seg = Segment
+                                .<Integer, String>builder()//
+                                .withDirectory(directory).withId(id)//
+                                .withKeyTypeDescriptor(tdi)//
+                                .withBloomFilterIndexSizeInBytes(0)//
+                                .withMaxNumberOfKeysInIndexPage(3)//
+                                .withMaxNumberOfKeysInSegmentCache(5)//
+                                .withIndexBufferSizeInBytes(2 * 1024)
+                                .withValueTypeDescriptor(tds).build();
+
+                try (PairWriter<Integer, String> writer = seg.openWriter()) {
+                        for (int i = 0; i < 1000; i++) {
+                                writer.put(Pair.of(i, "Ahoj"));
+                        }
+                }
+                seg.forceCompact();
+
+                for (int i = 0; i < 1000; i++) {
+                        final String value = seg.get(i);
+                        assertEquals("Ahoj", value);
+                }
+        }
+
+        /**
          * Prepare data for tests. Directory object is shared between
          * parameterized tests.
          * 
@@ -596,6 +630,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                                 .withValueTypeDescriptor(tds)//
                                 .withMaxNumberOfKeysInSegmentCache(10) //
                                 .withBloomFilterIndexSizeInBytes(0)//
+                                .withIndexBufferSizeInBytes(1 * 1024)//
                                 .build(), //
                                 2, // expectedNumberKeysInScarceIndex,
                                 10 // expectedNumberOfFile
@@ -607,6 +642,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                                 .withMaxNumberOfKeysInSegmentCache(1)//
                                 .withMaxNumberOfKeysInIndexPage(1)//
                                 .withBloomFilterIndexSizeInBytes(0)//
+                                .withIndexBufferSizeInBytes(2 * 1024)//
                                 .build(), //
                                 9, // expectedNumberKeysInScarceIndex
                                 5// expectedNumberOfFile
@@ -618,6 +654,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                                 .withMaxNumberOfKeysInSegmentCache(2)//
                                 .withMaxNumberOfKeysInIndexPage(2)//
                                 .withBloomFilterIndexSizeInBytes(0)//
+                                .withIndexBufferSizeInBytes(4 * 1024)//
                                 .build(), //
                                 5, // expectedNumberKeysInScarceIndex
                                 4 // expectedNumberOfFile

@@ -11,16 +11,35 @@ mvn package
 java -Ddir=./target/ -jar target/jmh-benchmarks.jar
 ```
 
+Specific JMH benchmark class could be run;
+
+```bash
+java -Ddir=./target/ -jar target/jmh-benchmarks.jar SegmentSearchBenchmark
+```
+
 result could look like:
 
 ```
-Benchmark                                        Mode  Cnt  Score   Error  Units
-FileReadingBenchmark.testReadDataWithBuffer16KB  avgt   25  0.941 ± 0.010  ms/op
-FileReadingBenchmark.testReadDataWithBuffer1KB   avgt   25  1.405 ± 0.090  ms/op
-FileReadingBenchmark.testReadDataWithBuffer2KB   avgt   25  1.117 ± 0.007  ms/op
-FileReadingBenchmark.testReadDataWithBuffer4KB   avgt   25  1.028 ± 0.008  ms/op
-FileReadingBenchmark.testReadDataWithBuffer8KB   avgt   25  0.964 ± 0.005  ms/op
+Benchmark                                             Mode  Cnt    Score      Error  Units
+SequentialFileReadingBenchmark.test_with_buffer_01KB  avgt    4   70.747 ±   42.480  ms/op
+SequentialFileReadingBenchmark.test_with_buffer_02KB  avgt    4   60.009 ±   52.899  ms/op
+SequentialFileReadingBenchmark.test_with_buffer_04KB  avgt    4   51.254 ±   30.112  ms/op
+SequentialFileReadingBenchmark.test_with_buffer_08KB  avgt    4   48.600 ±   28.892  ms/op
+SequentialFileReadingBenchmark.test_with_buffer_16KB  avgt    4   48.471 ±   25.665  ms/op
+SequentialFileReadingBenchmark.test_with_buffer_32KB  avgt    4   45.256 ±   24.986  ms/op
+SequentialFileReadingBenchmark.test_with_buffer_64KB  avgt    4   45.204 ±   24.867  ms/op
+SequentialFileWritingBenchmark.test_with_buffer_01KB  avgt    4  238.075 ±   75.311  ms/op
+SequentialFileWritingBenchmark.test_with_buffer_02KB  avgt    4  271.272 ±   64.747  ms/op
+SequentialFileWritingBenchmark.test_with_buffer_04KB  avgt    4  276.001 ±   45.815  ms/op
+SequentialFileWritingBenchmark.test_with_buffer_08KB  avgt    4  352.189 ± 1140.814  ms/op
+SequentialFileWritingBenchmark.test_with_buffer_16KB  avgt    4  258.806 ±   44.693  ms/op
+SequentialFileWritingBenchmark.test_with_buffer_32KB  avgt    4  276.246 ±  135.019  ms/op
+SequentialFileWritingBenchmark.test_with_buffer_64KB  avgt    4  275.944 ±  128.835  ms/op
 ```
+
+### Possible problems
+
+Generally JMH is quite fragile and generates. Usually help rebuild prject and start again as described above.
 
 ## Development
 

@@ -47,7 +47,6 @@ public class SequentialFileWritingBenchmark {
     private final static TypeDescriptor<Long> TYPE_DESCRIPTOR_LONG = new TypeDescriptorLong();
 
     private String directoryFileName;
-    private UnsortedDataFile<String, Long> testFile;
     private Directory directory;
 
     @Setup
@@ -59,14 +58,6 @@ public class SequentialFileWritingBenchmark {
         }
         directory = new FsDirectory(new File(directoryFileName));
 
-        testFile = UnsortedDataFile.<String, Long>builder()//
-                .withDirectory(directory)//
-                .withFileName(FILE_NAME)//
-                .withKeyWriter(TYPE_DESCRIPTOR_STRING.getTypeWriter())//
-                .withKeyReader(TYPE_DESCRIPTOR_STRING.getTypeReader())//
-                .withValueWriter(TYPE_DESCRIPTOR_LONG.getTypeWriter())//
-                .withValueReader(TYPE_DESCRIPTOR_LONG.getTypeReader())//
-                .build();
     }
 
     @Benchmark
@@ -106,10 +97,10 @@ public class SequentialFileWritingBenchmark {
 
     private String testRound(final int bufferSize) {
         long result = 0;
-
+        final UnsortedDataFile<String, Long> testFile = getDataFile(bufferSize);
         // prepare data
         try (PairWriter<String, Long> pairWriter = testFile
-                .openWriter(Access.OVERWRITE, bufferSize)) {
+                .openWriter(Access.OVERWRITE)) {
             for (int i = 0; i < NUMBER_OF_TESTING_PAIRS; i++) {
                 pairWriter.put(dataProvider.generateRandomString(),
                         RANDOM.nextLong());
@@ -117,6 +108,18 @@ public class SequentialFileWritingBenchmark {
             }
         }
         return String.valueOf(result);
+    }
+
+    private UnsortedDataFile<String, Long> getDataFile(int bufferSize) {
+        return UnsortedDataFile.<String, Long>builder()//
+                .withDirectory(directory)//
+                .withFileName(FILE_NAME)//
+                .withKeyWriter(TYPE_DESCRIPTOR_STRING.getTypeWriter())//
+                .withKeyReader(TYPE_DESCRIPTOR_STRING.getTypeReader())//
+                .withValueWriter(TYPE_DESCRIPTOR_LONG.getTypeWriter())//
+                .withValueReader(TYPE_DESCRIPTOR_LONG.getTypeReader())//
+                .withDiskIoBufferSize(bufferSize)//
+                .build();
     }
 
 }

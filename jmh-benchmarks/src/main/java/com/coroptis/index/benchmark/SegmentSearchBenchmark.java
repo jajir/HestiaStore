@@ -18,17 +18,22 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.coroptis.index.Pair;
-import com.coroptis.index.PairIterator;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.datatype.TypeDescriptorLong;
 import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
-import com.coroptis.index.directory.Directory.Access;
 import com.coroptis.index.directory.FsDirectory;
-import com.coroptis.index.unsorteddatafile.UnsortedDataFile;
+import com.coroptis.index.segment.Segment;
+import com.coroptis.index.segment.SegmentBuilder;
+import com.coroptis.index.segment.SegmentId;
 
+/**
+ * Test will create segment with String and Long as key value pairs.
+ * 
+ * Test data will be sequence, 10% of entry data will be randomly ommited from
+ * storing. Test will randomly read data from segment.
+ */
 @BenchmarkMode(Mode.AverageTime) // Measures the average time per operation
 @OutputTimeUnit(TimeUnit.MILLISECONDS) // Results in milliseconds
 @State(Scope.Thread) // Each thread gets its own state
@@ -36,21 +41,22 @@ import com.coroptis.index.unsorteddatafile.UnsortedDataFile;
 @Measurement(iterations = 4, time = 1, timeUnit = TimeUnit.SECONDS)
 @Fork(1) // Use 1 fork (JVM instance)
 @Threads(1)
-public class SequentialFileReadingBenchmark {
+public class SegmentSearchBenchmark {
 
     private final Logger logger = LoggerFactory
             .getLogger(SequentialFileReadingBenchmark.class);
     private final static String PROPERTY_DIRECTORY = "dir";
-    private final static String FILE_NAME = "test.unsorted";
+    private final SegmentId SEGMENT_ID = SegmentId.of(29);
     private final static Random RANDOM = new Random();
-    private final static DataProvider dataProvider = new DataProvider();    
-    private final static int NUMBER_OF_TESTING_PAIRS = 400_000;
+    private final static DataProvider dataProvider = new DataProvider();
+    private final static int NUMBER_OF_TESTING_PAIRS = 1_000_000;
+    private final static int NUMBER_OF_TESTING_SEARCH_OPERATIONS = 500_000;
     private final static TypeDescriptor<String> TYPE_DESCRIPTOR_STRING = new TypeDescriptorString();
     private final static TypeDescriptor<Long> TYPE_DESCRIPTOR_LONG = new TypeDescriptorLong();
 
     private String directoryFileName;
     private Directory directory;
-    
+
     @Setup
     public void setup() {
         directoryFileName = System.getProperty(PROPERTY_DIRECTORY);
@@ -59,85 +65,71 @@ public class SequentialFileReadingBenchmark {
             throw new IllegalStateException("Property 'dir' is not set");
         }
         directory = new FsDirectory(new File(directoryFileName));
-        
-        final UnsortedDataFile<String, Long> testFile = getDataFile(1024);
 
-        // prepare data
-        try (PairWriter<String, Long> pairWriter = testFile
-                .openWriter(Access.OVERWRITE)) {
+        final Segment<String, Long> segment = getCommonBuilder()// get default
+                                                                // builder
+                .build();
+
+        try (PairWriter<String, Long> pairWriter = segment.openWriter()) {
             for (int i = 0; i < NUMBER_OF_TESTING_PAIRS; i++) {
-                pairWriter.put(dataProvider.generateRandomString(), RANDOM.nextLong());
+                if (RANDOM.nextInt(10) != 0) {
+                    pairWriter.put(dataProvider.generateSequenceString(i),
+                            RANDOM.nextLong());
+                }
             }
         }
-    }
 
-    @Benchmark
-    public String test_with_buffer_01KB() {
-        return testRound(1024);
-    }
-
-    @Benchmark
-    public String test_with_buffer_02KB() {
-        return testRound(2*1024);
     }
 
     @Benchmark
     public String test_with_buffer_04KB() {
-        return testRound(4*1024);
+        return testRound(4 * 1024);
     }
 
     @Benchmark
     public String test_with_buffer_08KB() {
-        return testRound(8*1024);
+        return testRound(8 * 1024);
     }
 
     @Benchmark
     public String test_with_buffer_16KB() {
-        return testRound(16*1024);
+        return testRound(16 * 1024);
     }
 
     @Benchmark
     public String test_with_buffer_32KB() {
-        return testRound(32*1024);
-    }
-
-    @Benchmark
-    public String test_with_buffer_64KB() {
-        return testRound(64*1024);
+        return testRound(32 * 1024);
     }
 
     private String testRound(final int bufferSize) {
-        final UnsortedDataFile<String, Long> testFile = getDataFile(bufferSize);
         long result = 0;
-        try (PairIterator<String, Long> pairIterator = testFile
-                .openIterator()) {
-            while (pairIterator.hasNext()) {
-                final Pair<String, Long> pair = pairIterator.next();
-                if (pair == null) {
-                    throw new IllegalStateException("Pair is null");
-                }
-                if (pair.getKey() == null) {
-                    throw new IllegalStateException("Key is null");
-                }
-                if (pair.getValue() == null) {
-                    throw new IllegalStateException("Value is null");
-                }
-                result++;
+
+        final Segment<String, Long> segment = getCommonBuilder()// default
+                // builder
+                .withDiskIoBufferSize(bufferSize)//
+                .build();
+
+        // prepare data
+        for (int i = 0; i < NUMBER_OF_TESTING_SEARCH_OPERATIONS; i++) {
+            final String key = dataProvider.generateSequenceString(
+                    RANDOM.nextInt(NUMBER_OF_TESTING_PAIRS));
+            final Long value = segment.get(key);
+            if (value != null) {
+                result += value;
             }
         }
         return String.valueOf(result);
     }
 
-    private UnsortedDataFile<String, Long> getDataFile(int bufferSize) {
-        return UnsortedDataFile.<String, Long>builder()//
+    SegmentBuilder<String, Long> getCommonBuilder() {
+        return Segment.<String, Long>builder()//
                 .withDirectory(directory)//
-                .withFileName(FILE_NAME)//
-                .withKeyWriter(TYPE_DESCRIPTOR_STRING.getTypeWriter())//
-                .withKeyReader(TYPE_DESCRIPTOR_STRING.getTypeReader())//
-                .withValueWriter(TYPE_DESCRIPTOR_LONG.getTypeWriter())//
-                .withValueReader(TYPE_DESCRIPTOR_LONG.getTypeReader())//
-                .withDiskIoBufferSize(bufferSize)//
-                .build();
+                .withId(SEGMENT_ID)//
+                .withKeyTypeDescriptor(TYPE_DESCRIPTOR_STRING)//
+                .withValueTypeDescriptor(TYPE_DESCRIPTOR_LONG)//
+                .withMaxNumberOfKeysInSegmentCache(1024)//
+                .withBloomFilterIndexSizeInBytes(0)// disable bloom filter
+                .withDiskIoBufferSize(1024);
     }
 
 }

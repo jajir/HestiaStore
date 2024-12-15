@@ -22,11 +22,12 @@ public class SstFileWriter<K, V> implements PairWriter<K, V> {
 
     public SstFileWriter(final Directory directory, final String fileName,
             final ConvertorToBytes<K> keyConvertorToBytes,
-            final Comparator<K> keyComparator,
-            final TypeWriter<V> valueWriter) {
+            final Comparator<K> keyComparator, final TypeWriter<V> valueWriter,
+            final int diskIoBufferSize) {
         Objects.requireNonNull(directory);
         Objects.requireNonNull(fileName);
-        this.writer = directory.getFileWriter(fileName);
+        this.writer = directory.getFileWriter(fileName,
+                Directory.Access.OVERWRITE, diskIoBufferSize);
         this.valueWriter = valueWriter;
         diffKeyWriter = new DiffKeyWriter<>(keyConvertorToBytes, keyComparator);
         position = 0;

@@ -8,6 +8,8 @@ import com.coroptis.index.directory.Directory;
 
 public class UnsortedDataFileBuilder<K, V> {
 
+    private final static int DEFAULT_DISK_IO_BUFFER_SIZE = 4 * 1024;
+
     private Directory directory;
 
     private String fileName;
@@ -19,6 +21,8 @@ public class UnsortedDataFileBuilder<K, V> {
     private TypeReader<K> keyReader;
 
     private TypeReader<V> valueReader;
+
+    private int diskIoBufferSize = DEFAULT_DISK_IO_BUFFER_SIZE;
 
     public UnsortedDataFileBuilder<K, V> withDirectory(
             final Directory directory) {
@@ -55,9 +59,15 @@ public class UnsortedDataFileBuilder<K, V> {
         return this;
     }
 
+    public UnsortedDataFileBuilder<K, V> withDiskIoBufferSize(
+            final int diskIoBufferSize) {
+        this.diskIoBufferSize = diskIoBufferSize;
+        return this;
+    }
+
     public UnsortedDataFile<K, V> build() {
         return new UnsortedDataFile<>(directory, fileName, keyWriter,
-                valueWriter, keyReader, valueReader);
+                valueWriter, keyReader, valueReader, diskIoBufferSize);
     }
 
 }

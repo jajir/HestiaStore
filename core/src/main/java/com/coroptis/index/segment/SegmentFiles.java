@@ -119,7 +119,7 @@ public class SegmentFiles<K, V> {
                         keyTypeDescriptor.getConvertorToBytes()) //
                 .withValueReader(valueTypeDescriptor.getTypeReader())//
                 .withValueWriter(valueTypeDescriptor.getTypeWriter())//
-                .withFileReadingBufferSize(indexBufferSize)//
+                .withDiskIoBufferSize(indexBufferSize)//
                 .build();
     }
 
