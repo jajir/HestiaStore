@@ -33,12 +33,11 @@ public class SegmentDeltaCache<K, V> {
                 .withKeyComparator(keyTypeDescriptor.getComparator())
                 .withSstFile(segmentFiles.getCacheSstFile()).build();
         segmentPropertiesManager.getCacheDeltaFileNames()
-                .forEach(segmentDeltaFileName -> pok(segmentFiles,
+                .forEach(segmentDeltaFileName -> loadDataFromSegmentDeltaFile(segmentFiles,
                         segmentDeltaFileName));
     }
 
-    //FIXME rename, are there test?
-    private void pok(final SegmentFiles<K, V> segmentFiles,
+    private void loadDataFromSegmentDeltaFile(final SegmentFiles<K, V> segmentFiles,
             final String segmentDeltaFileName) {
         final SstFile<K, V> sstFile = segmentFiles
                 .getCacheSstFile(segmentDeltaFileName);
