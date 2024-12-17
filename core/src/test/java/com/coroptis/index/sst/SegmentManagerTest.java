@@ -3,6 +3,7 @@ package com.coroptis.index.sst;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,6 +38,7 @@ public class SegmentManagerTest {
                 final SegmentManager<Integer, String> segmentManager = new SegmentManager<>(
                                 directory, keyTypeDescriptor,
                                 valueTypeDescriptor, conf, segmentDataCache);
+                when(conf.getMaxNumberOfKeysInSegmentCache()).thenReturn(2L);
 
                 final Segment<Integer, String> s1 = segmentManager
                                 .getSegment(SegmentId.of(1));

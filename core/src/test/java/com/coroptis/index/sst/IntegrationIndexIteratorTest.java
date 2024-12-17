@@ -65,7 +65,7 @@ public class IntegrationIndexIteratorTest {
                 .withValueTypeDescriptor(tds) //
                 .withCustomConf()//
                 .withMaxNumberOfKeysInSegment(4) //
-                .withMaxNumberOfKeysInSegmentCache(1) //
+                .withMaxNumberOfKeysInSegmentCache(3) //
                 .withMaxNumberOfKeysInSegmentIndexPage(1) //
                 .withMaxNumberOfKeysInCache(1) //
                 .withBloomFilterIndexSizeInBytes(1000) //

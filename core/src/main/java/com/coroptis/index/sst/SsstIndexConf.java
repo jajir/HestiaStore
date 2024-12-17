@@ -47,7 +47,7 @@ public class SsstIndexConf {
 
         if (diskIoBufferSize % 1024 != 0) {
             throw new IllegalArgumentException(String.format(
-                    "Parameter 'indexBufferSizeInBytes' vith value '%s'"
+                    "Parameter 'diskIoBufferSize' vith value '%s'"
                             + " can't be divided by 1024 without reminder",
                     diskIoBufferSize));
         }

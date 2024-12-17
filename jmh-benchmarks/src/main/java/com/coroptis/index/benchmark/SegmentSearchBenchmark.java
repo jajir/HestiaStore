@@ -25,7 +25,7 @@ import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.FsDirectory;
 import com.coroptis.index.segment.Segment;
-import com.coroptis.index.segment.SegmentBuilder;
+import com.coroptis.index.segment.SegmentBuilderTest;
 import com.coroptis.index.segment.SegmentId;
 
 /**
@@ -68,6 +68,8 @@ public class SegmentSearchBenchmark {
 
         final Segment<String, Long> segment = getCommonBuilder()// get default
                                                                 // builder
+                .withMaxNumberOfKeysInSegmentCache(1000)//
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(100_000)//
                 .build();
 
         try (PairWriter<String, Long> pairWriter = segment.openWriter()) {
@@ -78,7 +80,8 @@ public class SegmentSearchBenchmark {
                 }
             }
         }
-
+        segment.forceCompact();
+        segment.close();
     }
 
     @Benchmark
@@ -121,15 +124,16 @@ public class SegmentSearchBenchmark {
         return String.valueOf(result);
     }
 
-    SegmentBuilder<String, Long> getCommonBuilder() {
+    SegmentBuilderTest<String, Long> getCommonBuilder() {
         return Segment.<String, Long>builder()//
                 .withDirectory(directory)//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(TYPE_DESCRIPTOR_STRING)//
                 .withValueTypeDescriptor(TYPE_DESCRIPTOR_LONG)//
-                .withMaxNumberOfKeysInSegmentCache(1024)//
-                .withBloomFilterIndexSizeInBytes(0)// disable bloom filter
-                .withDiskIoBufferSize(1024);
+                .withMaxNumberOfKeysInSegmentCache(1)//
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(100)//
+                .withMaxNumberOfKeysInIndexPage(100)//
+                .withBloomFilterIndexSizeInBytes(0);// disable bloom filter
     }
 
 }

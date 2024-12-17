@@ -90,7 +90,7 @@ public class IndexBuilderTest {
     }
 
     @Test
-    void test_MaxNumberOfKeysInSegment_is_3() throws Exception {
+    void test_maxNumberOfKeysInSegment_is_3() throws Exception {
         final Exception ex = assertThrows(IllegalArgumentException.class,
                 () -> Index.<Long, String>builder()//
                         .withDirectory(directory)//
@@ -149,11 +149,79 @@ public class IndexBuilderTest {
                         .build());
 
         assertEquals(
-                "Parameter 'indexBufferSizeInBytes' vith value '1000' "
+                "Parameter 'diskIoBufferSize' vith value '1000' "
                         + "can't be divided by 1024 without reminder",
                 ex.getMessage());
     }
 
+    @Test
+    void test_maxNumberOfSegmentsInCache_is_1() throws Exception {
+        final Exception ex = assertThrows(IllegalArgumentException.class,
+        () ->  Index.<Long, String>builder() //
+                .withDirectory(directory) //
+                .withKeyClass(Long.class) //
+                .withValueClass(String.class)//
+                .withCustomConf()//
+                .withMaxNumberOfKeysInSegmentCache(22)//
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(24) //
+                .withMaxNumberOfKeysInSegmentIndexPage(33)//
+                .withMaxNumberOfKeysInSegment(44)//
+                .withMaxNumberOfKeysInCache(143)//
+                .withMaxNumberOfSegmentsInCache(1)//
+                .withBloomFilterIndexSizeInBytes(0)//
+                .build());
+                assertEquals(
+                        "Max number of segments in "
+                        +"cache must be at least 2.",
+                        ex.getMessage());
+            }
+
+
+    @Test
+    void test_maxNumberOfKeysInSegmentCacheDuringFlushing_is_2() throws Exception {
+        final Exception ex = assertThrows(IllegalArgumentException.class,
+        () ->  Index.<Long, String>builder() //
+                .withDirectory(directory) //
+                .withKeyClass(Long.class) //
+                .withValueClass(String.class)//
+                .withCustomConf()//
+                .withMaxNumberOfKeysInSegmentCache(11)//
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(2) //
+                .withMaxNumberOfKeysInSegmentIndexPage(33)//
+                .withMaxNumberOfKeysInSegment(44)//
+                .withMaxNumberOfKeysInCache(55)//
+                .withMaxNumberOfSegmentsInCache(66)//
+                .withBloomFilterIndexSizeInBytes(0)//
+                .build());
+                assertEquals(
+                        "Max number of keys in segment cache during"+
+                        " flushing must be at least 3.",
+                        ex.getMessage());
+            }
+
+            @Test
+            void test_maxNumberOfKeysInSegmentCacheDuringFlushing_is_lower_than_maxNumberOfKeysInSegmentCache() throws Exception {
+                final Exception ex = assertThrows(IllegalArgumentException.class,
+                () ->  Index.<Long, String>builder() //
+                        .withDirectory(directory) //
+                        .withKeyClass(Long.class) //
+                        .withValueClass(String.class)//
+                        .withCustomConf()//
+                        .withMaxNumberOfKeysInSegmentCache(11)//
+                        .withMaxNumberOfKeysInSegmentCacheDuringFlushing(5) //
+                        .withMaxNumberOfKeysInSegmentIndexPage(33)//
+                        .withMaxNumberOfKeysInSegment(44)//
+                        .withMaxNumberOfKeysInCache(55)//
+                        .withMaxNumberOfSegmentsInCache(66)//
+                        .withBloomFilterIndexSizeInBytes(0)//
+                        .build());
+                        assertEquals(
+                                "Max number of keys in segment cache during "+
+                                "flushing must be greater than max number of "+
+                                "keys in segment cache.",
+                                ex.getMessage());
+                    }
+        
     @Test
     void test_custom_conf() throws Exception {
         final Index<Long, String> index = Index.<Long, String>builder() //
@@ -162,11 +230,11 @@ public class IndexBuilderTest {
                 .withValueClass(String.class)//
                 .withCustomConf()//
                 .withMaxNumberOfKeysInSegmentCache(11)//
-                .setMaxNumberOfKeysInSegmentCacheDuringFlushing(22) //
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22) //
                 .withMaxNumberOfKeysInSegmentIndexPage(33)//
                 .withMaxNumberOfKeysInSegment(44)//
                 .withMaxNumberOfKeysInCache(55)//
-                .setMaxNumberOfSegmentsInCache(66)//
+                .withMaxNumberOfSegmentsInCache(66)//
                 .withDiskIoBufferSizeInBytes(1024)//
                 .withBloomFilterIndexSizeInBytes(77)//
                 .withBloomFilterNumberOfHashFunctions(88)//

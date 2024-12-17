@@ -644,7 +644,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                                 .withId(id2)//
                                 .withKeyTypeDescriptor(tdi)//
                                 .withValueTypeDescriptor(tds)//
-                                .withMaxNumberOfKeysInSegmentCache(1)//
+                                .withMaxNumberOfKeysInSegmentCache(3)//
                                 .withMaxNumberOfKeysInIndexPage(1)//
                                 .withBloomFilterIndexSizeInBytes(0)//
                                 .withDiskIoBufferSize(2 * 1024)//
@@ -656,13 +656,13 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                                 .withId(id3)//
                                 .withKeyTypeDescriptor(tdi)//
                                 .withValueTypeDescriptor(tds)//
-                                .withMaxNumberOfKeysInSegmentCache(2)//
+                                .withMaxNumberOfKeysInSegmentCache(5)//
                                 .withMaxNumberOfKeysInIndexPage(2)//
                                 .withBloomFilterIndexSizeInBytes(0)//
                                 .withDiskIoBufferSize(4 * 1024)//
                                 .build(), //
                                 5, // expectedNumberKeysInScarceIndex
-                                4 // expectedNumberOfFile
+                                7 // expectedNumberOfFile
                 ));
         }
 

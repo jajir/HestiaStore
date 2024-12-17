@@ -123,7 +123,7 @@ public class IntegrationIndexTest extends AbstractIndexTest {
                 .withValueTypeDescriptor(tds) //
                 .withCustomConf()//
                 .withMaxNumberOfKeysInSegment(4) //
-                .withMaxNumberOfKeysInSegmentCache(1) //
+                .withMaxNumberOfKeysInSegmentCache(3) //
                 .withMaxNumberOfKeysInSegmentIndexPage(2) //
                 .withMaxNumberOfKeysInCache(2) //
                 .withBloomFilterIndexSizeInBytes(1000) //

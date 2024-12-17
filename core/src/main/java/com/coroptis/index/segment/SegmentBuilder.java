@@ -140,6 +140,26 @@ public class SegmentBuilder<K, V> {
     }
 
     public Segment<K, V> build() {
+        if (directory == null) {
+            throw new IllegalArgumentException("Directory can't be null");
+        }
+        if (keyTypeDescriptor == null) {
+            throw new IllegalArgumentException(
+                    "KeyTypeDescriptor can't be null");
+        }
+        if (valueTypeDescriptor == null) {
+            throw new IllegalArgumentException(
+                    "ValueTypeDescriptor can't be null");
+        }
+        if (maxNumberOfKeysInSegmentCache <= 1) {
+            throw new IllegalArgumentException(
+                    String.format("maxNumberOfKeysInSegmentCache is '%s' but must be higher than '1'", maxNumberOfKeysInSegmentCache));
+        }
+        if (maxNumberOfKeysInSegmentCacheDuringFlushing <= maxNumberOfKeysInSegmentCache) {
+            throw new IllegalArgumentException(
+                    "maxNumberOfKeysInSegmentCacheDuringFlushing must be higher"
+                            + " than maxNumberOfKeysInSegmentCache");
+        }
         if (versionController == null) {
             versionController = new VersionController();
         }

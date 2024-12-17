@@ -100,13 +100,13 @@ public class IndexBuilder<K, V> {
         return this;
     }
 
-    public IndexBuilder<K, V> setMaxNumberOfSegmentsInCache(
+    public IndexBuilder<K, V> withMaxNumberOfSegmentsInCache(
             final int maxNumberOfSegmentsInCache) {
         this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
         return this;
     }
 
-    public IndexBuilder<K, V> setMaxNumberOfKeysInSegmentCacheDuringFlushing(
+    public IndexBuilder<K, V> withMaxNumberOfKeysInSegmentCacheDuringFlushing(
             final int maxNumberOfKeysInSegmentCacheDuringFlushing) {
         this.maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInSegmentCacheDuringFlushing;
         return this;
@@ -172,12 +172,26 @@ public class IndexBuilder<K, V> {
             this.valueTypeDescriptor = DataTypeDescriptorRegistry
                     .getTypeDescriptor(this.valueClass);
         }
+        if(maxNumberOfKeysInSegmentCache<3) {
+            throw new IllegalArgumentException("Max number of keys in segment cache must be at least 3.");
+        }   
         if (maxNumberOfKeysInSegmentCacheDuringFlushing == DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING) {
             maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInCache;
+        }else{
+            if(maxNumberOfKeysInSegmentCacheDuringFlushing<3) {
+                throw new IllegalArgumentException("Max number of keys in segment cache during flushing must be at least 3.");
+            }
+            if(maxNumberOfKeysInSegmentCacheDuringFlushing<maxNumberOfKeysInSegmentCache) {
+                throw new IllegalArgumentException("Max number of keys in segment cache during flushing must be greater than max number of keys in segment cache.");
+            }
         }
         if (maxNumberOfKeysInSegment < 4) {
             throw new IllegalArgumentException(
                     "Max number of keys in segment must be at least 4.");
+        }
+        if (maxNumberOfSegmentsInCache <3) {
+            throw new IllegalArgumentException(
+                    "Max number of segments in cache must be at least 2.");
         }
 
         if (!customConfWasUsed) {
