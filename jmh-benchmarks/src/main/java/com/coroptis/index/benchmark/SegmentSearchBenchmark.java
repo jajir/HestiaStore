@@ -25,7 +25,7 @@ import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.FsDirectory;
 import com.coroptis.index.segment.Segment;
-import com.coroptis.index.segment.SegmentBuilderTest;
+import com.coroptis.index.segment.SegmentBuilder;
 import com.coroptis.index.segment.SegmentId;
 
 /**
@@ -124,13 +124,13 @@ public class SegmentSearchBenchmark {
         return String.valueOf(result);
     }
 
-    SegmentBuilderTest<String, Long> getCommonBuilder() {
+    SegmentBuilder<String, Long> getCommonBuilder() {
         return Segment.<String, Long>builder()//
                 .withDirectory(directory)//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(TYPE_DESCRIPTOR_STRING)//
                 .withValueTypeDescriptor(TYPE_DESCRIPTOR_LONG)//
-                .withMaxNumberOfKeysInSegmentCache(1)//
+                .withMaxNumberOfKeysInSegmentCache(3)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(100)//
                 .withMaxNumberOfKeysInIndexPage(100)//
                 .withBloomFilterIndexSizeInBytes(0);// disable bloom filter
