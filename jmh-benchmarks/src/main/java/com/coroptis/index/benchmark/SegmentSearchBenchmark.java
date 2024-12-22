@@ -60,7 +60,7 @@ public class SegmentSearchBenchmark {
     private Directory directory;
     private Segment<String, Long> segment;
 
-    @Param({ "1", "2", "4", "16", "32" })
+    @Param({ "1", "2", "4", "8", "16", "32" })
     private int diskIoBufferSize;
 
     @Setup

@@ -10,6 +10,7 @@ import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -43,14 +44,18 @@ public class SequentialFileReadingBenchmark {
     private final static String PROPERTY_DIRECTORY = "dir";
     private final static String FILE_NAME = "test.unsorted";
     private final static Random RANDOM = new Random();
-    private final static DataProvider dataProvider = new DataProvider();    
-    private final static int NUMBER_OF_TESTING_PAIRS = 400_000;
+    private final static DataProvider dataProvider = new DataProvider();
+    private final static int NUMBER_OF_TESTING_PAIRS = 800_000;
     private final static TypeDescriptor<String> TYPE_DESCRIPTOR_STRING = new TypeDescriptorString();
     private final static TypeDescriptor<Long> TYPE_DESCRIPTOR_LONG = new TypeDescriptorLong();
 
     private String directoryFileName;
     private Directory directory;
-    
+    private UnsortedDataFile<String, Long> testFile;
+
+    @Param({ "1", "2", "4", "8", "16", "32" })
+    private int diskIoBufferSize;
+
     @Setup
     public void setup() {
         directoryFileName = System.getProperty(PROPERTY_DIRECTORY);
@@ -59,55 +64,21 @@ public class SequentialFileReadingBenchmark {
             throw new IllegalStateException("Property 'dir' is not set");
         }
         directory = new FsDirectory(new File(directoryFileName));
-        
-        final UnsortedDataFile<String, Long> testFile = getDataFile(1024);
+
+        testFile = getDataFile(diskIoBufferSize);
 
         // prepare data
         try (PairWriter<String, Long> pairWriter = testFile
                 .openWriter(Access.OVERWRITE)) {
             for (int i = 0; i < NUMBER_OF_TESTING_PAIRS; i++) {
-                pairWriter.put(dataProvider.generateRandomString(), RANDOM.nextLong());
+                pairWriter.put(dataProvider.generateRandomString(),
+                        RANDOM.nextLong());
             }
         }
     }
 
     @Benchmark
-    public String test_with_buffer_01KB() {
-        return testRound(1024);
-    }
-
-    @Benchmark
-    public String test_with_buffer_02KB() {
-        return testRound(2*1024);
-    }
-
-    @Benchmark
-    public String test_with_buffer_04KB() {
-        return testRound(4*1024);
-    }
-
-    @Benchmark
-    public String test_with_buffer_08KB() {
-        return testRound(8*1024);
-    }
-
-    @Benchmark
-    public String test_with_buffer_16KB() {
-        return testRound(16*1024);
-    }
-
-    @Benchmark
-    public String test_with_buffer_32KB() {
-        return testRound(32*1024);
-    }
-
-    @Benchmark
-    public String test_with_buffer_64KB() {
-        return testRound(64*1024);
-    }
-
-    private String testRound(final int bufferSize) {
-        final UnsortedDataFile<String, Long> testFile = getDataFile(bufferSize);
+    public String test_reading_buffer() {
         long result = 0;
         try (PairIterator<String, Long> pairIterator = testFile
                 .openIterator()) {

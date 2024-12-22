@@ -14,7 +14,6 @@ import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.MemDirectory;
 import com.coroptis.index.segment.Segment;
-import com.coroptis.index.segment.SegmentBuilder;
 import com.coroptis.index.segment.SegmentId;
 
 public class IntegerationNumberOfKeysTest {
@@ -49,7 +48,7 @@ public class IntegerationNumberOfKeysTest {
         segment.forceCompact();
         segment.close();
         segment = getCommonBuilder();
-        
+
         assertEquals(NUMBER_OF_TESTING_PAIRS, segment.getNumberOfKeys());
     }
 
@@ -58,7 +57,7 @@ public class IntegerationNumberOfKeysTest {
         Segment<String, Long> segment = getCommonBuilder();
         writeData(segment);
         assertEquals(NUMBER_OF_TESTING_PAIRS, segment.getNumberOfKeys());
-        segment.close();        
+        segment.close();
     }
 
     private Segment<String, Long> getCommonBuilder() {
@@ -76,12 +75,10 @@ public class IntegerationNumberOfKeysTest {
                 .build();
     }
 
-    private void writeData(final Segment<String, Long> segment){
+    private void writeData(final Segment<String, Long> segment) {
         try (PairWriter<String, Long> pairWriter = segment.openWriter()) {
             for (int i = 0; i < NUMBER_OF_TESTING_PAIRS; i++) {
-                if (RANDOM.nextInt(10) != 0) {
-                    pairWriter.put(wrap(i), RANDOM.nextLong());
-                }
+                pairWriter.put(wrap(i), RANDOM.nextLong());
             }
         }
     }
