@@ -1,17 +1,21 @@
-# How to run JMH benchmarks
+# Development
+
+Here are some development related topiscs.
+
+## How to run JMH benchmarks
 
 Follow this steps:
+* Compile whole project and create pacakge containing all benchmarks data
 * Go to `jmh-benchmarks`
-* Create pacakge containing all benchmarks data
 * Execute it, with temp directory in `target` directory
 
 ```bash
+mvn clean install
 cd jmh-benchmarks
-mvn package
 java -Ddir=./target/ -jar target/jmh-benchmarks.jar
 ```
 
-Specific JMH benchmark class could be run;
+Specific JMH benchmark class could be run:
 
 ```bash
 java -Ddir=./target/ -jar target/jmh-benchmarks.jar SegmentSearchBenchmark
@@ -37,9 +41,11 @@ SequentialFileWritingBenchmark.test_with_buffer_32KB  avgt    4  276.246 ±  135
 SequentialFileWritingBenchmark.test_with_buffer_64KB  avgt    4  275.944 ±  128.835  ms/op
 ```
 
+When some JMH benchmark class is changed command `mvn package` have to be run.
+
 ### Possible problems
 
-Generally JMH is quite fragile and generates. Usually help rebuild prject and start again as described above.
+Generally JMH is quite fragile. Small changes broke JMH benchmark execution. Usually helps rebuild project and start again as described above.
 
 ## Development
 

@@ -7,9 +7,11 @@ import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -38,7 +40,7 @@ import com.coroptis.index.segment.SegmentId;
 @OutputTimeUnit(TimeUnit.MILLISECONDS) // Results in milliseconds
 @State(Scope.Thread) // Each thread gets its own state
 @Warmup(iterations = 0, time = 1) // 0 warm-up iterations
-@Measurement(iterations = 4, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 4, time = 10, timeUnit = TimeUnit.SECONDS)
 @Fork(1) // Use 1 fork (JVM instance)
 @Threads(1)
 public class SegmentSearchBenchmark {
@@ -49,13 +51,17 @@ public class SegmentSearchBenchmark {
     private final SegmentId SEGMENT_ID = SegmentId.of(29);
     private final static Random RANDOM = new Random();
     private final static DataProvider dataProvider = new DataProvider();
-    private final static int NUMBER_OF_TESTING_PAIRS = 1_000_000;
-    private final static int NUMBER_OF_TESTING_SEARCH_OPERATIONS = 500_000;
+    private final static int NUMBER_OF_TESTING_PAIRS = 2_000_000;
+    private final static int NUMBER_OF_TESTING_SEARCH_OPERATIONS = 1_000;
     private final static TypeDescriptor<String> TYPE_DESCRIPTOR_STRING = new TypeDescriptorString();
     private final static TypeDescriptor<Long> TYPE_DESCRIPTOR_LONG = new TypeDescriptorLong();
 
     private String directoryFileName;
     private Directory directory;
+    private Segment<String, Long> segment;
+
+    @Param({ "1", "2", "4", "16", "32" })
+    private int diskIoBufferSize;
 
     @Setup
     public void setup() {
@@ -67,51 +73,43 @@ public class SegmentSearchBenchmark {
         directory = new FsDirectory(new File(directoryFileName));
 
         final Segment<String, Long> segment = getCommonBuilder()// get default
-                                                                // builder
+                // builder
                 .withMaxNumberOfKeysInSegmentCache(1000)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(100_000)//
                 .build();
 
-        try (PairWriter<String, Long> pairWriter = segment.openWriter()) {
-            for (int i = 0; i < NUMBER_OF_TESTING_PAIRS; i++) {
-                if (RANDOM.nextInt(10) != 0) {
-                    pairWriter.put(dataProvider.generateSequenceString(i),
-                            RANDOM.nextLong());
+        if (segment.getNumberOfKeys() != NUMBER_OF_TESTING_PAIRS) {
+            System.out.println("main setup - rebuilding, it's "
+                    + segment.getNumberOfKeys());
+            try (PairWriter<String, Long> pairWriter = segment.openWriter()) {
+                for (int i = 0; i < NUMBER_OF_TESTING_PAIRS; i++) {
+                    if (RANDOM.nextInt(10) != 0) {
+                        pairWriter.put(dataProvider.generateSequenceString(i),
+                                RANDOM.nextLong());
+                    }
                 }
             }
+            segment.forceCompact();
         }
-        segment.forceCompact();
+
         segment.close();
     }
 
-    @Benchmark
-    public String test_with_buffer_04KB() {
-        return testRound(4 * 1024);
-    }
-
-    @Benchmark
-    public String test_with_buffer_08KB() {
-        return testRound(8 * 1024);
-    }
-
-    @Benchmark
-    public String test_with_buffer_16KB() {
-        return testRound(16 * 1024);
-    }
-
-    @Benchmark
-    public String test_with_buffer_32KB() {
-        return testRound(32 * 1024);
-    }
-
-    private String testRound(final int bufferSize) {
-        long result = 0;
-
-        final Segment<String, Long> segment = getCommonBuilder()// default
-                // builder
+    /**
+     * Should be run before each iteration (measurement).
+     */
+    @Setup(Level.Iteration)
+    public void setupIteration() {
+        int bufferSize = 1024 * diskIoBufferSize;
+        segment = getCommonBuilder()// default builder
                 .withDiskIoBufferSize(bufferSize)//
                 .build();
+    }
 
+    @Benchmark
+    public String test_search() {
+        long result = 0;
+    
         // prepare data
         for (int i = 0; i < NUMBER_OF_TESTING_SEARCH_OPERATIONS; i++) {
             final String key = dataProvider.generateSequenceString(
@@ -124,7 +122,7 @@ public class SegmentSearchBenchmark {
         return String.valueOf(result);
     }
 
-    SegmentBuilder<String, Long> getCommonBuilder() {
+    private SegmentBuilder<String, Long> getCommonBuilder() {
         return Segment.<String, Long>builder()//
                 .withDirectory(directory)//
                 .withId(SEGMENT_ID)//
