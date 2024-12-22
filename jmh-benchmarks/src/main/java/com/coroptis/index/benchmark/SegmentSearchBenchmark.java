@@ -51,7 +51,7 @@ public class SegmentSearchBenchmark {
     private final SegmentId SEGMENT_ID = SegmentId.of(29);
     private final static Random RANDOM = new Random();
     private final static DataProvider dataProvider = new DataProvider();
-    private final static int NUMBER_OF_TESTING_PAIRS = 2_000_000;
+    private final static int NUMBER_OF_TESTING_PAIRS = 200_000;
     private final static int NUMBER_OF_TESTING_SEARCH_OPERATIONS = 1_000;
     private final static TypeDescriptor<String> TYPE_DESCRIPTOR_STRING = new TypeDescriptorString();
     private final static TypeDescriptor<Long> TYPE_DESCRIPTOR_LONG = new TypeDescriptorLong();
@@ -83,10 +83,8 @@ public class SegmentSearchBenchmark {
                     + segment.getNumberOfKeys());
             try (PairWriter<String, Long> pairWriter = segment.openWriter()) {
                 for (int i = 0; i < NUMBER_OF_TESTING_PAIRS; i++) {
-                    if (RANDOM.nextInt(10) != 0) {
-                        pairWriter.put(dataProvider.generateSequenceString(i),
-                                RANDOM.nextLong());
-                    }
+                    pairWriter.put(dataProvider.generateSequenceString(i),
+                            RANDOM.nextLong());
                 }
             }
             segment.forceCompact();
@@ -109,7 +107,7 @@ public class SegmentSearchBenchmark {
     @Benchmark
     public String test_search() {
         long result = 0;
-    
+
         // prepare data
         for (int i = 0; i < NUMBER_OF_TESTING_SEARCH_OPERATIONS; i++) {
             final String key = dataProvider.generateSequenceString(
