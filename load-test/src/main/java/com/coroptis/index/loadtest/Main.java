@@ -1,9 +1,5 @@
 package com.coroptis.index.loadtest;
 
-import java.util.Objects;
-
-import org.apache.commons.cli.Option;
-
 public class Main {
 
 

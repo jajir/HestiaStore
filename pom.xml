@@ -13,6 +13,7 @@
 	<modules>
         <module>core</module>
         <module>jmh-benchmarks</module>
+        <module>load-test</module>
     </modules>
 
 	<properties>

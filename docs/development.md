@@ -47,6 +47,20 @@ When some JMH benchmark class is changed command `mvn package` have to be run.
 
 Generally JMH is quite fragile. Small changes broke JMH benchmark execution. Usually helps rebuild project and start again as described above.
 
+## Load test
+
+Runnign JVM should be inspected with some profiller. For profilling is usefull to hae long running task to watch it. Go to project `load-test`. Following command starts this task:
+
+```bash
+java -jar target/load-test.jar com.coroptis.index.loadtest.Main --help
+```
+
+Following parameters have to be defined
+
+* `--directory` - Directory where will be index placed
+* `--help` - print simple help
+* `--count` - How many records will be generated
+
 ## Development
 
 Mockito requires reflective access to non-public parts in a Java module. It could be manually open by passing following parameter as jvm parameter:
@@ -54,6 +68,8 @@ Mockito requires reflective access to non-public parts in a Java module. It coul
 ```
 --add-opens=java.base/java.lang=ALL-UNNAMED
 ```
+
+
 
 ## How to get segment disk size
 
