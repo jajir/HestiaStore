@@ -33,19 +33,20 @@
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 		</dependency>
-
-	
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-api</artifactId>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-core</artifactId>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-slf4j-impl</artifactId>
+			<scope>compile</scope>
 		</dependency>
 	</dependencies>
 	<build>
@@ -85,12 +86,20 @@
 							<minimizeJar>true</minimizeJar>
 							<finalName>load-test</finalName>
 							<transformers>
-                            <!-- Add the Main-Class attribute to the manifest -->
-                            <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                <mainClass>com.coroptis.index.loadtest.Main</mainClass>
-                            </transformer>
-                        </transformers>
-						</configuration>
+	                            <!-- Add the Main-Class attribute to the manifest -->
+								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+									<mainClass>com.coroptis.index.loadtest.Main</mainClass>
+								</transformer>
+                        	</transformers>
+							<filters>
+								<filter>
+									<artifact>*:*</artifact>
+									<excludes>
+										<exclude>**/Log4j2Plugins.dat</exclude>
+									</excludes>
+								</filter>
+							</filters>
+							</configuration>
 					</execution>
 				</executions>
 	        </plugin>

@@ -55,11 +55,23 @@ Runnign JVM should be inspected with some profiller. For profilling is usefull t
 java -jar target/load-test.jar com.coroptis.index.loadtest.Main --help
 ```
 
-Following parameters have to be defined
+It shows supported parameters. Data could be generated like:
 
-* `--directory` - Directory where will be index placed
-* `--help` - print simple help
-* `--count` - How many records will be generated
+```bash
+java -jar target/load-test.jar com.coroptis.index.loadtest.Main \
+    --write \
+    --directory ./target \
+    --count 1_000_000 \
+    --max-number-of-keys-in-cache 5_000_000 \
+    --max-number-of-keys-in-segment 10_000_000 \
+    --max-number-of-keys-in-segment-cache 500_000 \
+    --max-number-of-keys-in-segment-cache-during-flushing 2_000_000 \
+    --max-number-of-keys-in-segment-index-page 1_000 \
+    --bloom-filter-index-size-in-bytes 10_000_000 \
+    --bloom-filter-number-of-hash-functions 2
+```
+
+
 
 ## Development
 

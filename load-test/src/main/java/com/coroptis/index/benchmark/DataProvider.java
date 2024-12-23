@@ -21,15 +21,11 @@ public class DataProvider {
         return sb.toString();
     }
 
-    public String generateSequenceString(final int i) {
-        return wrap(i);
-    }
-
     /*
      * Wrap long to 10 zeros, results should look like 0000000001, 0000000002,
      * ...
      */
-    private String wrap(final int l) {
+    public String wrap(final long l) {
         String out = String.valueOf(l);
         while (out.length() < 10) {
             out = "0" + out;
