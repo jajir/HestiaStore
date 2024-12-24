@@ -55,13 +55,15 @@ Runnign JVM should be inspected with some profiller. For profilling is usefull t
 java -jar target/load-test.jar com.coroptis.index.loadtest.Main --help
 ```
 
-It shows supported parameters. Data could be generated like:
+It shows supported parameters. Complete exmaple generating data could look like:
 
 ```bash
-java -jar target/load-test.jar com.coroptis.index.loadtest.Main \
+java \
+    -agentpath:/Applications/YourKit-Java-Profiler-2023.9.app/Contents/Resources/bin/mac/libyjpagent.dylib=exceptions=disable,delay=10000,listen=all \
+    -jar target/load-test.jar com.coroptis.index.loadtest.Main \
     --write \
-    --directory ./target \
-    --count 1_000_000 \
+    --directory /Volumes/LaCie/test/  \
+    --count 5_000_000_000 \
     --max-number-of-keys-in-cache 5_000_000 \
     --max-number-of-keys-in-segment 10_000_000 \
     --max-number-of-keys-in-segment-cache 500_000 \
