@@ -49,13 +49,13 @@ Generally JMH is quite fragile. Small changes broke JMH benchmark execution. Usu
 
 ## Load test
 
-Runnign JVM should be inspected with some profiller. For profilling is usefull to hae long running task to watch it. Go to project `load-test`. Following command starts this task:
+Runnign JVM should be inspected with some profiller. For profilling is usefull to hae long running task to watch it. Go to project `load-test`. Following command show all optional parameters:
 
 ```bash
 java -jar target/load-test.jar com.coroptis.index.loadtest.Main --help
 ```
 
-It shows supported parameters. Complete exmaple generating data could look like:
+Theer are two main supported operations. First is data generating. It's could be usefull to place in java profilling agent. It could look like:
 
 ```bash
 java \
