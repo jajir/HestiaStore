@@ -5,6 +5,7 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 
 /**
@@ -86,8 +87,10 @@ public class SegmentCompacter<K, V> {
         versionController.changeVersion();
         try (SegmentFullWriter<K, V> writer = segment.openFullWriter()) {
             try (PairIterator<K, V> iterator = segment.openIterator()) {
+                Pair<K, V> pair;
                 while (iterator.hasNext()) {
-                    writer.put(iterator.next());
+                    pair = iterator.next();
+                    writer.put(pair);
                 }
             }
         }

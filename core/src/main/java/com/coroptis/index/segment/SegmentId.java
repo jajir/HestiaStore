@@ -49,7 +49,7 @@ public class SegmentId {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return id;
     }
 
     @Override

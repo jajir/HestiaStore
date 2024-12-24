@@ -175,7 +175,7 @@ public class LoadTestCli {
 
                 System.out.println("directory: " + directory);
                 System.out.println("count: " + count);
-                // System.out.println("customConf: " + customConf);
+                System.out.println("customConf: " + customConf);
                 System.out.println("maxNumberOfKeysInSegment: "
                                 + maxNumberOfKeysInSegment);
                 System.out.println("maxNumberOfKeysInSegmentCache: "
