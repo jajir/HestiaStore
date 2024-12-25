@@ -73,6 +73,27 @@ java \
     --bloom-filter-number-of-hash-functions 2
 ```
 
+It will generate 210 GB of testing data. Furst search test can be performed like this:
+
+```bash
+java \
+    -agentpath:/Applications/YourKit-Java-Profiler-2023.9.app/Contents/Resources/bin/mac/libyjpagent.dylib=exceptions=disable,delay=10000,listen=all \
+    -jar target/load-test.jar com.coroptis.index.loadtest.Main \
+    --search \
+    --directory /Volumes/LaCie/test/  \
+    --count 5_000_000_000 \
+    --max-key 5_000_000_000 \
+    --max-number-of-keys-in-cache 5_000_000 \
+    --max-number-of-keys-in-segment 10_000_000 \
+    --max-number-of-keys-in-segment-cache 500_000 \
+    --max-number-of-keys-in-segment-cache-during-flushing 2_000_000 \
+    --max-number-of-keys-in-segment-index-page 1_000 \
+    --bloom-filter-index-size-in-bytes 10_000_000 \
+    --bloom-filter-number-of-hash-functions 2
+```
+
+
+
 
 
 ## Development

@@ -51,7 +51,7 @@ public class LoadTestCli {
 
         private final static Option OPTION_MAX_KEY = Option.builder()//
                         .longOpt("max-key")//
-                        .hasArg(false)//
+                        .hasArg(true)//
                         .required(false)//
                         .desc("Max key value to search").build();
 
@@ -62,13 +62,6 @@ public class LoadTestCli {
                         .hasArg(true)//
                         .required(false)//
                         .desc("directory where index lies, when user selects count or search task then this parameter is mandatory")//
-                        .build();
-
-        private final static Option OPTION_CUSTOM_CONF = Option.builder()//
-                        .longOpt("custom-conf")//
-                        .hasArg(true)//
-                        .required(false)//
-                        .desc("Build with custom configuration, default is true")
                         .build();
 
         private final static Option OPTION_MAX_NUMBER_OF_KEYS_IN_SEGMENT = Option
@@ -123,7 +116,6 @@ public class LoadTestCli {
                 options.addOption(OPTION_WRITE);
                 options.addOption(OPTION_SEARCH);
                 options.addOption(OPTION_MAX_KEY);
-                options.addOption(OPTION_CUSTOM_CONF);
                 options.addOption(OPTION_MAX_NUMBER_OF_KEYS_IN_SEGMENT);
                 options.addOption(OPTION_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE);
                 options.addOption(
@@ -153,76 +145,48 @@ public class LoadTestCli {
                 }
         }
 
-        private void handleWriteOption(final CommandLine cmd) {
+        private Index<String, Long> createIndex(final CommandLine cmd) {
                 final String directory = extractDirectoryOption(cmd);
-                final long count = extractCountOption(cmd);
-                //FIXME it's not used
-                // final long customConf = extractCustomConfOption(cmd);
-                final long maxNumberOfKeysInSegment = extractMaxNumberOfKeysInSegmentOption(
-                                cmd);
-                final long maxNumberOfKeysInSegmentCache = extractMaxNumberOfKeysInSegmentCacheOption(
-                                cmd);
-                final long maxNumberOfKeysInSegmentCacheDuringFlushing = extractMaxNumberOfKeysInSegmentCacheDuringFlushingOption(
-                                cmd);
-                final long maxNumberOfKeysInSegmentIndexPage = extractMaxNumberOfKeysInSegmentIndexPageOption(
-                                cmd);
-                final long maxNumberOfKeysInCache = extractMaxNumberOfKeysInCacheOption(
-                                cmd);
-                final long bloomFilterIndexSizeInBytes = extractBloomFilterIndexSizeInBytesOption(
-                                cmd);
-                final long bloomFilterNumberOfHashFunctions = extractBloomFilterNumberOfHashFunctionsOption(
-                                cmd);
-
-                System.out.println("directory: " + directory);
-                System.out.println("count: " + count);
-                // System.out.println("customConf: " + customConf);
-                System.out.println("maxNumberOfKeysInSegment: "
-                                + maxNumberOfKeysInSegment);
-                System.out.println("maxNumberOfKeysInSegmentCache: "
-                                + maxNumberOfKeysInSegmentCache);
-                System.out.println(
-                                "maxNumberOfKeysInSegmentCacheDuringFlushing: "
-                                                + maxNumberOfKeysInSegmentCacheDuringFlushing);
-                System.out.println("maxNumberOfKeysInSegmentIndexPage: "
-                                + maxNumberOfKeysInSegmentIndexPage);
-                System.out.println("maxNumberOfKeysInCache: "
-                                + maxNumberOfKeysInCache);
-                System.out.println("bloomFilterIndexSizeInBytes: "
-                                + bloomFilterIndexSizeInBytes);
-                System.out.println("bloomFilterNumberOfHashFunctions: "
-                                + bloomFilterNumberOfHashFunctions);
-
+                final long maxNumberOfKeysInSegment = extractMaxNumberOfKeysInSegmentOption(cmd);
+                final long maxNumberOfKeysInSegmentCache = extractMaxNumberOfKeysInSegmentCacheOption(cmd);
+                final long maxNumberOfKeysInSegmentCacheDuringFlushing = extractMaxNumberOfKeysInSegmentCacheDuringFlushingOption(cmd);
+                final long maxNumberOfKeysInSegmentIndexPage = extractMaxNumberOfKeysInSegmentIndexPageOption(cmd);
+                final long maxNumberOfKeysInCache = extractMaxNumberOfKeysInCacheOption(cmd);
+                final long bloomFilterIndexSizeInBytes = extractBloomFilterIndexSizeInBytesOption(cmd);
+                final long bloomFilterNumberOfHashFunctions = extractBloomFilterNumberOfHashFunctionsOption(cmd);
                 final Directory dir = new FsDirectory(new File(directory));
 
-                final Index<String, Long> index = Index.<String, Long>builder()//
+                return Index.<String, Long>builder()//
                                 .withDirectory(dir)//
                                 .withKeyClass(String.class)//
                                 .withValueClass(Long.class)//
                                 .withKeyTypeDescriptor(TYPE_DESCRIPTOR_STRING) //
                                 .withValueTypeDescriptor(TYPE_DESCRIPTOR_LONG) //
                                 .withCustomConf()//
-                                .withMaxNumberOfKeysInSegment(
-                                                (int) maxNumberOfKeysInSegment) //
-                                .withMaxNumberOfKeysInSegmentCache(
-                                                maxNumberOfKeysInSegmentCache) //
-                                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(
-                                                (int) maxNumberOfKeysInSegmentCacheDuringFlushing) //
-                                .withMaxNumberOfKeysInSegmentIndexPage(
-                                                (int) maxNumberOfKeysInSegmentIndexPage) //
-                                .withMaxNumberOfKeysInCache(
-                                                (int) maxNumberOfKeysInCache) //
-                                .withBloomFilterIndexSizeInBytes(
-                                                (int) bloomFilterIndexSizeInBytes) //
-                                .withBloomFilterNumberOfHashFunctions(
-                                                (int) bloomFilterNumberOfHashFunctions) //
+                                .withMaxNumberOfKeysInSegment((int) maxNumberOfKeysInSegment) //
+                                .withMaxNumberOfKeysInSegmentCache(maxNumberOfKeysInSegmentCache) //
+                                .withMaxNumberOfKeysInSegmentCacheDuringFlushing((int) maxNumberOfKeysInSegmentCacheDuringFlushing) //
+                                .withMaxNumberOfKeysInSegmentIndexPage((int) maxNumberOfKeysInSegmentIndexPage) //
+                                .withMaxNumberOfKeysInCache((int) maxNumberOfKeysInCache) //
+                                .withBloomFilterIndexSizeInBytes((int) bloomFilterIndexSizeInBytes) //
+                                .withBloomFilterNumberOfHashFunctions((int) bloomFilterNumberOfHashFunctions) //
                                 .withUseFullLog(false) //
                                 .build();
+        }
+
+        private void handleWriteOption(final CommandLine cmd) {
+                final long count = extractCountOption(cmd);
+                final Index<String, Long> index = createIndex(cmd);
                 final WriteData writeData = new WriteData(index);
                 writeData.write(count);
         }
 
         private void handleSearchOption(final CommandLine cmd) {
-                // Empty method for handling search option
+                final long count = extractCountOption(cmd);
+                final long maxKey = extractMaxKeyOption(cmd);
+                final Index<String, Long> index = createIndex(cmd);
+                SearchData searchData = new SearchData(index);  
+                searchData.search(count, maxKey);
         }
 
         private long extractCountOption(final CommandLine cmd) {
@@ -235,20 +199,10 @@ public class LoadTestCli {
                 }
         }
 
-        private long extractCustomConfOption(final CommandLine cmd) {
-                if (cmd.hasOption(OPTION_CUSTOM_CONF)) {
-                        return parseLong(cmd.getOptionValue(
-                                        OPTION_CUSTOM_CONF));
-                } else {
-                        throw new IllegalArgumentException(
-                                        "When you select this task then you must specify custom configuration");
-                }
-        }
-
         private long extractMaxNumberOfKeysInSegmentOption(
                         final CommandLine cmd) {
-                if (cmd.hasOption("max-number-of-keys-in-segment")) {
-                        return parseLong(cmd.getOptionValue("max-number-of-keys-in-segment"));
+                if (cmd.hasOption(OPTION_MAX_NUMBER_OF_KEYS_IN_SEGMENT)) {
+                        return parseLong(cmd.getOptionValue(OPTION_MAX_NUMBER_OF_KEYS_IN_SEGMENT));
                 } else {
                         throw new IllegalArgumentException(
                                         "When you select this task then you must specify max number of keys in segment");
@@ -257,8 +211,8 @@ public class LoadTestCli {
 
         private long extractMaxNumberOfKeysInSegmentCacheOption(
                         final CommandLine cmd) {
-                if (cmd.hasOption("max-number-of-keys-in-segment-cache")) {
-                        return parseLong(cmd.getOptionValue("max-number-of-keys-in-segment-cache"));
+                if (cmd.hasOption(OPTION_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE)) {
+                        return parseLong(cmd.getOptionValue(OPTION_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE));
                 } else {
                         throw new IllegalArgumentException(
                                         "When you select this task then you must specify max number of keys in segment cache");
@@ -267,8 +221,8 @@ public class LoadTestCli {
 
         private long extractMaxNumberOfKeysInSegmentCacheDuringFlushingOption(
                         final CommandLine cmd) {
-                if (cmd.hasOption("max-number-of-keys-in-segment-cache-during-flushing")) {
-                        return parseLong(cmd.getOptionValue("max-number-of-keys-in-segment-cache-during-flushing"));
+                if (cmd.hasOption(OPTION_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING)) {
+                        return parseLong(cmd.getOptionValue(OPTION_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING));
                 } else {
                         throw new IllegalArgumentException(
                                         "When you select this task then you must specify max number of keys in segment cache during flushing");
@@ -277,8 +231,8 @@ public class LoadTestCli {
 
         private long extractMaxNumberOfKeysInSegmentIndexPageOption(
                         final CommandLine cmd) {
-                if (cmd.hasOption("max-number-of-keys-in-segment-index-page")) {
-                        return parseLong(cmd.getOptionValue("max-number-of-keys-in-segment-index-page"));
+                if (cmd.hasOption(OPTION_MAX_NUMBER_OF_KEYS_IN_SEGMENT_INDEX_PAGE)) {
+                        return parseLong(cmd.getOptionValue(OPTION_MAX_NUMBER_OF_KEYS_IN_SEGMENT_INDEX_PAGE));
                 } else {
                         throw new IllegalArgumentException(
                                         "When you select this task then you must specify max number of keys in segment index page");
@@ -287,8 +241,8 @@ public class LoadTestCli {
 
         private long extractMaxNumberOfKeysInCacheOption(
                         final CommandLine cmd) {
-                if (cmd.hasOption("max-number-of-keys-in-cache")) {
-                        return parseLong(cmd.getOptionValue("max-number-of-keys-in-cache"));
+                if (cmd.hasOption(OPTION_MAX_NUMBER_OF_KEYS_IN_CACHE)) {
+                        return parseLong(cmd.getOptionValue(OPTION_MAX_NUMBER_OF_KEYS_IN_CACHE));
                 } else {
                         throw new IllegalArgumentException(
                                         "When you select this task then you must specify max number of keys in cache");
@@ -297,8 +251,8 @@ public class LoadTestCli {
 
         private long extractBloomFilterIndexSizeInBytesOption(
                         final CommandLine cmd) {
-                if (cmd.hasOption("bloom-filter-index-size-in-bytes")) {
-                        return parseLong(cmd.getOptionValue("bloom-filter-index-size-in-bytes"));
+                if (cmd.hasOption(OPTION_BLOOM_FILTER_INDEX_SIZE_IN_BYTES)) {
+                        return parseLong(cmd.getOptionValue(OPTION_BLOOM_FILTER_INDEX_SIZE_IN_BYTES));
                 } else {
                         throw new IllegalArgumentException(
                                         "When you select this task then you must specify bloom filter index size in bytes");
@@ -307,8 +261,8 @@ public class LoadTestCli {
 
         private long extractBloomFilterNumberOfHashFunctionsOption(
                         final CommandLine cmd) {
-                if (cmd.hasOption("bloom-filter-number-of-hash-functions")) {
-                        return parseLong(cmd.getOptionValue("bloom-filter-number-of-hash-functions"));
+                if (cmd.hasOption(OPTION_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS)) {
+                        return parseLong(cmd.getOptionValue(OPTION_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS));
                 } else {
                         throw new IllegalArgumentException(
                                         "When you select this task then you must specify bloom filter number of hash functions");
@@ -321,6 +275,15 @@ public class LoadTestCli {
                 } else {
                         throw new IllegalArgumentException(
                                         "When you select count or search task then you must specify directory");
+                }
+        }
+
+        private long extractMaxKeyOption(final CommandLine cmd) {
+                if (cmd.hasOption(OPTION_MAX_KEY)) {
+                        return parseLong(cmd.getOptionValue(OPTION_MAX_KEY));
+                } else {
+                        throw new IllegalArgumentException(
+                                        "When you select this task then you must specify max key value");
                 }
         }
 
