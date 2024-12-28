@@ -9,7 +9,7 @@ import com.coroptis.index.IndexException;
 
 public class FsDirectory implements Directory {
 
-    private final static int BUFFER_SIZE = 1024 * 1 * 4;
+    private final static int DEFAULT_BUFFER_SIZE = 1024 * 1 * 4;
 
     private final File directory;
 
@@ -35,7 +35,7 @@ public class FsDirectory implements Directory {
 
     @Override
     public FileReader getFileReader(final String fileName) {
-        return getFileReader(fileName, BUFFER_SIZE);
+        return getFileReader(fileName, DEFAULT_BUFFER_SIZE);
     }
 
     @Override

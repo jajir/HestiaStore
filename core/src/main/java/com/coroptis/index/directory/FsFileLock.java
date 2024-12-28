@@ -4,11 +4,11 @@ import java.util.Objects;
 
 public class FsFileLock implements FileLock {
 
-    private final FsDirectory directory;
+    private final Directory directory;
 
     private final String lockFileName;
 
-    FsFileLock(final FsDirectory directory, final String lockFileName) {
+    FsFileLock(final Directory directory, final String lockFileName) {
         this.directory = Objects.requireNonNull(directory);
         this.lockFileName = Objects.requireNonNull(lockFileName);
     }

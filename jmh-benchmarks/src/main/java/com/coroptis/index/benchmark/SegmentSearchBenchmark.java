@@ -26,6 +26,7 @@ import com.coroptis.index.datatype.TypeDescriptorLong;
 import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.FsDirectory;
+import com.coroptis.index.directory.FsNioDirectory;
 import com.coroptis.index.segment.Segment;
 import com.coroptis.index.segment.SegmentBuilder;
 import com.coroptis.index.segment.SegmentId;
