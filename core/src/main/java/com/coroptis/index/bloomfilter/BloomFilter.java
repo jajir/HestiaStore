@@ -13,6 +13,8 @@ import com.coroptis.index.directory.FileWriter;
 
 public class BloomFilter<K> implements CloseableResource {
 
+    private final static String TEMP_FILE_EXTENSION = ".tmp";
+
     private final Logger logger = LoggerFactory.getLogger(BloomFilter.class);
 
     private final Directory directory;
@@ -85,15 +87,19 @@ public class BloomFilter<K> implements CloseableResource {
     void setNewHash(final Hash newHash) {
         Objects.requireNonNull(newHash, "New hash can't be null");
         this.hash = newHash;
-        try (FileWriter writer = directory.getFileWriter(bloomFilterFileName,
+        try (FileWriter writer = directory.getFileWriter(getTempFileName(),
                 Directory.Access.OVERWRITE, diskIoBufferSize)) {
             writer.write(hash.getData());
         }
-
+        directory.renameFile(getTempFileName(), bloomFilterFileName);
     }
 
     private boolean isExists() {
         return directory.isFileExists(bloomFilterFileName);
+    }
+
+    private final String getTempFileName(){
+        return bloomFilterFileName + TEMP_FILE_EXTENSION;
     }
 
     /**

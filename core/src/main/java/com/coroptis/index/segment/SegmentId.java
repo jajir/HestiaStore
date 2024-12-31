@@ -1,7 +1,5 @@
 package com.coroptis.index.segment;
 
-import java.util.Objects;
-
 /**
  * Index segments consisting of Sorted String Table (sst).
  * 
