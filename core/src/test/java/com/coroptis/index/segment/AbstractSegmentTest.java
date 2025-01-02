@@ -76,7 +76,8 @@ public abstract class AbstractSegmentTest extends AbstractDataTest {
      * @param pairIterator required pair iterator
      * @param pairs        required list of expected data in segment
      */
-    protected <M, N> void verifyIteratorData(final PairIterator<M, N> pairIterator,
+    protected <M, N> void verifyIteratorData(
+            final PairIterator<M, N> pairIterator,
             final List<Pair<M, N>> pairs) {
         final List<Pair<M, N>> data = toList(pairIterator);
         assertEquals(pairs.size(), data.size(), "Unexpected segment data size");
@@ -100,4 +101,10 @@ public abstract class AbstractSegmentTest extends AbstractDataTest {
         return cx.get();
     }
 
+    protected void verifyCacheFiles(final Directory directory) {
+        long cacheFileCount = directory.getFileNames()
+                .filter(fileName -> fileName.endsWith(".cache")).count();
+        assertEquals(0, cacheFileCount,
+                "Expected zero .cache files in directory");
+    }
 }

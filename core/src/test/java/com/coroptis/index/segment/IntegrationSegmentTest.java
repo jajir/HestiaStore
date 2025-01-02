@@ -48,6 +48,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                         int expectedNumberOfFiles) throws Exception {
 
                 seg.forceCompact();
+                verifyCacheFiles(directory);
 
                 verifySegmentData(seg, Arrays.asList());
 
