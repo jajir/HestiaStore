@@ -31,8 +31,8 @@ public class IntegrationUnsortedDataFileTest {
                 .<Integer, String>builder().withDirectory(dir)//
                 .withFileName("duck")//
                 .withKeyWriter(tdi.getTypeWriter())//
-                .withValueWriter(tds.getTypeWriter())//
                 .withKeyReader(tdi.getTypeReader())//
+                .withValueWriter(tds.getTypeWriter())//
                 .withValueReader(tds.getTypeReader())//
                 .build();
         assertNotNull(unsorted);

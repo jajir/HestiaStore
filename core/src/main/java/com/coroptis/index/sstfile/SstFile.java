@@ -3,9 +3,9 @@ package com.coroptis.index.sstfile;
 import java.util.Comparator;
 import java.util.Objects;
 
-import com.coroptis.index.PairIterator;
-import com.coroptis.index.PairIteratorFromReader;
 import com.coroptis.index.CloseablePairReader;
+import com.coroptis.index.PairIteratorFromReader;
+import com.coroptis.index.PairIteratorWithCurrent;
 import com.coroptis.index.PairReaderEmpty;
 import com.coroptis.index.PairSeekableReader;
 import com.coroptis.index.datatype.ConvertorFromBytes;
@@ -53,6 +53,16 @@ public class SstFile<K, V> {
         this.diskIoBufferSize = diskIoBufferSize;
     }
 
+    public SstFile<K, V> withFileName(final String newFileName) {
+        return new SstFile<>(directory, newFileName, valueWriter, valueReader,
+                keyComparator, keyConvertorFromBytes, keyConvertorToBytes,
+                diskIoBufferSize);
+    }
+
+    public SstFile<K, V> withProperties(final Directory newDirectory, final String newFileName, final int newDiskIoBufferSize) {
+        return new SstFile<>(newDirectory, newFileName, valueWriter, valueReader, keyComparator, keyConvertorFromBytes, keyConvertorToBytes, newDiskIoBufferSize);
+    }
+
     public CloseablePairReader<K, V> openReader() {
         return openReader(0);
     }
@@ -80,16 +90,21 @@ public class SstFile<K, V> {
                 directory.getFileReaderSeekable(fileName));
     }
 
-    public PairIterator<K, V> openIterator() {
-        final PairIterator<K, V> iterator = new PairIteratorFromReader<>(
+    public PairIteratorWithCurrent<K, V> openIterator() {
+        final PairIteratorWithCurrent<K, V> iterator = new PairIteratorFromReader<>(
                 openReader());
         return iterator;
     }
 
     public SstFileWriter<K, V> openWriter() {
         final SstFileWriter<K, V> writer = new SstFileWriter<>(directory,
-                fileName, keyConvertorToBytes, keyComparator, valueWriter, diskIoBufferSize);
+                fileName, keyConvertorToBytes, keyComparator, valueWriter,
+                diskIoBufferSize);
         return writer;
+    }
+
+    public void delete() {
+        directory.deleteFile(fileName);
     }
 
 }

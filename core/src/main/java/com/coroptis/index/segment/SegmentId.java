@@ -33,7 +33,8 @@ public class SegmentId {
      * @return return segment name
      */
     public String getName() {
-        String name = String.valueOf(id);
+    //FIXME use FileNameUtil.getPaddedId
+    String name = String.valueOf(id);
         while (name.length() < 5) {
             name = "0" + name;
         }

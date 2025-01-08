@@ -107,4 +107,11 @@ public abstract class AbstractSegmentTest extends AbstractDataTest {
         assertEquals(0, cacheFileCount,
                 "Expected zero .cache files in directory");
     }
+
+    protected void verifyNumberOfFiles(final Directory directory, final int expecetdNumberOfFiles) {
+        long sileCount = directory.getFileNames().count();
+        assertEquals(expecetdNumberOfFiles, sileCount,
+                "Invalid numbe of files in directory");
+    }
+    
 }

@@ -15,7 +15,7 @@ import java.util.Optional;
  * @param <K>
  * @param <V>
  */
-public class PairIteratorFromReader<K, V> implements PairIterator<K, V> {
+public class PairIteratorFromReader<K, V> implements PairIteratorWithCurrent<K, V> {
 
     private final CloseablePairReader<K, V> reader;
 
@@ -27,7 +27,8 @@ public class PairIteratorFromReader<K, V> implements PairIterator<K, V> {
         current = reader.read();
     }
 
-    public Optional<Pair<K, V>> readCurrent() {
+    @Override
+    public Optional<Pair<K, V>> getCurrent() {
         return Optional.ofNullable(current);
     }
 

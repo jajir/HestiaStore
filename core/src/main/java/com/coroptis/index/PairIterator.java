@@ -5,7 +5,7 @@ import java.util.Iterator;
 /**
  * Define key value pair iterator. It allows to go through all records and
  * further works with them. When object is initialized method
- * {@link #readCurrent()} return null.
+ * {@link #getCurrent()} return null.
  * 
  * @author honza
  *

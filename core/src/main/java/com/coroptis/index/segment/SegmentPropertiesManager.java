@@ -52,6 +52,7 @@ public class SegmentPropertiesManager {
         return getDeltaString(lastOne);
     }
 
+    //FIXME use FileNameUtil.getPaddedId
     private String getDeltaString(final int segmentCacheDeltaFileId) {
         String name = String.valueOf(segmentCacheDeltaFileId);
         while (name.length() < 3) {
