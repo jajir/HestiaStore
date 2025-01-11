@@ -27,9 +27,14 @@ import com.coroptis.index.unsorteddatafile.UnsortedDataFile;
 public class DataFileSorter<K, V> {
 
     private final static int COUNT_MAX_LENGTH = 5;
+    private final static String MERGING_FILES_PREFIX = "merging-";
+    private final static String MERGING_FILES_SUFFIX = ".tmp";
 
+    private final int ROUND_ZERO = 0;
+
+    private final int mergingFileCap = 10;
     private final UnsortedDataFile<K, V> unsortedDataFile;
-    private final SstFile<K, V> sortedDataFile;
+    private final SstFile<K, V> targetSortedDataFile;
     private final Merger<K, V> merger;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final long maxNumberOfKeysInMemory;
@@ -40,7 +45,7 @@ public class DataFileSorter<K, V> {
             final long maxNumberOfKeysInMemory) {
         this.unsortedDataFile = Objects.requireNonNull(unsortedDataFile,
                 "unsortedDataFile must not be null");
-        this.sortedDataFile = Objects.requireNonNull(sortedDataFile,
+        this.targetSortedDataFile = Objects.requireNonNull(sortedDataFile,
                 "sortedDataFile must not be null");
         this.merger = Objects.requireNonNull(merger, "merger must not be null");
         this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor,
@@ -49,8 +54,18 @@ public class DataFileSorter<K, V> {
     }
 
     public void sort() {
-        final int numbeorOfChunks = splitToChunks();
-        mergeChunks(numbeorOfChunks);
+        /*
+         * 1. Split data to chunks, record number of chunks
+         * 2. run merging round, if then l
+         * 
+         */
+        int round = 0;
+        int numbeorOfChunks = splitToChunks();
+
+        while (numbeorOfChunks > 1) {
+            numbeorOfChunks = mergeChunks(round, numbeorOfChunks);
+            round++;
+        }
     }
 
     private int splitToChunks() {
@@ -62,7 +77,7 @@ public class DataFileSorter<K, V> {
                 final Pair<K, V> pair = iterator.next();
                 cache.put(pair);
                 if (cache.size() >= maxNumberOfKeysInMemory) {
-                    writeChunkToFile(cache, chunkCount);
+                    writeChunkToFile(cache, ROUND_ZERO, chunkCount);
                     cache.clear();
                     chunkCount++;
                 }
@@ -70,46 +85,79 @@ public class DataFileSorter<K, V> {
 
         }
 
-        if (!cache.isEmpty()) {
-            writeChunkToFile(cache, chunkCount);
-            chunkCount++;
-        }
+        writeChunkToFile(cache, ROUND_ZERO, chunkCount);
+        chunkCount++;
         return chunkCount;
     }
 
     private void writeChunkToFile(final UniqueCache<K, V> cache,
-            final int chunkCount) {
-        final SstFile<K, V> chunkFile = getChunkFile(chunkCount);
+            final int round, final int chunkCount) {
+        final SstFile<K, V> chunkFile = getChunkFile(round, chunkCount);
         try (SstFileWriter<K, V> writer = chunkFile.openWriter()) {
             cache.getAsSortedList().forEach(pair -> writer.put(pair));
         }
     }
 
-    private final SstFile<K, V> getChunkFile(final int chunkCount) {
-        final String fileName = FileNameUtil.getFileName("pokus-", chunkCount,
-                COUNT_MAX_LENGTH, ".tmp");
-        return sortedDataFile.withFileName(fileName);
+    private final SstFile<K, V> getChunkFile(final int round, final int chunkCount) {
+        final String prefix = MERGING_FILES_PREFIX + FileNameUtil.getPaddedId(round, 3) + "-";
+        final String fileName = FileNameUtil.getFileName(prefix, chunkCount,
+                COUNT_MAX_LENGTH, MERGING_FILES_SUFFIX);
+        return targetSortedDataFile.withFileName(fileName);
     }
 
-    private void mergeChunks(final int chunkCount) {
+    private int mergeChunks(final int round, final int chunkCount) {
+        if (chunkCount < mergingFileCap) {
+            // last round
+            mergeIndexFiles(round, 0, chunkCount, targetSortedDataFile);
+            return 1;
+        } else {
+            int fileCount = 0;
+            int index = 0;
+            while (index < chunkCount) {
+                mergeIndexFiles(round, index, index + mergingFileCap, getChunkFile(round + 1, fileCount));
+                index += mergingFileCap;
+                fileCount++;
+            }
+            return fileCount;
+        }
+
+    }
+
+    private void mergeChunks1(final int round, final int chunkCount) {
         final List<PairIteratorWithCurrent<K, V>> chunkFiles = new ArrayList<>(
                 chunkCount);
         for (int i = 0; i < chunkCount; i++) {
-            chunkFiles.add(getChunkFile(i).openIterator());
+            chunkFiles.add(getChunkFile(round, i).openIterator());
         }
+        mergeFiles(chunkFiles, targetSortedDataFile);
+        for (int i = 0; i < chunkCount; i++) {
+            getChunkFile(round, i).delete();
+        }
+    }
+
+    private void mergeIndexFiles(final int round, final int fromFileIndex, final int toFileIndex,
+            SstFile<K, V> targetFile) {
+        final List<PairIteratorWithCurrent<K, V>> chunkFiles = new ArrayList<>(
+                toFileIndex - fromFileIndex);
+        for (int i = fromFileIndex; i < toFileIndex; i++) {
+            chunkFiles.add(getChunkFile(round, i).openIterator());
+        }
+        mergeFiles(chunkFiles, targetFile);
+        for (int i = fromFileIndex; i < toFileIndex; i++) {
+            getChunkFile(round, i).delete();
+        }
+    }
+
+    private void mergeFiles(final List<PairIteratorWithCurrent<K, V>> chunkFiles, SstFile<K, V> targetFile) {
         try (MergedPairIterator<K, V> iterator = new MergedPairIterator<>(
                 chunkFiles, keyTypeDescriptor.getComparator(), merger)) {
-            try (SstFileWriter<K, V> writer = sortedDataFile.openWriter()) {
+            try (SstFileWriter<K, V> writer = targetFile.openWriter()) {
                 Pair<K, V> pair = null;
                 while (iterator.hasNext()) {
-                    pair =iterator.next();
-                    System.out.println(pair);
+                    pair = iterator.next();
                     writer.put(pair);
                 }
             }
-        }
-        for (int i = 0; i < chunkCount; i++) {
-            getChunkFile(i).delete();
         }
     }
 
