@@ -5,7 +5,7 @@ import java.util.Objects;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.scarceindex.ScarceIndex;
-import com.coroptis.index.sstfile.SstFile;
+import com.coroptis.index.sorteddatafile.SortedDataFile;
 
 /**
  * Allows to easily access segment files.
@@ -66,8 +66,8 @@ public class SegmentFiles<K, V> {
         return id.getName() + INDEX_FILE_NAME_EXTENSION;
     }
 
-    SstFile<K, V> getCacheSstFile() {
-        return SstFile.<K, V>builder() //
+    SortedDataFile<K, V> getCacheSstFile() {
+        return SortedDataFile.<K, V>builder() //
                 .withDirectory(directory) //
                 .withFileName(getCacheFileName())//
                 .withKeyComparator(keyTypeDescriptor.getComparator()) //
@@ -81,8 +81,8 @@ public class SegmentFiles<K, V> {
                 .build();
     }
 
-    SstFile<K, V> getCacheSstFile(final String fileName) {
-        return SstFile.<K, V>builder() //
+    SortedDataFile<K, V> getCacheSstFile(final String fileName) {
+        return SortedDataFile.<K, V>builder() //
                 .withDirectory(directory) //
                 .withFileName(fileName)//
                 .withKeyComparator(keyTypeDescriptor.getComparator()) //
@@ -96,8 +96,8 @@ public class SegmentFiles<K, V> {
                 .build();
     }
 
-    SstFile<K, V> getIndexSstFile() {
-        return SstFile.<K, V>builder() //
+    SortedDataFile<K, V> getIndexSstFile() {
+        return SortedDataFile.<K, V>builder() //
                 .withDirectory(directory) //
                 .withFileName(getIndexFileName())//
                 .withKeyComparator(keyTypeDescriptor.getComparator()) //
@@ -111,8 +111,8 @@ public class SegmentFiles<K, V> {
                 .build();
     }
 
-    SstFile<K, V> getIndexSstFileForIteration() {
-        return SstFile.<K, V>builder() //
+    SortedDataFile<K, V> getIndexSstFileForIteration() {
+        return SortedDataFile.<K, V>builder() //
                 .withDirectory(directory) //
                 .withFileName(getIndexFileName())//
                 .withKeyComparator(keyTypeDescriptor.getComparator()) //
@@ -126,8 +126,8 @@ public class SegmentFiles<K, V> {
                 .build();
     }
 
-    SstFile<K, V> getTempIndexFile() {
-        return SstFile.<K, V>builder() //
+    SortedDataFile<K, V> getTempIndexFile() {
+        return SortedDataFile.<K, V>builder() //
                 .withDirectory(directory) //
                 .withFileName(getTempIndexFileName())//
                 .withKeyComparator(keyTypeDescriptor.getComparator()) //

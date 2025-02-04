@@ -1,4 +1,4 @@
-package com.coroptis.index.sstfile;
+package com.coroptis.index.sorteddatafile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -13,7 +13,7 @@ import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.MemDirectory;
 
-public class IntegrationSstFileTest {
+public class IntegrationSortedDataFileTest {
 
     private final static String FILE_NAME = "pok.index";
     private final TypeDescriptor<Integer> tdi = new TypeDescriptorInteger();
@@ -28,11 +28,11 @@ public class IntegrationSstFileTest {
     @Test
     void testName() throws Exception {
         final Directory dir = new MemDirectory();
-        final SstFile<String, Integer> sst = new SstFile<>(dir, FILE_NAME,
+        final SortedDataFile<String, Integer> sdf = new SortedDataFile<>(dir, FILE_NAME,
                 tdi.getTypeWriter(), tdi.getTypeReader(), tds.getComparator(),
                 tds.getConvertorFromBytes(), tds.getConvertorToBytes(), 1024);
         long position = 0;
-        try (SstFileWriter<String, Integer> writer = sst.openWriter()) {
+        try (SortedDataFileWriter<String, Integer> writer = sdf.openWriter()) {
             writer.put(P1);
             writer.put(P2);
             writer.put(P3);
@@ -41,7 +41,7 @@ public class IntegrationSstFileTest {
             writer.put(P6);
         }
 
-        try (PairSeekableReader<String, Integer> reader = sst
+        try (PairSeekableReader<String, Integer> reader = sdf
                 .openSeekableReader()) {
             // verify reading from the beginning
             verifyEquals(P1, reader.read());

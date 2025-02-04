@@ -1,4 +1,4 @@
-package com.coroptis.index.sstfile;
+package com.coroptis.index.sorteddatafile;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

@@ -1,4 +1,4 @@
-package com.coroptis.index.sstfile;
+package com.coroptis.index.sorteddatafile;
 
 import com.coroptis.index.IndexException;
 import com.coroptis.index.datatype.ConvertorFromBytes;

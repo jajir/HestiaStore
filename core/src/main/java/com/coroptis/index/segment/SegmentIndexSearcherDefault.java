@@ -4,8 +4,8 @@ import java.util.Comparator;
 import java.util.Objects;
 
 import com.coroptis.index.Pair;
+import com.coroptis.index.sorteddatafile.SortedDataFile;
 import com.coroptis.index.CloseablePairReader;
-import com.coroptis.index.sstfile.SstFile;
 
 /**
  * Searcher for each search open file for read and skip given number of bytes.
@@ -18,11 +18,11 @@ import com.coroptis.index.sstfile.SstFile;
 public class SegmentIndexSearcherDefault<K, V>
         implements SegmentIndexSearcher<K, V> {
 
-    private final SstFile<K, V> segmentIndexFile;
+    private final SortedDataFile<K, V> segmentIndexFile;
     private final int maxNumberOfKeysInIndexPage;
     private final Comparator<K> keyTypeComparator;
 
-    SegmentIndexSearcherDefault(final SstFile<K, V> segmentIndexFile,
+    SegmentIndexSearcherDefault(final SortedDataFile<K, V> segmentIndexFile,
             final int maxNumberOfKeysInIndexPage,
             final Comparator<K> keyTypeComparator) {
         this.segmentIndexFile = Objects.requireNonNull(segmentIndexFile);

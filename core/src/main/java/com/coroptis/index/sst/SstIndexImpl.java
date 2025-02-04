@@ -22,7 +22,7 @@ import com.coroptis.index.segment.Segment;
 import com.coroptis.index.segment.SegmentId;
 import com.coroptis.index.segment.SegmentSplitter;
 import com.coroptis.index.segment.SegmentSplitterResult;
-import com.coroptis.index.sstfile.PairComparator;
+import com.coroptis.index.sorteddatafile.PairComparator;
 import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
 
 public class SstIndexImpl<K, V> implements Index<K, V> {

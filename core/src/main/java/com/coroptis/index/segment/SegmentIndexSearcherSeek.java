@@ -5,7 +5,7 @@ import java.util.Objects;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairSeekableReader;
-import com.coroptis.index.sstfile.SstFile;
+import com.coroptis.index.sorteddatafile.SortedDataFile;
 
 /**
  * This implementation keep open file and when it search it seek to given place
@@ -23,7 +23,7 @@ public class SegmentIndexSearcherSeek<K, V>
     private final Comparator<K> keyTypeComparator;
     private final PairSeekableReader<K, V> pairSeekableReader;
 
-    SegmentIndexSearcherSeek(final SstFile<K, V> segmenIndexFile,
+    SegmentIndexSearcherSeek(final SortedDataFile<K, V> segmenIndexFile,
             final int maxNumberOfKeysInIndexPage,
             final Comparator<K> keyTypeComparator) {
         Objects.requireNonNull(segmenIndexFile);

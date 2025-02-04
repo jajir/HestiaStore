@@ -1,4 +1,4 @@
-package com.coroptis.index.sstfile;
+package com.coroptis.index.sorteddatafile;
 
 import java.util.Comparator;
 import java.util.Objects;
@@ -14,7 +14,7 @@ import com.coroptis.index.datatype.TypeReader;
 import com.coroptis.index.datatype.TypeWriter;
 import com.coroptis.index.directory.Directory;
 
-public class SstFile<K, V> {
+public class SortedDataFile<K, V> {
 
     private final Directory directory;
 
@@ -32,11 +32,11 @@ public class SstFile<K, V> {
 
     private final ConvertorToBytes<K> keyConvertorToBytes;
 
-    public static <M, N> SstFileBuilder<M, N> builder() {
-        return new SstFileBuilder<M, N>();
+    public static <M, N> SortedDataFileBuilder<M, N> builder() {
+        return new SortedDataFileBuilder<M, N>();
     }
 
-    public SstFile(final Directory directory, final String fileName,
+    public SortedDataFile(final Directory directory, final String fileName,
             final TypeWriter<V> valueWriter, final TypeReader<V> valueReader,
             final Comparator<K> keyComparator,
             final ConvertorFromBytes<K> keyConvertorFromBytes,
@@ -53,14 +53,14 @@ public class SstFile<K, V> {
         this.diskIoBufferSize = diskIoBufferSize;
     }
 
-    public SstFile<K, V> withFileName(final String newFileName) {
-        return new SstFile<>(directory, newFileName, valueWriter, valueReader,
+    public SortedDataFile<K, V> withFileName(final String newFileName) {
+        return new SortedDataFile<>(directory, newFileName, valueWriter, valueReader,
                 keyComparator, keyConvertorFromBytes, keyConvertorToBytes,
                 diskIoBufferSize);
     }
 
-    public SstFile<K, V> withProperties(final Directory newDirectory, final String newFileName, final int newDiskIoBufferSize) {
-        return new SstFile<>(newDirectory, newFileName, valueWriter, valueReader, keyComparator, keyConvertorFromBytes, keyConvertorToBytes, newDiskIoBufferSize);
+    public SortedDataFile<K, V> withProperties(final Directory newDirectory, final String newFileName, final int newDiskIoBufferSize) {
+        return new SortedDataFile<>(newDirectory, newFileName, valueWriter, valueReader, keyComparator, keyConvertorFromBytes, keyConvertorToBytes, newDiskIoBufferSize);
     }
 
     public CloseablePairReader<K, V> openReader() {
@@ -73,7 +73,7 @@ public class SstFile<K, V> {
         }
         final DiffKeyReader<K> diffKeyReader = new DiffKeyReader<K>(
                 keyConvertorFromBytes);
-        final SstFileReader<K, V> reader = new SstFileReader<>(diffKeyReader,
+        final SortedDataFileReader<K, V> reader = new SortedDataFileReader<>(diffKeyReader,
                 valueReader,
                 directory.getFileReader(fileName, diskIoBufferSize));
         reader.skip(position);
@@ -96,8 +96,8 @@ public class SstFile<K, V> {
         return iterator;
     }
 
-    public SstFileWriter<K, V> openWriter() {
-        final SstFileWriter<K, V> writer = new SstFileWriter<>(directory,
+    public SortedDataFileWriter<K, V> openWriter() {
+        final SortedDataFileWriter<K, V> writer = new SortedDataFileWriter<>(directory,
                 fileName, keyConvertorToBytes, keyComparator, valueWriter,
                 diskIoBufferSize);
         return writer;

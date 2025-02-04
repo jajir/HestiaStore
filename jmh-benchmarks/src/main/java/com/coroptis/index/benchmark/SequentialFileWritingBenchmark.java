@@ -26,7 +26,6 @@ import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.Directory.Access;
 import com.coroptis.index.directory.FsDirectory;
-import com.coroptis.index.directory.FsNioDirectory;
 import com.coroptis.index.unsorteddatafile.UnsortedDataFile;
 
 @BenchmarkMode(Mode.AverageTime) // Measures the average time per operation

@@ -10,8 +10,8 @@ import java.util.stream.Stream;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.PairIteratorFromReader;
+import com.coroptis.index.sorteddatafile.PairComparator;
 import com.coroptis.index.CloseablePairReader;
-import com.coroptis.index.sstfile.PairComparator;
 
 /**
  * Cache for index operation. When there are two operations with same key value

@@ -1,4 +1,4 @@
-package com.coroptis.index.sstfile;
+package com.coroptis.index.sorteddatafile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,13 +34,13 @@ public class DataFileSorter<K, V> {
 
     private final int mergingFileCap = 10;
     private final UnsortedDataFile<K, V> unsortedDataFile;
-    private final SstFile<K, V> targetSortedDataFile;
+    private final SortedDataFile<K, V> targetSortedDataFile;
     private final Merger<K, V> merger;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final long maxNumberOfKeysInMemory;
 
     public DataFileSorter(final UnsortedDataFile<K, V> unsortedDataFile,
-            final SstFile<K, V> sortedDataFile, final Merger<K, V> merger,
+            final SortedDataFile<K, V> sortedDataFile, final Merger<K, V> merger,
             final TypeDescriptor<K> keyTypeDescriptor,
             final long maxNumberOfKeysInMemory) {
         this.unsortedDataFile = Objects.requireNonNull(unsortedDataFile,
@@ -92,13 +92,13 @@ public class DataFileSorter<K, V> {
 
     private void writeChunkToFile(final UniqueCache<K, V> cache,
             final int round, final int chunkCount) {
-        final SstFile<K, V> chunkFile = getChunkFile(round, chunkCount);
-        try (SstFileWriter<K, V> writer = chunkFile.openWriter()) {
+        final SortedDataFile<K, V> chunkFile = getChunkFile(round, chunkCount);
+        try (SortedDataFileWriter<K, V> writer = chunkFile.openWriter()) {
             cache.getAsSortedList().forEach(pair -> writer.put(pair));
         }
     }
 
-    private final SstFile<K, V> getChunkFile(final int round, final int chunkCount) {
+    private final SortedDataFile<K, V> getChunkFile(final int round, final int chunkCount) {
         final String prefix = MERGING_FILES_PREFIX + FileNameUtil.getPaddedId(round, 3) + "-";
         final String fileName = FileNameUtil.getFileName(prefix, chunkCount,
                 COUNT_MAX_LENGTH, MERGING_FILES_SUFFIX);
@@ -123,20 +123,8 @@ public class DataFileSorter<K, V> {
 
     }
 
-    private void mergeChunks1(final int round, final int chunkCount) {
-        final List<PairIteratorWithCurrent<K, V>> chunkFiles = new ArrayList<>(
-                chunkCount);
-        for (int i = 0; i < chunkCount; i++) {
-            chunkFiles.add(getChunkFile(round, i).openIterator());
-        }
-        mergeFiles(chunkFiles, targetSortedDataFile);
-        for (int i = 0; i < chunkCount; i++) {
-            getChunkFile(round, i).delete();
-        }
-    }
-
     private void mergeIndexFiles(final int round, final int fromFileIndex, final int toFileIndex,
-            SstFile<K, V> targetFile) {
+            SortedDataFile<K, V> targetFile) {
         final List<PairIteratorWithCurrent<K, V>> chunkFiles = new ArrayList<>(
                 toFileIndex - fromFileIndex);
         for (int i = fromFileIndex; i < toFileIndex; i++) {
@@ -148,10 +136,10 @@ public class DataFileSorter<K, V> {
         }
     }
 
-    private void mergeFiles(final List<PairIteratorWithCurrent<K, V>> chunkFiles, SstFile<K, V> targetFile) {
+    private void mergeFiles(final List<PairIteratorWithCurrent<K, V>> chunkFiles, SortedDataFile<K, V> targetFile) {
         try (MergedPairIterator<K, V> iterator = new MergedPairIterator<>(
                 chunkFiles, keyTypeDescriptor.getComparator(), merger)) {
-            try (SstFileWriter<K, V> writer = targetFile.openWriter()) {
+            try (SortedDataFileWriter<K, V> writer = targetFile.openWriter()) {
                 Pair<K, V> pair = null;
                 while (iterator.hasNext()) {
                     pair = iterator.next();

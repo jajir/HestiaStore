@@ -1,4 +1,4 @@
-package com.coroptis.index.sstfile;
+package com.coroptis.index.sorteddatafile;
 
 import java.util.Comparator;
 import java.util.Objects;
@@ -10,7 +10,7 @@ import com.coroptis.index.datatype.TypeWriter;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.FileWriter;
 
-public class SstFileWriter<K, V> implements PairWriter<K, V> {
+public class SortedDataFileWriter<K, V> implements PairWriter<K, V> {
 
     private final TypeWriter<V> valueWriter;
 
@@ -20,7 +20,7 @@ public class SstFileWriter<K, V> implements PairWriter<K, V> {
 
     private long position;
 
-    public SstFileWriter(final Directory directory, final String fileName,
+    public SortedDataFileWriter(final Directory directory, final String fileName,
             final ConvertorToBytes<K> keyConvertorToBytes,
             final Comparator<K> keyComparator, final TypeWriter<V> valueWriter,
             final int diskIoBufferSize) {

@@ -5,7 +5,7 @@ import java.util.Objects;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.cache.UniqueCache;
-import com.coroptis.index.sstfile.SstFileWriter;
+import com.coroptis.index.sorteddatafile.SortedDataFileWriter;
 
 /**
  * Class collect unsorted data, sort them and finally write them into SST delta
@@ -64,7 +64,7 @@ public class SegmentDeltaCacheWriter<K, V> implements PairWriter<K, V> {
         segmentPropertiesManager.flush();
 
         // store cache
-        try (final SstFileWriter<K, V> writer = segmentFiles
+        try (final SortedDataFileWriter<K, V> writer = segmentFiles
                 .getCacheSstFile(
                         segmentPropertiesManager.getAndIncreaseDeltaFileName())
                 .openWriter()) {

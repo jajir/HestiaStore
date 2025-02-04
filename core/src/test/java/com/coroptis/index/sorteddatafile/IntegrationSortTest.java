@@ -1,4 +1,4 @@
-package com.coroptis.index.sstfile;
+package com.coroptis.index.sorteddatafile;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,8 +10,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.coroptis.index.FileNameUtil;
 import com.coroptis.index.Pair;
@@ -22,7 +20,6 @@ import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.MemDirectory;
 import com.coroptis.index.segment.AbstractSegmentTest;
-import com.coroptis.index.unsorteddatafile.IntegrationUnsortedDataFileTest;
 import com.coroptis.index.unsorteddatafile.UnsortedDataFile;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,12 +32,9 @@ public class IntegrationSortTest extends AbstractSegmentTest {
     private final static String SORTED_FILE_NAME = "kachna.sorted";
 
 
-    private final Logger logger = LoggerFactory
-            .getLogger(IntegrationUnsortedDataFileTest.class);
-
     private Directory dir = null;
     private UnsortedDataFile<String, Integer> unsorted = null;
-    private SstFile<String, Integer> sst = null;
+    private SortedDataFile<String, Integer> sdf = null;
     private DataFileSorter<String, Integer> sorter = null;
 
     @BeforeEach
@@ -55,11 +49,11 @@ public class IntegrationSortTest extends AbstractSegmentTest {
                 .withKeyReader(tds.getTypeReader())//
                 .build();
 
-        sst = new SstFile<>(dir, SORTED_FILE_NAME, tdi.getTypeWriter(),
+        sdf = new SortedDataFile<>(dir, SORTED_FILE_NAME, tdi.getTypeWriter(),
                 tdi.getTypeReader(), tds.getComparator(),
                 tds.getConvertorFromBytes(), tds.getConvertorToBytes(), 1024);
 
-        sorter = new DataFileSorter<>(unsorted, sst, (k, v1, v2) -> v1, tds, 2);
+        sorter = new DataFileSorter<>(unsorted, sdf, (k, v1, v2) -> v1, tds, 2);
     }
 
     @Test
@@ -72,7 +66,7 @@ public class IntegrationSortTest extends AbstractSegmentTest {
 
         sorter.sort();
 
-        verifyIteratorData(sst.openIterator(), Arrays.asList(//
+        verifyIteratorData(sdf.openIterator(), Arrays.asList(//
                 Pair.of("a", 20), //
                 Pair.of("b", 30), //
                 Pair.of("c", 40)));
@@ -86,7 +80,7 @@ public class IntegrationSortTest extends AbstractSegmentTest {
 
         sorter.sort();
 
-        verifyIteratorData(sst.openIterator(), Collections.emptyList());
+        verifyIteratorData(sdf.openIterator(), Collections.emptyList());
 
         verifyNumberOfFiles(dir, 2);
     }
@@ -104,7 +98,7 @@ public class IntegrationSortTest extends AbstractSegmentTest {
 
         sorter.sort();
 
-        verifyIteratorData(sst.openIterator(), data);
+        verifyIteratorData(sdf.openIterator(), data);
 
         verifyNumberOfFiles(dir, 2);
     }
@@ -122,7 +116,7 @@ public class IntegrationSortTest extends AbstractSegmentTest {
 
         sorter.sort();
 
-        verifyIteratorData(sst.openIterator(), data);
+        verifyIteratorData(sdf.openIterator(), data);
 
         verifyNumberOfFiles(dir, 2);
     }

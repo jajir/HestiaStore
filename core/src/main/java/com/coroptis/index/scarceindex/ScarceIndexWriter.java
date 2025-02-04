@@ -4,7 +4,7 @@ import java.util.Objects;
 
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairWriter;
-import com.coroptis.index.sstfile.SstFileWriter;
+import com.coroptis.index.sorteddatafile.SortedDataFileWriter;
 
 /**
  * Encapsulate writing of new index data. When writer is closed cache is
@@ -13,10 +13,10 @@ import com.coroptis.index.sstfile.SstFileWriter;
 public class ScarceIndexWriter<K> implements PairWriter<K, Integer> {
 
     private final ScarceIndex<K> scarceIndex;
-    private final SstFileWriter<K, Integer> writer;
+    private final SortedDataFileWriter<K, Integer> writer;
 
     ScarceIndexWriter(final ScarceIndex<K> scarceIndex,
-            final SstFileWriter<K, Integer> writer) {
+            final SortedDataFileWriter<K, Integer> writer) {
         this.scarceIndex = Objects.requireNonNull(scarceIndex);
         this.writer = Objects.requireNonNull(writer);
     }

@@ -7,7 +7,7 @@ import com.coroptis.index.Pair;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.bloomfilter.BloomFilterWriter;
 import com.coroptis.index.scarceindex.ScarceIndexWriter;
-import com.coroptis.index.sstfile.SstFileWriter;
+import com.coroptis.index.sorteddatafile.SortedDataFileWriter;
 
 /**
  * Allows to rewrite whole segment context including:
@@ -28,7 +28,7 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
     private final AtomicLong scarceIndexKeyCounter = new AtomicLong(0L);
     private final AtomicLong keyCounter = new AtomicLong(0L);
     private final ScarceIndexWriter<K> scarceWriter;
-    private final SstFileWriter<K, V> indexWriter;
+    private final SortedDataFileWriter<K, V> indexWriter;
     private final BloomFilterWriter<K> bloomFilterWriter;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
     private Pair<K, V> previousPair = null;

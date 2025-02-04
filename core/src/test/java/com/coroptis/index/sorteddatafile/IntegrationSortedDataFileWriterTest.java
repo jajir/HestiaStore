@@ -1,4 +1,4 @@
-package com.coroptis.index.sstfile;
+package com.coroptis.index.sorteddatafile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -13,7 +13,7 @@ import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.MemDirectory;
 
-public class IntegrationSstFileWriterTest {
+public class IntegrationSortedDataFileWriterTest {
 
     private final static int DISK_IO_BUFFER_SIZE = 1024;
     private final static String FILE_NAME = "pok.dat";
@@ -23,7 +23,7 @@ public class IntegrationSstFileWriterTest {
     @Test
     public void read_incorrect_insert_order_mem() throws Exception {
         final Directory directory = new MemDirectory();
-        try (SstFileWriter<String, Byte> siw = new SstFileWriter<>(directory,
+        try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(directory,
                 FILE_NAME, stringTd.getConvertorToBytes(),
                 Comparator.naturalOrder(), byteTd.getTypeWriter(),
                 DISK_IO_BUFFER_SIZE)) {
@@ -37,7 +37,7 @@ public class IntegrationSstFileWriterTest {
 
     @Test
     public void test_invalidOrder() throws Exception {
-        try (SstFileWriter<String, Byte> siw = new SstFileWriter<>(
+        try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(
                 new MemDirectory(), FILE_NAME, stringTd.getConvertorToBytes(),
                 Comparator.naturalOrder(), byteTd.getTypeWriter(),
                 DISK_IO_BUFFER_SIZE)) {
@@ -50,7 +50,7 @@ public class IntegrationSstFileWriterTest {
 
     @Test
     public void test_duplicatedValue() throws Exception {
-        try (SstFileWriter<String, Byte> siw = new SstFileWriter<>(
+        try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(
                 new MemDirectory(), FILE_NAME, stringTd.getConvertorToBytes(),
                 Comparator.naturalOrder(), byteTd.getTypeWriter(),
                 DISK_IO_BUFFER_SIZE)) {
@@ -63,7 +63,7 @@ public class IntegrationSstFileWriterTest {
 
     @Test
     public void test_null_key() throws Exception {
-        try (SstFileWriter<String, Byte> siw = new SstFileWriter<>(
+        try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(
                 new MemDirectory(), FILE_NAME, stringTd.getConvertorToBytes(),
                 Comparator.naturalOrder(), byteTd.getTypeWriter(),
                 DISK_IO_BUFFER_SIZE)) {

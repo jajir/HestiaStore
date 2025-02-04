@@ -19,8 +19,8 @@ import com.coroptis.index.PairIterator;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.segment.SegmentId;
-import com.coroptis.index.sstfile.SstFile;
-import com.coroptis.index.sstfile.SstFileWriter;
+import com.coroptis.index.sorteddatafile.SortedDataFile;
+import com.coroptis.index.sorteddatafile.SortedDataFileWriter;
 
 /**
  * Provide information about keys and particular segment files. Each key
@@ -50,7 +50,7 @@ public class KeySegmentCache<K> implements CloseableResource {
     public final static SegmentId FIRST_SEGMENT_ID = SegmentId.of(0);
 
     private TreeMap<K, SegmentId> list;
-    private final SstFile<K, SegmentId> sdf;
+    private final SortedDataFile<K, SegmentId> sdf;
     private final Comparator<K> keyComparator;
     private boolean isDirty = false;
 
@@ -61,7 +61,7 @@ public class KeySegmentCache<K> implements CloseableResource {
                 "Key type comparator is null.");
         this.keyComparator = Objects
                 .requireNonNull(keyTypeDescriptor.getComparator());
-        this.sdf = SstFile.<K, SegmentId>builder() //
+        this.sdf = SortedDataFile.<K, SegmentId>builder() //
                 .withDirectory(directory) //
                 .withFileName(FILE_NAME)//
                 .withKeyComparator(keyTypeDescriptor.getComparator()) //
@@ -176,7 +176,7 @@ public class KeySegmentCache<K> implements CloseableResource {
 
     public void flush() {
         if (isDirty) {
-            try (SstFileWriter<K, SegmentId> writer = sdf.openWriter()) {
+            try (SortedDataFileWriter<K, SegmentId> writer = sdf.openWriter()) {
                 list.forEach((k, v) -> writer.put(Pair.of(k, v)));
             }
         }

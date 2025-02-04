@@ -1,4 +1,4 @@
-package com.coroptis.index.sstfile;
+package com.coroptis.index.sorteddatafile;
 
 import java.util.Comparator;
 import java.util.Objects;
@@ -8,7 +8,7 @@ import java.util.function.Consumer;
 import com.coroptis.index.Pair;
 import com.coroptis.index.CloseablePairReader;
 
-public class SstFileSpliteratorSized<K, V> implements Spliterator<Pair<K, V>> {
+public class SortedDataFileSpliteratorSized<K, V> implements Spliterator<Pair<K, V>> {
 
     private final CloseablePairReader<K, V> pairReader;
 
@@ -16,7 +16,7 @@ public class SstFileSpliteratorSized<K, V> implements Spliterator<Pair<K, V>> {
 
     private final long estimateSize;
 
-    public SstFileSpliteratorSized(final CloseablePairReader<K, V> pairReader,
+    public SortedDataFileSpliteratorSized(final CloseablePairReader<K, V> pairReader,
             final PairComparator<K, V> pairComparator,
             final long estimateSize) {
         this.pairReader = Objects.requireNonNull(pairReader);

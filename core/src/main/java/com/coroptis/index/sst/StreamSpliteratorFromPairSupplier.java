@@ -8,7 +8,7 @@ import java.util.function.Consumer;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairReader;
 import com.coroptis.index.datatype.TypeDescriptor;
-import com.coroptis.index.sstfile.PairComparator;
+import com.coroptis.index.sorteddatafile.PairComparator;
 
 public class StreamSpliteratorFromPairSupplier<K, V>
         implements Spliterator<Pair<K, V>> {

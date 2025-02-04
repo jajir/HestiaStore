@@ -9,8 +9,8 @@ import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.MemDirectory;
 import com.coroptis.index.segment.SegmentId;
-import com.coroptis.index.sstfile.SstFile;
-import com.coroptis.index.sstfile.SstFileWriter;
+import com.coroptis.index.sorteddatafile.SortedDataFile;
+import com.coroptis.index.sorteddatafile.SortedDataFileWriter;
 
 public class KeySegmentCacheSanityCheckTest {
     private final TypeDescriptorString stringTd = new TypeDescriptorString();
@@ -24,13 +24,13 @@ public class KeySegmentCacheSanityCheckTest {
      */
     @Test
     public void test_sanityCheck() throws Exception {
-        final SstFile<String, SegmentId> sdf = new SstFile<>(directory,
+        final SortedDataFile<String, SegmentId> sdf = new SortedDataFile<>(directory,
                 "index.map", integerTd.getTypeWriter(),
                 integerTd.getTypeReader(), stringTd.getComparator(),
                 stringTd.getConvertorFromBytes(),
                 stringTd.getConvertorToBytes(), 1024);
 
-        try (SstFileWriter<String, SegmentId> writer = sdf.openWriter()) {
+        try (SortedDataFileWriter<String, SegmentId> writer = sdf.openWriter()) {
             writer.put(Pair.of("aaa", SegmentId.of(1)));
             writer.put(Pair.of("bbb", SegmentId.of(2)));
             writer.put(Pair.of("ccc", SegmentId.of(3)));

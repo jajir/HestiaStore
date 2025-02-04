@@ -7,7 +7,7 @@ import com.coroptis.index.PairIterator;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
 import com.coroptis.index.directory.Directory;
-import com.coroptis.index.sstfile.SstFile;
+import com.coroptis.index.sorteddatafile.SortedDataFile;
 
 /**
  * Scarce index contain map that contain just subset of keys from SST. It's a
@@ -41,7 +41,7 @@ public class ScarceIndex<K> {
 
     private final String fileName;
 
-    private final SstFile<K, Integer> sstFile;
+    private final SortedDataFile<K, Integer> cacheDataFile;
 
     private ScarceIndexCache<K> cache;
 
@@ -58,7 +58,7 @@ public class ScarceIndex<K> {
                 "File name object is null.");
         this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor,
                 "Key type descriptor object is null.");
-        this.sstFile = SstFile.<K, Integer>builder() //
+        this.cacheDataFile = SortedDataFile.<K, Integer>builder() //
                 .withDirectory(directory) //
                 .withFileName(fileName)//
                 .withKeyComparator(keyTypeDescriptor.getComparator()) //
@@ -77,7 +77,7 @@ public class ScarceIndex<K> {
     public void loadCache() {
         ScarceIndexCache<K> tmp = new ScarceIndexCache<>(keyTypeDescriptor);
         if (directory.isFileExists(fileName)) {
-            try (PairIterator<K, Integer> pairIterator = sstFile
+            try (PairIterator<K, Integer> pairIterator = cacheDataFile
                     .openIterator()) {
                 while (pairIterator.hasNext()) {
                     final Pair<K, Integer> pair = pairIterator.next();
@@ -106,7 +106,7 @@ public class ScarceIndex<K> {
     }
 
     public ScarceIndexWriter<K> openWriter() {
-        return new ScarceIndexWriter<>(this, sstFile.openWriter());
+        return new ScarceIndexWriter<>(this, cacheDataFile.openWriter());
     }
 
 }

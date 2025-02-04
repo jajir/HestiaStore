@@ -7,7 +7,7 @@ import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.cache.UniqueCache;
 import com.coroptis.index.datatype.TypeDescriptor;
-import com.coroptis.index.sstfile.SstFile;
+import com.coroptis.index.sorteddatafile.SortedDataFile;
 
 /**
  * Represents segment cache containing changes in segment.
@@ -39,9 +39,9 @@ public class SegmentDeltaCache<K, V> {
 
     private void loadDataFromSegmentDeltaFile(final SegmentFiles<K, V> segmentFiles,
             final String segmentDeltaFileName) {
-        final SstFile<K, V> sstFile = segmentFiles
+        final SortedDataFile<K, V> dataFile = segmentFiles
                 .getCacheSstFile(segmentDeltaFileName);
-        try (final PairIterator<K, V> iterator = sstFile.openIterator()) {
+        try (final PairIterator<K, V> iterator = dataFile.openIterator()) {
             while (iterator.hasNext()) {
                 cache.put(iterator.next());
             }
