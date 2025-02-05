@@ -1,5 +1,7 @@
 package com.coroptis.index.sorteddatafile;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -13,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coroptis.index.FileNameUtil;
 import com.coroptis.index.Pair;
+import com.coroptis.index.PairIteratorWithCurrent;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
@@ -30,7 +33,6 @@ public class IntegrationSortTest extends AbstractSegmentTest {
     private final static TypeDescriptor<Integer> tdi = new TypeDescriptorInteger();
     private final static String UNSORTED_FILE_NAME = "kachna.unsorted";
     private final static String SORTED_FILE_NAME = "kachna.sorted";
-
 
     private Directory dir = null;
     private UnsortedDataFile<String, Integer> unsorted = null;
@@ -53,11 +55,11 @@ public class IntegrationSortTest extends AbstractSegmentTest {
                 tdi.getTypeReader(), tds.getComparator(),
                 tds.getConvertorFromBytes(), tds.getConvertorToBytes(), 1024);
 
-        sorter = new DataFileSorter<>(unsorted, sdf, (k, v1, v2) -> v1, tds, 2);
+        sorter = new DataFileSorter<>(unsorted, sdf, (k, v1, v2) -> v1 > v2 ? v1 : v2, tds, 2);
     }
 
     @Test
-    void test_sort_3_emements() throws Exception {
+    void test_sort_3_unique_keys_shufled() throws Exception {
 
         writePairs(unsorted, Arrays.asList(//
                 Pair.of("b", 30), //
@@ -75,6 +77,24 @@ public class IntegrationSortTest extends AbstractSegmentTest {
     }
 
     @Test
+    void test_sort_3_duplicated_keys_shufled_merged() throws Exception {
+
+        writePairs(unsorted, Arrays.asList(//
+                Pair.of("a", 30), //
+                Pair.of("a", 20), //
+                Pair.of("c", 40), //
+                Pair.of("a", 50)));
+
+        sorter.sort();
+
+        verifyIteratorData(sdf.openIterator(), Arrays.asList(//
+                Pair.of("a", 50), //
+                Pair.of("c", 40)));
+
+        verifyNumberOfFiles(dir, 2);
+    }
+
+    @Test
     void test_sort_no_data() throws Exception {
         writePairs(unsorted, Collections.emptyList());
 
@@ -86,9 +106,9 @@ public class IntegrationSortTest extends AbstractSegmentTest {
     }
 
     @Test
-    void test_sort_100_sorted() throws Exception {
+    void test_sort_100_unique_keys_sorted() throws Exception {
         final List<Pair<String, Integer>> data = new ArrayList<>();
-        for(int i=0; i<100; i++) {
+        for (int i = 0; i < 100; i++) {
             data.add(Pair.of("key" + FileNameUtil.getPaddedId(i, 3), i));
         }
         final List<Pair<String, Integer>> shufledData = new ArrayList<>(data);
@@ -104,9 +124,9 @@ public class IntegrationSortTest extends AbstractSegmentTest {
     }
 
     @Test
-    void test_sort_100_random() throws Exception {
+    void test_sort_100_unique_keys_shufled() throws Exception {
         final List<Pair<String, Integer>> data = new ArrayList<>();
-        for(int i=0; i<100; i++) {
+        for (int i = 0; i < 100; i++) {
             data.add(Pair.of("key" + FileNameUtil.getPaddedId(i, 3), i));
         }
         final List<Pair<String, Integer>> shufledData = new ArrayList<>(data);
@@ -117,6 +137,33 @@ public class IntegrationSortTest extends AbstractSegmentTest {
         sorter.sort();
 
         verifyIteratorData(sdf.openIterator(), data);
+
+        verifyNumberOfFiles(dir, 2);
+    }
+
+    @Test
+    void test_sort_100_duplicated_keys_shufled() throws Exception {
+        final List<Pair<String, Integer>> data = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            int id = RANDOM.nextInt(10);
+            data.add(Pair.of("key" + FileNameUtil.getPaddedId(id, 3), id));
+        }
+        final List<Pair<String, Integer>> shufledData = new ArrayList<>(data);
+        Collections.shuffle(shufledData, RANDOM);
+
+        writePairs(unsorted, shufledData);
+
+        sorter.sort();
+
+        try (PairIteratorWithCurrent<String, Integer> iterator = sdf.openIterator()) {
+            int i = 0;
+            while (iterator.hasNext()) {
+                final Pair<String, Integer> pair = iterator.next();
+                assertEquals("key" + FileNameUtil.getPaddedId(i, 3), pair.getKey());
+                i++;
+            }
+            assertEquals(10, i);
+        }
 
         verifyNumberOfFiles(dir, 2);
     }
