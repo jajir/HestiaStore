@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.coroptis.index.FileNameUtil;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.Props;
 
@@ -52,13 +53,8 @@ public class SegmentPropertiesManager {
         return getDeltaString(lastOne);
     }
 
-    //FIXME use FileNameUtil.getPaddedId
     private String getDeltaString(final int segmentCacheDeltaFileId) {
-        String name = String.valueOf(segmentCacheDeltaFileId);
-        while (name.length() < 3) {
-            name = "0" + name;
-        }
-        return id.getName() + "-delta-" + name
+        return id.getName() + "-delta-" + FileNameUtil.getPaddedId(segmentCacheDeltaFileId, 3)
                 + SegmentFiles.CACHE_FILE_NAME_EXTENSION;
     }
 

@@ -1,5 +1,7 @@
 package com.coroptis.index.segment;
 
+import com.coroptis.index.FileNameUtil;
+
 /**
  * Index segments consisting of Sorted String Table (sst).
  * 
@@ -16,6 +18,9 @@ public class SegmentId {
      * @param id required segment id.
      */
     private SegmentId(final int id) {
+        if (id < 0) {
+            throw new IllegalArgumentException("Segment id must be greater than or equal to 0");
+        }
         this.id = id;
     }
 
@@ -33,12 +38,7 @@ public class SegmentId {
      * @return return segment name
      */
     public String getName() {
-    //FIXME use FileNameUtil.getPaddedId
-    String name = String.valueOf(id);
-        while (name.length() < 5) {
-            name = "0" + name;
-        }
-        return "segment-" + name;
+        return "segment-" + FileNameUtil.getPaddedId(id,5);
     }
 
     @Override
