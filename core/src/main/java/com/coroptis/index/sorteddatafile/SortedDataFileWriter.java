@@ -29,7 +29,7 @@ public class SortedDataFileWriter<K, V> implements PairWriter<K, V> {
         this.writer = directory.getFileWriter(fileName,
                 Directory.Access.OVERWRITE, diskIoBufferSize);
         this.valueWriter = valueWriter;
-        diffKeyWriter = new DiffKeyWriter<>(keyConvertorToBytes, keyComparator);
+        diffKeyWriter = new DiffKeyWriter<>(keyConvertorToBytes, keyComparator, writer);
         position = 0;
     }
 
@@ -42,7 +42,7 @@ public class SortedDataFileWriter<K, V> implements PairWriter<K, V> {
      * @return position of end of record.
      */
     public long put(final Pair<K, V> pair, final boolean fullWrite) {
-        final int diffKeyLength = diffKeyWriter.write(writer, pair.getKey(),
+        final int diffKeyLength = diffKeyWriter.write(pair.getKey(),
                 fullWrite);
 
         final int writenBytesInValue = valueWriter.write(writer,
@@ -60,7 +60,7 @@ public class SortedDataFileWriter<K, V> implements PairWriter<K, V> {
 
     @Override
     public void close() {
-        writer.close();
+        diffKeyWriter.close();
     }
 
 }
