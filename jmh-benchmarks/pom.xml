@@ -21,7 +21,7 @@
 	<description>Allows to quickly sort large ammount of data and quickly search through it.</description>
 	<dependencies>
 		<dependency>
-			<groupId>com.coroptis</groupId>
+			<groupId>com.coroptis.jbindex</groupId>
 			<artifactId>core</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
