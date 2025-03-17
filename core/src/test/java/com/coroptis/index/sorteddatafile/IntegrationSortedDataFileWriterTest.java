@@ -27,7 +27,7 @@ public class IntegrationSortedDataFileWriterTest {
         final FileWriter fileWriter = directory.getFileWriter(FILE_NAME,
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
         final DiffKeyWriter<String> diffKeyWriter = new DiffKeyWriter<>(stringTd.getConvertorToBytes(),
-                Comparator.naturalOrder(), fileWriter);
+                Comparator.naturalOrder());
         try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(byteTd.getTypeWriter(),
                 fileWriter, diffKeyWriter)) {
             assertEquals(0,
@@ -44,7 +44,7 @@ public class IntegrationSortedDataFileWriterTest {
         final FileWriter fileWriter = directory.getFileWriter(FILE_NAME,
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
         final DiffKeyWriter<String> diffKeyWriter = new DiffKeyWriter<>(stringTd.getConvertorToBytes(),
-                Comparator.naturalOrder(), fileWriter);
+                Comparator.naturalOrder());
         try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(byteTd.getTypeWriter(),
                 fileWriter, diffKeyWriter)) {
             siw.write(new Pair<String, Byte>("aaa", (byte) 0));
@@ -60,7 +60,7 @@ public class IntegrationSortedDataFileWriterTest {
         final FileWriter fileWriter = directory.getFileWriter(FILE_NAME,
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
         final DiffKeyWriter<String> diffKeyWriter = new DiffKeyWriter<>(stringTd.getConvertorToBytes(),
-                Comparator.naturalOrder(), fileWriter);
+                Comparator.naturalOrder());
         try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(byteTd.getTypeWriter(),
                 fileWriter, diffKeyWriter)) {
             siw.write(new Pair<String, Byte>("aaa", (byte) 0));
@@ -76,7 +76,7 @@ public class IntegrationSortedDataFileWriterTest {
         final FileWriter fileWriter = directory.getFileWriter(FILE_NAME,
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
         final DiffKeyWriter<String> diffKeyWriter = new DiffKeyWriter<>(stringTd.getConvertorToBytes(),
-                Comparator.naturalOrder(), fileWriter);
+                Comparator.naturalOrder());
         try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(byteTd.getTypeWriter(),
                 fileWriter, diffKeyWriter)) {
             assertThrows(NullPointerException.class,

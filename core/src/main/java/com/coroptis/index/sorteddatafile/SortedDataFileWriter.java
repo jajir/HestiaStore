@@ -11,16 +11,16 @@ public class SortedDataFileWriter<K, V> implements CloseableResource {
 
     private final TypeWriter<V> valueWriter;
 
-    private final FileWriter writer;
+    private final FileWriter fileWriter;
 
     private final DiffKeyWriter<K> diffKeyWriter;
 
     private long position;
 
     public SortedDataFileWriter(final TypeWriter<V> valueWriter,
-            final FileWriter writer, final DiffKeyWriter<K> diffKeyWriter) {
+            final FileWriter fileWriter, final DiffKeyWriter<K> diffKeyWriter) {
         this.valueWriter = Objects.requireNonNull(valueWriter, "valueWriter is required");
-        this.writer = Objects.requireNonNull(writer, "writer is required");
+        this.fileWriter = Objects.requireNonNull(fileWriter, "fileWriter is required");
         this.diffKeyWriter = Objects.requireNonNull(diffKeyWriter, "diffKeyWriter is required");
         position = 0;
     }
@@ -34,10 +34,10 @@ public class SortedDataFileWriter<K, V> implements CloseableResource {
      * @return position of end of record.
      */
     private long put(final Pair<K, V> pair, final boolean fullWrite) {
-        final int diffKeyLength = diffKeyWriter.write(pair.getKey(),
+        final int diffKeyLength = diffKeyWriter.write(pair.getKey(), fileWriter,
                 fullWrite);
 
-        final int writenBytesInValue = valueWriter.write(writer,
+        final int writenBytesInValue = valueWriter.write(fileWriter,
                 pair.getValue());
 
         long lastPosition = position;
@@ -66,7 +66,7 @@ public class SortedDataFileWriter<K, V> implements CloseableResource {
 
     @Override
     public void close() {
-        diffKeyWriter.close();
+        fileWriter.close();
     }
 
 }

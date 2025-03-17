@@ -7,11 +7,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.coroptis.index.ByteTool;
-import com.coroptis.index.CloseableResource;
 import com.coroptis.index.datatype.ConvertorToBytes;
 import com.coroptis.index.directory.FileWriter;
 
-public class DiffKeyWriter<K> implements CloseableResource {
+public class DiffKeyWriter<K> {
 
     private final Logger logger = LoggerFactory.getLogger(DiffKeyWriter.class);
 
@@ -19,33 +18,29 @@ public class DiffKeyWriter<K> implements CloseableResource {
 
     private final Comparator<K> keyComparator;
 
-    private final FileWriter fileWriter;
-
     private byte[] previousKeyBytes;
 
     private K previousKey;
 
     private final ByteTool byteTool;
-
+   
     public DiffKeyWriter(final ConvertorToBytes<K> convertorToBytes,
-            final Comparator<K> keyComparator, final FileWriter fileWriter) {
+            final Comparator<K> keyComparator) {
         this.convertorToBytes = Objects.requireNonNull(convertorToBytes,
                 "Convertor to bytes is null");
         this.keyComparator = Objects.requireNonNull(keyComparator,
                 "Key comparator can't be null");
-        this.fileWriter = Objects.requireNonNull(fileWriter,
-                "FileWriter can't be null");
         byteTool = new ByteTool();
         previousKeyBytes = new byte[0];
         previousKey = null;
         logger.trace(
-                "Initilizing with conventor to bytes '{}' and comparator '{}' and fileWriter '{}'",
+                "Initilizing with conventor to bytes '{}' and comparator '{}'",
                 this.convertorToBytes.getClass().getSimpleName(),
-                this.keyComparator.getClass().getSimpleName(),
-                this.fileWriter.getClass().getSimpleName());
+                this.keyComparator.getClass().getSimpleName());
     }
 
-    public int write(final K key, final boolean fullWrite) {
+    public int write(final K key, final FileWriter fileWriter, final boolean fullWrite) {
+        Objects.requireNonNull(fileWriter, "fileWriter can't be null");
         Objects.requireNonNull(key, "key can't be null");
         if (previousKey != null) {
             final int cmp = keyComparator.compare(previousKey, key);
@@ -71,7 +66,7 @@ public class DiffKeyWriter<K> implements CloseableResource {
         if (fullWrite) {
             final byte[] keyBytes = convertorToBytes.toBytes(key);
 
-            return write(0, keyBytes, key, keyBytes);
+            return write(fileWriter, 0, keyBytes, key, keyBytes);
         } else {
             final byte[] keyBytes = convertorToBytes.toBytes(key);
             final int sharedByteLength = byteTool
@@ -79,12 +74,12 @@ public class DiffKeyWriter<K> implements CloseableResource {
             final byte[] diffBytes = byteTool
                     .getRemainingBytesAfterIndex(sharedByteLength, keyBytes);
 
-            return write(sharedByteLength, diffBytes, key,
+            return write(fileWriter, sharedByteLength, diffBytes, key,
                     keyBytes);
         }
     }
 
-    private int write(final int sharedByteLength,
+    private int write(final FileWriter fileWriter, final int sharedByteLength,
             final byte[] diffBytes, final K key, final byte[] keyBytes) {
         fileWriter.write((byte) (sharedByteLength));
         fileWriter.write((byte) (diffBytes.length));
@@ -93,11 +88,6 @@ public class DiffKeyWriter<K> implements CloseableResource {
         previousKeyBytes = keyBytes;
         previousKey = key;
         return 2 + diffBytes.length;
-    }
-
-    @Override
-    public void close() {
-            fileWriter.close();
     }
 
 }

@@ -43,7 +43,7 @@ public class SortedDataFileWriterTest {
         final Exception e = assertThrows(NullPointerException.class,
                 () -> new SortedDataFileWriter<>(valueWriter, null, diffKeyWriter));
 
-        assertEquals("writer is required", e.getMessage());
+        assertEquals("fileWriter is required", e.getMessage());
     }
 
     @Test
@@ -60,7 +60,7 @@ public class SortedDataFileWriterTest {
                 fileWriter,
                 diffKeyWriter)) {
             writer.write(PAIR_1);
-            verify(diffKeyWriter).write("key1", false);
+            verify(diffKeyWriter).write("key1", fileWriter, false);
             verify(valueWriter).write(fileWriter, 100);
         }
     }
@@ -70,13 +70,13 @@ public class SortedDataFileWriterTest {
         try (SortedDataFileWriter<String, Integer> writer = new SortedDataFileWriter<>(valueWriter,
                 fileWriter,
                 diffKeyWriter)) {
-            when(diffKeyWriter.write("key1", true)).thenReturn(37);
+            when(diffKeyWriter.write("key1", fileWriter, true)).thenReturn(37);
             when(valueWriter.write(fileWriter, 100)).thenReturn(23);
             long ret = writer.writeFull(PAIR_1);
 
             assertEquals(0, ret);
 
-            when(diffKeyWriter.write("key2", true)).thenReturn(13);
+            when(diffKeyWriter.write("key2", fileWriter, true)).thenReturn(13);
             when(valueWriter.write(fileWriter, 200)).thenReturn(77);
             ret = writer.writeFull(PAIR_2);
 

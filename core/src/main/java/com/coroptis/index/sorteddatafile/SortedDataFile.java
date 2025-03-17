@@ -102,7 +102,7 @@ public class SortedDataFile<K, V> {
     public SortedDataFileWriter<K, V> openWriter() {
         final FileWriter fileWriter = directory.getFileWriter(fileName,
                 Directory.Access.OVERWRITE, diskIoBufferSize);
-        final DiffKeyWriter<K> diffKeyWriter = new DiffKeyWriter<>(keyConvertorToBytes, keyComparator, fileWriter);
+        final DiffKeyWriter<K> diffKeyWriter = new DiffKeyWriter<>(keyConvertorToBytes, keyComparator);
         final SortedDataFileWriter<K, V> writer = new SortedDataFileWriter<>(valueWriter,
                 fileWriter, diffKeyWriter);
         return writer;
