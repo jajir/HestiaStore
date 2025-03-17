@@ -26,9 +26,10 @@ public class IntegrationSortedDataFileWriterTest {
         final Directory directory = new MemDirectory();
         final FileWriter fileWriter = directory.getFileWriter(FILE_NAME,
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
-        final DiffKeyWriter<String> diffKeyWriter = new DiffKeyWriter<>(stringTd.getConvertorToBytes(), Comparator.naturalOrder(), fileWriter);
+        final DiffKeyWriter<String> diffKeyWriter = new DiffKeyWriter<>(stringTd.getConvertorToBytes(),
+                Comparator.naturalOrder(), fileWriter);
         try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(byteTd.getTypeWriter(),
-                DISK_IO_BUFFER_SIZE, fileWriter, diffKeyWriter)) {
+                fileWriter, diffKeyWriter)) {
             assertEquals(0,
                     siw.writeFull(new Pair<String, Byte>("aaabbb", (byte) 1)));
             assertThrows(IllegalArgumentException.class, () -> {
@@ -42,9 +43,10 @@ public class IntegrationSortedDataFileWriterTest {
         final Directory directory = new MemDirectory();
         final FileWriter fileWriter = directory.getFileWriter(FILE_NAME,
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
-        final DiffKeyWriter<String> diffKeyWriter = new DiffKeyWriter<>(stringTd.getConvertorToBytes(), Comparator.naturalOrder(), fileWriter);
+        final DiffKeyWriter<String> diffKeyWriter = new DiffKeyWriter<>(stringTd.getConvertorToBytes(),
+                Comparator.naturalOrder(), fileWriter);
         try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(byteTd.getTypeWriter(),
-                DISK_IO_BUFFER_SIZE, fileWriter, diffKeyWriter)) {
+                fileWriter, diffKeyWriter)) {
             siw.write(new Pair<String, Byte>("aaa", (byte) 0));
             siw.write(new Pair<String, Byte>("abbb", (byte) 1));
             assertThrows(IllegalArgumentException.class,
@@ -57,9 +59,10 @@ public class IntegrationSortedDataFileWriterTest {
         final Directory directory = new MemDirectory();
         final FileWriter fileWriter = directory.getFileWriter(FILE_NAME,
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
-        final DiffKeyWriter<String> diffKeyWriter = new DiffKeyWriter<>(stringTd.getConvertorToBytes(), Comparator.naturalOrder(), fileWriter);
+        final DiffKeyWriter<String> diffKeyWriter = new DiffKeyWriter<>(stringTd.getConvertorToBytes(),
+                Comparator.naturalOrder(), fileWriter);
         try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(byteTd.getTypeWriter(),
-                DISK_IO_BUFFER_SIZE, fileWriter, diffKeyWriter)) {
+                fileWriter, diffKeyWriter)) {
             siw.write(new Pair<String, Byte>("aaa", (byte) 0));
             siw.write(new Pair<String, Byte>("abbb", (byte) 1));
             assertThrows(IllegalArgumentException.class,
@@ -72,9 +75,10 @@ public class IntegrationSortedDataFileWriterTest {
         final Directory directory = new MemDirectory();
         final FileWriter fileWriter = directory.getFileWriter(FILE_NAME,
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
-        final DiffKeyWriter<String> diffKeyWriter = new DiffKeyWriter<>(stringTd.getConvertorToBytes(), Comparator.naturalOrder(), fileWriter);
+        final DiffKeyWriter<String> diffKeyWriter = new DiffKeyWriter<>(stringTd.getConvertorToBytes(),
+                Comparator.naturalOrder(), fileWriter);
         try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(byteTd.getTypeWriter(),
-                DISK_IO_BUFFER_SIZE, fileWriter, diffKeyWriter)) {
+                fileWriter, diffKeyWriter)) {
             assertThrows(NullPointerException.class,
                     () -> siw.write(new Pair<String, Byte>(null, (byte) 0)));
         }

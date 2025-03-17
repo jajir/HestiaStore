@@ -104,7 +104,7 @@ public class SortedDataFile<K, V> {
                 Directory.Access.OVERWRITE, diskIoBufferSize);
         final DiffKeyWriter<K> diffKeyWriter = new DiffKeyWriter<>(keyConvertorToBytes, keyComparator, fileWriter);
         final SortedDataFileWriter<K, V> writer = new SortedDataFileWriter<>(valueWriter,
-                diskIoBufferSize, fileWriter, diffKeyWriter);
+                fileWriter, diffKeyWriter);
         return writer;
     }
 

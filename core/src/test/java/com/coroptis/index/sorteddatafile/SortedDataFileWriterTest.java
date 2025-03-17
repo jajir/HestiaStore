@@ -17,8 +17,6 @@ import com.coroptis.index.directory.FileWriter;
 @ExtendWith(MockitoExtension.class)
 public class SortedDataFileWriterTest {
 
-    private static final int BUFFER_SIZE = 1024;
-
     private static final Pair<String, Integer> PAIR_1 = Pair.of("key1", 100);;
     private static final Pair<String, Integer> PAIR_2 = Pair.of("key2", 200);;
 
@@ -34,7 +32,7 @@ public class SortedDataFileWriterTest {
     @Test
     public void test_constructor_valueWriter_is_null() {
         final Exception e = assertThrows(NullPointerException.class,
-                () -> new SortedDataFileWriter<>(null, BUFFER_SIZE, fileWriter,
+                () -> new SortedDataFileWriter<>(null, fileWriter,
                         diffKeyWriter));
 
         assertEquals("valueWriter is required", e.getMessage());
@@ -43,7 +41,7 @@ public class SortedDataFileWriterTest {
     @Test
     void test_constructor_writer_is_null() {
         final Exception e = assertThrows(NullPointerException.class,
-                () -> new SortedDataFileWriter<>(valueWriter, BUFFER_SIZE, null, diffKeyWriter));
+                () -> new SortedDataFileWriter<>(valueWriter, null, diffKeyWriter));
 
         assertEquals("writer is required", e.getMessage());
     }
@@ -51,14 +49,14 @@ public class SortedDataFileWriterTest {
     @Test
     void test_constructor_diffKeyWriter_is_null() {
         final Exception e = assertThrows(NullPointerException.class,
-                () -> new SortedDataFileWriter<>(valueWriter, BUFFER_SIZE, fileWriter, null));
+                () -> new SortedDataFileWriter<>(valueWriter, fileWriter, null));
 
         assertEquals("diffKeyWriter is required", e.getMessage());
     }
 
     @Test
     public void test_write() {
-        try (SortedDataFileWriter<String, Integer> writer = new SortedDataFileWriter<>(valueWriter, BUFFER_SIZE,
+        try (SortedDataFileWriter<String, Integer> writer = new SortedDataFileWriter<>(valueWriter,
                 fileWriter,
                 diffKeyWriter)) {
             writer.write(PAIR_1);
@@ -69,7 +67,7 @@ public class SortedDataFileWriterTest {
 
     @Test
     public void test_writeFull() {
-        try (SortedDataFileWriter<String, Integer> writer = new SortedDataFileWriter<>(valueWriter, BUFFER_SIZE,
+        try (SortedDataFileWriter<String, Integer> writer = new SortedDataFileWriter<>(valueWriter,
                 fileWriter,
                 diffKeyWriter)) {
             when(diffKeyWriter.write("key1", true)).thenReturn(37);

@@ -18,7 +18,7 @@ public class SortedDataFileWriter<K, V> implements CloseableResource {
     private long position;
 
     public SortedDataFileWriter(final TypeWriter<V> valueWriter,
-            final int diskIoBufferSize, final FileWriter writer, final DiffKeyWriter<K> diffKeyWriter) {
+            final FileWriter writer, final DiffKeyWriter<K> diffKeyWriter) {
         this.valueWriter = Objects.requireNonNull(valueWriter, "valueWriter is required");
         this.writer = Objects.requireNonNull(writer, "writer is required");
         this.diffKeyWriter = Objects.requireNonNull(diffKeyWriter, "diffKeyWriter is required");
