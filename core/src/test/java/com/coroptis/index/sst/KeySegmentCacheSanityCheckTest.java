@@ -31,12 +31,12 @@ public class KeySegmentCacheSanityCheckTest {
                 stringTd.getConvertorToBytes(), 1024);
 
         try (SortedDataFileWriter<String, SegmentId> writer = sdf.openWriter()) {
-            writer.put(Pair.of("aaa", SegmentId.of(1)));
-            writer.put(Pair.of("bbb", SegmentId.of(2)));
-            writer.put(Pair.of("ccc", SegmentId.of(3)));
-            writer.put(Pair.of("ddd", SegmentId.of(4)));
-            writer.put(Pair.of("eee", SegmentId.of(5)));
-            writer.put(Pair.of("fff", SegmentId.of(3)));
+            writer.write(Pair.of("aaa", SegmentId.of(1)));
+            writer.write(Pair.of("bbb", SegmentId.of(2)));
+            writer.write(Pair.of("ccc", SegmentId.of(3)));
+            writer.write(Pair.of("ddd", SegmentId.of(4)));
+            writer.write(Pair.of("eee", SegmentId.of(5)));
+            writer.write(Pair.of("fff", SegmentId.of(3)));
         }
 
         assertThrows(IllegalStateException.class, () -> {

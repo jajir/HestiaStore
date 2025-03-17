@@ -33,12 +33,12 @@ public class IntegrationSortedDataFileTest {
                 tds.getConvertorFromBytes(), tds.getConvertorToBytes(), 1024);
         long position = 0;
         try (SortedDataFileWriter<String, Integer> writer = sdf.openWriter()) {
-            writer.put(P1);
-            writer.put(P2);
-            writer.put(P3);
-            position = writer.put(P4, true);
-            writer.put(P5);
-            writer.put(P6);
+            writer.write(P1);
+            writer.write(P2);
+            writer.write(P3);
+            position = writer.writeFull(P4);
+            writer.write(P5);
+            writer.write(P6);
         }
 
         try (PairSeekableReader<String, Integer> reader = sdf

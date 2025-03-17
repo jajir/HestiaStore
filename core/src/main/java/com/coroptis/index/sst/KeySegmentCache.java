@@ -177,7 +177,7 @@ public class KeySegmentCache<K> implements CloseableResource {
     public void flush() {
         if (isDirty) {
             try (SortedDataFileWriter<K, SegmentId> writer = sdf.openWriter()) {
-                list.forEach((k, v) -> writer.put(Pair.of(k, v)));
+                list.forEach((k, v) -> writer.write(Pair.of(k, v)));
             }
         }
         isDirty = false;

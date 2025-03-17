@@ -13,6 +13,7 @@ import com.coroptis.index.datatype.ConvertorToBytes;
 import com.coroptis.index.datatype.TypeReader;
 import com.coroptis.index.datatype.TypeWriter;
 import com.coroptis.index.directory.Directory;
+import com.coroptis.index.directory.FileWriter;
 
 public class SortedDataFile<K, V> {
 
@@ -59,8 +60,10 @@ public class SortedDataFile<K, V> {
                 diskIoBufferSize);
     }
 
-    public SortedDataFile<K, V> withProperties(final Directory newDirectory, final String newFileName, final int newDiskIoBufferSize) {
-        return new SortedDataFile<>(newDirectory, newFileName, valueWriter, valueReader, keyComparator, keyConvertorFromBytes, keyConvertorToBytes, newDiskIoBufferSize);
+    public SortedDataFile<K, V> withProperties(final Directory newDirectory, final String newFileName,
+            final int newDiskIoBufferSize) {
+        return new SortedDataFile<>(newDirectory, newFileName, valueWriter, valueReader, keyComparator,
+                keyConvertorFromBytes, keyConvertorToBytes, newDiskIoBufferSize);
     }
 
     public CloseablePairReader<K, V> openReader() {
@@ -97,9 +100,11 @@ public class SortedDataFile<K, V> {
     }
 
     public SortedDataFileWriter<K, V> openWriter() {
-        final SortedDataFileWriter<K, V> writer = new SortedDataFileWriter<>(directory,
-                fileName, keyConvertorToBytes, keyComparator, valueWriter,
-                diskIoBufferSize);
+        final FileWriter fileWriter = directory.getFileWriter(fileName,
+                Directory.Access.OVERWRITE, diskIoBufferSize);
+        final DiffKeyWriter<K> diffKeyWriter = new DiffKeyWriter<>(keyConvertorToBytes, keyComparator, fileWriter);
+        final SortedDataFileWriter<K, V> writer = new SortedDataFileWriter<>(valueWriter,
+                diskIoBufferSize, fileWriter, diffKeyWriter);
         return writer;
     }
 

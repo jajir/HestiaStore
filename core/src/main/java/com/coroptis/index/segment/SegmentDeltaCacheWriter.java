@@ -69,7 +69,7 @@ public class SegmentDeltaCacheWriter<K, V> implements PairWriter<K, V> {
                         segmentPropertiesManager.getAndIncreaseDeltaFileName())
                 .openWriter()) {
             uniqueCache.getStream().forEach(pair -> {
-                writer.put(pair);
+                writer.write(pair);
             });
         }
         uniqueCache.clear();

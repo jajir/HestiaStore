@@ -11,6 +11,7 @@ import com.coroptis.index.Pair;
 import com.coroptis.index.datatype.TypeDescriptorByte;
 import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
+import com.coroptis.index.directory.FileWriter;
 import com.coroptis.index.directory.MemDirectory;
 
 public class IntegrationSortedDataFileWriterTest {
@@ -23,53 +24,59 @@ public class IntegrationSortedDataFileWriterTest {
     @Test
     public void read_incorrect_insert_order_mem() throws Exception {
         final Directory directory = new MemDirectory();
-        try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(directory,
-                FILE_NAME, stringTd.getConvertorToBytes(),
-                Comparator.naturalOrder(), byteTd.getTypeWriter(),
-                DISK_IO_BUFFER_SIZE)) {
+        final FileWriter fileWriter = directory.getFileWriter(FILE_NAME,
+                Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
+        final DiffKeyWriter<String> diffKeyWriter = new DiffKeyWriter<>(stringTd.getConvertorToBytes(), Comparator.naturalOrder(), fileWriter);
+        try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(byteTd.getTypeWriter(),
+                DISK_IO_BUFFER_SIZE, fileWriter, diffKeyWriter)) {
             assertEquals(0,
-                    siw.put(new Pair<String, Byte>("aaabbb", (byte) 1), true));
+                    siw.writeFull(new Pair<String, Byte>("aaabbb", (byte) 1)));
             assertThrows(IllegalArgumentException.class, () -> {
-                siw.put(new Pair<String, Byte>("aaa", (byte) 0), false);
+                siw.write(new Pair<String, Byte>("aaa", (byte) 0));
             });
         }
     }
 
     @Test
     public void test_invalidOrder() throws Exception {
-        try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(
-                new MemDirectory(), FILE_NAME, stringTd.getConvertorToBytes(),
-                Comparator.naturalOrder(), byteTd.getTypeWriter(),
-                DISK_IO_BUFFER_SIZE)) {
-            siw.put(new Pair<String, Byte>("aaa", (byte) 0));
-            siw.put(new Pair<String, Byte>("abbb", (byte) 1));
+        final Directory directory = new MemDirectory();
+        final FileWriter fileWriter = directory.getFileWriter(FILE_NAME,
+                Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
+        final DiffKeyWriter<String> diffKeyWriter = new DiffKeyWriter<>(stringTd.getConvertorToBytes(), Comparator.naturalOrder(), fileWriter);
+        try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(byteTd.getTypeWriter(),
+                DISK_IO_BUFFER_SIZE, fileWriter, diffKeyWriter)) {
+            siw.write(new Pair<String, Byte>("aaa", (byte) 0));
+            siw.write(new Pair<String, Byte>("abbb", (byte) 1));
             assertThrows(IllegalArgumentException.class,
-                    () -> siw.put(new Pair<String, Byte>("aaaa", (byte) 2)));
+                    () -> siw.write(new Pair<String, Byte>("aaaa", (byte) 2)));
         }
     }
 
     @Test
     public void test_duplicatedValue() throws Exception {
-        try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(
-                new MemDirectory(), FILE_NAME, stringTd.getConvertorToBytes(),
-                Comparator.naturalOrder(), byteTd.getTypeWriter(),
-                DISK_IO_BUFFER_SIZE)) {
-            siw.put(new Pair<String, Byte>("aaa", (byte) 0));
-            siw.put(new Pair<String, Byte>("abbb", (byte) 1));
+        final Directory directory = new MemDirectory();
+        final FileWriter fileWriter = directory.getFileWriter(FILE_NAME,
+                Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
+        final DiffKeyWriter<String> diffKeyWriter = new DiffKeyWriter<>(stringTd.getConvertorToBytes(), Comparator.naturalOrder(), fileWriter);
+        try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(byteTd.getTypeWriter(),
+                DISK_IO_BUFFER_SIZE, fileWriter, diffKeyWriter)) {
+            siw.write(new Pair<String, Byte>("aaa", (byte) 0));
+            siw.write(new Pair<String, Byte>("abbb", (byte) 1));
             assertThrows(IllegalArgumentException.class,
-                    () -> siw.put(new Pair<String, Byte>("abbb", (byte) 2)));
+                    () -> siw.write(new Pair<String, Byte>("abbb", (byte) 2)));
         }
     }
 
     @Test
     public void test_null_key() throws Exception {
-        try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(
-                new MemDirectory(), FILE_NAME, stringTd.getConvertorToBytes(),
-                Comparator.naturalOrder(), byteTd.getTypeWriter(),
-                DISK_IO_BUFFER_SIZE)) {
-
+        final Directory directory = new MemDirectory();
+        final FileWriter fileWriter = directory.getFileWriter(FILE_NAME,
+                Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
+        final DiffKeyWriter<String> diffKeyWriter = new DiffKeyWriter<>(stringTd.getConvertorToBytes(), Comparator.naturalOrder(), fileWriter);
+        try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(byteTd.getTypeWriter(),
+                DISK_IO_BUFFER_SIZE, fileWriter, diffKeyWriter)) {
             assertThrows(NullPointerException.class,
-                    () -> siw.put(new Pair<String, Byte>(null, (byte) 0)));
+                    () -> siw.write(new Pair<String, Byte>(null, (byte) 0)));
         }
 
     }

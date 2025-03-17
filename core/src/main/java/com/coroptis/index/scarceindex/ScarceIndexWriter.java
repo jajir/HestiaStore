@@ -23,7 +23,7 @@ public class ScarceIndexWriter<K> implements PairWriter<K, Integer> {
 
     @Override
     public void put(final Pair<K, Integer> pair) {
-        writer.put(pair);
+        writer.write(pair);
     }
 
     @Override
