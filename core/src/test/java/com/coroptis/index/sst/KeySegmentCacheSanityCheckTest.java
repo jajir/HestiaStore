@@ -25,10 +25,7 @@ public class KeySegmentCacheSanityCheckTest {
     @Test
     public void test_sanityCheck() throws Exception {
         final SortedDataFile<String, SegmentId> sdf = new SortedDataFile<>(directory,
-                "index.map", integerTd.getTypeWriter(),
-                integerTd.getTypeReader(), stringTd.getComparator(),
-                stringTd.getConvertorFromBytes(),
-                stringTd.getConvertorToBytes(), 1024);
+                "index.map", stringTd, integerTd, 1024);
 
         try (SortedDataFileWriter<String, SegmentId> writer = sdf.openWriter()) {
             writer.write(Pair.of("aaa", SegmentId.of(1)));

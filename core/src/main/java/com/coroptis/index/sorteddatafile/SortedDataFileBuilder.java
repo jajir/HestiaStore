@@ -1,12 +1,8 @@
 package com.coroptis.index.sorteddatafile;
 
-import java.util.Comparator;
 import java.util.Objects;
 
-import com.coroptis.index.datatype.ConvertorFromBytes;
-import com.coroptis.index.datatype.ConvertorToBytes;
-import com.coroptis.index.datatype.TypeReader;
-import com.coroptis.index.datatype.TypeWriter;
+import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
 
 public class SortedDataFileBuilder<K, V> {
@@ -19,15 +15,9 @@ public class SortedDataFileBuilder<K, V> {
 
     private int diskIoBufferSize = DELAULT_FILE_READING_BUFFER_SIZE;
 
-    private TypeWriter<V> valueWriter;
+    private TypeDescriptor<K> keyTypeDescriptor;
 
-    private TypeReader<V> valueReader;
-
-    private Comparator<K> keyComparator;
-
-    private ConvertorFromBytes<K> keyConvertorFromBytes;
-
-    private ConvertorToBytes<K> keyConvertorToBytes;
+    private TypeDescriptor<V> valueTypeDescriptor;
 
     public SortedDataFileBuilder<K, V> withDirectory(final Directory directory) {
         this.directory = Objects.requireNonNull(directory);
@@ -46,40 +36,21 @@ public class SortedDataFileBuilder<K, V> {
         return this;
     }
 
-    public SortedDataFileBuilder<K, V> withValueWriter(
-            final TypeWriter<V> valueWriter) {
-        this.valueWriter = Objects.requireNonNull(valueWriter);
+    public SortedDataFileBuilder<K, V> withKeyTypeDescriptor(
+            final TypeDescriptor<K> keyTypeDescriptor) {
+        this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
         return this;
     }
 
-    public SortedDataFileBuilder<K, V> withValueReader(
-            final TypeReader<V> valueReader) {
-        this.valueReader = Objects.requireNonNull(valueReader);
-        return this;
-    }
-
-    public SortedDataFileBuilder<K, V> withKeyComparator(
-            final Comparator<K> keyComparator) {
-        this.keyComparator = Objects.requireNonNull(keyComparator);
-        return this;
-    }
-
-    public SortedDataFileBuilder<K, V> withKeyConvertorFromBytes(
-            final ConvertorFromBytes<K> keyConvertorFromBytes) {
-        this.keyConvertorFromBytes = Objects
-                .requireNonNull(keyConvertorFromBytes);
-        return this;
-    }
-
-    public SortedDataFileBuilder<K, V> withKeyConvertorToBytes(
-            final ConvertorToBytes<K> keyConvertorToBytes) {
-        this.keyConvertorToBytes = Objects.requireNonNull(keyConvertorToBytes);
+    public SortedDataFileBuilder<K, V> withValueTypeDescriptor(
+            final TypeDescriptor<V> valueTypeDescriptor) {
+        this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
         return this;
     }
 
     public SortedDataFile<K, V> build() {
-        return new SortedDataFile<>(directory, fileName, valueWriter, valueReader,
-                keyComparator, keyConvertorFromBytes, keyConvertorToBytes,
+        return new SortedDataFile<>(directory, fileName,
+                keyTypeDescriptor, valueTypeDescriptor,
                 diskIoBufferSize);
     }
 

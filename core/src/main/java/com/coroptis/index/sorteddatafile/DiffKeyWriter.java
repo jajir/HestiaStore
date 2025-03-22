@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import com.coroptis.index.ByteTool;
 import com.coroptis.index.datatype.ConvertorToBytes;
-import com.coroptis.index.directory.FileWriter;
 
 public class DiffKeyWriter<K> {
 
@@ -23,7 +22,7 @@ public class DiffKeyWriter<K> {
     private K previousKey;
 
     private final ByteTool byteTool;
-   
+
     public DiffKeyWriter(final ConvertorToBytes<K> convertorToBytes,
             final Comparator<K> keyComparator) {
         this.convertorToBytes = Objects.requireNonNull(convertorToBytes,
@@ -39,8 +38,7 @@ public class DiffKeyWriter<K> {
                 this.keyComparator.getClass().getSimpleName());
     }
 
-    public int write(final K key, final FileWriter fileWriter, final boolean fullWrite) {
-        Objects.requireNonNull(fileWriter, "fileWriter can't be null");
+    public byte[] write(final K key) {
         Objects.requireNonNull(key, "key can't be null");
         if (previousKey != null) {
             final int cmp = keyComparator.compare(previousKey, key);
@@ -63,31 +61,23 @@ public class DiffKeyWriter<K> {
                         s1, s2, keyComapratorClassName));
             }
         }
-        if (fullWrite) {
-            final byte[] keyBytes = convertorToBytes.toBytes(key);
+        final byte[] keyBytes = convertorToBytes.toBytes(key);
+        final int sharedByteLength = byteTool
+                .howMuchBytesIsSame(previousKeyBytes, keyBytes);
+        final byte[] diffBytes = byteTool
+                .getRemainingBytesAfterIndex(sharedByteLength, keyBytes);
 
-            return write(fileWriter, 0, keyBytes, key, keyBytes);
-        } else {
-            final byte[] keyBytes = convertorToBytes.toBytes(key);
-            final int sharedByteLength = byteTool
-                    .howMuchBytesIsSame(previousKeyBytes, keyBytes);
-            final byte[] diffBytes = byteTool
-                    .getRemainingBytesAfterIndex(sharedByteLength, keyBytes);
-
-            return write(fileWriter, sharedByteLength, diffBytes, key,
-                    keyBytes);
-        }
-    }
-
-    private int write(final FileWriter fileWriter, final int sharedByteLength,
-            final byte[] diffBytes, final K key, final byte[] keyBytes) {
-        fileWriter.write((byte) (sharedByteLength));
-        fileWriter.write((byte) (diffBytes.length));
-        fileWriter.write(diffBytes);
+        final byte[] out = new byte[2 + diffBytes.length];
+        out[0] = (byte) (sharedByteLength);
+        out[1] = (byte) (diffBytes.length);
+        System.arraycopy(diffBytes, 0, out, 2, diffBytes.length);
 
         previousKeyBytes = keyBytes;
         previousKey = key;
-        return 2 + diffBytes.length;
+        return out;
     }
 
+    public long close() {
+        return 0;
+    }
 }

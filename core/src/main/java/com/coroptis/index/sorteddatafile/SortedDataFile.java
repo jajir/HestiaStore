@@ -1,6 +1,5 @@
 package com.coroptis.index.sorteddatafile;
 
-import java.util.Comparator;
 import java.util.Objects;
 
 import com.coroptis.index.CloseablePairReader;
@@ -8,10 +7,7 @@ import com.coroptis.index.PairIteratorFromReader;
 import com.coroptis.index.PairIteratorWithCurrent;
 import com.coroptis.index.PairReaderEmpty;
 import com.coroptis.index.PairSeekableReader;
-import com.coroptis.index.datatype.ConvertorFromBytes;
-import com.coroptis.index.datatype.ConvertorToBytes;
-import com.coroptis.index.datatype.TypeReader;
-import com.coroptis.index.datatype.TypeWriter;
+import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.FileWriter;
 
@@ -23,47 +19,33 @@ public class SortedDataFile<K, V> {
 
     private final int diskIoBufferSize;
 
-    private final TypeWriter<V> valueWriter;
+    private final TypeDescriptor<K> keyTypeDescriptor;
 
-    private final TypeReader<V> valueReader;
-
-    private final Comparator<K> keyComparator;
-
-    private final ConvertorFromBytes<K> keyConvertorFromBytes;
-
-    private final ConvertorToBytes<K> keyConvertorToBytes;
+    private final TypeDescriptor<V> valueTypeDescriptor;
 
     public static <M, N> SortedDataFileBuilder<M, N> builder() {
         return new SortedDataFileBuilder<M, N>();
     }
 
     public SortedDataFile(final Directory directory, final String fileName,
-            final TypeWriter<V> valueWriter, final TypeReader<V> valueReader,
-            final Comparator<K> keyComparator,
-            final ConvertorFromBytes<K> keyConvertorFromBytes,
-            final ConvertorToBytes<K> keyConvertorToBytes,
+            final TypeDescriptor<K> keyTypeDescriptor, final TypeDescriptor<V> valueTypeDescriptor,
             final int diskIoBufferSize) {
         this.directory = Objects.requireNonNull(directory);
         this.fileName = Objects.requireNonNull(fileName);
-        this.valueWriter = Objects.requireNonNull(valueWriter);
-        this.valueReader = Objects.requireNonNull(valueReader);
-        this.keyComparator = Objects.requireNonNull(keyComparator);
-        this.keyConvertorFromBytes = Objects
-                .requireNonNull(keyConvertorFromBytes);
-        this.keyConvertorToBytes = Objects.requireNonNull(keyConvertorToBytes);
+        this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
+        this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
         this.diskIoBufferSize = diskIoBufferSize;
     }
 
     public SortedDataFile<K, V> withFileName(final String newFileName) {
-        return new SortedDataFile<>(directory, newFileName, valueWriter, valueReader,
-                keyComparator, keyConvertorFromBytes, keyConvertorToBytes,
-                diskIoBufferSize);
+        return new SortedDataFile<>(directory, newFileName,
+                keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize);
     }
 
     public SortedDataFile<K, V> withProperties(final Directory newDirectory, final String newFileName,
             final int newDiskIoBufferSize) {
-        return new SortedDataFile<>(newDirectory, newFileName, valueWriter, valueReader, keyComparator,
-                keyConvertorFromBytes, keyConvertorToBytes, newDiskIoBufferSize);
+        return new SortedDataFile<>(newDirectory, newFileName, keyTypeDescriptor, valueTypeDescriptor,
+                newDiskIoBufferSize);
     }
 
     public CloseablePairReader<K, V> openReader() {
@@ -74,10 +56,10 @@ public class SortedDataFile<K, V> {
         if (!directory.isFileExists(fileName)) {
             return new PairReaderEmpty<>();
         }
-        final DiffKeyReader<K> diffKeyReader = new DiffKeyReader<K>(
-                keyConvertorFromBytes);
+        final DiffKeyReader<K> diffKeyReader = new DiffKeyReader<>(
+                keyTypeDescriptor.getConvertorFromBytes());
         final SortedDataFileReader<K, V> reader = new SortedDataFileReader<>(diffKeyReader,
-                valueReader,
+                valueTypeDescriptor.getTypeReader(),
                 directory.getFileReader(fileName, diskIoBufferSize));
         reader.skip(position);
         return reader;
@@ -87,9 +69,9 @@ public class SortedDataFile<K, V> {
         if (!directory.isFileExists(fileName)) {
             return new PairReaderEmpty<>();
         }
-        final DiffKeyReader<K> diffKeyReader = new DiffKeyReader<K>(
-                keyConvertorFromBytes);
-        return new PairSeekableReaderImpl<>(diffKeyReader, valueReader,
+        final DiffKeyReader<K> diffKeyReader = new DiffKeyReader<>(
+                keyTypeDescriptor.getConvertorFromBytes());
+        return new PairSeekableReaderImpl<>(diffKeyReader, valueTypeDescriptor.getTypeReader(),
                 directory.getFileReaderSeekable(fileName));
     }
 
@@ -102,9 +84,8 @@ public class SortedDataFile<K, V> {
     public SortedDataFileWriter<K, V> openWriter() {
         final FileWriter fileWriter = directory.getFileWriter(fileName,
                 Directory.Access.OVERWRITE, diskIoBufferSize);
-        final DiffKeyWriter<K> diffKeyWriter = new DiffKeyWriter<>(keyConvertorToBytes, keyComparator);
-        final SortedDataFileWriter<K, V> writer = new SortedDataFileWriter<>(valueWriter,
-                fileWriter, diffKeyWriter);
+        final SortedDataFileWriter<K, V> writer = new SortedDataFileWriter<>(valueTypeDescriptor.getTypeWriter(),
+                fileWriter, keyTypeDescriptor);
         return writer;
     }
 

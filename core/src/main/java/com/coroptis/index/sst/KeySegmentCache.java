@@ -64,13 +64,8 @@ public class KeySegmentCache<K> implements CloseableResource {
         this.sdf = SortedDataFile.<K, SegmentId>builder() //
                 .withDirectory(directory) //
                 .withFileName(FILE_NAME)//
-                .withKeyComparator(keyTypeDescriptor.getComparator()) //
-                .withKeyConvertorFromBytes(
-                        keyTypeDescriptor.getConvertorFromBytes())//
-                .withKeyConvertorToBytes(
-                        keyTypeDescriptor.getConvertorToBytes()) //
-                .withValueReader(tdSegId.getTypeReader())//
-                .withValueWriter(tdSegId.getTypeWriter())//
+                .withKeyTypeDescriptor(keyTypeDescriptor) //
+                .withValueTypeDescriptor(tdSegId) //
                 .build();
 
         this.list = new TreeMap<>(keyComparator);

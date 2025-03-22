@@ -61,13 +61,8 @@ public class ScarceIndex<K> {
         this.cacheDataFile = SortedDataFile.<K, Integer>builder() //
                 .withDirectory(directory) //
                 .withFileName(fileName)//
-                .withKeyComparator(keyTypeDescriptor.getComparator()) //
-                .withKeyConvertorFromBytes(
-                        keyTypeDescriptor.getConvertorFromBytes())//
-                .withKeyConvertorToBytes(
-                        keyTypeDescriptor.getConvertorToBytes()) //
-                .withValueReader(typeDescriptorInteger.getTypeReader())//
-                .withValueWriter(typeDescriptorInteger.getTypeWriter())//
+                .withKeyTypeDescriptor(keyTypeDescriptor) //
+                .withValueTypeDescriptor(typeDescriptorInteger) 
                 .withDiskIoBufferSize(diskIoBufferSize) //
                 .build();
         this.cache = new ScarceIndexCache<>(keyTypeDescriptor);

@@ -29,8 +29,7 @@ public class IntegrationSortedDataFileTest {
     void testName() throws Exception {
         final Directory dir = new MemDirectory();
         final SortedDataFile<String, Integer> sdf = new SortedDataFile<>(dir, FILE_NAME,
-                tdi.getTypeWriter(), tdi.getTypeReader(), tds.getComparator(),
-                tds.getConvertorFromBytes(), tds.getConvertorToBytes(), 1024);
+                tds, tdi, 1024);
         long position = 0;
         try (SortedDataFileWriter<String, Integer> writer = sdf.openWriter()) {
             writer.write(P1);

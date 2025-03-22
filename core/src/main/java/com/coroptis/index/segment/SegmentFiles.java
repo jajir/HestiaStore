@@ -70,13 +70,8 @@ public class SegmentFiles<K, V> {
         return SortedDataFile.<K, V>builder() //
                 .withDirectory(directory) //
                 .withFileName(getCacheFileName())//
-                .withKeyComparator(keyTypeDescriptor.getComparator()) //
-                .withKeyConvertorFromBytes(
-                        keyTypeDescriptor.getConvertorFromBytes())//
-                .withKeyConvertorToBytes(
-                        keyTypeDescriptor.getConvertorToBytes()) //
-                .withValueReader(valueTypeDescriptor.getTypeReader())//
-                .withValueWriter(valueTypeDescriptor.getTypeWriter())//
+                .withKeyTypeDescriptor(keyTypeDescriptor) //
+                .withValueTypeDescriptor(valueTypeDescriptor) //
                 .withDiskIoBufferSize(diskIoBufferSize)//
                 .build();
     }
@@ -85,13 +80,8 @@ public class SegmentFiles<K, V> {
         return SortedDataFile.<K, V>builder() //
                 .withDirectory(directory) //
                 .withFileName(fileName)//
-                .withKeyComparator(keyTypeDescriptor.getComparator()) //
-                .withKeyConvertorFromBytes(
-                        keyTypeDescriptor.getConvertorFromBytes())//
-                .withKeyConvertorToBytes(
-                        keyTypeDescriptor.getConvertorToBytes()) //
-                .withValueReader(valueTypeDescriptor.getTypeReader())//
-                .withValueWriter(valueTypeDescriptor.getTypeWriter())//
+                .withKeyTypeDescriptor(keyTypeDescriptor) //
+                .withValueTypeDescriptor(valueTypeDescriptor) //
                 .withDiskIoBufferSize(diskIoBufferSize)//
                 .build();
     }
@@ -100,13 +90,8 @@ public class SegmentFiles<K, V> {
         return SortedDataFile.<K, V>builder() //
                 .withDirectory(directory) //
                 .withFileName(getIndexFileName())//
-                .withKeyComparator(keyTypeDescriptor.getComparator()) //
-                .withKeyConvertorFromBytes(
-                        keyTypeDescriptor.getConvertorFromBytes())//
-                .withKeyConvertorToBytes(
-                        keyTypeDescriptor.getConvertorToBytes()) //
-                .withValueReader(valueTypeDescriptor.getTypeReader())//
-                .withValueWriter(valueTypeDescriptor.getTypeWriter())//
+                .withKeyTypeDescriptor(keyTypeDescriptor) //
+                .withValueTypeDescriptor(valueTypeDescriptor) //
                 .withDiskIoBufferSize(diskIoBufferSize)//
                 .build();
     }
@@ -115,13 +100,8 @@ public class SegmentFiles<K, V> {
         return SortedDataFile.<K, V>builder() //
                 .withDirectory(directory) //
                 .withFileName(getIndexFileName())//
-                .withKeyComparator(keyTypeDescriptor.getComparator()) //
-                .withKeyConvertorFromBytes(
-                        keyTypeDescriptor.getConvertorFromBytes())//
-                .withKeyConvertorToBytes(
-                        keyTypeDescriptor.getConvertorToBytes()) //
-                .withValueReader(valueTypeDescriptor.getTypeReader())//
-                .withValueWriter(valueTypeDescriptor.getTypeWriter())//
+                .withKeyTypeDescriptor(keyTypeDescriptor) //
+                .withValueTypeDescriptor(valueTypeDescriptor) //
                 .withDiskIoBufferSize(diskIoBufferSize)//
                 .build();
     }
@@ -130,13 +110,8 @@ public class SegmentFiles<K, V> {
         return SortedDataFile.<K, V>builder() //
                 .withDirectory(directory) //
                 .withFileName(getTempIndexFileName())//
-                .withKeyComparator(keyTypeDescriptor.getComparator()) //
-                .withKeyConvertorFromBytes(
-                        keyTypeDescriptor.getConvertorFromBytes())//
-                .withKeyConvertorToBytes(
-                        keyTypeDescriptor.getConvertorToBytes()) //
-                .withValueReader(valueTypeDescriptor.getTypeReader())//
-                .withValueWriter(valueTypeDescriptor.getTypeWriter())//
+                .withKeyTypeDescriptor(keyTypeDescriptor) //
+                .withValueTypeDescriptor(valueTypeDescriptor) //
                 .withDiskIoBufferSize(diskIoBufferSize)//
                 .build();
     }
