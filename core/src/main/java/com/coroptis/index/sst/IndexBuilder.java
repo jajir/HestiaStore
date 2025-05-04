@@ -19,8 +19,7 @@ public class IndexBuilder<K, V> {
 
     private final static boolean DEFAULT_INDEX_SYNCHRONIZED = false;
 
-    private final static int DEFAULT_DISK_IO_BUFFER_SIZE_IN_BYTES = 1024
-            * 4;
+    private final static int DEFAULT_DISK_IO_BUFFER_SIZE_IN_BYTES = 1024 * 4;
 
     private long maxNumberOfKeysInSegmentCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
     private long maxNumberOfKeysInSegmentCacheDuringFlushing = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING;
@@ -36,6 +35,7 @@ public class IndexBuilder<K, V> {
 
     private int diskIoBufferSizeInBytes = DEFAULT_DISK_IO_BUFFER_SIZE_IN_BYTES;
 
+    private String indexName = null;
     private Directory directory;
     private Class<K> keyClass;
     private Class<V> valueClass;
@@ -73,6 +73,11 @@ public class IndexBuilder<K, V> {
 
     public IndexBuilder<K, V> withValueClass(final Class<V> valueClass) {
         this.valueClass = Objects.requireNonNull(valueClass);
+        return this;
+    }
+
+    public IndexBuilder<K, V> withName(final String indexName) {
+        this.indexName = Objects.requireNonNull(indexName);
         return this;
     }
 
@@ -172,26 +177,32 @@ public class IndexBuilder<K, V> {
             this.valueTypeDescriptor = DataTypeDescriptorRegistry
                     .getTypeDescriptor(this.valueClass);
         }
-        if(maxNumberOfKeysInSegmentCache<3) {
-            throw new IllegalArgumentException("Max number of keys in segment cache must be at least 3.");
-        }   
+        if (maxNumberOfKeysInSegmentCache < 3) {
+            throw new IllegalArgumentException(
+                    "Max number of keys in segment cache must be at least 3.");
+        }
         if (maxNumberOfKeysInSegmentCacheDuringFlushing == DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING) {
             maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInCache;
-        }else{
-            if(maxNumberOfKeysInSegmentCacheDuringFlushing<3) {
-                throw new IllegalArgumentException("Max number of keys in segment cache during flushing must be at least 3.");
+        } else {
+            if (maxNumberOfKeysInSegmentCacheDuringFlushing < 3) {
+                throw new IllegalArgumentException(
+                        "Max number of keys in segment cache during flushing must be at least 3.");
             }
-            if(maxNumberOfKeysInSegmentCacheDuringFlushing<maxNumberOfKeysInSegmentCache) {
-                throw new IllegalArgumentException("Max number of keys in segment cache during flushing must be greater than max number of keys in segment cache.");
+            if (maxNumberOfKeysInSegmentCacheDuringFlushing < maxNumberOfKeysInSegmentCache) {
+                throw new IllegalArgumentException(
+                        "Max number of keys in segment cache during flushing must be greater than max number of keys in segment cache.");
             }
         }
         if (maxNumberOfKeysInSegment < 4) {
             throw new IllegalArgumentException(
                     "Max number of keys in segment must be at least 4.");
         }
-        if (maxNumberOfSegmentsInCache <3) {
+        if (maxNumberOfSegmentsInCache < 3) {
             throw new IllegalArgumentException(
                     "Max number of segments in cache must be at least 2.");
+        }
+        if (indexName == null) {
+            throw new IllegalArgumentException("index name is required");
         }
 
         if (!customConfWasUsed) {
@@ -227,10 +238,9 @@ public class IndexBuilder<K, V> {
                 maxNumberOfKeysInSegmentCache,
                 maxNumberOfKeysInSegmentCacheDuringFlushing,
                 maxNumberOfKeysInSegmentIndexPage, maxNumberOfKeysInCache,
-                maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache,
+                maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache, indexName,
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
-                bloomFilterProbabilityOfFalsePositive,
-                diskIoBufferSizeInBytes);
+                bloomFilterProbabilityOfFalsePositive, diskIoBufferSizeInBytes);
         if (keyTypeDescriptor == null) {
             throw new IllegalArgumentException("Key type descriptor is null. "
                     + "Set key type descriptor of key class.");

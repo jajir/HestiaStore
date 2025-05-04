@@ -2,6 +2,7 @@ package com.coroptis.index.sorteddatafile;
 
 import java.util.Objects;
 
+import com.coroptis.index.LoggingContext;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
 
@@ -9,6 +10,7 @@ public class SortedDataFileBuilder<K, V> {
 
     private final static int DELAULT_FILE_READING_BUFFER_SIZE = 1024 * 4;
 
+    private LoggingContext loggingContext;
     private Directory directory;
 
     private String fileName;
@@ -19,7 +21,14 @@ public class SortedDataFileBuilder<K, V> {
 
     private TypeDescriptor<V> valueTypeDescriptor;
 
-    public SortedDataFileBuilder<K, V> withDirectory(final Directory directory) {
+    public SortedDataFileBuilder<K, V> withLoggingContext(
+            final LoggingContext loggingContext) {
+        this.loggingContext = loggingContext;
+        return this;
+    }
+
+    public SortedDataFileBuilder<K, V> withDirectory(
+            final Directory directory) {
         this.directory = Objects.requireNonNull(directory);
         return this;
     }
@@ -31,8 +40,7 @@ public class SortedDataFileBuilder<K, V> {
 
     public SortedDataFileBuilder<K, V> withDiskIoBufferSize(
             final int diskIoBufferSize) {
-        this.diskIoBufferSize = Objects
-                .requireNonNull(diskIoBufferSize);
+        this.diskIoBufferSize = Objects.requireNonNull(diskIoBufferSize);
         return this;
     }
 
@@ -49,9 +57,8 @@ public class SortedDataFileBuilder<K, V> {
     }
 
     public SortedDataFile<K, V> build() {
-        return new SortedDataFile<>(directory, fileName,
-                keyTypeDescriptor, valueTypeDescriptor,
-                diskIoBufferSize);
+        return new SortedDataFile<>(loggingContext, directory, fileName,
+                keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize);
     }
 
 }

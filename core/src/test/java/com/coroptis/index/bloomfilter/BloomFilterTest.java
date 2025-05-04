@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.coroptis.index.LoggingContext;
 import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.MemDirectory;
 
@@ -19,6 +20,9 @@ public class BloomFilterTest {
 
     private final Logger logger = LoggerFactory
             .getLogger(BloomFilterTest.class);
+
+    private final static LoggingContext LOGGING_CONTEXT = new LoggingContext(
+            "test_index");
 
     private final TypeDescriptorString STD = new TypeDescriptorString();
 
@@ -76,6 +80,7 @@ public class BloomFilterTest {
                         .withIndexSizeInBytes(0)//
                         .withNumberOfHashFunctions(0)//
                         .withRelatedObjectName("segment-00323")//
+                        .withLoggingContext(LOGGING_CONTEXT)//
                         .build());
 
         assertEquals("Number of hash function cant be '0'", e.getMessage());
@@ -90,6 +95,7 @@ public class BloomFilterTest {
                 .withIndexSizeInBytes(0)//
                 .withNumberOfHashFunctions(3)//
                 .withRelatedObjectName("segment-00323")//
+                .withLoggingContext(LOGGING_CONTEXT)//
                 .build();
 
         writeToFilter(bf, TEST_DATA_KEYS);
@@ -110,6 +116,7 @@ public class BloomFilterTest {
                 .withDirectory(directory)//
                 .withIndexSizeInBytes(0)//
                 .withRelatedObjectName("segment-00323")//
+                .withLoggingContext(LOGGING_CONTEXT)//
                 .withNumberOfHashFunctions(3)//
         ;
 
@@ -134,6 +141,7 @@ public class BloomFilterTest {
                 .withIndexSizeInBytes(100)//
                 .withNumberOfHashFunctions(10)//
                 .withRelatedObjectName("segment-00323")//
+                .withLoggingContext(LOGGING_CONTEXT)//
                 .build();
     }
 

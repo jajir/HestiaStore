@@ -81,6 +81,7 @@ public class IntegrationIndexConsistencyTest extends AbstractIndexTest {
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
                 .withUseFullLog(false) //
+                .withName("test_index") //
                 .build();
     }
 

@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coroptis.index.FileNameUtil;
+import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIteratorWithCurrent;
 import com.coroptis.index.PairWriter;
@@ -41,6 +42,7 @@ public class IntegrationSortTest extends AbstractSegmentTest {
 
     @BeforeEach
     void setUp() {
+        final LoggingContext loggingContext = new LoggingContext("test_index");
         dir = new MemDirectory();
         unsorted = UnsortedDataFile.<String, Integer>builder()
                 .withDirectory(dir)//
@@ -51,9 +53,11 @@ public class IntegrationSortTest extends AbstractSegmentTest {
                 .withKeyReader(tds.getTypeReader())//
                 .build();
 
-        sdf = new SortedDataFile<>(dir, SORTED_FILE_NAME, tds, tdi, 1024);
+        sdf = new SortedDataFile<>(loggingContext, dir, SORTED_FILE_NAME, tds,
+                tdi, 1024);
 
-        sorter = new DataFileSorter<>(unsorted, sdf, (k, v1, v2) -> v1 > v2 ? v1 : v2, tds, 2);
+        sorter = new DataFileSorter<>(unsorted, sdf,
+                (k, v1, v2) -> v1 > v2 ? v1 : v2, tds, 2);
     }
 
     @Test
@@ -153,11 +157,13 @@ public class IntegrationSortTest extends AbstractSegmentTest {
 
         sorter.sort();
 
-        try (PairIteratorWithCurrent<String, Integer> iterator = sdf.openIterator()) {
+        try (PairIteratorWithCurrent<String, Integer> iterator = sdf
+                .openIterator()) {
             int i = 0;
             while (iterator.hasNext()) {
                 final Pair<String, Integer> pair = iterator.next();
-                assertEquals("key" + FileNameUtil.getPaddedId(i, 3), pair.getKey());
+                assertEquals("key" + FileNameUtil.getPaddedId(i, 3),
+                        pair.getKey());
                 i++;
             }
             assertEquals(10, i);

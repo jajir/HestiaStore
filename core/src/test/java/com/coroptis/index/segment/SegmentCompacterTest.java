@@ -11,8 +11,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.coroptis.index.LoggingContext;
+
 @ExtendWith(MockitoExtension.class)
 public class SegmentCompacterTest {
+
+    private final static LoggingContext LOGGING_CONTEXT = new LoggingContext(
+            "test_index");
 
     @Mock
     private Segment<Integer, String> segment;
@@ -33,8 +38,8 @@ public class SegmentCompacterTest {
 
     @BeforeEach
     void setUp() {
-        sc = new SegmentCompacter<>(segment, segmentFiles, segmentConf,
-                versionController, segmentPropertiesManager);
+        sc = new SegmentCompacter<>(LOGGING_CONTEXT, segment, segmentFiles,
+                segmentConf, versionController, segmentPropertiesManager);
     }
 
     @Test
@@ -66,8 +71,7 @@ public class SegmentCompacterTest {
     public void test_shouldBeCompacted_yes() throws Exception {
         when(segmentPropertiesManager.getSegmentStats())
                 .thenReturn(new SegmentStats(31, 1000L, 15));
-        when(segmentConf.getMaxNumberOfKeysInDeltaCache())
-                .thenReturn(30L);
+        when(segmentConf.getMaxNumberOfKeysInDeltaCache()).thenReturn(30L);
 
         assertTrue(sc.shouldBeCompacted());
     }
@@ -76,11 +80,9 @@ public class SegmentCompacterTest {
     public void test_shouldBeCompacted_no() throws Exception {
         when(segmentPropertiesManager.getSegmentStats())
                 .thenReturn(new SegmentStats(31, 1000L, 15));
-        when(segmentConf.getMaxNumberOfKeysInDeltaCache())
-                .thenReturn(35L);
+        when(segmentConf.getMaxNumberOfKeysInDeltaCache()).thenReturn(35L);
 
         assertFalse(sc.shouldBeCompacted());
     }
-
 
 }

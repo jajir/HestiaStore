@@ -5,6 +5,8 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.coroptis.index.ContextAwareLogger;
+import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 
@@ -14,19 +16,20 @@ import com.coroptis.index.PairIterator;
  */
 public class SegmentCompacter<K, V> {
 
-    private final Logger logger = LoggerFactory
-            .getLogger(SegmentCompacter.class);
+    private final ContextAwareLogger logger;
     private final Segment<K, V> segment;
     private final SegmentConf segmentConf;
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
     private final SegmentPropertiesManager segmentPropertiesManager;
 
-    public SegmentCompacter(final Segment<K, V> segment,
-            final SegmentFiles<K, V> segmentFiles,
+    public SegmentCompacter(final LoggingContext loggingContext,
+            final Segment<K, V> segment, final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
             final VersionController versionController,
             final SegmentPropertiesManager segmentPropertiesManager) {
+        this.logger = new ContextAwareLogger(SegmentCompacter.class,
+                loggingContext);
         this.segment = Objects.requireNonNull(segment);
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.segmentConf = Objects.requireNonNull(segmentConf);

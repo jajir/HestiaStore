@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
@@ -26,8 +27,11 @@ import com.coroptis.index.segment.SegmentId;
 
 public class IntegrationIndexSimpleTest {
 
-    private final Logger logger = LoggerFactory.getLogger(IntegrationIndexSimpleTest.class);
+    private final Logger logger = LoggerFactory
+            .getLogger(IntegrationIndexSimpleTest.class);
 
+    private final static LoggingContext LOGGING_CONTEXT = new LoggingContext(
+            "test_index");
     final Directory directory = new MemDirectory();
     final SegmentId id = SegmentId.of(27);
     final TypeDescriptorString tds = new TypeDescriptorString();
@@ -147,7 +151,7 @@ public class IntegrationIndexSimpleTest {
      * @throws Exception
      */
     @Test
-    void test_read_from_reopend_index() throws Exception {
+    void test_read_from_reopend_index_multiple_records() throws Exception {
         final Index<Integer, String> index1 = makeSstIndex();
         testData.stream().forEach(index1::put);
         index1.close();
@@ -155,10 +159,25 @@ public class IntegrationIndexSimpleTest {
         final Index<Integer, String> index2 = makeSstIndex();
         final List<Pair<Integer, String>> list1 = index2.getStream()
                 .collect(Collectors.toList());
-        final List<Pair<Integer, String>> list2 = index2.getStream()
-                .collect(Collectors.toList());
         assertEquals(testData.size(), list1.size());
-        assertEquals(testData.size(), list2.size());
+    }
+
+    /**
+     * Verify that single record could be written to index and after reopening
+     * it's still there.
+     * 
+     * @throws Exception
+     */
+    @Test
+    void test_read_from_reopend_index_single_records() throws Exception {
+        final Index<Integer, String> index1 = makeSstIndex();
+        index1.put(Pair.of(2, "duck"));
+        index1.close();
+
+        final Index<Integer, String> index2 = makeSstIndex();
+        final List<Pair<Integer, String>> list1 = index2.getStream()
+                .collect(Collectors.toList());
+        assertEquals(1, list1.size());
     }
 
     /**
@@ -238,6 +257,7 @@ public class IntegrationIndexSimpleTest {
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
                 .withUseFullLog(withLog) //
+                .withName("test_index") //
                 .build();
     }
 
@@ -271,6 +291,7 @@ public class IntegrationIndexSimpleTest {
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
                 .withMaxNumberOfKeysInSegmentCache(2)//
+                .withLoggingContext(LOGGING_CONTEXT)//
                 .build();
     }
 

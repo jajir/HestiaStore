@@ -9,9 +9,8 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.coroptis.index.ContextAwareLogger;
+import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.datatype.TypeDescriptor;
 
@@ -28,14 +27,16 @@ import com.coroptis.index.datatype.TypeDescriptor;
  */
 public class ScarceIndexCache<K> {
 
-    private final Logger logger = LoggerFactory
-            .getLogger(ScarceIndexCache.class);
+    private final ContextAwareLogger logger;
 
     private final TreeMap<K, Integer> list;
     private final Comparator<K> keyComparator;
 
-    ScarceIndexCache(final TypeDescriptor<K> keyTypeDescriptor) {
+    ScarceIndexCache(final LoggingContext loggingContext,
+            final TypeDescriptor<K> keyTypeDescriptor) {
         Objects.requireNonNull(keyTypeDescriptor.getComparator());
+        this.logger = new ContextAwareLogger(ScarceIndexCache.class,
+                loggingContext);
         this.keyComparator = Objects
                 .requireNonNull(keyTypeDescriptor.getComparator());
         this.list = new TreeMap<>(keyComparator);

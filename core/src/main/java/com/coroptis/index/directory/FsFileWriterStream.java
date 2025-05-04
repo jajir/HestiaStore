@@ -16,12 +16,12 @@ import com.coroptis.index.directory.Directory.Access;
 
 public class FsFileWriterStream implements FileWriter {
 
+    private final static Logger logger = LoggerFactory
+            .getLogger(FsFileWriterStream.class);;
+
     private final OutputStream fio;
 
     private static final int BUFFER_SIZE = 1024 * 1 * 4;
-
-    private final Logger logger = LoggerFactory
-            .getLogger(FsFileWriterStream.class);
 
     FsFileWriterStream(final File file, final Directory.Access access) {
         this(file, access, BUFFER_SIZE);

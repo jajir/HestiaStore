@@ -10,10 +10,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.coroptis.index.CloseableResource;
+import com.coroptis.index.ContextAwareLogger;
+import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.datatype.TypeDescriptor;
@@ -37,9 +36,7 @@ import com.coroptis.index.sorteddatafile.SortedDataFileWriter;
  */
 public class KeySegmentCache<K> implements CloseableResource {
 
-    private final Logger logger = LoggerFactory
-            .getLogger(KeySegmentCache.class);
-
+    private final ContextAwareLogger logger;
     private final static TypeDescriptorSegmentId tdSegId = new TypeDescriptorSegmentId();
 
     private final static String FILE_NAME = "index.map";
@@ -54,8 +51,12 @@ public class KeySegmentCache<K> implements CloseableResource {
     private final Comparator<K> keyComparator;
     private boolean isDirty = false;
 
-    KeySegmentCache(final Directory directory,
+    KeySegmentCache(final LoggingContext loggingContext,
+            final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor) {
+        Objects.requireNonNull(loggingContext);
+        this.logger = new ContextAwareLogger(KeySegmentCache.class,
+                loggingContext);
         Objects.requireNonNull(directory, "Directory object is null.");
         Objects.requireNonNull(keyTypeDescriptor,
                 "Key type comparator is null.");
@@ -66,6 +67,7 @@ public class KeySegmentCache<K> implements CloseableResource {
                 .withFileName(FILE_NAME)//
                 .withKeyTypeDescriptor(keyTypeDescriptor) //
                 .withValueTypeDescriptor(tdSegId) //
+                .withLoggingContext(loggingContext) //
                 .build();
 
         this.list = new TreeMap<>(keyComparator);

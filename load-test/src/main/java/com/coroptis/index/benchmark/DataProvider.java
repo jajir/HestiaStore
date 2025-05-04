@@ -2,6 +2,9 @@ package com.coroptis.index.benchmark;
 
 import java.util.Random;
 
+/**
+ * Class provides random strings and wraps long to 10 zeros.
+ */
 public class DataProvider {
 
     private final static Random RANDOM = new Random();

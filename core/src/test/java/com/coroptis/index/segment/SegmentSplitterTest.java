@@ -15,11 +15,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 
 @ExtendWith(MockitoExtension.class)
 class SegmentSplitterTest {
+
+    private final static LoggingContext LOGGING_CONTEXT = new LoggingContext(
+            "test_index");
 
     private final static SegmentId SEGMENT_ID = SegmentId.of(27);
 
@@ -66,27 +70,29 @@ class SegmentSplitterTest {
 
     @BeforeEach
     void setUp() {
-        splitter = new SegmentSplitter<>(segment, segmentFiles,
+        splitter = new SegmentSplitter<>(LOGGING_CONTEXT, segment, segmentFiles,
                 versionController, segmentPropertiesManager,
                 deltaCacheController, segmentManager);
     }
 
     @Test
     void test_shouldBeCompactedBeforeSplitting_yes_lowEstimatedNumberOfKeys() {
-            when(segmentPropertiesManager.getSegmentStats())
-                    .thenReturn(segmentStats);
-            when(segmentStats.getNumberOfKeysInIndex()).thenReturn(2L);
-        when(deltaCacheController.getDeltaCacheSizeWithoutTombstones()).thenReturn(1);
+        when(segmentPropertiesManager.getSegmentStats())
+                .thenReturn(segmentStats);
+        when(segmentStats.getNumberOfKeysInIndex()).thenReturn(2L);
+        when(deltaCacheController.getDeltaCacheSizeWithoutTombstones())
+                .thenReturn(1);
 
         assertTrue(splitter.shouldBeCompactedBeforeSplitting(1000));
     }
 
     @Test
     void test_shouldBeCompactedBeforeSplitting_no() {
-            when(segmentPropertiesManager.getSegmentStats())
-                    .thenReturn(segmentStats);
-            when(segmentStats.getNumberOfKeysInIndex()).thenReturn(1000L);
-        when(deltaCacheController.getDeltaCacheSizeWithoutTombstones()).thenReturn(100);
+        when(segmentPropertiesManager.getSegmentStats())
+                .thenReturn(segmentStats);
+        when(segmentStats.getNumberOfKeysInIndex()).thenReturn(1000L);
+        when(deltaCacheController.getDeltaCacheSizeWithoutTombstones())
+                .thenReturn(100);
 
         assertFalse(splitter.shouldBeCompactedBeforeSplitting(1000));
     }
@@ -105,11 +111,12 @@ class SegmentSplitterTest {
         when(segmentPropertiesManager.getSegmentStats())
                 .thenReturn(segmentStats);
         when(segmentStats.getNumberOfKeysInIndex()).thenReturn(2L);
-        when(deltaCacheController.getDeltaCacheSizeWithoutTombstones()).thenReturn(2);
+        when(deltaCacheController.getDeltaCacheSizeWithoutTombstones())
+                .thenReturn(2);
 
         // main iterator behaviour
         when(segment.openIterator()).thenReturn(segmentIterator);
-        when(segmentIterator.hasNext()).thenReturn(true, true,true, false);
+        when(segmentIterator.hasNext()).thenReturn(true, true, true, false);
         when(segmentIterator.next()).thenReturn(PAIR1, PAIR2, PAIR3);
 
         // mock writing lower part to new segment
@@ -138,7 +145,8 @@ class SegmentSplitterTest {
         when(segmentPropertiesManager.getSegmentStats())
                 .thenReturn(segmentStats);
         when(segmentStats.getNumberOfKeysInIndex()).thenReturn(0L);
-        when(deltaCacheController.getDeltaCacheSizeWithoutTombstones()).thenReturn(1);
+        when(deltaCacheController.getDeltaCacheSizeWithoutTombstones())
+                .thenReturn(1);
 
         final Exception err = assertThrows(IllegalStateException.class,
                 () -> splitter.split(SEGMENT_ID));

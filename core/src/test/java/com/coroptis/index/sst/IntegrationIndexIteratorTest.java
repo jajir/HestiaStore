@@ -35,6 +35,7 @@ public class IntegrationIndexIteratorTest {
                 .withDirectory(directory)//
                 .withKeyClass(Integer.class)//
                 .withValueClass(String.class)//
+                .withName("test_index")//
                 .build();
         data.stream().forEach(index::put);
         index.compact();
@@ -71,6 +72,7 @@ public class IntegrationIndexIteratorTest {
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
                 .withDiskIoBufferSizeInBytes(1024)//
+                .withName("test_index")//
                 .build();
     }
 

@@ -2,10 +2,9 @@ package com.coroptis.index.segment;
 
 import java.util.Objects;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.coroptis.index.CloseableResource;
+import com.coroptis.index.ContextAwareLogger;
+import com.coroptis.index.LoggingContext;
 import com.coroptis.index.OptimisticLock;
 import com.coroptis.index.OptimisticLockObjectVersionProvider;
 import com.coroptis.index.PairIterator;
@@ -22,7 +21,8 @@ import com.coroptis.index.PairWriter;
 public class Segment<K, V>
         implements CloseableResource, OptimisticLockObjectVersionProvider {
 
-    private final Logger logger = LoggerFactory.getLogger(Segment.class);
+    private final ContextAwareLogger logger;
+    private final LoggingContext loggingContext;
     private final SegmentConf segmentConf;
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
@@ -36,13 +36,16 @@ public class Segment<K, V>
         return new SegmentBuilder<>();
     }
 
-    public Segment(final SegmentFiles<K, V> segmentFiles,
+    public Segment(final LoggingContext loggingContext,
+            final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
             final VersionController versionController,
             final SegmentPropertiesManager segmentPropertiesManager,
             final SegmentDataProvider<K, V> segmentDataProvider,
             final SegmentSearcher<K, V> segmentSearcher,
             final SegmentManager<K, V> segmentManager) {
+        this.loggingContext = Objects.requireNonNull(loggingContext);
+        this.logger = new ContextAwareLogger(Segment.class, loggingContext);
         this.segmentConf = Objects.requireNonNull(segmentConf);
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         logger.debug("Initializing segment '{}'", segmentFiles.getId());
@@ -55,8 +58,9 @@ public class Segment<K, V>
                 "Segment properties manager is required");
         deltaCacheController = new SegmentDeltaCacheController<>(segmentFiles,
                 segmentPropertiesManager, segmentDataProvider);
-        this.segmentCompacter = new SegmentCompacter<>(this, segmentFiles,
-                segmentConf, versionController, segmentPropertiesManager);
+        this.segmentCompacter = new SegmentCompacter<>(loggingContext, this,
+                segmentFiles, segmentConf, versionController,
+                segmentPropertiesManager);
         this.segmentSearcher = Objects.requireNonNull(segmentSearcher);
         this.segmentManager = Objects.requireNonNull(segmentManager,
                 "Segment manager is required");
@@ -80,7 +84,7 @@ public class Segment<K, V>
                 segmentFiles.getKeyTypeDescriptor(),
                 segmentFiles.getValueTypeDescriptor(),
                 deltaCacheController.getDeltaCache().getAsSortedList());
-        return new PairIteratorWithLock<>(mergedPairIterator,
+        return new PairIteratorWithLock<>(loggingContext, mergedPairIterator,
                 new OptimisticLock(versionController), getId().toString());
     }
 
@@ -118,8 +122,9 @@ public class Segment<K, V>
      * @return
      */
     public SegmentSplitter<K, V> getSegmentSplitter() {
-        return new SegmentSplitter<>(this, segmentFiles, versionController,
-                segmentPropertiesManager, deltaCacheController, segmentManager);
+        return new SegmentSplitter<>(loggingContext, this, segmentFiles,
+                versionController, segmentPropertiesManager,
+                deltaCacheController, segmentManager);
     }
 
     @Override
@@ -146,6 +151,6 @@ public class Segment<K, V>
 
     public SegmentPropertiesManager getSegmentPropertiesManager() {
         return segmentPropertiesManager;
-    }   
+    }
 
 }

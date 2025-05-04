@@ -31,7 +31,8 @@ public class PairIteratorWithLockTest {
 
     @BeforeEach
     void setUp() {
-        iterator = new PairIteratorWithLock<>(iter, lock,
+        final LoggingContext loggingContext = new LoggingContext("test_index");
+        iterator = new PairIteratorWithLock<>(loggingContext, iter, lock,
                 SEGMENT_ID.toString());
     }
 
@@ -45,7 +46,7 @@ public class PairIteratorWithLockTest {
     void test_unlocked_inner_in_not_next() throws Exception {
         when(lock.isLocked()).thenReturn(false);
         when(iter.hasNext()).thenReturn(false);
-        
+
         assertFalse(iterator.hasNext());
     }
 
@@ -53,18 +54,22 @@ public class PairIteratorWithLockTest {
     void test_unlocked_inner_in_next() throws Exception {
         when(lock.isLocked()).thenReturn(false);
         when(iter.hasNext()).thenReturn(true);
-        
+
         assertTrue(iterator.hasNext());
     }
 
     @Test
     void test_try_to_move_next_in_locked() throws Exception {
         when(lock.isLocked()).thenReturn(true);
-        
-        final Exception e = assertThrows(NoSuchElementException.class, ()->{iterator.next();});
-        
-        assertEquals("Unable to move to next element in iterator"
-                + " 'segment-00027' because it's locked.",e.getMessage());
+
+        final Exception e = assertThrows(NoSuchElementException.class, () -> {
+            iterator.next();
+        });
+
+        assertEquals(
+                "Unable to move to next element in iterator"
+                        + " 'segment-00027' because it's locked.",
+                e.getMessage());
     }
 
 }

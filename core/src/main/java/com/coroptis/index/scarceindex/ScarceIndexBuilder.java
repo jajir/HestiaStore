@@ -2,6 +2,7 @@ package com.coroptis.index.scarceindex;
 
 import java.util.Objects;
 
+import com.coroptis.index.LoggingContext;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
 
@@ -9,16 +10,20 @@ public class ScarceIndexBuilder<K> {
 
     private static final int DEFAULT_DISK_IO_BUFFER_SIZE = 4 * 1024;
 
+    private LoggingContext loggingContext;
     private TypeDescriptor<K> keyTypeDescriptor;
-
     private Directory directory;
-
     private String fileName;
-
     private int diskIoBufferSize = DEFAULT_DISK_IO_BUFFER_SIZE;
 
     ScarceIndexBuilder() {
         // just keep constructor with limited visibility
+    }
+
+    public ScarceIndexBuilder<K> withLoggingContext(
+            final LoggingContext loggingContext) {
+        this.loggingContext = loggingContext;
+        return this;
     }
 
     public ScarceIndexBuilder<K> withKeyTypeDescriptor(
@@ -44,8 +49,8 @@ public class ScarceIndexBuilder<K> {
     }
 
     public ScarceIndex<K> build() {
-        return new ScarceIndex<K>(directory, fileName, keyTypeDescriptor,
-                diskIoBufferSize);
+        return new ScarceIndex<K>(loggingContext, directory, fileName,
+                keyTypeDescriptor, diskIoBufferSize);
     }
 
 }

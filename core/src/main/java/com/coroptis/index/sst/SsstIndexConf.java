@@ -1,5 +1,7 @@
 package com.coroptis.index.sst;
 
+import java.util.Objects;
+
 public class SsstIndexConf {
 
     /*
@@ -13,7 +15,7 @@ public class SsstIndexConf {
     /*
      * SST index configuration
      */
-
+    private final String indexName;
     private final int maxNumberOfKeysInSCache;
     private final int maxNumberOfKeysInSegment;
     private final int maxNumberOfSegmentsInCache;
@@ -24,19 +26,22 @@ public class SsstIndexConf {
 
     private final int diskIoBufferSize;
 
-    SsstIndexConf(final long maxNumberOfKeysInSegmentCache,
-            final long maxNumberOfKeysInSegmentCacheDuringFlushing,
-            final int maxNumberOfKeysInSegmentIndexPage,
-            final int maxNumberOfKeysInCache,
-            final int maxNumberOfKeysInSegment,
-            final int maxNumberOfSegmentsInCache,
-            final Integer bloomFilterNumberOfHashFunctions,
-            final Integer bloomFilterIndexSizeInBytes,
-            final Double bloomFilterProbabilityOfFalsePositive,
+    SsstIndexConf(final long maxNumberOfKeysInSegmentCache, //
+            final long maxNumberOfKeysInSegmentCacheDuringFlushing, //
+            final int maxNumberOfKeysInSegmentIndexPage, //
+            final int maxNumberOfKeysInCache, //
+            final int maxNumberOfKeysInSegment, //
+            final int maxNumberOfSegmentsInCache, //
+            final String indexName, //
+            final Integer bloomFilterNumberOfHashFunctions, //
+            final Integer bloomFilterIndexSizeInBytes, //
+            final Double bloomFilterProbabilityOfFalsePositive, //
             final int diskIoBufferSize) {
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
         this.maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInSegmentCacheDuringFlushing;
         this.maxNumberOfKeysInSegmentIndexPage = maxNumberOfKeysInSegmentIndexPage;
+        this.indexName = Objects.requireNonNull(indexName,
+                "Index name can't be null");
         this.maxNumberOfKeysInSCache = maxNumberOfKeysInCache;
         this.maxNumberOfKeysInSegment = maxNumberOfKeysInSegment;
         this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
@@ -59,6 +64,10 @@ public class SsstIndexConf {
 
     int getMaxNumberOfKeysInSegmentIndexPage() {
         return maxNumberOfKeysInSegmentIndexPage;
+    }
+
+    String getIndexName() {
+        return indexName;
     }
 
     long getMaxNumberOfKeysInCache() {

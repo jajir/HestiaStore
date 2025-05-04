@@ -2,10 +2,9 @@ package com.coroptis.index.segment;
 
 import java.util.Objects;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.coroptis.index.ContextAwareLogger;
 import com.coroptis.index.F;
+import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 
@@ -16,8 +15,7 @@ import com.coroptis.index.PairIterator;
  */
 public class SegmentSplitter<K, V> {
 
-    private final Logger logger = LoggerFactory
-            .getLogger(SegmentSplitter.class);
+    private final ContextAwareLogger logger;
     private final Segment<K, V> segment;
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
@@ -25,12 +23,14 @@ public class SegmentSplitter<K, V> {
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
     private final SegmentManager<K, V> segmentManager;
 
-    public SegmentSplitter(final Segment<K, V> segment,
-            final SegmentFiles<K, V> segmentFiles,
+    public SegmentSplitter(final LoggingContext loggingContext,
+            final Segment<K, V> segment, final SegmentFiles<K, V> segmentFiles,
             final VersionController versionController,
             final SegmentPropertiesManager segmentPropertiesManager,
             final SegmentDeltaCacheController<K, V> deltaCacheController,
             final SegmentManager<K, V> segmentManager) {
+        this.logger = new ContextAwareLogger(SegmentSplitter.class,
+                loggingContext);
         this.segment = Objects.requireNonNull(segment);
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.versionController = Objects.requireNonNull(versionController,

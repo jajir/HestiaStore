@@ -6,10 +6,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.coroptis.index.ContextAwareLogger;
 import com.coroptis.index.F;
+import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.PairReader;
@@ -27,8 +26,8 @@ import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
 
 public class SstIndexImpl<K, V> implements Index<K, V> {
 
-    private final Logger logger = LoggerFactory.getLogger(SstIndexImpl.class);
-
+    private final ContextAwareLogger logger;
+    private final LoggingContext loggingContext;
     private final SsstIndexConf conf;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
@@ -43,6 +42,9 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final SsstIndexConf conf, final Log<K, V> log) {
+        this.loggingContext = new LoggingContext(conf.getIndexName());
+        this.logger = new ContextAwareLogger(SstIndexImpl.class,
+                loggingContext);
         if (directory == null) {
             throw new IllegalArgumentException("Directory was no specified.");
         }
@@ -54,12 +56,12 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         this.conf = Objects.requireNonNull(conf);
         this.cache = new UniqueCache<K, V>(
                 this.keyTypeDescriptor.getComparator());
-        this.keySegmentCache = new KeySegmentCache<>(directory,
+        this.keySegmentCache = new KeySegmentCache<>(loggingContext, directory,
                 keyTypeDescriptor);
         final SegmentDataCache<K, V> segmentDataCache = new SegmentDataCache<>(
                 conf);
-        this.segmentManager = new SegmentManager<>(directory, keyTypeDescriptor,
-                valueTypeDescriptor, conf, segmentDataCache);
+        this.segmentManager = new SegmentManager<>(loggingContext, directory,
+                keyTypeDescriptor, valueTypeDescriptor, conf, segmentDataCache);
         indexState.onReady(this);
     }
 
@@ -99,7 +101,8 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
 
     private PairIterator<K, V> openIterator() {
         final PairIterator<K, V> segmentIterator = new SegmentsIterator<>(
-                keySegmentCache.getSegmentIds(), segmentManager);
+                loggingContext, keySegmentCache.getSegmentIds(),
+                segmentManager);
         return segmentIterator;
     }
 
@@ -141,7 +144,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                 "Cache compacting of '{}' key value pairs in cache started.",
                 F.fmt(cache.size()));
         final CompactSupport<K, V> support = new CompactSupport<>(
-                segmentManager, keySegmentCache);
+                loggingContext, segmentManager, keySegmentCache);
         cache.getStream()
                 .sorted(new PairComparator<>(keyTypeDescriptor.getComparator()))
                 .forEach(support::compact);
@@ -193,7 +196,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
 
     private boolean shouldBeSplit(final Segment<K, V> segment) {
         return segment.getNumberOfKeys() > conf.getMaxNumberOfKeysInSegment();
-    }   
+    }
 
     private boolean split(final Segment<K, V> segment,
             final SegmentSplitter<K, V> segmentSplitter) {

@@ -7,6 +7,7 @@ import java.util.Random;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.coroptis.index.LoggingContext;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.datatype.TypeDescriptorLong;
@@ -18,6 +19,8 @@ import com.coroptis.index.segment.SegmentId;
 
 public class IntegerationNumberOfKeysTest {
 
+    private final static LoggingContext LOGGING_CONTEXT = new LoggingContext(
+            "test_index");
     private final SegmentId SEGMENT_ID = SegmentId.of(29);
     private final static Random RANDOM = new Random();
     private final static int NUMBER_OF_TESTING_PAIRS = 2_000_000;
@@ -72,6 +75,7 @@ public class IntegerationNumberOfKeysTest {
                 .withBloomFilterIndexSizeInBytes(0)// disable bloom filter
                 .withMaxNumberOfKeysInSegmentCache(1000)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(100_000)//
+                .withLoggingContext(LOGGING_CONTEXT)//
                 .build();
     }
 

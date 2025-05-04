@@ -9,17 +9,21 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.datatype.TypeDescriptorString;
 
 public class ScarceIndexCacheTest {
+
+    private final static LoggingContext LOGGING_CONTEXT = new LoggingContext(
+            "test_index");
 
     private final TypeDescriptorString tds = new TypeDescriptorString();
 
     @Test
     public void test_constructor_null() throws Exception {
         assertThrows(NullPointerException.class,
-                () -> new ScarceIndexCache<>(null));
+                () -> new ScarceIndexCache<>(LOGGING_CONTEXT, null));
     }
 
     @Test
@@ -58,7 +62,8 @@ public class ScarceIndexCacheTest {
 
     private ScarceIndexCache<String> makeCache(
             final List<Pair<String, Integer>> pairs) {
-        ScarceIndexCache<String> cache = new ScarceIndexCache<>(tds);
+        ScarceIndexCache<String> cache = new ScarceIndexCache<>(LOGGING_CONTEXT,
+                tds);
 
         pairs.forEach(cache::put);
 

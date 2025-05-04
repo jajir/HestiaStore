@@ -6,11 +6,11 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import com.coroptis.index.IndexException;
+import com.coroptis.index.LoggingContext;
 
 public class FsDirectory implements Directory {
 
     private final static int DEFAULT_BUFFER_SIZE = 1024 * 1 * 4;
-
     private final File directory;
 
     public FsDirectory(final File directory) {

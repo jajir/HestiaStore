@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.Test;
 
+import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairSeekableReader;
 import com.coroptis.index.datatype.TypeDescriptor;
@@ -15,6 +16,8 @@ import com.coroptis.index.directory.MemDirectory;
 
 public class IntegrationSortedDataFileTest {
 
+    private final static LoggingContext LOGGING_CONTEXT = new LoggingContext(
+            "test_index");
     private final static String FILE_NAME = "pok.index";
     private final TypeDescriptor<Integer> tdi = new TypeDescriptorInteger();
     private final TypeDescriptor<String> tds = new TypeDescriptorString();
@@ -28,8 +31,8 @@ public class IntegrationSortedDataFileTest {
     @Test
     void testName() throws Exception {
         final Directory dir = new MemDirectory();
-        final SortedDataFile<String, Integer> sdf = new SortedDataFile<>(dir, FILE_NAME,
-                tds, tdi, 1024);
+        final SortedDataFile<String, Integer> sdf = new SortedDataFile<>(
+                LOGGING_CONTEXT, dir, FILE_NAME, tds, tdi, 1024);
         long position = 0;
         try (SortedDataFileWriter<String, Integer> writer = sdf.openWriter()) {
             writer.write(P1);

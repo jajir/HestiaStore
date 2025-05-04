@@ -11,6 +11,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
 import com.coroptis.index.datatype.TypeDescriptorString;
@@ -39,7 +40,8 @@ public class IntegrationIndexTest extends AbstractIndexTest {
         writePairs(index, testData);
 
         /**
-         * Calling of verifyIndexData before compact() will fail. It's by design.
+         * Calling of verifyIndexData before compact() will fail. It's by
+         * design.
          */
 
         verifyIndexSearch(index, testData);
@@ -77,12 +79,15 @@ public class IntegrationIndexTest extends AbstractIndexTest {
 
     /**
      * In this test getStream() could ommit some results
+     * 
      * @param iterations
      * @throws Exception
      */
     @ParameterizedTest
-    @CsvSource(value = {"1:0", "3:3", "5:3", "15:15", "100:99", "102:102"}, delimiter = ':')
-    void test_adds_and_deletes_operations_no_compacting(final int iterations, final int itemsInIndex) throws Exception {
+    @CsvSource(value = { "1:0", "3:3", "5:3", "15:15", "100:99",
+            "102:102" }, delimiter = ':')
+    void test_adds_and_deletes_operations_no_compacting(final int iterations,
+            final int itemsInIndex) throws Exception {
         final Index<Integer, String> index = makeSstIndex(false);
         for (int i = 0; i < iterations; i++) {
             index.put(i, "kachna");
@@ -97,14 +102,15 @@ public class IntegrationIndexTest extends AbstractIndexTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {1, 3, 5, 15, 100, 102})
-    void test_adds_and_deletes_operations_with_compacting(final int iterations) throws Exception {
+    @ValueSource(ints = { 1, 3, 5, 15, 100, 102 })
+    void test_adds_and_deletes_operations_with_compacting(final int iterations)
+            throws Exception {
         final Index<Integer, String> index = makeSstIndex(false);
         for (int i = 0; i < iterations; i++) {
             index.put(i, "kachna");
             assertEquals("kachna", index.get(i));
         }
-        index.compact();        
+        index.compact();
         assertEquals(iterations, index.getStream().count());
         for (int i = 0; i < iterations; i++) {
             index.delete(i);
@@ -129,6 +135,7 @@ public class IntegrationIndexTest extends AbstractIndexTest {
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(2) //
                 .withUseFullLog(withLog) //
+                .withName("test_index") //
                 .build();
     }
 

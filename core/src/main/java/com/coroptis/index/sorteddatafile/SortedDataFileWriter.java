@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.Objects;
 
 import com.coroptis.index.CloseableResource;
+import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.datatype.ConvertorToBytes;
 import com.coroptis.index.datatype.TypeDescriptor;
@@ -12,6 +13,7 @@ import com.coroptis.index.directory.FileWriter;
 
 public class SortedDataFileWriter<K, V> implements CloseableResource {
 
+    private final LoggingContext loggingContext;
     private final TypeWriter<V> valueWriter;
 
     private final FileWriter fileWriter;
@@ -26,9 +28,11 @@ public class SortedDataFileWriter<K, V> implements CloseableResource {
 
     private K previousKey = null;
 
-    public SortedDataFileWriter(final TypeWriter<V> valueWriter,
-            final FileWriter fileWriter,
+    public SortedDataFileWriter(final LoggingContext loggingContext,
+            final TypeWriter<V> valueWriter, final FileWriter fileWriter,
             final TypeDescriptor<K> keyTypeDescriptor) {
+        this.loggingContext = Objects.requireNonNull(loggingContext,
+                "loggingContext is required");
         this.valueWriter = Objects.requireNonNull(valueWriter,
                 "valueWriter is required");
         this.fileWriter = Objects.requireNonNull(fileWriter,
@@ -45,7 +49,8 @@ public class SortedDataFileWriter<K, V> implements CloseableResource {
     }
 
     private DiffKeyWriter<K> makeDiffKeyWriter() {
-        return new DiffKeyWriter<>(keyConvertorToBytes, keyComparator);
+        return new DiffKeyWriter<>(loggingContext, keyConvertorToBytes,
+                keyComparator);
     }
 
     /**
