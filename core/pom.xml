@@ -134,6 +134,26 @@
 			<plugin>
 				<artifactId>maven-deploy-plugin</artifactId>
 			</plugin>
+			<plugin>
+				<groupId>org.owasp</groupId>
+				<artifactId>dependency-check-maven</artifactId>
+				<version>12.1.1</version> <!-- Use the latest version from https://github.com/jeremylong/DependencyCheck -->
+				<executions>
+					<execution>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<formats>
+						<format>HTML</format>
+						<format>JSON</format>
+					</formats>
+					<failBuildOnCVSS>7</failBuildOnCVSS> <!-- Fail build on vulnerabilities above this CVSS score -->
+					<nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
+				</configuration>
+        	</plugin>
 			<!--
 			-->
 			<plugin>
