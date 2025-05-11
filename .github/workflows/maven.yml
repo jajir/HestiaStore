@@ -48,12 +48,27 @@ jobs:
           ${{ runner.os }}-maven-        
 
     - name: Build with Maven
-      run: mvn -B package --file pom.xml
+      run: mvn -B verify --file pom.xml
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     - name: Update dependency graph
       uses: advanced-security/maven-dependency-submission-action@v4
 
+    - name: Generate JaCoCo Badge
+      uses: cicirello/jacoco-badge-generator@v2
+      with:
+        generate-branches-badge: true
+        jacoco-csv-file: ./core/target/site/jacoco/jacoco.csv
+        badges-directory: ./badges
+        coverage-badge-filename: jacoco-badge-${{ github.ref_name }}.svg
+    
+    - name: Upload badge (JaCoCo) to Gist
+      uses: andymckay/append-gist-action@6e8d64427fe47cbacf4ab6b890411f1d67c07f3e
+      with:
+        token: ${{ secrets.GIST_TOKEN }}
+        gistURL: https://gist.github.com/jajir/a613341fb9d9d0c6a426b42a714700b7
+        file: ./badges/jacoco-badge-${{ github.ref_name }}.svg
+          
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v2
       id: test-results
@@ -87,11 +102,7 @@ jobs:
         color: ${{ env.BADGE_COLOR }}
         path: badge-${{ github.ref_name }}.svg
     
-    - name: Upload badge to Gist
-      # Upload only for master branch
-      #if: >
-        #github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'master' ||
-        #github.event_name != 'workflow_run' && github.ref == 'refs/heads/master'
+    - name: Upload badge (test results) to Gist
       uses: andymckay/append-gist-action@6e8d64427fe47cbacf4ab6b890411f1d67c07f3e
       with:
         token: ${{ secrets.GIST_TOKEN }}
