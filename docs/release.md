@@ -24,12 +24,13 @@ there are following branches:
 
 # How to deploy new version
 
-## prerequisities
+## Prerequisities
  Adjust settings.xml in `~/.m2/settings.xml` like this described at [github official documentaion how to wootk with github maven repository](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry). Get correct token and it's done.
 
-## make release
+## Make release
 
-1) perform steps according to previous image
+1) Perform steps according to previous image
+3) Make release in `main` branch: `mvn deploy`
 2) It's done
 
 ## How to perfom some tasks
