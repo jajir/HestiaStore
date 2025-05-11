@@ -46,6 +46,6 @@ jobs:
       if: always()
       with:
         files: |
-          target/surefire-reports/**/*.xml
-          target/surefire-reports/**/*.trx
-          target/surefire-reports/**/*.json
+          core/target/surefire-reports/**/*.xml
+          core/target/surefire-reports/**/*.trx
+          core/target/surefire-reports/**/*.json
