@@ -16,17 +16,29 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
+    
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
     - name: Set up JDK 17
       uses: actions/setup-java@v3
       with:
         java-version: '17'
         distribution: 'temurin'
         cache: maven
+
+    - name: Show default environment variables
+      run: |
+        echo "The job_id is: $GITHUB_JOB"   # reference the default environment variables
+        echo "The id of this action is: $GITHUB_ACTION"   # reference the default environment variables
+        echo "The run id is: $GITHUB_RUN_ID"
+        echo "The GitHub Actor's username is: $GITHUB_ACTOR"
+        echo "GitHub SHA: $GITHUB_SHA"
+        echo "github.ref_name: ${{ github.ref_name }}"
+        echo "github.ref: ${{ github.ref }}"
+
     - name: Cache local Maven repository
       uses: actions/cache@v4
       with:
@@ -34,6 +46,7 @@ jobs:
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
           ${{ runner.os }}-maven-        
+
     - name: Build with Maven
       run: mvn -B package --file pom.xml
 
@@ -43,9 +56,45 @@ jobs:
 
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v2
+      id: test-results
       if: always()
       with:
         files: |
           core/target/surefire-reports/**/*.xml
           core/target/surefire-reports/**/*.trx
           core/target/surefire-reports/**/*.json
+
+    - name: Set badge color
+      shell: bash
+      run: |
+        case ${{ fromJSON( steps.test-results.outputs.json ).conclusion }} in
+          success)
+            echo "BADGE_COLOR=31c653" >> $GITHUB_ENV
+            ;;
+          failure)
+            echo "BADGE_COLOR=800000" >> $GITHUB_ENV
+            ;;
+          neutral)
+            echo "BADGE_COLOR=696969" >> $GITHUB_ENV
+            ;;
+        esac
+    
+    - name: Create badge
+      uses: emibcn/badge-action@808173dd03e2f30c980d03ee49e181626088eee8
+      with:
+        label: Tests
+        status: '${{ fromJSON( steps.test-results.outputs.json ).formatted.stats.tests }} tests, ${{ fromJSON( steps.test-results.outputs.json ).formatted.stats.runs }} runs: ${{ fromJSON( steps.test-results.outputs.json ).conclusion }}'
+        color: ${{ env.BADGE_COLOR }}
+        path: badge-${{ github.ref_name }}.svg
+    
+    - name: Upload badge to Gist
+      # Upload only for master branch
+      #if: >
+        #github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'master' ||
+        #github.event_name != 'workflow_run' && github.ref == 'refs/heads/master'
+      uses: andymckay/append-gist-action@6e8d64427fe47cbacf4ab6b890411f1d67c07f3e
+      with:
+        token: ${{ secrets.GIST_TOKEN }}
+        gistURL: https://gist.github.com/jajir/a613341fb9d9d0c6a426b42a714700b7
+        file: badge-${{ github.ref_name }}.svg
+
