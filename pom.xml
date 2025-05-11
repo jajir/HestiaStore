@@ -97,7 +97,7 @@
 					<version>3.1.1</version>
 					<executions>
 						<execution>
-							<id>deploy</id>
+							<id>default-deploy</id>
 							<phase>deploy</phase>
 							<goals>
 								<goal>deploy</goal>
