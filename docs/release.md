@@ -29,9 +29,25 @@ there are following branches:
 
 ## Make release
 
-1) Perform steps according to previous image
-3) Make release in `main` branch: `mvn deploy`
-2) It's done
+Perform steps according to previous image:
+1. Checkout master branch `git checkout master`
+1. Set new release version in all maven pom files `mvn versions:set -DnewVersion=0.0.12`
+1. Make release in `master` branch: `mvn deploy`
+1. Commit chnages in master:
+  ```
+  git add .
+  git commit -m "v0.1.12"
+  git push
+  ```
+1. go back to `devel` branch: `git checkout devel`
+1. Increase snapshot version `mvn versions:set -DnewVersion=0.0.13-SNAPSHOT`
+1. commit and pusch changes:
+  ```
+  git add .
+  git commit -m "v0.1.13-SNAPSHOT"
+  git push
+  ```
+1. It's done
 
 ## How to perfom some tasks
 
