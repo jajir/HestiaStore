@@ -1,6 +1,6 @@
 Branch master
 
-[![Build (master)](https://github.com/jajir/jbindex/actions/workflows/maven.yml/badge.svg?branch=master)](https://github.com/jajir/jbindex/actions/workflows/maven.yaml?query=branch%3Amaster)
+[![Build (master)](https://github.com/jajir/jbindex/actions/workflows/maven.yml/badge.svg?branch=master)](https://github.com/jajir/jbindex/actions/workflows/maven.yml?query=branch%3Amaster)
 
 Branch devel
 
