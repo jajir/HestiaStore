@@ -1,10 +1,15 @@
-![example workflow](https://github.com/jajir/jbindex/actions/workflows/maven.yml/badge.svg)
-# jbindex
+Branch master
 
 [![Build (master)](https://github.com/jajir/jbindex/actions/workflows/maven.yml/badge.svg?branch=master)](https://github.com/jajir/jbindex/actions/workflows/maven.yaml?query=branch%3Amaster)
+
+Branch devel
+
 [![Build (devel)](https://github.com/jajir/jbindex/actions/workflows/maven.yml/badge.svg?branch=devel)](https://github.com/jajir/jbindex/actions/workflows/maven.yml?query=branch%3Adevel)
 
+# jbindex
+
 A Java library for efficiently storing and retrieving large key-value maps.
+
 # jbindex
 
 Goal is to provide easy to use key value map for billions of records using just one directory and some space.
