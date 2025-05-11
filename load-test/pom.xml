@@ -111,24 +111,6 @@
 	<reporting>
 		<plugins>
 			<plugin>
-				<groupId>com.github.spotbugs</groupId>
-				<artifactId>spotbugs-maven-plugin</artifactId>
-				<version>4.7.3.5</version>
-				<configuration>
-					<!--
-					<includeFilterFile>spotbugs-security-include.xml</includeFilterFile>
-					<excludeFilterFile>spotbugs-security-exclude.xml</excludeFilterFile>
-					 -->
-					<plugins>
-						<plugin>
-							<groupId>com.h3xstream.findsecbugs</groupId>
-							<artifactId>findsecbugs-plugin</artifactId>
-							<version>1.12.0</version>
-						</plugin>
-					</plugins>
-				</configuration>
-			</plugin>
-			<plugin>
 				<artifactId>maven-project-info-reports-plugin</artifactId>
 				<version>3.4.5</version>
 				<configuration>

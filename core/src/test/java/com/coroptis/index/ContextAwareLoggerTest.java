@@ -9,11 +9,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.coroptis.index.segment.Segment;
 
 @ExtendWith(MockitoExtension.class)
 public class ContextAwareLoggerTest {
+
+    private final Logger logger = LoggerFactory.getLogger(Segment.class);
 
     @Mock
     private LoggingContext loggingContext;
@@ -37,7 +41,9 @@ public class ContextAwareLoggerTest {
 
     @Test
     void test_log_debug() {
-        when(loggingContext.formatPrefix()).thenReturn("");
+        if (logger.isDebugEnabled()) {
+            when(loggingContext.formatPrefix()).thenReturn("");
+        }
         final ContextAwareLogger logger = new ContextAwareLogger(Segment.class,
                 loggingContext);
 
