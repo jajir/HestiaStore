@@ -1,0 +1,15 @@
+@startuml
+hide footbox
+entity "branch devel" as devel
+entity "branch main" as main
+database "release repository" as repo
+
+devel -> devel : finish development 1.0.12-SNAPSHOT
+devel -> main : merge 1.0.12-SNAPSHOT
+
+main -> main : set version 1.0.12
+main -> repo : release 1.0.12
+
+devel -> devel : set version 1.0.13-SNAPSHOT
+
+@enduml

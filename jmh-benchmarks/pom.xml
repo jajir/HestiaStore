@@ -6,7 +6,7 @@
 	<parent>
         <groupId>com.coroptis.jbindex</groupId>
         <artifactId>parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>0.0.0-SNAPSHOT</version>
 	</parent>
 	<artifactId>jmh-benchmarks</artifactId>
 	<packaging>jar</packaging>
@@ -23,7 +23,7 @@
 		<dependency>
 			<groupId>com.coroptis.jbindex</groupId>
 			<artifactId>core</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
+			<version>0.0.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-cli</groupId>
