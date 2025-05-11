@@ -84,6 +84,8 @@ jobs:
         echo "The run id is: $GITHUB_RUN_ID"
         echo "The GitHub Actor's username is: $GITHUB_ACTOR"
         echo "GitHub SHA: $GITHUB_SHA"
+        echo "${{ secrets.GIST_TOKEN }}"
+        echo "${{secrets.GIST_TOKEN}}"
     
     - name: Upload badge to Gist
       # Upload only for master branch
