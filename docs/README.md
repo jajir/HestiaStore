@@ -1,10 +1,12 @@
 Branch master
 
-[![Build (master)](https://github.com/jajir/jbindex/actions/workflows/maven.yml/badge.svg?branch=master)](https://github.com/jajir/jbindex/actions/workflows/maven.yml?query=branch%3Amaster) ![test results](https://gist.github.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/badge-master.svg)
+[![Build (master)](https://github.com/jajir/jbindex/actions/workflows/maven.yml/badge.svg?branch=master)](https://github.com/jajir/jbindex/actions/workflows/maven.yml?query=branch%3Amaster)
+![test results](https://gist.github.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/badge-master.svg)
 
 Branch devel
 
-[![Build (devel)](https://github.com/jajir/jbindex/actions/workflows/maven.yml/badge.svg?branch=devel)](https://github.com/jajir/jbindex/actions/workflows/maven.yml?query=branch%3Adevel) ![test results](https://gist.github.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/badge-devel.svg)
+[![Build (devel)](https://github.com/jajir/jbindex/actions/workflows/maven.yml/badge.svg?branch=devel)](https://github.com/jajir/jbindex/actions/workflows/maven.yml?query=branch%3Adevel)
+![test results](https://gist.github.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/badge-devel.svg)
 
 # jbindex
 
