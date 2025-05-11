@@ -16,7 +16,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<junit.jupiter.version>5.5.0-M1</junit.jupiter.version>
 		<mockito.version>5.15.2</mockito.version>
-		<jacoco.version>0.8.9</jacoco.version>
+		<jacoco.version>0.8.13</jacoco.version>
 	</properties>
 	<!-- mvn jdeps:jdkinternals -->
 	<description>Allows to quickly sort large ammount of data and quickly search through it.</description>
@@ -87,6 +87,10 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<argLine>@{argLine}</argLine>
+					<forkCount>1</forkCount>
+				</configuration>
 			</plugin>
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
@@ -131,12 +135,42 @@
 				<artifactId>maven-deploy-plugin</artifactId>
 			</plugin>
 			<!--
+			-->
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
 				<version>${jacoco.version}</version>
+				<configuration>					
+					<rules>
+						<rule>
+							<element>BUNDLE</element>
+							<limits>
+								<limit>
+									<counter>INSTRUCTION</counter>
+									<value>COVEREDRATIO</value>
+									<minimum>0.80</minimum>
+								</limit>
+								<limit>
+									<counter>CLASS</counter>
+									<value>MISSEDCOUNT</value>
+									<maximum>0</maximum>
+								</limit>
+							</limits>
+						</rule>
+					</rules>
+				</configuration>
+				<executions>
+					<execution>
+						<id>prepare-agent</id>
+						<goals><goal>prepare-agent</goal></goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>verify</phase>
+						<goals><goal>report</goal></goals>
+					</execution>
+				</executions>
 			</plugin>
-			-->
 		</plugins>
 	</build>
 	<reporting>
@@ -147,18 +181,9 @@
 				<version>4.9.3.0</version>
 				<configuration>
 					<plugins>
-					<!--
-						<plugin>
-							<groupId>com.h3xstream.findsecbugs</groupId>
-							<artifactId>findsecbugs-plugin</artifactId>
-							<version>1.12.0</version>
-						</plugin>
-					-->
 					</plugins>
 				</configuration>
 			</plugin>
-		  <!--
-		  -->
 			<plugin>
 				<artifactId>maven-project-info-reports-plugin</artifactId>
 				<version>3.4.5</version>
@@ -195,7 +220,6 @@
 				<artifactId>maven-jxr-plugin</artifactId>
 				<version>2.5</version>
 			</plugin>
-			<!--
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
@@ -208,6 +232,7 @@
 					</reportSet>
 				</reportSets>
 			</plugin>
+			<!--
 			-->
 		</plugins>
 	</reporting>
