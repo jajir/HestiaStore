@@ -2,9 +2,6 @@ package com.coroptis.index.segment;
 
 import java.util.Objects;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.coroptis.index.ContextAwareLogger;
 import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;

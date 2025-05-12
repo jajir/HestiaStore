@@ -6,7 +6,6 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import com.coroptis.index.IndexException;
-import com.coroptis.index.LoggingContext;
 
 public class FsDirectory implements Directory {
 
