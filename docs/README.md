@@ -1,12 +1,11 @@
-[![Build (master)](https://github.com/jajir/jbindex/actions/workflows/maven.yml/badge.svg?branch=master)](https://github.com/jajir/jbindex/actions/workflows/maven.yml?query=branch%3Amaster)
-![test results](https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/badge-master.svg)
-![line coverage](https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/jacoco-badge-master.svg)
+[![Build (master)](https://github.com/jajir/jbindex/actions/workflows/maven.yml/badge.svg?branch=master)](https://github.com/jajir/jbindex/actions/workflows/maven.yml?query=branch%3Amain)
+![test results](https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/badge-main.svg)
+![line coverage](https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/jacoco-badge-main.svg)
+![OWAPS dependency check](https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/badge-owasp-main.svg)
 
 # jbindex
 
 A Java library for efficiently storing and retrieving large key-value maps.
-
-# jbindex
 
 Goal is to provide easy to use key value map for billions of records using just one directory and some space.
 
