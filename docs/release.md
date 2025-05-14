@@ -14,52 +14,78 @@ Meaning of number is:
 
 There are also snapshot versions with version number `0.3.6-SNAPSHOT`. Snapshot versions should not by sotred into maven repository.
 
-# Project branching
+## Branching strategy
 
 ![project branching](./images/branching.png)
 
-there are following branches:
+We use a simplified GitHub Flow:
 
-* main - the main stable release branch
-* devel - sed for ongoing development and bug fixes
-* feature branches - optionaly created for new features; especially useful for large or experimental changes
+* `main`: the primary development and release branch. Small changes may be committed directly to `main`, while larger or experimental features must be developed in a separate branch and merged via pull request.
+* Feature branches: created from `main` for larger or isolated changes. Use descriptive names like `feature/compression`, `fix/index-scan`, etc.
 
-# How to deploy new version
+The previous `devel` branch is no longer used and has been removed.
 
-## Prerequisities
+# How to release new version
 
- Adjust settings.xml in `~/.m2/settings.xml` like this described at [github official documentaion how to wootk with github maven repository](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry). Get correct token and it's done.
+## Prerequisites
+
+ Adjust settings.xml in `~/.m2/settings.xml` like this described at [github official documentation how to work with github maven repository](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry). Get correct token and it's done.
 
 ## Make release
 
-Perform steps according to previous image:
+Perform the following steps to create a new release:
 
-1. Checkout master branch `git checkout master`
-1. Set new release version in all maven pom files `mvn versions:set -DnewVersion=0.0.12`
-1. Make release in `master` branch: `mvn deploy`
-1. Commit chnages in master:
+1. Checkout the `main` branch:
 
-  ```
-  git add .
-  git commit -m "v0.1.12"
-  git push
-  ```
+   ```
+   git checkout main
+   ```
 
-1. go back to `devel` branch: `git checkout devel`
-1. Increase snapshot version `mvn versions:set -DnewVersion=0.0.13-SNAPSHOT`
-1. commit and pusch changes:
+2. Set the release version:
 
-  ```
-  git add .
-  git commit -m "v0.1.13-SNAPSHOT"
-  git push
-  ```
+   ```
+   mvn versions:set -DnewVersion=0.0.12
+   git commit -am "release: version 0.0.12"
+   ```
 
-1. It's done
+3. Tag and push the release:
 
-## How to perfom some tasks
+   ```
+   git tag v0.0.12
+   git push --follow-tags
+   ```
 
-### How to use custome settings.xml file
+4. Deploy the release (can be automated via GitHub Actions or done manually):
+
+   ```
+   mvn deploy
+   ```
+
+5. Bump to next snapshot version:
+
+   ```
+   mvn versions:set -DnewVersion=0.0.13-SNAPSHOT
+   git commit -am "post-release: bumped to 0.0.13-SNAPSHOT"
+   git push
+   ```
+
+That's it — the release is live and development can continue.
+
+# How to use project
+
+As release repository is used github packages. Released packages could be easily used in your project. In case of maven:
+
+```
+<dependency>
+  <groupId>com.coroptis</groupId>
+  <artifactId>jbindex</artifactId>
+  <version>x.y.z</version>
+</dependency>
+```
+
+# Helpfull commands
+
+### How to use custom settings.xml file
 
 ```
 mvn --settings ./src/main/settings.xml clean deploy
@@ -77,18 +103,4 @@ try to update dependencies. Check them with:
 
 ```
 mvn versions:display-dependency-updates
-```
-
-it's done.
-
-# How to use project
-
-As release repository is used github packages. Released packages could be easily used in your project. In case of maven:
-
-```
-<dependency>
-  <groupId>com.coroptis</groupId>
-  <artifactId>jbindex</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
-</dependency>
 ```
