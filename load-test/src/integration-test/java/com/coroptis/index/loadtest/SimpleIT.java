@@ -11,7 +11,7 @@ import java.nio.file.Paths;
 import java.util.logging.Logger;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class SimpleIT {
@@ -41,6 +41,9 @@ public class SimpleIT {
 
         Thread.sleep(1000);
         process.destroy(); // graceful SIGTERM
+
+        await().atMost(30, SECONDS).pollInterval(1, SECONDS)
+                .until(() -> !process.isAlive());
         assertFalse(process.isAlive(), "Process should be terminated");
     }
 
@@ -48,7 +51,7 @@ public class SimpleIT {
     void test_simple3() throws Exception {
     }
 
-    @BeforeAll
+    @BeforeEach
     void setUp() {
         TestStatus.reset();
         deleteDirectoryRecursively(new File(ConsistencyCheck.DIRECTORY));

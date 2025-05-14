@@ -86,7 +86,7 @@
 				</configuration>
 			</plugin>
 			<plugin>
-				<artifactId>maven-surefire-plugin</artifactId>
+				<artifactId>maven-failsafe-plugin</artifactId>
 			</plugin>
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
@@ -96,9 +96,6 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-resources-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<artifactId>maven-project-info-reports-plugin</artifactId>
 			</plugin>
 			<plugin>
 				<artifactId>maven-deploy-plugin</artifactId>
@@ -140,21 +137,6 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>build-helper-maven-plugin</artifactId>
-				<version>3.4.0</version>
-				<executions>
-					<execution>
-						<id>add-integration-test-source</id>
-						<phase>generate-test-sources</phase>
-						<goals>
-							<goal>add-test-source</goal>
-						</goals>
-						<configuration>
-							<sources>
-								<source>src/integration-test/java</source>
-							</sources>
-						</configuration>
-					</execution>
-				</executions>
 			</plugin>
 		</plugins>
 	</build>
@@ -162,14 +144,17 @@
 		<plugins>
 			<plugin>
 				<artifactId>maven-project-info-reports-plugin</artifactId>
-				<version>3.4.5</version>
 				<configuration>
 					<dependencyLocationsEnabled>false</dependencyLocationsEnabled>
 				</configuration>
 			</plugin>
 			<plugin>
 				<artifactId>maven-surefire-report-plugin</artifactId>
-				<version>3.1.2</version>
+				<configuration>
+					<alwaysGenerateFailsafeReport>true</alwaysGenerateFailsafeReport>
+					<!--
+					-->
+				</configuration>
 			</plugin>
 			<plugin>
 				<artifactId>maven-javadoc-plugin</artifactId>

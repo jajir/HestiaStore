@@ -17,7 +17,7 @@ import com.coroptis.index.directory.MemDirectory;
 import com.coroptis.index.segment.Segment;
 import com.coroptis.index.segment.SegmentId;
 
-public class IntegerationNumberOfKeysTest {
+public class IntegerationNumberOfKeysIT {
 
     private final static LoggingContext LOGGING_CONTEXT = new LoggingContext(
             "test_index");
