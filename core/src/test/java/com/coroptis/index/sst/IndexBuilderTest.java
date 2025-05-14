@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.datatype.TypeDescriptorLong;
 import com.coroptis.index.datatype.TypeDescriptorString;
@@ -15,8 +14,6 @@ import com.coroptis.index.directory.MemDirectory;
 
 public class IndexBuilderTest {
 
-    private final static LoggingContext LOGGING_CONTEXT = new LoggingContext(
-            "test_index");
     final Directory directory = new MemDirectory();
     private final TypeDescriptor<Long> tdl = new TypeDescriptorLong();
     private final TypeDescriptor<String> tds = new TypeDescriptorString();
