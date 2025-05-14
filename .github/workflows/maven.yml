@@ -101,3 +101,24 @@ jobs:
         gistURL: https://gist.github.com/jajir/a613341fb9d9d0c6a426b42a714700b7
         file: badge-${{ github.ref_name }}.svg
 
+    - name: OWASP vulnerabilities - count
+      id: vuln
+      run: |
+        VULN_COUNT=$(jq '[.dependencies[] | select(.vulnerabilities and (.vulnerabilities | length > 0)) | .vulnerabilities[]] | length' core/target/dependency-check-report.json)
+
+    - name: OWASP vulnerabilities - Generate badge
+      uses: emibcn/badge-action@808173dd03e2f30c980d03ee49e181626088eee8
+      run:
+        label: 'OWASP Vulnerabilities'
+        status: ${{ env.VULN_COUNT }}
+        color: 31c653
+        path: badge-owasp-${{ github.ref_name }}.svg
+
+    - name: OWASP vulnerabilities - Upload badge to Gist
+      uses: andymckay/append-gist-action@6e8d64427fe47cbacf4ab6b890411f1d67c07f3e
+      with:
+        token: ${{ secrets.GIST_TOKEN }}
+        gistURL: https://gist.github.com/jajir/a613341fb9d9d0c6a426b42a714700b7
+        file: badge-owasp-${{ github.ref_name }}.svg
+            
+
