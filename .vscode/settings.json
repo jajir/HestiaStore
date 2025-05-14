@@ -1,0 +1,15 @@
+{
+    "java.debug.settings.onBuildFailureProceed": true,
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.format.settings.url": "./eclipse-formatter.xml",
+    "java.format.settings.profile": "mujSunFormatter",
+    "editor.formatOnSave": true,
+    "java.dependency.syncWithFolderExplorer": false,
+    "java.debug.settings.showQualifiedNames": true,
+    "maven.view": "flat",
+    "java.project.sourcePaths": [
+        "src/integration-test/java",
+        "src/main/java",
+        "src/test/java"
+    ]
+}
