@@ -1,4 +1,8 @@
-# Versioning of the project
+# Releasing new version
+
+Simple guide how to make new release.
+
+## Versioning of the project
 
 Project use traditional versioning pattern. Version number consist of three numbers separated by dots. For example:
 
@@ -25,13 +29,13 @@ We use a simplified GitHub Flow:
 
 The previous `devel` branch is no longer used and has been removed.
 
-# How to release new version
+## How to release new version
 
-## Prerequisites
+### Prerequisites
 
  Adjust settings.xml in `~/.m2/settings.xml` like this described at [github official documentation how to work with github maven repository](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry). Get correct token and it's done.
 
-## Make release
+### Make release
 
 Perform the following steps to create a new release:
 
@@ -83,7 +87,7 @@ As release repository is used github packages. Released packages could be easily
 </dependency>
 ```
 
-# Helpfull commands
+## Helpfull commands
 
 ### How to use custom settings.xml file
 
