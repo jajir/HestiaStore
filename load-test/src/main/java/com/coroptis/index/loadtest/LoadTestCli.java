@@ -28,6 +28,12 @@ public class LoadTestCli {
             .desc("display help")//
             .build();
 
+    private final static Option OPTION_TEST_1 = Option.builder()//
+            .longOpt("test1")//
+            .hasArg(false)//
+            .desc("test1 - consistency test")//
+            .build();
+
     // Write and related parameters
     private final static Option OPTION_WRITE = Option.builder()//
             .longOpt("write")//
@@ -110,6 +116,7 @@ public class LoadTestCli {
     LoadTestCli(final String[] args) throws ParseException {
         final Options options = new Options();
         options.addOption(OPTION_HELP);
+        options.addOption(OPTION_TEST_1);
         options.addOption(OPTION_DIRECTORY);
         options.addOption(OPTION_COUNT);
         options.addOption(OPTION_WRITE);
@@ -132,6 +139,12 @@ public class LoadTestCli {
             formatter.printHelp(
                     "java -jar target/load-test.jar com.coroptis.index.loadtest.Main",
                     options);
+        } else if (cmd.hasOption(OPTION_TEST_1)) {
+            final ConsistencyCheck consistencyCheck = new ConsistencyCheck();
+            consistencyCheck.test();
+        } else if (cmd.hasOption(OPTION_TEST_1)) {
+            final ConsistencyCheck consistencyCheck = new ConsistencyCheck();
+            consistencyCheck.test();
         } else if (cmd.hasOption(OPTION_WRITE)) {
             handleWriteOption(cmd);
         } else if (cmd.hasOption(OPTION_SEARCH)) {
