@@ -99,9 +99,12 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         return seg.openIterator();
     }
 
-    private PairIterator<K, V> openIterator() {
+    private PairIterator<K, V> openIterator(SegmentWindow segmentWindows) {
+        if (segmentWindows == null) {
+            segmentWindows = SegmentWindow.unbounded();
+        }
         final PairIterator<K, V> segmentIterator = new SegmentsIterator<>(
-                loggingContext, keySegmentCache.getSegmentIds(),
+                loggingContext, keySegmentCache.getSegmentIds(segmentWindows),
                 segmentManager);
         return segmentIterator;
     }
@@ -119,9 +122,9 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
      * </pre>
      */
     @Override
-    public Stream<Pair<K, V>> getStream() {
+    public Stream<Pair<K, V>> getStream(SegmentWindow segmentWindow) {
         indexState.tryPerformOperation();
-        final PairIterator<K, V> iterator = openIterator();
+        final PairIterator<K, V> iterator = openIterator(segmentWindow);
         final PairReader<K, V> reader = new PairReaderRefreshedFromCache<>(
                 new PairSupplierFromIterator<>(iterator), cache,
                 valueTypeDescriptor);
@@ -132,11 +135,15 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         });
     }
 
-    public Stream<Pair<K, V>> getStreamSynchronized(final ReentrantLock lock) {
+    public Stream<Pair<K, V>> getStreamSynchronized(final ReentrantLock lock,
+            final SegmentWindow segmentWindow) {
         indexState.tryPerformOperation();
-        return StreamSupport.stream(new PairIteratorToSpliterator<K, V>(
-                new PairIteratorSynchronized<>(openIterator(), lock),
-                keyTypeDescriptor), false);
+        // TODO should be similar to getStream, is it broken?
+        return StreamSupport
+                .stream(new PairIteratorToSpliterator<K, V>(
+                        new PairIteratorSynchronized<>(
+                                openIterator(segmentWindow), lock),
+                        keyTypeDescriptor), false);
     }
 
     private void flushCache() {

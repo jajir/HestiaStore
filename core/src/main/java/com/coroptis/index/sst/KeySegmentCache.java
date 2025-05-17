@@ -170,7 +170,14 @@ public class KeySegmentCache<K> implements CloseableResource {
     }
 
     public List<SegmentId> getSegmentIds() {
-        return list.entrySet().stream().map(entry -> entry.getValue())
+        return getSegmentIds(SegmentWindow.unbounded());
+    }
+
+    public List<SegmentId> getSegmentIds(SegmentWindow segmentWindow) {
+        return list.entrySet().stream()//
+                .skip(segmentWindow.getIntOffset())//
+                .limit(segmentWindow.getIntLimit())//
+                .map(entry -> entry.getValue())//
                 .collect(Collectors.toList());
     }
 

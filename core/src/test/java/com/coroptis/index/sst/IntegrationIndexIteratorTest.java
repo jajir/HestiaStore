@@ -50,11 +50,12 @@ public class IntegrationIndexIteratorTest {
         index1.compact();
         logger.debug("verify that after that point no segment "
                 + "is loaded into memory.");
-        index1.getStream().forEach(pair -> {
+        index1.getStream(SegmentWindow.unbounded()).forEach(pair -> {
             assertTrue(data.contains(pair));
         });
 
-        assertEquals(data.size(), index1.getStream().count());
+        assertEquals(data.size(),
+                index1.getStream(SegmentWindow.unbounded()).count());
     }
 
     private Index<Integer, String> makeSstIndex() {

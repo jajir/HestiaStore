@@ -163,4 +163,52 @@ public class KeySegmentCacheTest {
         }
     }
 
+    @Test
+    public void test_getSegmentIds_noWindow() throws Exception {
+        try (KeySegmentCache<String> fif = new KeySegmentCache<>(
+                LOGGING_CONTEXT, directory, stringTd)) {
+            final List<SegmentId> list = fif.getSegmentIds();
+            assertEquals(1, list.get(0).getId());
+            assertEquals(2, list.get(1).getId());
+            assertEquals(3, list.get(2).getId());
+            assertEquals(4, list.get(3).getId());
+            assertEquals(4, list.size());
+        }
+    }
+
+    @Test
+    public void test_getSegmentIds_offSet_1() throws Exception {
+        try (KeySegmentCache<String> fif = new KeySegmentCache<>(
+                LOGGING_CONTEXT, directory, stringTd)) {
+            final List<SegmentId> list = fif
+                    .getSegmentIds(SegmentWindow.ofOffset(1));
+            assertEquals(2, list.get(0).getId());
+            assertEquals(3, list.get(1).getId());
+            assertEquals(4, list.get(2).getId());
+            assertEquals(3, list.size());
+        }
+    }
+
+    @Test
+    public void test_getSegmentIds_offSet_1_limit_2() throws Exception {
+        try (KeySegmentCache<String> fif = new KeySegmentCache<>(
+                LOGGING_CONTEXT, directory, stringTd)) {
+            final List<SegmentId> list = fif
+                    .getSegmentIds(SegmentWindow.of(1, 2));
+            assertEquals(2, list.get(0).getId());
+            assertEquals(3, list.get(1).getId());
+            assertEquals(2, list.size());
+        }
+    }
+
+    @Test
+    public void test_getSegmentIds_offSet_78_limit_2() throws Exception {
+        try (KeySegmentCache<String> fif = new KeySegmentCache<>(
+                LOGGING_CONTEXT, directory, stringTd)) {
+            final List<SegmentId> list = fif
+                    .getSegmentIds(SegmentWindow.of(78, 2));
+            assertEquals(0, list.size());
+        }
+    }
+
 }

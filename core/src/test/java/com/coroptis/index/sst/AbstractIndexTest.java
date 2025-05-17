@@ -12,7 +12,7 @@ import com.coroptis.index.AbstractDataTest;
 import com.coroptis.index.Pair;
 import com.coroptis.index.directory.Directory;
 
-public abstract class AbstractIndexTest extends AbstractDataTest{
+public abstract class AbstractIndexTest extends AbstractDataTest {
 
     private final Logger logger = LoggerFactory
             .getLogger(AbstractIndexTest.class);
@@ -31,7 +31,6 @@ public abstract class AbstractIndexTest extends AbstractDataTest{
             index.put(pair);
         }
     }
-
 
     /**
      * Open segment search and verify that found value for given key is equals
@@ -52,8 +51,8 @@ public abstract class AbstractIndexTest extends AbstractDataTest{
     }
 
     /**
-     * Open index search and verify that found value for given key is equals
-     * to expecetd value
+     * Open index search and verify that found value for given key is equals to
+     * expecetd value
      * 
      * @param <M>   key type
      * @param <N>   value type
@@ -62,8 +61,10 @@ public abstract class AbstractIndexTest extends AbstractDataTest{
      */
     protected <M, N> void verifyIndexData(final Index<M, N> index,
             final List<Pair<M, N>> pairs) {
-        final List<Pair<M, N>> data = toList(index.getStream());
-        assertEquals(pairs.size(), data.size(), "Unexpected number of pairs in index");
+        final List<Pair<M, N>> data = toList(
+                index.getStream(SegmentWindow.unbounded()));
+        assertEquals(pairs.size(), data.size(),
+                "Unexpected number of pairs in index");
         for (int i = 0; i < pairs.size(); i++) {
             final Pair<M, N> expectedPair = pairs.get(i);
             final Pair<M, N> realPair = data.get(i);

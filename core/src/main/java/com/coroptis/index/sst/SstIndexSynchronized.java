@@ -68,10 +68,10 @@ public class SstIndexSynchronized<K, V> implements Index<K, V> {
     }
 
     @Override
-    public Stream<Pair<K, V>> getStream() {
+    public Stream<Pair<K, V>> getStream(SegmentWindow segmentWindow) {
         lock.lock();
         try {
-            return index.getStreamSynchronized(lock);
+            return index.getStreamSynchronized(lock, segmentWindow);
         } finally {
             lock.unlock();
         }

@@ -56,7 +56,8 @@ public class IntegrationIndexConsistencyTest extends AbstractIndexTest {
     void test_reading_of_updated_values() throws Exception {
         final Index<Integer, Integer> index = makeIndex();
         writePairs(index, makeList(0));
-        try (final Stream<Pair<Integer, Integer>> stream = index.getStream()) {
+        try (final Stream<Pair<Integer, Integer>> stream = index
+                .getStream(SegmentWindow.unbounded())) {
             final AtomicInteger acx = new AtomicInteger();
             stream.forEach(pair -> {
                 int cx = acx.incrementAndGet();

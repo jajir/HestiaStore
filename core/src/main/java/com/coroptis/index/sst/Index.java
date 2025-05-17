@@ -37,9 +37,11 @@ public interface Index<K, V> extends CloseableResource {
      * Went through all records. In fact read all index data. Doesn't use
      * indexes and caches in segments.
      * 
+     * @param segmentWindows allows to limit examined segments. If empty then
+     *                       all segments are used.
      * @return stream of all data.
      */
-    Stream<Pair<K, V>> getStream();
+    Stream<Pair<K, V>> getStream(SegmentWindow segmentWindows);
 
     UnsortedDataFileStreamer<LoggedKey<K>, V> getLogStreamer();
 

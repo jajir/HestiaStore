@@ -92,7 +92,8 @@ public class IntegrationIndexTest extends AbstractIndexTest {
             index.put(i, "kachna");
             assertEquals("kachna", index.get(i));
         }
-        assertEquals(itemsInIndex, index.getStream().count());
+        assertEquals(itemsInIndex,
+                index.getStream(SegmentWindow.unbounded()).count());
         for (int i = 0; i < iterations; i++) {
             index.delete(i);
             assertNull(index.get(i));
@@ -110,7 +111,8 @@ public class IntegrationIndexTest extends AbstractIndexTest {
             assertEquals("kachna", index.get(i));
         }
         index.compact();
-        assertEquals(iterations, index.getStream().count());
+        assertEquals(iterations,
+                index.getStream(SegmentWindow.unbounded()).count());
         for (int i = 0; i < iterations; i++) {
             index.delete(i);
             assertNull(index.get(i));

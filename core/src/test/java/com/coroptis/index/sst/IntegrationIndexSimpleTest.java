@@ -116,7 +116,8 @@ public class IntegrationIndexSimpleTest {
         testData.stream().forEach(index1::put);
         index1.flush();
 
-        try (final Stream<Pair<Integer, String>> stream = index1.getStream()) {
+        try (final Stream<Pair<Integer, String>> stream = index1
+                .getStream(SegmentWindow.unbounded())) {
             final List<Pair<Integer, String>> list = stream
                     .collect(Collectors.toList());
             assertEquals(testData.size(), list.size());
@@ -136,9 +137,11 @@ public class IntegrationIndexSimpleTest {
         testData.stream().forEach(index1::put);
         index1.flush();
 
-        final List<Pair<Integer, String>> list1 = index1.getStream()
+        final List<Pair<Integer, String>> list1 = index1
+                .getStream(SegmentWindow.unbounded())
                 .collect(Collectors.toList());
-        final List<Pair<Integer, String>> list2 = index1.getStream()
+        final List<Pair<Integer, String>> list2 = index1
+                .getStream(SegmentWindow.unbounded())
                 .collect(Collectors.toList());
         assertEquals(testData.size(), list1.size());
         assertEquals(testData.size(), list2.size());
@@ -157,7 +160,8 @@ public class IntegrationIndexSimpleTest {
         index1.close();
 
         final Index<Integer, String> index2 = makeSstIndex();
-        final List<Pair<Integer, String>> list1 = index2.getStream()
+        final List<Pair<Integer, String>> list1 = index2
+                .getStream(SegmentWindow.unbounded())
                 .collect(Collectors.toList());
         assertEquals(testData.size(), list1.size());
     }
@@ -175,7 +179,8 @@ public class IntegrationIndexSimpleTest {
         index1.close();
 
         final Index<Integer, String> index2 = makeSstIndex();
-        final List<Pair<Integer, String>> list1 = index2.getStream()
+        final List<Pair<Integer, String>> list1 = index2
+                .getStream(SegmentWindow.unbounded())
                 .collect(Collectors.toList());
         assertEquals(1, list1.size());
     }
@@ -213,7 +218,8 @@ public class IntegrationIndexSimpleTest {
 
     private void verifyDataIndex(final Index<Integer, String> index,
             final List<Pair<Integer, String>> data) {
-        final List<Pair<Integer, String>> indexData = index.getStream()
+        final List<Pair<Integer, String>> indexData = index
+                .getStream(SegmentWindow.unbounded())
                 .collect(Collectors.toList());
         assertEquals(data.size(), indexData.size());
         for (int i = 0; i < data.size(); i++) {
