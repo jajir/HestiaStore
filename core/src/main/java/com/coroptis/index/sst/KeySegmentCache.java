@@ -77,10 +77,13 @@ public class KeySegmentCache<K> implements CloseableResource {
                 list.put(pair.getKey(), pair.getValue());
             }
         }
-        sanityCheck();
+        checkUniqueSegmentIds();
     }
 
-    public void sanityCheck() {
+    /**
+     * Verify, that all segment ids are unique.
+     */
+    public void checkUniqueSegmentIds() {
         final HashMap<SegmentId, K> tmp = new HashMap<SegmentId, K>();
         final AtomicBoolean fail = new AtomicBoolean(false);
         list.forEach((key, segmentId) -> {

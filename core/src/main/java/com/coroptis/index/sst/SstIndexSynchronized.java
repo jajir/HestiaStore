@@ -97,4 +97,15 @@ public class SstIndexSynchronized<K, V> implements Index<K, V> {
         }
 
     }
+
+    @Override
+    public void checkAndRepairConsistency() {
+        lock.lock();
+        try {
+            index.checkAndRepairConsistency();
+        } finally {
+            lock.unlock();
+        }
+    }
+
 }

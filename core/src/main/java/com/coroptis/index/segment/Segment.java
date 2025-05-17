@@ -78,6 +78,13 @@ public class Segment<K, V>
         segmentCompacter.optionallyCompact();
     }
 
+    public K checkAndRepairConsistency() {
+        final SegmentConsistencyChecker<K, V> consistencyChecker = new SegmentConsistencyChecker<>(
+                loggingContext, this,
+                segmentFiles.getKeyTypeDescriptor().getComparator());
+        return consistencyChecker.checkAndRepairConsistency();
+    }
+
     public PairIterator<K, V> openIterator() {
         final PairIterator<K, V> mergedPairIterator = new MergeDeltaCacheWithIndexIterator<>(
                 segmentFiles.getIndexSstFileForIteration().openIterator(),

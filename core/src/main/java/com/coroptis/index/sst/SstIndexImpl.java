@@ -251,6 +251,16 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
     }
 
     @Override
+    public void checkAndRepairConsistency() {
+        indexState.tryPerformOperation();
+        keySegmentCache.checkUniqueSegmentIds();
+        final IndexConsistencyChecker<K, V> checker = new IndexConsistencyChecker<>(
+                loggingContext, keySegmentCache, segmentManager,
+                keyTypeDescriptor);
+        checker.checkAndRepairConsistency();
+    }
+
+    @Override
     public void close() {
         flushCache();
         log.close();

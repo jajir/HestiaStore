@@ -26,6 +26,7 @@ public class IntegrationIndexConsistencyTest extends AbstractIndexTest {
     private final Logger logger = LoggerFactory
             .getLogger(IntegrationIndexConsistencyTest.class);
 
+    private final static int NUMBER_OF_TEST_PAIRS = 97;
     final Directory directory = new MemDirectory();
     final SegmentId id = SegmentId.of(27);
     final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
@@ -66,6 +67,17 @@ public class IntegrationIndexConsistencyTest extends AbstractIndexTest {
         }
     }
 
+    @Test
+    void test_search_for_missing_key_bigger_than_last_existing_one()
+            throws Exception {
+        final Index<Integer, Integer> index = makeIndex();
+        writePairs(index, makeList(888));
+        index.flush();
+        for (int i = 0; i < NUMBER_OF_TEST_PAIRS; i++) {
+            index.get(i * 2 + 1);
+        }
+    }
+
     private Index<Integer, Integer> makeIndex() {
         return Index.<Integer, Integer>builder()//
                 .withDirectory(directory)//
@@ -76,9 +88,9 @@ public class IntegrationIndexConsistencyTest extends AbstractIndexTest {
                 .withCustomConf()//
                 .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(10000) //
-                .withMaxNumberOfKeysInSegmentIndexPage(1000) //
+                .withMaxNumberOfKeysInSegmentIndexPage(10) //
                 .withMaxNumberOfKeysInCache(2) //
-                .withBloomFilterIndexSizeInBytes(1000) //
+                .withBloomFilterIndexSizeInBytes(0) //
                 .withBloomFilterNumberOfHashFunctions(4) //
                 .withUseFullLog(false) //
                 .withName("test_index") //
@@ -87,8 +99,8 @@ public class IntegrationIndexConsistencyTest extends AbstractIndexTest {
 
     protected List<Pair<Integer, Integer>> makeList(final int no) {
         final List<Pair<Integer, Integer>> out = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
-            out.add(Pair.of(i, no));
+        for (int i = 0; i < NUMBER_OF_TEST_PAIRS; i++) {
+            out.add(Pair.of(i * 2, no));
         }
         return out;
     }
