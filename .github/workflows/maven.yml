@@ -106,7 +106,7 @@ jobs:
       run: |
         VULN_COUNT=$(jq '[.dependencies[] | select(.vulnerabilities and (.vulnerabilities | length > 0)) | .vulnerabilities[]] | length' core/target/dependency-check-report.json)
         echo "OWASP Vulnerabilities count: $VULN_COUNT"
-        echo "VULN_COUNT=$count" >> $GITHUB_OUTPUT
+        echo "VULN_COUNT=$VULN_COUNT" >> $GITHUB_ENV
 
     - name: OWASP vulnerabilities - Generate badge
       uses: emibcn/badge-action@808173dd03e2f30c980d03ee49e181626088eee8
