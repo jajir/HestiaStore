@@ -11,13 +11,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.coroptis.index.LoggingContext;
-
 @ExtendWith(MockitoExtension.class)
 public class SegmentCompacterTest {
-
-    private final static LoggingContext LOGGING_CONTEXT = new LoggingContext(
-            "test_index");
 
     @Mock
     private Segment<Integer, String> segment;
@@ -38,8 +33,8 @@ public class SegmentCompacterTest {
 
     @BeforeEach
     void setUp() {
-        sc = new SegmentCompacter<>(LOGGING_CONTEXT, segment, segmentFiles,
-                segmentConf, versionController, segmentPropertiesManager);
+        sc = new SegmentCompacter<>(segment, segmentFiles, segmentConf,
+                versionController, segmentPropertiesManager);
     }
 
     @Test

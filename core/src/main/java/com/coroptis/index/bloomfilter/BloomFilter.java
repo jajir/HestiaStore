@@ -2,9 +2,10 @@ package com.coroptis.index.bloomfilter;
 
 import java.util.Objects;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.coroptis.index.CloseableResource;
-import com.coroptis.index.ContextAwareLogger;
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.datatype.ConvertorToBytes;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.FileReader;
@@ -14,7 +15,7 @@ public class BloomFilter<K> implements CloseableResource {
 
     private final static String TEMP_FILE_EXTENSION = ".tmp";
 
-    private final ContextAwareLogger logger;
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final Directory directory;
 
@@ -38,9 +39,8 @@ public class BloomFilter<K> implements CloseableResource {
         return new BloomFilterBuilder<>();
     }
 
-    BloomFilter(final LoggingContext loggingContext, final Directory directory,
-            final String bloomFilterFileName, final int numberOfHashFunctions,
-            final int indexSizeInBytes,
+    BloomFilter(final Directory directory, final String bloomFilterFileName,
+            final int numberOfHashFunctions, final int indexSizeInBytes,
             final ConvertorToBytes<K> convertorToBytes,
             final String relatedObjectName, final int diskIoBufferSize) {
         this.directory = Objects.requireNonNull(directory,
@@ -55,7 +55,6 @@ public class BloomFilter<K> implements CloseableResource {
         this.numberOfHashFunctions = numberOfHashFunctions;
         this.bloomFilterStats = new BloomFilterStats();
         this.diskIoBufferSize = diskIoBufferSize;
-        this.logger = new ContextAwareLogger(BloomFilter.class, loggingContext);
         if (numberOfHashFunctions <= 0) {
             throw new IllegalArgumentException(
                     String.format("Number of hash function cant be '0'"));

@@ -2,7 +2,7 @@ package com.coroptis.index.sst;
 
 import java.util.Objects;
 
-public class SsstIndexConf {
+public class IndexConf {
 
     /*
      * Segments configuration
@@ -26,7 +26,7 @@ public class SsstIndexConf {
 
     private final int diskIoBufferSize;
 
-    SsstIndexConf(final long maxNumberOfKeysInSegmentCache, //
+    IndexConf(final long maxNumberOfKeysInSegmentCache, //
             final long maxNumberOfKeysInSegmentCacheDuringFlushing, //
             final int maxNumberOfKeysInSegmentIndexPage, //
             final int maxNumberOfKeysInCache, //

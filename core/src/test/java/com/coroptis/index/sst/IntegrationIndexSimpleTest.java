@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
@@ -30,8 +29,6 @@ public class IntegrationIndexSimpleTest {
     private final Logger logger = LoggerFactory
             .getLogger(IntegrationIndexSimpleTest.class);
 
-    private final static LoggingContext LOGGING_CONTEXT = new LoggingContext(
-            "test_index");
     final Directory directory = new MemDirectory();
     final SegmentId id = SegmentId.of(27);
     final TypeDescriptorString tds = new TypeDescriptorString();
@@ -297,7 +294,6 @@ public class IntegrationIndexSimpleTest {
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
                 .withMaxNumberOfKeysInSegmentCache(2)//
-                .withLoggingContext(LOGGING_CONTEXT)//
                 .build();
     }
 

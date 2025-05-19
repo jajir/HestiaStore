@@ -20,7 +20,7 @@ public class SegmentDataCache<K, V> {
 
     final Cache<SegmentId, SegmentData<K, V>> cache;
 
-    SegmentDataCache(final SsstIndexConf conf) {
+    SegmentDataCache(final IndexConf conf) {
         cache = new CacheLru<>(conf.getMaxNumberOfSegmentsInCache(),
                 (segmenId, segmentData) -> {
                     segmentData.close();
@@ -51,7 +51,7 @@ public class SegmentDataCache<K, V> {
         return cache.get(id).isPresent();
     }
 
-    public void invalidateAll(){
+    public void invalidateAll() {
         cache.invalidateAll();
     }
 

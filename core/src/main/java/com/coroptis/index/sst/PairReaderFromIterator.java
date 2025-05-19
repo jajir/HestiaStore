@@ -6,12 +6,19 @@ import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.PairReader;
 
-public class PairSupplierFromIterator<K, V> implements PairReader<K, V> {
+/**
+ * Convert PairIterator to PairReader.
+ *
+ * @param <K> the type of the key
+ * @param <V> the type of the value
+ */
+public class PairReaderFromIterator<K, V> implements PairReader<K, V> {
 
     private final PairIterator<K, V> pairIterator;
 
-    PairSupplierFromIterator(final PairIterator<K, V> pairIterator) {
-        this.pairIterator = Objects.requireNonNull(pairIterator);
+    PairReaderFromIterator(final PairIterator<K, V> pairIterator) {
+        this.pairIterator = Objects.requireNonNull(pairIterator,
+                "Pair iterator cannot be null");
     }
 
     @Override

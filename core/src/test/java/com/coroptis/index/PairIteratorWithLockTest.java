@@ -31,8 +31,7 @@ public class PairIteratorWithLockTest {
 
     @BeforeEach
     void setUp() {
-        final LoggingContext loggingContext = new LoggingContext("test_index");
-        iterator = new PairIteratorWithLock<>(loggingContext, iter, lock,
+        iterator = new PairIteratorWithLock<>(iter, lock,
                 SEGMENT_ID.toString());
     }
 

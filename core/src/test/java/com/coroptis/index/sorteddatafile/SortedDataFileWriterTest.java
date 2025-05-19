@@ -10,7 +10,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.datatype.TypeDescriptorString;
@@ -20,8 +19,6 @@ import com.coroptis.index.directory.FileWriter;
 @ExtendWith(MockitoExtension.class)
 public class SortedDataFileWriterTest {
 
-    private final static LoggingContext LOGGING_CONTEXT = new LoggingContext(
-            "test_index");
     private static final Pair<String, Integer> PAIR_0 = Pair.of("key0", -100);
     private static final Pair<String, Integer> PAIR_1 = Pair.of("key1", 100);
     private static final Pair<String, Integer> PAIR_2 = Pair.of("key2", 200);
@@ -39,8 +36,7 @@ public class SortedDataFileWriterTest {
     @Test
     public void test_constructor_valueWriter_is_null() {
         final Exception e = assertThrows(NullPointerException.class,
-                () -> new SortedDataFileWriter<>(LOGGING_CONTEXT, null,
-                        fileWriter, stringTd));
+                () -> new SortedDataFileWriter<>(null, fileWriter, stringTd));
 
         assertEquals("valueWriter is required", e.getMessage());
     }
@@ -48,8 +44,7 @@ public class SortedDataFileWriterTest {
     @Test
     void test_constructor_writer_is_null() {
         final Exception e = assertThrows(NullPointerException.class,
-                () -> new SortedDataFileWriter<>(LOGGING_CONTEXT, valueWriter,
-                        null, stringTd));
+                () -> new SortedDataFileWriter<>(valueWriter, null, stringTd));
 
         assertEquals("fileWriter is required", e.getMessage());
     }
@@ -57,8 +52,8 @@ public class SortedDataFileWriterTest {
     @Test
     void test_constructor_keyTypeDescriptor_is_null() {
         final Exception e = assertThrows(NullPointerException.class,
-                () -> new SortedDataFileWriter<>(LOGGING_CONTEXT, valueWriter,
-                        fileWriter, null));
+                () -> new SortedDataFileWriter<>(valueWriter, fileWriter,
+                        null));
 
         assertEquals("keyTypeDescriptor is required", e.getMessage());
     }
@@ -66,7 +61,7 @@ public class SortedDataFileWriterTest {
     @Test
     void test_write_lower_key() {
         try (SortedDataFileWriter<String, Integer> writer = new SortedDataFileWriter<>(
-                LOGGING_CONTEXT, valueWriter, fileWriter, stringTd)) {
+                valueWriter, fileWriter, stringTd)) {
             writer.write(PAIR_1);
             final Exception e = assertThrows(IllegalArgumentException.class,
                     () -> writer.write(PAIR_0));
@@ -80,7 +75,7 @@ public class SortedDataFileWriterTest {
     @Test
     void test_write_same_key() {
         try (SortedDataFileWriter<String, Integer> writer = new SortedDataFileWriter<>(
-                LOGGING_CONTEXT, valueWriter, fileWriter, stringTd)) {
+                valueWriter, fileWriter, stringTd)) {
             writer.write(PAIR_1);
             final Exception e = assertThrows(IllegalArgumentException.class,
                     () -> writer.write(PAIR_0));
@@ -94,7 +89,7 @@ public class SortedDataFileWriterTest {
     @Test
     void test_writeFull_write_same_key() {
         try (SortedDataFileWriter<String, Integer> writer = new SortedDataFileWriter<>(
-                LOGGING_CONTEXT, valueWriter, fileWriter, stringTd)) {
+                valueWriter, fileWriter, stringTd)) {
             writer.writeFull(PAIR_1);
             final Exception e = assertThrows(IllegalArgumentException.class,
                     () -> writer.write(PAIR_0));
@@ -108,7 +103,7 @@ public class SortedDataFileWriterTest {
     @Test
     public void test_write() {
         try (SortedDataFileWriter<String, Integer> writer = new SortedDataFileWriter<>(
-                LOGGING_CONTEXT, valueWriter, fileWriter, stringTd)) {
+                valueWriter, fileWriter, stringTd)) {
             writer.write(PAIR_1);
             verify(valueWriter).write(fileWriter, 100);
             writer.write(PAIR_2);
@@ -119,7 +114,7 @@ public class SortedDataFileWriterTest {
     @Test
     public void test_writeFull_all_writes_are_full() {
         try (SortedDataFileWriter<String, Integer> writer = new SortedDataFileWriter<>(
-                LOGGING_CONTEXT, valueWriter, fileWriter, stringTd)) {
+                valueWriter, fileWriter, stringTd)) {
             long ret = writer.writeFull(PAIR_1);
             assertEquals(0, ret);
 
@@ -135,7 +130,7 @@ public class SortedDataFileWriterTest {
     @Test
     public void test_writeFull_mixed() {
         try (SortedDataFileWriter<String, Integer> writer = new SortedDataFileWriter<>(
-                LOGGING_CONTEXT, valueWriter, fileWriter, stringTd)) {
+                valueWriter, fileWriter, stringTd)) {
             writer.write(PAIR_1);
             writer.write(PAIR_2);
             writer.write(PAIR_3);

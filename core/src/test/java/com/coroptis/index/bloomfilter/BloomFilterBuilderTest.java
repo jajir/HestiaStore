@@ -7,16 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.MemDirectory;
 
 public class BloomFilterBuilderTest {
-
-    private final static LoggingContext LOGGING_CONTEXT = new LoggingContext(
-            "test_index");
 
     private final static TypeDescriptor<String> TDS = new TypeDescriptorString();
 
@@ -37,7 +33,6 @@ public class BloomFilterBuilderTest {
                 .withIndexSizeInBytes(1024)//
                 .withNumberOfHashFunctions(2)//
                 .withRelatedObjectName(OBJECT_NAME)//
-                .withLoggingContext(LOGGING_CONTEXT)//
                 .build();
         assertNotNull(bf);
         assertEquals(2, bf.getNumberOfHashFunctions());
@@ -53,7 +48,6 @@ public class BloomFilterBuilderTest {
                 .withIndexSizeInBytes(1024)//
                 .withNumberOfHashFunctions(2)//
                 .withRelatedObjectName(OBJECT_NAME)//
-                .withLoggingContext(LOGGING_CONTEXT)//
                 .build();
         assertNotNull(bf);
         assertEquals(2, bf.getNumberOfHashFunctions());
@@ -69,7 +63,6 @@ public class BloomFilterBuilderTest {
                 .withIndexSizeInBytes(0)//
                 .withNumberOfHashFunctions(2)//
                 .withRelatedObjectName(OBJECT_NAME)//
-                .withLoggingContext(LOGGING_CONTEXT)//
                 .build();
         assertNotNull(bf);
         assertEquals(2, bf.getNumberOfHashFunctions());
@@ -84,7 +77,6 @@ public class BloomFilterBuilderTest {
                 .withConvertorToBytes(TDS.getConvertorToBytes())//
                 .withIndexSizeInBytes(0)//
                 .withRelatedObjectName(OBJECT_NAME)//
-                .withLoggingContext(LOGGING_CONTEXT)//
                 .build();
         assertNotNull(bf);
         assertEquals(1, bf.getNumberOfHashFunctions());
@@ -101,7 +93,6 @@ public class BloomFilterBuilderTest {
                 .withNumberOfHashFunctions(2)//
                 .withProbabilityOfFalsePositive(null)//
                 .withRelatedObjectName(OBJECT_NAME)//
-                .withLoggingContext(LOGGING_CONTEXT)//
                 .build();
         assertNotNull(bf);
         assertEquals(2, bf.getNumberOfHashFunctions());
@@ -118,7 +109,6 @@ public class BloomFilterBuilderTest {
                 .withProbabilityOfFalsePositive(0.0001)//
                 .withIndexSizeInBytes(1_000_000)//
                 .withRelatedObjectName(OBJECT_NAME)//
-                .withLoggingContext(LOGGING_CONTEXT)//
                 .build();
         assertNotNull(bf);
         assertEquals(1, bf.getNumberOfHashFunctions());
@@ -134,7 +124,6 @@ public class BloomFilterBuilderTest {
                 .withNumberOfKeys(1000001L)//
                 .withProbabilityOfFalsePositive(0.0001)//
                 .withRelatedObjectName(OBJECT_NAME)//
-                .withLoggingContext(LOGGING_CONTEXT)//
                 .build();
         assertNotNull(bf);
         assertEquals(14, bf.getNumberOfHashFunctions());
@@ -151,7 +140,6 @@ public class BloomFilterBuilderTest {
                 .withProbabilityOfFalsePositive(0.0001)//
                 .withNumberOfHashFunctions(2)//
                 .withRelatedObjectName(OBJECT_NAME)//
-                .withLoggingContext(LOGGING_CONTEXT)//
                 .build();
         assertNotNull(bf);
         assertEquals(2, bf.getNumberOfHashFunctions());
@@ -164,7 +152,6 @@ public class BloomFilterBuilderTest {
                 () -> BloomFilter.<String>builder()//
                         .withDirectory(directory)//
                         .withBloomFilterFileName(FILE_NAME)//
-                        .withLoggingContext(LOGGING_CONTEXT)//
                         .withConvertorToBytes(TDS.getConvertorToBytes())//
                         .withProbabilityOfFalsePositive(0.0001)//
                         .withNumberOfHashFunctions(2)//
@@ -181,7 +168,6 @@ public class BloomFilterBuilderTest {
                         .withBloomFilterFileName(FILE_NAME)//
                         .withConvertorToBytes(TDS.getConvertorToBytes())//
                         .withDirectory(directory)//
-                        .withLoggingContext(LOGGING_CONTEXT)//
                         .withIndexSizeInBytes(0)//
                         .withNumberOfHashFunctions(0)//
                         .build());
@@ -215,21 +201,6 @@ public class BloomFilterBuilderTest {
 
         assertNotNull(e);
         assertEquals("Bloom filter file name is not set.", e.getMessage());
-    }
-
-    @Test
-    void test_missing_loggingContext() {
-        final Exception e = assertThrows(NullPointerException.class,
-                () -> BloomFilter.<String>builder()//
-                        .withDirectory(directory)//
-                        .withBloomFilterFileName(FILE_NAME)//
-                        .withConvertorToBytes(TDS.getConvertorToBytes())//
-                        .withProbabilityOfFalsePositive(0.0001)//
-                        .withNumberOfHashFunctions(2)//
-                        .build());
-
-        assertNotNull(e);
-        assertEquals("Logging context is not set.", e.getMessage());
     }
 
     @Test
@@ -293,7 +264,6 @@ public class BloomFilterBuilderTest {
                 .withNumberOfKeys(10001L)//
                 .withNumberOfHashFunctions(2)//
                 .withRelatedObjectName(OBJECT_NAME)//
-                .withLoggingContext(LOGGING_CONTEXT)//
                 .build();
     }
 

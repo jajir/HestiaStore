@@ -37,6 +37,17 @@ public interface Index<K, V> extends CloseableResource {
      * Went through all records. In fact read all index data. Doesn't use
      * indexes and caches in segments.
      * 
+     * This method should be closed at the end of usage. For example:
+     * 
+     * <pre>
+     * try (final Stream&#60;Pair&#60;Integer, String&#62;&#62; stream = index.getStream()) {
+     *     final List&#60;Pair&#60;Integer, String&#62;&#62; list = stream
+     *             .collect(Collectors.toList());
+     *     // some other code
+     * }
+     * 
+     * </pre>
+     * 
      * @param segmentWindows allows to limit examined segments. If empty then
      *                       all segments are used.
      * @return stream of all data.
@@ -77,4 +88,11 @@ public interface Index<K, V> extends CloseableResource {
      * @throws IndexException if an uncorrectable inconsistency is detected.
      */
     void checkAndRepairConsistency();
+
+    /**
+     * Returns the configuration of the index.
+     *
+     * @return the configuration of the index
+     */
+    IndexConf getConfiguration();
 }

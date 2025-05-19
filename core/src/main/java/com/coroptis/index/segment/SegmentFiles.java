@@ -2,7 +2,6 @@ package com.coroptis.index.segment;
 
 import java.util.Objects;
 
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.scarceindex.ScarceIndex;
@@ -24,19 +23,16 @@ public class SegmentFiles<K, V> {
     private final static String TEMP_FILE_NAME_EXTENSION = ".tmp";
     private final static String BOOM_FILTER_FILE_NAME_EXTENSION = ".bloom-filter";
 
-    private final LoggingContext loggingContext;
     private final Directory directory;
     private final SegmentId id;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final int diskIoBufferSize;
 
-    public SegmentFiles(final LoggingContext loggingContext,
-            final Directory directory, final SegmentId id,
+    public SegmentFiles(final Directory directory, final SegmentId id,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final int diskIoBufferSize) {
-        this.loggingContext = Objects.requireNonNull(loggingContext);
         this.directory = Objects.requireNonNull(directory);
         this.id = Objects.requireNonNull(id);
         this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
@@ -77,7 +73,6 @@ public class SegmentFiles<K, V> {
                 .withKeyTypeDescriptor(keyTypeDescriptor) //
                 .withValueTypeDescriptor(valueTypeDescriptor) //
                 .withDiskIoBufferSize(diskIoBufferSize)//
-                .withLoggingContext(loggingContext) //
                 .build();
     }
 
@@ -88,7 +83,6 @@ public class SegmentFiles<K, V> {
                 .withKeyTypeDescriptor(keyTypeDescriptor) //
                 .withValueTypeDescriptor(valueTypeDescriptor) //
                 .withDiskIoBufferSize(diskIoBufferSize)//
-                .withLoggingContext(loggingContext) //
                 .build();
     }
 
@@ -99,7 +93,6 @@ public class SegmentFiles<K, V> {
                 .withKeyTypeDescriptor(keyTypeDescriptor) //
                 .withValueTypeDescriptor(valueTypeDescriptor) //
                 .withDiskIoBufferSize(diskIoBufferSize)//
-                .withLoggingContext(loggingContext) //
                 .build();
     }
 
@@ -110,7 +103,6 @@ public class SegmentFiles<K, V> {
                 .withKeyTypeDescriptor(keyTypeDescriptor) //
                 .withValueTypeDescriptor(valueTypeDescriptor) //
                 .withDiskIoBufferSize(diskIoBufferSize)//
-                .withLoggingContext(loggingContext) //
                 .build();
     }
 
@@ -121,7 +113,6 @@ public class SegmentFiles<K, V> {
                 .withKeyTypeDescriptor(keyTypeDescriptor) //
                 .withValueTypeDescriptor(valueTypeDescriptor) //
                 .withDiskIoBufferSize(diskIoBufferSize)//
-                .withLoggingContext(loggingContext) //
                 .build();
     }
 
@@ -131,7 +122,6 @@ public class SegmentFiles<K, V> {
                 .withFileName(getTempScarceFileName())//
                 .withKeyTypeDescriptor(getKeyTypeDescriptor())//
                 .withDiskIoBufferSize(diskIoBufferSize) //
-                .withLoggingContext(loggingContext) //
                 .build();
     }
 

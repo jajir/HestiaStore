@@ -3,19 +3,19 @@ package com.coroptis.index;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class PairIteratorWithLock<K, V> implements PairIterator<K, V> {
 
-    private final ContextAwareLogger logger;
+    private final Logger logger = LoggerFactory.getLogger(getClass());
     private final PairIterator<K, V> iterator;
     private final OptimisticLock lock;
     private final String lockedObjectName;
 
-    public PairIteratorWithLock(final LoggingContext loggingContext,
-            final PairIterator<K, V> iterator,
+    public PairIteratorWithLock(final PairIterator<K, V> iterator,
             final OptimisticLock optimisticLock,
             final String lockedObjectName) {
-        this.logger = new ContextAwareLogger(PairIteratorWithLock.class,
-                loggingContext);
         this.iterator = Objects.requireNonNull(iterator,
                 "Pair iterator can't be null.");
         this.lock = Objects.requireNonNull(optimisticLock,

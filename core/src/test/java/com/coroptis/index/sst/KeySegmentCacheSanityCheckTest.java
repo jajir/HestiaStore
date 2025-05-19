@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
@@ -15,8 +14,6 @@ import com.coroptis.index.sorteddatafile.SortedDataFileWriter;
 
 public class KeySegmentCacheSanityCheckTest {
 
-    private final static LoggingContext LOGGING_CONTEXT = new LoggingContext(
-            "test_index");
     private final TypeDescriptorString stringTd = new TypeDescriptorString();
     private final TypeDescriptorSegmentId integerTd = new TypeDescriptorSegmentId();
     private final Directory directory = new MemDirectory();
@@ -29,8 +26,7 @@ public class KeySegmentCacheSanityCheckTest {
     @Test
     public void test_sanityCheck() throws Exception {
         final SortedDataFile<String, SegmentId> sdf = new SortedDataFile<>(
-                LOGGING_CONTEXT, directory, "index.map", stringTd, integerTd,
-                1024);
+                directory, "index.map", stringTd, integerTd, 1024);
 
         try (SortedDataFileWriter<String, SegmentId> writer = sdf
                 .openWriter()) {
@@ -43,8 +39,8 @@ public class KeySegmentCacheSanityCheckTest {
         }
 
         assertThrows(IllegalStateException.class, () -> {
-            try (KeySegmentCache<String> fif = new KeySegmentCache<>(
-                    LOGGING_CONTEXT, directory, stringTd)) {
+            try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
+                    stringTd)) {
             }
         }, "Unable to load scarce index, sanity check failed.");
 

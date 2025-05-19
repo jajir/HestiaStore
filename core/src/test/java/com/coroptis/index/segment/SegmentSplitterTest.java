@@ -15,15 +15,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 
 @ExtendWith(MockitoExtension.class)
 class SegmentSplitterTest {
-
-    private final static LoggingContext LOGGING_CONTEXT = new LoggingContext(
-            "test_index");
 
     private final static SegmentId SEGMENT_ID = SegmentId.of(27);
 
@@ -70,7 +66,7 @@ class SegmentSplitterTest {
 
     @BeforeEach
     void setUp() {
-        splitter = new SegmentSplitter<>(LOGGING_CONTEXT, segment, segmentFiles,
+        splitter = new SegmentSplitter<>(segment, segmentFiles,
                 versionController, segmentPropertiesManager,
                 deltaCacheController, segmentManager);
     }

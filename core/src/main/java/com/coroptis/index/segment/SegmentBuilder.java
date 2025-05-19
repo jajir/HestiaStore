@@ -2,7 +2,6 @@ package com.coroptis.index.segment;
 
 import java.util.Objects;
 
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
 
@@ -17,7 +16,6 @@ public class SegmentBuilder<K, V> {
 
     private final static int DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES = 1024 * 4;
 
-    private LoggingContext loggingContext;
     private Directory directory;
     private SegmentId id;
     private TypeDescriptor<K> keyTypeDescriptor;
@@ -37,12 +35,6 @@ public class SegmentBuilder<K, V> {
 
     SegmentBuilder() {
 
-    }
-
-    public SegmentBuilder<K, V> withLoggingContext(
-            final LoggingContext loggingContext) {
-        this.loggingContext = loggingContext;
-        return this;
     }
 
     public SegmentBuilder<K, V> withDirectory(final Directory directory) {
@@ -155,9 +147,6 @@ public class SegmentBuilder<K, V> {
             throw new IllegalArgumentException(
                     "KeyTypeDescriptor can't be null");
         }
-        if (loggingContext == null) {
-            throw new IllegalArgumentException("LoggingContext can't be null");
-        }
         if (valueTypeDescriptor == null) {
             throw new IllegalArgumentException(
                     "ValueTypeDescriptor can't be null");
@@ -184,8 +173,8 @@ public class SegmentBuilder<K, V> {
                     bloomFilterProbabilityOfFalsePositive, diskIoBufferSize);
         }
         if (segmentFiles == null) {
-            segmentFiles = new SegmentFiles<>(loggingContext, directory, id,
-                    keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize);
+            segmentFiles = new SegmentFiles<>(directory, id, keyTypeDescriptor,
+                    valueTypeDescriptor, diskIoBufferSize);
         }
         if (segmentPropertiesManager == null) {
             segmentPropertiesManager = new SegmentPropertiesManager(
@@ -193,8 +182,7 @@ public class SegmentBuilder<K, V> {
         }
         if (segmentDataProvider == null) {
             final SegmentDataSupplier<K, V> segmentDataSupplier = new SegmentDataSupplier<>(
-                    loggingContext, segmentFiles, segmentConf,
-                    segmentPropertiesManager);
+                    segmentFiles, segmentConf, segmentPropertiesManager);
             final SegmentDataFactory<K, V> segmentDataFactory = new SegmentDataFactoryImpl<>(
                     segmentDataSupplier);
             segmentDataProvider = new SegmentDataProviderSimple<>(
@@ -206,14 +194,14 @@ public class SegmentBuilder<K, V> {
                 segmentFiles.getValueTypeDescriptor(), supplier.get(),
                 segmentDataProvider);
         final SegmentManager<K, V> segmentManager = new SegmentManager<>(
-                loggingContext, segmentFiles, segmentPropertiesManager,
-                segmentConf, segmentDataProvider,
+                segmentFiles, segmentPropertiesManager, segmentConf,
+                segmentDataProvider,
                 new SegmentDeltaCacheController<>(segmentFiles,
                         segmentPropertiesManager, segmentDataProvider));
 
-        return new Segment<>(loggingContext, segmentFiles, segmentConf,
-                versionController, segmentPropertiesManager,
-                segmentDataProvider, segmentSearcher, segmentManager);
+        return new Segment<>(segmentFiles, segmentConf, versionController,
+                segmentPropertiesManager, segmentDataProvider, segmentSearcher,
+                segmentManager);
     }
 
 }

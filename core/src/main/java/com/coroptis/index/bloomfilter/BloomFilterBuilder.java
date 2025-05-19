@@ -2,7 +2,6 @@ package com.coroptis.index.bloomfilter;
 
 import java.util.Objects;
 
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.datatype.ConvertorToBytes;
 import com.coroptis.index.directory.Directory;
 
@@ -11,7 +10,6 @@ public class BloomFilterBuilder<K> {
     private final static double DEFAULT_PROBABILITY_OF_FALSE_POSITIVE = 0.01;
     private final static int DEFAULT_DISK_IO_BUFFER_SIZE = 2 * 1024;
 
-    private LoggingContext loggingContext = null;
     private Directory directory;
     private String bloomFilterFileName;
     private ConvertorToBytes<K> convertorToBytes;
@@ -28,12 +26,6 @@ public class BloomFilterBuilder<K> {
 
     public BloomFilterBuilder<K> withDirectory(final Directory directory) {
         this.directory = directory;
-        return this;
-    }
-
-    public BloomFilterBuilder<K> withLoggingContext(
-            final LoggingContext loggingContext) {
-        this.loggingContext = loggingContext;
         return this;
     }
 
@@ -92,7 +84,6 @@ public class BloomFilterBuilder<K> {
                 "Bloom filter file name is not set.");
         Objects.requireNonNull(convertorToBytes,
                 "Convertor to bytes is not set.");
-        Objects.requireNonNull(loggingContext, "Logging context is not set.");
         if (numberOfKeys == null && indexSizeInBytes == null) {
             throw new IllegalStateException("Number of keys is not set.");
         }
@@ -117,7 +108,7 @@ public class BloomFilterBuilder<K> {
                         indexSizeInBytes / (double) numberOfKeys * Math.log(2));
             }
         }
-        return new BloomFilter<>(loggingContext, directory, bloomFilterFileName,
+        return new BloomFilter<>(directory, bloomFilterFileName,
                 numberOfHashFunctions, indexSizeInBytes, convertorToBytes,
                 relatedObjectName, diskIoBufferSize);
     }

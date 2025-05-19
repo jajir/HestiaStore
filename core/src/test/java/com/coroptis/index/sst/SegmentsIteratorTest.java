@@ -15,7 +15,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.segment.Segment;
@@ -26,8 +25,6 @@ class SegmentsIteratorTest {
 
     private final static SegmentId SEGMENT_ID_17 = SegmentId.of(17);
     private final static SegmentId SEGMENT_ID_23 = SegmentId.of(23);
-    private final static LoggingContext LOGGING_CONTEXT = new LoggingContext(
-            "test_index");
 
     @Mock
     private SegmentManager<String, String> segmentManager;
@@ -47,7 +44,7 @@ class SegmentsIteratorTest {
     @Test
     void test_there_is_no_segment() {
         try (SegmentsIterator<String, String> iterator = new SegmentsIterator<>(
-                LOGGING_CONTEXT, new ArrayList<>(), segmentManager)) {
+                new ArrayList<>(), segmentManager)) {
             assertFalse(iterator.hasNext());
             assertFalse(iterator.hasNext());
             assertFalse(iterator.hasNext());
@@ -66,7 +63,7 @@ class SegmentsIteratorTest {
         tst.add(SEGMENT_ID_17);
 
         try (SegmentsIterator<String, String> iterator = new SegmentsIterator<>(
-                LOGGING_CONTEXT, tst, segmentManager)) {
+                tst, segmentManager)) {
             assertTrue(iterator.hasNext());
             final Pair<String, String> pair1 = iterator.next();
             assertEquals("key1", pair1.getKey());
@@ -95,7 +92,7 @@ class SegmentsIteratorTest {
         tst.add(SEGMENT_ID_23);
 
         try (SegmentsIterator<String, String> iterator = new SegmentsIterator<>(
-                LOGGING_CONTEXT, tst, segmentManager)) {
+                tst, segmentManager)) {
             assertTrue(iterator.hasNext());
             final Pair<String, String> pair1 = iterator.next();
             assertEquals("key1", pair1.getKey());
@@ -120,8 +117,8 @@ class SegmentsIteratorTest {
         final ArrayList<SegmentId> tst = new ArrayList<SegmentId>();
         tst.add(SEGMENT_ID_17);
 
-        SegmentsIterator<String, String> iterator = new SegmentsIterator<>(
-                LOGGING_CONTEXT, tst, segmentManager);
+        SegmentsIterator<String, String> iterator = new SegmentsIterator<>(tst,
+                segmentManager);
         iterator.close();
 
         verify(pairIterator17, atLeastOnce()).close();

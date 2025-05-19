@@ -3,7 +3,7 @@
   <Appenders>
     <Console name="Console" target="SYSTEM_OUT">
       <PatternLayout
-          pattern="%style{%d{ISO8601}}{white} %highlight{%-5level }[%style{%t}{bright,blue}] %style{%-C{1.mv}}{bright,yellow}: %msg%n%throwable" />
+          pattern="%style{%d{ISO8601}}{white} %highlight{%-5level }[%style{%t}{bright,blue}] index='%style{%X{index.name}}{magenta}' %style{%-C{1.mv}}{bright,yellow}: %msg%n%throwable" />
     </Console>
     <!--
       following is debug level fixed width 6 chars
@@ -11,7 +11,7 @@
     -->
   </Appenders>
   <Loggers>
-    <Root level="info"> 
+    <Root level="debug"> 
       <AppenderRef ref="Console"/>
     </Root>
   </Loggers>

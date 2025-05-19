@@ -9,7 +9,6 @@ import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
 
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.PairWriter;
@@ -20,8 +19,6 @@ import com.coroptis.index.directory.MemDirectory;
 
 public class IntegrationSegmentWriteConsistencyTest {
 
-    private final static LoggingContext LOGGING_CONTEXT = new LoggingContext(
-            "test_index");
     final List<String> values = List.of("aaa", "bbb", "ccc", "ddd", "eee",
             "fff");
     final List<Pair<Integer, String>> data = IntStream
@@ -71,7 +68,6 @@ public class IntegrationSegmentWriteConsistencyTest {
                 .withMaxNumberOfKeysInIndexPage(2)//
                 .withMaxNumberOfKeysInSegmentCache(3)//
                 .withBloomFilterIndexSizeInBytes(0)//
-                .withLoggingContext(LOGGING_CONTEXT)//
                 .build();
         return seg;
     }

@@ -3,9 +3,10 @@ package com.coroptis.index.sst;
 import java.util.Comparator;
 import java.util.Objects;
 
-import com.coroptis.index.ContextAwareLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.coroptis.index.IndexException;
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.segment.Segment;
 import com.coroptis.index.segment.SegmentId;
@@ -20,18 +21,15 @@ import com.coroptis.index.segment.SegmentId;
  * @param <V>
  */
 public class IndexConsistencyChecker<K, V> {
-    private final ContextAwareLogger logger;
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final SegmentManager<K, V> segmentManager;
     private final KeySegmentCache<K> keySegmentCache;
     private final Comparator<K> keyComparator;
 
-    IndexConsistencyChecker(final LoggingContext loggingContext,
-            final KeySegmentCache<K> keySegmentCache,
+    IndexConsistencyChecker(final KeySegmentCache<K> keySegmentCache,
             final SegmentManager<K, V> segmentManager,
             final TypeDescriptor<K> keyTypeDescriptor) {
-        this.logger = new ContextAwareLogger(IndexConsistencyChecker.class,
-                loggingContext);
         this.segmentManager = Objects.requireNonNull(segmentManager);
         this.keySegmentCache = Objects.requireNonNull(keySegmentCache);
         Objects.requireNonNull(keyTypeDescriptor);

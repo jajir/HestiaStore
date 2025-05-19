@@ -15,7 +15,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coroptis.index.IndexException;
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
@@ -25,8 +24,6 @@ import com.coroptis.index.segment.SegmentId;
 @ExtendWith(MockitoExtension.class)
 public class IndexConsistencyCheckerTest {
 
-    private final static LoggingContext LOGGING_CONTEXT = new LoggingContext(
-            "test_index");
     private final static TypeDescriptor<Integer> TYPE_DESCRIPTOR_INTEGER = new TypeDescriptorInteger();
     private final static SegmentId SEGMENT_ID = SegmentId.of(13);
     private final static Integer SEGMENT_MAX_KEY = 73;
@@ -95,8 +92,8 @@ public class IndexConsistencyCheckerTest {
 
     @BeforeEach
     void setUp() {
-        checker = new IndexConsistencyChecker<>(LOGGING_CONTEXT,
-                keySegmentCache, segmentManager, TYPE_DESCRIPTOR_INTEGER);
+        checker = new IndexConsistencyChecker<>(keySegmentCache, segmentManager,
+                TYPE_DESCRIPTOR_INTEGER);
         segmentPair = Pair.of(SEGMENT_MAX_KEY, SEGMENT_ID);
     }
 

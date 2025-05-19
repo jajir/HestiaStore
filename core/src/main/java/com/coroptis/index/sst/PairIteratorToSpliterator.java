@@ -19,7 +19,8 @@ public class PairIteratorToSpliterator<K, V>
 
     public PairIteratorToSpliterator(final PairIterator<K, V> pairIterator,
             final TypeDescriptor<K> keyTypeDescriptor) {
-        this.pairIterator = Objects.requireNonNull(pairIterator);
+        this.pairIterator = Objects.requireNonNull(pairIterator,
+                "Pair iterator is required");
         Objects.requireNonNull(keyTypeDescriptor,
                 "Key type descriptor must not be null");
         this.pairComparator = new PairComparator<>(
@@ -32,7 +33,6 @@ public class PairIteratorToSpliterator<K, V>
             action.accept(pairIterator.next());
             return true;
         } else {
-            pairIterator.close();
             return false;
         }
     }

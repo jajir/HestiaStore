@@ -234,8 +234,7 @@ public class IndexBuilder<K, V> {
                         keyClass.getName(), memoryConf));
             }
         }
-        final SsstIndexConf conf = new SsstIndexConf(
-                maxNumberOfKeysInSegmentCache,
+        final IndexConf conf = new IndexConf(maxNumberOfKeysInSegmentCache,
                 maxNumberOfKeysInSegmentCacheDuringFlushing,
                 maxNumberOfKeysInSegmentIndexPage, maxNumberOfKeysInCache,
                 maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache, indexName,
@@ -259,12 +258,16 @@ public class IndexBuilder<K, V> {
         } else {
             log = Log.<K, V>builder().buildEmpty();
         }
-        final SstIndexImpl<K, V> index = new SstIndexImpl<>(directory,
-                keyTypeDescriptor, valueTypeDescriptor, conf, log);
         if (isIndexSynchronized) {
-            return new SstIndexSynchronized<>(index);
+            final IndexInternal<K, V> index = new IndexInternalSynchronized<>(
+                    directory, keyTypeDescriptor, valueTypeDescriptor, conf,
+                    log);
+            return new IndexContextLoggingAdapter<>(conf, index);
         } else {
-            return index;
+            final IndexInternal<K, V> index = new IndexInternalSynchronized<>(
+                    directory, keyTypeDescriptor, valueTypeDescriptor, conf,
+                    log);
+            return new IndexContextLoggingAdapter<>(conf, index);
         }
     }
 

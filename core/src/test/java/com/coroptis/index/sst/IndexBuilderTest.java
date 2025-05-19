@@ -128,7 +128,7 @@ public class IndexBuilderTest {
                 .withName("test_index")//
                 .withDirectory(directory).withKeyClass(Long.class)
                 .withValueClass(String.class).build();
-        final SsstIndexConf conf = getConf(index);
+        final IndexConf conf = index.getConfiguration();
         assertEquals(500_000L, conf.getMaxNumberOfKeysInSegmentCache());
         assertEquals(10_000_000,
                 conf.getMaxNumberOfKeysInSegmentCacheDuringFlushing());
@@ -241,7 +241,7 @@ public class IndexBuilderTest {
                 .withBloomFilterIndexSizeInBytes(77)//
                 .withBloomFilterNumberOfHashFunctions(88)//
                 .build();
-        final SsstIndexConf conf = getConf(index);
+        final IndexConf conf = index.getConfiguration();
         assertEquals(11, conf.getMaxNumberOfKeysInSegmentCache());
         assertEquals(22, conf.getMaxNumberOfKeysInSegmentCacheDuringFlushing());
         assertEquals(33, conf.getMaxNumberOfKeysInSegmentIndexPage());
@@ -251,11 +251,6 @@ public class IndexBuilderTest {
         assertEquals(1024, conf.getDiskIoBufferSize());
         assertEquals(77, conf.getBloomFilterIndexSizeInBytes());
         assertEquals(88, conf.getBloomFilterNumberOfHashFunctions());
-    }
-
-    private <M, N> SsstIndexConf getConf(Index<M, N> index) {
-        final SstIndexImpl<M, N> ind = (SstIndexImpl<M, N>) index;
-        return ind.getConf();
     }
 
 }

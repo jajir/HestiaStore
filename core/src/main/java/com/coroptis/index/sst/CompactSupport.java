@@ -4,9 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import com.coroptis.index.ContextAwareLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.coroptis.index.F;
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.segment.Segment;
@@ -14,7 +15,7 @@ import com.coroptis.index.segment.SegmentId;
 
 public class CompactSupport<K, V> {
 
-    private final ContextAwareLogger logger;
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final List<Pair<K, V>> toSameSegment = new ArrayList<>();
     private final KeySegmentCache<K> keySegmentCache;
@@ -26,11 +27,8 @@ public class CompactSupport<K, V> {
      */
     private List<SegmentId> eligibleSegments = new ArrayList<>();
 
-    CompactSupport(final LoggingContext loggingContext,
-            final SegmentManager<K, V> segmentManager,
+    CompactSupport(final SegmentManager<K, V> segmentManager,
             final KeySegmentCache<K> keySegmentCache) {
-        this.logger = new ContextAwareLogger(CompactSupport.class,
-                loggingContext);
         this.segmentManager = Objects.requireNonNull(segmentManager);
         this.keySegmentCache = Objects.requireNonNull(keySegmentCache);
     }

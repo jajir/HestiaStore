@@ -2,16 +2,13 @@ package com.coroptis.index.sst;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
-import com.coroptis.index.ContextAwareLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.coroptis.index.F;
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
-import com.coroptis.index.PairReader;
 import com.coroptis.index.cache.UniqueCache;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
@@ -24,27 +21,23 @@ import com.coroptis.index.segment.SegmentSplitterResult;
 import com.coroptis.index.sorteddatafile.PairComparator;
 import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
 
-public class SstIndexImpl<K, V> implements Index<K, V> {
+public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
 
-    private final ContextAwareLogger logger;
-    private final LoggingContext loggingContext;
-    private final SsstIndexConf conf;
-    private final TypeDescriptor<K> keyTypeDescriptor;
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+    private final IndexConf conf;
+    protected final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final UniqueCache<K, V> cache;
     private final KeySegmentCache<K> keySegmentCache;
     private final SegmentManager<K, V> segmentManager;
     private final Log<K, V> log;
     private final Stats stats = new Stats();
-    private IndexState<K, V> indexState;
+    protected IndexState<K, V> indexState;
 
     public SstIndexImpl(final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor,
-            final TypeDescriptor<V> valueTypeDescriptor,
-            final SsstIndexConf conf, final Log<K, V> log) {
-        this.loggingContext = new LoggingContext(conf.getIndexName());
-        this.logger = new ContextAwareLogger(SstIndexImpl.class,
-                loggingContext);
+            final TypeDescriptor<V> valueTypeDescriptor, final IndexConf conf,
+            final Log<K, V> log) {
         if (directory == null) {
             throw new IllegalArgumentException("Directory was no specified.");
         }
@@ -56,12 +49,12 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         this.conf = Objects.requireNonNull(conf);
         this.cache = new UniqueCache<K, V>(
                 this.keyTypeDescriptor.getComparator());
-        this.keySegmentCache = new KeySegmentCache<>(loggingContext, directory,
+        this.keySegmentCache = new KeySegmentCache<>(directory,
                 keyTypeDescriptor);
         final SegmentDataCache<K, V> segmentDataCache = new SegmentDataCache<>(
                 conf);
-        this.segmentManager = new SegmentManager<>(loggingContext, directory,
-                keyTypeDescriptor, valueTypeDescriptor, conf, segmentDataCache);
+        this.segmentManager = new SegmentManager<>(directory, keyTypeDescriptor,
+                valueTypeDescriptor, conf, segmentDataCache);
         indexState.onReady(this);
     }
 
@@ -99,51 +92,19 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         return seg.openIterator();
     }
 
-    private PairIterator<K, V> openIterator(SegmentWindow segmentWindows) {
+    @Override
+    public PairIterator<K, V> openSegmentIterator(
+            SegmentWindow segmentWindows) {
         if (segmentWindows == null) {
             segmentWindows = SegmentWindow.unbounded();
         }
         final PairIterator<K, V> segmentIterator = new SegmentsIterator<>(
-                loggingContext, keySegmentCache.getSegmentIds(segmentWindows),
-                segmentManager);
-        return segmentIterator;
-    }
-
-    /**
-     * This method should be closed at the end of usage. For example:
-     * 
-     * <pre>
-     * try (final Stream&#60;Pair&#60;Integer, String&#62;&#62; stream = index.getStream()) {
-     *     final List&#60;Pair&#60;Integer, String&#62;&#62; list = stream
-     *             .collect(Collectors.toList());
-     *     // some other code
-     * }
-     * 
-     * </pre>
-     */
-    @Override
-    public Stream<Pair<K, V>> getStream(SegmentWindow segmentWindow) {
-        indexState.tryPerformOperation();
-        final PairIterator<K, V> iterator = openIterator(segmentWindow);
-        final PairReader<K, V> reader = new PairReaderRefreshedFromCache<>(
-                new PairSupplierFromIterator<>(iterator), cache,
-                valueTypeDescriptor);
-        final StreamSpliteratorFromPairSupplier<K, V> spliterator = new StreamSpliteratorFromPairSupplier<>(
-                reader, keyTypeDescriptor);
-        return StreamSupport.stream(spliterator, false).onClose(() -> {
-            iterator.close();
-        });
-    }
-
-    public Stream<Pair<K, V>> getStreamSynchronized(final ReentrantLock lock,
-            final SegmentWindow segmentWindow) {
-        indexState.tryPerformOperation();
-        // TODO should be similar to getStream, is it broken?
-        return StreamSupport
-                .stream(new PairIteratorToSpliterator<K, V>(
-                        new PairIteratorSynchronized<>(
-                                openIterator(segmentWindow), lock),
-                        keyTypeDescriptor), false);
+                keySegmentCache.getSegmentIds(segmentWindows), segmentManager);
+        final PairIterator<K, V> iterratorFreshedFromCache = new PairIteratorRefreshedFromCache<>(
+                segmentIterator, cache, valueTypeDescriptor);
+        final PairIteratorLoggingContext<K, V> pairIteratorLoggingContext = new PairIteratorLoggingContext<>(
+                iterratorFreshedFromCache, conf);
+        return pairIteratorLoggingContext;
     }
 
     private void flushCache() {
@@ -151,7 +112,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
                 "Cache compacting of '{}' key value pairs in cache started.",
                 F.fmt(cache.size()));
         final CompactSupport<K, V> support = new CompactSupport<>(
-                loggingContext, segmentManager, keySegmentCache);
+                segmentManager, keySegmentCache);
         cache.getStream()
                 .sorted(new PairComparator<>(keyTypeDescriptor.getComparator()))
                 .forEach(support::compact);
@@ -262,8 +223,7 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         indexState.tryPerformOperation();
         keySegmentCache.checkUniqueSegmentIds();
         final IndexConsistencyChecker<K, V> checker = new IndexConsistencyChecker<>(
-                loggingContext, keySegmentCache, segmentManager,
-                keyTypeDescriptor);
+                keySegmentCache, segmentManager, keyTypeDescriptor);
         checker.checkAndRepairConsistency();
     }
 
@@ -288,13 +248,8 @@ public class SstIndexImpl<K, V> implements Index<K, V> {
         flushCache();
     }
 
-    /**
-     * It's for junit testing. It's only way how to get to configuration values
-     * set by builder.
-     * 
-     * @return
-     */
-    SsstIndexConf getConf() {
+    @Override
+    public IndexConf getConfiguration() {
         return conf;
     }
 

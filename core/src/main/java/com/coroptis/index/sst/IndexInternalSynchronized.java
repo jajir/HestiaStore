@@ -1,27 +1,33 @@
 package com.coroptis.index.sst;
 
-import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import com.coroptis.index.Pair;
+import com.coroptis.index.PairIterator;
+import com.coroptis.index.datatype.TypeDescriptor;
+import com.coroptis.index.directory.Directory;
+import com.coroptis.index.log.Log;
 import com.coroptis.index.log.LoggedKey;
 import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
 
-public class SstIndexSynchronized<K, V> implements Index<K, V> {
+public class IndexInternalSynchronized<K, V> extends SstIndexImpl<K, V> {
 
-    private final SstIndexImpl<K, V> index;
     private final ReentrantLock lock = new ReentrantLock();
 
-    SstIndexSynchronized(final SstIndexImpl<K, V> index) {
-        this.index = Objects.requireNonNull(index);
+    public IndexInternalSynchronized(final Directory directory,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor, final IndexConf conf,
+            final Log<K, V> log) {
+        super(directory, keyTypeDescriptor, valueTypeDescriptor, conf, log);
     }
 
     @Override
     public void close() {
         lock.lock();
         try {
-            index.close();
+            super.close();
         } finally {
             lock.unlock();
         }
@@ -31,7 +37,7 @@ public class SstIndexSynchronized<K, V> implements Index<K, V> {
     public void put(final K key, final V value) {
         lock.lock();
         try {
-            index.put(key, value);
+            super.put(key, value);
         } finally {
             lock.unlock();
         }
@@ -41,7 +47,7 @@ public class SstIndexSynchronized<K, V> implements Index<K, V> {
     public V get(final K key) {
         lock.lock();
         try {
-            return index.get(key);
+            return super.get(key);
         } finally {
             lock.unlock();
         }
@@ -51,7 +57,7 @@ public class SstIndexSynchronized<K, V> implements Index<K, V> {
     public void delete(final K key) {
         lock.lock();
         try {
-            index.delete(key);
+            super.delete(key);
         } finally {
             lock.unlock();
         }
@@ -61,7 +67,7 @@ public class SstIndexSynchronized<K, V> implements Index<K, V> {
     public void compact() {
         lock.lock();
         try {
-            index.compact();
+            super.compact();
         } finally {
             lock.unlock();
         }
@@ -71,7 +77,16 @@ public class SstIndexSynchronized<K, V> implements Index<K, V> {
     public Stream<Pair<K, V>> getStream(SegmentWindow segmentWindow) {
         lock.lock();
         try {
-            return index.getStreamSynchronized(lock, segmentWindow);
+            indexState.tryPerformOperation();
+            final PairIterator<K, V> iterator = openSegmentIterator(
+                    segmentWindow);
+            final PairIterator<K, V> synchronizedIterator = new PairIteratorSynchronized<>(
+                    iterator, lock);
+            final PairIteratorToSpliterator<K, V> spliterator = new PairIteratorToSpliterator<K, V>(
+                    synchronizedIterator, keyTypeDescriptor);
+            return StreamSupport.stream(spliterator, false).onClose(() -> {
+                iterator.close();
+            });
         } finally {
             lock.unlock();
         }
@@ -81,7 +96,7 @@ public class SstIndexSynchronized<K, V> implements Index<K, V> {
     public UnsortedDataFileStreamer<LoggedKey<K>, V> getLogStreamer() {
         lock.lock();
         try {
-            return index.getLogStreamer();
+            return super.getLogStreamer();
         } finally {
             lock.unlock();
         }
@@ -91,7 +106,7 @@ public class SstIndexSynchronized<K, V> implements Index<K, V> {
     public void flush() {
         lock.lock();
         try {
-            index.flush();
+            super.flush();
         } finally {
             lock.unlock();
         }
@@ -102,7 +117,7 @@ public class SstIndexSynchronized<K, V> implements Index<K, V> {
     public void checkAndRepairConsistency() {
         lock.lock();
         try {
-            index.checkAndRepairConsistency();
+            super.checkAndRepairConsistency();
         } finally {
             lock.unlock();
         }

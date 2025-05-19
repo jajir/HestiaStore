@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.segment.Segment;
@@ -21,20 +20,16 @@ public class SegmentManager<K, V> {
 
     private final Map<SegmentId, Segment<K, V>> segments = new HashMap<>();
 
-    private final LoggingContext loggingContext;
-    private final SsstIndexConf conf;
+    private final IndexConf conf;
     private final Directory directory;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final SegmentDataCache<K, V> segmentDataCache;
 
-    SegmentManager(final LoggingContext loggingContext,
-            final Directory directory,
+    SegmentManager(final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor,
-            final TypeDescriptor<V> valueTypeDescriptor,
-            final SsstIndexConf conf,
+            final TypeDescriptor<V> valueTypeDescriptor, final IndexConf conf,
             final SegmentDataCache<K, V> segmentDataCache) {
-        this.loggingContext = Objects.requireNonNull(loggingContext);
         this.directory = Objects.requireNonNull(directory);
         this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
         this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
@@ -67,13 +62,12 @@ public class SegmentManager<K, V> {
         final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
                 directory, segmentId);
 
-        final SegmentFiles<K, V> segmentFiles = new SegmentFiles<>(
-                loggingContext, directory, segmentId, keyTypeDescriptor,
-                valueTypeDescriptor, conf.getDiskIoBufferSize());
+        final SegmentFiles<K, V> segmentFiles = new SegmentFiles<>(directory,
+                segmentId, keyTypeDescriptor, valueTypeDescriptor,
+                conf.getDiskIoBufferSize());
 
         final SegmentDataSupplier<K, V> segmentDataSupplier = new SegmentDataSupplier<>(
-                loggingContext, segmentFiles, segmentConf,
-                segmentPropertiesManager);
+                segmentFiles, segmentConf, segmentPropertiesManager);
 
         final SegmentDataFactory<K, V> segmentDataFactory = new SegmentDataFactoryImpl<>(
                 segmentDataSupplier);
@@ -88,7 +82,6 @@ public class SegmentManager<K, V> {
                 .withSegmentConf(segmentConf)//
                 .withSegmentFiles(segmentFiles)//
                 .withSegmentPropertiesManager(segmentPropertiesManager)//
-                .withLoggingContext(loggingContext)//
                 .withMaxNumberOfKeysInSegmentCache(
                         conf.getMaxNumberOfKeysInSegmentCache())//
                 .withMaxNumberOfKeysInIndexPage(

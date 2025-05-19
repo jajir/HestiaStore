@@ -4,8 +4,9 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
-import com.coroptis.index.ContextAwareLogger;
-import com.coroptis.index.LoggingContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.segment.Segment;
@@ -22,7 +23,7 @@ import com.coroptis.index.segment.SegmentId;
  */
 class SegmentsIterator<K, V> implements PairIterator<K, V> {
 
-    private final ContextAwareLogger logger;
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final SegmentManager<K, V> segmentManager;
     private final List<SegmentId> ids;
@@ -32,11 +33,8 @@ class SegmentsIterator<K, V> implements PairIterator<K, V> {
 
     private int position = 0;
 
-    SegmentsIterator(final LoggingContext loggingContext,
-            final List<SegmentId> ids,
+    SegmentsIterator(final List<SegmentId> ids,
             final SegmentManager<K, V> segmentManager) {
-        this.logger = new ContextAwareLogger(SegmentsIterator.class,
-                loggingContext);
         this.segmentManager = Objects.requireNonNull(segmentManager);
         this.ids = Objects.requireNonNull(ids);
         nextSegmentIterator();

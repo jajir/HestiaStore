@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
 import com.coroptis.index.datatype.TypeDescriptorString;
@@ -18,8 +17,6 @@ import com.coroptis.index.directory.MemDirectory;
 
 public class SegmentBuilderTest {
 
-    private final static LoggingContext LOGGING_CONTEXT = new LoggingContext(
-            "test_index");
     private static final SegmentId SEGMENT_ID = SegmentId.of(27);
     private final static Directory DIRECTORY = new MemDirectory();
     private static final TypeDescriptor<String> VALUE_TYPE_DESCRIPTOR = new TypeDescriptorString();
@@ -65,7 +62,6 @@ public class SegmentBuilderTest {
                         // .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
                         .withMaxNumberOfKeysInSegmentCache(10)//
                         .withBloomFilterIndexSizeInBytes(0)//
-                        .withLoggingContext(LOGGING_CONTEXT)//
                         .build());
 
         assertEquals("ValueTypeDescriptor can't be null", e.getMessage());
@@ -81,7 +77,6 @@ public class SegmentBuilderTest {
                         .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
                         .withMaxNumberOfKeysInSegmentCache(1)//
                         .withBloomFilterIndexSizeInBytes(0)//
-                        .withLoggingContext(LOGGING_CONTEXT)//
                         .build());
 
         assertEquals(
@@ -100,7 +95,6 @@ public class SegmentBuilderTest {
                         .withMaxNumberOfKeysInSegmentCache(10)//
                         .withMaxNumberOfKeysInSegmentCacheDuringFlushing(10)
                         .withBloomFilterIndexSizeInBytes(0)//
-                        .withLoggingContext(LOGGING_CONTEXT)//
                         .build());
 
         assertEquals(

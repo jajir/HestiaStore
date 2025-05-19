@@ -10,7 +10,6 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
@@ -26,8 +25,6 @@ import com.coroptis.index.directory.MemDirectory;
  */
 public class IntegrationSegmentConsistencyTest extends AbstractSegmentTest {
 
-    private final static LoggingContext LOGGING_CONTEXT = new LoggingContext(
-            "test_index");
     private final static int MAX_LOOP = 100;
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final SegmentId id = SegmentId.of(29);
@@ -44,7 +41,6 @@ public class IntegrationSegmentConsistencyTest extends AbstractSegmentTest {
                 .withValueTypeDescriptor(tdi)//
                 .withMaxNumberOfKeysInSegmentCache(10000)//
                 .withBloomFilterIndexSizeInBytes(0)//
-                .withLoggingContext(LOGGING_CONTEXT)//
                 .build();
     }
 

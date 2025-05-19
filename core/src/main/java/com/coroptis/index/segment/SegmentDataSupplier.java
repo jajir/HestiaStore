@@ -2,7 +2,6 @@ package com.coroptis.index.segment;
 
 import java.util.Objects;
 
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.bloomfilter.BloomFilter;
 import com.coroptis.index.scarceindex.ScarceIndex;
 
@@ -17,16 +16,13 @@ import com.coroptis.index.scarceindex.ScarceIndex;
  */
 public class SegmentDataSupplier<K, V> {
 
-    private final LoggingContext loggingContext;
     private final SegmentFiles<K, V> segmentFiles;
     private final SegmentConf segmentConf;
     private final SegmentPropertiesManager segmentPropertiesManager;
 
-    public SegmentDataSupplier(final LoggingContext loggingContext,
-            final SegmentFiles<K, V> segmentFiles,
+    public SegmentDataSupplier(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
             final SegmentPropertiesManager segmentPropertiesManager) {
-        this.loggingContext = Objects.requireNonNull(loggingContext);
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.segmentConf = Objects.requireNonNull(segmentConf);
         this.segmentPropertiesManager = Objects
@@ -52,7 +48,6 @@ public class SegmentDataSupplier<K, V> {
                         segmentConf.getBloomFilterProbabilityOfFalsePositive())
                 .withRelatedObjectName(segmentFiles.getSegmentIdName())
                 .withDiskIoBufferSize(segmentConf.getDiskIoBufferSize())
-                .withLoggingContext(loggingContext)//
                 .build();
     }
 
@@ -62,7 +57,6 @@ public class SegmentDataSupplier<K, V> {
                 .withFileName(segmentFiles.getScarceFileName())//
                 .withKeyTypeDescriptor(segmentFiles.getKeyTypeDescriptor())//
                 .withDiskIoBufferSize(segmentConf.getDiskIoBufferSize())//
-                .withLoggingContext(loggingContext)//
                 .build();
     }
 

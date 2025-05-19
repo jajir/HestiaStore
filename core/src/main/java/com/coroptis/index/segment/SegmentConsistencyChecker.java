@@ -3,22 +3,21 @@ package com.coroptis.index.segment;
 import java.util.Comparator;
 import java.util.Objects;
 
-import com.coroptis.index.ContextAwareLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.coroptis.index.IndexException;
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 
 public class SegmentConsistencyChecker<K, V> {
 
-    private final ContextAwareLogger logger;
+    private final Logger logger = LoggerFactory.getLogger(getClass());
     private final Segment<K, V> segment;
     private final Comparator<K> keyComparator;
 
-    SegmentConsistencyChecker(final LoggingContext loggingContext,
-            final Segment<K, V> segment, final Comparator<K> keyComparator) {
-        this.logger = new ContextAwareLogger(SegmentConsistencyChecker.class,
-                loggingContext);
+    SegmentConsistencyChecker(final Segment<K, V> segment,
+            final Comparator<K> keyComparator) {
         this.segment = Objects.requireNonNull(segment);
         this.keyComparator = Objects.requireNonNull(keyComparator);
     }

@@ -10,7 +10,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
 import com.coroptis.index.datatype.TypeDescriptorString;
@@ -21,8 +20,6 @@ import com.coroptis.index.segment.SegmentId;
 @ExtendWith(MockitoExtension.class)
 public class SegmentManagerTest {
 
-    private final static LoggingContext LOGGING_CONTEXT = new LoggingContext(
-            "test_index");
     private final TypeDescriptor<Integer> keyTypeDescriptor = new TypeDescriptorInteger();
 
     private final TypeDescriptor<String> valueTypeDescriptor = new TypeDescriptorString();
@@ -31,7 +28,7 @@ public class SegmentManagerTest {
     private Directory directory;
 
     @Mock
-    private SsstIndexConf conf;
+    private IndexConf conf;
 
     @Mock
     private SegmentDataCache<Integer, String> segmentDataCache;
@@ -39,8 +36,8 @@ public class SegmentManagerTest {
     @Test
     void test_getting_same_segmentId() throws Exception {
         final SegmentManager<Integer, String> segmentManager = new SegmentManager<>(
-                LOGGING_CONTEXT, directory, keyTypeDescriptor,
-                valueTypeDescriptor, conf, segmentDataCache);
+                directory, keyTypeDescriptor, valueTypeDescriptor, conf,
+                segmentDataCache);
         when(conf.getMaxNumberOfKeysInSegmentCache()).thenReturn(2L);
 
         final Segment<Integer, String> s1 = segmentManager
@@ -61,8 +58,8 @@ public class SegmentManagerTest {
     @Test
     void test_close() throws Exception {
         final SegmentManager<Integer, String> segmentManager = new SegmentManager<>(
-                LOGGING_CONTEXT, directory, keyTypeDescriptor,
-                valueTypeDescriptor, conf, segmentDataCache);
+                directory, keyTypeDescriptor, valueTypeDescriptor, conf,
+                segmentDataCache);
         segmentManager.close();
 
         verify(segmentDataCache).invalidateAll();

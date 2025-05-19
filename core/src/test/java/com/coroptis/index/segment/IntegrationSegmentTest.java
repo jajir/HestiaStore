@@ -17,7 +17,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairWriter;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
@@ -27,8 +26,6 @@ import com.coroptis.index.directory.MemDirectory;
 
 public class IntegrationSegmentTest extends AbstractSegmentTest {
 
-    private final static LoggingContext LOGGING_CONTEXT = new LoggingContext(
-            "test_index");
     private final TypeDescriptorString tds = new TypeDescriptorString();
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
 
@@ -204,7 +201,6 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()
                 .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
                 .withBloomFilterIndexSizeInBytes(0).withValueTypeDescriptor(tds)
-                .withLoggingContext(LOGGING_CONTEXT)//
                 .build();
 
         writePairs(seg, Arrays.asList(//
@@ -243,7 +239,6 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
         final SegmentId id = SegmentId.of(27);
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()
                 .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
-                .withLoggingContext(LOGGING_CONTEXT)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withValueTypeDescriptor(tds).build();
 
@@ -283,7 +278,6 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
         final SegmentId id = SegmentId.of(27);
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()
                 .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
-                .withLoggingContext(LOGGING_CONTEXT)//
                 .withValueTypeDescriptor(tds).build();
 
         writePairs(seg, Arrays.asList(//
@@ -349,7 +343,6 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()
                 .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
                 .withBloomFilterIndexSizeInBytes(0)//
-                .withLoggingContext(LOGGING_CONTEXT)//
                 .withValueTypeDescriptor(tds)//
                 .build();
 
@@ -394,7 +387,6 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withMaxNumberOfKeysInIndexPage(3)//
                 .withKeyTypeDescriptor(tdi)//
                 .withBloomFilterIndexSizeInBytes(0)//
-                .withLoggingContext(LOGGING_CONTEXT)//
                 .withValueTypeDescriptor(tds)//
                 .build();
 
@@ -435,11 +427,10 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                 directory, segmentId);
 
         final SegmentFiles<Integer, String> segmentFiles = new SegmentFiles<>(
-                LOGGING_CONTEXT, directory, segmentId, tdi, tds, 1024);
+                directory, segmentId, tdi, tds, 1024);
 
         final SegmentDataSupplier<Integer, String> segmentDataSupplier = new SegmentDataSupplier<>(
-                LOGGING_CONTEXT, segmentFiles, segmentConf,
-                segmentPropertiesManager);
+                segmentFiles, segmentConf, segmentPropertiesManager);
 
         final SegmentDataFactory<Integer, String> segmentDataFactory = new SegmentDataFactoryImpl<>(
                 segmentDataSupplier);
@@ -460,7 +451,6 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withKeyTypeDescriptor(tdi)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withValueTypeDescriptor(tds)//
-                .withLoggingContext(LOGGING_CONTEXT)//
                 .build();
 
         assertFalse(dataProvider.isLoaded());
@@ -528,7 +518,6 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()
                 .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
                 .withBloomFilterIndexSizeInBytes(0).withValueTypeDescriptor(tds)
-                .withLoggingContext(LOGGING_CONTEXT)//
                 .build();
 
         writePairs(seg, Arrays.asList(//
@@ -583,7 +572,6 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withMaxNumberOfKeysInIndexPage(3)//
                 .withMaxNumberOfKeysInSegmentCache(5)//
                 .withDiskIoBufferSize(3 * 1024).withValueTypeDescriptor(tds)
-                .withLoggingContext(LOGGING_CONTEXT)//
                 .build();
 
         try (PairWriter<Integer, String> writer = seg.openWriter()) {
@@ -621,9 +609,10 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                         .withKeyTypeDescriptor(tdi)//
                         .withValueTypeDescriptor(tds)//
                         .withMaxNumberOfKeysInSegmentCache(10) //
+                        .withMaxNumberOfKeysInIndexPage(10)//
                         .withBloomFilterIndexSizeInBytes(0)//
-                        .withDiskIoBufferSize(1 * 1024)//
-                        .withLoggingContext(LOGGING_CONTEXT).build(), //
+                        .withDiskIoBufferSize(1 * 1024) //
+                        .build(), //
                 2, // expectedNumberKeysInScarceIndex,
                 10 // expectedNumberOfFile
         ), arguments(tdi, tds, dir2, Segment.<Integer, String>builder()//
@@ -635,7 +624,6 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withMaxNumberOfKeysInIndexPage(1)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withDiskIoBufferSize(2 * 1024)//
-                .withLoggingContext(LOGGING_CONTEXT)//
                 .build(), //
                 9, // expectedNumberKeysInScarceIndex
                 5// expectedNumberOfFile
@@ -648,7 +636,6 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withMaxNumberOfKeysInIndexPage(2)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withDiskIoBufferSize(4 * 1024)//
-                .withLoggingContext(LOGGING_CONTEXT)//
                 .build(), //
                 5, // expectedNumberKeysInScarceIndex
                 7 // expectedNumberOfFile

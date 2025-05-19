@@ -2,28 +2,23 @@ package com.coroptis.index.segment;
 
 import java.util.Objects;
 
-import com.coroptis.index.LoggingContext;
-
 /**
  * Class is responsible for creating new objects with complex segment
  * dependencies.
  */
 public class SegmentManager<K, V> {
 
-    private final LoggingContext loggingContext;
     private final SegmentFiles<K, V> segmentFiles;
     private final SegmentPropertiesManager segmentPropertiesManager;
     private final SegmentConf segmentConf;
     private final SegmentDataProvider<K, V> segmentCacheDataProvider;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
 
-    public SegmentManager(final LoggingContext loggingContext,
-            final SegmentFiles<K, V> segmentFiles,
+    public SegmentManager(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentPropertiesManager,
             final SegmentConf segmentConf,
             final SegmentDataProvider<K, V> segmentCacheDataProvider,
             final SegmentDeltaCacheController<K, V> deltaCacheController) {
-        this.loggingContext = Objects.requireNonNull(loggingContext);
         this.segmentFiles = Objects.requireNonNull(segmentFiles);
         this.segmentPropertiesManager = Objects
                 .requireNonNull(segmentPropertiesManager);
@@ -58,7 +53,6 @@ public class SegmentManager<K, V> {
                 .withKeyTypeDescriptor(segmentFiles.getKeyTypeDescriptor())//
                 .withValueTypeDescriptor(segmentFiles.getValueTypeDescriptor())//
                 .withSegmentConf(new SegmentConf(segmentConf))//
-                .withLoggingContext(loggingContext)//
                 .build();
     }
 }

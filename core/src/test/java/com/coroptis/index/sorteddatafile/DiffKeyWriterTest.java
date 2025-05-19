@@ -7,20 +7,17 @@ import java.util.Comparator;
 
 import org.junit.jupiter.api.Test;
 
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
 import com.coroptis.index.datatype.TypeDescriptorString;
 
 public class DiffKeyWriterTest {
 
-    private final static LoggingContext LOGGING_CONTEXT = new LoggingContext(
-            "test_index");
     private final TypeDescriptor<Integer> tdi = new TypeDescriptorInteger();
     private final TypeDescriptor<String> tds = new TypeDescriptorString();
 
     private DiffKeyWriter<Integer> makeDiffKeyWriter() {
-        return new DiffKeyWriter<>(LOGGING_CONTEXT, tdi.getConvertorToBytes(),
+        return new DiffKeyWriter<>(tdi.getConvertorToBytes(),
                 Comparator.naturalOrder());
     }
 
@@ -75,7 +72,7 @@ public class DiffKeyWriterTest {
     @Test
     public void test_constructor_convertorToBytes_is_null() {
         final Exception e = assertThrows(NullPointerException.class,
-                () -> new DiffKeyWriter<Integer>(LOGGING_CONTEXT, null,
+                () -> new DiffKeyWriter<Integer>(null,
                         Comparator.naturalOrder()));
 
         assertEquals("Convertor to bytes is null", e.getMessage());
@@ -84,15 +81,15 @@ public class DiffKeyWriterTest {
     @Test
     public void test_constructor_comparator_is_null() {
         final Exception e = assertThrows(NullPointerException.class,
-                () -> new DiffKeyWriter<Integer>(LOGGING_CONTEXT,
-                        tdi.getConvertorToBytes(), null));
+                () -> new DiffKeyWriter<Integer>(tdi.getConvertorToBytes(),
+                        null));
 
         assertEquals("Key comparator can't be null", e.getMessage());
     }
 
     @Test
     public void test_write() throws Exception {
-        DiffKeyWriter<String> diffWriter = new DiffKeyWriter<>(LOGGING_CONTEXT,
+        DiffKeyWriter<String> diffWriter = new DiffKeyWriter<>(
                 tds.getConvertorToBytes(), Comparator.naturalOrder());
 
         byte[] ret = diffWriter.write("aaa");

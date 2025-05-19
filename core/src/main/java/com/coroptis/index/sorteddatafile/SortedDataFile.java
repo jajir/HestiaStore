@@ -3,7 +3,6 @@ package com.coroptis.index.sorteddatafile;
 import java.util.Objects;
 
 import com.coroptis.index.CloseablePairReader;
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.PairIteratorFromReader;
 import com.coroptis.index.PairIteratorWithCurrent;
 import com.coroptis.index.PairReaderEmpty;
@@ -14,7 +13,6 @@ import com.coroptis.index.directory.FileWriter;
 
 public class SortedDataFile<K, V> {
 
-    private final LoggingContext loggingContext;
     private final Directory directory;
 
     private final String fileName;
@@ -29,12 +27,10 @@ public class SortedDataFile<K, V> {
         return new SortedDataFileBuilder<M, N>();
     }
 
-    public SortedDataFile(final LoggingContext loggingContext,
-            final Directory directory, final String fileName,
+    public SortedDataFile(final Directory directory, final String fileName,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final int diskIoBufferSize) {
-        this.loggingContext = Objects.requireNonNull(loggingContext);
         this.directory = Objects.requireNonNull(directory);
         this.fileName = Objects.requireNonNull(fileName);
         this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
@@ -43,13 +39,13 @@ public class SortedDataFile<K, V> {
     }
 
     public SortedDataFile<K, V> withFileName(final String newFileName) {
-        return new SortedDataFile<>(loggingContext, directory, newFileName,
-                keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize);
+        return new SortedDataFile<>(directory, newFileName, keyTypeDescriptor,
+                valueTypeDescriptor, diskIoBufferSize);
     }
 
     public SortedDataFile<K, V> withProperties(final Directory newDirectory,
             final String newFileName, final int newDiskIoBufferSize) {
-        return new SortedDataFile<>(loggingContext, newDirectory, newFileName,
+        return new SortedDataFile<>(newDirectory, newFileName,
                 keyTypeDescriptor, valueTypeDescriptor, newDiskIoBufferSize);
     }
 
@@ -91,7 +87,7 @@ public class SortedDataFile<K, V> {
         final FileWriter fileWriter = directory.getFileWriter(fileName,
                 Directory.Access.OVERWRITE, diskIoBufferSize);
         final SortedDataFileWriter<K, V> writer = new SortedDataFileWriter<>(
-                loggingContext, valueTypeDescriptor.getTypeWriter(), fileWriter,
+                valueTypeDescriptor.getTypeWriter(), fileWriter,
                 keyTypeDescriptor);
         return writer;
     }

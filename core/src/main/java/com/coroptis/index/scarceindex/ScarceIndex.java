@@ -2,7 +2,6 @@ package com.coroptis.index.scarceindex;
 
 import java.util.Objects;
 
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.PairIterator;
 import com.coroptis.index.datatype.TypeDescriptor;
@@ -34,8 +33,6 @@ import com.coroptis.index.sorteddatafile.SortedDataFile;
  */
 public class ScarceIndex<K> {
 
-    private final LoggingContext loggingContext;
-
     private final static TypeDescriptorInteger typeDescriptorInteger = new TypeDescriptorInteger();
 
     private final TypeDescriptor<K> keyTypeDescriptor;
@@ -52,10 +49,9 @@ public class ScarceIndex<K> {
         return new ScarceIndexBuilder<M>();
     }
 
-    ScarceIndex(final LoggingContext loggingContext, final Directory directory,
-            final String fileName, final TypeDescriptor<K> keyTypeDescriptor,
+    ScarceIndex(final Directory directory, final String fileName,
+            final TypeDescriptor<K> keyTypeDescriptor,
             final int diskIoBufferSize) {
-        this.loggingContext = Objects.requireNonNull(loggingContext);
         this.directory = Objects.requireNonNull(directory,
                 "Directory object is null.");
         this.fileName = Objects.requireNonNull(fileName,
@@ -68,15 +64,13 @@ public class ScarceIndex<K> {
                 .withKeyTypeDescriptor(keyTypeDescriptor) //
                 .withValueTypeDescriptor(typeDescriptorInteger)
                 .withDiskIoBufferSize(diskIoBufferSize) //
-                .withLoggingContext(loggingContext) //
                 .build();
-        this.cache = new ScarceIndexCache<>(loggingContext, keyTypeDescriptor);
+        this.cache = new ScarceIndexCache<>(keyTypeDescriptor);
         loadCache();
     }
 
     public void loadCache() {
-        ScarceIndexCache<K> tmp = new ScarceIndexCache<>(loggingContext,
-                keyTypeDescriptor);
+        ScarceIndexCache<K> tmp = new ScarceIndexCache<>(keyTypeDescriptor);
         if (directory.isFileExists(fileName)) {
             try (PairIterator<K, Integer> pairIterator = cacheDataFile
                     .openIterator()) {

@@ -9,15 +9,12 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.Pair;
 import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.MemDirectory;
 
 public class IntegrationScarceIndexTest {
 
-    private final static LoggingContext LOGGING_CONTEXT = new LoggingContext(
-            "test_index");
     private final static String FILE_NAME = "pok.dat";
     private final TypeDescriptorString stringTd = new TypeDescriptorString();
 
@@ -101,7 +98,6 @@ public class IntegrationScarceIndexTest {
         final ScarceIndex<String> index = ScarceIndex.<String>builder()
                 .withDirectory(directory).withFileName(FILE_NAME)//
                 .withKeyTypeDescriptor(stringTd)//
-                .withLoggingContext(LOGGING_CONTEXT)//
                 .build();
 
         try (ScarceIndexWriter<String> writer = index.openWriter()) {

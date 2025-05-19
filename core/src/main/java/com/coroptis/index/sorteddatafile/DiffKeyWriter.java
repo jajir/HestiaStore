@@ -3,14 +3,15 @@ package com.coroptis.index.sorteddatafile;
 import java.util.Comparator;
 import java.util.Objects;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.coroptis.index.ByteTool;
-import com.coroptis.index.ContextAwareLogger;
-import com.coroptis.index.LoggingContext;
 import com.coroptis.index.datatype.ConvertorToBytes;
 
 public class DiffKeyWriter<K> {
 
-        private final ContextAwareLogger logger;
+        private final Logger logger = LoggerFactory.getLogger(getClass());
 
         private final ConvertorToBytes<K> convertorToBytes;
 
@@ -22,11 +23,8 @@ public class DiffKeyWriter<K> {
 
         private final ByteTool byteTool;
 
-        public DiffKeyWriter(final LoggingContext loggingContext,
-                        final ConvertorToBytes<K> convertorToBytes,
+        public DiffKeyWriter(final ConvertorToBytes<K> convertorToBytes,
                         final Comparator<K> keyComparator) {
-                this.logger = new ContextAwareLogger(DiffKeyWriter.class,
-                                loggingContext);
                 this.convertorToBytes = Objects.requireNonNull(convertorToBytes,
                                 "Convertor to bytes is null");
                 this.keyComparator = Objects.requireNonNull(keyComparator,
