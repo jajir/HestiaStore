@@ -1,7 +1,5 @@
 package com.coroptis.index.sst;
 
-import static org.mockito.Mockito.when;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

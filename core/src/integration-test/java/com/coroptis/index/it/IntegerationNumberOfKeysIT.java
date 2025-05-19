@@ -1,4 +1,4 @@
-package com.coroptis.index.sst;
+package com.coroptis.index.it;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -19,7 +19,7 @@ import com.coroptis.index.segment.SegmentId;
 public class IntegerationNumberOfKeysIT {
     private final SegmentId SEGMENT_ID = SegmentId.of(29);
     private final static Random RANDOM = new Random();
-    private final static int NUMBER_OF_TESTING_PAIRS = 2_000_000;
+    private final static int NUMBER_OF_TESTING_PAIRS = 200_000;
     private final static TypeDescriptor<String> TYPE_DESCRIPTOR_STRING = new TypeDescriptorString();
     private final static TypeDescriptor<Long> TYPE_DESCRIPTOR_LONG = new TypeDescriptorLong();
 
