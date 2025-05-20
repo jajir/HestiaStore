@@ -79,3 +79,30 @@ Index<Integer, Integer> index = Index.<Integer, Integer>builder()
     .withUseFullLog(false)
     .build();
 ```
+
+#### Index Library – Design Requirements (User-Friendly Version)
+
+1. **User clarity**  
+   * The public API must be self-explanatory.  
+   * Constructors, builders, and method names should read like plain English.
+
+2. **JUnit friendliness**  
+   * All stateful components must be injectable or mockable.  
+   * Constructors should avoid side effects (I/O, threads) so unit tests can instantiate quickly.
+
+3. **Existence check**  
+   * Provide an explicit `Index.exists(Path dir)` (or similar) that answers *“Is there an index here?”* without opening it.
+
+4. **Separate create vs. open**  
+   * Creation and opening must be two distinct operations (e.g., `create()` vs. `open()`), never bundled in one call.
+
+5. **Parameter integrity**  
+   * Persisted metadata (key/value classes, segment sizes, etc.) is immutable once the index is created.  
+   * Attempting to reopen with conflicting settings must throw a clear exception.
+
+6. **Type safety**  
+   * The API is fully generic (`Index<K,V>`).  
+   * Only matching key/value types compile; no unchecked casts are exposed to users.
+
+7. **Runtime tuning**  
+   * Non-persistent knobs (e.g., cache sizes, buffer lengths) can be adjusted at runtime through dedicated setters or a `RuntimeConfig` object, without recreating the index.

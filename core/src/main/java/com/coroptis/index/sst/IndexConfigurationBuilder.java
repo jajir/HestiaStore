@@ -4,10 +4,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 import com.coroptis.index.datatype.TypeDescriptor;
-import com.coroptis.index.directory.Directory;
-import com.coroptis.index.log.Log;
 
-public class IndexBuilder<K, V> {
+public class IndexConfigurationBuilder<K, V> {
 
     private final static long DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = 200_000;
     private final static long DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING = -1;
@@ -36,7 +34,6 @@ public class IndexBuilder<K, V> {
     private int diskIoBufferSizeInBytes = DEFAULT_DISK_IO_BUFFER_SIZE_IN_BYTES;
 
     private String indexName = null;
-    private Directory directory;
     private Class<K> keyClass;
     private Class<V> valueClass;
     private TypeDescriptor<K> keyTypeDescriptor;
@@ -45,124 +42,123 @@ public class IndexBuilder<K, V> {
     private boolean customConfWasUsed = false;
     private String memoryConf = null;
 
-    IndexBuilder() {
+    IndexConfigurationBuilder() {
 
     }
 
-    public IndexBuilder<K, V> withDirectory(final Directory directory) {
-        this.directory = Objects.requireNonNull(directory);
-        return this;
-    }
-
-    public IndexBuilder<K, V> withKeyTypeDescriptor(
+    public IndexConfigurationBuilder<K, V> withKeyTypeDescriptor(
             final TypeDescriptor<K> keyTypeDescriptor) {
         this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
         return this;
     }
 
-    public IndexBuilder<K, V> withValueTypeDescriptor(
+    public IndexConfigurationBuilder<K, V> withValueTypeDescriptor(
             final TypeDescriptor<V> valueTypeDescriptor) {
         this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
         return this;
     }
 
-    public IndexBuilder<K, V> withKeyClass(final Class<K> keyClass) {
+    public IndexConfigurationBuilder<K, V> withKeyClass(
+            final Class<K> keyClass) {
         this.keyClass = Objects.requireNonNull(keyClass);
         return this;
     }
 
-    public IndexBuilder<K, V> withValueClass(final Class<V> valueClass) {
+    public IndexConfigurationBuilder<K, V> withValueClass(
+            final Class<V> valueClass) {
         this.valueClass = Objects.requireNonNull(valueClass);
         return this;
     }
 
-    public IndexBuilder<K, V> withName(final String indexName) {
+    public IndexConfigurationBuilder<K, V> withName(final String indexName) {
         this.indexName = Objects.requireNonNull(indexName);
         return this;
     }
 
-    public IndexBuilder<K, V> withMaxNumberOfKeysInSegmentCache(
+    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentCache(
             final long maxNumberOfKeysInSegmentCache) {
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
         return this;
     }
 
-    public IndexBuilder<K, V> withMaxNumberOfKeysInSegmentIndexPage(
+    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentIndexPage(
             final int maxNumberOfKeysInSegmentIndexPage) {
         this.maxNumberOfKeysInSegmentIndexPage = maxNumberOfKeysInSegmentIndexPage;
         return this;
     }
 
-    public IndexBuilder<K, V> withMaxNumberOfKeysInCache(
+    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInCache(
             final int maxNumberOfKeysInCache) {
         this.maxNumberOfKeysInCache = maxNumberOfKeysInCache;
         return this;
     }
 
-    public IndexBuilder<K, V> withMaxNumberOfKeysInSegment(
+    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegment(
             final int maxNumberOfKeysInSegment) {
         this.maxNumberOfKeysInSegment = maxNumberOfKeysInSegment;
         return this;
     }
 
-    public IndexBuilder<K, V> withMaxNumberOfSegmentsInCache(
+    public IndexConfigurationBuilder<K, V> withMaxNumberOfSegmentsInCache(
             final int maxNumberOfSegmentsInCache) {
         this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
         return this;
     }
 
-    public IndexBuilder<K, V> withMaxNumberOfKeysInSegmentCacheDuringFlushing(
+    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentCacheDuringFlushing(
             final int maxNumberOfKeysInSegmentCacheDuringFlushing) {
         this.maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInSegmentCacheDuringFlushing;
         return this;
     }
 
-    public IndexBuilder<K, V> withBloomFilterNumberOfHashFunctions(
+    public IndexConfigurationBuilder<K, V> withBloomFilterNumberOfHashFunctions(
             final int bloomFilterNumberOfHashFunctions) {
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         return this;
     }
 
-    public IndexBuilder<K, V> withBloomFilterProbabilityOfFalsePositive(
+    public IndexConfigurationBuilder<K, V> withBloomFilterProbabilityOfFalsePositive(
             final Double probabilityOfFalsePositive) {
         this.bloomFilterProbabilityOfFalsePositive = probabilityOfFalsePositive;
         return this;
     }
 
-    public IndexBuilder<K, V> withIsIndexSynchronized(
+    public IndexConfigurationBuilder<K, V> withIsIndexSynchronized(
             final boolean isIndexSynchronized) {
         this.isIndexSynchronized = isIndexSynchronized;
         return this;
     }
 
-    public IndexBuilder<K, V> withBloomFilterIndexSizeInBytes(
+    public IndexConfigurationBuilder<K, V> withBloomFilterIndexSizeInBytes(
             final int bloomFilterIndexSizeInBytes) {
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
         return this;
     }
 
-    public IndexBuilder<K, V> withDiskIoBufferSizeInBytes(
+    public IndexConfigurationBuilder<K, V> withDiskIoBufferSizeInBytes(
             final int diskIoBufferSizeInBytes) {
         this.diskIoBufferSizeInBytes = diskIoBufferSizeInBytes;
         return this;
     }
 
-    public IndexBuilder<K, V> withCustomConf() {
+    public IndexConfigurationBuilder<K, V> withCustomConf() {
         this.customConfWasUsed = true;
         return this;
     }
 
-    public IndexBuilder<K, V> withConf(final String memoryConfiguration) {
+    public IndexConfigurationBuilder<K, V> withConf(
+            final String memoryConfiguration) {
         this.memoryConf = memoryConfiguration;
         return this;
     }
 
-    public IndexBuilder<K, V> withUseFullLog(final boolean useFullLog) {
+    public IndexConfigurationBuilder<K, V> withUseFullLog(
+            final boolean useFullLog) {
         this.useFullLog = useFullLog;
         return this;
     }
 
-    public Index<K, V> build() {
+    public IndexConfiguration build() {
         if (keyClass == null) {
             throw new IllegalArgumentException("Key class wasn't specified");
         }
@@ -234,7 +230,7 @@ public class IndexBuilder<K, V> {
                         keyClass.getName(), memoryConf));
             }
         }
-        final IndexConfiguration conf = new IndexConfiguration(
+        final IndexConfiguration indexConf = new IndexConfiguration(
                 maxNumberOfKeysInSegmentCache,
                 maxNumberOfKeysInSegmentCacheDuringFlushing,
                 maxNumberOfKeysInSegmentIndexPage, maxNumberOfKeysInCache,
@@ -250,27 +246,7 @@ public class IndexBuilder<K, V> {
             throw new IllegalArgumentException("Value type descriptor is null. "
                     + "Set value type descriptor of value class.");
         }
-        Log<K, V> log = null;
-        if (useFullLog) {
-            log = Log.<K, V>builder()//
-                    .withDirectory(directory)//
-                    .withKeyTypeDescriptor(keyTypeDescriptor)//
-                    .withValueTypeDescriptor(valueTypeDescriptor)//
-                    .build();
-        } else {
-            log = Log.<K, V>builder().buildEmpty();
-        }
-        if (isIndexSynchronized) {
-            final IndexInternal<K, V> index = new IndexInternalSynchronized<>(
-                    directory, keyTypeDescriptor, valueTypeDescriptor, conf,
-                    log);
-            return new IndexContextLoggingAdapter<>(conf, index);
-        } else {
-            final IndexInternal<K, V> index = new IndexInternalSynchronized<>(
-                    directory, keyTypeDescriptor, valueTypeDescriptor, conf,
-                    log);
-            return new IndexContextLoggingAdapter<>(conf, index);
-        }
+        return indexConf;
     }
 
 }

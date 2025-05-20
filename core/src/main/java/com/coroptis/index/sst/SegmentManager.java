@@ -18,91 +18,100 @@ import com.coroptis.index.segment.SegmentPropertiesManager;
 
 public class SegmentManager<K, V> {
 
-    private final Map<SegmentId, Segment<K, V>> segments = new HashMap<>();
+        private final Map<SegmentId, Segment<K, V>> segments = new HashMap<>();
 
-    private final IndexConf conf;
-    private final Directory directory;
-    private final TypeDescriptor<K> keyTypeDescriptor;
-    private final TypeDescriptor<V> valueTypeDescriptor;
-    private final SegmentDataCache<K, V> segmentDataCache;
+        private final IndexConfiguration conf;
+        private final Directory directory;
+        private final TypeDescriptor<K> keyTypeDescriptor;
+        private final TypeDescriptor<V> valueTypeDescriptor;
+        private final SegmentDataCache<K, V> segmentDataCache;
 
-    SegmentManager(final Directory directory,
-            final TypeDescriptor<K> keyTypeDescriptor,
-            final TypeDescriptor<V> valueTypeDescriptor, final IndexConf conf,
-            final SegmentDataCache<K, V> segmentDataCache) {
-        this.directory = Objects.requireNonNull(directory);
-        this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
-        this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
-        this.conf = Objects.requireNonNull(conf);
-        this.segmentDataCache = Objects.requireNonNull(segmentDataCache);
-    }
-
-    public Segment<K, V> getSegment(final SegmentId segmentId) {
-        Objects.requireNonNull(segmentId, "Segment id is required");
-        Segment<K, V> out = segments.get(segmentId);
-        if (out == null) {
-            out = instantiateSegment(segmentId);
-            segments.put(segmentId, out);
+        SegmentManager(final Directory directory,
+                        final TypeDescriptor<K> keyTypeDescriptor,
+                        final TypeDescriptor<V> valueTypeDescriptor,
+                        final IndexConfiguration conf,
+                        final SegmentDataCache<K, V> segmentDataCache) {
+                this.directory = Objects.requireNonNull(directory);
+                this.keyTypeDescriptor = Objects
+                                .requireNonNull(keyTypeDescriptor);
+                this.valueTypeDescriptor = Objects
+                                .requireNonNull(valueTypeDescriptor);
+                this.conf = Objects.requireNonNull(conf);
+                this.segmentDataCache = Objects
+                                .requireNonNull(segmentDataCache);
         }
-        return out;
-    }
 
-    private Segment<K, V> instantiateSegment(final SegmentId segmentId) {
-        Objects.requireNonNull(segmentId, "Segment id is required");
+        public Segment<K, V> getSegment(final SegmentId segmentId) {
+                Objects.requireNonNull(segmentId, "Segment id is required");
+                Segment<K, V> out = segments.get(segmentId);
+                if (out == null) {
+                        out = instantiateSegment(segmentId);
+                        segments.put(segmentId, out);
+                }
+                return out;
+        }
 
-        SegmentConf segmentConf = new SegmentConf(
-                conf.getMaxNumberOfKeysInSegmentCache(),
-                conf.getMaxNumberOfKeysInSegmentCacheDuringFlushing(),
-                conf.getMaxNumberOfKeysInSegmentIndexPage(),
-                conf.getBloomFilterNumberOfHashFunctions(),
-                conf.getBloomFilterIndexSizeInBytes(),
-                conf.getBloomFilterProbabilityOfFalsePositive(),
-                conf.getDiskIoBufferSize());
+        private Segment<K, V> instantiateSegment(final SegmentId segmentId) {
+                Objects.requireNonNull(segmentId, "Segment id is required");
 
-        final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
-                directory, segmentId);
+                SegmentConf segmentConf = new SegmentConf(
+                                conf.getMaxNumberOfKeysInSegmentCache(),
+                                conf.getMaxNumberOfKeysInSegmentCacheDuringFlushing(),
+                                conf.getMaxNumberOfKeysInSegmentIndexPage(),
+                                conf.getBloomFilterNumberOfHashFunctions(),
+                                conf.getBloomFilterIndexSizeInBytes(),
+                                conf.getBloomFilterProbabilityOfFalsePositive(),
+                                conf.getDiskIoBufferSize());
 
-        final SegmentFiles<K, V> segmentFiles = new SegmentFiles<>(directory,
-                segmentId, keyTypeDescriptor, valueTypeDescriptor,
-                conf.getDiskIoBufferSize());
+                final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
+                                directory, segmentId);
 
-        final SegmentDataSupplier<K, V> segmentDataSupplier = new SegmentDataSupplier<>(
-                segmentFiles, segmentConf, segmentPropertiesManager);
+                final SegmentFiles<K, V> segmentFiles = new SegmentFiles<>(
+                                directory, segmentId, keyTypeDescriptor,
+                                valueTypeDescriptor,
+                                conf.getDiskIoBufferSize());
 
-        final SegmentDataFactory<K, V> segmentDataFactory = new SegmentDataFactoryImpl<>(
-                segmentDataSupplier);
+                final SegmentDataSupplier<K, V> segmentDataSupplier = new SegmentDataSupplier<>(
+                                segmentFiles, segmentConf,
+                                segmentPropertiesManager);
 
-        final SegmentDataProvider<K, V> dataProvider = new SegmentDataProviderFromMainCache<>(
-                segmentId, segmentDataCache, segmentDataFactory);
+                final SegmentDataFactory<K, V> segmentDataFactory = new SegmentDataFactoryImpl<>(
+                                segmentDataSupplier);
 
-        final Segment<K, V> out = Segment.<K, V>builder()
-                .withDirectory(directory).withId(segmentId)
-                .withKeyTypeDescriptor(keyTypeDescriptor)
-                .withSegmentDataProvider(dataProvider)//
-                .withSegmentConf(segmentConf)//
-                .withSegmentFiles(segmentFiles)//
-                .withSegmentPropertiesManager(segmentPropertiesManager)//
-                .withMaxNumberOfKeysInSegmentCache(
-                        conf.getMaxNumberOfKeysInSegmentCache())//
-                .withMaxNumberOfKeysInIndexPage(
-                        conf.getMaxNumberOfKeysInSegmentIndexPage())//
-                .withValueTypeDescriptor(valueTypeDescriptor)//
-                .withBloomFilterNumberOfHashFunctions(
-                        conf.getBloomFilterNumberOfHashFunctions())//
-                .withBloomFilterIndexSizeInBytes(
-                        conf.getBloomFilterIndexSizeInBytes())//
-                .withSegmentDataProvider(dataProvider)//
-                .withDiskIoBufferSize(conf.getDiskIoBufferSize())//
-                .build();
-        return out;
-    }
+                final SegmentDataProvider<K, V> dataProvider = new SegmentDataProviderFromMainCache<>(
+                                segmentId, segmentDataCache,
+                                segmentDataFactory);
 
-    Directory getDirectory() {
-        return directory;
-    }
+                final Segment<K, V> out = Segment.<K, V>builder()
+                                .withDirectory(directory).withId(segmentId)
+                                .withKeyTypeDescriptor(keyTypeDescriptor)
+                                .withSegmentDataProvider(dataProvider)//
+                                .withSegmentConf(segmentConf)//
+                                .withSegmentFiles(segmentFiles)//
+                                .withSegmentPropertiesManager(
+                                                segmentPropertiesManager)//
+                                .withMaxNumberOfKeysInSegmentCache(conf
+                                                .getMaxNumberOfKeysInSegmentCache())//
+                                .withMaxNumberOfKeysInIndexPage(conf
+                                                .getMaxNumberOfKeysInSegmentIndexPage())//
+                                .withValueTypeDescriptor(valueTypeDescriptor)//
+                                .withBloomFilterNumberOfHashFunctions(conf
+                                                .getBloomFilterNumberOfHashFunctions())//
+                                .withBloomFilterIndexSizeInBytes(conf
+                                                .getBloomFilterIndexSizeInBytes())//
+                                .withSegmentDataProvider(dataProvider)//
+                                .withDiskIoBufferSize(
+                                                conf.getDiskIoBufferSize())//
+                                .build();
+                return out;
+        }
 
-    public void close() {
-        segmentDataCache.invalidateAll();
-    }
+        Directory getDirectory() {
+                return directory;
+        }
+
+        public void close() {
+                segmentDataCache.invalidateAll();
+        }
 
 }

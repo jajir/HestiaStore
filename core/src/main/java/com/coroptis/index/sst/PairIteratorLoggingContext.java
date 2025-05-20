@@ -10,10 +10,10 @@ import com.coroptis.index.PairIterator;
 public class PairIteratorLoggingContext<K, V> implements PairIterator<K, V> {
 
     private final PairIterator<K, V> pairIterator;
-    private final IndexConf indexConf;
+    private final IndexConfiguration indexConf;
 
     PairIteratorLoggingContext(final PairIterator<K, V> pairIterator,
-            final IndexConf indexConf) {
+            final IndexConfiguration indexConf) {
         this.pairIterator = Objects.requireNonNull(pairIterator,
                 "Pair iterator cannot be null");
         this.indexConf = Objects.requireNonNull(indexConf,

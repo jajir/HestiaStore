@@ -2,7 +2,7 @@ package com.coroptis.index.sst;
 
 import java.util.Objects;
 
-public class IndexConf {
+public class IndexConfiguration {
 
     /*
      * Segments configuration
@@ -25,8 +25,14 @@ public class IndexConf {
     private final Double bloomFilterProbabilityOfFalsePositive;
 
     private final int diskIoBufferSize;
+    private final boolean threadSafe;
+    private final boolean logEnabled;
 
-    IndexConf(final long maxNumberOfKeysInSegmentCache, //
+    static <M, N> IndexConfigurationBuilder<M, N> builder() {
+        return new IndexConfigurationBuilder<>();
+    }
+
+    IndexConfiguration(final long maxNumberOfKeysInSegmentCache, //
             final long maxNumberOfKeysInSegmentCacheDuringFlushing, //
             final int maxNumberOfKeysInSegmentIndexPage, //
             final int maxNumberOfKeysInCache, //
@@ -36,7 +42,8 @@ public class IndexConf {
             final Integer bloomFilterNumberOfHashFunctions, //
             final Integer bloomFilterIndexSizeInBytes, //
             final Double bloomFilterProbabilityOfFalsePositive, //
-            final int diskIoBufferSize) {
+            final int diskIoBufferSize, final boolean threadSafe,
+            final boolean logEnabled) {
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
         this.maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInSegmentCacheDuringFlushing;
         this.maxNumberOfKeysInSegmentIndexPage = maxNumberOfKeysInSegmentIndexPage;
@@ -49,6 +56,8 @@ public class IndexConf {
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
         this.bloomFilterProbabilityOfFalsePositive = bloomFilterProbabilityOfFalsePositive;
         this.diskIoBufferSize = diskIoBufferSize;
+        this.threadSafe = threadSafe;
+        this.logEnabled = logEnabled;
 
         if (diskIoBufferSize % 1024 != 0) {
             throw new IllegalArgumentException(String.format(
@@ -102,4 +111,11 @@ public class IndexConf {
         return diskIoBufferSize;
     }
 
+    boolean isThreadSafe() {
+        return threadSafe;
+    }
+
+    boolean isLogEnabled() {
+        return logEnabled;
+    }
 }

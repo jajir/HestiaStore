@@ -13,8 +13,8 @@ public class IndexInternalDefault<K, V> extends SstIndexImpl<K, V> {
 
     public IndexInternalDefault(final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor,
-            final TypeDescriptor<V> valueTypeDescriptor, final IndexConf conf,
-            final Log<K, V> log) {
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final IndexConfiguration conf, final Log<K, V> log) {
         super(directory, keyTypeDescriptor, valueTypeDescriptor, conf, log);
     }
 

@@ -1,11 +1,13 @@
 package com.coroptis.index.sst;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import com.coroptis.index.CloseableResource;
 import com.coroptis.index.IndexException;
 import com.coroptis.index.Pair;
+import com.coroptis.index.directory.Directory;
 import com.coroptis.index.log.LoggedKey;
 import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
 
@@ -13,6 +15,24 @@ public interface Index<K, V> extends CloseableResource {
 
     static <M, N> IndexBuilder<M, N> builder() {
         return new IndexBuilder<>();
+    }
+
+    static <M, N> Index<M, N> create(final Directory directory,
+            final IndexConfiguration indexConf) {
+        return null;
+    }
+
+    static <M, N> Index<M, N> open(final Directory directory,
+            final IndexConfiguration indexConf) {
+        return null;
+    }
+
+    static <M, N> Index<M, N> open(final Directory directory) {
+        return null;
+    }
+
+    static <M, N> Optional<Index<M, N>> tryOpen(final Directory directory) {
+        return null;
     }
 
     void put(K key, V value);
@@ -94,5 +114,5 @@ public interface Index<K, V> extends CloseableResource {
      *
      * @return the configuration of the index
      */
-    IndexConf getConfiguration();
+    IndexConfiguration getConfiguration();
 }
