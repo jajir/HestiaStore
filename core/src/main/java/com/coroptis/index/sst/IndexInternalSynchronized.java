@@ -19,7 +19,7 @@ public class IndexInternalSynchronized<K, V> extends SstIndexImpl<K, V> {
     public IndexInternalSynchronized(final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
-            final IndexConfiguration conf, final Log<K, V> log) {
+            final IndexConfiguration<K, V> conf, final Log<K, V> log) {
         super(directory, keyTypeDescriptor, valueTypeDescriptor, conf, log);
     }
 

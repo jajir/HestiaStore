@@ -28,7 +28,7 @@ public class SegmentManagerTest {
         private Directory directory;
 
         @Mock
-        private IndexConfiguration conf;
+        private IndexConfiguration<Integer, String> conf;
 
         @Mock
         private SegmentDataCache<Integer, String> segmentDataCache;

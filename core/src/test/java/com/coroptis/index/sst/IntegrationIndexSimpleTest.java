@@ -58,7 +58,7 @@ public class IntegrationIndexSimpleTest {
         index1.compact();
 
         index1.close();
-        assertEquals(17, numberOfFilesInDirectoryP(directory));
+        assertEquals(14, numberOfFilesInDirectoryP(directory));
 
         final Index<Integer, String> index2 = makeSstIndex();
         testData.stream().forEach(pair -> {
@@ -70,37 +70,37 @@ public class IntegrationIndexSimpleTest {
         assertEquals(Pair.of(1, "bbb"), pairs1.get(0));
         assertEquals(Pair.of(2, "ccc"), pairs1.get(1));
         assertEquals(Pair.of(3, "dde"), pairs1.get(2));
-        assertEquals(3, pairs1.size());
+        assertEquals(Pair.of(4, "ddf"), pairs1.get(3));
+        assertEquals(4, pairs1.size());
 
         List<Pair<Integer, String>> pairs2 = getSegmentData(2);
-        assertEquals(Pair.of(4, "ddf"), pairs2.get(0));
-        assertEquals(Pair.of(5, "ddg"), pairs2.get(1));
-        assertEquals(Pair.of(6, "ddh"), pairs2.get(2));
+        assertEquals(Pair.of(5, "ddg"), pairs2.get(0));
+        assertEquals(Pair.of(6, "ddh"), pairs2.get(1));
+        assertEquals(Pair.of(7, "ddi"), pairs2.get(2));
         assertEquals(3, pairs2.size());
 
         List<Pair<Integer, String>> pairs3 = getSegmentData(3);
-        assertEquals(Pair.of(7, "ddi"), pairs3.get(0));
-        assertEquals(Pair.of(8, "ddj"), pairs3.get(1));
-        assertEquals(2, pairs3.size());
+        assertEquals(0, pairs3.size());
 
         List<Pair<Integer, String>> pairs4 = getSegmentData(0);
-        assertEquals(Pair.of(9, "ddk"), pairs4.get(0));
-        assertEquals(Pair.of(10, "ddl"), pairs4.get(1));
-        assertEquals(Pair.of(11, "ddm"), pairs4.get(2));
-        assertEquals(3, pairs4.size());
+        assertEquals(Pair.of(8, "ddj"), pairs4.get(0));
+        assertEquals(Pair.of(9, "ddk"), pairs4.get(1));
+        assertEquals(Pair.of(10, "ddl"), pairs4.get(2));
+        assertEquals(Pair.of(11, "ddm"), pairs4.get(3));
+        assertEquals(4, pairs4.size());
 
     }
 
     @Test
     void test_fullLog() throws Exception {
 
-        Index<Integer, String> index1 = makeSstIndex(true);
+        Index<Integer, String> index1 = makeIndex(true);
 
         testData.stream().forEach(index1::put);
 
         // reopen index to make sure all log data at flushed at the disk
         index1.close();
-        index1 = makeSstIndex(true);
+        index1 = makeIndex(true);
 
         final List<Pair<LoggedKey<Integer>, String>> list = index1
                 .getLogStreamer().stream().collect(Collectors.toList());
@@ -242,12 +242,12 @@ public class IntegrationIndexSimpleTest {
     }
 
     private Index<Integer, String> makeSstIndex() {
-        return makeSstIndex(false);
+        return makeIndex(false);
     }
 
-    private Index<Integer, String> makeSstIndex(boolean withLog) {
-        return Index.<Integer, String>builder()//
-                .withDirectory(directory)//
+    private Index<Integer, String> makeIndex(boolean withLog) {
+        final IndexConfiguration<Integer, String> conf = IndexConfiguration
+                .<Integer, String>builder()//
                 .withKeyClass(Integer.class)//
                 .withValueClass(String.class)//
                 .withKeyTypeDescriptor(tdi) //
@@ -255,13 +255,15 @@ public class IntegrationIndexSimpleTest {
                 .withCustomConf()//
                 .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(3) //
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(4) //
                 .withMaxNumberOfKeysInSegmentIndexPage(2) //
-                .withMaxNumberOfKeysInCache(2) //
+                .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
                 .withUseFullLog(withLog) //
                 .withName("test_index") //
                 .build();
+        return Index.create(directory, conf);
     }
 
     private int numberOfFilesInDirectoryP(final Directory directory) {

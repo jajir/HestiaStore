@@ -21,7 +21,7 @@ public class IndexInternalSynchronizedTest {
     private Directory directory = new MemDirectory();
 
     @Mock
-    private IndexConfiguration conf;
+    private IndexConfiguration<Integer, String> conf;
 
     @Mock
     private Log<Integer, String> log;

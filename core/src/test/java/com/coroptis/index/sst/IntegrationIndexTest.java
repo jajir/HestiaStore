@@ -83,8 +83,8 @@ public class IntegrationIndexTest extends AbstractIndexTest {
      * @throws Exception
      */
     @ParameterizedTest
-    @CsvSource(value = { "1:0", "3:3", "5:3", "15:15", "100:99",
-            "102:102" }, delimiter = ':')
+    @CsvSource(value = { "1:0", "3:0", "5:4", "15:12", "100:100",
+            "102:100" }, delimiter = ':')
     void test_adds_and_deletes_operations_no_compacting(final int iterations,
             final int itemsInIndex) throws Exception {
         final Index<Integer, String> index = makeSstIndex(false);
@@ -122,8 +122,8 @@ public class IntegrationIndexTest extends AbstractIndexTest {
     }
 
     private Index<Integer, String> makeSstIndex(boolean withLog) {
-        return Index.<Integer, String>builder()//
-                .withDirectory(directory)//
+        final IndexConfiguration<Integer, String> conf = IndexConfiguration
+                .<Integer, String>builder()//
                 .withKeyClass(Integer.class)//
                 .withValueClass(String.class)//
                 .withKeyTypeDescriptor(tdi) //
@@ -131,13 +131,15 @@ public class IntegrationIndexTest extends AbstractIndexTest {
                 .withCustomConf()//
                 .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(3) //
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(4) //
                 .withMaxNumberOfKeysInSegmentIndexPage(2) //
-                .withMaxNumberOfKeysInCache(2) //
+                .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(2) //
                 .withUseFullLog(withLog) //
                 .withName("test_index") //
                 .build();
+        return Index.create(directory, conf);
     }
 
 }

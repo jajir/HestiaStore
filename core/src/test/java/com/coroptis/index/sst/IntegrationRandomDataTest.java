@@ -51,7 +51,8 @@ public class IntegrationRandomDataTest {
 
         // Step 2: Randomly change some entries
         for (int i = 0; i < TEST_UPDATE_LOOPS; i++) {
-            final List<String> keys = referenceMap.keySet().stream().collect(Collectors.toList());
+            final List<String> keys = referenceMap.keySet().stream()
+                    .collect(Collectors.toList());
             for (final String key : keys) {
                 if (random.nextInt(10) % 3 == 0) {
                     // key is deleted
@@ -89,8 +90,8 @@ public class IntegrationRandomDataTest {
     }
 
     private Index<String, Integer> makeSstIndex(boolean withLog) {
-        return Index.<String, Integer>builder()//
-                .withDirectory(directory)//
+        final IndexConfiguration<String, Integer> conf = IndexConfiguration
+                .<String, Integer>builder()//
                 .withKeyClass(String.class)//
                 .withValueClass(Integer.class)//
                 .withKeyTypeDescriptor(tds) //
@@ -104,5 +105,6 @@ public class IntegrationRandomDataTest {
                 .withBloomFilterNumberOfHashFunctions(2) //
                 .withUseFullLog(withLog) //
                 .build();
+        return Index.create(directory, conf);
     }
 }

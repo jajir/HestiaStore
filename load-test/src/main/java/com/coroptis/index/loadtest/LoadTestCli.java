@@ -17,6 +17,7 @@ import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.FsDirectory;
 import com.coroptis.index.sst.Index;
+import com.coroptis.index.sst.IndexConfiguration;
 
 public class LoadTestCli {
 
@@ -174,8 +175,8 @@ public class LoadTestCli {
                 cmd);
         final Directory dir = new FsDirectory(new File(directory));
 
-        return Index.<String, Long>builder()//
-                .withDirectory(dir)//
+        final IndexConfiguration<String, Long> conf = IndexConfiguration
+                .<String, Long>builder()//
                 .withKeyClass(String.class)//
                 .withValueClass(Long.class)//
                 .withKeyTypeDescriptor(TYPE_DESCRIPTOR_STRING) //
@@ -195,6 +196,7 @@ public class LoadTestCli {
                         (int) bloomFilterNumberOfHashFunctions) //
                 .withUseFullLog(false) //
                 .build();
+        return Index.<String, Long>create(dir, conf);
     }
 
     private void handleWriteOption(final CommandLine cmd) {

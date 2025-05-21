@@ -8,6 +8,7 @@ import com.coroptis.index.datatype.TypeDescriptorString;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.directory.FsDirectory;
 import com.coroptis.index.sst.Index;
+import com.coroptis.index.sst.IndexConfiguration;
 
 public class ConsistencyCheck {
     public final static String DIRECTORY = "target/consistency-check";
@@ -19,8 +20,9 @@ public class ConsistencyCheck {
     ConsistencyCheck() {
         final Directory dir = new FsDirectory(new File(DIRECTORY));
         // Constructor logic if needed
-        this.index = Index.<String, Long>builder()//
-                .withDirectory(dir)//
+
+        IndexConfiguration<String, Long> conf = IndexConfiguration
+                .<String, Long>builder()//
                 .withName("kachnicka")//
                 .withKeyClass(String.class)//
                 .withValueClass(Long.class)//
@@ -36,6 +38,7 @@ public class ConsistencyCheck {
                 .withBloomFilterNumberOfHashFunctions(1) //
                 .withUseFullLog(false) //
                 .build();
+        this.index = Index.create(dir, conf);
     }
 
     private final static long WRITE_KEYS = 9_000_000L;

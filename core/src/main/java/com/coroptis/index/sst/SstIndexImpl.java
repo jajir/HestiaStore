@@ -24,7 +24,7 @@ import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
 public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final IndexConfiguration conf;
+    private final IndexConfiguration<K, V> conf;
     protected final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final UniqueCache<K, V> cache;
@@ -37,7 +37,7 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
     public SstIndexImpl(final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
-            final IndexConfiguration conf, final Log<K, V> log) {
+            final IndexConfiguration<K, V> conf, final Log<K, V> log) {
         if (directory == null) {
             throw new IllegalArgumentException("Directory was no specified.");
         }
@@ -249,7 +249,7 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
     }
 
     @Override
-    public IndexConfiguration getConfiguration() {
+    public IndexConfiguration<K, V> getConfiguration() {
         return conf;
     }
 

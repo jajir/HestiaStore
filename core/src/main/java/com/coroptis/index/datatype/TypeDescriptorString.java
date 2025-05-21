@@ -45,4 +45,17 @@ public class TypeDescriptorString implements TypeDescriptor<String> {
         return TOMBSTONE_VALUE;
     }
 
+    @Override
+    public boolean equals(final Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null || getClass() != obj.getClass())
+            return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }

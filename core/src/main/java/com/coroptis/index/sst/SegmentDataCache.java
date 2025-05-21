@@ -20,7 +20,7 @@ public class SegmentDataCache<K, V> {
 
     final Cache<SegmentId, SegmentData<K, V>> cache;
 
-    SegmentDataCache(final IndexConfiguration conf) {
+    SegmentDataCache(final IndexConfiguration<K, V> conf) {
         cache = new CacheLru<>(conf.getMaxNumberOfSegmentsInCache(),
                 (segmenId, segmentData) -> {
                     segmentData.close();

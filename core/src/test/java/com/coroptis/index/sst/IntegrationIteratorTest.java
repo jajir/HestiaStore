@@ -30,22 +30,23 @@ public class IntegrationIteratorTest extends AbstractIndexTest {
     @BeforeEach
     void setUp() {
         directory = new MemDirectory();
-        index = Index.<String, Integer>builder()//
-                .withDirectory(directory)//
-                .withKeyClass(String.class)//
+        IndexConfiguration<String, Integer> conf = IndexConfiguration
+                .<String, Integer>builder().withKeyClass(String.class)//
                 .withValueClass(Integer.class)//
                 .withKeyTypeDescriptor(tds) //
                 .withValueTypeDescriptor(tdi) //
                 .withCustomConf()//
                 .withMaxNumberOfKeysInSegment(4) //
-                .withMaxNumberOfKeysInSegmentCache(10000) //
+                .withMaxNumberOfKeysInSegmentCache(100) //
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(200)//
                 .withMaxNumberOfKeysInSegmentIndexPage(1000) //
-                .withMaxNumberOfKeysInCache(2) //
+                .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
                 .withUseFullLog(false) //
                 .withName("test_index") //
                 .build();
+        index = Index.<String, Integer>create(directory, conf);
 
         writePairs(index, indexFile);
         index.compact();

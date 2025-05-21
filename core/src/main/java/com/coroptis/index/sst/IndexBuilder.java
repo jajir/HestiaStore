@@ -7,6 +7,7 @@ import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.log.Log;
 
+@Deprecated
 public class IndexBuilder<K, V> {
 
     private final static long DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = 200_000;
@@ -234,7 +235,8 @@ public class IndexBuilder<K, V> {
                         keyClass.getName(), memoryConf));
             }
         }
-        final IndexConfiguration conf = new IndexConfiguration(
+        final IndexConfiguration<K, V> conf = new IndexConfiguration<K, V>(
+                keyClass, valueClass, keyTypeDescriptor, valueTypeDescriptor,
                 maxNumberOfKeysInSegmentCache,
                 maxNumberOfKeysInSegmentCacheDuringFlushing,
                 maxNumberOfKeysInSegmentIndexPage, maxNumberOfKeysInCache,

@@ -7,7 +7,7 @@ import com.coroptis.index.directory.Directory;
 
 public class BloomFilterBuilder<K> {
 
-    private final static double DEFAULT_PROBABILITY_OF_FALSE_POSITIVE = 0.01;
+    public final static double DEFAULT_PROBABILITY_OF_FALSE_POSITIVE = 0.01;
     private final static int DEFAULT_DISK_IO_BUFFER_SIZE = 2 * 1024;
 
     private Directory directory;

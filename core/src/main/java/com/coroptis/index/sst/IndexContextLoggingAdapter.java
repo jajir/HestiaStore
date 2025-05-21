@@ -11,10 +11,10 @@ import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
 
 public class IndexContextLoggingAdapter<K, V> implements Index<K, V> {
 
-    private final IndexConfiguration indexConf;
+    private final IndexConfiguration<K, V> indexConf;
     private final Index<K, V> index;
 
-    IndexContextLoggingAdapter(final IndexConfiguration indexConf,
+    IndexContextLoggingAdapter(final IndexConfiguration<K, V> indexConf,
             final Index<K, V> index) {
         this.indexConf = Objects.requireNonNull(indexConf,
                 "Index configuration cannot be null");
@@ -120,7 +120,7 @@ public class IndexContextLoggingAdapter<K, V> implements Index<K, V> {
     }
 
     @Override
-    public IndexConfiguration getConfiguration() {
+    public IndexConfiguration<K, V> getConfiguration() {
         setContext();
         try {
             return index.getConfiguration();

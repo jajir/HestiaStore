@@ -158,79 +158,9 @@ public class IndexConfigurationBuilder<K, V> {
         return this;
     }
 
-    public IndexConfiguration build() {
-        if (keyClass == null) {
-            throw new IllegalArgumentException("Key class wasn't specified");
-        }
-        if (valueClass == null) {
-            throw new IllegalArgumentException("Value class wasn't specified");
-        }
-        if (keyTypeDescriptor == null) {
-            this.keyTypeDescriptor = DataTypeDescriptorRegistry
-                    .getTypeDescriptor(this.keyClass);
-        }
-        if (valueTypeDescriptor == null) {
-            this.valueTypeDescriptor = DataTypeDescriptorRegistry
-                    .getTypeDescriptor(this.valueClass);
-        }
-        if (maxNumberOfKeysInSegmentCache < 3) {
-            throw new IllegalArgumentException(
-                    "Max number of keys in segment cache must be at least 3.");
-        }
-        if (maxNumberOfKeysInSegmentCacheDuringFlushing == DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING) {
-            maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInCache;
-        } else {
-            if (maxNumberOfKeysInSegmentCacheDuringFlushing < 3) {
-                throw new IllegalArgumentException(
-                        "Max number of keys in segment cache during flushing must be at least 3.");
-            }
-            if (maxNumberOfKeysInSegmentCacheDuringFlushing < maxNumberOfKeysInSegmentCache) {
-                throw new IllegalArgumentException(
-                        "Max number of keys in segment cache during flushing must be greater than max number of keys in segment cache.");
-            }
-        }
-        if (maxNumberOfKeysInSegment < 4) {
-            throw new IllegalArgumentException(
-                    "Max number of keys in segment must be at least 4.");
-        }
-        if (maxNumberOfSegmentsInCache < 3) {
-            throw new IllegalArgumentException(
-                    "Max number of segments in cache must be at least 2.");
-        }
-        if (indexName == null) {
-            throw new IllegalArgumentException("index name is required");
-        }
-
-        if (!customConfWasUsed) {
-            final Optional<BuilderConfiguration> oConf = BuilderConfigurationRegistry
-                    .get(keyClass, memoryConf);
-            if (oConf.isPresent()) {
-                final BuilderConfiguration conf = oConf.get();
-                maxNumberOfKeysInSegmentCache = conf
-                        .getMaxNumberOfKeysInSegmentCache();
-                maxNumberOfKeysInSegmentCacheDuringFlushing = conf
-                        .getMaxNumberOfKeysInSegmentCacheDuringFlushing();
-                maxNumberOfKeysInSegmentIndexPage = conf
-                        .getMaxNumberOfKeysInSegmentIndexPage();
-                maxNumberOfKeysInCache = conf.getMaxNumberOfKeysInCache();
-                maxNumberOfKeysInSegment = conf.getMaxNumberOfKeysInSegment();
-                maxNumberOfSegmentsInCache = conf
-                        .getMaxNumberOfSegmentsInCache();
-                diskIoBufferSizeInBytes = conf.getIndexBufferSizeInBytes();
-                bloomFilterIndexSizeInBytes = conf
-                        .getBloomFilterIndexSizeInBytes();
-                bloomFilterNumberOfHashFunctions = conf
-                        .getBloomFilterNumberOfHashFunctions();
-                bloomFilterProbabilityOfFalsePositive = conf
-                        .getBloomFilterProbabilityOfFalsePositive();
-            } else {
-                throw new IllegalStateException(String.format(
-                        "Configuration for key class '%s' "
-                                + "and memory configuration '%s' was not specified.",
-                        keyClass.getName(), memoryConf));
-            }
-        }
-        final IndexConfiguration indexConf = new IndexConfiguration(
+    public IndexConfiguration<K, V> build() {
+        final IndexConfiguration<K, V> indexConf = new IndexConfiguration<K, V>(
+                keyClass, valueClass, keyTypeDescriptor, valueTypeDescriptor,
                 maxNumberOfKeysInSegmentCache,
                 maxNumberOfKeysInSegmentCacheDuringFlushing,
                 maxNumberOfKeysInSegmentIndexPage, maxNumberOfKeysInCache,
@@ -238,14 +168,6 @@ public class IndexConfigurationBuilder<K, V> {
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
                 bloomFilterProbabilityOfFalsePositive, diskIoBufferSizeInBytes,
                 isIndexSynchronized, useFullLog);
-        if (keyTypeDescriptor == null) {
-            throw new IllegalArgumentException("Key type descriptor is null. "
-                    + "Set key type descriptor of key class.");
-        }
-        if (valueTypeDescriptor == null) {
-            throw new IllegalArgumentException("Value type descriptor is null. "
-                    + "Set value type descriptor of value class.");
-        }
         return indexConf;
     }
 

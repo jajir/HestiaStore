@@ -8,31 +8,73 @@ import com.coroptis.index.CloseableResource;
 import com.coroptis.index.IndexException;
 import com.coroptis.index.Pair;
 import com.coroptis.index.directory.Directory;
+import com.coroptis.index.log.Log;
 import com.coroptis.index.log.LoggedKey;
 import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
 
 public interface Index<K, V> extends CloseableResource {
 
+    @Deprecated
     static <M, N> IndexBuilder<M, N> builder() {
         return new IndexBuilder<>();
     }
 
     static <M, N> Index<M, N> create(final Directory directory,
-            final IndexConfiguration indexConf) {
-        return null;
+            final IndexConfiguration<M, N> indexConf) {
+        final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
+                new IndexConfiguratonStorage<>(directory));
+        confManager.save(indexConf);
+        return openIndex(directory, indexConf);
     }
 
+    // FIXME NYI
     static <M, N> Index<M, N> open(final Directory directory,
-            final IndexConfiguration indexConf) {
-        return null;
+            final IndexConfiguration<M, N> indexConf) {
+        throw new UnsupportedOperationException(
+                "This method is not implemented yet");
     }
 
     static <M, N> Index<M, N> open(final Directory directory) {
-        return null;
+        final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
+                new IndexConfiguratonStorage<>(directory));
+        return openIndex(directory, confManager.loadExisting());
     }
 
     static <M, N> Optional<Index<M, N>> tryOpen(final Directory directory) {
-        return null;
+        final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
+                new IndexConfiguratonStorage<>(directory));
+        final Optional<IndexConfiguration<M, N>> oConf = confManager
+                .tryToLoad();
+        if (oConf.isPresent()) {
+            return Optional.of(openIndex(directory, oConf.get()));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private static <M, N> Index<M, N> openIndex(final Directory directory,
+            final IndexConfiguration<M, N> indexConf) {
+        Log<M, N> log = null;
+        if (indexConf.isLogEnabled()) {
+            log = Log.<M, N>builder()//
+                    .withDirectory(directory)//
+                    .withKeyTypeDescriptor(indexConf.getKeyTypeDescriptor())//
+                    .withValueTypeDescriptor(indexConf.getValueTypeDescriptor())//
+                    .build();
+        } else {
+            log = Log.<M, N>builder().buildEmpty();
+        }
+        if (indexConf.isThreadSafe()) {
+            final IndexInternal<M, N> index = new IndexInternalSynchronized<>(
+                    directory, indexConf.getKeyTypeDescriptor(),
+                    indexConf.getValueTypeDescriptor(), indexConf, log);
+            return new IndexContextLoggingAdapter<>(indexConf, index);
+        } else {
+            final IndexInternal<M, N> index = new IndexInternalSynchronized<>(
+                    directory, indexConf.getKeyTypeDescriptor(),
+                    indexConf.getValueTypeDescriptor(), indexConf, log);
+            return new IndexContextLoggingAdapter<>(indexConf, index);
+        }
     }
 
     void put(K key, V value);
@@ -114,5 +156,5 @@ public interface Index<K, V> extends CloseableResource {
      *
      * @return the configuration of the index
      */
-    IndexConfiguration getConfiguration();
+    IndexConfiguration<K, V> getConfiguration();
 }

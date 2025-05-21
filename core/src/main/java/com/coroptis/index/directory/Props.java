@@ -15,14 +15,24 @@ public class Props {
     private final String fileName;
     private final Properties properties = new Properties();
 
+    // TODO make force true by default, remove in in future
     public Props(final Directory directory, final String fileName) {
-        this.directory = Objects.requireNonNull(directory);
-        this.fileName = Objects.requireNonNull(fileName);
-        tryToReadProps();
+        this(directory, fileName, false);
     }
 
-    private void tryToReadProps() {
+    public Props(final Directory directory, final String fileName,
+            final boolean force) {
+        this.directory = Objects.requireNonNull(directory);
+        this.fileName = Objects.requireNonNull(fileName);
+        tryToReadProps(force);
+    }
+
+    private void tryToReadProps(boolean force) {
         if (!directory.isFileExists(fileName)) {
+            if (force) {
+                throw new IndexException("File " + fileName
+                        + " does not exist in directory " + directory);
+            }
             return;
         }
         try {
@@ -61,6 +71,28 @@ public class Props {
             return 0L;
         }
         return Long.parseLong(properties.getProperty(propertyKey));
+    }
+
+    public void setDouble(final String propertyKey, final double value) {
+        properties.put(propertyKey, String.valueOf(value));
+    }
+
+    public double getDouble(final String propertyKey) {
+        if (properties.getProperty(propertyKey) == null) {
+            return 0D;
+        }
+        return Double.parseDouble(properties.getProperty(propertyKey));
+    }
+
+    public void setBoolean(final String propertyKey, final boolean value) {
+        properties.put(propertyKey, String.valueOf(value));
+    }
+
+    public boolean getBoolean(final String propertyKey) {
+        if (properties.getProperty(propertyKey) == null) {
+            return false;
+        }
+        return Boolean.parseBoolean(properties.getProperty(propertyKey));
     }
 
     public void writeData() {

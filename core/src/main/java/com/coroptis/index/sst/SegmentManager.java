@@ -20,7 +20,7 @@ public class SegmentManager<K, V> {
 
         private final Map<SegmentId, Segment<K, V>> segments = new HashMap<>();
 
-        private final IndexConfiguration conf;
+        private final IndexConfiguration<K, V> conf;
         private final Directory directory;
         private final TypeDescriptor<K> keyTypeDescriptor;
         private final TypeDescriptor<V> valueTypeDescriptor;
@@ -29,7 +29,7 @@ public class SegmentManager<K, V> {
         SegmentManager(final Directory directory,
                         final TypeDescriptor<K> keyTypeDescriptor,
                         final TypeDescriptor<V> valueTypeDescriptor,
-                        final IndexConfiguration conf,
+                        final IndexConfiguration<K, V> conf,
                         final SegmentDataCache<K, V> segmentDataCache) {
                 this.directory = Objects.requireNonNull(directory);
                 this.keyTypeDescriptor = Objects
