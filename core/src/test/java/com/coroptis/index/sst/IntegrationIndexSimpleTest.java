@@ -42,7 +42,6 @@ public class IntegrationIndexSimpleTest {
 
     @Test
     void testBasic() throws Exception {
-
         final Index<Integer, String> index1 = makeSstIndex();
 
         testData.stream().forEach(index1::put);

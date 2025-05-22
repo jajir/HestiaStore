@@ -106,3 +106,27 @@ Index<Integer, Integer> index = Index.<Integer, Integer>builder()
 
 7. **Runtime tuning**  
    * Non-persistent knobs (e.g., cache sizes, buffer lengths) can be adjusted at runtime through dedicated setters or a `RuntimeConfig` object, without recreating the index.
+
+## Adjustable index parameters
+
+Some parameters coudl be during indx opening set to new value.
+
+| Name                                        | Meaning                                              | Can be changed | Applys on            |
+| ------------------------------------------- | ---------------------------------------------------- | -------------- | -------------------- |
+| indexName                                   | Logical name of the index                            | 🟩             | index                |
+| keyClass                                    | Key class                                            | 🟥             | index                |
+| valueClass                                  | Value class                                          | 🟥             | index                |
+| keyTypeDescriptor                           | Key class type descriptor                            | 🟥             | index                |
+| valueTypeDescriptor                         | Value class type descriptor                          | 🟥             | index                |
+| maxNumberOfKeysInSegmentIndexPage           | Maximum keys in segment index page                   | 🟥             | segment              |
+| maxNumberOfKeysInSegmentCache               | Maximum number of keys in segment cache              | 🟩             | segment              |
+| maxNumberOfKeysInSegmentCacheDuringFlushing | Maximum keys in cache during flushing                | 🟩             | segment              |
+| maxNumberOfKeysInCache                      | Maximum keys in the index cache                      | 🟩             | index                |
+| maxNumberOfKeysInSegment                    | Maximum keys in a segment                            | 🟥             | segment              |
+| maxNumberOfSegmentsInCache                  | Maximum number of segments in cache                  | 🟩             | index                |
+| bloomFilterNumberOfHashFunctions            | Bloom filter - number of hash functions used         | 🟥             | segment bloom filter |
+| bloomFilterIndexSizeInBytes                 | Bloom filter - index size in bytes                   | 🟥             | segment bloom filter |
+| bloomFilterProbabilityOfFalsePositive       | Bloom filter - probability of false positives        | 🟥             | segment bloom filter |
+| diskIoBufferSize                            | Size of the disk I/O buffer                          | 🟩             | Disk IO              |
+| threadSafe                                  | If index is thread-safe                              | 🟩             | index                |
+| logEnabled                                  | If full logging is enabled                           | 🟩             | index                |

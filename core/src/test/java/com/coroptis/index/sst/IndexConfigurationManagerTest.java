@@ -31,6 +31,8 @@ public class IndexConfigurationManagerTest {
             .withKeyTypeDescriptor(TD_LONG)//
             .withValueTypeDescriptor(TD_STRING)//
             .withName("test_index")//
+            .withLogEnabled(false)//
+            .withThreadSafe(false)//
             .withMaxNumberOfKeysInSegmentCache(11)//
             .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22) //
             .withMaxNumberOfKeysInSegmentIndexPage(33)//
@@ -90,18 +92,36 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_value_type_descriptor_missing() throws Exception {
+    void test_save_thread_safe_missing() throws Exception {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withKeyClass(Long.class)//
                 .withValueClass(String.class)//
                 .withKeyTypeDescriptor(TD_LONG)//
+                .withValueTypeDescriptor(TD_STRING)//
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
                 () -> manager.save(config));
 
-        assertEquals("Value type descriptor is null.", ex.getMessage());
+        assertEquals("Value of thread safe is null.", ex.getMessage());
+    }
+
+    @Test
+    void test_save_log_enabled_missing() throws Exception {
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
+                .withKeyClass(Long.class)//
+                .withValueClass(String.class)//
+                .withKeyTypeDescriptor(TD_LONG)//
+                .withValueTypeDescriptor(TD_STRING)//
+                .withThreadSafe(true)//
+                .build();
+
+        final Exception ex = assertThrows(IllegalArgumentException.class,
+                () -> manager.save(config));
+
+        assertEquals("Value of log enable is null.", ex.getMessage());
     }
 
     @Test
@@ -112,6 +132,8 @@ public class IndexConfigurationManagerTest {
                 .withValueClass(String.class)//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
+                .withThreadSafe(true)//
+                .withLogEnabled(true)//
                 .withMaxNumberOfKeysInCache(2)//
                 .build();
 
@@ -130,6 +152,8 @@ public class IndexConfigurationManagerTest {
                 .withValueClass(String.class)//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
+                .withThreadSafe(true)//
+                .withLogEnabled(true)//
                 .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(3)//
                 .build();
@@ -150,6 +174,8 @@ public class IndexConfigurationManagerTest {
                 .withValueClass(String.class)//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
+                .withThreadSafe(true)//
+                .withLogEnabled(true)//
                 .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(4)//
                 .withMaxNumberOfSegmentsInCache(1)//
@@ -157,7 +183,7 @@ public class IndexConfigurationManagerTest {
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
                 () -> manager.save(config));
-        assertEquals("Max number of segments in " + "cache must be at least 2.",
+        assertEquals("Max number of segments in " + "cache must be at least 3.",
                 ex.getMessage());
     }
 
@@ -170,6 +196,8 @@ public class IndexConfigurationManagerTest {
                 .withValueClass(String.class)//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
+                .withThreadSafe(true)//
+                .withLogEnabled(true)//
                 .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(4)//
                 .withMaxNumberOfSegmentsInCache(3)//
@@ -191,6 +219,8 @@ public class IndexConfigurationManagerTest {
                 .withValueClass(String.class)//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
+                .withThreadSafe(true)//
+                .withLogEnabled(true)//
                 .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(4)//
                 .withMaxNumberOfSegmentsInCache(3)//
@@ -214,6 +244,8 @@ public class IndexConfigurationManagerTest {
                 .withValueClass(String.class)//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
+                .withThreadSafe(true)//
+                .withLogEnabled(true)//
                 .withDiskIoBufferSizeInBytes(1000)//
                 .withMaxNumberOfKeysInSegmentCache(10)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(20)//
@@ -237,6 +269,8 @@ public class IndexConfigurationManagerTest {
                 .withValueClass(String.class)//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
+                .withThreadSafe(true)//
+                .withLogEnabled(true)//
                 .withDiskIoBufferSizeInBytes(1024)//
                 .withMaxNumberOfKeysInSegmentCache(10)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(20)//
@@ -256,7 +290,7 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_mergeWithStored() {
+    void test_mergeWithStored_used_stored_values() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withKeyClass(Long.class) //
@@ -282,7 +316,8 @@ public class IndexConfigurationManagerTest {
         verify(storage, Mockito.times(0)).save(any());
 
         assertNotNull(ret);
-        // returned object can't be changed
+        // TODO verify returned object,
+
     }
 
     @Test
@@ -298,6 +333,178 @@ public class IndexConfigurationManagerTest {
         assertNotNull(ret);
 
         assertEquals("pandemonium", ret.getIndexName());
+    }
+
+    @Test
+    void test_mergeWithStored_maxNumberOfKeysInSegmentCache() {
+        final IndexConfiguration<Long, String> config = configBuilder//
+                .withMaxNumberOfKeysInSegmentCache(3627)//
+                .build();
+
+        when(storage.load()).thenReturn(CONFIG);
+        final IndexConfiguration<Long, String> ret = manager
+                .mergeWithStored(config);
+        verify(storage, Mockito.times(1)).save(any());
+        assertNotNull(ret);
+
+        assertEquals(3627, ret.getMaxNumberOfKeysInSegmentCache());
+    }
+
+    @Test
+    void test_mergeWithStored_diskIoBufferSize() {
+        final IndexConfiguration<Long, String> config = configBuilder//
+                .withDiskIoBufferSizeInBytes(1024 * 77)//
+                .build();
+
+        when(storage.load()).thenReturn(CONFIG);
+        final IndexConfiguration<Long, String> ret = manager
+                .mergeWithStored(config);
+        verify(storage, Mockito.times(1)).save(any());
+        assertNotNull(ret);
+
+        assertEquals(1024 * 77, ret.getDiskIoBufferSize());
+    }
+
+    @Test
+    void test_mergeWithStored_isLogEnabled() {
+        final IndexConfiguration<Long, String> config = configBuilder//
+                .withLogEnabled(true)//
+                .build();
+
+        when(storage.load()).thenReturn(CONFIG);
+        final IndexConfiguration<Long, String> ret = manager
+                .mergeWithStored(config);
+        verify(storage, Mockito.times(1)).save(any());
+        assertNotNull(ret);
+
+        assertEquals(true, ret.isLogEnabled());
+    }
+
+    @Test
+    void test_mergeWithStored_isThreadSafe() {
+        final IndexConfiguration<Long, String> config = configBuilder//
+                .withThreadSafe(true)//
+                .build();
+
+        when(storage.load()).thenReturn(CONFIG);
+        final IndexConfiguration<Long, String> ret = manager
+                .mergeWithStored(config);
+        verify(storage, Mockito.times(1)).save(any());
+        assertNotNull(ret);
+
+        assertEquals(true, ret.isThreadSafe());
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @Test
+    void test_mergeWithStored_keyClass() {
+        final IndexConfiguration cfg = IndexConfiguration.builder()//
+                .withKeyClass((Class) Double.class) //
+                .build();
+        when(storage.load()).thenReturn(CONFIG);
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> manager.mergeWithStored(cfg));
+
+        assertEquals(
+                "Key class is already set to 'java.lang.Long' and "
+                        + "can't be changed to 'java.lang.Double'",
+                e.getMessage());
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @Test
+    void test_mergeWithStored_valueClass() {
+        final IndexConfiguration cfg = IndexConfiguration.builder()//
+                .withValueClass((Class) Double.class) //
+                .build();
+        when(storage.load()).thenReturn(CONFIG);
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> manager.mergeWithStored(cfg));
+
+        assertEquals(
+                "Value class is already set to 'java.lang.String' and "
+                        + "can't be changed to 'java.lang.Double'",
+                e.getMessage());
+    }
+
+    @Test
+    void test_mergeWithStored_maxNumberOfKeysInSegment() {
+        final IndexConfiguration<Long, String> config = configBuilder//
+                .withMaxNumberOfKeysInSegment(9864)//
+                .build();
+
+        when(storage.load()).thenReturn(CONFIG);
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> manager.mergeWithStored(config));
+
+        assertEquals(
+                "Value of MaxNumberOfKeysInSegment is already "
+                        + "set to '44' and can't be changed to '9864'",
+                e.getMessage());
+    }
+
+    @Test
+    void test_mergeWithStored_bloomFilterIndexSizeInBytes() {
+        final IndexConfiguration<Long, String> config = configBuilder//
+                .withBloomFilterIndexSizeInBytes(4620)//
+                .build();
+
+        when(storage.load()).thenReturn(CONFIG);
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> manager.mergeWithStored(config));
+
+        assertEquals(
+                "Value of BloomFilterIndexSizeInBytes is already "
+                        + "set to '77' and can't be changed to '4620'",
+                e.getMessage());
+    }
+
+    @Test
+    void test_mergeWithStored_bloomFilterNumberOfHashFunctions() {
+        final IndexConfiguration<Long, String> config = configBuilder//
+                .withBloomFilterNumberOfHashFunctions(4620)//
+                .build();
+
+        when(storage.load()).thenReturn(CONFIG);
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> manager.mergeWithStored(config));
+
+        assertEquals(
+                "Value of BloomFilterNumberOfHashFunctions is already "
+                        + "set to '88' and can't be changed to '4620'",
+                e.getMessage());
+    }
+
+    @Test
+    void test_mergeWithStored_bloomFilterProbabilityOfFalsePositive() {
+        final IndexConfiguration<Long, String> config = configBuilder//
+                .withBloomFilterProbabilityOfFalsePositive(0.5)//
+                .build();
+
+        when(storage.load()).thenReturn(CONFIG);
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> manager.mergeWithStored(config));
+
+        assertEquals(
+                "Value of BloomFilterProbabilityOfFalsePositive is already "
+                        + "set to 'null' and can't be changed to '0.5'",
+                e.getMessage());
+    }
+
+    @Test
+    void test_mergeWithStored_maxNumberOfKeysInSegmentIndexPage() {
+        final IndexConfiguration<Long, String> config = configBuilder//
+                .withMaxNumberOfKeysInSegmentIndexPage(4620)//
+                .build();
+
+        when(storage.load()).thenReturn(CONFIG);
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> manager.mergeWithStored(config));
+
+        assertEquals(
+                "Value of MaxNumberOfKeysInSegmentIndexPage is already "
+                        + "set to '33' and can't be changed to '4620'",
+                e.getMessage());
     }
 
     @BeforeEach

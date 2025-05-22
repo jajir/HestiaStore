@@ -1,7 +1,6 @@
 package com.coroptis.index.sst;
 
 import java.util.Objects;
-import java.util.Optional;
 
 import com.coroptis.index.datatype.TypeDescriptor;
 
@@ -15,8 +14,6 @@ public class IndexConfigurationBuilder<K, V> {
     private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_CACHE = 1_000_000;
     private final static int DEFAULT_MAX_NUMBER_OF_SEGMENTS_IN_CACHE = 10;
 
-    private final static boolean DEFAULT_INDEX_SYNCHRONIZED = false;
-
     private final static int DEFAULT_DISK_IO_BUFFER_SIZE_IN_BYTES = 1024 * 4;
 
     private long maxNumberOfKeysInSegmentCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
@@ -25,11 +22,11 @@ public class IndexConfigurationBuilder<K, V> {
     private int maxNumberOfKeysInCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_CACHE;
     private int maxNumberOfKeysInSegment = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT;
     private int maxNumberOfSegmentsInCache = DEFAULT_MAX_NUMBER_OF_SEGMENTS_IN_CACHE;
+    // TODO change previous types to long
 
     private Integer bloomFilterNumberOfHashFunctions;
     private Integer bloomFilterIndexSizeInBytes;
     private Double bloomFilterProbabilityOfFalsePositive = null;
-    private boolean isThreadSafe = DEFAULT_INDEX_SYNCHRONIZED;
 
     private int diskIoBufferSizeInBytes = DEFAULT_DISK_IO_BUFFER_SIZE_IN_BYTES;
 
@@ -38,7 +35,8 @@ public class IndexConfigurationBuilder<K, V> {
     private Class<V> valueClass;
     private TypeDescriptor<K> keyTypeDescriptor;
     private TypeDescriptor<V> valueTypeDescriptor;
-    private boolean logEnabled = false;
+    private Boolean logEnabled;
+    private Boolean isThreadSafe;
     private String memoryConf = null;
 
     IndexConfigurationBuilder() {
@@ -123,7 +121,7 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     public IndexConfigurationBuilder<K, V> withThreadSafe(
-            final boolean isThreadSafe) {
+            final Boolean isThreadSafe) {
         this.isThreadSafe = isThreadSafe;
         return this;
     }
@@ -147,7 +145,7 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     public IndexConfigurationBuilder<K, V> withLogEnabled(
-            final boolean useFullLog) {
+            final Boolean useFullLog) {
         this.logEnabled = useFullLog;
         return this;
     }

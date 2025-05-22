@@ -32,8 +32,8 @@ public class IndexConfiguration<K, V> {
     private final Double bloomFilterProbabilityOfFalsePositive;
 
     private final int diskIoBufferSize;
-    private final boolean threadSafe;
-    private final boolean logEnabled;
+    private final Boolean threadSafe;
+    private final Boolean logEnabled;
 
     /**
      * Creates a new instance of IndexConfigurationBuilder.
@@ -60,8 +60,8 @@ public class IndexConfiguration<K, V> {
             final Integer bloomFilterNumberOfHashFunctions, //
             final Integer bloomFilterIndexSizeInBytes, //
             final Double bloomFilterProbabilityOfFalsePositive, //
-            final int diskIoBufferSize, final boolean threadSafe,
-            final boolean logEnabled) {
+            final int diskIoBufferSize, final Boolean threadSafe,
+            final Boolean logEnabled) {
         this.keyClass = keyClass;
         this.valueClass = valueClass;
         this.keyTypeDescriptor = keyTypeDescriptor;
@@ -93,7 +93,7 @@ public class IndexConfiguration<K, V> {
         return indexName;
     }
 
-    long getMaxNumberOfKeysInCache() {
+    int getMaxNumberOfKeysInCache() {
         return maxNumberOfKeysInSCache;
     }
 
@@ -125,11 +125,11 @@ public class IndexConfiguration<K, V> {
         return diskIoBufferSize;
     }
 
-    boolean isThreadSafe() {
+    Boolean isThreadSafe() {
         return threadSafe;
     }
 
-    boolean isLogEnabled() {
+    Boolean isLogEnabled() {
         return logEnabled;
     }
 

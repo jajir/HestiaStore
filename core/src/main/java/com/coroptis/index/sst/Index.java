@@ -18,8 +18,10 @@ public interface Index<K, V> extends CloseableResource {
             final IndexConfiguration<M, N> indexConf) {
         final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
                 new IndexConfiguratonStorage<>(directory));
-        confManager.save(indexConf);
-        return openIndex(directory, indexConf);
+        final IndexConfiguration<M, N> conf = confManager
+                .applyDefaults(indexConf);
+        confManager.save(conf);
+        return openIndex(directory, conf);
     }
 
     static <M, N> Index<M, N> open(final Directory directory,
@@ -67,7 +69,7 @@ public interface Index<K, V> extends CloseableResource {
                     indexConf.getValueTypeDescriptor(), indexConf, log);
             return new IndexContextLoggingAdapter<>(indexConf, index);
         } else {
-            final IndexInternal<M, N> index = new IndexInternalSynchronized<>(
+            final IndexInternal<M, N> index = new IndexInternalDefault<>(
                     directory, indexConf.getKeyTypeDescriptor(),
                     indexConf.getValueTypeDescriptor(), indexConf, log);
             return new IndexContextLoggingAdapter<>(indexConf, index);
