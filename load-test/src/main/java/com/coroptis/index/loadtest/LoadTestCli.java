@@ -181,7 +181,6 @@ public class LoadTestCli {
                 .withValueClass(Long.class)//
                 .withKeyTypeDescriptor(TYPE_DESCRIPTOR_STRING) //
                 .withValueTypeDescriptor(TYPE_DESCRIPTOR_LONG) //
-                .withCustomConf()//
                 .withMaxNumberOfKeysInSegment((int) maxNumberOfKeysInSegment) //
                 .withMaxNumberOfKeysInSegmentCache(
                         maxNumberOfKeysInSegmentCache) //
@@ -194,7 +193,7 @@ public class LoadTestCli {
                         (int) bloomFilterIndexSizeInBytes) //
                 .withBloomFilterNumberOfHashFunctions(
                         (int) bloomFilterNumberOfHashFunctions) //
-                .withUseFullLog(false) //
+                .withLogEnabled(false) //
                 .build();
         return Index.<String, Long>create(dir, conf);
     }

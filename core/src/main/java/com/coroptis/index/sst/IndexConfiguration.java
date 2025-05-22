@@ -1,22 +1,8 @@
 package com.coroptis.index.sst;
 
-import java.util.Objects;
-
 import com.coroptis.index.datatype.TypeDescriptor;
 
 public class IndexConfiguration<K, V> {
-
-    private final static long DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = 200_000;
-    private final static long DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING = -1;
-    private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_INDEX_PAGE = 5_000;
-
-    private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT = 10_000_000;
-    private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_CACHE = 1_000_000;
-    private final static int DEFAULT_MAX_NUMBER_OF_SEGMENTS_IN_CACHE = 10;
-
-    private final static boolean DEFAULT_INDEX_SYNCHRONIZED = false;
-
-    private final static int DEFAULT_DISK_IO_BUFFER_SIZE_IN_BYTES = 1024 * 4;
 
     /**
      * general Data configuration.
@@ -48,9 +34,14 @@ public class IndexConfiguration<K, V> {
     private final int diskIoBufferSize;
     private final boolean threadSafe;
     private final boolean logEnabled;
-    // TODO with method shoul be withThreadSafe and withLogging
-    // TODO remove with custom conf, it's useless
 
+    /**
+     * Creates a new instance of IndexConfigurationBuilder.
+     *
+     * @param <M> the type of the key
+     * @param <N> the type of the value
+     * @return a new instance of IndexConfigurationBuilder
+     */
     public static <M, N> IndexConfigurationBuilder<M, N> builder() {
         return new IndexConfigurationBuilder<>();
     }

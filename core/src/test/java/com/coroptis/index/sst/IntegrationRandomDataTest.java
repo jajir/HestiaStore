@@ -96,14 +96,13 @@ public class IntegrationRandomDataTest {
                 .withValueClass(Integer.class)//
                 .withKeyTypeDescriptor(tds) //
                 .withValueTypeDescriptor(tdi) //
-                .withCustomConf()//
                 .withMaxNumberOfKeysInSegment(2) //
                 .withMaxNumberOfKeysInSegmentCache(1) //
                 .withMaxNumberOfKeysInSegmentIndexPage(2) //
                 .withMaxNumberOfKeysInCache(2) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(2) //
-                .withUseFullLog(withLog) //
+                .withLogEnabled(withLog) //
                 .build();
         return Index.create(directory, conf);
     }

@@ -43,10 +43,8 @@ public class IndexConfiguratonStorage<K, V> {
                 .withKeyClass(keyClass) //
                 .withValueClass(valueClass)//
                 .withName(props.getString(PROP_INDEX_NAME))//
-                .withCustomConf()//
-                .withUseFullLog(props.getBoolean(PROP_USE_FULL_LOG))//
-                .withIsIndexSynchronized(
-                        props.getBoolean(PROP_IS_INDEX_SYNCHRONIZED))//
+                .withLogEnabled(props.getBoolean(PROP_USE_FULL_LOG))//
+                .withThreadSafe(props.getBoolean(PROP_IS_INDEX_SYNCHRONIZED))//
 
                 // Index runtime properties
                 .withMaxNumberOfKeysInCache(

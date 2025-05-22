@@ -14,11 +14,6 @@ import com.coroptis.index.unsorteddatafile.UnsortedDataFileStreamer;
 
 public interface Index<K, V> extends CloseableResource {
 
-    @Deprecated
-    static <M, N> IndexBuilder<M, N> builder() {
-        return new IndexBuilder<>();
-    }
-
     static <M, N> Index<M, N> create(final Directory directory,
             final IndexConfiguration<M, N> indexConf) {
         final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
@@ -27,11 +22,13 @@ public interface Index<K, V> extends CloseableResource {
         return openIndex(directory, indexConf);
     }
 
-    // FIXME NYI
     static <M, N> Index<M, N> open(final Directory directory,
             final IndexConfiguration<M, N> indexConf) {
-        throw new UnsupportedOperationException(
-                "This method is not implemented yet");
+        final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
+                new IndexConfiguratonStorage<>(directory));
+        final IndexConfiguration<M, N> mergedConf = confManager
+                .mergeWithStored(indexConf);
+        return openIndex(directory, mergedConf);
     }
 
     static <M, N> Index<M, N> open(final Directory directory) {

@@ -52,14 +52,13 @@ public class IndexConfiguratonStorageTest {
                 .withMaxNumberOfKeysInSegment(20000)//
                 .withMaxNumberOfSegmentsInCache(8)//
                 .withName(INDX_NAME)//
-                .withCustomConf()//
                 .withBloomFilterNumberOfHashFunctions(3)//
                 .withBloomFilterIndexSizeInBytes(2048)//
                 .withBloomFilterProbabilityOfFalsePositive(
                         BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE)//
                 .withDiskIoBufferSizeInBytes(4096)//
-                .withIsIndexSynchronized(true)//
-                .withUseFullLog(true)//
+                .withThreadSafe(true)//
+                .withLogEnabled(true)//
                 .build();
         storage.save(config);
 
@@ -105,12 +104,11 @@ public class IndexConfiguratonStorageTest {
                 .withMaxNumberOfKeysInSegment(20000)//
                 .withMaxNumberOfSegmentsInCache(8)//
                 .withName(INDX_NAME)//
-                .withCustomConf()//
                 .withBloomFilterNumberOfHashFunctions(3)//
                 .withBloomFilterIndexSizeInBytes(2048)//
                 .withDiskIoBufferSizeInBytes(4096)//
-                .withIsIndexSynchronized(true)//
-                .withUseFullLog(true)//
+                .withThreadSafe(true)//
+                .withLogEnabled(true)//
                 .build();
         storage.save(config);
 

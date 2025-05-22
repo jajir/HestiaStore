@@ -89,7 +89,6 @@ public class IntegrationIndexConsistencyTest extends AbstractIndexTest {
                 .withValueClass(Integer.class)//
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tdi) //
-                .withCustomConf()//
                 .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(10) //
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(12)//
@@ -97,7 +96,7 @@ public class IntegrationIndexConsistencyTest extends AbstractIndexTest {
                 .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(0) //
                 .withBloomFilterNumberOfHashFunctions(4) //
-                .withUseFullLog(false) //
+                .withLogEnabled(false) //
                 .withName("test_index") //
                 .build();
         return Index.<Integer, Integer>create(directory, conf);

@@ -39,7 +39,8 @@ public class IntegrationIndexIteratorTest {
                 .withName("test_index")//
                 .build();
         // FIXME it should work, but not now
-        // final Index<Integer, String> index = Index.create(directory, conf);
+        // final Index<Integer, String> index = Index.create(directory,
+        // conf);
         // data.stream().forEach(index::put);
         // index.compact();
 
@@ -68,7 +69,6 @@ public class IntegrationIndexIteratorTest {
                 .withValueClass(String.class)//
                 .withKeyTypeDescriptor(TD_INTEGER) //
                 .withValueTypeDescriptor(TD_STRING) //
-                .withCustomConf()//
                 .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(3) //
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(4)

@@ -252,7 +252,6 @@ public class IntegrationIndexSimpleTest {
                 .withValueClass(String.class)//
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tds) //
-                .withCustomConf()//
                 .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(3) //
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(4) //
@@ -260,7 +259,7 @@ public class IntegrationIndexSimpleTest {
                 .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
-                .withUseFullLog(withLog) //
+                .withLogEnabled(withLog) //
                 .withName("test_index") //
                 .build();
         return Index.create(directory, conf);

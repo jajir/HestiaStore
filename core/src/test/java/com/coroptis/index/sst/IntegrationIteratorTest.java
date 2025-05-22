@@ -35,7 +35,6 @@ public class IntegrationIteratorTest extends AbstractIndexTest {
                 .withValueClass(Integer.class)//
                 .withKeyTypeDescriptor(tds) //
                 .withValueTypeDescriptor(tdi) //
-                .withCustomConf()//
                 .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(100) //
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(200)//
@@ -43,7 +42,7 @@ public class IntegrationIteratorTest extends AbstractIndexTest {
                 .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
-                .withUseFullLog(false) //
+                .withLogEnabled(false) //
                 .withName("test_index") //
                 .build();
         index = Index.<String, Integer>create(directory, conf);

@@ -28,7 +28,6 @@ public class ConsistencyCheck {
                 .withValueClass(Long.class)//
                 .withKeyTypeDescriptor(TYPE_DESCRIPTOR_STRING) //
                 .withValueTypeDescriptor(TYPE_DESCRIPTOR_LONG) //
-                .withCustomConf()//
                 .withMaxNumberOfKeysInSegment(1_000_000) //
                 .withMaxNumberOfKeysInSegmentCache(1_000L) //
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(5_000) //
@@ -36,7 +35,7 @@ public class ConsistencyCheck {
                 .withMaxNumberOfKeysInCache(10_000_000) //
                 .withBloomFilterIndexSizeInBytes(0) //
                 .withBloomFilterNumberOfHashFunctions(1) //
-                .withUseFullLog(false) //
+                .withLogEnabled(false) //
                 .build();
         this.index = Index.create(dir, conf);
     }

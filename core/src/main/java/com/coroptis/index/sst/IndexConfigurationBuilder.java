@@ -29,7 +29,7 @@ public class IndexConfigurationBuilder<K, V> {
     private Integer bloomFilterNumberOfHashFunctions;
     private Integer bloomFilterIndexSizeInBytes;
     private Double bloomFilterProbabilityOfFalsePositive = null;
-    private boolean isIndexSynchronized = DEFAULT_INDEX_SYNCHRONIZED;
+    private boolean isThreadSafe = DEFAULT_INDEX_SYNCHRONIZED;
 
     private int diskIoBufferSizeInBytes = DEFAULT_DISK_IO_BUFFER_SIZE_IN_BYTES;
 
@@ -38,8 +38,7 @@ public class IndexConfigurationBuilder<K, V> {
     private Class<V> valueClass;
     private TypeDescriptor<K> keyTypeDescriptor;
     private TypeDescriptor<V> valueTypeDescriptor;
-    private boolean useFullLog = false;
-    private boolean customConfWasUsed = false;
+    private boolean logEnabled = false;
     private String memoryConf = null;
 
     IndexConfigurationBuilder() {
@@ -106,7 +105,7 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentCacheDuringFlushing(
-            final int maxNumberOfKeysInSegmentCacheDuringFlushing) {
+            final long maxNumberOfKeysInSegmentCacheDuringFlushing) {
         this.maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInSegmentCacheDuringFlushing;
         return this;
     }
@@ -123,9 +122,9 @@ public class IndexConfigurationBuilder<K, V> {
         return this;
     }
 
-    public IndexConfigurationBuilder<K, V> withIsIndexSynchronized(
-            final boolean isIndexSynchronized) {
-        this.isIndexSynchronized = isIndexSynchronized;
+    public IndexConfigurationBuilder<K, V> withThreadSafe(
+            final boolean isThreadSafe) {
+        this.isThreadSafe = isThreadSafe;
         return this;
     }
 
@@ -141,20 +140,15 @@ public class IndexConfigurationBuilder<K, V> {
         return this;
     }
 
-    public IndexConfigurationBuilder<K, V> withCustomConf() {
-        this.customConfWasUsed = true;
-        return this;
-    }
-
     public IndexConfigurationBuilder<K, V> withConf(
             final String memoryConfiguration) {
         this.memoryConf = memoryConfiguration;
         return this;
     }
 
-    public IndexConfigurationBuilder<K, V> withUseFullLog(
+    public IndexConfigurationBuilder<K, V> withLogEnabled(
             final boolean useFullLog) {
-        this.useFullLog = useFullLog;
+        this.logEnabled = useFullLog;
         return this;
     }
 
@@ -167,7 +161,7 @@ public class IndexConfigurationBuilder<K, V> {
                 maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache, indexName,
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
                 bloomFilterProbabilityOfFalsePositive, diskIoBufferSizeInBytes,
-                isIndexSynchronized, useFullLog);
+                isThreadSafe, logEnabled);
         return indexConf;
     }
 

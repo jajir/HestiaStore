@@ -128,7 +128,6 @@ public class IntegrationIndexTest extends AbstractIndexTest {
                 .withValueClass(String.class)//
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tds) //
-                .withCustomConf()//
                 .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(3) //
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(4) //
@@ -136,7 +135,7 @@ public class IntegrationIndexTest extends AbstractIndexTest {
                 .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(2) //
-                .withUseFullLog(withLog) //
+                .withLogEnabled(withLog) //
                 .withName("test_index") //
                 .build();
         return Index.create(directory, conf);

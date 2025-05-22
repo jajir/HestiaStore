@@ -11,5 +11,8 @@
         "src/integration-test/java",
         "src/main/java",
         "src/test/java"
-    ]
+    ],
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false
 }
