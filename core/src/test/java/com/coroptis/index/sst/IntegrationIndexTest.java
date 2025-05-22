@@ -129,8 +129,8 @@ public class IntegrationIndexTest extends AbstractIndexTest {
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tds) //
                 .withMaxNumberOfKeysInSegment(4) //
-                .withMaxNumberOfKeysInSegmentCache(3) //
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(4) //
+                .withMaxNumberOfKeysInSegmentCache(3L) //
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(4L) //
                 .withMaxNumberOfKeysInSegmentIndexPage(2) //
                 .withMaxNumberOfKeysInCache(3) //
                 .withMaxNumberOfSegmentsInCache(3)

@@ -12,7 +12,7 @@ import java.util.Optional;
  *
  */
 public class BuilderConfigurationRegistry {
-
+    // TODO rename it to IndexConfigurationRegistry
     /**
      * memory attribute could be null.
      * 

@@ -39,7 +39,7 @@ public class BuilderConfigurationString implements BuilderConfiguration {
     }
 
     @Override
-    public int getIndexBufferSizeInBytes() {
+    public int getDiskIoBufferSizeInBytes() {
         return 1024 * 1024;
     }
 

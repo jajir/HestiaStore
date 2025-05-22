@@ -30,7 +30,7 @@ public class ConsistencyCheck {
                 .withValueTypeDescriptor(TYPE_DESCRIPTOR_LONG) //
                 .withMaxNumberOfKeysInSegment(1_000_000) //
                 .withMaxNumberOfKeysInSegmentCache(1_000L) //
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(5_000) //
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(5_000L) //
                 .withMaxNumberOfKeysInSegmentIndexPage(1_000) //
                 .withMaxNumberOfKeysInCache(10_000_000) //
                 .withBloomFilterIndexSizeInBytes(0) //

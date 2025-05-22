@@ -185,7 +185,7 @@ public class LoadTestCli {
                 .withMaxNumberOfKeysInSegmentCache(
                         maxNumberOfKeysInSegmentCache) //
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(
-                        (int) maxNumberOfKeysInSegmentCacheDuringFlushing) //
+                        maxNumberOfKeysInSegmentCacheDuringFlushing) //
                 .withMaxNumberOfKeysInSegmentIndexPage(
                         (int) maxNumberOfKeysInSegmentIndexPage) //
                 .withMaxNumberOfKeysInCache((int) maxNumberOfKeysInCache) //

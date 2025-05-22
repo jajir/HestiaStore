@@ -33,8 +33,8 @@ public class IndexConfigurationManagerTest {
             .withName("test_index")//
             .withLogEnabled(false)//
             .withThreadSafe(false)//
-            .withMaxNumberOfKeysInSegmentCache(11)//
-            .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22) //
+            .withMaxNumberOfKeysInSegmentCache(11L)//
+            .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22L) //
             .withMaxNumberOfKeysInSegmentIndexPage(33)//
             .withMaxNumberOfKeysInSegment(44)//
             .withMaxNumberOfKeysInCache(55)//
@@ -77,12 +77,27 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
+    void test_save_index_name_is_empy() throws Exception {
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
+                .withKeyClass(Long.class)//
+                .withValueClass(String.class)//
+                .build();
+
+        final Exception ex = assertThrows(IllegalArgumentException.class,
+                () -> manager.save(config));
+
+        assertEquals("Index name is null.", ex.getMessage());
+    }
+
+    @Test
     void test_save_key_type_descriptor_missing() throws Exception {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withKeyClass(Long.class)//
                 .withValueClass(String.class)//
                 .withValueTypeDescriptor(TD_STRING)//
+                .withName("test_index")//
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -97,6 +112,7 @@ public class IndexConfigurationManagerTest {
                 .<Long, String>builder()//
                 .withKeyClass(Long.class)//
                 .withValueClass(String.class)//
+                .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .build();
@@ -113,6 +129,7 @@ public class IndexConfigurationManagerTest {
                 .<Long, String>builder()//
                 .withKeyClass(Long.class)//
                 .withValueClass(String.class)//
+                .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withThreadSafe(true)//
@@ -130,6 +147,7 @@ public class IndexConfigurationManagerTest {
                 .<Long, String>builder()//
                 .withKeyClass(Long.class)//
                 .withValueClass(String.class)//
+                .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withThreadSafe(true)//
@@ -150,6 +168,7 @@ public class IndexConfigurationManagerTest {
                 .<Long, String>builder()//
                 .withKeyClass(Long.class)//
                 .withValueClass(String.class)//
+                .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withThreadSafe(true)//
@@ -172,6 +191,7 @@ public class IndexConfigurationManagerTest {
                 .<Long, String>builder()//
                 .withKeyClass(Long.class) //
                 .withValueClass(String.class)//
+                .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withThreadSafe(true)//
@@ -194,6 +214,7 @@ public class IndexConfigurationManagerTest {
                 .<Long, String>builder()//
                 .withKeyClass(Long.class) //
                 .withValueClass(String.class)//
+                .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withThreadSafe(true)//
@@ -201,7 +222,7 @@ public class IndexConfigurationManagerTest {
                 .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(4)//
                 .withMaxNumberOfSegmentsInCache(3)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(2) //
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(2L) //
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -217,6 +238,7 @@ public class IndexConfigurationManagerTest {
                 .<Long, String>builder()//
                 .withKeyClass(Long.class) //
                 .withValueClass(String.class)//
+                .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withThreadSafe(true)//
@@ -224,8 +246,8 @@ public class IndexConfigurationManagerTest {
                 .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(4)//
                 .withMaxNumberOfSegmentsInCache(3)//
-                .withMaxNumberOfKeysInSegmentCache(11)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(5) //
+                .withMaxNumberOfKeysInSegmentCache(11L)//
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(5L) //
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -236,19 +258,26 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_custom_conf_disk_reading_cache_size_in_not_1024()
-            throws Exception {
+    void test_save_disk_reading_cache_size_in_not_1024() throws Exception {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withKeyClass(Long.class)//
                 .withValueClass(String.class)//
+                .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withThreadSafe(true)//
                 .withLogEnabled(true)//
+                .withMaxNumberOfKeysInSegmentCache(11L)//
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22L) //
+                .withMaxNumberOfKeysInSegmentIndexPage(33)//
+                .withMaxNumberOfKeysInSegment(44)//
+                .withMaxNumberOfSegmentsInCache(66)//
+                .withMaxNumberOfKeysInCache(1000)
+                .withDiskIoBufferSizeInBytes(1024)//
+                .withBloomFilterIndexSizeInBytes(77)//
+                .withBloomFilterNumberOfHashFunctions(88)//
                 .withDiskIoBufferSizeInBytes(1000)//
-                .withMaxNumberOfKeysInSegmentCache(10)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(20)//
                 .withName("test_index")//
                 .build();
 
@@ -259,27 +288,6 @@ public class IndexConfigurationManagerTest {
                 "Parameter 'diskIoBufferSize' vith value '1000' "
                         + "can't be divided by 1024 without reminder",
                 ex.getMessage());
-    }
-
-    @Test
-    void test_save_index_name_is_empy() throws Exception {
-        final IndexConfiguration<Long, String> config = IndexConfiguration
-                .<Long, String>builder()//
-                .withKeyClass(Long.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(TD_LONG)//
-                .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
-                .withLogEnabled(true)//
-                .withDiskIoBufferSizeInBytes(1024)//
-                .withMaxNumberOfKeysInSegmentCache(10)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(20)//
-                .build();
-
-        final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
-
-        assertEquals("Index name is null.", ex.getMessage());
     }
 
     @Test
@@ -298,8 +306,8 @@ public class IndexConfigurationManagerTest {
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withName("test_index")//
-                .withMaxNumberOfKeysInSegmentCache(11)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22) //
+                .withMaxNumberOfKeysInSegmentCache(11L)//
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22L) //
                 .withMaxNumberOfKeysInSegmentIndexPage(33)//
                 .withMaxNumberOfKeysInSegment(44)//
                 .withMaxNumberOfKeysInCache(55)//
@@ -338,7 +346,7 @@ public class IndexConfigurationManagerTest {
     @Test
     void test_mergeWithStored_maxNumberOfKeysInSegmentCache() {
         final IndexConfiguration<Long, String> config = configBuilder//
-                .withMaxNumberOfKeysInSegmentCache(3627)//
+                .withMaxNumberOfKeysInSegmentCache(3627L)//
                 .build();
 
         when(storage.load()).thenReturn(CONFIG);
@@ -516,8 +524,8 @@ public class IndexConfigurationManagerTest {
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withName("test_index")//
-                .withMaxNumberOfKeysInSegmentCache(11)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22) //
+                .withMaxNumberOfKeysInSegmentCache(11L)//
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22L) //
                 .withMaxNumberOfKeysInSegmentIndexPage(33)//
                 .withMaxNumberOfKeysInSegment(44)//
                 .withMaxNumberOfKeysInCache(55)//

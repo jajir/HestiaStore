@@ -22,7 +22,7 @@ public interface BuilderConfiguration {
 
     int getMaxNumberOfSegmentsInCache();
 
-    int getIndexBufferSizeInBytes();
+    int getDiskIoBufferSizeInBytes();
 
     int getBloomFilterNumberOfHashFunctions();
 
@@ -31,6 +31,5 @@ public interface BuilderConfiguration {
     }
 
     int getBloomFilterIndexSizeInBytes();
-
 
 }

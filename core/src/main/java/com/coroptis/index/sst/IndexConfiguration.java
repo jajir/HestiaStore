@@ -15,23 +15,23 @@ public class IndexConfiguration<K, V> {
     /*
      * Segments configuration
      */
-    private final long maxNumberOfKeysInSegmentCache;
-    private final long maxNumberOfKeysInSegmentCacheDuringFlushing;
-    private final int maxNumberOfKeysInSegmentIndexPage;
+    private final Long maxNumberOfKeysInSegmentCache;
+    private final Long maxNumberOfKeysInSegmentCacheDuringFlushing;
+    private final Integer maxNumberOfKeysInSegmentIndexPage;
 
     /*
      * SST index configuration
      */
     private final String indexName;
-    private final int maxNumberOfKeysInSCache;
-    private final int maxNumberOfKeysInSegment;
-    private final int maxNumberOfSegmentsInCache;
+    private final Integer maxNumberOfKeysInSCache;
+    private final Integer maxNumberOfKeysInSegment;
+    private final Integer maxNumberOfSegmentsInCache;
 
     private final Integer bloomFilterNumberOfHashFunctions;
     private final Integer bloomFilterIndexSizeInBytes;
     private final Double bloomFilterProbabilityOfFalsePositive;
 
-    private final int diskIoBufferSize;
+    private final Integer diskIoBufferSize;
     private final Boolean threadSafe;
     private final Boolean logEnabled;
 
@@ -50,17 +50,17 @@ public class IndexConfiguration<K, V> {
             final Class<V> valueClass, //
             final TypeDescriptor<K> keyTypeDescriptor, //
             final TypeDescriptor<V> valueTypeDescriptor, //
-            final long maxNumberOfKeysInSegmentCache, //
-            final long maxNumberOfKeysInSegmentCacheDuringFlushing, //
-            final int maxNumberOfKeysInSegmentIndexPage, //
-            final int maxNumberOfKeysInCache, //
-            final int maxNumberOfKeysInSegment, //
-            final int maxNumberOfSegmentsInCache, //
+            final Long maxNumberOfKeysInSegmentCache, //
+            final Long maxNumberOfKeysInSegmentCacheDuringFlushing, //
+            final Integer maxNumberOfKeysInSegmentIndexPage, //
+            final Integer maxNumberOfKeysInCache, //
+            final Integer maxNumberOfKeysInSegment, //
+            final Integer maxNumberOfSegmentsInCache, //
             final String indexName, //
             final Integer bloomFilterNumberOfHashFunctions, //
             final Integer bloomFilterIndexSizeInBytes, //
             final Double bloomFilterProbabilityOfFalsePositive, //
-            final int diskIoBufferSize, final Boolean threadSafe,
+            final Integer diskIoBufferSize, final Boolean threadSafe,
             final Boolean logEnabled) {
         this.keyClass = keyClass;
         this.valueClass = valueClass;
@@ -81,31 +81,31 @@ public class IndexConfiguration<K, V> {
         this.logEnabled = logEnabled;
     }
 
-    long getMaxNumberOfKeysInSegmentCache() {
+    public Long getMaxNumberOfKeysInSegmentCache() {
         return maxNumberOfKeysInSegmentCache;
     }
 
-    int getMaxNumberOfKeysInSegmentIndexPage() {
+    public Integer getMaxNumberOfKeysInSegmentIndexPage() {
         return maxNumberOfKeysInSegmentIndexPage;
     }
 
-    String getIndexName() {
+    public String getIndexName() {
         return indexName;
     }
 
-    int getMaxNumberOfKeysInCache() {
+    public Integer getMaxNumberOfKeysInCache() {
         return maxNumberOfKeysInSCache;
     }
 
-    int getMaxNumberOfKeysInSegment() {
+    public Integer getMaxNumberOfKeysInSegment() {
         return maxNumberOfKeysInSegment;
     }
 
-    Integer getBloomFilterNumberOfHashFunctions() {
+    public Integer getBloomFilterNumberOfHashFunctions() {
         return bloomFilterNumberOfHashFunctions;
     }
 
-    Integer getBloomFilterIndexSizeInBytes() {
+    public Integer getBloomFilterIndexSizeInBytes() {
         return bloomFilterIndexSizeInBytes;
     }
 
@@ -113,23 +113,23 @@ public class IndexConfiguration<K, V> {
         return bloomFilterProbabilityOfFalsePositive;
     }
 
-    int getMaxNumberOfSegmentsInCache() {
+    public Integer getMaxNumberOfSegmentsInCache() {
         return maxNumberOfSegmentsInCache;
     }
 
-    long getMaxNumberOfKeysInSegmentCacheDuringFlushing() {
+    public Long getMaxNumberOfKeysInSegmentCacheDuringFlushing() {
         return maxNumberOfKeysInSegmentCacheDuringFlushing;
     }
 
-    int getDiskIoBufferSize() {
+    public Integer getDiskIoBufferSize() {
         return diskIoBufferSize;
     }
 
-    Boolean isThreadSafe() {
+    public Boolean isThreadSafe() {
         return threadSafe;
     }
 
-    Boolean isLogEnabled() {
+    public Boolean isLogEnabled() {
         return logEnabled;
     }
 

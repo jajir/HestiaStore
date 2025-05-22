@@ -33,11 +33,14 @@ Index could be in following states:
 Index should be created with builder, which make index instance. For example:
 
 ```java
-final Index<Integer, String> index = Index.<Integer, String>builder()
-        .withDirectory(directory)
-        .withKeyClass(Integer.class)
-        .withValueClass(String.class)
+final IndexConfiguration<Integer, String> conf = IndexConfiguration
+        .<Integer, String>builder()//
+        .withKeyClass(Integer.class)//
+        .withValueClass(String.class)//
+        .withName("test_index")//
         .build();
+
+final Index<Integer, String> index = Index.create(directory, conf);
 ```
 
 ![Index states](./images/index-state-diagram.png)

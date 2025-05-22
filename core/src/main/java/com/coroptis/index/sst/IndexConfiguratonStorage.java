@@ -58,8 +58,8 @@ public class IndexConfiguratonStorage<K, V> {
 
                 // Segment properties
                 .withMaxNumberOfKeysInSegmentCache(
-                        props.getInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE))//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(props.getInt(
+                        props.getLong(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE))//
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(props.getLong(
                         PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING))//
                 .withMaxNumberOfKeysInSegmentIndexPage(props
                         .getInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_INDEX_PAGE))//

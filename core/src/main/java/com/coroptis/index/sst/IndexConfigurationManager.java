@@ -3,9 +3,15 @@ package com.coroptis.index.sst;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.coroptis.index.IndexException;
+
 public class IndexConfigurationManager<K, V> {
 
     private final IndexConfiguratonStorage<K, V> confStorage;
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     IndexConfigurationManager(
             final IndexConfiguratonStorage<K, V> confStorage) {
@@ -27,15 +33,71 @@ public class IndexConfigurationManager<K, V> {
     }
 
     IndexConfiguration<K, V> applyDefaults(
-            final IndexConfiguration<K, V> indexConfiguration) {
-        final IndexConfigurationBuilder<K, V> builder = makeBuilder(
-                indexConfiguration);
-        // TODO all defaults shoudl be applied
-        if (indexConfiguration.isLogEnabled() == null) {
+            final IndexConfiguration<K, V> conf) {
+        validateDatatypesAndIndexName(conf);
+        final IndexConfigurationBuilder<K, V> builder = makeBuilder(conf);
+        if (conf.getKeyTypeDescriptor() == null) {
+            builder.withKeyTypeDescriptor(DataTypeDescriptorRegistry
+                    .getTypeDescriptor(conf.getKeyClass()));
+        }
+        if (conf.getValueTypeDescriptor() == null) {
+            builder.withValueTypeDescriptor(DataTypeDescriptorRegistry
+                    .getTypeDescriptor(conf.getValueClass()));
+        }
+        if (conf.isLogEnabled() == null) {
             builder.withLogEnabled(false);
         }
-        if (indexConfiguration.isThreadSafe() == null) {
+        if (conf.isThreadSafe() == null) {
             builder.withThreadSafe(false);
+        }
+        final Optional<BuilderConfiguration> oDefaults = BuilderConfigurationRegistry
+                .get(conf.getKeyClass());
+        if (oDefaults.isEmpty()) {
+            logger.debug("There is no default configuration for key class '{}'",
+                    conf.getKeyClass());
+            return builder.build();
+        }
+        final BuilderConfiguration defaults = oDefaults.get();
+        if (conf.getMaxNumberOfKeysInSegment() == null) {
+            builder.withMaxNumberOfKeysInSegment(
+                    defaults.getMaxNumberOfKeysInSegment());
+        }
+        if (conf.getMaxNumberOfKeysInSegmentCache() == null) {
+            builder.withMaxNumberOfKeysInSegmentCache(
+                    defaults.getMaxNumberOfKeysInSegmentCache());
+        }
+        if (conf.getMaxNumberOfKeysInSegmentCacheDuringFlushing() == null) {
+            builder.withMaxNumberOfKeysInSegmentCacheDuringFlushing(
+                    defaults.getMaxNumberOfKeysInSegmentCacheDuringFlushing());
+        }
+        if (conf.getMaxNumberOfKeysInCache() == null) {
+            builder.withMaxNumberOfKeysInCache(
+                    defaults.getMaxNumberOfKeysInCache());
+        }
+        if (conf.getMaxNumberOfSegmentsInCache() == null) {
+            builder.withMaxNumberOfSegmentsInCache(
+                    defaults.getMaxNumberOfSegmentsInCache());
+        }
+        if (conf.getMaxNumberOfKeysInSegmentIndexPage() == null) {
+            builder.withMaxNumberOfKeysInSegmentIndexPage(
+                    defaults.getMaxNumberOfKeysInSegmentIndexPage());
+        }
+        // bloom filter
+        if (conf.getBloomFilterIndexSizeInBytes() == null) {
+            builder.withBloomFilterIndexSizeInBytes(
+                    defaults.getBloomFilterIndexSizeInBytes());
+        }
+        if (conf.getBloomFilterNumberOfHashFunctions() == null) {
+            builder.withBloomFilterNumberOfHashFunctions(
+                    defaults.getBloomFilterNumberOfHashFunctions());
+        }
+        if (conf.getBloomFilterProbabilityOfFalsePositive() == null) {
+            builder.withBloomFilterProbabilityOfFalsePositive(
+                    defaults.getBloomFilterProbabilityOfFalsePositive());
+        }
+        if (conf.getDiskIoBufferSize() == null) {
+            builder.withDiskIoBufferSizeInBytes(
+                    defaults.getDiskIoBufferSizeInBytes());
         }
         return builder.build();
     }
@@ -141,33 +203,34 @@ public class IndexConfigurationManager<K, V> {
             dirty = true;
         }
 
-        if (indexConf.getDiskIoBufferSize() > 0 && indexConf
-                .getDiskIoBufferSize() != storedConf.getDiskIoBufferSize()) {
+        if (indexConf.getDiskIoBufferSize() > 0
+                && !indexConf.getDiskIoBufferSize()
+                        .equals(storedConf.getDiskIoBufferSize())) {
             builder.withDiskIoBufferSizeInBytes(
                     indexConf.getDiskIoBufferSize());
             dirty = true;
         }
 
         if (indexConf.getMaxNumberOfKeysInSegmentCache() > 0
-                && indexConf.getMaxNumberOfKeysInSegmentCache() != storedConf
-                        .getMaxNumberOfKeysInSegmentCache()) {
+                && !indexConf.getMaxNumberOfKeysInSegmentCache().equals(
+                        storedConf.getMaxNumberOfKeysInSegmentCache())) {
             builder.withMaxNumberOfKeysInSegmentCache(
                     indexConf.getMaxNumberOfKeysInSegmentCache());
             dirty = true;
         }
 
         if (indexConf.getMaxNumberOfKeysInSegmentCacheDuringFlushing() > 0
-                && indexConf
-                        .getMaxNumberOfKeysInSegmentCacheDuringFlushing() != storedConf
-                                .getMaxNumberOfKeysInSegmentCacheDuringFlushing()) {
+                && !indexConf.getMaxNumberOfKeysInSegmentCacheDuringFlushing()
+                        .equals(storedConf
+                                .getMaxNumberOfKeysInSegmentCacheDuringFlushing())) {
             builder.withMaxNumberOfKeysInSegmentCacheDuringFlushing(
                     indexConf.getMaxNumberOfKeysInSegmentCacheDuringFlushing());
             dirty = true;
         }
 
         if (indexConf.getMaxNumberOfKeysInCache() > 0
-                && indexConf.getMaxNumberOfKeysInCache() != storedConf
-                        .getMaxNumberOfKeysInCache()) {
+                && !indexConf.getMaxNumberOfKeysInCache()
+                        .equals(storedConf.getMaxNumberOfKeysInCache())) {
             builder.withMaxNumberOfKeysInCache(
                     indexConf.getMaxNumberOfKeysInCache());
             dirty = true;
@@ -192,12 +255,7 @@ public class IndexConfigurationManager<K, V> {
     }
 
     private IndexConfiguration<K, V> validate(IndexConfiguration<K, V> conf) {
-        if (conf.getKeyClass() == null) {
-            throw new IllegalArgumentException("Key class wasn't specified");
-        }
-        if (conf.getValueClass() == null) {
-            throw new IllegalArgumentException("Value class wasn't specified");
-        }
+        validateDatatypesAndIndexName(conf);
         if (conf.getKeyTypeDescriptor() == null) {
             throw new IllegalArgumentException("Key type descriptor is null.");
         }
@@ -211,6 +269,7 @@ public class IndexConfigurationManager<K, V> {
         if (conf.isLogEnabled() == null) {
             throw new IllegalArgumentException("Value of log enable is null.");
         }
+        // FIXME add validation for null values
         if (conf.getMaxNumberOfKeysInCache() < 3) {
             throw new IllegalArgumentException(
                     "Max number of keys in cache must be at least 3.");
@@ -238,48 +297,60 @@ public class IndexConfigurationManager<K, V> {
                             + " can't be divided by 1024 without reminder",
                     conf.getDiskIoBufferSize()));
         }
-        if (conf.getIndexName() == null) {
-            throw new IllegalArgumentException("Index name is null.");
-        }
         return conf;
     }
 
+    private void validateDatatypesAndIndexName(
+            final IndexConfiguration<K, V> conf) {
+        if (conf.getKeyClass() == null) {
+            throw new IllegalArgumentException("Key class wasn't specified");
+        }
+        if (conf.getValueClass() == null) {
+            throw new IllegalArgumentException("Value class wasn't specified");
+        }
+        if (conf.getIndexName() == null) {
+            throw new IllegalArgumentException("Index name is null.");
+        }
+
+    }
+
     private IndexConfigurationBuilder<K, V> makeBuilder(
-            final IndexConfiguration<K, V> storedConf) {
-        return IndexConfiguration.<K, V>builder()//
-                .withKeyClass(storedConf.getKeyClass()) //
-                .withValueClass(storedConf.getValueClass())//
-                .withKeyTypeDescriptor(storedConf.getKeyTypeDescriptor())//
-                .withValueTypeDescriptor(storedConf.getValueTypeDescriptor())//
-                .withLogEnabled(storedConf.isLogEnabled())//
-                .withThreadSafe(storedConf.isThreadSafe())//
-                .withName(storedConf.getIndexName())//
+            final IndexConfiguration<K, V> conf) {
+        IndexConfigurationBuilder<K, V> builder = IndexConfiguration
+                .<K, V>builder()//
+                .withKeyClass(conf.getKeyClass()) //
+                .withValueClass(conf.getValueClass())//
+                .withKeyTypeDescriptor(conf.getKeyTypeDescriptor())//
+                .withValueTypeDescriptor(conf.getValueTypeDescriptor())//
+                .withLogEnabled(conf.isLogEnabled())//
+                .withThreadSafe(conf.isThreadSafe())//
+                .withName(conf.getIndexName())//
 
                 // Index runtime properties
-                .withMaxNumberOfKeysInCache(
-                        storedConf.getMaxNumberOfKeysInCache())//
+                .withMaxNumberOfKeysInCache(conf.getMaxNumberOfKeysInCache())//
                 .withMaxNumberOfSegmentsInCache(
-                        storedConf.getMaxNumberOfSegmentsInCache())//
+                        conf.getMaxNumberOfSegmentsInCache())//
                 .withMaxNumberOfKeysInSegment(
-                        storedConf.getMaxNumberOfKeysInSegment())//
-                .withDiskIoBufferSizeInBytes(storedConf.getDiskIoBufferSize())//
+                        conf.getMaxNumberOfKeysInSegment())//
+                .withDiskIoBufferSizeInBytes(conf.getDiskIoBufferSize())//
 
                 // Segment properties
                 .withMaxNumberOfKeysInSegmentCache(
-                        storedConf.getMaxNumberOfKeysInSegmentCache())//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(storedConf
-                        .getMaxNumberOfKeysInSegmentCacheDuringFlushing())//
+                        conf.getMaxNumberOfKeysInSegmentCache())//
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(
+                        conf.getMaxNumberOfKeysInSegmentCacheDuringFlushing())//
                 .withMaxNumberOfKeysInSegmentIndexPage(
-                        storedConf.getMaxNumberOfKeysInSegmentIndexPage())//
+                        conf.getMaxNumberOfKeysInSegmentIndexPage())//
 
                 // Segment bloom filter properties
                 .withBloomFilterNumberOfHashFunctions(
-                        storedConf.getBloomFilterNumberOfHashFunctions())//
+                        conf.getBloomFilterNumberOfHashFunctions())//
                 .withBloomFilterIndexSizeInBytes(
-                        storedConf.getBloomFilterIndexSizeInBytes())//
+                        conf.getBloomFilterIndexSizeInBytes())//
                 .withBloomFilterProbabilityOfFalsePositive(
-                        storedConf.getBloomFilterProbabilityOfFalsePositive())//
+                        conf.getBloomFilterProbabilityOfFalsePositive())//
         ;
+        return builder;
     }
 
 }

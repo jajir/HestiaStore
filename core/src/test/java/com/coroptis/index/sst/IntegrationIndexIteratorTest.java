@@ -38,13 +38,12 @@ public class IntegrationIndexIteratorTest {
                 .withValueClass(String.class)//
                 .withName("test_index")//
                 .build();
-        // FIXME it should work, but not now
-        // final Index<Integer, String> index = Index.create(directory,
-        // conf);
-        // data.stream().forEach(index::put);
-        // index.compact();
-
+        final Index<Integer, String> index = Index.create(directory, conf);
+        data.stream().forEach(index::put);
+        index.compact();
     }
+
+    // TEST nkey class non existing conf
 
     @Test
     void testBasic() throws Exception {
@@ -70,8 +69,8 @@ public class IntegrationIndexIteratorTest {
                 .withKeyTypeDescriptor(TD_INTEGER) //
                 .withValueTypeDescriptor(TD_STRING) //
                 .withMaxNumberOfKeysInSegment(4) //
-                .withMaxNumberOfKeysInSegmentCache(3) //
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(4)
+                .withMaxNumberOfKeysInSegmentCache(3L) //
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(4L)
                 .withMaxNumberOfKeysInSegmentIndexPage(1) //
                 .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(1000) //

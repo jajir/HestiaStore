@@ -1,34 +1,22 @@
 package com.coroptis.index.sst;
 
-import java.util.Objects;
-
 import com.coroptis.index.datatype.TypeDescriptor;
 
 public class IndexConfigurationBuilder<K, V> {
 
-    private final static long DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = 200_000;
-    private final static long DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING = -1;
-    private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_INDEX_PAGE = 5_000;
-
-    private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT = 10_000_000;
-    private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_CACHE = 1_000_000;
-    private final static int DEFAULT_MAX_NUMBER_OF_SEGMENTS_IN_CACHE = 10;
-
-    private final static int DEFAULT_DISK_IO_BUFFER_SIZE_IN_BYTES = 1024 * 4;
-
-    private long maxNumberOfKeysInSegmentCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
-    private long maxNumberOfKeysInSegmentCacheDuringFlushing = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING;
-    private int maxNumberOfKeysInSegmentIndexPage = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_INDEX_PAGE;
-    private int maxNumberOfKeysInCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_CACHE;
-    private int maxNumberOfKeysInSegment = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT;
-    private int maxNumberOfSegmentsInCache = DEFAULT_MAX_NUMBER_OF_SEGMENTS_IN_CACHE;
+    private Long maxNumberOfKeysInSegmentCache;
+    private Long maxNumberOfKeysInSegmentCacheDuringFlushing;
+    private Integer maxNumberOfKeysInSegmentIndexPage;
+    private Integer maxNumberOfKeysInCache;
+    private Integer maxNumberOfKeysInSegment;
+    private Integer maxNumberOfSegmentsInCache;
     // TODO change previous types to long
 
     private Integer bloomFilterNumberOfHashFunctions;
     private Integer bloomFilterIndexSizeInBytes;
     private Double bloomFilterProbabilityOfFalsePositive = null;
 
-    private int diskIoBufferSizeInBytes = DEFAULT_DISK_IO_BUFFER_SIZE_IN_BYTES;
+    private int diskIoBufferSizeInBytes;
 
     private String indexName = null;
     private Class<K> keyClass;
@@ -45,71 +33,71 @@ public class IndexConfigurationBuilder<K, V> {
 
     public IndexConfigurationBuilder<K, V> withKeyTypeDescriptor(
             final TypeDescriptor<K> keyTypeDescriptor) {
-        this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
+        this.keyTypeDescriptor = keyTypeDescriptor;
         return this;
     }
 
     public IndexConfigurationBuilder<K, V> withValueTypeDescriptor(
             final TypeDescriptor<V> valueTypeDescriptor) {
-        this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
+        this.valueTypeDescriptor = valueTypeDescriptor;
         return this;
     }
 
     public IndexConfigurationBuilder<K, V> withKeyClass(
             final Class<K> keyClass) {
-        this.keyClass = Objects.requireNonNull(keyClass);
+        this.keyClass = keyClass;
         return this;
     }
 
     public IndexConfigurationBuilder<K, V> withValueClass(
             final Class<V> valueClass) {
-        this.valueClass = Objects.requireNonNull(valueClass);
+        this.valueClass = valueClass;
         return this;
     }
 
     public IndexConfigurationBuilder<K, V> withName(final String indexName) {
-        this.indexName = Objects.requireNonNull(indexName);
+        this.indexName = indexName;
         return this;
     }
 
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentCache(
-            final long maxNumberOfKeysInSegmentCache) {
+            final Long maxNumberOfKeysInSegmentCache) {
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
         return this;
     }
 
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentIndexPage(
-            final int maxNumberOfKeysInSegmentIndexPage) {
+            final Integer maxNumberOfKeysInSegmentIndexPage) {
         this.maxNumberOfKeysInSegmentIndexPage = maxNumberOfKeysInSegmentIndexPage;
         return this;
     }
 
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInCache(
-            final int maxNumberOfKeysInCache) {
+            final Integer maxNumberOfKeysInCache) {
         this.maxNumberOfKeysInCache = maxNumberOfKeysInCache;
         return this;
     }
 
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegment(
-            final int maxNumberOfKeysInSegment) {
+            final Integer maxNumberOfKeysInSegment) {
         this.maxNumberOfKeysInSegment = maxNumberOfKeysInSegment;
         return this;
     }
 
     public IndexConfigurationBuilder<K, V> withMaxNumberOfSegmentsInCache(
-            final int maxNumberOfSegmentsInCache) {
+            final Integer maxNumberOfSegmentsInCache) {
         this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
         return this;
     }
 
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentCacheDuringFlushing(
-            final long maxNumberOfKeysInSegmentCacheDuringFlushing) {
+            final Long maxNumberOfKeysInSegmentCacheDuringFlushing) {
         this.maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInSegmentCacheDuringFlushing;
         return this;
     }
 
     public IndexConfigurationBuilder<K, V> withBloomFilterNumberOfHashFunctions(
-            final int bloomFilterNumberOfHashFunctions) {
+            final Integer bloomFilterNumberOfHashFunctions) {
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         return this;
     }
@@ -127,13 +115,13 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     public IndexConfigurationBuilder<K, V> withBloomFilterIndexSizeInBytes(
-            final int bloomFilterIndexSizeInBytes) {
+            final Integer bloomFilterIndexSizeInBytes) {
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
         return this;
     }
 
     public IndexConfigurationBuilder<K, V> withDiskIoBufferSizeInBytes(
-            final int diskIoBufferSizeInBytes) {
+            final Integer diskIoBufferSizeInBytes) {
         this.diskIoBufferSizeInBytes = diskIoBufferSizeInBytes;
         return this;
     }

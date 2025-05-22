@@ -25,7 +25,7 @@ public class IndexConfiguratonStorageTest {
     private IndexConfiguratonStorage<String, Long> storage;
 
     private static final long MAX_KEYS_IN_SEGMENT_CACHE = 5000L;
-    private static final int MAX_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING = 5777;
+    private static final long MAX_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING = 5777;
     private static final int MAX_INDEX_PAGE = 256;
     private static final int MAX_KEYS_CACHE = 10000;
     private static final int MAX_KEYS_SEGMENT = 20000;

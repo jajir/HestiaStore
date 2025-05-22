@@ -97,7 +97,7 @@ public class IntegrationRandomDataTest {
                 .withKeyTypeDescriptor(tds) //
                 .withValueTypeDescriptor(tdi) //
                 .withMaxNumberOfKeysInSegment(2) //
-                .withMaxNumberOfKeysInSegmentCache(1) //
+                .withMaxNumberOfKeysInSegmentCache(1L) //
                 .withMaxNumberOfKeysInSegmentIndexPage(2) //
                 .withMaxNumberOfKeysInCache(2) //
                 .withBloomFilterIndexSizeInBytes(1000) //
