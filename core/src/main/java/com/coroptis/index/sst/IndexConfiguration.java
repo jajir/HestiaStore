@@ -1,7 +1,5 @@
 package com.coroptis.index.sst;
 
-import com.coroptis.index.datatype.TypeDescriptor;
-
 public class IndexConfiguration<K, V> {
 
     /**
@@ -9,8 +7,8 @@ public class IndexConfiguration<K, V> {
      */
     private final Class<K> keyClass;
     private final Class<V> valueClass;
-    private final TypeDescriptor<K> keyTypeDescriptor;
-    private final TypeDescriptor<V> valueTypeDescriptor;
+    private final String keyTypeDescriptor;
+    private final String valueTypeDescriptor;
 
     /*
      * Segments configuration
@@ -48,8 +46,8 @@ public class IndexConfiguration<K, V> {
 
     IndexConfiguration(final Class<K> keyClass, //
             final Class<V> valueClass, //
-            final TypeDescriptor<K> keyTypeDescriptor, //
-            final TypeDescriptor<V> valueTypeDescriptor, //
+            final String keyTypeDescriptor, //
+            final String valueTypeDescriptor, //
             final Long maxNumberOfKeysInSegmentCache, //
             final Long maxNumberOfKeysInSegmentCacheDuringFlushing, //
             final Integer maxNumberOfKeysInSegmentIndexPage, //
@@ -141,11 +139,11 @@ public class IndexConfiguration<K, V> {
         return valueClass;
     }
 
-    public TypeDescriptor<K> getKeyTypeDescriptor() {
+    public String getKeyTypeDescriptor() {
         return keyTypeDescriptor;
     }
 
-    public TypeDescriptor<V> getValueTypeDescriptor() {
+    public String getValueTypeDescriptor() {
         return valueTypeDescriptor;
     }
 }

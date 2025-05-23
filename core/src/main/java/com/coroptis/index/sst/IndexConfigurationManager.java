@@ -143,7 +143,26 @@ public class IndexConfigurationManager<K, V> {
                     indexConf.getValueClass().getName()));
         }
 
-        if (indexConf.getMaxNumberOfKeysInSegment() > 0
+        if (indexConf.getKeyTypeDescriptor() != null
+                && !indexConf.getKeyTypeDescriptor()
+                        .equals(storedConf.getKeyTypeDescriptor())) {
+            throw new IllegalArgumentException(String.format(
+                    "Key type descriptor is already set to '%s' and can't be changed to '%s'",
+                    storedConf.getKeyTypeDescriptor(),
+                    indexConf.getKeyTypeDescriptor()));
+        }
+
+        if (indexConf.getValueTypeDescriptor() != null
+                && !indexConf.getValueTypeDescriptor()
+                        .equals(storedConf.getValueTypeDescriptor())) {
+            throw new IllegalArgumentException(String.format(
+                    "Value type descriptor is already set to '%s' and can't be changed to '%s'",
+                    storedConf.getValueTypeDescriptor(),
+                    indexConf.getValueTypeDescriptor()));
+        }
+
+        if (indexConf.getMaxNumberOfKeysInSegment() != null
+                && indexConf.getMaxNumberOfKeysInSegment() > 0
                 && indexConf.getMaxNumberOfKeysInSegment() != storedConf
                         .getMaxNumberOfKeysInSegment()) {
             throw new IllegalArgumentException(String.format(
@@ -153,9 +172,11 @@ public class IndexConfigurationManager<K, V> {
                     indexConf.getMaxNumberOfKeysInSegment()));
         }
 
-        if (indexConf.getMaxNumberOfKeysInSegmentIndexPage() > 0 && indexConf
-                .getMaxNumberOfKeysInSegmentIndexPage() != storedConf
-                        .getMaxNumberOfKeysInSegmentIndexPage()) {
+        if (indexConf.getMaxNumberOfKeysInSegmentIndexPage() != null
+                && indexConf.getMaxNumberOfKeysInSegmentIndexPage() > 0
+                && indexConf
+                        .getMaxNumberOfKeysInSegmentIndexPage() != storedConf
+                                .getMaxNumberOfKeysInSegmentIndexPage()) {
             throw new IllegalArgumentException(String.format(
                     "Value of MaxNumberOfKeysInSegmentIndexPage is already set"
                             + " to '%s' and can't be changed to '%s'",
@@ -163,7 +184,8 @@ public class IndexConfigurationManager<K, V> {
                     indexConf.getMaxNumberOfKeysInSegmentIndexPage()));
         }
 
-        if (indexConf.getBloomFilterIndexSizeInBytes() > 0
+        if (indexConf.getBloomFilterIndexSizeInBytes() != null
+                && indexConf.getBloomFilterIndexSizeInBytes() > 0
                 && indexConf.getBloomFilterIndexSizeInBytes() != storedConf
                         .getBloomFilterIndexSizeInBytes()) {
             throw new IllegalArgumentException(String.format(
@@ -173,7 +195,8 @@ public class IndexConfigurationManager<K, V> {
                     indexConf.getBloomFilterIndexSizeInBytes()));
         }
 
-        if (indexConf.getBloomFilterNumberOfHashFunctions() > 0
+        if (indexConf.getBloomFilterNumberOfHashFunctions() != null
+                && indexConf.getBloomFilterNumberOfHashFunctions() > 0
                 && indexConf.getBloomFilterNumberOfHashFunctions() != storedConf
                         .getBloomFilterNumberOfHashFunctions()) {
             throw new IllegalArgumentException(String.format(
@@ -200,7 +223,8 @@ public class IndexConfigurationManager<K, V> {
             dirty = true;
         }
 
-        if (indexConf.getDiskIoBufferSize() > 0
+        if (indexConf.getDiskIoBufferSize() != null
+                && indexConf.getDiskIoBufferSize() > 0
                 && !indexConf.getDiskIoBufferSize()
                         .equals(storedConf.getDiskIoBufferSize())) {
             builder.withDiskIoBufferSizeInBytes(
@@ -208,7 +232,8 @@ public class IndexConfigurationManager<K, V> {
             dirty = true;
         }
 
-        if (indexConf.getMaxNumberOfKeysInSegmentCache() > 0
+        if (indexConf.getMaxNumberOfKeysInSegmentCache() != null
+                && indexConf.getMaxNumberOfKeysInSegmentCache() > 0
                 && !indexConf.getMaxNumberOfKeysInSegmentCache().equals(
                         storedConf.getMaxNumberOfKeysInSegmentCache())) {
             builder.withMaxNumberOfKeysInSegmentCache(
@@ -216,7 +241,9 @@ public class IndexConfigurationManager<K, V> {
             dirty = true;
         }
 
-        if (indexConf.getMaxNumberOfKeysInSegmentCacheDuringFlushing() > 0
+        if (indexConf.getMaxNumberOfKeysInSegmentCacheDuringFlushing() != null
+                && indexConf
+                        .getMaxNumberOfKeysInSegmentCacheDuringFlushing() > 0
                 && !indexConf.getMaxNumberOfKeysInSegmentCacheDuringFlushing()
                         .equals(storedConf
                                 .getMaxNumberOfKeysInSegmentCacheDuringFlushing())) {
@@ -225,7 +252,8 @@ public class IndexConfigurationManager<K, V> {
             dirty = true;
         }
 
-        if (indexConf.getMaxNumberOfKeysInCache() > 0
+        if (indexConf.getMaxNumberOfKeysInCache() != null
+                && indexConf.getMaxNumberOfKeysInCache() > 0
                 && !indexConf.getMaxNumberOfKeysInCache()
                         .equals(storedConf.getMaxNumberOfKeysInCache())) {
             builder.withMaxNumberOfKeysInCache(

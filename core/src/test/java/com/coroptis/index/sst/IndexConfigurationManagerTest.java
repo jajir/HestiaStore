@@ -16,15 +16,16 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.datatype.TypeDescriptorLong;
 import com.coroptis.index.datatype.TypeDescriptorString;
 
 @ExtendWith(MockitoExtension.class)
 public class IndexConfigurationManagerTest {
 
-    private final static TypeDescriptor<String> TD_STRING = new TypeDescriptorString();
-    private final static TypeDescriptor<Long> TD_LONG = new TypeDescriptorLong();
+    private final static String TD_STRING = TypeDescriptorString.class
+            .getSimpleName();
+    private final static String TD_LONG = TypeDescriptorLong.class
+            .getSimpleName();
     private final static IndexConfiguration<Long, String> CONFIG = IndexConfiguration
             .<Long, String>builder()//
             .withKeyClass(Long.class) //
@@ -429,7 +430,8 @@ public class IndexConfigurationManagerTest {
 
     @Test
     void test_mergeWithStored_indexName() {
-        final IndexConfiguration<Long, String> config = configBuilder//
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
                 .withName("pandemonium")//
                 .build();
 
@@ -444,7 +446,8 @@ public class IndexConfigurationManagerTest {
 
     @Test
     void test_mergeWithStored_maxNumberOfKeysInSegmentCache() {
-        final IndexConfiguration<Long, String> config = configBuilder//
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
                 .withMaxNumberOfKeysInSegmentCache(3627L)//
                 .build();
 
@@ -459,7 +462,8 @@ public class IndexConfigurationManagerTest {
 
     @Test
     void test_mergeWithStored_diskIoBufferSize() {
-        final IndexConfiguration<Long, String> config = configBuilder//
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
                 .withDiskIoBufferSizeInBytes(1024 * 77)//
                 .build();
 
@@ -474,7 +478,8 @@ public class IndexConfigurationManagerTest {
 
     @Test
     void test_mergeWithStored_isLogEnabled() {
-        final IndexConfiguration<Long, String> config = configBuilder//
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
                 .withLogEnabled(true)//
                 .build();
 
@@ -489,7 +494,8 @@ public class IndexConfigurationManagerTest {
 
     @Test
     void test_mergeWithStored_isThreadSafe() {
-        final IndexConfiguration<Long, String> config = configBuilder//
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
                 .withThreadSafe(true)//
                 .build();
 
@@ -534,9 +540,40 @@ public class IndexConfigurationManagerTest {
                 e.getMessage());
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @Test
+    void test_mergeWithStored_keyTypeDescriptor() {
+        final IndexConfiguration cfg = IndexConfiguration.builder()//
+                .withKeyTypeDescriptor("kachana") //
+                .build();
+        when(storage.load()).thenReturn(CONFIG);
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> manager.mergeWithStored(cfg));
+
+        assertEquals("Key type descriptor is already set to "
+                + "'TypeDescriptorLong' and can't be changed to 'kachana'",
+                e.getMessage());
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @Test
+    void test_mergeWithStored_valueTypeDescriptor() {
+        final IndexConfiguration cfg = IndexConfiguration.builder()//
+                .withValueTypeDescriptor("kachna") //
+                .build();
+        when(storage.load()).thenReturn(CONFIG);
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> manager.mergeWithStored(cfg));
+
+        assertEquals("Value type descriptor is already set to "
+                + "'TypeDescriptorString' and can't be changed to 'kachna'",
+                e.getMessage());
+    }
+
     @Test
     void test_mergeWithStored_maxNumberOfKeysInSegment() {
-        final IndexConfiguration<Long, String> config = configBuilder//
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
                 .withMaxNumberOfKeysInSegment(9864)//
                 .build();
 
@@ -552,7 +589,8 @@ public class IndexConfigurationManagerTest {
 
     @Test
     void test_mergeWithStored_bloomFilterIndexSizeInBytes() {
-        final IndexConfiguration<Long, String> config = configBuilder//
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
                 .withBloomFilterIndexSizeInBytes(4620)//
                 .build();
 
@@ -568,7 +606,8 @@ public class IndexConfigurationManagerTest {
 
     @Test
     void test_mergeWithStored_bloomFilterNumberOfHashFunctions() {
-        final IndexConfiguration<Long, String> config = configBuilder//
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
                 .withBloomFilterNumberOfHashFunctions(4620)//
                 .build();
 
@@ -584,7 +623,8 @@ public class IndexConfigurationManagerTest {
 
     @Test
     void test_mergeWithStored_bloomFilterProbabilityOfFalsePositive() {
-        final IndexConfiguration<Long, String> config = configBuilder//
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
                 .withBloomFilterProbabilityOfFalsePositive(0.5)//
                 .build();
 
@@ -600,7 +640,8 @@ public class IndexConfigurationManagerTest {
 
     @Test
     void test_mergeWithStored_maxNumberOfKeysInSegmentIndexPage() {
-        final IndexConfiguration<Long, String> config = configBuilder//
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
                 .withMaxNumberOfKeysInSegmentIndexPage(4620)//
                 .build();
 

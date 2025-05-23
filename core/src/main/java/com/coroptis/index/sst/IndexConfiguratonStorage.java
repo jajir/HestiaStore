@@ -10,6 +10,8 @@ public class IndexConfiguratonStorage<K, V> {
 
     private static final String PROP_KEY_CLASS = "keyClass";
     private static final String PROP_VALUE_CLASS = "valueClass";
+    private static final String PROP_KEY_TYPE_DESCRIPTOR = "keyTypeDescriptor";
+    private static final String PROP_VALUE_TYPE_DESCRIPTOR = "valueTypeDescriptor";
     private static final String PROP_INDEX_NAME = "indexName";
     private static final String PROP_USE_FULL_LOG = "logEnabled";
     private static final String PROP_IS_THREAD_SAFE = "isThreadSafe";
@@ -78,9 +80,9 @@ public class IndexConfiguratonStorage<K, V> {
         }
 
         builder.withKeyTypeDescriptor(
-                DataTypeDescriptorRegistry.getTypeDescriptor(keyClass));
+                props.getString(PROP_KEY_TYPE_DESCRIPTOR));
         builder.withValueTypeDescriptor(
-                DataTypeDescriptorRegistry.getTypeDescriptor(valueClass));
+                props.getString(PROP_VALUE_TYPE_DESCRIPTOR));
 
         return builder.build();
     }
@@ -91,6 +93,10 @@ public class IndexConfiguratonStorage<K, V> {
                 indexConfiguration.getKeyClass().getName());
         props.setString(PROP_VALUE_CLASS,
                 indexConfiguration.getValueClass().getName());
+        props.setString(PROP_KEY_TYPE_DESCRIPTOR,
+                indexConfiguration.getKeyTypeDescriptor());
+        props.setString(PROP_VALUE_TYPE_DESCRIPTOR,
+                indexConfiguration.getValueTypeDescriptor());
         props.setString(PROP_INDEX_NAME, indexConfiguration.getIndexName());
         props.setBoolean(PROP_USE_FULL_LOG, indexConfiguration.isLogEnabled());
         props.setBoolean(PROP_IS_THREAD_SAFE,

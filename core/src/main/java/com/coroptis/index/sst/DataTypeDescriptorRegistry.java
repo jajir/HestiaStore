@@ -3,8 +3,9 @@ package com.coroptis.index.sst;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
+import com.coroptis.index.IndexException;
+import com.coroptis.index.Vldtn;
 import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.datatype.TypeDescriptorInteger;
 import com.coroptis.index.datatype.TypeDescriptorLong;
@@ -19,7 +20,7 @@ import com.coroptis.index.datatype.TypeDescriptorString;
  */
 public class DataTypeDescriptorRegistry {
 
-    private final static Map<Class<?>, TypeDescriptor<?>> descriptors = new HashMap<>();
+    private final static Map<Class<?>, String> descriptors = new HashMap<>();
 
     static {
         addTypeDescriptor(Integer.class, new TypeDescriptorInteger());
@@ -31,26 +32,59 @@ public class DataTypeDescriptorRegistry {
             final TypeDescriptor<T> typeDescriptor) {
         Objects.requireNonNull(clazz);
         Objects.requireNonNull(typeDescriptor);
+        descriptors.put(clazz, typeDescriptor.getClass().getName());
+    }
+
+    public static final <T> void addTypeDescriptor(final Class<T> clazz,
+            final String typeDescriptor) {
+        Objects.requireNonNull(clazz);
+        Objects.requireNonNull(typeDescriptor);
         descriptors.put(clazz, typeDescriptor);
     }
 
-    @SuppressWarnings("unchecked")
-    public static final <T> Optional<TypeDescriptor<T>> getTypeDescriptorO(
-            final Class<T> clazz) {
+    public static final <T> String getTypeDescriptor(final Class<T> clazz) {
         Objects.requireNonNull(clazz);
-        return Optional.ofNullable((TypeDescriptor<T>) descriptors.get(clazz));
+        final String typeDescriptor = descriptors.get(clazz);
+        if (typeDescriptor == null) {
+            throw new IllegalStateException(
+                    String.format("There is not data type descriptor"
+                            + " in registry for class '%s'", clazz));
+        }
+        return typeDescriptor;
+
     }
 
-    public static final <T> TypeDescriptor<T> getTypeDescriptor(
-            final Class<T> clazz) {
-        Objects.requireNonNull(clazz);
-        return DataTypeDescriptorRegistry.getTypeDescriptorO(clazz)
-                .orElseThrow(
-                        () -> new IllegalStateException(String.format(
-                                "There is not data type descriptor"
-                                        + " in registry for class '%s'",
-                                clazz)));
+    @SuppressWarnings("unchecked")
+    public static <N> TypeDescriptor<N> makeInstance(String className) {
+        Vldtn.requiredNotNull(className, "className");
+        try {
+            // Load class by name
+            final Class<?> clazz = Class.forName(className);
 
+            // Instantiate using no-argument constructor
+            Object instance = clazz.getDeclaredConstructor().newInstance();
+
+            // Verify the created instance
+            if (instance instanceof TypeDescriptor) {
+                return (TypeDescriptor<N>) instance;
+            } else {
+                throw new IndexException(String.format(
+                        "Class '%s' does not implement TypeDescriptor",
+                        className));
+            }
+        } catch (ClassNotFoundException e) {
+            throw new IndexException(String.format(
+                    "Unable to find class '%s'. "
+                            + "Make sure the class is in the classpath.",
+                    className), e);
+        } catch (NoSuchMethodException e) {
+            throw new IndexException(String.format(
+                    "In class '%s' there is no public default (no-args) costructor.",
+                    className), e);
+        } catch (ReflectiveOperationException e) {
+            throw new IndexException(String.format(
+                    "Unable to create instance of class '%s'.", className), e);
+        }
     }
 
 }

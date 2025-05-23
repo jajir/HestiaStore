@@ -1,5 +1,6 @@
 package com.coroptis.index.sst;
 
+import com.coroptis.index.Vldtn;
 import com.coroptis.index.datatype.TypeDescriptor;
 
 public class IndexConfigurationBuilder<K, V> {
@@ -20,8 +21,8 @@ public class IndexConfigurationBuilder<K, V> {
     private String indexName;
     private Class<K> keyClass;
     private Class<V> valueClass;
-    private TypeDescriptor<K> keyTypeDescriptor;
-    private TypeDescriptor<V> valueTypeDescriptor;
+    private String keyTypeDescriptor;
+    private String valueTypeDescriptor;
     private Boolean logEnabled;
     private Boolean isThreadSafe;
 
@@ -31,12 +32,28 @@ public class IndexConfigurationBuilder<K, V> {
 
     public IndexConfigurationBuilder<K, V> withKeyTypeDescriptor(
             final TypeDescriptor<K> keyTypeDescriptor) {
-        this.keyTypeDescriptor = keyTypeDescriptor;
+        this.keyTypeDescriptor = Vldtn
+                .requiredNotNull(keyTypeDescriptor, "keyTypeDescriptor")
+                .getClass().getName();
         return this;
     }
 
     public IndexConfigurationBuilder<K, V> withValueTypeDescriptor(
             final TypeDescriptor<V> valueTypeDescriptor) {
+        this.valueTypeDescriptor = Vldtn
+                .requiredNotNull(valueTypeDescriptor, "valueTypeDescriptor")
+                .getClass().getName();
+        return this;
+    }
+
+    public IndexConfigurationBuilder<K, V> withKeyTypeDescriptor(
+            final String keyTypeDescriptor) {
+        this.keyTypeDescriptor = keyTypeDescriptor;
+        return this;
+    }
+
+    public IndexConfigurationBuilder<K, V> withValueTypeDescriptor(
+            final String valueTypeDescriptor) {
         this.valueTypeDescriptor = valueTypeDescriptor;
         return this;
     }

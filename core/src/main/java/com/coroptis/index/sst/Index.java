@@ -7,6 +7,7 @@ import java.util.stream.Stream;
 import com.coroptis.index.CloseableResource;
 import com.coroptis.index.IndexException;
 import com.coroptis.index.Pair;
+import com.coroptis.index.datatype.TypeDescriptor;
 import com.coroptis.index.directory.Directory;
 import com.coroptis.index.log.Log;
 import com.coroptis.index.log.LoggedKey;
@@ -54,24 +55,28 @@ public interface Index<K, V> extends CloseableResource {
     private static <M, N> Index<M, N> openIndex(final Directory directory,
             final IndexConfiguration<M, N> indexConf) {
         Log<M, N> log = null;
+        final TypeDescriptor<M> keyTypeDescriptor = DataTypeDescriptorRegistry
+                .makeInstance(indexConf.getKeyTypeDescriptor());
+        final TypeDescriptor<N> valueTypeDescriptor = DataTypeDescriptorRegistry
+                .makeInstance(indexConf.getValueTypeDescriptor());
         if (indexConf.isLogEnabled()) {
             log = Log.<M, N>builder()//
                     .withDirectory(directory)//
-                    .withKeyTypeDescriptor(indexConf.getKeyTypeDescriptor())//
-                    .withValueTypeDescriptor(indexConf.getValueTypeDescriptor())//
+                    .withKeyTypeDescriptor(keyTypeDescriptor)//
+                    .withValueTypeDescriptor(valueTypeDescriptor)//
                     .build();
         } else {
             log = Log.<M, N>builder().buildEmpty();
         }
         if (indexConf.isThreadSafe()) {
             final IndexInternal<M, N> index = new IndexInternalSynchronized<>(
-                    directory, indexConf.getKeyTypeDescriptor(),
-                    indexConf.getValueTypeDescriptor(), indexConf, log);
+                    directory, keyTypeDescriptor, valueTypeDescriptor,
+                    indexConf, log);
             return new IndexContextLoggingAdapter<>(indexConf, index);
         } else {
             final IndexInternal<M, N> index = new IndexInternalDefault<>(
-                    directory, indexConf.getKeyTypeDescriptor(),
-                    indexConf.getValueTypeDescriptor(), indexConf, log);
+                    directory, keyTypeDescriptor, valueTypeDescriptor,
+                    indexConf, log);
             return new IndexContextLoggingAdapter<>(indexConf, index);
         }
     }
