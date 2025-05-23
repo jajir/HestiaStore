@@ -51,7 +51,7 @@ public class IndexConfigurationManagerTest {
     private IndexConfigurationManager<Long, String> manager;
 
     @Test
-    void test_save_key_class_missing() throws Exception {
+    void test_save_key_class_is_null() throws Exception {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withValueClass(String.class)//
@@ -64,7 +64,7 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_value_class_missing() throws Exception {
+    void test_save_value_class_is_null() throws Exception {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withKeyClass(Long.class)//
@@ -77,7 +77,7 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_index_name_is_empy() throws Exception {
+    void test_save_index_name_is_null() throws Exception {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withKeyClass(Long.class)//
@@ -91,7 +91,7 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_key_type_descriptor_missing() throws Exception {
+    void test_save_key_type_descriptor_is_null() throws Exception {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withKeyClass(Long.class)//
@@ -107,7 +107,7 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_thread_safe_missing() throws Exception {
+    void test_save_thread_safe_is_null() throws Exception {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withKeyClass(Long.class)//
@@ -142,6 +142,26 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
+    void test_save_maxNumberOfKeysInCache_is_null() throws Exception {
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
+                .withKeyClass(Long.class)//
+                .withValueClass(String.class)//
+                .withName("test_index")//
+                .withKeyTypeDescriptor(TD_LONG)//
+                .withValueTypeDescriptor(TD_STRING)//
+                .withThreadSafe(true)//
+                .withLogEnabled(true)//
+                .build();
+
+        final Exception ex = assertThrows(IllegalArgumentException.class,
+                () -> manager.save(config));
+
+        assertEquals("Property ‘MaxNumberOfKeysInCache’ must not be null.",
+                ex.getMessage());
+    }
+
+    @Test
     void test_save_maxNumberOfKeysInCache_is_less_than_3() throws Exception {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
@@ -159,6 +179,27 @@ public class IndexConfigurationManagerTest {
                 () -> manager.save(config));
 
         assertEquals("Max number of keys in cache must be at least 3.",
+                ex.getMessage());
+    }
+
+    @Test
+    void test_save_maxNumberOfKeysInSegment_is_null() throws Exception {
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
+                .withKeyClass(Long.class)//
+                .withValueClass(String.class)//
+                .withName("test_index")//
+                .withKeyTypeDescriptor(TD_LONG)//
+                .withValueTypeDescriptor(TD_STRING)//
+                .withThreadSafe(true)//
+                .withLogEnabled(true)//
+                .withMaxNumberOfKeysInCache(3)//
+                .build();
+
+        final Exception ex = assertThrows(IllegalArgumentException.class,
+                () -> manager.save(config));
+
+        assertEquals("Property ‘MaxNumberOfKeysInSegment’ must not be null.",
                 ex.getMessage());
     }
 
@@ -185,6 +226,27 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
+    void test_save_maxNumberOfSegmentsInCache_is_null() throws Exception {
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
+                .withKeyClass(Long.class) //
+                .withValueClass(String.class)//
+                .withName("test_index")//
+                .withKeyTypeDescriptor(TD_LONG)//
+                .withValueTypeDescriptor(TD_STRING)//
+                .withThreadSafe(true)//
+                .withLogEnabled(true)//
+                .withMaxNumberOfKeysInCache(3)//
+                .withMaxNumberOfKeysInSegment(4)//
+                .build();
+
+        final Exception ex = assertThrows(IllegalArgumentException.class,
+                () -> manager.save(config));
+        assertEquals("Property ‘MaxNumberOfSegmentsInCache’ must not be null.",
+                ex.getMessage());
+    }
+
+    @Test
     void test_save_maxNumberOfSegmentsInCache_is_less_than_3()
             throws Exception {
         final IndexConfiguration<Long, String> config = IndexConfiguration
@@ -205,6 +267,29 @@ public class IndexConfigurationManagerTest {
                 () -> manager.save(config));
         assertEquals("Max number of segments in " + "cache must be at least 3.",
                 ex.getMessage());
+    }
+
+    @Test
+    void test_save_maxNumberOfKeysInSegmentCacheDuringFlushing_is_null()
+            throws Exception {
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
+                .withKeyClass(Long.class) //
+                .withValueClass(String.class)//
+                .withName("test_index")//
+                .withKeyTypeDescriptor(TD_LONG)//
+                .withValueTypeDescriptor(TD_STRING)//
+                .withThreadSafe(true)//
+                .withLogEnabled(true)//
+                .withMaxNumberOfKeysInCache(3)//
+                .withMaxNumberOfKeysInSegment(4)//
+                .withMaxNumberOfSegmentsInCache(3)//
+                .build();
+
+        final Exception ex = assertThrows(IllegalArgumentException.class,
+                () -> manager.save(config));
+        assertEquals("Property ‘MaxNumberOfKeysInSegmentCacheDuringFlushing’"
+                + " must not be null.", ex.getMessage());
     }
 
     @Test

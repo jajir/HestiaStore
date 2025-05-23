@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.coroptis.index.IndexException;
+import com.coroptis.index.Vldtn;
 
 public class IndexConfigurationManager<K, V> {
 
@@ -269,19 +270,31 @@ public class IndexConfigurationManager<K, V> {
         if (conf.isLogEnabled() == null) {
             throw new IllegalArgumentException("Value of log enable is null.");
         }
-        // FIXME add validation for null values
+
+        Vldtn.requiredNotNull(conf.getMaxNumberOfKeysInCache(),
+                "MaxNumberOfKeysInCache");
         if (conf.getMaxNumberOfKeysInCache() < 3) {
             throw new IllegalArgumentException(
                     "Max number of keys in cache must be at least 3.");
         }
+
+        Vldtn.requiredNotNull(conf.getMaxNumberOfKeysInSegment(),
+                "MaxNumberOfKeysInSegment");
         if (conf.getMaxNumberOfKeysInSegment() < 4) {
             throw new IllegalArgumentException(
                     "Max number of keys in segment must be at least 4.");
         }
+
+        Vldtn.requiredNotNull(conf.getMaxNumberOfSegmentsInCache(),
+                "MaxNumberOfSegmentsInCache");
         if (conf.getMaxNumberOfSegmentsInCache() < 3) {
             throw new IllegalArgumentException(
                     "Max number of segments in cache must be at least 3.");
         }
+
+        Vldtn.requiredNotNull(
+                conf.getMaxNumberOfKeysInSegmentCacheDuringFlushing(),
+                "MaxNumberOfKeysInSegmentCacheDuringFlushing");
         if (conf.getMaxNumberOfKeysInSegmentCacheDuringFlushing() < 3) {
             throw new IllegalArgumentException(
                     "Max number of keys in segment cache during flushing must be at least 3.");
@@ -291,6 +304,8 @@ public class IndexConfigurationManager<K, V> {
             throw new IllegalArgumentException(
                     "Max number of keys in segment cache during flushing must be greater than max number of keys in segment cache.");
         }
+
+        Vldtn.requiredNotNull(conf.getDiskIoBufferSize(), "DiskIoBufferSize");
         if (conf.getDiskIoBufferSize() % 1024 != 0) {
             throw new IllegalArgumentException(String.format(
                     "Parameter 'diskIoBufferSize' vith value '%s'"
