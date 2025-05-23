@@ -6,7 +6,6 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.coroptis.index.IndexException;
 import com.coroptis.index.Vldtn;
 
 public class IndexConfigurationManager<K, V> {
@@ -45,20 +44,20 @@ public class IndexConfigurationManager<K, V> {
             builder.withValueTypeDescriptor(DataTypeDescriptorRegistry
                     .getTypeDescriptor(conf.getValueClass()));
         }
-        if (conf.isLogEnabled() == null) {
-            builder.withLogEnabled(false);
-        }
-        if (conf.isThreadSafe() == null) {
-            builder.withThreadSafe(false);
-        }
-        final Optional<BuilderConfiguration> oDefaults = BuilderConfigurationRegistry
+        final Optional<IndexConfigurationDefault> oDefaults = IndexConfigurationRegistry
                 .get(conf.getKeyClass());
         if (oDefaults.isEmpty()) {
             logger.debug("There is no default configuration for key class '{}'",
                     conf.getKeyClass());
             return builder.build();
         }
-        final BuilderConfiguration defaults = oDefaults.get();
+        final IndexConfigurationDefault defaults = oDefaults.get();
+        if (conf.isLogEnabled() == null) {
+            builder.withLogEnabled(defaults.isLogEnabled());
+        }
+        if (conf.isThreadSafe() == null) {
+            builder.withThreadSafe(defaults.isThreadSafe());
+        }
         if (conf.getMaxNumberOfKeysInSegment() == null) {
             builder.withMaxNumberOfKeysInSegment(
                     defaults.getMaxNumberOfKeysInSegment());
@@ -124,9 +123,6 @@ public class IndexConfigurationManager<K, V> {
     IndexConfiguration<K, V> mergeWithStored(
             final IndexConfiguration<K, V> indexConf) {
         final IndexConfiguration<K, V> storedConf = confStorage.load();
-        // TODO verify stored conf, user can change it manually
-        // FIXME it should allow to change more properties
-        // TODO openin index in non existing place shoudl provide better message
 
         final IndexConfigurationBuilder<K, V> builder = makeBuilder(storedConf);
         boolean dirty = false;

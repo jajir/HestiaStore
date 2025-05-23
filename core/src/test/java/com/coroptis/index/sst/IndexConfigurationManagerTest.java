@@ -1,6 +1,7 @@
 package com.coroptis.index.sst;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -409,8 +410,21 @@ public class IndexConfigurationManagerTest {
         verify(storage, Mockito.times(0)).save(any());
 
         assertNotNull(ret);
-        // TODO verify returned object,
-
+        assertEquals(Long.class, ret.getKeyClass());
+        assertEquals(String.class, ret.getValueClass());
+        assertEquals(TD_LONG, ret.getKeyTypeDescriptor());
+        assertEquals(TD_STRING, ret.getValueTypeDescriptor());
+        assertEquals("test_index", ret.getIndexName());
+        assertEquals(11L, ret.getMaxNumberOfKeysInSegmentCache());
+        assertEquals(22L, ret.getMaxNumberOfKeysInSegmentCacheDuringFlushing());
+        assertEquals(33, ret.getMaxNumberOfKeysInSegmentIndexPage());
+        assertEquals(44, ret.getMaxNumberOfKeysInSegment());
+        assertEquals(66, ret.getMaxNumberOfSegmentsInCache());
+        assertEquals(1024, ret.getDiskIoBufferSize());
+        assertEquals(77, ret.getBloomFilterIndexSizeInBytes());
+        assertEquals(88, ret.getBloomFilterNumberOfHashFunctions());
+        assertFalse(ret.isLogEnabled());
+        assertFalse(ret.isThreadSafe());
     }
 
     @Test

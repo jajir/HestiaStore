@@ -10,22 +10,20 @@ public class IndexConfigurationBuilder<K, V> {
     private Integer maxNumberOfKeysInCache;
     private Integer maxNumberOfKeysInSegment;
     private Integer maxNumberOfSegmentsInCache;
-    // TODO change previous types to long
 
     private Integer bloomFilterNumberOfHashFunctions;
     private Integer bloomFilterIndexSizeInBytes;
-    private Double bloomFilterProbabilityOfFalsePositive = null;
+    private Double bloomFilterProbabilityOfFalsePositive;
 
     private int diskIoBufferSizeInBytes;
 
-    private String indexName = null;
+    private String indexName;
     private Class<K> keyClass;
     private Class<V> valueClass;
     private TypeDescriptor<K> keyTypeDescriptor;
     private TypeDescriptor<V> valueTypeDescriptor;
     private Boolean logEnabled;
     private Boolean isThreadSafe;
-    private String memoryConf = null;
 
     IndexConfigurationBuilder() {
 
@@ -123,12 +121,6 @@ public class IndexConfigurationBuilder<K, V> {
     public IndexConfigurationBuilder<K, V> withDiskIoBufferSizeInBytes(
             final Integer diskIoBufferSizeInBytes) {
         this.diskIoBufferSizeInBytes = diskIoBufferSizeInBytes;
-        return this;
-    }
-
-    public IndexConfigurationBuilder<K, V> withConf(
-            final String memoryConfiguration) {
-        this.memoryConf = memoryConfiguration;
         return this;
     }
 

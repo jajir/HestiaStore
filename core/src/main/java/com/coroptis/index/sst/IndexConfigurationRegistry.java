@@ -11,8 +11,7 @@ import java.util.Optional;
  * @author honza
  *
  */
-public class BuilderConfigurationRegistry {
-    // TODO rename it to IndexConfigurationRegistry
+public class IndexConfigurationRegistry {
     /**
      * memory attribute could be null.
      * 
@@ -54,34 +53,35 @@ public class BuilderConfigurationRegistry {
 
     }
 
-    private final static Map<Key, BuilderConfiguration> confs = new HashMap<>();
+    private final static Map<Key, IndexConfigurationDefault> confs = new HashMap<>();
 
     static {
-        addTypeDefaultConf(Integer.class, new BuilderConfigurationInteger());
-        addTypeDefaultConf(Long.class, new BuilderConfigurationInteger());
-        addTypeDefaultConf(String.class, new BuilderConfigurationString());
+        addTypeDefaultConf(Integer.class,
+                new IndexConfigurationDefaultInteger());
+        addTypeDefaultConf(Long.class, new IndexConfigurationDefaultInteger());
+        addTypeDefaultConf(String.class, new IndexConfigurationDefaultString());
     }
 
     public static final <T> void addTypeDefaultConf(final Class<T> clazz,
-            final BuilderConfiguration typeConfiguration) {
+            final IndexConfigurationDefault typeConfiguration) {
         Objects.requireNonNull(clazz);
         Objects.requireNonNull(typeConfiguration);
         add(clazz, null, typeConfiguration);
     }
 
     public static final <T> void add(final Class<T> clazz, final String memory,
-            final BuilderConfiguration typeConfiguration) {
+            final IndexConfigurationDefault typeConfiguration) {
         Objects.requireNonNull(clazz);
         Objects.requireNonNull(typeConfiguration);
         confs.put(Key.of(clazz, memory), typeConfiguration);
     }
 
-    public static final <T> Optional<BuilderConfiguration> get(
+    public static final <T> Optional<IndexConfigurationDefault> get(
             final Class<T> clazz) {
         return get(clazz, null);
     }
 
-    public static final <T> Optional<BuilderConfiguration> get(
+    public static final <T> Optional<IndexConfigurationDefault> get(
             final Class<T> clazz, final String memory) {
         Objects.requireNonNull(clazz, "Class can't be null");
         return Optional.ofNullable(confs.get(Key.of(clazz, memory)));

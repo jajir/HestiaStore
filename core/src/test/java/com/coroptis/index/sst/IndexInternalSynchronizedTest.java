@@ -1,5 +1,7 @@
 package com.coroptis.index.sst;
 
+import static org.mockito.Mockito.when;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -28,6 +30,7 @@ public class IndexInternalSynchronizedTest {
 
     @Test
     public void test_constructor() throws Exception {
+        when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(1000);
         try (IndexInternalSynchronized<Integer, String> synchIndex = new IndexInternalSynchronized<>(
                 directory, TD_INTEGER, TD_STRING, conf, log)) {
         }

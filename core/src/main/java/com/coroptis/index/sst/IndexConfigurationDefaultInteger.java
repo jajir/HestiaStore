@@ -6,7 +6,8 @@ package com.coroptis.index.sst;
  * @author honza
  *
  */
-public class BuilderConfigurationInteger implements BuilderConfiguration {
+public class IndexConfigurationDefaultInteger
+        implements IndexConfigurationDefault {
 
     @Override
     public long getMaxNumberOfKeysInSegmentCache() {

@@ -75,7 +75,7 @@ class SegmentSplitterTest {
     void test_shouldBeCompactedBeforeSplitting_yes_lowEstimatedNumberOfKeys() {
         when(segmentPropertiesManager.getSegmentStats())
                 .thenReturn(segmentStats);
-        when(segmentStats.getNumberOfKeysInIndex()).thenReturn(2L);
+        when(segmentStats.getNumberOfKeysInSegment()).thenReturn(2L);
         when(deltaCacheController.getDeltaCacheSizeWithoutTombstones())
                 .thenReturn(1);
 
@@ -86,7 +86,7 @@ class SegmentSplitterTest {
     void test_shouldBeCompactedBeforeSplitting_no() {
         when(segmentPropertiesManager.getSegmentStats())
                 .thenReturn(segmentStats);
-        when(segmentStats.getNumberOfKeysInIndex()).thenReturn(1000L);
+        when(segmentStats.getNumberOfKeysInSegment()).thenReturn(1000L);
         when(deltaCacheController.getDeltaCacheSizeWithoutTombstones())
                 .thenReturn(100);
 
@@ -106,7 +106,7 @@ class SegmentSplitterTest {
     void test_split() {
         when(segmentPropertiesManager.getSegmentStats())
                 .thenReturn(segmentStats);
-        when(segmentStats.getNumberOfKeysInIndex()).thenReturn(2L);
+        when(segmentStats.getNumberOfKeysInSegment()).thenReturn(2L);
         when(deltaCacheController.getDeltaCacheSizeWithoutTombstones())
                 .thenReturn(2);
 
@@ -140,7 +140,7 @@ class SegmentSplitterTest {
     void test_split_half_is_zero() {
         when(segmentPropertiesManager.getSegmentStats())
                 .thenReturn(segmentStats);
-        when(segmentStats.getNumberOfKeysInIndex()).thenReturn(0L);
+        when(segmentStats.getNumberOfKeysInSegment()).thenReturn(0L);
         when(deltaCacheController.getDeltaCacheSizeWithoutTombstones())
                 .thenReturn(1);
 

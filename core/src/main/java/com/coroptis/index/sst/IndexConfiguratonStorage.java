@@ -11,8 +11,8 @@ public class IndexConfiguratonStorage<K, V> {
     private static final String PROP_KEY_CLASS = "keyClass";
     private static final String PROP_VALUE_CLASS = "valueClass";
     private static final String PROP_INDEX_NAME = "indexName";
-    private static final String PROP_USE_FULL_LOG = "useFullLog";
-    private static final String PROP_IS_INDEX_SYNCHRONIZED = "isIndexSynchronized";
+    private static final String PROP_USE_FULL_LOG = "logEnabled";
+    private static final String PROP_IS_THREAD_SAFE = "isThreadSafe";
 
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = "maxNumberOfKeysInSegmentCache";
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING = "maxNumberOfKeysInSegmentCacheDuringFlushing";
@@ -44,7 +44,7 @@ public class IndexConfiguratonStorage<K, V> {
                 .withValueClass(valueClass)//
                 .withName(props.getString(PROP_INDEX_NAME))//
                 .withLogEnabled(props.getBoolean(PROP_USE_FULL_LOG))//
-                .withThreadSafe(props.getBoolean(PROP_IS_INDEX_SYNCHRONIZED))//
+                .withThreadSafe(props.getBoolean(PROP_IS_THREAD_SAFE))//
 
                 // Index runtime properties
                 .withMaxNumberOfKeysInCache(
@@ -93,7 +93,7 @@ public class IndexConfiguratonStorage<K, V> {
                 indexConfiguration.getValueClass().getName());
         props.setString(PROP_INDEX_NAME, indexConfiguration.getIndexName());
         props.setBoolean(PROP_USE_FULL_LOG, indexConfiguration.isLogEnabled());
-        props.setBoolean(PROP_IS_INDEX_SYNCHRONIZED,
+        props.setBoolean(PROP_IS_THREAD_SAFE,
                 indexConfiguration.isThreadSafe());
 
         // Index runtime properties

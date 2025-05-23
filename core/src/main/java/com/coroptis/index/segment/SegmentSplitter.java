@@ -133,8 +133,9 @@ public class SegmentSplitter<K, V> {
                     "Splitting failed. Lower segment doesn't contains any data");
         }
         if (cxHigher == 0) {
-            throw new IllegalStateException(
-                    "Splitting failed. Higher segment doesn't contains any data");
+            throw new IllegalStateException(String.format(
+                    "Splitting failed. Higher segment doesn't contains any data. Estimated number of keys was '%s'",
+                    F.fmt(estimatedNumberOfKeys)));
         }
         return new SegmentSplitterResult<>(lowerSegment, minKey, maxKey);
     }
@@ -149,7 +150,7 @@ public class SegmentSplitter<K, V> {
      * @return return estimated number of keys in segment
      */
     private long getEstimatedNumberOfKeys() {
-        return getStats().getNumberOfKeysInIndex()
+        return getStats().getNumberOfKeysInSegment()
                 + deltaCacheController.getDeltaCacheSizeWithoutTombstones();
     }
 

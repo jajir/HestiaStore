@@ -22,7 +22,7 @@ public class SegmentPropertiesManagerTest {
         SegmentStats stats = props.getSegmentStats();
         assertEquals(0, stats.getNumberOfKeys());
         assertEquals(0, stats.getNumberOfKeysInDeltaCache());
-        assertEquals(0, stats.getNumberOfKeysInIndex());
+        assertEquals(0, stats.getNumberOfKeysInSegment());
         assertEquals(0, stats.getNumberOfKeysInScarceIndex());
 
         assertEquals(0, props.getCacheDeltaFileNames().size());
@@ -43,7 +43,7 @@ public class SegmentPropertiesManagerTest {
         stats = props.getSegmentStats();
         assertEquals(1110, stats.getNumberOfKeys());
         assertEquals(87, stats.getNumberOfKeysInDeltaCache());
-        assertEquals(1023, stats.getNumberOfKeysInIndex());
+        assertEquals(1023, stats.getNumberOfKeysInSegment());
         assertEquals(132, stats.getNumberOfKeysInScarceIndex());
 
         // verify that newly added

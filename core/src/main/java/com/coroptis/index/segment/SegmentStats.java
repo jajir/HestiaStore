@@ -14,10 +14,11 @@ class SegmentStats {
     private final long numberOfKeysInIndex;
     private final long numberOfKeysInScarceIndex;
 
-    SegmentStats(final long numberOfKeysInDeltaCache, final long numberOfKeysInIndex,
+    SegmentStats(final long numberOfKeysInDeltaCache,
+            final long numberOfKeysInSegment,
             final long numberOfKeysInScarceIndex) {
         this.numberOfKeysInDeltaCache = numberOfKeysInDeltaCache;
-        this.numberOfKeysInIndex = numberOfKeysInIndex;
+        this.numberOfKeysInIndex = numberOfKeysInSegment;
         this.numberOfKeysInScarceIndex = numberOfKeysInScarceIndex;
     }
 
@@ -25,12 +26,12 @@ class SegmentStats {
         return numberOfKeysInDeltaCache;
     }
 
-    public long getNumberOfKeysInIndex() {
+    public long getNumberOfKeysInSegment() {
         return numberOfKeysInIndex;
     }
 
     public long getNumberOfKeys() {
-        return getNumberOfKeysInDeltaCache() + getNumberOfKeysInIndex();
+        return getNumberOfKeysInDeltaCache() + getNumberOfKeysInSegment();
     }
 
     public long getNumberOfKeysInScarceIndex() {

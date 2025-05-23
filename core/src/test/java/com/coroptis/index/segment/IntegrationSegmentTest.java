@@ -54,7 +54,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
         final SegmentStats stats = seg.getStats();
         assertEquals(0, stats.getNumberOfKeys());
         assertEquals(0, stats.getNumberOfKeysInDeltaCache());
-        assertEquals(0, stats.getNumberOfKeysInIndex());
+        assertEquals(0, stats.getNumberOfKeysInSegment());
         assertEquals(0, stats.getNumberOfKeysInScarceIndex());
 
         verifySegmentSearch(seg, Arrays.asList(// s
@@ -215,7 +215,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
 
         assertEquals(4, seg.getStats().getNumberOfKeys());
         assertEquals(4, seg.getStats().getNumberOfKeysInDeltaCache());
-        assertEquals(0, seg.getStats().getNumberOfKeysInIndex());
+        assertEquals(0, seg.getStats().getNumberOfKeysInSegment());
 
         verifySegmentData(seg, Arrays.asList(//
                 Pair.of(2, "a"), //
@@ -254,7 +254,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
 
         assertEquals(4, seg.getStats().getNumberOfKeys());
         assertEquals(4, seg.getStats().getNumberOfKeysInDeltaCache());
-        assertEquals(0, seg.getStats().getNumberOfKeysInIndex());
+        assertEquals(0, seg.getStats().getNumberOfKeysInSegment());
 
         verifySegmentData(seg, Arrays.asList(//
                 Pair.of(2, "a"), //
@@ -297,7 +297,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
          */
         assertEquals(4, seg.getStats().getNumberOfKeys());
         assertEquals(4, seg.getStats().getNumberOfKeysInDeltaCache());
-        assertEquals(0, seg.getStats().getNumberOfKeysInIndex());
+        assertEquals(0, seg.getStats().getNumberOfKeysInSegment());
 
         verifySegmentData(seg, Arrays.asList(//
                 Pair.of(2, "a"), //
@@ -362,7 +362,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
 
         assertEquals(4, seg.getStats().getNumberOfKeys());
         assertEquals(4, seg.getStats().getNumberOfKeysInDeltaCache());
-        assertEquals(0, seg.getStats().getNumberOfKeysInIndex());
+        assertEquals(0, seg.getStats().getNumberOfKeysInSegment());
 
         verifySegmentData(seg, Arrays.asList(//
         ));
@@ -534,7 +534,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
 
         assertEquals(3, seg.getStats().getNumberOfKeys());
         assertEquals(0, seg.getStats().getNumberOfKeysInDeltaCache());
-        assertEquals(3, seg.getStats().getNumberOfKeysInIndex());
+        assertEquals(3, seg.getStats().getNumberOfKeysInSegment());
 
         verifySegmentData(seg, Arrays.asList(//
                 Pair.of(2, "a"), //

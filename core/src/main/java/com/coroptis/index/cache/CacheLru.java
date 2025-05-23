@@ -16,7 +16,7 @@ import java.util.function.BiConsumer;
  */
 public class CacheLru<K, V> implements Cache<K, V> {
 
-    private final int limit;
+    private final long limit;
 
     private final Map<K, CacheLruElement<V>> cache;
 
@@ -24,10 +24,17 @@ public class CacheLru<K, V> implements Cache<K, V> {
 
     private long accessCx = 0;
 
-    public CacheLru(final int limit, final BiConsumer<K, V> evictedElement) {
+    public CacheLru(final long limit, final BiConsumer<K, V> evictedElement) {
         this.limit = limit;
         this.evictedElement = Objects.requireNonNull(evictedElement);
-        this.cache = new HashMap<>(limit);
+        if (limit <= 0) {
+            throw new IllegalArgumentException("Limit must be greater than 0");
+        }
+        if (limit > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException(
+                    "Limit must be less than " + Integer.MAX_VALUE);
+        }
+        this.cache = new HashMap<>((int) limit);
     }
 
     @Override
