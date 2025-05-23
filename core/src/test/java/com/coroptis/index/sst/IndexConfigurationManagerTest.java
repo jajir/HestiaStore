@@ -45,7 +45,6 @@ public class IndexConfigurationManagerTest {
             .withBloomFilterIndexSizeInBytes(77)//
             .withBloomFilterNumberOfHashFunctions(88)//
             .build();
-    private IndexConfigurationBuilder<Long, String> configBuilder;
 
     @Mock
     private IndexConfiguratonStorage<Long, String> storage;
@@ -658,28 +657,11 @@ public class IndexConfigurationManagerTest {
     @BeforeEach
     void setup() {
         manager = new IndexConfigurationManager<>(storage);
-        configBuilder = IndexConfiguration.<Long, String>builder()//
-                .withKeyClass(Long.class) //
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(TD_LONG)//
-                .withValueTypeDescriptor(TD_STRING)//
-                .withName("test_index")//
-                .withMaxNumberOfKeysInSegmentCache(11L)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22L) //
-                .withMaxNumberOfKeysInSegmentIndexPage(33)//
-                .withMaxNumberOfKeysInSegment(44)//
-                .withMaxNumberOfKeysInCache(55)//
-                .withMaxNumberOfSegmentsInCache(66)//
-                .withDiskIoBufferSizeInBytes(1024)//
-                .withBloomFilterIndexSizeInBytes(77)//
-                .withBloomFilterNumberOfHashFunctions(88)//
-        ;
     }
 
     @AfterEach
     void tearDown() {
         manager = null;
-        configBuilder = null;
     }
 
 }

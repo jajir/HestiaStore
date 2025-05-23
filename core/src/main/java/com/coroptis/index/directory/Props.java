@@ -15,7 +15,6 @@ public class Props {
     private final String fileName;
     private final Properties properties = new Properties();
 
-    // TODO make force true by default, remove in in future
     public Props(final Directory directory, final String fileName) {
         this(directory, fileName, false);
     }
