@@ -5,7 +5,6 @@
 ![line coverage](https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/jacoco-badge-main.svg)
 ![OWAPS dependency check](https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/badge-owasp-main.svg)
 
-
 Goal is to provide easy to use key value map for billions of records using just one directory and some space.
 
 It's simple fast index. Work with index should be split into phases of:
@@ -18,10 +17,12 @@ Index is not thread safe.
 
 ## Documentation
 
-* [Overall index architecture](architecture.md)
-* [Index configuration](configuration.md)
-* [Project versioning and how to release snapshot and new version](release.md)
-* [Logging](logging.md)
+* [HestiaStore Index architecture](architecture.md)
+* [How to use HestiaStore](how-to-use-index.md) including some examples
+* [Index configuration](configuration.md) and configuration properties explaining
+* [Logging](logging.md) How to setup loggin
+* [Project versioning and how to release](release.md) snapshot and new version
+* [Security](SECURITY.md) and related topics
 
 <!--
 * [Segment implementation details](segment.md)
@@ -53,22 +54,3 @@ index.put("Hello", "World");
 String value = index.get("Hello");
 System.out.println("Value for 'Hello': " + value);
 ```
-
-## Limitations
-
-### Staled result from index.getStream() method
-
-Data from `index.getStream()` method could be staled or invalid. It's corner case when next readed key value pair is changed. Index data streaming is splited into steps `hasNextElement()` and `getNextElement()`. Following example will show why it's no possible to use index cache:
-
-```java
-index.hasNextElement(); // --> true
-```
-
-Now next element has to be known to be sure that exists. Let's suppose that in index is just one element `<k1,v1>`.
-
-```java
-index.delete("k1");
-index.nextElement(); // --> fail
-```
-
-last operation will fail because there is not possible to find next element because `<k1,v1>` was deleted. To prevent this problem index cache is not used during index streaming. If all index content should be streamed than before streaming should be `compact()` method and during streaming data shouldn't be changed.

@@ -120,6 +120,10 @@ public interface Index<K, V> extends CloseableResource {
      */
     Stream<Pair<K, V>> getStream(SegmentWindow segmentWindows);
 
+    default Stream<Pair<K, V>> getStream() {
+        return getStream(SegmentWindow.unbounded());
+    }
+
     UnsortedDataFileStreamer<LoggedKey<K>, V> getLogStreamer();
 
     /**

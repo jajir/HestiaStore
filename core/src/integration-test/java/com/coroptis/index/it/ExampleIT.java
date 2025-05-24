@@ -6,6 +6,7 @@ import com.hestiastore.index.directory.Directory;
 import com.hestiastore.index.directory.MemDirectory;
 import com.hestiastore.index.sst.Index;
 import com.hestiastore.index.sst.IndexConfiguration;
+import com.hestiastore.index.sst.SegmentWindow;
 
 public class ExampleIT {
 
@@ -31,6 +32,38 @@ public class ExampleIT {
 
         String value = index.get("Hello");
         System.out.println("Value for 'Hello': " + value);
+
+        index.close();
+
+        reopen(directory);
+    }
+
+    private void reopen(final Directory directory) {
+        IndexConfiguration<String, String> conf = IndexConfiguration
+                .<String, String>builder()//
+                .withKeyClass(String.class)//
+                .withValueClass(String.class)//
+                .withName("test_index") //
+                .build();
+
+        Index<String, String> index = Index.<String, String>open(directory,
+                conf);
+
+        index.getStream().forEach(entry -> {
+            System.out.println("Entry: " + entry);
+        });
+
+        SegmentWindow window = SegmentWindow.of(1000, 10);
+
+        index.getStream(window).forEach(entry -> {
+            System.out.println("Entry: " + entry);
+        });
+
+        index.flush();
+
+        index.checkAndRepairConsistency();
+
+        index.compact();
     }
 
 }

@@ -137,6 +137,7 @@ public class IntegrationIndexTest extends AbstractIndexTest {
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(3) //
                 .withLogEnabled(withLog) //
+                .withThreadSafe(false)//
                 .withName("test_index") //
                 .build();
         return Index.create(directory, conf);
