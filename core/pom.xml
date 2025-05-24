@@ -4,13 +4,13 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-        <groupId>com.coroptis.jbindex</groupId>
+        <groupId>com.hestiastore.index</groupId>
         <artifactId>parent</artifactId>
         <version>0.0.1-SNAPSHOT</version>
 	</parent>
 	<artifactId>core</artifactId>
 	<packaging>jar</packaging>
-	<name>Simple index library</name>
+	<name>HestiaStore Core index library</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

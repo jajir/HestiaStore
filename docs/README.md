@@ -1,11 +1,10 @@
-[![Build (master)](https://github.com/jajir/jbindex/actions/workflows/maven.yml/badge.svg?branch=master)](https://github.com/jajir/jbindex/actions/workflows/maven.yml?query=branch%3Amain)
+![HestiaStore logo](./images/logo.png)
+
+[![Build (master)](https://github.com/jajir/HestiaStore/actions/workflows/maven.yml/badge.svg?branch=master)](https://github.com/jajir/HestiaStore/actions/workflows/maven.yml?query=branch%3Amain)
 ![test results](https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/badge-main.svg)
 ![line coverage](https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/jacoco-badge-main.svg)
 ![OWAPS dependency check](https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/badge-owasp-main.svg)
 
-# jbindex
-
-A Java library for efficiently storing and retrieving large key-value maps.
 
 Goal is to provide easy to use key value map for billions of records using just one directory and some space.
 
@@ -17,18 +16,14 @@ It's simple fast index. Work with index should be split into phases of:
 
 Index is not thread safe.
 
-## Useful links
+## Documentation
 
 * [Overall index architecture](architecture.md)
 * [Index configuration](configuration.md)
 * [Project versioning and how to release snapshot and new version](release.md)
 * [Segment implementation details](segment.md)
 
-## Basic work with index
-
-Index could be in following states:
-
-![Index methods](./images/index-class.png)
+## How to use HestiaStore
 
 Index should be created with builder, which make index instance. For example:
 
@@ -54,6 +49,11 @@ index.put("Hello", "World");
 String value = index.get("Hello");
 System.out.println("Value for 'Hello': " + value);
 ```
+# Architecture
+
+Index could be in following states:
+
+![Index methods](./images/index-class.png)
 
 ![Index states](./images/index-state-diagram.png)
 

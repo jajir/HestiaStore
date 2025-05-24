@@ -19,14 +19,14 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.coroptis.index.PairWriter;
-import com.coroptis.index.datatype.TypeDescriptor;
-import com.coroptis.index.datatype.TypeDescriptorLong;
-import com.coroptis.index.datatype.TypeDescriptorString;
-import com.coroptis.index.directory.Directory;
-import com.coroptis.index.directory.Directory.Access;
-import com.coroptis.index.directory.FsDirectory;
-import com.coroptis.index.unsorteddatafile.UnsortedDataFile;
+import com.hestiastore.index.PairWriter;
+import com.hestiastore.index.datatype.TypeDescriptor;
+import com.hestiastore.index.datatype.TypeDescriptorLong;
+import com.hestiastore.index.datatype.TypeDescriptorString;
+import com.hestiastore.index.directory.Directory;
+import com.hestiastore.index.directory.FsDirectory;
+import com.hestiastore.index.directory.Directory.Access;
+import com.hestiastore.index.unsorteddatafile.UnsortedDataFile;
 
 @BenchmarkMode(Mode.AverageTime) // Measures the average time per operation
 @OutputTimeUnit(TimeUnit.MILLISECONDS) // Results in milliseconds

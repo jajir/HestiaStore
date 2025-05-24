@@ -7,14 +7,14 @@ import java.util.Random;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.coroptis.index.PairWriter;
-import com.coroptis.index.datatype.TypeDescriptor;
-import com.coroptis.index.datatype.TypeDescriptorLong;
-import com.coroptis.index.datatype.TypeDescriptorString;
-import com.coroptis.index.directory.Directory;
-import com.coroptis.index.directory.MemDirectory;
-import com.coroptis.index.segment.Segment;
-import com.coroptis.index.segment.SegmentId;
+import com.hestiastore.index.PairWriter;
+import com.hestiastore.index.datatype.TypeDescriptor;
+import com.hestiastore.index.datatype.TypeDescriptorLong;
+import com.hestiastore.index.datatype.TypeDescriptorString;
+import com.hestiastore.index.directory.Directory;
+import com.hestiastore.index.directory.MemDirectory;
+import com.hestiastore.index.segment.Segment;
+import com.hestiastore.index.segment.SegmentId;
 
 public class IntegerationNumberOfKeysIT {
     private final SegmentId SEGMENT_ID = SegmentId.of(29);

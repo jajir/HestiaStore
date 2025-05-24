@@ -2,10 +2,10 @@ package com.coroptis.index.it;
 
 import org.junit.jupiter.api.Test;
 
-import com.coroptis.index.directory.Directory;
-import com.coroptis.index.directory.MemDirectory;
-import com.coroptis.index.sst.Index;
-import com.coroptis.index.sst.IndexConfiguration;
+import com.hestiastore.index.directory.Directory;
+import com.hestiastore.index.directory.MemDirectory;
+import com.hestiastore.index.sst.Index;
+import com.hestiastore.index.sst.IndexConfiguration;
 
 public class ExampleIT {
 

@@ -4,13 +4,13 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-        <groupId>com.coroptis.jbindex</groupId>
+        <groupId>com.hestiastore.index</groupId>
         <artifactId>parent</artifactId>
         <version>0.0.1-SNAPSHOT</version>
 	</parent>
 	<artifactId>jmh-benchmarks</artifactId>
 	<packaging>jar</packaging>
-	<name>JMH benchmarks for index</name>
+	<name>HestiaStore JMH benchmarks for index</name>
 
 	
 	<properties>
@@ -21,7 +21,7 @@
 	<description>Allows to quickly sort large ammount of data and quickly search through it.</description>
 	<dependencies>
 		<dependency>
-			<groupId>com.coroptis.jbindex</groupId>
+			<groupId>com.hestiastore.index</groupId>
 			<artifactId>core</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>

@@ -20,15 +20,15 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.coroptis.index.PairWriter;
-import com.coroptis.index.datatype.TypeDescriptor;
-import com.coroptis.index.datatype.TypeDescriptorLong;
-import com.coroptis.index.datatype.TypeDescriptorString;
-import com.coroptis.index.directory.Directory;
-import com.coroptis.index.directory.FsDirectory;
-import com.coroptis.index.segment.Segment;
-import com.coroptis.index.segment.SegmentBuilder;
-import com.coroptis.index.segment.SegmentId;
+import com.hestiastore.index.PairWriter;
+import com.hestiastore.index.datatype.TypeDescriptor;
+import com.hestiastore.index.datatype.TypeDescriptorLong;
+import com.hestiastore.index.datatype.TypeDescriptorString;
+import com.hestiastore.index.directory.Directory;
+import com.hestiastore.index.directory.FsDirectory;
+import com.hestiastore.index.segment.Segment;
+import com.hestiastore.index.segment.SegmentBuilder;
+import com.hestiastore.index.segment.SegmentId;
 
 /**
  * Test will create segment with String and Long as key value pairs.
