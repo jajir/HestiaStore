@@ -21,7 +21,11 @@ Index is not thread safe.
 * [Overall index architecture](architecture.md)
 * [Index configuration](configuration.md)
 * [Project versioning and how to release snapshot and new version](release.md)
+* [Logging](logging.md)
+
+<!--
 * [Segment implementation details](segment.md)
+-->
 
 ## How to use HestiaStore
 
@@ -49,15 +53,6 @@ index.put("Hello", "World");
 String value = index.get("Hello");
 System.out.println("Value for 'Hello': " + value);
 ```
-# Architecture
-
-Index could be in following states:
-
-![Index methods](./images/index-class.png)
-
-![Index states](./images/index-state-diagram.png)
-
-Interruption of process of writing data to index could lead to corruption of entire index.
 
 ## Limitations
 

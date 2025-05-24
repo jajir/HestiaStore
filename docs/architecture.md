@@ -16,3 +16,13 @@ To prevent these issues, you should call `compact()` before invoking `getStream(
 Updating values in the index using `put()` or deleting keys using `delete()` does not cause inconsistencies. Updated values will be returned, and deleted keys will be excluded from the stream.
 
 Other operations, like `get()`, remain consistently reliable.
+
+# States
+
+Index could be in following states:
+
+![Index methods](./images/index-class.png)
+
+![Index states](./images/index-state-diagram.png)
+
+Interruption of process of writing data to index could lead to corruption of entire index.
