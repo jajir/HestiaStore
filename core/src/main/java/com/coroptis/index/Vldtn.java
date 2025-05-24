@@ -10,15 +10,15 @@ public final class Vldtn {
         // private constructor
     }
 
-    public static <T> T requiredNotNull(final T object,
+    public static <T> T requireNonNull(final T object,
             final String propertyName) {
         if (propertyName == null) {
             throw new IllegalArgumentException(
-                    "Proepty 'propertyName' must not be null");
+                    "Property 'propertyName' must not be null.");
         }
         if (object == null) {
             throw new IllegalArgumentException(String
-                    .format("Property ‘%s’ must not be null.", propertyName));
+                    .format("Property '%s' must not be null.", propertyName));
         }
         return object;
     }

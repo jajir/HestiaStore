@@ -33,7 +33,7 @@ public class IndexConfigurationBuilder<K, V> {
     public IndexConfigurationBuilder<K, V> withKeyTypeDescriptor(
             final TypeDescriptor<K> keyTypeDescriptor) {
         this.keyTypeDescriptor = Vldtn
-                .requiredNotNull(keyTypeDescriptor, "keyTypeDescriptor")
+                .requireNonNull(keyTypeDescriptor, "keyTypeDescriptor")
                 .getClass().getName();
         return this;
     }
@@ -41,7 +41,7 @@ public class IndexConfigurationBuilder<K, V> {
     public IndexConfigurationBuilder<K, V> withValueTypeDescriptor(
             final TypeDescriptor<V> valueTypeDescriptor) {
         this.valueTypeDescriptor = Vldtn
-                .requiredNotNull(valueTypeDescriptor, "valueTypeDescriptor")
+                .requireNonNull(valueTypeDescriptor, "valueTypeDescriptor")
                 .getClass().getName();
         return this;
     }

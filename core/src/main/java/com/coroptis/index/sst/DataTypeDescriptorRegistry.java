@@ -56,7 +56,7 @@ public class DataTypeDescriptorRegistry {
 
     @SuppressWarnings("unchecked")
     public static <N> TypeDescriptor<N> makeInstance(String className) {
-        Vldtn.requiredNotNull(className, "className");
+        Vldtn.requireNonNull(className, "className");
         try {
             // Load class by name
             final Class<?> clazz = Class.forName(className);

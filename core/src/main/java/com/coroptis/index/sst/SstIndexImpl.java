@@ -173,9 +173,16 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
         final SegmentId newSegmentId = keySegmentCache.findNewSegmentId();
         final SegmentSplitterResult<K, V> result = segmentSplitter
                 .split(newSegmentId);
-        keySegmentCache.insertSegment(result.getMaxKey(), newSegmentId);
-        logger.debug("Splitting of segment '{}' to '{}' is done.", segmentId,
-                newSegmentId);
+        if (result.isSplited()) {
+            keySegmentCache.insertSegment(result.getMaxKey(), newSegmentId);
+            logger.debug("Splitting of segment '{}' to '{}' is done.",
+                    segmentId, newSegmentId);
+        } else {
+            logger.debug(
+                    "Splitting of segment '{}' is done, "
+                            + "but at the end it was compacting.",
+                    segmentId, newSegmentId);
+        }
         return true;
     }
 

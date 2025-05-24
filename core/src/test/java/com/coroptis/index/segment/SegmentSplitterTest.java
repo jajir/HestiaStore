@@ -112,7 +112,8 @@ class SegmentSplitterTest {
 
         // main iterator behaviour
         when(segment.openIterator()).thenReturn(segmentIterator);
-        when(segmentIterator.hasNext()).thenReturn(true, true, true, false);
+        when(segmentIterator.hasNext()).thenReturn(true, true, true, true,
+                false);
         when(segmentIterator.next()).thenReturn(PAIR1, PAIR2, PAIR3);
 
         // mock writing lower part to new segment

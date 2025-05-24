@@ -22,6 +22,7 @@ public class SegmentFiles<K, V> {
     final static String CACHE_FILE_NAME_EXTENSION = ".cache";
     private final static String TEMP_FILE_NAME_EXTENSION = ".tmp";
     private final static String BOOM_FILTER_FILE_NAME_EXTENSION = ".bloom-filter";
+    private final static String PROPERTIES_FILENAME_EXTENSION = ".properties";
 
     private final Directory directory;
     private final SegmentId id;
@@ -64,6 +65,10 @@ public class SegmentFiles<K, V> {
 
     String getIndexFileName() {
         return id.getName() + INDEX_FILE_NAME_EXTENSION;
+    }
+
+    String getPropertiesFilename() {
+        return id.getName() + PROPERTIES_FILENAME_EXTENSION;
     }
 
     SortedDataFile<K, V> getCacheSstFile() {

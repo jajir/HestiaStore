@@ -40,10 +40,9 @@ public class IntegrationIndexConsistencyTest extends AbstractIndexTest {
     void test_basic_consistency() throws Exception {
         final Index<Integer, Integer> index = makeIndex();
         for (int i = 0; i < 100; i++) {
-            // FIXME it should work, but look at #83
-            // writePairs(index, makeList(i));
-            // index.flush();
-            // verifyIndexData(index, makeList(i));
+            writePairs(index, makeList(i));
+            index.flush();
+            verifyIndexData(index, makeList(i));
         }
     }
 
@@ -60,13 +59,12 @@ public class IntegrationIndexConsistencyTest extends AbstractIndexTest {
         try (final Stream<Pair<Integer, Integer>> stream = index
                 .getStream(SegmentWindow.unbounded())) {
             final AtomicInteger acx = new AtomicInteger();
-            // FIXME it should work, but look at #83
-            // stream.forEach(pair -> {
-            // int cx = acx.incrementAndGet();
-            // writePairs(index, makeList(cx));
-            // logger.debug(cx + " " + pair.toString());
-            // verifyIndexData(index, makeList(cx));
-            // });
+            stream.forEach(pair -> {
+                int cx = acx.incrementAndGet();
+                writePairs(index, makeList(cx));
+                logger.debug(cx + " " + pair.toString());
+                verifyIndexData(index, makeList(cx));
+            });
         }
     }
 

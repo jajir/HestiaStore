@@ -31,6 +31,7 @@ public class SegmentPropertiesManager {
         this.props = new Props(directory, getPropertiesFilename());
     }
 
+    // FIXME use value from SegmentFiles.getPropertiesFilename
     private String getPropertiesFilename() {
         return id.getName() + PROPERTIES_FILENAME_EXTENSION;
     }

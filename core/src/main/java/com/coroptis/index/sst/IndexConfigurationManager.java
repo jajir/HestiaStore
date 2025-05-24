@@ -295,28 +295,28 @@ public class IndexConfigurationManager<K, V> {
             throw new IllegalArgumentException("Value of log enable is null.");
         }
 
-        Vldtn.requiredNotNull(conf.getMaxNumberOfKeysInCache(),
+        Vldtn.requireNonNull(conf.getMaxNumberOfKeysInCache(),
                 "MaxNumberOfKeysInCache");
         if (conf.getMaxNumberOfKeysInCache() < 3) {
             throw new IllegalArgumentException(
                     "Max number of keys in cache must be at least 3.");
         }
 
-        Vldtn.requiredNotNull(conf.getMaxNumberOfKeysInSegment(),
+        Vldtn.requireNonNull(conf.getMaxNumberOfKeysInSegment(),
                 "MaxNumberOfKeysInSegment");
         if (conf.getMaxNumberOfKeysInSegment() < 4) {
             throw new IllegalArgumentException(
                     "Max number of keys in segment must be at least 4.");
         }
 
-        Vldtn.requiredNotNull(conf.getMaxNumberOfSegmentsInCache(),
+        Vldtn.requireNonNull(conf.getMaxNumberOfSegmentsInCache(),
                 "MaxNumberOfSegmentsInCache");
         if (conf.getMaxNumberOfSegmentsInCache() < 3) {
             throw new IllegalArgumentException(
                     "Max number of segments in cache must be at least 3.");
         }
 
-        Vldtn.requiredNotNull(
+        Vldtn.requireNonNull(
                 conf.getMaxNumberOfKeysInSegmentCacheDuringFlushing(),
                 "MaxNumberOfKeysInSegmentCacheDuringFlushing");
         if (conf.getMaxNumberOfKeysInSegmentCacheDuringFlushing() < 3) {
@@ -329,7 +329,7 @@ public class IndexConfigurationManager<K, V> {
                     "Max number of keys in segment cache during flushing must be greater than max number of keys in segment cache.");
         }
 
-        Vldtn.requiredNotNull(conf.getDiskIoBufferSize(), "DiskIoBufferSize");
+        Vldtn.requireNonNull(conf.getDiskIoBufferSize(), "DiskIoBufferSize");
         if (conf.getDiskIoBufferSize() % 1024 != 0) {
             throw new IllegalArgumentException(String.format(
                     "Parameter 'diskIoBufferSize' vith value '%s'"

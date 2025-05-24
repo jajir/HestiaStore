@@ -112,32 +112,71 @@ public class SegmentSplitter<K, V> {
                 }
             }
 
-            try (final SegmentFullWriter<K, V> writer = openFullWriter()) {
-                while (iterator.hasNext()) {
-                    final Pair<K, V> pair = iterator.next();
-                    writer.put(pair);
-                    cxHigher++;
-                }
+            if (cxLower == 0) {
+                throw new IllegalStateException(
+                        "Splitting failed. Lower segment doesn't contains any data");
             }
 
-        }
-        logger.debug(
-                "Splitting of '{}' finished, '{}' was created. "
+            if (iterator.hasNext()) {
+                    /**
+                     * There are some more keys in segment, so split the
+                     * segment.
+                     */
+                    try (final SegmentFullWriter<K, V> writer = openFullWriter()) {
+                    while (iterator.hasNext()) {
+                        final Pair<K, V> pair = iterator.next();
+                        writer.put(pair);
+                        cxHigher++;
+                    }
+                }
+                logger.debug("Splitting of '{}' finished, '{}' was created. "
                         + "Estimated number of keys was '{}', "
                         + "half key was '{}' and real number of keys was '{}'.",
-                segmentFiles.getId(), lowerSegment.getId(),
-                F.fmt(estimatedNumberOfKeys), F.fmt(half),
-                F.fmt(cxLower + cxHigher));
-        if (cxLower == 0) {
-            throw new IllegalStateException(
-                    "Splitting failed. Lower segment doesn't contains any data");
+                        segmentFiles.getId(), lowerSegment.getId(),
+                        F.fmt(estimatedNumberOfKeys), F.fmt(half),
+                        F.fmt(cxLower + cxHigher));
+                if (cxHigher == 0) {
+                    throw new IllegalStateException(String.format(
+                            "Splitting failed. Higher segment doesn't contains any data. Estimated number of keys was '%s'",
+                            F.fmt(estimatedNumberOfKeys)));
+                }
+                return new SegmentSplitterResult<>(lowerSegment, minKey, maxKey,
+                        SegmentSplitterResult.SegmentSplittingStatus.SPLITED);
+            } else {
+                /**
+                 * There are no more keys in segment, so just compact segment.
+                 * 
+                 * Data from lower segment have to be moved to current one.
+                 */
+
+                // Moving segment main data file
+                segmentFiles.getDirectory().renameFile(
+                        lowerSegment.getSegmentFiles().getIndexFileName(),
+                        segmentFiles.getIndexFileName());
+                // Moving segment scarce index file
+                segmentFiles.getDirectory().renameFile(
+                        lowerSegment.getSegmentFiles().getScarceFileName(),
+                        segmentFiles.getScarceFileName());
+                // Moving bloom filter file
+                segmentFiles.getDirectory().renameFile(
+                        lowerSegment.getSegmentFiles().getBloomFilterFileName(),
+                        segmentFiles.getBloomFilterFileName());
+
+                deltaCacheController.clear();
+
+                // update segment statistics
+                segmentPropertiesManager.setNumberOfKeysInCache(0);
+                final SegmentStats stats = lowerSegment
+                        .getSegmentPropertiesManager().getSegmentStats();
+                segmentPropertiesManager.setNumberOfKeysInIndex(
+                        stats.getNumberOfKeysInSegment());
+                segmentPropertiesManager.setNumberOfKeysInScarceIndex(
+                        stats.getNumberOfKeysInScarceIndex());
+                segmentPropertiesManager.flush();
+                return new SegmentSplitterResult<>(lowerSegment, minKey, maxKey,
+                        SegmentSplitterResult.SegmentSplittingStatus.COMPACTED);
+            }
         }
-        if (cxHigher == 0) {
-            throw new IllegalStateException(String.format(
-                    "Splitting failed. Higher segment doesn't contains any data. Estimated number of keys was '%s'",
-                    F.fmt(estimatedNumberOfKeys)));
-        }
-        return new SegmentSplitterResult<>(lowerSegment, minKey, maxKey);
     }
 
     /*

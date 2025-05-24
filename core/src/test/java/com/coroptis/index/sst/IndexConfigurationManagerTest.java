@@ -158,7 +158,7 @@ public class IndexConfigurationManagerTest {
         final Exception ex = assertThrows(IllegalArgumentException.class,
                 () -> manager.save(config));
 
-        assertEquals("Property ‘MaxNumberOfKeysInCache’ must not be null.",
+        assertEquals("Property 'MaxNumberOfKeysInCache' must not be null.",
                 ex.getMessage());
     }
 
@@ -200,7 +200,7 @@ public class IndexConfigurationManagerTest {
         final Exception ex = assertThrows(IllegalArgumentException.class,
                 () -> manager.save(config));
 
-        assertEquals("Property ‘MaxNumberOfKeysInSegment’ must not be null.",
+        assertEquals("Property 'MaxNumberOfKeysInSegment' must not be null.",
                 ex.getMessage());
     }
 
@@ -243,7 +243,7 @@ public class IndexConfigurationManagerTest {
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
                 () -> manager.save(config));
-        assertEquals("Property ‘MaxNumberOfSegmentsInCache’ must not be null.",
+        assertEquals("Property 'MaxNumberOfSegmentsInCache' must not be null.",
                 ex.getMessage());
     }
 
@@ -289,7 +289,7 @@ public class IndexConfigurationManagerTest {
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
                 () -> manager.save(config));
-        assertEquals("Property ‘MaxNumberOfKeysInSegmentCacheDuringFlushing’"
+        assertEquals("Property 'MaxNumberOfKeysInSegmentCacheDuringFlushing'"
                 + " must not be null.", ex.getMessage());
     }
 
