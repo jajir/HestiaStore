@@ -33,14 +33,26 @@ Index could be in following states:
 Index should be created with builder, which make index instance. For example:
 
 ```java
-final IndexConfiguration<Integer, String> conf = IndexConfiguration
-        .<Integer, String>builder()//
-        .withKeyClass(Integer.class)//
+// Create an in-memory file system abstraction
+final Directory directory = new MemDirectory();
+
+// Prepare index configuration
+final IndexConfiguration<String, String> conf = IndexConfiguration
+        .<String, String>builder()//
+        .withKeyClass(String.class)//
         .withValueClass(String.class)//
-        .withName("test_index")//
+        .withName("test_index") //
         .build();
 
-final Index<Integer, String> index = Index.create(directory, conf);
+// create new index
+Index<String, String> index = Index.<String, String>create(directory,
+        conf);
+
+// Do some work with the index
+index.put("Hello", "World");
+
+String value = index.get("Hello");
+System.out.println("Value for 'Hello': " + value);
 ```
 
 ![Index states](./images/index-state-diagram.png)
