@@ -5,7 +5,14 @@
 ![line coverage](https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/jacoco-badge-main.svg)
 ![OWAPS dependency check](https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/badge-owasp-main.svg)
 
-Goal is to provide easy to use key value map for billions of records using just one directory and some space.
+HestiaStore is a lightweight, embeddable key-value storage engine optimized for billions of records, designed to run in a single directory with high performance and minimal configuration.
+
+	•	Java-based with minimum external dependencies
+	•	Requires Java 17+
+	•	In-memory or file-backed indexes
+	•	Optional write-ahead logging
+	•	Supports user-defined key/value types
+	•	Optionaly could be thread safe
 
 It's simple fast index. Work with index should be split into phases of:
 
@@ -45,12 +52,11 @@ final IndexConfiguration<String, String> conf = IndexConfiguration
         .build();
 
 // create new index
-Index<String, String> index = Index.<String, String>create(directory,
-        conf);
+Index<String, String> index = Index.<String, String>create(directory, conf);
 
 // Do some work with the index
 index.put("Hello", "World");
 
-String value = index.get("Hello");
+ String value = index.get("Hello");
 System.out.println("Value for 'Hello': " + value);
 ```
