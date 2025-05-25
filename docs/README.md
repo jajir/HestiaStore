@@ -7,20 +7,16 @@
 
 HestiaStore is a lightweight, embeddable key-value storage engine optimized for billions of records, designed to run in a single directory with high performance and minimal configuration.
 
-	•	Java-based with minimum external dependencies
-	•	Requires Java 17+
-	•	In-memory or file-backed indexes
-	•	Optional write-ahead logging
-	•	Supports user-defined key/value types
-	•	Optionaly could be thread safe
+Features:
 
-It's simple fast index. Work with index should be split into phases of:
-
-* Writing data to index. All data that should be stored in index should be send to index.
-* Building index. In this phase data are organized for fast access.
-* Search through index. In this phase it's not possible to alter data in index.
-
-Index is not thread safe.
+```
+ • Java-based with minimum external dependencies
+ • Requires Java 17+
+ • In-memory or file-backed indexes
+ • Optional write-ahead logging
+ • Supports user-defined key/value types
+ • Optionaly could be thread safe
+```
 
 ## Documentation
 
