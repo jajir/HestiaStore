@@ -20,4 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Improved design of the `sorteddatafile` package for better modularity. (#59) ([github.com](https://github.com/jajir/HestiaStore/issues))
 - Enhanced index configuration validation and parameter consistency. (#81) ([github.com](https://github.com/jajir/HestiaStore/commits/main/))
 - Introduced limits on the number of delta files to prevent unbounded growth. (#75) ([github.com](https://github.com/jajir/HestiaStore/issues))
+
+
+
 -
