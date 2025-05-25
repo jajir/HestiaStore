@@ -27,6 +27,7 @@ Features:
 * [Logging](logging.md) How to setup loggin
 * [Project versioning and how to release](release.md) snapshot and new version
 * [Security](SECURITY.md) and related topics
+* [Change log](CHANGELOG.md)
 
 <!--
 * [Segment implementation details](segment.md)
