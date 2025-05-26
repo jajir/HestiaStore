@@ -17,7 +17,7 @@ Updating values in the index using `put()` or deleting keys using `delete()` doe
 
 Other operations, like `get()`, remain consistently reliable.
 
-# States
+## States
 
 Index could be in following states:
 
