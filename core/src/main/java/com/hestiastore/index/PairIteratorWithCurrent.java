@@ -19,6 +19,6 @@ public interface PairIteratorWithCurrent<K, V> extends PairIterator<K, V> {
      * 
      * @return
      */
-    public Optional<Pair<K, V>> getCurrent();
+    Optional<Pair<K, V>> getCurrent();
 
 }

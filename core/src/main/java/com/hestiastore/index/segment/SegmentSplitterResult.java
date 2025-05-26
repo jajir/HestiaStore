@@ -13,7 +13,7 @@ public class SegmentSplitterResult<K, V> {
     /**
      * Status of segment after splitting.
      */
-    public static enum SegmentSplittingStatus {
+    public enum SegmentSplittingStatus {
         /**
          * Segment was just compacted. It means that segmentId was not used.
          */

@@ -99,7 +99,7 @@ public class DataFileSorter<K, V> {
         }
     }
 
-    private final SortedDataFile<K, V> getChunkFile(final int round,
+    private SortedDataFile<K, V> getChunkFile(final int round,
             final int chunkCount) {
         final String prefix = MERGING_FILES_PREFIX
                 + FileNameUtil.getPaddedId(round, 3) + "-";

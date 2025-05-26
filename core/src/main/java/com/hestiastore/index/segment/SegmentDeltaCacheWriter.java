@@ -64,7 +64,7 @@ public class SegmentDeltaCacheWriter<K, V> implements PairWriter<K, V> {
         segmentPropertiesManager.flush();
 
         // store cache
-        try (final SortedDataFileWriter<K, V> writer = segmentFiles
+        try (SortedDataFileWriter<K, V> writer = segmentFiles
                 .getCacheSstFile(
                         segmentPropertiesManager.getAndIncreaseDeltaFileName())
                 .openWriter()) {

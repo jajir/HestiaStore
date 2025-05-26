@@ -15,7 +15,7 @@ public class FsNioFileReaderStream implements FileReader {
 
     private final FileChannel channel;
 
-    public FsNioFileReaderStream(final File file, final int bufferSize) {
+    public FsNioFileReaderStream(final File file) {
         try {
             channel = FileChannel.open(file.toPath(), StandardOpenOption.READ);
         } catch (IOException e) {

@@ -98,7 +98,7 @@ public class BloomFilter<K> implements CloseableResource {
         return directory.isFileExists(bloomFilterFileName);
     }
 
-    private final String getTempFileName() {
+    private String getTempFileName() {
         return bloomFilterFileName + TEMP_FILE_EXTENSION;
     }
 

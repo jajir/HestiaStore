@@ -42,7 +42,7 @@ public class SegmentDeltaCache<K, V> {
             final String segmentDeltaFileName) {
         final SortedDataFile<K, V> dataFile = segmentFiles
                 .getCacheSstFile(segmentDeltaFileName);
-        try (final PairIterator<K, V> iterator = dataFile.openIterator()) {
+        try (PairIterator<K, V> iterator = dataFile.openIterator()) {
             while (iterator.hasNext()) {
                 cache.put(iterator.next());
             }
