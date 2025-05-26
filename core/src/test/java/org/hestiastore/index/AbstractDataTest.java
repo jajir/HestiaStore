@@ -4,9 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
-
 public abstract class AbstractDataTest {
 
     /**

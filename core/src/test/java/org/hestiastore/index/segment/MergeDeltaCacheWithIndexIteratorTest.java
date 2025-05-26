@@ -8,7 +8,6 @@ import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.PairIteratorList;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorString;
-import org.hestiastore.index.segment.MergeDeltaCacheWithIndexIterator;
 import org.junit.jupiter.api.Test;
 
 class MergeDeltaCacheWithIndexIteratorTest extends AbstractSegmentTest {

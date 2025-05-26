@@ -2,8 +2,6 @@ package org.hestiastore.index.directory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.Props;
 import org.junit.jupiter.api.Test;
 
 public class PropsTest {

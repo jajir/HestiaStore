@@ -6,9 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Comparator;
 
-import org.hestiastore.index.datatype.ConvertorFromBytes;
-import org.hestiastore.index.datatype.ConvertorToBytes;
-import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.junit.jupiter.api.Test;
 
 public class TypeDescriptorIntegerTest {

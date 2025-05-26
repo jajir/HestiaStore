@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorString;
-import org.hestiastore.index.sst.DataTypeDescriptorRegistry;
 import org.junit.jupiter.api.Test;
 
 public class DataTypeDescriptorRegistryTest {

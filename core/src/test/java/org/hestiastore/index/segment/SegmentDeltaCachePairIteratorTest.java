@@ -8,9 +8,6 @@ import static org.mockito.Mockito.when;
 import java.util.Arrays;
 import java.util.List;
 
-import org.hestiastore.index.segment.SegmentDeltaCache;
-import org.hestiastore.index.segment.SegmentDeltaCacheController;
-import org.hestiastore.index.segment.SegmentDeltaCachePairIterator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

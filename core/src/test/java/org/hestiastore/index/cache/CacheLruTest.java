@@ -8,8 +8,6 @@ import static org.mockito.Mockito.verify;
 
 import java.util.function.BiConsumer;
 
-import org.hestiastore.index.cache.Cache;
-import org.hestiastore.index.cache.CacheLru;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

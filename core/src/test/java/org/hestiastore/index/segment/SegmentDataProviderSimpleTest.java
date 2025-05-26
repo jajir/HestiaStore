@@ -7,10 +7,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.hestiastore.index.segment.SegmentData;
-import org.hestiastore.index.segment.SegmentDataFactory;
-import org.hestiastore.index.segment.SegmentDataProviderSimple;
-import org.hestiastore.index.segment.SegmentDeltaCache;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

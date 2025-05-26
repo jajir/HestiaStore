@@ -9,8 +9,8 @@ import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.datatype.TypeWriter;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.FileReader;
 import org.hestiastore.index.directory.Directory.Access;
+import org.hestiastore.index.directory.FileReader;
 
 /**
  * Unsorted key value pairs storage file.

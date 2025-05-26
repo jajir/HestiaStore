@@ -13,7 +13,6 @@ import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.PairIteratorList;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
-import org.hestiastore.index.sst.LimitedPairIterator;
 import org.junit.jupiter.api.Test;
 
 public class LimitedPairIteratorTest {

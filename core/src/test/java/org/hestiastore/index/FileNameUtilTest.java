@@ -3,7 +3,6 @@ package org.hestiastore.index;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.hestiastore.index.FileNameUtil;
 import org.junit.jupiter.api.Test;
 
 public class FileNameUtilTest {

@@ -5,13 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
-import org.hestiastore.index.segment.Segment;
-import org.hestiastore.index.segment.SegmentCompacter;
-import org.hestiastore.index.segment.SegmentConf;
-import org.hestiastore.index.segment.SegmentFiles;
-import org.hestiastore.index.segment.SegmentPropertiesManager;
-import org.hestiastore.index.segment.SegmentStats;
-import org.hestiastore.index.segment.VersionController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

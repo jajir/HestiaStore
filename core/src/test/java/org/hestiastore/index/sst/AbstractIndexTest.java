@@ -8,8 +8,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.hestiastore.index.AbstractDataTest;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.sst.Index;
-import org.hestiastore.index.sst.SegmentWindow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

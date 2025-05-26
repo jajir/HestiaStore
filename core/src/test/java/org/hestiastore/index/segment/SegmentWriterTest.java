@@ -6,10 +6,6 @@ import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
-import org.hestiastore.index.segment.SegmentCompacter;
-import org.hestiastore.index.segment.SegmentDeltaCacheController;
-import org.hestiastore.index.segment.SegmentDeltaCacheWriter;
-import org.hestiastore.index.segment.SegmentWriter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

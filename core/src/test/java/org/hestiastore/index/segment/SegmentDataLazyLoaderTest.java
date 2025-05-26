@@ -7,9 +7,6 @@ import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.bloomfilter.BloomFilter;
 import org.hestiastore.index.scarceindex.ScarceIndex;
-import org.hestiastore.index.segment.SegmentDataLazyLoaded;
-import org.hestiastore.index.segment.SegmentDataSupplier;
-import org.hestiastore.index.segment.SegmentDeltaCache;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
