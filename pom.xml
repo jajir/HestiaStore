@@ -3,12 +3,13 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.hestiastore.index</groupId>
+	<groupId>org.hestiastore.index</groupId>
 	<artifactId>parent</artifactId>
 	<version>0.0.2-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>HestiaStore Parent module</name>
-
+    <description>Parent module for Java library for efficiently storing and retrieving large key-value maps.</description>
+    <url>https://github.com/jajir/HestiaStore</url>
 
 	<modules>
         <module>core</module>
@@ -217,17 +218,25 @@
 			<url>https://maven.pkg.github.com/jajir/HestiaStore</url>			
 		</snapshotRepository>
 	</distributionManagement>
+    <scm>
+        <connection>scm:git:git://github.com/jajir/HestiaStore.git</connection>
+        <developerConnection>scm:git:ssh://github.com:jajir/HestiaStore.git</developerConnection>
+        <url>http://github.com/jajir/HestiaStore/tree/main</url>
+    </scm>
 	<licenses>
 		<license>
-			<name>Apache 2</name>
+			<name>LGPL-3.0</name>
 			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
 			<distribution>repo</distribution>
-			<comments>A business-friendly OSS license</comments>
+			<comments>GNU LESSER GENERAL PUBLIC LICENSE</comments>
 		</license>
 	</licenses>
 	<developers>
 		<developer>
-			<name>Jajir</name>
-		</developer>
+            <name>Jan Jirout</name>
+            <email>jirout@gmail.com</email>
+            <organization>GitHub</organization>
+            <organizationUrl>https://github.com/jajir</organizationUrl>
+        </developer>
 	</developers>
 </project>
