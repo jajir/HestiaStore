@@ -66,4 +66,5 @@ plugins:
 # Theme specific settings: https://just-the-docs.com/docs/configuration/#search
 search_enabled: false
 logo: /images/logo.png
+favicon_ico: "/images/favicon.ico"
 
