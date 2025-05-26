@@ -39,10 +39,10 @@ Index should be created with builder, which make index instance. For example:
 
 ```java
 // Create an in-memory file system abstraction
-final Directory directory = new MemDirectory();
+Directory directory = new MemDirectory();
 
 // Prepare index configuration
-final IndexConfiguration<String, String> conf = IndexConfiguration
+IndexConfiguration<String, String> conf = IndexConfiguration
         .<String, String>builder()//
         .withKeyClass(String.class)//
         .withValueClass(String.class)//
@@ -55,6 +55,6 @@ Index<String, String> index = Index.<String, String>create(directory, conf);
 // Do some work with the index
 index.put("Hello", "World");
 
- String value = index.get("Hello");
+String value = index.get("Hello");
 System.out.println("Value for 'Hello': " + value);
 ```
