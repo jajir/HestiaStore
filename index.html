@@ -4,27 +4,27 @@
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="None">
         
-        
-        
-        <link rel="shortcut icon" href="/HestiaStore/img/favicon.ico">
+        <link rel="canonical" href="https://jajir.github.io/HestiaStore/">
+        <link rel="shortcut icon" href="img/favicon.ico">
         <title>HestiaStore</title>
-        <link href="/HestiaStore/css/bootstrap.min.css" rel="stylesheet">
-        <link href="/HestiaStore/css/fontawesome.min.css" rel="stylesheet">
-        <link href="/HestiaStore/css/brands.min.css" rel="stylesheet">
-        <link href="/HestiaStore/css/solid.min.css" rel="stylesheet">
-        <link href="/HestiaStore/css/v4-font-face.min.css" rel="stylesheet">
-        <link href="/HestiaStore/css/base.css" rel="stylesheet">
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/fontawesome.min.css" rel="stylesheet">
+        <link href="css/brands.min.css" rel="stylesheet">
+        <link href="css/solid.min.css" rel="stylesheet">
+        <link href="css/v4-font-face.min.css" rel="stylesheet">
+        <link href="css/base.css" rel="stylesheet">
         <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
         <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
         <script>hljs.highlightAll();</script> 
     </head>
 
-    <body>
+    <body class="homepage">
         <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
             <div class="container">
-                <a class="navbar-brand" href="/HestiaStore/.">HestiaStore</a>
+                <a class="navbar-brand" href=".">HestiaStore</a>
                 <!-- Expander button -->
                 <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -35,10 +35,10 @@
                         <!-- Main navigation -->
                         <ul class="nav navbar-nav">
                             <li class="nav-item">
-                                <a href="/HestiaStore/." class="nav-link">Home</a>
+                                <a href="." class="nav-link active" aria-current="page">Home</a>
                             </li>
                             <li class="nav-item">
-                                <a href="/HestiaStore/architecture/" class="nav-link">Architecture</a>
+                                <a href="architecture/" class="nav-link">Architecture</a>
                             </li>
                         </ul>
 
@@ -48,6 +48,16 @@
                                 <i class="fa fa-search"></i> Search
                             </a>
                         </li>
+                            <li class="nav-item">
+                                <a rel="prev" class="nav-link disabled">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="architecture/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
                     </ul>
                 </div>
             </div>
@@ -55,15 +65,79 @@
 
         <div class="container">
             <div class="row">
-
-    <div class="row-fluid">
-      <div id="main-content" class="span12">
-        <h1 id="404-page-not-found" style="text-align: center">404</h1>
-        <p style="text-align: center"><strong>Page not found</strong></p>
-      </div>
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
     </div>
 
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="2"><a href="#documentation" class="nav-link">Documentation</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#how-to-use-hestiastore" class="nav-link">How to use HestiaStore</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
 
+<p><img alt="HestiaStore logo" src="./images/logo.png" /></p>
+<p>HestiaStore is a lightweight, embeddable key-value storage engine optimized for billions of records, designed to run in a single directory with high performance and minimal configuration.</p>
+<p>Features:</p>
+<pre><code> • Java-based with minimum external dependencies
+ • Requires Java 17+
+ • In-memory or file-backed indexes
+ • Optional write-ahead logging
+ • Supports user-defined key/value types
+ • Optionaly could be thread safe
+</code></pre>
+<h2 id="documentation">Documentation</h2>
+<ul>
+<li><a href="architecture/">HestiaStore Index architecture</a></li>
+<li><a href="how-to-use-index.md">How to use HestiaStore</a> including some examples</li>
+<li><a href="configuration.md">Index configuration</a> and configuration properties explaining</li>
+<li><a href="logging.md">Logging</a> How to setup loggin</li>
+<li><a href="release.md">Project versioning and how to release</a> snapshot and new version</li>
+<li><a href="SECURITY.md">Security</a> and related topics</li>
+<li><a href="CHANGELOG.md">Change log</a></li>
+</ul>
+<!--
+* [Segment implementation details](segment.md)
+-->
+
+<h2 id="how-to-use-hestiastore">How to use HestiaStore</h2>
+<p>Index should be created with builder, which make index instance. For example:</p>
+<pre><code class="language-java">// Create an in-memory file system abstraction
+Directory directory = new MemDirectory();
+
+// Prepare index configuration
+IndexConfiguration&lt;String, String&gt; conf = IndexConfiguration
+        .&lt;String, String&gt;builder()//
+        .withKeyClass(String.class)//
+        .withValueClass(String.class)//
+        .withName(&quot;test_index&quot;) //
+        .build();
+
+// create new index
+Index&lt;String, String&gt; index = Index.&lt;String, String&gt;create(directory, conf);
+
+// Do some work with the index
+index.put(&quot;Hello&quot;, &quot;World&quot;);
+
+String value = index.get(&quot;Hello&quot;);
+System.out.println(&quot;Value for 'Hello': &quot; + value);
+</code></pre>
+<h3 id="questions">Questions</h3>
+<p>If you encounter a bug, have a feature request, or need help using HestiaStore, please <a href="https://github.com/jajir/HestiaStore/issues">create an issue</a>.</p></div>
             </div>
         </div>
 
@@ -71,13 +145,13 @@
             <hr>
             <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
         </footer>
-        <script src="/HestiaStore/js/bootstrap.bundle.min.js"></script>
+        <script src="js/bootstrap.bundle.min.js"></script>
         <script>
-            var base_url = "/HestiaStore/",
+            var base_url = ".",
                 shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
         </script>
-        <script src="/HestiaStore/js/base.js"></script>
-        <script src="/HestiaStore/search/main.js"></script>
+        <script src="js/base.js"></script>
+        <script src="search/main.js"></script>
 
         <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -142,3 +216,8 @@
 
     </body>
 </html>
+
+<!--
+MkDocs version : 1.6.1
+Build Date UTC : 2025-05-26 14:13:34.693413+00:00
+-->
