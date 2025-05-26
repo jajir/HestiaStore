@@ -13,20 +13,6 @@ Features:
  • Optionaly could be thread safe
 ```
 
-## Documentation
-
-* [HestiaStore Index architecture](architecture.md)
-* [How to use HestiaStore](how-to-use-index.md) including some examples
-* [Index configuration](configuration.md) and configuration properties explaining
-* [Logging](logging.md) How to setup loggin
-* [Project versioning and how to release](release.md) snapshot and new version
-* [Security](SECURITY.md) and related topics
-* [Change log](CHANGELOG.md)
-
-<!--
-* [Segment implementation details](segment.md)
--->
-
 ## How to use HestiaStore
 
 Index should be created with builder, which make index instance. For example:

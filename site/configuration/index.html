@@ -10,13 +10,13 @@
         <meta name="author" content="Jan Jirout">
       
       
-        <link rel="canonical" href="https://jajir.github.io/HestiaStore/architecture/">
+        <link rel="canonical" href="https://jajir.github.io/HestiaStore/configuration/">
       
       
-        <link rel="prev" href="../logging/">
+        <link rel="prev" href="../how-to-use-index/">
       
       
-        <link rel="next" href="../segment/">
+        <link rel="next" href="../logging/">
       
       
       <link rel="icon" href="../images/favicon.ico">
@@ -24,7 +24,7 @@
     
     
       
-        <title>index - HestiaStore</title>
+        <title>Configuraton - HestiaStore</title>
       
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#architecture" class="md-skip">
+        <a href="#configuration" class="md-skip">
           Skip to content
         </a>
       
@@ -101,7 +101,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              index
+              Configuraton
             
           </span>
         </div>
@@ -261,10 +261,19 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../configuration/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -275,6 +284,7 @@
   
 
       </a>
+      
     </li>
   
 
@@ -305,20 +315,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           
           <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
@@ -334,7 +342,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Architecture
@@ -345,32 +353,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    index
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
         
   
   
@@ -381,44 +367,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#operation-consistency" class="md-nav__link">
-    <span class="md-ellipsis">
-      Operation consistency
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#states" class="md-nav__link">
-    <span class="md-ellipsis">
-      States
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -565,32 +513,6 @@
     
   
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#operation-consistency" class="md-nav__link">
-    <span class="md-ellipsis">
-      Operation consistency
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#states" class="md-nav__link">
-    <span class="md-ellipsis">
-      States
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
 </nav>
                   </div>
                 </div>
@@ -605,23 +527,211 @@
 
 
 
-<h1 id="architecture">Architecture</h1>
-<p>Here is described basic index concepts. This page explain you how to correctly configure index.</p>
-<p><img alt="basic index architecture" src="../images/architecture.png" /></p>
-<h2 id="operation-consistency">Operation consistency</h2>
-<p>The <code>getStream()</code> method can sometimes return inconsistent results, occasionally omitting some items. This can occur in the following scenarios:</p>
+<h1 id="configuration">Configuration</h1>
+<p>Don’t be afraid to experiment—if a configuration is missing or invalid, the Index will fail fast, helping you catch issues early.</p>
+<p>The index is configured using the <code>IndexConfiguration</code> class. All essential index properties are configurable through the builder. See the example below:</p>
+<pre><code class="language-java">IndexConfiguration&lt;Integer, Integer&gt; conf = IndexConfiguration
+    .&lt;Integer, Integer&gt;builder()//
+    .withKeyClass(Integer.class)//
+    .withValueClass(Integer.class)//
+    .withKeyTypeDescriptor(tdi) //
+    .withValueTypeDescriptor(tdi) //
+    .withMaxNumberOfKeysInSegment(4) //
+    .withMaxNumberOfKeysInSegmentCache(10L) //
+    .withMaxNumberOfKeysInSegmentCacheDuringFlushing(12L)//
+    .withMaxNumberOfKeysInSegmentIndexPage(2) //
+    .withMaxNumberOfKeysInCache(3) //
+    .withBloomFilterIndexSizeInBytes(0) //
+    .withBloomFilterNumberOfHashFunctions(4) //
+    .withLogEnabled(false) //
+    .withName(&quot;test_index&quot;) //
+    .build();
+
+Index&lt;Integer, Integer&gt; index = Index.&lt;Integer, Integer&gt;create(directory, conf);
+</code></pre>
+<p>Now let's look at particular parameters.</p>
+<h1 id="index-directory">Index Directory</h1>
+<p>Place where all data are stored. There are two already prepared types:</p>
+<h2 id="in-memory">In Memory</h2>
+<p>All data are stored in memory. It's created like this:</p>
+<pre><code class="language-java">Directory directory = new MemDirectory();
+</code></pre>
+<p>It's usefull for testing purposes.</p>
+<h2 id="file-system">File system</h2>
+<p>Its main purpose is to store index data in the file system. Create a file-system-based directory like this:</p>
+<pre><code class="language-java">Directory directory = new FsDirectory(new File('my directory'));
+</code></pre>
+<h1 id="properties-of-indexconfiguration-class">Properties of <code>IndexConfiguration</code> class</h1>
+<p>All properties are required and have the following meanings:</p>
+<h2 id="index-related-configuration">Index related configuration</h2>
+<h3 id="key-class-withkeyclass">Key class - <code>withKeyClass()</code></h3>
+<p>A <code>Class</code> object that represents the type of keys used in the index. Only instances of this class may be inserted. While any Java class is technically supported, it's recommended to use simple, compact types for performance reasons. Predefined classes are:</p>
 <ul>
-<li>Segment Compaction: If data is being streamed from a segment and new keys are added to that segment during the process, the segment may stop providing additional keys. In this case, the stream operation will either continue with the next segment or terminate if no more segments are available.</li>
-<li>Adding New Keys: If a completely new key is added to the index and is only present in the main index cache, it will not be returned.</li>
+<li>Integer</li>
+<li>Long</li>
+<li>String</li>
+<li>Byte</li>
 </ul>
-<p>To prevent these issues, you should call <code>compact()</code> before invoking <code>getStream()</code> and ensure no new keys are added during streaming.</p>
-<p>Updating values in the index using <code>put()</code> or deleting keys using <code>delete()</code> does not cause inconsistencies. Updated values will be returned, and deleted keys will be excluded from the stream.</p>
-<p>Other operations, like <code>get()</code>, remain consistently reliable.</p>
-<h2 id="states">States</h2>
-<p>Index could be in following states:</p>
-<p><img alt="Index methods" src="../images/index-class.png" /></p>
-<p><img alt="Index states" src="../images/index-state-diagram.png" /></p>
-<p>Interruption of process of writing data to index could lead to corruption of entire index.</p>
+<p>If a different class is used, the key type descriptor must be set using the <code>withKeyTypeDescriptor()</code> method from the builder. If you use a custom class, you must implement the <code>com.hestiastore.index.datatype.TypeDescriptor</code> interface to describe how the type is serialized and compared.</p>
+<h3 id="value-class-withvalueclass">Value class - <code>withValueClass()</code></h3>
+<p>Required. Specifies the Java class used for values. The same rules that apply to the key class also apply to the value class.</p>
+<h3 id="index-name-withname">Index name - <code>withName()</code></h3>
+<p>Required. Assigns a logical name to the index. This can be useful in diagnostics and logging.</p>
+<h3 id="key-type-descriptor-withkeytypedescriptor">Key type descriptor - <code>withKeyTypeDescriptor()</code></h3>
+<p>Type descriptor for the key class. Required for non-default types.</p>
+<h3 id="value-type-descriptor-withvaluetypedescriptor">Value type descriptor - <code>withValueTypeDescriptor()</code></h3>
+<p>Type descriptor for the value class. Required for non-default types.</p>
+<h3 id="max-number-of-keys-in-cache-withmaxnumberofkeysincache">Max number of keys in cache - <code>withMaxNumberOfKeysInCache()</code></h3>
+<p>Sets the maximum number of key-value pairs allowed in the in-memory cache before flushing.</p>
+<h3 id="max-number-of-segments-in-cache-withmaxnumberofsegmentsincache">Max number of segments in cache - <code>withMaxNumberOfSegmentsInCache()</code></h3>
+<p>Limits the number of segments stored in memory. Useful for controlling memory usage.</p>
+<h3 id="thread-safe-withthreadsafe">Thread safe - <code>withThreadSafe()</code></h3>
+<p>Whether the index instance is safe for concurrent access by multiple threads. When it's set to <code>code</code> true than index will be synchronized between threads.</p>
+<h3 id="log-enabled-withlogenabled">Log enabled - <code>withLogEnabled()</code></h3>
+<p>Enables or disables write-ahead logging. Currently it's experimental feature.</p>
+<h2 id="segment-related-configuration">Segment related configuration</h2>
+<h3 id="max-number-of-keys-in-segment-withmaxnumberofkeysinsegment">Max number of keys in segment - <code>withMaxNumberOfKeysInSegment()</code></h3>
+<p>Sets the maximum number of keys allowed in a single segment. Exceeding this splits the segment.</p>
+<h3 id="max-number-of-keys-in-segment-cache-withmaxnumberofkeysinsegmentcache">Max number of keys in segment cache - <code>withMaxNumberOfKeysInSegmentCache()</code></h3>
+<p>Defines how many keys can be cached from a segment during regular operation.</p>
+<h3 id="max-number-of-keys-in-segment-cache-during-flushing-withmaxnumberofkeysinsegmentcacheduringflushing">Max number of keys in segment cache during flushing - <code>withMaxNumberOfKeysInSegmentCacheDuringFlushing()</code></h3>
+<p>Specifies the maximum number of keys that can be temporarily cached from a segment during flushing.</p>
+<h3 id="max-number-of-keys-in-segment-index-page-withmaxnumberofkeysinsegmentindexpage">Max number of keys in segment index page - <code>withMaxNumberOfKeysInSegmentIndexPage()</code></h3>
+<p>Defines the number of keys in the index page for a segment. This impacts lookup efficiency.</p>
+<h2 id="bloom-filter-configuration">Bloom filter configuration</h2>
+<p>A Bloom filter is a probabilistic data structure that efficiently tests whether an element is part of a set. You can find a detailed explanation on <a href="https://en.wikipedia.org/wiki/Bloom_filter">Wikipedia</a>. In this context, each segment has its own Bloom filter.</p>
+<p>To <strong>disable</strong> bloom filter completle set:</p>
+<pre><code class="language-java"> .withBloomFilterIndexSizeInBytes(0)
+</code></pre>
+<p>The settings for the Bloom filter can be adjusted using the following methods:</p>
+<h4 id="bloom-filter-size-withbloomfilterindexsizeinbytes">Bloom filter size - <code>withBloomFilterIndexSizeInBytes()</code></h4>
+<p>Sets the size of the Bloom filter in bytes. A value of 0 disables the use of the Bloom filter.</p>
+<h4 id="number-of-hash-functions-withbloomfilternumberofhashfunctions">Number of hash functions - <code>withBloomFilterNumberOfHashFunctions()</code></h4>
+<p>Sets the number of hash functions used in the Bloom filter.</p>
+<h4 id="probability-of-false-positive-withbloomfilterprobabilityoffalsepositive">Probability of false positive - <code>withBloomFilterProbabilityOfFalsePositive()</code></h4>
+<p>Sets the probability of false positives. When <code>get(someKey)</code> is called on a segment, the Bloom filter is checked to determine if the value is not in the segment. It can return <code>true</code>, indicating that the key <strong>could be</strong> in the segment. If the Bloom filter indicates the key is in the segment but it's not found, that's a false positive. The probability of this occurring is a value between 0 and 1.</p>
+<p>Usually, it's not necessary to adjust the Bloom filter settings.</p>
+<h2 id="changing-index-propertise">Changing Index propertise</h2>
+<p>Some parameters can be redefined when the index is opened.</p>
+<pre><code class="language-java">Index&lt;String, String&gt; index = Index.&lt;String, String&gt;open(directory, conf);
+</code></pre>
+<p>At allows to pass <code>IndexConfiguration</code> object and this way change configuration parameters. Fllowing table shou parameters that can be changed.  </p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Meaning</th>
+<th>Can be changed</th>
+<th>Applies to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>indexName</td>
+<td>Logical name of the index</td>
+<td>🟩</td>
+<td>index</td>
+</tr>
+<tr>
+<td>keyClass</td>
+<td>Key class</td>
+<td>🟥</td>
+<td>index</td>
+</tr>
+<tr>
+<td>valueClass</td>
+<td>Value class</td>
+<td>🟥</td>
+<td>index</td>
+</tr>
+<tr>
+<td>keyTypeDescriptor</td>
+<td>Key class type descriptor</td>
+<td>🟥</td>
+<td>index</td>
+</tr>
+<tr>
+<td>valueTypeDescriptor</td>
+<td>Value class type descriptor</td>
+<td>🟥</td>
+<td>index</td>
+</tr>
+<tr>
+<td>maxNumberOfKeysInSegmentIndexPage</td>
+<td>Maximum keys in segment index page</td>
+<td>🟥</td>
+<td>segment</td>
+</tr>
+<tr>
+<td>maxNumberOfKeysInSegmentCache</td>
+<td>Maximum number of keys in segment cache</td>
+<td>🟩</td>
+<td>segment</td>
+</tr>
+<tr>
+<td>maxNumberOfKeysInSegmentCacheDuringFlushing</td>
+<td>Maximum keys in cache during flushing</td>
+<td>🟩</td>
+<td>segment</td>
+</tr>
+<tr>
+<td>maxNumberOfKeysInCache</td>
+<td>Maximum keys in the index cache</td>
+<td>🟩</td>
+<td>index</td>
+</tr>
+<tr>
+<td>maxNumberOfKeysInSegment</td>
+<td>Maximum keys in a segment</td>
+<td>🟥</td>
+<td>segment</td>
+</tr>
+<tr>
+<td>maxNumberOfSegmentsInCache</td>
+<td>Maximum number of segments in cache</td>
+<td>🟩</td>
+<td>index</td>
+</tr>
+<tr>
+<td>bloomFilterNumberOfHashFunctions</td>
+<td>Bloom filter - number of hash functions used</td>
+<td>🟥</td>
+<td>segment bloom filter</td>
+</tr>
+<tr>
+<td>bloomFilterIndexSizeInBytes</td>
+<td>Bloom filter - index size in bytes</td>
+<td>🟥</td>
+<td>segment bloom filter</td>
+</tr>
+<tr>
+<td>bloomFilterProbabilityOfFalsePositive</td>
+<td>Bloom filter - probability of false positives</td>
+<td>🟥</td>
+<td>segment bloom filter</td>
+</tr>
+<tr>
+<td>diskIoBufferSize</td>
+<td>Size of the disk I/O buffer</td>
+<td>🟩</td>
+<td>Disk IO</td>
+</tr>
+<tr>
+<td>threadSafe</td>
+<td>If index is thread-safe</td>
+<td>🟩</td>
+<td>index</td>
+</tr>
+<tr>
+<td>logEnabled</td>
+<td>If full logging is enabled</td>
+<td>🟩</td>
+<td>index</td>
+</tr>
+</tbody>
+</table>
+<h1 id="add-custom-data-type">Add custom data type</h1>
+<p>HestiaStore have to know how to work with new data type. So first is create implementatio of <code>com.hestiastore.index.datatype.TypeDescriptor</code>. Than during index creation set let index know about your implementation by <code>withKeyTypeDescriptor</code>. And it's done.</p>
 
 
 
