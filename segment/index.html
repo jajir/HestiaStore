@@ -684,27 +684,27 @@
 </ul>
 <h2 id="segment-putget-and-iterate-consistency">Segment put/get and iterate consistency</h2>
 <p>operations like write and get should be always consistent. What is written is read. Iteration behave differently. better than provide old data it stop providing any data.</p>
-<p>Let's have a followin key value pairs in main index:</p>
-<pre><code class="language-text">&lt;a, 20 &gt;
-&lt;b, 30 &gt;
-&lt;c, 40 &gt;
-</code></pre>
-<p>In segment cache are following pairs:</p>
-<pre><code class="language-text">&lt;a, 25&gt;
-&lt;e, 28&gt;
-&lt;b, tombstone&gt;
-</code></pre>
+<p>Let's have a followin key value pairs in main index:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>&lt;a, 20 &gt;
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>&lt;b, 30 &gt;
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>&lt;c, 40 &gt;
+</code></pre></div></p>
+<p>In segment cache are following pairs:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>&lt;a, 25&gt;
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>&lt;e, 28&gt;
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>&lt;b, tombstone&gt;
+</code></pre></div></p>
 <p>When user will iterate throught segment data, there will be followin cases:</p>
 <h3 id="case-1-read-data">Case 1 - Read data</h3>
-<pre><code class="language-text">iterator.read() --&gt; &lt;a, 25&gt;
-iterator.read() --&gt; &lt;c, 40&gt;
-iterator.read() --&gt; &lt;e, 28&gt;
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>iterator.read() --&gt; &lt;a, 25&gt;
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>iterator.read() --&gt; &lt;c, 40&gt;
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>iterator.read() --&gt; &lt;e, 28&gt;
+</code></pre></div>
 <h3 id="case-2-change-data">Case 2 - Change data</h3>
-<pre><code class="language-text">iterator.read() --&gt; &lt;a, 25&gt;
-segment.write(c, 10)
-iterator.read() --&gt; null
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>iterator.read() --&gt; &lt;a, 25&gt;
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>segment.write(c, 10)
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>iterator.read() --&gt; null
+</code></pre></div>
 <p>Any segment write operation will break segment iterator. It's easier way to secure segment consistency.  </p>
 <h2 id="caching-of-segment-data">Caching of segment data</h2>
 <p>In segment following object are cached:</p>

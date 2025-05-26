@@ -694,31 +694,31 @@
 <p>HestiaStore uses <strong>slf4j</strong> for internal logging. So you should include your preferred logging library like logback, log4j, or another with a bridge to slf4j. In case you use log4j, look at the example configuration:</p>
 <h2 id="example-configuration-file-for-log4j">Example configuration File for log4j</h2>
 <p>Bellow is the example Log4j2 configuration used in HestiaStore:</p>
-<pre><code class="language-xml">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-&lt;Configuration status=&quot;INFO&quot;&gt;
-  &lt;Appenders&gt;
-
-    &lt;Console name=&quot;Console&quot; target=&quot;SYSTEM_OUT&quot;&gt;
-      &lt;PatternLayout
-          pattern=&quot;%style{%d{ISO8601}}{white} %highlight{%-5level }[%style{%t}{bright,blue}] %style{%-C{1.mv}}{bright,yellow}: %msg%n%throwable&quot; /&gt;
-    &lt;/Console&gt;
-
-    &lt;Console name=&quot;indexAppender&quot; target=&quot;SYSTEM_OUT&quot;&gt;
-      &lt;PatternLayout
-          pattern=&quot;%style{%d{ISO8601}}{white} %highlight{%-5level }[%style{%t}{bright,blue}] index='%style{%X{index.name}}{magenta}' %style{%-C{1.mv}}{bright,yellow}: %msg%n%throwable&quot; /&gt;
-    &lt;/Console&gt;
-
-  &lt;/Appenders&gt;
-  &lt;Loggers&gt;
-    &lt;logger name=&quot;com.hestiastore.index&quot; level=&quot;DEBUG&quot; additivity=&quot;false&quot;&gt;
-      &lt;appender-ref ref=&quot;indexAppender&quot; /&gt;
-    &lt;/logger&gt;
-    &lt;Root level=&quot;DEBUG&quot;&gt;
-      &lt;AppenderRef ref=&quot;Console&quot;/&gt;
-    &lt;/Root&gt;
-  &lt;/Loggers&gt;
-&lt;/Configuration&gt;
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nt">&lt;Configuration</span><span class="w"> </span><span class="na">status=</span><span class="s">&quot;INFO&quot;</span><span class="nt">&gt;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">&lt;Appenders&gt;</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="nt">&lt;Console</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;Console&quot;</span><span class="w"> </span><span class="na">target=</span><span class="s">&quot;SYSTEM_OUT&quot;</span><span class="nt">&gt;</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">      </span><span class="nt">&lt;PatternLayout</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">          </span><span class="na">pattern=</span><span class="s">&quot;%style{%d{ISO8601}}{white} %highlight{%-5level }[%style{%t}{bright,blue}] %style{%-C{1.mv}}{bright,yellow}: %msg%n%throwable&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="nt">&lt;/Console&gt;</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="nt">&lt;Console</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;indexAppender&quot;</span><span class="w"> </span><span class="na">target=</span><span class="s">&quot;SYSTEM_OUT&quot;</span><span class="nt">&gt;</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">      </span><span class="nt">&lt;PatternLayout</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">          </span><span class="na">pattern=</span><span class="s">&quot;%style{%d{ISO8601}}{white} %highlight{%-5level }[%style{%t}{bright,blue}] index=&#39;%style{%X{index.name}}{magenta}&#39; %style{%-C{1.mv}}{bright,yellow}: %msg%n%throwable&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">    </span><span class="nt">&lt;/Console&gt;</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">  </span><span class="nt">&lt;/Appenders&gt;</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">  </span><span class="nt">&lt;Loggers&gt;</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">    </span><span class="nt">&lt;logger</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;com.hestiastore.index&quot;</span><span class="w"> </span><span class="na">level=</span><span class="s">&quot;DEBUG&quot;</span><span class="w"> </span><span class="na">additivity=</span><span class="s">&quot;false&quot;</span><span class="nt">&gt;</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">      </span><span class="nt">&lt;appender-ref</span><span class="w"> </span><span class="na">ref=</span><span class="s">&quot;indexAppender&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">    </span><span class="nt">&lt;/logger&gt;</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">    </span><span class="nt">&lt;Root</span><span class="w"> </span><span class="na">level=</span><span class="s">&quot;DEBUG&quot;</span><span class="nt">&gt;</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">      </span><span class="nt">&lt;AppenderRef</span><span class="w"> </span><span class="na">ref=</span><span class="s">&quot;Console&quot;</span><span class="nt">/&gt;</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">    </span><span class="nt">&lt;/Root&gt;</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">  </span><span class="nt">&lt;/Loggers&gt;</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="nt">&lt;/Configuration&gt;</span>
+</code></pre></div>
 <p>this example will produce logs look like this:</p>
 <p><img alt="HestiaStore log4j logs" src="../images/screenshot-logs.png" /></p>
 <h3 id="log-appenders">Log Appenders</h3>
@@ -732,8 +732,8 @@
 <li><code>ERROR</code>, <code>WARN</code>, <code>INFO</code>, <code>DEBUG</code>, or <code>TRACE</code></li>
 <li>For example, to suppress general debug logs:</li>
 </ul>
-<pre><code class="language-xml">&lt;Root level=&quot;INFO&quot;&gt;
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">&lt;Root</span><span class="w"> </span><span class="na">level=</span><span class="s">&quot;INFO&quot;</span><span class="nt">&gt;</span>
+</code></pre></div>
 <h2 id="disabling-index-logs">Disabling Index Logs</h2>
 <p>If you want to disable index-specific logging entirely, remove or comment out the <code>com.hestiastore.index</code> logger section. Alternatively log level for package could be set to "ERROR".</p>
 <h2 id="recommendations">Recommendations</h2>
@@ -744,8 +744,8 @@
 </ul>
 <h2 id="logging-implementation">Logging Implementation</h2>
 <p>The <code>indexAppender</code> uses a mapped diagnostic context (MDC) value <code>index.name</code>, which should be set programmatically:</p>
-<pre><code class="language-java">ThreadContext.put(&quot;index.name&quot;, &quot;userIndex&quot;);
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">ThreadContext</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">&quot;index.name&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;userIndex&quot;</span><span class="p">);</span>
+</code></pre></div>
 <p>This allows the log output to include which index instance the message is referring to, aiding in debugging concurrent access or behavior across multiple indexes.</p>
 
 

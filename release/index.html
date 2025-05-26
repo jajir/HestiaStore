@@ -676,8 +676,8 @@
 <p>Simple guide how to make new release.</p>
 <h2 id="versioning-of-the-project">Versioning of the project</h2>
 <p>Project use traditional versioning pattern. Version number consist of three numbers separated by dots. For example:</p>
-<pre><code>0.3.6
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>0.3.6
+</code></pre></div>
 <p>Meaning of number is:</p>
 <ul>
 <li><code>0</code> - Major project version, project API could be incompatible between two major versions</li>
@@ -701,47 +701,52 @@
 <ol>
 <li>Checkout the <code>main</code> branch:</li>
 </ol>
-<p><code>git checkout main</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>git checkout main
+</code></pre></div>
 <ol>
 <li>Set the release version:</li>
 </ol>
-<p><code>mvn versions:set -DnewVersion=0.0.12
-   git commit -am "release: version 0.0.12"</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>mvn versions:set -DnewVersion=0.0.12
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>git commit -am &quot;release: version 0.0.12&quot;
+</code></pre></div>
 <ol>
 <li>Tag and push the release:</li>
 </ol>
-<p><code>git tag v0.0.12
-   git push --follow-tags</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>git tag v0.0.12
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>git push --follow-tags
+</code></pre></div>
 <ol>
 <li>Deploy the release (can be automated via GitHub Actions or done manually):</li>
 </ol>
-<p><code>mvn deploy</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>mvn deploy
+</code></pre></div>
 <ol>
 <li>Bump to next snapshot version:</li>
 </ol>
-<p><code>mvn versions:set -DnewVersion=0.0.13-SNAPSHOT
-   git commit -am "post-release: bumped to 0.0.13-SNAPSHOT"
-   git push</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>mvn versions:set -DnewVersion=0.0.13-SNAPSHOT
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>git commit -am &quot;post-release: bumped to 0.0.13-SNAPSHOT&quot;
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>git push
+</code></pre></div>
 <p>That's it — the release is live and development can continue.</p>
 <h1 id="how-to-use-project">How to use project</h1>
 <p>As release repository is used github packages. Released packages could be easily used in your project. In case of maven:</p>
-<pre><code>&lt;dependency&gt;
-  &lt;groupId&gt;com.coroptis&lt;/groupId&gt;
-  &lt;artifactId&gt;jbindex&lt;/artifactId&gt;
-  &lt;version&gt;x.y.z&lt;/version&gt;
-&lt;/dependency&gt;
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>&lt;dependency&gt;
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>  &lt;groupId&gt;com.coroptis&lt;/groupId&gt;
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  &lt;artifactId&gt;jbindex&lt;/artifactId&gt;
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>  &lt;version&gt;x.y.z&lt;/version&gt;
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>&lt;/dependency&gt;
+</code></pre></div>
 <h2 id="helpfull-commands">Helpfull commands</h2>
 <h3 id="how-to-use-custom-settingsxml-file">How to use custom settings.xml file</h3>
-<pre><code>mvn --settings ./src/main/settings.xml clean deploy
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>mvn --settings ./src/main/settings.xml clean deploy
+</code></pre></div>
 <h3 id="how-to-use-set-maven-project-version">How to use set maven project version</h3>
-<pre><code>mvn versions:set -DnewVersion=1.0.1-SNAPSHOT
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>mvn versions:set -DnewVersion=1.0.1-SNAPSHOT
+</code></pre></div>
 <h3 id="check-dependencies">Check dependencies</h3>
 <p>try to update dependencies. Check them with:</p>
-<pre><code>mvn versions:display-dependency-updates
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>mvn versions:display-dependency-updates
+</code></pre></div>
 
 
 

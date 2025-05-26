@@ -533,37 +533,37 @@
 <h1 id="configuration">Configuration</h1>
 <p>Don’t be afraid to experiment—if a configuration is missing or invalid, the Index will fail fast, helping you catch issues early.</p>
 <p>The index is configured using the <code>IndexConfiguration</code> class. All essential index properties are configurable through the builder. See the example below:</p>
-<pre><code class="language-java">IndexConfiguration&lt;Integer, Integer&gt; conf = IndexConfiguration
-    .&lt;Integer, Integer&gt;builder()//
-    .withKeyClass(Integer.class)//
-    .withValueClass(Integer.class)//
-    .withKeyTypeDescriptor(tdi) //
-    .withValueTypeDescriptor(tdi) //
-    .withMaxNumberOfKeysInSegment(4) //
-    .withMaxNumberOfKeysInSegmentCache(10L) //
-    .withMaxNumberOfKeysInSegmentCacheDuringFlushing(12L)//
-    .withMaxNumberOfKeysInSegmentIndexPage(2) //
-    .withMaxNumberOfKeysInCache(3) //
-    .withBloomFilterIndexSizeInBytes(0) //
-    .withBloomFilterNumberOfHashFunctions(4) //
-    .withLogEnabled(false) //
-    .withName(&quot;test_index&quot;) //
-    .build();
-
-Index&lt;Integer, Integer&gt; index = Index.&lt;Integer, Integer&gt;create(directory, conf);
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">IndexConfiguration</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="w"> </span><span class="n">conf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IndexConfiguration</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="p">.</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">()</span><span class="c1">//</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="p">.</span><span class="na">withKeyClass</span><span class="p">(</span><span class="n">Integer</span><span class="p">.</span><span class="na">class</span><span class="p">)</span><span class="c1">//</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="p">.</span><span class="na">withValueClass</span><span class="p">(</span><span class="n">Integer</span><span class="p">.</span><span class="na">class</span><span class="p">)</span><span class="c1">//</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="p">.</span><span class="na">withKeyTypeDescriptor</span><span class="p">(</span><span class="n">tdi</span><span class="p">)</span><span class="w"> </span><span class="c1">//</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="p">.</span><span class="na">withValueTypeDescriptor</span><span class="p">(</span><span class="n">tdi</span><span class="p">)</span><span class="w"> </span><span class="c1">//</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="p">.</span><span class="na">withMaxNumberOfKeysInSegment</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="w"> </span><span class="c1">//</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="p">.</span><span class="na">withMaxNumberOfKeysInSegmentCache</span><span class="p">(</span><span class="mi">10L</span><span class="p">)</span><span class="w"> </span><span class="c1">//</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="p">.</span><span class="na">withMaxNumberOfKeysInSegmentCacheDuringFlushing</span><span class="p">(</span><span class="mi">12L</span><span class="p">)</span><span class="c1">//</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="p">.</span><span class="na">withMaxNumberOfKeysInSegmentIndexPage</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="c1">//</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="p">.</span><span class="na">withMaxNumberOfKeysInCache</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="w"> </span><span class="c1">//</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="p">.</span><span class="na">withBloomFilterIndexSizeInBytes</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="c1">//</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">    </span><span class="p">.</span><span class="na">withBloomFilterNumberOfHashFunctions</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="w"> </span><span class="c1">//</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">    </span><span class="p">.</span><span class="na">withLogEnabled</span><span class="p">(</span><span class="kc">false</span><span class="p">)</span><span class="w"> </span><span class="c1">//</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">    </span><span class="p">.</span><span class="na">withName</span><span class="p">(</span><span class="s">&quot;test_index&quot;</span><span class="p">)</span><span class="w"> </span><span class="c1">//</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="n">Index</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Index</span><span class="p">.</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="n">create</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span><span class="w"> </span><span class="n">conf</span><span class="p">);</span>
+</code></pre></div>
 <p>Now let's look at particular parameters.</p>
 <h1 id="index-directory">Index Directory</h1>
 <p>Place where all data are stored. There are two already prepared types:</p>
 <h2 id="in-memory">In Memory</h2>
 <p>All data are stored in memory. It's created like this:</p>
-<pre><code class="language-java">Directory directory = new MemDirectory();
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">Directory</span><span class="w"> </span><span class="n">directory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">MemDirectory</span><span class="p">();</span>
+</code></pre></div>
 <p>It's usefull for testing purposes.</p>
 <h2 id="file-system">File system</h2>
 <p>Its main purpose is to store index data in the file system. Create a file-system-based directory like this:</p>
-<pre><code class="language-java">Directory directory = new FsDirectory(new File('my directory'));
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">Directory</span><span class="w"> </span><span class="n">directory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">FsDirectory</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">File</span><span class="p">(</span><span class="err">&#39;</span><span class="n">my</span><span class="w"> </span><span class="n">directory</span><span class="err">&#39;</span><span class="p">));</span>
+</code></pre></div>
 <h1 id="properties-of-indexconfiguration-class">Properties of <code>IndexConfiguration</code> class</h1>
 <p>All properties are required and have the following meanings:</p>
 <h2 id="index-related-configuration">Index related configuration</h2>
@@ -604,8 +604,8 @@ Index&lt;Integer, Integer&gt; index = Index.&lt;Integer, Integer&gt;create(direc
 <h2 id="bloom-filter-configuration">Bloom filter configuration</h2>
 <p>A Bloom filter is a probabilistic data structure that efficiently tests whether an element is part of a set. You can find a detailed explanation on <a href="https://en.wikipedia.org/wiki/Bloom_filter">Wikipedia</a>. In this context, each segment has its own Bloom filter.</p>
 <p>To <strong>disable</strong> bloom filter completle set:</p>
-<pre><code class="language-java"> .withBloomFilterIndexSizeInBytes(0)
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="w"> </span><span class="p">.</span><span class="na">withBloomFilterIndexSizeInBytes</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div>
 <p>The settings for the Bloom filter can be adjusted using the following methods:</p>
 <h4 id="bloom-filter-size-withbloomfilterindexsizeinbytes">Bloom filter size - <code>withBloomFilterIndexSizeInBytes()</code></h4>
 <p>Sets the size of the Bloom filter in bytes. A value of 0 disables the use of the Bloom filter.</p>
@@ -616,8 +616,8 @@ Index&lt;Integer, Integer&gt; index = Index.&lt;Integer, Integer&gt;create(direc
 <p>Usually, it's not necessary to adjust the Bloom filter settings.</p>
 <h2 id="changing-index-propertise">Changing Index propertise</h2>
 <p>Some parameters can be redefined when the index is opened.</p>
-<pre><code class="language-java">Index&lt;String, String&gt; index = Index.&lt;String, String&gt;open(directory, conf);
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">Index</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Index</span><span class="p">.</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="n">open</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span><span class="w"> </span><span class="n">conf</span><span class="p">);</span>
+</code></pre></div>
 <p>At allows to pass <code>IndexConfiguration</code> object and this way change configuration parameters. Fllowing table shou parameters that can be changed.  </p>
 <table>
 <thead>
