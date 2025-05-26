@@ -13,7 +13,7 @@ import org.apache.commons.codec.digest.MurmurHash3;
  * @author honza
  *
  */
-public class Hash {
+public final class Hash {
 
     private final BitArray bits;
 

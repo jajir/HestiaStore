@@ -11,7 +11,7 @@ import com.hestiastore.index.IndexException;
 /**
  * Same as FsFileReaderStream but uses java.nio.
  */
-public class FsNioFileReaderStream implements FileReader {
+public final class FsNioFileReaderStream implements FileReader {
 
     private final FileChannel channel;
 

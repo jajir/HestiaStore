@@ -9,7 +9,7 @@ import java.util.Properties;
 import com.hestiastore.index.IndexException;
 import com.hestiastore.index.directory.Directory.Access;
 
-public class Props {
+public final class Props {
 
     private final Directory directory;
     private final String fileName;

@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 import com.hestiastore.index.IndexException;
 import com.hestiastore.index.directory.Directory.Access;
 
-public class FsFileWriterStream implements FileWriter {
+public final class FsFileWriterStream implements FileWriter {
 
     private final static Logger logger = LoggerFactory
             .getLogger(FsFileWriterStream.class);

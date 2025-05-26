@@ -6,7 +6,7 @@ import java.io.RandomAccessFile;
 
 import com.hestiastore.index.IndexException;
 
-public class FsFileReaderSeekable implements FileReaderSeekable {
+public final class FsFileReaderSeekable implements FileReaderSeekable {
 
     private final RandomAccessFile raf;
 

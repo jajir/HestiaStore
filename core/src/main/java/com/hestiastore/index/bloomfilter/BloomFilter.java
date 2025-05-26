@@ -11,7 +11,7 @@ import com.hestiastore.index.directory.Directory;
 import com.hestiastore.index.directory.FileReader;
 import com.hestiastore.index.directory.FileWriter;
 
-public class BloomFilter<K> implements CloseableResource {
+public final class BloomFilter<K> implements CloseableResource {
 
     private final static String TEMP_FILE_EXTENSION = ".tmp";
 

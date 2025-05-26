@@ -9,7 +9,7 @@ import com.hestiastore.index.directory.Directory;
 /**
  * Responsible for managing log files.
  */
-public class LogFileNamesManager {
+public final class LogFileNamesManager {
     private final static String LOG_FILE_EXTENSION = ".log";
     private final static String LOG_FILE_PREFIX = "wal-";
     private final static int MAX_LOG_FILE_NUMBER = 99999;

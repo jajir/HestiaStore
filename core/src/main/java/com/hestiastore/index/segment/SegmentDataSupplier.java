@@ -14,7 +14,7 @@ import com.hestiastore.index.scarceindex.ScarceIndex;
  * @param <K>
  * @param <V>
  */
-public class SegmentDataSupplier<K, V> {
+public final class SegmentDataSupplier<K, V> {
 
     private final SegmentFiles<K, V> segmentFiles;
     private final SegmentConf segmentConf;

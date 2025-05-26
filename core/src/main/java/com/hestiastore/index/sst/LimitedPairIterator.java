@@ -7,7 +7,7 @@ import java.util.Objects;
 import com.hestiastore.index.Pair;
 import com.hestiastore.index.PairIterator;
 
-public class LimitedPairIterator<K, V> implements PairIterator<K, V> {
+public final class LimitedPairIterator<K, V> implements PairIterator<K, V> {
 
     private final PairIterator<K, V> iterator;
     private final Comparator<K> keyComparator;

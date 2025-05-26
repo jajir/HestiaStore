@@ -16,7 +16,7 @@ import com.hestiastore.index.sorteddatafile.SortedDataFileWriter;
  * @param <K>
  * @param <V>
  */
-public class SegmentDeltaCacheWriter<K, V> implements PairWriter<K, V> {
+public final class SegmentDeltaCacheWriter<K, V> implements PairWriter<K, V> {
 
     /**
      * Cache will contains data written into this delta file.

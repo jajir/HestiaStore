@@ -5,7 +5,7 @@ import java.util.Objects;
 import com.hestiastore.index.directory.Directory;
 import com.hestiastore.index.directory.FileLock;
 
-public class IndexStateNew<K, V> implements IndexState<K, V> {
+public final class IndexStateNew<K, V> implements IndexState<K, V> {
 
     private final static String LOCK_FILE_NAME = ".lock";
 

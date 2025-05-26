@@ -19,7 +19,7 @@ import com.hestiastore.index.sorteddatafile.SortedDataFile;
  * @param <K>
  * @param <V>
  */
-public class SegmentDeltaCache<K, V> {
+public final class SegmentDeltaCache<K, V> {
 
     private final SegmentFiles<K, V> segmentFiles;
 

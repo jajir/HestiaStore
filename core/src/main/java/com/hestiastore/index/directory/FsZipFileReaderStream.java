@@ -8,7 +8,7 @@ import java.util.zip.ZipInputStream;
 
 import com.hestiastore.index.IndexException;
 
-public class FsZipFileReaderStream implements FileReader {
+public final class FsZipFileReaderStream implements FileReader {
 
     private final ZipInputStream bis;
 

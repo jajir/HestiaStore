@@ -3,7 +3,8 @@ package com.hestiastore.index.datatype;
 import java.nio.charset.Charset;
 import java.util.Comparator;
 
-public class TypeDescriptorFixedLengthString implements TypeDescriptor<String> {
+public final class TypeDescriptorFixedLengthString
+        implements TypeDescriptor<String> {
 
     private final static String CHARSET_ENCODING_NAME = "ISO_8859_1";
 

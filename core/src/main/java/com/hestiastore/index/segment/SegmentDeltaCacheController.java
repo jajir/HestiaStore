@@ -12,7 +12,7 @@ import com.hestiastore.index.PairIterator;
  * @param <K>
  * @param <V>
  */
-public class SegmentDeltaCacheController<K, V> {
+public final class SegmentDeltaCacheController<K, V> {
 
     private final SegmentFiles<K, V> segmentFiles;
     private final SegmentPropertiesManager segmentPropertiesManager;

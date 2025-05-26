@@ -10,7 +10,7 @@ import java.nio.file.StandardOpenOption;
 
 import com.hestiastore.index.IndexException;
 
-public class FsFileReaderStream implements FileReader {
+public final class FsFileReaderStream implements FileReader {
 
     private final BufferedInputStream bis;
 

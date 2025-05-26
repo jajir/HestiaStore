@@ -10,7 +10,8 @@ import java.util.Optional;
 import com.hestiastore.index.Pair;
 import com.hestiastore.index.PairIteratorWithCurrent;
 
-public class MergedPairIterator<K, V> implements PairIteratorWithCurrent<K, V> {
+public final class MergedPairIterator<K, V>
+        implements PairIteratorWithCurrent<K, V> {
 
     private final List<PairIteratorWithCurrent<K, V>> iterators;
     private final Comparator<K> keyComparator;
