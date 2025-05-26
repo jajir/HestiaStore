@@ -21,13 +21,11 @@ Features:
 
 ## Documentation
 
-* [HestiaStore Index architecture](architecture.md)
-* [How to use HestiaStore](how-to-use-index.md) including some examples
-* [Index configuration](configuration.md) and configuration properties explaining
-* [Logging](logging.md) How to setup loggin
-* [Project versioning and how to release](release.md) snapshot and new version
-* [Security](SECURITY.md) and related topics
-* [Change log](CHANGELOG.md)
+* [HestiaStore Index architecture](https://jajir.github.io/HestiaStore/architecture/)
+* [How to use HestiaStore](https://jajir.github.io/HestiaStore/how-to-use-index/) including some examples
+* [Index configuration](https://jajir.github.io/HestiaStore/configuration/) and configuration properties explaining
+* [Library Logging](https://jajir.github.io/HestiaStore/logging/) How to setup loggin
+* [Project versioning and how to release](https://jajir.github.io/HestiaStore/release/) snapshot and new version
 
 <!--
 * [Segment implementation details](segment.md)
