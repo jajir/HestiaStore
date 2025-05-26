@@ -3,7 +3,7 @@ site_url: https://jajir.github.io/HestiaStore/
 site_author: Jan Jirout
 
 repo_name: jajir/HestiaStore
-repo_url: https://jajir.github.io/HestiaStore/
+repo_url: https://github.com/jajir/HestiaStore
 
 nav:
     - Home: index.md    
