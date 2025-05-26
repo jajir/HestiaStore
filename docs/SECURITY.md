@@ -109,3 +109,5 @@ Planned or considered improvements include:
 - ✅ Basic threat model documented
 - ⚠️ Assumes trusted host environment (no access control or encryption)
 - 🚧 Future improvements under consideration (checksums, encryption)
+
+If you encounter any problems, discover vulnerabilities, or have questions, please report them by opening an [issue in the project's GitHub repository](https://github.com/jajir/HestiaStore/issues).
