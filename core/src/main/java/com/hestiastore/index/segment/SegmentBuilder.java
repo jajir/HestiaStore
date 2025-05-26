@@ -5,7 +5,7 @@ import java.util.Objects;
 import com.hestiastore.index.datatype.TypeDescriptor;
 import com.hestiastore.index.directory.Directory;
 
-public class SegmentBuilder<K, V> {
+public final class SegmentBuilder<K, V> {
 
     private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = 1000
             * 1000 * 10;

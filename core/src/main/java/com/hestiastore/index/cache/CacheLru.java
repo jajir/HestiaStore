@@ -14,7 +14,7 @@ import java.util.function.BiConsumer;
  * @param <K>
  * @param <V>
  */
-public class CacheLru<K, V> implements Cache<K, V> {
+public final class CacheLru<K, V> implements Cache<K, V> {
 
     private final long limit;
 

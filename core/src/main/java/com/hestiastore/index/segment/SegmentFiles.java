@@ -15,7 +15,7 @@ import com.hestiastore.index.sorteddatafile.SortedDataFile;
  * @param <K>
  * @param <V>
  */
-public class SegmentFiles<K, V> {
+public final class SegmentFiles<K, V> {
 
     private final static String INDEX_FILE_NAME_EXTENSION = ".index";
     private final static String SCARCE_FILE_NAME_EXTENSION = ".scarce";

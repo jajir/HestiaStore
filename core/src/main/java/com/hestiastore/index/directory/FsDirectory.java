@@ -7,7 +7,7 @@ import java.util.stream.Stream;
 
 import com.hestiastore.index.IndexException;
 
-public class FsDirectory implements Directory {
+public final class FsDirectory implements Directory {
 
     private final static int DEFAULT_BUFFER_SIZE = 1024 * 1 * 4;
     private final File directory;

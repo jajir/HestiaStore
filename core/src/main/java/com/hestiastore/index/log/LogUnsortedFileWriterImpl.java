@@ -12,7 +12,7 @@ import com.hestiastore.index.PairWriter;
  * @param <K> key type
  * @param <V> value type
  */
-public class LogUnsortedFileWriterImpl<K, V>
+public final class LogUnsortedFileWriterImpl<K, V>
         implements LogUnsortedFileWriter<K, V> {
 
     private final PairWriter<LoggedKey<K>, V> writer;

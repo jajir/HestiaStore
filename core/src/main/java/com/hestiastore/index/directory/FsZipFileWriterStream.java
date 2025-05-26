@@ -9,7 +9,7 @@ import java.util.zip.ZipOutputStream;
 
 import com.hestiastore.index.IndexException;
 
-public class FsZipFileWriterStream implements FileWriter {
+public final class FsZipFileWriterStream implements FileWriter {
 
     private final ZipOutputStream fio;
 

@@ -35,7 +35,7 @@ import com.hestiastore.index.sorteddatafile.SortedDataFileWriter;
  *
  * @param <K>
  */
-public class KeySegmentCache<K> implements CloseableResource {
+public final class KeySegmentCache<K> implements CloseableResource {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final static TypeDescriptorSegmentId tdSegId = new TypeDescriptorSegmentId();

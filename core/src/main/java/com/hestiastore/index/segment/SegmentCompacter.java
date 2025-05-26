@@ -12,7 +12,7 @@ import com.hestiastore.index.PairIterator;
  * Class is responsible for compacting segment. It also verify if segment should
  * be compacted.
  */
-public class SegmentCompacter<K, V> {
+public final class SegmentCompacter<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final Segment<K, V> segment;

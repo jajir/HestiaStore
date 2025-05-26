@@ -7,7 +7,7 @@ import java.util.stream.Stream;
 
 import com.hestiastore.index.IndexException;
 
-public class FsZipDirectory implements Directory {
+public final class FsZipDirectory implements Directory {
 
     private final File directory;
 

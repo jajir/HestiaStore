@@ -5,7 +5,7 @@ import java.util.Objects;
 import com.hestiastore.index.datatype.TypeDescriptor;
 import com.hestiastore.index.directory.Directory;
 
-public class ScarceIndexBuilder<K> {
+public final class ScarceIndexBuilder<K> {
 
     private static final int DEFAULT_DISK_IO_BUFFER_SIZE = 4 * 1024;
 

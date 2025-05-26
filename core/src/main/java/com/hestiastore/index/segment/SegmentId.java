@@ -8,7 +8,7 @@ import com.hestiastore.index.FileNameUtil;
  * @author honza
  *
  */
-public class SegmentId {
+public final class SegmentId {
 
     private final int id;
 

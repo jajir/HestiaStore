@@ -8,7 +8,7 @@ import com.hestiastore.index.directory.Directory;
 /**
  * Fluent builder for creating new instance of {@link LogImpl}.
  */
-public class LogBuilder<K, V> {
+public final class LogBuilder<K, V> {
 
     private Directory directory;
 

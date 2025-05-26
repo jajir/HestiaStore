@@ -9,7 +9,7 @@ import java.nio.file.StandardOpenOption;
 import com.hestiastore.index.IndexException;
 import com.hestiastore.index.directory.Directory.Access;
 
-public class FsNioFileWriterStream implements FileWriter {
+public final class FsNioFileWriterStream implements FileWriter {
 
     private final FileChannel channel;
 

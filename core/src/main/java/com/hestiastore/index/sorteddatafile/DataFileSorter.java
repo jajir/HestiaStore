@@ -29,10 +29,9 @@ public class DataFileSorter<K, V> {
     private final static int COUNT_MAX_LENGTH = 5;
     private final static String MERGING_FILES_PREFIX = "merging-";
     private final static String MERGING_FILES_SUFFIX = ".tmp";
+    private final static int ROUND_ZERO = 0;
+    private final static int MERGING_FILE_CAP = 10;
 
-    private final int ROUND_ZERO = 0;
-
-    private final int mergingFileCap = 10;
     private final UnsortedDataFile<K, V> unsortedDataFile;
     private final SortedDataFile<K, V> targetSortedDataFile;
     private final Merger<K, V> merger;
@@ -109,7 +108,7 @@ public class DataFileSorter<K, V> {
     }
 
     private int mergeChunks(final int round, final int chunkCount) {
-        if (chunkCount < mergingFileCap) {
+        if (chunkCount < MERGING_FILE_CAP) {
             // last round
             mergeIndexFiles(round, 0, chunkCount, targetSortedDataFile);
             return 1;
@@ -117,9 +116,9 @@ public class DataFileSorter<K, V> {
             int fileCount = 0;
             int index = 0;
             while (index < chunkCount) {
-                mergeIndexFiles(round, index, index + mergingFileCap,
+                mergeIndexFiles(round, index, index + MERGING_FILE_CAP,
                         getChunkFile(round + 1, fileCount));
-                index += mergingFileCap;
+                index += MERGING_FILE_CAP;
                 fileCount++;
             }
             return fileCount;

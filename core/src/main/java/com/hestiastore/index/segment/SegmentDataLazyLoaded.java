@@ -14,7 +14,7 @@ import com.hestiastore.index.scarceindex.ScarceIndex;
  * @param <K>
  * @param <V>
  */
-public class SegmentDataLazyLoaded<K, V>
+public final class SegmentDataLazyLoaded<K, V>
         implements SegmentData<K, V>, CloseableResource {
 
     private final SegmentDataSupplier<K, V> segmentDataSupplier;
