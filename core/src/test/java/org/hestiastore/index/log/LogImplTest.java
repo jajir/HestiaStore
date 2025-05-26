@@ -6,11 +6,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
-import org.hestiastore.index.log.LogFileNamesManager;
-import org.hestiastore.index.log.LogFilesManager;
-import org.hestiastore.index.log.LogImpl;
-import org.hestiastore.index.log.LogWriter;
-import org.hestiastore.index.log.LoggedKey;
 import org.hestiastore.index.unsorteddatafile.UnsortedDataFileStreamer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

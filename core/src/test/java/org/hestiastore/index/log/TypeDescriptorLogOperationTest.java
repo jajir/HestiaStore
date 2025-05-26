@@ -5,8 +5,6 @@ import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.FileReader;
-import org.hestiastore.index.log.LogOperation;
-import org.hestiastore.index.log.TypeDescriptorLogOperation;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

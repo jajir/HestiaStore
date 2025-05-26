@@ -4,10 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.hestiastore.index.directory.FileReader;
-import org.hestiastore.index.directory.FileReaderSeekable;
-import org.hestiastore.index.directory.FileWriter;
-import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.directory.Directory.Access;
 import org.junit.jupiter.api.Test;
 

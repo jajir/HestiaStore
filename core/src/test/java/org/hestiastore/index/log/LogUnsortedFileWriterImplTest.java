@@ -3,9 +3,6 @@ package org.hestiastore.index.log;
 import static org.mockito.Mockito.verify;
 
 import org.hestiastore.index.PairWriter;
-import org.hestiastore.index.log.LogOperation;
-import org.hestiastore.index.log.LogUnsortedFileWriterImpl;
-import org.hestiastore.index.log.LoggedKey;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

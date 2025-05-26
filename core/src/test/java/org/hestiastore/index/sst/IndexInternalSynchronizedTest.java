@@ -8,8 +8,6 @@ import org.hestiastore.index.datatype.TypeDescriptorString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.log.Log;
-import org.hestiastore.index.sst.IndexConfiguration;
-import org.hestiastore.index.sst.IndexInternalSynchronized;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

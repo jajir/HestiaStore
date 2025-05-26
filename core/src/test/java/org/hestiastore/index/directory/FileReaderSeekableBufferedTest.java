@@ -3,11 +3,6 @@ package org.hestiastore.index.directory;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.FileReaderSeekable;
-import org.hestiastore.index.directory.FileReaderSeekableBuffered;
-import org.hestiastore.index.directory.FileWriter;
-import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

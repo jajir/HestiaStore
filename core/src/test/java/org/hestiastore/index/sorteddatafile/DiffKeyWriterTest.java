@@ -8,7 +8,6 @@ import java.util.Comparator;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorString;
-import org.hestiastore.index.sorteddatafile.DiffKeyWriter;
 import org.junit.jupiter.api.Test;
 
 public class DiffKeyWriterTest {

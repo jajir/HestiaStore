@@ -9,7 +9,6 @@ import org.hestiastore.index.datatype.TypeDescriptorString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileWriter;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.sorteddatafile.SortedDataFileWriter;
 import org.junit.jupiter.api.Test;
 
 public class IntegrationSortedDataFileWriterTest {

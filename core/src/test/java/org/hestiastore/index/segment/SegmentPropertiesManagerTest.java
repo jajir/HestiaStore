@@ -6,9 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segment.SegmentPropertiesManager;
-import org.hestiastore.index.segment.SegmentStats;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

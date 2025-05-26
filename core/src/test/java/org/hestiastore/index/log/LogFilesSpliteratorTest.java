@@ -9,10 +9,6 @@ import java.util.List;
 
 import org.hestiastore.index.CloseablePairReader;
 import org.hestiastore.index.Pair;
-import org.hestiastore.index.log.LogFilesManager;
-import org.hestiastore.index.log.LogFilesSpliterator;
-import org.hestiastore.index.log.LogOperation;
-import org.hestiastore.index.log.LoggedKey;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

@@ -9,7 +9,6 @@ import java.util.List;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.datatype.TypeDescriptorString;
-import org.hestiastore.index.scarceindex.ScarceIndexCache;
 import org.junit.jupiter.api.Test;
 
 public class ScarceIndexCacheTest {

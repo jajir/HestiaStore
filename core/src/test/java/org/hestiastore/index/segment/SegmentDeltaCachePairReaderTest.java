@@ -10,7 +10,6 @@ import java.util.List;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.cache.UniqueCache;
-import org.hestiastore.index.segment.SegmentDeltaCachePairReader;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

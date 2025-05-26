@@ -10,7 +10,6 @@ import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.segment.Segment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

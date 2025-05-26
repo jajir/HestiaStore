@@ -10,7 +10,6 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorString;
 import org.hestiastore.index.datatype.TypeWriter;
 import org.hestiastore.index.directory.FileWriter;
-import org.hestiastore.index.sorteddatafile.SortedDataFileWriter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

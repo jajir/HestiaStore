@@ -5,11 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 
-import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.FileReader;
-import org.hestiastore.index.directory.FileWriter;
-import org.hestiastore.index.directory.FsDirectory;
-import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

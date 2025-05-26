@@ -13,7 +13,6 @@ import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.cache.UniqueCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorString;
-import org.hestiastore.index.sst.PairIteratorRefreshedFromCache;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

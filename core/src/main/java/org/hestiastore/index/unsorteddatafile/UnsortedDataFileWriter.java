@@ -6,8 +6,8 @@ import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.datatype.TypeWriter;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.FileWriter;
 import org.hestiastore.index.directory.Directory.Access;
+import org.hestiastore.index.directory.FileWriter;
 
 public class UnsortedDataFileWriter<K, V> implements PairWriter<K, V> {
 

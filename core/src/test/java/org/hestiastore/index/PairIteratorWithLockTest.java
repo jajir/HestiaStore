@@ -8,9 +8,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.NoSuchElementException;
 
-import org.hestiastore.index.OptimisticLock;
-import org.hestiastore.index.PairIterator;
-import org.hestiastore.index.PairIteratorWithLock;
 import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

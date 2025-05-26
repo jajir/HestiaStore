@@ -7,7 +7,6 @@ import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
-import org.hestiastore.index.sst.PairReaderFromIterator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

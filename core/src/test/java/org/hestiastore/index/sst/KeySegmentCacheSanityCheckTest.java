@@ -9,8 +9,6 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 import org.hestiastore.index.sorteddatafile.SortedDataFileWriter;
-import org.hestiastore.index.sst.KeySegmentCache;
-import org.hestiastore.index.sst.TypeDescriptorSegmentId;
 import org.junit.jupiter.api.Test;
 
 public class KeySegmentCacheSanityCheckTest {

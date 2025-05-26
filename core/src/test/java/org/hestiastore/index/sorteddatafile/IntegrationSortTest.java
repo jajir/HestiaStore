@@ -18,8 +18,6 @@ import org.hestiastore.index.datatype.TypeDescriptorString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.AbstractSegmentTest;
-import org.hestiastore.index.sorteddatafile.DataFileSorter;
-import org.hestiastore.index.sorteddatafile.SortedDataFile;
 import org.hestiastore.index.unsorteddatafile.UnsortedDataFile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -5,10 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.hestiastore.index.segment.SegmentData;
-import org.hestiastore.index.segment.SegmentDataFactoryImpl;
-import org.hestiastore.index.segment.SegmentDataLazyLoaded;
-import org.hestiastore.index.segment.SegmentDataSupplier;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

@@ -11,7 +11,6 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorString;
 import org.hestiastore.index.directory.FileReader;
-import org.hestiastore.index.sorteddatafile.DiffKeyReader;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 
