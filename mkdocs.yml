@@ -37,3 +37,9 @@ plugins:
 #        output_folder: "out"
 #        input_folder: "src"
 dev_addr: 127.0.0.1:8080
+
+
+markdown_extensions:
+    - pymdownx.highlight:
+        anchor_linenums: true
+    - pymdownx.superfences 
