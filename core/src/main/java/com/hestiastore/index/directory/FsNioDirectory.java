@@ -46,7 +46,7 @@ public class FsNioDirectory implements Directory {
             throw new IndexException(
                     String.format("File '%s' doesn't exists."));
         }
-        return new FsNioFileReaderStream(file, bufferSize);
+        return new FsNioFileReaderStream(file);
     }
 
     @Override

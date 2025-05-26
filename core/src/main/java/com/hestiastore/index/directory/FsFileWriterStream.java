@@ -17,7 +17,7 @@ import com.hestiastore.index.directory.Directory.Access;
 public class FsFileWriterStream implements FileWriter {
 
     private final static Logger logger = LoggerFactory
-            .getLogger(FsFileWriterStream.class);;
+            .getLogger(FsFileWriterStream.class);
 
     private final OutputStream fio;
 
