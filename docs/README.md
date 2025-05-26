@@ -58,3 +58,7 @@ index.put("Hello", "World");
 String value = index.get("Hello");
 System.out.println("Value for 'Hello': " + value);
 ```
+
+### Questions
+
+If you encounter a bug, have a feature request, or need help using HestiaStore, please [create an issue](https://github.com/jajir/HestiaStore/issues).

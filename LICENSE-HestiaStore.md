@@ -16,9 +16,7 @@ If you wish to modify the library or include it in a way that prevents replaceme
 
 ## Using HestiaStore under commercial license
 
-
 For inquiries about alternative licensing options or commercial use, feel free to contact the author directly.
-
 
 <!--
 📩 Contact us for commercial licensing: [your-email@example.com]
@@ -29,4 +27,3 @@ For inquiries about alternative licensing options or commercial use, feel free t
 ### Questions, Issues, and Licensing
 
 If you encounter a bug, have a feature request, or need help using HestiaStore, please [create an issue](https://github.com/jajir/HestiaStore/issues).
-
