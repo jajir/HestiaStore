@@ -10,19 +10,25 @@
         <meta name="author" content="Jan Jirout">
       
       
+        <link rel="canonical" href="https://jajir.github.io/HestiaStore/development/">
       
       
+        <link rel="prev" href="../segment/">
       
-      <link rel="icon" href="/HestiaStore/images/favicon.ico">
+      
+        <link rel="next" href="../release/">
+      
+      
+      <link rel="icon" href="../images/favicon.ico">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
     
     
       
-        <title>HestiaStore</title>
+        <title>Architecture - HestiaStore</title>
       
     
     
-      <link rel="stylesheet" href="/HestiaStore/assets/stylesheets/main.342714a4.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
       
       
 
@@ -41,7 +47,7 @@
       
     
     
-    <script>__md_scope=new URL("/HestiaStore/",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -59,6 +65,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#development" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -71,9 +82,9 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="/HestiaStore/." title="HestiaStore" class="md-header__button md-logo" aria-label="HestiaStore" data-md-component="logo">
+    <a href=".." title="HestiaStore" class="md-header__button md-logo" aria-label="HestiaStore" data-md-component="logo">
       
-  <img src="/HestiaStore/images/logo-square.png" alt="logo">
+  <img src="../images/logo-square.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -90,7 +101,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              
+              Architecture
             
           </span>
         </div>
@@ -180,9 +191,9 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="/HestiaStore/." title="HestiaStore" class="md-nav__button md-logo" aria-label="HestiaStore" data-md-component="logo">
+    <a href=".." title="HestiaStore" class="md-nav__button md-logo" aria-label="HestiaStore" data-md-component="logo">
       
-  <img src="/HestiaStore/images/logo-square.png" alt="logo">
+  <img src="../images/logo-square.png" alt="logo">
 
     </a>
     HestiaStore
@@ -209,7 +220,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/HestiaStore/." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -231,7 +242,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/HestiaStore/how-to-use-index/" class="md-nav__link">
+      <a href="../how-to-use-index/" class="md-nav__link">
         
   
   
@@ -253,7 +264,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/HestiaStore/configuration/" class="md-nav__link">
+      <a href="../configuration/" class="md-nav__link">
         
   
   
@@ -275,7 +286,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/HestiaStore/logging/" class="md-nav__link">
+      <a href="../logging/" class="md-nav__link">
         
   
   
@@ -335,7 +346,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/HestiaStore/architecture/" class="md-nav__link">
+      <a href="../architecture/" class="md-nav__link">
         
   
   
@@ -358,7 +369,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/HestiaStore/segment/" class="md-nav__link">
+      <a href="../segment/" class="md-nav__link">
         
   
   
@@ -385,18 +396,20 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
         
           
           <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
@@ -412,7 +425,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             Development
@@ -423,10 +436,32 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="/HestiaStore/development/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Architecture
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -437,6 +472,77 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-run-jmh-benchmarks" class="md-nav__link">
+    <span class="md-ellipsis">
+      How to run JMH benchmarks
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How to run JMH benchmarks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#possible-problems" class="md-nav__link">
+    <span class="md-ellipsis">
+      Possible problems
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#load-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      Load test
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#development_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Development
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-get-segment-disk-size" class="md-nav__link">
+    <span class="md-ellipsis">
+      How to get segment disk size
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -449,7 +555,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/HestiaStore/release/" class="md-nav__link">
+      <a href="../release/" class="md-nav__link">
         
   
   
@@ -489,6 +595,67 @@
   
   
   
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-run-jmh-benchmarks" class="md-nav__link">
+    <span class="md-ellipsis">
+      How to run JMH benchmarks
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How to run JMH benchmarks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#possible-problems" class="md-nav__link">
+    <span class="md-ellipsis">
+      Possible problems
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#load-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      Load test
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#development_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Development
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-get-segment-disk-size" class="md-nav__link">
+    <span class="md-ellipsis">
+      How to get segment disk size
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -500,8 +667,100 @@
             <div class="md-content" data-md-component="content">
               <article class="md-content__inner md-typeset">
                 
-  <h1>404 - Not found</h1>
+                  
 
+
+
+<h1 id="development">Development</h1>
+<p>Here are some development related topiscs.</p>
+<h2 id="how-to-run-jmh-benchmarks">How to run JMH benchmarks</h2>
+<p>Follow this steps:
+* Compile whole project and create pacakge containing all benchmarks data
+* Go to <code>jmh-benchmarks</code>
+* Execute it, with temp directory in <code>target</code> directory</p>
+<pre><code class="language-bash">mvn clean install
+cd jmh-benchmarks
+java -Ddir=./target/ -jar target/jmh-benchmarks.jar
+</code></pre>
+<p>Specific JMH benchmark class could be run:</p>
+<pre><code class="language-bash">java -Ddir=./target/ -jar target/jmh-benchmarks.jar SegmentSearchBenchmark
+</code></pre>
+<p>result could look like:</p>
+<pre><code>Benchmark                                             Mode  Cnt    Score      Error  Units
+SequentialFileReadingBenchmark.test_with_buffer_01KB  avgt    4   70.747 ±   42.480  ms/op
+SequentialFileReadingBenchmark.test_with_buffer_02KB  avgt    4   60.009 ±   52.899  ms/op
+SequentialFileReadingBenchmark.test_with_buffer_04KB  avgt    4   51.254 ±   30.112  ms/op
+SequentialFileReadingBenchmark.test_with_buffer_08KB  avgt    4   48.600 ±   28.892  ms/op
+SequentialFileReadingBenchmark.test_with_buffer_16KB  avgt    4   48.471 ±   25.665  ms/op
+SequentialFileReadingBenchmark.test_with_buffer_32KB  avgt    4   45.256 ±   24.986  ms/op
+SequentialFileReadingBenchmark.test_with_buffer_64KB  avgt    4   45.204 ±   24.867  ms/op
+SequentialFileWritingBenchmark.test_with_buffer_01KB  avgt    4  238.075 ±   75.311  ms/op
+SequentialFileWritingBenchmark.test_with_buffer_02KB  avgt    4  271.272 ±   64.747  ms/op
+SequentialFileWritingBenchmark.test_with_buffer_04KB  avgt    4  276.001 ±   45.815  ms/op
+SequentialFileWritingBenchmark.test_with_buffer_08KB  avgt    4  352.189 ± 1140.814  ms/op
+SequentialFileWritingBenchmark.test_with_buffer_16KB  avgt    4  258.806 ±   44.693  ms/op
+SequentialFileWritingBenchmark.test_with_buffer_32KB  avgt    4  276.246 ±  135.019  ms/op
+SequentialFileWritingBenchmark.test_with_buffer_64KB  avgt    4  275.944 ±  128.835  ms/op
+</code></pre>
+<p>When some JMH benchmark class is changed command <code>mvn package</code> have to be run.</p>
+<h3 id="possible-problems">Possible problems</h3>
+<p>Generally JMH is quite fragile. Small changes broke JMH benchmark execution. Usually helps rebuild project and start again as described above.</p>
+<h2 id="load-test">Load test</h2>
+<p>Runnign JVM should be inspected with some profiller. For profilling is usefull to hae long running task to watch it. Go to project <code>load-test</code>. Following command show all optional parameters:</p>
+<pre><code class="language-bash">java -jar target/load-test.jar com.coroptis.index.loadtest.Main --help
+</code></pre>
+<p>Theer are two main supported operations. First is data generating. It's could be usefull to place in java profilling agent. It could look like:</p>
+<pre><code class="language-bash">java \
+    -agentpath:/Applications/YourKit-Java-Profiler-2023.9.app/Contents/Resources/bin/mac/libyjpagent.dylib=exceptions=disable,delay=10000,listen=all \
+    -jar target/load-test.jar com.coroptis.index.loadtest.Main \
+    --write \
+    --directory /Volumes/LaCie/test/  \
+    --count 5_000_000_000 \
+    --max-number-of-keys-in-cache 5_000_000 \
+    --max-number-of-keys-in-segment 10_000_000 \
+    --max-number-of-keys-in-segment-cache 500_000 \
+    --max-number-of-keys-in-segment-cache-during-flushing 2_000_000 \
+    --max-number-of-keys-in-segment-index-page 1_000 \
+    --bloom-filter-index-size-in-bytes 10_000_000 \
+    --bloom-filter-number-of-hash-functions 2
+</code></pre>
+<p>It will generate 210 GB of testing data. Furst search test can be performed like this:</p>
+<pre><code class="language-bash">java \
+    -agentpath:/Applications/YourKit-Java-Profiler-2023.9.app/Contents/Resources/bin/mac/libyjpagent.dylib=exceptions=disable,delay=10000,listen=all \
+    -jar target/load-test.jar com.coroptis.index.loadtest.Main \
+    --search \
+    --directory /Volumes/LaCie/test/  \
+    --count 5_000_000_000 \
+    --max-key 5_000_000_000 \
+    --max-number-of-keys-in-cache 5_000_000 \
+    --max-number-of-keys-in-segment 10_000_000 \
+    --max-number-of-keys-in-segment-cache 500_000 \
+    --max-number-of-keys-in-segment-cache-during-flushing 2_000_000 \
+    --max-number-of-keys-in-segment-index-page 1_000 \
+    --bloom-filter-index-size-in-bytes 10_000_000 \
+    --bloom-filter-number-of-hash-functions 2
+</code></pre>
+<h2 id="development_1">Development</h2>
+<p>Mockito requires reflective access to non-public parts in a Java module. It could be manually open by passing following parameter as jvm parameter:</p>
+<pre><code>--add-opens=java.base/java.lang=ALL-UNNAMED
+</code></pre>
+<h2 id="how-to-get-segment-disk-size">How to get segment disk size</h2>
+<p>On apple try:</p>
+<pre><code>diskutil  info /Volumes/LaCie
+</code></pre>
+
+
+
+
+
+
+
+
+
+
+
+
+                
               </article>
             </div>
           
@@ -537,10 +796,10 @@
     
     
       
-      <script id="__config" type="application/json">{"base": "/HestiaStore/", "features": [], "search": "/HestiaStore/assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="/HestiaStore/assets/javascripts/bundle.13a4f30d.min.js"></script>
+      <script src="../assets/javascripts/bundle.13a4f30d.min.js"></script>
       
     
   </body>

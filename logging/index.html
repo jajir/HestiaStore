@@ -10,19 +10,25 @@
         <meta name="author" content="Jan Jirout">
       
       
+        <link rel="canonical" href="https://jajir.github.io/HestiaStore/logging/">
       
       
+        <link rel="prev" href="../configuration/">
       
-      <link rel="icon" href="/HestiaStore/images/favicon.ico">
+      
+        <link rel="next" href="../architecture/">
+      
+      
+      <link rel="icon" href="../images/favicon.ico">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
     
     
       
-        <title>HestiaStore</title>
+        <title>Logging - HestiaStore</title>
       
     
     
-      <link rel="stylesheet" href="/HestiaStore/assets/stylesheets/main.342714a4.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
       
       
 
@@ -41,7 +47,7 @@
       
     
     
-    <script>__md_scope=new URL("/HestiaStore/",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -59,6 +65,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#logging" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -71,9 +82,9 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="/HestiaStore/." title="HestiaStore" class="md-header__button md-logo" aria-label="HestiaStore" data-md-component="logo">
+    <a href=".." title="HestiaStore" class="md-header__button md-logo" aria-label="HestiaStore" data-md-component="logo">
       
-  <img src="/HestiaStore/images/logo-square.png" alt="logo">
+  <img src="../images/logo-square.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -90,7 +101,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              
+              Logging
             
           </span>
         </div>
@@ -180,9 +191,9 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="/HestiaStore/." title="HestiaStore" class="md-nav__button md-logo" aria-label="HestiaStore" data-md-component="logo">
+    <a href=".." title="HestiaStore" class="md-nav__button md-logo" aria-label="HestiaStore" data-md-component="logo">
       
-  <img src="/HestiaStore/images/logo-square.png" alt="logo">
+  <img src="../images/logo-square.png" alt="logo">
 
     </a>
     HestiaStore
@@ -209,7 +220,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/HestiaStore/." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -231,7 +242,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/HestiaStore/how-to-use-index/" class="md-nav__link">
+      <a href="../how-to-use-index/" class="md-nav__link">
         
   
   
@@ -253,7 +264,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/HestiaStore/configuration/" class="md-nav__link">
+      <a href="../configuration/" class="md-nav__link">
         
   
   
@@ -272,10 +283,32 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="/HestiaStore/logging/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Logging
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -286,6 +319,86 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#example-configuration-file-for-log4j" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example configuration File for log4j
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Example configuration File for log4j">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#log-appenders" class="md-nav__link">
+    <span class="md-ellipsis">
+      Log Appenders
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#customizing-logging-levels" class="md-nav__link">
+    <span class="md-ellipsis">
+      Customizing Logging Levels
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#disabling-index-logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Disabling Index Logs
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommendations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Recommendations
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logging-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Logging Implementation
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -335,7 +448,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/HestiaStore/architecture/" class="md-nav__link">
+      <a href="../architecture/" class="md-nav__link">
         
   
   
@@ -358,7 +471,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/HestiaStore/segment/" class="md-nav__link">
+      <a href="../segment/" class="md-nav__link">
         
   
   
@@ -426,7 +539,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/HestiaStore/development/" class="md-nav__link">
+      <a href="../development/" class="md-nav__link">
         
   
   
@@ -449,7 +562,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/HestiaStore/release/" class="md-nav__link">
+      <a href="../release/" class="md-nav__link">
         
   
   
@@ -489,6 +602,76 @@
   
   
   
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#example-configuration-file-for-log4j" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example configuration File for log4j
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Example configuration File for log4j">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#log-appenders" class="md-nav__link">
+    <span class="md-ellipsis">
+      Log Appenders
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#customizing-logging-levels" class="md-nav__link">
+    <span class="md-ellipsis">
+      Customizing Logging Levels
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#disabling-index-logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Disabling Index Logs
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommendations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Recommendations
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logging-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Logging Implementation
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -500,8 +683,80 @@
             <div class="md-content" data-md-component="content">
               <article class="md-content__inner md-typeset">
                 
-  <h1>404 - Not found</h1>
+                  
 
+
+
+<h1 id="logging">Logging</h1>
+<p>HestiaStore uses <strong>slf4j</strong> for internal logging. So you should include your preferred logging library like logback, log4j, or another with a bridge to slf4j. In case you use log4j, look at the example configuration:</p>
+<h2 id="example-configuration-file-for-log4j">Example configuration File for log4j</h2>
+<p>Bellow is the example Log4j2 configuration used in HestiaStore:</p>
+<pre><code class="language-xml">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;Configuration status=&quot;INFO&quot;&gt;
+  &lt;Appenders&gt;
+
+    &lt;Console name=&quot;Console&quot; target=&quot;SYSTEM_OUT&quot;&gt;
+      &lt;PatternLayout
+          pattern=&quot;%style{%d{ISO8601}}{white} %highlight{%-5level }[%style{%t}{bright,blue}] %style{%-C{1.mv}}{bright,yellow}: %msg%n%throwable&quot; /&gt;
+    &lt;/Console&gt;
+
+    &lt;Console name=&quot;indexAppender&quot; target=&quot;SYSTEM_OUT&quot;&gt;
+      &lt;PatternLayout
+          pattern=&quot;%style{%d{ISO8601}}{white} %highlight{%-5level }[%style{%t}{bright,blue}] index='%style{%X{index.name}}{magenta}' %style{%-C{1.mv}}{bright,yellow}: %msg%n%throwable&quot; /&gt;
+    &lt;/Console&gt;
+
+  &lt;/Appenders&gt;
+  &lt;Loggers&gt;
+    &lt;logger name=&quot;com.hestiastore.index&quot; level=&quot;DEBUG&quot; additivity=&quot;false&quot;&gt;
+      &lt;appender-ref ref=&quot;indexAppender&quot; /&gt;
+    &lt;/logger&gt;
+    &lt;Root level=&quot;DEBUG&quot;&gt;
+      &lt;AppenderRef ref=&quot;Console&quot;/&gt;
+    &lt;/Root&gt;
+  &lt;/Loggers&gt;
+&lt;/Configuration&gt;
+</code></pre>
+<p>this example will produce logs look like this:</p>
+<p><img alt="HestiaStore log4j logs" src="../images/screenshot-logs.png" /></p>
+<h3 id="log-appenders">Log Appenders</h3>
+<ul>
+<li><strong>Console (default)</strong>: Used by all components not explicitly assigned a logger. Outputs time, level, thread, and class name.</li>
+<li><strong>indexAppender</strong>: Specifically configured for <code>com.hestiastore.index</code>, outputs additional context (<code>index.name</code>) for disambiguating messages from different index instances.</li>
+</ul>
+<h3 id="customizing-logging-levels">Customizing Logging Levels</h3>
+<p>You can control verbosity by modifying the <code>&lt;logger&gt;</code> or <code>&lt;Root&gt;</code> levels:</p>
+<ul>
+<li><code>ERROR</code>, <code>WARN</code>, <code>INFO</code>, <code>DEBUG</code>, or <code>TRACE</code></li>
+<li>For example, to suppress general debug logs:</li>
+</ul>
+<pre><code class="language-xml">&lt;Root level=&quot;INFO&quot;&gt;
+</code></pre>
+<h2 id="disabling-index-logs">Disabling Index Logs</h2>
+<p>If you want to disable index-specific logging entirely, remove or comment out the <code>com.hestiastore.index</code> logger section. Alternatively log level for package could be set to "ERROR".</p>
+<h2 id="recommendations">Recommendations</h2>
+<ul>
+<li>Use <code>DEBUG</code> during development or troubleshooting.</li>
+<li>Switch to <code>INFO</code> or <code>WARN</code> in production to reduce log noise.</li>
+<li>Ensure you clear MDC values (<code>ThreadContext.clearAll()</code>) in thread pools to prevent memory leaks or incorrect context reuse.</li>
+</ul>
+<h2 id="logging-implementation">Logging Implementation</h2>
+<p>The <code>indexAppender</code> uses a mapped diagnostic context (MDC) value <code>index.name</code>, which should be set programmatically:</p>
+<pre><code class="language-java">ThreadContext.put(&quot;index.name&quot;, &quot;userIndex&quot;);
+</code></pre>
+<p>This allows the log output to include which index instance the message is referring to, aiding in debugging concurrent access or behavior across multiple indexes.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
               </article>
             </div>
           
@@ -537,10 +792,10 @@
     
     
       
-      <script id="__config" type="application/json">{"base": "/HestiaStore/", "features": [], "search": "/HestiaStore/assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="/HestiaStore/assets/javascripts/bundle.13a4f30d.min.js"></script>
+      <script src="../assets/javascripts/bundle.13a4f30d.min.js"></script>
       
     
   </body>
