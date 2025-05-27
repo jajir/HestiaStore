@@ -33,7 +33,20 @@ Features:
 
 ## How to use HestiaStore
 
-Index should be created with builder, which make index instance. For example:
+At file `pom.xml` to section `dependencies ` add the following:
+
+```xml
+<dependencies>
+  <dependency>
+    <groupId>org.hestiastore.index</groupId>
+    <artifactId>core</artifactId>
+    <version>0.0.3</version> <!-- Replace with the actual version -->
+  </dependency>
+</dependencies>
+```
+
+New Index should be created with builder, which make index instance. For example:
+
 
 ```java
 // Create an in-memory file system abstraction
