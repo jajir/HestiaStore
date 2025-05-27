@@ -50,7 +50,7 @@ jobs:
       uses: cicirello/jacoco-badge-generator@v2
       with:
         generate-branches-badge: true
-        jacoco-csv-file: ./core/target/site/jacoco/jacoco.csv
+        jacoco-csv-file: ./target/site/jacoco/jacoco.csv
         badges-directory: ./badges
         coverage-badge-filename: jacoco-badge-${{ github.ref_name }}.svg
     
@@ -67,9 +67,9 @@ jobs:
       if: always()
       with:
         files: |
-          core/target/surefire-reports/**/*.xml
-          core/target/surefire-reports/**/*.trx
-          core/target/surefire-reports/**/*.json
+          target/surefire-reports/**/*.xml
+          target/surefire-reports/**/*.trx
+          target/surefire-reports/**/*.json
 
     - name: Set badge color
       shell: bash
@@ -104,7 +104,7 @@ jobs:
     - name: OWASP vulnerabilities - count
       id: vuln
       run: |
-        VULN_COUNT=$(jq '[.dependencies[] | select(.vulnerabilities and (.vulnerabilities | length > 0)) | .vulnerabilities[]] | length' core/target/dependency-check-report.json)
+        VULN_COUNT=$(jq '[.dependencies[] | select(.vulnerabilities and (.vulnerabilities | length > 0)) | .vulnerabilities[]] | length' target/dependency-check-report.json)
         echo "OWASP Vulnerabilities count: $VULN_COUNT"
         echo "VULN_COUNT=$VULN_COUNT" >> $GITHUB_ENV
 
