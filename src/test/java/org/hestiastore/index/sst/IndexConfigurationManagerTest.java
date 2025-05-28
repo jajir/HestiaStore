@@ -370,8 +370,40 @@ public class IndexConfigurationManagerTest {
                 () -> manager.save(config));
 
         assertEquals(
-                "Parameter 'diskIoBufferSize' vith value '1000' "
+                "Parameter 'diskIoBufferSize' with value '1000' "
                         + "can't be divided by 1024 without reminder",
+                ex.getMessage());
+    }
+
+    @Test
+    void test_save_disk_reading_cache_size_in_0() throws Exception {
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
+                .withKeyClass(Long.class)//
+                .withValueClass(String.class)//
+                .withName("test_index")//
+                .withKeyTypeDescriptor(TD_LONG)//
+                .withValueTypeDescriptor(TD_STRING)//
+                .withThreadSafe(true)//
+                .withLogEnabled(true)//
+                .withMaxNumberOfKeysInSegmentCache(11L)//
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22L) //
+                .withMaxNumberOfKeysInSegmentIndexPage(33)//
+                .withMaxNumberOfKeysInSegment(44)//
+                .withMaxNumberOfSegmentsInCache(66)//
+                .withMaxNumberOfKeysInCache(1000)//
+                .withDiskIoBufferSizeInBytes(0)//
+                .withBloomFilterIndexSizeInBytes(77)//
+                .withBloomFilterNumberOfHashFunctions(88)//
+                .withName("test_index")//
+                .build();
+
+        final Exception ex = assertThrows(IllegalArgumentException.class,
+                () -> manager.save(config));
+
+        assertEquals(
+                "Parameter 'diskIoBufferSize' with value '0' "
+                        + "can't be smaller or equal to zero.",
                 ex.getMessage());
     }
 
@@ -446,7 +478,7 @@ public class IndexConfigurationManagerTest {
     void test_mergeWithStored_maxNumberOfKeysInSegmentCache() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withMaxNumberOfKeysInSegmentCache(3627L)//
+                .withMaxNumberOfKeysInSegmentCache(8L)//
                 .build();
 
         when(storage.load()).thenReturn(CONFIG);
@@ -455,7 +487,7 @@ public class IndexConfigurationManagerTest {
         verify(storage, Mockito.times(1)).save(any());
         assertNotNull(ret);
 
-        assertEquals(3627, ret.getMaxNumberOfKeysInSegmentCache());
+        assertEquals(8, ret.getMaxNumberOfKeysInSegmentCache());
     }
 
     @Test

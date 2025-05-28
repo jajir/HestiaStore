@@ -275,7 +275,7 @@ public class IndexConfigurationManager<K, V> {
         if (dirty) {
             confStorage.save(builder.build());
         }
-        return builder.build();
+        return validate(builder.build());
     }
 
     private IndexConfiguration<K, V> validate(IndexConfiguration<K, V> conf) {
@@ -329,9 +329,15 @@ public class IndexConfigurationManager<K, V> {
         }
 
         Vldtn.requireNonNull(conf.getDiskIoBufferSize(), "DiskIoBufferSize");
+        if (conf.getDiskIoBufferSize() <= 0) {
+            throw new IllegalArgumentException(String.format(
+                    "Parameter 'diskIoBufferSize' with value '%s'"
+                            + " can't be smaller or equal to zero.",
+                    conf.getDiskIoBufferSize()));
+        }
         if (conf.getDiskIoBufferSize() % 1024 != 0) {
             throw new IllegalArgumentException(String.format(
-                    "Parameter 'diskIoBufferSize' vith value '%s'"
+                    "Parameter 'diskIoBufferSize' with value '%s'"
                             + " can't be divided by 1024 without reminder",
                     conf.getDiskIoBufferSize()));
         }

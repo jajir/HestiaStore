@@ -2,6 +2,7 @@ package org.hestiastore.index.directory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.directory.Directory.Access;
@@ -101,6 +102,16 @@ public class MemDirectoryTest {
         // verify second skip to correct place
         fr.seek(19);
         assertEquals("reference", readStr(fr, 9));
+    }
+
+    @Test
+    void test_getFileWriter_invalid_cacheSize() {
+        final MemDirectory directory = new MemDirectory();
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> directory.getFileWriter("pok", Access.OVERWRITE, 0));
+
+        assertEquals("Buffer size must be greater than zero.", e.getMessage());
+
     }
 
     private String readStr(final FileReader fr, final int length) {
