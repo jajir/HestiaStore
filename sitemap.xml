@@ -5,10 +5,6 @@
          <lastmod>2025-05-28</lastmod>
     </url>
     <url>
-         <loc>https://jajir.github.io/HestiaStore/how-to-use-index/</loc>
-         <lastmod>2025-05-28</lastmod>
-    </url>
-    <url>
          <loc>https://jajir.github.io/HestiaStore/architecture/</loc>
          <lastmod>2025-05-28</lastmod>
     </url>
@@ -42,6 +38,18 @@
     </url>
     <url>
          <loc>https://jajir.github.io/HestiaStore/development/release/</loc>
+         <lastmod>2025-05-28</lastmod>
+    </url>
+    <url>
+         <loc>https://jajir.github.io/HestiaStore/how-to-use/</loc>
+         <lastmod>2025-05-28</lastmod>
+    </url>
+    <url>
+         <loc>https://jajir.github.io/HestiaStore/how-to-use/examples/</loc>
+         <lastmod>2025-05-28</lastmod>
+    </url>
+    <url>
+         <loc>https://jajir.github.io/HestiaStore/how-to-use/install/</loc>
          <lastmod>2025-05-28</lastmod>
     </url>
 </urlset>

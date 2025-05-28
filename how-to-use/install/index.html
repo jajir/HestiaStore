@@ -10,11 +10,13 @@
         <meta name="author" content="Jan Jirout">
       
       
-        <link rel="canonical" href="https://jajir.github.io/HestiaStore/development/guides/">
+        <link rel="canonical" href="https://jajir.github.io/HestiaStore/how-to-use/install/">
       
       
-        <link rel="prev" href="../documentation/">
+        <link rel="prev" href="../">
       
+      
+        <link rel="next" href="../examples/">
       
       
       <link rel="icon" href="../../images/favicon.ico">
@@ -22,7 +24,7 @@
     
     
       
-        <title>Guides - HestiaStore</title>
+        <title>Install - HestiaStore</title>
       
     
     
@@ -64,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#development" class="md-skip">
+        <a href="#installation-guide" class="md-skip">
           Skip to content
         </a>
       
@@ -99,7 +101,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Guides
+              Install
             
           </span>
         </div>
@@ -202,11 +204,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../how-to-use/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -268,13 +272,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../development/" class="md-tabs__link">
           
   
   
@@ -364,6 +366,8 @@
       
   
   
+    
+  
   
   
     
@@ -381,22 +385,23 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../how-to-use/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   
@@ -409,13 +414,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             Getting Started
@@ -428,10 +433,32 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../how-to-use/install/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Install
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -442,6 +469,77 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      ⚙️ Prerequisites
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#maven" class="md-nav__link">
+    <span class="md-ellipsis">
+      🛠️ Maven
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🛠️ Maven">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#optionaly-verify-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      ✅ (Optionaly) Verify Installation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gradle" class="md-nav__link">
+    <span class="md-ellipsis">
+      🛠️ Gradle
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-from-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      🧱 Build from Sources
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -454,7 +552,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../how-to-use/examples/" class="md-nav__link">
+      <a href="../examples/" class="md-nav__link">
         
   
   
@@ -690,8 +788,6 @@
       
   
   
-    
-  
   
   
     
@@ -711,23 +807,22 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../../development/" class="md-nav__link ">
               
   
   
@@ -740,13 +835,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Development
@@ -762,7 +857,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../release/" class="md-nav__link">
+      <a href="../../development/release/" class="md-nav__link">
         
   
   
@@ -785,7 +880,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../documentation/" class="md-nav__link">
+      <a href="../../development/documentation/" class="md-nav__link">
         
   
   
@@ -805,32 +900,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    Guides
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../development/guides/" class="md-nav__link">
         
   
   
@@ -841,77 +914,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#how-to-run-jmh-benchmarks" class="md-nav__link">
-    <span class="md-ellipsis">
-      How to run JMH benchmarks
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="How to run JMH benchmarks">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#possible-problems" class="md-nav__link">
-    <span class="md-ellipsis">
-      Possible problems
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#load-test" class="md-nav__link">
-    <span class="md-ellipsis">
-      Load test
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#development_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      Development
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-to-get-segment-disk-size" class="md-nav__link">
-    <span class="md-ellipsis">
-      How to get segment disk size
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -951,19 +953,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#how-to-run-jmh-benchmarks" class="md-nav__link">
+  <a href="#prerequisites" class="md-nav__link">
     <span class="md-ellipsis">
-      How to run JMH benchmarks
+      ⚙️ Prerequisites
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="How to run JMH benchmarks">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#maven" class="md-nav__link">
+    <span class="md-ellipsis">
+      🛠️ Maven
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🛠️ Maven">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#possible-problems" class="md-nav__link">
+  <a href="#optionaly-verify-installation" class="md-nav__link">
     <span class="md-ellipsis">
-      Possible problems
+      ✅ (Optionaly) Verify Installation
     </span>
   </a>
   
@@ -975,27 +986,18 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#load-test" class="md-nav__link">
+  <a href="#gradle" class="md-nav__link">
     <span class="md-ellipsis">
-      Load test
+      🛠️ Gradle
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#development_1" class="md-nav__link">
+  <a href="#build-from-sources" class="md-nav__link">
     <span class="md-ellipsis">
-      Development
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-to-get-segment-disk-size" class="md-nav__link">
-    <span class="md-ellipsis">
-      How to get segment disk size
+      🧱 Build from Sources
     </span>
   </a>
   
@@ -1017,7 +1019,7 @@
 
 
   
-    <a href="https://github.com/jajir/HestiaStore/edit/master/docs/development/guides.md" title="Edit this page" class="md-content__button md-icon">
+    <a href="https://github.com/jajir/HestiaStore/edit/master/docs/how-to-use/install.md" title="Edit this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -1026,90 +1028,43 @@
     
       
     
-    <a href="https://github.com/jajir/HestiaStore/raw/master/docs/development/guides.md" title="View source of this page" class="md-content__button md-icon">
+    <a href="https://github.com/jajir/HestiaStore/raw/master/docs/how-to-use/install.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
     </a>
   
 
 
-<h1 id="development">Development</h1>
-<p>Here are some development related topiscs.</p>
-<h2 id="how-to-run-jmh-benchmarks">How to run JMH benchmarks</h2>
-<p>Follow this steps:
-* Compile whole project and create pacakge containing all benchmarks data
-* Go to <code>jmh-benchmarks</code>
-* Execute it, with temp directory in <code>target</code> directory</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>mvn<span class="w"> </span>clean<span class="w"> </span>install
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>jmh-benchmarks
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>java<span class="w"> </span>-Ddir<span class="o">=</span>./target/<span class="w"> </span>-jar<span class="w"> </span>target/jmh-benchmarks.jar
+<h1 id="installation-guide">Installation Guide</h1>
+<h2 id="prerequisites">⚙️ Prerequisites</h2>
+<ul>
+<li>Java 11 or higher</li>
+<li>Maven 3.6+ or Gradle 6+</li>
+</ul>
+<p>HestiaStore is distributed via Maven Central.</p>
+<h2 id="maven">🛠️ Maven</h2>
+<p>In your <code>pom.xml</code>, add the following to the <code>dependencies</code> section:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">&lt;dependencies&gt;</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">&lt;dependency&gt;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">&lt;groupId&gt;</span>org.hestiastore.index<span class="nt">&lt;/groupId&gt;</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nt">&lt;artifactId&gt;</span>core<span class="nt">&lt;/artifactId&gt;</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="nt">&lt;version&gt;</span>0.0.3<span class="nt">&lt;/version&gt;</span><span class="w"> </span><span class="cm">&lt;!-- Replace with the actual version --&gt;</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="nt">&lt;/dependency&gt;</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="nt">&lt;/dependencies&gt;</span>
 </code></pre></div>
-<p>Specific JMH benchmark class could be run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>java<span class="w"> </span>-Ddir<span class="o">=</span>./target/<span class="w"> </span>-jar<span class="w"> </span>target/jmh-benchmarks.jar<span class="w"> </span>SegmentSearchBenchmark
+<h3 id="optionaly-verify-installation">✅ (Optionaly) Verify Installation</h3>
+<p>To verify that HestiaStore was installed successfully and is accessible from your project, try compiling and running a minimal example or run:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>mvn<span class="w"> </span>dependency:tree
 </code></pre></div>
-<p>result could look like:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Benchmark                                             Mode  Cnt    Score      Error  Units
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>SequentialFileReadingBenchmark.test_with_buffer_01KB  avgt    4   70.747 ±   42.480  ms/op
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>SequentialFileReadingBenchmark.test_with_buffer_02KB  avgt    4   60.009 ±   52.899  ms/op
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>SequentialFileReadingBenchmark.test_with_buffer_04KB  avgt    4   51.254 ±   30.112  ms/op
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>SequentialFileReadingBenchmark.test_with_buffer_08KB  avgt    4   48.600 ±   28.892  ms/op
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>SequentialFileReadingBenchmark.test_with_buffer_16KB  avgt    4   48.471 ±   25.665  ms/op
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>SequentialFileReadingBenchmark.test_with_buffer_32KB  avgt    4   45.256 ±   24.986  ms/op
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>SequentialFileReadingBenchmark.test_with_buffer_64KB  avgt    4   45.204 ±   24.867  ms/op
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>SequentialFileWritingBenchmark.test_with_buffer_01KB  avgt    4  238.075 ±   75.311  ms/op
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>SequentialFileWritingBenchmark.test_with_buffer_02KB  avgt    4  271.272 ±   64.747  ms/op
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>SequentialFileWritingBenchmark.test_with_buffer_04KB  avgt    4  276.001 ±   45.815  ms/op
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>SequentialFileWritingBenchmark.test_with_buffer_08KB  avgt    4  352.189 ± 1140.814  ms/op
-<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>SequentialFileWritingBenchmark.test_with_buffer_16KB  avgt    4  258.806 ±   44.693  ms/op
-<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>SequentialFileWritingBenchmark.test_with_buffer_32KB  avgt    4  276.246 ±  135.019  ms/op
-<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>SequentialFileWritingBenchmark.test_with_buffer_64KB  avgt    4  275.944 ±  128.835  ms/op
+to confirm the dependency was resolved correctly.</p>
+<h2 id="gradle">🛠️ Gradle</h2>
+<p>For Gradle, add the following to your <code>build.gradle</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="o">{</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="n">implementation</span><span class="w"> </span><span class="s2">&quot;org.hestiastore.index:core:0.0.3&quot;</span><span class="w"> </span><span class="c1">// Replace with the actual version</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="o">}</span>
 </code></pre></div>
-<p>When some JMH benchmark class is changed command <code>mvn package</code> have to be run.</p>
-<h3 id="possible-problems">Possible problems</h3>
-<p>Generally JMH is quite fragile. Small changes broke JMH benchmark execution. Usually helps rebuild project and start again as described above.</p>
-<h2 id="load-test">Load test</h2>
-<p>Runnign JVM should be inspected with some profiller. For profilling is usefull to hae long running task to watch it. Go to project <code>load-test</code>. Following command show all optional parameters:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>java<span class="w"> </span>-jar<span class="w"> </span>target/load-test.jar<span class="w"> </span>com.coroptis.index.loadtest.Main<span class="w"> </span>--help
-</code></pre></div>
-<p>Theer are two main supported operations. First is data generating. It's could be usefull to place in java profilling agent. It could look like:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>java<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span>-agentpath:/Applications/YourKit-Java-Profiler-2023.9.app/Contents/Resources/bin/mac/libyjpagent.dylib<span class="o">=</span><span class="nv">exceptions</span><span class="o">=</span>disable,delay<span class="o">=</span><span class="m">10000</span>,listen<span class="o">=</span>all<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span>-jar<span class="w"> </span>target/load-test.jar<span class="w"> </span>com.coroptis.index.loadtest.Main<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span>--write<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span>--directory<span class="w"> </span>/Volumes/LaCie/test/<span class="w">  </span><span class="se">\</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span>--count<span class="w"> </span>5_000_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span>--max-number-of-keys-in-cache<span class="w"> </span>5_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span>--max-number-of-keys-in-segment<span class="w"> </span>10_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">    </span>--max-number-of-keys-in-segment-cache<span class="w"> </span>500_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">    </span>--max-number-of-keys-in-segment-cache-during-flushing<span class="w"> </span>2_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">    </span>--max-number-of-keys-in-segment-index-page<span class="w"> </span>1_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">    </span>--bloom-filter-index-size-in-bytes<span class="w"> </span>10_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">    </span>--bloom-filter-number-of-hash-functions<span class="w"> </span><span class="m">2</span>
-</code></pre></div>
-<p>It will generate 210 GB of testing data. Furst search test can be performed like this:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>java<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span>-agentpath:/Applications/YourKit-Java-Profiler-2023.9.app/Contents/Resources/bin/mac/libyjpagent.dylib<span class="o">=</span><span class="nv">exceptions</span><span class="o">=</span>disable,delay<span class="o">=</span><span class="m">10000</span>,listen<span class="o">=</span>all<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span>-jar<span class="w"> </span>target/load-test.jar<span class="w"> </span>com.coroptis.index.loadtest.Main<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span>--search<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">    </span>--directory<span class="w"> </span>/Volumes/LaCie/test/<span class="w">  </span><span class="se">\</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">    </span>--count<span class="w"> </span>5_000_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">    </span>--max-key<span class="w"> </span>5_000_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">    </span>--max-number-of-keys-in-cache<span class="w"> </span>5_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">    </span>--max-number-of-keys-in-segment<span class="w"> </span>10_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">    </span>--max-number-of-keys-in-segment-cache<span class="w"> </span>500_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">    </span>--max-number-of-keys-in-segment-cache-during-flushing<span class="w"> </span>2_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="w">    </span>--max-number-of-keys-in-segment-index-page<span class="w"> </span>1_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="w">    </span>--bloom-filter-index-size-in-bytes<span class="w"> </span>10_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="w">    </span>--bloom-filter-number-of-hash-functions<span class="w"> </span><span class="m">2</span>
-</code></pre></div>
-<h2 id="development_1">Development</h2>
-<p>Mockito requires reflective access to non-public parts in a Java module. It could be manually open by passing following parameter as jvm parameter:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>--add-opens=java.base/java.lang=ALL-UNNAMED
-</code></pre></div>
-<h2 id="how-to-get-segment-disk-size">How to get segment disk size</h2>
-<p>On apple try:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>diskutil  info /Volumes/LaCie
-</code></pre></div>
+<h2 id="build-from-sources">🧱 Build from Sources</h2>
+<p>Source code for each release can be downloaded from <a href="https://github.com/jajir/HestiaStore/releases">GitHub HestiaStore releases</a>. Then, build the desired version using <code>mvn install</code>.</p>
 
 
 

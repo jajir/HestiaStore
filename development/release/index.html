@@ -208,7 +208,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../how-to-use-index/" class="md-tabs__link">
+        <a href="../../how-to-use/" class="md-tabs__link">
           
   
   
@@ -372,6 +372,12 @@
     
       
         
+          
+        
+      
+        
+      
+        
       
     
     
@@ -391,8 +397,9 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
         
           
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
-            
+          <div class="md-nav__link md-nav__container">
+            <a href="../../how-to-use/" class="md-nav__link ">
+              
   
   
   <span class="md-ellipsis">
@@ -401,8 +408,14 @@
   </span>
   
 
-            <span class="md-nav__icon md-icon"></span>
-          </label>
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
@@ -412,18 +425,43 @@
           <ul class="md-nav__list" data-md-scrollfix>
             
               
+            
+              
                 
   
   
   
   
     <li class="md-nav__item">
-      <a href="../../how-to-use-index/" class="md-nav__link">
+      <a href="../../how-to-use/install/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    How to use HestiaStore
+    Install
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to-use/examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    examples
     
   </span>
   
@@ -1132,7 +1170,7 @@
 <h1 id="releasing-new-version">Releasing new version</h1>
 <p>Simple guide how to make new release.</p>
 <h2 id="versioning-of-the-project">Versioning of the project</h2>
-<p>Project use traditional versioning pattern. Version number consist of three numbers separated by dots. For example:</p>
+<p>Project use traditional versioning pattern. Described as Semantic Versioning, It's described at <a href="https://semver.org">https://semver.org</a>. Version number consist of three numbers separated by dots. For example:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>0.3.6
 </code></pre></div>
 <p>Meaning of number is:</p>
@@ -1143,7 +1181,7 @@
 </ul>
 <p>There are also snapshot versions with version number <code>0.3.6-SNAPSHOT</code>. Snapshot versions should not by sotred into maven repository.</p>
 <h2 id="branching-strategy">Branching strategy</h2>
-<p><img alt="project branching" src="./images/branching.png" /></p>
+<p><img alt="project branching" src="../../images/branching.png" /></p>
 <p>We use a simplified GitHub Flow:</p>
 <ul>
 <li><code>main</code>: the primary development and release branch. Small changes may be committed directly to <code>main</code>, while larger or experimental features must be developed in a separate branch and merged via pull request.</li>
@@ -1211,21 +1249,48 @@
 <ol>
 <li>Bump to next snapshot version:</li>
 </ol>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>mvn versions:set -DnewVersion=0.0.13-SNAPSHOT
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>mvn versions:set -DnewVersion=0.0.13-SNAPSHOT
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>git commit -am &quot;post-release: bumped to 0.0.13-SNAPSHOT&quot;
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>git push
 </code></pre></div>
+6. Go to <a href="https://github.com/jajir/HestiaStore/releases">https://github.com/jajir/HestiaStore/releases</a> and choose <code>Draft a new release</code>.</p>
+<ol>
+<li>
+<p>From drop down box <code>target: main</code> select <code>recent commits</code> and select correct one with name <code>release: version 0.0.12</code></p>
+</li>
+<li>
+<p>From frop down box <code>Choose a tag</code> enter <code>release-0.0.12</code> and click at <code>Create new tag: release ...</code>. Now in repo is tag clearly signalizing new release.</p>
+</li>
+<li>
+<p>Release title should be <code>Release 0.0.3</code> and in field <code>Write</code> enter:</p>
+</li>
+</ol>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>Release to maven central:
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="sb">```xml</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="nt">&lt;dependencies&gt;</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span><span class="nt">&lt;dependency&gt;</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">    </span><span class="nt">&lt;groupId&gt;</span>org.hestiastore.index<span class="nt">&lt;/groupId&gt;</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">    </span><span class="nt">&lt;artifactId&gt;</span>core<span class="nt">&lt;/artifactId&gt;</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">    </span><span class="nt">&lt;version&gt;</span>0.0.3<span class="nt">&lt;/version&gt;</span><span class="w"> </span><span class="cm">&lt;!-- Replace with the actual version --&gt;</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">  </span><span class="nt">&lt;/dependency&gt;</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="nt">&lt;/dependencies&gt;</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="sb">```</span>
+</code></pre></div>
+<ol>
+<li>Press <code>Publish release</code>.</li>
+</ol>
 <p>That's it — the release is live and development can continue.</p>
 <h2 id="helpfull-commands">Helpfull commands</h2>
 <h3 id="how-to-use-custom-settingsxml-file">How to use custom settings.xml file</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>mvn --settings ./src/main/settings.xml clean deploy
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>mvn --settings ./src/main/settings.xml clean deploy
 </code></pre></div>
 <h3 id="how-to-use-set-maven-project-version">How to use set maven project version</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>mvn versions:set -DnewVersion=1.0.1-SNAPSHOT
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>mvn versions:set -DnewVersion=1.0.1-SNAPSHOT
 </code></pre></div>
 <h3 id="check-dependencies">Check dependencies</h3>
 <p>try to update dependencies. Check them with:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>mvn versions:display-dependency-updates
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>mvn versions:display-dependency-updates
 </code></pre></div>
 
 
