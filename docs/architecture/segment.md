@@ -12,6 +12,7 @@ Segment is core part of index. It represents one string sorted table file with:
 operations like write and get should be always consistent. What is written is read. Iteration behave differently. better than provide old data it stop providing any data.
 
 Let's have a followin key value pairs in main index:
+
 ```text
 <a, 20 >
 <b, 30 >
@@ -19,6 +20,7 @@ Let's have a followin key value pairs in main index:
 ```
 
 In segment cache are following pairs:
+
 ```text
 <a, 25>
 <e, 28>
@@ -55,14 +57,14 @@ In segment following object are cached:
 
 There are few classes that provide lazy loading of segment data a flexibility to cache segment data. Segment data are managed by following classes: 
 
-![Sequence of call when cached data are required](./images/segment-cache-class1.png)
+![Sequence of call when cached data are required](../images/segment-cache-class1.png)
 
 Object `SegmentData` could contains objects `SegmentDeltaCache`, `BloomFilter` and `ScarceIndex`. All of them are lazy loaded by `SegmentDataSupplier`. For closer class description look at source code.
 
 
 The following image shows that `SegmentDatafactory` can be referenced from `SegmentDataProviderSimple`, which is the simplest implementation that merely holds segment data from the factory. The class `SegmentDataProviderFromMainCache` interacts with the main index cache where the segment data is stored. Data may be evicted from the cache without any notification.
 
-![Cache related object relations](./images/segment-cache-class2.png)
+![Cache related object relations](../images/segment-cache-class2.png)
 
 ## Writing to segment
 
@@ -70,5 +72,5 @@ Opening segment writer immediatelly close all segment readers. When writing oper
 
 Putting new pair into segment is here:
 
-![Segment writing sequence diagram](./images/segment-writing-seq.png)
+![Segment writing sequence diagram](../images/segment-writing-seq.png)
 
