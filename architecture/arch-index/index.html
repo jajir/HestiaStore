@@ -10,25 +10,25 @@
         <meta name="author" content="Jan Jirout">
       
       
-        <link rel="canonical" href="https://jajir.github.io/HestiaStore/segment/">
+        <link rel="canonical" href="https://jajir.github.io/HestiaStore/architecture/arch-index/">
       
       
-        <link rel="prev" href="../arch-index/">
+        <link rel="prev" href="../">
       
       
-        <link rel="next" href="../development/">
+        <link rel="next" href="../segment/">
       
       
-      <link rel="icon" href="../images/favicon.ico">
+      <link rel="icon" href="../../images/favicon.ico">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
     
     
       
-        <title>Segment - HestiaStore</title>
+        <title>Index Architecture - HestiaStore</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.342714a4.min.css">
       
       
 
@@ -47,7 +47,7 @@
       
     
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#segment-implementation" class="md-skip">
+        <a href="#architecture" class="md-skip">
           Skip to content
         </a>
       
@@ -82,9 +82,9 @@
 
 <header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="HestiaStore" class="md-header__button md-logo" aria-label="HestiaStore" data-md-component="logo">
+    <a href="../.." title="HestiaStore" class="md-header__button md-logo" aria-label="HestiaStore" data-md-component="logo">
       
-  <img src="../images/logo-square.png" alt="logo">
+  <img src="../../images/logo-square.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -101,7 +101,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Segment
+              Index Architecture
             
           </span>
         </div>
@@ -132,11 +132,18 @@
       </label>
       <nav class="md-search__options" aria-label="Search">
         
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
         <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
           
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
       
     </form>
     <div class="md-search__output">
@@ -180,7 +187,7 @@
   
   
     <li class="md-tabs__item">
-      <a href=".." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         
   
   
@@ -198,17 +205,20 @@
   
   
   
-    <li class="md-tabs__item">
-      <a href="../how-to-use-index/" class="md-tabs__link">
-        
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../how-to-use-index/" class="md-tabs__link">
+          
   
   
     
   
-  How to use it
+  Getting Started
 
-      </a>
-    </li>
+        </a>
+      </li>
+    
   
 
       
@@ -217,36 +227,20 @@
   
   
   
-    <li class="md-tabs__item">
-      <a href="../configuration/" class="md-tabs__link">
-        
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../configuration/" class="md-tabs__link">
+          
   
   
     
   
-  Configuraton
+  Configuration
 
-      </a>
-    </li>
-  
-
-      
-        
-  
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../logging/" class="md-tabs__link">
-        
-  
-  
+        </a>
+      </li>
     
-  
-  Logging
-
-      </a>
-    </li>
   
 
       
@@ -260,7 +254,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../architecture/" class="md-tabs__link">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -282,7 +276,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../development/" class="md-tabs__link">
+        <a href="../../development/" class="md-tabs__link">
           
   
   
@@ -324,9 +318,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="HestiaStore" class="md-nav__button md-logo" aria-label="HestiaStore" data-md-component="logo">
+    <a href="../.." title="HestiaStore" class="md-nav__button md-logo" aria-label="HestiaStore" data-md-component="logo">
       
-  <img src="../images/logo-square.png" alt="logo">
+  <img src="../../images/logo-square.png" alt="logo">
 
     </a>
     HestiaStore
@@ -353,7 +347,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -374,18 +368,75 @@
   
   
   
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Getting Started
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
-      <a href="../how-to-use-index/" class="md-nav__link">
+      <a href="../../how-to-use-index/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    How to use it
+    How to use HestiaStore
     
   </span>
   
 
       </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -396,30 +447,70 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../configuration/" class="md-nav__link">
+    
+    
+      
         
+          
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../configuration/" class="md-nav__link ">
+              
   
   
   <span class="md-ellipsis">
-    Configuraton
+    Configuration
     
   </span>
   
 
-      </a>
-    </li>
-  
-
-    
-      
-      
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Configuration
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
   
   
   
   
     <li class="md-nav__item">
-      <a href="../logging/" class="md-nav__link">
+      <a href="../../configuration/logging/" class="md-nav__link">
         
   
   
@@ -433,6 +524,14 @@
     </li>
   
 
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
     
       
       
@@ -446,6 +545,8 @@
     
       
         
+          
+        
       
         
       
@@ -458,6 +559,8 @@
         
         
       
+      
+        
       
     
     
@@ -465,11 +568,12 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
-            
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
   
   
   <span class="md-ellipsis">
@@ -478,60 +582,22 @@
   </span>
   
 
-            <span class="md-nav__icon md-icon"></span>
-          </label>
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             Architecture
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../architecture/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Architecture
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../arch-index/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Index architecture
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
               
             
               
@@ -555,7 +621,7 @@
   
   
   <span class="md-ellipsis">
-    Segment
+    Index Architecture
     
   </span>
   
@@ -568,7 +634,7 @@
   
   
   <span class="md-ellipsis">
-    Segment
+    Index Architecture
     
   </span>
   
@@ -591,51 +657,18 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#segment-putget-and-iterate-consistency" class="md-nav__link">
+  <a href="#operation-consistency" class="md-nav__link">
     <span class="md-ellipsis">
-      Segment put/get and iterate consistency
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Segment put/get and iterate consistency">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#case-1-read-data" class="md-nav__link">
-    <span class="md-ellipsis">
-      Case 1 - Read data
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#case-2-change-data" class="md-nav__link">
-    <span class="md-ellipsis">
-      Case 2 - Change data
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#caching-of-segment-data" class="md-nav__link">
-    <span class="md-ellipsis">
-      Caching of segment data
+      Operation consistency
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#writing-to-segment" class="md-nav__link">
+  <a href="#states" class="md-nav__link">
     <span class="md-ellipsis">
-      Writing to segment
+      States
     </span>
   </a>
   
@@ -645,6 +678,29 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../segment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Segment Design
+    
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -667,6 +723,10 @@
     
       
         
+          
+        
+      
+        
       
         
       
@@ -676,6 +736,8 @@
     
     
       
+      
+        
       
     
     
@@ -685,11 +747,12 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
-            
+          <div class="md-nav__link md-nav__container">
+            <a href="../../development/" class="md-nav__link ">
+              
   
   
   <span class="md-ellipsis">
@@ -698,38 +761,23 @@
   </span>
   
 
-            <span class="md-nav__icon md-icon"></span>
-          </label>
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Development
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
               
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../development/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Development
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
             
               
                 
@@ -738,7 +786,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../release/" class="md-nav__link">
+      <a href="../../development/release/" class="md-nav__link">
         
   
   
@@ -761,12 +809,35 @@
   
   
     <li class="md-nav__item">
-      <a href="../documentation/" class="md-nav__link">
+      <a href="../../development/documentation/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     Documentation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/guides/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Guides
     
   </span>
   
@@ -811,51 +882,18 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#segment-putget-and-iterate-consistency" class="md-nav__link">
+  <a href="#operation-consistency" class="md-nav__link">
     <span class="md-ellipsis">
-      Segment put/get and iterate consistency
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Segment put/get and iterate consistency">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#case-1-read-data" class="md-nav__link">
-    <span class="md-ellipsis">
-      Case 1 - Read data
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#case-2-change-data" class="md-nav__link">
-    <span class="md-ellipsis">
-      Case 2 - Change data
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#caching-of-segment-data" class="md-nav__link">
-    <span class="md-ellipsis">
-      Caching of segment data
+      Operation consistency
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#writing-to-segment" class="md-nav__link">
+  <a href="#states" class="md-nav__link">
     <span class="md-ellipsis">
-      Writing to segment
+      States
     </span>
   </a>
   
@@ -877,57 +915,39 @@
 
 
   
+    <a href="https://github.com/jajir/HestiaStore/edit/master/docs/architecture/arch-index.md" title="Edit this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+    
+      
+    
+    <a href="https://github.com/jajir/HestiaStore/raw/master/docs/architecture/arch-index.md" title="View source of this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
+    </a>
   
 
 
-<h1 id="segment-implementation">Segment implementation</h1>
-<p>Segment is core part of index. It represents one string sorted table file with:</p>
+<h1 id="architecture">Architecture</h1>
+<p>Here is described basic index concepts. This page explain you how to correctly configure index.</p>
+<p><img alt="basic index architecture" src="../../images/architecture.png" /></p>
+<h2 id="operation-consistency">Operation consistency</h2>
+<p>The <code>getStream()</code> method can sometimes return inconsistent results, occasionally omitting some items. This can occur in the following scenarios:</p>
 <ul>
-<li>Partial consistency - iterator stop working or return consistent data</li>
-<li>Support Writing changes into delta files</li>
-<li>Bloom filter for faster evaluating if key is in index</li>
-<li>Scarce index for faster searching for data in main index</li>
+<li>Segment Compaction: If data is being streamed from a segment and new keys are added to that segment during the process, the segment may stop providing additional keys. In this case, the stream operation will either continue with the next segment or terminate if no more segments are available.</li>
+<li>Adding New Keys: If a completely new key is added to the index and is only present in the main index cache, it will not be returned.</li>
 </ul>
-<h2 id="segment-putget-and-iterate-consistency">Segment put/get and iterate consistency</h2>
-<p>operations like write and get should be always consistent. What is written is read. Iteration behave differently. better than provide old data it stop providing any data.</p>
-<p>Let's have a followin key value pairs in main index:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>&lt;a, 20 &gt;
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>&lt;b, 30 &gt;
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>&lt;c, 40 &gt;
-</code></pre></div></p>
-<p>In segment cache are following pairs:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>&lt;a, 25&gt;
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>&lt;e, 28&gt;
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>&lt;b, tombstone&gt;
-</code></pre></div></p>
-<p>When user will iterate throught segment data, there will be followin cases:</p>
-<h3 id="case-1-read-data">Case 1 - Read data</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>iterator.read() --&gt; &lt;a, 25&gt;
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>iterator.read() --&gt; &lt;c, 40&gt;
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>iterator.read() --&gt; &lt;e, 28&gt;
-</code></pre></div>
-<h3 id="case-2-change-data">Case 2 - Change data</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>iterator.read() --&gt; &lt;a, 25&gt;
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>segment.write(c, 10)
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>iterator.read() --&gt; null
-</code></pre></div>
-<p>Any segment write operation will break segment iterator. It's easier way to secure segment consistency.  </p>
-<h2 id="caching-of-segment-data">Caching of segment data</h2>
-<p>In segment following object are cached:</p>
-<ul>
-<li>SegmentDeltaCache - contains changed key value pair from segment</li>
-<li>BloomFilter - bloom filter data</li>
-<li>ScarceIndex - scarce index data</li>
-</ul>
-<p>There are few classes that provide lazy loading of segment data a flexibility to cache segment data. Segment data are managed by following classes: </p>
-<p><img alt="Sequence of call when cached data are required" src="../images/segment-cache-class1.png" /></p>
-<p>Object <code>SegmentData</code> could contains objects <code>SegmentDeltaCache</code>, <code>BloomFilter</code> and <code>ScarceIndex</code>. All of them are lazy loaded by <code>SegmentDataSupplier</code>. For closer class description look at source code.</p>
-<p>The following image shows that <code>SegmentDatafactory</code> can be referenced from <code>SegmentDataProviderSimple</code>, which is the simplest implementation that merely holds segment data from the factory. The class <code>SegmentDataProviderFromMainCache</code> interacts with the main index cache where the segment data is stored. Data may be evicted from the cache without any notification.</p>
-<p><img alt="Cache related object relations" src="../images/segment-cache-class2.png" /></p>
-<h2 id="writing-to-segment">Writing to segment</h2>
-<p>Opening segment writer immediatelly close all segment readers. When writing operation add key that is in index but is not in cache this value will not returned updated. </p>
-<p>Putting new pair into segment is here:</p>
-<p><img alt="Segment writing sequence diagram" src="../images/segment-writing-seq.png" /></p>
+<p>To prevent these issues, you should call <code>compact()</code> before invoking <code>getStream()</code> and ensure no new keys are added during streaming.</p>
+<p>Updating values in the index using <code>put()</code> or deleting keys using <code>delete()</code> does not cause inconsistencies. Updated values will be returned, and deleted keys will be excluded from the stream.</p>
+<p>Other operations, like <code>get()</code>, remain consistently reliable.</p>
+<h2 id="states">States</h2>
+<p>Index could be in following states:</p>
+<p><img alt="Index methods" src="../../images/index-class.png" /></p>
+<p><img alt="Index states" src="../../images/index-state-diagram.png" /></p>
+<p>Interruption of process of writing data to index could lead to corruption of entire index.</p>
 
 
 
@@ -976,10 +996,10 @@
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.expand", "navigation.path", "navigation.indexes"], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "../..", "features": ["content.action.edit", "content.action.view", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      <script src="../../assets/javascripts/bundle.13a4f30d.min.js"></script>
       
     
   </body>
