@@ -37,21 +37,25 @@ We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING
 * [Segment implementation details](segment.md)
 -->
 
-## 🚀 How to Use HestiaStore
+## 📦 Installation and Basic Usage
 
-At file `pom.xml` to section `dependencies` add the following:
+To include HestiaStore in your Maven project, add the following dependency to your `pom.xml`:
 
 ```xml
 <dependencies>
   <dependency>
     <groupId>org.hestiastore.index</groupId>
     <artifactId>core</artifactId>
-    <version>0.0.3</version> <!-- Replace with the actual version -->
+    <version>0.0.3</version>
   </dependency>
 </dependencies>
 ```
 
-New Index should be created with builder, which make index instance. For example:
+Replace the version number with the latest available from Maven Central.
+
+**Note**: HestiaStore requires Java 17 or newer.
+
+You can create a new index using the builder pattern as shown below:
 
 ```java
 // Create an in-memory file system abstraction
@@ -65,16 +69,26 @@ IndexConfiguration<String, String> conf = IndexConfiguration
         .withName("test_index") //
         .build();
 
-// create new index
+// Create a new index
 Index<String, String> index = Index.<String, String>create(directory, conf);
 
-// Do some work with the index
+// Perform basic operations
 index.put("Hello", "World");
 
 String value = index.get("Hello");
 System.out.println("Value for 'Hello': " + value);
 ```
 
-### ❓ Need Help or Have Questions?
+## Road map
+
+I would like to:
+
+* Improve JavaDoc
+* Verify data consistency by se checksum
+* Finish WAL implementation
+
+For more concrete steps see [issues](https://github.com/jajir/HestiaStore/issues)
+
+## ❓ Need Help or Have Questions?
 
 If you encounter a bug, have a feature request, or need help using HestiaStore, please [create an issue](https://github.com/jajir/HestiaStore/issues).
