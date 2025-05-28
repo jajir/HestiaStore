@@ -16,7 +16,7 @@
         <link rel="prev" href="../logging/">
       
       
-        <link rel="next" href="../segment/">
+        <link rel="next" href="../arch-index/">
       
       
       <link rel="icon" href="../images/favicon.ico">
@@ -24,7 +24,7 @@
     
     
       
-        <title>index - HestiaStore</title>
+        <title>Architecture - HestiaStore</title>
       
     
     
@@ -80,7 +80,7 @@
 
   
 
-<header class="md-header md-header--shadow" data-md-component="header">
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href=".." title="HestiaStore" class="md-header__button md-logo" aria-label="HestiaStore" data-md-component="logo">
       
@@ -101,7 +101,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              index
+              Architecture
             
           </span>
         </div>
@@ -168,13 +168,144 @@
     
   </nav>
   
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../how-to-use-index/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  How to use it
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../configuration/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Configuraton
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../logging/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Logging
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../development/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Development
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
 </header>
     
     <div class="md-container" data-md-component="container">
       
       
-        
-          
         
       
       <main class="md-main" data-md-component="main">
@@ -188,8 +319,10 @@
                     
 
 
+  
 
-<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href=".." title="HestiaStore" class="md-nav__button md-logo" aria-label="HestiaStore" data-md-component="logo">
       
@@ -311,17 +444,31 @@
   
     
     
+      
+        
+      
+        
+      
+        
+      
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   
@@ -357,68 +504,41 @@
         
       
       
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    index
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
   <span class="md-ellipsis">
-    index
+    Architecture
     
   </span>
   
 
       </a>
       
-        
+    </li>
+  
 
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+              
+            
+              
+                
   
   
   
+  
+    <li class="md-nav__item">
+      <a href="../arch-index/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Index architecture
     
+  </span>
   
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#operation-consistency" class="md-nav__link">
-    <span class="md-ellipsis">
-      Operation consistency
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#states" class="md-nav__link">
-    <span class="md-ellipsis">
-      States
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
+
+      </a>
     </li>
   
 
@@ -462,14 +582,27 @@
   
     
     
+      
+        
+      
+        
+      
+        
+      
     
+    
+    
+      
+      
     
     
     <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
         
           
           <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
@@ -504,7 +637,7 @@
   
   
   <span class="md-ellipsis">
-    Architecture
+    Development
     
   </span>
   
@@ -528,6 +661,29 @@
   
   <span class="md-ellipsis">
     Release
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Documentation
     
   </span>
   
@@ -565,32 +721,6 @@
     
   
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#operation-consistency" class="md-nav__link">
-    <span class="md-ellipsis">
-      Operation consistency
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#states" class="md-nav__link">
-    <span class="md-ellipsis">
-      States
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
 </nav>
                   </div>
                 </div>
@@ -609,22 +739,6 @@
 
 
 <h1 id="architecture">Architecture</h1>
-<p>Here is described basic index concepts. This page explain you how to correctly configure index.</p>
-<p><img alt="basic index architecture" src="../images/architecture.png" /></p>
-<h2 id="operation-consistency">Operation consistency</h2>
-<p>The <code>getStream()</code> method can sometimes return inconsistent results, occasionally omitting some items. This can occur in the following scenarios:</p>
-<ul>
-<li>Segment Compaction: If data is being streamed from a segment and new keys are added to that segment during the process, the segment may stop providing additional keys. In this case, the stream operation will either continue with the next segment or terminate if no more segments are available.</li>
-<li>Adding New Keys: If a completely new key is added to the index and is only present in the main index cache, it will not be returned.</li>
-</ul>
-<p>To prevent these issues, you should call <code>compact()</code> before invoking <code>getStream()</code> and ensure no new keys are added during streaming.</p>
-<p>Updating values in the index using <code>put()</code> or deleting keys using <code>delete()</code> does not cause inconsistencies. Updated values will be returned, and deleted keys will be excluded from the stream.</p>
-<p>Other operations, like <code>get()</code>, remain consistently reliable.</p>
-<h2 id="states">States</h2>
-<p>Index could be in following states:</p>
-<p><img alt="Index methods" src="../images/index-class.png" /></p>
-<p><img alt="Index states" src="../images/index-state-diagram.png" /></p>
-<p>Interruption of process of writing data to index could lead to corruption of entire index.</p>
 
 
 
@@ -673,7 +787,7 @@
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.expand", "navigation.path", "navigation.indexes"], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
       <script src="../assets/javascripts/bundle.13a4f30d.min.js"></script>
