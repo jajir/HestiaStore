@@ -2,17 +2,17 @@
 
 Security and quality are important considerations in the HestiaStore project. While HestiaStore is a library (not a network-exposed service), several tools are in place to monitor and improve code and dependency safety.
 
-## Dependency Scanning
+## 🧪 Dependency Scanning
 
 HestiaStore uses the [OWASP Dependency-Check](https://owasp.org/www-project-dependency-check/) Maven plugin to automatically scan project dependencies for known vulnerabilities. The scan is performed during the Maven `verify` phase. This helps detect issues in third-party libraries such as outdated or vulnerable versions of common libraries.
 
 The OWASP dependency report is also included in the Maven Site documentation.
 
-## Data Storage Security
+## 💾 Data Storage Security
 
 Currently, HestiaStore does **not** support a persistent, remote or encrypted storage backend. All data is stored in the local file system or memory, depending on the `Directory` implementation (e.g. `FsDirectory` or `MemDirectory`). Support for more advanced persistent stores with security features like encryption may be added in the future.
 
-## Static Code Analysis
+## 🕵️ Static Code Analysis
 
 HestiaStore uses the following tools to enforce code quality and detect potential bugs:
 
@@ -21,7 +21,7 @@ HestiaStore uses the following tools to enforce code quality and detect potentia
 
 Both reports are available through the Maven Site (`mvn site`).
 
-## Testing and Coverage
+## ✅ Testing and Coverage
 
 The project includes a comprehensive suite of unit tests. Test coverage is measured using **JaCoCo**, and the coverage report is also published as part of the Maven Site.
 
@@ -31,7 +31,7 @@ mvn clean verify site
 
 This will generate the full set of reports under `target/site/`.
 
-## Threat Model
+## 🔐 Threat Model
 
 HestiaStore is designed to run as a component within a trusted local application. It does not expose network interfaces or provide internal access control mechanisms. As such, it assumes that:
 
@@ -39,7 +39,7 @@ HestiaStore is designed to run as a component within a trusted local application
 - Filesystem access is managed by the application or OS.
 - Inputs to the library are trusted or validated upstream.
 
-### Known Risks
+### ⚠️ Known Risks
 
 | Threat                      | Mitigated? | Notes |
 |----------------------------|------------|-------|
@@ -49,7 +49,7 @@ HestiaStore is designed to run as a component within a trusted local application
 | Memory data leakage        | ❌         | JVM memory is not encrypted or zeroed |
 | Index inconsistency        | ⚠️         | Recovery possible using `checkAndRepairConsistency()` |
 
-## Trust Boundaries
+## 🛡️ Trust Boundaries
 
 HestiaStore does not define security boundaries within its API. Instead, it assumes that:
 
@@ -57,7 +57,7 @@ HestiaStore does not define security boundaries within its API. Instead, it assu
 - Memory content is considered volatile and not protected against memory inspection.
 - The user is responsible for isolating the library appropriately in containerized or multi-tenant environments.
 
-## Data Integrity
+## 🔍 Data Integrity
 
 HestiaStore provides limited protections:
 
@@ -65,7 +65,7 @@ HestiaStore provides limited protections:
 - Manual compaction and `checkAndRepairConsistency()` assist in recovery from logical inconsistencies.
 - No built-in checksums or MACs are currently used.
 
-## Encryption
+## 🔒 Encryption
 
 HestiaStore does not implement:
 
@@ -75,7 +75,7 @@ HestiaStore does not implement:
 
 Users requiring data confidentiality should enable full-disk encryption or isolate the storage backend appropriately.
 
-## Denial of Service Considerations
+## 🏗️ Denial of Service Considerations
 
 While HestiaStore is efficient, certain usage patterns may degrade system performance:
 
@@ -83,7 +83,7 @@ While HestiaStore is efficient, certain usage patterns may degrade system perfor
 - Large segment files may incur slow read or compaction times.
 - `withThreadSafe(true)` may incur additional locking overhead under heavy concurrency.
 
-## Security Responsibilities of Integrators
+## 👷 Security Responsibilities of Integrators
 
 Users embedding HestiaStore must take responsibility for:
 
@@ -92,7 +92,7 @@ Users embedding HestiaStore must take responsibility for:
 - Applying memory and disk usage quotas externally
 - Protecting against unauthorized runtime access
 
-## Future Work
+## 🔧 Future Work
 
 Planned or considered improvements include:
 
@@ -100,7 +100,7 @@ Planned or considered improvements include:
 - Checksumming of stored values
 - Sandboxed key/value type descriptors
 
-## Summary
+## 📋 Summary
 
 - ✅ Vulnerability scanning via OWASP Dependency Check
 - ✅ Static analysis via PMD and SpotBugs

@@ -44,4 +44,4 @@ We appreciate your contribution, whether it's code, documentation, or ideas. You
 
 ---
 
-💬 For questions, feel free to open a GitHub Discussion or contact a maintainer.
+💬 For questions, feel free to open a [GitHub Issue](https://github.com/jajir/HestiaStore/issues).
