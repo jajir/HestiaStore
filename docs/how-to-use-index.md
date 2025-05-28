@@ -1,18 +1,5 @@
 > **Note:** HestiaStore is a library, not a standalone application. It is designed to be integrated into a larger system to provide efficient storage and retrieval of large volumes of key-value pairs.
 
-## Table of Contents
-
-- [Prerequisites](#prerequisites)
-- [Maven](#maven)
-- [Gradle](#gradle)
-- [Creating an index](#creating-an-index)
-- [Opening an existing index](#opening-an-existing-index)
-- [Data manipulation](#data-manipulation)
-- [Sequential data reading](#sequential-data-reading)
-- [Data maintenance](#data-maintenance)
-- [Limitations](#limitations)
-- [Thread Safety](#threadsafety)
-- [Exception handling](#exception-handling)
 
 # How to Use HestiaStore
 
@@ -26,21 +13,14 @@ HestiaStore is available via GitHub Packages. To use it in your project, you nee
 
 ## Maven
 
-Add the following to your `pom.xml`:
+At file `pom.xml` to section `dependencies ` add the following:
 
 ```xml
-<repositories>
-  <repository>
-    <id>github</id>
-    <url>https://maven.pkg.github.com/jajir/HestiaStore</url>
-  </repository>
-</repositories>
-
 <dependencies>
   <dependency>
-    <groupId>com.hestiastore</groupId>
-    <artifactId>hestia-store</artifactId>
-    <version>1.0.0</version> <!-- Replace with the actual version -->
+    <groupId>org.hestiastore.index</groupId>
+    <artifactId>core</artifactId>
+    <version>0.0.3</version> <!-- Replace with the actual version -->
   </dependency>
 </dependencies>
 ```
@@ -52,18 +32,8 @@ Add the following to your `pom.xml`:
 In your `build.gradle`:
 
 ```groovy
-repositories {
-  maven {
-    url = uri("https://maven.pkg.github.com/jajir/HestiaStore")
-    credentials {
-      username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
-      password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
-    }
-  }
-}
-
 dependencies {
-  implementation "com.hestiastore:hestia-store:1.0.0" // Replace with the actual version
+  implementation "org.hestiastore.index:core:0.0.3" // Replace with the actual version
 }
 ```
 

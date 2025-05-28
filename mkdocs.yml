@@ -13,11 +13,13 @@ nav:
     - Configuraton: configuration.md
     - Logging: logging.md
     - 'Architecture':
-        - index: architecture.md
+        - architecture.md
+        - Index architecture: arch-index.md
         - Segment: segment.md
     - 'Development':
-        - Architecture: development.md
+        - development.md
         - Release: release.md
+        - Documentation: documentation.md
 
 theme:
     name: material
@@ -26,8 +28,13 @@ theme:
     font:
         text: Roboto
         code: Roboto Mono
-#    features:
-#        - navigation.tabs
+    features:
+        - navigation.tabs
+        - navigation.tabs.sticky
+        - navigation.expand
+        - navigation.path
+        - navigation.indexes
+#        - toc.integrate # disable page TOC
 
 plugins:
 #    - build_plantuml:

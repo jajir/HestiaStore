@@ -35,7 +35,44 @@ The previous `devel` branch is no longer used and has been removed.
 
  Adjust settings.xml in `~/.m2/settings.xml` like this described at [github official documentation how to work with github maven repository](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry). Get correct token and it's done.
 
-### Make release
+## How to make release
+
+Release will appear in maven central.
+
+### Release prerequisities:
+
+1. File `~/m2/settings.xml` should contains:
+
+```xml
+<settings>
+    ...
+	<profile>
+	  <id>release</id>
+	  <properties>
+	    <gpg.executable>gpg</gpg.executable>
+	    <gpg.passphrase>--pgp-password--</gpg.passphrase>
+	  </properties>      
+	</profile>
+    ...
+</settings>
+```
+2. At [central.sonatype.com](https://central.sonatype.com/) heve to be account with verified namespace `org.hestiastore`. From section `Acount` key and password have to be generated. both should be placed at 
+
+```xml
+<settings>
+    ...
+    <servers>
+        <server>
+            <id>central</id>
+	        <username>------</username>
+	        <password>---------------token---------------</password>
+	    </server>
+    </servers>
+    ...
+</settings>
+```
+
+### Perform release 
 
 Perform the following steps to create a new release:
 
@@ -62,7 +99,7 @@ Perform the following steps to create a new release:
 4. Deploy the release (can be automated via GitHub Actions or done manually):
 
    ```
-   mvn deploy
+   mvn deploy -P release
    ```
 
 5. Bump to next snapshot version:
@@ -74,18 +111,6 @@ Perform the following steps to create a new release:
    ```
 
 That's it — the release is live and development can continue.
-
-# How to use project
-
-As release repository is used github packages. Released packages could be easily used in your project. In case of maven:
-
-```
-<dependency>
-  <groupId>com.coroptis</groupId>
-  <artifactId>jbindex</artifactId>
-  <version>x.y.z</version>
-</dependency>
-```
 
 ## Helpfull commands
 
