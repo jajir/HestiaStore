@@ -45,4 +45,4 @@ The `mkdocs.yml` file in the root directory controls site structure, navigation,
   ```bash
   mkdocs gh-deploy
   ```
-  In a few minutes new documentation will be published.
+  In a few minutes (could be 15 minutes) new documentation will be published.

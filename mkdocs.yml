@@ -9,17 +9,20 @@ repo_url: https://github.com/jajir/HestiaStore
 
 nav:
     - Home: index.md    
-    - How to use it: how-to-use-index.md
-    - Configuraton: configuration.md
-    - Logging: logging.md
+    - Getting Started:
+        - How to use HestiaStore: how-to-use-index.md
+    - Configuration:
+        - configuration/index.md
+        - Logging: configuration/logging.md
     - 'Architecture':
-        - architecture.md
-        - Index architecture: arch-index.md
-        - Segment: segment.md
+        - architecture/index.md
+        - Index Architecture: architecture/arch-index.md
+        - Segment Design: architecture/segment.md
     - 'Development':
-        - development.md
-        - Release: release.md
-        - Documentation: documentation.md
+        - development/index.md
+        - Release: development/release.md
+        - Documentation: development/documentation.md
+        - Guides: development/guides.md
 
 theme:
     name: material
@@ -29,14 +32,21 @@ theme:
         text: Roboto
         code: Roboto Mono
     features:
+        - content.action.edit
+        - content.action.view
         - navigation.tabs
         - navigation.tabs.sticky
+        - navigation.sections
         - navigation.expand
-        - navigation.path
-        - navigation.indexes
-#        - toc.integrate # disable page TOC
+        - navigation.path # Breadcrumbs navidation 
+        - navigation.indexes # Compact section name with link
+        - toc.follow
+        - search.highlight
+        - search.share
+        - search.suggest
 
 plugins:
+
 #    - build_plantuml:
 #        render: "server" # or "local" for local rendering
 #        bin_path: "/usr/local/bin/plantuml" # ignored when render: server

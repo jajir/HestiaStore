@@ -35,7 +35,7 @@ Bellow is the example Log4j2 configuration used in HestiaStore:
 
 this example will produce logs look like this:
 
-![HestiaStore log4j logs](./images/screenshot-logs.png)
+![HestiaStore log4j logs](./screenshot-logs.png)
 
 ### Log Appenders
 

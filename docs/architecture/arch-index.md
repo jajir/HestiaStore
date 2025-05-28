@@ -2,7 +2,7 @@
 
 Here is described basic index concepts. This page explain you how to correctly configure index.
 
-![basic index architecture](./images/architecture.png)
+![basic index architecture](../images/architecture.png)
 
 ## Operation consistency
 
@@ -21,8 +21,8 @@ Other operations, like `get()`, remain consistently reliable.
 
 Index could be in following states:
 
-![Index methods](./images/index-class.png)
+![Index methods](../images/index-class.png)
 
-![Index states](./images/index-state-diagram.png)
+![Index states](../images/index-state-diagram.png)
 
 Interruption of process of writing data to index could lead to corruption of entire index.
