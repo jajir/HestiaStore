@@ -16,7 +16,7 @@ public class IndexConfigurationBuilder<K, V> {
     private Integer bloomFilterIndexSizeInBytes;
     private Double bloomFilterProbabilityOfFalsePositive;
 
-    private int diskIoBufferSizeInBytes;
+    private Integer diskIoBufferSizeInBytes;
 
     private String indexName;
     private Class<K> keyClass;

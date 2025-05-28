@@ -38,6 +38,10 @@ public class MemDirectory implements Directory {
     @Override
     public FileWriter getFileWriter(final String fileName, final Access access,
             final int bufferSize) {
+        if (bufferSize <= 0) {
+            throw new IllegalArgumentException(
+                    "Buffer size must be greater than zero.");
+        }
         return new MemFileWriter(fileName, this, access);
     }
 
