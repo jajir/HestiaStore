@@ -1,10 +1,10 @@
 # Contributor Covenant Code of Conduct
 
-## Our Pledge
+## 🤝 Our Pledge
 
 In the interest of fostering an open and welcoming environment, we as contributors and maintainers pledge to making participation in our project and our community a harassment-free experience for everyone, regardless of age, body size, disability, ethnicity, gender identity and expression, level of experience, nationality, personal appearance, race, religion, or sexual identity and orientation.
 
-## Our Standards
+## 🌟 Our Standards
 
 Examples of behavior that contributes to creating a positive environment include:
 
@@ -22,17 +22,17 @@ Examples of unacceptable behavior by participants include:
 * Publishing others’ private information, such as a physical or email address, without their explicit permission
 * Other conduct which could reasonably be considered inappropriate in a professional setting
 
-## Our Responsibilities
+## 📋 Our Responsibilities
 
 Project maintainers are responsible for clarifying the standards of acceptable behavior and are expected to take appropriate and fair corrective action in response to any instances of unacceptable behavior.
 
-## Enforcement
+## 🛡️ Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project team via [project issue](https://github.com/jajir/HestiaStore/issues). All complaints will be reviewed and investigated and will result in a response that is deemed necessary and appropriate to the circumstances. The project team is obligated to maintain confidentiality with regard to the reporter of an incident. Further details of specific enforcement policies may be posted separately.
 
 Project maintainers who do not follow or enforce the Code of Conduct in good faith may face temporary or permanent repercussions as determined by other members of the project's leadership.
 
-## Attribution
+## 📎 Attribution
 
 This Code of Conduct is adapted from the [Contributor Covenant][homepage], version 2.0, available at <https://www.contributor-covenant.org/version/2/0/code_of_conduct.html>.
 

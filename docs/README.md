@@ -7,7 +7,6 @@
 [![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
 ![Maven Central Version](https://img.shields.io/maven-central/v/org.hestiastore.index/core)
 
-
 HestiaStore is a lightweight, embeddable key-value storage engine optimized for billions of records, designed to run in a single directory with high performance and minimal configuration.
 
 Features:
@@ -21,7 +20,11 @@ Features:
  • Optionaly could be thread safe
 ```
 
-## Documentation
+## 🤝 Contributing
+
+We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING.md) before submitting a pull request.
+
+## 📚 Documentation
 
 * [HestiaStore Index architecture](https://jajir.github.io/HestiaStore/architecture/)
 * [How to use HestiaStore](https://jajir.github.io/HestiaStore/how-to-use-index/) including some examples
@@ -33,9 +36,9 @@ Features:
 * [Segment implementation details](segment.md)
 -->
 
-## How to use HestiaStore
+## 🚀 How to Use HestiaStore
 
-At file `pom.xml` to section `dependencies ` add the following:
+At file `pom.xml` to section `dependencies` add the following:
 
 ```xml
 <dependencies>
@@ -48,7 +51,6 @@ At file `pom.xml` to section `dependencies ` add the following:
 ```
 
 New Index should be created with builder, which make index instance. For example:
-
 
 ```java
 // Create an in-memory file system abstraction
@@ -72,6 +74,6 @@ String value = index.get("Hello");
 System.out.println("Value for 'Hello': " + value);
 ```
 
-### Do you need help or do you have any questions?
+### ❓ Need Help or Have Questions?
 
-If you encounter a bug, have a feature request, or need help using HestiaStore, please [create an issue](https://github.com/jajir/HestiaStore/issues).	
+If you encounter a bug, have a feature request, or need help using HestiaStore, please [create an issue](https://github.com/jajir/HestiaStore/issues).
