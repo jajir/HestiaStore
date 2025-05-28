@@ -27,11 +27,11 @@ We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING
 
 ## 📚 Documentation
 
-* [HestiaStore Index architecture](https://jajir.github.io/HestiaStore/architecture/)
-* [How to use HestiaStore](https://jajir.github.io/HestiaStore/how-to-use-index/) including some examples
-* [Index configuration](https://jajir.github.io/HestiaStore/configuration/) and configuration properties explaining
-* [Library Logging](https://jajir.github.io/HestiaStore/logging/) How to setup loggin
-* [Project versioning and how to release](https://jajir.github.io/HestiaStore/release/) snapshot and new version
+* [HestiaStore Index architecture](https://hestiastore.org/architecture/arch-index/)
+* [How to use HestiaStore](https://hestiastore.org/how-to-use/) including some examples
+* [Index configuration](https://hestiastore.org/configuration/) and configuration properties explaining
+* [Library Logging](https://hestiastore.org/configuration/logging/) How to setup loggin
+* [Project versioning and how to release](https://hestiastore.org/development/release/) snapshot and new version
 
 <!--
 * [Segment implementation details](segment.md)
