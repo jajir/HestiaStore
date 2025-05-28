@@ -79,15 +79,15 @@ String value = index.get("Hello");
 System.out.println("Value for 'Hello': " + value);
 ```
 
-## Road map
+## 🗺️ Roadmap
 
-I would like to:
+Planned improvements include:
 
-* Improve JavaDoc
-* Verify data consistency by se checksum
-* Finish WAL implementation
+* Enhance Javadoc documentation
+* Implement data consistency verification using checksums
+* Complete the implementation of Write-Ahead Logging (WAH)
 
-For more concrete steps see [issues](https://github.com/jajir/HestiaStore/issues)
+For detailed tasks and progress, see the [GitHub Issues](https://github.com/jajir/HestiaStore/issues) page.
 
 ## ❓ Need Help or Have Questions?
 
