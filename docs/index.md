@@ -13,7 +13,7 @@ Features:
  • Optionaly could be thread safe
 ```
 
-## How to use HestiaStore
+## Quick Start with HestiaStore
 
 Index should be created with builder, which make index instance. For example:
 

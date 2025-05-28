@@ -10,7 +10,9 @@ repo_url: https://github.com/jajir/HestiaStore
 nav:
     - Home: index.md    
     - Getting Started:
-        - How to use HestiaStore: how-to-use-index.md
+        - how-to-use/index.md
+        - Install: how-to-use/install.md
+        - examples: how-to-use/examples.md
     - Configuration:
         - configuration/index.md
         - Logging: configuration/logging.md

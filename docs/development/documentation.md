@@ -40,6 +40,7 @@ The `mkdocs.yml` file in the root directory controls site structure, navigation,
 * From [github.com/jajir/HestiaStore](https://github.com/jajir/HestiaStore/) checkout branch `docs`. 
 * Make changes
 * Commit changes to `docs`
+* Pull again to be sure, that latest chnages from branch `gh-pages` is at local.
 * Then, run the following command locally:
 
   ```bash

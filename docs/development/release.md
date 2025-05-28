@@ -4,7 +4,7 @@ Simple guide how to make new release.
 
 ## Versioning of the project
 
-Project use traditional versioning pattern. Version number consist of three numbers separated by dots. For example:
+Project use traditional versioning pattern. Described as Semantic Versioning, It's described at [https://semver.org](https://semver.org). Version number consist of three numbers separated by dots. For example:
 
 ```
 0.3.6
@@ -20,7 +20,7 @@ There are also snapshot versions with version number `0.3.6-SNAPSHOT`. Snapshot 
 
 ## Branching strategy
 
-![project branching](./images/branching.png)
+![project branching](../images/branching.png)
 
 We use a simplified GitHub Flow:
 
@@ -109,7 +109,31 @@ Perform the following steps to create a new release:
    git commit -am "post-release: bumped to 0.0.13-SNAPSHOT"
    git push
    ```
+6. Go to [https://github.com/jajir/HestiaStore/releases](https://github.com/jajir/HestiaStore/releases) and choose `Draft a new release`.
 
+7. From drop down box `target: main` select `recent commits` and select correct one with name `release: version 0.0.12`
+
+8. From frop down box `Choose a tag` enter `release-0.0.12` and click at `Create new tag: release ...`. Now in repo is tag clearly signalizing new release.
+
+9. Release title should be `Release 0.0.3` and in field `Write` enter:
+
+````markdown
+Release to maven central:
+
+```xml
+<dependencies>
+  <dependency>
+    <groupId>org.hestiastore.index</groupId>
+    <artifactId>core</artifactId>
+    <version>0.0.3</version> <!-- Replace with the actual version -->
+  </dependency>
+</dependencies>
+```
+
+````
+
+10. Press `Publish release`.
+ 
 That's it — the release is live and development can continue.
 
 ## Helpfull commands
