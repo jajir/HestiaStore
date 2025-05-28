@@ -23,7 +23,7 @@ Bellow is the example Log4j2 configuration used in HestiaStore:
 
   </Appenders>
   <Loggers>
-    <logger name="com.hestiastore.index" level="DEBUG" additivity="false">
+    <logger name="org.hestiastore.index" level="DEBUG" additivity="false">
       <appender-ref ref="indexAppender" />
     </logger>
     <Root level="DEBUG">
@@ -40,7 +40,7 @@ this example will produce logs look like this:
 ### Log Appenders
 
 - **Console (default)**: Used by all components not explicitly assigned a logger. Outputs time, level, thread, and class name.
-- **indexAppender**: Specifically configured for `com.hestiastore.index`, outputs additional context (`index.name`) for disambiguating messages from different index instances.
+- **indexAppender**: Specifically configured for `org.hestiastore.index`, outputs additional context (`index.name`) for disambiguating messages from different index instances.
 
 ### Customizing Logging Levels
 
