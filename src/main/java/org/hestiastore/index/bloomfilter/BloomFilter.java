@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 public final class BloomFilter<K> implements CloseableResource {
 
-    private final static String TEMP_FILE_EXTENSION = ".tmp";
+    private static final String TEMP_FILE_EXTENSION = ".tmp";
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
