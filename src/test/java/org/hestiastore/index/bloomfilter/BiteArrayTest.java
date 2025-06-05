@@ -10,6 +10,27 @@ import org.junit.jupiter.api.Test;
 
 public class BiteArrayTest {
 
+    private final static int BIT_ARRAY_SIZE = 10;
+    private final static int TESTED_BYTE = 7;
+    private final static int BITS_IN_BYTE = 8;
+
+    @Test
+    void test_setBit() {
+        // Arrange
+        BitArray bitArray = new BitArray(BIT_ARRAY_SIZE);
+
+        for (int i = 0; i < BITS_IN_BYTE; i++) {
+            final int index = TESTED_BYTE * BITS_IN_BYTE + i;
+            bitArray.setBit(index);
+        }
+
+        for (int i = 0; i < BITS_IN_BYTE; i++) {
+            final int index = TESTED_BYTE * BITS_IN_BYTE + i;
+            assertTrue(bitArray.get(index),
+                    "Bit at index " + index + " should be set");
+        }
+    }
+
     @Test
     void testSetBit_validIndex() {
         // Arrange
