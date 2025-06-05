@@ -15,6 +15,13 @@ public class BitArray {
         byteArray = Objects.requireNonNull(data, "Data are null");
     }
 
+    /**
+     * Sets the bit at the specified index to 1.
+     *
+     * @param index the index of the bit to set
+     * @return true if the bit was changed, false if it was already set
+     * @throws IndexOutOfBoundsException if the index is out of bounds
+     */
     public boolean setBit(final int index) {
         if (index < 0 || index >= byteArray.length * 8) {
             throw new IndexOutOfBoundsException("Invalid index");
@@ -24,8 +31,8 @@ public class BitArray {
         int bitIndex = index % 8;
 
         byte oldValue = byteArray[byteIndex];
-        byte newValue = (byte) (oldValue | (1 << bitIndex));
-        
+        byte newValue = (byte) (oldValue & 0xff | (1 << bitIndex));
+
         byteArray[byteIndex] = newValue;
 
         return oldValue != newValue;
@@ -43,7 +50,7 @@ public class BitArray {
         int byteIndex = index / 8;
         int bitIndex = index % 8;
 
-        byte b = byteArray[byteIndex];
+        int b = byteArray[byteIndex] & 0xff; // Convert byte to unsigned int
 
         return (b & (1 << bitIndex)) != 0;
     }

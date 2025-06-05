@@ -80,16 +80,25 @@ public final class Hash {
         int h1 = MurmurHash3.hash32x86(data, 0, data.length, 0);
         int h2 = MurmurHash3.hash32x86(data, 0, data.length, h1);
 
-        boolean bitsChanged = false;
         for (int i = 1; i <= numHashFunctions; i++) {
             int combinedHash = h1 + (i * h2);
             // Flip all the bits if it's negative (guaranteed positive number)
             if (combinedHash < 0) {
                 combinedHash = ~combinedHash;
             }
-            bitsChanged |= bits.get((int) (combinedHash % bitSize));
+            final boolean bitSet = bits.get((int) (combinedHash % bitSize));
+            if (!bitSet) {
+                /**
+                 * There is at least one bit that is not set. So I can say that
+                 * data is not stored into index.
+                 */
+                return true;
+            }
         }
-        return bitsChanged;
+        /**
+         * All bits are set, so I can say that data is probably stored in index.
+         */
+        return false;
     }
 
     public byte[] getData() {

@@ -21,7 +21,7 @@ public class BiteArrayTest {
 
         for (int i = 0; i < BITS_IN_BYTE; i++) {
             final int index = TESTED_BYTE * BITS_IN_BYTE + i;
-            bitArray.setBit(index);
+            assertTrue(bitArray.setBit(index));
         }
 
         for (int i = 0; i < BITS_IN_BYTE; i++) {
@@ -33,31 +33,38 @@ public class BiteArrayTest {
 
     @Test
     void test_setBit_initilized_to0() {
-        // Arrange
         BitArray bitArray = new BitArray(BIT_ARRAY_SIZE);
 
-        bitArray.setBit(5);
+        bitArray.setBit(30 + 5);
 
-        assertFalse(bitArray.get(0));
-        assertFalse(bitArray.get(1));
-        assertFalse(bitArray.get(2));
-        assertFalse(bitArray.get(3));
-        assertFalse(bitArray.get(4));
-        assertTrue(bitArray.get(5));
-        assertFalse(bitArray.get(6));
-        assertFalse(bitArray.get(7));
-
+        assertFalse(bitArray.get(30 + 0));
+        assertFalse(bitArray.get(30 + 1));
+        assertFalse(bitArray.get(30 + 2));
+        assertFalse(bitArray.get(30 + 3));
+        assertFalse(bitArray.get(30 + 4));
+        assertTrue(bitArray.get(30 + 5));
+        assertFalse(bitArray.get(30 + 6));
+        assertFalse(bitArray.get(30 + 7));
     }
 
     @Test
     void test_setBit_notInitialized() {
-        // Arrange
         BitArray bitArray = new BitArray(BIT_ARRAY_SIZE);
 
         for (int i = 0; i < BITS_IN_BYTE; i++) {
             final int index = TESTED_BYTE * BITS_IN_BYTE + i;
-            bitArray.setBit(index);
+            assertTrue(bitArray.setBit(index));
             assertTrue(bitArray.get(index),
+                    "Bit at index " + index + " should be set");
+        }
+    }
+
+    @Test
+    void test_array_is_set_to_0() {
+        BitArray bitArray = new BitArray(BIT_ARRAY_SIZE);
+
+        for (int index = 0; index < BITS_IN_BYTE * BIT_ARRAY_SIZE; index++) {
+            assertFalse(bitArray.get(index),
                     "Bit at index " + index + " should be set");
         }
     }

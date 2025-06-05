@@ -131,7 +131,7 @@ public class BloomFilterTest {
                 .withConvertorToBytes(STD.getConvertorToBytes())//
                 .withDirectory(directory)//
                 .withIndexSizeInBytes(100)//
-                .withNumberOfHashFunctions(10)//
+                .withNumberOfHashFunctions(2)//
                 .withRelatedObjectName("segment-00323")//
                 .build();
     }
