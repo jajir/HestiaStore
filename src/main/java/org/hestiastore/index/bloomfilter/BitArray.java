@@ -25,6 +25,7 @@ public class BitArray {
 
         byte oldValue = byteArray[byteIndex];
         byte newValue = (byte) (oldValue | (1 << bitIndex));
+        
         byteArray[byteIndex] = newValue;
 
         return oldValue != newValue;
@@ -42,10 +43,9 @@ public class BitArray {
         int byteIndex = index / 8;
         int bitIndex = index % 8;
 
-        byte oldValue = byteArray[byteIndex];
-        byte newValue = (byte) (oldValue | (1 << bitIndex));
+        byte b = byteArray[byteIndex];
 
-        return oldValue != newValue;
+        return (b & (1 << bitIndex)) != 0;
     }
 
     public int bitSize() {
