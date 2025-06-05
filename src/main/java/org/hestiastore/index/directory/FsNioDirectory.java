@@ -3,8 +3,6 @@ package org.hestiastore.index.directory;
 import java.io.File;
 import java.util.Objects;
 
-import org.hestiastore.index.IndexException;
-
 public final class FsNioDirectory extends AbstractDirectory {
 
     private static final int DEFAULT_BUFFER_SIZE = 1024 * 1 * 4;
@@ -55,7 +53,7 @@ public final class FsNioDirectory extends AbstractDirectory {
 
     @Override
     public String toString() {
-        return "FsDirectory{directory=" + getDirectory().getPath() + "}";
+        return "FsNioDirectory{directory=" + getDirectory().getPath() + "}";
     }
 
     @Override
