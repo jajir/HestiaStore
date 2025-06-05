@@ -7,7 +7,7 @@ import java.util.stream.Stream;
 
 import org.hestiastore.index.IndexException;
 
-public final class FsZipDirectory implements Directory {
+public final class FsZipDirectory extends AbstractDirectory {
 
     private final File directory;
 
@@ -28,10 +28,7 @@ public final class FsZipDirectory implements Directory {
     @Override
     public FileReader getFileReader(final String fileName) {
         final File file = getFile(fileName);
-        if (!file.exists()) {
-            throw new IndexException(String.format("File '%s' doesn't exists.",
-                    file.getAbsolutePath()));
-        }
+        assureThatFileExists(file);
         return new FsZipFileReaderStream(file);
     }
 
@@ -45,10 +42,7 @@ public final class FsZipDirectory implements Directory {
     public void renameFile(final String currentFileName,
             final String newFileName) {
         final File file = getFile(currentFileName);
-        if (!file.exists()) {
-            throw new IndexException(String.format("File '%s' doesn't exists.",
-                    file.getAbsolutePath()));
-        }
+        assureThatFileExists(file);
         if (!file.renameTo(getFile(newFileName))) {
             throw new IndexException(
                     String.format("Unable to rename file '%s' to '%s'.",
