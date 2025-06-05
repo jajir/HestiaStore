@@ -1,6 +1,9 @@
 package org.hestiastore.index.directory;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
@@ -12,11 +15,58 @@ import org.hestiastore.index.Vldtn;
  */
 public abstract class AbstractDirectory implements Directory {
 
+    private final File directory;
+
+    public AbstractDirectory(final File directory) {
+        this.directory = Vldtn.requireNonNull(directory, "directory");
+        if (!directory.exists() && !directory.mkdirs()) {
+            throw new IndexException(
+                    String.format("Unable to create directory '%s'.",
+                            directory.getAbsolutePath()));
+        }
+        if (directory.isFile()) {
+            throw new IndexException(String.format(
+                    "There is required directory but '%s' is file.",
+                    directory.getAbsolutePath()));
+        }
+    }
+
+    protected File getDirectory() {
+        return directory;
+    }
+
     protected void assureThatFileExists(final File file) {
         Vldtn.requireNonNull(file, "file");
         if (!file.exists()) {
             throw new IndexException(String.format("File '%s' doesn't exists.",
                     file.getAbsolutePath()));
+        }
+    }
+
+    protected File getFile(final String fileName) {
+        Objects.requireNonNull(fileName);
+        return directory.toPath().resolve(fileName).toFile();
+    }
+
+    @Override
+    public boolean deleteFile(final String fileName) {
+        return getFile(fileName).delete();
+    }
+
+    @Override
+    public Stream<String> getFileNames() {
+        return Arrays.stream(directory.list());
+    }
+
+    @Override
+    public void renameFile(final String currentFileName,
+            final String newFileName) {
+        final File file = getFile(currentFileName);
+        assureThatFileExists(file);
+        if (!file.renameTo(getFile(newFileName))) {
+            throw new IndexException(
+                    String.format("Unable to rename file '%s' to name '%s'.",
+                            file.getAbsolutePath(), newFileName));
         }
     }
 
