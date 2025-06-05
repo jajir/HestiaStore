@@ -14,9 +14,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class SegmentWriterTest {
 
-    private final static Pair<Integer, String> PAIR_1 = Pair.of(1, "aaa");
-    private final static Pair<Integer, String> PAIR_2 = Pair.of(2, "bbb");
-    private final static Pair<Integer, String> PAIR_3 = Pair.of(3, "ccc");
+    private static final Pair<Integer, String> PAIR_1 = Pair.of(1, "aaa");
+    private static final Pair<Integer, String> PAIR_2 = Pair.of(2, "bbb");
+    private static final Pair<Integer, String> PAIR_3 = Pair.of(3, "ccc");
 
     @Mock
     private SegmentCompacter<Integer, String> segmentCompacter;

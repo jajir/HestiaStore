@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 
 public class MemFileLockTest {
 
-    private final static String LOCK_FILE_NAME = ".lock";
+    private static final String LOCK_FILE_NAME = ".lock";
     private Directory directory = null;
 
     @Test

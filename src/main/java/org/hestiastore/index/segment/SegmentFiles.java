@@ -17,12 +17,12 @@ import org.hestiastore.index.sorteddatafile.SortedDataFile;
  */
 public final class SegmentFiles<K, V> {
 
-    private final static String INDEX_FILE_NAME_EXTENSION = ".index";
-    private final static String SCARCE_FILE_NAME_EXTENSION = ".scarce";
-    final static String CACHE_FILE_NAME_EXTENSION = ".cache";
-    private final static String TEMP_FILE_NAME_EXTENSION = ".tmp";
-    private final static String BOOM_FILTER_FILE_NAME_EXTENSION = ".bloom-filter";
-    private final static String PROPERTIES_FILENAME_EXTENSION = ".properties";
+    private static final String INDEX_FILE_NAME_EXTENSION = ".index";
+    private static final String SCARCE_FILE_NAME_EXTENSION = ".scarce";
+    static final String CACHE_FILE_NAME_EXTENSION = ".cache";
+    private static final String TEMP_FILE_NAME_EXTENSION = ".tmp";
+    private static final String BOOM_FILTER_FILE_NAME_EXTENSION = ".bloom-filter";
+    private static final String PROPERTIES_FILENAME_EXTENSION = ".properties";
 
     private final Directory directory;
     private final SegmentId id;

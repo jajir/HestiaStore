@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 
 public class IntegrationScarceIndexTest {
 
-    private final static String FILE_NAME = "pok.dat";
+    private static final String FILE_NAME = "pok.dat";
     private final TypeDescriptorString stringTd = new TypeDescriptorString();
 
     @Test

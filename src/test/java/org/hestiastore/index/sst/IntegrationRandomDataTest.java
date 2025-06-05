@@ -35,9 +35,9 @@ public class IntegrationRandomDataTest {
         random = new Random();
     }
 
-    private final static int TEST_ITEMS = 10000;
-    private final static int TEST_UPDATE_LOOPS = 2;
-    private final static int TEST_STRING_LENGTH = 10;
+    private static final int TEST_ITEMS = 10000;
+    private static final int TEST_UPDATE_LOOPS = 2;
+    private static final int TEST_STRING_LENGTH = 10;
 
     public void testRandomOperations() {
         // Step 1: Insert random key-value pairs

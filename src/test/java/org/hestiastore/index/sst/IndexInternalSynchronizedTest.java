@@ -16,7 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class IndexInternalSynchronizedTest {
 
-    private final static TypeDescriptor<Integer> TD_INTEGER = new TypeDescriptorInteger();
+    private static final TypeDescriptor<Integer> TD_INTEGER = new TypeDescriptorInteger();
     private TypeDescriptor<String> TD_STRING = new TypeDescriptorString();
 
     private Directory directory = new MemDirectory();

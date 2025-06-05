@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 
 public final class FsFileWriterStream implements FileWriter {
 
-    private final static Logger logger = LoggerFactory
+    private static final Logger logger = LoggerFactory
             .getLogger(FsFileWriterStream.class);
 
     private final OutputStream fio;

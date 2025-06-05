@@ -12,9 +12,9 @@ import org.hestiastore.index.datatype.TypeWriter;
 public class TypeDescriptorLogOperation
         implements TypeDescriptor<LogOperation> {
 
-    private final static byte END_OF_FILE = -1;
+    private static final byte END_OF_FILE = -1;
 
-    private final static TypeDescriptorByte TDB = new TypeDescriptorByte();
+    private static final TypeDescriptorByte TDB = new TypeDescriptorByte();
 
     @Override
     public ConvertorToBytes<LogOperation> getConvertorToBytes() {

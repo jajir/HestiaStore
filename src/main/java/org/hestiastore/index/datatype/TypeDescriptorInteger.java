@@ -7,7 +7,7 @@ public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
     /**
      * Thombstone value, use can't use it.
      */
-    public final static Integer TOMBSTONE_VALUE = Integer.MIN_VALUE + 1;
+    public static final Integer TOMBSTONE_VALUE = Integer.MIN_VALUE + 1;
 
     /**
      * How many bytes is required to store Integer.

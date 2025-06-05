@@ -7,14 +7,14 @@ import org.hestiastore.index.directory.Directory;
 
 public final class SegmentBuilder<K, V> {
 
-    private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = 1000
+    private static final int DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = 1000
             * 1000 * 10;
-    private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE
+    private static final int DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE
             * 5;
 
-    private final static int DEFAULT_MAX_NUMBER_OF_KEYS_IN_INDEX_PAGE = 1000;
+    private static final int DEFAULT_MAX_NUMBER_OF_KEYS_IN_INDEX_PAGE = 1000;
 
-    private final static int DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES = 1024 * 4;
+    private static final int DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES = 1024 * 4;
 
     private Directory directory;
     private SegmentId id;

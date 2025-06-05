@@ -16,8 +16,8 @@ import org.slf4j.LoggerFactory;
 
 public class IntegrationIndexIteratorTest {
 
-    private final static TypeDescriptorString TD_STRING = new TypeDescriptorString();
-    private final static TypeDescriptorInteger TD_INTEGER = new TypeDescriptorInteger();
+    private static final TypeDescriptorString TD_STRING = new TypeDescriptorString();
+    private static final TypeDescriptorInteger TD_INTEGER = new TypeDescriptorInteger();
 
     private final Logger logger = LoggerFactory
             .getLogger(IntegrationIndexIteratorTest.class);

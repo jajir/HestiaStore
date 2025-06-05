@@ -8,7 +8,7 @@ import org.hestiastore.index.directory.Directory;
 
 public class UnsortedDataFileBuilder<K, V> {
 
-    private final static int DEFAULT_DISK_IO_BUFFER_SIZE = 4 * 1024;
+    private static final int DEFAULT_DISK_IO_BUFFER_SIZE = 4 * 1024;
 
     private Directory directory;
 

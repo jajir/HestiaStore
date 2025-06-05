@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 
 public class IntegrationSortedDataFileTest {
 
-    private final static String FILE_NAME = "pok.index";
+    private static final String FILE_NAME = "pok.index";
     private final TypeDescriptor<Integer> tdi = new TypeDescriptorInteger();
     private final TypeDescriptor<String> tds = new TypeDescriptorString();
     private final Pair<String, Integer> P1 = Pair.of("a", 1);

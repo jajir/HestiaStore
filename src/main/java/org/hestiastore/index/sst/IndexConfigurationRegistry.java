@@ -24,7 +24,7 @@ public class IndexConfigurationRegistry {
 
         private final String memory;
 
-        public final static Key of(final Class<?> clazz, final String memory) {
+        public static final Key of(final Class<?> clazz, final String memory) {
             return new Key(clazz, memory);
         }
 
@@ -53,7 +53,7 @@ public class IndexConfigurationRegistry {
 
     }
 
-    private final static Map<Key, IndexConfigurationDefault> confs = new HashMap<>();
+    private static final Map<Key, IndexConfigurationDefault> confs = new HashMap<>();
 
     static {
         addTypeDefaultConf(Integer.class,

@@ -35,7 +35,7 @@ public enum LogOperation {
     }
 
     private static class Constants {
-        private final static byte POST_CODE = (byte) 80; // ASCII value for 'P'
-        private final static byte DELETE_CODE = (byte) 68;// ASCII value for 'D'
+        private static final byte POST_CODE = (byte) 80; // ASCII value for 'P'
+        private static final byte DELETE_CODE = (byte) 68;// ASCII value for 'D'
     }
 }

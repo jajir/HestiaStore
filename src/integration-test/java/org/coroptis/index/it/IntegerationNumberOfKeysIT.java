@@ -17,10 +17,10 @@ import org.junit.jupiter.api.Test;
 
 public class IntegerationNumberOfKeysIT {
     private final SegmentId SEGMENT_ID = SegmentId.of(29);
-    private final static Random RANDOM = new Random();
-    private final static int NUMBER_OF_TESTING_PAIRS = 1_000_000;
-    private final static TypeDescriptor<String> TYPE_DESCRIPTOR_STRING = new TypeDescriptorString();
-    private final static TypeDescriptor<Long> TYPE_DESCRIPTOR_LONG = new TypeDescriptorLong();
+    private static final Random RANDOM = new Random();
+    private static final int NUMBER_OF_TESTING_PAIRS = 1_000_000;
+    private static final TypeDescriptor<String> TYPE_DESCRIPTOR_STRING = new TypeDescriptorString();
+    private static final TypeDescriptor<Long> TYPE_DESCRIPTOR_LONG = new TypeDescriptorLong();
 
     private Directory directory;
 

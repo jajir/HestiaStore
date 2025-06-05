@@ -7,7 +7,7 @@ import org.hestiastore.index.directory.Directory;
 
 public class SortedDataFileBuilder<K, V> {
 
-    private final static int DELAULT_FILE_READING_BUFFER_SIZE = 1024 * 4;
+    private static final int DELAULT_FILE_READING_BUFFER_SIZE = 1024 * 4;
 
     private Directory directory;
 

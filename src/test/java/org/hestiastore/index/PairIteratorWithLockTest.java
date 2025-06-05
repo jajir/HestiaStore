@@ -18,7 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class PairIteratorWithLockTest {
 
-    private final static SegmentId SEGMENT_ID = SegmentId.of(27);
+    private static final SegmentId SEGMENT_ID = SegmentId.of(27);
 
     @Mock
     private PairIteratorWithLock<String, Integer> iter;

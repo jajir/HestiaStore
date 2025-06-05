@@ -11,9 +11,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class FileReaderSeekableBufferedTest {
 
-    private final static String FILE1 = "pok.txt";
+    private static final String FILE1 = "pok.txt";
 
-    private final static byte[] TEXT_LONG = ("This code stores a reference to an "
+    private static final byte[] TEXT_LONG = ("This code stores a reference to an "
             + "externally mutable object into the internal "
             + "representation of the object.  If instances are accessed "
             + "by untrusted code, and unchecked changes to the mutable "
@@ -22,9 +22,9 @@ public class FileReaderSeekableBufferedTest {
             + "Storing a copy of the object is better approach in many "
             + "situations.").getBytes();
 
-    private final static byte[] TEXT_SHORT = "This code stores".getBytes();
+    private static final byte[] TEXT_SHORT = "This code stores".getBytes();
 
-    private final static byte[] TEXT_TINY = "This".getBytes();
+    private static final byte[] TEXT_TINY = "This".getBytes();
 
     @Mock
     private FileReaderSeekable fileReaderSeekable;

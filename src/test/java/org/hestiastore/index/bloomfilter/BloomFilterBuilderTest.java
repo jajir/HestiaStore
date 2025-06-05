@@ -13,11 +13,11 @@ import org.junit.jupiter.api.Test;
 
 public class BloomFilterBuilderTest {
 
-    private final static TypeDescriptor<String> TDS = new TypeDescriptorString();
+    private static final TypeDescriptor<String> TDS = new TypeDescriptorString();
 
-    private final static String FILE_NAME = "test.bf";
+    private static final String FILE_NAME = "test.bf";
 
-    private final static String OBJECT_NAME = "segment-01940";
+    private static final String OBJECT_NAME = "segment-01940";
 
     private Directory directory;
 

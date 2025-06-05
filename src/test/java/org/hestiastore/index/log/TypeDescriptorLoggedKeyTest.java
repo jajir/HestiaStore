@@ -15,8 +15,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class TypeDescriptorLoggedKeyTest {
 
-    private final static TypeDescriptor<Integer> tdi = new TypeDescriptorInteger();
-    private final static TypeDescriptor<String> tds = new TypeDescriptorString();
+    private static final TypeDescriptor<Integer> tdi = new TypeDescriptorInteger();
+    private static final TypeDescriptor<String> tds = new TypeDescriptorString();
 
     @Test
     public void test_integer_read_write() throws Exception {

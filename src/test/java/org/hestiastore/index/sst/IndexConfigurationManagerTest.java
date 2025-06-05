@@ -21,11 +21,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class IndexConfigurationManagerTest {
 
-    private final static String TD_STRING = TypeDescriptorString.class
+    private static final String TD_STRING = TypeDescriptorString.class
             .getSimpleName();
-    private final static String TD_LONG = TypeDescriptorLong.class
+    private static final String TD_LONG = TypeDescriptorLong.class
             .getSimpleName();
-    private final static IndexConfiguration<Long, String> CONFIG = IndexConfiguration
+    private static final IndexConfiguration<Long, String> CONFIG = IndexConfiguration
             .<Long, String>builder()//
             .withKeyClass(Long.class) //
             .withValueClass(String.class)//

@@ -27,7 +27,7 @@ public class IndexConfiguratonStorage<K, V> {
     private static final String PROP_BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE = "bloomFilterProbabilityOfFalsePositive";
     private static final String PROP_DISK_IO_BUFFER_SIZE_IN_BYTES = "diskIoBufferSizeInBytes";
 
-    private final static String CONFIGURATION_FILENAME = "index-configuration.properties";
+    private static final String CONFIGURATION_FILENAME = "index-configuration.properties";
 
     private final Directory directory;
 
