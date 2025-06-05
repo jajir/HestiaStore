@@ -53,6 +53,11 @@ public final class FsZipDirectory extends AbstractDirectory {
     }
 
     @Override
+    public String toString() {
+        return "FsZipDirectory{directory=" + getDirectory().getPath() + "}";
+    }
+
+    @Override
     public FileReaderSeekable getFileReaderSeekable(final String fileName) {
         throw new UnsupportedOperationException();
     }

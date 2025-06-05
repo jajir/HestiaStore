@@ -1,11 +1,7 @@
 package org.hestiastore.index.directory;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.Objects;
-import java.util.stream.Stream;
-
-import org.hestiastore.index.IndexException;
 
 public final class FsDirectory extends AbstractDirectory {
 
