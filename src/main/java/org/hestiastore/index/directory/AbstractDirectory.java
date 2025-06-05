@@ -15,6 +15,8 @@ import org.hestiastore.index.Vldtn;
  */
 public abstract class AbstractDirectory implements Directory {
 
+    protected static final int DEFAULT_BUFFER_SIZE = 1024 * 1 * 4;
+
     private final File directory;
 
     public AbstractDirectory(final File directory) {

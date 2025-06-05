@@ -15,11 +15,6 @@ public class IndexConfigurationDefaultString
     }
 
     @Override
-    public long getMaxNumberOfKeysInSegmentCacheDuringFlushing() {
-        return getMaxNumberOfKeysInCache() * 2L;
-    }
-
-    @Override
     public int getMaxNumberOfKeysInSegmentIndexPage() {
         return 10_000;
     }
