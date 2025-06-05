@@ -7,7 +7,7 @@ import java.util.stream.Stream;
 
 import org.hestiastore.index.IndexException;
 
-public final class FsNioDirectory implements Directory {
+public final class FsNioDirectory extends AbstractDirectory {
 
     private final static int DEFAULT_BUFFER_SIZE = 1024 * 1 * 4;
 
@@ -42,10 +42,7 @@ public final class FsNioDirectory implements Directory {
     public FileReader getFileReader(final String fileName,
             final int bufferSize) {
         final File file = getFile(fileName);
-        if (!file.exists()) {
-            throw new IndexException(String.format("File '%s' doesn't exists.",
-                    file.getAbsolutePath()));
-        }
+        assureThatFileExists(file);
         return new FsNioFileReaderStream(file);
     }
 
@@ -69,10 +66,7 @@ public final class FsNioDirectory implements Directory {
     public void renameFile(final String currentFileName,
             final String newFileName) {
         final File file = getFile(currentFileName);
-        if (!file.exists()) {
-            throw new IndexException(String.format("File '%s' doesn't exists.",
-                    file.getAbsolutePath()));
-        }
+        assureThatFileExists(file);
         if (!file.renameTo(getFile(newFileName))) {
             throw new IndexException(
                     String.format("Unable to rename file '%s' to name '%s'.",
