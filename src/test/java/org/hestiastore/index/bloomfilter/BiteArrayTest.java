@@ -15,7 +15,7 @@ public class BiteArrayTest {
     private final static int BITS_IN_BYTE = 8;
 
     @Test
-    void test_setBit() {
+    void test_setBit_initilized_to1() {
         // Arrange
         BitArray bitArray = new BitArray(BIT_ARRAY_SIZE);
 
@@ -26,6 +26,37 @@ public class BiteArrayTest {
 
         for (int i = 0; i < BITS_IN_BYTE; i++) {
             final int index = TESTED_BYTE * BITS_IN_BYTE + i;
+            assertTrue(bitArray.get(index),
+                    "Bit at index " + index + " should be set");
+        }
+    }
+
+    @Test
+    void test_setBit_initilized_to0() {
+        // Arrange
+        BitArray bitArray = new BitArray(BIT_ARRAY_SIZE);
+
+        bitArray.setBit(5);
+
+        assertFalse(bitArray.get(0));
+        assertFalse(bitArray.get(1));
+        assertFalse(bitArray.get(2));
+        assertFalse(bitArray.get(3));
+        assertFalse(bitArray.get(4));
+        assertTrue(bitArray.get(5));
+        assertFalse(bitArray.get(6));
+        assertFalse(bitArray.get(7));
+
+    }
+
+    @Test
+    void test_setBit_notInitialized() {
+        // Arrange
+        BitArray bitArray = new BitArray(BIT_ARRAY_SIZE);
+
+        for (int i = 0; i < BITS_IN_BYTE; i++) {
+            final int index = TESTED_BYTE * BITS_IN_BYTE + i;
+            bitArray.setBit(index);
             assertTrue(bitArray.get(index),
                     "Bit at index " + index + " should be set");
         }
@@ -55,19 +86,6 @@ public class BiteArrayTest {
     }
 
     @Test
-    void testGet_validIndex() {
-        // Arrange
-        BitArray bitArray = new BitArray(10);
-        bitArray.setBit(5);
-
-        // Act
-        boolean result = bitArray.get(5);
-
-        // Assert
-        assertFalse(result);
-    }
-
-    @Test
     void testGet_doesnt_change_value_1() {
         // Arrange
         BitArray bitArray = new BitArray(10);
@@ -78,7 +96,7 @@ public class BiteArrayTest {
 
         // Assert
         assertEquals((byte) 0b00100000, bitArray.getByteArray()[0]);
-        assertFalse(result);
+        assertTrue(result);
     }
 
     @Test
@@ -91,7 +109,7 @@ public class BiteArrayTest {
 
         // Assert
         assertEquals((byte) 0b00000000, bitArray.getByteArray()[0]);
-        assertTrue(result);
+        assertFalse(result);
     }
 
     @Test
