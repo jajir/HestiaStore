@@ -20,11 +20,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class SegmentConsistencyCheckerTest {
 
-    private final static SegmentId SEGMENT_ID = SegmentId.of(13);
-    private final static TypeDescriptor<Integer> TYPE_DESCRIPTOR_INTEGER = new TypeDescriptorInteger();
-    private final static Pair<Integer, String> PAIR1 = Pair.of(1, "a");
-    private final static Pair<Integer, String> PAIR2 = Pair.of(2, "b");
-    private final static Pair<Integer, String> PAIR3 = Pair.of(3, "c");
+    private static final SegmentId SEGMENT_ID = SegmentId.of(13);
+    private static final TypeDescriptor<Integer> TYPE_DESCRIPTOR_INTEGER = new TypeDescriptorInteger();
+    private static final Pair<Integer, String> PAIR1 = Pair.of(1, "a");
+    private static final Pair<Integer, String> PAIR2 = Pair.of(2, "b");
+    private static final Pair<Integer, String> PAIR3 = Pair.of(3, "c");
 
     @Mock
     private Segment<Integer, String> segment;

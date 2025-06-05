@@ -26,11 +26,11 @@ import org.hestiastore.index.unsorteddatafile.UnsortedDataFile;
  */
 public class DataFileSorter<K, V> {
 
-    private final static int COUNT_MAX_LENGTH = 5;
-    private final static String MERGING_FILES_PREFIX = "merging-";
-    private final static String MERGING_FILES_SUFFIX = ".tmp";
-    private final static int ROUND_ZERO = 0;
-    private final static int MERGING_FILE_CAP = 10;
+    private static final int COUNT_MAX_LENGTH = 5;
+    private static final String MERGING_FILES_PREFIX = "merging-";
+    private static final String MERGING_FILES_SUFFIX = ".tmp";
+    private static final int ROUND_ZERO = 0;
+    private static final int MERGING_FILE_CAP = 10;
 
     private final UnsortedDataFile<K, V> unsortedDataFile;
     private final SortedDataFile<K, V> targetSortedDataFile;

@@ -13,7 +13,7 @@ public final class FsZipFileWriterStream implements FileWriter {
 
     private final ZipOutputStream fio;
 
-    private final static int BUFFER_SIZE = 1024 * 100;
+    private static final int BUFFER_SIZE = 1024 * 100;
 
     FsZipFileWriterStream(final File file) {
         try {

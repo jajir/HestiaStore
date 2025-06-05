@@ -23,9 +23,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class IndexConsistencyCheckerTest {
 
-    private final static TypeDescriptor<Integer> TYPE_DESCRIPTOR_INTEGER = new TypeDescriptorInteger();
-    private final static SegmentId SEGMENT_ID = SegmentId.of(13);
-    private final static Integer SEGMENT_MAX_KEY = 73;
+    private static final TypeDescriptor<Integer> TYPE_DESCRIPTOR_INTEGER = new TypeDescriptorInteger();
+    private static final SegmentId SEGMENT_ID = SegmentId.of(13);
+    private static final Integer SEGMENT_MAX_KEY = 73;
 
     @Mock
     private KeySegmentCache<Integer> keySegmentCache;

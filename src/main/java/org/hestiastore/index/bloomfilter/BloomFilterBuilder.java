@@ -7,8 +7,8 @@ import org.hestiastore.index.directory.Directory;
 
 public class BloomFilterBuilder<K> {
 
-    public final static double DEFAULT_PROBABILITY_OF_FALSE_POSITIVE = 0.01;
-    private final static int DEFAULT_DISK_IO_BUFFER_SIZE = 2 * 1024;
+    public static final double DEFAULT_PROBABILITY_OF_FALSE_POSITIVE = 0.01;
+    private static final int DEFAULT_DISK_IO_BUFFER_SIZE = 2 * 1024;
 
     private Directory directory;
     private String bloomFilterFileName;

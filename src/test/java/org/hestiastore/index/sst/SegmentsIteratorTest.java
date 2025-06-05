@@ -22,8 +22,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class SegmentsIteratorTest {
 
-    private final static SegmentId SEGMENT_ID_17 = SegmentId.of(17);
-    private final static SegmentId SEGMENT_ID_23 = SegmentId.of(23);
+    private static final SegmentId SEGMENT_ID_17 = SegmentId.of(17);
+    private static final SegmentId SEGMENT_ID_23 = SegmentId.of(23);
 
     @Mock
     private SegmentManager<String, String> segmentManager;

@@ -8,7 +8,7 @@ public class LoggedKey<K> {
 
     private final K key;
 
-    public final static <M> LoggedKey<M> of(final LogOperation logOperation,
+    public static final <M> LoggedKey<M> of(final LogOperation logOperation,
             final M key) {
         return new LoggedKey<M>(logOperation, key);
     }

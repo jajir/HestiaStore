@@ -20,7 +20,7 @@ import org.hestiastore.index.datatype.TypeDescriptorString;
  */
 public class DataTypeDescriptorRegistry {
 
-    private final static Map<Class<?>, String> descriptors = new HashMap<>();
+    private static final Map<Class<?>, String> descriptors = new HashMap<>();
 
     static {
         addTypeDescriptor(Integer.class, new TypeDescriptorInteger());

@@ -18,9 +18,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class PairIteratorToSpliteratorTest {
 
-    private final static Pair<String, Integer> PAIR1 = Pair.of("aaa", 1);
+    private static final Pair<String, Integer> PAIR1 = Pair.of("aaa", 1);
 
-    private final static TypeDescriptor<String> STRING_TD = new TypeDescriptorString();
+    private static final TypeDescriptor<String> STRING_TD = new TypeDescriptorString();
 
     @Mock
     private PairIterator<String, Integer> pairIterator;

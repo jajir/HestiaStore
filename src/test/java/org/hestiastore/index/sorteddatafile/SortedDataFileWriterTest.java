@@ -24,7 +24,7 @@ public class SortedDataFileWriterTest {
     private static final Pair<String, Integer> PAIR_3 = Pair.of("key3", 300);
     private static final Pair<String, Integer> PAIR_4 = Pair.of("key4", 400);
 
-    private final static TypeDescriptor<String> stringTd = new TypeDescriptorString();
+    private static final TypeDescriptor<String> stringTd = new TypeDescriptorString();
 
     @Mock
     private FileWriter fileWriter;

@@ -20,13 +20,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class SegmentSplitterTest {
 
-    private final static SegmentId SEGMENT_ID = SegmentId.of(27);
+    private static final SegmentId SEGMENT_ID = SegmentId.of(27);
 
-    private final static Pair<String, String> PAIR1 = Pair.of("key1", "value1");
+    private static final Pair<String, String> PAIR1 = Pair.of("key1", "value1");
 
-    private final static Pair<String, String> PAIR2 = Pair.of("key2", "value2");
+    private static final Pair<String, String> PAIR2 = Pair.of("key2", "value2");
 
-    private final static Pair<String, String> PAIR3 = Pair.of("key3", "value3");
+    private static final Pair<String, String> PAIR3 = Pair.of("key3", "value3");
 
     @Mock
     private Segment<String, String> segment;

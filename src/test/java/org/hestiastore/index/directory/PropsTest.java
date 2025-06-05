@@ -36,8 +36,8 @@ public class PropsTest {
         assertEquals(42, props2.getLong("test1"));
     }
 
-    private final static String LONG_KEY1 = "very_long_key_with_some_additional_data1";
-    private final static String LONG_KEY2 = "very_long_key_with_some_additional_data2_tst";
+    private static final String LONG_KEY1 = "very_long_key_with_some_additional_data1";
+    private static final String LONG_KEY2 = "very_long_key_with_some_additional_data2_tst";
 
     @Test
     public void test_write_and_read_long_keys() throws Exception {

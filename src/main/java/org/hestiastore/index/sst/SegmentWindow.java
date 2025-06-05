@@ -9,7 +9,7 @@ import java.util.OptionalInt;
  */
 public class SegmentWindow {
 
-    final static SegmentWindow UNBOUNDED = new SegmentWindow(
+    static final SegmentWindow UNBOUNDED = new SegmentWindow(
             OptionalInt.empty(), OptionalInt.empty());
     private final OptionalInt offset;
     private final OptionalInt limit;

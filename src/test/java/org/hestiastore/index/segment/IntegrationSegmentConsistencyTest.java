@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
  */
 public class IntegrationSegmentConsistencyTest extends AbstractSegmentTest {
 
-    private final static int MAX_LOOP = 100;
+    private static final int MAX_LOOP = 100;
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final SegmentId id = SegmentId.of(29);
     private Directory dir;

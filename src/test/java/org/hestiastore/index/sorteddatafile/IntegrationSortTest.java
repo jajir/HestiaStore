@@ -27,11 +27,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class IntegrationSortTest extends AbstractSegmentTest {
 
-    private final static Random RANDOM = new Random();
-    private final static TypeDescriptor<String> tds = new TypeDescriptorString();
-    private final static TypeDescriptor<Integer> tdi = new TypeDescriptorInteger();
-    private final static String UNSORTED_FILE_NAME = "kachna.unsorted";
-    private final static String SORTED_FILE_NAME = "kachna.sorted";
+    private static final Random RANDOM = new Random();
+    private static final TypeDescriptor<String> tds = new TypeDescriptorString();
+    private static final TypeDescriptor<Integer> tdi = new TypeDescriptorInteger();
+    private static final String UNSORTED_FILE_NAME = "kachna.unsorted";
+    private static final String SORTED_FILE_NAME = "kachna.sorted";
 
     private Directory dir = null;
     private UnsortedDataFile<String, Integer> unsorted = null;

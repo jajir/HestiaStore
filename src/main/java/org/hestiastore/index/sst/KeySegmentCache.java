@@ -37,14 +37,14 @@ import org.slf4j.LoggerFactory;
 public final class KeySegmentCache<K> implements CloseableResource {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final static TypeDescriptorSegmentId tdSegId = new TypeDescriptorSegmentId();
+    private static final TypeDescriptorSegmentId tdSegId = new TypeDescriptorSegmentId();
 
-    private final static String FILE_NAME = "index.map";
+    private static final String FILE_NAME = "index.map";
 
     /**
      * When new index is created than this is id of first segment.
      */
-    public final static SegmentId FIRST_SEGMENT_ID = SegmentId.of(0);
+    public static final SegmentId FIRST_SEGMENT_ID = SegmentId.of(0);
 
     private TreeMap<K, SegmentId> list;
     private final SortedDataFile<K, SegmentId> sdf;

@@ -16,9 +16,9 @@ import org.junit.jupiter.api.Test;
 
 public class IndexConfiguratonStorageTest {
 
-    private final static String TD_STRING = TypeDescriptorString.class
+    private static final String TD_STRING = TypeDescriptorString.class
             .getName();
-    private final static String TD_LONG = TypeDescriptorLong.class.getName();
+    private static final String TD_LONG = TypeDescriptorLong.class.getName();
     private Directory directory;
 
     private IndexConfiguratonStorage<String, Long> storage;

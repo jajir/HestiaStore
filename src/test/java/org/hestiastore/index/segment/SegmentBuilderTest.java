@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 public class SegmentBuilderTest {
 
     private static final SegmentId SEGMENT_ID = SegmentId.of(27);
-    private final static Directory DIRECTORY = new MemDirectory();
+    private static final Directory DIRECTORY = new MemDirectory();
     private static final TypeDescriptor<String> VALUE_TYPE_DESCRIPTOR = new TypeDescriptorString();
     private static final TypeDescriptor<Integer> KEY_TYPE_DESCRIPTOR = new TypeDescriptorInteger();
 

@@ -15,11 +15,11 @@ import org.hestiastore.index.directory.Props;
  */
 public class SegmentPropertiesManager {
 
-    private final static String NUMBER_OF_KEYS_IN_DELTA_CACHE = "numberOfKeysInDeltaCache";
-    private final static String NUMBER_OF_KEYS_IN_MAIN_INDEX = "numberOfKeysInMainIndex";
-    private final static String NUMBER_OF_KEYS_IN_SCARCE_INDEX = "numberOfKeysInScarceIndex";
-    private final static String NUMBER_OF_SEGMENT_CACHE_DELTA_FILES = "numberOfSegmentDeltaFiles";
-    private final static String PROPERTIES_FILENAME_EXTENSION = ".properties";
+    private static final String NUMBER_OF_KEYS_IN_DELTA_CACHE = "numberOfKeysInDeltaCache";
+    private static final String NUMBER_OF_KEYS_IN_MAIN_INDEX = "numberOfKeysInMainIndex";
+    private static final String NUMBER_OF_KEYS_IN_SCARCE_INDEX = "numberOfKeysInScarceIndex";
+    private static final String NUMBER_OF_SEGMENT_CACHE_DELTA_FILES = "numberOfSegmentDeltaFiles";
+    private static final String PROPERTIES_FILENAME_EXTENSION = ".properties";
 
     private final SegmentId id;
     private final Props props;

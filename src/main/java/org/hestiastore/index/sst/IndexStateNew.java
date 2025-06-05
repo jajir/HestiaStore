@@ -7,7 +7,7 @@ import org.hestiastore.index.directory.FileLock;
 
 public final class IndexStateNew<K, V> implements IndexState<K, V> {
 
-    private final static String LOCK_FILE_NAME = ".lock";
+    private static final String LOCK_FILE_NAME = ".lock";
 
     private final FileLock fileLock;
 

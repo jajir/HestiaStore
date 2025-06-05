@@ -33,7 +33,7 @@ import org.hestiastore.index.sorteddatafile.SortedDataFile;
  */
 public class ScarceIndex<K> {
 
-    private final static TypeDescriptorInteger typeDescriptorInteger = new TypeDescriptorInteger();
+    private static final TypeDescriptorInteger typeDescriptorInteger = new TypeDescriptorInteger();
 
     private final TypeDescriptor<K> keyTypeDescriptor;
 

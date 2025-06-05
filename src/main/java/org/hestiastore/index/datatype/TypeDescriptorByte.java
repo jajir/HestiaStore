@@ -7,7 +7,7 @@ public class TypeDescriptorByte implements TypeDescriptor<Byte> {
     /**
      * Thombstone value, use can't use it.
      */
-    private final static Byte TOMBSTONE_VALUE = Byte.MIN_VALUE;
+    private static final Byte TOMBSTONE_VALUE = Byte.MIN_VALUE;
 
     @Override
     public ConvertorToBytes<Byte> getConvertorToBytes() {

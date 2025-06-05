@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Test;
 
 public class IntegrationSortedDataFileWriterTest {
 
-    private final static int DISK_IO_BUFFER_SIZE = 1024;
-    private final static String FILE_NAME = "pok.dat";
+    private static final int DISK_IO_BUFFER_SIZE = 1024;
+    private static final String FILE_NAME = "pok.dat";
     private final TypeDescriptorByte byteTd = new TypeDescriptorByte();
     private final TypeDescriptorString stringTd = new TypeDescriptorString();
 

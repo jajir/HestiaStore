@@ -21,11 +21,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class PairReaderRefreshedFromCacheTest {
 
-    private final static Pair<Integer, String> PAIR1 = Pair.of(2, "bbb");
-    private final static Pair<Integer, String> PAIR2 = Pair.of(3, "ccc");
-    private final static Pair<Integer, String> PAIR3 = Pair.of(4, "ddd");
+    private static final Pair<Integer, String> PAIR1 = Pair.of(2, "bbb");
+    private static final Pair<Integer, String> PAIR2 = Pair.of(3, "ccc");
+    private static final Pair<Integer, String> PAIR3 = Pair.of(4, "ddd");
 
-    private final static TypeDescriptor<String> STRING_TD = new TypeDescriptorString();
+    private static final TypeDescriptor<String> STRING_TD = new TypeDescriptorString();
 
     @Mock
     private PairIterator<Integer, String> pairIterator;

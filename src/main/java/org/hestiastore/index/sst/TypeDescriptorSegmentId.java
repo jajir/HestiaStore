@@ -19,7 +19,7 @@ import org.hestiastore.index.segment.SegmentId;
  */
 public class TypeDescriptorSegmentId implements TypeDescriptor<SegmentId> {
 
-    private final static TypeDescriptorInteger tdi = new TypeDescriptorInteger();
+    private static final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
 
     @Override
     public Comparator<SegmentId> getComparator() {

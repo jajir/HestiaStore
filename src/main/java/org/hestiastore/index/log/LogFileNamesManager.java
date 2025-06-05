@@ -10,9 +10,9 @@ import org.hestiastore.index.directory.Directory;
  * Responsible for managing log files.
  */
 public final class LogFileNamesManager {
-    private final static String LOG_FILE_EXTENSION = ".log";
-    private final static String LOG_FILE_PREFIX = "wal-";
-    private final static int MAX_LOG_FILE_NUMBER = 99999;
+    private static final String LOG_FILE_EXTENSION = ".log";
+    private static final String LOG_FILE_PREFIX = "wal-";
+    private static final int MAX_LOG_FILE_NUMBER = 99999;
 
     private final Directory directory;
 

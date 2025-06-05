@@ -25,7 +25,7 @@ public class IntegrationIndexConsistencyTest extends AbstractIndexTest {
     private final Logger logger = LoggerFactory
             .getLogger(IntegrationIndexConsistencyTest.class);
 
-    private final static int NUMBER_OF_TEST_PAIRS = 97;
+    private static final int NUMBER_OF_TEST_PAIRS = 97;
     final Directory directory = new MemDirectory();
     final SegmentId id = SegmentId.of(27);
     final TypeDescriptorInteger tdi = new TypeDescriptorInteger();

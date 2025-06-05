@@ -15,7 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class PairReaderFromIteratorTest {
 
-    private final static Pair<String, Integer> PAIR1 = Pair.of("aaa", 1);
+    private static final Pair<String, Integer> PAIR1 = Pair.of("aaa", 1);
 
     @Mock
     private PairIterator<String, Integer> pairIterator;

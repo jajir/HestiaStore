@@ -9,9 +9,9 @@ import org.junit.jupiter.api.io.TempDir;
 
 public class FsStorageTest {
 
-    private final static String FILE_NAME = "pok.txt";
+    private static final String FILE_NAME = "pok.txt";
 
-    private final static byte[] TEXT_LONG = ("This code stores a reference to an "
+    private static final byte[] TEXT_LONG = ("This code stores a reference to an "
             + "externally mutable object into the internal "
             + "representation of the object.  If instances are accessed "
             + "by untrusted code, and unchecked changes to the mutable "

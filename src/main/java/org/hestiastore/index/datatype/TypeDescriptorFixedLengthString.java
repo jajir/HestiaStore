@@ -6,15 +6,15 @@ import java.util.Comparator;
 public final class TypeDescriptorFixedLengthString
         implements TypeDescriptor<String> {
 
-    private final static String CHARSET_ENCODING_NAME = "ISO_8859_1";
+    private static final String CHARSET_ENCODING_NAME = "ISO_8859_1";
 
-    private final static Charset CHARSET_ENCODING = Charset
+    private static final Charset CHARSET_ENCODING = Charset
             .forName(CHARSET_ENCODING_NAME);
 
     /**
      * Tombstones value, use can't use it.
      */
-    private final static String TOMBSTONE_DEFAULT_VALUE = //
+    private static final String TOMBSTONE_DEFAULT_VALUE = //
             ""//
                     + "(*&^%$#@!)-1eaa9b2c-"//
                     + "3c11-11ee-be56-0242a"//

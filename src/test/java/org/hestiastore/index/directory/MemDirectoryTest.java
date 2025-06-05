@@ -10,9 +10,9 @@ import org.junit.jupiter.api.Test;
 
 public class MemDirectoryTest {
 
-    private final static byte[] NAME = "Karel".getBytes();
-    private final static byte[] SURNAME = "Novotny".getBytes();
-    private final static byte[] TEXT = ("This code stores a reference to an "
+    private static final byte[] NAME = "Karel".getBytes();
+    private static final byte[] SURNAME = "Novotny".getBytes();
+    private static final byte[] TEXT = ("This code stores a reference to an "
             + "externally mutable object into the internal "
             + "representation of the object.  If instances are accessed "
             + "by untrusted code, and unchecked changes to the mutable "
