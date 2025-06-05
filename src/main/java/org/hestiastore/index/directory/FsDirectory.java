@@ -5,8 +5,6 @@ import java.util.Objects;
 
 public final class FsDirectory extends AbstractDirectory {
 
-    private static final int DEFAULT_BUFFER_SIZE = 1024 * 1 * 4;
-
     public FsDirectory(final File directory) {
         super(directory);
     }

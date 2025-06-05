@@ -26,7 +26,7 @@ public interface IndexConfigurationDefault {
     }
 
     default long getMaxNumberOfKeysInSegmentCacheDuringFlushing() {
-        return MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING;
+        return getMaxNumberOfKeysInSegmentCache() * 2L;
     }
 
     default int getMaxNumberOfKeysInSegmentIndexPage() {
