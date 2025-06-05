@@ -19,17 +19,18 @@ public final class FsZipDirectory implements Directory {
                             directory.getAbsoluteFile()));
         }
         if (directory.isFile()) {
-            throw new IndexException(String
-                    .format("There is required directory but '%s' is file."));
+            throw new IndexException(String.format(
+                    "There is required directory but '%s' is file.",
+                    directory.getAbsolutePath()));
         }
     }
 
     @Override
     public FileReader getFileReader(final String fileName) {
         final File file = getFile(fileName);
-        if (!directory.exists()) {
-            throw new IndexException(
-                    String.format("File '%s' doesn't exists."));
+        if (!file.exists()) {
+            throw new IndexException(String.format("File '%s' doesn't exists.",
+                    file.getAbsolutePath()));
         }
         return new FsZipFileReaderStream(file);
     }
@@ -44,9 +45,9 @@ public final class FsZipDirectory implements Directory {
     public void renameFile(final String currentFileName,
             final String newFileName) {
         final File file = getFile(currentFileName);
-        if (!directory.exists()) {
-            throw new IndexException(
-                    String.format("File '%s' doesn't exists."));
+        if (!file.exists()) {
+            throw new IndexException(String.format("File '%s' doesn't exists.",
+                    file.getAbsolutePath()));
         }
         if (!file.renameTo(getFile(newFileName))) {
             throw new IndexException(

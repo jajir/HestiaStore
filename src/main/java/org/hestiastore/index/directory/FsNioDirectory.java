@@ -42,9 +42,9 @@ public final class FsNioDirectory implements Directory {
     public FileReader getFileReader(final String fileName,
             final int bufferSize) {
         final File file = getFile(fileName);
-        if (!directory.exists()) {
-            throw new IndexException(
-                    String.format("File '%s' doesn't exists."));
+        if (!file.exists()) {
+            throw new IndexException(String.format("File '%s' doesn't exists.",
+                    file.getAbsolutePath()));
         }
         return new FsNioFileReaderStream(file);
     }
@@ -69,9 +69,9 @@ public final class FsNioDirectory implements Directory {
     public void renameFile(final String currentFileName,
             final String newFileName) {
         final File file = getFile(currentFileName);
-        if (!directory.exists()) {
-            throw new IndexException(
-                    String.format("File '%s' doesn't exists."));
+        if (!file.exists()) {
+            throw new IndexException(String.format("File '%s' doesn't exists.",
+                    file.getAbsolutePath()));
         }
         if (!file.renameTo(getFile(newFileName))) {
             throw new IndexException(

@@ -162,8 +162,8 @@ public class IndexConfigurationManager<K, V> {
 
         if (indexConf.getMaxNumberOfKeysInSegment() != null
                 && indexConf.getMaxNumberOfKeysInSegment() > 0
-                && indexConf.getMaxNumberOfKeysInSegment() != storedConf
-                        .getMaxNumberOfKeysInSegment()) {
+                && !indexConf.getMaxNumberOfKeysInSegment()
+                        .equals(storedConf.getMaxNumberOfKeysInSegment())) {
             throw new IllegalArgumentException(String.format(
                     "Value of MaxNumberOfKeysInSegment is already set"
                             + " to '%s' and can't be changed to '%s'",
@@ -173,9 +173,8 @@ public class IndexConfigurationManager<K, V> {
 
         if (indexConf.getMaxNumberOfKeysInSegmentIndexPage() != null
                 && indexConf.getMaxNumberOfKeysInSegmentIndexPage() > 0
-                && indexConf
-                        .getMaxNumberOfKeysInSegmentIndexPage() != storedConf
-                                .getMaxNumberOfKeysInSegmentIndexPage()) {
+                && !indexConf.getMaxNumberOfKeysInSegmentIndexPage().equals(
+                        storedConf.getMaxNumberOfKeysInSegmentIndexPage())) {
             throw new IllegalArgumentException(String.format(
                     "Value of MaxNumberOfKeysInSegmentIndexPage is already set"
                             + " to '%s' and can't be changed to '%s'",
@@ -185,8 +184,8 @@ public class IndexConfigurationManager<K, V> {
 
         if (indexConf.getBloomFilterIndexSizeInBytes() != null
                 && indexConf.getBloomFilterIndexSizeInBytes() > 0
-                && indexConf.getBloomFilterIndexSizeInBytes() != storedConf
-                        .getBloomFilterIndexSizeInBytes()) {
+                && !indexConf.getBloomFilterIndexSizeInBytes()
+                        .equals(storedConf.getBloomFilterIndexSizeInBytes())) {
             throw new IllegalArgumentException(String.format(
                     "Value of BloomFilterIndexSizeInBytes is already set"
                             + " to '%s' and can't be changed to '%s'",
@@ -196,8 +195,8 @@ public class IndexConfigurationManager<K, V> {
 
         if (indexConf.getBloomFilterNumberOfHashFunctions() != null
                 && indexConf.getBloomFilterNumberOfHashFunctions() > 0
-                && indexConf.getBloomFilterNumberOfHashFunctions() != storedConf
-                        .getBloomFilterNumberOfHashFunctions()) {
+                && !indexConf.getBloomFilterNumberOfHashFunctions().equals(
+                        storedConf.getBloomFilterNumberOfHashFunctions())) {
             throw new IllegalArgumentException(String.format(
                     "Value of BloomFilterNumberOfHashFunctions is already set"
                             + " to '%s' and can't be changed to '%s'",
@@ -206,9 +205,9 @@ public class IndexConfigurationManager<K, V> {
         }
 
         if (indexConf.getBloomFilterProbabilityOfFalsePositive() != null
-                && indexConf
-                        .getBloomFilterProbabilityOfFalsePositive() != storedConf
-                                .getBloomFilterProbabilityOfFalsePositive()) {
+                && !indexConf.getBloomFilterProbabilityOfFalsePositive()
+                        .equals(storedConf
+                                .getBloomFilterProbabilityOfFalsePositive())) {
             throw new IllegalArgumentException(String.format(
                     "Value of BloomFilterProbabilityOfFalsePositive is already set"
                             + " to '%s' and can't be changed to '%s'",
