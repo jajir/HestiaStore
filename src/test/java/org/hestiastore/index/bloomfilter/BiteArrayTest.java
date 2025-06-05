@@ -10,9 +10,9 @@ import org.junit.jupiter.api.Test;
 
 public class BiteArrayTest {
 
-    private final static int BIT_ARRAY_SIZE = 10;
-    private final static int TESTED_BYTE = 7;
-    private final static int BITS_IN_BYTE = 8;
+    private static final int BIT_ARRAY_SIZE = 10;
+    private static final int TESTED_BYTE = 7;
+    private static final int BITS_IN_BYTE = 8;
 
     @Test
     void test_setBit_initilized_to1() {
