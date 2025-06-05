@@ -1,5 +1,10 @@
 package org.hestiastore.index.log;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.util.List;
+
+import org.hestiastore.index.Pair;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.datatype.TypeDescriptorString;
@@ -23,15 +28,31 @@ public class IntegrationLogWriterIsFlushTest {
 
     @Test
     void test_writting_to_log() {
-        final Log<Long, String> index = Log.<Long, String>builder()//
+        final Log<Long, String> log = Log.<Long, String>builder()//
                 .withDirectory(directory)//
                 .withKeyTypeDescriptor(tdl)//
                 .withValueTypeDescriptor(tds)//
                 .build();
 
-        index.post(1L, "aaa");
-        index.post(2L, "bbb");
-        index.post(3L, "ccc");
+        log.post(1L, "aaa");
+        log.post(2L, "bbb");
+        log.post(3L, "ccc");
+        log.rotate();
+
+        final List<Pair<LoggedKey<Long>, String>> pairs = log.openStreamer()
+                .stream().toList();
+        assertEquals(3, pairs.size());
+
+        Pair<LoggedKey<Long>, String> pair1 = pairs.get(0);
+        Pair<LoggedKey<Long>, String> pair2 = pairs.get(1);
+        Pair<LoggedKey<Long>, String> pair3 = pairs.get(2);
+        assertEquals(1L, pair1.getKey().getKey());
+        assertEquals(2L, pair2.getKey().getKey());
+        assertEquals(3L, pair3.getKey().getKey());
+        assertEquals("aaa", pair1.getValue());
+        assertEquals("bbb", pair2.getValue());
+        assertEquals("ccc", pair3.getValue());
+        log.close();
     }
 
 }
