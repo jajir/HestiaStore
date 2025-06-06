@@ -46,9 +46,8 @@ public class DiffKeyWriterTest {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> diffWriter2.write(3));
 
-        assertTrue(
-                "Attempt to insers same key as previous. Key '1' was comapred with 'NaturalOrderComparator'",
-                e.getMessage());
+        assertTrue(e.getMessage()
+                .startsWith("Attempt to insers same key as previous. Key"));
     }
 
     @Test
