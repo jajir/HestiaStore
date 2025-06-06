@@ -2,6 +2,7 @@ package org.hestiastore.index.sorteddatafile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Comparator;
 
@@ -27,6 +28,9 @@ public class DiffKeyWriterTest {
         diffWriter.write(2);
         diffWriter.write(3);
         diffWriter.write(4);
+
+        // if no exception is thrown, then correct was accepted
+        assertTrue(true);
     }
 
     @Test
@@ -39,8 +43,12 @@ public class DiffKeyWriterTest {
         diffWriter.write(3);
 
         final DiffKeyWriter<Integer> diffWriter2 = diffWriter;
-        assertThrows(IllegalArgumentException.class,
+        final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> diffWriter2.write(3));
+
+        assertTrue(
+                "Attempt to insers same key as previous. Key '1' was comapred with 'NaturalOrderComparator'",
+                e.getMessage());
     }
 
     @Test
