@@ -46,7 +46,7 @@ public class DiffKeyWriter<K> {
                 final String keyComapratorClassName = keyComparator.getClass()
                         .getSimpleName();
                 throw new IllegalArgumentException(String.format(
-                        "Attempt to insers same key as previous. Key '%s' was comapred with '%s'",
+                        "Attempt to insers same key as previous. Key '%s' was compared with '%s'",
                         s2, keyComapratorClassName));
             }
             if (cmp > 0) {
