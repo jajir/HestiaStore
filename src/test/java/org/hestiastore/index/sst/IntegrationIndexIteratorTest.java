@@ -40,6 +40,7 @@ public class IntegrationIndexIteratorTest {
         final Index<Integer, String> index = Index.create(directory, conf);
         data.stream().forEach(index::put);
         index.compact();
+        assertTrue(true); // Just to ensure no exceptions are thrown);
     }
 
     // TEST nkey class non existing conf

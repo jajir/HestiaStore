@@ -113,9 +113,16 @@ public class KeySegmentCacheTest {
     public void test_getSegmentsAsStream_print_data() throws Exception {
         try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                 stringTd)) {
-            fif.getSegmentsAsStream().forEach(p -> {
-                logger.debug("Segment '{}'", p.toString());
-            });
+            final List<Pair<String, SegmentId>> segments = fif
+                    .getSegmentsAsStream().toList();
+            assertEquals("Pair[key='ahoj',value='segment-00001']",
+                    segments.get(0).toString());
+            assertEquals("Pair[key='betka',value='segment-00002']",
+                    segments.get(1).toString());
+            assertEquals("Pair[key='cukrar',value='segment-00003']",
+                    segments.get(2).toString());
+            assertEquals("Pair[key='kachna',value='segment-00004']",
+                    segments.get(3).toString());
         }
     }
 
