@@ -1,5 +1,8 @@
 package org.hestiastore.index.sst;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -74,7 +77,7 @@ public class IntegrationIndexConsistencyTest extends AbstractIndexTest {
         writePairs(index, makeList(888));
         index.flush();
         for (int i = 0; i < NUMBER_OF_TEST_PAIRS; i++) {
-            index.get(i * 2 + 1);
+            assertNull(index.get(i * 2 + 1));
         }
     }
 

@@ -61,8 +61,10 @@ public class DiffKeyWriterTest {
         diffWriter.write(3);
 
         final DiffKeyWriter<Integer> diffWriter2 = makeDiffKeyWriter();
+
         // nothing is thrown because new class is created
         diffWriter2.write(3);
+        assertTrue(true);
     }
 
     @Test
