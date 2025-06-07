@@ -15,13 +15,8 @@ import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class KeySegmentCacheTest {
-
-    private final Logger logger = LoggerFactory
-            .getLogger(KeySegmentCacheTest.class);
 
     private final TypeDescriptorString stringTd = new TypeDescriptorString();
 

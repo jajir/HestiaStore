@@ -4,65 +4,44 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 
-/**
- * This iterator merge non modifiable data from file with cached data. Cached
- * value is obtained from cache just before returning. It make sure that data
- * are actual.
- * 
- * @author honza
- *
- * @param <K>
- * @param <V>
- */
 public class MergeDeltaCacheWithIndexIterator<K, V>
         implements PairIterator<K, V> {
 
-    /**
-     * Iterator contains main data with deleted items. Can't contains
-     * tombstones.
-     */
     private final PairIterator<K, V> mainIterator;
-
-    /**
-     * Cached data iterator. Can contains tombstones.
-     */
     private final Iterator<Pair<K, V>> deltaCacheIterator;
-
     private final TypeDescriptor<V> valueTypeDescriptor;
-
     private final Comparator<K> keyComparator;
 
-    private Pair<K, V> nextMainIndexPair = null;
-    private Pair<K, V> nextDeltaCachePair = null;
+    private Pair<K, V> next = null;
 
-    public MergeDeltaCacheWithIndexIterator( //
-            final PairIterator<K, V> mainIterator, //
-            final TypeDescriptor<K> keyTypeDescriptor, //
-            final TypeDescriptor<V> valueTypeDescriptor, //
+    private Pair<K, V> mainCurrent;
+    private Pair<K, V> deltaCurrent;
+
+    public MergeDeltaCacheWithIndexIterator(
+            final PairIterator<K, V> mainIterator,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
             final List<Pair<K, V>> sortedDeltaCache) {
-        this.mainIterator = Objects.requireNonNull(mainIterator);
-        this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
-        Objects.requireNonNull(keyTypeDescriptor);
-        this.keyComparator = keyTypeDescriptor.getComparator();
-        Objects.requireNonNull(sortedDeltaCache);
-        this.deltaCacheIterator = sortedDeltaCache.iterator();
-        nextMainIterator();
-        nextCacheIterator();
-        tryToRemoveTombstone();
-    }
 
-    public Pair<K, V> read() {
-        if (hasNext()) {
-            return next();
-        } else {
-            return null;
-        }
+        this.mainIterator = Vldtn.requireNonNull(mainIterator, "mainIterator");
+        this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
+                "valueTypeDescriptor");
+        this.keyComparator = Vldtn
+                .requireNonNull(keyTypeDescriptor, "keyTypeDescriptor")
+                .getComparator();
+        Vldtn.requireNonNull(sortedDeltaCache, "sortedDeltaCache");
+
+        this.deltaCacheIterator = sortedDeltaCache.iterator();
+        this.mainCurrent = readNextPairFromMain();
+        this.deltaCurrent = readNextPairFromCache();
+
+        advance();
     }
 
     @Override
@@ -72,105 +51,68 @@ public class MergeDeltaCacheWithIndexIterator<K, V>
 
     @Override
     public boolean hasNext() {
-        return nextDeltaCachePair != null || nextMainIndexPair != null;
+        return next != null;
     }
 
     @Override
     public Pair<K, V> next() {
-        if (nextMainIndexPair == null) {
-            if (nextDeltaCachePair == null) {
-                throw new NoSuchElementException("There no next element.");
+        if (next == null) {
+            throw new NoSuchElementException("No next element.");
+        }
+        Pair<K, V> result = next;
+        advance();
+        return result;
+    }
+
+    private void advance() {
+        next = null;
+        // Is there aany data to examine?
+        while (mainCurrent != null || deltaCurrent != null) {
+            Pair<K, V> candidate;
+            if (mainCurrent == null) {
+                candidate = deltaCurrent;
+                deltaCurrent = readNextPairFromCache();
+            } else if (deltaCurrent == null) {
+                candidate = mainCurrent;
+                mainCurrent = readNextPairFromMain();
             } else {
-                final Pair<K, V> out = nextCacheIterator();
-                tryToRemoveTombstone();
-                return out;
-            }
-        } else {
-            if (nextDeltaCachePair == null) {
-                final Pair<K, V> out = nextMainIterator();
-                tryToRemoveTombstone();
-                return out;
-            } else {
-                // both next elements exists, so compare them
-                final int cmp = keyComparator.compare(
-                        nextMainIndexPair.getKey(),
-                        nextDeltaCachePair.getKey());
+                int cmp = keyComparator.compare(mainCurrent.getKey(),
+                        deltaCurrent.getKey());
                 if (cmp < 0) {
-                    // main < cache
-                    final Pair<K, V> out = nextMainIterator();
-                    tryToRemoveTombstone();
-                    return out;
-                } else if (cmp == 0) {
-                    // main = cache
-                    final Pair<K, V> out = nextDeltaCachePair;
-                    if (valueTypeDescriptor.isTombstone(out.getValue())) {
-                        nextMainIterator();
-                        nextCacheIterator();
-                        tryToRemoveTombstone();
-                        if (hasNext()) {
-                            return next();
-                        } else {
-                            return null;
-                        }
-                    } else {
-                        nextMainIterator();
-                        nextCacheIterator();
-                        tryToRemoveTombstone();
-                        return out;
-                    }
+                    candidate = mainCurrent;
+                    mainCurrent = readNextPairFromMain();
+                } else if (cmp > 0) {
+                    candidate = deltaCurrent;
+                    deltaCurrent = readNextPairFromCache();
                 } else {
-                    // main > cache
-                    final Pair<K, V> out = nextCacheIterator();
-                    tryToRemoveTombstone();
-                    return out;
+                    // same key: use delta version, skip both
+                    candidate = deltaCurrent;
+                    mainCurrent = readNextPairFromMain();
+                    deltaCurrent = readNextPairFromCache();
                 }
             }
+
+            if (!valueTypeDescriptor.isTombstone(candidate.getValue())) {
+                next = candidate;
+                return;
+            }
+            // else skip tombstone and continue
         }
     }
 
-    private Pair<K, V> nextMainIterator() {
-        final Pair<K, V> outPair = nextMainIndexPair;
+    private Pair<K, V> readNextPairFromMain() {
         if (mainIterator.hasNext()) {
-            nextMainIndexPair = mainIterator.next();
+            return mainIterator.next();
         } else {
-            nextMainIndexPair = null;
+            return null;
         }
-        return outPair;
     }
 
-    private Pair<K, V> nextCacheIterator() {
-        final Pair<K, V> outPair = nextDeltaCachePair;
+    private Pair<K, V> readNextPairFromCache() {
         if (deltaCacheIterator.hasNext()) {
-            nextDeltaCachePair = deltaCacheIterator.next();
+            return deltaCacheIterator.next();
         } else {
-            nextDeltaCachePair = null;
-        }
-        return outPair;
-    }
-
-    private void tryToRemoveTombstone() {
-        if (nextDeltaCachePair == null) {
-            return;
-        }
-        if (nextMainIndexPair == null) {
-            if (valueTypeDescriptor
-                    .isTombstone(nextDeltaCachePair.getValue())) {
-                nextCacheIterator();
-                tryToRemoveTombstone();
-            }
-            return;
-        }
-        if (valueTypeDescriptor.isTombstone(nextDeltaCachePair.getValue())) {
-            final int cmp = keyComparator.compare(nextMainIndexPair.getKey(),
-                    nextDeltaCachePair.getKey());
-            if (cmp == 0) {
-                nextMainIterator();
-                nextCacheIterator();
-                tryToRemoveTombstone();
-            } else if (cmp > 0) {
-                nextCacheIterator();
-            }
+            return null;
         }
     }
-
 }
