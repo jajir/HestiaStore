@@ -1,7 +1,12 @@
 package org.hestiastore.index.segment;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.util.Arrays;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
@@ -39,6 +44,17 @@ class MergeDeltaCacheWithIndexIteratorTest extends AbstractSegmentTest {
                 Arrays.asList(), Arrays.asList());
 
         verifyIteratorData(iterator, Arrays.asList());
+    }
+
+    @Test
+    void test_move_to_invalid_item() {
+        final PairIterator<String, Integer> iterator = makeIterator(//
+                Arrays.asList(), Arrays.asList());
+
+        assertFalse(iterator.hasNext(), "Iterator should be empty");
+        final Exception e = assertThrows(NoSuchElementException.class,
+                () -> iterator.next());
+        assertEquals("No next element.", e.getMessage());
     }
 
     @Test
@@ -89,6 +105,23 @@ class MergeDeltaCacheWithIndexIteratorTest extends AbstractSegmentTest {
     }
 
     @Test
+    void test_merge_with_tombstone_as_first_element() {
+        final PairIterator<String, Integer> iterator = makeIterator(//
+                Arrays.asList(//
+                        Pair.of("a", 10), //
+                        Pair.of("b", 20), //
+                        Pair.of("c", 30)),
+                Arrays.asList(//
+                        Pair.of("a", tdi.getTombstone()), //
+                        Pair.of("b", 20), //
+                        Pair.of("c", 55)));
+
+        verifyIteratorData(iterator, Arrays.asList(//
+                Pair.of("b", 20), //
+                Pair.of("c", 55)));
+    }
+
+    @Test
     void test_merge_with_tombstone_fill_end_of_delata_cache() {
         final PairIterator<String, Integer> iterator = makeIterator(//
                 Arrays.asList(//
@@ -112,7 +145,20 @@ class MergeDeltaCacheWithIndexIteratorTest extends AbstractSegmentTest {
                 Arrays.asList(//
                         Pair.of("a", 10), //
                         Pair.of("b", 20), //
-                        Pair.of("c", 30)),
+                        Pair.of("c", 30)), //
+                Arrays.asList(//
+                        Pair.of("a", tdi.getTombstone()), //
+                        Pair.of("b", tdi.getTombstone()), //
+                        Pair.of("c", tdi.getTombstone()), //
+                        Pair.of("e", tdi.getTombstone())));
+
+        verifyIteratorData(iterator, Arrays.asList());
+    }
+
+    @Test
+    void test_merge_all_is_deleted_2() {
+        final PairIterator<String, Integer> iterator = makeIterator(//
+                Arrays.asList(), //
                 Arrays.asList(//
                         Pair.of("a", tdi.getTombstone()), //
                         Pair.of("b", tdi.getTombstone()), //
