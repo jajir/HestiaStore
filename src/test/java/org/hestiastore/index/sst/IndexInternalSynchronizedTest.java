@@ -1,5 +1,6 @@
 package org.hestiastore.index.sst;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -33,6 +34,9 @@ public class IndexInternalSynchronizedTest {
         try (IndexInternalSynchronized<Integer, String> synchIndex = new IndexInternalSynchronized<>(
                 directory, TD_INTEGER, TD_STRING, conf, log)) {
         }
+
+        // If no exception is thrown, then constructor works as expected
+        assertTrue(true);
     }
 
 }
