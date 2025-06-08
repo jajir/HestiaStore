@@ -82,31 +82,36 @@ public class MergeWithCacheIterator<K, V> implements PairIterator<K, V> {
                 tryToremoveTombstone();
             } else {
                 // both next elements exists
-                final int cmp = keyComparator.compare(nextMainPair.getKey(),
-                        nextCacheKey);
-                if (cmp < 0) {
-                    currentPair = nextMainIterator();
-                    tryToremoveTombstone();
-                } else if (cmp == 0) {
-                    final Pair<K, V> nextCachePair = getCachedPair(
-                            nextCacheKey);
-                    if (valueTypeDescriptor
-                            .isTombstone(nextCachePair.getValue())) {
-                        nextMainIterator();
-                        nextCacheIterator();
-                        tryToremoveTombstone();
-                        next();
-                    } else {
-                        currentPair = nextCachePair;
-                    }
-                    nextMainIterator();
-                    nextCacheIterator();
-                    tryToremoveTombstone();
-                } else {
-                    currentPair = nextCacheIterator();
-                    tryToremoveTombstone();
-                }
+                currentPair = nextBothIterators();
             }
+        }
+        return currentPair;
+    }
+
+    private Pair<K, V> nextBothIterators() {
+        final int cmp = keyComparator.compare(nextMainPair.getKey(),
+                nextCacheKey);
+        if (cmp < 0) {
+            Pair<K, V> out = nextMainIterator();
+            tryToremoveTombstone();
+            return out;
+        } else if (cmp == 0) {
+            final Pair<K, V> nextCachePair = getCachedPair(nextCacheKey);
+            if (valueTypeDescriptor.isTombstone(nextCachePair.getValue())) {
+                nextMainIterator();
+                nextCacheIterator();
+                tryToremoveTombstone();
+                next();
+            } else {
+                return nextCachePair;
+            }
+            nextMainIterator();
+            nextCacheIterator();
+            tryToremoveTombstone();
+        } else {
+            Pair<K, V> out = nextCacheIterator();
+            tryToremoveTombstone();
+            return out;
         }
         return currentPair;
     }
