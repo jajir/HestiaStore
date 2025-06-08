@@ -4,7 +4,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -101,7 +100,7 @@ public final class KeySegmentCache<K> implements CloseableResource {
     }
 
     public SegmentId findSegmentId(final K key) {
-        Objects.requireNonNull(key, "Key can't be null");
+        Vldtn.requireNonNull(key, "key");
         final Pair<K, SegmentId> pair = localFindSegmentForKey(key);
         return pair == null ? null : pair.getValue();
     }
@@ -111,7 +110,7 @@ public final class KeySegmentCache<K> implements CloseableResource {
     }
 
     public SegmentId insertKeyToSegment(final K key) {
-        Objects.requireNonNull(key, "Key can't be null");
+        Vldtn.requireNonNull(key, "key");
         final Pair<K, SegmentId> pair = localFindSegmentForKey(key);
         if (pair == null) {
             /*
@@ -127,7 +126,7 @@ public final class KeySegmentCache<K> implements CloseableResource {
     }
 
     private Pair<K, SegmentId> localFindSegmentForKey(final K key) {
-        Objects.requireNonNull(key, "Key can't be null");
+        Vldtn.requireNonNull(key, "key");
         final Map.Entry<K, SegmentId> ceilingEntry = list.ceilingEntry(key);
         if (ceilingEntry == null) {
             return null;
@@ -151,7 +150,7 @@ public final class KeySegmentCache<K> implements CloseableResource {
     }
 
     public void insertSegment(final K key, final SegmentId segmentId) {
-        Objects.requireNonNull(key, "Key can't be null");
+        Vldtn.requireNonNull(key, "key");
         if (list.containsValue(segmentId)) {
             throw new IllegalArgumentException(
                     String.format("Segment id '%s' already exists", segmentId));

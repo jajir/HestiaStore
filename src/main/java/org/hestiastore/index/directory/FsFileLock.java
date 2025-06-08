@@ -1,7 +1,5 @@
 package org.hestiastore.index.directory;
 
-import java.util.Objects;
-
 import org.hestiastore.index.Vldtn;
 
 public class FsFileLock implements FileLock {
