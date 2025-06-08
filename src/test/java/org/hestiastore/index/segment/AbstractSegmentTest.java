@@ -7,7 +7,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hestiastore.index.AbstractDataTest;
 import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.directory.Directory;
 import org.slf4j.Logger;
@@ -65,26 +64,6 @@ public abstract class AbstractSegmentTest extends AbstractDataTest {
     protected <M, N> void verifySegmentData(final Segment<M, N> seg,
             final List<Pair<M, N>> pairs) {
         verifyIteratorData(seg.openIterator(), pairs);
-    }
-
-    /**
-     * Verify that data from iterator are same as expecetd values
-     * 
-     * @param <M>          key type
-     * @param <N>          value type
-     * @param pairIterator required pair iterator
-     * @param pairs        required list of expected data in segment
-     */
-    protected <M, N> void verifyIteratorData(
-            final PairIterator<M, N> pairIterator,
-            final List<Pair<M, N>> pairs) {
-        final List<Pair<M, N>> data = toList(pairIterator);
-        assertEquals(pairs.size(), data.size(), "Unexpected segment data size");
-        for (int i = 0; i < pairs.size(); i++) {
-            final Pair<M, N> expectedPair = pairs.get(i);
-            final Pair<M, N> realPair = data.get(i);
-            assertEquals(expectedPair, realPair);
-        }
     }
 
     protected int numberOfFilesInDirectory(final Directory directory) {

@@ -19,7 +19,7 @@ public abstract class AbstractDirectory implements Directory {
 
     private final File directory;
 
-    public AbstractDirectory(final File directory) {
+    protected AbstractDirectory(final File directory) {
         this.directory = Vldtn.requireNonNull(directory, "directory");
         if (!directory.exists() && !directory.mkdirs()) {
             throw new IndexException(

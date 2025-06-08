@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Optional;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIteratorWithCurrent;
+import org.hestiastore.index.Vldtn;
 
 public final class MergedPairIterator<K, V>
         implements PairIteratorWithCurrent<K, V> {
@@ -21,12 +21,19 @@ public final class MergedPairIterator<K, V>
 
     MergedPairIterator(final List<PairIteratorWithCurrent<K, V>> iterators,
             final Comparator<K> keyComparator, final Merger<K, V> merger) {
-        Objects.requireNonNull(iterators, "iterators must not be null");
+        Vldtn.requireNonNull(iterators, "iterators");
         this.iterators = new ArrayList<>();
-        this.iterators.addAll(iterators);
-        this.keyComparator = Objects.requireNonNull(keyComparator,
-                "keyComparator must not be null");
-        this.merger = Objects.requireNonNull(merger, "merger must not be null");
+        iterators.forEach(iterator -> {
+            if (iterator.hasNext()) {
+                iterator.next();
+                this.iterators.add(iterator);
+            } else {
+                iterator.close();
+            }
+        });
+        this.keyComparator = Vldtn.requireNonNull(keyComparator,
+                "keyComparator");
+        this.merger = Vldtn.requireNonNull(merger, "merger");
         next = moveToNextPair();
     }
 
@@ -69,7 +76,8 @@ public final class MergedPairIterator<K, V>
     }
 
     private Pair<K, V> moveNextIteratorsWithKey(final K key) {
-        Objects.requireNonNull(key);
+        Vldtn.requireNonNull(key, "key");
+        final List<PairIteratorWithCurrent<K, V>> toRemove = new ArrayList<>();
         V out = null;
         for (final PairIteratorWithCurrent<K, V> iter : iterators) {
             if (iter.getCurrent().isPresent()) {
@@ -85,11 +93,13 @@ public final class MergedPairIterator<K, V>
                         iter.next();
                     } else {
                         iter.close();
+                        toRemove.add(iter);
                     }
                 }
             }
         }
-        Objects.requireNonNull(out, "out must not be null");
+        iterators.removeAll(toRemove);
+        Vldtn.requireNonNull(out, "outKey");
         return new Pair<K, V>(key, out);
     }
 

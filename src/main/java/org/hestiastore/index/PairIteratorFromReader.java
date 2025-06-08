@@ -20,12 +20,14 @@ public class PairIteratorFromReader<K, V>
 
     private final CloseablePairReader<K, V> reader;
 
-    private Pair<K, V> current = null;
+    private Pair<K, V> next;
+    private Pair<K, V> current;
 
     public PairIteratorFromReader(final CloseablePairReader<K, V> reader) {
         this.reader = Objects.requireNonNull(reader,
                 "Pair reader can't be null.");
-        current = reader.read();
+        next = reader.read();
+        current = null;
     }
 
     @Override
@@ -35,17 +37,17 @@ public class PairIteratorFromReader<K, V>
 
     @Override
     public boolean hasNext() {
-        return current != null;
+        return next != null;
     }
 
     @Override
     public Pair<K, V> next() {
-        if (current == null) {
+        if (next == null) {
             throw new NoSuchElementException();
         }
-        final Pair<K, V> out = current;
-        current = reader.read();
-        return out;
+        current = next;
+        next = reader.read();
+        return current;
     }
 
     @Override
