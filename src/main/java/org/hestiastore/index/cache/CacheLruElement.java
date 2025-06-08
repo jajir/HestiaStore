@@ -1,6 +1,6 @@
 package org.hestiastore.index.cache;
 
-import java.util.Objects;
+import org.hestiastore.index.Vldtn;
 
 public class CacheLruElement<V> {
 
@@ -9,7 +9,7 @@ public class CacheLruElement<V> {
     private long cx;
 
     CacheLruElement(final V value, long initialCx) {
-        this.value = Objects.requireNonNull(value);
+        this.value = Vldtn.requireNonNull(value, "value");
         cx = initialCx;
     }
 

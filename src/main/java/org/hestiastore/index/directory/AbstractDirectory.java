@@ -2,7 +2,6 @@ package org.hestiastore.index.directory;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.IndexException;
@@ -46,7 +45,7 @@ public abstract class AbstractDirectory implements Directory {
     }
 
     protected File getFile(final String fileName) {
-        Objects.requireNonNull(fileName);
+        Vldtn.requireNonNull(fileName, "fileName");
         return directory.toPath().resolve(fileName).toFile();
     }
 

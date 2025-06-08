@@ -3,7 +3,6 @@ package org.hestiastore.index;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Optional;
 
 public class PairIteratorList<K, V> implements PairIteratorWithCurrent<K, V> {
@@ -13,12 +12,11 @@ public class PairIteratorList<K, V> implements PairIteratorWithCurrent<K, V> {
     private boolean closed = false;
 
     public PairIteratorList(final List<Pair<K, V>> list) {
-        this(Objects.requireNonNull(list, "List can't be null.").iterator());
+        this(Vldtn.requireNonNull(list, "list").iterator());
     }
 
-    public PairIteratorList(final Iterator<Pair<K, V>> Iterator) {
-        this.iterator = Objects.requireNonNull(Iterator,
-                "Iterator can't be null.");
+    public PairIteratorList(final Iterator<Pair<K, V>> iterator) {
+        this.iterator = Vldtn.requireNonNull(iterator, "iterator");
     }
 
     @Override

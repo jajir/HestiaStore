@@ -46,7 +46,7 @@ public class KeySegmentCacheTest {
 
     @Test
     public void test_constructor_empty_directory() throws Exception {
-        assertThrows(NullPointerException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             try (KeySegmentCache<String> fif = new KeySegmentCache<>(null,
                     stringTd)) {
             }
@@ -55,7 +55,7 @@ public class KeySegmentCacheTest {
 
     @Test
     public void test_constructor_empty_keyTypeDescriptor() throws Exception {
-        assertThrows(NullPointerException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                     null)) {
             }

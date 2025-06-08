@@ -1,7 +1,8 @@
 package org.hestiastore.index.directory;
 
-import java.util.Objects;
 import java.util.stream.Stream;
+
+import org.hestiastore.index.Vldtn;
 
 public interface Directory {
 
@@ -22,9 +23,7 @@ public interface Directory {
      * @return return {@link FileWriter} or exception is thrown
      */
     default FileWriter getFileWriter(final String fileName) {
-        return getFileWriter(
-                Objects.requireNonNull(fileName,
-                        () -> String.format("File name is null.")),
+        return getFileWriter(Vldtn.requireNonNull(fileName, "fileName"),
                 Access.OVERWRITE);
     }
 

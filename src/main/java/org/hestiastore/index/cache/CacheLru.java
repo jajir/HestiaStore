@@ -2,9 +2,10 @@ package org.hestiastore.index.cache;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+
+import org.hestiastore.index.Vldtn;
 
 /**
  * Simple implementation of LRU algorithm.
@@ -26,7 +27,8 @@ public final class CacheLru<K, V> implements Cache<K, V> {
 
     public CacheLru(final long limit, final BiConsumer<K, V> evictedElement) {
         this.limit = limit;
-        this.evictedElement = Objects.requireNonNull(evictedElement);
+        this.evictedElement = Vldtn.requireNonNull(evictedElement,
+                "evictedElement");
         if (limit <= 0) {
             throw new IllegalArgumentException("Limit must be greater than 0");
         }
@@ -39,8 +41,8 @@ public final class CacheLru<K, V> implements Cache<K, V> {
 
     @Override
     public void put(final K key, final V value) {
-        Objects.requireNonNull(key);
-        Objects.requireNonNull(value);
+        Vldtn.requireNonNull(key, "key");
+        Vldtn.requireNonNull(value, "value");
         if (cache.size() >= limit) {
             final K keyToRemove = getOlderElement();
             final CacheLruElement<V> element = cache.remove(keyToRemove);
@@ -77,7 +79,7 @@ public final class CacheLru<K, V> implements Cache<K, V> {
 
     @Override
     public void ivalidate(final K key) {
-        Objects.requireNonNull(key);
+        Vldtn.requireNonNull(key, "key");
         final CacheLruElement<V> value = cache.remove(key);
         if (value != null) {
             evictedElement.accept(key, value.getValue());

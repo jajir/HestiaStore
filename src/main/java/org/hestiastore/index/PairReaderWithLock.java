@@ -1,7 +1,5 @@
 package org.hestiastore.index;
 
-import java.util.Objects;
-
 /**
  * To pair reader add lock, that allows to skip rest of data.
  * 
@@ -15,12 +13,11 @@ public class PairReaderWithLock<K, V> implements CloseablePairReader<K, V> {
     private final CloseablePairReader<K, V> reader;
     private final OptimisticLock optimisticLock;
 
-    public PairReaderWithLock(final CloseablePairReader<K, V> reader,
+    public PairReaderWithLock(final CloseablePairReader<K, V> pairReader,
             final OptimisticLock optimisticLock) {
-        this.reader = Objects.requireNonNull(reader,
-                "Pair reader can't be null.");
-        this.optimisticLock = Objects.requireNonNull(optimisticLock,
-                "Optimistic lock can't be null.");
+        this.reader = Vldtn.requireNonNull(pairReader, "pairReader");
+        this.optimisticLock = Vldtn.requireNonNull(optimisticLock,
+                "optimisticLock");
     }
 
     @Override

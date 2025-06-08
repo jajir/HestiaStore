@@ -1,8 +1,7 @@
 package org.hestiastore.index.bloomfilter;
 
-import java.util.Objects;
-
 import org.hestiastore.index.CloseableResource;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileReader;
@@ -42,14 +41,13 @@ public final class BloomFilter<K> implements CloseableResource {
             final int numberOfHashFunctions, final int indexSizeInBytes,
             final ConvertorToBytes<K> convertorToBytes,
             final String relatedObjectName, final int diskIoBufferSize) {
-        this.directory = Objects.requireNonNull(directory,
-                "Directory is required");
-        this.bloomFilterFileName = Objects.requireNonNull(bloomFilterFileName,
-                "Bloom filter file name is required");
-        this.convertorToBytes = Objects.requireNonNull(convertorToBytes,
-                "Convertor to bytes is required");
-        this.relatedObjectName = Objects.requireNonNull(relatedObjectName,
-                "Bloom filter related object name is required");
+        this.directory = Vldtn.requireNonNull(directory, "diskIoBufferSize");
+        this.bloomFilterFileName = Vldtn.requireNonNull(bloomFilterFileName,
+                "bloomFilterFileName");
+        this.convertorToBytes = Vldtn.requireNonNull(convertorToBytes,
+                "convertorToBytes");
+        this.relatedObjectName = Vldtn.requireNonNull(relatedObjectName,
+                "relatedObjectName");
         this.indexSizeInBytes = indexSizeInBytes;
         this.numberOfHashFunctions = numberOfHashFunctions;
         this.bloomFilterStats = new BloomFilterStats();
@@ -84,7 +82,7 @@ public final class BloomFilter<K> implements CloseableResource {
     }
 
     void setNewHash(final Hash newHash) {
-        Objects.requireNonNull(newHash, "New hash can't be null");
+        Vldtn.requireNonNull(newHash, "newHash");
         this.hash = newHash;
         try (FileWriter writer = directory.getFileWriter(getTempFileName(),
                 Directory.Access.OVERWRITE, diskIoBufferSize)) {

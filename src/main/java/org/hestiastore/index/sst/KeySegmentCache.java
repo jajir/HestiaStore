@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentId;
@@ -53,11 +54,11 @@ public final class KeySegmentCache<K> implements CloseableResource {
 
     KeySegmentCache(final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor) {
-        Objects.requireNonNull(directory, "Directory object is null.");
-        Objects.requireNonNull(keyTypeDescriptor,
-                "Key type comparator is null.");
-        this.keyComparator = Objects
-                .requireNonNull(keyTypeDescriptor.getComparator());
+        Vldtn.requireNonNull(directory, "directory");
+        Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
+        this.keyComparator = Vldtn.requireNonNull(
+                keyTypeDescriptor.getComparator(),
+                "keyTypeDescriptor.getComparator()");
         this.sdf = SortedDataFile.<K, SegmentId>builder() //
                 .withDirectory(directory) //
                 .withFileName(FILE_NAME)//

@@ -10,6 +10,7 @@ import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.datatype.TypeDescriptorString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -20,8 +21,9 @@ public class IntegrationLogWriterIsFlushTest {
     private final TypeDescriptor<Long> tdl = new TypeDescriptorLong();
     private final TypeDescriptor<String> tds = new TypeDescriptorString();
 
-    private Directory directory = new MemDirectory();
+    private Directory directory;
 
+    @BeforeEach
     void setUp() {
         directory = new MemDirectory();
     }

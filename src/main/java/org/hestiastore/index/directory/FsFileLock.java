@@ -2,6 +2,8 @@ package org.hestiastore.index.directory;
 
 import java.util.Objects;
 
+import org.hestiastore.index.Vldtn;
+
 public class FsFileLock implements FileLock {
 
     private final Directory directory;
@@ -9,8 +11,8 @@ public class FsFileLock implements FileLock {
     private final String lockFileName;
 
     FsFileLock(final Directory directory, final String lockFileName) {
-        this.directory = Objects.requireNonNull(directory);
-        this.lockFileName = Objects.requireNonNull(lockFileName);
+        this.directory = Vldtn.requireNonNull(directory, "directory");
+        this.lockFileName = Vldtn.requireNonNull(lockFileName, "lockFileName");
     }
 
     @Override

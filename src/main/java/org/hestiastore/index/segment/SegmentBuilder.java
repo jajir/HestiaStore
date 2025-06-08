@@ -1,7 +1,6 @@
 package org.hestiastore.index.segment;
 
-import java.util.Objects;
-
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 
@@ -38,62 +37,64 @@ public final class SegmentBuilder<K, V> {
     }
 
     public SegmentBuilder<K, V> withDirectory(final Directory directory) {
-        this.directory = Objects.requireNonNull(directory,
-                "Directory can't be null");
+        this.directory = Vldtn.requireNonNull(directory, "directory");
         return this;
     }
 
     public SegmentBuilder<K, V> withSegmentConf(final SegmentConf segmentConf) {
-        this.segmentConf = Objects.requireNonNull(segmentConf);
+        this.segmentConf = Vldtn.requireNonNull(segmentConf, "segmentConf");
         return this;
     }
 
     public SegmentBuilder<K, V> withSegmentFiles(
             final SegmentFiles<K, V> segmentFiles) {
-        this.segmentFiles = Objects.requireNonNull(segmentFiles);
+        this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
         return this;
     }
 
     public SegmentBuilder<K, V> withKeyTypeDescriptor(
             final TypeDescriptor<K> keyTypeDescriptor) {
-        this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
+        this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
+                "keyTypeDescriptor");
         return this;
     }
 
     public SegmentBuilder<K, V> withValueTypeDescriptor(
             final TypeDescriptor<V> valueTypeDescriptor) {
-        this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
+        this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
+                "valueTypeDescriptor");
         return this;
     }
 
     public SegmentBuilder<K, V> withId(final Integer id) {
-        this.id = SegmentId.of(Objects.requireNonNull(id));
+        this.id = SegmentId.of(Vldtn.requireNonNull(id, "id"));
         return this;
     }
 
     public SegmentBuilder<K, V> withId(final SegmentId id) {
-        this.id = Objects.requireNonNull(id);
+        this.id = Vldtn.requireNonNull(id, "id");
         return this;
     }
 
     public SegmentBuilder<K, V> withMaxNumberOfKeysInSegmentCache(
             final long maxNumberOfKeysInSegmentCache) {
-        this.maxNumberOfKeysInSegmentCache = Objects
-                .requireNonNull(maxNumberOfKeysInSegmentCache);
+        this.maxNumberOfKeysInSegmentCache = Vldtn.requireNonNull(
+                maxNumberOfKeysInSegmentCache, "maxNumberOfKeysInSegmentCache");
         return this;
     }
 
     public SegmentBuilder<K, V> withMaxNumberOfKeysInSegmentCacheDuringFlushing(
             final long maxNumberOfKeysInSegmentCacheDuringFlushing) {
-        this.maxNumberOfKeysInSegmentCacheDuringFlushing = Objects
-                .requireNonNull(maxNumberOfKeysInSegmentCacheDuringFlushing);
+        this.maxNumberOfKeysInSegmentCacheDuringFlushing = Vldtn.requireNonNull(
+                maxNumberOfKeysInSegmentCacheDuringFlushing,
+                "maxNumberOfKeysInSegmentCacheDuringFlushing");
         return this;
     }
 
     public SegmentBuilder<K, V> withMaxNumberOfKeysInIndexPage(
             final int maxNumberOfKeysInIndexPage) {
-        this.maxNumberOfKeysInIndexPage = Objects
-                .requireNonNull(maxNumberOfKeysInIndexPage);
+        this.maxNumberOfKeysInIndexPage = Vldtn.requireNonNull(
+                maxNumberOfKeysInIndexPage, "maxNumberOfKeysInIndexPage");
         return this;
     }
 

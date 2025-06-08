@@ -1,6 +1,6 @@
 package org.hestiastore.index.directory;
 
-import java.util.Objects;
+import org.hestiastore.index.Vldtn;
 
 public class FileReaderSeekableBuffered implements FileReaderSeekable {
 
@@ -12,7 +12,7 @@ public class FileReaderSeekableBuffered implements FileReaderSeekable {
 
     public FileReaderSeekableBuffered(final FileReaderSeekable fileReader,
             final int bufferSizeInBytes) {
-        this.fileReader = Objects.requireNonNull(fileReader);
+        this.fileReader = Vldtn.requireNonNull(fileReader, "fileReader");
         this.bufferSizeInBytes = bufferSizeInBytes;
         bufferedReader = new BufferedReader(fileReader, bufferSizeInBytes, 0);
     }

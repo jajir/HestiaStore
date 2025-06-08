@@ -1,7 +1,5 @@
 package org.hestiastore.index;
 
-import java.util.Objects;
-
 /**
  * Allows to use some locked object until it change.
  * 
@@ -15,7 +13,8 @@ public class OptimisticLock {
 
     public OptimisticLock(
             final OptimisticLockObjectVersionProvider versionProvider) {
-        this.versionProvider = Objects.requireNonNull(versionProvider);
+        this.versionProvider = Vldtn.requireNonNull(versionProvider,
+                "versionProvider");
         this.initialObjectVersion = versionProvider.getVersion();
     }
 

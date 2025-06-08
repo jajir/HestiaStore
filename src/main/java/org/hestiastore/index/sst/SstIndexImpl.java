@@ -1,11 +1,11 @@
 package org.hestiastore.index.sst;
 
 import java.util.List;
-import java.util.Objects;
 
 import org.hestiastore.index.F;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.UniqueCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
@@ -40,12 +40,14 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
         if (directory == null) {
             throw new IllegalArgumentException("Directory was no specified.");
         }
-        Objects.requireNonNull(directory);
+        Vldtn.requireNonNull(directory, "directory");
         indexState = new IndexStateNew<>(directory);
-        this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
-        this.log = Objects.requireNonNull(log);
-        this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
-        this.conf = Objects.requireNonNull(conf);
+        this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
+                "keyTypeDescriptor");
+        this.log = Vldtn.requireNonNull(log, "log");
+        this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
+                "valueTypeDescriptor");
+        this.conf = Vldtn.requireNonNull(conf, "conf");
         this.cache = new UniqueCache<K, V>(
                 this.keyTypeDescriptor.getComparator());
         this.keySegmentCache = new KeySegmentCache<>(directory,
@@ -60,8 +62,8 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
     @Override
     public void put(final K key, final V value) {
         indexState.tryPerformOperation();
-        Objects.requireNonNull(key, "Key cant be null");
-        Objects.requireNonNull(value, "Value cant be null");
+        Vldtn.requireNonNull(key, "key");
+        Vldtn.requireNonNull(value, "value");
         stats.incPutCx();
 
         if (valueTypeDescriptor.isTombstone(value)) {
@@ -86,7 +88,7 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
      * @return
      */
     PairIterator<K, V> openSegmentIterator(final SegmentId segmentId) {
-        Objects.requireNonNull(segmentId, "SegmentId can't be null.");
+        Vldtn.requireNonNull(segmentId, "segmentId");
         final Segment<K, V> seg = segmentManager.getSegment(segmentId);
         return seg.openIterator();
     }
@@ -144,7 +146,7 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
      * @return
      */
     private boolean optionallySplit(final Segment<K, V> segment) {
-        Objects.requireNonNull(segment, "Segment is required");
+        Vldtn.requireNonNull(segment, "segment");
         if (shouldBeSplit(segment)) {
             final SegmentSplitter<K, V> segmentSplitter = segment
                     .getSegmentSplitter();
@@ -188,7 +190,7 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
     @Override
     public V get(final K key) {
         indexState.tryPerformOperation();
-        Objects.requireNonNull(key, "Key cant be null");
+        Vldtn.requireNonNull(key, "key");
         stats.incGetCx();
 
         final V out = cache.get(key);
@@ -211,7 +213,7 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
     @Override
     public void delete(final K key) {
         indexState.tryPerformOperation();
-        Objects.requireNonNull(key, "Key cant be null");
+        Vldtn.requireNonNull(key, "key");
         stats.incDeleteCx();
 
         log.delete(key, valueTypeDescriptor.getTombstone());
@@ -246,7 +248,7 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
     }
 
     public void setIndexState(final IndexState<K, V> indexState) {
-        this.indexState = Objects.requireNonNull(indexState);
+        this.indexState = Vldtn.requireNonNull(indexState, "indexState");
     }
 
     @Override
