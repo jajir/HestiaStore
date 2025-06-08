@@ -1,7 +1,5 @@
 package org.hestiastore.index.bloomfilter;
 
-import java.util.Objects;
-
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.directory.Directory;
