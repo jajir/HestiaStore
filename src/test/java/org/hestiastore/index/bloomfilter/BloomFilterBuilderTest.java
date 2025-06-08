@@ -162,7 +162,7 @@ public class BloomFilterBuilderTest {
 
     @Test
     void test_missing_relatedObjectName() {
-        final Exception e = assertThrows(NullPointerException.class,
+        final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> BloomFilter.<String>builder()//
                         .withBloomFilterFileName(FILE_NAME)//
                         .withConvertorToBytes(TDS.getConvertorToBytes())//
@@ -171,13 +171,13 @@ public class BloomFilterBuilderTest {
                         .withNumberOfHashFunctions(0)//
                         .build());
 
-        assertEquals("Bloom filter related object name is required",
+        assertEquals("Property 'relatedObjectName' must not be null.",
                 e.getMessage());
     }
 
     @Test
     void test_missing_conventorToBytes() {
-        final Exception e = assertThrows(NullPointerException.class,
+        final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> BloomFilter.<String>builder()//
                         .withDirectory(directory)//
                         .withBloomFilterFileName(FILE_NAME)//
@@ -186,12 +186,13 @@ public class BloomFilterBuilderTest {
                         .build());
 
         assertNotNull(e);
-        assertEquals("Convertor to bytes is not set.", e.getMessage());
+        assertEquals("Property 'convertorToBytes' must not be null.",
+                e.getMessage());
     }
 
     @Test
     void test_missing_bloomFilterName() {
-        final Exception e = assertThrows(NullPointerException.class,
+        final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> BloomFilter.<String>builder()//
                         .withDirectory(directory)//
                         .withProbabilityOfFalsePositive(0.0001)//
@@ -199,12 +200,13 @@ public class BloomFilterBuilderTest {
                         .build());
 
         assertNotNull(e);
-        assertEquals("Bloom filter file name is not set.", e.getMessage());
+        assertEquals("Property 'bloomFilterFileName' must not be null.",
+                e.getMessage());
     }
 
     @Test
     void test_missing_directory() {
-        final Exception e = assertThrows(NullPointerException.class,
+        final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> BloomFilter.<String>builder()//
                         .withBloomFilterFileName(FILE_NAME)//
                         .withProbabilityOfFalsePositive(0.0001)//
@@ -212,7 +214,7 @@ public class BloomFilterBuilderTest {
                         .build());
 
         assertNotNull(e);
-        assertEquals("Directory is not set.", e.getMessage());
+        assertEquals("Property 'directory' must not be null.", e.getMessage());
     }
 
     @Test

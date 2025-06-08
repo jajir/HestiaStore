@@ -1,7 +1,8 @@
 package org.hestiastore.index.bloomfilter;
 
 import java.util.Arrays;
-import java.util.Objects;
+
+import org.hestiastore.index.Vldtn;
 
 public class BitArray {
 
@@ -12,7 +13,7 @@ public class BitArray {
     }
 
     public BitArray(final byte[] data) {
-        byteArray = Objects.requireNonNull(data, "Data are null");
+        byteArray = Vldtn.requireNonNull(data, "data");
     }
 
     /**

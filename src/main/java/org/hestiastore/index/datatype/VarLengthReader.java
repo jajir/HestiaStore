@@ -1,7 +1,6 @@
 package org.hestiastore.index.datatype;
 
-import java.util.Objects;
-
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileReader;
 
 public class VarLengthReader<T> implements TypeReader<T> {
@@ -9,7 +8,7 @@ public class VarLengthReader<T> implements TypeReader<T> {
     private final ConvertorFromBytes<T> convertor;
 
     public VarLengthReader(final ConvertorFromBytes<T> convertor) {
-        this.convertor = Objects.requireNonNull(convertor, "Convertor is null");
+        this.convertor = Vldtn.requireNonNull(convertor, "convertor");
     }
 
     @Override

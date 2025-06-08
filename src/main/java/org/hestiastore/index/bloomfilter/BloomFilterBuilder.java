@@ -2,6 +2,7 @@ package org.hestiastore.index.bloomfilter;
 
 import java.util.Objects;
 
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.directory.Directory;
 
@@ -79,11 +80,9 @@ public class BloomFilterBuilder<K> {
     }
 
     public BloomFilter<K> build() {
-        Objects.requireNonNull(directory, "Directory is not set.");
-        Objects.requireNonNull(bloomFilterFileName,
-                "Bloom filter file name is not set.");
-        Objects.requireNonNull(convertorToBytes,
-                "Convertor to bytes is not set.");
+        Vldtn.requireNonNull(directory, "directory");
+        Vldtn.requireNonNull(bloomFilterFileName, "bloomFilterFileName");
+        Vldtn.requireNonNull(convertorToBytes, "convertorToBytes");
         if (numberOfKeys == null && indexSizeInBytes == null) {
             throw new IllegalStateException("Number of keys is not set.");
         }

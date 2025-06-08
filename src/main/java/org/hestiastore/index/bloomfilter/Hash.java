@@ -1,8 +1,7 @@
 package org.hestiastore.index.bloomfilter;
 
-import java.util.Objects;
-
 import org.apache.commons.codec.digest.MurmurHash3;
+import org.hestiastore.index.Vldtn;
 
 /**
  * Implementation was taken from <a href=
@@ -20,7 +19,7 @@ public final class Hash {
     private final int numHashFunctions;
 
     Hash(final BitArray bits, final int numHashFunctions) {
-        this.bits = Objects.requireNonNull(bits);
+        this.bits = Vldtn.requireNonNull(bits, "bits");
         if (numHashFunctions <= 0) {
             throw new IllegalArgumentException(String.format(
                     "Number of hash function cant be '%s'", numHashFunctions));

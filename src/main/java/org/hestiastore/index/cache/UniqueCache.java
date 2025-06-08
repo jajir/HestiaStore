@@ -2,7 +2,6 @@ package org.hestiastore.index.cache;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -11,6 +10,7 @@ import org.hestiastore.index.CloseablePairReader;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.PairIteratorFromReader;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.sorteddatafile.PairComparator;
 
 /**
@@ -30,7 +30,8 @@ public class UniqueCache<K, V> {
     }
 
     public UniqueCache(final Comparator<K> keyComparator) {
-        this.keyComparator = Objects.requireNonNull(keyComparator);
+        this.keyComparator = Vldtn.requireNonNull(keyComparator,
+                "keyComparator");
         this.map = new TreeMap<>(keyComparator);
     }
 
@@ -42,7 +43,7 @@ public class UniqueCache<K, V> {
     }
 
     public V get(final K key) {
-        Objects.requireNonNull(key, "Key cant be null");
+        Vldtn.requireNonNull(key, "key");
         return map.get(key);
     }
 

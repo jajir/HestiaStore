@@ -2,7 +2,6 @@ package org.hestiastore.index;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -23,10 +22,9 @@ public class PairIteratorFromReader<K, V>
     private Pair<K, V> next;
     private Pair<K, V> current;
 
-    public PairIteratorFromReader(final CloseablePairReader<K, V> reader) {
-        this.reader = Objects.requireNonNull(reader,
-                "Pair reader can't be null.");
-        next = reader.read();
+    public PairIteratorFromReader(final CloseablePairReader<K, V> pairReader) {
+        this.reader = Vldtn.requireNonNull(pairReader, "pairReader");
+        next = pairReader.read();
         current = null;
     }
 

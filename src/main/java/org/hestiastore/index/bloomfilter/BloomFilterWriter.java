@@ -1,8 +1,7 @@
 package org.hestiastore.index.bloomfilter;
 
-import java.util.Objects;
-
 import org.hestiastore.index.CloseableResource;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 
 public class BloomFilterWriter<K> implements CloseableResource {
@@ -15,13 +14,14 @@ public class BloomFilterWriter<K> implements CloseableResource {
 
     BloomFilterWriter(final ConvertorToBytes<K> convertorToBytes,
             final Hash newHash, final BloomFilter<K> bloomFilter) {
-        this.convertorToBytes = Objects.requireNonNull(convertorToBytes);
-        this.hash = Objects.requireNonNull(newHash);
-        this.bloomFilter = Objects.requireNonNull(bloomFilter);
+        this.convertorToBytes = Vldtn.requireNonNull(convertorToBytes,
+                "convertorToBytes");
+        this.hash = Vldtn.requireNonNull(newHash, "newHash");
+        this.bloomFilter = Vldtn.requireNonNull(bloomFilter, "bloomFilter");
     }
 
     public boolean write(final K key) {
-        Objects.requireNonNull(key, "Key can't be null");
+        Vldtn.requireNonNull(key, "key");
         return hash.store(convertorToBytes.toBytes(key));
     }
 

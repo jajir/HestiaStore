@@ -1,7 +1,6 @@
 package org.hestiastore.index;
 
 import java.util.NoSuchElementException;
-import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,12 +15,10 @@ public class PairIteratorWithLock<K, V> implements PairIterator<K, V> {
     public PairIteratorWithLock(final PairIterator<K, V> iterator,
             final OptimisticLock optimisticLock,
             final String lockedObjectName) {
-        this.iterator = Objects.requireNonNull(iterator,
-                "Pair iterator can't be null.");
-        this.lock = Objects.requireNonNull(optimisticLock,
-                "Optimistic lock can't be null.");
-        this.lockedObjectName = Objects.requireNonNull(lockedObjectName,
-                "Locked object name can't be null.");
+        this.iterator = Vldtn.requireNonNull(iterator, "iterator");
+        this.lock = Vldtn.requireNonNull(optimisticLock, "optimisticLock");
+        this.lockedObjectName = Vldtn.requireNonNull(lockedObjectName,
+                "lockedObjectName");
     }
 
     @Override

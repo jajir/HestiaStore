@@ -1,6 +1,6 @@
 package org.hestiastore.index.directory;
 
-import java.util.Objects;
+import org.hestiastore.index.Vldtn;
 
 public class BufferedReader {
 
@@ -12,7 +12,7 @@ public class BufferedReader {
 
     BufferedReader(final FileReaderSeekable fileReader,
             final int bufferSizeInBytes, final int currentPositioninBuffer) {
-        this.fileReader = Objects.requireNonNull(fileReader);
+        this.fileReader = Vldtn.requireNonNull(fileReader, "fileReader");
         this.currentBufferPosition = currentPositioninBuffer;
         this.bufferSize = bufferSizeInBytes;
         buffer = new byte[bufferSizeInBytes];

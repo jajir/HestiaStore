@@ -1,9 +1,8 @@
 package org.hestiastore.index.segment;
 
-import java.util.Objects;
-
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Vldtn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,13 +24,13 @@ public final class SegmentCompacter<K, V> {
             final SegmentConf segmentConf,
             final VersionController versionController,
             final SegmentPropertiesManager segmentPropertiesManager) {
-        this.segment = Objects.requireNonNull(segment);
-        this.segmentFiles = Objects.requireNonNull(segmentFiles);
-        this.segmentConf = Objects.requireNonNull(segmentConf);
-        this.versionController = Objects.requireNonNull(versionController,
-                "Version controller is required");
-        this.segmentPropertiesManager = Objects
-                .requireNonNull(segmentPropertiesManager);
+        this.segment = Vldtn.requireNonNull(segment, "segment");
+        this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
+        this.segmentConf = Vldtn.requireNonNull(segmentConf, "segmentConf");
+        this.versionController = Vldtn.requireNonNull(versionController,
+                "versionController");
+        this.segmentPropertiesManager = Vldtn.requireNonNull(
+                segmentPropertiesManager, "segmentPropertiesManager");
     }
 
     /**
