@@ -89,18 +89,24 @@ public final class MergedPairIterator<K, V>
                     } else {
                         out = merger.merge(key, out, pair.getValue());
                     }
-                    if (iter.hasNext()) {
-                        iter.next();
-                    } else {
-                        iter.close();
-                        toRemove.add(iter);
-                    }
+                    moveIteratorToNextPair(iter, toRemove);
                 }
             }
         }
         iterators.removeAll(toRemove);
         Vldtn.requireNonNull(out, "outKey");
         return new Pair<K, V>(key, out);
+    }
+
+    private void moveIteratorToNextPair(
+            final PairIteratorWithCurrent<K, V> iterator,
+            final List<PairIteratorWithCurrent<K, V>> toRemove) {
+        if (iterator.hasNext()) {
+            iterator.next();
+        } else {
+            iterator.close();
+            toRemove.add(iterator);
+        }
     }
 
     @Override
