@@ -549,8 +549,8 @@ public class IndexConfigurationManagerTest {
                 () -> manager.mergeWithStored(cfg));
 
         assertEquals(
-                "Key class is already set to 'java.lang.Long' and "
-                        + "can't be changed to 'java.lang.Double'",
+                "Value of KeyClass is already set to 'java.lang.Long' "
+                        + "and can't be changed to 'java.lang.Double'",
                 e.getMessage());
     }
 
@@ -565,8 +565,8 @@ public class IndexConfigurationManagerTest {
                 () -> manager.mergeWithStored(cfg));
 
         assertEquals(
-                "Value class is already set to 'java.lang.String' and "
-                        + "can't be changed to 'java.lang.Double'",
+                "Value of ValueClass is already set to 'java.lang.String' "
+                        + "and can't be changed to 'java.lang.Double'",
                 e.getMessage());
     }
 
@@ -580,7 +580,7 @@ public class IndexConfigurationManagerTest {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> manager.mergeWithStored(cfg));
 
-        assertEquals("Key type descriptor is already set to "
+        assertEquals("Value of KeyTypeDescriptor is already set to "
                 + "'TypeDescriptorLong' and can't be changed to 'kachana'",
                 e.getMessage());
     }
@@ -595,7 +595,7 @@ public class IndexConfigurationManagerTest {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> manager.mergeWithStored(cfg));
 
-        assertEquals("Value type descriptor is already set to "
+        assertEquals("Value of ValueTypeDescriptor is already set to "
                 + "'TypeDescriptorString' and can't be changed to 'kachna'",
                 e.getMessage());
     }

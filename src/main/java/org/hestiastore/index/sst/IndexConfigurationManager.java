@@ -204,93 +204,92 @@ public class IndexConfigurationManager<K, V> {
     void validateThatFixValuesAreNotOverriden(
             final IndexConfiguration<K, V> storedConf,
             final IndexConfiguration<K, V> indexConf) {
-        if (indexConf.getKeyClass() != null
-                && !indexConf.getKeyClass().equals(storedConf.getKeyClass())) {
-            throw new IllegalArgumentException(String.format(
-                    "Key class is already set to '%s' and can't be changed to '%s'",
-                    storedConf.getKeyClass().getName(),
-                    indexConf.getKeyClass().getName()));
+        if (indexConf.getKeyClass() != null) {
+            validateThatWasntChanged(
+                    !indexConf.getKeyClass().equals(storedConf.getKeyClass()), //
+                    "KeyClass", //
+                    storedConf.getKeyClass().getName(), //
+                    indexConf.getKeyClass().getName());
         }
 
-        if (indexConf.getValueClass() != null && !indexConf.getValueClass()
-                .equals(storedConf.getValueClass())) {
-            throw new IllegalArgumentException(String.format(
-                    "Value class is already set to '%s' and can't be changed to '%s'",
-                    storedConf.getValueClass().getName(),
-                    indexConf.getValueClass().getName()));
+        if (indexConf.getValueClass() != null) {
+            validateThatWasntChanged(
+                    !indexConf.getValueClass()
+                            .equals(storedConf.getValueClass()), //
+                    "ValueClass", //
+                    storedConf.getValueClass().getName(), //
+                    indexConf.getValueClass().getName());
         }
 
-        if (indexConf.getKeyTypeDescriptor() != null
-                && !indexConf.getKeyTypeDescriptor()
-                        .equals(storedConf.getKeyTypeDescriptor())) {
-            throw new IllegalArgumentException(String.format(
-                    "Key type descriptor is already set to '%s' and can't be changed to '%s'",
-                    storedConf.getKeyTypeDescriptor(),
-                    indexConf.getKeyTypeDescriptor()));
-        }
+        validateThatWasntChanged(
+                indexConf.getKeyTypeDescriptor() != null
+                        && !indexConf.getKeyTypeDescriptor()
+                                .equals(storedConf.getKeyTypeDescriptor()), //
+                "KeyTypeDescriptor", //
+                storedConf.getKeyTypeDescriptor(), //
+                indexConf.getKeyTypeDescriptor());
 
-        if (indexConf.getValueTypeDescriptor() != null
-                && !indexConf.getValueTypeDescriptor()
-                        .equals(storedConf.getValueTypeDescriptor())) {
-            throw new IllegalArgumentException(String.format(
-                    "Value type descriptor is already set to '%s' and can't be changed to '%s'",
-                    storedConf.getValueTypeDescriptor(),
-                    indexConf.getValueTypeDescriptor()));
-        }
+        validateThatWasntChanged(
+                indexConf.getValueTypeDescriptor() != null
+                        && !indexConf.getValueTypeDescriptor()
+                                .equals(storedConf.getValueTypeDescriptor()), //
+                "ValueTypeDescriptor", //
+                storedConf.getValueTypeDescriptor(), //
+                indexConf.getValueTypeDescriptor());
 
-        if (indexConf.getMaxNumberOfKeysInSegment() != null
-                && indexConf.getMaxNumberOfKeysInSegment() > 0
-                && !indexConf.getMaxNumberOfKeysInSegment()
-                        .equals(storedConf.getMaxNumberOfKeysInSegment())) {
-            throw new IllegalArgumentException(String.format(
-                    "Value of MaxNumberOfKeysInSegment is already set"
-                            + " to '%s' and can't be changed to '%s'",
-                    storedConf.getMaxNumberOfKeysInSegment(),
-                    indexConf.getMaxNumberOfKeysInSegment()));
-        }
+        validateThatWasntChanged(
+                indexConf.getMaxNumberOfKeysInSegment() != null
+                        && indexConf.getMaxNumberOfKeysInSegment() > 0
+                        && !indexConf.getMaxNumberOfKeysInSegment().equals(
+                                storedConf.getMaxNumberOfKeysInSegment()), //
+                "MaxNumberOfKeysInSegment", //
+                storedConf.getMaxNumberOfKeysInSegment(), //
+                indexConf.getMaxNumberOfKeysInSegment());
 
-        if (indexConf.getMaxNumberOfKeysInSegmentIndexPage() != null
+        validateThatWasntChanged(indexConf
+                .getMaxNumberOfKeysInSegmentIndexPage() != null
                 && indexConf.getMaxNumberOfKeysInSegmentIndexPage() > 0
                 && !indexConf.getMaxNumberOfKeysInSegmentIndexPage().equals(
-                        storedConf.getMaxNumberOfKeysInSegmentIndexPage())) {
-            throw new IllegalArgumentException(String.format(
-                    "Value of MaxNumberOfKeysInSegmentIndexPage is already set"
-                            + " to '%s' and can't be changed to '%s'",
-                    storedConf.getMaxNumberOfKeysInSegmentIndexPage(),
-                    indexConf.getMaxNumberOfKeysInSegmentIndexPage()));
-        }
+                        storedConf.getMaxNumberOfKeysInSegmentIndexPage()), //
+                "MaxNumberOfKeysInSegmentIndexPage", //
+                storedConf.getMaxNumberOfKeysInSegmentIndexPage(), //
+                indexConf.getMaxNumberOfKeysInSegmentIndexPage());
 
-        if (indexConf.getBloomFilterIndexSizeInBytes() != null
-                && indexConf.getBloomFilterIndexSizeInBytes() > 0
-                && !indexConf.getBloomFilterIndexSizeInBytes()
-                        .equals(storedConf.getBloomFilterIndexSizeInBytes())) {
-            throw new IllegalArgumentException(String.format(
-                    "Value of BloomFilterIndexSizeInBytes is already set"
-                            + " to '%s' and can't be changed to '%s'",
-                    storedConf.getBloomFilterIndexSizeInBytes(),
-                    indexConf.getBloomFilterIndexSizeInBytes()));
-        }
+        validateThatWasntChanged(
+                indexConf.getBloomFilterIndexSizeInBytes() != null
+                        && indexConf.getBloomFilterIndexSizeInBytes() > 0
+                        && !indexConf.getBloomFilterIndexSizeInBytes().equals(
+                                storedConf.getBloomFilterIndexSizeInBytes()), //
+                "BloomFilterIndexSizeInBytes", //
+                storedConf.getBloomFilterIndexSizeInBytes(), //
+                indexConf.getBloomFilterIndexSizeInBytes());
 
-        if (indexConf.getBloomFilterNumberOfHashFunctions() != null
-                && indexConf.getBloomFilterNumberOfHashFunctions() > 0
-                && !indexConf.getBloomFilterNumberOfHashFunctions().equals(
-                        storedConf.getBloomFilterNumberOfHashFunctions())) {
-            throw new IllegalArgumentException(String.format(
-                    "Value of BloomFilterNumberOfHashFunctions is already set"
-                            + " to '%s' and can't be changed to '%s'",
-                    storedConf.getBloomFilterNumberOfHashFunctions(),
-                    indexConf.getBloomFilterNumberOfHashFunctions()));
-        }
+        validateThatWasntChanged(
+                indexConf.getBloomFilterNumberOfHashFunctions() != null
+                        && indexConf.getBloomFilterNumberOfHashFunctions() > 0
+                        && !indexConf.getBloomFilterNumberOfHashFunctions()
+                                .equals(storedConf
+                                        .getBloomFilterNumberOfHashFunctions()), //
+                "BloomFilterNumberOfHashFunctions", //
+                storedConf.getBloomFilterNumberOfHashFunctions(), //
+                indexConf.getBloomFilterNumberOfHashFunctions());
 
-        if (indexConf.getBloomFilterProbabilityOfFalsePositive() != null
-                && !indexConf.getBloomFilterProbabilityOfFalsePositive()
-                        .equals(storedConf
-                                .getBloomFilterProbabilityOfFalsePositive())) {
+        validateThatWasntChanged(indexConf
+                .getBloomFilterProbabilityOfFalsePositive() != null
+                && !indexConf.getBloomFilterProbabilityOfFalsePositive().equals(
+                        storedConf.getBloomFilterProbabilityOfFalsePositive()), //
+                "BloomFilterProbabilityOfFalsePositive", //
+                storedConf.getBloomFilterProbabilityOfFalsePositive(), //
+                indexConf.getBloomFilterProbabilityOfFalsePositive());
+    }
+
+    void validateThatWasntChanged(boolean wasChanged, final String propertyName,
+            Object storedValue, Object newValue) {
+        if (wasChanged) {
             throw new IllegalArgumentException(String.format(
-                    "Value of BloomFilterProbabilityOfFalsePositive is already set"
+                    "Value of " + propertyName + " is already set"
                             + " to '%s' and can't be changed to '%s'",
-                    storedConf.getBloomFilterProbabilityOfFalsePositive(),
-                    indexConf.getBloomFilterProbabilityOfFalsePositive()));
+                    storedValue, newValue));
         }
     }
 
