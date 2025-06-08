@@ -126,58 +126,33 @@ public class IndexConfigurationManager<K, V> {
         final IndexConfigurationBuilder<K, V> builder = makeBuilder(storedConf);
         boolean dirty = false;
 
-        validateThatFixValuesAreNotOverriden(storedConf, indexConf);
+        validateThatFixPropertiesAreNotOverriden(storedConf, indexConf);
 
-        if (indexConf.getBloomFilterProbabilityOfFalsePositive() != null
-                && !indexConf.getBloomFilterProbabilityOfFalsePositive()
-                        .equals(storedConf
-                                .getBloomFilterProbabilityOfFalsePositive())) {
-            throw new IllegalArgumentException(String.format(
-                    "Value of BloomFilterProbabilityOfFalsePositive is already set"
-                            + " to '%s' and can't be changed to '%s'",
-                    storedConf.getBloomFilterProbabilityOfFalsePositive(),
-                    indexConf.getBloomFilterProbabilityOfFalsePositive()));
-        }
-
-        if (indexConf.getIndexName() != null && !indexConf.getIndexName()
-                .equals(storedConf.getIndexName())) {
+        if (isIndexNameOverriden(storedConf, indexConf)) {
             builder.withName(indexConf.getIndexName());
             dirty = true;
         }
 
-        if (indexConf.getDiskIoBufferSize() != null
-                && indexConf.getDiskIoBufferSize() > 0
-                && !indexConf.getDiskIoBufferSize()
-                        .equals(storedConf.getDiskIoBufferSize())) {
+        if (isDiskIoBufferSizeOverriden(storedConf, indexConf)) {
             builder.withDiskIoBufferSizeInBytes(
                     indexConf.getDiskIoBufferSize());
             dirty = true;
         }
 
-        if (indexConf.getMaxNumberOfKeysInSegmentCache() != null
-                && indexConf.getMaxNumberOfKeysInSegmentCache() > 0
-                && !indexConf.getMaxNumberOfKeysInSegmentCache().equals(
-                        storedConf.getMaxNumberOfKeysInSegmentCache())) {
+        if (isMaxNumberOfKeysInSegmentCacheOverriden(storedConf, indexConf)) {
             builder.withMaxNumberOfKeysInSegmentCache(
                     indexConf.getMaxNumberOfKeysInSegmentCache());
             dirty = true;
         }
 
-        if (indexConf.getMaxNumberOfKeysInSegmentCacheDuringFlushing() != null
-                && indexConf
-                        .getMaxNumberOfKeysInSegmentCacheDuringFlushing() > 0
-                && !indexConf.getMaxNumberOfKeysInSegmentCacheDuringFlushing()
-                        .equals(storedConf
-                                .getMaxNumberOfKeysInSegmentCacheDuringFlushing())) {
+        if (isMaxNumberOfKeysInSegmentCacheDuringFlushingOverriden(storedConf,
+                indexConf)) {
             builder.withMaxNumberOfKeysInSegmentCacheDuringFlushing(
                     indexConf.getMaxNumberOfKeysInSegmentCacheDuringFlushing());
             dirty = true;
         }
 
-        if (indexConf.getMaxNumberOfKeysInCache() != null
-                && indexConf.getMaxNumberOfKeysInCache() > 0
-                && !indexConf.getMaxNumberOfKeysInCache()
-                        .equals(storedConf.getMaxNumberOfKeysInCache())) {
+        if (isMaxNumberOfKeysInCacheOverriden(storedConf, indexConf)) {
             builder.withMaxNumberOfKeysInCache(
                     indexConf.getMaxNumberOfKeysInCache());
             dirty = true;
@@ -201,7 +176,53 @@ public class IndexConfigurationManager<K, V> {
         return validate(builder.build());
     }
 
-    void validateThatFixValuesAreNotOverriden(
+    private boolean isIndexNameOverriden(
+            final IndexConfiguration<K, V> storedConf,
+            final IndexConfiguration<K, V> indexConf) {
+        return indexConf.getIndexName() != null
+                && !indexConf.getIndexName().equals(storedConf.getIndexName());
+    }
+
+    private boolean isDiskIoBufferSizeOverriden(
+            final IndexConfiguration<K, V> storedConf,
+            final IndexConfiguration<K, V> indexConf) {
+        return indexConf.getDiskIoBufferSize() != null
+                && indexConf.getDiskIoBufferSize() > 0
+                && !indexConf.getDiskIoBufferSize()
+                        .equals(storedConf.getDiskIoBufferSize());
+    }
+
+    private boolean isMaxNumberOfKeysInSegmentCacheOverriden(
+            final IndexConfiguration<K, V> storedConf,
+            final IndexConfiguration<K, V> indexConf) {
+        return indexConf.getMaxNumberOfKeysInSegmentCache() != null
+                && indexConf.getMaxNumberOfKeysInSegmentCache() > 0
+                && !indexConf.getMaxNumberOfKeysInSegmentCache()
+                        .equals(storedConf.getMaxNumberOfKeysInSegmentCache());
+    }
+
+    private boolean isMaxNumberOfKeysInSegmentCacheDuringFlushingOverriden(
+            final IndexConfiguration<K, V> storedConf,
+            final IndexConfiguration<K, V> indexConf) {
+        return indexConf
+                .getMaxNumberOfKeysInSegmentCacheDuringFlushing() != null
+                && indexConf
+                        .getMaxNumberOfKeysInSegmentCacheDuringFlushing() > 0
+                && !indexConf.getMaxNumberOfKeysInSegmentCacheDuringFlushing()
+                        .equals(storedConf
+                                .getMaxNumberOfKeysInSegmentCacheDuringFlushing());
+    }
+
+    private boolean isMaxNumberOfKeysInCacheOverriden(
+            final IndexConfiguration<K, V> storedConf,
+            final IndexConfiguration<K, V> indexConf) {
+        return indexConf.getMaxNumberOfKeysInCache() != null
+                && indexConf.getMaxNumberOfKeysInCache() > 0
+                && !indexConf.getMaxNumberOfKeysInCache()
+                        .equals(storedConf.getMaxNumberOfKeysInCache());
+    }
+
+    void validateThatFixPropertiesAreNotOverriden(
             final IndexConfiguration<K, V> storedConf,
             final IndexConfiguration<K, V> indexConf) {
         if (indexConf.getKeyClass() != null) {
