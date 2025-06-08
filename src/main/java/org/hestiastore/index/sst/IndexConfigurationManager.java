@@ -126,6 +126,84 @@ public class IndexConfigurationManager<K, V> {
         final IndexConfigurationBuilder<K, V> builder = makeBuilder(storedConf);
         boolean dirty = false;
 
+        validateThatFixValuesAreNotOverriden(storedConf, indexConf);
+
+        if (indexConf.getBloomFilterProbabilityOfFalsePositive() != null
+                && !indexConf.getBloomFilterProbabilityOfFalsePositive()
+                        .equals(storedConf
+                                .getBloomFilterProbabilityOfFalsePositive())) {
+            throw new IllegalArgumentException(String.format(
+                    "Value of BloomFilterProbabilityOfFalsePositive is already set"
+                            + " to '%s' and can't be changed to '%s'",
+                    storedConf.getBloomFilterProbabilityOfFalsePositive(),
+                    indexConf.getBloomFilterProbabilityOfFalsePositive()));
+        }
+
+        if (indexConf.getIndexName() != null && !indexConf.getIndexName()
+                .equals(storedConf.getIndexName())) {
+            builder.withName(indexConf.getIndexName());
+            dirty = true;
+        }
+
+        if (indexConf.getDiskIoBufferSize() != null
+                && indexConf.getDiskIoBufferSize() > 0
+                && !indexConf.getDiskIoBufferSize()
+                        .equals(storedConf.getDiskIoBufferSize())) {
+            builder.withDiskIoBufferSizeInBytes(
+                    indexConf.getDiskIoBufferSize());
+            dirty = true;
+        }
+
+        if (indexConf.getMaxNumberOfKeysInSegmentCache() != null
+                && indexConf.getMaxNumberOfKeysInSegmentCache() > 0
+                && !indexConf.getMaxNumberOfKeysInSegmentCache().equals(
+                        storedConf.getMaxNumberOfKeysInSegmentCache())) {
+            builder.withMaxNumberOfKeysInSegmentCache(
+                    indexConf.getMaxNumberOfKeysInSegmentCache());
+            dirty = true;
+        }
+
+        if (indexConf.getMaxNumberOfKeysInSegmentCacheDuringFlushing() != null
+                && indexConf
+                        .getMaxNumberOfKeysInSegmentCacheDuringFlushing() > 0
+                && !indexConf.getMaxNumberOfKeysInSegmentCacheDuringFlushing()
+                        .equals(storedConf
+                                .getMaxNumberOfKeysInSegmentCacheDuringFlushing())) {
+            builder.withMaxNumberOfKeysInSegmentCacheDuringFlushing(
+                    indexConf.getMaxNumberOfKeysInSegmentCacheDuringFlushing());
+            dirty = true;
+        }
+
+        if (indexConf.getMaxNumberOfKeysInCache() != null
+                && indexConf.getMaxNumberOfKeysInCache() > 0
+                && !indexConf.getMaxNumberOfKeysInCache()
+                        .equals(storedConf.getMaxNumberOfKeysInCache())) {
+            builder.withMaxNumberOfKeysInCache(
+                    indexConf.getMaxNumberOfKeysInCache());
+            dirty = true;
+        }
+
+        if (indexConf.isLogEnabled() != null && !indexConf.isLogEnabled()
+                .equals(storedConf.isLogEnabled())) {
+            builder.withLogEnabled(indexConf.isLogEnabled());
+            dirty = true;
+        }
+
+        if (indexConf.isThreadSafe() != null && !indexConf.isThreadSafe()
+                .equals(storedConf.isThreadSafe())) {
+            builder.withThreadSafe(indexConf.isThreadSafe());
+            dirty = true;
+        }
+
+        if (dirty) {
+            confStorage.save(builder.build());
+        }
+        return validate(builder.build());
+    }
+
+    void validateThatFixValuesAreNotOverriden(
+            final IndexConfiguration<K, V> storedConf,
+            final IndexConfiguration<K, V> indexConf) {
         if (indexConf.getKeyClass() != null
                 && !indexConf.getKeyClass().equals(storedConf.getKeyClass())) {
             throw new IllegalArgumentException(String.format(
@@ -214,67 +292,6 @@ public class IndexConfigurationManager<K, V> {
                     storedConf.getBloomFilterProbabilityOfFalsePositive(),
                     indexConf.getBloomFilterProbabilityOfFalsePositive()));
         }
-
-        if (indexConf.getIndexName() != null && !indexConf.getIndexName()
-                .equals(storedConf.getIndexName())) {
-            builder.withName(indexConf.getIndexName());
-            dirty = true;
-        }
-
-        if (indexConf.getDiskIoBufferSize() != null
-                && indexConf.getDiskIoBufferSize() > 0
-                && !indexConf.getDiskIoBufferSize()
-                        .equals(storedConf.getDiskIoBufferSize())) {
-            builder.withDiskIoBufferSizeInBytes(
-                    indexConf.getDiskIoBufferSize());
-            dirty = true;
-        }
-
-        if (indexConf.getMaxNumberOfKeysInSegmentCache() != null
-                && indexConf.getMaxNumberOfKeysInSegmentCache() > 0
-                && !indexConf.getMaxNumberOfKeysInSegmentCache().equals(
-                        storedConf.getMaxNumberOfKeysInSegmentCache())) {
-            builder.withMaxNumberOfKeysInSegmentCache(
-                    indexConf.getMaxNumberOfKeysInSegmentCache());
-            dirty = true;
-        }
-
-        if (indexConf.getMaxNumberOfKeysInSegmentCacheDuringFlushing() != null
-                && indexConf
-                        .getMaxNumberOfKeysInSegmentCacheDuringFlushing() > 0
-                && !indexConf.getMaxNumberOfKeysInSegmentCacheDuringFlushing()
-                        .equals(storedConf
-                                .getMaxNumberOfKeysInSegmentCacheDuringFlushing())) {
-            builder.withMaxNumberOfKeysInSegmentCacheDuringFlushing(
-                    indexConf.getMaxNumberOfKeysInSegmentCacheDuringFlushing());
-            dirty = true;
-        }
-
-        if (indexConf.getMaxNumberOfKeysInCache() != null
-                && indexConf.getMaxNumberOfKeysInCache() > 0
-                && !indexConf.getMaxNumberOfKeysInCache()
-                        .equals(storedConf.getMaxNumberOfKeysInCache())) {
-            builder.withMaxNumberOfKeysInCache(
-                    indexConf.getMaxNumberOfKeysInCache());
-            dirty = true;
-        }
-
-        if (indexConf.isLogEnabled() != null && !indexConf.isLogEnabled()
-                .equals(storedConf.isLogEnabled())) {
-            builder.withLogEnabled(indexConf.isLogEnabled());
-            dirty = true;
-        }
-
-        if (indexConf.isThreadSafe() != null && !indexConf.isThreadSafe()
-                .equals(storedConf.isThreadSafe())) {
-            builder.withThreadSafe(indexConf.isThreadSafe());
-            dirty = true;
-        }
-
-        if (dirty) {
-            confStorage.save(builder.build());
-        }
-        return validate(builder.build());
     }
 
     private IndexConfiguration<K, V> validate(IndexConfiguration<K, V> conf) {

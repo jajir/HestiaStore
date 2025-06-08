@@ -127,6 +127,14 @@ public final class MergedPairIterator<K, V>
 
     @Override
     public void close() {
+        for (final PairIteratorWithCurrent<K, V> iterator : iterators) {
+            if (iterator.hasNext()) {
+                iterator.close();
+            }
+        }
+        iterators.clear();
+        current = null;
+        next = null;
     }
 
     @Override
