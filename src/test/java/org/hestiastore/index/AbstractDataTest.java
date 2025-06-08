@@ -1,5 +1,8 @@
 package org.hestiastore.index;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -23,6 +26,20 @@ public abstract class AbstractDataTest {
     }
 
     /**
+     * Compare two key value pairs.
+     * 
+     * @param expectedPair expected pair
+     * @param pair         verified pair
+     */
+    protected void verifyEquals(final Pair<String, Integer> expectedPair,
+            final Pair<String, Integer> pair) {
+        assertNotNull(expectedPair);
+        assertNotNull(pair);
+        assertEquals(expectedPair.getKey(), pair.getKey());
+        assertEquals(expectedPair.getValue(), pair.getValue());
+    }
+
+    /**
      * Convert pair iterator data to list
      * 
      * @param <M>      key type
@@ -38,6 +55,28 @@ public abstract class AbstractDataTest {
         }
         iterator.close();
         return out;
+    }
+
+    /**
+     * Verify that data from iterator are same as expecetd values
+     * 
+     * @param <M>          key type
+     * @param <N>          value type
+     * @param pairIterator required pair iterator
+     * @param pairs        required list of expected data in segment
+     */
+    protected <M, N> void verifyIteratorData(
+            final PairIterator<M, N> pairIterator,
+            final List<Pair<M, N>> pairs) {
+        // TODO Expectation parameter should come as first.
+        final List<Pair<M, N>> data = toList(pairIterator);
+        assertEquals(pairs.size(), data.size(),
+                "Unexpected iterator data size");
+        for (int i = 0; i < pairs.size(); i++) {
+            final Pair<M, N> expectedPair = pairs.get(i);
+            final Pair<M, N> realPair = data.get(i);
+            assertEquals(expectedPair, realPair);
+        }
     }
 
 }
