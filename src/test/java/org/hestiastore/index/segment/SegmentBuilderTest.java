@@ -22,7 +22,7 @@ public class SegmentBuilderTest {
     private static final TypeDescriptor<Integer> KEY_TYPE_DESCRIPTOR = new TypeDescriptorInteger();
 
     @Test
-    public void test_directory_is_missing() {
+    void test_directory_is_missing() {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> Segment.<Integer, String>builder()//
                         // .withDirectory(DIRECTORY)//
@@ -37,7 +37,7 @@ public class SegmentBuilderTest {
     }
 
     @Test
-    public void test_keyTypeDescriptor_is_missing() {
+    void test_keyTypeDescriptor_is_missing() {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> Segment.<Integer, String>builder()//
                         .withDirectory(DIRECTORY)//
@@ -52,7 +52,7 @@ public class SegmentBuilderTest {
     }
 
     @Test
-    public void test_valueTypeDescriptor_is_missing() {
+    void test_valueTypeDescriptor_is_missing() {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> Segment.<Integer, String>builder()//
                         .withDirectory(DIRECTORY)//
@@ -67,7 +67,7 @@ public class SegmentBuilderTest {
     }
 
     @Test
-    public void test_withMaxNumberOfKeysInSegmentCache_is_1() {
+    void test_withMaxNumberOfKeysInSegmentCache_is_1() {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> Segment.<Integer, String>builder()//
                         .withDirectory(DIRECTORY)//
@@ -84,7 +84,7 @@ public class SegmentBuilderTest {
     }
 
     @Test
-    public void test_MaxNumberOfKeysInSegmentCacheDuringFlushing_is_too_low() {
+    void test_MaxNumberOfKeysInSegmentCacheDuringFlushing_is_too_low() {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> Segment.<Integer, String>builder()//
                         .withDirectory(DIRECTORY)//

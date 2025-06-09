@@ -40,7 +40,7 @@ public class PropsTest {
     private static final String LONG_KEY2 = "very_long_key_with_some_additional_data2_tst";
 
     @Test
-    public void test_write_and_read_long_keys() {
+    void test_write_and_read_long_keys() {
         final Props props1 = new Props(directory, "pok1.properties");
         props1.setInt(LONG_KEY1, 21);
         props1.setLong(LONG_KEY2, 42);

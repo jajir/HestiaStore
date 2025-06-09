@@ -16,13 +16,13 @@ public class ScarceIndexCacheTest {
     private final TypeDescriptorString tds = new TypeDescriptorString();
 
     @Test
-    public void test_constructor_null() {
+    void test_constructor_null() {
         assertThrows(NullPointerException.class,
                 () -> new ScarceIndexCache<>(null));
     }
 
     @Test
-    public void test_empty_index() {
+    void test_empty_index() {
         final ScarceIndexCache<String> cache = makeCache(
                 Collections.emptyList());
         assertNull(cache.findSegmentId("a"));
@@ -37,7 +37,7 @@ public class ScarceIndexCacheTest {
     }
 
     @Test
-    public void test_simple_index() {
+    void test_simple_index() {
         final ScarceIndexCache<String> cache = makeCache(
                 List.of(Pair.of("bbb", 1), Pair.of("ccc", 2), Pair.of("ddd", 3),
                         Pair.of("eee", 4), Pair.of("fff", 5)));

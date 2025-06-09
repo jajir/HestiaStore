@@ -24,7 +24,7 @@ public class FsStorageTest {
     protected File tempDir;
 
     @Test
-    public void test_seek() {
+    void test_seek() {
         final Directory dir = new FsDirectory(tempDir);
 
         // Write data

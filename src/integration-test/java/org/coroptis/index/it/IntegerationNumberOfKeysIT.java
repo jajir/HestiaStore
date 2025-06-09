@@ -30,7 +30,7 @@ public class IntegerationNumberOfKeysIT {
     }
 
     @Test
-    public void test_after_force_compact() {
+    void test_after_force_compact() {
         final Segment<String, Long> segment = getCommonBuilder();
         writeData(segment);
         segment.forceCompact();
@@ -40,7 +40,7 @@ public class IntegerationNumberOfKeysIT {
     }
 
     @Test
-    public void test_after_closing() {
+    void test_after_closing() {
         Segment<String, Long> segment = getCommonBuilder();
         writeData(segment);
         segment.forceCompact();
@@ -51,7 +51,7 @@ public class IntegerationNumberOfKeysIT {
     }
 
     @Test
-    public void test_after_writing() {
+    void test_after_writing() {
         Segment<String, Long> segment = getCommonBuilder();
         writeData(segment);
         assertEquals(NUMBER_OF_TESTING_PAIRS, segment.getNumberOfKeys());

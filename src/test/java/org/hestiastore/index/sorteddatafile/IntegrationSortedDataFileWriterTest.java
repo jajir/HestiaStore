@@ -34,7 +34,7 @@ public class IntegrationSortedDataFileWriterTest {
     }
 
     @Test
-    public void test_invalidOrder() {
+    void test_invalidOrder() {
         final Directory directory = new MemDirectory();
         final FileWriter fileWriter = directory.getFileWriter(FILE_NAME,
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
@@ -48,7 +48,7 @@ public class IntegrationSortedDataFileWriterTest {
     }
 
     @Test
-    public void test_duplicatedValue() {
+    void test_duplicatedValue() {
         final Directory directory = new MemDirectory();
         final FileWriter fileWriter = directory.getFileWriter(FILE_NAME,
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
@@ -62,7 +62,7 @@ public class IntegrationSortedDataFileWriterTest {
     }
 
     @Test
-    public void test_null_key() {
+    void test_null_key() {
         final Directory directory = new MemDirectory();
         final FileWriter fileWriter = directory.getFileWriter(FILE_NAME,
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);

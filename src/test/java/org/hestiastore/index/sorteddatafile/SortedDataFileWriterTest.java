@@ -33,7 +33,7 @@ public class SortedDataFileWriterTest {
     private TypeWriter<Integer> valueWriter;
 
     @Test
-    public void test_constructor_valueWriter_is_null() {
+    void test_constructor_valueWriter_is_null() {
         final Exception e = assertThrows(NullPointerException.class,
                 () -> new SortedDataFileWriter<>(null, fileWriter, stringTd));
 
@@ -100,7 +100,7 @@ public class SortedDataFileWriterTest {
     }
 
     @Test
-    public void test_write() {
+    void test_write() {
         try (SortedDataFileWriter<String, Integer> writer = new SortedDataFileWriter<>(
                 valueWriter, fileWriter, stringTd)) {
             writer.write(PAIR_1);
@@ -111,7 +111,7 @@ public class SortedDataFileWriterTest {
     }
 
     @Test
-    public void test_writeFull_all_writes_are_full() {
+    void test_writeFull_all_writes_are_full() {
         try (SortedDataFileWriter<String, Integer> writer = new SortedDataFileWriter<>(
                 valueWriter, fileWriter, stringTd)) {
             long ret = writer.writeFull(PAIR_1);
@@ -127,7 +127,7 @@ public class SortedDataFileWriterTest {
     }
 
     @Test
-    public void test_writeFull_mixed() {
+    void test_writeFull_mixed() {
         try (SortedDataFileWriter<String, Integer> writer = new SortedDataFileWriter<>(
                 valueWriter, fileWriter, stringTd)) {
             writer.write(PAIR_1);
