@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 
 class ByteToolTest {
 
+    private static final byte[] BYTES_EMPTY_STR = "".getBytes();
+    private static final byte[] BYTES_AHOJ_STR = "ahoj".getBytes();
     private ByteTool bt = new ByteTool();
 
     @Test
@@ -24,9 +26,9 @@ class ByteToolTest {
         testBytes("", "", 0);
 
         assertThrows(NullPointerException.class,
-                () -> bt.howMuchBytesIsSame("".getBytes(), null));
+                () -> bt.howMuchBytesIsSame(BYTES_EMPTY_STR, null));
         assertThrows(NullPointerException.class,
-                () -> bt.howMuchBytesIsSame(null, "".getBytes()));
+                () -> bt.howMuchBytesIsSame(null, BYTES_EMPTY_STR));
     }
 
     private void testBytes(final String a, final String b,
@@ -44,7 +46,7 @@ class ByteToolTest {
         testFunction(4, "ahoj", "");
 
         assertThrows(NegativeArraySizeException.class,
-                () -> bt.getRemainingBytesAfterIndex(5, "ahoj".getBytes()));
+                () -> bt.getRemainingBytesAfterIndex(5, BYTES_AHOJ_STR));
     }
 
     private void testFunction(final int sharedLength, final String str,
