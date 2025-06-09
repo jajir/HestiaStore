@@ -45,7 +45,7 @@ public class KeySegmentCacheTest {
     }
 
     @Test
-    public void test_constructor_empty_directory() {
+    void test_constructor_empty_directory() {
         assertThrows(IllegalArgumentException.class, () -> {
             try (KeySegmentCache<String> fif = new KeySegmentCache<>(null,
                     stringTd)) {
@@ -54,7 +54,7 @@ public class KeySegmentCacheTest {
     }
 
     @Test
-    public void test_constructor_empty_keyTypeDescriptor() {
+    void test_constructor_empty_keyTypeDescriptor() {
         assertThrows(IllegalArgumentException.class, () -> {
             try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                     null)) {
@@ -63,7 +63,7 @@ public class KeySegmentCacheTest {
     }
 
     @Test
-    public void test_insertSegment_duplicate_segmentId() {
+    void test_insertSegment_duplicate_segmentId() {
         try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                 stringTd)) {
             assertThrows(IllegalArgumentException.class,
@@ -73,7 +73,7 @@ public class KeySegmentCacheTest {
     }
 
     @Test
-    public void test_insertKeyToSegment_higher_segment() {
+    void test_insertKeyToSegment_higher_segment() {
         try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                 stringTd)) {
             assertEquals(4, fif.insertKeyToSegment("zzz").getId());
@@ -89,7 +89,7 @@ public class KeySegmentCacheTest {
     }
 
     @Test
-    public void test_insetSegment_normal() {
+    void test_insetSegment_normal() {
         try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                 stringTd)) {
             assertEquals(4, fif.insertKeyToSegment("zzz").getId());
@@ -105,7 +105,7 @@ public class KeySegmentCacheTest {
     }
 
     @Test
-    public void test_getSegmentsAsStream_print_data() {
+    void test_getSegmentsAsStream_print_data() {
         try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                 stringTd)) {
             final List<Pair<String, SegmentId>> segments = fif
@@ -122,7 +122,7 @@ public class KeySegmentCacheTest {
     }
 
     @Test
-    public void test_getSegmentsAsStream_number_of_segments() {
+    void test_getSegmentsAsStream_number_of_segments() {
         try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                 stringTd)) {
             assertEquals(4, fif.getSegmentsAsStream().count());
@@ -130,7 +130,7 @@ public class KeySegmentCacheTest {
     }
 
     @Test
-    public void test_getSegmentsAsStream_correct_page_order() {
+    void test_getSegmentsAsStream_correct_page_order() {
         try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                 stringTd)) {
             /*
@@ -146,7 +146,7 @@ public class KeySegmentCacheTest {
     }
 
     @Test
-    public void test_findSegmentId() {
+    void test_findSegmentId() {
         try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                 stringTd)) {
             assertEquals(3, fif.findSegmentId("cuketa").getId());
@@ -162,7 +162,7 @@ public class KeySegmentCacheTest {
     }
 
     @Test
-    public void test_getSegmentIds_noWindow() {
+    void test_getSegmentIds_noWindow() {
         try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                 stringTd)) {
             final List<SegmentId> list = fif.getSegmentIds();
@@ -175,7 +175,7 @@ public class KeySegmentCacheTest {
     }
 
     @Test
-    public void test_getSegmentIds_offSet_1() {
+    void test_getSegmentIds_offSet_1() {
         try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                 stringTd)) {
             final List<SegmentId> list = fif
@@ -188,7 +188,7 @@ public class KeySegmentCacheTest {
     }
 
     @Test
-    public void test_getSegmentIds_offSet_1_limit_2() {
+    void test_getSegmentIds_offSet_1_limit_2() {
         try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                 stringTd)) {
             final List<SegmentId> list = fif
@@ -200,7 +200,7 @@ public class KeySegmentCacheTest {
     }
 
     @Test
-    public void test_getSegmentIds_offSet_78_limit_2() {
+    void test_getSegmentIds_offSet_78_limit_2() {
         try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                 stringTd)) {
             final List<SegmentId> list = fif

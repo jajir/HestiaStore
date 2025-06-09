@@ -28,7 +28,7 @@ public class SegmentDataLazyLoaderTest {
     private SegmentDeltaCache<Integer, String> segmentDeltaCache;
 
     @Test
-    public void test_close_not_initialized() {
+    void test_close_not_initialized() {
         SegmentDataLazyLoaded<Integer, String> loader = new SegmentDataLazyLoaded<>(
                 supplier);
         loader.close();
@@ -39,7 +39,7 @@ public class SegmentDataLazyLoaderTest {
     }
 
     @Test
-    public void test_init_and_close_bloom_filter() {
+    void test_init_and_close_bloom_filter() {
         SegmentDataLazyLoaded<Integer, String> loader = new SegmentDataLazyLoaded<>(
                 supplier);
         when(supplier.getBloomFilter()).thenReturn(bloomFilter);
@@ -55,7 +55,7 @@ public class SegmentDataLazyLoaderTest {
     }
 
     @Test
-    public void test_init_and_close_scarce_index() {
+    void test_init_and_close_scarce_index() {
         SegmentDataLazyLoaded<Integer, String> loader = new SegmentDataLazyLoaded<>(
                 supplier);
         when(supplier.getScarceIndex()).thenReturn(scarceIndex);
@@ -71,7 +71,7 @@ public class SegmentDataLazyLoaderTest {
     }
 
     @Test
-    public void test_init_and_close_segment_delta_cache() {
+    void test_init_and_close_segment_delta_cache() {
         SegmentDataLazyLoaded<Integer, String> loader = new SegmentDataLazyLoaded<>(
                 supplier);
         when(supplier.getSegmentDeltaCache()).thenReturn(segmentDeltaCache);

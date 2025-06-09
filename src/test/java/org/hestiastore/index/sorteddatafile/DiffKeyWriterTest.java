@@ -22,7 +22,7 @@ public class DiffKeyWriterTest {
     }
 
     @Test
-    public void test_ordering_of_key() {
+    void test_ordering_of_key() {
         final DiffKeyWriter<Integer> diffWriter = makeDiffKeyWriter();
         diffWriter.write(1);
         diffWriter.write(2);
@@ -34,7 +34,7 @@ public class DiffKeyWriterTest {
     }
 
     @Test
-    public void test_ordering_same_keys_throw_exception() {
+    void test_ordering_same_keys_throw_exception() {
         DiffKeyWriter<Integer> diffWriter = makeDiffKeyWriter();
         diffWriter.write(1);
         diffWriter = makeDiffKeyWriter();
@@ -51,7 +51,7 @@ public class DiffKeyWriterTest {
     }
 
     @Test
-    public void test_ordering_same_keys_throw_full_write_exception() {
+    void test_ordering_same_keys_throw_full_write_exception() {
         DiffKeyWriter<Integer> diffWriter = makeDiffKeyWriter();
         diffWriter.write(1);
         diffWriter = makeDiffKeyWriter();
@@ -67,7 +67,7 @@ public class DiffKeyWriterTest {
     }
 
     @Test
-    public void test_ordering_smaller_key_than_previous_one_throw_exception() {
+    void test_ordering_smaller_key_than_previous_one_throw_exception() {
         DiffKeyWriter<Integer> diffWriter = makeDiffKeyWriter();
         diffWriter.write(1);
 
@@ -76,7 +76,7 @@ public class DiffKeyWriterTest {
     }
 
     @Test
-    public void test_constructor_convertorToBytes_is_null() {
+    void test_constructor_convertorToBytes_is_null() {
         final Exception e = assertThrows(NullPointerException.class,
                 () -> new DiffKeyWriter<Integer>(null,
                         Comparator.naturalOrder()));
@@ -85,7 +85,7 @@ public class DiffKeyWriterTest {
     }
 
     @Test
-    public void test_constructor_comparator_is_null() {
+    void test_constructor_comparator_is_null() {
         final Exception e = assertThrows(NullPointerException.class,
                 () -> new DiffKeyWriter<Integer>(tdi.getConvertorToBytes(),
                         null));
@@ -94,7 +94,7 @@ public class DiffKeyWriterTest {
     }
 
     @Test
-    public void test_write() {
+    void test_write() {
         DiffKeyWriter<String> diffWriter = new DiffKeyWriter<>(
                 tds.getConvertorToBytes(), Comparator.naturalOrder());
 

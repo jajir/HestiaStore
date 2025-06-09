@@ -18,7 +18,7 @@ public class UniqueCacheTest {
             (i1, i2) -> i1 - i2);
 
     @Test
-    public void test_basic_function() {
+    void test_basic_function() {
         final UniqueCache<Integer, String> cache = new UniqueCache<>(
                 (i1, i2) -> i1 - i2);
         cache.put(Pair.of(10, "hello"));
@@ -35,7 +35,7 @@ public class UniqueCacheTest {
     }
 
     @Test
-    public void test_basic_function_different_order() {
+    void test_basic_function_different_order() {
         final UniqueCache<Integer, String> cache = new UniqueCache<>(
                 (i1, i2) -> i1 - i2);
         cache.put(Pair.of(15, "dear"));
@@ -57,7 +57,7 @@ public class UniqueCacheTest {
      * @
      */
     @Test
-    public void test_stream_sorting() {
+    void test_stream_sorting() {
         final UniqueCache<Integer, String> cache = new UniqueCache<>(
                 (i1, i2) -> i1 - i2);
         cache.put(Pair.of(15, "dear"));
@@ -80,7 +80,7 @@ public class UniqueCacheTest {
      * @
      */
     @Test
-    public void test_just_last_value_is_stored() {
+    void test_just_last_value_is_stored() {
         final UniqueCache<Integer, String> cache = new UniqueCache<>(
                 (i1, i2) -> i1 - i2);
         logger.debug("Cache size '{}'", cache.size());

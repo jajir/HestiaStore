@@ -24,7 +24,7 @@ public class IntegrationUnsortedDataFileTest {
     private final TypeDescriptor<String> tds = new TypeDescriptorString();
 
     @Test
-    public void test_in_mem_unsorted_index() {
+    void test_in_mem_unsorted_index() {
         final Directory dir = new MemDirectory();
         final UnsortedDataFile<Integer, String> unsorted = UnsortedDataFile
                 .<Integer, String>builder().withDirectory(dir)//
@@ -58,7 +58,7 @@ public class IntegrationUnsortedDataFileTest {
     }
 
     @Test
-    public void test_stream_non_exesting_file() {
+    void test_stream_non_exesting_file() {
         final Directory dir = new MemDirectory();
         final UnsortedDataFile<Integer, String> unsorted = UnsortedDataFile
                 .<Integer, String>builder().withDirectory(dir)//

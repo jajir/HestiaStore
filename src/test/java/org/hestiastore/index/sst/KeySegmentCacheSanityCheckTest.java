@@ -23,7 +23,7 @@ public class KeySegmentCacheSanityCheckTest {
      * @
      */
     @Test
-    public void test_sanityCheck() {
+    void test_sanityCheck() {
         final SortedDataFile<String, SegmentId> sdf = new SortedDataFile<>(
                 directory, "index.map", stringTd, integerTd, 1024);
 

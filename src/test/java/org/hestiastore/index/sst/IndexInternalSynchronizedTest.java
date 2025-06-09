@@ -29,7 +29,7 @@ public class IndexInternalSynchronizedTest {
     private Log<Integer, String> log;
 
     @Test
-    public void test_constructor() {
+    void test_constructor() {
         when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(1000);
         try (IndexInternalSynchronized<Integer, String> synchIndex = new IndexInternalSynchronized<>(
                 directory, TD_INTEGER, TD_STRING, conf, log)) {

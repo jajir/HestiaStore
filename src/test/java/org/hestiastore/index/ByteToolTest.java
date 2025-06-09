@@ -38,7 +38,7 @@ public class ByteToolTest {
     }
 
     @Test
-    public void test_getRemainingBytesAfterIndex() {
+    void test_getRemainingBytesAfterIndex() {
         testFunction(1, "ahoj", "hoj");
         testFunction(0, "ahoj", "ahoj");
         testFunction(4, "ahoj", "");

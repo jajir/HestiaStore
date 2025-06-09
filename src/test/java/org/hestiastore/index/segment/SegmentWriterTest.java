@@ -28,7 +28,7 @@ public class SegmentWriterTest {
     private SegmentDeltaCacheWriter<Integer, String> deltaCacheWriter;
 
     @Test
-    public void test_basic_writing() {
+    void test_basic_writing() {
         when(deltaCacheController.openWriter()).thenReturn(deltaCacheWriter);
         when(deltaCacheWriter.getNumberOfKeys()).thenReturn(1L, 2L, 3L);
         when(segmentCompacter.shouldBeCompactedDuringWriting(1))
@@ -55,7 +55,7 @@ public class SegmentWriterTest {
     }
 
     @Test
-    public void test_compact_during_writing() {
+    void test_compact_during_writing() {
         when(deltaCacheController.openWriter()).thenReturn(deltaCacheWriter);
         when(deltaCacheWriter.getNumberOfKeys()).thenReturn(1L, 2L, 3L);
         when(segmentCompacter.shouldBeCompactedDuringWriting(1))

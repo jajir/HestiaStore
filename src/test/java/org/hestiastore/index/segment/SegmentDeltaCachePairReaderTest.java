@@ -24,7 +24,7 @@ public class SegmentDeltaCachePairReaderTest {
     private SegmentDeltaCachePairReader<String, String> reader;
 
     @Test
-    public void test_read_multiple_values() {
+    void test_read_multiple_values() {
         final List<String> keys = Arrays.asList("key1", "key2", "key3");
         when(cache.getSortedKeys()).thenReturn(keys);
         when(cache.get("key1")).thenReturn("value1");
@@ -39,7 +39,7 @@ public class SegmentDeltaCachePairReaderTest {
     }
 
     @Test
-    public void test_close() {
+    void test_close() {
         final List<String> keys = Arrays.asList("key1", "key2", "key3");
         when(cache.getSortedKeys()).thenReturn(keys);
         when(cache.get("key1")).thenReturn("value1");
@@ -56,7 +56,7 @@ public class SegmentDeltaCachePairReaderTest {
 
     @SuppressWarnings("resource")
     @Test
-    public void test_constructor_cache_is_null() {
+    void test_constructor_cache_is_null() {
         assertThrows(NullPointerException.class, () -> {
             new SegmentDeltaCachePairReader<>(null);
         });

@@ -22,7 +22,7 @@ public class MemDirectoryTest {
             + "situations.").getBytes();
 
     @Test
-    public void test_write_and_append() {
+    void test_write_and_append() {
         final MemDirectory directory = new MemDirectory();
         FileWriter fw = directory.getFileWriter("pok");
         fw.write(NAME);
@@ -40,7 +40,7 @@ public class MemDirectoryTest {
     }
 
     @Test
-    public void test_write_and_overwrite() {
+    void test_write_and_overwrite() {
         final MemDirectory directory = new MemDirectory();
         FileWriter fw = directory.getFileWriter("pok");
         fw.write(NAME);
@@ -58,7 +58,7 @@ public class MemDirectoryTest {
     }
 
     @Test
-    public void test_fileExists() {
+    void test_fileExists() {
         final MemDirectory directory = new MemDirectory();
         FileWriter fw = directory.getFileWriter("pok");
         fw.write(NAME);
@@ -69,7 +69,7 @@ public class MemDirectoryTest {
     }
 
     @Test
-    public void test_fileReader_skip() {
+    void test_fileReader_skip() {
         final MemDirectory directory = new MemDirectory();
         FileWriter fw = directory.getFileWriter("pok");
         fw.write(TEXT);
@@ -87,7 +87,7 @@ public class MemDirectoryTest {
     }
 
     @Test
-    public void test_fileReaderSeakable_seek() {
+    void test_fileReaderSeakable_seek() {
         final MemDirectory directory = new MemDirectory();
         FileWriter fw = directory.getFileWriter("pok");
         fw.write(TEXT);
