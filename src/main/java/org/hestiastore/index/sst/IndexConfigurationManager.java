@@ -48,7 +48,7 @@ public class IndexConfigurationManager<K, V> {
         if (oDefaults.isEmpty()) {
             logger.debug("There is no default configuration for key class '{}'",
                     conf.getKeyClass());
-            return builder.build();
+            return validate(builder.build());
         }
         final IndexConfigurationDefault defaults = oDefaults.get();
         if (conf.isLogEnabled() == null) {
@@ -98,7 +98,7 @@ public class IndexConfigurationManager<K, V> {
             builder.withDiskIoBufferSizeInBytes(
                     defaults.getDiskIoBufferSizeInBytes());
         }
-        return builder.build();
+        return validate(builder.build());
     }
 
     /**
@@ -314,7 +314,8 @@ public class IndexConfigurationManager<K, V> {
         }
     }
 
-    private IndexConfiguration<K, V> validate(IndexConfiguration<K, V> conf) {
+    private IndexConfiguration<K, V> validate(
+            final IndexConfiguration<K, V> conf) {
         validateDatatypesAndIndexName(conf);
         if (conf.getKeyTypeDescriptor() == null) {
             throw new IllegalArgumentException("Key type descriptor is null.");
