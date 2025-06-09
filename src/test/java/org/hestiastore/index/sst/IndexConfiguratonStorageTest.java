@@ -14,7 +14,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class IndexConfiguratonStorageTest {
+class IndexConfiguratonStorageTest {
 
     private static final String TD_STRING = TypeDescriptorString.class
             .getName();

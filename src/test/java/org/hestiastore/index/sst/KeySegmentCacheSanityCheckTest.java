@@ -11,7 +11,7 @@ import org.hestiastore.index.sorteddatafile.SortedDataFile;
 import org.hestiastore.index.sorteddatafile.SortedDataFileWriter;
 import org.junit.jupiter.api.Test;
 
-public class KeySegmentCacheSanityCheckTest {
+class KeySegmentCacheSanityCheckTest {
 
     private final TypeDescriptorString stringTd = new TypeDescriptorString();
     private final TypeDescriptorSegmentId integerTd = new TypeDescriptorSegmentId();

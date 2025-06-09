@@ -14,7 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class SegmentDeltaCachePairIteratorTest {
+class SegmentDeltaCachePairIteratorTest {
 
     private final List<Integer> testKeys = Arrays.asList(1, 2, 3);
 

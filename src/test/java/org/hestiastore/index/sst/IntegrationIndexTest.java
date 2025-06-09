@@ -20,7 +20,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 /**
  * Basic index integrations tests.
  */
-public class IntegrationIndexTest extends AbstractIndexTest {
+class IntegrationIndexTest extends AbstractIndexTest {
     final Directory directory = new MemDirectory();
     final SegmentId id = SegmentId.of(27);
     final TypeDescriptorString tds = new TypeDescriptorString();

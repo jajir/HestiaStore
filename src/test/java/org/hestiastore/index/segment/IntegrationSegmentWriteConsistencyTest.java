@@ -16,7 +16,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
-public class IntegrationSegmentWriteConsistencyTest {
+class IntegrationSegmentWriteConsistencyTest {
 
     final List<String> values = List.of("aaa", "bbb", "ccc", "ddd", "eee",
             "fff");

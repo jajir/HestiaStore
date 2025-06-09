@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class MemFileLockTest {
+class MemFileLockTest {
 
     private static final String LOCK_FILE_NAME = ".lock";
     private Directory directory = null;

@@ -16,7 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @ExtendWith(MockitoExtension.class)
-public class CacheLruTest {
+class CacheLruTest {
 
     private final Logger logger = LoggerFactory.getLogger(CacheLruTest.class);
 

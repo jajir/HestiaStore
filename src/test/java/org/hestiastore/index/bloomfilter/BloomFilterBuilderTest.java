@@ -11,7 +11,7 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class BloomFilterBuilderTest {
+class BloomFilterBuilderTest {
 
     private static final TypeDescriptor<String> TDS = new TypeDescriptorString();
 

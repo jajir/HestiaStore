@@ -9,7 +9,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorString;
 import org.junit.jupiter.api.Test;
 
-public class DataTypeDescriptorRegistryTest {
+class DataTypeDescriptorRegistryTest {
 
     @Test
     void test_integer_datatypeDescriptor() {

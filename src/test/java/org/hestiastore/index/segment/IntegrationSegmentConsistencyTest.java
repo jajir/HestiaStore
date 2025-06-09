@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
  * @author honza
  *
  */
-public class IntegrationSegmentConsistencyTest extends AbstractSegmentTest {
+class IntegrationSegmentConsistencyTest extends AbstractSegmentTest {
 
     private static final int MAX_LOOP = 100;
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();

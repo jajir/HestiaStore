@@ -13,7 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class SegmentDataProviderSimpleTest {
+class SegmentDataProviderSimpleTest {
 
     @Mock
     private SegmentDataFactory<Integer, String> segmentDataFactory;

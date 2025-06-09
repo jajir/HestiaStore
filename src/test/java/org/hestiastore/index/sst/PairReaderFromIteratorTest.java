@@ -13,7 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class PairReaderFromIteratorTest {
+class PairReaderFromIteratorTest {
 
     private static final Pair<String, Integer> PAIR1 = Pair.of("aaa", 1);
 

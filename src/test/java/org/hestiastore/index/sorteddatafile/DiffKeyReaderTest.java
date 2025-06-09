@@ -14,7 +14,7 @@ import org.hestiastore.index.directory.FileReader;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 
-public class DiffKeyReaderTest {
+class DiffKeyReaderTest {
 
     private final FileReader fileReader = mock(FileReader.class);
 

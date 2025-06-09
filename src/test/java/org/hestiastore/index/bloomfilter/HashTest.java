@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-public class HashTest {
+class HashTest {
     @Test
     void testStore_simple() {
         Hash hash = new Hash(new BitArray(10), 3);

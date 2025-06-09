@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class BloomFilterTest {
+class BloomFilterTest {
 
     private final Logger logger = LoggerFactory
             .getLogger(BloomFilterTest.class);

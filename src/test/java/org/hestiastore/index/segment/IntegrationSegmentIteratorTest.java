@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
  * This test case verify high level segment contract describe in exmples in
  * documentation.
  */
-public class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
+class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
 
     private final TypeDescriptorString tds = new TypeDescriptorString();
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();

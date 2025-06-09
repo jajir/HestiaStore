@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class IntegrationUnsortedDataFileTest {
+class IntegrationUnsortedDataFileTest {
 
     private final Logger logger = LoggerFactory
             .getLogger(IntegrationUnsortedDataFileTest.class);

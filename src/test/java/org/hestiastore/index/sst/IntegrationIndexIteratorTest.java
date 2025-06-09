@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class IntegrationIndexIteratorTest {
+class IntegrationIndexIteratorTest {
 
     private static final TypeDescriptorString TD_STRING = new TypeDescriptorString();
     private static final TypeDescriptorInteger TD_INTEGER = new TypeDescriptorInteger();

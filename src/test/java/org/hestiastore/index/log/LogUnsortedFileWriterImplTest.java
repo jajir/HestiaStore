@@ -9,7 +9,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class LogUnsortedFileWriterImplTest {
+class LogUnsortedFileWriterImplTest {
 
     @Mock
     private PairWriter<LoggedKey<String>, Integer> writer;

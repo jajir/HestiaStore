@@ -12,7 +12,7 @@ import java.util.NoSuchElementException;
 
 import org.junit.jupiter.api.Test;
 
-public class PairIteratorListTest {
+class PairIteratorListTest {
 
     @Test
     void test_basic() {

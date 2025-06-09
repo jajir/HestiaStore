@@ -9,7 +9,7 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class SegmentPropertiesManagerTest {
+class SegmentPropertiesManagerTest {
 
     private final SegmentId id = SegmentId.of(27);
     private Directory directory;

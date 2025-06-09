@@ -8,7 +8,7 @@ import java.io.File;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-public class FsFileReaderSeekableTest {
+class FsFileReaderSeekableTest {
 
     private static final String FILE_NAME = "pok.txt";
 

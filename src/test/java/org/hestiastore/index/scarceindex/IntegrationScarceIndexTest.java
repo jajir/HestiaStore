@@ -12,7 +12,7 @@ import org.hestiastore.index.datatype.TypeDescriptorString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
-public class IntegrationScarceIndexTest {
+class IntegrationScarceIndexTest {
 
     private static final String FILE_NAME = "pok.dat";
     private final TypeDescriptorString stringTd = new TypeDescriptorString();

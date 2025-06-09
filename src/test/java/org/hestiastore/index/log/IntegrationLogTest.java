@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Verify basic logging functionality.
  */
-public class IntegrationLogTest {
+class IntegrationLogTest {
 
     private Directory directory;
     private final TypeDescriptor<Integer> tdi = new TypeDescriptorInteger();
