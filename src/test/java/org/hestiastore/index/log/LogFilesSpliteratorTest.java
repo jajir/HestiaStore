@@ -15,7 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class LogFilesSpliteratorTest {
+class LogFilesSpliteratorTest {
 
     // This verify that FILE_NAMES are could be immutable object
     private final List<String> FILE_NAMES = List.of("log1", "log2");

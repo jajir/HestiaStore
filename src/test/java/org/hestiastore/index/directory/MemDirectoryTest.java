@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.hestiastore.index.directory.Directory.Access;
 import org.junit.jupiter.api.Test;
 
-public class MemDirectoryTest {
+class MemDirectoryTest {
 
     private static final byte[] NAME = "Karel".getBytes();
     private static final byte[] SURNAME = "Novotny".getBytes();

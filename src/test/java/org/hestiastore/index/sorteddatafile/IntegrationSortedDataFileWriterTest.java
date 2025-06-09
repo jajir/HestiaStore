@@ -11,7 +11,7 @@ import org.hestiastore.index.directory.FileWriter;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
-public class IntegrationSortedDataFileWriterTest {
+class IntegrationSortedDataFileWriterTest {
 
     private static final int DISK_IO_BUFFER_SIZE = 1024;
     private static final String FILE_NAME = "pok.dat";

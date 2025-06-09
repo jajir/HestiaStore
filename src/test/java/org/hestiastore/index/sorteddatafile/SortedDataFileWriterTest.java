@@ -16,7 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class SortedDataFileWriterTest {
+class SortedDataFileWriterTest {
 
     private static final Pair<String, Integer> PAIR_0 = Pair.of("key0", -100);
     private static final Pair<String, Integer> PAIR_1 = Pair.of("key1", 100);

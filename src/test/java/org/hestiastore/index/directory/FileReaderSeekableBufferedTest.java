@@ -9,7 +9,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class FileReaderSeekableBufferedTest {
+class FileReaderSeekableBufferedTest {
 
     private static final String FILE1 = "pok.txt";
 

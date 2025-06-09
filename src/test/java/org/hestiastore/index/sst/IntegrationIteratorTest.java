@@ -13,7 +13,7 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class IntegrationIteratorTest extends AbstractIndexTest {
+class IntegrationIteratorTest extends AbstractIndexTest {
 
     private final TypeDescriptorString tds = new TypeDescriptorString();
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();

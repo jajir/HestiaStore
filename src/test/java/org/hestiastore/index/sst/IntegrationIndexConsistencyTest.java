@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
  * @author honza
  *
  */
-public class IntegrationIndexConsistencyTest extends AbstractIndexTest {
+class IntegrationIndexConsistencyTest extends AbstractIndexTest {
     private final Logger logger = LoggerFactory
             .getLogger(IntegrationIndexConsistencyTest.class);
 

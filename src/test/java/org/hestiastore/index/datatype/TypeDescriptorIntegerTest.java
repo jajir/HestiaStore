@@ -8,7 +8,7 @@ import java.util.Comparator;
 
 import org.junit.jupiter.api.Test;
 
-public class TypeDescriptorIntegerTest {
+class TypeDescriptorIntegerTest {
 
     private final TypeDescriptorInteger ti = new TypeDescriptorInteger();
     private final ConvertorToBytes<Integer> toBytes = ti.getConvertorToBytes();

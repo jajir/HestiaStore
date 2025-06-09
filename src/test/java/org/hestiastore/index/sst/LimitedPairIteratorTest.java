@@ -15,7 +15,7 @@ import org.hestiastore.index.PairIteratorList;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.junit.jupiter.api.Test;
 
-public class LimitedPairIteratorTest {
+class LimitedPairIteratorTest {
 
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
 

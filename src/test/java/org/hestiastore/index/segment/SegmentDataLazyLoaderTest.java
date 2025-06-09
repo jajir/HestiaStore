@@ -13,7 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class SegmentDataLazyLoaderTest {
+class SegmentDataLazyLoaderTest {
 
     @Mock
     private SegmentDataSupplier<Integer, String> supplier;

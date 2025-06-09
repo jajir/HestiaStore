@@ -12,7 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class SegmentWriterTest {
+class SegmentWriterTest {
 
     private static final Pair<Integer, String> PAIR_1 = Pair.of(1, "aaa");
     private static final Pair<Integer, String> PAIR_2 = Pair.of(2, "bbb");

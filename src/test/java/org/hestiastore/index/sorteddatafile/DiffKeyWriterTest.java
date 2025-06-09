@@ -11,7 +11,7 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorString;
 import org.junit.jupiter.api.Test;
 
-public class DiffKeyWriterTest {
+class DiffKeyWriterTest {
 
     private final TypeDescriptor<Integer> tdi = new TypeDescriptorInteger();
     private final TypeDescriptor<String> tds = new TypeDescriptorString();

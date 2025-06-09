@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Test verify that logged data are immeditelly stored to drive.
  */
-public class IntegrationLogWriterIsFlushTest {
+class IntegrationLogWriterIsFlushTest {
 
     private final TypeDescriptor<Long> tdl = new TypeDescriptorLong();
     private final TypeDescriptor<String> tds = new TypeDescriptorString();

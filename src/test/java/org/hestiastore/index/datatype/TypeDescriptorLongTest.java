@@ -9,7 +9,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
-public class TypeDescriptorLongTest {
+class TypeDescriptorLongTest {
 
     private final TypeDescriptorLong ti = new TypeDescriptorLong();
     private final ConvertorToBytes<Long> toBytes = ti.getConvertorToBytes();

@@ -19,7 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class MergedPairIteratorTest extends AbstractDataTest {
+class MergedPairIteratorTest extends AbstractDataTest {
 
     private static final Comparator<String> KEY_COMPARATOR = Comparator
             .naturalOrder();

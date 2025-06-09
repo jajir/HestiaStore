@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-public class BiteArrayTest {
+class BiteArrayTest {
 
     private static final int BIT_ARRAY_SIZE = 10;
     private static final int TESTED_BYTE = 7;

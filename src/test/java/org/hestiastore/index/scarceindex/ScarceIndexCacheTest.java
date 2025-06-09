@@ -11,7 +11,7 @@ import org.hestiastore.index.Pair;
 import org.hestiastore.index.datatype.TypeDescriptorString;
 import org.junit.jupiter.api.Test;
 
-public class ScarceIndexCacheTest {
+class ScarceIndexCacheTest {
 
     private final TypeDescriptorString tds = new TypeDescriptorString();
 

@@ -18,7 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class SegmentConsistencyCheckerTest {
+class SegmentConsistencyCheckerTest {
 
     private static final SegmentId SEGMENT_ID = SegmentId.of(13);
     private static final TypeDescriptor<Integer> TYPE_DESCRIPTOR_INTEGER = new TypeDescriptorInteger();

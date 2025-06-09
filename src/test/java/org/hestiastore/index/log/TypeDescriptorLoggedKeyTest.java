@@ -13,7 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class TypeDescriptorLoggedKeyTest {
+class TypeDescriptorLoggedKeyTest {
 
     private static final TypeDescriptor<Integer> tdi = new TypeDescriptorInteger();
     private static final TypeDescriptor<String> tds = new TypeDescriptorString();

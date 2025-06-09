@@ -19,7 +19,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class IndexConfigurationManagerTest {
+class IndexConfigurationManagerTest {
 
     private static final String TD_STRING = TypeDescriptorString.class
             .getSimpleName();

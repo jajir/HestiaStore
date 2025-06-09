@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
-public class FileNameUtilTest {
+class FileNameUtilTest {
 
     @Test
     void test_getPaddedId() {

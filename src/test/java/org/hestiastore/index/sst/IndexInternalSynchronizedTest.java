@@ -15,7 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class IndexInternalSynchronizedTest {
+class IndexInternalSynchronizedTest {
 
     private static final TypeDescriptor<Integer> TD_INTEGER = new TypeDescriptorInteger();
     private TypeDescriptor<String> TD_STRING = new TypeDescriptorString();

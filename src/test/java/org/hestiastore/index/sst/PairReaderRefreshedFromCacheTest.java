@@ -19,7 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class PairReaderRefreshedFromCacheTest {
+class PairReaderRefreshedFromCacheTest {
 
     private static final Pair<Integer, String> PAIR1 = Pair.of(2, "bbb");
     private static final Pair<Integer, String> PAIR2 = Pair.of(3, "ccc");

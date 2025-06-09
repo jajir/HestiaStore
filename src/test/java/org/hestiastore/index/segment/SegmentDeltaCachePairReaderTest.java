@@ -16,7 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class SegmentDeltaCachePairReaderTest {
+class SegmentDeltaCachePairReaderTest {
 
     @Mock
     private UniqueCache<String, String> cache;

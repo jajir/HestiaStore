@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class FormatTest {
+class FormatTest {
 
     private final Logger logger = LoggerFactory.getLogger(FormatTest.class);
 

@@ -12,7 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class SegmentCompacterTest {
+class SegmentCompacterTest {
 
     @Mock
     private Segment<Integer, String> segment;

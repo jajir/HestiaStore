@@ -14,7 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class LogImplTest {
+class LogImplTest {
 
     private final List<String> data = List.of("wal-00012.log", "wal-00044.log");
 

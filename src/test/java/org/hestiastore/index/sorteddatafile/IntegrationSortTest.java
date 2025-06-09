@@ -25,7 +25,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class IntegrationSortTest extends AbstractSegmentTest {
+class IntegrationSortTest extends AbstractSegmentTest {
 
     private static final Random RANDOM = new Random();
     private static final TypeDescriptor<String> tds = new TypeDescriptorString();

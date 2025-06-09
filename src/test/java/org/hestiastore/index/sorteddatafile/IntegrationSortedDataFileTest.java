@@ -16,7 +16,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class IntegrationSortedDataFileTest extends AbstractDataTest {
+class IntegrationSortedDataFileTest extends AbstractDataTest {
 
     private static final String FILE_NAME = "pok.index";
     private static final TypeDescriptor<Integer> tdi = new TypeDescriptorInteger();

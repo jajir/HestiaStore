@@ -17,7 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class SegmentManagerTest {
+class SegmentManagerTest {
 
     private final TypeDescriptor<Integer> keyTypeDescriptor = new TypeDescriptorInteger();
 
