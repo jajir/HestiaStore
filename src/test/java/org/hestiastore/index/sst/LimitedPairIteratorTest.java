@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -210,11 +211,12 @@ class LimitedPairIteratorTest {
     @SuppressWarnings("resource")
     @Test
     void test_unordered_min_max() {
+        final List<Pair<Integer, String>> list = Collections.emptyList();
+        final Comparator<Integer> comparator = tdi.getComparator();
         assertThrows(IllegalArgumentException.class, () -> {
             new LimitedPairIterator<Integer, String>(
-                    new PairIteratorList<Integer, String>(
-                            Collections.emptyList()),
-                    tdi.getComparator(), 10, 5);
+                    new PairIteratorList<Integer, String>(list), comparator, 10,
+                    5);
         }, "Min key '10' have to be smalles than max key '5'.");
     }
 }
