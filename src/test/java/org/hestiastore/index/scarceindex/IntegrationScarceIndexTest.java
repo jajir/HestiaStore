@@ -17,10 +17,18 @@ class IntegrationScarceIndexTest {
     private static final String FILE_NAME = "pok.dat";
     private final TypeDescriptorString stringTd = new TypeDescriptorString();
 
+    private static final Pair<String, Integer> P_BBB_1 = Pair.of("bbb", 13);
+    private static final Pair<String, Integer> P_BBB_2 = Pair.of("bbb", 1);
+    private static final Pair<String, Integer> P_CCC_1 = Pair.of("ccc", 2);
+    private static final Pair<String, Integer> P_CCC_2 = Pair.of("ccc", 3);
+    private static final Pair<String, Integer> P_DDD = Pair.of("ddd", 3);
+    private static final Pair<String, Integer> P_EEE = Pair.of("eee", 4);
+    private static final Pair<String, Integer> P_FFF_1 = Pair.of("fff", 4);
+    private static final Pair<String, Integer> P_FFF_2 = Pair.of("fff", 5);
+
     @Test
     void test_one_key() {
-        final ScarceIndex<String> index = makeIndex(
-                List.of(Pair.of("bbb", 13)));
+        final ScarceIndex<String> index = makeIndex(List.of(P_BBB_1));
 
         assertEquals(13, index.get("bbb"));
         assertNull(index.get("aaa"));
@@ -45,8 +53,7 @@ class IntegrationScarceIndexTest {
     @Test
     void test_one_multiple() {
         final ScarceIndex<String> index = makeIndex(
-                List.of(Pair.of("bbb", 1), Pair.of("ccc", 2), Pair.of("ddd", 3),
-                        Pair.of("eee", 4), Pair.of("fff", 5)));
+                List.of(P_BBB_2, P_CCC_1, P_DDD, P_EEE, P_FFF_2));
 
         assertNull(index.get("aaa"));
         assertEquals(1, index.get("bbb"));
@@ -61,29 +68,26 @@ class IntegrationScarceIndexTest {
 
     @Test
     void test_insert_duplicite_keys() {
-        assertThrows(IllegalArgumentException.class,
-                () -> makeIndex(List.of(Pair.of("bbb", 1), Pair.of("ccc", 2),
-                        Pair.of("ccc", 3), Pair.of("eee", 4),
-                        Pair.of("fff", 5))));
+        final List<Pair<String, Integer>> pairs = List.of(P_BBB_2, P_CCC_1,
+                P_CCC_2, P_EEE, P_FFF_2);
+        assertThrows(IllegalArgumentException.class, () -> makeIndex(pairs));
     }
 
     @Test
     void test_sanity_check() {
-        assertThrows(IllegalStateException.class,
-                () -> makeIndex(List.of(Pair.of("bbb", 1), Pair.of("ccc", 2),
-                        Pair.of("ddd", 3), Pair.of("eee", 4),
-                        Pair.of("fff", 4))));
+        final List<Pair<String, Integer>> pairs = List.of(P_BBB_2, P_CCC_1,
+                P_DDD, P_EEE, P_FFF_1);
+        assertThrows(IllegalStateException.class, () -> makeIndex(pairs));
     }
 
     @Test
     void test_overwrite_index() {
 
         final ScarceIndex<String> index = makeIndex(
-                List.of(Pair.of("bbb", 1), Pair.of("ccc", 2), Pair.of("ddd", 3),
-                        Pair.of("eee", 4), Pair.of("fff", 5)));
+                List.of(P_BBB_2, P_CCC_1, P_DDD, P_EEE, P_FFF_2));
 
         try (ScarceIndexWriter<String> writer = index.openWriter()) {
-            writer.put(Pair.of("bbb", 1));
+            writer.put(P_BBB_2);
         }
 
         assertEquals(1, index.get("bbb"));

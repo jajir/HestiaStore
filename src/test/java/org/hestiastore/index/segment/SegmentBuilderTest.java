@@ -23,60 +23,68 @@ class SegmentBuilderTest {
 
     @Test
     void test_directory_is_missing() {
+        final SegmentBuilder<Integer, String> builder = Segment
+                .<Integer, String>builder()//
+                // .withDirectory(DIRECTORY)//
+                .withId(SEGMENT_ID)//
+                .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
+                .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
+                .withMaxNumberOfKeysInSegmentCache(10)//
+                .withBloomFilterIndexSizeInBytes(0)//
+        ;
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> Segment.<Integer, String>builder()//
-                        // .withDirectory(DIRECTORY)//
-                        .withId(SEGMENT_ID)//
-                        .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
-                        .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
-                        .withMaxNumberOfKeysInSegmentCache(10)//
-                        .withBloomFilterIndexSizeInBytes(0)//
-                        .build());
+                () -> builder.build());
 
         assertEquals("Directory can't be null", e.getMessage());
     }
 
     @Test
     void test_keyTypeDescriptor_is_missing() {
+        final SegmentBuilder<Integer, String> builder = Segment
+                .<Integer, String>builder()//
+                .withDirectory(DIRECTORY)//
+                .withId(SEGMENT_ID)//
+                // .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
+                .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
+                .withMaxNumberOfKeysInSegmentCache(10)//
+                .withBloomFilterIndexSizeInBytes(0)//
+        ;
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> Segment.<Integer, String>builder()//
-                        .withDirectory(DIRECTORY)//
-                        .withId(SEGMENT_ID)//
-                        // .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
-                        .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
-                        .withMaxNumberOfKeysInSegmentCache(10)//
-                        .withBloomFilterIndexSizeInBytes(0)//
-                        .build());
+                () -> builder.build());
 
         assertEquals("KeyTypeDescriptor can't be null", e.getMessage());
     }
 
     @Test
     void test_valueTypeDescriptor_is_missing() {
+        final SegmentBuilder<Integer, String> builder = Segment
+                .<Integer, String>builder()//
+                .withDirectory(DIRECTORY)//
+                .withId(SEGMENT_ID)//
+                .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
+                // .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
+                .withMaxNumberOfKeysInSegmentCache(10)//
+                .withBloomFilterIndexSizeInBytes(0)//
+        ;
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> Segment.<Integer, String>builder()//
-                        .withDirectory(DIRECTORY)//
-                        .withId(SEGMENT_ID)//
-                        .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
-                        // .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
-                        .withMaxNumberOfKeysInSegmentCache(10)//
-                        .withBloomFilterIndexSizeInBytes(0)//
-                        .build());
+                () -> builder.build());
 
         assertEquals("ValueTypeDescriptor can't be null", e.getMessage());
     }
 
     @Test
     void test_withMaxNumberOfKeysInSegmentCache_is_1() {
+        final SegmentBuilder<Integer, String> builder = Segment
+                .<Integer, String>builder()//
+                .withDirectory(DIRECTORY)//
+                .withId(SEGMENT_ID)//
+                .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
+                .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
+                .withMaxNumberOfKeysInSegmentCache(1)//
+                .withBloomFilterIndexSizeInBytes(0)//
+        ;
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> Segment.<Integer, String>builder()//
-                        .withDirectory(DIRECTORY)//
-                        .withId(SEGMENT_ID)//
-                        .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
-                        .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
-                        .withMaxNumberOfKeysInSegmentCache(1)//
-                        .withBloomFilterIndexSizeInBytes(0)//
-                        .build());
+                () -> builder.build());
 
         assertEquals(
                 "maxNumberOfKeysInSegmentCache is '1' but must be higher than '1'",
@@ -85,16 +93,18 @@ class SegmentBuilderTest {
 
     @Test
     void test_MaxNumberOfKeysInSegmentCacheDuringFlushing_is_too_low() {
+        final SegmentBuilder<Integer, String> builder = Segment
+                .<Integer, String>builder()//
+                .withDirectory(DIRECTORY)//
+                .withId(SEGMENT_ID)//
+                .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
+                .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
+                .withMaxNumberOfKeysInSegmentCache(10)//
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(10)
+                .withBloomFilterIndexSizeInBytes(0)//
+        ;
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> Segment.<Integer, String>builder()//
-                        .withDirectory(DIRECTORY)//
-                        .withId(SEGMENT_ID)//
-                        .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
-                        .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
-                        .withMaxNumberOfKeysInSegmentCache(10)//
-                        .withMaxNumberOfKeysInSegmentCacheDuringFlushing(10)
-                        .withBloomFilterIndexSizeInBytes(0)//
-                        .build());
+                () -> builder.build());
 
         assertEquals(
                 "maxNumberOfKeysInSegmentCacheDuringFlushing must be higher than maxNumberOfKeysInSegmentCache",

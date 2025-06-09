@@ -13,6 +13,18 @@ import org.junit.jupiter.api.Test;
 
 class IntegrationSortedDataFileWriterTest {
 
+    private static final Pair<String, Byte> P_AAABBB_1 = new Pair<>("aaabbb",
+            (byte) 1);
+    private static final Pair<String, Byte> P_AAA_0 = new Pair<>("aaa",
+            (byte) 0);
+    private static final Pair<String, Byte> P_ABBB_1 = new Pair<>("abbb",
+            (byte) 1);
+    private static final Pair<String, Byte> P_AAAA_2 = new Pair<>("aaaa",
+            (byte) 2);
+    private static final Pair<String, Byte> P_ABBB_2 = new Pair<>("abbb",
+            (byte) 2);
+    private static final Pair<String, Byte> P_NULL_0 = new Pair<>(null,
+            (byte) 0);
     private static final int DISK_IO_BUFFER_SIZE = 1024;
     private static final String FILE_NAME = "pok.dat";
     private final TypeDescriptorByte byteTd = new TypeDescriptorByte();
@@ -25,10 +37,9 @@ class IntegrationSortedDataFileWriterTest {
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
         try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(
                 byteTd.getTypeWriter(), fileWriter, stringTd)) {
-            assertEquals(0,
-                    siw.writeFull(new Pair<String, Byte>("aaabbb", (byte) 1)));
+            assertEquals(0, siw.writeFull(P_AAABBB_1));
             assertThrows(IllegalArgumentException.class, () -> {
-                siw.write(new Pair<String, Byte>("aaa", (byte) 0));
+                siw.write(P_AAA_0);
             });
         }
     }
@@ -40,10 +51,10 @@ class IntegrationSortedDataFileWriterTest {
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
         try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(
                 byteTd.getTypeWriter(), fileWriter, stringTd)) {
-            siw.write(new Pair<String, Byte>("aaa", (byte) 0));
-            siw.write(new Pair<String, Byte>("abbb", (byte) 1));
+            siw.write(P_AAA_0);
+            siw.write(P_ABBB_1);
             assertThrows(IllegalArgumentException.class,
-                    () -> siw.write(new Pair<String, Byte>("aaaa", (byte) 2)));
+                    () -> siw.write(P_AAAA_2));
         }
     }
 
@@ -54,10 +65,10 @@ class IntegrationSortedDataFileWriterTest {
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
         try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(
                 byteTd.getTypeWriter(), fileWriter, stringTd)) {
-            siw.write(new Pair<String, Byte>("aaa", (byte) 0));
-            siw.write(new Pair<String, Byte>("abbb", (byte) 1));
+            siw.write(P_AAA_0);
+            siw.write(P_ABBB_1);
             assertThrows(IllegalArgumentException.class,
-                    () -> siw.write(new Pair<String, Byte>("abbb", (byte) 2)));
+                    () -> siw.write(P_ABBB_2));
         }
     }
 
@@ -68,8 +79,7 @@ class IntegrationSortedDataFileWriterTest {
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
         try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(
                 byteTd.getTypeWriter(), fileWriter, stringTd)) {
-            assertThrows(NullPointerException.class,
-                    () -> siw.write(new Pair<String, Byte>(null, (byte) 0)));
+            assertThrows(NullPointerException.class, () -> siw.write(P_NULL_0));
         }
 
     }

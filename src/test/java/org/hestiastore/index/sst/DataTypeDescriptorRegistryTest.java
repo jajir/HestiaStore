@@ -11,6 +11,9 @@ import org.junit.jupiter.api.Test;
 
 class DataTypeDescriptorRegistryTest {
 
+    private static final String TD_FAULTY = MyFaultyTypeDescriptor.class
+            .getName();
+
     @Test
     void test_integer_datatypeDescriptor() {
         final String tdInteger = DataTypeDescriptorRegistry
@@ -56,8 +59,7 @@ class DataTypeDescriptorRegistryTest {
     @Test
     void test_makeInstance_classIsNotTypeDescriptor() {
         final IndexException e = assertThrows(IndexException.class,
-                () -> DataTypeDescriptorRegistry
-                        .makeInstance(MyFaultyTypeDescriptor.class.getName()));
+                () -> DataTypeDescriptorRegistry.makeInstance(TD_FAULTY));
 
         assertEquals(
                 "In class 'org.hestiastore.index.sst.DataTypeDescriptorRegistryTest$MyFaultyTypeDescriptor'"

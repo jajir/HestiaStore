@@ -82,8 +82,9 @@ class HashTest {
 
     @Test
     void testConstructor_InvalidNumberOfHashFunctions() {
+        final BitArray bitArray = new BitArray(10);
         assertThrows(IllegalArgumentException.class,
-                () -> new Hash(new BitArray(10), 0));
+                () -> new Hash(bitArray, 0));
     }
 
 }

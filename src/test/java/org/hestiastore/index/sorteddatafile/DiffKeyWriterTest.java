@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Comparator;
 
+import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorString;
@@ -77,18 +78,19 @@ class DiffKeyWriterTest {
 
     @Test
     void test_constructor_convertorToBytes_is_null() {
+        final Comparator<Integer> comparator = Comparator.naturalOrder();
         final Exception e = assertThrows(NullPointerException.class,
-                () -> new DiffKeyWriter<Integer>(null,
-                        Comparator.naturalOrder()));
+                () -> new DiffKeyWriter<Integer>(null, comparator));
 
         assertEquals("Convertor to bytes is null", e.getMessage());
     }
 
     @Test
     void test_constructor_comparator_is_null() {
+        final ConvertorToBytes<Integer> convertorToBytes = tdi
+                .getConvertorToBytes();
         final Exception e = assertThrows(NullPointerException.class,
-                () -> new DiffKeyWriter<Integer>(tdi.getConvertorToBytes(),
-                        null));
+                () -> new DiffKeyWriter<Integer>(convertorToBytes, null));
 
         assertEquals("Key comparator can't be null", e.getMessage());
     }
