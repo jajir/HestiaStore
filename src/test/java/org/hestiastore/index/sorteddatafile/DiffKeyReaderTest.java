@@ -122,10 +122,7 @@ class DiffKeyReaderTest {
         assertEquals("prase", ret1);
 
         when(fileReader.read()).thenReturn(3).thenReturn(5);
-        when(fileReader.read(eq(new byte[5]))).thenAnswer(invocation -> {
-            // loadStringToByteArray(invocation, "lesni");
-            return 3;
-        });
+        when(fileReader.read(eq(new byte[5]))).thenReturn(3);
         assertThrows(IndexException.class, () -> reader.read(fileReader));
     }
 
