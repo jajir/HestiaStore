@@ -35,10 +35,10 @@ public class IntegrationIndexConsistencyTest extends AbstractIndexTest {
     /**
      * Verify that what is written is read correctly back.
      * 
-     * @throws Exception
+     * @
      */
     @Test
-    void test_basic_consistency() throws Exception {
+    void test_basic_consistency() {
         final Index<Integer, Integer> index = makeIndex();
         for (int i = 0; i < 100; i++) {
             writePairs(index, makeList(i));
@@ -51,10 +51,10 @@ public class IntegrationIndexConsistencyTest extends AbstractIndexTest {
      * Test verify that read operation provide latest values. Even writing to
      * segment during
      * 
-     * @throws Exception
+     * @
      */
     @Test
-    void test_reading_of_updated_values() throws Exception {
+    void test_reading_of_updated_values() {
         final Index<Integer, Integer> index = makeIndex();
         writePairs(index, makeList(0));
         try (final Stream<Pair<Integer, Integer>> stream = index
@@ -70,8 +70,7 @@ public class IntegrationIndexConsistencyTest extends AbstractIndexTest {
     }
 
     @Test
-    void test_search_for_missing_key_bigger_than_last_existing_one()
-            throws Exception {
+    void test_search_for_missing_key_bigger_than_last_existing_one() {
         final Index<Integer, Integer> index = makeIndex();
         writePairs(index, makeList(888));
         index.flush();

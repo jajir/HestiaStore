@@ -51,7 +51,7 @@ public class IndexConfigurationManagerTest {
     private IndexConfigurationManager<Long, String> manager;
 
     @Test
-    void test_save_key_class_is_null() throws Exception {
+    void test_save_key_class_is_null() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withValueClass(String.class)//
@@ -64,7 +64,7 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_value_class_is_null() throws Exception {
+    void test_save_value_class_is_null() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withKeyClass(Long.class)//
@@ -77,7 +77,7 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_index_name_is_null() throws Exception {
+    void test_save_index_name_is_null() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withKeyClass(Long.class)//
@@ -91,7 +91,7 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_key_type_descriptor_is_null() throws Exception {
+    void test_save_key_type_descriptor_is_null() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withKeyClass(Long.class)//
@@ -107,7 +107,7 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_thread_safe_is_null() throws Exception {
+    void test_save_thread_safe_is_null() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withKeyClass(Long.class)//
@@ -124,7 +124,7 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_log_enabled_missing() throws Exception {
+    void test_save_log_enabled_missing() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withKeyClass(Long.class)//
@@ -142,7 +142,7 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_maxNumberOfKeysInCache_is_null() throws Exception {
+    void test_save_maxNumberOfKeysInCache_is_null() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withKeyClass(Long.class)//
@@ -162,7 +162,7 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_maxNumberOfKeysInCache_is_less_than_3() throws Exception {
+    void test_save_maxNumberOfKeysInCache_is_less_than_3() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withKeyClass(Long.class)//
@@ -183,7 +183,7 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_maxNumberOfKeysInSegment_is_null() throws Exception {
+    void test_save_maxNumberOfKeysInSegment_is_null() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withKeyClass(Long.class)//
@@ -204,7 +204,7 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_maxNumberOfKeysInSegment_is_less_than_4() throws Exception {
+    void test_save_maxNumberOfKeysInSegment_is_less_than_4() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withKeyClass(Long.class)//
@@ -226,7 +226,7 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_maxNumberOfSegmentsInCache_is_null() throws Exception {
+    void test_save_maxNumberOfSegmentsInCache_is_null() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withKeyClass(Long.class) //
@@ -247,8 +247,7 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_maxNumberOfSegmentsInCache_is_less_than_3()
-            throws Exception {
+    void test_save_maxNumberOfSegmentsInCache_is_less_than_3() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withKeyClass(Long.class) //
@@ -270,8 +269,7 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_maxNumberOfKeysInSegmentCacheDuringFlushing_is_null()
-            throws Exception {
+    void test_save_maxNumberOfKeysInSegmentCacheDuringFlushing_is_null() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withKeyClass(Long.class) //
@@ -293,8 +291,7 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_maxNumberOfKeysInSegmentCacheDuringFlushing_is_less_than_3()
-            throws Exception {
+    void test_save_maxNumberOfKeysInSegmentCacheDuringFlushing_is_less_than_3() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withKeyClass(Long.class) //
@@ -317,8 +314,7 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_maxNumberOfKeysInSegmentCacheDuringFlushing_is_lower_than_maxNumberOfKeysInSegmentCache()
-            throws Exception {
+    void test_save_maxNumberOfKeysInSegmentCacheDuringFlushing_is_lower_than_maxNumberOfKeysInSegmentCache() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withKeyClass(Long.class) //
@@ -343,7 +339,7 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_disk_reading_cache_size_in_not_1024() throws Exception {
+    void test_save_disk_reading_cache_size_in_not_1024() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withKeyClass(Long.class)//
@@ -376,7 +372,7 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_disk_reading_cache_size_in_0() throws Exception {
+    void test_save_disk_reading_cache_size_in_0() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
                 .withKeyClass(Long.class)//
@@ -408,7 +404,7 @@ public class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save() throws Exception {
+    void test_save() {
         manager.save(CONFIG);
 
         verify(storage, Mockito.times(1)).save(CONFIG);

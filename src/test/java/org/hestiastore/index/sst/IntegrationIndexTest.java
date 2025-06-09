@@ -33,7 +33,7 @@ public class IntegrationIndexTest extends AbstractIndexTest {
             Pair.of(10, "ddl"), Pair.of(11, "ddm"));
 
     @Test
-    void testBasic() throws Exception {
+    void testBasic() {
         final Index<Integer, String> index = makeSstIndex(false);
         writePairs(index, testData);
 
@@ -52,7 +52,7 @@ public class IntegrationIndexTest extends AbstractIndexTest {
     }
 
     @Test
-    void test_duplicated_operations() throws Exception {
+    void test_duplicated_operations() {
         final Index<Integer, String> index = makeSstIndex(false);
         for (int i = 0; i < 100; i++) {
             index.put(i, "kachna");
@@ -63,7 +63,7 @@ public class IntegrationIndexTest extends AbstractIndexTest {
     }
 
     @Test
-    void test_delete_search_operations() throws Exception {
+    void test_delete_search_operations() {
         final Index<Integer, String> index = makeSstIndex(false);
         for (int i = 0; i < 300; i++) {
             index.put(i, "kachna");
@@ -78,14 +78,13 @@ public class IntegrationIndexTest extends AbstractIndexTest {
     /**
      * In this test getStream() could ommit some results
      * 
-     * @param iterations
-     * @throws Exception
+     * @param iterations @
      */
     @ParameterizedTest
     @CsvSource(value = { "1:0", "3:0", "5:4", "15:12", "100:100",
             "102:100" }, delimiter = ':')
     void test_adds_and_deletes_operations_no_compacting(final int iterations,
-            final int itemsInIndex) throws Exception {
+            final int itemsInIndex) {
         final Index<Integer, String> index = makeSstIndex(false);
         for (int i = 0; i < iterations; i++) {
             index.put(i, "kachna");
@@ -102,8 +101,8 @@ public class IntegrationIndexTest extends AbstractIndexTest {
 
     @ParameterizedTest
     @ValueSource(ints = { 1, 3, 5, 15, 100, 102 })
-    void test_adds_and_deletes_operations_with_compacting(final int iterations)
-            throws Exception {
+    void test_adds_and_deletes_operations_with_compacting(
+            final int iterations) {
         final Index<Integer, String> index = makeSstIndex(false);
         for (int i = 0; i < iterations; i++) {
             index.put(i, "kachna");

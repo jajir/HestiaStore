@@ -21,7 +21,7 @@ public class DiffKeyReaderTest {
     private final TypeDescriptor<String> tds = new TypeDescriptorString();
 
     @Test
-    public void test_reading_end_of_file() throws Exception {
+    public void test_reading_end_of_file() {
         final DiffKeyReader<String> reader = new DiffKeyReader<>(
                 tds.getConvertorFromBytes());
 
@@ -31,7 +31,7 @@ public class DiffKeyReaderTest {
     }
 
     @Test
-    public void test_first_record_expect_previous() throws Exception {
+    public void test_first_record_expect_previous() {
         final DiffKeyReader<String> reader = new DiffKeyReader<>(
                 tds.getConvertorFromBytes());
 
@@ -44,7 +44,7 @@ public class DiffKeyReaderTest {
     }
 
     @Test
-    public void test_reading_first_full_record() throws Exception {
+    public void test_reading_first_full_record() {
         final DiffKeyReader<String> reader = new DiffKeyReader<>(
                 tds.getConvertorFromBytes());
 
@@ -58,8 +58,7 @@ public class DiffKeyReaderTest {
     }
 
     @Test
-    public void test_reading_first_fail_when_just_part_of_data_is_read()
-            throws Exception {
+    public void test_reading_first_fail_when_just_part_of_data_is_read() {
         final DiffKeyReader<String> reader = new DiffKeyReader<>(
                 tds.getConvertorFromBytes());
 
@@ -71,7 +70,7 @@ public class DiffKeyReaderTest {
     }
 
     @Test
-    public void test_reading_more_records() throws Exception {
+    public void test_reading_more_records() {
         final DiffKeyReader<String> reader = new DiffKeyReader<>(
                 tds.getConvertorFromBytes());
 
@@ -93,8 +92,7 @@ public class DiffKeyReaderTest {
     }
 
     @Test
-    public void test_reading_more_records_with_inconsistency()
-            throws Exception {
+    public void test_reading_more_records_with_inconsistency() {
         final DiffKeyReader<String> reader = new DiffKeyReader<>(
                 tds.getConvertorFromBytes());
 
@@ -111,8 +109,7 @@ public class DiffKeyReaderTest {
     }
 
     @Test
-    public void test_reading_more_records_second_reading_load_part_of_bytes()
-            throws Exception {
+    public void test_reading_more_records_second_reading_load_part_of_bytes() {
         final DiffKeyReader<String> reader = new DiffKeyReader<>(
                 tds.getConvertorFromBytes());
 

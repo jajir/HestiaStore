@@ -1,8 +1,7 @@
 package org.hestiastore.index.log;
 
-import java.util.Objects;
-
 import org.hestiastore.index.CloseablePairReader;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.unsorteddatafile.UnsortedDataFile;
@@ -16,9 +15,11 @@ public class LogFilesManager<K, V> {
     LogFilesManager(final Directory directory,
             final TypeDescriptor<LoggedKey<K>> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor) {
-        this.directory = Objects.requireNonNull(directory);
-        this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
-        this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
+        this.directory = Vldtn.requireNonNull(directory, "directory");
+        this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
+                "keyTypeDescriptor");
+        this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
+                "valueTypeDescriptor");
     }
 
     UnsortedDataFile<LoggedKey<K>, V> getLogFile(final String name) {

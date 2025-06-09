@@ -14,7 +14,7 @@ public class MemFileLockTest {
     private Directory directory = null;
 
     @Test
-    void test_basicFlow() throws Exception {
+    void test_basicFlow() {
         final FileLock lock = directory.getLock(LOCK_FILE_NAME);
 
         assertNotNull(lock);
@@ -31,7 +31,7 @@ public class MemFileLockTest {
     }
 
     @Test
-    void test_lock_again_file() throws Exception {
+    void test_lock_again_file() {
         final FileLock lock1 = directory.getLock(LOCK_FILE_NAME);
         assertFalse(lock1.isLocked());
         lock1.lock();
@@ -39,7 +39,7 @@ public class MemFileLockTest {
     }
 
     @Test
-    void test_unlock_unlocked_lock() throws Exception {
+    void test_unlock_unlocked_lock() {
         final FileLock lock1 = directory.getLock(LOCK_FILE_NAME);
         assertFalse(lock1.isLocked());
         lock1.lock();
@@ -50,7 +50,7 @@ public class MemFileLockTest {
     }
 
     @Test
-    void test_lock_locked_file() throws Exception {
+    void test_lock_locked_file() {
         final FileLock lock1 = directory.getLock(LOCK_FILE_NAME);
         assertFalse(lock1.isLocked());
         lock1.lock();

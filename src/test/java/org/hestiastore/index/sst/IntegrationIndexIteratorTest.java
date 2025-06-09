@@ -30,7 +30,7 @@ public class IntegrationIndexIteratorTest {
             Pair.of(11, "ddm"));
 
     @Test
-    void test_simple_index_building() throws Exception {
+    void test_simple_index_building() {
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
                 .withKeyClass(Integer.class)//
@@ -46,7 +46,7 @@ public class IntegrationIndexIteratorTest {
     // TEST nkey class non existing conf
 
     @Test
-    void testBasic() throws Exception {
+    void testBasic() {
         final Index<Integer, String> index1 = makeSstIndex();
 
         data.stream().forEach(index1::put);

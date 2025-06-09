@@ -19,7 +19,7 @@ public class TypeDescriptorLoggedKeyTest {
     private static final TypeDescriptor<String> tds = new TypeDescriptorString();
 
     @Test
-    public void test_integer_read_write() throws Exception {
+    public void test_integer_read_write() {
         final TypeDescriptorLoggedKey<Integer> tdlk = new TypeDescriptorLoggedKey<>(
                 tdi);
 
@@ -31,7 +31,7 @@ public class TypeDescriptorLoggedKeyTest {
     }
 
     @Test
-    public void test_string_read_write() throws Exception {
+    public void test_string_read_write() {
         final TypeDescriptorLoggedKey<String> tdlk = new TypeDescriptorLoggedKey<>(
                 tds);
 
@@ -43,7 +43,7 @@ public class TypeDescriptorLoggedKeyTest {
     }
 
     @Test
-    public void test_string_read_write_tombstone() throws Exception {
+    public void test_string_read_write_tombstone() {
         final TypeDescriptorLoggedKey<String> tdlk = new TypeDescriptorLoggedKey<>(
                 tds);
 
@@ -59,7 +59,7 @@ public class TypeDescriptorLoggedKeyTest {
     private FileReader fileReader;
 
     @Test
-    public void test_read_null() throws Exception {
+    public void test_read_null() {
         final TypeDescriptorLoggedKey<String> tdlk = new TypeDescriptorLoggedKey<>(
                 tds);
         when(fileReader.read()).thenReturn(-1);

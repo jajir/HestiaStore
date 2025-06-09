@@ -17,7 +17,7 @@ public class TypeDescriptorLongTest {
             .getConvertorFromBytes();
 
     @Test
-    public void test_convertorto_bytes() throws Exception {
+    public void test_convertorto_bytes() {
         assertEqualsBytes(0L);
         assertEqualsBytes(21L);
         assertEqualsBytes(Long.MAX_VALUE);
@@ -33,7 +33,7 @@ public class TypeDescriptorLongTest {
     }
 
     @Test
-    public void test_writer() throws Exception {
+    public void test_writer() {
         Directory dir = new MemDirectory();
 
         int ret = ti.getTypeWriter().write(dir.getFileWriter("test"),
@@ -43,7 +43,7 @@ public class TypeDescriptorLongTest {
     }
 
     @Test
-    public void test_compare() throws Exception {
+    public void test_compare() {
         final Comparator<Long> cmp = ti.getComparator();
         assertTrue(cmp.compare(0l, 0L) == 0);
         assertTrue(cmp.compare(3l, 12L) < 0);

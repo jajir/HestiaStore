@@ -15,7 +15,7 @@ public class FormatTest {
     private final Logger logger = LoggerFactory.getLogger(FormatTest.class);
 
     @Test
-    void test_basic_fomatting() throws Exception {
+    void test_basic_fomatting() {
         DecimalFormat df = (DecimalFormat) NumberFormat
                 .getNumberInstance(Locale.getDefault());
         logger.debug(Locale.getDefault().toString());

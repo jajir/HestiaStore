@@ -39,7 +39,7 @@ public class CacheLruTest {
     private CacheElement value4;
 
     @Test
-    public void test_basic_operations() throws Exception {
+    public void test_basic_operations() {
         Cache<Integer, String> cache = new CacheLru<>(5, (k, v) -> {
             // do nothing
             fail();
@@ -55,7 +55,7 @@ public class CacheLruTest {
     }
 
     @Test
-    public void test_remove_size_exceeding_element() throws Exception {
+    public void test_remove_size_exceeding_element() {
         Cache<Integer, CacheElement> cache = new CacheLru<>(2, (k, v) -> {
             v.invalidate();
             logger.debug("Removing cached element <'{}','{}'>", k, v);
@@ -72,7 +72,7 @@ public class CacheLruTest {
     }
 
     @Test
-    public void test_invalidate_one_element() throws Exception {
+    public void test_invalidate_one_element() {
         Cache<Integer, CacheElement> cache = new CacheLru<>(5, (k, v) -> {
             // this
             v.invalidate();
@@ -86,7 +86,7 @@ public class CacheLruTest {
     }
 
     @Test
-    public void test_invalidateAll() throws Exception {
+    public void test_invalidateAll() {
         Cache<Integer, CacheElement> cache = new CacheLru<>(2, EVICTED_ELEMENT);
         cache.put(1, value1);
         cache.put(2, value2);
@@ -98,7 +98,7 @@ public class CacheLruTest {
     }
 
     @Test
-    public void test_constructor_limit_too_high() throws Exception {
+    public void test_constructor_limit_too_high() {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> new CacheLru<>(((long) Integer.MAX_VALUE) + 2L,
                         EVICTED_ELEMENT));
@@ -107,7 +107,7 @@ public class CacheLruTest {
     }
 
     @Test
-    public void test_constructor_limit_too_low() throws Exception {
+    public void test_constructor_limit_too_low() {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> new CacheLru<>(-1, EVICTED_ELEMENT));
 

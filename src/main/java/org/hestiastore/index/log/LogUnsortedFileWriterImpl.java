@@ -1,8 +1,7 @@
 package org.hestiastore.index.log;
 
-import java.util.Objects;
-
 import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.Vldtn;
 
 /**
  * Unsorted key value pairs log file.
@@ -18,7 +17,7 @@ public final class LogUnsortedFileWriterImpl<K, V>
     private final PairWriter<LoggedKey<K>, V> writer;
 
     public LogUnsortedFileWriterImpl(final PairWriter<LoggedKey<K>, V> writer) {
-        this.writer = Objects.requireNonNull(writer);
+        this.writer = Vldtn.requireNonNull(writer, "writer");
     }
 
     public void post(final K key, final V value) {

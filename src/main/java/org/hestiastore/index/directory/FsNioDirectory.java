@@ -1,7 +1,8 @@
 package org.hestiastore.index.directory;
 
 import java.io.File;
-import java.util.Objects;
+
+import org.hestiastore.index.Vldtn;
 
 public final class FsNioDirectory extends AbstractDirectory {
 
@@ -31,17 +32,17 @@ public final class FsNioDirectory extends AbstractDirectory {
     @Override
     public FileWriter getFileWriter(final String fileName,
             final Access access) {
-        Objects.requireNonNull(fileName, "File name can't be null.");
+        Vldtn.requireNonNull(fileName, "fileName");
         return new FsNioFileWriterStream(getFile(fileName),
-                Objects.requireNonNull(access, "Access name can't be null."));
+                Vldtn.requireNonNull(access, "access"));
     }
 
     @Override
     public FileWriter getFileWriter(final String fileName, final Access access,
             final int bufferSize) {
-        Objects.requireNonNull(fileName, "File name can't be null.");
+        Vldtn.requireNonNull(fileName, "fileName");
         return new FsNioFileWriterStream(getFile(fileName),
-                Objects.requireNonNull(access, "Access name can't be null."));
+                Vldtn.requireNonNull(access, "access"));
     }
 
     @Override

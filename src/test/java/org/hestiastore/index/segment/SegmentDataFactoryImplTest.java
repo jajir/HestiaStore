@@ -17,7 +17,7 @@ public class SegmentDataFactoryImplTest {
     private SegmentDataSupplier<Integer, String> supplier;
 
     @Test
-    void test_getSegmentData() throws Exception {
+    void test_getSegmentData() {
         final SegmentDataFactoryImpl<Integer, String> factory = new SegmentDataFactoryImpl<>(
                 supplier);
         final SegmentData<Integer, String> result = factory.getSegmentData();
@@ -27,7 +27,7 @@ public class SegmentDataFactoryImplTest {
     }
 
     @Test
-    void test_supplier_is_null() throws Exception {
+    void test_supplier_is_null() {
         final Exception e = assertThrows(NullPointerException.class,
                 () -> new SegmentDataFactoryImpl<>(null));
 

@@ -10,7 +10,7 @@ public class ByteToolTest {
     private ByteTool bt = new ByteTool();
 
     @Test
-    void test_howMuchBytesIsSame() throws Exception {
+    void test_howMuchBytesIsSame() {
         testBytes("a", "a", 1);
         testBytes("aaaa", "aaaa", 4);
         testBytes("ahoj", "ahoj", 4);
@@ -38,7 +38,7 @@ public class ByteToolTest {
     }
 
     @Test
-    public void test_getRemainingBytesAfterIndex() throws Exception {
+    public void test_getRemainingBytesAfterIndex() {
         testFunction(1, "ahoj", "hoj");
         testFunction(0, "ahoj", "ahoj");
         testFunction(4, "ahoj", "");

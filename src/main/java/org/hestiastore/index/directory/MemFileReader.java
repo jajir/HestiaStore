@@ -1,6 +1,6 @@
 package org.hestiastore.index.directory;
 
-import java.util.Objects;
+import org.hestiastore.index.Vldtn;
 
 public class MemFileReader implements FileReader {
 
@@ -9,7 +9,7 @@ public class MemFileReader implements FileReader {
     private int position;
 
     MemFileReader(final byte[] data) {
-        Objects.requireNonNull(data);
+        Vldtn.requireNonNull(data, "data");
         this.data = data;
         position = 0;
     }

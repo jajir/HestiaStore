@@ -35,13 +35,13 @@ public class PairIteratorWithLockTest {
     }
 
     @Test
-    void test_is_locked() throws Exception {
+    void test_is_locked() {
         when(lock.isLocked()).thenReturn(true);
         assertFalse(iterator.hasNext());
     }
 
     @Test
-    void test_unlocked_inner_in_not_next() throws Exception {
+    void test_unlocked_inner_in_not_next() {
         when(lock.isLocked()).thenReturn(false);
         when(iter.hasNext()).thenReturn(false);
 
@@ -49,7 +49,7 @@ public class PairIteratorWithLockTest {
     }
 
     @Test
-    void test_unlocked_inner_in_next() throws Exception {
+    void test_unlocked_inner_in_next() {
         when(lock.isLocked()).thenReturn(false);
         when(iter.hasNext()).thenReturn(true);
 
@@ -57,7 +57,7 @@ public class PairIteratorWithLockTest {
     }
 
     @Test
-    void test_try_to_move_next_in_locked() throws Exception {
+    void test_try_to_move_next_in_locked() {
         when(lock.isLocked()).thenReturn(true);
 
         final Exception e = assertThrows(NoSuchElementException.class, () -> {

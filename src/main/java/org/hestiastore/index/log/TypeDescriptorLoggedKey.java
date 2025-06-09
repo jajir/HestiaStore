@@ -1,8 +1,8 @@
 package org.hestiastore.index.log;
 
 import java.util.Comparator;
-import java.util.Objects;
 
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -16,8 +16,9 @@ public class TypeDescriptorLoggedKey<K>
 
     private final TypeDescriptor<K> tdKey;
 
-    public TypeDescriptorLoggedKey(final TypeDescriptor<K> tdKey) {
-        this.tdKey = Objects.requireNonNull(tdKey);
+    public TypeDescriptorLoggedKey(final TypeDescriptor<K> typeDescriptorKey) {
+        this.tdKey = Vldtn.requireNonNull(typeDescriptorKey,
+                "typeDescriptorKey");
     }
 
     @Override

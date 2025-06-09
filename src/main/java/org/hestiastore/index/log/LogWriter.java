@@ -1,7 +1,6 @@
 package org.hestiastore.index.log;
 
-import java.util.Objects;
-
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory.Access;
 import org.hestiastore.index.unsorteddatafile.UnsortedDataFile;
 
@@ -14,8 +13,10 @@ public class LogWriter<K, V> {
 
     LogWriter(final LogFileNamesManager logFileNamesManager,
             final LogFilesManager<K, V> logFilesManager) {
-        this.logFileNamessManager = Objects.requireNonNull(logFileNamesManager);
-        this.logFilesManager = Objects.requireNonNull(logFilesManager);
+        this.logFileNamessManager = Vldtn.requireNonNull(logFileNamesManager,
+                "logFileNamesManager");
+        this.logFilesManager = Vldtn.requireNonNull(logFilesManager,
+                "logFilesManager");
     }
 
     void post(final K key, final V value) {

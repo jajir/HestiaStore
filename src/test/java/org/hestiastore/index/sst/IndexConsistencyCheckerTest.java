@@ -41,7 +41,7 @@ public class IndexConsistencyCheckerTest {
     private IndexConsistencyChecker<Integer, String> checker;
 
     @Test
-    void test_noSegments() throws Exception {
+    void test_noSegments() {
         when(keySegmentCache.getSegmentsAsStream()).thenReturn(Stream.empty());
 
         checker.checkAndRepairConsistency();
@@ -50,7 +50,7 @@ public class IndexConsistencyCheckerTest {
     }
 
     @Test
-    void test_missingSegment() throws Exception {
+    void test_missingSegment() {
         when(keySegmentCache.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
         when(segmentManager.getSegment(SEGMENT_ID)).thenReturn(null);
@@ -63,7 +63,7 @@ public class IndexConsistencyCheckerTest {
     }
 
     @Test
-    void test_oneSegment_segmenMaxKeyIsHigher() throws Exception {
+    void test_oneSegment_segmenMaxKeyIsHigher() {
         when(keySegmentCache.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
         when(segmentManager.getSegment(SEGMENT_ID)).thenReturn(segment);
@@ -76,7 +76,7 @@ public class IndexConsistencyCheckerTest {
     }
 
     @Test
-    void test_oneSegment() throws Exception {
+    void test_oneSegment() {
         when(keySegmentCache.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
         when(segmentManager.getSegment(SEGMENT_ID)).thenReturn(segment);

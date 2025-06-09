@@ -1,7 +1,6 @@
 package org.hestiastore.index.log;
 
-import java.util.Objects;
-
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.unsorteddatafile.UnsortedDataFileStreamer;
 
 public class LogImpl<K, V> implements Log<K, V> {
@@ -13,12 +12,11 @@ public class LogImpl<K, V> implements Log<K, V> {
     public LogImpl(final LogWriter<K, V> logWriter,
             final LogFileNamesManager logFileNamesManager,
             final LogFilesManager<K, V> logFilesManager) {
-        this.logWriter = Objects.requireNonNull(logWriter,
-                "logWriter must not be null");
-        this.logFileNamesManager = Objects.requireNonNull(logFileNamesManager,
-                "logFileNamesManager must not be null");
-        this.logFilesManager = Objects.requireNonNull(logFilesManager,
-                "logFilesManager must not be null");
+        this.logWriter = Vldtn.requireNonNull(logWriter, "logWriter");
+        this.logFileNamesManager = Vldtn.requireNonNull(logFileNamesManager,
+                "logFileNamesManager");
+        this.logFilesManager = Vldtn.requireNonNull(logFilesManager,
+                "logFilesManager");
     }
 
     public UnsortedDataFileStreamer<LoggedKey<K>, V> openStreamer() {

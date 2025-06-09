@@ -18,7 +18,7 @@ public class IntegrationScarceIndexTest {
     private final TypeDescriptorString stringTd = new TypeDescriptorString();
 
     @Test
-    public void test_one_key() throws Exception {
+    public void test_one_key() {
         final ScarceIndex<String> index = makeIndex(
                 List.of(Pair.of("bbb", 13)));
 
@@ -31,7 +31,7 @@ public class IntegrationScarceIndexTest {
     }
 
     @Test
-    public void test_empty() throws Exception {
+    public void test_empty() {
         final ScarceIndex<String> index = makeIndex(Collections.emptyList());
 
         assertNull(index.get("aaa"));
@@ -43,7 +43,7 @@ public class IntegrationScarceIndexTest {
     }
 
     @Test
-    public void test_one_multiple() throws Exception {
+    public void test_one_multiple() {
         final ScarceIndex<String> index = makeIndex(
                 List.of(Pair.of("bbb", 1), Pair.of("ccc", 2), Pair.of("ddd", 3),
                         Pair.of("eee", 4), Pair.of("fff", 5)));
@@ -60,7 +60,7 @@ public class IntegrationScarceIndexTest {
     }
 
     @Test
-    public void test_insert_duplicite_keys() throws Exception {
+    public void test_insert_duplicite_keys() {
         assertThrows(IllegalArgumentException.class,
                 () -> makeIndex(List.of(Pair.of("bbb", 1), Pair.of("ccc", 2),
                         Pair.of("ccc", 3), Pair.of("eee", 4),
@@ -68,7 +68,7 @@ public class IntegrationScarceIndexTest {
     }
 
     @Test
-    public void test_sanity_check() throws Exception {
+    public void test_sanity_check() {
         assertThrows(IllegalStateException.class,
                 () -> makeIndex(List.of(Pair.of("bbb", 1), Pair.of("ccc", 2),
                         Pair.of("ddd", 3), Pair.of("eee", 4),
@@ -76,7 +76,7 @@ public class IntegrationScarceIndexTest {
     }
 
     @Test
-    public void test_overwrite_index() throws Exception {
+    public void test_overwrite_index() {
 
         final ScarceIndex<String> index = makeIndex(
                 List.of(Pair.of("bbb", 1), Pair.of("ccc", 2), Pair.of("ddd", 3),

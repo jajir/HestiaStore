@@ -19,7 +19,7 @@ public class IntegrationSortedDataFileWriterTest {
     private final TypeDescriptorString stringTd = new TypeDescriptorString();
 
     @Test
-    public void read_incorrect_insert_order_mem() throws Exception {
+    public void read_incorrect_insert_order_mem() {
         final Directory directory = new MemDirectory();
         final FileWriter fileWriter = directory.getFileWriter(FILE_NAME,
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
@@ -34,7 +34,7 @@ public class IntegrationSortedDataFileWriterTest {
     }
 
     @Test
-    public void test_invalidOrder() throws Exception {
+    public void test_invalidOrder() {
         final Directory directory = new MemDirectory();
         final FileWriter fileWriter = directory.getFileWriter(FILE_NAME,
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
@@ -48,7 +48,7 @@ public class IntegrationSortedDataFileWriterTest {
     }
 
     @Test
-    public void test_duplicatedValue() throws Exception {
+    public void test_duplicatedValue() {
         final Directory directory = new MemDirectory();
         final FileWriter fileWriter = directory.getFileWriter(FILE_NAME,
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
@@ -62,7 +62,7 @@ public class IntegrationSortedDataFileWriterTest {
     }
 
     @Test
-    public void test_null_key() throws Exception {
+    public void test_null_key() {
         final Directory directory = new MemDirectory();
         final FileWriter fileWriter = directory.getFileWriter(FILE_NAME,
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);

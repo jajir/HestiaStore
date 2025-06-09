@@ -40,7 +40,7 @@ public class IntegrationIndexSimpleTest {
             Pair.of(10, "ddl"), Pair.of(11, "ddm"));
 
     @Test
-    void testBasic() throws Exception {
+    void testBasic() {
         final Index<Integer, String> index1 = makeSstIndex();
 
         testData.stream().forEach(index1::put);
@@ -90,7 +90,7 @@ public class IntegrationIndexSimpleTest {
     }
 
     @Test
-    void test_fullLog() throws Exception {
+    void test_fullLog() {
 
         Index<Integer, String> index1 = makeIndex(true);
 
@@ -106,7 +106,7 @@ public class IntegrationIndexSimpleTest {
     }
 
     @Test
-    void test_merging_values_from_cache_and_segment() throws Exception {
+    void test_merging_values_from_cache_and_segment() {
         final Index<Integer, String> index1 = makeSstIndex();
         testData.stream().forEach(index1::put);
         index1.flush();
@@ -124,10 +124,10 @@ public class IntegrationIndexSimpleTest {
      * Verify that stream could be read repeatedly without concurrent
      * modification problem.
      * 
-     * @throws Exception
+     * @
      */
     @Test
-    void test_repeated_read() throws Exception {
+    void test_repeated_read() {
         final Index<Integer, String> index1 = makeSstIndex();
         testData.stream().forEach(index1::put);
         index1.flush();
@@ -146,10 +146,10 @@ public class IntegrationIndexSimpleTest {
      * Verify that data could be read from index after index is closed and new
      * one is opened.
      * 
-     * @throws Exception
+     * @
      */
     @Test
-    void test_read_from_reopend_index_multiple_records() throws Exception {
+    void test_read_from_reopend_index_multiple_records() {
         final Index<Integer, String> index1 = makeSstIndex();
         testData.stream().forEach(index1::put);
         index1.close();
@@ -165,10 +165,10 @@ public class IntegrationIndexSimpleTest {
      * Verify that single record could be written to index and after reopening
      * it's still there.
      * 
-     * @throws Exception
+     * @
      */
     @Test
-    void test_read_from_reopend_index_single_records() throws Exception {
+    void test_read_from_reopend_index_single_records() {
         final Index<Integer, String> index1 = makeSstIndex();
         index1.put(Pair.of(2, "duck"));
         index1.close();
@@ -183,10 +183,10 @@ public class IntegrationIndexSimpleTest {
     /**
      * Verify that changed data are correctly stored.
      * 
-     * @throws Exception
+     * @
      */
     @Test
-    void test_storing_of_modified_data_after_index_close() throws Exception {
+    void test_storing_of_modified_data_after_index_close() {
         // generate data
         final List<String> values = List.of("aaa", "bbb", "ccc", "ddd", "eee",
                 "fff");
@@ -229,10 +229,10 @@ public class IntegrationIndexSimpleTest {
      * Verify that data could be read from index after index is closed and new
      * one is opened.
      * 
-     * @throws Exception
+     * @
      */
     @Test
-    void test_read_from_unclosed_index() throws Exception {
+    void test_read_from_unclosed_index() {
         final Index<Integer, String> index1 = makeSstIndex();
         testData.stream().forEach(index1::put);
 

@@ -16,7 +16,7 @@ public class TypeDescriptorIntegerTest {
             .getConvertorFromBytes();
 
     @Test
-    public void test_convertorto_bytes() throws Exception {
+    public void test_convertorto_bytes() {
         assertEqualsBytes(0);
         assertEqualsBytes(Integer.MAX_VALUE);
         assertEqualsBytes(Integer.MIN_VALUE);
@@ -31,7 +31,7 @@ public class TypeDescriptorIntegerTest {
     }
 
     @Test
-    public void test_compare() throws Exception {
+    public void test_compare() {
         final Comparator<Integer> cmp = ti.getComparator();
         assertTrue(cmp.compare(0, 0) == 0);
         assertTrue(cmp.compare(3, 12) < 0);
@@ -39,7 +39,7 @@ public class TypeDescriptorIntegerTest {
     }
 
     @Test
-    public void test_isTombStone() throws Exception {
+    public void test_isTombStone() {
         assertFalse(ti.isTombstone(-1));
         assertFalse(ti.isTombstone(Integer.MIN_VALUE));
         assertTrue(ti.isTombstone(Integer.MIN_VALUE + 1));

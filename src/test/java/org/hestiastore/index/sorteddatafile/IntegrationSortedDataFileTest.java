@@ -57,7 +57,7 @@ public class IntegrationSortedDataFileTest extends AbstractDataTest {
     }
 
     @Test
-    void test_seekInFile() throws Exception {
+    void test_seekInFile() {
         long position = writeDataWithOneFullWrite();
 
         try (PairSeekableReader<String, Integer> reader = sdf
@@ -79,7 +79,7 @@ public class IntegrationSortedDataFileTest extends AbstractDataTest {
     }
 
     @Test
-    void test_iterator() throws Exception {
+    void test_iterator() {
         writeDataWithOneFullWrite();
 
         try (PairIteratorWithCurrent<String, Integer> iterator = sdf

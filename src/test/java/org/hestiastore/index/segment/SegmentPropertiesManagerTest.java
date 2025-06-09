@@ -16,7 +16,7 @@ public class SegmentPropertiesManagerTest {
     private SegmentPropertiesManager props;
 
     @Test
-    public void test_store_and_read_values() throws Exception {
+    public void test_store_and_read_values() {
         // Verify that new object is empty
         SegmentStats stats = props.getSegmentStats();
         assertEquals(0, stats.getNumberOfKeys());
@@ -59,7 +59,7 @@ public class SegmentPropertiesManagerTest {
     }
 
     @Test
-    public void test_deltaFileNames_are_sorted() throws Exception {
+    public void test_deltaFileNames_are_sorted() {
         assertEquals("segment-00027-delta-000.cache",
                 props.getAndIncreaseDeltaFileName());
         assertEquals("segment-00027-delta-001.cache",
@@ -81,7 +81,7 @@ public class SegmentPropertiesManagerTest {
     }
 
     @Test
-    public void test_increase_numberOfKeysInCache() throws Exception {
+    public void test_increase_numberOfKeysInCache() {
         assertEquals(0, props.getNumberOfKeysInDeltaCache());
 
         // verify increment by one

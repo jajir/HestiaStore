@@ -57,7 +57,7 @@ public class IntegrationSortTest extends AbstractSegmentTest {
     }
 
     @Test
-    void test_sort_3_unique_keys_shufled() throws Exception {
+    void test_sort_3_unique_keys_shufled() {
 
         writePairs(unsorted, Arrays.asList(//
                 Pair.of("b", 30), //
@@ -75,7 +75,7 @@ public class IntegrationSortTest extends AbstractSegmentTest {
     }
 
     @Test
-    void test_sort_3_duplicated_keys_shufled_merged() throws Exception {
+    void test_sort_3_duplicated_keys_shufled_merged() {
 
         writePairs(unsorted, Arrays.asList(//
                 Pair.of("a", 30), //
@@ -93,7 +93,7 @@ public class IntegrationSortTest extends AbstractSegmentTest {
     }
 
     @Test
-    void test_sort_no_data() throws Exception {
+    void test_sort_no_data() {
         writePairs(unsorted, Collections.emptyList());
 
         sorter.sort();
@@ -104,7 +104,7 @@ public class IntegrationSortTest extends AbstractSegmentTest {
     }
 
     @Test
-    void test_sort_100_unique_keys_sorted() throws Exception {
+    void test_sort_100_unique_keys_sorted() {
         final List<Pair<String, Integer>> data = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             data.add(Pair.of("key" + FileNameUtil.getPaddedId(i, 3), i));
@@ -122,7 +122,7 @@ public class IntegrationSortTest extends AbstractSegmentTest {
     }
 
     @Test
-    void test_sort_100_unique_keys_shufled() throws Exception {
+    void test_sort_100_unique_keys_shufled() {
         final List<Pair<String, Integer>> data = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             data.add(Pair.of("key" + FileNameUtil.getPaddedId(i, 3), i));
@@ -140,7 +140,7 @@ public class IntegrationSortTest extends AbstractSegmentTest {
     }
 
     @Test
-    void test_sort_100_duplicated_keys_shufled() throws Exception {
+    void test_sort_100_duplicated_keys_shufled() {
         final List<Pair<String, Integer>> data = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             int id = RANDOM.nextInt(10);
