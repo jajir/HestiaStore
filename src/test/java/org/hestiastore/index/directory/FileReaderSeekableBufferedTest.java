@@ -30,35 +30,35 @@ public class FileReaderSeekableBufferedTest {
     private FileReaderSeekable fileReaderSeekable;
 
     @Test
-    void test_read_short_text_from_0_from_long_text() throws Exception {
+    void test_read_short_text_from_0_from_long_text() {
         final FileReaderSeekableBuffered reader = makeReader(TEXT_LONG);
 
         assertEquals("This", readStr(reader, 4));
     }
 
     @Test
-    void test_read_long_text_from_0_from_long_text() throws Exception {
+    void test_read_long_text_from_0_from_long_text() {
         final FileReaderSeekableBuffered reader = makeReader(TEXT_LONG);
 
         assertEquals("This code stores", readStr(reader, 16));
     }
 
     @Test
-    void test_read_short_text_from_0_from_tiny_text() throws Exception {
+    void test_read_short_text_from_0_from_tiny_text() {
         final FileReaderSeekableBuffered reader = makeReader(TEXT_TINY);
 
         assertEquals("This", readStr(reader, 10, 4));
     }
 
     @Test
-    void test_read_long_text_from_0_from_short_text() throws Exception {
+    void test_read_long_text_from_0_from_short_text() {
         final FileReaderSeekableBuffered reader = makeReader(TEXT_SHORT);
 
         assertEquals("This code stores", readStr(reader, 20, 16));
     }
 
     @Test
-    void test_read_short_text_from_35_from_long_text() throws Exception {
+    void test_read_short_text_from_35_from_long_text() {
         final FileReaderSeekableBuffered reader = makeReader(TEXT_LONG);
         reader.seek(35);
 
@@ -66,7 +66,7 @@ public class FileReaderSeekableBufferedTest {
     }
 
     @Test
-    void test_read_long_text_from_35_from_long_text() throws Exception {
+    void test_read_long_text_from_35_from_long_text() {
         final FileReaderSeekableBuffered reader = makeReader(TEXT_LONG);
         reader.seek(35);
 
@@ -74,7 +74,7 @@ public class FileReaderSeekableBufferedTest {
     }
 
     @Test
-    void test_multiple_reads_from_long_text() throws Exception {
+    void test_multiple_reads_from_long_text() {
         final FileReaderSeekableBuffered reader = makeReader(TEXT_LONG);
         reader.seek(35);
 
@@ -86,7 +86,7 @@ public class FileReaderSeekableBufferedTest {
     }
 
     @Test
-    void test_read_short_text_from_20_from_tiny_text() throws Exception {
+    void test_read_short_text_from_20_from_tiny_text() {
         final FileReaderSeekableBuffered reader = makeReader(TEXT_TINY);
 
         assertThrows(IllegalArgumentException.class, () -> reader.seek(20));

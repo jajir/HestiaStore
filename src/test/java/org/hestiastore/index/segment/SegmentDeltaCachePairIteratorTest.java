@@ -25,7 +25,7 @@ public class SegmentDeltaCachePairIteratorTest {
     private SegmentDeltaCache<Integer, String> deltaCache;
 
     @Test
-    void test_simple() throws Exception {
+    void test_simple() {
         when(deltaCacheController.getDeltaCache()).thenReturn(deltaCache);
         when(deltaCache.get(1)).thenReturn("aaa");
         when(deltaCache.get(2)).thenReturn("bbb");

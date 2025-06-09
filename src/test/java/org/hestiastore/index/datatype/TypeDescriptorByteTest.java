@@ -10,7 +10,7 @@ public class TypeDescriptorByteTest {
     private final TypeDescriptorByte ti = new TypeDescriptorByte();
 
     @Test
-    public void test_isTombstone() throws Exception {
+    public void test_isTombstone() {
         assertFalse(ti.isTombstone(Byte.valueOf((byte) 127)));
         assertFalse(ti.isTombstone(Byte.valueOf((byte) 1)));
         assertFalse(ti.isTombstone(Byte.valueOf((byte) 0)));

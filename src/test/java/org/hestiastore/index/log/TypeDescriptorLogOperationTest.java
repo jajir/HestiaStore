@@ -17,7 +17,7 @@ public class TypeDescriptorLogOperationTest {
     private FileReader fileReader;
 
     @Test
-    public void test_read_null() throws Exception {
+    public void test_read_null() {
         final TypeDescriptor<LogOperation> tdlk = new TypeDescriptorLogOperation();
         when(fileReader.read()).thenReturn(-1);
         final LogOperation k = tdlk.getTypeReader().read(fileReader);

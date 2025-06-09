@@ -24,7 +24,7 @@ public class PairIteratorFromReaderTest {
     private OptimisticLockObjectVersionProvider provider;
 
     @Test
-    void test_iteartor() throws Exception {
+    void test_iteartor() {
         when(reader.read())//
                 .thenReturn(PAIR_1) //
                 .thenReturn(PAIR_2)//
@@ -45,7 +45,7 @@ public class PairIteratorFromReaderTest {
     }
 
     @Test
-    void test_iteartor_with_current() throws Exception {
+    void test_iteartor_with_current() {
         when(reader.read())//
                 .thenReturn(PAIR_1) //
                 .thenReturn(PAIR_2)//
@@ -78,7 +78,7 @@ public class PairIteratorFromReaderTest {
     }
 
     @Test
-    void test_empty_reader() throws Exception {
+    void test_empty_reader() {
         when(reader.read())//
                 .thenReturn(null);
         final PairIterator<Integer, String> iterator = new PairIteratorFromReader<>(

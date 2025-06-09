@@ -1,6 +1,6 @@
 package org.hestiastore.index.directory;
 
-import java.util.Objects;
+import org.hestiastore.index.Vldtn;
 
 public class MemFileLock implements FileLock {
 
@@ -9,8 +9,8 @@ public class MemFileLock implements FileLock {
     private final String lockFileName;
 
     MemFileLock(final MemDirectory directory, final String lockFileName) {
-        this.directory = Objects.requireNonNull(directory);
-        this.lockFileName = Objects.requireNonNull(lockFileName);
+        this.directory = Vldtn.requireNonNull(directory, "directory");
+        this.lockFileName = Vldtn.requireNonNull(lockFileName, "lockFileName");
     }
 
     @Override

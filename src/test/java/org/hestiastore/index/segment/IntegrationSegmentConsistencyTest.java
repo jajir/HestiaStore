@@ -46,10 +46,10 @@ public class IntegrationSegmentConsistencyTest extends AbstractSegmentTest {
     /**
      * Verify that what is written is read correctly back.
      * 
-     * @throws Exception
+     * @
      */
     @Test
-    void test_consistency() throws Exception {
+    void test_consistency() {
         for (int i = 0; i < MAX_LOOP; i++) {
             writePairs(seg, makeList(i));
             verifySegmentData(seg, makeList(i));
@@ -58,10 +58,10 @@ public class IntegrationSegmentConsistencyTest extends AbstractSegmentTest {
 
     /**
      * 
-     * @throws Exception
+     * @
      */
     @Test
-    void test_iterator_should_close_after_data_update() throws Exception {
+    void test_iterator_should_close_after_data_update() {
         writePairs(seg, makeList(0));
         final PairIterator<Integer, Integer> iterator = seg.openIterator();
         assertTrue(iterator.hasNext());

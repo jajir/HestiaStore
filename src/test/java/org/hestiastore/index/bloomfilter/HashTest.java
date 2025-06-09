@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 public class HashTest {
     @Test
-    void testStore_simple() throws Exception {
+    void testStore_simple() {
         Hash hash = new Hash(new BitArray(10), 3);
 
         assertTrue(hash.store("ahoj".getBytes()));
@@ -17,14 +17,14 @@ public class HashTest {
     }
 
     @Test
-    void testStore_null_data() throws Exception {
+    void testStore_null_data() {
         Hash hash = new Hash(new BitArray(10), 3);
 
         assertThrows(NullPointerException.class, () -> hash.store(null));
     }
 
     @Test
-    void testStore_zero_data() throws Exception {
+    void testStore_zero_data() {
         Hash hash = new Hash(new BitArray(10), 3);
 
         assertThrows(IllegalArgumentException.class,
@@ -32,14 +32,14 @@ public class HashTest {
     }
 
     @Test
-    void testIsNotStored_null_data() throws Exception {
+    void testIsNotStored_null_data() {
         Hash hash = new Hash(new BitArray(10), 3);
 
         assertThrows(NullPointerException.class, () -> hash.isNotStored(null));
     }
 
     @Test
-    void testIsNotStored_zero_data() throws Exception {
+    void testIsNotStored_zero_data() {
         Hash hash = new Hash(new BitArray(10), 3);
 
         assertThrows(IllegalArgumentException.class,
@@ -47,7 +47,7 @@ public class HashTest {
     }
 
     @Test
-    void testIsNotStored_simple() throws Exception {
+    void testIsNotStored_simple() {
         Hash hash = new Hash(new BitArray(10), 10);
 
         assertTrue(hash.isNotStored("ahoj".getBytes()));
@@ -57,7 +57,7 @@ public class HashTest {
     }
 
     @Test
-    void testSmallSize() throws Exception {
+    void testSmallSize() {
         Hash hash = new Hash(new BitArray(1), 1);
 
         hash.store("a".getBytes());
@@ -81,7 +81,7 @@ public class HashTest {
     }
 
     @Test
-    void testConstructor_InvalidNumberOfHashFunctions() throws Exception {
+    void testConstructor_InvalidNumberOfHashFunctions() {
         assertThrows(IllegalArgumentException.class,
                 () -> new Hash(new BitArray(10), 0));
     }

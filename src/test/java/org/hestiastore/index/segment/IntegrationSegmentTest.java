@@ -43,7 +43,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
             final TypeDescriptorString tds, final Directory directory,
             final Segment<Integer, String> seg,
             final int expectedNumberKeysInScarceIndex,
-            int expectedNumberOfFiles) throws Exception {
+            int expectedNumberOfFiles) {
 
         seg.forceCompact();
         verifyCacheFiles(directory);
@@ -74,7 +74,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
             final TypeDescriptorString tds, final Directory directory,
             final Segment<Integer, String> seg,
             final int expectedNumberKeysInScarceIndex,
-            final int expectedNumberOfFiles) throws Exception {
+            final int expectedNumberOfFiles) {
 
         /*
          * Writing operation is here intentionally duplicated. It verifies, that
@@ -110,7 +110,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
             final TypeDescriptorString tds, final Directory directory,
             final Segment<Integer, String> seg,
             final int expectedNumberKeysInScarceIndex,
-            final int expectedNumberOfFiles) throws Exception {
+            final int expectedNumberOfFiles) {
 
         testDataSet.forEach(pair -> {
             writePairs(seg, Arrays.asList(pair));
@@ -150,7 +150,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
             final TypeDescriptorString tds, final Directory directory,
             final Segment<Integer, String> seg,
             final int expectedNumberKeysInScarceIndex,
-            final int expectedNumberOfFiles) throws Exception {
+            final int expectedNumberOfFiles) {
 
         writePairs(seg, Arrays.asList(Pair.of(2, "e"), Pair.of(3, "e"),
                 Pair.of(4, "e")));
@@ -194,7 +194,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
     }
 
     @Test
-    void test_duplicities() throws Exception {
+    void test_duplicities() {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()
@@ -233,7 +233,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
     }
 
     @Test
-    void test_write_unordered() throws Exception {
+    void test_write_unordered() {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()
@@ -272,7 +272,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
     }
 
     @Test
-    void test_write_unordered_tombstone() throws Exception {
+    void test_write_unordered_tombstone() {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()
@@ -318,7 +318,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
             final TypeDescriptorString tds, final Directory directory,
             final Segment<Integer, String> seg,
             final int expectedNumberKeysInScarceIndex,
-            final int expectedNumberOfFiles) throws Exception {
+            final int expectedNumberOfFiles) {
         for (int i = 0; i < 100; i++) {
             int a = i * 3;
             int b = i * 3 + 1;
@@ -336,7 +336,7 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
     }
 
     @Test
-    void test_write_delete_operations() throws Exception {
+    void test_write_delete_operations() {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()
@@ -508,10 +508,10 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
      * new FsDirectory(new File("./target/tmp/"));
      * </pre></code>
      * 
-     * @throws Exception
+     * @
      */
     @Test
-    void test_write_unordered_tombstone_with_forceCompact() throws Exception {
+    void test_write_unordered_tombstone_with_forceCompact() {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()
@@ -558,10 +558,10 @@ public class IntegrationSegmentTest extends AbstractSegmentTest {
      * DirectoryMem methods for gettin read and writer objecs. It's easy to
      * spot, that correct value was set buffer have strange value 3KB.
      * 
-     * @throws Exception
+     * @
      */
     @Test
-    void test_search_on_disk() throws Exception {
+    void test_search_on_disk() {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()//

@@ -1,9 +1,9 @@
 package org.hestiastore.index.log;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
 
 /**
@@ -17,7 +17,7 @@ public final class LogFileNamesManager {
     private final Directory directory;
 
     public LogFileNamesManager(Directory directory) {
-        this.directory = Objects.requireNonNull(directory);
+        this.directory = Vldtn.requireNonNull(directory, "directory");
     }
 
     String getNewLogFileName() {

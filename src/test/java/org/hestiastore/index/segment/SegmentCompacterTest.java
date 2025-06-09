@@ -38,12 +38,12 @@ public class SegmentCompacterTest {
     }
 
     @Test
-    public void test_basic_operations() throws Exception {
+    public void test_basic_operations() {
         assertNotNull(sc);
     }
 
     @Test
-    public void test_shouldBeCompactedDuringWriting_yes() throws Exception {
+    public void test_shouldBeCompactedDuringWriting_yes() {
         when(segmentPropertiesManager.getSegmentStats())
                 .thenReturn(new SegmentStats(10, 1000L, 15));
         when(segmentConf.getMaxNumberOfKeysInDeltaCacheDuringWriting())
@@ -53,7 +53,7 @@ public class SegmentCompacterTest {
     }
 
     @Test
-    public void test_shouldBeCompactedDuringWriting_no() throws Exception {
+    public void test_shouldBeCompactedDuringWriting_no() {
         when(segmentPropertiesManager.getSegmentStats())
                 .thenReturn(new SegmentStats(10, 1000L, 15));
         when(segmentConf.getMaxNumberOfKeysInDeltaCacheDuringWriting())
@@ -63,7 +63,7 @@ public class SegmentCompacterTest {
     }
 
     @Test
-    public void test_shouldBeCompacted_yes() throws Exception {
+    public void test_shouldBeCompacted_yes() {
         when(segmentPropertiesManager.getSegmentStats())
                 .thenReturn(new SegmentStats(31, 1000L, 15));
         when(segmentConf.getMaxNumberOfKeysInDeltaCache()).thenReturn(30L);
@@ -72,7 +72,7 @@ public class SegmentCompacterTest {
     }
 
     @Test
-    public void test_shouldBeCompacted_no() throws Exception {
+    public void test_shouldBeCompacted_no() {
         when(segmentPropertiesManager.getSegmentStats())
                 .thenReturn(new SegmentStats(31, 1000L, 15));
         when(segmentConf.getMaxNumberOfKeysInDeltaCache()).thenReturn(35L);

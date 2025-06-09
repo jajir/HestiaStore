@@ -4,12 +4,12 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.Pair;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,14 +33,16 @@ public class ScarceIndexCache<K> {
     private final Comparator<K> keyComparator;
 
     ScarceIndexCache(final TypeDescriptor<K> keyTypeDescriptor) {
-        Objects.requireNonNull(keyTypeDescriptor.getComparator());
-        this.keyComparator = Objects
-                .requireNonNull(keyTypeDescriptor.getComparator());
+        Vldtn.requireNonNull(keyTypeDescriptor.getComparator(),
+                "keyTypeDescriptor.getComparator()");
+        this.keyComparator = Vldtn.requireNonNull(
+                keyTypeDescriptor.getComparator(),
+                "keyTypeDescriptor.getComparator()");
         this.list = new TreeMap<>(keyComparator);
     }
 
     void put(final Pair<K, Integer> pair) {
-        Objects.requireNonNull(pair, "Pair is null.");
+        Vldtn.requireNonNull(pair, "pair");
         list.put(pair.getKey(), pair.getValue());
     }
 
@@ -79,13 +81,13 @@ public class ScarceIndexCache<K> {
     }
 
     public Integer findSegmentId(final K key) {
-        Objects.requireNonNull(key, "Key can't be null");
+        Vldtn.requireNonNull(key, "key");
         final Pair<K, Integer> pair = localFindSegmentForKey(key);
         return pair == null ? null : pair.getValue();
     }
 
     private Pair<K, Integer> localFindSegmentForKey(final K key) {
-        Objects.requireNonNull(key, "Key can't be null");
+        Vldtn.requireNonNull(key, "key");
         final Map.Entry<K, Integer> ceilingEntry = list.floorEntry(key);
         if (ceilingEntry == null) {
             return null;

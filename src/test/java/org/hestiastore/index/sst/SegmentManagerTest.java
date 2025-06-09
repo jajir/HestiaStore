@@ -33,7 +33,7 @@ public class SegmentManagerTest {
     private SegmentDataCache<Integer, String> segmentDataCache;
 
     @Test
-    void test_getting_same_segmentId() throws Exception {
+    void test_getting_same_segmentId() {
         final SegmentManager<Integer, String> segmentManager = new SegmentManager<>(
                 directory, keyTypeDescriptor, valueTypeDescriptor, conf,
                 segmentDataCache);
@@ -55,7 +55,7 @@ public class SegmentManagerTest {
     }
 
     @Test
-    void test_close() throws Exception {
+    void test_close() {
         final SegmentManager<Integer, String> segmentManager = new SegmentManager<>(
                 directory, keyTypeDescriptor, valueTypeDescriptor, conf,
                 segmentDataCache);

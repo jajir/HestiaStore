@@ -35,10 +35,10 @@ public class IntegrationSegmentWriteConsistencyTest {
     /**
      * Test that updated data are correctly stored into index.
      * 
-     * @throws Exception
+     * @
      */
     @Test
-    void test_writing_updated_values() throws Exception {
+    void test_writing_updated_values() {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
         final Segment<Integer, String> seg1 = makeSegment(directory, id);

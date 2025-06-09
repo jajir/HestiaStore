@@ -20,7 +20,7 @@ public class LimitedPairIteratorTest {
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
 
     @Test
-    void test_basic_usage() throws Exception {
+    void test_basic_usage() {
 
         final List<Pair<Integer, String>> data = List.of(Pair.of(1, "bbb"),
                 Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(4, "ddf"),
@@ -46,7 +46,7 @@ public class LimitedPairIteratorTest {
     }
 
     @Test
-    void test_start_at_first_element() throws Exception {
+    void test_start_at_first_element() {
 
         final List<Pair<Integer, String>> data = List.of(Pair.of(1, "bbb"),
                 Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(4, "ddf"),
@@ -69,7 +69,7 @@ public class LimitedPairIteratorTest {
     }
 
     @Test
-    void test_end_at_last_element() throws Exception {
+    void test_end_at_last_element() {
 
         final List<Pair<Integer, String>> data = List.of(Pair.of(1, "bbb"),
                 Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(4, "ddf"),
@@ -92,7 +92,7 @@ public class LimitedPairIteratorTest {
     }
 
     @Test
-    void test_start_before_first_element() throws Exception {
+    void test_start_before_first_element() {
 
         final List<Pair<Integer, String>> data = List.of(Pair.of(1, "bbb"),
                 Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(4, "ddf"),
@@ -115,7 +115,7 @@ public class LimitedPairIteratorTest {
     }
 
     @Test
-    void test_end_after_last_element() throws Exception {
+    void test_end_after_last_element() {
 
         final List<Pair<Integer, String>> data = List.of(Pair.of(1, "bbb"),
                 Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(4, "ddf"),
@@ -138,7 +138,7 @@ public class LimitedPairIteratorTest {
     }
 
     @Test
-    void test_one_element() throws Exception {
+    void test_one_element() {
 
         final List<Pair<Integer, String>> data = List.of(Pair.of(1, "bbb"),
                 Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(4, "ddf"),
@@ -158,7 +158,7 @@ public class LimitedPairIteratorTest {
     }
 
     @Test
-    void test_no_data_elements() throws Exception {
+    void test_no_data_elements() {
 
         try (final PairIterator<Integer, String> limited = new LimitedPairIterator<Integer, String>(
                 new PairIteratorList<Integer, String>(Collections.emptyList()),
@@ -169,7 +169,7 @@ public class LimitedPairIteratorTest {
     }
 
     @Test
-    void test_no_data_match() throws Exception {
+    void test_no_data_match() {
 
         final List<Pair<Integer, String>> data = List.of(Pair.of(1, "bbb"),
                 Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(4, "ddf"),
@@ -186,7 +186,7 @@ public class LimitedPairIteratorTest {
     }
 
     @Test
-    void test_no_such_element() throws Exception {
+    void test_no_such_element() {
 
         final List<Pair<Integer, String>> data = List.of(Pair.of(1, "bbb"),
                 Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(4, "ddf"),
@@ -209,7 +209,7 @@ public class LimitedPairIteratorTest {
 
     @SuppressWarnings("resource")
     @Test
-    void test_unordered_min_max() throws Exception {
+    void test_unordered_min_max() {
         assertThrows(IllegalArgumentException.class, () -> {
             new LimitedPairIterator<Integer, String>(
                     new PairIteratorList<Integer, String>(

@@ -51,7 +51,7 @@ public class IntegrationIteratorTest extends AbstractIndexTest {
     }
 
     @Test
-    void test_case_1_simple_read() throws Exception {
+    void test_case_1_simple_read() {
         verifyIndexSearch(index, Arrays.asList(//
                 Pair.of("a", 20), //
                 Pair.of("b", 30), //
@@ -65,7 +65,7 @@ public class IntegrationIteratorTest extends AbstractIndexTest {
     }
 
     @Test
-    void test_case_2_deleted_key() throws Exception {
+    void test_case_2_deleted_key() {
         index.delete("b");
 
         verifyIndexSearch(index, Arrays.asList(//
@@ -81,7 +81,7 @@ public class IntegrationIteratorTest extends AbstractIndexTest {
     }
 
     @Test
-    void test_case_3_modify_key() throws Exception {
+    void test_case_3_modify_key() {
         index.delete("b");
         index.put("e", 28);
 
@@ -99,7 +99,7 @@ public class IntegrationIteratorTest extends AbstractIndexTest {
     }
 
     @Test
-    void test_case_4_add_key() throws Exception {
+    void test_case_4_add_key() {
         index.put("g", 13);
 
         // verify that added value could be get by key
@@ -119,7 +119,7 @@ public class IntegrationIteratorTest extends AbstractIndexTest {
     }
 
     @Test
-    void test_case_5_flush_make_data_iterable() throws Exception {
+    void test_case_5_flush_make_data_iterable() {
         index.delete("b");
         index.put("g", 13);
         index.flush();

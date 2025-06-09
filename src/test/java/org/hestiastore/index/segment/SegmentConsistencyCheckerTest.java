@@ -35,7 +35,7 @@ public class SegmentConsistencyCheckerTest {
     private SegmentConsistencyChecker<Integer, String> checker;
 
     @Test
-    void test_noData() throws Exception {
+    void test_noData() {
         when(segment.openIterator()).thenReturn(iterator);
         when(segment.getId()).thenReturn(SEGMENT_ID);
         when(iterator.hasNext()).thenReturn(false);
@@ -45,7 +45,7 @@ public class SegmentConsistencyCheckerTest {
     }
 
     @Test
-    void test_3_records() throws Exception {
+    void test_3_records() {
         when(segment.openIterator()).thenReturn(iterator);
         when(segment.getId()).thenReturn(SEGMENT_ID);
         when(iterator.hasNext()).thenReturn(true, true, true, false);
@@ -57,7 +57,7 @@ public class SegmentConsistencyCheckerTest {
     }
 
     @Test
-    void test_same_records() throws Exception {
+    void test_same_records() {
         when(segment.openIterator()).thenReturn(iterator);
         when(segment.getId()).thenReturn(SEGMENT_ID);
         when(iterator.hasNext()).thenReturn(true, true, true, false);
@@ -74,7 +74,7 @@ public class SegmentConsistencyCheckerTest {
     }
 
     @Test
-    void test_invalid_order() throws Exception {
+    void test_invalid_order() {
         when(segment.openIterator()).thenReturn(iterator);
         when(segment.getId()).thenReturn(SEGMENT_ID);
         when(iterator.hasNext()).thenReturn(true, true, true, false);

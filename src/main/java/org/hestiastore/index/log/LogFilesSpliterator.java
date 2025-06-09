@@ -2,13 +2,13 @@ package org.hestiastore.index.log;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 
 import org.hestiastore.index.CloseablePairReader;
 import org.hestiastore.index.CloseableSpliterator;
 import org.hestiastore.index.Pair;
+import org.hestiastore.index.Vldtn;
 
 /**
  * Allows to read log files.
@@ -22,9 +22,10 @@ public class LogFilesSpliterator<K, V>
 
     public LogFilesSpliterator(final LogFilesManager<K, V> logFilesManager,
             final List<String> logFileNames) {
-        this.logFilesManager = Objects.requireNonNull(logFilesManager);
+        this.logFilesManager = Vldtn.requireNonNull(logFilesManager,
+                "logFilesManager");
         this.logFileNames = new ArrayList<>(
-                Objects.requireNonNull(logFileNames));
+                Vldtn.requireNonNull(logFileNames, "logFileNames"));
     }
 
     private void openNextFile() {

@@ -3,10 +3,10 @@ package org.hestiastore.index.directory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Objects;
 import java.util.Properties;
 
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory.Access;
 
 public final class Props {
@@ -21,8 +21,8 @@ public final class Props {
 
     public Props(final Directory directory, final String fileName,
             final boolean force) {
-        this.directory = Objects.requireNonNull(directory);
-        this.fileName = Objects.requireNonNull(fileName);
+        this.directory = Vldtn.requireNonNull(directory, "directory");
+        this.fileName = Vldtn.requireNonNull(fileName, "fileName");
         tryToReadProps(force);
     }
 

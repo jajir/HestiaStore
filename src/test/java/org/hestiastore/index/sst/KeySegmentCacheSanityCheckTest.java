@@ -20,10 +20,10 @@ public class KeySegmentCacheSanityCheckTest {
     /**
      * Verify that loading of corrupted scarce index fails.
      * 
-     * @throws Exception
+     * @
      */
     @Test
-    public void test_sanityCheck() throws Exception {
+    public void test_sanityCheck() {
         final SortedDataFile<String, SegmentId> sdf = new SortedDataFile<>(
                 directory, "index.map", stringTd, integerTd, 1024);
 

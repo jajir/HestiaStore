@@ -1,9 +1,8 @@
 package org.hestiastore.index.scarceindex;
 
-import java.util.Objects;
-
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.Directory;
@@ -52,12 +51,10 @@ public class ScarceIndex<K> {
     ScarceIndex(final Directory directory, final String fileName,
             final TypeDescriptor<K> keyTypeDescriptor,
             final int diskIoBufferSize) {
-        this.directory = Objects.requireNonNull(directory,
-                "Directory object is null.");
-        this.fileName = Objects.requireNonNull(fileName,
-                "File name object is null.");
-        this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor,
-                "Key type descriptor object is null.");
+        this.directory = Vldtn.requireNonNull(directory, "directory");
+        this.fileName = Vldtn.requireNonNull(fileName, "fileName");
+        this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
+                "keyTypeDescriptor");
         this.cacheDataFile = SortedDataFile.<K, Integer>builder() //
                 .withDirectory(directory) //
                 .withFileName(fileName)//

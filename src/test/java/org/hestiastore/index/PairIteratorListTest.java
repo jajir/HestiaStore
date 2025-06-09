@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 public class PairIteratorListTest {
 
     @Test
-    void test_basic() throws Exception {
+    void test_basic() {
         final List<Pair<Integer, String>> data = List.of(Pair.of(1, "bbb"),
                 Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(11, "ddm"));
 
@@ -49,7 +49,7 @@ public class PairIteratorListTest {
     }
 
     @Test
-    void test_close() throws Exception {
+    void test_close() {
         final List<Pair<Integer, String>> data = List.of(Pair.of(1, "bbb"),
                 Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(11, "ddm"));
 
@@ -68,7 +68,7 @@ public class PairIteratorListTest {
     }
 
     @Test
-    void test_next_fails_when_there_is_no_data() throws Exception {
+    void test_next_fails_when_there_is_no_data() {
         final List<Pair<Integer, String>> data = List.of(Pair.of(1, "bbb"));
         try (PairIterator<Integer, String> iterator = new PairIteratorList<>(
                 data)) {
@@ -84,7 +84,7 @@ public class PairIteratorListTest {
     }
 
     @Test
-    void test_empty_list() throws Exception {
+    void test_empty_list() {
         try (final PairIterator<Integer, String> iterator = new PairIteratorList<>(
                 Collections.emptyList())) {
 

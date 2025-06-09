@@ -2,6 +2,8 @@ package org.hestiastore.index.log;
 
 import java.util.Objects;
 
+import org.hestiastore.index.Vldtn;
+
 public class LoggedKey<K> {
 
     private final LogOperation logOperation;
@@ -14,8 +16,8 @@ public class LoggedKey<K> {
     }
 
     private LoggedKey(final LogOperation logOperation, final K key) {
-        this.logOperation = Objects.requireNonNull(logOperation);
-        this.key = Objects.requireNonNull(key);
+        this.logOperation = Vldtn.requireNonNull(logOperation, "logOperation");
+        this.key = Vldtn.requireNonNull(key, "key");
     }
 
     public LogOperation getLogOperation() {

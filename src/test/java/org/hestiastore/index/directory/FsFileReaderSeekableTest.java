@@ -27,49 +27,49 @@ public class FsFileReaderSeekableTest {
     protected File tempDir;
 
     @Test
-    public void test_read_write_text_fs() throws Exception {
+    public void test_read_write_text_fs() {
         Directory dir = new FsDirectory(tempDir);
         test_read_write_text(dir);
     }
 
     @Test
-    public void test_read_write_text_mem() throws Exception {
+    public void test_read_write_text_mem() {
         Directory dir = new MemDirectory();
         test_read_write_text(dir);
     }
 
     @Test
-    public void test_read_write_end_of_file_reached_mem() throws Exception {
+    public void test_read_write_end_of_file_reached_mem() {
         Directory dir = new MemDirectory();
         test_read_long_bytes(dir);
     }
 
     @Test
-    public void test_read_write_end_of_file_reached_fs() throws Exception {
+    public void test_read_write_end_of_file_reached_fs() {
         Directory dir = new FsDirectory(tempDir);
         test_read_long_bytes(dir);
     }
 
     @Test
-    public void test_overwrite_data_fs() throws Exception {
+    public void test_overwrite_data_fs() {
         Directory dir = new FsDirectory(tempDir);
         test_overwrite_file(dir);
     }
 
     @Test
-    public void test_overwrite_data_mem() throws Exception {
+    public void test_overwrite_data_mem() {
         Directory dir = new MemDirectory();
         test_overwrite_file(dir);
     }
 
     @Test
-    public void test_create_empty_file_fs() throws Exception {
+    public void test_create_empty_file_fs() {
         Directory dir = new FsDirectory(tempDir);
         test_create_empty_file_file(dir);
     }
 
     @Test
-    public void test_create_empty_file_mem() throws Exception {
+    public void test_create_empty_file_mem() {
         Directory dir = new MemDirectory();
         test_create_empty_file_file(dir);
     }

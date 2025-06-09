@@ -1,9 +1,9 @@
 package org.hestiastore.index.directory;
 
 import java.io.File;
-import java.util.Objects;
 
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.Vldtn;
 
 public final class FsZipDirectory extends AbstractDirectory {
 
@@ -31,8 +31,8 @@ public final class FsZipDirectory extends AbstractDirectory {
             throw new IndexException(
                     "Append to ZIP file system is not supported");
         }
-        return new FsZipFileWriterStream(getFile(Objects.requireNonNull(
-                fileName, () -> String.format("File name is required."))));
+        return new FsZipFileWriterStream(
+                getFile(Vldtn.requireNonNull(fileName, "fileName")));
     }
 
     @Override
