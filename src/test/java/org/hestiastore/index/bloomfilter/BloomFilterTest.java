@@ -67,15 +67,16 @@ class BloomFilterTest {
 
     @Test
     void test_zero_hashFuntions() {
+        final BloomFilterBuilder<String> builder = BloomFilter.<String>builder()//
+                .withBloomFilterFileName(FILE_NAME)//
+                .withConvertorToBytes(STD.getConvertorToBytes())//
+                .withDirectory(directory)//
+                .withIndexSizeInBytes(0)//
+                .withNumberOfHashFunctions(0)//
+                .withRelatedObjectName("segment-00323")//
+        ;
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> BloomFilter.<String>builder()//
-                        .withBloomFilterFileName(FILE_NAME)//
-                        .withConvertorToBytes(STD.getConvertorToBytes())//
-                        .withDirectory(directory)//
-                        .withIndexSizeInBytes(0)//
-                        .withNumberOfHashFunctions(0)//
-                        .withRelatedObjectName("segment-00323")//
-                        .build());
+                () -> builder.build());
 
         assertEquals("Number of hash function cant be '0'", e.getMessage());
     }

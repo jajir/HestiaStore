@@ -147,14 +147,15 @@ class BloomFilterBuilderTest {
 
     @Test
     void test_missing_numberOfKeys() {
+        final BloomFilterBuilder<String> builder = BloomFilter.<String>builder()//
+                .withDirectory(directory)//
+                .withBloomFilterFileName(FILE_NAME)//
+                .withConvertorToBytes(TDS.getConvertorToBytes())//
+                .withProbabilityOfFalsePositive(0.0001)//
+                .withNumberOfHashFunctions(2)//
+        ;
         final Exception e = assertThrows(IllegalStateException.class,
-                () -> BloomFilter.<String>builder()//
-                        .withDirectory(directory)//
-                        .withBloomFilterFileName(FILE_NAME)//
-                        .withConvertorToBytes(TDS.getConvertorToBytes())//
-                        .withProbabilityOfFalsePositive(0.0001)//
-                        .withNumberOfHashFunctions(2)//
-                        .build());
+                () -> builder.build());
 
         assertNotNull(e);
         assertEquals("Number of keys is not set.", e.getMessage());
@@ -162,14 +163,15 @@ class BloomFilterBuilderTest {
 
     @Test
     void test_missing_relatedObjectName() {
+        final BloomFilterBuilder<String> builder = BloomFilter.<String>builder()//
+                .withBloomFilterFileName(FILE_NAME)//
+                .withConvertorToBytes(TDS.getConvertorToBytes())//
+                .withDirectory(directory)//
+                .withIndexSizeInBytes(0)//
+                .withNumberOfHashFunctions(0)//
+        ;
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> BloomFilter.<String>builder()//
-                        .withBloomFilterFileName(FILE_NAME)//
-                        .withConvertorToBytes(TDS.getConvertorToBytes())//
-                        .withDirectory(directory)//
-                        .withIndexSizeInBytes(0)//
-                        .withNumberOfHashFunctions(0)//
-                        .build());
+                () -> builder.build());
 
         assertEquals("Property 'relatedObjectName' must not be null.",
                 e.getMessage());
@@ -177,13 +179,14 @@ class BloomFilterBuilderTest {
 
     @Test
     void test_missing_conventorToBytes() {
+        final BloomFilterBuilder<String> builder = BloomFilter.<String>builder()//
+                .withDirectory(directory)//
+                .withBloomFilterFileName(FILE_NAME)//
+                .withProbabilityOfFalsePositive(0.0001)//
+                .withNumberOfHashFunctions(2)//
+        ;
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> BloomFilter.<String>builder()//
-                        .withDirectory(directory)//
-                        .withBloomFilterFileName(FILE_NAME)//
-                        .withProbabilityOfFalsePositive(0.0001)//
-                        .withNumberOfHashFunctions(2)//
-                        .build());
+                () -> builder.build());
 
         assertNotNull(e);
         assertEquals("Property 'convertorToBytes' must not be null.",
@@ -192,12 +195,13 @@ class BloomFilterBuilderTest {
 
     @Test
     void test_missing_bloomFilterName() {
+        final BloomFilterBuilder<String> builder = BloomFilter.<String>builder()//
+                .withDirectory(directory)//
+                .withProbabilityOfFalsePositive(0.0001)//
+                .withNumberOfHashFunctions(2)//
+        ;
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> BloomFilter.<String>builder()//
-                        .withDirectory(directory)//
-                        .withProbabilityOfFalsePositive(0.0001)//
-                        .withNumberOfHashFunctions(2)//
-                        .build());
+                () -> builder.build());
 
         assertNotNull(e);
         assertEquals("Property 'bloomFilterFileName' must not be null.",
@@ -206,12 +210,13 @@ class BloomFilterBuilderTest {
 
     @Test
     void test_missing_directory() {
+        final BloomFilterBuilder<String> builder = BloomFilter.<String>builder()//
+                .withBloomFilterFileName(FILE_NAME)//
+                .withProbabilityOfFalsePositive(0.0001)//
+                .withNumberOfHashFunctions(2)//
+        ;
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> BloomFilter.<String>builder()//
-                        .withBloomFilterFileName(FILE_NAME)//
-                        .withProbabilityOfFalsePositive(0.0001)//
-                        .withNumberOfHashFunctions(2)//
-                        .build());
+                () -> builder.build());
 
         assertNotNull(e);
         assertEquals("Property 'directory' must not be null.", e.getMessage());

@@ -18,6 +18,8 @@ import org.junit.jupiter.api.Test;
 
 class KeySegmentCacheTest {
 
+    private static final SegmentId SEGMENT_ID = SegmentId.of(1);
+
     private final TypeDescriptorString stringTd = new TypeDescriptorString();
 
     private Directory directory;
@@ -27,7 +29,7 @@ class KeySegmentCacheTest {
         directory = new MemDirectory();
         try (KeySegmentCache<String> cache = new KeySegmentCache<>(directory,
                 stringTd)) {
-            cache.insertSegment("ahoj", SegmentId.of(1));
+            cache.insertSegment("ahoj", SEGMENT_ID);
             cache.insertSegment("betka", SegmentId.of(2));
             cache.insertSegment("cukrar", SegmentId.of(3));
             cache.insertSegment("dikobraz", SegmentId.of(4));
@@ -67,7 +69,7 @@ class KeySegmentCacheTest {
         try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                 stringTd)) {
             assertThrows(IllegalArgumentException.class,
-                    () -> fif.insertSegment("aaa", SegmentId.of(1)),
+                    () -> fif.insertSegment("aaa", SEGMENT_ID),
                     "Segment id 'segment-00001' already exists");
         }
     }

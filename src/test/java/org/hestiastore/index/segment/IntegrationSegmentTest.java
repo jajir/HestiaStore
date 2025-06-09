@@ -25,6 +25,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class IntegrationSegmentTest extends AbstractSegmentTest {
 
+    private static final SegmentId SEGMENT_37_ID = SegmentId.of(37);
+
     private final TypeDescriptorString tds = new TypeDescriptorString();
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
 
@@ -406,11 +408,13 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .getSegmentSplitter();
         assertTrue(segSplitter.shouldBeCompactedBeforeSplitting(10));
 
+        final SegmentSplitter<Integer, String> segmentSplitter = seg
+                .getSegmentSplitter();
         /**
          * Verify that split is not possible
          */
         final Exception err = assertThrows(IllegalStateException.class,
-                () -> seg.getSegmentSplitter().split(SegmentId.of(37)));
+                () -> segmentSplitter.split(SEGMENT_37_ID));
         assertEquals("Splitting failed. Number of keys is too low.",
                 err.getMessage());
     }
