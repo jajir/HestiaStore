@@ -19,9 +19,9 @@ class BloomFilterTest {
     private final Logger logger = LoggerFactory
             .getLogger(BloomFilterTest.class);
 
-    private final TypeDescriptorString STD = new TypeDescriptorString();
+    private static final TypeDescriptorString STD = new TypeDescriptorString();
 
-    private final String FILE_NAME = "segment-00880.bloomFilter";
+    private static final String FILE_NAME = "segment-00880.bloomFilter";
 
     private MemDirectory directory = new MemDirectory();
 
@@ -46,7 +46,7 @@ class BloomFilterTest {
         assertEquals(6, stats.getBloomFilterCalls());
         assertEquals(1, stats.getKeyIsNotStored());
         assertEquals(5, stats.getKeyWasStored());
-        assertEquals(16, stats.getRatio());
+        assertEquals(16, (int) stats.getPercentageOfFalseResponses());
         logger.debug(stats.getStatsString());
     }
 
@@ -59,7 +59,7 @@ class BloomFilterTest {
         final BloomFilterStats stats = bf.getStatistics();
         assertEquals(0, stats.getBloomFilterCalls());
         assertEquals(0, stats.getKeyIsNotStored());
-        assertEquals(0, stats.getRatio());
+        assertEquals(0, stats.getPercentageOfFalseResponses());
 
         logger.debug(stats.getStatsString());
         assertEquals("Bloom filter was not used.", stats.getStatsString());
@@ -88,7 +88,7 @@ class BloomFilterTest {
                 .withConvertorToBytes(STD.getConvertorToBytes())//
                 .withDirectory(directory)//
                 .withIndexSizeInBytes(0)//
-                .withNumberOfHashFunctions(3)//
+                .withNumberOfHashFunctions(2)//
                 .withRelatedObjectName("segment-00323")//
                 .build();
 

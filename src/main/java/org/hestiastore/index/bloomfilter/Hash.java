@@ -14,12 +14,12 @@ import org.hestiastore.index.Vldtn;
  */
 public final class Hash {
 
-    private final BitArray bits;
+    private final BitArray bitArray;
 
     private final int numHashFunctions;
 
     Hash(final BitArray bits, final int numHashFunctions) {
-        this.bits = Vldtn.requireNonNull(bits, "bits");
+        this.bitArray = Vldtn.requireNonNull(bits, "bits");
         if (numHashFunctions <= 0) {
             throw new IllegalArgumentException(String.format(
                     "Number of hash function cant be '%s'", numHashFunctions));
@@ -34,7 +34,7 @@ public final class Hash {
         if (data.length == 0) {
             throw new IllegalArgumentException("Zero size of byte array");
         }
-        final long bitSize = bits.bitSize();
+        final long bitSize = bitArray.bitSize();
         if (bitSize == 0) {
             return true;
         }
@@ -49,7 +49,7 @@ public final class Hash {
             if (combinedHash < 0) {
                 combinedHash = ~combinedHash;
             }
-            bitsChanged |= bits.setBit((int) (combinedHash % bitSize));
+            bitsChanged |= bitArray.setBit((int) (combinedHash % bitSize));
         }
         return bitsChanged;
     }
@@ -64,16 +64,20 @@ public final class Hash {
      *         index. Otherwise return <code>false</code>.
      */
     public boolean isNotStored(final byte[] data) {
+        return !isProbablyStored(data);
+    }
+
+    public boolean isProbablyStored(final byte[] data) {
         if (data == null) {
             throw new NullPointerException("No data");
         }
         if (data.length == 0) {
             throw new IllegalArgumentException("Zero size of byte array");
         }
-        long bitSize = bits.bitSize();
+        long bitSize = bitArray.bitSize();
         if (bitSize == 0) {
             // if there are no bits set, then the data is not stored
-            return false;
+            return true;
         }
 
         int h1 = MurmurHash3.hash32x86(data, 0, data.length, 0);
@@ -85,23 +89,23 @@ public final class Hash {
             if (combinedHash < 0) {
                 combinedHash = ~combinedHash;
             }
-            final boolean bitSet = bits.get((int) (combinedHash % bitSize));
+            final boolean bitSet = bitArray.get((int) (combinedHash % bitSize));
             if (!bitSet) {
                 /**
                  * There is at least one bit that is not set. So I can say that
                  * data is not stored into index.
                  */
-                return true;
+                return false;
             }
         }
         /**
          * All bits are set, so I can say that data is probably stored in index.
          */
-        return false;
+        return true;
     }
 
     public byte[] getData() {
-        return bits.getByteArray();
+        return bitArray.getByteArray();
     }
 
 }

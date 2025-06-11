@@ -28,21 +28,26 @@ public class BloomFilterStats {
         }
     }
 
-    public int getRatio() {
+    public double getPercentageOfFalseResponses() {
         if (bloomFilterCalls == 0) {
             return 0;
         }
-        return (int) (keyIsNotStored / (float) bloomFilterCalls * 100);
+        return (keyIsNotStored / (double) bloomFilterCalls * 100);
     }
 
     String getStatsString() {
         if (bloomFilterCalls == 0) {
             return "Bloom filter was not used.";
         }
-        return String.format("Bloom filter was used %s times "
-                + "and key was not stored in %s times, it's %s%% ratio. "
-                + "Probability of false positive is %.3f%%",
-                F.fmt(bloomFilterCalls), F.fmt(keyIsNotStored), getRatio(),
+        return String.format(
+                "The Bloom filter was queried %s times "
+                        + "and successfully avoided %s index accesses, "
+                        + "achieving a %.3f%% effectiveness rate. "
+                        + "It returned a positive result %s times, "
+                        + "with an observed false positive rate of %.3f%%.",
+                F.fmt(bloomFilterCalls), F.fmt(keyIsNotStored),
+                getPercentageOfFalseResponses(),
+                F.fmt(getCallsWithFalsePositive()),
                 getProbabilityOfFalsePositive());
     }
 
@@ -50,8 +55,8 @@ public class BloomFilterStats {
         return bloomFilterCalls - keyIsNotStored;
     }
 
-    float getProbabilityOfFalsePositive() {
-        return falsePositive / ((float) getKeyWasStored()) * 100F;
+    double getProbabilityOfFalsePositive() {
+        return falsePositive / ((double) getKeyWasStored()) * 100F;
     }
 
     long getKeyIsNotStored() {
@@ -72,6 +77,10 @@ public class BloomFilterStats {
 
     void incrementFalsePositive() {
         this.falsePositive++;
+    }
+
+    private long getCallsWithFalsePositive() {
+        return bloomFilterCalls - keyIsNotStored;
     }
 
 }

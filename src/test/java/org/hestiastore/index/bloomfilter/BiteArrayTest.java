@@ -7,12 +7,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class BiteArrayTest {
 
     private static final int BIT_ARRAY_SIZE = 10;
     private static final int TESTED_BYTE = 7;
     private static final int BITS_IN_BYTE = 8;
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Test
     void test_setBit_initilized_to1() {
@@ -23,12 +26,14 @@ class BiteArrayTest {
             final int index = TESTED_BYTE * BITS_IN_BYTE + i;
             assertTrue(bitArray.setBit(index));
         }
+        log(bitArray);
 
         for (int i = 0; i < BITS_IN_BYTE; i++) {
             final int index = TESTED_BYTE * BITS_IN_BYTE + i;
             assertTrue(bitArray.get(index),
                     "Bit at index " + index + " should be set");
         }
+        log(bitArray);
     }
 
     @Test
@@ -45,6 +50,28 @@ class BiteArrayTest {
         assertTrue(bitArray.get(30 + 5));
         assertFalse(bitArray.get(30 + 6));
         assertFalse(bitArray.get(30 + 7));
+        log(bitArray);
+    }
+
+    @Test
+    void test_set_byte_minus() {
+        // show at debug log -12 as binary
+        byte[] b = new byte[1];
+        b[0] = -12;
+        logger.debug(toBinaryString(b));
+
+        // set firts byte to -12
+        BitArray bitArray = new BitArray(BIT_ARRAY_SIZE);
+        assertTrue(bitArray.setBit(2));
+        assertTrue(bitArray.setBit(4));
+        assertTrue(bitArray.setBit(5));
+        assertTrue(bitArray.setBit(6));
+        assertTrue(bitArray.setBit(7));
+
+        log(bitArray);
+
+        // verify that first byte is -12
+        assertEquals(-12, bitArray.getByteArray()[0]);
     }
 
     @Test
@@ -56,6 +83,7 @@ class BiteArrayTest {
             assertTrue(bitArray.setBit(index));
             assertTrue(bitArray.get(index),
                     "Bit at index " + index + " should be set");
+            assertFalse(bitArray.setBit(index));
         }
     }
 
@@ -102,6 +130,7 @@ class BiteArrayTest {
         boolean result = bitArray.get(5);
 
         // Assert
+        log(bitArray);
         assertEquals((byte) 0b00100000, bitArray.getByteArray()[0]);
         assertTrue(result);
     }
@@ -115,6 +144,7 @@ class BiteArrayTest {
         boolean result = bitArray.get(5);
 
         // Assert
+        log(bitArray);
         assertEquals((byte) 0b00000000, bitArray.getByteArray()[0]);
         assertFalse(result);
     }
@@ -188,4 +218,18 @@ class BiteArrayTest {
         // Act and Assert
         assertNotEquals(bitArray1.hashCode(), bitArray2.hashCode());
     }
+
+    private void log(final BitArray value) {
+        logger.debug(toBinaryString(value.getByteArray()));
+    }
+
+    private String toBinaryString(byte[] data) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : data) {
+            sb.append(String.format("%8s", Integer.toBinaryString(b & 0xFF))
+                    .replace(' ', '0'));
+        }
+        return sb.toString();
+    }
+
 }
