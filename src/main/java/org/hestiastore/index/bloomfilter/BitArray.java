@@ -31,12 +31,16 @@ public class BitArray {
         int byteIndex = index / 8;
         int bitIndex = index % 8;
 
-        byte oldValue = byteArray[byteIndex];
-        byte newValue = (byte) (oldValue & 0xff | (1 << bitIndex));
+        int oldValue = byteArray[byteIndex] & 0xff;
+        int newValue = oldValue | (1 << bitIndex);
 
-        byteArray[byteIndex] = newValue;
+        if (oldValue == newValue) {
+            return false; // Bit was already set
+        } else {
+            byteArray[byteIndex] = (byte) newValue;
+            return true;
+        }
 
-        return oldValue != newValue;
     }
 
     public byte[] getByteArray() {
