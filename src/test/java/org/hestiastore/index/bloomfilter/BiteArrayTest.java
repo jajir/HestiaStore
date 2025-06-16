@@ -164,7 +164,7 @@ class BiteArrayTest {
         BitArray bitArray = new BitArray(10);
 
         // Act and Assert
-        assertTrue(bitArray.equals(bitArray));
+        assertEquals(bitArray, bitArray);
     }
 
     @Test
@@ -185,7 +185,7 @@ class BiteArrayTest {
 
         // Act and Assert
         assertTrue(bitArray1.equals(bitArray2));
-        assertTrue(bitArray2.equals(bitArray1));
+        assertEquals(bitArray2, bitArray1);
     }
 
     @Test
@@ -195,8 +195,8 @@ class BiteArrayTest {
         BitArray bitArray2 = new BitArray(5);
 
         // Act and Assert
-        assertFalse(bitArray1.equals(bitArray2));
-        assertFalse(bitArray2.equals(bitArray1));
+        assertNotEquals(bitArray1, bitArray2);
+        assertNotEquals(bitArray2, bitArray1);
     }
 
     @Test

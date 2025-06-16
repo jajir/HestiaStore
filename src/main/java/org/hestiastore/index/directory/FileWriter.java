@@ -6,6 +6,6 @@ public interface FileWriter extends CloseableResource {
 
     void write(byte b);
 
-    void write(byte bytes[]);
+    void write(byte[] bytes);
 
 }

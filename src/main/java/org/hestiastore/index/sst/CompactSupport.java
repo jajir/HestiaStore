@@ -62,8 +62,10 @@ public class CompactSupport<K, V> {
     }
 
     private void flushToCurrentSegment() {
-        logger.debug("Flushing '{}' key value pairs into segment '{}'.",
-                F.fmt(toSameSegment.size()), currentSegmentId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Flushing '{}' key value pairs into segment '{}'.",
+                    F.fmt(toSameSegment.size()), currentSegmentId);
+        }
         final Segment<K, V> segment = segmentManager
                 .getSegment(currentSegmentId);
         try (PairWriter<K, V> writer = segment.openWriter()) {

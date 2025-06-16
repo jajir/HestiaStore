@@ -82,6 +82,7 @@ class FsFileReaderSeekableTest {
 
         // write empty file
         try (FileWriter fw = dir.getFileWriter(FILE_NAME)) {
+            // intentionally empty
         }
 
         // assert no data are read
@@ -100,6 +101,7 @@ class FsFileReaderSeekableTest {
         }
         // write empty file
         try (FileWriter fw = dir.getFileWriter(FILE_NAME)) {
+            // intentionally empty
         }
 
         // assert no data are read, but file exists

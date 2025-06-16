@@ -127,12 +127,15 @@ public class SegmentSplitter<K, V> {
                         cxHigher++;
                     }
                 }
-                logger.debug("Splitting of '{}' finished, '{}' was created. "
-                        + "Estimated number of keys was '{}', "
-                        + "half key was '{}' and real number of keys was '{}'.",
-                        segmentFiles.getId(), lowerSegment.getId(),
-                        F.fmt(estimatedNumberOfKeys), F.fmt(half),
-                        F.fmt(cxLower + cxHigher));
+                if (logger.isDebugEnabled()) {
+                    logger.debug(
+                            "Splitting of '{}' finished, '{}' was created. "
+                                    + "Estimated number of keys was '{}', "
+                                    + "half key was '{}' and real number of keys was '{}'.",
+                            segmentFiles.getId(), lowerSegment.getId(),
+                            F.fmt(estimatedNumberOfKeys), F.fmt(half),
+                            F.fmt(cxLower + cxHigher));
+                }
                 if (cxHigher == 0) {
                     throw new IllegalStateException(String.format(
                             "Splitting failed. Higher segment doesn't contains any data. Estimated number of keys was '%s'",
@@ -175,6 +178,7 @@ public class SegmentSplitter<K, V> {
                         SegmentSplitterResult.SegmentSplittingStatus.COMPACTED);
             }
         }
+
     }
 
     /*

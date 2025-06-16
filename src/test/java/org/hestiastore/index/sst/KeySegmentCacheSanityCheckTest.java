@@ -40,6 +40,7 @@ class KeySegmentCacheSanityCheckTest {
         assertThrows(IllegalStateException.class, () -> {
             try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                     stringTd)) {
+                // Intentionally left empty to trigger Exception
             }
         }, "Unable to load scarce index, sanity check failed.");
 

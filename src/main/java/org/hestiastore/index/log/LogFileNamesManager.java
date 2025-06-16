@@ -1,7 +1,6 @@
 package org.hestiastore.index.log;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;

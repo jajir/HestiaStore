@@ -36,7 +36,7 @@ class DiffKeyReaderTest {
                 tds.getConvertorFromBytes());
 
         when(fileReader.read()).thenReturn(3).thenReturn(5);
-        when(fileReader.read(eq(new byte[5]))).thenAnswer(invocation -> {
+        when(fileReader.read(new byte[5])).thenAnswer(invocation -> {
             loadStringToByteArray(invocation, "prase");
             return 5;
         });
@@ -49,7 +49,7 @@ class DiffKeyReaderTest {
                 tds.getConvertorFromBytes());
 
         when(fileReader.read()).thenReturn(0).thenReturn(5);
-        when(fileReader.read(eq(new byte[5]))).thenAnswer(invocation -> {
+        when(fileReader.read(new byte[5])).thenAnswer(invocation -> {
             loadStringToByteArray(invocation, "prase");
             return 5;
         });
@@ -63,7 +63,7 @@ class DiffKeyReaderTest {
                 tds.getConvertorFromBytes());
 
         when(fileReader.read()).thenReturn(0).thenReturn(5);
-        when(fileReader.read(eq(new byte[5]))).thenAnswer(invocation -> {
+        when(fileReader.read(new byte[5])).thenAnswer(invocation -> {
             return 3;
         });
         assertThrows(IndexException.class, () -> reader.read(fileReader));
@@ -97,7 +97,7 @@ class DiffKeyReaderTest {
                 tds.getConvertorFromBytes());
 
         when(fileReader.read()).thenReturn(0).thenReturn(5);
-        when(fileReader.read(eq(new byte[5]))).thenAnswer(invocation -> {
+        when(fileReader.read(new byte[5])).thenAnswer(invocation -> {
             loadStringToByteArray(invocation, "prase");
             return 5;
         });

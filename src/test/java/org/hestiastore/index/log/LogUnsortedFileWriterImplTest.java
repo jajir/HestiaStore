@@ -37,6 +37,7 @@ class LogUnsortedFileWriterImplTest {
     void test_close() {
         try (final LogUnsortedFileWriterImpl<String, Integer> logWriter = new LogUnsortedFileWriterImpl<>(
                 writer)) {
+            // Intentionally left empty to test close method
         }
         verify(writer).close();
     }
