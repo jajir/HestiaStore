@@ -46,8 +46,7 @@ public final class FsFileReaderStream implements FileReader {
     @Override
     public int read(final byte[] bytes) {
         try {
-            final int readBytes = bis.read(bytes);
-            return readBytes;
+            return bis.read(bytes);
         } catch (IOException e) {
             throw new IndexException(e.getMessage(), e);
         }

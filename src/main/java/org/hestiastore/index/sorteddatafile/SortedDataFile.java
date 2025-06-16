@@ -78,18 +78,14 @@ public class SortedDataFile<K, V> {
     }
 
     public PairIteratorWithCurrent<K, V> openIterator() {
-        final PairIteratorWithCurrent<K, V> iterator = new PairIteratorFromReader<>(
-                openReader());
-        return iterator;
+        return new PairIteratorFromReader<>(openReader());
     }
 
     public SortedDataFileWriter<K, V> openWriter() {
         final FileWriter fileWriter = directory.getFileWriter(fileName,
                 Directory.Access.OVERWRITE, diskIoBufferSize);
-        final SortedDataFileWriter<K, V> writer = new SortedDataFileWriter<>(
-                valueTypeDescriptor.getTypeWriter(), fileWriter,
-                keyTypeDescriptor);
-        return writer;
+        return new SortedDataFileWriter<>(valueTypeDescriptor.getTypeWriter(),
+                fileWriter, keyTypeDescriptor);
     }
 
     public void delete() {

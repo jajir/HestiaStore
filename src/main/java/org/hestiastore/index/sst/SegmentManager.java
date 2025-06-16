@@ -76,9 +76,8 @@ public class SegmentManager<K, V> {
         final SegmentDataProvider<K, V> dataProvider = new SegmentDataProviderFromMainCache<>(
                 segmentId, segmentDataCache, segmentDataFactory);
 
-        final Segment<K, V> out = Segment.<K, V>builder()
-                .withDirectory(directory).withId(segmentId)
-                .withKeyTypeDescriptor(keyTypeDescriptor)
+        return Segment.<K, V>builder().withDirectory(directory)
+                .withId(segmentId).withKeyTypeDescriptor(keyTypeDescriptor)
                 .withSegmentDataProvider(dataProvider)//
                 .withSegmentConf(segmentConf)//
                 .withSegmentFiles(segmentFiles)//
@@ -95,7 +94,6 @@ public class SegmentManager<K, V> {
                 .withSegmentDataProvider(dataProvider)//
                 .withDiskIoBufferSize(conf.getDiskIoBufferSize())//
                 .build();
-        return out;
     }
 
     Directory getDirectory() {

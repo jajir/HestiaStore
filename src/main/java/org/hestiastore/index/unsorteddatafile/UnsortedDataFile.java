@@ -54,9 +54,7 @@ public class UnsortedDataFile<K, V> {
     }
 
     public PairIterator<K, V> openIterator() {
-        final PairIterator<K, V> iterator = new PairIteratorFromReader<>(
-                openReader());
-        return iterator;
+        return new PairIteratorFromReader<>(openReader());
     }
 
     public PairWriter<K, V> openWriter() {
@@ -71,10 +69,8 @@ public class UnsortedDataFile<K, V> {
         } else {
             used = Access.OVERWRITE;
         }
-        final UnsortedDataFileWriter<K, V> writer = new UnsortedDataFileWriter<>(
-                directory, fileName, keyWriter, valueWriter, used,
-                diskIoBufferSize);
-        return writer;
+        return new UnsortedDataFileWriter<>(directory, fileName, keyWriter,
+                valueWriter, used, diskIoBufferSize);
     }
 
     public UnsortedDataFileStreamer<K, V> openStreamer() {
@@ -88,9 +84,8 @@ public class UnsortedDataFile<K, V> {
     }
 
     public CloseablePairReader<K, V> openReader() {
-        final UnsortedDataFileReader<K, V> out = new UnsortedDataFileReader<>(
-                keyReader, valueReader, getFileReader());
-        return out;
+        return new UnsortedDataFileReader<>(keyReader, valueReader,
+                getFileReader());
     }
 
     private FileReader getFileReader() {

@@ -98,9 +98,8 @@ class FileReaderSeekableBufferedTest {
             fw.write(text);
         }
 
-        final FileReaderSeekableBuffered reader = new FileReaderSeekableBuffered(
+        return new FileReaderSeekableBuffered(
                 directory.getFileReaderSeekable(FILE1), 10);
-        return reader;
     }
 
     private String readStr(final FileReaderSeekable fr, final int length,

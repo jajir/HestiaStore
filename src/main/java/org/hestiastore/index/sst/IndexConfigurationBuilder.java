@@ -148,8 +148,8 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     public IndexConfiguration<K, V> build() {
-        final IndexConfiguration<K, V> indexConf = new IndexConfiguration<K, V>(
-                keyClass, valueClass, keyTypeDescriptor, valueTypeDescriptor,
+        return new IndexConfiguration<K, V>(keyClass, valueClass,
+                keyTypeDescriptor, valueTypeDescriptor,
                 maxNumberOfKeysInSegmentCache,
                 maxNumberOfKeysInSegmentCacheDuringFlushing,
                 maxNumberOfKeysInSegmentIndexPage, maxNumberOfKeysInCache,
@@ -157,7 +157,6 @@ public class IndexConfigurationBuilder<K, V> {
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
                 bloomFilterProbabilityOfFalsePositive, diskIoBufferSizeInBytes,
                 isThreadSafe, logEnabled);
-        return indexConf;
     }
 
 }

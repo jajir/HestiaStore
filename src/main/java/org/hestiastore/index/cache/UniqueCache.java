@@ -3,7 +3,6 @@ package org.hestiastore.index.cache;
 import java.util.Comparator;
 import java.util.List;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.CloseablePairReader;
@@ -94,9 +93,7 @@ public class UniqueCache<K, V> {
     }
 
     public PairIterator<K, V> getSortedIterator() {
-        final PairIterator<K, V> iterator = new PairIteratorFromReader<>(
-                openSortedClonedReader());
-        return iterator;
+        return new PairIteratorFromReader<>(openSortedClonedReader());
     }
 
     /**
