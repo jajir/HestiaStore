@@ -3,7 +3,6 @@ package org.hestiastore.index.log;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -84,7 +83,7 @@ class IntegrationLogTest {
     }
 
     @BeforeEach
-    public void prepareData() {
+    void prepareData() {
         directory = new MemDirectory();
     }
 }

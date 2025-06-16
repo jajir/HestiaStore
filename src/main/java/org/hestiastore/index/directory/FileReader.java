@@ -26,7 +26,7 @@ public interface FileReader extends CloseableResource {
      * @return Return number of read bytes. When it's -1 than end of file was
      *         reached.
      */
-    int read(byte bytes[]);
+    int read(byte[] bytes);
 
     /**
      * Skip n bytes to specific position in file.

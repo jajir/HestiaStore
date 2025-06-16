@@ -108,9 +108,11 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
     }
 
     private void flushCache() {
-        logger.debug(
-                "Cache compacting of '{}' key value pairs in cache started.",
-                F.fmt(cache.size()));
+        if (logger.isDebugEnabled()) {
+            logger.debug(
+                    "Cache compacting of '{}' key value pairs in cache started.",
+                    F.fmt(cache.size()));
+        }
         final CompactSupport<K, V> support = new CompactSupport<>(
                 segmentManager, keySegmentCache);
         cache.getStream()
@@ -123,9 +125,11 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
         cache.clear();
         keySegmentCache.flush();
         log.rotate();
-        logger.debug(
-                "Cache compacting is done. Cache contains '{}' key value pairs.",
-                F.fmt(cache.size()));
+        if (logger.isDebugEnabled()) {
+            logger.debug(
+                    "Cache compacting is done. Cache contains '{}' key value pairs.",
+                    F.fmt(cache.size()));
+        }
     }
 
     @Override
@@ -240,10 +244,12 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
         log.close();
         indexState.onClose(this);
         segmentManager.close();
-        logger.debug(String.format(
-                "Index is closing, where was %s gets, %s puts and %s deletes.",
-                F.fmt(stats.getGetCx()), F.fmt(stats.getPutCx()),
-                F.fmt(stats.getDeleteCx())));
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format(
+                    "Index is closing, where was %s gets, %s puts and %s deletes.",
+                    F.fmt(stats.getGetCx()), F.fmt(stats.getPutCx()),
+                    F.fmt(stats.getDeleteCx())));
+        }
     }
 
     public void setIndexState(final IndexState<K, V> indexState) {

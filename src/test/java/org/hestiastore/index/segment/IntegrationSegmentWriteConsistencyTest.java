@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.hestiastore.index.Pair;
@@ -18,17 +17,17 @@ import org.junit.jupiter.api.Test;
 
 class IntegrationSegmentWriteConsistencyTest {
 
-    final List<String> values = List.of("aaa", "bbb", "ccc", "ddd", "eee",
-            "fff");
-    final List<Pair<Integer, String>> data = IntStream
+    private static final TypeDescriptorString TDS = new TypeDescriptorString();
+    private static final TypeDescriptorInteger TDI = new TypeDescriptorInteger();
+
+    private final List<String> values = List.of("aaa", "bbb", "ccc", "ddd",
+            "eee", "fff");
+    private final List<Pair<Integer, String>> data = IntStream
             .range(0, values.size() - 1)
             .mapToObj(i -> Pair.of(i, values.get(i))).toList();
-    final List<Pair<Integer, String>> updatedData = IntStream
+    private final List<Pair<Integer, String>> updatedData = IntStream
             .range(0, values.size() - 1)
             .mapToObj(i -> Pair.of(i, values.get(i + 1))).toList();
-
-    private final TypeDescriptorString tds = new TypeDescriptorString();
-    private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
 
     /**
      * Test that updated data are correctly stored into index.
@@ -59,8 +58,8 @@ class IntegrationSegmentWriteConsistencyTest {
             final SegmentId id) {
         return Segment.<Integer, String>builder().withDirectory(directory)//
                 .withId(id)//
-                .withKeyTypeDescriptor(tdi)//
-                .withValueTypeDescriptor(tds)//
+                .withKeyTypeDescriptor(TDI)//
+                .withValueTypeDescriptor(TDS)//
                 .withMaxNumberOfKeysInIndexPage(2)//
                 .withMaxNumberOfKeysInSegmentCache(3)//
                 .withBloomFilterIndexSizeInBytes(0)//
@@ -82,9 +81,9 @@ class IntegrationSegmentWriteConsistencyTest {
     private List<Pair<Integer, String>> toList(
             final Segment<Integer, String> index) {
         try (PairIterator<Integer, String> iterator = index.openIterator()) {
-            final List<Pair<Integer, String>> data = new ArrayList<>();
-            iterator.forEachRemaining(data::add);
-            return data;
+            final List<Pair<Integer, String>> out = new ArrayList<>();
+            iterator.forEachRemaining(out::add);
+            return out;
         }
 
     }

@@ -24,7 +24,7 @@ class KeySegmentCacheTest {
     private Directory directory;
 
     @BeforeEach
-    public void prepareData() {
+    void prepareData() {
         directory = new MemDirectory();
         try (KeySegmentCache<String> cache = new KeySegmentCache<>(directory,
                 stringTd)) {
@@ -41,7 +41,7 @@ class KeySegmentCacheTest {
     }
 
     @AfterEach
-    public void cleanData() {
+    void cleanData() {
         directory = null;
     }
 
@@ -50,6 +50,7 @@ class KeySegmentCacheTest {
         assertThrows(IllegalArgumentException.class, () -> {
             try (KeySegmentCache<String> fif = new KeySegmentCache<>(null,
                     stringTd)) {
+                // Intentionally left empty to trigger Exception
             }
         });
     }
@@ -59,6 +60,7 @@ class KeySegmentCacheTest {
         assertThrows(IllegalArgumentException.class, () -> {
             try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                     null)) {
+                // Intentionally left empty to trigger Exception
             }
         });
     }

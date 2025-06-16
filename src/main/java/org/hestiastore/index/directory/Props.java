@@ -35,7 +35,7 @@ public final class Props {
             return;
         }
         try {
-            final byte buff[] = readEntireFile(directory, fileName);
+            final byte[] buff = readEntireFile(directory, fileName);
             properties.load(new ByteArrayInputStream(buff));
         } catch (IOException e) {
             throw new IndexException(e.getMessage(), e);
@@ -95,7 +95,7 @@ public final class Props {
     }
 
     public void writeData() {
-        final byte buff[] = convertPropsToByteArray();
+        final byte[] buff = convertPropsToByteArray();
         try (FileWriter fileWriter = directory.getFileWriter(fileName,
                 Access.OVERWRITE)) {
             fileWriter.write(buff);
@@ -116,7 +116,7 @@ public final class Props {
             final String fileName) {
         try (FileReader fileReader = directory.getFileReader(fileName)) {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            byte buff[] = new byte[128];
+            byte[] buff = new byte[128];
             int readedBytes = fileReader.read(buff);
             while (readedBytes != -1) {
                 baos.write(buff, 0, readedBytes);

@@ -54,12 +54,12 @@ public class MemDirectory implements Directory {
         }
     }
 
-    void addFile(final String fileName, final byte bytes[],
+    void addFile(final String fileName, final byte[] bytes,
             final Access access) {
         if (Access.OVERWRITE == access) {
             data.put(fileName, bytes);
         } else {
-            final byte a[] = data.get(fileName);
+            final byte[] a = data.get(fileName);
             if (a == null) {
                 throw new IndexException(
                         String.format("No such file '%s'", fileName));

@@ -26,11 +26,11 @@ class MergedPairIteratorTest extends AbstractDataTest {
 
     private static final Merger<String, Integer> MERGER = (k, v1, v2) -> v1;
 
-    private final static Pair<String, Integer> PAIR1 = new Pair<>("a", 1);
-    private final static Pair<String, Integer> PAIR2 = new Pair<>("b", 2);
-    private final static Pair<String, Integer> PAIR3 = new Pair<>("c", 3);
-    private final static Pair<String, Integer> PAIR4 = new Pair<>("d", 4);
-    private final static Pair<String, Integer> PAIR5 = new Pair<>("e", 5);
+    private static final Pair<String, Integer> PAIR1 = new Pair<>("a", 1);
+    private static final Pair<String, Integer> PAIR2 = new Pair<>("b", 2);
+    private static final Pair<String, Integer> PAIR3 = new Pair<>("c", 3);
+    private static final Pair<String, Integer> PAIR4 = new Pair<>("d", 4);
+    private static final Pair<String, Integer> PAIR5 = new Pair<>("e", 5);
 
     private PairIteratorWithCurrent<String, Integer> iterator1;
 
