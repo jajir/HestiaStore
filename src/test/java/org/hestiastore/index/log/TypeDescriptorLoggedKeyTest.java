@@ -15,13 +15,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class TypeDescriptorLoggedKeyTest {
 
-    private static final TypeDescriptor<Integer> tdi = new TypeDescriptorInteger();
-    private static final TypeDescriptor<String> tds = new TypeDescriptorString();
+    private static final TypeDescriptor<Integer> TDI = new TypeDescriptorInteger();
+    private static final TypeDescriptor<String> TDS = new TypeDescriptorString();
 
     @Test
     void test_integer_read_write() {
         final TypeDescriptorLoggedKey<Integer> tdlk = new TypeDescriptorLoggedKey<>(
-                tdi);
+                TDI);
 
         final LoggedKey<Integer> k1 = tdlk.getConvertorFromBytes()
                 .fromBytes(tdlk.getConvertorToBytes()
@@ -33,7 +33,7 @@ class TypeDescriptorLoggedKeyTest {
     @Test
     void test_string_read_write() {
         final TypeDescriptorLoggedKey<String> tdlk = new TypeDescriptorLoggedKey<>(
-                tds);
+                TDS);
 
         final LoggedKey<String> k1 = tdlk.getConvertorFromBytes()
                 .fromBytes(tdlk.getConvertorToBytes().toBytes(
@@ -45,7 +45,7 @@ class TypeDescriptorLoggedKeyTest {
     @Test
     void test_string_read_write_tombstone() {
         final TypeDescriptorLoggedKey<String> tdlk = new TypeDescriptorLoggedKey<>(
-                tds);
+                TDS);
 
         final LoggedKey<String> k1 = tdlk.getConvertorFromBytes()
                 .fromBytes(tdlk.getConvertorToBytes()
@@ -61,7 +61,7 @@ class TypeDescriptorLoggedKeyTest {
     @Test
     void test_read_null() {
         final TypeDescriptorLoggedKey<String> tdlk = new TypeDescriptorLoggedKey<>(
-                tds);
+                TDS);
         when(fileReader.read()).thenReturn(-1);
         final LoggedKey<String> k = tdlk.getTypeReader().read(fileReader);
 

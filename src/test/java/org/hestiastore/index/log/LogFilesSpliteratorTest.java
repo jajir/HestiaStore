@@ -18,12 +18,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class LogFilesSpliteratorTest {
 
     // This verify that FILE_NAMES are could be immutable object
-    private final List<String> FILE_NAMES = List.of("log1", "log2");
-    private final Pair<LoggedKey<String>, String> PAIR1 = new Pair<>(
+    private static final List<String> FILE_NAMES = List.of("log1", "log2");
+    private static final Pair<LoggedKey<String>, String> PAIR1 = new Pair<>(
             LoggedKey.of(LogOperation.POST, "key1"), "value1");
-    private final Pair<LoggedKey<String>, String> PAIR2 = new Pair<>(
+    private static final Pair<LoggedKey<String>, String> PAIR2 = new Pair<>(
             LoggedKey.of(LogOperation.POST, "key2"), "value2");
-    private final Pair<LoggedKey<String>, String> PAIR3 = new Pair<>(
+    private static final Pair<LoggedKey<String>, String> PAIR3 = new Pair<>(
             LoggedKey.of(LogOperation.DELETE, "key1"), "value3");
 
     @Mock

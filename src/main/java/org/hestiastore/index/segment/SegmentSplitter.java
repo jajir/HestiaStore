@@ -48,7 +48,7 @@ public class SegmentSplitter<K, V> {
         return segmentManager.createSegmentFullWriter();
     }
 
-    private final float MINIMAL_PERCENTAGE_DIFFERENCE = 0.9F;
+    private static final float MINIMAL_PERCENTAGE_DIFFERENCE = 0.9F;
 
     /**
      * Method checks if segment should be compacted before splitting. It prevent
