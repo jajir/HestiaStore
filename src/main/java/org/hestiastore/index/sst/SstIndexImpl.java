@@ -103,9 +103,8 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
                 keySegmentCache.getSegmentIds(segmentWindows), segmentManager);
         final PairIterator<K, V> iterratorFreshedFromCache = new PairIteratorRefreshedFromCache<>(
                 segmentIterator, cache, valueTypeDescriptor);
-        final PairIteratorLoggingContext<K, V> pairIteratorLoggingContext = new PairIteratorLoggingContext<>(
-                iterratorFreshedFromCache, conf);
-        return pairIteratorLoggingContext;
+        return new PairIteratorLoggingContext<>(iterratorFreshedFromCache,
+                conf);
     }
 
     private void flushCache() {

@@ -23,8 +23,7 @@ public class LogFilesManager<K, V> {
     }
 
     UnsortedDataFile<LoggedKey<K>, V> getLogFile(final String name) {
-        final UnsortedDataFile<LoggedKey<K>, V> out = UnsortedDataFile
-                .<LoggedKey<K>, V>builder()//
+        return UnsortedDataFile.<LoggedKey<K>, V>builder()//
                 .withDirectory(directory)//
                 .withFileName(name)//
                 .withKeyWriter(keyTypeDescriptor.getTypeWriter())//
@@ -32,7 +31,6 @@ public class LogFilesManager<K, V> {
                 .withValueWriter(valueTypeDescriptor.getTypeWriter())//
                 .withValueReader(valueTypeDescriptor.getTypeReader())//
                 .build();
-        return out;
     }
 
     CloseablePairReader<LoggedKey<K>, V> openReader(final String name) {

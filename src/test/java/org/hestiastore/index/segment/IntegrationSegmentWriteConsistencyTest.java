@@ -57,8 +57,7 @@ class IntegrationSegmentWriteConsistencyTest {
 
     private Segment<Integer, String> makeSegment(final Directory directory,
             final SegmentId id) {
-        final Segment<Integer, String> seg = Segment.<Integer, String>builder()
-                .withDirectory(directory)//
+        return Segment.<Integer, String>builder().withDirectory(directory)//
                 .withId(id)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//
@@ -66,7 +65,6 @@ class IntegrationSegmentWriteConsistencyTest {
                 .withMaxNumberOfKeysInSegmentCache(3)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .build();
-        return seg;
     }
 
     private void verifyDataIndex(final Segment<Integer, String> index,

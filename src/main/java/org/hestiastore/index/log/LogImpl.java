@@ -20,10 +20,8 @@ public class LogImpl<K, V> implements Log<K, V> {
     }
 
     public UnsortedDataFileStreamer<LoggedKey<K>, V> openStreamer() {
-        final UnsortedDataFileStreamer<LoggedKey<K>, V> streamer = new UnsortedDataFileStreamer<>(
-                new LogFilesSpliterator<>(logFilesManager,
-                        logFileNamesManager.getSortedLogFiles()));
-        return streamer;
+        return new UnsortedDataFileStreamer<>(new LogFilesSpliterator<>(
+                logFilesManager, logFileNamesManager.getSortedLogFiles()));
     }
 
     @Override

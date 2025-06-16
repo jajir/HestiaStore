@@ -397,8 +397,7 @@ public class IndexConfigurationManager<K, V> {
 
     private IndexConfigurationBuilder<K, V> makeBuilder(
             final IndexConfiguration<K, V> conf) {
-        IndexConfigurationBuilder<K, V> builder = IndexConfiguration
-                .<K, V>builder()//
+        return IndexConfiguration.<K, V>builder()//
                 .withKeyClass(conf.getKeyClass()) //
                 .withValueClass(conf.getValueClass())//
                 .withKeyTypeDescriptor(conf.getKeyTypeDescriptor())//
@@ -431,7 +430,6 @@ public class IndexConfigurationManager<K, V> {
                 .withBloomFilterProbabilityOfFalsePositive(
                         conf.getBloomFilterProbabilityOfFalsePositive())//
         ;
-        return builder;
     }
 
 }
