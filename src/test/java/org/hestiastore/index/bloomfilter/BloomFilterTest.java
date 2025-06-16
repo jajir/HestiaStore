@@ -23,10 +23,10 @@ class BloomFilterTest {
 
     private static final String FILE_NAME = "segment-00880.bloomFilter";
 
-    private MemDirectory directory = new MemDirectory();
+    private static final List<String> TEST_DATA_KEYS = Arrays.asList("ahoj",
+            "znenku", "karle", "kachna");
 
-    private final List<String> TEST_DATA_KEYS = Arrays.asList("ahoj", "znenku",
-            "karle", "kachna");
+    private MemDirectory directory = new MemDirectory();
 
     @Test
     void test_basic_functionality() {

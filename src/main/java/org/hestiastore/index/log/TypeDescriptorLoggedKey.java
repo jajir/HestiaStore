@@ -12,7 +12,7 @@ import org.hestiastore.index.datatype.TypeWriter;
 public class TypeDescriptorLoggedKey<K>
         implements TypeDescriptor<LoggedKey<K>> {
 
-    private final TypeDescriptorLogOperation TDLO = new TypeDescriptorLogOperation();
+    private static final TypeDescriptorLogOperation TDLO = new TypeDescriptorLogOperation();
 
     private final TypeDescriptor<K> tdKey;
 
