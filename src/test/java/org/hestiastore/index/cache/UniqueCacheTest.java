@@ -27,9 +27,9 @@ class UniqueCacheTest {
 
         final List<Pair<Integer, String>> out = cache.toList();
         assertEquals(3, cache.size());
-        assertEquals(Pair.of(10, "hello"), out.remove(0));
-        assertEquals(Pair.of(13, "my"), out.remove(0));
-        assertEquals(Pair.of(15, "dear"), out.remove(0));
+        assertEquals(Pair.of(10, "hello"), out.get(0));
+        assertEquals(Pair.of(13, "my"), out.get(1));
+        assertEquals(Pair.of(15, "dear"), out.get(2));
         cache.clear();
         assertEquals(0, cache.size());
     }
@@ -44,9 +44,9 @@ class UniqueCacheTest {
 
         final List<Pair<Integer, String>> out = cache.getAsSortedList();
         assertEquals(3, cache.size());
-        assertEquals(Pair.of(-199, "hello"), out.remove(0));
-        assertEquals(Pair.of(13, "my"), out.remove(0));
-        assertEquals(Pair.of(15, "dear"), out.remove(0));
+        assertEquals(Pair.of(-199, "hello"), out.get(0));
+        assertEquals(Pair.of(13, "my"), out.get(1));
+        assertEquals(Pair.of(15, "dear"), out.get(2));
         cache.clear();
         assertEquals(0, cache.size());
     }
@@ -67,10 +67,10 @@ class UniqueCacheTest {
 
         final List<Pair<Integer, String>> out = cache.getAsSortedList();
         assertEquals(4, cache.size());
-        assertEquals(Pair.of(-199, "hello"), out.remove(0));
-        assertEquals(Pair.of(-19, "Duck"), out.remove(0));
-        assertEquals(Pair.of(13, "my"), out.remove(0));
-        assertEquals(Pair.of(15, "dear"), out.remove(0));
+        assertEquals(Pair.of(-199, "hello"), out.get(0));
+        assertEquals(Pair.of(-19, "Duck"), out.get(1));
+        assertEquals(Pair.of(13, "my"), out.get(2));
+        assertEquals(Pair.of(15, "dear"), out.get(3));
         assertEquals(4, cache.size());
     }
 
@@ -91,7 +91,7 @@ class UniqueCacheTest {
         logger.debug("Cache size '{}'", cache.size());
         final List<Pair<Integer, String>> out = cache.toList();
         assertEquals(1, cache.size());
-        assertEquals(Pair.of(10, "dear"), out.remove(0));
+        assertEquals(Pair.of(10, "dear"), out.get(0));
         cache.clear();
         assertEquals(0, cache.size());
     }

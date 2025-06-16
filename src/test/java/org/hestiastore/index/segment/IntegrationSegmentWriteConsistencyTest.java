@@ -22,12 +22,10 @@ class IntegrationSegmentWriteConsistencyTest {
             "fff");
     final List<Pair<Integer, String>> data = IntStream
             .range(0, values.size() - 1)
-            .mapToObj(i -> Pair.of(i, values.get(i)))
-            .collect(Collectors.toList());
+            .mapToObj(i -> Pair.of(i, values.get(i))).toList();
     final List<Pair<Integer, String>> updatedData = IntStream
             .range(0, values.size() - 1)
-            .mapToObj(i -> Pair.of(i, values.get(i + 1)))
-            .collect(Collectors.toList());
+            .mapToObj(i -> Pair.of(i, values.get(i + 1))).toList();
 
     private final TypeDescriptorString tds = new TypeDescriptorString();
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();

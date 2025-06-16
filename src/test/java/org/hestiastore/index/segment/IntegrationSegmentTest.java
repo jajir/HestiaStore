@@ -37,7 +37,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
     private final List<Pair<Integer, String>> sortedTestDataSet = testDataSet
             .stream().sorted((pair1, pair2) -> {
                 return pair1.getKey() - pair2.getKey();
-            }).collect(Collectors.toList());
+            }).toList();
 
     @ParameterizedTest
     @MethodSource("segmentProvider")

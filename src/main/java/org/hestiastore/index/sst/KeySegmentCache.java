@@ -173,7 +173,7 @@ public final class KeySegmentCache<K> implements CloseableResource {
                 .skip(segmentWindow.getIntOffset())//
                 .limit(segmentWindow.getIntLimit())//
                 .map(entry -> entry.getValue())//
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public void flush() {
