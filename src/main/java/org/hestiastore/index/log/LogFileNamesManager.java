@@ -31,9 +31,10 @@ public final class LogFileNamesManager {
 
     List<String> getSortedLogFiles() {
         return directory.getFileNames()
-                .filter(f -> f.startsWith(LOG_FILE_PREFIX))
-                .filter(f -> f.endsWith(LOG_FILE_EXTENSION)).sorted()
-                .collect(Collectors.toList());
+                .filter(f -> f.startsWith(LOG_FILE_PREFIX))//
+                .filter(f -> f.endsWith(LOG_FILE_EXTENSION))//
+                .sorted()//
+                .toList();
     }
 
     int extractIndex(final String fileName) {

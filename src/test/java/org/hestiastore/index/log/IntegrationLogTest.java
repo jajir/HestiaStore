@@ -68,7 +68,7 @@ class IntegrationLogTest {
         try (final UnsortedDataFileStreamer<LoggedKey<Integer>, String> streamer = log
                 .openStreamer()) {
             final List<Pair<LoggedKey<Integer>, String>> list = streamer
-                    .stream().collect(Collectors.toList());
+                    .stream().toList();
             final Pair<LoggedKey<Integer>, String> p0 = list.get(0);
             assertEquals(LoggedKey.of(LogOperation.POST, 3), p0.getKey());
 

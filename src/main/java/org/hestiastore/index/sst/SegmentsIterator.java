@@ -83,7 +83,6 @@ class SegmentsIterator<K, V> implements PairIterator<K, V> {
         }
         currentIterator = null;
         nextPair = null;
-        ids.clear();
     }
 
 }

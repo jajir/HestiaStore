@@ -67,7 +67,7 @@ public class UniqueCache<K, V> {
     public List<Pair<K, V>> toList() {
         return map.entrySet().stream()
                 .map(entry -> new Pair<K, V>(entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -82,15 +82,15 @@ public class UniqueCache<K, V> {
     public List<Pair<K, V>> getAsSortedList() {
         return map.entrySet().stream()
                 .map(entry -> new Pair<K, V>(entry.getKey(), entry.getValue()))
-                .sorted(new PairComparator<>(keyComparator))
-                .collect(Collectors.toList());
+                .sorted(new PairComparator<>(keyComparator))//
+                .toList();
     }
 
     public List<K> getSortedKeys() {
         return map.entrySet().stream()//
                 .map(entry -> entry.getKey())//
                 .sorted(keyComparator)//
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public PairIterator<K, V> getSortedIterator() {
