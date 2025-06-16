@@ -54,7 +54,7 @@ public final class BloomFilter<K> implements CloseableResource {
         this.diskIoBufferSize = diskIoBufferSize;
         if (numberOfHashFunctions <= 0) {
             throw new IllegalArgumentException(
-                    String.format("Number of hash function cant be '0'"));
+                    "Number of hash function cant be '0'");
         }
         if (isExists() && indexSizeInBytes > 0) {
             try (FileReader reader = directory
