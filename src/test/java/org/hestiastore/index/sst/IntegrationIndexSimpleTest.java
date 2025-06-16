@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -101,7 +100,7 @@ class IntegrationIndexSimpleTest {
         index1 = makeIndex(true);
 
         final List<Pair<LoggedKey<Integer>, String>> list = index1
-                .getLogStreamer().stream().collect(Collectors.toList());
+                .getLogStreamer().stream().toList();
         assertEquals(testData.size(), list.size());
     }
 
@@ -113,8 +112,7 @@ class IntegrationIndexSimpleTest {
 
         try (final Stream<Pair<Integer, String>> stream = index1
                 .getStream(SegmentWindow.unbounded())) {
-            final List<Pair<Integer, String>> list = stream
-                    .collect(Collectors.toList());
+            final List<Pair<Integer, String>> list = stream.toList();
             assertEquals(testData.size(), list.size());
         }
 
@@ -133,11 +131,9 @@ class IntegrationIndexSimpleTest {
         index1.flush();
 
         final List<Pair<Integer, String>> list1 = index1
-                .getStream(SegmentWindow.unbounded())
-                .collect(Collectors.toList());
+                .getStream(SegmentWindow.unbounded()).toList();
         final List<Pair<Integer, String>> list2 = index1
-                .getStream(SegmentWindow.unbounded())
-                .collect(Collectors.toList());
+                .getStream(SegmentWindow.unbounded()).toList();
         assertEquals(testData.size(), list1.size());
         assertEquals(testData.size(), list2.size());
     }
@@ -156,8 +152,7 @@ class IntegrationIndexSimpleTest {
 
         final Index<Integer, String> index2 = makeSstIndex();
         final List<Pair<Integer, String>> list1 = index2
-                .getStream(SegmentWindow.unbounded())
-                .collect(Collectors.toList());
+                .getStream(SegmentWindow.unbounded()).toList();
         assertEquals(testData.size(), list1.size());
     }
 
@@ -175,8 +170,7 @@ class IntegrationIndexSimpleTest {
 
         final Index<Integer, String> index2 = makeSstIndex();
         final List<Pair<Integer, String>> list1 = index2
-                .getStream(SegmentWindow.unbounded())
-                .collect(Collectors.toList());
+                .getStream(SegmentWindow.unbounded()).toList();
         assertEquals(1, list1.size());
     }
 
@@ -192,12 +186,10 @@ class IntegrationIndexSimpleTest {
                 "fff");
         final List<Pair<Integer, String>> data = IntStream
                 .range(0, values.size() - 1)
-                .mapToObj(i -> Pair.of(i, values.get(i)))
-                .collect(Collectors.toList());
+                .mapToObj(i -> Pair.of(i, values.get(i))).toList();
         final List<Pair<Integer, String>> updatedData = IntStream
                 .range(0, values.size() - 1)
-                .mapToObj(i -> Pair.of(i, values.get(i + 1)))
-                .collect(Collectors.toList());
+                .mapToObj(i -> Pair.of(i, values.get(i + 1))).toList();
 
         final Index<Integer, String> index1 = makeSstIndex();
         data.stream().forEach(index1::put);
@@ -214,8 +206,7 @@ class IntegrationIndexSimpleTest {
     private void verifyDataIndex(final Index<Integer, String> index,
             final List<Pair<Integer, String>> data) {
         final List<Pair<Integer, String>> indexData = index
-                .getStream(SegmentWindow.unbounded())
-                .collect(Collectors.toList());
+                .getStream(SegmentWindow.unbounded()).toList();
         assertEquals(data.size(), indexData.size());
         for (int i = 0; i < data.size(); i++) {
             final Pair<Integer, String> pairData = data.get(i);

@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.datatype.TypeDescriptorString;
@@ -85,7 +84,7 @@ class KeySegmentCacheTest {
              * Verify that higher page key was updated.
              */
             final List<Pair<String, SegmentId>> list = fif.getSegmentsAsStream()
-                    .collect(Collectors.toList());
+                    .toList();
             assertEquals(Pair.of("zzz", SegmentId.of(4)), list.get(3));
         }
     }
@@ -101,7 +100,7 @@ class KeySegmentCacheTest {
              * Verify that higher page key was updated.
              */
             final List<Pair<String, SegmentId>> list = fif.getSegmentsAsStream()
-                    .collect(Collectors.toList());
+                    .toList();
             assertEquals(Pair.of("zzz", SegmentId.of(4)), list.get(3));
         }
     }
@@ -139,7 +138,7 @@ class KeySegmentCacheTest {
              * Verify that pages are returned as sorted stream.
              */
             final List<Pair<String, SegmentId>> list = fif.getSegmentsAsStream()
-                    .collect(Collectors.toList());
+                    .toList();
             assertEquals(Pair.of("ahoj", SegmentId.of(1)), list.get(0));
             assertEquals(Pair.of("betka", SegmentId.of(2)), list.get(1));
             assertEquals(Pair.of("cukrar", SegmentId.of(3)), list.get(2));
