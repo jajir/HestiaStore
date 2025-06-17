@@ -63,7 +63,7 @@ class IntegrationIndexConsistencyTest extends AbstractIndexTest {
             stream.forEach(pair -> {
                 int cx = acx.incrementAndGet();
                 writePairs(index, makeList(cx));
-                logger.debug("{} {}", cx, pair.toString());
+                logger.debug("{} {}", cx, pair);
                 verifyIndexData(index, makeList(cx));
             });
         }

@@ -45,11 +45,11 @@ public final class LogFileNamesManager {
         if (index > MAX_LOG_FILE_NUMBER) {
             throw new IllegalStateException("Max number of log files reached");
         }
-        String no = String.valueOf(index);
-        while (no.length() < 5) {
-            no = "0" + no;
+        StringBuilder sb = new StringBuilder(String.valueOf(index));
+        while (sb.length() < 5) {
+            sb.insert(0, "0");
         }
-        return LOG_FILE_PREFIX + no + LOG_FILE_EXTENSION;
+        return LOG_FILE_PREFIX + sb.toString() + LOG_FILE_EXTENSION;
     }
 
 }
