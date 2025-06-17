@@ -545,7 +545,7 @@ class IndexConfigurationManagerTest {
                 () -> manager.mergeWithStored(cfg));
 
         assertEquals(
-                "Value of KeyClass is already set to 'java.lang.Long' "
+                "Value of 'KeyClass' is already set to 'java.lang.Long' "
                         + "and can't be changed to 'java.lang.Double'",
                 e.getMessage());
     }
@@ -561,7 +561,7 @@ class IndexConfigurationManagerTest {
                 () -> manager.mergeWithStored(cfg));
 
         assertEquals(
-                "Value of ValueClass is already set to 'java.lang.String' "
+                "Value of 'ValueClass' is already set to 'java.lang.String' "
                         + "and can't be changed to 'java.lang.Double'",
                 e.getMessage());
     }
@@ -576,7 +576,7 @@ class IndexConfigurationManagerTest {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> manager.mergeWithStored(cfg));
 
-        assertEquals("Value of KeyTypeDescriptor is already set to "
+        assertEquals("Value of 'KeyTypeDescriptor' is already set to "
                 + "'TypeDescriptorLong' and can't be changed to 'kachana'",
                 e.getMessage());
     }
@@ -591,7 +591,7 @@ class IndexConfigurationManagerTest {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> manager.mergeWithStored(cfg));
 
-        assertEquals("Value of ValueTypeDescriptor is already set to "
+        assertEquals("Value of 'ValueTypeDescriptor' is already set to "
                 + "'TypeDescriptorString' and can't be changed to 'kachna'",
                 e.getMessage());
     }
@@ -608,7 +608,7 @@ class IndexConfigurationManagerTest {
                 () -> manager.mergeWithStored(config));
 
         assertEquals(
-                "Value of MaxNumberOfKeysInSegment is already "
+                "Value of 'MaxNumberOfKeysInSegment' is already "
                         + "set to '44' and can't be changed to '9864'",
                 e.getMessage());
     }
@@ -625,7 +625,7 @@ class IndexConfigurationManagerTest {
                 () -> manager.mergeWithStored(config));
 
         assertEquals(
-                "Value of BloomFilterIndexSizeInBytes is already "
+                "Value of 'BloomFilterIndexSizeInBytes' is already "
                         + "set to '77' and can't be changed to '4620'",
                 e.getMessage());
     }
@@ -642,7 +642,7 @@ class IndexConfigurationManagerTest {
                 () -> manager.mergeWithStored(config));
 
         assertEquals(
-                "Value of BloomFilterNumberOfHashFunctions is already "
+                "Value of 'BloomFilterNumberOfHashFunctions' is already "
                         + "set to '88' and can't be changed to '4620'",
                 e.getMessage());
     }
@@ -659,7 +659,7 @@ class IndexConfigurationManagerTest {
                 () -> manager.mergeWithStored(config));
 
         assertEquals(
-                "Value of BloomFilterProbabilityOfFalsePositive is already "
+                "Value of 'BloomFilterProbabilityOfFalsePositive' is already "
                         + "set to 'null' and can't be changed to '0.5'",
                 e.getMessage());
     }
@@ -676,7 +676,7 @@ class IndexConfigurationManagerTest {
                 () -> manager.mergeWithStored(config));
 
         assertEquals(
-                "Value of MaxNumberOfKeysInSegmentIndexPage is already "
+                "Value of 'MaxNumberOfKeysInSegmentIndexPage' is already "
                         + "set to '33' and can't be changed to '4620'",
                 e.getMessage());
     }

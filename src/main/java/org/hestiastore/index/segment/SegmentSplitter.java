@@ -66,16 +66,14 @@ public class SegmentSplitter<K, V> {
         if (estimatedNumberOfKeys <= 3) {
             return true;
         }
-        if (estimatedNumberOfKeys < maxNumberOfKeysInSegment
-                * MINIMAL_PERCENTAGE_DIFFERENCE) {
-            /**
-             * It seems that number of keys in segment after compacting will be
-             * lower about 10% to maximam allowed number of key in segment. So
-             * splitting is not necessary.
-             */
-            return true;
-        }
-        return false;
+
+        /**
+         * It it's true than it seems that number of keys in segment after
+         * compacting will be lower about 10% to maximam allowed number of key
+         * in segment. So splitting is not necessary.
+         */
+        return estimatedNumberOfKeys < maxNumberOfKeysInSegment
+                * MINIMAL_PERCENTAGE_DIFFERENCE;
     }
 
     public SegmentSplitterResult<K, V> split(final SegmentId segmentId) {

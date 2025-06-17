@@ -20,8 +20,7 @@ class CacheLruTest {
 
     private final Logger logger = LoggerFactory.getLogger(CacheLruTest.class);
 
-    private final BiConsumer<Integer, CacheElement> EVICTED_ELEMENT = (k,
-            v) -> {
+    private final BiConsumer<Integer, CacheElement> evictedElement = (k, v) -> {
         v.invalidate();
         logger.debug("Removing cached element <'{}','{}'>", k, v);
     };
@@ -87,7 +86,7 @@ class CacheLruTest {
 
     @Test
     void test_invalidateAll() {
-        Cache<Integer, CacheElement> cache = new CacheLru<>(2, EVICTED_ELEMENT);
+        Cache<Integer, CacheElement> cache = new CacheLru<>(2, evictedElement);
         cache.put(1, value1);
         cache.put(2, value2);
         cache.invalidateAll();
@@ -101,7 +100,7 @@ class CacheLruTest {
     void test_constructor_limit_too_high() {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> new CacheLru<>(((long) Integer.MAX_VALUE) + 2L,
-                        EVICTED_ELEMENT));
+                        evictedElement));
 
         assertEquals("Limit must be less than 2147483647", e.getMessage());
     }
@@ -109,7 +108,7 @@ class CacheLruTest {
     @Test
     void test_constructor_limit_too_low() {
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> new CacheLru<>(-1, EVICTED_ELEMENT));
+                () -> new CacheLru<>(-1, evictedElement));
 
         assertEquals("Limit must be greater than 0", e.getMessage());
     }

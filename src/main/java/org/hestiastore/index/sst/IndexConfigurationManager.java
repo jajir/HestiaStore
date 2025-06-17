@@ -308,9 +308,9 @@ public class IndexConfigurationManager<K, V> {
             Object storedValue, Object newValue) {
         if (wasChanged) {
             throw new IllegalArgumentException(String.format(
-                    "Value of " + propertyName + " is already set"
+                    "Value of '%s' is already set"
                             + " to '%s' and can't be changed to '%s'",
-                    storedValue, newValue));
+                    propertyName, storedValue, newValue));
         }
     }
 

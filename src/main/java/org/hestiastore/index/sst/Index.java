@@ -7,6 +7,7 @@ import java.util.stream.Stream;
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Pair;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.log.Log;
@@ -59,7 +60,8 @@ public interface Index<K, V> extends CloseableResource {
                 .makeInstance(indexConf.getKeyTypeDescriptor());
         final TypeDescriptor<N> valueTypeDescriptor = DataTypeDescriptorRegistry
                 .makeInstance(indexConf.getValueTypeDescriptor());
-        if (indexConf.isLogEnabled()) {
+        Vldtn.requireNonNull(indexConf.isLogEnabled(), "isLogEnabled");
+        if (Boolean.TRUE.equals(indexConf.isLogEnabled())) {
             log = Log.<M, N>builder()//
                     .withDirectory(directory)//
                     .withKeyTypeDescriptor(keyTypeDescriptor)//
@@ -68,7 +70,8 @@ public interface Index<K, V> extends CloseableResource {
         } else {
             log = Log.<M, N>builder().buildEmpty();
         }
-        if (indexConf.isThreadSafe()) {
+        Vldtn.requireNonNull(indexConf.isThreadSafe(), "isThreadSafe");
+        if (Boolean.TRUE.equals(indexConf.isThreadSafe())) {
             final IndexInternal<M, N> index = new IndexInternalSynchronized<>(
                     directory, keyTypeDescriptor, valueTypeDescriptor,
                     indexConf, log);

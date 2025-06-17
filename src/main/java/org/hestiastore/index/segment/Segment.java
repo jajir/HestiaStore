@@ -90,7 +90,7 @@ public class Segment<K, V>
     }
 
     public void forceCompact() {
-        if (segmentPropertiesManager.getCacheDeltaFileNames().size() > 0) {
+        if (!segmentPropertiesManager.getCacheDeltaFileNames().isEmpty()) {
             segmentCompacter.forceCompact();
         }
     }

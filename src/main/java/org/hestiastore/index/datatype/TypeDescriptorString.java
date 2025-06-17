@@ -49,9 +49,7 @@ public class TypeDescriptorString implements TypeDescriptor<String> {
     public boolean equals(final Object obj) {
         if (this == obj)
             return true;
-        if (obj == null || getClass() != obj.getClass())
-            return false;
-        return true;
+        return obj != null && getClass() == obj.getClass();
     }
 
     @Override

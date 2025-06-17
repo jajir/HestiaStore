@@ -3,9 +3,11 @@ package org.hestiastore.index.sorteddatafile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import java.util.Arrays;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -75,18 +77,22 @@ class DiffKeyReaderTest {
                 tds.getConvertorFromBytes());
 
         when(fileReader.read()).thenReturn(0).thenReturn(5);
-        when(fileReader.read(eq(new byte[5]))).thenAnswer(invocation -> {
-            loadStringToByteArray(invocation, "prase");
-            return 5;
-        });
+        when(fileReader
+                .read(argThat(array -> Arrays.equals(new byte[5], array))))
+                .thenAnswer(invocation -> {
+                    loadStringToByteArray(invocation, "prase");
+                    return 5;
+                });
         final String ret1 = reader.read(fileReader);
         assertEquals("prase", ret1);
 
         when(fileReader.read()).thenReturn(3).thenReturn(5);
-        when(fileReader.read(eq(new byte[5]))).thenAnswer(invocation -> {
-            loadStringToByteArray(invocation, "lesni");
-            return 5;
-        });
+        when(fileReader
+                .read(argThat(array -> Arrays.equals(new byte[5], array))))
+                .thenAnswer(invocation -> {
+                    loadStringToByteArray(invocation, "lesni");
+                    return 5;
+                });
         final String ret2 = reader.read(fileReader);
         assertEquals("pralesni", ret2);
     }
@@ -114,15 +120,19 @@ class DiffKeyReaderTest {
                 tds.getConvertorFromBytes());
 
         when(fileReader.read()).thenReturn(0).thenReturn(5);
-        when(fileReader.read(eq(new byte[5]))).thenAnswer(invocation -> {
-            loadStringToByteArray(invocation, "prase");
-            return 5;
-        });
+        when(fileReader
+                .read(argThat(array -> Arrays.equals(new byte[5], array))))
+                .thenAnswer(invocation -> {
+                    loadStringToByteArray(invocation, "prase");
+                    return 5;
+                });
         final String ret1 = reader.read(fileReader);
         assertEquals("prase", ret1);
 
         when(fileReader.read()).thenReturn(3).thenReturn(5);
-        when(fileReader.read(eq(new byte[5]))).thenReturn(3);
+        when(fileReader
+                .read(argThat(array -> Arrays.equals(new byte[5], array))))
+                .thenReturn(3);
         assertThrows(IndexException.class, () -> reader.read(fileReader));
     }
 

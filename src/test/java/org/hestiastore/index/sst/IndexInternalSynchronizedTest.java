@@ -18,7 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class IndexInternalSynchronizedTest {
 
     private static final TypeDescriptor<Integer> TD_INTEGER = new TypeDescriptorInteger();
-    private TypeDescriptor<String> TD_STRING = new TypeDescriptorString();
+    private static final TypeDescriptor<String> TD_STRING = new TypeDescriptorString();
 
     private Directory directory = new MemDirectory();
 
