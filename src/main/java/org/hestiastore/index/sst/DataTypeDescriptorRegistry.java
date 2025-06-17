@@ -87,4 +87,8 @@ public class DataTypeDescriptorRegistry {
         }
     }
 
+    private DataTypeDescriptorRegistry() {
+        // Prevent instantiation
+    }
+
 }

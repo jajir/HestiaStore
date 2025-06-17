@@ -81,7 +81,6 @@ class SegmentWriterTest {
         verify(segmentCompacter).shouldBeCompactedDuringWriting(3);
 
         verify(segmentCompacter, times(1)).forceCompact();
-        ;
     }
 
 }

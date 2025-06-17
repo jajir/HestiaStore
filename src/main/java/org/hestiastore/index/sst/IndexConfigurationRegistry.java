@@ -86,4 +86,9 @@ public class IndexConfigurationRegistry {
         Objects.requireNonNull(clazz, "Class can't be null");
         return Optional.ofNullable(confs.get(Key.of(clazz, memory)));
     }
+
+    private IndexConfigurationRegistry() {
+        // Private constructor to prevent instantiation
+    }
+
 }

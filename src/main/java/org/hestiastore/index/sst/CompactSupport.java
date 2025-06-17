@@ -44,7 +44,6 @@ public class CompactSupport<K, V> {
         }
         if (currentSegmentId == segmentId) {
             toSameSegment.add(pair);
-            return;
         } else {
             /* Write all keys to index and clean cache and set new pageId */
             flushToCurrentSegment();

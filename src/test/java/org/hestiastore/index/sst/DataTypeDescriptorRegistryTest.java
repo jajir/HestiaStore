@@ -70,7 +70,7 @@ class DataTypeDescriptorRegistryTest {
     class MyFaultyTypeDescriptor extends TypeDescriptorString {
 
         MyFaultyTypeDescriptor(final String name) {
-            // super faulty constructor;
+            // super faulty constructor
         }
 
     }

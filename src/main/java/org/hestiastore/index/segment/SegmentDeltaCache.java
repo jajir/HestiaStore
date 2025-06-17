@@ -82,9 +82,4 @@ public final class SegmentDeltaCache<K, V> {
         return cache.getAsSortedList();
     }
 
-    @Deprecated
-    public PairIterator<K, V> getSortedIterator() {
-        return cache.getSortedIterator();
-    }
-
 }

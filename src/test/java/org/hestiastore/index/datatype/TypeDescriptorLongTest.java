@@ -45,7 +45,7 @@ class TypeDescriptorLongTest {
     @Test
     void test_compare() {
         final Comparator<Long> cmp = ti.getComparator();
-        assertTrue(cmp.compare(0l, 0L) == 0);
+        assertEquals(cmp.compare(0l, 0L), 0);
         assertTrue(cmp.compare(3l, 12L) < 0);
         assertTrue(cmp.compare(3l, 2L) > 0);
     }

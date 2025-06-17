@@ -174,7 +174,7 @@ class BiteArrayTest {
         Object obj = new Object();
 
         // Act and Assert
-        assertFalse(bitArray.equals(obj));
+        assertNotEquals(bitArray, obj);
     }
 
     @Test
@@ -184,7 +184,7 @@ class BiteArrayTest {
         BitArray bitArray2 = new BitArray(10);
 
         // Act and Assert
-        assertTrue(bitArray1.equals(bitArray2));
+        assertEquals(bitArray1, bitArray2);
         assertEquals(bitArray2, bitArray1);
     }
 

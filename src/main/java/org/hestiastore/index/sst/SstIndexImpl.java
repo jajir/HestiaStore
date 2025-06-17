@@ -33,7 +33,7 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
     private final Stats stats = new Stats();
     protected IndexState<K, V> indexState;
 
-    public SstIndexImpl(final Directory directory,
+    protected SstIndexImpl(final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf, final Log<K, V> log) {

@@ -136,9 +136,7 @@ public class TypeDescriptorLong implements TypeDescriptor<Long> {
     public boolean equals(final Object obj) {
         if (this == obj)
             return true;
-        if (obj == null || getClass() != obj.getClass())
-            return false;
-        return true;
+        return obj != null && obj.getClass() == getClass();
     }
 
     @Override
