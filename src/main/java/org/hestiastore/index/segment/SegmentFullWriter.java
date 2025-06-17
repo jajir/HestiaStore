@@ -1,10 +1,10 @@
 package org.hestiastore.index.segment;
 
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilterWriter;
 import org.hestiastore.index.scarceindex.ScarceIndexWriter;
 import org.hestiastore.index.sorteddatafile.SortedDataFileWriter;
@@ -38,25 +38,26 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
             final int maxNumberOfKeysInIndexPage,
             final SegmentDataProvider<K, V> segmentCacheDataProvider,
             final SegmentDeltaCacheController<K, V> deltaCacheController) {
-        this.maxNumberOfKeysInIndexPage = Objects
-                .requireNonNull(maxNumberOfKeysInIndexPage);
-        this.segmentPropertiesManager = Objects
-                .requireNonNull(segmentStatsManager);
-        this.segmentFiles = Objects.requireNonNull(segmentFiles);
+        this.maxNumberOfKeysInIndexPage = Vldtn.requireNonNull(
+                maxNumberOfKeysInIndexPage, "maxNumberOfKeysInIndexPage");
+        this.segmentPropertiesManager = Vldtn
+                .requireNonNull(segmentStatsManager, "segmentStatsManager");
+        this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
         this.scarceWriter = segmentFiles.getTempScarceIndex().openWriter();
         this.indexWriter = segmentFiles.getTempIndexFile().openWriter();
-        Objects.requireNonNull(segmentCacheDataProvider,
-                "Segment cached data provider is required");
-        this.deltaCacheController = Objects
-                .requireNonNull(deltaCacheController);
+        Vldtn.requireNonNull(segmentCacheDataProvider,
+                "segmentCacheDataProvider");
+        this.deltaCacheController = Vldtn.requireNonNull(deltaCacheController,
+                "deltaCacheController");
         segmentCacheDataProvider.invalidate();
-        bloomFilterWriter = Objects.requireNonNull(
-                segmentCacheDataProvider.getBloomFilter().openWriter());
+        bloomFilterWriter = Vldtn.requireNonNull(
+                segmentCacheDataProvider.getBloomFilter().openWriter(),
+                "bloomFilterWriter");
     }
 
     @Override
     public void put(final Pair<K, V> pair) {
-        Objects.requireNonNull(pair);
+        Vldtn.requireNonNull(pair, "pair");
 
         bloomFilterWriter.write(pair.getKey());
 

@@ -1,8 +1,7 @@
 package org.hestiastore.index.segment;
 
-import java.util.Objects;
-
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Vldtn;
 
 /**
  * Provide ultimate access to delta cache and related operations
@@ -21,12 +20,11 @@ public final class SegmentDeltaCacheController<K, V> {
     public SegmentDeltaCacheController(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentPropertiesManager,
             final SegmentDataProvider<K, V> segmentCacheDataProvider) {
-        this.segmentFiles = Objects.requireNonNull(segmentFiles);
-        this.segmentPropertiesManager = Objects
-                .requireNonNull(segmentPropertiesManager);
-        this.segmentCacheDataProvider = Objects.requireNonNull(
-                segmentCacheDataProvider,
-                "Segment cached data provider is required");
+        this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
+        this.segmentPropertiesManager = Vldtn.requireNonNull(
+                segmentPropertiesManager, "segmentPropertiesManager");
+        this.segmentCacheDataProvider = Vldtn.requireNonNull(
+                segmentCacheDataProvider, "segmentCacheDataProvider");
     }
 
     public SegmentDeltaCache<K, V> getDeltaCache() {

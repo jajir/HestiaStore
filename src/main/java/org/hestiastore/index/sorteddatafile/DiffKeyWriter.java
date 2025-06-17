@@ -1,9 +1,9 @@
 package org.hestiastore.index.sorteddatafile;
 
 import java.util.Comparator;
-import java.util.Objects;
 
 import org.hestiastore.index.ByteTool;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,10 +24,10 @@ public class DiffKeyWriter<K> {
 
     public DiffKeyWriter(final ConvertorToBytes<K> convertorToBytes,
             final Comparator<K> keyComparator) {
-        this.convertorToBytes = Objects.requireNonNull(convertorToBytes,
-                "Convertor to bytes is null");
-        this.keyComparator = Objects.requireNonNull(keyComparator,
-                "Key comparator can't be null");
+        this.convertorToBytes = Vldtn.requireNonNull(convertorToBytes,
+                "convertorToBytes");
+        this.keyComparator = Vldtn.requireNonNull(keyComparator,
+                "keyComparator");
         byteTool = new ByteTool();
         previousKeyBytes = new byte[0];
         previousKey = null;
@@ -38,7 +38,7 @@ public class DiffKeyWriter<K> {
     }
 
     public byte[] write(final K key) {
-        Objects.requireNonNull(key, "key can't be null");
+        Vldtn.requireNonNull(key, "key");
         if (previousKey != null) {
             final int cmp = keyComparator.compare(previousKey, key);
             if (cmp == 0) {

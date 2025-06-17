@@ -1,6 +1,6 @@
 package org.hestiastore.index.segment;
 
-import java.util.Objects;
+import org.hestiastore.index.Vldtn;
 
 /**
  * This factory is used for creating new instances of {@link SegmentData}.
@@ -14,8 +14,8 @@ public class SegmentDataFactoryImpl<K, V> implements SegmentDataFactory<K, V> {
 
     public SegmentDataFactoryImpl(
             final SegmentDataSupplier<K, V> segmentDataSupplier) {
-        this.segmentDataSupplier = Objects.requireNonNull(segmentDataSupplier,
-                "segmentDataSupplier cannot be null");
+        this.segmentDataSupplier = Vldtn.requireNonNull(segmentDataSupplier,
+                "segmentDataSupplier");
     }
 
     @Override

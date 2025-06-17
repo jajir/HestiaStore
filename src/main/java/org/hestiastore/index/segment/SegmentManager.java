@@ -1,6 +1,6 @@
 package org.hestiastore.index.segment;
 
-import java.util.Objects;
+import org.hestiastore.index.Vldtn;
 
 /**
  * Class is responsible for creating new objects with complex segment
@@ -19,14 +19,14 @@ public class SegmentManager<K, V> {
             final SegmentConf segmentConf,
             final SegmentDataProvider<K, V> segmentCacheDataProvider,
             final SegmentDeltaCacheController<K, V> deltaCacheController) {
-        this.segmentFiles = Objects.requireNonNull(segmentFiles);
-        this.segmentPropertiesManager = Objects
-                .requireNonNull(segmentPropertiesManager);
-        this.segmentConf = Objects.requireNonNull(segmentConf);
-        this.segmentCacheDataProvider = Objects
-                .requireNonNull(segmentCacheDataProvider);
-        this.deltaCacheController = Objects
-                .requireNonNull(deltaCacheController);
+        this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
+        this.segmentPropertiesManager = Vldtn.requireNonNull(
+                segmentPropertiesManager, "segmentPropertiesManager");
+        this.segmentConf = Vldtn.requireNonNull(segmentConf, "segmentConf");
+        this.segmentCacheDataProvider = Vldtn.requireNonNull(
+                segmentCacheDataProvider, "segmentCacheDataProvider");
+        this.deltaCacheController = Vldtn.requireNonNull(deltaCacheController,
+                "deltaCacheController");
     }
 
     /**

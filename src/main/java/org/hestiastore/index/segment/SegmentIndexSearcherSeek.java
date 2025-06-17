@@ -5,6 +5,7 @@ import java.util.Objects;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairSeekableReader;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 
 /**
@@ -26,10 +27,11 @@ public class SegmentIndexSearcherSeek<K, V>
     SegmentIndexSearcherSeek(final SortedDataFile<K, V> segmenIndexFile,
             final int maxNumberOfKeysInIndexPage,
             final Comparator<K> keyTypeComparator) {
-        Objects.requireNonNull(segmenIndexFile);
+        Vldtn.requireNonNull(segmenIndexFile, "segmenIndexFile");
         this.maxNumberOfKeysInIndexPage = Objects
                 .requireNonNull(maxNumberOfKeysInIndexPage);
-        this.keyTypeComparator = Objects.requireNonNull(keyTypeComparator);
+        this.keyTypeComparator = Vldtn.requireNonNull(keyTypeComparator,
+                "keyTypeComparator");
         this.pairSeekableReader = segmenIndexFile.openSeekableReader();
     }
 

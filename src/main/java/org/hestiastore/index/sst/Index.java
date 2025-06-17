@@ -1,6 +1,5 @@
 package org.hestiastore.index.sst;
 
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -87,7 +86,7 @@ public interface Index<K, V> extends CloseableResource {
     void put(K key, V value);
 
     default void put(final Pair<K, V> pair) {
-        Objects.requireNonNull(pair, "Pair cant be null");
+        Vldtn.requireNonNull(pair, "pair");
         put(pair.getKey(), pair.getValue());
     }
 

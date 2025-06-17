@@ -1,8 +1,6 @@
 
 package org.hestiastore.index.segment;
 
-import java.util.Objects;
-
 import org.hestiastore.index.Vldtn;
 
 /**
@@ -32,9 +30,9 @@ public class SegmentSplitterResult<K, V> {
     public SegmentSplitterResult(final Segment<K, V> segment, final K minKey,
             final K maxKey,
             final SegmentSplittingStatus segmentSplittingStatus) {
-        this.segment = Objects.requireNonNull(segment);
-        this.minKey = Objects.requireNonNull(minKey);
-        this.maxKey = Objects.requireNonNull(maxKey);
+        this.segment = Vldtn.requireNonNull(segment, "segment");
+        this.minKey = Vldtn.requireNonNull(minKey, "minKey");
+        this.maxKey = Vldtn.requireNonNull(maxKey, "maxKey");
         this.status = Vldtn.requireNonNull(segmentSplittingStatus,
                 "segmentSplittingStatus");
     }

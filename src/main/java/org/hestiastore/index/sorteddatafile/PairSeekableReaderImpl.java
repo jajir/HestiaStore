@@ -1,9 +1,8 @@
 package org.hestiastore.index.sorteddatafile;
 
-import java.util.Objects;
-
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairSeekableReader;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.directory.FileReaderSeekable;
 
@@ -16,10 +15,9 @@ public class PairSeekableReaderImpl<K, V> implements PairSeekableReader<K, V> {
     public PairSeekableReaderImpl(final TypeReader<K> keyReader,
             final TypeReader<V> valueReader,
             final FileReaderSeekable fileReader) {
-        this.keyTypeReader = Objects.requireNonNull(keyReader);
-        this.valueTypeReader = Objects.requireNonNull(valueReader);
-        this.reader = Objects.requireNonNull(fileReader,
-                "File reader can't be null.");
+        this.keyTypeReader = Vldtn.requireNonNull(keyReader, "keyReader");
+        this.valueTypeReader = Vldtn.requireNonNull(valueReader, "valueReader");
+        this.reader = Vldtn.requireNonNull(fileReader, "valueReader");
     }
 
     @Override

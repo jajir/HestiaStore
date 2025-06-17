@@ -4,11 +4,11 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.function.Function;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 
 /**
@@ -49,13 +49,16 @@ public class MergeWithCacheIterator<K, V> implements PairIterator<K, V> {
             final TypeDescriptor<V> valueTypeDescriptor,
             final List<K> sortedKeysFromCache,
             final Function<K, V> cacheValueGetter) {
-        this.mainIterator = Objects.requireNonNull(mainIterator);
-        this.cacheKeyIterator = Objects.requireNonNull(sortedKeysFromCache)
+        this.mainIterator = Vldtn.requireNonNull(mainIterator, "mainIterator");
+        this.cacheKeyIterator = Vldtn
+                .requireNonNull(sortedKeysFromCache, "sortedKeysFromCache")
                 .iterator();
-        this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
-        Objects.requireNonNull(keyTypeDescriptor);
+        this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
+                "valueTypeDescriptor");
+        Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
         this.keyComparator = keyTypeDescriptor.getComparator();
-        this.cacheValueGetter = Objects.requireNonNull(cacheValueGetter);
+        this.cacheValueGetter = Vldtn.requireNonNull(cacheValueGetter,
+                "cacheValueGetter");
 
         nextMainIterator();
         nextCacheIterator();

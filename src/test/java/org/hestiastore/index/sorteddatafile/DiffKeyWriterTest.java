@@ -79,20 +79,22 @@ class DiffKeyWriterTest {
     @Test
     void test_constructor_convertorToBytes_is_null() {
         final Comparator<Integer> comparator = Comparator.naturalOrder();
-        final Exception e = assertThrows(NullPointerException.class,
+        final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> new DiffKeyWriter<Integer>(null, comparator));
 
-        assertEquals("Convertor to bytes is null", e.getMessage());
+        assertEquals("Property 'convertorToBytes' must not be null.",
+                e.getMessage());
     }
 
     @Test
     void test_constructor_comparator_is_null() {
         final ConvertorToBytes<Integer> convertorToBytes = tdi
                 .getConvertorToBytes();
-        final Exception e = assertThrows(NullPointerException.class,
+        final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> new DiffKeyWriter<Integer>(convertorToBytes, null));
 
-        assertEquals("Key comparator can't be null", e.getMessage());
+        assertEquals("Property 'keyComparator' must not be null.",
+                e.getMessage());
     }
 
     @Test

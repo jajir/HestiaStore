@@ -1,9 +1,9 @@
 package org.hestiastore.index.sorteddatafile;
 
 import java.util.Comparator;
-import java.util.Objects;
 
 import org.hestiastore.index.Pair;
+import org.hestiastore.index.Vldtn;
 
 /**
  * Allows to compare pairs by key.
@@ -18,8 +18,8 @@ public class PairComparator<K, V> implements Comparator<Pair<K, V>> {
     private final Comparator<? super K> keyComparator;
 
     public PairComparator(final Comparator<? super K> keyComparator) {
-        this.keyComparator = Objects.requireNonNull(keyComparator,
-                "Key comparator  must not be null");
+        this.keyComparator = Vldtn.requireNonNull(keyComparator,
+                "keyComparator");
     }
 
     @Override
