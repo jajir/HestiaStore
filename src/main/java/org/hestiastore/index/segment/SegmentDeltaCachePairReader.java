@@ -1,10 +1,10 @@
 package org.hestiastore.index.segment;
 
 import java.util.Iterator;
-import java.util.Objects;
 
 import org.hestiastore.index.CloseablePairReader;
 import org.hestiastore.index.Pair;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.UniqueCache;
 
 /**
@@ -17,7 +17,7 @@ public class SegmentDeltaCachePairReader<K, V>
     private final Iterator<K> cacheKeyIterator;
 
     SegmentDeltaCachePairReader(final UniqueCache<K, V> cache) {
-        this.cache = Objects.requireNonNull(cache);
+        this.cache = Vldtn.requireNonNull(cache, "cache");
         this.cacheKeyIterator = cache.getSortedKeys().iterator();
     }
 

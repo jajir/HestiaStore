@@ -1,6 +1,6 @@
 package org.hestiastore.index.segment;
 
-import java.util.Objects;
+import org.hestiastore.index.Vldtn;
 
 public class SegmentIndexSearcherSeekSupplier<K, V>
         implements SegmentIndexSearcherSupplier<K, V> {
@@ -10,8 +10,8 @@ public class SegmentIndexSearcherSeekSupplier<K, V>
 
     SegmentIndexSearcherSeekSupplier(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf) {
-        this.segmentFiles = Objects.requireNonNull(segmentFiles);
-        this.segmentConf = Objects.requireNonNull(segmentConf);
+        this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
+        this.segmentConf = Vldtn.requireNonNull(segmentConf, "segmentConf");
     }
 
     @Override

@@ -57,7 +57,7 @@ class SegmentDeltaCachePairReaderTest {
     @SuppressWarnings("resource")
     @Test
     void test_constructor_cache_is_null() {
-        assertThrows(NullPointerException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             new SegmentDeltaCachePairReader<>(null);
         });
     }

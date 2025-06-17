@@ -1,9 +1,8 @@
 package org.hestiastore.index.segment;
 
-import java.util.Objects;
-
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.Vldtn;
 
 /**
  * Allows to add data to segment. When searcher is in memory and number of added
@@ -27,9 +26,10 @@ public class SegmentWriter<K, V> implements PairWriter<K, V> {
 
     public SegmentWriter(final SegmentCompacter<K, V> segmentCompacter,
             final SegmentDeltaCacheController<K, V> deltaCacheController) {
-        this.segmentCompacter = Objects.requireNonNull(segmentCompacter);
-        this.deltaCacheController = Objects
-                .requireNonNull(deltaCacheController);
+        this.segmentCompacter = Vldtn.requireNonNull(segmentCompacter,
+                "segmentCompacter");
+        this.deltaCacheController = Vldtn.requireNonNull(deltaCacheController,
+                "deltaCacheController");
     }
 
     @Override

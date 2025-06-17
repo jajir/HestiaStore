@@ -2,12 +2,12 @@ package org.hestiastore.index.sorteddatafile;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import org.hestiastore.index.FileNameUtil;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.PairIteratorWithCurrent;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.UniqueCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.unsorteddatafile.UnsortedDataFile;
@@ -43,13 +43,13 @@ public class DataFileSorter<K, V> {
             final Merger<K, V> merger,
             final TypeDescriptor<K> keyTypeDescriptor,
             final long maxNumberOfKeysInMemory) {
-        this.unsortedDataFile = Objects.requireNonNull(unsortedDataFile,
-                "unsortedDataFile must not be null");
-        this.targetSortedDataFile = Objects.requireNonNull(sortedDataFile,
-                "sortedDataFile must not be null");
-        this.merger = Objects.requireNonNull(merger, "merger must not be null");
-        this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor,
-                "keyTypeDescriptor must not be null");
+        this.unsortedDataFile = Vldtn.requireNonNull(unsortedDataFile,
+                "unsortedDataFile");
+        this.targetSortedDataFile = Vldtn.requireNonNull(sortedDataFile,
+                "sortedDataFile");
+        this.merger = Vldtn.requireNonNull(merger, "merger");
+        this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
+                "keyTypeDescriptor");
         this.maxNumberOfKeysInMemory = maxNumberOfKeysInMemory;
     }
 

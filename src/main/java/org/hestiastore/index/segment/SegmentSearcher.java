@@ -1,8 +1,7 @@
 package org.hestiastore.index.segment;
 
-import java.util.Objects;
-
 import org.hestiastore.index.CloseableResource;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilter;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.scarceindex.ScarceIndex;
@@ -27,12 +26,12 @@ public class SegmentSearcher<K, V> implements CloseableResource {
     public SegmentSearcher(final TypeDescriptor<V> valueTypeDescriptor,
             final SegmentIndexSearcher<K, V> segmentIndexSearcher,
             final SegmentDataProvider<K, V> segmentDataProvider) {
-        this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
-        this.segmentCacheDataProvider = Objects.requireNonNull(
-                segmentDataProvider,
-                "Segment cached data provider is required");
-        this.segmentIndexSearcher = Objects
-                .requireNonNull(segmentIndexSearcher);
+        this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
+                "valueTypeDescriptor");
+        this.segmentCacheDataProvider = Vldtn
+                .requireNonNull(segmentDataProvider, "segmentDataProvider");
+        this.segmentIndexSearcher = Vldtn.requireNonNull(segmentIndexSearcher,
+                "segmentIndexSearcher");
     }
 
     private SegmentDeltaCache<K, V> getDeltaCache() {

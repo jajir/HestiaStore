@@ -1,10 +1,10 @@
 package org.hestiastore.index.segment;
 
 import java.util.Comparator;
-import java.util.Objects;
 
 import org.hestiastore.index.CloseablePairReader;
 import org.hestiastore.index.Pair;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 
 /**
@@ -25,10 +25,12 @@ public class SegmentIndexSearcherDefault<K, V>
     SegmentIndexSearcherDefault(final SortedDataFile<K, V> segmentIndexFile,
             final int maxNumberOfKeysInIndexPage,
             final Comparator<K> keyTypeComparator) {
-        this.segmentIndexFile = Objects.requireNonNull(segmentIndexFile);
-        this.maxNumberOfKeysInIndexPage = Objects
-                .requireNonNull(maxNumberOfKeysInIndexPage);
-        this.keyTypeComparator = Objects.requireNonNull(keyTypeComparator);
+        this.segmentIndexFile = Vldtn.requireNonNull(segmentIndexFile,
+                "segmentIndexFile");
+        this.maxNumberOfKeysInIndexPage = Vldtn.requireNonNull(
+                maxNumberOfKeysInIndexPage, "maxNumberOfKeysInIndexPage");
+        this.keyTypeComparator = Vldtn.requireNonNull(keyTypeComparator,
+                "keyTypeComparator");
     }
 
     @Override

@@ -1,13 +1,12 @@
 package org.hestiastore.index.segment;
 
-import java.util.Objects;
-
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.OptimisticLock;
 import org.hestiastore.index.OptimisticLockObjectVersionProvider;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.PairIteratorWithLock;
 import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.Vldtn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,23 +41,22 @@ public class Segment<K, V>
             final SegmentDataProvider<K, V> segmentDataProvider,
             final SegmentSearcher<K, V> segmentSearcher,
             final SegmentManager<K, V> segmentManager) {
-        this.segmentConf = Objects.requireNonNull(segmentConf);
-        this.segmentFiles = Objects.requireNonNull(segmentFiles);
+        this.segmentConf = Vldtn.requireNonNull(segmentConf, "segmentConf");
+        this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
         logger.debug("Initializing segment '{}'", segmentFiles.getId());
-        this.versionController = Objects.requireNonNull(versionController,
-                "Version controller is required");
-        Objects.requireNonNull(segmentDataProvider,
-                "Segment cached data provider is required");
-        this.segmentPropertiesManager = Objects.requireNonNull(
-                segmentPropertiesManager,
-                "Segment properties manager is required");
+        this.versionController = Vldtn.requireNonNull(versionController,
+                "versionController");
+        Vldtn.requireNonNull(segmentDataProvider, "segmentDataProvider");
+        this.segmentPropertiesManager = Vldtn.requireNonNull(
+                segmentPropertiesManager, "segmentPropertiesManager");
         deltaCacheController = new SegmentDeltaCacheController<>(segmentFiles,
                 segmentPropertiesManager, segmentDataProvider);
         this.segmentCompacter = new SegmentCompacter<>(this, segmentFiles,
                 segmentConf, versionController, segmentPropertiesManager);
-        this.segmentSearcher = Objects.requireNonNull(segmentSearcher);
-        this.segmentManager = Objects.requireNonNull(segmentManager,
-                "Segment manager is required");
+        this.segmentSearcher = Vldtn.requireNonNull(segmentSearcher,
+                "segmentSearcher");
+        this.segmentManager = Vldtn.requireNonNull(segmentManager,
+                "segmentManager");
     }
 
     public SegmentStats getStats() {

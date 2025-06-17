@@ -1,9 +1,8 @@
 package org.hestiastore.index.scarceindex;
 
-import java.util.Objects;
-
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.sorteddatafile.SortedDataFileWriter;
 
 /**
@@ -17,8 +16,8 @@ public class ScarceIndexWriter<K> implements PairWriter<K, Integer> {
 
     ScarceIndexWriter(final ScarceIndex<K> scarceIndex,
             final SortedDataFileWriter<K, Integer> writer) {
-        this.scarceIndex = Objects.requireNonNull(scarceIndex);
-        this.writer = Objects.requireNonNull(writer);
+        this.scarceIndex = Vldtn.requireNonNull(scarceIndex, "scarceIndex");
+        this.writer = Vldtn.requireNonNull(writer, "writer");
     }
 
     @Override

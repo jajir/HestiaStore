@@ -1,8 +1,7 @@
 package org.hestiastore.index.segment;
 
-import java.util.Objects;
-
 import org.hestiastore.index.CloseableResource;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilter;
 import org.hestiastore.index.scarceindex.ScarceIndex;
 
@@ -25,7 +24,8 @@ public final class SegmentDataLazyLoaded<K, V>
 
     public SegmentDataLazyLoaded(
             final SegmentDataSupplier<K, V> segmentDataSupplier) {
-        this.segmentDataSupplier = Objects.requireNonNull(segmentDataSupplier);
+        this.segmentDataSupplier = Vldtn.requireNonNull(segmentDataSupplier,
+                "segmentDataSupplier");
     }
 
     @Override

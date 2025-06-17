@@ -1,7 +1,6 @@
 package org.hestiastore.index.segment;
 
-import java.util.Objects;
-
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.scarceindex.ScarceIndex;
@@ -34,10 +33,12 @@ public final class SegmentFiles<K, V> {
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final int diskIoBufferSize) {
-        this.directory = Objects.requireNonNull(directory);
-        this.id = Objects.requireNonNull(id);
-        this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
-        this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
+        this.directory = Vldtn.requireNonNull(directory, "directory");
+        this.id = Vldtn.requireNonNull(id, "segmentId");
+        this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
+                "keyTypeDescriptor");
+        this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
+                "valueTypeDescriptor");
         this.diskIoBufferSize = diskIoBufferSize;
     }
 

@@ -1,11 +1,11 @@
 package org.hestiastore.index.segment;
 
 import java.util.Comparator;
-import java.util.Objects;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Vldtn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,8 +17,9 @@ public class SegmentConsistencyChecker<K, V> {
 
     SegmentConsistencyChecker(final Segment<K, V> segment,
             final Comparator<K> keyComparator) {
-        this.segment = Objects.requireNonNull(segment);
-        this.keyComparator = Objects.requireNonNull(keyComparator);
+        this.segment = Vldtn.requireNonNull(segment, "segment");
+        this.keyComparator = Vldtn.requireNonNull(keyComparator,
+                "keyComparator");
     }
 
     /**

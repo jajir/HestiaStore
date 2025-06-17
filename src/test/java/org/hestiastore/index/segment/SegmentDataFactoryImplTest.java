@@ -28,10 +28,11 @@ class SegmentDataFactoryImplTest {
 
     @Test
     void test_supplier_is_null() {
-        final Exception e = assertThrows(NullPointerException.class,
+        final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> new SegmentDataFactoryImpl<>(null));
 
-        assertEquals("segmentDataSupplier cannot be null", e.getMessage());
+        assertEquals("Property 'segmentDataSupplier' must not be null.",
+                e.getMessage());
     }
 
 }

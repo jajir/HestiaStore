@@ -1,10 +1,10 @@
 package org.hestiastore.index.segment;
 
 import java.util.List;
-import java.util.Objects;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.UniqueCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
@@ -28,7 +28,7 @@ public final class SegmentDeltaCache<K, V> {
     public SegmentDeltaCache(final TypeDescriptor<K> keyTypeDescriptor,
             final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentPropertiesManager) {
-        this.segmentFiles = Objects.requireNonNull(segmentFiles);
+        this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
         this.cache = UniqueCache.<K, V>builder()
                 .withKeyComparator(keyTypeDescriptor.getComparator())
                 .withSstFile(segmentFiles.getCacheSstFile()).build();
@@ -50,7 +50,7 @@ public final class SegmentDeltaCache<K, V> {
     }
 
     public void put(final Pair<K, V> pair) {
-        Objects.requireNonNull(pair);
+        Vldtn.requireNonNull(pair, "pair");
         cache.put(pair);
     }
 

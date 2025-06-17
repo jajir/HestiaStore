@@ -2,6 +2,7 @@ package org.hestiastore.index.segment;
 
 import java.util.Objects;
 
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilter;
 import org.hestiastore.index.scarceindex.ScarceIndex;
 
@@ -23,8 +24,8 @@ public final class SegmentDataSupplier<K, V> {
     public SegmentDataSupplier(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
             final SegmentPropertiesManager segmentPropertiesManager) {
-        this.segmentFiles = Objects.requireNonNull(segmentFiles);
-        this.segmentConf = Objects.requireNonNull(segmentConf);
+        this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
+        this.segmentConf = Vldtn.requireNonNull(segmentConf, "segmentConf");
         this.segmentPropertiesManager = Objects
                 .requireNonNull(segmentPropertiesManager);
     }

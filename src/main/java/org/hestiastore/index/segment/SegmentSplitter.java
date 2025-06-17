@@ -1,10 +1,9 @@
 package org.hestiastore.index.segment;
 
-import java.util.Objects;
-
 import org.hestiastore.index.F;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Vldtn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,15 +28,16 @@ public class SegmentSplitter<K, V> {
             final SegmentPropertiesManager segmentPropertiesManager,
             final SegmentDeltaCacheController<K, V> deltaCacheController,
             final SegmentManager<K, V> segmentManager) {
-        this.segment = Objects.requireNonNull(segment);
-        this.segmentFiles = Objects.requireNonNull(segmentFiles);
-        this.versionController = Objects.requireNonNull(versionController,
-                "Version controller is required");
-        this.segmentPropertiesManager = Objects
-                .requireNonNull(segmentPropertiesManager);
-        this.deltaCacheController = Objects
-                .requireNonNull(deltaCacheController);
-        this.segmentManager = Objects.requireNonNull(segmentManager);
+        this.segment = Vldtn.requireNonNull(segment, "segment");
+        this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
+        this.versionController = Vldtn.requireNonNull(versionController,
+                "versionController");
+        this.segmentPropertiesManager = Vldtn.requireNonNull(
+                segmentPropertiesManager, "segmentPropertiesManager");
+        this.deltaCacheController = Vldtn.requireNonNull(deltaCacheController,
+                "deltaCacheController");
+        this.segmentManager = Vldtn.requireNonNull(segmentManager,
+                "segmentManager");
     }
 
     private SegmentStats getStats() {
@@ -77,7 +77,7 @@ public class SegmentSplitter<K, V> {
     }
 
     public SegmentSplitterResult<K, V> split(final SegmentId segmentId) {
-        Objects.requireNonNull(segmentId, "Segment id is required");
+        Vldtn.requireNonNull(segmentId, "segmentId");
         logger.debug("Splitting of '{}' started", segmentFiles.getId());
         versionController.changeVersion();
 

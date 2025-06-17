@@ -1,7 +1,6 @@
 package org.hestiastore.index.scarceindex;
 
-import java.util.Objects;
-
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 
@@ -20,17 +19,18 @@ public final class ScarceIndexBuilder<K> {
 
     public ScarceIndexBuilder<K> withKeyTypeDescriptor(
             final TypeDescriptor<K> typeDescriptor) {
-        this.keyTypeDescriptor = Objects.requireNonNull(typeDescriptor);
+        this.keyTypeDescriptor = Vldtn.requireNonNull(typeDescriptor,
+                "keyTypeDescriptor");
         return this;
     }
 
     public ScarceIndexBuilder<K> withDirectory(final Directory directory) {
-        this.directory = Objects.requireNonNull(directory);
+        this.directory = Vldtn.requireNonNull(directory, "directory");
         return this;
     }
 
     public ScarceIndexBuilder<K> withFileName(final String fileName) {
-        this.fileName = Objects.requireNonNull(fileName);
+        this.fileName = Vldtn.requireNonNull(fileName, "fileName");
         return this;
     }
 

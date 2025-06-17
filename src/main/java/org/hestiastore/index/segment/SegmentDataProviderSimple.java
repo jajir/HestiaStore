@@ -1,7 +1,6 @@
 package org.hestiastore.index.segment;
 
-import java.util.Objects;
-
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilter;
 import org.hestiastore.index.scarceindex.ScarceIndex;
 
@@ -21,8 +20,8 @@ public class SegmentDataProviderSimple<K, V>
 
     SegmentDataProviderSimple(
             final SegmentDataFactory<K, V> segmentDataFactory) {
-        this.segmentDataFactory = Objects.requireNonNull(segmentDataFactory,
-                "segmentDataFactory cannot be null");
+        this.segmentDataFactory = Vldtn.requireNonNull(segmentDataFactory,
+                "segmentDataFactory");
     }
 
     @Override

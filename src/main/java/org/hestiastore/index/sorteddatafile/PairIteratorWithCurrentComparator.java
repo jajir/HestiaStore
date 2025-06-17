@@ -1,11 +1,11 @@
 package org.hestiastore.index.sorteddatafile;
 
 import java.util.Comparator;
-import java.util.Objects;
 import java.util.Optional;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIteratorWithCurrent;
+import org.hestiastore.index.Vldtn;
 
 public class PairIteratorWithCurrentComparator<K, V>
         implements Comparator<PairIteratorWithCurrent<K, V>> {
@@ -14,7 +14,8 @@ public class PairIteratorWithCurrentComparator<K, V>
 
     public PairIteratorWithCurrentComparator(
             final Comparator<K> keyComparator) {
-        this.keyComparator = Objects.requireNonNull(keyComparator);
+        this.keyComparator = Vldtn.requireNonNull(keyComparator,
+                "keyComparator");
     }
 
     @Override

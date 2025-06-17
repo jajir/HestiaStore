@@ -1,9 +1,8 @@
 package org.hestiastore.index.segment;
 
-import java.util.Objects;
-
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.UniqueCache;
 import org.hestiastore.index.sorteddatafile.SortedDataFileWriter;
 
@@ -38,14 +37,13 @@ public final class SegmentDeltaCacheWriter<K, V> implements PairWriter<K, V> {
     public SegmentDeltaCacheWriter(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentPropertiesManager,
             final SegmentDataProvider<K, V> segmentCacheDataProvider) {
-        this.segmentPropertiesManager = Objects
-                .requireNonNull(segmentPropertiesManager);
-        this.segmentFiles = Objects.requireNonNull(segmentFiles);
+        this.segmentPropertiesManager = Vldtn.requireNonNull(
+                segmentPropertiesManager, "segmentPropertiesManager");
+        this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
         this.uniqueCache = new UniqueCache<>(
                 segmentFiles.getKeyTypeDescriptor().getComparator());
-        this.segmentCacheDataProvider = Objects.requireNonNull(
-                segmentCacheDataProvider,
-                "Segment cached data provider is required");
+        this.segmentCacheDataProvider = Vldtn.requireNonNull(
+                segmentCacheDataProvider, "segmentCacheDataProvider");
     }
 
     public long getNumberOfKeys() {

@@ -2,9 +2,9 @@ package org.hestiastore.index.segment;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import org.hestiastore.index.FileNameUtil;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.Props;
 
@@ -26,8 +26,8 @@ public class SegmentPropertiesManager {
 
     public SegmentPropertiesManager(final Directory directory,
             final SegmentId id) {
-        Objects.requireNonNull(directory);
-        this.id = Objects.requireNonNull(id);
+        Vldtn.requireNonNull(directory, "directory");
+        this.id = Vldtn.requireNonNull(id, "segmentId");
         this.props = new Props(directory, getPropertiesFilename());
     }
 

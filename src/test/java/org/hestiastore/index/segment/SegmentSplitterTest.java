@@ -94,10 +94,12 @@ class SegmentSplitterTest {
 
     @Test
     void test_split_segmentId_is_null() {
-        final Exception err = assertThrows(NullPointerException.class, () -> {
-            splitter.split(null);
-        });
-        assertEquals("Segment id is required", err.getMessage());
+        final Exception err = assertThrows(IllegalArgumentException.class,
+                () -> {
+                    splitter.split(null);
+                });
+        assertEquals("Property 'segmentId' must not be null.",
+                err.getMessage());
     }
 
     @SuppressWarnings("unchecked")

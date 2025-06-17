@@ -1,11 +1,10 @@
 package org.hestiastore.index.unsorteddatafile;
 
-import java.util.Objects;
-
 import org.hestiastore.index.CloseablePairReader;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.PairIteratorFromReader;
 import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.datatype.TypeWriter;
 import org.hestiastore.index.directory.Directory;
@@ -44,12 +43,12 @@ public class UnsortedDataFile<K, V> {
             final TypeWriter<K> keyWriter, final TypeWriter<V> valueWriter,
             final TypeReader<K> keyReader, final TypeReader<V> valueReader,
             final int diskIoBufferSize) {
-        this.directory = Objects.requireNonNull(directory);
-        this.fileName = Objects.requireNonNull(fileName);
-        this.keyWriter = Objects.requireNonNull(keyWriter);
-        this.valueWriter = Objects.requireNonNull(valueWriter);
-        this.keyReader = Objects.requireNonNull(keyReader);
-        this.valueReader = Objects.requireNonNull(valueReader);
+        this.directory = Vldtn.requireNonNull(directory, "directory");
+        this.fileName = Vldtn.requireNonNull(fileName, "fileName");
+        this.keyWriter = Vldtn.requireNonNull(keyWriter, "keyWriter");
+        this.valueWriter = Vldtn.requireNonNull(valueWriter, "");
+        this.keyReader = Vldtn.requireNonNull(keyReader, "");
+        this.valueReader = Vldtn.requireNonNull(valueReader, "valueReader");
         this.diskIoBufferSize = diskIoBufferSize;
     }
 
@@ -62,7 +61,7 @@ public class UnsortedDataFile<K, V> {
     }
 
     public PairWriter<K, V> openWriter(final Access access) {
-        Objects.requireNonNull(access);
+        Vldtn.requireNonNull(access, "access");
         Access used = null;
         if (directory.isFileExists(fileName)) {
             used = access;
