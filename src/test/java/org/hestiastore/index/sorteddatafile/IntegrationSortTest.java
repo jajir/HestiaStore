@@ -104,24 +104,6 @@ class IntegrationSortTest extends AbstractSegmentTest {
     }
 
     @Test
-    void test_sort_100_unique_keys_sorted() {
-        final List<Pair<String, Integer>> data = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
-            data.add(Pair.of("key" + FileNameUtil.getPaddedId(i, 3), i));
-        }
-        final List<Pair<String, Integer>> shufledData = new ArrayList<>(data);
-        Collections.shuffle(shufledData, RANDOM);
-
-        writePairs(unsorted, shufledData);
-
-        sorter.sort();
-
-        verifyIteratorData(sdf.openIterator(), data);
-
-        verifyNumberOfFiles(dir, 2);
-    }
-
-    @Test
     void test_sort_100_unique_keys_shufled() {
         final List<Pair<String, Integer>> data = new ArrayList<>();
         for (int i = 0; i < 100; i++) {

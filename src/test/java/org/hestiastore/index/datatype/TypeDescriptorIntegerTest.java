@@ -33,7 +33,7 @@ class TypeDescriptorIntegerTest {
     @Test
     void test_compare() {
         final Comparator<Integer> cmp = ti.getComparator();
-        assertEquals(cmp.compare(0, 0), 0);
+        assertEquals(0, cmp.compare(0, 0));
         assertTrue(cmp.compare(3, 12) < 0);
         assertTrue(cmp.compare(3, 2) > 0);
     }

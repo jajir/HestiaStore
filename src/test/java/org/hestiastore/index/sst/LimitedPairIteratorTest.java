@@ -213,10 +213,11 @@ class LimitedPairIteratorTest {
     void test_unordered_min_max() {
         final List<Pair<Integer, String>> list = Collections.emptyList();
         final Comparator<Integer> comparator = tdi.getComparator();
+        final PairIteratorList<Integer, String> pairIteratorList = new PairIteratorList<>(
+                list);
         assertThrows(IllegalArgumentException.class, () -> {
-            new LimitedPairIterator<Integer, String>(
-                    new PairIteratorList<Integer, String>(list), comparator, 10,
-                    5);
+            new LimitedPairIterator<Integer, String>(pairIteratorList,
+                    comparator, 10, 5);
         }, "Min key '10' have to be smalles than max key '5'.");
     }
 }
