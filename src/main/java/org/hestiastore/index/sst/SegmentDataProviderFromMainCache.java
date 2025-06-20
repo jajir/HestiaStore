@@ -1,8 +1,8 @@
 package org.hestiastore.index.sst;
 
-import java.util.Objects;
 import java.util.Optional;
 
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilter;
 import org.hestiastore.index.scarceindex.ScarceIndex;
 import org.hestiastore.index.segment.SegmentData;
@@ -21,9 +21,10 @@ public class SegmentDataProviderFromMainCache<K, V>
     SegmentDataProviderFromMainCache(final SegmentId id,
             final SegmentDataCache<K, V> cache,
             final SegmentDataFactory<K, V> segmentDataFactory) {
-        this.id = Objects.requireNonNull(id);
-        this.cache = Objects.requireNonNull(cache);
-        this.segmentDataFactory = Objects.requireNonNull(segmentDataFactory);
+        this.id = Vldtn.requireNonNull(id, "segmentId");
+        this.cache = Vldtn.requireNonNull(cache, "cache");
+        this.segmentDataFactory = Vldtn.requireNonNull(segmentDataFactory,
+                "segmentDataFactory");
     }
 
     private SegmentData<K, V> getSegmentData() {

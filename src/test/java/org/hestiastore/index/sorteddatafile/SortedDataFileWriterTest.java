@@ -34,27 +34,29 @@ class SortedDataFileWriterTest {
 
     @Test
     void test_constructor_valueWriter_is_null() {
-        final Exception e = assertThrows(NullPointerException.class,
+        final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> new SortedDataFileWriter<>(null, fileWriter, stringTd));
 
-        assertEquals("valueWriter is required", e.getMessage());
+        assertEquals("Property 'valueWriter' must not be null.",
+                e.getMessage());
     }
 
     @Test
     void test_constructor_writer_is_null() {
-        final Exception e = assertThrows(NullPointerException.class,
+        final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> new SortedDataFileWriter<>(valueWriter, null, stringTd));
 
-        assertEquals("fileWriter is required", e.getMessage());
+        assertEquals("Property 'fileWriter' must not be null.", e.getMessage());
     }
 
     @Test
     void test_constructor_keyTypeDescriptor_is_null() {
-        final Exception e = assertThrows(NullPointerException.class,
+        final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> new SortedDataFileWriter<>(valueWriter, fileWriter,
                         null));
 
-        assertEquals("keyTypeDescriptor is required", e.getMessage());
+        assertEquals("Property 'keyTypeDescriptor' must not be null.",
+                e.getMessage());
     }
 
     @Test

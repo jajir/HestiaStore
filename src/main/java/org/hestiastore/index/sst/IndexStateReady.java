@@ -1,7 +1,6 @@
 package org.hestiastore.index.sst;
 
-import java.util.Objects;
-
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileLock;
 
 public class IndexStateReady<K, V> implements IndexState<K, V> {
@@ -9,7 +8,7 @@ public class IndexStateReady<K, V> implements IndexState<K, V> {
     private final FileLock fileLock;
 
     IndexStateReady(final FileLock fileLock) {
-        this.fileLock = Objects.requireNonNull(fileLock);
+        this.fileLock = Vldtn.requireNonNull(fileLock, "fileLock");
     }
 
     @Override

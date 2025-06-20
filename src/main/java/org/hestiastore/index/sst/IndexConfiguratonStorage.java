@@ -1,7 +1,6 @@
 package org.hestiastore.index.sst;
 
-import java.util.Objects;
-
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilterBuilder;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.Props;
@@ -32,8 +31,7 @@ public class IndexConfiguratonStorage<K, V> {
     private final Directory directory;
 
     IndexConfiguratonStorage(final Directory directory) {
-        this.directory = Objects.requireNonNull(directory,
-                "Directory cannot be null");
+        this.directory = Vldtn.requireNonNull(directory, "directory");
     }
 
     IndexConfiguration<K, V> load() {

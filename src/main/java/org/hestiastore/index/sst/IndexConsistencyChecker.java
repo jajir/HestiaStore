@@ -1,9 +1,9 @@
 package org.hestiastore.index.sst;
 
 import java.util.Comparator;
-import java.util.Objects;
 
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
@@ -29,9 +29,11 @@ public class IndexConsistencyChecker<K, V> {
     IndexConsistencyChecker(final KeySegmentCache<K> keySegmentCache,
             final SegmentManager<K, V> segmentManager,
             final TypeDescriptor<K> keyTypeDescriptor) {
-        this.segmentManager = Objects.requireNonNull(segmentManager);
-        this.keySegmentCache = Objects.requireNonNull(keySegmentCache);
-        Objects.requireNonNull(keyTypeDescriptor);
+        this.segmentManager = Vldtn.requireNonNull(segmentManager,
+                "segmentManager");
+        this.keySegmentCache = Vldtn.requireNonNull(keySegmentCache,
+                "keySegmentCache");
+        Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
         this.keyComparator = keyTypeDescriptor.getComparator();
     }
 

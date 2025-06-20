@@ -1,12 +1,12 @@
 package org.hestiastore.index.sst;
 
 import java.util.Comparator;
-import java.util.Objects;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.sorteddatafile.PairComparator;
 
@@ -19,10 +19,8 @@ public class PairIteratorToSpliterator<K, V>
 
     public PairIteratorToSpliterator(final PairIterator<K, V> pairIterator,
             final TypeDescriptor<K> keyTypeDescriptor) {
-        this.pairIterator = Objects.requireNonNull(pairIterator,
-                "Pair iterator is required");
-        Objects.requireNonNull(keyTypeDescriptor,
-                "Key type descriptor must not be null");
+        this.pairIterator = Vldtn.requireNonNull(pairIterator, "pairIterator");
+        Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
         this.pairComparator = new PairComparator<>(
                 keyTypeDescriptor.getComparator());
     }

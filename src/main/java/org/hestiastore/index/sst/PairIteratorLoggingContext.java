@@ -1,9 +1,8 @@
 package org.hestiastore.index.sst;
 
-import java.util.Objects;
-
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Vldtn;
 import org.slf4j.MDC;
 
 public class PairIteratorLoggingContext<K, V> implements PairIterator<K, V> {
@@ -13,10 +12,8 @@ public class PairIteratorLoggingContext<K, V> implements PairIterator<K, V> {
 
     PairIteratorLoggingContext(final PairIterator<K, V> pairIterator,
             final IndexConfiguration<K, V> indexConf) {
-        this.pairIterator = Objects.requireNonNull(pairIterator,
-                "Pair iterator cannot be null");
-        this.indexConf = Objects.requireNonNull(indexConf,
-                "Index configuration cannot be null");
+        this.pairIterator = Vldtn.requireNonNull(pairIterator, "pairIterator");
+        this.indexConf = Vldtn.requireNonNull(indexConf, "indexConf");
     }
 
     @Override

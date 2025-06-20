@@ -1,7 +1,6 @@
 package org.hestiastore.index.sst;
 
-import java.util.Objects;
-
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileLock;
 
@@ -12,7 +11,7 @@ public final class IndexStateNew<K, V> implements IndexState<K, V> {
     private final FileLock fileLock;
 
     IndexStateNew(final Directory directory) {
-        this.fileLock = Objects.requireNonNull(directory)
+        this.fileLock = Vldtn.requireNonNull(directory, "directory")
                 .getLock(LOCK_FILE_NAME);
         if (fileLock.isLocked()) {
             throw new IllegalStateException(

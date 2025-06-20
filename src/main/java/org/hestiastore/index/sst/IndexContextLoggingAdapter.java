@@ -1,9 +1,9 @@
 package org.hestiastore.index.sst;
 
-import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.Pair;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.log.LoggedKey;
 import org.hestiastore.index.unsorteddatafile.UnsortedDataFileStreamer;
 import org.slf4j.MDC;
@@ -15,9 +15,8 @@ public class IndexContextLoggingAdapter<K, V> implements Index<K, V> {
 
     IndexContextLoggingAdapter(final IndexConfiguration<K, V> indexConf,
             final Index<K, V> index) {
-        this.indexConf = Objects.requireNonNull(indexConf,
-                "Index configuration cannot be null");
-        this.index = Objects.requireNonNull(index, "Index cannot be null");
+        this.indexConf = Vldtn.requireNonNull(indexConf, "indexConfiguration");
+        this.index = Vldtn.requireNonNull(index, "index");
     }
 
     private void setContext() {

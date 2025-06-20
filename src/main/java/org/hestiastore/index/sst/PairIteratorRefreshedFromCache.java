@@ -1,10 +1,10 @@
 package org.hestiastore.index.sst;
 
 import java.util.NoSuchElementException;
-import java.util.Objects;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.UniqueCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
 
@@ -19,9 +19,10 @@ public class PairIteratorRefreshedFromCache<K, V>
     PairIteratorRefreshedFromCache(final PairIterator<K, V> pairIterator,
             final UniqueCache<K, V> cache,
             final TypeDescriptor<V> valueTypeDescriptor) {
-        this.pairIterator = Objects.requireNonNull(pairIterator);
-        this.cache = Objects.requireNonNull(cache);
-        this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
+        this.pairIterator = Vldtn.requireNonNull(pairIterator, "pairIterator");
+        this.cache = Vldtn.requireNonNull(cache, "cache");
+        this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
+                "valueTypeDescriptor");
         currentPair = readNext();
     }
 

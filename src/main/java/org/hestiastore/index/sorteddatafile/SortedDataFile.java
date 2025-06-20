@@ -1,12 +1,11 @@
 package org.hestiastore.index.sorteddatafile;
 
-import java.util.Objects;
-
 import org.hestiastore.index.CloseablePairReader;
 import org.hestiastore.index.PairIteratorFromReader;
 import org.hestiastore.index.PairIteratorWithCurrent;
 import org.hestiastore.index.PairReaderEmpty;
 import org.hestiastore.index.PairSeekableReader;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileWriter;
@@ -31,10 +30,12 @@ public class SortedDataFile<K, V> {
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final int diskIoBufferSize) {
-        this.directory = Objects.requireNonNull(directory);
-        this.fileName = Objects.requireNonNull(fileName);
-        this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
-        this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
+        this.directory = Vldtn.requireNonNull(directory, "directory");
+        this.fileName = Vldtn.requireNonNull(fileName, "fileName");
+        this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
+                "keyTypeDescriptor");
+        this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
+                "valueTypeDescriptor");
         this.diskIoBufferSize = diskIoBufferSize;
     }
 

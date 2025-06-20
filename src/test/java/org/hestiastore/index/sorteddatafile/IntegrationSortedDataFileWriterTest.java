@@ -79,7 +79,8 @@ class IntegrationSortedDataFileWriterTest {
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
         try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(
                 byteTd.getTypeWriter(), fileWriter, stringTd)) {
-            assertThrows(NullPointerException.class, () -> siw.write(P_NULL_0));
+            assertThrows(IllegalArgumentException.class,
+                    () -> siw.write(P_NULL_0));
         }
 
     }

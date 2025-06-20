@@ -1,7 +1,6 @@
 package org.hestiastore.index.unsorteddatafile;
 
-import java.util.Objects;
-
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.datatype.TypeWriter;
 import org.hestiastore.index.directory.Directory;
@@ -26,36 +25,36 @@ public class UnsortedDataFileBuilder<K, V> {
 
     public UnsortedDataFileBuilder<K, V> withDirectory(
             final Directory directory) {
-        this.directory = Objects.requireNonNull(directory);
+        this.directory = Vldtn.requireNonNull(directory, "directory");
         return this;
     }
 
-    public UnsortedDataFileBuilder<K, V> withFileName(final String file) {
-        this.fileName = Objects.requireNonNull(file);
+    public UnsortedDataFileBuilder<K, V> withFileName(final String fileName) {
+        this.fileName = Vldtn.requireNonNull(fileName, "fileName");
         return this;
     }
 
     public UnsortedDataFileBuilder<K, V> withKeyWriter(
             final TypeWriter<K> keyWriter) {
-        this.keyWriter = Objects.requireNonNull(keyWriter);
+        this.keyWriter = Vldtn.requireNonNull(keyWriter, "keyWriter");
         return this;
     }
 
     public UnsortedDataFileBuilder<K, V> withValueWriter(
             final TypeWriter<V> valueWriter) {
-        this.valueWriter = Objects.requireNonNull(valueWriter);
+        this.valueWriter = Vldtn.requireNonNull(valueWriter, "valueWriter");
         return this;
     }
 
     public UnsortedDataFileBuilder<K, V> withKeyReader(
             final TypeReader<K> keyReader) {
-        this.keyReader = Objects.requireNonNull(keyReader);
+        this.keyReader = Vldtn.requireNonNull(keyReader, "keyReader");
         return this;
     }
 
     public UnsortedDataFileBuilder<K, V> withValueReader(
             final TypeReader<V> valueReader) {
-        this.valueReader = Objects.requireNonNull(valueReader);
+        this.valueReader = Vldtn.requireNonNull(valueReader, "valueReader");
         return this;
     }
 

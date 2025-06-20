@@ -2,7 +2,6 @@ package org.hestiastore.index.sst;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
@@ -30,20 +29,20 @@ public class DataTypeDescriptorRegistry {
 
     public static final <T> void addTypeDescriptor(final Class<T> clazz,
             final TypeDescriptor<T> typeDescriptor) {
-        Objects.requireNonNull(clazz);
-        Objects.requireNonNull(typeDescriptor);
+        Vldtn.requireNonNull(clazz, "clazz");
+        Vldtn.requireNonNull(typeDescriptor, "typeDescriptor");
         descriptors.put(clazz, typeDescriptor.getClass().getName());
     }
 
     public static final <T> void addTypeDescriptor(final Class<T> clazz,
             final String typeDescriptor) {
-        Objects.requireNonNull(clazz);
-        Objects.requireNonNull(typeDescriptor);
+        Vldtn.requireNonNull(clazz, "clazz");
+        Vldtn.requireNonNull(typeDescriptor, "typeDescriptor");
         descriptors.put(clazz, typeDescriptor);
     }
 
     public static final <T> String getTypeDescriptor(final Class<T> clazz) {
-        Objects.requireNonNull(clazz);
+        Vldtn.requireNonNull(clazz, "clazz");
         final String typeDescriptor = descriptors.get(clazz);
         if (typeDescriptor == null) {
             throw new IllegalStateException(

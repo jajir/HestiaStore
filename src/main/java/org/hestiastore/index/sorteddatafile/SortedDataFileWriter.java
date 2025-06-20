@@ -1,10 +1,10 @@
 package org.hestiastore.index.sorteddatafile;
 
 import java.util.Comparator;
-import java.util.Objects;
 
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.Pair;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeWriter;
@@ -29,17 +29,13 @@ public class SortedDataFileWriter<K, V> implements CloseableResource {
     public SortedDataFileWriter(final TypeWriter<V> valueWriter,
             final FileWriter fileWriter,
             final TypeDescriptor<K> keyTypeDescriptor) {
-        this.valueWriter = Objects.requireNonNull(valueWriter,
-                "valueWriter is required");
-        this.fileWriter = Objects.requireNonNull(fileWriter,
-                "fileWriter is required");
-        Objects.requireNonNull(keyTypeDescriptor,
-                "keyTypeDescriptor is required");
-        this.keyComparator = Objects.requireNonNull(
-                keyTypeDescriptor.getComparator(), "Comparator is required");
-        this.keyConvertorToBytes = Objects.requireNonNull(
-                keyTypeDescriptor.getConvertorToBytes(),
-                "Convertor to bytes is required");
+        this.valueWriter = Vldtn.requireNonNull(valueWriter, "valueWriter");
+        this.fileWriter = Vldtn.requireNonNull(fileWriter, "fileWriter");
+        Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
+        this.keyComparator = Vldtn.requireNonNull(
+                keyTypeDescriptor.getComparator(), "keyComparator");
+        this.keyConvertorToBytes = Vldtn.requireNonNull(
+                keyTypeDescriptor.getConvertorToBytes(), "keyConvertorToBytes");
         this.diffKeyWriter = makeDiffKeyWriter();
         position = 0;
     }
@@ -98,9 +94,9 @@ public class SortedDataFileWriter<K, V> implements CloseableResource {
      * @param pair required key-value pair
      */
     public void write(final Pair<K, V> pair) {
-        Objects.requireNonNull(pair, "pair is required");
-        Objects.requireNonNull(pair.getKey(), "key is required");
-        Objects.requireNonNull(pair.getValue(), "value is required");
+        Vldtn.requireNonNull(pair, "pair");
+        Vldtn.requireNonNull(pair.getKey(), "key");
+        Vldtn.requireNonNull(pair.getValue(), "value");
         verifyKeyOrder(pair.getKey());
 
         put(pair);
@@ -113,9 +109,9 @@ public class SortedDataFileWriter<K, V> implements CloseableResource {
      * @return position where will next data starts
      */
     public long writeFull(final Pair<K, V> pair) {
-        Objects.requireNonNull(pair, "pair is required");
-        Objects.requireNonNull(pair.getKey(), "key is required");
-        Objects.requireNonNull(pair.getValue(), "value is required");
+        Vldtn.requireNonNull(pair, "pair");
+        Vldtn.requireNonNull(pair.getKey(), "key");
+        Vldtn.requireNonNull(pair.getValue(), "value");
         verifyKeyOrder(pair.getKey());
 
         diffKeyWriter = makeDiffKeyWriter();

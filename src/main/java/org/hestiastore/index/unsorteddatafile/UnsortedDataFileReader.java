@@ -1,9 +1,8 @@
 package org.hestiastore.index.unsorteddatafile;
 
-import java.util.Objects;
-
 import org.hestiastore.index.CloseablePairReader;
 import org.hestiastore.index.Pair;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.directory.FileReader;
 
@@ -14,13 +13,12 @@ public class UnsortedDataFileReader<K, V> implements CloseablePairReader<K, V> {
     private final FileReader reader;
 
     UnsortedDataFileReader(final TypeReader<K> keyTypeReader,
-            final TypeReader<V> valueTypeReader, final FileReader reader) {
-        this.keyTypeReader = Objects.requireNonNull(keyTypeReader,
-                "Key type reader can't be null.");
-        this.valueTypeReader = Objects.requireNonNull(valueTypeReader,
-                "Value type reader can't be null.");
-        this.reader = Objects.requireNonNull(reader,
-                "File reader can't be null.");
+            final TypeReader<V> valueTypeReader, final FileReader fileReader) {
+        this.keyTypeReader = Vldtn.requireNonNull(keyTypeReader,
+                "keyTypeReader");
+        this.valueTypeReader = Vldtn.requireNonNull(valueTypeReader,
+                "valueTypeReader");
+        this.reader = Vldtn.requireNonNull(fileReader, "fileReader");
     }
 
     @Override

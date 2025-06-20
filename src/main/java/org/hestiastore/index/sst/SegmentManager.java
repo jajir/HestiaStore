@@ -2,8 +2,8 @@ package org.hestiastore.index.sst;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.Segment;
@@ -31,15 +31,18 @@ public class SegmentManager<K, V> {
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
             final SegmentDataCache<K, V> segmentDataCache) {
-        this.directory = Objects.requireNonNull(directory);
-        this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
-        this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
-        this.conf = Objects.requireNonNull(conf);
-        this.segmentDataCache = Objects.requireNonNull(segmentDataCache);
+        this.directory = Vldtn.requireNonNull(directory, "directory");
+        this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
+                "keyTypeDescriptor");
+        this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
+                "valueTypeDescriptor");
+        this.conf = Vldtn.requireNonNull(conf, "conf");
+        this.segmentDataCache = Vldtn.requireNonNull(segmentDataCache,
+                "segmentDataCache");
     }
 
     public Segment<K, V> getSegment(final SegmentId segmentId) {
-        Objects.requireNonNull(segmentId, "Segment id is required");
+        Vldtn.requireNonNull(segmentId, "segmentId");
         Segment<K, V> out = segments.get(segmentId);
         if (out == null) {
             out = instantiateSegment(segmentId);
@@ -49,7 +52,7 @@ public class SegmentManager<K, V> {
     }
 
     private Segment<K, V> instantiateSegment(final SegmentId segmentId) {
-        Objects.requireNonNull(segmentId, "Segment id is required");
+        Vldtn.requireNonNull(segmentId, "segmentId");
 
         SegmentConf segmentConf = new SegmentConf(
                 conf.getMaxNumberOfKeysInSegmentCache(),
