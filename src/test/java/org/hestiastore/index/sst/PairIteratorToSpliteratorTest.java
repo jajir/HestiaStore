@@ -27,18 +27,20 @@ class PairIteratorToSpliteratorTest {
 
     @Test
     void test_required_pairIterator() {
-        final Exception e = assertThrows(NullPointerException.class,
+        final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> new PairIteratorToSpliterator<>(null, STRING_TD));
 
-        assertEquals("Pair iterator is required", e.getMessage());
+        assertEquals("Property 'pairIterator' must not be null.",
+                e.getMessage());
     }
 
     @Test
     void test_required_keyDescriptor() {
-        final Exception e = assertThrows(NullPointerException.class,
+        final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> new PairIteratorToSpliterator<>(pairIterator, null));
 
-        assertEquals("Key type descriptor must not be null", e.getMessage());
+        assertEquals("Property 'keyTypeDescriptor' must not be null.",
+                e.getMessage());
     }
 
     @Test

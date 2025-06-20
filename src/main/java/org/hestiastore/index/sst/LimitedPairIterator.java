@@ -2,10 +2,10 @@ package org.hestiastore.index.sst;
 
 import java.util.Comparator;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Vldtn;
 
 public final class LimitedPairIterator<K, V> implements PairIterator<K, V> {
 
@@ -18,10 +18,11 @@ public final class LimitedPairIterator<K, V> implements PairIterator<K, V> {
 
     LimitedPairIterator(final PairIterator<K, V> iterator,
             final Comparator<K> keyComparator, final K minKey, final K maxKey) {
-        this.iterator = Objects.requireNonNull(iterator);
-        this.keyComparator = Objects.requireNonNull(keyComparator);
-        this.minKey = Objects.requireNonNull(minKey);
-        this.maxKey = Objects.requireNonNull(maxKey);
+        this.iterator = Vldtn.requireNonNull(iterator, "iterator");
+        this.keyComparator = Vldtn.requireNonNull(keyComparator,
+                "keyComparator");
+        this.minKey = Vldtn.requireNonNull(minKey, "minKey");
+        this.maxKey = Vldtn.requireNonNull(maxKey, "");
         if (keyComparator.compare(minKey, maxKey) > 0) {
             throw new IllegalArgumentException(String.format(
                     "Min key '%s' have to be smalles than max key '%s'.",

@@ -1,10 +1,9 @@
 package org.hestiastore.index.sst;
 
-import java.util.Objects;
-
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.PairReader;
+import org.hestiastore.index.Vldtn;
 
 /**
  * Convert PairIterator to PairReader.
@@ -17,8 +16,7 @@ public class PairReaderFromIterator<K, V> implements PairReader<K, V> {
     private final PairIterator<K, V> pairIterator;
 
     PairReaderFromIterator(final PairIterator<K, V> pairIterator) {
-        this.pairIterator = Objects.requireNonNull(pairIterator,
-                "Pair iterator cannot be null");
+        this.pairIterator = Vldtn.requireNonNull(pairIterator, "pairIterator");
     }
 
     @Override

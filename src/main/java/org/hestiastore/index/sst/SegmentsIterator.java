@@ -2,10 +2,10 @@ package org.hestiastore.index.sst;
 
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.slf4j.Logger;
@@ -34,8 +34,9 @@ class SegmentsIterator<K, V> implements PairIterator<K, V> {
 
     SegmentsIterator(final List<SegmentId> ids,
             final SegmentManager<K, V> segmentManager) {
-        this.segmentManager = Objects.requireNonNull(segmentManager);
-        this.ids = Objects.requireNonNull(ids);
+        this.segmentManager = Vldtn.requireNonNull(segmentManager,
+                "segmentManager");
+        this.ids = Vldtn.requireNonNull(ids, "ids");
         nextSegmentIterator();
     }
 

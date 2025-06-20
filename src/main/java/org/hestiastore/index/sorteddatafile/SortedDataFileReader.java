@@ -1,9 +1,8 @@
 package org.hestiastore.index.sorteddatafile;
 
-import java.util.Objects;
-
 import org.hestiastore.index.CloseablePairReader;
 import org.hestiastore.index.Pair;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.directory.FileReader;
 
@@ -15,9 +14,9 @@ public class SortedDataFileReader<K, V> implements CloseablePairReader<K, V> {
 
     SortedDataFileReader(final TypeReader<K> keyReader,
             final TypeReader<V> valueReader, final FileReader reader) {
-        this.keyTypeReader = Objects.requireNonNull(keyReader);
-        this.valueTypeReader = Objects.requireNonNull(valueReader);
-        this.reader = Objects.requireNonNull(reader);
+        this.keyTypeReader = Vldtn.requireNonNull(keyReader, "keyReader");
+        this.valueTypeReader = Vldtn.requireNonNull(valueReader, "valueReader");
+        this.reader = Vldtn.requireNonNull(reader, "reader");
     }
 
     public void skip(final long position) {

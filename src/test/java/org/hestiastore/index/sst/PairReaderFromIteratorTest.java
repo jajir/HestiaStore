@@ -22,10 +22,11 @@ class PairReaderFromIteratorTest {
 
     @Test
     void test_iteratorIsRequired() {
-        final Exception e = assertThrows(NullPointerException.class,
+        final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> new PairReaderFromIterator<String, Integer>(null));
 
-        assertEquals("Pair iterator cannot be null", e.getMessage());
+        assertEquals("Property 'pairIterator' must not be null.",
+                e.getMessage());
 
     }
 

@@ -1,10 +1,10 @@
 package org.hestiastore.index.sst;
 
-import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Vldtn;
 
 public class PairIteratorSynchronized<K, V> implements PairIterator<K, V> {
 
@@ -13,8 +13,8 @@ public class PairIteratorSynchronized<K, V> implements PairIterator<K, V> {
 
     PairIteratorSynchronized(final PairIterator<K, V> iterator,
             final ReentrantLock lock) {
-        this.iterator = Objects.requireNonNull(iterator);
-        this.lock = Objects.requireNonNull(lock);
+        this.iterator = Vldtn.requireNonNull(iterator, "iterator");
+        this.lock = Vldtn.requireNonNull(lock, "lock");
     }
 
     @Override

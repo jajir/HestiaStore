@@ -2,11 +2,11 @@ package org.hestiastore.index.sst;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import org.hestiastore.index.F;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.slf4j.Logger;
@@ -28,12 +28,14 @@ public class CompactSupport<K, V> {
 
     CompactSupport(final SegmentManager<K, V> segmentManager,
             final KeySegmentCache<K> keySegmentCache) {
-        this.segmentManager = Objects.requireNonNull(segmentManager);
-        this.keySegmentCache = Objects.requireNonNull(keySegmentCache);
+        this.segmentManager = Vldtn.requireNonNull(segmentManager,
+                "segmentManager");
+        this.keySegmentCache = Vldtn.requireNonNull(keySegmentCache,
+                "keySegmentCache");
     }
 
     public void compact(final Pair<K, V> pair) {
-        Objects.requireNonNull(pair);
+        Vldtn.requireNonNull(pair, "pair");
         final K segmentKey = pair.getKey();
         final SegmentId segmentId = keySegmentCache
                 .insertKeyToSegment(segmentKey);

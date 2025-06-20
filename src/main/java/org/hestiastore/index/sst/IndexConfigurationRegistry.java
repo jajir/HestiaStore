@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.hestiastore.index.Vldtn;
+
 /**
  * Define contract, that define index configuration.
  * 
@@ -29,7 +31,7 @@ public class IndexConfigurationRegistry {
         }
 
         private Key(final Class<?> clazz, final String memory) {
-            this.clazz = Objects.requireNonNull(clazz);
+            this.clazz = Vldtn.requireNonNull(clazz, "clazz");
             this.memory = memory;
         }
 
@@ -64,15 +66,15 @@ public class IndexConfigurationRegistry {
 
     public static final <T> void addTypeDefaultConf(final Class<T> clazz,
             final IndexConfigurationDefault typeConfiguration) {
-        Objects.requireNonNull(clazz);
-        Objects.requireNonNull(typeConfiguration);
+        Vldtn.requireNonNull(clazz, "clazz");
+        Vldtn.requireNonNull(typeConfiguration, "typeConfiguration");
         add(clazz, null, typeConfiguration);
     }
 
     public static final <T> void add(final Class<T> clazz, final String memory,
             final IndexConfigurationDefault typeConfiguration) {
-        Objects.requireNonNull(clazz);
-        Objects.requireNonNull(typeConfiguration);
+        Vldtn.requireNonNull(clazz, "");
+        Vldtn.requireNonNull(typeConfiguration, "typeConfiguration");
         confs.put(Key.of(clazz, memory), typeConfiguration);
     }
 
@@ -83,7 +85,7 @@ public class IndexConfigurationRegistry {
 
     public static final <T> Optional<IndexConfigurationDefault> get(
             final Class<T> clazz, final String memory) {
-        Objects.requireNonNull(clazz, "Class can't be null");
+        Vldtn.requireNonNull(clazz, "class");
         return Optional.ofNullable(confs.get(Key.of(clazz, memory)));
     }
 

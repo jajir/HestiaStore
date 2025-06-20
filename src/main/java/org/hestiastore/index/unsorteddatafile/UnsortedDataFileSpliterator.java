@@ -1,12 +1,12 @@
 package org.hestiastore.index.unsorteddatafile;
 
-import java.util.Objects;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 
 import org.hestiastore.index.CloseablePairReader;
 import org.hestiastore.index.CloseableSpliterator;
 import org.hestiastore.index.Pair;
+import org.hestiastore.index.Vldtn;
 
 public class UnsortedDataFileSpliterator<K, V>
         implements CloseableSpliterator<K, V> {
@@ -15,7 +15,7 @@ public class UnsortedDataFileSpliterator<K, V>
 
     public UnsortedDataFileSpliterator(
             final CloseablePairReader<K, V> pairReader) {
-        this.pairReader = Objects.requireNonNull(pairReader);
+        this.pairReader = Vldtn.requireNonNull(pairReader, "pairReader");
     }
 
     @Override

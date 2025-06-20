@@ -1,9 +1,8 @@
 package org.hestiastore.index.unsorteddatafile;
 
-import java.util.Objects;
-
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeWriter;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.Directory.Access;
@@ -19,18 +18,19 @@ public class UnsortedDataFileWriter<K, V> implements PairWriter<K, V> {
             final String fileName, final TypeWriter<K> keyWriter,
             final TypeWriter<V> valueWriter, final Access access,
             final int diskIoBufferSize) {
-        this.keyWriter = Objects.requireNonNull(keyWriter);
-        this.valueWriter = Objects.requireNonNull(valueWriter);
-        Objects.requireNonNull(directory);
-        Objects.requireNonNull(fileName);
+        this.keyWriter = Vldtn.requireNonNull(keyWriter, "keyWriter");
+        this.valueWriter = Vldtn.requireNonNull(valueWriter, "valueWriter");
+        Vldtn.requireNonNull(directory, "directory");
+        Vldtn.requireNonNull(fileName, "fileName");
         fileWriter = directory.getFileWriter(fileName, access,
                 diskIoBufferSize);
     }
 
     @Override
     public void put(final Pair<K, V> pair) {
-        Objects.requireNonNull(pair.getKey());
-        Objects.requireNonNull(pair.getValue());
+        Vldtn.requireNonNull(pair, "pair");
+        Vldtn.requireNonNull(pair.getKey(), "key");
+        Vldtn.requireNonNull(pair.getValue(), "value");
         keyWriter.write(fileWriter, pair.getKey());
         valueWriter.write(fileWriter, pair.getValue());
     }

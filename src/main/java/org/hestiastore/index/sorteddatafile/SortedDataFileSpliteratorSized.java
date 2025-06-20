@@ -1,12 +1,12 @@
 package org.hestiastore.index.sorteddatafile;
 
 import java.util.Comparator;
-import java.util.Objects;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 
 import org.hestiastore.index.CloseablePairReader;
 import org.hestiastore.index.Pair;
+import org.hestiastore.index.Vldtn;
 
 public class SortedDataFileSpliteratorSized<K, V>
         implements Spliterator<Pair<K, V>> {
@@ -21,9 +21,9 @@ public class SortedDataFileSpliteratorSized<K, V>
             final CloseablePairReader<K, V> pairReader,
             final PairComparator<K, V> pairComparator,
             final long estimateSize) {
-        this.pairReader = Objects.requireNonNull(pairReader);
-        this.pairComparator = Objects.requireNonNull(pairComparator,
-                "pair comparator must not be null");
+        this.pairReader = Vldtn.requireNonNull(pairReader, "pairReader");
+        this.pairComparator = Vldtn.requireNonNull(pairComparator,
+                "pairComparator");
         this.estimateSize = estimateSize;
     }
 

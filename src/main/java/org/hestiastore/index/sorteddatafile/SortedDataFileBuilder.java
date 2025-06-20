@@ -1,7 +1,6 @@
 package org.hestiastore.index.sorteddatafile;
 
-import java.util.Objects;
-
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 
@@ -21,30 +20,33 @@ public class SortedDataFileBuilder<K, V> {
 
     public SortedDataFileBuilder<K, V> withDirectory(
             final Directory directory) {
-        this.directory = Objects.requireNonNull(directory);
+        this.directory = Vldtn.requireNonNull(directory, "directory");
         return this;
     }
 
-    public SortedDataFileBuilder<K, V> withFileName(final String file) {
-        this.fileName = Objects.requireNonNull(file);
+    public SortedDataFileBuilder<K, V> withFileName(final String fileName) {
+        this.fileName = Vldtn.requireNonNull(fileName, "fileName");
         return this;
     }
 
     public SortedDataFileBuilder<K, V> withDiskIoBufferSize(
             final int diskIoBufferSize) {
-        this.diskIoBufferSize = Objects.requireNonNull(diskIoBufferSize);
+        this.diskIoBufferSize = Vldtn.requireNonNull(diskIoBufferSize,
+                "diskIoBufferSize");
         return this;
     }
 
     public SortedDataFileBuilder<K, V> withKeyTypeDescriptor(
             final TypeDescriptor<K> keyTypeDescriptor) {
-        this.keyTypeDescriptor = Objects.requireNonNull(keyTypeDescriptor);
+        this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
+                "keyTypeDescriptor");
         return this;
     }
 
     public SortedDataFileBuilder<K, V> withValueTypeDescriptor(
             final TypeDescriptor<V> valueTypeDescriptor) {
-        this.valueTypeDescriptor = Objects.requireNonNull(valueTypeDescriptor);
+        this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
+                "valueTypeDescriptor");
         return this;
     }
 

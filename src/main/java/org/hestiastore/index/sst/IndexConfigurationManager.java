@@ -1,6 +1,5 @@
 package org.hestiastore.index.sst;
 
-import java.util.Objects;
 import java.util.Optional;
 
 import org.hestiastore.index.Vldtn;
@@ -14,9 +13,7 @@ public class IndexConfigurationManager<K, V> {
 
     IndexConfigurationManager(
             final IndexConfiguratonStorage<K, V> confStorage) {
-        this.confStorage = Objects.requireNonNull(confStorage,
-                "IndexConfiguratonStorage cannot be null");
-        // private constructor to prevent instantiation
+        this.confStorage = Vldtn.requireNonNull(confStorage, "confStorage");
     }
 
     IndexConfiguration<K, V> loadExisting() {

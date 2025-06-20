@@ -1,8 +1,8 @@
 package org.hestiastore.index.sst;
 
-import java.util.Objects;
 import java.util.Optional;
 
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.Cache;
 import org.hestiastore.index.cache.CacheLru;
 import org.hestiastore.index.segment.SegmentData;
@@ -30,7 +30,7 @@ public class SegmentDataCache<K, V> {
 
     public Optional<SegmentData<K, V>> getSegmentData(
             final SegmentId segmentId) {
-        Objects.requireNonNull(segmentId);
+        Vldtn.requireNonNull(segmentId, "segmentId");
         if (cache.get(segmentId).isEmpty()) {
             return Optional.empty();
         } else {
@@ -43,7 +43,7 @@ public class SegmentDataCache<K, V> {
     }
 
     public void invalidate(final SegmentId id) {
-        Objects.requireNonNull(id);
+        Vldtn.requireNonNull(id, "segmentId");
         cache.ivalidate(id);
     }
 
