@@ -1,62 +1,61 @@
-# Releasing new version
+# 🚀 Releasing a New Version
 
-Simple guide how to make new release.
+This is a step-by-step guide for making a new HestiaStore release.
 
-## Versioning of the project
+## ☝️ Versioning of the project
 
-Project use traditional versioning pattern. Described as Semantic Versioning, It's described at [https://semver.org](https://semver.org). Version number consist of three numbers separated by dots. For example:
+The project uses the traditional versioning pattern known as Semantic Versioning, detailed at [https://semver.org](https://semver.org). The version number consists of three components separated by dots:
 
-```
+```text
 0.3.6
 ```
 
-Meaning of number is:
+Each number has the following meaning:
 
-* `0` - Major project version, project API could be incompatible between two major versions
-* `3` - Minor project version contains changes in features, performance optimizations and small improvement. Minor versions should be compatible.
-* `6` - Bug fixing project release
+* `0` - Major project version. Project API could be incompatible between two major versions.
+* `3` - Minor project version. Contains changes in features, performance optimizations, and small improvements. Minor versions should be compatible.
+* `6` - Patch version. Bug fixing project release.
 
-There are also snapshot versions with version number `0.3.6-SNAPSHOT`. Snapshot versions should not by sotred into maven repository.
+There are also snapshot versions with version number `0.3.6-SNAPSHOT`. Snapshot versions should not be stored in the Maven repository.
 
-## Branching strategy
+## 🕊️ Branching strategy
 
 ![project branching](../images/branching.png)
 
 We use a simplified GitHub Flow:
 
 * `main`: the primary development and release branch. Small changes may be committed directly to `main`, while larger or experimental features must be developed in a separate branch and merged via pull request.
-* Feature branches: created from `main` for larger or isolated changes. Use descriptive names like `feature/compression`, `fix/index-scan`, etc.
+* Feature branches are created from `main` for larger or isolated changes. Use descriptive names like `feature/compression`, `fix/index-scan`, etc.
 
-The previous `devel` branch is no longer used and has been removed.
+The deprecated `devel` branch has been removed and is no longer used.
 
-## How to release new version
+## 🧑‍💻 Release prerequisites
 
-### Prerequisites
+The release will be published to Maven Central. Release configuration secrets are placed at the Maven settings file `~/.m2/settings.xml`.
+Adjust `settings.xml` in `~/.m2/settings.xml` as described in [GitHub's official documentation on how to work with the GitHub Maven repository](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry). Generate a valid token and you are done.
 
- Adjust settings.xml in `~/.m2/settings.xml` like this described at [github official documentation how to work with github maven repository](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry). Get correct token and it's done.
+### Provide correct package signature
 
-## How to make release
-
-Release will appear in maven central.
-
-### Release prerequisities:
-
-1. File `~/m2/settings.xml` should contains:
+In your `~/.m2/settings.xml` file, add the following section:
 
 ```xml
 <settings>
     ...
-	<profile>
-	  <id>release</id>
-	  <properties>
-	    <gpg.executable>gpg</gpg.executable>
-	    <gpg.passphrase>--pgp-password--</gpg.passphrase>
-	  </properties>      
-	</profile>
+   <profile>
+     <id>release</id>
+       <properties>
+       <gpg.executable>gpg</gpg.executable>
+       <gpg.passphrase>--pgp-password--</gpg.passphrase>
+     </properties>      
+   </profile>
     ...
 </settings>
 ```
-2. At [central.sonatype.com](https://central.sonatype.com/) heve to be account with verified namespace `org.hestiastore`. From section `Acount` key and password have to be generated. both should be placed at 
+
+### Setup maven central accout secrets
+
+This provides `org.sonatype.central:central-publishing-maven-plugin` plugin secrets to enable login to the Maven Central account where release data will be placed.
+You must have an account with a verified namespace `org.hestiastore` at [central.sonatype.com](https://central.sonatype.com/). From the `Account` section, generate a key and password. These should be added to:
 
 ```xml
 <settings>
@@ -64,58 +63,63 @@ Release will appear in maven central.
     <servers>
         <server>
             <id>central</id>
-	        <username>------</username>
-	        <password>---------------token---------------</password>
-	    </server>
+           <username>------</username>
+           <password>---------------token---------------</password>
+       </server>
     </servers>
     ...
 </settings>
 ```
 
-### Perform release 
+## Perform release
 
 Perform the following steps to create a new release:
 
-1. Checkout the `main` branch:
+### 1. 🏷️ Checkout the `main` branch
 
-   ```
-   git checkout main
-   ```
+```bash
+git checkout main
+```
 
-2. Set the release version:
+### 2. 🔢 Set the Release Version
 
-   ```
-   mvn versions:set -DnewVersion=0.0.12
-   git commit -am "release: version 0.0.12"
-   ```
+```bash
+mvn versions:set -DnewVersion=0.0.12
+git commit -am "release: version 0.0.12"
+```
 
-3. Tag and push the release:
+### 3. 🏷️ Tag and Push the Release
 
-   ```
-   git tag v0.0.12
-   git push --follow-tags
-   ```
+```bash
+git tag v0.0.12
+git push --follow-tags
+```
 
-4. Deploy the release (can be automated via GitHub Actions or done manually):
+### 4. 🚀 Deploy the Release
 
-   ```
-   mvn deploy -P release
-   ```
+Deploy the release (can be later automated via GitHub Actions or done manually):
 
-5. Bump to next snapshot version:
+```bash
+mvn deploy -P release
+```
 
-   ```
-   mvn versions:set -DnewVersion=0.0.13-SNAPSHOT
-   git commit -am "post-release: bumped to 0.0.13-SNAPSHOT"
-   git push
-   ```
-6. Go to [https://github.com/jajir/HestiaStore/releases](https://github.com/jajir/HestiaStore/releases) and choose `Draft a new release`.
+### 5. 📈 Bump to the Next Snapshot Version
 
-7. From drop down box `target: main` select `recent commits` and select correct one with name `release: version 0.0.12`
+```bash
+mvn versions:set -DnewVersion=0.0.13-SNAPSHOT
+git commit -am "post-release: bumped to 0.0.13-SNAPSHOT"
+git push
+```
 
-8. From frop down box `Choose a tag` enter `release-0.0.12` and click at `Create new tag: release ...`. Now in repo is tag clearly signalizing new release.
+### 6. 📝 Publish the Release on GitHub
 
-9. Release title should be `Release 0.0.3` and in field `Write` enter:
+1. Go to [https://github.com/jajir/HestiaStore/releases](https://github.com/jajir/HestiaStore/releases) and choose `Draft a new release`.
+1. From the drop-down box `target: main`, select `recent commits` and select the correct one with name `release: version 0.0.12`.
+1. From the drop-down box `Choose a tag` enter `release-0.0.12` and click `Create new tag: release ...`. Now in the repo, the tag clearly signals the new release.
+1. Release title should be `Release 0.0.3` and in the `Write` field, use the text generated from the template below:
+1. Press `Publish release`.
+
+Text template:
 
 ````markdown
 Release to maven central:
@@ -132,28 +136,30 @@ Release to maven central:
 
 ````
 
-10. Press `Publish release`.
- 
+### 7. 🎉 Celebrate
+
 That's it — the release is live and development can continue.
 
-## Helpfull commands
+## 🧰 Helpful Commands
 
-### How to use custom settings.xml file
+At the beginning there may be problems. Here are a few tricks that help to gather more information.
 
-```
+### How to Use a Custom settings.xml File
+
+```bash
 mvn --settings ./src/main/settings.xml clean deploy
 ```
 
-### How to use set maven project version
+### How to Set the Maven Project Version
 
-```
+```bash
 mvn versions:set -DnewVersion=1.0.1-SNAPSHOT
 ```
 
 ### Check dependencies
 
-try to update dependencies. Check them with:
+Try to update dependencies. Check them with:
 
-```
+```bash
 mvn versions:display-dependency-updates
 ```
