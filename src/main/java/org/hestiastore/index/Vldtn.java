@@ -23,4 +23,18 @@ public final class Vldtn {
         return object;
     }
 
+    public static int ioBufferSize(final int ioBufferSize) {
+        if (ioBufferSize <= 0) {
+            throw new IllegalArgumentException(
+                    "Property 'ioBufferSize' must be greater than 0");
+        }
+        if (ioBufferSize % 1024 != 0) {
+            throw new IllegalArgumentException(String.format(
+                    "Propety 'ioBufferSize' must be divisible by 1024 "
+                            + "(e.g., 1024, 2048, 4096). Got: '%s'",
+                    ioBufferSize));
+        }
+        return ioBufferSize;
+    }
+
 }
