@@ -43,6 +43,20 @@ class IntegrationIndexIteratorTest {
         assertTrue(true); // Just to ensure no exceptions are thrown
     }
 
+    @Test
+    void test_string_defaults() {
+        final IndexConfiguration<String, String> conf = IndexConfiguration
+                .<String, String>builder()//
+                .withKeyClass(String.class)//
+                .withValueClass(String.class)//
+                .withName("test_index")//
+                .build();
+        final Index<String, String> index = Index.create(directory, conf);
+        index.put("a", "a");
+        index.put("b", "b");
+        index.compact();
+        assertTrue(true); // Just to ensure no exceptions are thrown
+    }
     // TEST nkey class non existing conf
 
     @Test

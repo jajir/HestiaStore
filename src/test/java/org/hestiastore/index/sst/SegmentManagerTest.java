@@ -38,6 +38,7 @@ class SegmentManagerTest {
                 directory, keyTypeDescriptor, valueTypeDescriptor, conf,
                 segmentDataCache);
         when(conf.getMaxNumberOfKeysInSegmentCache()).thenReturn(2L);
+        when(conf.getDiskIoBufferSize()).thenReturn(1024);
 
         final Segment<Integer, String> s1 = segmentManager
                 .getSegment(SegmentId.of(1));

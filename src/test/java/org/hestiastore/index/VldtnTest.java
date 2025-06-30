@@ -30,4 +30,38 @@ class VldtnTest {
                 e.getMessage());
     }
 
+    @Test
+    void test_ioBufferSize() {
+        assertEquals(1024, Vldtn.ioBufferSize(1024));
+    }
+
+    @Test
+    void test_ioBufferSize_less_then_zero() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.ioBufferSize(-1));
+
+        assertEquals("Property 'ioBufferSize' must be greater than 0",
+                e.getMessage());
+    }
+
+    @Test
+    void test_ioBufferSize_is_zero() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.ioBufferSize(0));
+
+        assertEquals("Property 'ioBufferSize' must be greater than 0",
+                e.getMessage());
+    }
+
+    @Test
+    void test_ioBufferSize_dividion_by_1024() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.ioBufferSize(100000));
+
+        assertEquals(
+                "Propety 'ioBufferSize' must be divisible "
+                        + "by 1024 (e.g., 1024, 2048, 4096). Got: '100000'",
+                e.getMessage());
+    }
+
 }
