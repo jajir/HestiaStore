@@ -34,17 +34,17 @@ class SegmentManagerTest {
 
     @Test
     void test_getting_same_segmentId() {
-        final SegmentManager<Integer, String> segmentManager = new SegmentManager<>(
+        final SegmentRegistry<Integer, String> segmentRegistry = new SegmentRegistry<>(
                 directory, keyTypeDescriptor, valueTypeDescriptor, conf,
                 segmentDataCache);
         when(conf.getMaxNumberOfKeysInSegmentCache()).thenReturn(2L);
         when(conf.getDiskIoBufferSize()).thenReturn(1024);
 
-        final Segment<Integer, String> s1 = segmentManager
+        final Segment<Integer, String> s1 = segmentRegistry
                 .getSegment(SegmentId.of(1));
         assertNotNull(s1);
 
-        final Segment<Integer, String> s2 = segmentManager
+        final Segment<Integer, String> s2 = segmentRegistry
                 .getSegment(SegmentId.of(1));
         assertNotNull(s1);
 
@@ -57,10 +57,10 @@ class SegmentManagerTest {
 
     @Test
     void test_close() {
-        final SegmentManager<Integer, String> segmentManager = new SegmentManager<>(
+        final SegmentRegistry<Integer, String> segmentRegistry = new SegmentRegistry<>(
                 directory, keyTypeDescriptor, valueTypeDescriptor, conf,
                 segmentDataCache);
-        segmentManager.close();
+        segmentRegistry.close();
 
         verify(segmentDataCache).invalidateAll();
     }

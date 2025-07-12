@@ -13,7 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class SortedDataFileTest {
+class SortedDataFileTest {
 
     private static final String FILE_NAME = "test.sdf";
     private static final TypeDescriptorString STD = new TypeDescriptorString();

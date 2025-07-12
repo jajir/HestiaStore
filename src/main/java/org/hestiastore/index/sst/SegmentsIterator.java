@@ -24,7 +24,7 @@ class SegmentsIterator<K, V> implements PairIterator<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final SegmentManager<K, V> segmentManager;
+    private final SegmentRegistry<K, V> segmentRegistry;
     private final List<SegmentId> ids;
     private Pair<K, V> currentPair = null;
     private Pair<K, V> nextPair = null;
@@ -33,9 +33,9 @@ class SegmentsIterator<K, V> implements PairIterator<K, V> {
     private int position = 0;
 
     SegmentsIterator(final List<SegmentId> ids,
-            final SegmentManager<K, V> segmentManager) {
-        this.segmentManager = Vldtn.requireNonNull(segmentManager,
-                "segmentManager");
+            final SegmentRegistry<K, V> segmentRegistry) {
+        this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
+                "segmentRegistry");
         this.ids = Vldtn.requireNonNull(ids, "ids");
         nextSegmentIterator();
     }
@@ -49,7 +49,7 @@ class SegmentsIterator<K, V> implements PairIterator<K, V> {
             logger.debug("Starting processing segment '{}' which is {} of {}",
                     segmentId, position, ids.size());
             position++;
-            final Segment<K, V> segment = segmentManager.getSegment(segmentId);
+            final Segment<K, V> segment = segmentRegistry.getSegment(segmentId);
             currentIterator = segment.openIterator();
             if (currentIterator.hasNext()) {
                 nextPair = currentIterator.next();

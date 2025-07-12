@@ -16,7 +16,7 @@ import org.hestiastore.index.segment.SegmentFiles;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentPropertiesManager;
 
-public class SegmentManager<K, V> {
+public class SegmentRegistry<K, V> {
 
     private final Map<SegmentId, Segment<K, V>> segments = new HashMap<>();
 
@@ -26,7 +26,7 @@ public class SegmentManager<K, V> {
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final SegmentDataCache<K, V> segmentDataCache;
 
-    SegmentManager(final Directory directory,
+    SegmentRegistry(final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,

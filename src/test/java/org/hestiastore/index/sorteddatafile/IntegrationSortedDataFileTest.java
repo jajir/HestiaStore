@@ -86,40 +86,27 @@ class IntegrationSortedDataFileTest extends AbstractDataTest {
                 .openIterator()) {
 
             assertTrue(iterator.getCurrent().isEmpty());
-            assertTrue(iterator.hasNext());
-            verifyEquals(P1, iterator.next());
-            assertTrue(iterator.getCurrent().isPresent());
-            verifyEquals(P1, iterator.getCurrent().get());
 
-            assertTrue(iterator.hasNext());
-            verifyEquals(P2, iterator.next());
-            assertTrue(iterator.getCurrent().isPresent());
-            verifyEquals(P2, iterator.getCurrent().get());
-
-            assertTrue(iterator.hasNext());
-            verifyEquals(P3, iterator.next());
-            assertTrue(iterator.getCurrent().isPresent());
-            verifyEquals(P3, iterator.getCurrent().get());
-
-            assertTrue(iterator.hasNext());
-            verifyEquals(P4, iterator.next());
-            assertTrue(iterator.getCurrent().isPresent());
-            verifyEquals(P4, iterator.getCurrent().get());
-
-            assertTrue(iterator.hasNext());
-            verifyEquals(P5, iterator.next());
-            assertTrue(iterator.getCurrent().isPresent());
-            verifyEquals(P5, iterator.getCurrent().get());
-
-            assertTrue(iterator.hasNext());
-            verifyEquals(P6, iterator.next());
-            assertTrue(iterator.getCurrent().isPresent());
-            verifyEquals(P6, iterator.getCurrent().get());
+            verifyNextElement(iterator, P1);
+            verifyNextElement(iterator, P2);
+            verifyNextElement(iterator, P3);
+            verifyNextElement(iterator, P4);
+            verifyNextElement(iterator, P5);
+            verifyNextElement(iterator, P6);
 
             assertFalse(iterator.hasNext());
             assertTrue(iterator.getCurrent().isPresent());
             verifyEquals(P6, iterator.getCurrent().get());
         }
+    }
+
+    private void verifyNextElement(
+            PairIteratorWithCurrent<String, Integer> iterator,
+            Pair<String, Integer> expected) {
+        assertTrue(iterator.hasNext());
+        verifyEquals(expected, iterator.next());
+        assertTrue(iterator.getCurrent().isPresent());
+        verifyEquals(expected, iterator.getCurrent().get());
     }
 
 }
