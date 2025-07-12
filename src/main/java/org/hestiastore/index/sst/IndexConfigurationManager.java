@@ -313,21 +313,13 @@ public class IndexConfigurationManager<K, V> {
 
     private IndexConfiguration<K, V> validate(
             final IndexConfiguration<K, V> conf) {
+        Vldtn.requireNonNull(conf, "configuration");
         validateDatatypesAndIndexName(conf);
-        // TODO replace it Vldtn.requireNonNull
-        if (conf.getKeyTypeDescriptor() == null) {
-            throw new IllegalArgumentException("Key type descriptor is null.");
-        }
-        if (conf.getValueTypeDescriptor() == null) {
-            throw new IllegalArgumentException(
-                    "Value type descriptor is null.");
-        }
-        if (conf.isThreadSafe() == null) {
-            throw new IllegalArgumentException("Value of thread safe is null.");
-        }
-        if (conf.isLogEnabled() == null) {
-            throw new IllegalArgumentException("Value of log enable is null.");
-        }
+        Vldtn.requireNonNull(conf.getKeyTypeDescriptor(), "keyTypeDescriptor");
+        Vldtn.requireNonNull(conf.getValueTypeDescriptor(),
+                "valueTypeDescriptor");
+        Vldtn.requireNonNull(conf.isThreadSafe(), "isThreadSafe");
+        Vldtn.requireNonNull(conf.isLogEnabled(), "isLogEnabled");
 
         Vldtn.requireNonNull(conf.getMaxNumberOfKeysInCache(),
                 "MaxNumberOfKeysInCache");

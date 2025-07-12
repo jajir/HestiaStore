@@ -32,10 +32,11 @@ class MergeDeltaCacheWithIndexIteratorTest extends AbstractSegmentTest {
                         Pair.of("b", 22), //
                         Pair.of("c", 33)));
 
-        verifyIteratorData(iterator, Arrays.asList(//
+        verifyIteratorData(Arrays.asList(//
                 Pair.of("a", 11), //
                 Pair.of("b", 22), //
-                Pair.of("c", 33)));
+                Pair.of("c", 33)//
+        ), iterator);
     }
 
     @Test
@@ -43,7 +44,7 @@ class MergeDeltaCacheWithIndexIteratorTest extends AbstractSegmentTest {
         final PairIterator<String, Integer> iterator = makeIterator(//
                 Arrays.asList(), Arrays.asList());
 
-        verifyIteratorData(iterator, Arrays.asList());
+        verifyIteratorData(Arrays.asList(), iterator);
     }
 
     @Test
@@ -65,10 +66,11 @@ class MergeDeltaCacheWithIndexIteratorTest extends AbstractSegmentTest {
                         Pair.of("b", 22), //
                         Pair.of("c", 33)));
 
-        verifyIteratorData(iterator, Arrays.asList(//
+        verifyIteratorData(Arrays.asList(//
                 Pair.of("a", 11), //
                 Pair.of("b", 22), //
-                Pair.of("c", 33)));
+                Pair.of("c", 33)//
+        ), iterator);
     }
 
     @Test
@@ -80,10 +82,11 @@ class MergeDeltaCacheWithIndexIteratorTest extends AbstractSegmentTest {
                         Pair.of("c", 30)),
                 Arrays.asList());
 
-        verifyIteratorData(iterator, Arrays.asList(//
+        verifyIteratorData(Arrays.asList(//
                 Pair.of("a", 10), //
                 Pair.of("b", 20), //
-                Pair.of("c", 30)));
+                Pair.of("c", 30)//
+        ), iterator);
     }
 
     @Test
@@ -98,10 +101,11 @@ class MergeDeltaCacheWithIndexIteratorTest extends AbstractSegmentTest {
                         Pair.of("b", tdi.getTombstone()), //
                         Pair.of("e", 55)));
 
-        verifyIteratorData(iterator, Arrays.asList(//
+        verifyIteratorData(Arrays.asList(//
                 Pair.of("a", 11), //
                 Pair.of("c", 30), //
-                Pair.of("e", 55)));
+                Pair.of("e", 55)//
+        ), iterator);
     }
 
     @Test
@@ -116,9 +120,10 @@ class MergeDeltaCacheWithIndexIteratorTest extends AbstractSegmentTest {
                         Pair.of("b", 20), //
                         Pair.of("c", 55)));
 
-        verifyIteratorData(iterator, Arrays.asList(//
+        verifyIteratorData(Arrays.asList(//
                 Pair.of("b", 20), //
-                Pair.of("c", 55)));
+                Pair.of("c", 55)//
+        ), iterator);
     }
 
     @Test
@@ -134,9 +139,9 @@ class MergeDeltaCacheWithIndexIteratorTest extends AbstractSegmentTest {
                         Pair.of("c", tdi.getTombstone()), //
                         Pair.of("e", tdi.getTombstone())));
 
-        verifyIteratorData(iterator, Arrays.asList(//
+        verifyIteratorData(Arrays.asList(//
                 Pair.of("a", 11)//
-        ));
+        ), iterator);
     }
 
     @Test
@@ -152,7 +157,7 @@ class MergeDeltaCacheWithIndexIteratorTest extends AbstractSegmentTest {
                         Pair.of("c", tdi.getTombstone()), //
                         Pair.of("e", tdi.getTombstone())));
 
-        verifyIteratorData(iterator, Arrays.asList());
+        verifyIteratorData(Arrays.asList(), iterator);
     }
 
     @Test
@@ -165,7 +170,7 @@ class MergeDeltaCacheWithIndexIteratorTest extends AbstractSegmentTest {
                         Pair.of("c", tdi.getTombstone()), //
                         Pair.of("e", tdi.getTombstone())));
 
-        verifyIteratorData(iterator, Arrays.asList());
+        verifyIteratorData(Arrays.asList(), iterator);
     }
 
     private MergeDeltaCacheWithIndexIterator<String, Integer> makeIterator(

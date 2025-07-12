@@ -63,7 +63,7 @@ public abstract class AbstractSegmentTest extends AbstractDataTest {
      */
     protected <M, N> void verifySegmentData(final Segment<M, N> seg,
             final List<Pair<M, N>> pairs) {
-        verifyIteratorData(seg.openIterator(), pairs);
+        verifyIteratorData(pairs, seg.openIterator());
     }
 
     protected int numberOfFilesInDirectory(final Directory directory) {

@@ -167,7 +167,7 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
     }
 
     private boolean shouldBeSplit(final Segment<K, V> segment) {
-        return segment.getNumberOfKeys() > conf.getMaxNumberOfKeysInSegment();
+        return segment.getNumberOfKeys() >= conf.getMaxNumberOfKeysInSegment();
     }
 
     private boolean split(final Segment<K, V> segment,

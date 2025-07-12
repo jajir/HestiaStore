@@ -66,10 +66,11 @@ class IntegrationSortTest extends AbstractSegmentTest {
 
         sorter.sort();
 
-        verifyIteratorData(sdf.openIterator(), Arrays.asList(//
+        verifyIteratorData(Arrays.asList(//
                 Pair.of("a", 20), //
                 Pair.of("b", 30), //
-                Pair.of("c", 40)));
+                Pair.of("c", 40)//
+        ), sdf.openIterator());
 
         verifyNumberOfFiles(dir, 2);
     }
@@ -85,9 +86,10 @@ class IntegrationSortTest extends AbstractSegmentTest {
 
         sorter.sort();
 
-        verifyIteratorData(sdf.openIterator(), Arrays.asList(//
+        verifyIteratorData(Arrays.asList(//
                 Pair.of("a", 50), //
-                Pair.of("c", 40)));
+                Pair.of("c", 40)//
+        ), sdf.openIterator());
 
         verifyNumberOfFiles(dir, 2);
     }
@@ -98,7 +100,7 @@ class IntegrationSortTest extends AbstractSegmentTest {
 
         sorter.sort();
 
-        verifyIteratorData(sdf.openIterator(), Collections.emptyList());
+        verifyIteratorData(Collections.emptyList(), sdf.openIterator());
 
         verifyNumberOfFiles(dir, 2);
     }
@@ -116,7 +118,7 @@ class IntegrationSortTest extends AbstractSegmentTest {
 
         sorter.sort();
 
-        verifyIteratorData(sdf.openIterator(), data);
+        verifyIteratorData(data, sdf.openIterator());
 
         verifyNumberOfFiles(dir, 2);
     }
