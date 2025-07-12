@@ -23,15 +23,15 @@ public class IndexConsistencyChecker<K, V> {
     private static final String ERROR_MSG = "Index is broken. "
             + "File 'index.map' containing information about segments is corrupted. ";
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final SegmentManager<K, V> segmentManager;
+    private final SegmentRegistry<K, V> segmentRegistry;
     private final KeySegmentCache<K> keySegmentCache;
     private final Comparator<K> keyComparator;
 
     IndexConsistencyChecker(final KeySegmentCache<K> keySegmentCache,
-            final SegmentManager<K, V> segmentManager,
+            final SegmentRegistry<K, V> segmentRegistry,
             final TypeDescriptor<K> keyTypeDescriptor) {
-        this.segmentManager = Vldtn.requireNonNull(segmentManager,
-                "segmentManager");
+        this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
+                "segmentRegistry");
         this.keySegmentCache = Vldtn.requireNonNull(keySegmentCache,
                 "keySegmentCache");
         Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
@@ -49,7 +49,7 @@ public class IndexConsistencyChecker<K, V> {
                 throw new IndexException(ERROR_MSG + "Segment id is null.");
             }
             logger.debug("checking segment '{}'.", segmentId);
-            final Segment<K, V> segment = segmentManager.getSegment(segmentId);
+            final Segment<K, V> segment = segmentRegistry.getSegment(segmentId);
             if (segment == null) {
                 throw new IndexException(String.format(
                         ERROR_MSG + "Segment '%s' is not found in index.",
@@ -61,9 +61,10 @@ public class IndexConsistencyChecker<K, V> {
                         ERROR_MSG + "Max key of segment '%s' is null.",
                         segmentId));
             }
-            if (keyComparator.compare(segmentKey, maxKey) != 0) {
+            if (keyComparator.compare(segmentKey, maxKey) < 0) {
                 logger.error(
-                        "Key '{}' of segment '{}' is not equal to max key '{}'.",
+                        "Store max key '{}' of segment '{}' is not greated or equal "
+                                + "to max key from index data '{}'.",
                         segmentKey, segmentId, maxKey);
             }
             logger.debug("Checking segment '{}' id done.", segmentId);

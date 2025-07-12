@@ -18,7 +18,7 @@ public class CompactSupport<K, V> {
 
     private final List<Pair<K, V>> toSameSegment = new ArrayList<>();
     private final KeySegmentCache<K> keySegmentCache;
-    private final SegmentManager<K, V> segmentManager;
+    private final SegmentRegistry<K, V> segmentRegistry;
     private SegmentId currentSegmentId = null;
 
     /**
@@ -26,10 +26,10 @@ public class CompactSupport<K, V> {
      */
     private List<SegmentId> eligibleSegments = new ArrayList<>();
 
-    CompactSupport(final SegmentManager<K, V> segmentManager,
+    CompactSupport(final SegmentRegistry<K, V> segmentRegistry,
             final KeySegmentCache<K> keySegmentCache) {
-        this.segmentManager = Vldtn.requireNonNull(segmentManager,
-                "segmentManager");
+        this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
+                "segmentRegistry");
         this.keySegmentCache = Vldtn.requireNonNull(keySegmentCache,
                 "keySegmentCache");
     }
@@ -67,7 +67,7 @@ public class CompactSupport<K, V> {
             logger.debug("Flushing '{}' key value pairs into segment '{}'.",
                     F.fmt(toSameSegment.size()), currentSegmentId);
         }
-        final Segment<K, V> segment = segmentManager
+        final Segment<K, V> segment = segmentRegistry
                 .getSegment(currentSegmentId);
         try (PairWriter<K, V> writer = segment.openWriter()) {
             toSameSegment.forEach(writer::put);

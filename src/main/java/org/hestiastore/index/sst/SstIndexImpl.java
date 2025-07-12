@@ -13,8 +13,6 @@ import org.hestiastore.index.log.Log;
 import org.hestiastore.index.log.LoggedKey;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segment.SegmentSplitter;
-import org.hestiastore.index.segment.SegmentSplitterResult;
 import org.hestiastore.index.sorteddatafile.PairComparator;
 import org.hestiastore.index.unsorteddatafile.UnsortedDataFileStreamer;
 import org.slf4j.Logger;
@@ -28,7 +26,8 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final UniqueCache<K, V> cache;
     private final KeySegmentCache<K> keySegmentCache;
-    private final SegmentManager<K, V> segmentManager;
+    private final SegmentRegistry<K, V> segmentRegistry;
+    private final SegmentSplitCoordinator<K, V> segmentSplitCoordinator;
     private final Log<K, V> log;
     private final Stats stats = new Stats();
     protected IndexState<K, V> indexState;
@@ -54,8 +53,10 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
                 keyTypeDescriptor);
         final SegmentDataCache<K, V> segmentDataCache = new SegmentDataCache<>(
                 conf);
-        this.segmentManager = new SegmentManager<>(directory, keyTypeDescriptor,
-                valueTypeDescriptor, conf, segmentDataCache);
+        this.segmentRegistry = new SegmentRegistry<>(directory,
+                keyTypeDescriptor, valueTypeDescriptor, conf, segmentDataCache);
+        this.segmentSplitCoordinator = new SegmentSplitCoordinator<>(conf,
+                keySegmentCache);
         indexState.onReady(this);
     }
 
@@ -89,7 +90,7 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
      */
     PairIterator<K, V> openSegmentIterator(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
-        final Segment<K, V> seg = segmentManager.getSegment(segmentId);
+        final Segment<K, V> seg = segmentRegistry.getSegment(segmentId);
         return seg.openIterator();
     }
 
@@ -100,7 +101,7 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
             segmentWindows = SegmentWindow.unbounded();
         }
         final PairIterator<K, V> segmentIterator = new SegmentsIterator<>(
-                keySegmentCache.getSegmentIds(segmentWindows), segmentManager);
+                keySegmentCache.getSegmentIds(segmentWindows), segmentRegistry);
         final PairIterator<K, V> iterratorFreshedFromCache = new PairIteratorRefreshedFromCache<>(
                 segmentIterator, cache, valueTypeDescriptor);
         return new PairIteratorLoggingContext<>(iterratorFreshedFromCache,
@@ -114,14 +115,16 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
                     F.fmt(cache.size()));
         }
         final CompactSupport<K, V> support = new CompactSupport<>(
-                segmentManager, keySegmentCache);
+                segmentRegistry, keySegmentCache);
         cache.getStream()
                 .sorted(new PairComparator<>(keyTypeDescriptor.getComparator()))
                 .forEach(support::compact);
         support.compactRest();
         final List<SegmentId> segmentIds = support.getEligibleSegmentIds();
-        segmentIds.stream().map(segmentManager::getSegment)
-                .forEach(this::optionallySplit);
+        segmentIds.stream()//
+                .map(segmentRegistry::getSegment)//
+                .filter(segmentSplitCoordinator::shouldBeSplit)//
+                .forEach(segmentSplitCoordinator::optionallySplit);
         cache.clear();
         keySegmentCache.flush();
         log.rotate();
@@ -137,57 +140,9 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
         indexState.tryPerformOperation();
         flushCache();
         keySegmentCache.getSegmentIds().forEach(segmentId -> {
-            final Segment<K, V> seg = segmentManager.getSegment(segmentId);
+            final Segment<K, V> seg = segmentRegistry.getSegment(segmentId);
             seg.forceCompact();
         });
-    }
-
-    /**
-     * If number of keys reach threshold split segment into two.
-     * 
-     * @param segment required simple data file
-     * @return
-     */
-    private boolean optionallySplit(final Segment<K, V> segment) {
-        Vldtn.requireNonNull(segment, "segment");
-        if (shouldBeSplit(segment)) {
-            final SegmentSplitter<K, V> segmentSplitter = segment
-                    .getSegmentSplitter();
-            if (segmentSplitter.shouldBeCompactedBeforeSplitting(
-                    conf.getMaxNumberOfKeysInSegment())) {
-                segment.forceCompact();
-                if (shouldBeSplit(segment)) {
-                    return split(segment, segmentSplitter);
-                }
-            } else {
-                return split(segment, segmentSplitter);
-            }
-        }
-        return false;
-    }
-
-    private boolean shouldBeSplit(final Segment<K, V> segment) {
-        return segment.getNumberOfKeys() >= conf.getMaxNumberOfKeysInSegment();
-    }
-
-    private boolean split(final Segment<K, V> segment,
-            final SegmentSplitter<K, V> segmentSplitter) {
-        final SegmentId segmentId = segment.getId();
-        logger.debug("Splitting of '{}' started.", segmentId);
-        final SegmentId newSegmentId = keySegmentCache.findNewSegmentId();
-        final SegmentSplitterResult<K, V> result = segmentSplitter
-                .split(newSegmentId);
-        if (result.isSplited()) {
-            keySegmentCache.insertSegment(result.getMaxKey(), newSegmentId);
-            logger.debug("Splitting of segment '{}' to '{}' is done.",
-                    segmentId, newSegmentId);
-        } else {
-            logger.debug(
-                    "Splitting of segment '{}' is done, "
-                            + "but at the end it was compacting.",
-                    segmentId, newSegmentId);
-        }
-        return true;
     }
 
     @Override
@@ -202,7 +157,7 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
             if (id == null) {
                 return null;
             }
-            final Segment<K, V> segment = segmentManager.getSegment(id);
+            final Segment<K, V> segment = segmentRegistry.getSegment(id);
             return segment.get(key);
         } else {
             if (valueTypeDescriptor.isTombstone(out)) {
@@ -234,7 +189,7 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
         indexState.tryPerformOperation();
         keySegmentCache.checkUniqueSegmentIds();
         final IndexConsistencyChecker<K, V> checker = new IndexConsistencyChecker<>(
-                keySegmentCache, segmentManager, keyTypeDescriptor);
+                keySegmentCache, segmentRegistry, keyTypeDescriptor);
         checker.checkAndRepairConsistency();
     }
 
@@ -243,7 +198,7 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
         flushCache();
         log.close();
         indexState.onClose(this);
-        segmentManager.close();
+        segmentRegistry.close();
         if (logger.isDebugEnabled()) {
             logger.debug(String.format(
                     "Index is closing, where was %s gets, %s puts and %s deletes.",
