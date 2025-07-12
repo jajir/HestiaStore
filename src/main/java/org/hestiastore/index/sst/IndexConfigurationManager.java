@@ -314,6 +314,7 @@ public class IndexConfigurationManager<K, V> {
     private IndexConfiguration<K, V> validate(
             final IndexConfiguration<K, V> conf) {
         validateDatatypesAndIndexName(conf);
+        // TODO replace it Vldtn.requireNonNull
         if (conf.getKeyTypeDescriptor() == null) {
             throw new IllegalArgumentException("Key type descriptor is null.");
         }
