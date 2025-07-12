@@ -58,12 +58,60 @@ class IndexConsistencyCheckerTest {
         final Exception e = assertThrows(IndexException.class,
                 () -> checker.checkAndRepairConsistency());
 
-        assertEquals("Segment 'segment-00013' is not found in index.",
+        assertEquals(
+                "Index is broken. File 'index.map' "
+                        + "containing information about segments is corrupted. "
+                        + "Segment 'segment-00013' is not found in index.",
                 e.getMessage());
     }
 
     @Test
-    void test_oneSegment_segmenMaxKeyIsHigher() {
+    void test_oneSegment_segmentKey_is_null() {
+        when(keySegmentCache.getSegmentsAsStream())
+                .thenReturn(Stream.of(Pair.of(null, SEGMENT_ID)));
+
+        final Exception e = assertThrows(IndexException.class,
+                () -> checker.checkAndRepairConsistency());
+
+        assertEquals(
+                "Index is broken. " + "File 'index.map' containing information "
+                        + "about segments is corrupted. Segment key is null.",
+                e.getMessage());
+    }
+
+    @Test
+    void test_oneSegment_segmentId_is_null() {
+        when(keySegmentCache.getSegmentsAsStream())
+                .thenReturn(Stream.of(Pair.of(SEGMENT_MAX_KEY, null)));
+
+        final Exception e = assertThrows(IndexException.class,
+                () -> checker.checkAndRepairConsistency());
+
+        assertEquals(
+                "Index is broken. " + "File 'index.map' containing information "
+                        + "about segments is corrupted. Segment id is null.",
+                e.getMessage());
+    }
+
+    @Test
+    void test_oneSegment_segmentMaxKey_is_null() {
+        when(keySegmentCache.getSegmentsAsStream())
+                .thenReturn(Stream.of(segmentPair));
+        when(segmentManager.getSegment(SEGMENT_ID)).thenReturn(segment);
+        when(segment.checkAndRepairConsistency()).thenReturn(null);
+
+        final Exception e = assertThrows(IndexException.class,
+                () -> checker.checkAndRepairConsistency());
+
+        assertEquals(
+                "Index is broken. " + "File 'index.map' containing information "
+                        + "about segments is corrupted."
+                        + " Max key of segment 'segment-00013' is null.",
+                e.getMessage());
+    }
+
+    @Test
+    void test_oneSegment_segmentMaxKeyIsHigher() {
         when(keySegmentCache.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
         when(segmentManager.getSegment(SEGMENT_ID)).thenReturn(segment);
