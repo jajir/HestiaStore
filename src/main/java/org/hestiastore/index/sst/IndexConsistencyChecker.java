@@ -48,6 +48,7 @@ public class IndexConsistencyChecker<K, V> {
             if (segmentId == null) {
                 throw new IndexException(ERROR_MSG + "Segment id is null.");
             }
+            logger.debug("checking segment '{}'.", segmentId);
             final Segment<K, V> segment = segmentManager.getSegment(segmentId);
             if (segment == null) {
                 throw new IndexException(String.format(
@@ -65,7 +66,7 @@ public class IndexConsistencyChecker<K, V> {
                         "Key '{}' of segment '{}' is not equal to max key '{}'.",
                         segmentKey, segmentId, maxKey);
             }
-            logger.debug("Checking segment '{}'", segmentId);
+            logger.debug("Checking segment '{}' id done.", segmentId);
         });
     }
 

@@ -84,7 +84,7 @@ class MergedPairIteratorTest extends AbstractDataTest {
         MergedPairIterator<String, Integer> iterator = new MergedPairIterator<>(
                 Collections.emptyList(), KEY_COMPARATOR, MERGER);
 
-        verifyIteratorData(iterator, Collections.emptyList());
+        verifyIteratorData(Collections.emptyList(), iterator);
     }
 
     @Test
@@ -92,7 +92,7 @@ class MergedPairIteratorTest extends AbstractDataTest {
         MergedPairIterator<String, Integer> iterator = new MergedPairIterator<>(
                 Arrays.asList(iterator1), KEY_COMPARATOR, MERGER);
 
-        verifyIteratorData(iterator, Arrays.asList(PAIR1, PAIR2, PAIR3));
+        verifyIteratorData(Arrays.asList(PAIR1, PAIR2, PAIR3), iterator);
     }
 
     @Test
@@ -100,7 +100,7 @@ class MergedPairIteratorTest extends AbstractDataTest {
         MergedPairIterator<String, Integer> iterator = new MergedPairIterator<>(
                 Arrays.asList(iterator1, iterator2), KEY_COMPARATOR, MERGER);
 
-        verifyIteratorData(iterator, Arrays.asList(PAIR1, PAIR2, PAIR3, PAIR4));
+        verifyIteratorData(Arrays.asList(PAIR1, PAIR2, PAIR3, PAIR4), iterator);
     }
 
     @Test
@@ -108,8 +108,8 @@ class MergedPairIteratorTest extends AbstractDataTest {
         MergedPairIterator<String, Integer> iterator = new MergedPairIterator<>(
                 iterators, KEY_COMPARATOR, MERGER);
 
-        verifyIteratorData(iterator,
-                Arrays.asList(PAIR1, PAIR2, PAIR3, PAIR4, PAIR5));
+        verifyIteratorData(Arrays.asList(PAIR1, PAIR2, PAIR3, PAIR4, PAIR5),
+                iterator);
     }
 
     @Test
@@ -119,7 +119,7 @@ class MergedPairIteratorTest extends AbstractDataTest {
                         new PairIteratorList<>(Arrays.asList(PAIR3))), //
                 KEY_COMPARATOR, MERGER);
 
-        verifyIteratorData(iterator, Arrays.asList(PAIR1, PAIR2, PAIR3));
+        verifyIteratorData(Arrays.asList(PAIR1, PAIR2, PAIR3), iterator);
     }
 
 }

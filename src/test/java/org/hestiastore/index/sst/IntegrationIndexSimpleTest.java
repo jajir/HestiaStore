@@ -241,7 +241,7 @@ class IntegrationIndexSimpleTest {
                 .withValueClass(String.class)//
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tds) //
-                .withMaxNumberOfKeysInSegment(4) //
+                .withMaxNumberOfKeysInSegment(5) //
                 .withMaxNumberOfKeysInSegmentCache(3L) //
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(4L) //
                 .withMaxNumberOfKeysInSegmentIndexPage(2) //

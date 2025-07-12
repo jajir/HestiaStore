@@ -62,13 +62,11 @@ public abstract class AbstractDataTest {
      * 
      * @param <M>          key type
      * @param <N>          value type
-     * @param pairIterator required pair iterator
      * @param pairs        required list of expected data in segment
+     * @param pairIterator required pair iterator
      */
-    protected <M, N> void verifyIteratorData(
-            final PairIterator<M, N> pairIterator,
-            final List<Pair<M, N>> pairs) {
-        // TODO Expectation parameter should come as first.
+    protected <M, N> void verifyIteratorData(final List<Pair<M, N>> pairs,
+            final PairIterator<M, N> pairIterator) {
         final List<Pair<M, N>> data = toList(pairIterator);
         assertEquals(pairs.size(), data.size(),
                 "Unexpected iterator data size");

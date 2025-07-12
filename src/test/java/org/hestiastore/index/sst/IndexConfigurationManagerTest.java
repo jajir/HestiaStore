@@ -103,7 +103,8 @@ class IndexConfigurationManagerTest {
         final Exception ex = assertThrows(IllegalArgumentException.class,
                 () -> manager.save(config));
 
-        assertEquals("Key type descriptor is null.", ex.getMessage());
+        assertEquals("Property 'keyTypeDescriptor' must not be null.",
+                ex.getMessage());
     }
 
     @Test
@@ -120,7 +121,8 @@ class IndexConfigurationManagerTest {
         final Exception ex = assertThrows(IllegalArgumentException.class,
                 () -> manager.save(config));
 
-        assertEquals("Value of thread safe is null.", ex.getMessage());
+        assertEquals("Property 'isThreadSafe' must not be null.",
+                ex.getMessage());
     }
 
     @Test
@@ -138,7 +140,8 @@ class IndexConfigurationManagerTest {
         final Exception ex = assertThrows(IllegalArgumentException.class,
                 () -> manager.save(config));
 
-        assertEquals("Value of log enable is null.", ex.getMessage());
+        assertEquals("Property 'isLogEnabled' must not be null.",
+                ex.getMessage());
     }
 
     @Test

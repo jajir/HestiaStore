@@ -19,6 +19,7 @@ import org.hestiastore.index.datatype.TypeDescriptorString;
  */
 public class DataTypeDescriptorRegistry {
 
+    private static final String CLAZZ = "clazz";
     private static final Map<Class<?>, String> descriptors = new HashMap<>();
 
     static {
@@ -29,20 +30,20 @@ public class DataTypeDescriptorRegistry {
 
     public static final <T> void addTypeDescriptor(final Class<T> clazz,
             final TypeDescriptor<T> typeDescriptor) {
-        Vldtn.requireNonNull(clazz, "clazz");
+        Vldtn.requireNonNull(clazz, CLAZZ);
         Vldtn.requireNonNull(typeDescriptor, "typeDescriptor");
         descriptors.put(clazz, typeDescriptor.getClass().getName());
     }
 
     public static final <T> void addTypeDescriptor(final Class<T> clazz,
             final String typeDescriptor) {
-        Vldtn.requireNonNull(clazz, "clazz");
+        Vldtn.requireNonNull(clazz, CLAZZ);
         Vldtn.requireNonNull(typeDescriptor, "typeDescriptor");
         descriptors.put(clazz, typeDescriptor);
     }
 
     public static final <T> String getTypeDescriptor(final Class<T> clazz) {
-        Vldtn.requireNonNull(clazz, "clazz");
+        Vldtn.requireNonNull(clazz, CLAZZ);
         final String typeDescriptor = descriptors.get(clazz);
         if (typeDescriptor == null) {
             throw new IllegalStateException(
