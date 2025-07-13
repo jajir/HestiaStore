@@ -10,7 +10,7 @@ import java.util.List;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
  */
 class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
 
-    private final TypeDescriptorString tds = new TypeDescriptorString();
+    private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final SegmentId id = SegmentId.of(29);
     private Directory directory;

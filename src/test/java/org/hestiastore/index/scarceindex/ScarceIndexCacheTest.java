@@ -8,12 +8,12 @@ import java.util.Collections;
 import java.util.List;
 
 import org.hestiastore.index.Pair;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.junit.jupiter.api.Test;
 
 class ScarceIndexCacheTest {
 
-    private final TypeDescriptorString tds = new TypeDescriptorString();
+    private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
 
     @Test
     void test_constructor_null() {

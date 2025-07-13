@@ -12,12 +12,12 @@ import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.PairIteratorList;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.junit.jupiter.api.Test;
 
 class MergeDeltaCacheWithIndexIteratorTest extends AbstractSegmentTest {
 
-    private final TypeDescriptorString tds = new TypeDescriptorString();
+    private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
 
     @Test

@@ -9,7 +9,7 @@ import org.hestiastore.index.PairIteratorWithCurrent;
 import org.hestiastore.index.PairSeekableReader;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.AfterEach;
@@ -20,7 +20,7 @@ class IntegrationSortedDataFileTest extends AbstractDataTest {
 
     private static final String FILE_NAME = "pok.index";
     private static final TypeDescriptor<Integer> tdi = new TypeDescriptorInteger();
-    private static final TypeDescriptor<String> tds = new TypeDescriptorString();
+    private static final TypeDescriptor<String> tds = new TypeDescriptorShortString();
     private static final Pair<String, Integer> P1 = Pair.of("a", 1);
     private static final Pair<String, Integer> P2 = Pair.of("aaaaaa", 2);
     private static final Pair<String, Integer> P3 = Pair.of("bbb", 3);

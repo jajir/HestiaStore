@@ -126,7 +126,7 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
                 .filter(segmentSplitCoordinator::shouldBeSplit)//
                 .forEach(segmentSplitCoordinator::optionallySplit);
         cache.clear();
-        keySegmentCache.flush();
+        keySegmentCache.optionalyFlush();
         log.rotate();
         if (logger.isDebugEnabled()) {
             logger.debug(

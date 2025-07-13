@@ -11,7 +11,7 @@ import java.util.Arrays;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.FileReader;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -20,7 +20,7 @@ class DiffKeyReaderTest {
 
     private final FileReader fileReader = mock(FileReader.class);
 
-    private final TypeDescriptor<String> tds = new TypeDescriptorString();
+    private final TypeDescriptor<String> tds = new TypeDescriptorShortString();
 
     @Test
     void test_reading_end_of_file() {

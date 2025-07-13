@@ -3,6 +3,10 @@ package org.hestiastore.index.datatype;
 import java.nio.charset.Charset;
 import java.util.Comparator;
 
+/**
+ * TypeDescriptor for String values. It uses ISO_8859_1 encoding. Max length of
+ * string is over 2 GB, exactly Integer.MAX_VALUE.
+ */
 public class TypeDescriptorString implements TypeDescriptor<String> {
 
     private static final String CHARSET_ENCODING_NAME = "ISO_8859_1";
@@ -56,4 +60,5 @@ public class TypeDescriptorString implements TypeDescriptor<String> {
     public int hashCode() {
         return getClass().hashCode();
     }
+
 }

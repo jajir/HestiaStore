@@ -7,7 +7,7 @@ import java.util.Random;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
@@ -19,7 +19,7 @@ public class IntegerationNumberOfKeysIT {
     private final SegmentId SEGMENT_ID = SegmentId.of(29);
     private static final Random RANDOM = new Random();
     private static final int NUMBER_OF_TESTING_PAIRS = 1_000_000;
-    private static final TypeDescriptor<String> TYPE_DESCRIPTOR_STRING = new TypeDescriptorString();
+    private static final TypeDescriptor<String> TYPE_DESCRIPTOR_STRING = new TypeDescriptorShortString();
     private static final TypeDescriptor<Long> TYPE_DESCRIPTOR_LONG = new TypeDescriptorLong();
 
     private Directory directory;

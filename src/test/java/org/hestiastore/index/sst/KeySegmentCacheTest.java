@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.List;
 
 import org.hestiastore.index.Pair;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
@@ -19,7 +19,7 @@ class KeySegmentCacheTest {
 
     private static final SegmentId SEGMENT_ID = SegmentId.of(1);
 
-    private final TypeDescriptorString stringTd = new TypeDescriptorString();
+    private final TypeDescriptorShortString stringTd = new TypeDescriptorShortString();
 
     private Directory directory;
 

@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Arrays;
 import java.util.List;
 
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -19,7 +19,7 @@ class BloomFilterTest {
     private final Logger logger = LoggerFactory
             .getLogger(BloomFilterTest.class);
 
-    private static final TypeDescriptorString STD = new TypeDescriptorString();
+    private static final TypeDescriptorShortString STD = new TypeDescriptorShortString();
 
     private static final String FILE_NAME = "segment-00880.bloomFilter";
 

@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.bloomfilter.BloomFilterBuilder;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.AfterEach;
@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 
 class IndexConfiguratonStorageTest {
 
-    private static final String TD_STRING = TypeDescriptorString.class
+    private static final String TD_STRING = TypeDescriptorShortString.class
             .getName();
     private static final String TD_LONG = TypeDescriptorLong.class.getName();
     private Directory directory;

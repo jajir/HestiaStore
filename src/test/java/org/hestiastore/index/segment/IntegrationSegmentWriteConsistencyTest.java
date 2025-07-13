@@ -10,14 +10,14 @@ import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
 class IntegrationSegmentWriteConsistencyTest {
 
-    private static final TypeDescriptorString TDS = new TypeDescriptorString();
+    private static final TypeDescriptorShortString TDS = new TypeDescriptorShortString();
     private static final TypeDescriptorInteger TDI = new TypeDescriptorInteger();
 
     private final List<String> values = List.of("aaa", "bbb", "ccc", "ddd",

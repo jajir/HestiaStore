@@ -9,13 +9,13 @@ import java.util.Comparator;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.junit.jupiter.api.Test;
 
 class DiffKeyWriterTest {
 
     private final TypeDescriptor<Integer> tdi = new TypeDescriptorInteger();
-    private final TypeDescriptor<String> tds = new TypeDescriptorString();
+    private final TypeDescriptor<String> tds = new TypeDescriptorShortString();
 
     private DiffKeyWriter<Integer> makeDiffKeyWriter() {
         return new DiffKeyWriter<>(tdi.getConvertorToBytes(),

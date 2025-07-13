@@ -83,7 +83,7 @@ public class CompactSupport<K, V> {
                     .max(keyTypeDescriptor.getComparator()).ifPresent(key -> {
                         // Update segment cache with highest key.
                         keySegmentCache.insertKeyToSegment(key);
-                        keySegmentCache.flush();
+                        keySegmentCache.optionalyFlush();
                     });
         }
 

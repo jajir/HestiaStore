@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.junit.jupiter.api.Test;
 
 class DataTypeDescriptorRegistryTest {
@@ -67,7 +67,7 @@ class DataTypeDescriptorRegistryTest {
                 e.getMessage());
     }
 
-    class MyFaultyTypeDescriptor extends TypeDescriptorString {
+    class MyFaultyTypeDescriptor extends TypeDescriptorShortString {
 
         MyFaultyTypeDescriptor(final String name) {
             // super faulty constructor

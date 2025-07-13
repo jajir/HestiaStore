@@ -9,7 +9,7 @@ import static org.mockito.Mockito.when;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -20,7 +20,7 @@ class PairIteratorToSpliteratorTest {
 
     private static final Pair<String, Integer> PAIR1 = Pair.of("aaa", 1);
 
-    private static final TypeDescriptor<String> STRING_TD = new TypeDescriptorString();
+    private static final TypeDescriptor<String> STRING_TD = new TypeDescriptorShortString();
 
     @Mock
     private PairIterator<String, Integer> pairIterator;

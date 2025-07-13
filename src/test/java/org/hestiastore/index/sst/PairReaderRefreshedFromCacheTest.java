@@ -12,7 +12,7 @@ import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.cache.UniqueCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -25,7 +25,7 @@ class PairReaderRefreshedFromCacheTest {
     private static final Pair<Integer, String> PAIR2 = Pair.of(3, "ccc");
     private static final Pair<Integer, String> PAIR3 = Pair.of(4, "ddd");
 
-    private static final TypeDescriptor<String> STRING_TD = new TypeDescriptorString();
+    private static final TypeDescriptor<String> STRING_TD = new TypeDescriptorShortString();
 
     @Mock
     private PairIterator<Integer, String> pairIterator;
