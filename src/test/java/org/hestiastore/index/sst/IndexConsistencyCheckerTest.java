@@ -118,9 +118,13 @@ class IndexConsistencyCheckerTest {
         when(segment.checkAndRepairConsistency())
                 .thenReturn(SEGMENT_MAX_KEY + 1);
 
-        checker.checkAndRepairConsistency();
+        final Exception e = assertThrows(IndexException.class,
+                () -> checker.checkAndRepairConsistency());
 
-        assertTrue(true);
+        assertEquals("Index is broken. File 'index.map' containing information "
+                + "about segments is corrupted. Segment 'segment-00013' "
+                + "has a max key of '73', which is less "
+                + "than the max key '74' from the index data.", e.getMessage());
     }
 
     @Test

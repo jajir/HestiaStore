@@ -7,6 +7,7 @@ import org.hestiastore.index.F;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.slf4j.Logger;
@@ -19,6 +20,7 @@ public class CompactSupport<K, V> {
     private final List<Pair<K, V>> toSameSegment = new ArrayList<>();
     private final KeySegmentCache<K> keySegmentCache;
     private final SegmentRegistry<K, V> segmentRegistry;
+    private final TypeDescriptor<K> keyTypeDescriptor;
     private SegmentId currentSegmentId = null;
 
     /**
@@ -27,11 +29,14 @@ public class CompactSupport<K, V> {
     private List<SegmentId> eligibleSegments = new ArrayList<>();
 
     CompactSupport(final SegmentRegistry<K, V> segmentRegistry,
-            final KeySegmentCache<K> keySegmentCache) {
+            final KeySegmentCache<K> keySegmentCache,
+            final TypeDescriptor<K> keyTypeDescriptor) {
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
         this.keySegmentCache = Vldtn.requireNonNull(keySegmentCache,
                 "keySegmentCache");
+        this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
+                "keyTypeDescriptor");
     }
 
     public void compact(final Pair<K, V> pair) {
@@ -72,6 +77,16 @@ public class CompactSupport<K, V> {
         try (PairWriter<K, V> writer = segment.openWriter()) {
             toSameSegment.forEach(writer::put);
         }
+        if (KeySegmentCache.FIRST_SEGMENT_ID.equals(currentSegmentId)) {
+            // Segment containing highest key.
+            toSameSegment.stream().map(Pair::getKey)
+                    .max(keyTypeDescriptor.getComparator()).ifPresent(key -> {
+                        // Update segment cache with highest key.
+                        keySegmentCache.insertKeyToSegment(key);
+                        keySegmentCache.flush();
+                    });
+        }
+
         eligibleSegments.add(currentSegmentId);
         toSameSegment.clear();
         logger.debug("Flushing to segment '{}' was done.", currentSegmentId);

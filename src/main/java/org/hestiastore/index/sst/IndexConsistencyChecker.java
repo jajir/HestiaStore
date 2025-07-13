@@ -62,10 +62,10 @@ public class IndexConsistencyChecker<K, V> {
                         segmentId));
             }
             if (keyComparator.compare(segmentKey, maxKey) < 0) {
-                logger.error(
-                        "Store max key '{}' of segment '{}' is not greated or equal "
-                                + "to max key from index data '{}'.",
-                        segmentKey, segmentId, maxKey);
+                throw new IndexException(String.format(ERROR_MSG
+                        + "Segment '%s' has a max key of '%s', "
+                        + "which is less than the max key '%s' from the index data.",
+                        segmentId, segmentKey, maxKey));
             }
             logger.debug("Checking segment '{}' id done.", segmentId);
         });
