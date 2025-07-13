@@ -10,11 +10,13 @@
         <meta name="author" content="Jan Jirout">
       
       
-        <link rel="canonical" href="https://jajir.github.io/HestiaStore/development/guides/">
+        <link rel="canonical" href="https://jajir.github.io/HestiaStore/configuration/data-types/">
       
       
-        <link rel="prev" href="../documentation/">
+        <link rel="prev" href="../">
       
+      
+        <link rel="next" href="../logging/">
       
       
       <link rel="icon" href="../../images/favicon.ico">
@@ -22,7 +24,7 @@
     
     
       
-        <title>Guides - HestiaStore</title>
+        <title>Data Types - HestiaStore</title>
       
     
     
@@ -74,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#development" class="md-skip">
+        <a href="#data-types" class="md-skip">
           Skip to content
         </a>
       
@@ -109,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Guides
+              Data Types
             
           </span>
         </div>
@@ -273,11 +275,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../configuration/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -317,13 +321,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../development/" class="md-tabs__link">
           
   
   
@@ -600,6 +602,8 @@
       
   
   
+    
+  
   
   
     
@@ -617,22 +621,23 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../configuration/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   
@@ -645,13 +650,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Configuration
@@ -664,10 +669,32 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../configuration/data-types/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Data Types
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -678,6 +705,59 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#custom-data-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom Data Types
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Custom Data Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-to-use-new-data-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      How to use new Data Type
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Notes
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -690,7 +770,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../configuration/logging/" class="md-nav__link">
+      <a href="../logging/" class="md-nav__link">
         
   
   
@@ -834,8 +914,6 @@
       
   
   
-    
-  
   
   
     
@@ -855,23 +933,22 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../../development/" class="md-nav__link ">
               
   
   
@@ -884,13 +961,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Development
@@ -906,7 +983,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../release/" class="md-nav__link">
+      <a href="../../development/release/" class="md-nav__link">
         
   
   
@@ -929,7 +1006,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../documentation/" class="md-nav__link">
+      <a href="../../development/documentation/" class="md-nav__link">
         
   
   
@@ -949,32 +1026,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    Guides
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../development/guides/" class="md-nav__link">
         
   
   
@@ -985,77 +1040,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#how-to-run-jmh-benchmarks" class="md-nav__link">
-    <span class="md-ellipsis">
-      How to run JMH benchmarks
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="How to run JMH benchmarks">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#possible-problems" class="md-nav__link">
-    <span class="md-ellipsis">
-      Possible problems
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#load-test" class="md-nav__link">
-    <span class="md-ellipsis">
-      Load test
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#development_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      Development
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-to-get-segment-disk-size" class="md-nav__link">
-    <span class="md-ellipsis">
-      How to get segment disk size
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1095,19 +1079,19 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#how-to-run-jmh-benchmarks" class="md-nav__link">
+  <a href="#custom-data-types" class="md-nav__link">
     <span class="md-ellipsis">
-      How to run JMH benchmarks
+      Custom Data Types
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="How to run JMH benchmarks">
+    <nav class="md-nav" aria-label="Custom Data Types">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#possible-problems" class="md-nav__link">
+  <a href="#how-to-use-new-data-type" class="md-nav__link">
     <span class="md-ellipsis">
-      Possible problems
+      How to use new Data Type
     </span>
   </a>
   
@@ -1119,27 +1103,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#load-test" class="md-nav__link">
+  <a href="#notes" class="md-nav__link">
     <span class="md-ellipsis">
-      Load test
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#development_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      Development
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-to-get-segment-disk-size" class="md-nav__link">
-    <span class="md-ellipsis">
-      How to get segment disk size
+      Notes
     </span>
   </a>
   
@@ -1164,83 +1130,99 @@
   
 
 
-<h1 id="development">Development</h1>
-<p>Here are some development related topiscs.</p>
-<h2 id="how-to-run-jmh-benchmarks">How to run JMH benchmarks</h2>
-<p>Follow this steps:
-* Compile whole project and create pacakge containing all benchmarks data
-* Go to <code>jmh-benchmarks</code>
-* Execute it, with temp directory in <code>target</code> directory</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>mvn<span class="w"> </span>clean<span class="w"> </span>install
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>jmh-benchmarks
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>java<span class="w"> </span>-Ddir<span class="o">=</span>./target/<span class="w"> </span>-jar<span class="w"> </span>target/jmh-benchmarks.jar
+<h1 id="data-types">Data types</h1>
+<p>HestiaStore supports a variety of data types for storing keys and values in a binary-efficient and consistent manner. Each data type is associated with a <code>TypeDescriptor</code>, which handles serialization, deserialization, comparison, and hashing logic.</p>
+<p>Below is a list of the supported data types and their characteristics.</p>
+<table>
+<thead>
+<tr>
+<th>Java Class</th>
+<th>TypeDescriptor Class</th>
+<th>Max Length (Bytes)</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>java.lang.Byte</code></td>
+<td><code>TypeDescriptorByte</code></td>
+<td>1</td>
+<td>Two's complement representation</td>
+</tr>
+<tr>
+<td><code>java.lang.Integer</code></td>
+<td><code>TypeDescriptorInteger</code></td>
+<td>4</td>
+<td>Big-endian encoding</td>
+</tr>
+<tr>
+<td><code>java.lang.Long</code></td>
+<td><code>TypeDescriptorLong</code></td>
+<td>8</td>
+<td>Big-endian encoding</td>
+</tr>
+<tr>
+<td><code>java.lang.Float</code></td>
+<td><code>TypeDescriptorFloat</code></td>
+<td>4</td>
+<td>IEEE 754 format</td>
+</tr>
+<tr>
+<td><code>java.lang.Double</code></td>
+<td><code>TypeDescriptorDouble</code></td>
+<td>8</td>
+<td>IEEE 754 format</td>
+</tr>
+<tr>
+<td><code>java.lang.String</code></td>
+<td><code>TypeDescriptorShortString</code></td>
+<td>128</td>
+<td>UTF-8 encoding, prefixed with 2-byte length</td>
+</tr>
+<tr>
+<td><code>java.lang.String</code></td>
+<td><code>TypeDescriptorString</code></td>
+<td>2 GB</td>
+<td>UTF-8 encoding, prefixed with 2-byte length</td>
+</tr>
+<tr>
+<td><code>hestia.datatype.ByteArray</code></td>
+<td><code>TypeDescriptorByteArray</code></td>
+<td>n</td>
+<td>Raw bytes, length determined by actual data</td>
+</tr>
+</tbody>
+</table>
+<h2 id="custom-data-types">Custom Data Types</h2>
+<p>HestiaStore allows advanced users to define custom <code>TypeDescriptor</code> implementations for handling specialized serialization strategies or complex types. Main usecases:</p>
+<ul>
+<li>Allows to store new data type.</li>
+<li>Introduce some specific encoding. it could lead to space saving.</li>
+<li>Limit data to some exact size</li>
+</ul>
+<p>To create a new data type:</p>
+<ol>
+<li>Implement the <code>TypeDescriptor&lt;T&gt;</code> interface. It's just a collection of simple interfaces which allows store data type to bytes and restore it from byte array</li>
+<li>Optionallly register it using <code>org.hestiastore.index.sst.DataTypeDescriptorRegistry.addTypeDescriptor(Class, descriptor)</code>.</li>
+</ol>
+<h3 id="how-to-use-new-data-type">How to use new Data Type</h3>
+<p>During Index configuration new data type descriptor can by directly used:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">IndexConfiguration</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="w"> </span><span class="n">conf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IndexConfiguration</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="p">.</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">()</span><span class="c1">//</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="p">.</span><span class="na">withKeyClass</span><span class="p">(</span><span class="n">Integer</span><span class="p">.</span><span class="na">class</span><span class="p">)</span><span class="c1">//</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="p">.</span><span class="na">withValueClass</span><span class="p">(</span><span class="n">MySuperDataType</span><span class="p">.</span><span class="na">class</span><span class="p">)</span><span class="c1">//</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">        </span><span class="p">...</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="p">.</span><span class="na">withValueTypeDescriptor</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">TypeDescriptorMySuperDataType</span><span class="p">())</span><span class="w"> </span><span class="c1">//</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">        </span><span class="p">...</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">Index</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Index</span><span class="p">.</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="n">create</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span><span class="w"> </span><span class="n">conf</span><span class="p">);</span>
 </code></pre></div>
-<p>Specific JMH benchmark class could be run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>java<span class="w"> </span>-Ddir<span class="o">=</span>./target/<span class="w"> </span>-jar<span class="w"> </span>target/jmh-benchmarks.jar<span class="w"> </span>SegmentSearchBenchmark
-</code></pre></div>
-<p>result could look like:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Benchmark                                             Mode  Cnt    Score      Error  Units
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>SequentialFileReadingBenchmark.test_with_buffer_01KB  avgt    4   70.747 ±   42.480  ms/op
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>SequentialFileReadingBenchmark.test_with_buffer_02KB  avgt    4   60.009 ±   52.899  ms/op
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>SequentialFileReadingBenchmark.test_with_buffer_04KB  avgt    4   51.254 ±   30.112  ms/op
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>SequentialFileReadingBenchmark.test_with_buffer_08KB  avgt    4   48.600 ±   28.892  ms/op
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>SequentialFileReadingBenchmark.test_with_buffer_16KB  avgt    4   48.471 ±   25.665  ms/op
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>SequentialFileReadingBenchmark.test_with_buffer_32KB  avgt    4   45.256 ±   24.986  ms/op
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>SequentialFileReadingBenchmark.test_with_buffer_64KB  avgt    4   45.204 ±   24.867  ms/op
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>SequentialFileWritingBenchmark.test_with_buffer_01KB  avgt    4  238.075 ±   75.311  ms/op
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>SequentialFileWritingBenchmark.test_with_buffer_02KB  avgt    4  271.272 ±   64.747  ms/op
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>SequentialFileWritingBenchmark.test_with_buffer_04KB  avgt    4  276.001 ±   45.815  ms/op
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>SequentialFileWritingBenchmark.test_with_buffer_08KB  avgt    4  352.189 ± 1140.814  ms/op
-<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>SequentialFileWritingBenchmark.test_with_buffer_16KB  avgt    4  258.806 ±   44.693  ms/op
-<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>SequentialFileWritingBenchmark.test_with_buffer_32KB  avgt    4  276.246 ±  135.019  ms/op
-<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>SequentialFileWritingBenchmark.test_with_buffer_64KB  avgt    4  275.944 ±  128.835  ms/op
-</code></pre></div>
-<p>When some JMH benchmark class is changed command <code>mvn package</code> have to be run.</p>
-<h3 id="possible-problems">Possible problems</h3>
-<p>Generally JMH is quite fragile. Small changes broke JMH benchmark execution. Usually helps rebuild project and start again as described above.</p>
-<h2 id="load-test">Load test</h2>
-<p>Runnign JVM should be inspected with some profiller. For profilling is usefull to hae long running task to watch it. Go to project <code>load-test</code>. Following command show all optional parameters:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>java<span class="w"> </span>-jar<span class="w"> </span>target/load-test.jar<span class="w"> </span>com.coroptis.index.loadtest.Main<span class="w"> </span>--help
-</code></pre></div>
-<p>Theer are two main supported operations. First is data generating. It's could be usefull to place in java profilling agent. It could look like:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>java<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span>-agentpath:/Applications/YourKit-Java-Profiler-2023.9.app/Contents/Resources/bin/mac/libyjpagent.dylib<span class="o">=</span><span class="nv">exceptions</span><span class="o">=</span>disable,delay<span class="o">=</span><span class="m">10000</span>,listen<span class="o">=</span>all<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span>-jar<span class="w"> </span>target/load-test.jar<span class="w"> </span>com.coroptis.index.loadtest.Main<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span>--write<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span>--directory<span class="w"> </span>/Volumes/LaCie/test/<span class="w">  </span><span class="se">\</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span>--count<span class="w"> </span>5_000_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span>--max-number-of-keys-in-cache<span class="w"> </span>5_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span>--max-number-of-keys-in-segment<span class="w"> </span>10_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">    </span>--max-number-of-keys-in-segment-cache<span class="w"> </span>500_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">    </span>--max-number-of-keys-in-segment-cache-during-flushing<span class="w"> </span>2_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">    </span>--max-number-of-keys-in-segment-index-page<span class="w"> </span>1_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">    </span>--bloom-filter-index-size-in-bytes<span class="w"> </span>10_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">    </span>--bloom-filter-number-of-hash-functions<span class="w"> </span><span class="m">2</span>
-</code></pre></div>
-<p>It will generate 210 GB of testing data. Furst search test can be performed like this:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>java<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span>-agentpath:/Applications/YourKit-Java-Profiler-2023.9.app/Contents/Resources/bin/mac/libyjpagent.dylib<span class="o">=</span><span class="nv">exceptions</span><span class="o">=</span>disable,delay<span class="o">=</span><span class="m">10000</span>,listen<span class="o">=</span>all<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span>-jar<span class="w"> </span>target/load-test.jar<span class="w"> </span>com.coroptis.index.loadtest.Main<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span>--search<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">    </span>--directory<span class="w"> </span>/Volumes/LaCie/test/<span class="w">  </span><span class="se">\</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">    </span>--count<span class="w"> </span>5_000_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">    </span>--max-key<span class="w"> </span>5_000_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">    </span>--max-number-of-keys-in-cache<span class="w"> </span>5_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">    </span>--max-number-of-keys-in-segment<span class="w"> </span>10_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">    </span>--max-number-of-keys-in-segment-cache<span class="w"> </span>500_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">    </span>--max-number-of-keys-in-segment-cache-during-flushing<span class="w"> </span>2_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="w">    </span>--max-number-of-keys-in-segment-index-page<span class="w"> </span>1_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="w">    </span>--bloom-filter-index-size-in-bytes<span class="w"> </span>10_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="w">    </span>--bloom-filter-number-of-hash-functions<span class="w"> </span><span class="m">2</span>
-</code></pre></div>
-<h2 id="development_1">Development</h2>
-<p>Mockito requires reflective access to non-public parts in a Java module. It could be manually open by passing following parameter as jvm parameter:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>--add-opens=java.base/java.lang=ALL-UNNAMED
-</code></pre></div>
-<h2 id="how-to-get-segment-disk-size">How to get segment disk size</h2>
-<p>On apple try:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>diskutil  info /Volumes/LaCie
-</code></pre></div>
+<h2 id="notes">Notes</h2>
+<ul>
+<li>All numeric types use big-endian byte order for consistent sorting and comparison.</li>
+<li><code>ByteArray</code> is a wrapper class designed to support <code>equals()</code>, <code>hashCode()</code>, and lexicographic comparison. It can be used for binary blobs or hash digests.</li>
+</ul>
 
 
 
