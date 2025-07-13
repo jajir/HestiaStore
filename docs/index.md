@@ -4,7 +4,7 @@ HestiaStore is a lightweight, embeddable key-value storage engine optimized for 
 
 Features:
 
-```
+```text
  • Java-based with minimum external dependencies
  • Requires Java 17+
  • In-memory or file-backed indexes
