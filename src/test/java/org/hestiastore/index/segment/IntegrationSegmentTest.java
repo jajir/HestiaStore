@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
@@ -26,7 +26,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
 
     private static final SegmentId SEGMENT_37_ID = SegmentId.of(37);
 
-    private final TypeDescriptorString tds = new TypeDescriptorString();
+    private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
 
     private final List<Pair<Integer, String>> testDataSet = Arrays.asList(
@@ -41,7 +41,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
     @ParameterizedTest
     @MethodSource("segmentProvider")
     void test_empty_segment_stats(final TypeDescriptorInteger tdi,
-            final TypeDescriptorString tds, final Directory directory,
+            final TypeDescriptorShortString tds, final Directory directory,
             final Segment<Integer, String> seg,
             final int expectedNumberKeysInScarceIndex,
             int expectedNumberOfFiles) {
@@ -72,7 +72,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
     @ParameterizedTest
     @MethodSource("segmentProvider")
     void test_simple(final TypeDescriptorInteger tdi,
-            final TypeDescriptorString tds, final Directory directory,
+            final TypeDescriptorShortString tds, final Directory directory,
             final Segment<Integer, String> seg,
             final int expectedNumberKeysInScarceIndex,
             final int expectedNumberOfFiles) {
@@ -108,7 +108,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
     @ParameterizedTest
     @MethodSource("segmentProvider")
     void test_multipleWrites(final TypeDescriptorInteger tdi,
-            final TypeDescriptorString tds, final Directory directory,
+            final TypeDescriptorShortString tds, final Directory directory,
             final Segment<Integer, String> seg,
             final int expectedNumberKeysInScarceIndex,
             final int expectedNumberOfFiles) {
@@ -148,7 +148,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
     @ParameterizedTest
     @MethodSource("segmentProvider")
     void test_split(final TypeDescriptorInteger tdi,
-            final TypeDescriptorString tds, final Directory directory,
+            final TypeDescriptorShortString tds, final Directory directory,
             final Segment<Integer, String> seg,
             final int expectedNumberKeysInScarceIndex,
             final int expectedNumberOfFiles) {
@@ -288,7 +288,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 Pair.of(3, "bb"), //
                 Pair.of(4, "c"), //
                 Pair.of(5, "ddd"), //
-                Pair.of(5, TypeDescriptorString.TOMBSTONE_VALUE)//
+                Pair.of(5, TypeDescriptorShortString.TOMBSTONE_VALUE)//
         ));
 
         /**
@@ -316,7 +316,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
     @ParameterizedTest
     @MethodSource("segmentProvider")
     void test_write_delete_repeat_operations(final TypeDescriptorInteger tdi,
-            final TypeDescriptorString tds, final Directory directory,
+            final TypeDescriptorShortString tds, final Directory directory,
             final Segment<Integer, String> seg,
             final int expectedNumberKeysInScarceIndex,
             final int expectedNumberOfFiles) {
@@ -393,15 +393,15 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         writePairs(seg, Arrays.asList(//
                 Pair.of(25, "d"), //
                 Pair.of(15, "d"), //
-                Pair.of(1, TypeDescriptorString.TOMBSTONE_VALUE), //
-                Pair.of(2, TypeDescriptorString.TOMBSTONE_VALUE), //
-                Pair.of(3, TypeDescriptorString.TOMBSTONE_VALUE), //
-                Pair.of(4, TypeDescriptorString.TOMBSTONE_VALUE), //
-                Pair.of(5, TypeDescriptorString.TOMBSTONE_VALUE), //
-                Pair.of(6, TypeDescriptorString.TOMBSTONE_VALUE), //
-                Pair.of(7, TypeDescriptorString.TOMBSTONE_VALUE), //
-                Pair.of(8, TypeDescriptorString.TOMBSTONE_VALUE), //
-                Pair.of(9, TypeDescriptorString.TOMBSTONE_VALUE)//
+                Pair.of(1, TypeDescriptorShortString.TOMBSTONE_VALUE), //
+                Pair.of(2, TypeDescriptorShortString.TOMBSTONE_VALUE), //
+                Pair.of(3, TypeDescriptorShortString.TOMBSTONE_VALUE), //
+                Pair.of(4, TypeDescriptorShortString.TOMBSTONE_VALUE), //
+                Pair.of(5, TypeDescriptorShortString.TOMBSTONE_VALUE), //
+                Pair.of(6, TypeDescriptorShortString.TOMBSTONE_VALUE), //
+                Pair.of(7, TypeDescriptorShortString.TOMBSTONE_VALUE), //
+                Pair.of(8, TypeDescriptorShortString.TOMBSTONE_VALUE), //
+                Pair.of(9, TypeDescriptorShortString.TOMBSTONE_VALUE)//
         ));
         final SegmentSplitter<Integer, String> segSplitter = seg
                 .getSegmentSplitter();
@@ -470,7 +470,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 Pair.of(20, "aaj"), //
                 Pair.of(21, "aak"), //
                 Pair.of(22, "aal"), //
-                Pair.of(9, TypeDescriptorString.TOMBSTONE_VALUE)//
+                Pair.of(9, TypeDescriptorShortString.TOMBSTONE_VALUE)//
         ));
         /**
          * Writing to segment which doesn't require compaction doesn't load
@@ -530,7 +530,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 Pair.of(3, "bb"), //
                 Pair.of(4, "c"), //
                 Pair.of(5, "ddd"), //
-                Pair.of(5, TypeDescriptorString.TOMBSTONE_VALUE)//
+                Pair.of(5, TypeDescriptorShortString.TOMBSTONE_VALUE)//
         ));
         seg.forceCompact();
 
@@ -602,7 +602,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         final SegmentId id1 = SegmentId.of(29);
         final SegmentId id2 = SegmentId.of(23);
         final SegmentId id3 = SegmentId.of(17);
-        final TypeDescriptorString tds = new TypeDescriptorString();
+        final TypeDescriptorShortString tds = new TypeDescriptorShortString();
         final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
         return Stream.of(arguments(tdi, tds, dir1,
                 Segment.<Integer, String>builder()//

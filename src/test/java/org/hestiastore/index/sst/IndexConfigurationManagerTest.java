@@ -9,7 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.datatype.TypeDescriptorLong;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,7 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class IndexConfigurationManagerTest {
 
-    private static final String TD_STRING = TypeDescriptorString.class
+    private static final String TD_STRING = TypeDescriptorShortString.class
             .getSimpleName();
     private static final String TD_LONG = TypeDescriptorLong.class
             .getSimpleName();
@@ -595,7 +595,7 @@ class IndexConfigurationManagerTest {
                 () -> manager.mergeWithStored(cfg));
 
         assertEquals("Value of 'ValueTypeDescriptor' is already set to "
-                + "'TypeDescriptorString' and can't be changed to 'kachna'",
+                + "'TypeDescriptorShortString' and can't be changed to 'kachna'",
                 e.getMessage());
     }
 

@@ -8,14 +8,14 @@ import java.util.Collections;
 import java.util.List;
 
 import org.hestiastore.index.Pair;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
 class IntegrationScarceIndexTest {
 
     private static final String FILE_NAME = "pok.dat";
-    private final TypeDescriptorString stringTd = new TypeDescriptorString();
+    private final TypeDescriptorShortString stringTd = new TypeDescriptorShortString();
 
     private static final Pair<String, Integer> P_BBB_1 = Pair.of("bbb", 13);
     private static final Pair<String, Integer> P_BBB_2 = Pair.of("bbb", 1);

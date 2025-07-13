@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.datatype.TypeDescriptorByte;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileWriter;
 import org.hestiastore.index.directory.MemDirectory;
@@ -28,7 +28,7 @@ class IntegrationSortedDataFileWriterTest {
     private static final int DISK_IO_BUFFER_SIZE = 1024;
     private static final String FILE_NAME = "pok.dat";
     private final TypeDescriptorByte byteTd = new TypeDescriptorByte();
-    private final TypeDescriptorString stringTd = new TypeDescriptorString();
+    private final TypeDescriptorShortString stringTd = new TypeDescriptorShortString();
 
     @Test
     void read_incorrect_insert_order_mem() {

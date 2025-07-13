@@ -7,7 +7,7 @@ import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
@@ -21,7 +21,7 @@ class SegmentManagerTest {
 
     private final TypeDescriptor<Integer> keyTypeDescriptor = new TypeDescriptorInteger();
 
-    private final TypeDescriptor<String> valueTypeDescriptor = new TypeDescriptorString();
+    private final TypeDescriptor<String> valueTypeDescriptor = new TypeDescriptorShortString();
 
     @Mock
     private Directory directory;

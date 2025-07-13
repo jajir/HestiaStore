@@ -7,7 +7,7 @@ import java.util.List;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 
 class IntegrationIndexIteratorTest {
 
-    private static final TypeDescriptorString TD_STRING = new TypeDescriptorString();
+    private static final TypeDescriptorShortString TD_STRING = new TypeDescriptorShortString();
     private static final TypeDescriptorInteger TD_INTEGER = new TypeDescriptorInteger();
 
     private final Logger logger = LoggerFactory

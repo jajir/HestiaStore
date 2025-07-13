@@ -5,10 +5,14 @@ import java.util.Map;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.datatype.ByteArray;
 import org.hestiastore.index.datatype.TypeDescriptor;
+import org.hestiastore.index.datatype.TypeDescriptorByteArray;
+import org.hestiastore.index.datatype.TypeDescriptorDouble;
+import org.hestiastore.index.datatype.TypeDescriptorFloat;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 
 /**
  * Class hold data type definitions in a static way. So for most common types it
@@ -25,7 +29,10 @@ public class DataTypeDescriptorRegistry {
     static {
         addTypeDescriptor(Integer.class, new TypeDescriptorInteger());
         addTypeDescriptor(Long.class, new TypeDescriptorLong());
-        addTypeDescriptor(String.class, new TypeDescriptorString());
+        addTypeDescriptor(String.class, new TypeDescriptorShortString());
+        addTypeDescriptor(Float.class, new TypeDescriptorFloat());
+        addTypeDescriptor(Double.class, new TypeDescriptorDouble());
+        addTypeDescriptor(ByteArray.class, new TypeDescriptorByteArray());
     }
 
     public static final <T> void addTypeDescriptor(final Class<T> clazz,

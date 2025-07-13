@@ -14,7 +14,7 @@ import org.hestiastore.index.PairIteratorWithCurrent;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.AbstractSegmentTest;
@@ -28,7 +28,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class IntegrationSortTest extends AbstractSegmentTest {
 
     private static final Random RANDOM = new Random();
-    private static final TypeDescriptor<String> tds = new TypeDescriptorString();
+    private static final TypeDescriptor<String> tds = new TypeDescriptorShortString();
     private static final TypeDescriptor<Integer> tdi = new TypeDescriptorInteger();
     private static final String UNSORTED_FILE_NAME = "kachna.unsorted";
     private static final String SORTED_FILE_NAME = "kachna.sorted";

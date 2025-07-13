@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,7 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class SortedDataFileTest {
 
     private static final String FILE_NAME = "test.sdf";
-    private static final TypeDescriptorString STD = new TypeDescriptorString();
+    private static final TypeDescriptorShortString STD = new TypeDescriptorShortString();
     private static final TypeDescriptorInteger LTD = new TypeDescriptorInteger();
     private static final int IO_BUFFER_SIZE = 1024 * 4;
 

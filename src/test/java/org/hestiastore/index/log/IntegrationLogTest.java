@@ -7,7 +7,7 @@ import java.util.List;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.unsorteddatafile.UnsortedDataFileStreamer;
@@ -21,7 +21,7 @@ class IntegrationLogTest {
 
     private Directory directory;
     private final TypeDescriptor<Integer> tdi = new TypeDescriptorInteger();
-    private final TypeDescriptor<String> tds = new TypeDescriptorString();
+    private final TypeDescriptor<String> tds = new TypeDescriptorShortString();
 
     @Test
     void test_simple_event_logging() {

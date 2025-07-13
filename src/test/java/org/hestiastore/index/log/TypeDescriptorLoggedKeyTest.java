@@ -5,7 +5,7 @@ import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.FileReader;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,7 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class TypeDescriptorLoggedKeyTest {
 
     private static final TypeDescriptor<Integer> TDI = new TypeDescriptorInteger();
-    private static final TypeDescriptor<String> TDS = new TypeDescriptorString();
+    private static final TypeDescriptor<String> TDS = new TypeDescriptorShortString();
 
     @Test
     void test_integer_read_write() {
@@ -50,8 +50,8 @@ class TypeDescriptorLoggedKeyTest {
         final LoggedKey<String> k1 = tdlk.getConvertorFromBytes()
                 .fromBytes(tdlk.getConvertorToBytes()
                         .toBytes(LoggedKey.<String>of(LogOperation.POST,
-                                TypeDescriptorString.TOMBSTONE_VALUE)));
-        assertEquals(TypeDescriptorString.TOMBSTONE_VALUE, k1.getKey());
+                                TypeDescriptorShortString.TOMBSTONE_VALUE)));
+        assertEquals(TypeDescriptorShortString.TOMBSTONE_VALUE, k1.getKey());
         assertEquals(LogOperation.POST, k1.getLogOperation());
     }
 

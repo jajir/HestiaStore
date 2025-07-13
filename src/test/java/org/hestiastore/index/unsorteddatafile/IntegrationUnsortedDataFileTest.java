@@ -8,7 +8,7 @@ import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
@@ -21,7 +21,7 @@ class IntegrationUnsortedDataFileTest {
             .getLogger(IntegrationUnsortedDataFileTest.class);
 
     private final TypeDescriptor<Integer> tdi = new TypeDescriptorInteger();
-    private final TypeDescriptor<String> tds = new TypeDescriptorString();
+    private final TypeDescriptor<String> tds = new TypeDescriptorShortString();
 
     @Test
     void test_in_mem_unsorted_index() {

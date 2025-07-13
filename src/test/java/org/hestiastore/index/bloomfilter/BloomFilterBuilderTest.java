@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 
 class BloomFilterBuilderTest {
 
-    private static final TypeDescriptor<String> TDS = new TypeDescriptorString();
+    private static final TypeDescriptor<String> TDS = new TypeDescriptorShortString();
 
     private static final String FILE_NAME = "test.bf";
 

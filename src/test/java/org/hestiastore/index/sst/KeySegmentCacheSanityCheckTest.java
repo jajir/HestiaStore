@@ -3,7 +3,7 @@ package org.hestiastore.index.sst;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.hestiastore.index.Pair;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 
 class KeySegmentCacheSanityCheckTest {
 
-    private final TypeDescriptorString stringTd = new TypeDescriptorString();
+    private final TypeDescriptorShortString stringTd = new TypeDescriptorShortString();
     private final TypeDescriptorSegmentId integerTd = new TypeDescriptorSegmentId();
     private final Directory directory = new MemDirectory();
 

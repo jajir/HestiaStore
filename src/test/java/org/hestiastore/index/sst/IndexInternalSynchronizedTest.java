@@ -5,7 +5,7 @@ import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.log.Log;
@@ -18,7 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class IndexInternalSynchronizedTest {
 
     private static final TypeDescriptor<Integer> TD_INTEGER = new TypeDescriptorInteger();
-    private static final TypeDescriptor<String> TD_STRING = new TypeDescriptorString();
+    private static final TypeDescriptor<String> TD_STRING = new TypeDescriptorShortString();
 
     private Directory directory = new MemDirectory();
 

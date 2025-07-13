@@ -8,7 +8,7 @@ import java.util.List;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
@@ -23,7 +23,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 class IntegrationIndexTest extends AbstractIndexTest {
     final Directory directory = new MemDirectory();
     final SegmentId id = SegmentId.of(27);
-    final TypeDescriptorString tds = new TypeDescriptorString();
+    final TypeDescriptorShortString tds = new TypeDescriptorShortString();
     final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
 
     private final List<Pair<Integer, String>> testData = List.of(

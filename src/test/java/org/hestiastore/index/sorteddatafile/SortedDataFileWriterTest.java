@@ -7,7 +7,7 @@ import static org.mockito.Mockito.verify;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.datatype.TypeWriter;
 import org.hestiastore.index.directory.FileWriter;
 import org.junit.jupiter.api.Test;
@@ -24,7 +24,7 @@ class SortedDataFileWriterTest {
     private static final Pair<String, Integer> PAIR_3 = Pair.of("key3", 300);
     private static final Pair<String, Integer> PAIR_4 = Pair.of("key4", 400);
 
-    private static final TypeDescriptor<String> stringTd = new TypeDescriptorString();
+    private static final TypeDescriptor<String> stringTd = new TypeDescriptorShortString();
 
     @Mock
     private FileWriter fileWriter;

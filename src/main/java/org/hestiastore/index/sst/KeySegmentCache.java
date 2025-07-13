@@ -177,7 +177,11 @@ public final class KeySegmentCache<K> implements CloseableResource {
                 .toList();
     }
 
-    public void flush() {
+    /**
+     * Flushes all changes to disk if there are any. This method is
+     * automatically called when this cache is closed.
+     */
+    public void optionalyFlush() {
         if (isDirty) {
             try (SortedDataFileWriter<K, SegmentId> writer = sdf.openWriter()) {
                 list.forEach((k, v) -> writer.write(Pair.of(k, v)));
@@ -188,6 +192,6 @@ public final class KeySegmentCache<K> implements CloseableResource {
 
     @Override
     public void close() {
-        flush();
+        optionalyFlush();
     }
 }
