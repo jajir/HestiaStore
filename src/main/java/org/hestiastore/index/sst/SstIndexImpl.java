@@ -115,7 +115,7 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
                     F.fmt(cache.size()));
         }
         final CompactSupport<K, V> support = new CompactSupport<>(
-                segmentRegistry, keySegmentCache);
+                segmentRegistry, keySegmentCache, keyTypeDescriptor);
         cache.getStream()
                 .sorted(new PairComparator<>(keyTypeDescriptor.getComparator()))
                 .forEach(support::compact);
