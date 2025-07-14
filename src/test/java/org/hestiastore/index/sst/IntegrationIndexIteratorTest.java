@@ -1,8 +1,9 @@
 package org.hestiastore.index.sst;
 
+import static org.hestiastore.index.datatype.NullValue.NULL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.hestiastore.index.datatype.NullValue.NULL;
+
 import java.util.List;
 
 import org.hestiastore.index.Pair;
@@ -12,7 +13,6 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
-import org.mockito.internal.matchers.Null;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
