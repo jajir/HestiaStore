@@ -11,9 +11,11 @@ Below is a list of the supported data types and their characteristics.
 | `java.lang.Long`     | `TypeDescriptorLong`              | 8                   | Big-endian encoding |
 | `java.lang.Float`    | `TypeDescriptorFloat`             | 4                   | IEEE 754 format |
 | `java.lang.Double`   | `TypeDescriptorDouble`            | 8                   | IEEE 754 format |
-| `java.lang.String`   | `TypeDescriptorShortString`       | 128                 | UTF-8 encoding, prefixed with 2-byte length |
-| `java.lang.String`   | `TypeDescriptorString`            | 2 GB                | UTF-8 encoding, prefixed with 2-byte length |
-| `hestia.datatype.ByteArray` | `TypeDescriptorByteArray`   | n                   | Raw bytes, length determined by actual data |
+| `java.lang.String`   | `TypeDescriptorShortString`       | 128                 | UTF-8 encoding, prefixed with 1-byte length, it's default string type descriptor |
+| `java.lang.String`   | `TypeDescriptorString`            | 2 GB                | UTF-8 encoding, prefixed with 4-byte length |
+| `org.hestiastore.index.datatype.ByteArray` | `TypeDescriptorByteArray`   | n                   | Raw bytes, length determined by actual data |
+| `org.hestiastore.index.datatype.NullValue` | `TypeDescriptorNullValue`   | 0                   | Usefulll when value is not needed. Doesn't occupy any space. |
+| `org.hestiastore.index.datatype.CompositeValue` | `TypeDescriptorCompositeValue`   | n                   | Represents multiple values.  |
 
 ## Custom Data Types
 
