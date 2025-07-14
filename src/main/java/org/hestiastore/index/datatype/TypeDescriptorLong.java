@@ -12,7 +12,7 @@ public class TypeDescriptorLong implements TypeDescriptor<Long> {
     /**
      * How many bytes is required to store Integer.
      */
-    private static final int REQUIRED_BYTES = 8;
+    static final int REQUIRED_BYTES = 8;
 
     /**
      * With byte AND allows to select required part of bytes.

@@ -2,15 +2,17 @@ package org.hestiastore.index.sst;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
+import static org.hestiastore.index.datatype.NullValue.NULL;
 import java.util.List;
 
 import org.hestiastore.index.Pair;
+import org.hestiastore.index.datatype.NullValue;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
+import org.mockito.internal.matchers.Null;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +30,11 @@ class IntegrationIndexIteratorTest {
             Pair.of(5, "ddg"), Pair.of(6, "ddh"), Pair.of(7, "ddi"),
             Pair.of(8, "ddj"), Pair.of(9, "ddk"), Pair.of(10, "ddl"),
             Pair.of(11, "ddm"));
+    private final List<Pair<Integer, NullValue>> data2 = List.of(
+            Pair.of(1, NULL), Pair.of(2, NULL), Pair.of(3, NULL),
+            Pair.of(4, NULL), Pair.of(5, NULL), Pair.of(6, NULL),
+            Pair.of(7, NULL), Pair.of(8, NULL), Pair.of(9, NULL),
+            Pair.of(10, NULL), Pair.of(11, NULL));
 
     @Test
     void test_simple_index_building() {
@@ -39,6 +46,20 @@ class IntegrationIndexIteratorTest {
                 .build();
         final Index<Integer, String> index = Index.create(directory, conf);
         data.stream().forEach(index::put);
+        index.compact();
+        assertTrue(true); // Just to ensure no exceptions are thrown
+    }
+
+    @Test
+    void test_null_value() {
+        final IndexConfiguration<Integer, NullValue> conf = IndexConfiguration
+                .<Integer, NullValue>builder()//
+                .withKeyClass(Integer.class)//
+                .withValueClass(NullValue.class)//
+                .withName("test_index")//
+                .build();
+        final Index<Integer, NullValue> index = Index.create(directory, conf);
+        data2.stream().forEach(index::put);
         index.compact();
         assertTrue(true); // Just to ensure no exceptions are thrown
     }

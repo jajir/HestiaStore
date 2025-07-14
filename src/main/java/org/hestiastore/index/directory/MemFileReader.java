@@ -8,7 +8,7 @@ public class MemFileReader implements FileReader {
 
     private int position;
 
-    MemFileReader(final byte[] data) {
+    public MemFileReader(final byte[] data) {
         Vldtn.requireNonNull(data, "data");
         this.data = data;
         position = 0;
