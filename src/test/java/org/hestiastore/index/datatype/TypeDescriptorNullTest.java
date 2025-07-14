@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import org.junit.jupiter.api.Test;
 
-public class TypeDescriptorNullTest {
+class TypeDescriptorNullTest {
 
     private static final TypeDescriptor<NullValue> TDN = new TypeDescriptorNull();
 

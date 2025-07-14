@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-public class TypeDescriptorDoubleText {
+class TypeDescriptorDoubleText {
 
     private static final TypeDescriptor<Double> TDF = new TypeDescriptorDouble();
 

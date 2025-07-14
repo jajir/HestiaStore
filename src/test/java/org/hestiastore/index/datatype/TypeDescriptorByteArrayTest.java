@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-public class TypeDescriptorByteArrayTest {
+class TypeDescriptorByteArrayTest {
 
     private static final TypeDescriptor<ByteArray> TDBA = new TypeDescriptorByteArray();
 

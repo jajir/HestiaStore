@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-public class TypeDescriptorCompositeTest {
+class TypeDescriptorCompositeTest {
 
     private static final TypeDescriptor<String> TDS = new TypeDescriptorShortString();
     private static final TypeDescriptor<Double> TDF = new TypeDescriptorDouble();

@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-public class TypeDescriptorFloatTest {
+class TypeDescriptorFloatTest {
 
     private static final TypeDescriptor<Float> TDF = new TypeDescriptorFloat();
 
