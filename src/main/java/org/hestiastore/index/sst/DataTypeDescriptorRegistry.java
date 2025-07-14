@@ -6,12 +6,14 @@ import java.util.Map;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ByteArray;
+import org.hestiastore.index.datatype.NullValue;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorByteArray;
 import org.hestiastore.index.datatype.TypeDescriptorDouble;
 import org.hestiastore.index.datatype.TypeDescriptorFloat;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
+import org.hestiastore.index.datatype.TypeDescriptorNull;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 
 /**
@@ -33,6 +35,7 @@ public class DataTypeDescriptorRegistry {
         addTypeDescriptor(Float.class, new TypeDescriptorFloat());
         addTypeDescriptor(Double.class, new TypeDescriptorDouble());
         addTypeDescriptor(ByteArray.class, new TypeDescriptorByteArray());
+        addTypeDescriptor(NullValue.class, new TypeDescriptorNull());
     }
 
     public static final <T> void addTypeDescriptor(final Class<T> clazz,

@@ -12,7 +12,7 @@ public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
     /**
      * How many bytes is required to store Integer.
      */
-    private static final int REQUIRED_BYTES = 4;
+    static final int REQUIRED_BYTES = 4;
 
     /**
      * With byte AND allows to select required part of bytes.
