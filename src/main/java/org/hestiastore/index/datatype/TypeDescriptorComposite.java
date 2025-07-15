@@ -65,6 +65,7 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
      *                        elementTypes.
      */
     @Override
+    @SuppressWarnings("unchecked")
     public Comparator<CompositeValue> getComparator() {
         return (a, b) -> {
             if (a.size() != elementTypes.size()
