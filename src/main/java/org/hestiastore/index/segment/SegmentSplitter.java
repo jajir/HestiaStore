@@ -6,7 +6,9 @@ import org.hestiastore.index.F;
 import org.hestiastore.index.AtomicKey;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.WriteTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,10 +47,6 @@ public class SegmentSplitter<K, V> {
 
     private SegmentStats getStats() {
         return segmentPropertiesManager.getSegmentStats();
-    }
-
-    private SegmentFullWriter<K, V> openFullWriter() {
-        return segmentManager.createSegmentFullWriter();
     }
 
     private static final float MINIMAL_PERCENTAGE_DIFFERENCE = 0.9F;
@@ -98,9 +96,9 @@ public class SegmentSplitter<K, V> {
         final AtomicLong cxLower = new AtomicLong(0);
         final AtomicLong cxHigher = new AtomicLong(0);
         try (PairIterator<K, V> iterator = segment.openIterator()) {
-
-            try (SegmentFullWriter<K, V> writer = lowerSegment
-                    .openFullWriter()) {
+            final WriteTransaction<K, V> lowerSegmentWriteTx = lowerSegment
+                    .openFullWriteTx();
+            try (PairWriter<K, V> writer = lowerSegmentWriteTx.openWriter()) {
                 while (cxLower.get() < half && iterator.hasNext()) {
                     cxLower.incrementAndGet();
                     final Pair<K, V> pair = iterator.next();
@@ -111,6 +109,7 @@ public class SegmentSplitter<K, V> {
                     writer.put(pair);
                 }
             }
+            lowerSegmentWriteTx.commit();
 
             if (cxLower.get() == 0) {
                 throw new IllegalStateException(
@@ -121,13 +120,17 @@ public class SegmentSplitter<K, V> {
                 /**
                  * There are some more keys in segment, so split the segment.
                  */
-                try (SegmentFullWriter<K, V> writer = openFullWriter()) {
+                final WriteTransaction<K, V> segmentWriteTx = segment
+                        .openFullWriteTx();
+                try (PairWriter<K, V> writer = segmentWriteTx.openWriter()) {
                     while (iterator.hasNext()) {
                         final Pair<K, V> pair = iterator.next();
                         writer.put(pair);
                         cxHigher.incrementAndGet();
                     }
                 }
+                segmentWriteTx.commit();
+
                 if (logger.isDebugEnabled()) {
                     logger.debug(
                             "Splitting of '{}' finished, '{}' was created. "

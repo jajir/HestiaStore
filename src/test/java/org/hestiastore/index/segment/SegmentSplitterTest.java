@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.WriteTransaction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,10 +57,16 @@ class SegmentSplitterTest {
     private PairIterator<String, String> segmentIterator;
 
     @Mock
-    SegmentFullWriter<String, String> segmentFullWriter;
+    private SegmentFullWriter<String, String> segmentFullWriter;
 
     @Mock
-    SegmentFullWriter<String, String> lowerSegmentFullWriter;
+    private WriteTransaction<String, String> segmentFullWriterTx;
+
+    @Mock
+    private SegmentFullWriter<String, String> lowerSegmentFullWriter;
+
+    @Mock
+    private WriteTransaction<String, String> lowerSegmentWriteTx;
 
     private SegmentSplitter<String, String> splitter;
 
@@ -119,11 +126,14 @@ class SegmentSplitterTest {
 
         // mock writing lower part to new segment
         when(segmentManager.createSegment(SEGMENT_ID)).thenReturn(lowerSegment);
-        when(lowerSegment.openFullWriter()).thenReturn(lowerSegmentFullWriter);
+        when(lowerSegment.openFullWriteTx()).thenReturn(lowerSegmentWriteTx);
+        when(lowerSegmentWriteTx.openWriter())
+                .thenReturn(lowerSegmentFullWriter);
 
         // mock writing upper part to current segment
-        when(segmentManager.createSegmentFullWriter())
-                .thenReturn(segmentFullWriter);
+
+        when(segment.openFullWriteTx()).thenReturn(segmentFullWriterTx);
+        when(segmentFullWriterTx.openWriter()).thenReturn(segmentFullWriter);
 
         final SegmentSplitterResult<String, String> result = splitter
                 .split(SEGMENT_ID);
@@ -136,6 +146,8 @@ class SegmentSplitterTest {
         verify(segmentFullWriter, times(1)).close();
         verify(versionController, times(1)).changeVersion();
         verify(segmentIterator, times(1)).close();
+        verify(lowerSegmentWriteTx, times(1)).commit();
+        verify(segmentFullWriterTx, times(1)).commit();
     }
 
     @Test

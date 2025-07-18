@@ -92,7 +92,9 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
         scarceWriter.close();
         indexWriter.close();
         bloomFilterWriter.close();
+    }
 
+    public void commit() {
         // rename temporal files to main one
         segmentFiles.getDirectory().renameFile(
                 segmentFiles.getTempIndexFileName(),

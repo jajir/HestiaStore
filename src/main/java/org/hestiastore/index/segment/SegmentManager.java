@@ -34,20 +34,8 @@ public class SegmentManager<K, V> {
      * 
      * @return segment writer object
      */
-    public SegmentFullWriter<K, V> createSegmentFullWriter() {
+    public SegmentFullWriter<K, V> createSegmentFullWriterNew() {
         return new SegmentFullWriter<>(segmentFiles, segmentPropertiesManager,
-                segmentConf.getMaxNumberOfKeysInIndexPage(),
-                segmentCacheDataProvider, deltaCacheController);
-    }
-
-    /**
-     * Allows to re-write all data in segment.
-     * 
-     * @return segment writer object
-     */
-    public SegmentFullWriterNew<K, V> createSegmentFullWriterNew() {
-        return new SegmentFullWriterNew<>(segmentFiles,
-                segmentPropertiesManager,
                 segmentConf.getMaxNumberOfKeysInIndexPage(),
                 segmentCacheDataProvider, deltaCacheController);
     }
