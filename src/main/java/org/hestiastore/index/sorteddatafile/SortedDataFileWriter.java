@@ -57,7 +57,7 @@ public class SortedDataFileWriter<K, V> implements CloseableResource {
                 final String keyComapratorClassName = keyComparator.getClass()
                         .getSimpleName();
                 throw new IllegalArgumentException(String.format(
-                        "Attempt to insers same key as previous. Key '%s' was comapred with '%s'",
+                        "Attempt to insers same key as previous. Key is '%s' and comparator is '%s'",
                         s2, keyComapratorClassName));
             }
             if (cmp > 0) {
