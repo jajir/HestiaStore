@@ -41,6 +41,18 @@ public class SegmentManager<K, V> {
     }
 
     /**
+     * Allows to re-write all data in segment.
+     * 
+     * @return segment writer object
+     */
+    public SegmentFullWriterNew<K, V> createSegmentFullWriterNew() {
+        return new SegmentFullWriterNew<>(segmentFiles,
+                segmentPropertiesManager,
+                segmentConf.getMaxNumberOfKeysInIndexPage(),
+                segmentCacheDataProvider, deltaCacheController);
+    }
+
+    /**
      * Create new segment.
      * 
      * @param segmentId rqeuired segment id

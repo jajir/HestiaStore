@@ -1,6 +1,9 @@
 package org.hestiastore.index.segment;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.hestiastore.index.F;
+import org.hestiastore.index.AtomicKey;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.Vldtn;
@@ -90,26 +93,26 @@ public class SegmentSplitter<K, V> {
         final Segment<K, V> lowerSegment = segmentManager
                 .createSegment(segmentId);
 
-        K minKey = null;
-        K maxKey = null;
-        long cxLower = 0;
-        long cxHigher = 0;
+        final AtomicKey<K> minKey = new AtomicKey<>();
+        final AtomicKey<K> maxKey = new AtomicKey<>();
+        final AtomicLong cxLower = new AtomicLong(0);
+        final AtomicLong cxHigher = new AtomicLong(0);
         try (PairIterator<K, V> iterator = segment.openIterator()) {
 
             try (SegmentFullWriter<K, V> writer = lowerSegment
                     .openFullWriter()) {
-                while (cxLower < half && iterator.hasNext()) {
-                    cxLower++;
+                while (cxLower.get() < half && iterator.hasNext()) {
+                    cxLower.incrementAndGet();
                     final Pair<K, V> pair = iterator.next();
-                    if (minKey == null) {
-                        minKey = pair.getKey();
+                    if (minKey.isEmpty()) {
+                        minKey.set(pair.getKey());
                     }
-                    maxKey = pair.getKey();
+                    maxKey.set(pair.getKey());
                     writer.put(pair);
                 }
             }
 
-            if (cxLower == 0) {
+            if (cxLower.get() == 0) {
                 throw new IllegalStateException(
                         "Splitting failed. Lower segment doesn't contains any data");
             }
@@ -122,7 +125,7 @@ public class SegmentSplitter<K, V> {
                     while (iterator.hasNext()) {
                         final Pair<K, V> pair = iterator.next();
                         writer.put(pair);
-                        cxHigher++;
+                        cxHigher.incrementAndGet();
                     }
                 }
                 if (logger.isDebugEnabled()) {
@@ -132,14 +135,15 @@ public class SegmentSplitter<K, V> {
                                     + "half key was '{}' and real number of keys was '{}'.",
                             segmentFiles.getId(), lowerSegment.getId(),
                             F.fmt(estimatedNumberOfKeys), F.fmt(half),
-                            F.fmt(cxLower + cxHigher));
+                            F.fmt(cxLower.get() + cxHigher.get()));
                 }
-                if (cxHigher == 0) {
+                if (cxHigher.get() == 0) {
                     throw new IllegalStateException(String.format(
                             "Splitting failed. Higher segment doesn't contains any data. Estimated number of keys was '%s'",
                             F.fmt(estimatedNumberOfKeys)));
                 }
-                return new SegmentSplitterResult<>(lowerSegment, minKey, maxKey,
+                return new SegmentSplitterResult<>(lowerSegment, minKey.get(),
+                        maxKey.get(),
                         SegmentSplitterResult.SegmentSplittingStatus.SPLITED);
             } else {
                 /**
@@ -172,7 +176,8 @@ public class SegmentSplitter<K, V> {
                 segmentPropertiesManager.setNumberOfKeysInScarceIndex(
                         stats.getNumberOfKeysInScarceIndex());
                 segmentPropertiesManager.flush();
-                return new SegmentSplitterResult<>(lowerSegment, minKey, maxKey,
+                return new SegmentSplitterResult<>(lowerSegment, minKey.get(),
+                        maxKey.get(),
                         SegmentSplitterResult.SegmentSplittingStatus.COMPACTED);
             }
         }

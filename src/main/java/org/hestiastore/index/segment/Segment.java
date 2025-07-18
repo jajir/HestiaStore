@@ -7,6 +7,8 @@ import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.PairIteratorWithLock;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.WriteTransaction;
+import org.hestiastore.index.WriteTransaction.WriterFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,6 +105,38 @@ public class Segment<K, V>
      */
     SegmentFullWriter<K, V> openFullWriter() {
         return segmentManager.createSegmentFullWriter();
+    }
+
+    /**
+     * Method should be called just from inside of this package. Method open
+     * direct writer to scarce index and main sst file.
+     * 
+     * Writer should be opend and closed as one atomic operation.
+     * 
+     * @return return segment writer object
+     */
+    void openFullWriteTx(final WriterFunction<K, V> writeFunction) {
+        new WriteTransaction<K, V>() {
+
+            private final SegmentFullWriterNew<K, V> segmentFullWriter = segmentManager
+                    .createSegmentFullWriterNew();
+
+            @Override
+            public PairWriter<K, V> openWriter() {
+                return segmentFullWriter;
+            }
+
+            @Override
+            public void commit() {
+                segmentFullWriter.commit();
+            }
+
+            @Override
+            public void close() {
+                // TODO is it usefull?
+            }
+
+        }.execute(writeFunction);
     }
 
     public PairWriter<K, V> openWriter() {
