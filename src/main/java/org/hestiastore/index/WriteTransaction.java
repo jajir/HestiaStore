@@ -26,25 +26,20 @@ public interface WriteTransaction<K, V> {
     void commit();
 
     /**
-     * Closes the transaction, releasing any resources held. It's caled even
-     * when some Exception is throws during writing.
+     * Method execute write operation. It can be used directly of as pattern how
+     * to maually call it. Disadvantage of this method is that it complicate
+     * junit tests.
+     *
+     * @param writeFunction the function to apply
      */
-    void close();
-
     default void execute(final WriterFunction<K, V> writeFunction) {
-        boolean success = false;
         try (PairWriter<K, V> writer = openWriter()) {
             writeFunction.apply(writer);
-            success = true;
         } catch (Exception e) {
             throw new IndexException(
                     "Error during writing pairs: " + e.getMessage(), e);
-        } finally {
-            close();
-            if (success) {
-                commit();
-            }
         }
+        commit();
     }
 
     /**

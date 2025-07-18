@@ -82,7 +82,7 @@ public final class SegmentCompacter<K, V> {
     public void forceCompact() {
         logger.debug("Start of compacting '{}'", segmentFiles.getId());
         versionController.changeVersion();
-        segment.openFullWriteTx(writer -> {
+        segment.executeFullWriteTx(writer -> {
             try (PairIterator<K, V> iterator = segment.openIterator()) {
                 Pair<K, V> pair;
                 while (iterator.hasNext()) {

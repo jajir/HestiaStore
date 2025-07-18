@@ -103,22 +103,10 @@ public class Segment<K, V>
      * 
      * @return return segment writer object
      */
-    SegmentFullWriter<K, V> openFullWriter() {
-        return segmentManager.createSegmentFullWriter();
-    }
-
-    /**
-     * Method should be called just from inside of this package. Method open
-     * direct writer to scarce index and main sst file.
-     * 
-     * Writer should be opend and closed as one atomic operation.
-     * 
-     * @return return segment writer object
-     */
-    void openFullWriteTx(final WriterFunction<K, V> writeFunction) {
+    void executeFullWriteTx(final WriterFunction<K, V> writeFunction) {
         new WriteTransaction<K, V>() {
 
-            private final SegmentFullWriterNew<K, V> segmentFullWriter = segmentManager
+            private final SegmentFullWriter<K, V> segmentFullWriter = segmentManager
                     .createSegmentFullWriterNew();
 
             @Override
@@ -131,12 +119,26 @@ public class Segment<K, V>
                 segmentFullWriter.commit();
             }
 
+        }.execute(writeFunction);
+    }
+
+    WriteTransaction<K, V> openFullWriteTx() {
+        return new WriteTransaction<K, V>() {
+
+            private final SegmentFullWriter<K, V> segmentFullWriter = segmentManager
+                    .createSegmentFullWriterNew();
+
             @Override
-            public void close() {
-                // TODO is it usefull?
+            public PairWriter<K, V> openWriter() {
+                return segmentFullWriter;
             }
 
-        }.execute(writeFunction);
+            @Override
+            public void commit() {
+                segmentFullWriter.commit();
+            }
+
+        };
     }
 
     public PairWriter<K, V> openWriter() {

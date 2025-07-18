@@ -2,8 +2,10 @@ package org.hestiastore.index;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
@@ -38,10 +40,6 @@ public class WriteTransactionTest {
                     public void commit() {
                     }
 
-                    @Override
-                    public void close() {
-                    }
-
                 });
 
         testTransaction.execute(writer -> {
@@ -51,8 +49,8 @@ public class WriteTransactionTest {
 
         verify(pairWriter).put(PAIR1);
         verify(pairWriter).put(PAIR2);
-        verify(testTransaction).close();
-        verify(testTransaction).commit();
+        verify(pairWriter, times(1)).close();
+        verify(testTransaction, times(1)).commit();
     }
 
     @Test
@@ -69,10 +67,6 @@ public class WriteTransactionTest {
                     public void commit() {
                     }
 
-                    @Override
-                    public void close() {
-                    }
-
                 });
 
         final Exception e = assertThrows(IndexException.class,
@@ -86,7 +80,7 @@ public class WriteTransactionTest {
                 e.getMessage());
         verify(pairWriter).put(PAIR1);
         verify(pairWriter).put(PAIR2);
-        verify(testTransaction).close();
+        verify(pairWriter, times(1)).close();
         verify(testTransaction, never()).commit();
     }
 
@@ -104,23 +98,20 @@ public class WriteTransactionTest {
                     public void commit() {
                     }
 
-                    @Override
-                    public void close() {
-                        throw new IndexException("Closing exception");
-                    }
-
                 });
-
+        doThrow(new IndexException("Closing exception")).when(pairWriter)
+                .close();
         final Exception e = assertThrows(IndexException.class,
                 () -> testTransaction.execute(writer -> {
                     writer.put(PAIR1);
                     writer.put(PAIR2);
                 }));
 
-        assertEquals("Closing exception", e.getMessage());
+        assertEquals("Error during writing pairs: Closing exception",
+                e.getMessage());
         verify(pairWriter).put(PAIR1);
         verify(pairWriter).put(PAIR2);
-        verify(testTransaction).close();
+        verify(pairWriter, times(1)).close();
         verify(testTransaction, never()).commit();
     }
 
@@ -138,10 +129,6 @@ public class WriteTransactionTest {
                     public void commit() {
                     }
 
-                    @Override
-                    public void close() {
-                    }
-
                 });
 
         final Exception e = assertThrows(IndexException.class,
@@ -154,7 +141,7 @@ public class WriteTransactionTest {
                 e.getMessage());
         verify(pairWriter, never()).put(PAIR1);
         verify(pairWriter, never()).put(PAIR2);
-        verify(testTransaction).close();
+        verify(pairWriter, never()).close();
         verify(testTransaction, never()).commit();
     }
 
