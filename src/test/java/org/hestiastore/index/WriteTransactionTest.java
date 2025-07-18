@@ -16,7 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class WriteTransactionTest {
+class WriteTransactionTest {
 
     private static final Pair<String, String> PAIR1 = new Pair<>("key1",
             "value1");
@@ -38,6 +38,7 @@ public class WriteTransactionTest {
 
                     @Override
                     public void commit() {
+                        // it's intentionaly empty
                     }
 
                 });
@@ -65,6 +66,7 @@ public class WriteTransactionTest {
 
                     @Override
                     public void commit() {
+                        // it's intentionaly empty
                     }
 
                 });
@@ -96,6 +98,7 @@ public class WriteTransactionTest {
 
                     @Override
                     public void commit() {
+                        // it's intentionaly empty
                     }
 
                 });
@@ -127,6 +130,7 @@ public class WriteTransactionTest {
 
                     @Override
                     public void commit() {
+                        // it's intentionaly empty
                     }
 
                 });
