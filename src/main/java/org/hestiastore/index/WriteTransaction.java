@@ -47,6 +47,6 @@ public interface WriteTransaction<K, V> {
      */
     @FunctionalInterface
     interface WriterFunction<K, V> {
-        void apply(PairWriter<K, V> writer) throws Exception;
+        void apply(PairWriter<K, V> writer);
     }
 }

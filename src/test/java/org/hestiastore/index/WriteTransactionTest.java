@@ -75,7 +75,7 @@ class WriteTransactionTest {
                 () -> testTransaction.execute(writer -> {
                     writer.put(PAIR1);
                     writer.put(PAIR2);
-                    throw new IOException("My test exception");
+                    throw new RuntimeException("My test exception");
                 }));
 
         assertEquals("Error during writing pairs: My test exception",
