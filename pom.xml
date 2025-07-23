@@ -5,7 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.hestiastore.index</groupId>
 	<artifactId>core</artifactId>
-	<version>0.0.4-SNAPSHOT</version>
+	<version>0.0.4</version>
 	<packaging>jar</packaging>
 	<name>HestiaStore</name>
     <description>Java library for efficiently storing and retrieving large key-value maps.</description>
