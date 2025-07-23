@@ -1,0 +1,133 @@
+@startuml
+
+title MicroCol Game Screen Flow – Implementation Status
+
+
+skinparam package {
+  BackgroundColor<<green>> #ddffdd
+  BackgroundColor<<yellow>> #fffacc
+  BackgroundColor<<red>> #ffdddd
+}
+
+interface Closeable {
+  + close()
+}
+
+interface Commitable {
+  + commit()
+}
+
+class Bytes {
+  - byte[] data;
+  + getData()
+  + length()
+}
+
+package blockfile <<green>> {
+  
+  class BlockPosition {
+    - int position
+    + getValue()
+  }
+  
+  interface BytesWriter {
+     + BlockPosition write(DataBytes blockData)
+  }
+  BytesWriter --|> Closeable
+  
+  interface BytesWriterTransaction {
+     + BytesWriter openWriter()
+     + commit()
+  }
+  BytesWriterTransaction --|> Commitable
+  BytesWriterTransaction --> BytesWriter
+  
+  class DataBlockHeader {
+    - magic
+    - crc32
+  }
+  
+  class DataBlock {
+    - BlockPosition position
+    - Bytes bytes
+    + DataBlockHeader getHeader()
+  }
+  DataBlock --> Bytes
+  DataBlock --> BlockPosition
+  DataBlock --> DataBlockHeader
+  
+  class BlockFile {
+    - int blockSize
+    - String fileName
+    + BlockPosition FIRST_BLOCK;
+    + int getBlockSize()
+    + int getPayloadSize()
+    + BytesWriterTransaction openWriter()
+    + DataBlock get(BlockPosition position)
+    + Iterator<DataBlock> openIterator(BlockPosition position)
+    + consistencyCheck()
+  }
+  BlockFile --> BytesWriterTransaction
+  BlockFile --> DataBlock
+  
+}
+
+package chunkstore <<yellow>> {
+
+  class ChunkPositon {
+    - int position
+    + int getValue()
+  }
+  
+  class PositionConvertor {
+    - int cellSize
+    - int blockSize
+    + BlockPosition getBlockPosition(ChunkPositon chunkPositon)
+    + int getCell(ChunkPositon chunkPositon)
+  }
+  
+  
+  class ChunkHeader {
+    - magic
+    - crc32
+    - length
+  }
+
+  class Chunk {
+    - List<Bytes> bytes;
+    + addPair(pair pair)
+    + ChunkHeader getHeader()
+  }
+  Chunk --> ChunkPositon
+  Chunk --> Bytes
+  Chunk --> ChunkHeader
+  
+  interface ChunkWriter {
+     + ChunkPositon write(DataBytes blockData)
+  }
+  ChunkWriter --|> Closeable
+  
+  interface ChunkWriterTransaction {
+     + ChunkWriter openWriter()
+     + commit()
+  }
+  ChunkWriterTransaction --|> Commitable
+  ChunkWriterTransaction --> ChunkWriter
+
+  class ChunkFileStore{
+    - BlockFile blockFile
+    + ChunkWriterTransaction openWriter()
+    + Chunk get(ChunkPositon position)
+    + Iterator<Chunk> openIterator(ChunkPositon position)
+    + consistencyCheck()
+  }
+  ChunkFileStore --> ChunkWriterTransaction
+  ChunkFileStore --> Chunk
+  ChunkFileStore --> PositionConvertor
+  ChunkFileStore -left-> blockfile.BlockFile
+  
+  
+    
+}
+
+@enduml

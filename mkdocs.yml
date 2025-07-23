@@ -23,6 +23,7 @@ nav:
         - architecture/index.md
         - Index Architecture: architecture/arch-index.md
         - Segment Design: architecture/segment.md
+        - Data block: architecture/datablock.md
     - 'Development':
         - development/index.md
         - Release: development/release.md
