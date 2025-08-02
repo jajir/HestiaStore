@@ -37,4 +37,31 @@ public final class Vldtn {
         return ioBufferSize;
     }
 
+    /**
+     * Validates that a given integer value is between a minimum and maximum
+     * value (inclusive).
+     *
+     * @param value        the value to validate
+     * @param minInclusive the minimum allowed value (inclusive)
+     * @param maxInclusive the maximum allowed value (inclusive)
+     * @param propertyName the name of the property being validated, used in
+     *                     error messages
+     * @return the validated value if it is within range
+     * @throws IllegalArgumentException if the value is out of range or
+     *                                  propertyName is null
+     */
+    public static int requireBetween(final int value, final int minInclusive,
+            final int maxInclusive, final String propertyName) {
+        if (propertyName == null) {
+            throw new IllegalArgumentException(
+                    "Property 'propertyName' must not be null.");
+        }
+        if (value < minInclusive || value > maxInclusive) {
+            throw new IllegalArgumentException(String.format(
+                    "Property '%s' must be between %d and %d (inclusive). Got: %d",
+                    propertyName, minInclusive, maxInclusive, value));
+        }
+        return value;
+    }
+
 }
