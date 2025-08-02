@@ -64,4 +64,35 @@ class VldtnTest {
                 e.getMessage());
     }
 
+    @Test
+    void test_requireBetween() {
+        assertEquals(5, Vldtn.requireBetween(5, 1, 10, "testProperty"));
+    }
+
+    @Test
+    void test_requireBetween_high() {
+        assertEquals(10, Vldtn.requireBetween(10, 1, 10, "testProperty"));
+    }
+
+    @Test
+    void test_requireBetween_higher() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireBetween(11, 1, 10, "testProperty"));
+        assertEquals("Property 'testProperty' must be between 1 and 10 "
+                + "(inclusive). Got: 11", e.getMessage());
+    }
+
+    @Test
+    void test_requireBetween_low() {
+        assertEquals(1, Vldtn.requireBetween(1, 1, 10, "testProperty"));
+    }
+
+    @Test
+    void test_requireBetween_lower() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireBetween(0, 1, 10, "testProperty"));
+        assertEquals("Property 'testProperty' must be between 1 and 10 "
+                + "(inclusive). Got: 0", e.getMessage());
+    }
+
 }

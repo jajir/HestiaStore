@@ -10,7 +10,7 @@ package org.hestiastore.index;
  * @param <K> the type of keys
  * @param <V> the type of values
  */
-public interface WriteTransaction<K, V> {
+public interface WriteTransaction<K, V> extends Commitable {
 
     /**
      * Opens a writer for writing key-value pairs.
@@ -18,12 +18,6 @@ public interface WriteTransaction<K, V> {
      * @return a PairWriter instance for writing pairs
      */
     PairWriter<K, V> openWriter();
-
-    /**
-     * Commits the changes made during the transaction. This method is called
-     * after successfully writing all pairs.
-     */
-    void commit();
 
     /**
      * Method execute write operation. It can be used directly of as pattern how
