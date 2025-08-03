@@ -18,7 +18,7 @@ public class BlockPosition {
         this.position = position;
     }
 
-    public int getPosition() {
+    public int getValue() {
         return position;
     }
 

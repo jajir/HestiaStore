@@ -1,22 +1,25 @@
 package org.hestiastore.index.blockdatafile;
 
-import org.apache.commons.codec.digest.PureJavaCrc32;
 import org.hestiastore.index.Bytes;
+import org.hestiastore.index.Vldtn;
 
 /**
  * Represents a block of data in the block data file.
  */
 public class DataBlock {
 
-    private static final int HEADER_SIZE = 16;
+    static final int HEADER_SIZE = 16;
 
-    // "hicholas" in ASCII
-    private static final long MAGIC_NUMBER = 0x6E6963686F6C6173L;
+    // "nicholas" in ASCII
+    static final long MAGIC_NUMBER = 0x6E6963686F6C6173L;
 
     private final Bytes bytes;
 
-    public DataBlock(final Bytes bytes) {
-        this.bytes = bytes;
+    private final BlockPosition position;
+
+    DataBlock(final Bytes bytes, final BlockPosition position) {
+        this.bytes = Vldtn.requireNonNull(bytes, "bytes");
+        this.position = Vldtn.requireNonNull(position, "position");
     }
 
     public DataBlockPayload getPayload() {
@@ -25,11 +28,15 @@ public class DataBlock {
     }
 
     public DataBlockHeader getHeader() {
-        return new DataBlockHeader(bytes.subBytes(0, HEADER_SIZE));
+        return DataBlockHeader.of(bytes.subBytes(0, HEADER_SIZE));
     }
 
     public Bytes getBytes() {
         return bytes;
+    }
+
+    public BlockPosition getPosition() {
+        return position;
     }
 
     void validate() {
@@ -45,9 +52,7 @@ public class DataBlock {
     }
 
     public long calculateCrc() {
-        final PureJavaCrc32 crc = new PureJavaCrc32();
-        crc.update(getPayload().getBytes().getData());
-        return crc.getValue();
+        return getPayload().calculateCrc();
     }
 
 }
