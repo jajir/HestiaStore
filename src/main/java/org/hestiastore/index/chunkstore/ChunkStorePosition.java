@@ -1,5 +1,7 @@
 package org.hestiastore.index.chunkstore;
 
+import org.hestiastore.index.blockdatafile.BlockPosition;
+
 /**
  * Specifi position within a chunk store.
  */
@@ -38,6 +40,14 @@ public class ChunkStorePosition {
 
         ChunkStorePosition that = (ChunkStorePosition) o;
         return position == that.position;
+    }
+
+    public BlockPosition toDataBlockPosition() {
+        return BlockPosition.of(position >> 4);
+    }
+
+    public int cellIndex() {
+        return position % Chunk.CELL_SIZE;
     }
 
     @Override
