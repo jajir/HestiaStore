@@ -1,13 +1,13 @@
-package org.hestiastore.index.blockdatafile;
+package org.hestiastore.index.chunkstore;
 
 import org.apache.commons.codec.digest.PureJavaCrc32;
 import org.hestiastore.index.Bytes;
 
-public class DataBlockPayload {
+public class ChunkPayload {
 
     private final Bytes bytes;
 
-    public DataBlockPayload(final Bytes bytes) {
+    public ChunkPayload(final Bytes bytes) {
         this.bytes = bytes;
     }
 
@@ -20,5 +20,4 @@ public class DataBlockPayload {
         crc.update(bytes.getData());
         return crc.getValue();
     }
-
 }
