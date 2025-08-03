@@ -2,9 +2,14 @@ package org.hestiastore.index.blockdatafile;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.FileReader;
 
 public class BlockDataFile {
 
+    /**
+     * There is not block reserved for metadata. Each data block have it's own
+     * small header.
+     */
     private static final BlockPosition FIRST_BLOCK = BlockPosition.of(0);
 
     private final int blockSize;
@@ -19,12 +24,21 @@ public class BlockDataFile {
     }
 
     public DataBlockReader openReader(final BlockPosition blockPosition) {
-        // Implementation to retrieve a DataBlock by its position
-        return null;
+        Vldtn.requireNonNull(blockPosition, "blockPosition");
+        if (blockPosition.getValue() < FIRST_BLOCK.getValue()) {
+            throw new IllegalArgumentException(String.format(
+                    "Block position must be >= '%s'", FIRST_BLOCK.getValue()));
+        }
+        return new DataBlockReaderImpl(getFileReader(blockPosition),
+                blockPosition, blockSize);
+    }
+
+    private FileReader getFileReader(final BlockPosition blockPosition) {
+        return directory.getFileReader(fileName, blockSize);
     }
 
     public DataBlockWriterTx getDataBlockWriterTx() {
-        return new DataBlockWriterTx();
+        return new DataBlockWriterTx(fileName, directory, blockSize);
     }
 
     public int getBlockSize() {

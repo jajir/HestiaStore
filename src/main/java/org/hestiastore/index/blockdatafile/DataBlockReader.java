@@ -1,5 +1,7 @@
 package org.hestiastore.index.blockdatafile;
 
-public interface DataBlockReader extends AutoCloseable, Reader<DataBlock> {
+import org.hestiastore.index.CloseableResource;
+
+public interface DataBlockReader extends CloseableResource, Reader<DataBlock> {
 
 }
