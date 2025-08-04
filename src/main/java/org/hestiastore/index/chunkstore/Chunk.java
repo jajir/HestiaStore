@@ -1,6 +1,9 @@
 package org.hestiastore.index.chunkstore;
 
-public class Chunk {
+import org.hestiastore.index.Bytes;
+import org.hestiastore.index.Vldtn;
+
+public final class Chunk {
 
     static final int HEADER_SIZE = 32;
 
@@ -23,5 +26,35 @@ public class Chunk {
      * introduced.
      */
     static final int VERSION = 0xff_00_00_05;
+
+    private final Bytes bytes;
+
+    public static Chunk of(final Bytes bytes) {
+        return new Chunk(bytes);
+    }
+
+    private Chunk(final Bytes bytes) {
+        Vldtn.requireNonNull(bytes, "bytes");
+        final ChunkHeader header = getHeader();
+        final int requiredLength = header.getPayloadLength() + HEADER_SIZE;
+        if (bytes.length() != requiredLength) {
+            throw new IllegalArgumentException(String.format(
+                    "Chunk bytes length is not equal to required length '%s'",
+                    requiredLength));
+        }
+        this.bytes = bytes;
+    }
+
+    public Bytes getBytes() {
+        return bytes;
+    }
+
+    public ChunkPayload getPayload() {
+        return new ChunkPayload(bytes.subBytes(HEADER_SIZE, bytes.length()));
+    }
+
+    public ChunkHeader getHeader() {
+        return ChunkHeader.of(bytes.subBytes(0, HEADER_SIZE));
+    }
 
 }
