@@ -15,6 +15,16 @@ public class Bytes {
         return new Bytes(data);
     }
 
+    public static Bytes of(final Bytes data1, final Bytes data2) {
+        Vldtn.requireNonNull(data1, "data1");
+        Vldtn.requireNonNull(data2, "data2");
+        final byte[] combined = new byte[data1.length() + data2.length()];
+        System.arraycopy(data1.getData(), 0, combined, 0, data1.length());
+        System.arraycopy(data2.getData(), 0, combined, data1.length(),
+                data2.length());
+        return new Bytes(combined);
+    }
+
     private Bytes(final byte[] data) {
         this.data = Vldtn.requireNonNull(data, "data");
     }
@@ -30,6 +40,27 @@ public class Bytes {
         byte[] data = new byte[len];
         System.arraycopy(this.data, startByte, data, 0, len);
         return new Bytes(data);
+    }
+
+    /**
+     * Returns a new Bytes instance padded with zeros to the specified size. If
+     * the current size is greater than or equal to newSize, returns this.
+     *
+     * @param newSize the target size of the resulting Bytes object
+     * @return a new Bytes instance with data padded to newSize
+     */
+    public Bytes paddedTo(final int newSize) {
+        Vldtn.requireBetween(newSize, 0, Integer.MAX_VALUE, "newSize");
+        if (data.length >= newSize) {
+            return this;
+        }
+        byte[] padded = new byte[newSize];
+        System.arraycopy(data, 0, padded, 0, data.length);
+        return new Bytes(padded);
+    }
+
+    public Bytes add(final Bytes bytes) {
+        return Bytes.of(this, bytes);
     }
 
     public byte[] getData() {

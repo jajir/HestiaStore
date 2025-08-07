@@ -3,6 +3,18 @@ package org.hestiastore.index.chunkstore;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 
+/**
+ * Chunk is a data structure that represents a block of data in the chunk store.
+ * Chunks are addressable.
+ * 
+ * 
+ * Version of the chunk format. It is used to identify the format of the chunk
+ * and ensure compatibility between different versions of the chunk format.
+ * 
+ * Real version is remotely related to main library version when it's
+ * introduced. And include information about compression or encryption.
+ * 
+ */
 public final class Chunk {
 
     static final int HEADER_SIZE = 32;
@@ -18,14 +30,14 @@ public final class Chunk {
     static final long MAGIC_NUMBER = 0x7468656F646F7261L;
 
     /**
-     * Version of the chunk format. It is used to identify the format of the
-     * chunk and ensure compatibility between different versions of the chunk
-     * format.
-     * 
-     * real version is remotely related to main library version when it's
-     * introduced.
+     * Uncompressed chunk format version 1
      */
-    static final int VERSION = 0xff_00_00_05;
+    static final int VERSION_01_00 = 0xff_00_01_00;
+
+    /**
+     * Compressed chunk format version 2
+     */
+    static final int VERSION_02_00 = 0xff_00_02_00;
 
     private final Bytes bytes;
 
@@ -57,4 +69,18 @@ public final class Chunk {
         return ChunkHeader.of(bytes.subBytes(0, HEADER_SIZE));
     }
 
+    void validate() {
+        final ChunkHeader header = getHeader();
+        if (header.getMagicNumber() != MAGIC_NUMBER) {
+            throw new IllegalArgumentException(
+                    "Invalid magic number in chunk header");
+        }
+        if (header.getCrc() != calculateCrc()) {
+            throw new IllegalArgumentException("CRC mismatch in chunk header");
+        }
+    }
+
+    public long calculateCrc() {
+        return getPayload().calculateCrc();
+    }
 }

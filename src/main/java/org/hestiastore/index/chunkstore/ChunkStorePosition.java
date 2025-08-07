@@ -60,4 +60,16 @@ public class ChunkStorePosition {
         return "ChunkStorePosition{" + "position=" + position + '}';
     }
 
+    public ChunkStorePosition addDataBlock(final int dataBlockSize) {
+        return ChunkStorePosition.of(position + dataBlockSize);
+    }
+
+    public ChunkStorePosition addCellsForBytes(final int byteCount) {
+        int cells = byteCount / Chunk.CELL_SIZE;
+        if (byteCount % Chunk.CELL_SIZE != 0) {
+            cells++;
+        }
+        return ChunkStorePosition.of(position + cells * Chunk.CELL_SIZE);
+    }
+
 }

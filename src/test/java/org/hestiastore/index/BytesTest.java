@@ -66,4 +66,22 @@ public class BytesTest {
         assertEquals(expect.hashCode(), bytes2.hashCode());
     }
 
+    @Test
+    void test_paddedTo() {
+        final Bytes bytes = Bytes.of(TEST_DATA);
+        final Bytes padded = bytes.paddedTo(100);
+
+        assertEquals(100, padded.length());
+        assertEquals(bytes, padded.subBytes(0, bytes.length()));
+    }
+
+    @Test
+    void test_paddedTo_smaller_than_size() {
+        final Bytes bytes = Bytes.of(TEST_DATA);
+        final Bytes padded = bytes.paddedTo(TEST_DATA.length - 2);
+
+        assertEquals(TEST_DATA.length, padded.length());
+        assertEquals(bytes, padded.subBytes(0, bytes.length()));
+    }
+
 }

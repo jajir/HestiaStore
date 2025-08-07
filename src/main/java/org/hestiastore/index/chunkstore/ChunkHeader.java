@@ -16,6 +16,8 @@ import org.hestiastore.index.datatype.TypeDescriptorLong;
  * <li>Payload data length - int</li>
  * <li>CRC32 code - long</li>
  * </ul>
+ * 
+ * Header will be always 32 bytes long.
  */
 public class ChunkHeader {
 
