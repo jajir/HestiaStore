@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.util.Arrays;
 
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.TestData;
 import org.hestiastore.index.directory.FileReader;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

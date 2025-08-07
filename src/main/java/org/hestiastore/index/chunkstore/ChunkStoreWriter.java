@@ -4,6 +4,6 @@ import org.hestiastore.index.CloseableResource;
 
 public interface ChunkStoreWriter extends CloseableResource {
 
-    void write(ChunkPayload chunkPayload);
+    ChunkStorePosition write(ChunkPayload chunkPayload, int version);
 
 }
