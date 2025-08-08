@@ -64,4 +64,35 @@ public final class Vldtn {
         return value;
     }
 
+    private static final int CELL_SIZE = 16;
+
+    /**
+     * Validates that given value is valid cell size
+     * 
+     * @param cellSize     cell size to validate
+     * @param propertyName name of the property being validated, used in error
+     *                     messages
+     * @throws IllegalArgumentException if cellSize is less than or equal to 0,
+     *                                  or not divisible by 16
+     * @return the validated cell size
+     */
+    public static int requireCellSize(final int cellSize,
+            final String propertyName) {
+        if (propertyName == null) {
+            throw new IllegalArgumentException(
+                    "Property 'propertyName' must not be null.");
+        }
+        if (cellSize <= 0) {
+            throw new IllegalArgumentException(String.format(
+                    "Property '%s' must be greater than 0", propertyName));
+        }
+        if (cellSize % CELL_SIZE != 0) {
+            throw new IllegalArgumentException(String.format(
+                    "Property '%s' must be divisible by %d (e.g., %d, %d, %d). Got: '%s'",
+                    propertyName, CELL_SIZE, CELL_SIZE, CELL_SIZE * 2,
+                    CELL_SIZE * 4, cellSize));
+        }
+        return cellSize;
+    }
+
 }

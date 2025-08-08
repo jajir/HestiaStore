@@ -57,7 +57,7 @@ public class ChunkStorePosition {
 
     @Override
     public String toString() {
-        return "ChunkStorePosition{" + "position=" + position + '}';
+        return "ChunkStorePosition{" + "value=" + position + '}';
     }
 
     public ChunkStorePosition addDataBlock(final int dataBlockSize) {

@@ -7,6 +7,12 @@ import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
 
+/**
+ * DataBlockHeader represents the header of a data block.It have fixed size of
+ * 16 bytes, where the first 8 bytes are the magic number and the next 8 bytes
+ * are the CRC of the data block. It's probably coincidence that it have size of
+ * one 16 byte cell.
+ */
 public class DataBlockHeader {
 
     private static final TypeDescriptor<Long> TYPE_DESCRIPTOR_LONG = new TypeDescriptorLong();

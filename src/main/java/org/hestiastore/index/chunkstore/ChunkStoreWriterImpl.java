@@ -24,8 +24,10 @@ public class ChunkStoreWriterImpl implements ChunkStoreWriter {
             final int dataBlockSize, final int blockPayloadSize) {
         this.dataBlockWriter = Vldtn.requireNonNull(dataBlockWriter,
                 "dataBlockWriter");
-        this.dataBlockPayloadSize = blockPayloadSize;
-        this.dataBlockSize = dataBlockSize;
+        this.dataBlockPayloadSize = Vldtn.requireCellSize(blockPayloadSize,
+                "blockPayloadSize");
+        this.dataBlockSize = Vldtn.requireCellSize(dataBlockSize,
+                "dataBlockSize");
         chunkStorePosition = ChunkStoreFile.FIRST_POSITION;
     }
 
@@ -70,6 +72,7 @@ public class ChunkStoreWriterImpl implements ChunkStoreWriter {
         if (bytesToWrite.length() > 0) {
             chunkStorePosition = chunkStorePosition
                     .addCellsForBytes(bytesToWrite.length());
+            // musim zarovnat na cells
             bytesToWrite = bytesToWrite.paddedTo(dataBlockPayloadSize);
             toNextDataBlock = bytesToWrite;
         } else {
