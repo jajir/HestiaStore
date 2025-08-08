@@ -95,4 +95,51 @@ class VldtnTest {
                 + "(inclusive). Got: 0", e.getMessage());
     }
 
+    @Test
+    void test_requireBetween_nullPropertyName() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireBetween(5, 1, 10, null));
+        assertEquals("Property 'propertyName' must not be null.",
+                e.getMessage());
+    }
+
+    @Test
+    void test_requireCellSize_invalidCellSize() {
+        assertEquals(16, Vldtn.requireCellSize(16, "blockPayloadSize"));
+        assertEquals(1024, Vldtn.requireCellSize(1024, "blockPayloadSize"));
+    }
+
+    @Test
+    void test_requireCellSize_invalidCellSize_0() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireCellSize(0, "blockPayloadSize"));
+        assertEquals("Property 'blockPayloadSize' must be greater than 0",
+                e.getMessage());
+    }
+
+    @Test
+    void test_requireCellSize_invalidCellSize_minus100() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireCellSize(-100, "blockPayloadSize"));
+        assertEquals("Property 'blockPayloadSize' must be greater than 0",
+                e.getMessage());
+    }
+
+    @Test
+    void test_requireCellSize_invalidCellSize_20() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireCellSize(20, "blockPayloadSize"));
+        assertEquals(
+                "Property 'blockPayloadSize' must be divisible by 16 (e.g., 16, 32, 64). Got: '20'",
+                e.getMessage());
+    }
+
+    @Test
+    void test_requireCellSize_null_propertyName() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireCellSize(20, null));
+        assertEquals("Property 'propertyName' must not be null.",
+                e.getMessage());
+    }
+
 }

@@ -19,10 +19,9 @@ import org.slf4j.LoggerFactory;
 @ExtendWith(MockitoExtension.class)
 public class ChunkStoreWriterImplTest {
 
-    private static final int DATABLOCK_SIZE = 60;
+    private static final int DATABLOCK_SIZE = 80;
 
-    // FIXME musi to byt delitelne 16
-    private static final int DATABLOCK_PAYLOAD_SIZE = 50;
+    private static final int DATABLOCK_PAYLOAD_SIZE = 64;
 
     private static final int VERSION = 1;
 
@@ -65,16 +64,16 @@ public class ChunkStoreWriterImplTest {
         final ChunkHeader header = ChunkHeader.of(Chunk.MAGIC_NUMBER, VERSION,
                 PAYLOAD_154.length(), PAYLOAD_154.calculateCrc());
         Bytes bytesToWrite = Bytes.of(header.toBytes(), PAYLOAD_154.getBytes());
-        Bytes bytesToWrite0 = bytesToWrite.subBytes(0, 50);
-        Bytes bytesToWrite1 = bytesToWrite.subBytes(50, 100);
-        Bytes bytesToWrite2 = bytesToWrite.subBytes(100, 150);
-        Bytes bytesToWrite3 = bytesToWrite.subBytes(150, 186).paddedTo(50);
+        Bytes bytesToWrite0 = bytesToWrite.subBytes(0, 64);
+        Bytes bytesToWrite1 = bytesToWrite.subBytes(64, 128);
+        Bytes bytesToWrite2 = bytesToWrite.subBytes(128, 186).paddedTo(64);
+        // Bytes bytesToWrite3 = bytesToWrite.subBytes(192, 256).paddedTo(64);
 
         logger.info("Bytes length: {}", bytesToWrite.length());
         verify(dataBlockWriter).write(DataBlockPayload.of(bytesToWrite0));
         verify(dataBlockWriter).write(DataBlockPayload.of(bytesToWrite1));
         verify(dataBlockWriter).write(DataBlockPayload.of(bytesToWrite2));
-        verify(dataBlockWriter).write(DataBlockPayload.of(bytesToWrite3));
+        // verify(dataBlockWriter).write(DataBlockPayload.of(bytesToWrite3));
     }
 
     @Test
@@ -86,7 +85,7 @@ public class ChunkStoreWriterImplTest {
         final ChunkHeader header1 = ChunkHeader.of(Chunk.MAGIC_NUMBER, VERSION,
                 PAYLOAD_9.length(), PAYLOAD_9.calculateCrc());
         Bytes bytesToWrite = Bytes.of(header1.toBytes(), PAYLOAD_9.getBytes())
-                .paddedTo(50);
+                .paddedTo(64);
 
         logger.info("Bytes length: {}", bytesToWrite.length());
 
