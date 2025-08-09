@@ -1,6 +1,7 @@
 package org.hestiastore.index;
 
-import org.hestiastore.index.blockdatafile.DataBlockPayload;
+import org.hestiastore.index.chunkstore.ChunkPayload;
+import org.hestiastore.index.datablockfile.DataBlockPayload;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -226,6 +227,17 @@ public final class TestData {
             .getConvertorFromBytes();
     public static final ConvertorToBytes<Long> LONG_CONVERTOR_TO_BYTES = TYPE_DESCRIPTOR_LONG
             .getConvertorToBytes();
+
+    public static final String STRING_9 = "test data";
+    public static final Bytes BYTES_9 = Bytes.of(STRING_9.getBytes());
+    public static final ChunkPayload PAYLOAD_9 = ChunkPayload.of(BYTES_9);
+
+    public static final String STRING_15 = "super test data";
+    public static final Bytes BYTES_15 = Bytes.of(STRING_15.getBytes());
+    public static final ChunkPayload PAYLOAD_15 = ChunkPayload.of(BYTES_15);
+
+    public static final Bytes BYTES_154 = Bytes.of(BYTE_ARRAY_154);
+    public static final ChunkPayload PAYLOAD_154 = ChunkPayload.of(BYTES_154);
 
     private TestData() {
         // Prevent instantiation

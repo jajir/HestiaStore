@@ -84,4 +84,13 @@ public class BytesTest {
         assertEquals(bytes, padded.subBytes(0, bytes.length()));
     }
 
+    @Test
+    void test_paddedToNextCell() {
+        final Bytes bytes = Bytes.of(TEST_DATA);
+        final Bytes padded = bytes.paddedToNextCell();
+
+        assertEquals(63, bytes.length());
+        assertEquals(64, padded.length());
+    }
+
 }

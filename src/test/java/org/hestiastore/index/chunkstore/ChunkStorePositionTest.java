@@ -6,23 +6,27 @@ import org.junit.jupiter.api.Test;
 
 public class ChunkStorePositionTest {
 
+    private static final int DATABLOCK_SIZE = 1024;
+
     @Test
     void test() {
-        ChunkStorePosition position = ChunkStorePosition.of(1000);
-        assertEquals(62, position.toDataBlockPosition().getValue());
-        assertEquals(8, position.cellIndex());
+        ChunkStorePosition position = ChunkStorePosition.of(DATABLOCK_SIZE,
+                1024);
+        assertEquals(1, position.getDataBlockPosition().getValue());
+        assertEquals(1, position.getCellIndex());
+        assertEquals(1024, position.getValue());
     }
 
     @Test
     void testAddDataBlock() {
-        ChunkStorePosition position = ChunkStorePosition.of(1000)
-                .addDataBlock(1000);
-        assertEquals(2000, position.getValue());
+        ChunkStorePosition position = ChunkStorePosition
+                .of(DATABLOCK_SIZE, 1000).addDataBlock();
+        assertEquals(2024, position.getValue());
     }
 
     @Test
     void test_addCellsForBytes_from0() {
-        ChunkStorePosition position = ChunkStorePosition.of(0);
+        ChunkStorePosition position = ChunkStorePosition.of(DATABLOCK_SIZE, 0);
         assertEquals(16, position.addCellsForBytes(16).getValue());
         assertEquals(32, position.addCellsForBytes(17).getValue());
         assertEquals(48, position.addCellsForBytes(41).getValue());
@@ -30,9 +34,30 @@ public class ChunkStorePositionTest {
 
     @Test
     void test_addCellsForBytes_from1000() {
-        ChunkStorePosition position = ChunkStorePosition.of(1000);
+        ChunkStorePosition position = ChunkStorePosition.of(DATABLOCK_SIZE,
+                1000);
         assertEquals(1016, position.addCellsForBytes(16).getValue());
         assertEquals(1032, position.addCellsForBytes(17).getValue());
+    }
+
+    @Test
+    void test_getCellIndex_256() {
+        ChunkStorePosition position = ChunkStorePosition.of(DATABLOCK_SIZE,
+                1024 + 256);
+        assertEquals(17, position.getCellIndex());
+    }
+
+    @Test
+    void test_getCellIndex_1024() {
+        ChunkStorePosition position = ChunkStorePosition.of(DATABLOCK_SIZE,
+                1024);
+        assertEquals(1, position.getCellIndex());
+    }
+
+    @Test
+    void test_getOccupiedBytes_1024() {
+        ChunkStorePosition position = ChunkStorePosition.of(80, 64);
+        assertEquals(0, position.getOccupiedBytes());
     }
 
 }

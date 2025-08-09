@@ -64,7 +64,7 @@ public class ChunkHeader {
         }
     }
 
-    public Bytes toBytes() {
+    public Bytes getBytes() {
         return Bytes.of(data);
     }
 
