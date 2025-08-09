@@ -2,14 +2,12 @@ package org.hestiastore.index.chunkstore;
 
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.blockdatafile.DataBlockPayload;
-import org.hestiastore.index.blockdatafile.DataBlockWriter;
+import org.hestiastore.index.datablockfile.DataBlockPayload;
+import org.hestiastore.index.datablockfile.DataBlockWriter;
 
 public class ChunkStoreWriterImpl implements ChunkStoreWriter {
 
     private final DataBlockWriter dataBlockWriter;
-
-    private final int dataBlockSize;
 
     private final int dataBlockPayloadSize;
 
@@ -20,15 +18,16 @@ public class ChunkStoreWriterImpl implements ChunkStoreWriter {
      */
     private Bytes toNextDataBlock = null;
 
-    public ChunkStoreWriterImpl(final DataBlockWriter dataBlockWriter,
-            final int dataBlockSize, final int blockPayloadSize) {
+    public ChunkStoreWriterImpl(final ChunkStorePosition chunkStorePosition,
+            final DataBlockWriter dataBlockWriter, final int blockPayloadSize) {
+        this.chunkStorePosition = Vldtn.requireNonNull(chunkStorePosition,
+                "chunkStorePosition");
         this.dataBlockWriter = Vldtn.requireNonNull(dataBlockWriter,
                 "dataBlockWriter");
         this.dataBlockPayloadSize = Vldtn.requireCellSize(blockPayloadSize,
                 "blockPayloadSize");
-        this.dataBlockSize = Vldtn.requireCellSize(dataBlockSize,
-                "dataBlockSize");
-        chunkStorePosition = ChunkStoreFile.FIRST_POSITION;
+        this.chunkStorePosition = Vldtn.requireNonNull(chunkStorePosition,
+                "chunkStorePosition");
     }
 
     @Override
@@ -47,36 +46,41 @@ public class ChunkStoreWriterImpl implements ChunkStoreWriter {
         final ChunkStorePosition returnPosition = chunkStorePosition;
         final ChunkHeader header = ChunkHeader.of(Chunk.MAGIC_NUMBER, version,
                 chunkPayload.length(), chunkPayload.calculateCrc());
-        Bytes bytesToWrite = Bytes.of(header.toBytes(),
-                chunkPayload.getBytes());
-        if (chunkStorePosition.cellIndex() > 0) {
-            // find remaining bytes and write to them part of chunk payload
-            final int occupiedBytes = chunkStorePosition.cellIndex()
-                    * Chunk.CELL_SIZE;
-            final int freeBytes = dataBlockPayloadSize - occupiedBytes;
-            if (freeBytes > 0) {
-                // TODO
-                toNextDataBlock = bytesToWrite.subBytes(0, freeBytes);
-                bytesToWrite = bytesToWrite.subBytes(freeBytes,
-                        bytesToWrite.length());
-                dataBlockWriter.write(DataBlockPayload.of(toNextDataBlock));
+        Bytes bufferToWrite = Bytes
+                .of(header.getBytes(), chunkPayload.getBytes())
+                .paddedToNextCell();
+
+        while (bufferToWrite != null && bufferToWrite.length() > 0) {
+            final int occupiedBytes = chunkStorePosition.getOccupiedBytes();
+            final int availableBytes = dataBlockPayloadSize - occupiedBytes;
+            if (availableBytes <= 0) {
+                throw new IllegalStateException("Data block is full");
             }
-        }
-        while (bytesToWrite.length() > dataBlockPayloadSize) {
-            final Bytes tmp = bytesToWrite.subBytes(0, dataBlockPayloadSize);
-            bytesToWrite = bytesToWrite.subBytes(dataBlockPayloadSize,
-                    bytesToWrite.length());
-            dataBlockWriter.write(DataBlockPayload.of(tmp));
-            chunkStorePosition = chunkStorePosition.addDataBlock(dataBlockSize);
-        }
-        if (bytesToWrite.length() > 0) {
-            chunkStorePosition = chunkStorePosition
-                    .addCellsForBytes(bytesToWrite.length());
-            // musim zarovnat na cells
-            bytesToWrite = bytesToWrite.paddedTo(dataBlockPayloadSize);
-            toNextDataBlock = bytesToWrite;
-        } else {
-            toNextDataBlock = null;
+            if (availableBytes < bufferToWrite.length()) {
+                Bytes tmp = null;
+                if (toNextDataBlock != null && toNextDataBlock.length() > 0) {
+                    tmp = Bytes.of(toNextDataBlock,
+                            bufferToWrite.subBytes(0, availableBytes));
+                } else {
+                    tmp = bufferToWrite.subBytes(0, availableBytes);
+                }
+                bufferToWrite = bufferToWrite.subBytes(availableBytes,
+                        bufferToWrite.length());
+                chunkStorePosition = chunkStorePosition
+                        .addCellsForBytes(availableBytes);
+                dataBlockWriter.write(DataBlockPayload.of(tmp));
+                toNextDataBlock = null;
+            } else {
+                chunkStorePosition = chunkStorePosition
+                        .addCellsForBytes(bufferToWrite.length());
+                if (toNextDataBlock == null || toNextDataBlock.length() == 0) {
+                    toNextDataBlock = bufferToWrite;
+                } else {
+                    toNextDataBlock = Bytes.of(toNextDataBlock, bufferToWrite);
+                }
+                bufferToWrite = null;
+            }
+
         }
         return returnPosition;
     }

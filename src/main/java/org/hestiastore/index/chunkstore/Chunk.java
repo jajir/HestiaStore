@@ -45,14 +45,22 @@ public final class Chunk {
         return new Chunk(bytes);
     }
 
+    public static Chunk of(final ChunkHeader header, final Bytes payload) {
+        Vldtn.requireNonNull(header, "header");
+        Vldtn.requireNonNull(payload, "payload");
+        final Bytes bytes = Bytes.of(header.getBytes(), payload);
+        return new Chunk(bytes);
+    }
+
     private Chunk(final Bytes bytes) {
         Vldtn.requireNonNull(bytes, "bytes");
-        final ChunkHeader header = getHeader();
-        final int requiredLength = header.getPayloadLength() + HEADER_SIZE;
-        if (bytes.length() != requiredLength) {
+        final ChunkHeader header = ChunkHeader
+                .of(bytes.subBytes(0, HEADER_SIZE));
+        final int requiredLength = header.getPayloadLength();
+        if (bytes.length() != requiredLength + HEADER_SIZE) {
             throw new IllegalArgumentException(String.format(
-                    "Chunk bytes length is not equal to required length '%s'",
-                    requiredLength));
+                    "Chunk bytes length '%s' is not equal to required length '%s'",
+                    bytes.length(), requiredLength));
         }
         this.bytes = bytes;
     }

@@ -71,6 +71,17 @@ public class Bytes {
         return data.length;
     }
 
+    public Bytes paddedToNextCell() {
+        int modulo = data.length % 16;
+        if (modulo == 0) {
+            return this;
+        }
+        int padding = 16 - modulo;
+        byte[] padded = new byte[data.length + padding];
+        System.arraycopy(data, 0, padded, 0, data.length);
+        return new Bytes(padded);
+    }
+
     @Override
     public int hashCode() {
         return Arrays.hashCode(data);
@@ -86,6 +97,11 @@ public class Bytes {
         }
         Bytes other = (Bytes) obj;
         return Arrays.equals(data, other.data);
+    }
+
+    @Override
+    public String toString() {
+        return "Bytes{" + "data=" + Arrays.toString(data) + '}';
     }
 
 }

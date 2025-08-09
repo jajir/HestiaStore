@@ -1,4 +1,4 @@
-package org.hestiastore.index.blockdatafile;
+package org.hestiastore.index.datablockfile;
 
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
@@ -8,18 +8,27 @@ import org.hestiastore.index.Vldtn;
  */
 public class DataBlock {
 
-    static final int HEADER_SIZE = 16;
+    public static final int HEADER_SIZE = 16;
 
     // "nicholas" in ASCII
-    static final long MAGIC_NUMBER = 0x6E6963686F6C6173L;
+    public static final long MAGIC_NUMBER = 0x6E6963686F6C6173L;
 
     private final Bytes bytes;
 
-    private final BlockPosition position;
+    private final DataBlockPosition position;
 
-    DataBlock(final Bytes bytes, final BlockPosition position) {
+    public static DataBlock of(final Bytes bytes,
+            final DataBlockPosition position) {
+        return new DataBlock(bytes, position);
+    }
+
+    DataBlock(final Bytes bytes, final DataBlockPosition position) {
         this.bytes = Vldtn.requireNonNull(bytes, "bytes");
         this.position = Vldtn.requireNonNull(position, "position");
+        if (getHeader().getMagicNumber() != MAGIC_NUMBER) {
+            throw new IllegalArgumentException(
+                    "Invalid magic number in data block header");
+        }
     }
 
     public DataBlockPayload getPayload() {
@@ -35,7 +44,7 @@ public class DataBlock {
         return bytes;
     }
 
-    public BlockPosition getPosition() {
+    public DataBlockPosition getPosition() {
         return position;
     }
 

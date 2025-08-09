@@ -1,4 +1,4 @@
-package org.hestiastore.index.blockdatafile;
+package org.hestiastore.index.datablockfile;
 
 import org.hestiastore.index.Bytes;
 
@@ -10,6 +10,6 @@ public interface BlockWriter extends AutoCloseable {
      * @param blockPosition the position where the block should be written
      * @param dataBytes     the data bytes to write
      */
-    BlockPosition write(Bytes blockData);
+    DataBlockPosition write(Bytes blockData);
 
 }

@@ -1,4 +1,4 @@
-package org.hestiastore.index.blockdatafile;
+package org.hestiastore.index.datablockfile;
 
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
@@ -12,7 +12,7 @@ public class DataBlockReaderImpl implements DataBlockReader {
     private int position;
 
     DataBlockReaderImpl(final FileReader fileReader,
-            final BlockPosition blockPosition, final int blockSize) {
+            final DataBlockPosition blockPosition, final int blockSize) {
         this.fileReader = Vldtn.requireNonNull(fileReader, "fileReader");
         this.blockSize = blockSize;
         this.position = blockPosition.getValue();
@@ -33,7 +33,7 @@ public class DataBlockReaderImpl implements DataBlockReader {
         if (bytesRead != blockSize) {
             throw new IndexException("Unable to read full block");
         }
-        BlockPosition blockPosition = BlockPosition.of(position);
+        DataBlockPosition blockPosition = DataBlockPosition.of(position);
         position += blockSize;
         return new DataBlock(Bytes.of(buffer), blockPosition);
     }

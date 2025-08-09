@@ -1,4 +1,4 @@
-package org.hestiastore.index.blockdatafile;
+package org.hestiastore.index.datablockfile;
 
 import org.apache.commons.codec.digest.PureJavaCrc32;
 import org.hestiastore.index.Bytes;

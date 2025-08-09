@@ -1,17 +1,17 @@
-package org.hestiastore.index.blockdatafile;
+package org.hestiastore.index.datablockfile;
 
 /**
  * Alows to identify exact position of a block in a block data file.
  */
-public class BlockPosition {
+public class DataBlockPosition {
 
     private final int position;
 
-    public static BlockPosition of(final int position) {
-        return new BlockPosition(position);
+    public static DataBlockPosition of(final int position) {
+        return new DataBlockPosition(position);
     }
 
-    private BlockPosition(final int position) {
+    private DataBlockPosition(final int position) {
         if (position < 0) {
             throw new IllegalArgumentException("Position must be non-negative");
         }
@@ -36,7 +36,7 @@ public class BlockPosition {
             return false;
         }
 
-        BlockPosition that = (BlockPosition) o;
+        DataBlockPosition that = (DataBlockPosition) o;
         return position == that.position;
     }
 

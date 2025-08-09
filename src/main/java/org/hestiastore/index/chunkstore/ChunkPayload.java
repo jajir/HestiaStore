@@ -30,4 +30,26 @@ public class ChunkPayload {
         crc.update(bytes.getData());
         return crc.getValue();
     }
+
+    @Override
+    public int hashCode() {
+        return bytes.hashCode();
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof ChunkPayload)) {
+            return false;
+        }
+        final ChunkPayload other = (ChunkPayload) obj;
+        return bytes.equals(other.bytes);
+    }
+
+    @Override
+    public String toString() {
+        return "ChunkPayload{" + "bytes=" + bytes + '}';
+    }
 }

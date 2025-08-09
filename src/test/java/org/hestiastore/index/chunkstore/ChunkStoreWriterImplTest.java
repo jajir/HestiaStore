@@ -5,8 +5,8 @@ import static org.mockito.Mockito.verify;
 
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.TestData;
-import org.hestiastore.index.blockdatafile.DataBlockPayload;
-import org.hestiastore.index.blockdatafile.DataBlockWriter;
+import org.hestiastore.index.datablockfile.DataBlockPayload;
+import org.hestiastore.index.datablockfile.DataBlockWriter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,15 +25,6 @@ public class ChunkStoreWriterImplTest {
 
     private static final int VERSION = 1;
 
-    private static final ChunkPayload PAYLOAD_9 = ChunkPayload
-            .of(Bytes.of("test data".getBytes()));
-
-    private static final ChunkPayload PAYLOAD_15 = ChunkPayload
-            .of(Bytes.of("super test data".getBytes()));
-
-    private static final ChunkPayload PAYLOAD_154 = ChunkPayload
-            .of(Bytes.of(TestData.BYTE_ARRAY_154));
-
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Mock
@@ -43,7 +34,8 @@ public class ChunkStoreWriterImplTest {
 
     @BeforeEach
     void beforeEach() {
-        writer = new ChunkStoreWriterImpl(dataBlockWriter, DATABLOCK_SIZE,
+        writer = new ChunkStoreWriterImpl(
+                ChunkStorePosition.of(DATABLOCK_SIZE, 0), dataBlockWriter,
                 DATABLOCK_PAYLOAD_SIZE);
     }
 
@@ -57,13 +49,16 @@ public class ChunkStoreWriterImplTest {
      */
     @Test
     void test_write_large_chunk() {
-        ChunkStorePosition position = writer.write(PAYLOAD_154, VERSION);
+        ChunkStorePosition position = writer.write(TestData.PAYLOAD_154,
+                VERSION);
         assertEquals(0, position.getValue());
         writer.close();
 
         final ChunkHeader header = ChunkHeader.of(Chunk.MAGIC_NUMBER, VERSION,
-                PAYLOAD_154.length(), PAYLOAD_154.calculateCrc());
-        Bytes bytesToWrite = Bytes.of(header.toBytes(), PAYLOAD_154.getBytes());
+                TestData.PAYLOAD_154.length(),
+                TestData.PAYLOAD_154.calculateCrc());
+        Bytes bytesToWrite = Bytes.of(header.getBytes(),
+                TestData.PAYLOAD_154.getBytes());
         Bytes bytesToWrite0 = bytesToWrite.subBytes(0, 64);
         Bytes bytesToWrite1 = bytesToWrite.subBytes(64, 128);
         Bytes bytesToWrite2 = bytesToWrite.subBytes(128, 186).paddedTo(64);
@@ -78,13 +73,15 @@ public class ChunkStoreWriterImplTest {
 
     @Test
     void test_write_small_chunk() {
-        ChunkStorePosition position1 = writer.write(PAYLOAD_9, VERSION);
+        ChunkStorePosition position1 = writer.write(TestData.PAYLOAD_9,
+                VERSION);
         assertEquals(0, position1.getValue());
         writer.close();
 
         final ChunkHeader header1 = ChunkHeader.of(Chunk.MAGIC_NUMBER, VERSION,
-                PAYLOAD_9.length(), PAYLOAD_9.calculateCrc());
-        Bytes bytesToWrite = Bytes.of(header1.toBytes(), PAYLOAD_9.getBytes())
+                TestData.PAYLOAD_9.length(), TestData.PAYLOAD_9.calculateCrc());
+        Bytes bytesToWrite = Bytes
+                .of(header1.getBytes(), TestData.PAYLOAD_9.getBytes())
                 .paddedTo(64);
 
         logger.info("Bytes length: {}", bytesToWrite.length());
@@ -94,26 +91,33 @@ public class ChunkStoreWriterImplTest {
 
     @Test
     void test_write_small_chunks() {
-        ChunkStorePosition position1 = writer.write(PAYLOAD_9, VERSION);
+        ChunkStorePosition position1 = writer.write(TestData.PAYLOAD_9,
+                VERSION);
         assertEquals(0, position1.getValue());
-        ChunkStorePosition position2 = writer.write(PAYLOAD_15, VERSION);
+        ChunkStorePosition position2 = writer.write(TestData.PAYLOAD_15,
+                VERSION);
         assertEquals(48, position2.getValue());
         writer.close();
 
         final ChunkHeader header1 = ChunkHeader.of(Chunk.MAGIC_NUMBER, VERSION,
-                PAYLOAD_9.length(), PAYLOAD_9.calculateCrc());
-        Bytes bytesToWrite1 = Bytes.of(header1.toBytes(), PAYLOAD_9.getBytes())
+                TestData.PAYLOAD_9.length(), TestData.PAYLOAD_9.calculateCrc());
+        Bytes bytesToWrite = Bytes
+                .of(header1.getBytes(), TestData.PAYLOAD_9.getBytes())
                 .paddedTo(48);
 
         final ChunkHeader header2 = ChunkHeader.of(Chunk.MAGIC_NUMBER, VERSION,
-                PAYLOAD_15.length(), PAYLOAD_15.calculateCrc());
-        bytesToWrite1 = bytesToWrite1.add(header2.toBytes());
-        bytesToWrite1 = bytesToWrite1.add(PAYLOAD_15.getBytes());
+                TestData.PAYLOAD_15.length(),
+                TestData.PAYLOAD_15.calculateCrc());
+        bytesToWrite = bytesToWrite.add(header2.getBytes());
+        bytesToWrite = bytesToWrite
+                .add(TestData.PAYLOAD_15.getBytes().paddedTo(16));
 
-        System.out.println(bytesToWrite1.length());
+        assertEquals(96, bytesToWrite.length());
 
-        verify(dataBlockWriter).write(DataBlockPayload.of(bytesToWrite1));
-        logger.info("Bytes length: {}", bytesToWrite1.length());
+        Bytes dataBlock1 = bytesToWrite.subBytes(0, 64);
+        Bytes dataBlock2 = bytesToWrite.subBytes(64, 96).paddedTo(64);
+        verify(dataBlockWriter).write(DataBlockPayload.of(dataBlock1));
+        verify(dataBlockWriter).write(DataBlockPayload.of(dataBlock2));
     }
 
 }

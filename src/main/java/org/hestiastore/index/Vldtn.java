@@ -23,7 +23,7 @@ public final class Vldtn {
         return object;
     }
 
-    public static int ioBufferSize(final int ioBufferSize) {
+    public static int requiredIoBufferSize(final int ioBufferSize) {
         if (ioBufferSize <= 0) {
             throw new IllegalArgumentException(
                     "Property 'ioBufferSize' must be greater than 0");
@@ -60,6 +60,29 @@ public final class Vldtn {
             throw new IllegalArgumentException(String.format(
                     "Property '%s' must be between %d and %d (inclusive). Got: %d",
                     propertyName, minInclusive, maxInclusive, value));
+        }
+        return value;
+    }
+
+    /**
+     * Validates that given value is valid cell size
+     * 
+     * @param value        cell size to validate
+     * @param propertyName name of the property being validated, used in error
+     *                     messages
+     * @throws IllegalArgumentException if cellSize is less than or equal to 0,
+     *                                  or not divisible by 16
+     * @return the validated cell size
+     */
+    public static int requireGreaterThanZero(final int value,
+            final String propertyName) {
+        if (propertyName == null) {
+            throw new IllegalArgumentException(
+                    "Property 'propertyName' must not be null.");
+        }
+        if (value <= 0) {
+            throw new IllegalArgumentException(String.format(
+                    "Property '%s' must be greater than 0", propertyName));
         }
         return value;
     }

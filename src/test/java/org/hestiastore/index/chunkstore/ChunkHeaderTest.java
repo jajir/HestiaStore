@@ -16,7 +16,7 @@ public class ChunkHeaderTest {
         final ChunkHeader header1 = ChunkHeader.of(Chunk.MAGIC_NUMBER, VERSION,
                 PAYLOAD_LENGTH, CRC);
 
-        final byte[] data = header1.toBytes().getData();
+        final byte[] data = header1.getBytes().getData();
         final ChunkHeader header2 = ChunkHeader.of(data);
 
         assertEquals(Chunk.MAGIC_NUMBER, header2.getMagicNumber());
