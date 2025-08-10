@@ -35,7 +35,7 @@ public class ChunkStoreReaderImplTest {
     @BeforeEach
     void beforeEach() {
         reader = new ChunkStoreReaderImpl(dataBlockReader,
-                DATABLOCK_PAYLOAD_SIZE);
+                DATABLOCK_PAYLOAD_SIZE, 0);
     }
 
     @AfterEach

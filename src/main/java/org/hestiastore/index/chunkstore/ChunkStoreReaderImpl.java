@@ -13,10 +13,11 @@ public class ChunkStoreReaderImpl implements ChunkStoreReader {
     private int currentBlockPosition = 0;
 
     public ChunkStoreReaderImpl(final DataBlockReader dataBlockReader,
-            final int dataBlockPayloadSize) {
+            final int dataBlockPayloadSize, final int initialCellIndex) {
         this.dataBlockReader = Vldtn.requireNonNull(dataBlockReader,
                 "dataBlockReader");
         this.dataBlockPayloadSize = dataBlockPayloadSize;
+        this.currentBlockPosition = initialCellIndex * 16;
     }
 
     @Override

@@ -17,6 +17,7 @@ import org.hestiastore.index.Vldtn;
  */
 public final class Chunk {
 
+    // TODO move it to header
     static final int HEADER_SIZE = 32;
 
     /**
@@ -27,6 +28,7 @@ public final class Chunk {
     /**
      * "theodora" in ASCII
      */
+    // TODO move it to header
     static final long MAGIC_NUMBER = 0x7468656F646F7261L;
 
     /**
