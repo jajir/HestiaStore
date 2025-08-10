@@ -27,23 +27,38 @@ public class ChunkStoreReaderImpl implements ChunkStoreReader {
     @Override
     public Chunk read() {
         final ChunkHeader chunkHeader = readHeader();
+        if (chunkHeader == null) {
+            return null;
+        }
         int requiredLength = chunkHeader.getPayloadLength();
         int cellLength = convertLengthToWholeCells(requiredLength);
         Bytes payload = readPayload(cellLength);
         if (cellLength != requiredLength) {
             payload = payload.subBytes(0, requiredLength);
         }
-        return Chunk.of(chunkHeader, payload);
+        final Chunk out = Chunk.of(chunkHeader, payload);
+        if (chunkHeader.getCrc() != out.calculateCrc()) {
+            throw new IllegalArgumentException(String.format(
+                    "Invalid chunk CRC, expected: '%s', actual: '%s'",
+                    chunkHeader.getCrc(), out.calculateCrc()));
+        }
+        return out;
     }
 
     private ChunkHeader readHeader() {
         optionalyMoveToNextDataBlock();
+        if (currentDataBlock == null) {
+            return null;
+        }
         final int remainingBytes = dataBlockPayloadSize - currentBlockPosition;
         Bytes tmp = null;
         if (remainingBytes == 16) {
             tmp = currentDataBlock.getPayload().getBytes()
                     .subBytes(currentBlockPosition, currentBlockPosition + 16);
             moveToNextDataBlock();
+            if (currentDataBlock == null) {
+                return null;
+            }
             tmp = tmp.add(
                     currentDataBlock.getPayload().getBytes().subBytes(0, 16));
             currentBlockPosition = 16;
@@ -57,24 +72,25 @@ public class ChunkStoreReaderImpl implements ChunkStoreReader {
     }
 
     private Bytes readPayload(final int length) {
-        Vldtn.requireGreaterThanZero(length, "length");
+        int bytesToread = Vldtn.requireGreaterThanZero(length, "length");
         optionalyMoveToNextDataBlock();
-        final int remainingBytes = dataBlockPayloadSize - currentBlockPosition;
-        Bytes tmp = null;
-        if (remainingBytes == length) {
-            tmp = currentDataBlock.getPayload().getBytes()
-                    .subBytes(currentBlockPosition, length);
-            moveToNextDataBlock();
-            tmp = tmp.add(currentDataBlock.getPayload().getBytes().subBytes(0,
-                    length));
-            currentBlockPosition = length;
-        } else {
-            tmp = currentDataBlock.getPayload().getBytes().subBytes(
-                    currentBlockPosition, currentBlockPosition + length);
-            currentBlockPosition += length;
-
+        Bytes chunkPayloadBytes = Bytes.EMPTY;
+        while (bytesToread > 0) {
+            final int remainingBytesToReadInChunk = dataBlockPayloadSize
+                    - currentBlockPosition;
+            final int bytesToreadFromCurrentBlock = Math
+                    .min(remainingBytesToReadInChunk, bytesToread);
+            chunkPayloadBytes = chunkPayloadBytes
+                    .add(currentDataBlock.getPayload().getBytes()
+                            .subBytes(currentBlockPosition, currentBlockPosition
+                                    + bytesToreadFromCurrentBlock));
+            currentBlockPosition += bytesToreadFromCurrentBlock;
+            bytesToread -= bytesToreadFromCurrentBlock;
+            if (dataBlockPayloadSize <= currentBlockPosition) {
+                moveToNextDataBlock();
+            }
         }
-        return tmp;
+        return chunkPayloadBytes;
     }
 
     private void optionalyMoveToNextDataBlock() {
