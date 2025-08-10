@@ -8,9 +8,13 @@ import org.hestiastore.index.Vldtn;
  */
 public final class DataBlock {
 
+    // TODO move it to header
     public static final int HEADER_SIZE = 16;
 
-    // "nicholas" in ASCII
+    // TODO move it to header
+    /**
+     * "nicholas" in ASCII
+     */
     public static final long MAGIC_NUMBER = 0x6E6963686F6C6173L;
 
     private final Bytes bytes;

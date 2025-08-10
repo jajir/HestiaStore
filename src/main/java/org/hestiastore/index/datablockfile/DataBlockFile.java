@@ -46,4 +46,8 @@ public class DataBlockFile {
         return blockSize;
     }
 
+    public int getDataBlockPayloadSize() {
+        return blockSize - DataBlock.HEADER_SIZE;
+    }
+
 }
