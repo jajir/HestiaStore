@@ -62,6 +62,10 @@ public final class Chunk {
                     "Chunk bytes length '%s' is not equal to required length '%s'",
                     bytes.length(), requiredLength));
         }
+        if (header.getMagicNumber() != MAGIC_NUMBER) {
+            throw new IllegalArgumentException(
+                    "Invalid magic number in chunk header");
+        }
         this.bytes = bytes;
     }
 

@@ -62,6 +62,11 @@ public class ChunkHeader {
                     "Invalid chunk header size '%d', expected is '%d'",
                     data.length, Chunk.HEADER_SIZE));
         }
+        if (getMagicNumber() != Chunk.MAGIC_NUMBER) {
+            throw new IllegalArgumentException(String.format(
+                    "Invalid chunk magic number '%d', expected is '%d'",
+                    getMagicNumber(), Chunk.MAGIC_NUMBER));
+        }
     }
 
     public Bytes getBytes() {

@@ -6,7 +6,7 @@ import org.hestiastore.index.Vldtn;
 /**
  * Represents a block of data in the block data file.
  */
-public class DataBlock {
+public final class DataBlock {
 
     public static final int HEADER_SIZE = 16;
 
@@ -25,9 +25,14 @@ public class DataBlock {
     DataBlock(final Bytes bytes, final DataBlockPosition position) {
         this.bytes = Vldtn.requireNonNull(bytes, "bytes");
         this.position = Vldtn.requireNonNull(position, "position");
-        if (getHeader().getMagicNumber() != MAGIC_NUMBER) {
+        final DataBlockHeader header = getHeader();
+        if (header.getMagicNumber() != MAGIC_NUMBER) {
             throw new IllegalArgumentException(
                     "Invalid magic number in data block header");
+        }
+        if (header.getCrc() != calculateCrc()) {
+            throw new IllegalArgumentException(
+                    "CRC mismatch in data block header");
         }
     }
 

@@ -9,6 +9,8 @@ import java.util.Arrays;
  */
 public class Bytes {
 
+    public static final Bytes EMPTY = new Bytes(new byte[0]);
+
     private final byte[] data;
 
     public static Bytes of(final byte[] data) {
