@@ -85,8 +85,9 @@ public class SortedDataFile<K, V> {
     public SortedDataFileWriter<K, V> openWriter() {
         final FileWriter fileWriter = directory.getFileWriter(fileName,
                 Directory.Access.OVERWRITE, diskIoBufferSize);
-        return new SortedDataFileWriter<>(valueTypeDescriptor.getTypeWriter(),
-                fileWriter, keyTypeDescriptor);
+        return new SortedDataFileWriterImpl<>(
+                valueTypeDescriptor.getTypeWriter(), fileWriter,
+                keyTypeDescriptor);
     }
 
     public void delete() {
