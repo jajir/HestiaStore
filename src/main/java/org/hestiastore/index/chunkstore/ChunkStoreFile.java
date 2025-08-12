@@ -1,13 +1,11 @@
 package org.hestiastore.index.chunkstore;
 
 import org.hestiastore.index.datablockfile.DataBlockFile;
-import org.hestiastore.index.datablockfile.DataBlockWriterTx;
 import org.hestiastore.index.directory.Directory;
 
 public class ChunkStoreFile {
 
     private final DataBlockFile dataBlockFile;
-
     private final int dataBlockSize;
 
     public ChunkStoreFile(final Directory directory, final String fileName,

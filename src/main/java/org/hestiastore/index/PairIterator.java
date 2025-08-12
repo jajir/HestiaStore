@@ -7,6 +7,8 @@ import java.util.Iterator;
  * further works with them. When object is initialized method
  * {@link #getNextPair()} return null.
  * 
+ * Must be closed to release resources.
+ * 
  * @author honza
  *
  * @param <K>

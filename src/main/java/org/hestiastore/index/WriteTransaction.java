@@ -6,6 +6,8 @@ package org.hestiastore.index;
  *
  * Interface allows easily and securely perform write operations including
  * closing all resources and committing.
+ * 
+ * Commit can't be part of close() method.
  *
  * @param <K> the type of keys
  * @param <V> the type of values
