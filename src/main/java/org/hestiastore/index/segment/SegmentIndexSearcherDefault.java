@@ -2,10 +2,10 @@ package org.hestiastore.index.segment;
 
 import java.util.Comparator;
 
-import org.hestiastore.index.CloseablePairReader;
 import org.hestiastore.index.Pair;
+import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.sorteddatafile.SortedDataFile;
+import org.hestiastore.index.sorteddatafile.SortedDataFileSearcher;
 
 /**
  * Searcher for each search open file for read and skip given number of bytes.
@@ -18,11 +18,12 @@ import org.hestiastore.index.sorteddatafile.SortedDataFile;
 public class SegmentIndexSearcherDefault<K, V>
         implements SegmentIndexSearcher<K, V> {
 
-    private final SortedDataFile<K, V> segmentIndexFile;
+    private final SortedDataFileSearcher<K, V> segmentIndexFile;
     private final int maxNumberOfKeysInIndexPage;
     private final Comparator<K> keyTypeComparator;
 
-    SegmentIndexSearcherDefault(final SortedDataFile<K, V> segmentIndexFile,
+    SegmentIndexSearcherDefault(
+            final SortedDataFileSearcher<K, V> segmentIndexFile,
             final int maxNumberOfKeysInIndexPage,
             final Comparator<K> keyTypeComparator) {
         this.segmentIndexFile = Vldtn.requireNonNull(segmentIndexFile,
@@ -40,10 +41,10 @@ public class SegmentIndexSearcherDefault<K, V>
 
     @Override
     public V search(final K key, long startPosition) {
-        try (CloseablePairReader<K, V> fileReader = segmentIndexFile
-                .openReader(startPosition)) {
+        try (PairIterator<K, V> fileReader = segmentIndexFile
+                .search(startPosition)) {
             for (int i = 0; i < maxNumberOfKeysInIndexPage; i++) {
-                final Pair<K, V> pair = fileReader.read();
+                final Pair<K, V> pair = fileReader.next();
                 final int cmp = keyTypeComparator.compare(pair.getKey(), key);
                 if (cmp == 0) {
                     return pair.getValue();

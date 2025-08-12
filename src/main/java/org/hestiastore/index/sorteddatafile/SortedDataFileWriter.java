@@ -3,6 +3,8 @@ package org.hestiastore.index.sorteddatafile;
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.Pair;
 
+//TODO consider renaming, SortedPairWriter.
+
 /**
  * Abstraction for writing to sorted data file.
  * 

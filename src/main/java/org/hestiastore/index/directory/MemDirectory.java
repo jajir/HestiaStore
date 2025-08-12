@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
 
 public class MemDirectory implements Directory {
@@ -17,6 +18,14 @@ public class MemDirectory implements Directory {
                     String.format("There is no file '%s'", fileName));
         }
         return new MemFileReader(data.get(fileName));
+    }
+
+    public Bytes getFileBytes(final String fileName) {
+        if (!data.containsKey(fileName)) {
+            throw new IndexException(
+                    String.format("There is no file '%s'", fileName));
+        }
+        return Bytes.of(data.get(fileName));
     }
 
     @Override

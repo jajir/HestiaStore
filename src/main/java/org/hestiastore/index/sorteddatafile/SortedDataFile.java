@@ -10,7 +10,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileWriter;
 
-public class SortedDataFile<K, V> {
+public class SortedDataFile<K, V> implements SortedDataFileSearcher<K, V> {
 
     private final Directory directory;
 
@@ -80,6 +80,16 @@ public class SortedDataFile<K, V> {
 
     public PairIteratorWithCurrent<K, V> openIterator() {
         return new PairIteratorFromReader<>(openReader());
+    }
+
+    @Override
+    public PairIteratorWithCurrent<K, V> search(long position) {
+        return new PairIteratorFromReader<>(openReader(position));
+    }
+
+    @Override
+    public PairIteratorWithCurrent<K, V> search() {
+        return openIterator();
     }
 
     public SortedDataFileWriter<K, V> openWriter() {
