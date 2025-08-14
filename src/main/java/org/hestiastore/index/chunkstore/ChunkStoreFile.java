@@ -20,7 +20,7 @@ public class ChunkStoreFile {
                 dataBlockSize, chunkPosition.getCellIndex());
     }
 
-    public ChunkStoreWriterTx getChunkStoreWriterTx() {
+    public ChunkStoreWriterTx openWriteTx() {
         return new ChunkStoreWriterTx(dataBlockFile,
                 getFirstChunkStorePosition(),
                 dataBlockFile.getDataBlockPayloadSize());
