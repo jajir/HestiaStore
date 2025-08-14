@@ -1,9 +1,9 @@
 package org.hestiastore.index.chunkpairfile;
 
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.PairIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkStoreFile;
-import org.hestiastore.index.chunkstore.ChunkStorePairIterator;
 import org.hestiastore.index.chunkstore.ChunkStorePosition;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.sorteddatafile.SortedDataFileSearcher;
@@ -11,6 +11,8 @@ import org.hestiastore.index.sorteddatafile.SortedDataFileSearcher;
 /**
  * Object providing search functionality for a chunk store.
  */
+@Deprecated
+// TODO remove this class in the future
 public class ChunkStoreSearcher<K, V> implements SortedDataFileSearcher<K, V> {
 
     private final ChunkStoreFile chunkStoreFile;
@@ -32,15 +34,15 @@ public class ChunkStoreSearcher<K, V> implements SortedDataFileSearcher<K, V> {
 
     @Override
     public PairIterator<K, V> search(final long position) {
-        return new ChunkStorePairIterator<>(
+        return new ChunkPairFileIterator<>(
                 chunkStoreFile.openReader(
                         ChunkStorePosition.of(dataBlockSize, (int) position)),
                 keyTypeDescriptor, valueTypeDescriptor);
     }
 
     @Override
-    public PairIterator<K, V> search() {
-        return new ChunkStorePairIterator<>(
+    public PairIteratorWithCurrent<K, V> search() {
+        return new ChunkPairFileIterator<>(
                 chunkStoreFile
                         .openReader(ChunkStorePosition.of(dataBlockSize, 0)),
                 keyTypeDescriptor, valueTypeDescriptor);

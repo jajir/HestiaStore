@@ -1,4 +1,4 @@
-package org.hestiastore.index.chunkstore;
+package org.hestiastore.index.chunkpairfile;
 
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -6,9 +6,12 @@ import java.util.Optional;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.chunkstore.Chunk;
+import org.hestiastore.index.chunkstore.ChunkPairIterator;
+import org.hestiastore.index.chunkstore.ChunkStoreReader;
 import org.hestiastore.index.datatype.TypeDescriptor;
 
-public class ChunkStorePairIterator<K, V>
+public class ChunkPairFileIterator<K, V>
         implements PairIteratorWithCurrent<K, V> {
 
     private final ChunkStoreReader chunkStoreReader;
@@ -17,7 +20,7 @@ public class ChunkStorePairIterator<K, V>
 
     private PairIteratorWithCurrent<K, V> iterator;
 
-    public ChunkStorePairIterator(ChunkStoreReader chunkStoreReader,
+    public ChunkPairFileIterator(ChunkStoreReader chunkStoreReader,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor) {
         this.chunkStoreReader = Vldtn.requireNonNull(chunkStoreReader,
