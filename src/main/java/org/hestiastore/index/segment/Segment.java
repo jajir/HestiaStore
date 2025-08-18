@@ -81,7 +81,7 @@ public class Segment<K, V>
 
     public PairIterator<K, V> openIterator() {
         final PairIterator<K, V> mergedPairIterator = new MergeDeltaCacheWithIndexIterator<>(
-                segmentFiles.getIndexSstFileForIteration().openIterator(),
+                segmentFiles.getIndexSstFile().openIterator(),
                 segmentFiles.getKeyTypeDescriptor(),
                 segmentFiles.getValueTypeDescriptor(),
                 deltaCacheController.getDeltaCache().getAsSortedList());

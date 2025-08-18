@@ -102,16 +102,6 @@ public final class SegmentFiles<K, V> {
                 .build();
     }
 
-    SortedDataFile<K, V> getIndexSstFileForIteration() {
-        return SortedDataFile.<K, V>builder() //
-                .withDirectory(directory) //
-                .withFileName(getIndexFileName())//
-                .withKeyTypeDescriptor(keyTypeDescriptor) //
-                .withValueTypeDescriptor(valueTypeDescriptor) //
-                .withDiskIoBufferSize(diskIoBufferSize)//
-                .build();
-    }
-
     SortedDataFile<K, V> getTempIndexFile() {
         return SortedDataFile.<K, V>builder() //
                 .withDirectory(directory) //
