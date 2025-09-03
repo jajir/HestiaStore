@@ -1,6 +1,8 @@
 package org.hestiastore.index.segment;
 
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.chunkpairfile.ChunkPairFile;
+import org.hestiastore.index.chunkstore.ChunkStoreFile;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.scarceindex.ScarceIndex;
@@ -46,6 +48,7 @@ public final class SegmentFiles<K, V> {
         return id.getName() + CACHE_FILE_NAME_EXTENSION;
     }
 
+    @Deprecated
     String getTempIndexFileName() {
         return id.getName() + TEMP_FILE_NAME_EXTENSION
                 + INDEX_FILE_NAME_EXTENSION;
@@ -92,6 +95,7 @@ public final class SegmentFiles<K, V> {
                 .build();
     }
 
+    @Deprecated
     SortedDataFile<K, V> getIndexSstFile() {
         return SortedDataFile.<K, V>builder() //
                 .withDirectory(directory) //
@@ -102,6 +106,14 @@ public final class SegmentFiles<K, V> {
                 .build();
     }
 
+    ChunkPairFile<K, V> getIndexFile() {
+        final ChunkStoreFile chunkStoreFile = new ChunkStoreFile(getDirectory(),
+                getIndexFileName(), diskIoBufferSize);
+        return new ChunkPairFile<>(chunkStoreFile, keyTypeDescriptor,
+                valueTypeDescriptor, diskIoBufferSize);
+    }
+
+    @Deprecated
     SortedDataFile<K, V> getTempIndexFile() {
         return SortedDataFile.<K, V>builder() //
                 .withDirectory(directory) //

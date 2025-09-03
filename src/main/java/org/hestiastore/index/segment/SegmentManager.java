@@ -34,8 +34,9 @@ public class SegmentManager<K, V> {
      * 
      * @return segment writer object
      */
-    public SegmentFullWriter<K, V> createSegmentFullWriterNew() {
-        return new SegmentFullWriter<>(segmentFiles, segmentPropertiesManager,
+    public SegmentFullWriterToChunkStore<K, V> createSegmentFullWriterNew() {
+        return new SegmentFullWriterToChunkStore<>(segmentFiles,
+                segmentPropertiesManager,
                 segmentConf.getMaxNumberOfKeysInIndexPage(),
                 segmentCacheDataProvider, deltaCacheController);
     }

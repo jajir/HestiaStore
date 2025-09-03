@@ -19,7 +19,9 @@ import org.hestiastore.index.sorteddatafile.SortedDataFileWriter;
  * <ul>
  * .
  */
-public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
+@Deprecated
+// TODO remove this class
+public class SegmentFullWriterToSstFile<K, V> implements PairWriter<K, V> {
 
     private final SegmentFiles<K, V> segmentFiles;
     private final SegmentPropertiesManager segmentPropertiesManager;
@@ -33,7 +35,7 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
     private Pair<K, V> previousPair = null;
 
-    SegmentFullWriter(final SegmentFiles<K, V> segmentFiles,
+    SegmentFullWriterToSstFile(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentStatsManager,
             final int maxNumberOfKeysInIndexPage,
             final SegmentDataProvider<K, V> segmentCacheDataProvider,

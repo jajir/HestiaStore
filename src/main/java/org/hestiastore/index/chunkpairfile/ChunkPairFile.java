@@ -6,6 +6,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkStoreFile;
 import org.hestiastore.index.chunkstore.ChunkStorePosition;
 import org.hestiastore.index.datatype.TypeDescriptor;
+import org.hestiastore.index.segment.SegmentIndexSearcher;
 import org.hestiastore.index.sorteddatafile.SortedDataFileSearcher;
 
 /**
@@ -54,6 +55,17 @@ public class ChunkPairFile<K, V> implements SortedDataFileSearcher<K, V> {
         return new ChunkPairFileIterator<>(
                 chunkStoreFile
                         .openReader(ChunkStorePosition.of(dataBlockSize, 0)),
+                keyTypeDescriptor, valueTypeDescriptor);
+    }
+
+    public SegmentIndexSearcher<K, V> getSegmentIndexSearcher(
+            final int maxNumberOfKeysInIndexChunk) {
+        return new ChunkPairFileSegmentIndexSearcher<>(getChunkStoreSearcher(),
+                maxNumberOfKeysInIndexChunk, keyTypeDescriptor.getComparator());
+    }
+
+    private ChunkStoreSearcher<K, V> getChunkStoreSearcher() {
+        return new ChunkStoreSearcher<>(chunkStoreFile, dataBlockSize,
                 keyTypeDescriptor, valueTypeDescriptor);
     }
 
