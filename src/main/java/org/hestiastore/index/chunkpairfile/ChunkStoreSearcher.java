@@ -11,8 +11,6 @@ import org.hestiastore.index.sorteddatafile.SortedDataFileSearcher;
 /**
  * Object providing search functionality for a chunk store.
  */
-@Deprecated
-// TODO remove this class in the future
 public class ChunkStoreSearcher<K, V> implements SortedDataFileSearcher<K, V> {
 
     private final ChunkStoreFile chunkStoreFile;

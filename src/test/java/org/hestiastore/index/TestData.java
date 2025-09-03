@@ -5,7 +5,9 @@ import org.hestiastore.index.datablockfile.DataBlockPayload;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.datatype.TypeDescriptor;
+import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
+import org.hestiastore.index.datatype.TypeDescriptorString;
 
 /**
  * Class holds static test data.
@@ -227,6 +229,9 @@ public final class TestData {
             .getConvertorFromBytes();
     public static final ConvertorToBytes<Long> LONG_CONVERTOR_TO_BYTES = TYPE_DESCRIPTOR_LONG
             .getConvertorToBytes();
+
+    public static final TypeDescriptor<String> TYPE_DESCRIPTOR_STRING = new TypeDescriptorString();
+    public static final TypeDescriptor<Integer> TYPE_DESCRIPTOR_INTEGER = new TypeDescriptorInteger();
 
     public static final String STRING_9 = "test data";
     public static final Bytes BYTES_9 = Bytes.of(STRING_9.getBytes());

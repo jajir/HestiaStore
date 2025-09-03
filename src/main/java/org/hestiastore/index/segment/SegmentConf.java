@@ -46,6 +46,7 @@ public class SegmentConf {
         return maxNumberOfKeysInSegmentDeltaCache;
     }
 
+    // TODO rename it to MaxNumberOfKeysInIndexChunk
     Integer getMaxNumberOfKeysInIndexPage() {
         return maxNumberOfKeysInIndexPage;
     }

@@ -30,8 +30,12 @@ public class DataBlockFile {
             throw new IllegalArgumentException(String.format(
                     "Block position must be >= '%s'", FIRST_BLOCK.getValue()));
         }
-        return new DataBlockReaderImpl(getFileReader(blockPosition),
-                blockPosition, blockSize);
+        if (directory.isFileExists(fileName)) {
+            return new DataBlockReaderImpl(getFileReader(blockPosition),
+                    blockPosition, blockSize);
+        } else {
+            return new DataBlockReaderEmpty();
+        }
     }
 
     private FileReader getFileReader(final DataBlockPosition blockPosition) {

@@ -81,7 +81,7 @@ public class Segment<K, V>
 
     public PairIterator<K, V> openIterator() {
         final PairIterator<K, V> mergedPairIterator = new MergeDeltaCacheWithIndexIterator<>(
-                segmentFiles.getIndexSstFile().openIterator(),
+                segmentFiles.getIndexFile().openIterator(),
                 segmentFiles.getKeyTypeDescriptor(),
                 segmentFiles.getValueTypeDescriptor(),
                 deltaCacheController.getDeltaCache().getAsSortedList());
@@ -106,7 +106,7 @@ public class Segment<K, V>
     void executeFullWriteTx(final WriterFunction<K, V> writeFunction) {
         new WriteTransaction<K, V>() {
 
-            private final SegmentFullWriter<K, V> segmentFullWriter = segmentManager
+            private final SegmentFullWriterToChunkStore<K, V> segmentFullWriter = segmentManager
                     .createSegmentFullWriterNew();
 
             @Override
@@ -125,7 +125,7 @@ public class Segment<K, V>
     WriteTransaction<K, V> openFullWriteTx() {
         return new WriteTransaction<K, V>() {
 
-            private final SegmentFullWriter<K, V> segmentFullWriter = segmentManager
+            private final SegmentFullWriterToChunkStore<K, V> segmentFullWriter = segmentManager
                     .createSegmentFullWriterNew();
 
             @Override
