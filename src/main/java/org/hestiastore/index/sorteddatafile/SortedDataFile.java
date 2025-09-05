@@ -10,7 +10,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileWriter;
 
-public class SortedDataFile<K, V> {
+public class SortedDataFile<K, V> implements SortedDataFileSearcher<K, V> {
 
     private final Directory directory;
 
@@ -36,7 +36,7 @@ public class SortedDataFile<K, V> {
                 "keyTypeDescriptor");
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
-        this.diskIoBufferSize = Vldtn.ioBufferSize(diskIoBufferSize);
+        this.diskIoBufferSize = Vldtn.requiredIoBufferSize(diskIoBufferSize);
     }
 
     public SortedDataFile<K, V> withFileName(final String newFileName) {
@@ -82,11 +82,22 @@ public class SortedDataFile<K, V> {
         return new PairIteratorFromReader<>(openReader());
     }
 
+    @Override
+    public PairIteratorWithCurrent<K, V> search(long position) {
+        return new PairIteratorFromReader<>(openReader(position));
+    }
+
+    @Override
+    public PairIteratorWithCurrent<K, V> search() {
+        return openIterator();
+    }
+
     public SortedDataFileWriter<K, V> openWriter() {
         final FileWriter fileWriter = directory.getFileWriter(fileName,
                 Directory.Access.OVERWRITE, diskIoBufferSize);
-        return new SortedDataFileWriter<>(valueTypeDescriptor.getTypeWriter(),
-                fileWriter, keyTypeDescriptor);
+        return new SortedDataFileWriterImpl<>(
+                valueTypeDescriptor.getTypeWriter(), fileWriter,
+                keyTypeDescriptor);
     }
 
     public void delete() {

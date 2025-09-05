@@ -32,13 +32,13 @@ class VldtnTest {
 
     @Test
     void test_ioBufferSize() {
-        assertEquals(1024, Vldtn.ioBufferSize(1024));
+        assertEquals(1024, Vldtn.requiredIoBufferSize(1024));
     }
 
     @Test
     void test_ioBufferSize_less_then_zero() {
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> Vldtn.ioBufferSize(-1));
+                () -> Vldtn.requiredIoBufferSize(-1));
 
         assertEquals("Property 'ioBufferSize' must be greater than 0",
                 e.getMessage());
@@ -47,7 +47,7 @@ class VldtnTest {
     @Test
     void test_ioBufferSize_is_zero() {
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> Vldtn.ioBufferSize(0));
+                () -> Vldtn.requiredIoBufferSize(0));
 
         assertEquals("Property 'ioBufferSize' must be greater than 0",
                 e.getMessage());
@@ -56,11 +56,89 @@ class VldtnTest {
     @Test
     void test_ioBufferSize_dividion_by_1024() {
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> Vldtn.ioBufferSize(100000));
+                () -> Vldtn.requiredIoBufferSize(100000));
 
         assertEquals(
                 "Propety 'ioBufferSize' must be divisible "
                         + "by 1024 (e.g., 1024, 2048, 4096). Got: '100000'",
+                e.getMessage());
+    }
+
+    @Test
+    void test_requireBetween() {
+        assertEquals(5, Vldtn.requireBetween(5, 1, 10, "testProperty"));
+    }
+
+    @Test
+    void test_requireBetween_high() {
+        assertEquals(10, Vldtn.requireBetween(10, 1, 10, "testProperty"));
+    }
+
+    @Test
+    void test_requireBetween_higher() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireBetween(11, 1, 10, "testProperty"));
+        assertEquals("Property 'testProperty' must be between 1 and 10 "
+                + "(inclusive). Got: 11", e.getMessage());
+    }
+
+    @Test
+    void test_requireBetween_low() {
+        assertEquals(1, Vldtn.requireBetween(1, 1, 10, "testProperty"));
+    }
+
+    @Test
+    void test_requireBetween_lower() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireBetween(0, 1, 10, "testProperty"));
+        assertEquals("Property 'testProperty' must be between 1 and 10 "
+                + "(inclusive). Got: 0", e.getMessage());
+    }
+
+    @Test
+    void test_requireBetween_nullPropertyName() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireBetween(5, 1, 10, null));
+        assertEquals("Property 'propertyName' must not be null.",
+                e.getMessage());
+    }
+
+    @Test
+    void test_requireCellSize_invalidCellSize() {
+        assertEquals(16, Vldtn.requireCellSize(16, "blockPayloadSize"));
+        assertEquals(1024, Vldtn.requireCellSize(1024, "blockPayloadSize"));
+    }
+
+    @Test
+    void test_requireCellSize_invalidCellSize_0() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireCellSize(0, "blockPayloadSize"));
+        assertEquals("Property 'blockPayloadSize' must be greater than 0",
+                e.getMessage());
+    }
+
+    @Test
+    void test_requireCellSize_invalidCellSize_minus100() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireCellSize(-100, "blockPayloadSize"));
+        assertEquals("Property 'blockPayloadSize' must be greater than 0",
+                e.getMessage());
+    }
+
+    @Test
+    void test_requireCellSize_invalidCellSize_20() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireCellSize(20, "blockPayloadSize"));
+        assertEquals(
+                "Property 'blockPayloadSize' must be divisible by 16 (e.g., 16, 32, 64). Got: '20'",
+                e.getMessage());
+    }
+
+    @Test
+    void test_requireCellSize_null_propertyName() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireCellSize(20, null));
+        assertEquals("Property 'propertyName' must not be null.",
                 e.getMessage());
     }
 

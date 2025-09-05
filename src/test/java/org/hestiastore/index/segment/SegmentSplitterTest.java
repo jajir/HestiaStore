@@ -57,13 +57,13 @@ class SegmentSplitterTest {
     private PairIterator<String, String> segmentIterator;
 
     @Mock
-    private SegmentFullWriter<String, String> segmentFullWriter;
+    private SegmentFullWriterToSstFile<String, String> segmentFullWriter;
 
     @Mock
     private WriteTransaction<String, String> segmentFullWriterTx;
 
     @Mock
-    private SegmentFullWriter<String, String> lowerSegmentFullWriter;
+    private SegmentFullWriterToSstFile<String, String> lowerSegmentFullWriter;
 
     @Mock
     private WriteTransaction<String, String> lowerSegmentWriteTx;
