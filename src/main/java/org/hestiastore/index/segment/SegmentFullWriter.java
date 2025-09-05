@@ -6,9 +6,8 @@ import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilterWriter;
-import org.hestiastore.index.chunkpairfile.ChunkPairFileWriter;
-import org.hestiastore.index.chunkpairfile.ChunkPairFileWriterTx;
 import org.hestiastore.index.scarceindex.ScarceIndexWriter;
+import org.hestiastore.index.sorteddatafile.SortedDataFileWriter;
 
 /**
  * Allows to rewrite whole segment context including:
@@ -20,21 +19,21 @@ import org.hestiastore.index.scarceindex.ScarceIndexWriter;
  * <ul>
  * .
  */
-public class SegmentFullWriterToChunkStore<K, V> implements PairWriter<K, V> {
+public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
 
+    private final SegmentFiles<K, V> segmentFiles;
     private final SegmentPropertiesManager segmentPropertiesManager;
     private final int maxNumberOfKeysInIndexPage;
 
     private final AtomicLong scarceIndexKeyCounter = new AtomicLong(0L);
     private final AtomicLong keyCounter = new AtomicLong(0L);
     private final ScarceIndexWriter<K> scarceWriter;
-    private final ChunkPairFileWriterTx<K, V> chunkPairFileWriterTx;
-    private final ChunkPairFileWriter<K, V> indexWriter;
+    private final SortedDataFileWriter<K, V> indexWriter;
     private final BloomFilterWriter<K> bloomFilterWriter;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
-    private Pair<K, V> startPair = null;
+    private Pair<K, V> previousPair = null;
 
-    SegmentFullWriterToChunkStore(final SegmentFiles<K, V> segmentFiles,
+    SegmentFullWriter(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentStatsManager,
             final int maxNumberOfKeysInIndexPage,
             final SegmentDataProvider<K, V> segmentCacheDataProvider,
@@ -43,12 +42,9 @@ public class SegmentFullWriterToChunkStore<K, V> implements PairWriter<K, V> {
                 maxNumberOfKeysInIndexPage, "maxNumberOfKeysInIndexPage");
         this.segmentPropertiesManager = Vldtn
                 .requireNonNull(segmentStatsManager, "segmentStatsManager");
-        Vldtn.requireNonNull(segmentFiles, "segmentFiles");
+        this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
         this.scarceWriter = segmentFiles.getTempScarceIndex().openWriter();
-        this.chunkPairFileWriterTx = null;
-        // this.chunkPairFileWriterTx =
-        // segmentFiles.getIndexFile().openWriterTx();
-        this.indexWriter = chunkPairFileWriterTx.openWriter();
+        this.indexWriter = segmentFiles.getTempIndexFile().openWriter();
         Vldtn.requireNonNull(segmentCacheDataProvider,
                 "segmentCacheDataProvider");
         this.deltaCacheController = Vldtn.requireNonNull(deltaCacheController,
@@ -65,33 +61,33 @@ public class SegmentFullWriterToChunkStore<K, V> implements PairWriter<K, V> {
 
         bloomFilterWriter.write(pair.getKey());
 
-        if (startPair == null) {
-            startPair = pair;
+        if (previousPair != null) {
+            final long i = keyCounter.getAndIncrement();
+            /*
+             * Write first pair end every nth pair.
+             */
+            if (i % maxNumberOfKeysInIndexPage == 0) {
+                final long position = indexWriter.writeFull(previousPair);
+                scarceWriter
+                        .put(Pair.of(previousPair.getKey(), (int) position));
+                scarceIndexKeyCounter.incrementAndGet();
+            } else {
+                indexWriter.write(previousPair);
+            }
         }
 
-        final long i = keyCounter.getAndIncrement() + 1;
-        indexWriter.write(pair);
-        /*
-         * Write first pair end every nth pair.
-         */
-        if (i % maxNumberOfKeysInIndexPage == 0) {
-            flush();
-        }
-    }
-
-    private void flush() {
-        if (startPair == null) {
-            return;
-        }
-        final long position = indexWriter.flush();
-        scarceWriter.put(Pair.of(startPair.getKey(), (int) position));
-        scarceIndexKeyCounter.incrementAndGet();
-        startPair = null;
+        previousPair = pair;
     }
 
     @Override
     public void close() {
-        flush();
+        if (previousPair != null) {
+            // write last pair to scarce index
+            final long position = indexWriter.writeFull(previousPair);
+            scarceWriter.put(Pair.of(previousPair.getKey(), (int) position));
+            keyCounter.getAndIncrement();
+            scarceIndexKeyCounter.incrementAndGet();
+        }
         // close all resources
         scarceWriter.close();
         indexWriter.close();
@@ -100,7 +96,13 @@ public class SegmentFullWriterToChunkStore<K, V> implements PairWriter<K, V> {
 
     public void commit() {
         // rename temporal files to main one
-        chunkPairFileWriterTx.commit();
+        segmentFiles.getDirectory().renameFile(
+                segmentFiles.getTempIndexFileName(),
+                segmentFiles.getIndexFileName());
+        segmentFiles.getDirectory().renameFile(
+                segmentFiles.getTempScarceFileName(),
+                segmentFiles.getScarceFileName());
+
         deltaCacheController.clear();
 
         // update segment statistics

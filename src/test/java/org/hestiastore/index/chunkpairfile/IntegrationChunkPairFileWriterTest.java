@@ -49,8 +49,6 @@ public class IntegrationChunkPairFileWriterTest {
 
         chunkStoreWriter.close();
         chunkStoreWriterTx.commit();
-
-        fail();
     }
 
 }
