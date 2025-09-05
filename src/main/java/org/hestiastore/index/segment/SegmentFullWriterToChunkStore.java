@@ -6,9 +6,9 @@ import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilterWriter;
+import org.hestiastore.index.chunkpairfile.ChunkPairFileWriter;
 import org.hestiastore.index.chunkpairfile.ChunkPairFileWriterTx;
 import org.hestiastore.index.scarceindex.ScarceIndexWriter;
-import org.hestiastore.index.sorteddatafile.SortedDataFileWriter;
 
 /**
  * Allows to rewrite whole segment context including:
@@ -29,10 +29,10 @@ public class SegmentFullWriterToChunkStore<K, V> implements PairWriter<K, V> {
     private final AtomicLong keyCounter = new AtomicLong(0L);
     private final ScarceIndexWriter<K> scarceWriter;
     private final ChunkPairFileWriterTx<K, V> chunkPairFileWriterTx;
-    private final SortedDataFileWriter<K, V> indexWriter;
+    private final ChunkPairFileWriter<K, V> indexWriter;
     private final BloomFilterWriter<K> bloomFilterWriter;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
-    private Pair<K, V> previousPair = null;
+    private Pair<K, V> startPair = null;
 
     SegmentFullWriterToChunkStore(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentStatsManager,
@@ -63,33 +63,33 @@ public class SegmentFullWriterToChunkStore<K, V> implements PairWriter<K, V> {
 
         bloomFilterWriter.write(pair.getKey());
 
-        if (previousPair != null) {
-            final long i = keyCounter.getAndIncrement();
-            /*
-             * Write first pair end every nth pair.
-             */
-            if (i % maxNumberOfKeysInIndexPage == 0) {
-                final long position = indexWriter.writeFull(previousPair);
-                scarceWriter
-                        .put(Pair.of(previousPair.getKey(), (int) position));
-                scarceIndexKeyCounter.incrementAndGet();
-            } else {
-                indexWriter.write(previousPair);
-            }
+        if (startPair == null) {
+            startPair = pair;
         }
 
-        previousPair = pair;
+        final long i = keyCounter.getAndIncrement() + 1;
+        indexWriter.write(pair);
+        /*
+         * Write first pair end every nth pair.
+         */
+        if (i % maxNumberOfKeysInIndexPage == 0) {
+            flush();
+        }
+    }
+
+    private void flush() {
+        if (startPair == null) {
+            return;
+        }
+        final long position = indexWriter.flush();
+        scarceWriter.put(Pair.of(startPair.getKey(), (int) position));
+        scarceIndexKeyCounter.incrementAndGet();
+        startPair = null;
     }
 
     @Override
     public void close() {
-        if (previousPair != null) {
-            // write last pair to scarce index
-            final long position = indexWriter.writeFull(previousPair);
-            scarceWriter.put(Pair.of(previousPair.getKey(), (int) position));
-            keyCounter.getAndIncrement();
-            scarceIndexKeyCounter.incrementAndGet();
-        }
+        flush();
         // close all resources
         scarceWriter.close();
         indexWriter.close();

@@ -39,10 +39,14 @@ public class IntegrationChunkPairFileWriterTest {
         final ChunkStoreWriterTx chunkStoreWriterTx = chunkStoreFile
                 .openWriteTx();
         ChunkStoreWriter chunkStoreWriter = chunkStoreWriterTx.openWriter();
-        final ChunkPairFileWriter<String, Long> chunkPairFileWriter = new ChunkPairFileWriter<>(
-                chunkStoreWriter, TestData.TYPE_DESCRIPTOR_STRING,
-                TestData.TYPE_DESCRIPTOR_LONG);
-        // chunkPairFileWriter.write(TestData.PAIR_1);
+
+        final ChunkPairFileWriter<Integer, String> chunkPairFileWriter = new ChunkPairFileWriter<>(
+                chunkStoreWriter, TestData.TYPE_DESCRIPTOR_INTEGER,
+                TestData.TYPE_DESCRIPTOR_STRING);
+        chunkPairFileWriter.write(TestData.PAIR1);
+        chunkPairFileWriter.write(TestData.PAIR2);
+        chunkPairFileWriter.write(TestData.PAIR3);
+
         chunkStoreWriter.close();
         chunkStoreWriterTx.commit();
 

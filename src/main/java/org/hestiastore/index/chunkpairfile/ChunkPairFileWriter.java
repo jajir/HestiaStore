@@ -35,6 +35,16 @@ public class ChunkPairFileWriter<K, V> implements SortedDataFileWriter<K, V> {
 
     @Override
     public long writeFull(final Pair<K, V> pair) {
+        chunkPairWriter.put(pair);
+        return flush();
+    }
+
+    /**
+     * Flushes the current chunk pair writer.
+     *
+     * @return The position of the written chunk.
+     */
+    public long flush() {
         ChunkPayload payload = chunkPairWriter.close();
         chunkPairWriter = null; // reset for next write
         openNewChunkPairWriter();

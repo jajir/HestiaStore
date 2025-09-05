@@ -4,7 +4,6 @@ import org.hestiastore.index.Commitable;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkStoreWriterTx;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.sorteddatafile.SortedDataFileWriter;
 
 public class ChunkPairFileWriterTx<K, V> implements Commitable {
 
@@ -23,7 +22,7 @@ public class ChunkPairFileWriterTx<K, V> implements Commitable {
                 "valueTypeDescriptor");
     }
 
-    public SortedDataFileWriter<K, V> openWriter() {
+    public ChunkPairFileWriter<K, V> openWriter() {
         return new ChunkPairFileWriter<>(chunkStoreWriterTx.openWriter(),
                 keyTypeDescriptor, valueTypeDescriptor);
     }
