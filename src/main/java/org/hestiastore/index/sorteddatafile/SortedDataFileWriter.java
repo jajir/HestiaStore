@@ -11,6 +11,7 @@ import org.hestiastore.index.Pair;
  * @param <K> Key type
  * @param <V> Value type
  */
+// TODO remove it. It's implementations are different
 public interface SortedDataFileWriter<K, V> extends CloseableResource {
 
     void write(final Pair<K, V> pair);
