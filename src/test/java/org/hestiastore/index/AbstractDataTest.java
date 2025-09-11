@@ -9,6 +9,8 @@ import java.util.stream.Stream;
 
 public abstract class AbstractDataTest {
 
+    // TODO stop extending from this class, reffer to it
+
     /**
      * Convert pair iterator data to list
      * 
@@ -47,7 +49,7 @@ public abstract class AbstractDataTest {
      * @param iterator
      * @returnlist of pairs with data from list
      */
-    protected <M, N> List<Pair<M, N>> toList(
+    protected static <M, N> List<Pair<M, N>> toList(
             final PairIterator<M, N> iterator) {
         final ArrayList<Pair<M, N>> out = new ArrayList<>();
         while (iterator.hasNext()) {
@@ -65,7 +67,7 @@ public abstract class AbstractDataTest {
      * @param pairs        required list of expected data in segment
      * @param pairIterator required pair iterator
      */
-    protected <M, N> void verifyIteratorData(final List<Pair<M, N>> pairs,
+    public static <M, N> void verifyIteratorData(final List<Pair<M, N>> pairs,
             final PairIterator<M, N> pairIterator) {
         final List<Pair<M, N>> data = toList(pairIterator);
         assertEquals(pairs.size(), data.size(),

@@ -1,5 +1,8 @@
 package org.hestiastore.index;
 
+import java.util.Collections;
+import java.util.List;
+
 import org.hestiastore.index.chunkstore.ChunkPayload;
 import org.hestiastore.index.datablockfile.DataBlockPayload;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
@@ -249,6 +252,12 @@ public final class TestData {
     public static final Pair<Integer, String> PAIR1 = Pair.of(1, "a");
     public static final Pair<Integer, String> PAIR2 = Pair.of(2, "b");
     public static final Pair<Integer, String> PAIR3 = Pair.of(3, "c");
+
+    public static final List<Pair<Integer, String>> PAIR_LIST_3 = List.of(PAIR1,
+            PAIR2, PAIR3);
+
+    public static final List<Pair<Integer, String>> PAIR_LIST_EMPTY = Collections
+            .emptyList();
 
     private TestData() {
         // Prevent instantiation

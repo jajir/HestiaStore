@@ -1,10 +1,11 @@
-package org.hestiastore.index.chunkstore;
+package org.hestiastore.index.chunkpairfile;
 
 import java.util.Optional;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.chunkstore.Chunk;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
@@ -12,7 +13,8 @@ import org.hestiastore.index.sorteddatafile.SortedDataFile;
 /**
  * It allows to iterate over all pairs stored in one chunk.
  */
-public class ChunkPairIterator<K, V> implements PairIteratorWithCurrent<K, V> {
+public class SingleChunkPairIterator<K, V>
+        implements PairIteratorWithCurrent<K, V> {
 
     private static final String CHUNK_FILE_NAME = "chunk";
 
@@ -20,11 +22,13 @@ public class ChunkPairIterator<K, V> implements PairIteratorWithCurrent<K, V> {
 
     private final PairIteratorWithCurrent<K, V> iterator;
 
-    public ChunkPairIterator(final Chunk chunk,
+    public SingleChunkPairIterator(final Chunk chunk,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor) {
         Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
         Vldtn.requireNonNull(valueTypeDescriptor, "valueTypeDescriptor");
+        Vldtn.requireNonNull(chunk, "chunk");
+        directory.setFileBytes(CHUNK_FILE_NAME, chunk.getPayload().getBytes());
         final SortedDataFile<K, V> sortedDataFile = SortedDataFile
                 .<K, V>builder() //
                 .withDirectory(directory) //

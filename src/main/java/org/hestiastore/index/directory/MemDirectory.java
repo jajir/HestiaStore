@@ -28,6 +28,10 @@ public class MemDirectory implements Directory {
         return Bytes.of(data.get(fileName));
     }
 
+    public void setFileBytes(final String fileName, final Bytes bytes) {
+        data.put(fileName, bytes.getData());
+    }
+
     @Override
     public FileReader getFileReader(final String fileName,
             final int bufferSize) {

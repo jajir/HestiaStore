@@ -7,7 +7,6 @@ import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.Chunk;
-import org.hestiastore.index.chunkstore.ChunkPairIterator;
 import org.hestiastore.index.chunkstore.ChunkStoreReader;
 import org.hestiastore.index.datatype.TypeDescriptor;
 
@@ -66,8 +65,8 @@ public class ChunkPairFileIterator<K, V>
         if (iterator == null || !iterator.hasNext()) {
             Chunk chunk = chunkStoreReader.read();
             if (chunk != null) {
-                iterator = new ChunkPairIterator<>(chunk, keyTypeDescriptor,
-                        valueTypeDescriptor);
+                iterator = new SingleChunkPairIterator<>(chunk,
+                        keyTypeDescriptor, valueTypeDescriptor);
             }
         }
     }

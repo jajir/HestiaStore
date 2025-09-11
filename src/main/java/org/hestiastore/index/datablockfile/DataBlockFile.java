@@ -10,8 +10,7 @@ public class DataBlockFile {
      * There is not block reserved for metadata. Each data block have it's own
      * small header.
      */
-    private static final DataBlockPosition FIRST_BLOCK = DataBlockPosition
-            .of(0);
+    static final DataBlockPosition FIRST_BLOCK = DataBlockPosition.of(0);
 
     private final int blockSize;
     private final String fileName;
