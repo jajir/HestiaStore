@@ -29,7 +29,7 @@ public final class Chunk {
      * "theodora" in ASCII
      */
     // TODO move it to header
-    static final long MAGIC_NUMBER = 0x7468656F646F7261L;
+    public static final long MAGIC_NUMBER = 0x7468656F646F7261L;
 
     /**
      * Uncompressed chunk format version 1
