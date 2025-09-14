@@ -53,6 +53,8 @@ public class SegmentSearcher<K, V> implements CloseableResource {
             return null;
         }
 
+        // TODO optimize ifs with junits
+
         // look in bloom filter
         if (out == null && getBloomFilter().isNotStored(key)) {
             /*

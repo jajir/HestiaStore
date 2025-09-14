@@ -48,7 +48,8 @@ public abstract class AbstractSegmentTest extends AbstractDataTest {
         pairs.forEach(pair -> {
             final M key = pair.getKey();
             final N expectedValue = pair.getValue();
-            assertEquals(expectedValue, seg.get(key));
+            assertEquals(expectedValue, seg.get(key),
+                    String.format("Unable to find value for key '%s'.", key));
         });
     }
 

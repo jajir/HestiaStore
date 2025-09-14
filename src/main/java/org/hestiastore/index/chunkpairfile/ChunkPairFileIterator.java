@@ -2,6 +2,7 @@ package org.hestiastore.index.chunkpairfile;
 
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.function.Function;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIteratorWithCurrent;
@@ -14,26 +15,35 @@ public class ChunkPairFileIterator<K, V>
         implements PairIteratorWithCurrent<K, V> {
 
     private final ChunkStoreReader chunkStoreReader;
-    private final TypeDescriptor<K> keyTypeDescriptor;
-    private final TypeDescriptor<V> valueTypeDescriptor;
+    private final Function<Chunk, PairIteratorWithCurrent<K, V>> iteratorFactory;
 
     private PairIteratorWithCurrent<K, V> iterator;
 
     public ChunkPairFileIterator(ChunkStoreReader chunkStoreReader,
-            final TypeDescriptor<K> keyTypeDescriptor,
-            final TypeDescriptor<V> valueTypeDescriptor) {
+            final Function<Chunk, PairIteratorWithCurrent<K, V>> iteratorFactory) {
         this.chunkStoreReader = Vldtn.requireNonNull(chunkStoreReader,
                 "chunkStoreReader");
-        this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
-                "keyTypeDescriptor");
-        this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
-                "valueTypeDescriptor");
+        this.iteratorFactory = Vldtn.requireNonNull(iteratorFactory,
+                "iteratorFactory");
         moveToNextChunk();
     }
 
     @Override
     public boolean hasNext() {
-        return iterator != null && iterator.hasNext();
+        if (iterator == null) {
+            return false;
+        }
+        if (iterator.hasNext()) {
+            return true;
+        }
+
+        // current iterator exhausted; attempt to move to next chunk
+        moveToNextChunk();
+
+        if (iterator == null) {
+            return false;
+        }
+        return iterator.hasNext();
     }
 
     @Override
@@ -65,8 +75,9 @@ public class ChunkPairFileIterator<K, V>
         if (iterator == null || !iterator.hasNext()) {
             Chunk chunk = chunkStoreReader.read();
             if (chunk != null) {
-                iterator = new SingleChunkPairIterator<>(chunk,
-                        keyTypeDescriptor, valueTypeDescriptor);
+                iterator = iteratorFactory.apply(chunk);
+            } else {
+                iterator = null;
             }
         }
     }
