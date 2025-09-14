@@ -64,6 +64,7 @@ public class ChunkStoreReaderImpl implements ChunkStoreReader {
                     currentDataBlock.getPayload().getBytes().subBytes(0, 16));
             currentBlockPosition = 16;
         } else {
+            // FIXME funny error
             tmp = currentDataBlock.getPayload().getBytes()
                     .subBytes(currentBlockPosition, 32);
             currentBlockPosition += 32;

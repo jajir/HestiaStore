@@ -35,7 +35,8 @@ public class ChunkStoreSearcher<K, V> implements SortedDataFileSearcher<K, V> {
         return new ChunkPairFileIterator<>(
                 chunkStoreFile.openReader(
                         ChunkStorePosition.of(dataBlockSize, (int) position)),
-                keyTypeDescriptor, valueTypeDescriptor);
+                chunk -> new SingleChunkPairIterator<>(chunk, keyTypeDescriptor,
+                        valueTypeDescriptor));
     }
 
     @Override
@@ -43,7 +44,8 @@ public class ChunkStoreSearcher<K, V> implements SortedDataFileSearcher<K, V> {
         return new ChunkPairFileIterator<>(
                 chunkStoreFile
                         .openReader(ChunkStorePosition.of(dataBlockSize, 0)),
-                keyTypeDescriptor, valueTypeDescriptor);
+                chunk -> new SingleChunkPairIterator<>(chunk, keyTypeDescriptor,
+                        valueTypeDescriptor));
     }
 
 }

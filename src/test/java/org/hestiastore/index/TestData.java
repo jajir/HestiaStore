@@ -3,6 +3,8 @@ package org.hestiastore.index;
 import java.util.Collections;
 import java.util.List;
 
+import org.hestiastore.index.chunkstore.Chunk;
+import org.hestiastore.index.chunkstore.ChunkHeader;
 import org.hestiastore.index.chunkstore.ChunkPayload;
 import org.hestiastore.index.datablockfile.DataBlockPayload;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
@@ -252,12 +254,21 @@ public final class TestData {
     public static final Pair<Integer, String> PAIR1 = Pair.of(1, "a");
     public static final Pair<Integer, String> PAIR2 = Pair.of(2, "b");
     public static final Pair<Integer, String> PAIR3 = Pair.of(3, "c");
+    public static final Pair<Integer, String> PAIR4 = Pair.of(4, "d");
+    public static final Pair<Integer, String> PAIR5 = Pair.of(5, "e");
 
     public static final List<Pair<Integer, String>> PAIR_LIST_3 = List.of(PAIR1,
             PAIR2, PAIR3);
 
     public static final List<Pair<Integer, String>> PAIR_LIST_EMPTY = Collections
             .emptyList();
+
+    public static final Chunk CHUNK_15 = Chunk.of(
+            ChunkHeader.of(Chunk.MAGIC_NUMBER, 1, BYTES_15.length(), 321L),
+            BYTES_15);
+    public static final Chunk CHUNK_154 = Chunk.of(
+            ChunkHeader.of(Chunk.MAGIC_NUMBER, 1, BYTES_154.length(), 321L),
+            BYTES_154);
 
     private TestData() {
         // Prevent instantiation

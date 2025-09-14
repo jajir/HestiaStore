@@ -66,6 +66,7 @@ class IntegrationSegmentWriteConsistencyTest {
                 .build();
     }
 
+    // TODO move it to static utility class
     private void verifyDataIndex(final Segment<Integer, String> index,
             final List<Pair<Integer, String>> data) {
         final List<Pair<Integer, String>> indexData = toList(index);
@@ -78,9 +79,10 @@ class IntegrationSegmentWriteConsistencyTest {
         }
     }
 
+    // TODO move it to static utility class
     private List<Pair<Integer, String>> toList(
-            final Segment<Integer, String> index) {
-        try (PairIterator<Integer, String> iterator = index.openIterator()) {
+            final Segment<Integer, String> segment) {
+        try (PairIterator<Integer, String> iterator = segment.openIterator()) {
             final List<Pair<Integer, String>> out = new ArrayList<>();
             iterator.forEachRemaining(out::add);
             return out;
