@@ -15,9 +15,10 @@ public class ChunkStoreFile {
     }
 
     public ChunkStoreReader openReader(final ChunkStorePosition chunkPosition) {
-        return new ChunkStoreReaderImpl(
+        final DataBlockByteReader dataBlockByteReader = new DataBlockByteReaderImpl(
                 dataBlockFile.openReader(chunkPosition.getDataBlockPosition()),
                 dataBlockSize, chunkPosition.getCellIndex());
+        return new ChunkStoreReaderImpl(dataBlockByteReader);
     }
 
     public ChunkStoreWriterTx openWriteTx() {

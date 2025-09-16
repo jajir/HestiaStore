@@ -18,6 +18,8 @@ import org.hestiastore.index.datatype.TypeDescriptorLong;
  * </ul>
  * 
  * Header will be always 32 bytes long.
+ * 
+ * Equals and hashCode are implemented based on the byte array content.
  */
 public class ChunkHeader {
 
@@ -95,6 +97,28 @@ public class ChunkHeader {
         final byte[] buff = new byte[8];
         System.arraycopy(data, 16, buff, 0, 8);
         return LONG_CONVERTOR_FROM_BYTES.fromBytes(buff);
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o)
+            return true;
+        if (!(o instanceof ChunkHeader))
+            return false;
+        final ChunkHeader that = (ChunkHeader) o;
+        return java.util.Arrays.equals(this.data, that.data);
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Arrays.hashCode(data);
+    }
+
+    @Override
+    public String toString() {
+        return "ChunkHeader{" + "magic=" + getMagicNumber() + ", version="
+                + getVersion() + ", payloadLength=" + getPayloadLength()
+                + ", crc=" + getCrc() + '}';
     }
 
 }

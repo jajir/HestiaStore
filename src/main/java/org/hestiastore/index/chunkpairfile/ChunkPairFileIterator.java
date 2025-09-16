@@ -9,7 +9,6 @@ import org.hestiastore.index.PairIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.Chunk;
 import org.hestiastore.index.chunkstore.ChunkStoreReader;
-import org.hestiastore.index.datatype.TypeDescriptor;
 
 public class ChunkPairFileIterator<K, V>
         implements PairIteratorWithCurrent<K, V> {

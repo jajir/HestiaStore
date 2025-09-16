@@ -250,6 +250,8 @@ public final class TestData {
     public static final Bytes BYTES_154 = Bytes.of(BYTE_ARRAY_154);
     public static final ChunkPayload PAYLOAD_154 = ChunkPayload.of(BYTES_154);
 
+    public static final Bytes BYTES_1024 = Bytes.of(BYTE_ARRAY_1024);
+
     public static final SegmentId SEGMENT_ID = SegmentId.of(13);
     public static final Pair<Integer, String> PAIR1 = Pair.of(1, "a");
     public static final Pair<Integer, String> PAIR2 = Pair.of(2, "b");
