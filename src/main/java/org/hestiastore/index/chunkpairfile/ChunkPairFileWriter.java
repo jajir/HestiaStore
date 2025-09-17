@@ -3,7 +3,7 @@ package org.hestiastore.index.chunkpairfile;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkPayload;
-import org.hestiastore.index.chunkstore.ChunkStorePosition;
+import org.hestiastore.index.chunkstore.CellPosition;
 import org.hestiastore.index.chunkstore.ChunkStoreWriter;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.sorteddatafile.SortedDataFileWriter;
@@ -48,7 +48,7 @@ public class ChunkPairFileWriter<K, V> implements SortedDataFileWriter<K, V> {
         ChunkPayload payload = chunkPairWriter.close();
         chunkPairWriter = null; // reset for next write
         openNewChunkPairWriter();
-        ChunkStorePosition chunkPosition = chunkStoreWriter.write(payload, 1);
+        CellPosition chunkPosition = chunkStoreWriter.write(payload, 1);
         return chunkPosition.getValue();
     }
 

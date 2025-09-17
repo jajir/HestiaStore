@@ -17,6 +17,11 @@ public class Bytes {
         return new Bytes(data);
     }
 
+    public static Bytes allocate(int size) {
+        return new Bytes(new byte[size]);
+    }
+
+    // rename to concatrnate
     public static Bytes of(final Bytes data1, final Bytes data2) {
         Vldtn.requireNonNull(data1, "data1");
         Vldtn.requireNonNull(data2, "data2");

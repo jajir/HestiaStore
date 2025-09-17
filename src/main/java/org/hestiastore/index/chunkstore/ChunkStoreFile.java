@@ -1,5 +1,7 @@
 package org.hestiastore.index.chunkstore;
 
+import org.hestiastore.index.datablockfile.DataBlockByteReader;
+import org.hestiastore.index.datablockfile.DataBlockByteReaderImpl;
 import org.hestiastore.index.datablockfile.DataBlockFile;
 import org.hestiastore.index.directory.Directory;
 
@@ -14,7 +16,7 @@ public class ChunkStoreFile {
         this.dataBlockSize = blockSize;
     }
 
-    public ChunkStoreReader openReader(final ChunkStorePosition chunkPosition) {
+    public ChunkStoreReader openReader(final CellPosition chunkPosition) {
         final DataBlockByteReader dataBlockByteReader = new DataBlockByteReaderImpl(
                 dataBlockFile.openReader(chunkPosition.getDataBlockPosition()),
                 dataBlockSize, chunkPosition.getCellIndex());
@@ -27,8 +29,8 @@ public class ChunkStoreFile {
                 dataBlockFile.getDataBlockPayloadSize());
     }
 
-    public ChunkStorePosition getFirstChunkStorePosition() {
-        return ChunkStorePosition.of(dataBlockSize, 0);
+    public CellPosition getFirstChunkStorePosition() {
+        return CellPosition.of(dataBlockSize, 0);
     }
 
 }

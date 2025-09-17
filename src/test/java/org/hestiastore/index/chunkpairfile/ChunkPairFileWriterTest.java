@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.Pair;
-import org.hestiastore.index.chunkstore.ChunkStorePosition;
+import org.hestiastore.index.chunkstore.CellPosition;
 import org.hestiastore.index.chunkstore.ChunkStoreWriter;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
@@ -48,7 +48,7 @@ public class ChunkPairFileWriterTest {
     void test_basic_write() {
         when(chunkStoreWriter.write(org.mockito.ArgumentMatchers.any(),
                 org.mockito.ArgumentMatchers.anyInt()))
-                .thenReturn(ChunkStorePosition.of(1024, 2048));
+                .thenReturn(CellPosition.of(1024, 2048));
         final long ret1 = writer.writeFull(Pair.of("key1", 1L));
 
         assertEquals(2048, ret1);

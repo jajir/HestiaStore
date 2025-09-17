@@ -30,13 +30,12 @@ public class ChunkStoreWriterImplTest {
     @Mock
     private DataBlockWriter dataBlockWriter;
 
-    private ChunkStoreWriterImpl writer;
+    private ChunkStoreWriterOldImpl writer;
 
     @BeforeEach
     void beforeEach() {
-        writer = new ChunkStoreWriterImpl(
-                ChunkStorePosition.of(DATABLOCK_SIZE, 0), dataBlockWriter,
-                DATABLOCK_PAYLOAD_SIZE);
+        writer = new ChunkStoreWriterOldImpl(CellPosition.of(DATABLOCK_SIZE, 0),
+                dataBlockWriter, DATABLOCK_PAYLOAD_SIZE);
     }
 
     @AfterEach
@@ -49,8 +48,7 @@ public class ChunkStoreWriterImplTest {
      */
     @Test
     void test_write_large_chunk() {
-        ChunkStorePosition position = writer.write(TestData.PAYLOAD_154,
-                VERSION);
+        CellPosition position = writer.write(TestData.PAYLOAD_154, VERSION);
         assertEquals(0, position.getValue());
         writer.close();
 
@@ -73,8 +71,7 @@ public class ChunkStoreWriterImplTest {
 
     @Test
     void test_write_small_chunk() {
-        ChunkStorePosition position1 = writer.write(TestData.PAYLOAD_9,
-                VERSION);
+        CellPosition position1 = writer.write(TestData.PAYLOAD_9, VERSION);
         assertEquals(0, position1.getValue());
         writer.close();
 
@@ -91,11 +88,9 @@ public class ChunkStoreWriterImplTest {
 
     @Test
     void test_write_small_chunks() {
-        ChunkStorePosition position1 = writer.write(TestData.PAYLOAD_9,
-                VERSION);
+        CellPosition position1 = writer.write(TestData.PAYLOAD_9, VERSION);
         assertEquals(0, position1.getValue());
-        ChunkStorePosition position2 = writer.write(TestData.PAYLOAD_15,
-                VERSION);
+        CellPosition position2 = writer.write(TestData.PAYLOAD_15, VERSION);
         assertEquals(48, position2.getValue());
         writer.close();
 

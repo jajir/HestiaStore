@@ -38,7 +38,7 @@ public class IntegrationChunkStoreFileTest {
     void test_simple() {
         // verify write
         ChunkStoreWriterTx writerTx = chunkStoreFile.openWriteTx();
-        ChunkStorePosition position;
+        CellPosition position;
         try (ChunkStoreWriter writer = writerTx.openWriter()) {
             position = writer.write(TestData.PAYLOAD_154, VERSION);
         }

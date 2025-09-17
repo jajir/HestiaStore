@@ -1,9 +1,7 @@
-package org.hestiastore.index.chunkstore;
+package org.hestiastore.index.datablockfile;
 
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.datablockfile.DataBlock;
-import org.hestiastore.index.datablockfile.DataBlockReader;
 
 public class DataBlockByteReaderImpl implements DataBlockByteReader {
 
