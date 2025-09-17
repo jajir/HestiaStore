@@ -1,4 +1,4 @@
-package org.hestiastore.index.chunkstore;
+package org.hestiastore.index.datablockfile;
 
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.CloseableResource;

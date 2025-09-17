@@ -1,7 +1,10 @@
 package org.hestiastore.index.chunkstore;
 
+import java.util.Optional;
+
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.datablockfile.DataBlockByteReader;
 
 public class ChunkStoreReaderImpl implements ChunkStoreReader {
 
@@ -21,10 +24,12 @@ public class ChunkStoreReaderImpl implements ChunkStoreReader {
     public Chunk read() {
         final Bytes headerBytes = dataBlockByteReader
                 .readExactly(Chunk.HEADER_SIZE);
-        if (headerBytes == null) {
+        final Optional<ChunkHeader> optChunkHeader = ChunkHeader
+                .optionalOf(headerBytes);
+        if (optChunkHeader.isEmpty()) {
             return null;
         }
-        final ChunkHeader chunkHeader = ChunkHeader.of(headerBytes);
+        final ChunkHeader chunkHeader = optChunkHeader.get();
         int requiredLength = chunkHeader.getPayloadLength();
         int cellLength = convertLengthToWholeCells(requiredLength);
         Bytes payload = dataBlockByteReader.readExactly(cellLength);

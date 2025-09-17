@@ -29,6 +29,7 @@ public interface WriteTransaction<K, V> extends Commitable {
      * @param writeFunction the function to apply
      */
     default void execute(final WriterFunction<K, V> writeFunction) {
+        // FIXME remove exception repackaging
         try (PairWriter<K, V> writer = openWriter()) {
             writeFunction.apply(writer);
         } catch (Exception e) {

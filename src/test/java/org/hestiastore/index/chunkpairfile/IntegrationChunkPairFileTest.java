@@ -69,7 +69,6 @@ public class IntegrationChunkPairFileTest {
         pair = iterator.next();
         assertEquals(TestData.PAIR3, pair);
         assertFalse(iterator.hasNext());
-
     }
 
 }

@@ -1,5 +1,7 @@
 package org.hestiastore.index.chunkstore;
 
+import java.util.Optional;
+
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
@@ -43,6 +45,26 @@ public class ChunkHeader {
     public static ChunkHeader of(final Bytes bytes) {
         Vldtn.requireNonNull(bytes, "bytes");
         return new ChunkHeader(bytes.getData());
+    }
+
+    public static Optional<ChunkHeader> optionalOf(final Bytes bytes) {
+        if (bytes == null) {
+            return Optional.empty();
+        }
+        final byte[] data = bytes.getData();
+        if (data == null) {
+            return Optional.empty();
+        }
+        if (data.length != Chunk.HEADER_SIZE) {
+            return Optional.empty();
+        }
+        final byte[] buff = new byte[8];
+        System.arraycopy(data, 0, buff, 0, 8);
+        Long magic = LONG_CONVERTOR_FROM_BYTES.fromBytes(buff);
+        if (magic == null || !magic.equals(Chunk.MAGIC_NUMBER)) {
+            return Optional.empty();
+        }
+        return Optional.of(new ChunkHeader(data));
     }
 
     public static ChunkHeader of(final long magic, final int version,

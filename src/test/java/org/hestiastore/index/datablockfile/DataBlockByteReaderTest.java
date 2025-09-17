@@ -1,4 +1,4 @@
-package org.hestiastore.index.chunkstore;
+package org.hestiastore.index.datablockfile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;

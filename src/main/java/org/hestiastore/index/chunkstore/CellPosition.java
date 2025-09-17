@@ -5,20 +5,19 @@ import org.hestiastore.index.datablockfile.DataBlockPosition;
 import org.hestiastore.index.datablockfile.DataBlock;
 
 /**
- * Specifi position within a chunk store.
+ * Specify position of cell.
  */
-public class ChunkStorePosition {
+public class CellPosition {
 
     private final int dataBlockSize;
 
     private final int position;
 
-    public static ChunkStorePosition of(final int dataBlockSize,
-            final int position) {
-        return new ChunkStorePosition(dataBlockSize, position);
+    public static CellPosition of(final int dataBlockSize, final int position) {
+        return new CellPosition(dataBlockSize, position);
     }
 
-    private ChunkStorePosition(final int dataBlockSize, final int position) {
+    private CellPosition(final int dataBlockSize, final int position) {
         if (position < 0) {
             throw new IllegalArgumentException("Position must be non-negative");
         }
@@ -49,7 +48,7 @@ public class ChunkStorePosition {
             return false;
         }
 
-        ChunkStorePosition that = (ChunkStorePosition) o;
+        CellPosition that = (CellPosition) o;
         return position == that.position;
     }
 
@@ -67,16 +66,16 @@ public class ChunkStorePosition {
         return "ChunkStorePosition{" + "value=" + position + '}';
     }
 
-    public ChunkStorePosition addDataBlock() {
-        return ChunkStorePosition.of(dataBlockSize, position + dataBlockSize);
+    public CellPosition addDataBlock() {
+        return CellPosition.of(dataBlockSize, position + dataBlockSize);
     }
 
-    public ChunkStorePosition addCellsForBytes(final int byteCount) {
+    public CellPosition addCellsForBytes(final int byteCount) {
         int cells = byteCount / Chunk.CELL_SIZE;
         if (byteCount % Chunk.CELL_SIZE != 0) {
             cells++;
         }
-        return ChunkStorePosition.of(dataBlockSize,
+        return CellPosition.of(dataBlockSize,
                 position + cells * Chunk.CELL_SIZE);
     }
 

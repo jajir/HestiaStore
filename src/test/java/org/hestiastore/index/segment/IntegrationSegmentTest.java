@@ -568,13 +568,14 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
-                .withDirectory(directory).withId(id)//
+                .withDirectory(directory)//
+                .withId(id)//
                 .withKeyTypeDescriptor(tdi)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withMaxNumberOfKeysInIndexPage(3)//
                 .withMaxNumberOfKeysInSegmentCache(5)//
-                .withDiskIoBufferSize(3 * 1024).withValueTypeDescriptor(tds)
-                .build();
+                .withDiskIoBufferSize(3 * 1024)//
+                .withValueTypeDescriptor(tds).build();
 
         try (PairWriter<Integer, String> writer = seg.openWriter()) {
             for (int i = 0; i < 1000; i++) {

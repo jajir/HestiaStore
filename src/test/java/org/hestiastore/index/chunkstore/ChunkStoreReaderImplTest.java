@@ -5,7 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;
 
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.TestData;
+import org.hestiastore.index.datablockfile.DataBlockByteReader;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,6 +45,7 @@ public class ChunkStoreReaderImplTest {
     void test_one_chunk() {
         when(dataBlockByteReader.readExactly(32))//
                 .thenReturn(CHUNK_HEADER_9.getBytes())//
+                .thenReturn(Bytes.of(new byte[32]))// s
                 .thenReturn(null);
         when(dataBlockByteReader.readExactly(16))
                 .thenReturn(TestData.BYTES_9.paddedTo(16))//
