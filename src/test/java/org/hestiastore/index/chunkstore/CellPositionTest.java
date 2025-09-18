@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-public class ChunkStorePositionTest {
+public class CellPositionTest {
 
     private static final int DATABLOCK_SIZE = 1024;
 
