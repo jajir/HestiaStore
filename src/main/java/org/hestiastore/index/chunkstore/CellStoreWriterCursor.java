@@ -69,6 +69,7 @@ public final class CellStoreWriterCursor implements CloseableResource {
                         "Data block is full, should have been written already");
             }
         }
+        dataBlockWriter.close();
     }
 
     CellPosition getNextCellPosition() {

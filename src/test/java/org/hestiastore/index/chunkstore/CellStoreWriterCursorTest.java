@@ -7,8 +7,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import java.util.List;
-
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.TestData;
 import org.hestiastore.index.datablockfile.DataBlockPayload;
@@ -117,6 +115,13 @@ public class CellStoreWriterCursorTest {
         assertEquals(
                 "Property 'bytes' must be divisible by 16 (e.g., 16, 32, 64). Got: '18'",
                 e.getMessage());
+    }
+
+    @Test
+    void test_close() {
+        cursor.close();
+        // verify that data block close was called once
+        verify(dataBlockWriter, times(1)).close();
     }
 
     @Test
