@@ -83,6 +83,9 @@ public class CellPosition {
         return (position % getDataBlockPayloadSize()) / Chunk.CELL_SIZE;
     }
 
+    // TODO add tests, refactor methods.
+    // TODO add method getFreeBytesInCurrentDataBlock()
+
     /**
      * Where starts empty space in data block.
      * 

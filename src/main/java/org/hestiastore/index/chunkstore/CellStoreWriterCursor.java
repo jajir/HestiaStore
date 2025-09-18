@@ -84,6 +84,7 @@ public final class CellStoreWriterCursor implements CloseableResource {
         }
     }
 
+    //FIXME Invalid method
     int getAvailableBytes() {
         final int occupiedBytes = currentCellPosition.getOccupiedBytes();
         return dataBlockPayloadSize - occupiedBytes;
