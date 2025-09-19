@@ -1,19 +1,23 @@
 package org.hestiastore.index.chunkstore;
 
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datablockfile.DataBlockByteReader;
 import org.hestiastore.index.datablockfile.DataBlockByteReaderImpl;
 import org.hestiastore.index.datablockfile.DataBlockFile;
+import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.directory.Directory;
 
 public class ChunkStoreFile {
 
     private final DataBlockFile dataBlockFile;
-    private final int dataBlockSize;
+    private final DataBlockSize dataBlockSize;
 
     public ChunkStoreFile(final Directory directory, final String fileName,
-            final int blockSize) {
-        this.dataBlockFile = new DataBlockFile(directory, fileName, blockSize);
-        this.dataBlockSize = blockSize;
+            final DataBlockSize dataBlockSize) {
+        this.dataBlockFile = new DataBlockFile(directory, fileName,
+                dataBlockSize);
+        this.dataBlockSize = Vldtn.requireNonNull(dataBlockSize,
+                "dataBlockSize");
     }
 
     public ChunkStoreReader openReader(final CellPosition chunkPosition) {
@@ -24,9 +28,7 @@ public class ChunkStoreFile {
     }
 
     public ChunkStoreWriterTx openWriteTx() {
-        return new ChunkStoreWriterTx(dataBlockFile,
-                getFirstChunkStorePosition(),
-                dataBlockFile.getDataBlockPayloadSize());
+        return new ChunkStoreWriterTx(dataBlockFile, dataBlockSize);
     }
 
     public CellPosition getFirstChunkStorePosition() {

@@ -9,6 +9,7 @@ import java.util.Iterator;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.TestData;
 import org.hestiastore.index.chunkstore.ChunkStoreFile;
+import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.AfterEach;
@@ -17,9 +18,10 @@ import org.junit.jupiter.api.Test;
 
 public class IntegrationChunkPairFileTest {
 
-    private final static int BLOCK_SIZE = 1024;
+    private static final DataBlockSize BLOCK_SIZE = DataBlockSize
+            .ofDataBlockSize(1024);
 
-    private final static String FILE_NAME = "chunkpairfilewriter-test";
+    private static final String FILE_NAME = "chunkpairfilewriter-test";
 
     private Directory directory;
 

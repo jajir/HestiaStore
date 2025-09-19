@@ -7,8 +7,7 @@ public class CellStoreWriterImpl implements CellStoreWriter {
 
     private final CellStoreWriterCursor cursor;
 
-    public CellStoreWriterImpl(final int blockPayloadSize,
-            final CellStoreWriterCursor cursor) {
+    public CellStoreWriterImpl(final CellStoreWriterCursor cursor) {
         this.cursor = Vldtn.requireNonNull(cursor, "cursor");
     }
 

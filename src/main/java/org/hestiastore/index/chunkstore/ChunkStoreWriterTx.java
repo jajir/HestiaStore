@@ -3,28 +3,27 @@ package org.hestiastore.index.chunkstore;
 import org.hestiastore.index.Commitable;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datablockfile.DataBlockFile;
+import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datablockfile.DataBlockWriterTx;
 
 public class ChunkStoreWriterTx implements Commitable {
 
     private final DataBlockWriterTx dataBlockWriterTx;
-    private final CellPosition startPosition;
-    private final int payloadSize;
+    private final DataBlockSize dataBlockSize;
 
     public ChunkStoreWriterTx(final DataBlockFile blockDataFile,
-            final CellPosition startPosition, final int payloadSize) {
+            final DataBlockSize dataBlockSize) {
         Vldtn.requireNonNull(blockDataFile, "blockDataFile");
         this.dataBlockWriterTx = blockDataFile.getDataBlockWriterTx();
-        this.startPosition = Vldtn.requireNonNull(startPosition,
-                "startPosition");
-        this.payloadSize = Vldtn.requireCellSize(payloadSize, "payloadSize");
+        this.dataBlockSize = Vldtn.requireNonNull(dataBlockSize,
+                "dataBlockSize");
     }
 
     public ChunkStoreWriter openWriter() {
         final CellStoreWriterCursor cursor = new CellStoreWriterCursor(
-                dataBlockWriterTx.openWriter(), payloadSize);
+                dataBlockWriterTx.openWriter(), dataBlockSize);
         final CellStoreWriterImpl cellStoreWriter = new CellStoreWriterImpl(
-                payloadSize, cursor);
+                cursor);
         return new ChunkStoreWriterImpl(cellStoreWriter);
     }
 

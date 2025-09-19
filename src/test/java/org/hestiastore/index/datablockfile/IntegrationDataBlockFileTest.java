@@ -12,7 +12,8 @@ import org.junit.jupiter.api.Test;
 
 public class IntegrationDataBlockFileTest {
 
-    private final static int BLOCK_SIZE = 1024;
+    private final static DataBlockSize BLOCK_SIZE = DataBlockSize
+            .ofDataBlockSize(1024);
 
     private final static String FILE_NAME = "chunkpairfilewriter-test";
 

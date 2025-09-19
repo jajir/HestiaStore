@@ -3,6 +3,7 @@ package org.hestiastore.index.segment;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkpairfile.ChunkPairFile;
 import org.hestiastore.index.chunkstore.ChunkStoreFile;
+import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.scarceindex.ScarceIndex;
@@ -126,9 +127,11 @@ public final class SegmentFiles<K, V> {
 
     ChunkPairFile<K, V> getIndexFile() {
         final ChunkStoreFile chunkStoreFile = new ChunkStoreFile(getDirectory(),
-                getIndexFileName(), diskIoBufferSize);
+                getIndexFileName(),
+                DataBlockSize.ofDataBlockSize(diskIoBufferSize));
         return new ChunkPairFile<>(chunkStoreFile, keyTypeDescriptor,
-                valueTypeDescriptor, diskIoBufferSize);
+                valueTypeDescriptor,
+                DataBlockSize.ofDataBlockSize(diskIoBufferSize));
     }
 
     Directory getDirectory() {

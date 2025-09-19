@@ -2,27 +2,30 @@ package org.hestiastore.index.chunkstore;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datablockfile.DataBlockPosition;
+import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datablockfile.DataBlock;
 
 /**
- * Specify position of cell.
+ * Specify position within a chunk store.
  */
 public class CellPosition {
 
-    private final int dataBlockSize;
+    private final DataBlockSize dataBlockSize;
 
     private final int position;
 
-    public static CellPosition of(final int dataBlockSize, final int position) {
+    public static CellPosition of(final DataBlockSize dataBlockSize,
+            final int position) {
         return new CellPosition(dataBlockSize, position);
     }
 
-    private CellPosition(final int dataBlockSize, final int position) {
+    private CellPosition(final DataBlockSize dataBlockSize,
+            final int position) {
         if (position < 0) {
             throw new IllegalArgumentException("Position must be non-negative");
         }
         this.position = position;
-        this.dataBlockSize = Vldtn.requireCellSize(dataBlockSize,
+        this.dataBlockSize = Vldtn.requireNonNull(dataBlockSize,
                 "dataBlockSize");
     }
 
@@ -31,7 +34,7 @@ public class CellPosition {
     }
 
     private int getDataBlockPayloadSize() {
-        return dataBlockSize - DataBlock.HEADER_SIZE;
+        return dataBlockSize.getPayloadSize();
     }
 
     @Override
@@ -53,7 +56,13 @@ public class CellPosition {
     }
 
     public DataBlockPosition getDataBlockPosition() {
-        return DataBlockPosition.of(position / dataBlockSize);
+        return DataBlockPosition
+                .of(position / dataBlockSize.getDataBlockSize());
+    }
+
+    public int getFreeBytesInCurrentDataBlock() {
+
+        return getDataBlockPayloadSize() - position % getDataBlockPayloadSize();
     }
 
     @Override
@@ -67,7 +76,8 @@ public class CellPosition {
     }
 
     public CellPosition addDataBlock() {
-        return CellPosition.of(dataBlockSize, position + dataBlockSize);
+        return CellPosition.of(dataBlockSize,
+                position + dataBlockSize.getDataBlockSize());
     }
 
     public CellPosition addCellsForBytes(final int byteCount) {
@@ -82,9 +92,6 @@ public class CellPosition {
     public int getCellIndex() {
         return (position % getDataBlockPayloadSize()) / Chunk.CELL_SIZE;
     }
-
-    // TODO add tests, refactor methods.
-    // TODO add method getFreeBytesInCurrentDataBlock()
 
     /**
      * Where starts empty space in data block.

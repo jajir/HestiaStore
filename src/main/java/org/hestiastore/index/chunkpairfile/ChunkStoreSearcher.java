@@ -3,8 +3,9 @@ package org.hestiastore.index.chunkpairfile;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.PairIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.chunkstore.ChunkStoreFile;
 import org.hestiastore.index.chunkstore.CellPosition;
+import org.hestiastore.index.chunkstore.ChunkStoreFile;
+import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.sorteddatafile.SortedDataFileSearcher;
 
@@ -14,16 +15,18 @@ import org.hestiastore.index.sorteddatafile.SortedDataFileSearcher;
 public class ChunkStoreSearcher<K, V> implements SortedDataFileSearcher<K, V> {
 
     private final ChunkStoreFile chunkStoreFile;
-    private final int dataBlockSize;
+    private final DataBlockSize dataBlockSize;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
 
     public ChunkStoreSearcher(final ChunkStoreFile chunkStoreFile,
-            int dataBlockSize, final TypeDescriptor<K> keyTypeDescriptor,
+            final DataBlockSize dataBlockSize,
+            final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor) {
         this.chunkStoreFile = Vldtn.requireNonNull(chunkStoreFile,
                 "chunkStoreFile");
-        this.dataBlockSize = dataBlockSize;
+        this.dataBlockSize = Vldtn.requireNonNull(dataBlockSize,
+                "dataBlockSize");
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
                 "keyTypeDescriptor");
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,

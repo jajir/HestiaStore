@@ -18,8 +18,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class CellStoreWriterImplTest {
 
-    private static final int DATABLOCK_PAYLOAD_SIZE = 64;
-    private static final CellPosition CELL_POSITION_0 = CellPosition.of(64, 0);
+    private static final CellPosition CELL_POSITION_0 = CellPosition
+            .of(TestData.DATA_BLOCK_SIZE, 0);
     private static final Bytes BYTES_64 = TestData.BYTES_1024.subBytes(0, 64);
     private static final Bytes BYTES_16 = TestData.BYTES_1024.subBytes(0, 16);
     private static final Bytes BYTES_18 = TestData.BYTES_1024.subBytes(0, 18);
@@ -58,7 +58,7 @@ public class CellStoreWriterImplTest {
 
     @BeforeEach
     void beforeEach() {
-        writer = new CellStoreWriterImpl(DATABLOCK_PAYLOAD_SIZE, cursor);
+        writer = new CellStoreWriterImpl(cursor);
     }
 
     @AfterEach

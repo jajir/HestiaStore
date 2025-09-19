@@ -7,6 +7,7 @@ import org.hestiastore.index.chunkstore.Chunk;
 import org.hestiastore.index.chunkstore.ChunkHeader;
 import org.hestiastore.index.chunkstore.ChunkPayload;
 import org.hestiastore.index.datablockfile.DataBlockPayload;
+import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -238,6 +239,9 @@ public final class TestData {
 
     public static final TypeDescriptor<String> TYPE_DESCRIPTOR_STRING = new TypeDescriptorString();
     public static final TypeDescriptor<Integer> TYPE_DESCRIPTOR_INTEGER = new TypeDescriptorInteger();
+
+    public static final DataBlockSize DATA_BLOCK_SIZE = DataBlockSize
+            .ofDataBlockSize(1024);
 
     public static final String STRING_9 = "test data";
     public static final Bytes BYTES_9 = Bytes.of(STRING_9.getBytes());
