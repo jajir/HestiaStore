@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.TestData;
 import org.hestiastore.index.datablockfile.DataBlockPayload;
+import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datablockfile.DataBlockWriter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,11 +23,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class CellStoreWriterCursorTest {
 
-    private static final int DATABLOCK_PAYLOAD_SIZE = 64;
-    private static final Bytes BYTES_64 = TestData.BYTES_1024.subBytes(0, 64);
+    private static final DataBlockSize DATABLOCK_SIZE = DataBlockSize
+            .ofDataBlockSize(1024);
+    private static final Bytes BYTES_1008 = TestData.BYTES_1024.subBytes(0,
+            1008);
     private static final Bytes BYTES_16 = TestData.BYTES_1024.subBytes(0, 16);
     private static final Bytes BYTES_18 = TestData.BYTES_1024.subBytes(0, 18);
-    private static final Bytes BYTES_80 = TestData.BYTES_1024.subBytes(0, 80);
+    private static final Bytes BYTES_1024 = TestData.BYTES_1024;
     private static final Bytes BYTES_48 = TestData.BYTES_1024.subBytes(0, 48);
 
     @Mock
@@ -44,14 +47,15 @@ public class CellStoreWriterCursorTest {
     }
 
     @Test
-    void test_write_64_bytes() {
-        assertEquals(64, cursor.write(BYTES_64).getValue());
+    void test_write_1008_bytes() {
+        assertEquals(1008, cursor.write(BYTES_1008).getValue());
         cursor.close();
 
-        verify(dataBlockWriter).write(DataBlockPayload.of(BYTES_64));
+        verify(dataBlockWriter).write(DataBlockPayload.of(BYTES_1008));
 
         // verify that data block write wasn't called more than once
         verify(dataBlockWriter, times(1)).write(any(DataBlockPayload.class));
+        assertEquals(1008, cursor.getAvailableBytes());
     }
 
     @Test
@@ -70,6 +74,7 @@ public class CellStoreWriterCursorTest {
         // verify that data block write wasn't called more than once
         verify(dataBlockWriter, times(1)).write(any(DataBlockPayload.class));
         assertEquals(16, cursor.getNextCellPosition().getValue());
+        assertEquals(992, cursor.getAvailableBytes());
     }
 
     @Test
@@ -89,21 +94,22 @@ public class CellStoreWriterCursorTest {
 
         // verify that data block write wasn't called more than once
         verify(dataBlockWriter, times(1)).write(any(DataBlockPayload.class));
+        assertEquals(944, cursor.getAvailableBytes());
     }
 
     @Test
-    void test_write_80_bytes_exception() {
+    void test_write_1024_bytes_exception() {
         final Exception e = assertThrows(IllegalStateException.class,
-                () -> cursor.write(BYTES_80));
+                () -> cursor.write(BYTES_1024));
 
         assertEquals("Not enough space to write to data block", e.getMessage());
     }
 
     @Test
-    void test_write_16_64_bytes_exception() {
+    void test_write_16_1024_bytes_exception() {
         cursor.write(BYTES_16);
         final Exception e = assertThrows(IllegalStateException.class,
-                () -> cursor.write(BYTES_64));
+                () -> cursor.write(BYTES_1024));
 
         assertEquals("Not enough space to write to data block", e.getMessage());
     }
@@ -127,7 +133,13 @@ public class CellStoreWriterCursorTest {
     @Test
     void test_constructor_null_dataBlockWriter() {
         assertThrows(IllegalArgumentException.class,
-                () -> new CellStoreWriterCursor(null, DATABLOCK_PAYLOAD_SIZE));
+                () -> new CellStoreWriterCursor(null, DATABLOCK_SIZE));
+    }
+
+    @Test
+    void test_constructor_null_dataBlockSize() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new CellStoreWriterCursor(dataBlockWriter, null));
     }
 
     @Test
@@ -137,8 +149,7 @@ public class CellStoreWriterCursorTest {
 
     @BeforeEach
     void beforeEach() {
-        cursor = new CellStoreWriterCursor(dataBlockWriter,
-                DATABLOCK_PAYLOAD_SIZE);
+        cursor = new CellStoreWriterCursor(dataBlockWriter, DATABLOCK_SIZE);
     }
 
     @AfterEach

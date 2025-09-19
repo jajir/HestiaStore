@@ -6,11 +6,6 @@ import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.TestData;
-import org.hestiastore.index.datablockfile.DataBlock;
-import org.hestiastore.index.datablockfile.DataBlockHeader;
-import org.hestiastore.index.datablockfile.DataBlockPayload;
-import org.hestiastore.index.datablockfile.DataBlockPosition;
-import org.hestiastore.index.datablockfile.DataBlockReader;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,7 +33,8 @@ public class DataBlockByteReaderTest {
             dataBlockHeader2.toBytes().add(dataBlockPayload2.getBytes()),
             DataBlockPosition.of(128));
 
-    private static final int DATABLOCK_PAYLOAD_SIZE = 64;
+    @Mock
+    private DataBlockSize dataBlockSize;
 
     @Mock
     private DataBlockReader dataBlockReader;
@@ -47,8 +43,9 @@ public class DataBlockByteReaderTest {
 
     @BeforeEach
     void beforeEach() {
-        reader = new DataBlockByteReaderImpl(dataBlockReader,
-                DATABLOCK_PAYLOAD_SIZE, 0);
+        when(dataBlockSize.getPayloadSize())//
+                .thenReturn(64);
+        reader = new DataBlockByteReaderImpl(dataBlockReader, dataBlockSize, 0);
     }
 
     @AfterEach

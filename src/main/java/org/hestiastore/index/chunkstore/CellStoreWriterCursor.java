@@ -4,6 +4,7 @@ import org.hestiastore.index.Bytes;
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datablockfile.DataBlockPayload;
+import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datablockfile.DataBlockWriter;
 
 /**
@@ -18,11 +19,11 @@ public final class CellStoreWriterCursor implements CloseableResource {
     private Bytes currentDataBlock = null;
 
     public CellStoreWriterCursor(final DataBlockWriter dataBlockWriter,
-            final int blockPayloadSize) {
+            final DataBlockSize blockPayloadSize) {
         this.dataBlockWriter = Vldtn.requireNonNull(dataBlockWriter,
                 "dataBlockWriter");
-        this.dataBlockPayloadSize = Vldtn.requireCellSize(blockPayloadSize,
-                "blockPayloadSize");
+        Vldtn.requireNonNull(blockPayloadSize, "blockPayloadSize");
+        this.dataBlockPayloadSize = blockPayloadSize.getPayloadSize();
         this.currentCellPosition = CellPosition.of(blockPayloadSize, 0);
     }
 
@@ -72,6 +73,10 @@ public final class CellStoreWriterCursor implements CloseableResource {
         dataBlockWriter.close();
     }
 
+    public int getAvailableBytes() {
+        return currentCellPosition.getFreeBytesInCurrentDataBlock();
+    }
+
     CellPosition getNextCellPosition() {
         return currentCellPosition;
     }
@@ -82,12 +87,6 @@ public final class CellStoreWriterCursor implements CloseableResource {
         } else {
             currentDataBlock = Bytes.of(currentDataBlock, bytes);
         }
-    }
-
-    //FIXME Invalid method
-    int getAvailableBytes() {
-        final int occupiedBytes = currentCellPosition.getOccupiedBytes();
-        return dataBlockPayloadSize - occupiedBytes;
     }
 
 }

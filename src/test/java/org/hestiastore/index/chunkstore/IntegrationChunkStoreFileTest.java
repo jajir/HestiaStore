@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.hestiastore.index.TestData;
+import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.AfterEach;
@@ -12,11 +13,12 @@ import org.junit.jupiter.api.Test;
 
 public class IntegrationChunkStoreFileTest {
 
-    private final static int BLOCK_SIZE = 1024;
+    private static final DataBlockSize DATABLOCK_SIZE = DataBlockSize
+            .ofDataBlockSize(1024);
 
-    private final static int VERSION = 3;
+    private static final int VERSION = 3;
 
-    private final static String FILE_NAME = "chunkpairfilewriter-test";
+    private static final String FILE_NAME = "chunkpairfilewriter-test";
 
     private Directory directory;
 
@@ -25,7 +27,8 @@ public class IntegrationChunkStoreFileTest {
     @BeforeEach
     void setUp() {
         directory = new MemDirectory();
-        chunkStoreFile = new ChunkStoreFile(directory, FILE_NAME, BLOCK_SIZE);
+        chunkStoreFile = new ChunkStoreFile(directory, FILE_NAME,
+                DATABLOCK_SIZE);
     }
 
     @AfterEach

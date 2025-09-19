@@ -12,10 +12,11 @@ public class DataBlockByteReaderImpl implements DataBlockByteReader {
     private int currentBlockPosition = 0;
 
     public DataBlockByteReaderImpl(final DataBlockReader dataBlockReader,
-            final int dataBlockPayloadSize, final int initialCellIndex) {
+            final DataBlockSize dataBlockSize, final int initialCellIndex) {
         this.dataBlockReader = Vldtn.requireNonNull(dataBlockReader,
                 "dataBlockReader");
-        this.dataBlockPayloadSize = dataBlockPayloadSize;
+        Vldtn.requireNonNull(dataBlockSize, "dataBlockSize");
+        this.dataBlockPayloadSize = dataBlockSize.getPayloadSize();
         this.currentBlockPosition = initialCellIndex * 16;
     }
 

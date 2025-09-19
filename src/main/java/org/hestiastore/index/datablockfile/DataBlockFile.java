@@ -12,15 +12,15 @@ public class DataBlockFile {
      */
     static final DataBlockPosition FIRST_BLOCK = DataBlockPosition.of(0);
 
-    private final int blockSize;
+    private final DataBlockSize blockSize;
     private final String fileName;
     private final Directory directory;
 
     public DataBlockFile(final Directory directory, final String fileName,
-            final int blockSize) {
+            final DataBlockSize blockSize) {
         this.directory = Vldtn.requireNonNull(directory, "directory");
         this.fileName = Vldtn.requireNonNull(fileName, "fileName");
-        this.blockSize = Vldtn.requiredIoBufferSize(blockSize);
+        this.blockSize = Vldtn.requireNonNull(blockSize, "blockSize");
     }
 
     public DataBlockReader openReader(final DataBlockPosition blockPosition) {
@@ -31,26 +31,27 @@ public class DataBlockFile {
         }
         if (directory.isFileExists(fileName)) {
             return new DataBlockReaderImpl(getFileReader(blockPosition),
-                    blockPosition, blockSize);
+                    blockPosition, blockSize.getDataBlockSize());
         } else {
             return new DataBlockReaderEmpty();
         }
     }
 
     private FileReader getFileReader(final DataBlockPosition blockPosition) {
-        return directory.getFileReader(fileName, blockSize);
+        return directory.getFileReader(fileName, blockSize.getDataBlockSize());
     }
 
     public DataBlockWriterTx getDataBlockWriterTx() {
-        return new DataBlockWriterTx(fileName, directory, blockSize);
+        return new DataBlockWriterTx(fileName, directory,
+                blockSize.getDataBlockSize());
     }
 
     public int getBlockSize() {
-        return blockSize;
+        return blockSize.getDataBlockSize();
     }
 
     public int getDataBlockPayloadSize() {
-        return blockSize - DataBlock.HEADER_SIZE;
+        return blockSize.getPayloadSize();
     }
 
 }
