@@ -17,6 +17,11 @@ public class DataBlockSize {
         this.size = Vldtn.requiredIoBufferSize(size);
     }
 
+    /**
+     * Get data block size in bytes including header and payload.
+     * 
+     * @return datablock size in bytes
+     */
     public int getDataBlockSize() {
         return size;
     }

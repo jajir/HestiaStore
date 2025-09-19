@@ -38,7 +38,10 @@ public class DataBlockFile {
     }
 
     private FileReader getFileReader(final DataBlockPosition blockPosition) {
-        return directory.getFileReader(fileName, blockSize.getDataBlockSize());
+        FileReader out = directory.getFileReader(fileName,
+                blockSize.getDataBlockSize());
+        out.skip(blockPosition.getValue());
+        return out;
     }
 
     public DataBlockWriterTx getDataBlockWriterTx() {

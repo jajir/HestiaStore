@@ -1,6 +1,7 @@
 package org.hestiastore.index.chunkstore;
 
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.datablockfile.CellPosition;
 import org.hestiastore.index.datablockfile.DataBlockByteReader;
 import org.hestiastore.index.datablockfile.DataBlockByteReaderImpl;
 import org.hestiastore.index.datablockfile.DataBlockFile;

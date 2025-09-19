@@ -17,7 +17,17 @@ public class DataBlockByteReaderImpl implements DataBlockByteReader {
                 "dataBlockReader");
         Vldtn.requireNonNull(dataBlockSize, "dataBlockSize");
         this.dataBlockPayloadSize = dataBlockSize.getPayloadSize();
-        this.currentBlockPosition = initialCellIndex * 16;
+        if (initialCellIndex > 0) {
+            final int requestedPosition = initialCellIndex * 16;
+            Vldtn.requireCellSize(requestedPosition, "requestedPosition");
+            if (requestedPosition >= dataBlockPayloadSize) {
+                throw new IllegalArgumentException(String.format(
+                        "Initial cell index '%s' is out of range. Max allowed is '%s'",
+                        initialCellIndex, (dataBlockPayloadSize / 16) - 1));
+            }
+            moveToNextDataBlock();
+            this.currentBlockPosition = requestedPosition;
+        }
     }
 
     @Override
@@ -38,14 +48,14 @@ public class DataBlockByteReaderImpl implements DataBlockByteReader {
             }
             final int remainingBytesToReadInChunk = dataBlockPayloadSize
                     - currentBlockPosition;
-            final int bytesToreadFromCurrentBlock = Math
+            final int bytesToReadFromCurrentBlock = Math
                     .min(remainingBytesToReadInChunk, bytesToread);
             chunkPayloadBytes = chunkPayloadBytes
                     .add(currentDataBlock.getPayload().getBytes()
                             .subBytes(currentBlockPosition, currentBlockPosition
-                                    + bytesToreadFromCurrentBlock));
-            currentBlockPosition += bytesToreadFromCurrentBlock;
-            bytesToread -= bytesToreadFromCurrentBlock;
+                                    + bytesToReadFromCurrentBlock));
+            currentBlockPosition += bytesToReadFromCurrentBlock;
+            bytesToread -= bytesToReadFromCurrentBlock;
             optionalyMoveToNextDataBlock();
         }
         return chunkPayloadBytes;

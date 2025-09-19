@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.datablockfile.CellPosition;
 import org.hestiastore.index.datablockfile.DataBlockByteReader;
 
 public class ChunkStoreReaderImpl implements ChunkStoreReader {
@@ -50,11 +51,11 @@ public class ChunkStoreReaderImpl implements ChunkStoreReader {
     }
 
     private int convertLengthToWholeCells(final int length) {
-        int out = length / Chunk.CELL_SIZE;
-        if (length % Chunk.CELL_SIZE != 0) {
+        int out = length / CellPosition.CELL_SIZE;
+        if (length % CellPosition.CELL_SIZE != 0) {
             out++;
         }
-        return out * Chunk.CELL_SIZE;
+        return out * CellPosition.CELL_SIZE;
 
     }
 

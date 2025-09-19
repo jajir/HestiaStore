@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.TestData;
+import org.hestiastore.index.datablockfile.CellPosition;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

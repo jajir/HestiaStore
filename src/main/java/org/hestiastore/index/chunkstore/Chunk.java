@@ -21,11 +21,6 @@ public final class Chunk {
     static final int HEADER_SIZE = 32;
 
     /**
-     * Size of cell in bytes. Cell is smalles addresable unit in chunk store.
-     */
-    static final int CELL_SIZE = 16;
-
-    /**
      * "theodora" in ASCII
      */
     // TODO move it to header

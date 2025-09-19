@@ -2,6 +2,7 @@ package org.hestiastore.index.datablockfile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.hestiastore.index.TestData;
 import org.hestiastore.index.directory.Directory;
@@ -34,7 +35,7 @@ public class IntegrationDataBlockFileTest {
     }
 
     @Test
-    void test_simple() {
+    void test_write_and_read_one_data_block() {
         // verify write
         DataBlockWriterTx writerTx = dataBlockFile.getDataBlockWriterTx();
         try (DataBlockWriter writer = writerTx.openWriter()) {
@@ -45,11 +46,54 @@ public class IntegrationDataBlockFileTest {
         // Verify read
         try (DataBlockReader reader = dataBlockFile
                 .openReader(DataBlockFile.FIRST_BLOCK)) {
-            DataBlock dataBlock = reader.read();
-            assertNotNull(dataBlock);
-            DataBlockPayload payload = dataBlock.getPayload();
-            assertNotNull(payload);
-            assertEquals(TestData.PAYLOAD_1008, payload);
+            verifyBlock(reader.read(), TestData.PAYLOAD_1008);
+            assertNull(reader.read());
         }
+    }
+
+    @Test
+    void test_write_and_read_two_data_block() {
+        // verify write
+        DataBlockWriterTx writerTx = dataBlockFile.getDataBlockWriterTx();
+        try (DataBlockWriter writer = writerTx.openWriter()) {
+            writer.write(TestData.PAYLOAD_1008);
+            writer.write(TestData.PAYLOAD_1008_2);
+        }
+        writerTx.commit();
+
+        // Verify read
+        try (DataBlockReader reader = dataBlockFile
+                .openReader(DataBlockFile.FIRST_BLOCK)) {
+            verifyBlock(reader.read(), TestData.PAYLOAD_1008);
+            verifyBlock(reader.read(), TestData.PAYLOAD_1008_2);
+            assertNull(reader.read());
+        }
+    }
+
+    @Test
+    void test_write_and_read_second_data_block() {
+        // verify write
+        DataBlockWriterTx writerTx = dataBlockFile.getDataBlockWriterTx();
+        try (DataBlockWriter writer = writerTx.openWriter()) {
+            writer.write(TestData.PAYLOAD_1008);
+            writer.write(TestData.PAYLOAD_1008_2);
+        }
+        writerTx.commit();
+
+        // Verify read
+        try (DataBlockReader reader = dataBlockFile
+                .openReader(DataBlockPosition.of(1008 + 16))) {
+            // verifyBlock(reader.read(), TestData.PAYLOAD_1008);
+            verifyBlock(reader.read(), TestData.PAYLOAD_1008_2);
+            assertNull(reader.read());
+        }
+    }
+
+    private void verifyBlock(final DataBlock dataBlock,
+            DataBlockPayload expectedPayload) {
+        assertNotNull(dataBlock);
+        final DataBlockPayload payload = dataBlock.getPayload();
+        assertNotNull(payload);
+        assertEquals(expectedPayload, payload);
     }
 }

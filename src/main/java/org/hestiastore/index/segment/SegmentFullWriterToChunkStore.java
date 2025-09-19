@@ -33,7 +33,7 @@ public class SegmentFullWriterToChunkStore<K, V> implements PairWriter<K, V> {
     private final ChunkPairFileWriter<K, V> indexWriter;
     private final BloomFilterWriter<K> bloomFilterWriter;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
-    private Pair<K, V> startPair = null;
+    private Pair<K, V> lastPair = null;
 
     SegmentFullWriterToChunkStore(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentStatsManager,
@@ -64,13 +64,13 @@ public class SegmentFullWriterToChunkStore<K, V> implements PairWriter<K, V> {
 
         bloomFilterWriter.write(pair.getKey());
 
-        startPair = pair;
-        if (startPair == null) {
+        lastPair = pair;
+        if (lastPair == null) {
         }
 
         final long i = keyCounter.getAndIncrement() + 1;
         indexWriter.write(pair);
-        System.out.println("put " + pair.getKey() + ", " + pair.getValue());
+        // System.out.println("put " + pair.getKey() + ", " + pair.getValue());
         /*
          * Write first pair end every nth pair.
          */
@@ -80,15 +80,16 @@ public class SegmentFullWriterToChunkStore<K, V> implements PairWriter<K, V> {
     }
 
     private void flush() {
-        if (startPair == null) {
+        if (lastPair == null) {
             return;
         }
+        // TODO should return position object
         final long position = indexWriter.flush();
-        scarceWriter.put(Pair.of(startPair.getKey(), (int) position));
-        System.out.println(
-                "flushing " + startPair.getKey() + ", position " + position);
+        scarceWriter.put(Pair.of(lastPair.getKey(), (int) position));
+        // System.out.println(
+        // "flushing " + lastPair.getKey() + ", position " + position);
         scarceIndexKeyCounter.incrementAndGet();
-        startPair = null;
+        lastPair = null;
     }
 
     @Override

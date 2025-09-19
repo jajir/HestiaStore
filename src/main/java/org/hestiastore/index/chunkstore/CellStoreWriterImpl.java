@@ -2,6 +2,7 @@ package org.hestiastore.index.chunkstore;
 
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.datablockfile.CellPosition;
 
 public class CellStoreWriterImpl implements CellStoreWriter {
 

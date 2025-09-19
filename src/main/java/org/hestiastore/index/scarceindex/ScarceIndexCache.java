@@ -88,7 +88,7 @@ public class ScarceIndexCache<K> {
 
     private Pair<K, Integer> localFindSegmentForKey(final K key) {
         Vldtn.requireNonNull(key, "key");
-        final Map.Entry<K, Integer> ceilingEntry = list.floorEntry(key);
+        final Map.Entry<K, Integer> ceilingEntry = list.ceilingEntry(key);
         if (ceilingEntry == null) {
             return null;
         } else {
