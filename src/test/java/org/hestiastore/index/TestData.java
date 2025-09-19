@@ -228,6 +228,8 @@ public final class TestData {
 
     public static final DataBlockPayload PAYLOAD_1008 = DataBlockPayload
             .of(Bytes.of(BYTE_ARRAY_1008));
+    public static final DataBlockPayload PAYLOAD_1008_2 = DataBlockPayload
+            .of(Bytes.of(BYTE_ARRAY_1024).subBytes(0, 1008));
     public static final DataBlockPayload PAYLOAD_1024 = DataBlockPayload
             .of(Bytes.of(BYTE_ARRAY_1024));
 

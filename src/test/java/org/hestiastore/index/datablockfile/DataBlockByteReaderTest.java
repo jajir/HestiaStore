@@ -2,6 +2,7 @@ package org.hestiastore.index.datablockfile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.Bytes;
@@ -44,13 +45,37 @@ public class DataBlockByteReaderTest {
     @BeforeEach
     void beforeEach() {
         when(dataBlockSize.getPayloadSize())//
-                .thenReturn(64);
+                .thenReturn(64, 64, 64);
         reader = new DataBlockByteReaderImpl(dataBlockReader, dataBlockSize, 0);
     }
 
     @AfterEach
     void afterEach() {
         reader.close();
+        reader = null;
+    }
+
+    @Test
+    void test_constructor_initial_cell_in_out_of_range_4() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> new DataBlockByteReaderImpl(dataBlockReader,
+                        dataBlockSize, 4));
+        assertEquals(
+                "Initial cell index '4' is out of range. Max allowed is '3'",
+                e.getMessage());
+    }
+
+    @Test
+    void test_read_from_cell_2() {
+        when(dataBlockReader.read())//
+                .thenReturn(dataBlock1)//
+                .thenReturn(null);
+        reader = new DataBlockByteReaderImpl(dataBlockReader, dataBlockSize, 2);
+
+        final Bytes bytes1 = reader.readExactly(32);
+        final Bytes expectedBytes1 = TestData.BYTES_1024.subBytes(32, 32 + 32);
+        assertEquals(expectedBytes1, bytes1);
+        assertNull(reader.readExactly(32));
     }
 
     @Test

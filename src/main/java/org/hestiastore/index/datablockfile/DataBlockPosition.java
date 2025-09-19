@@ -1,7 +1,7 @@
 package org.hestiastore.index.datablockfile;
 
 /**
- * Alows to identify exact position of a block in a block data file.
+ * Identify exact position of a block in a block data file.
  */
 public class DataBlockPosition {
 
@@ -18,6 +18,11 @@ public class DataBlockPosition {
         this.position = position;
     }
 
+    /**
+     * Provide data block position in bytes.
+     * 
+     * @return data block position in bytes
+     */
     public int getValue() {
         return position;
     }

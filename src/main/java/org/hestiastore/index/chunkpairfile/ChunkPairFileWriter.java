@@ -3,8 +3,8 @@ package org.hestiastore.index.chunkpairfile;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkPayload;
-import org.hestiastore.index.chunkstore.CellPosition;
 import org.hestiastore.index.chunkstore.ChunkStoreWriter;
+import org.hestiastore.index.datablockfile.CellPosition;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.sorteddatafile.SortedDataFileWriter;
 

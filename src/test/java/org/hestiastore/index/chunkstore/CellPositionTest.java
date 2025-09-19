@@ -2,6 +2,7 @@ package org.hestiastore.index.chunkstore;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import org.hestiastore.index.datablockfile.CellPosition;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.junit.jupiter.api.Test;
 

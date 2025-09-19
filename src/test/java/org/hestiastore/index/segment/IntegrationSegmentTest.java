@@ -583,10 +583,10 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
             }
         }
         seg.forceCompact();
+        assertEquals("Ahoj", seg.get(3));
 
         for (int i = 0; i < 1000; i++) {
-            final String value = seg.get(i);
-            assertEquals("Ahoj", value);
+            assertEquals("Ahoj", seg.get(i), "Invalid value for key " + i);
         }
     }
 

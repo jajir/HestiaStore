@@ -3,6 +3,7 @@ package org.hestiastore.index.chunkstore;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.datablockfile.CellPosition;
 import org.hestiastore.index.datablockfile.DataBlockPayload;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datablockfile.DataBlockWriter;

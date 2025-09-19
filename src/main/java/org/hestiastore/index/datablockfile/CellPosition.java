@@ -1,14 +1,18 @@
-package org.hestiastore.index.chunkstore;
+package org.hestiastore.index.datablockfile;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.datablockfile.DataBlockPosition;
-import org.hestiastore.index.datablockfile.DataBlockSize;
-import org.hestiastore.index.datablockfile.DataBlock;
 
 /**
  * Specify position within a chunk store.
  */
 public class CellPosition {
+
+    /**
+     * Size of cell in bytes. Cell is smalles addresable unit in chunk store.
+     * 
+     * TODO this is not correct place for this constant.
+     */
+    public static final int CELL_SIZE = 16;
 
     private final DataBlockSize dataBlockSize;
 
@@ -81,16 +85,15 @@ public class CellPosition {
     }
 
     public CellPosition addCellsForBytes(final int byteCount) {
-        int cells = byteCount / Chunk.CELL_SIZE;
-        if (byteCount % Chunk.CELL_SIZE != 0) {
+        int cells = byteCount / CELL_SIZE;
+        if (byteCount % CELL_SIZE != 0) {
             cells++;
         }
-        return CellPosition.of(dataBlockSize,
-                position + cells * Chunk.CELL_SIZE);
+        return CellPosition.of(dataBlockSize, position + cells * CELL_SIZE);
     }
 
     public int getCellIndex() {
-        return (position % getDataBlockPayloadSize()) / Chunk.CELL_SIZE;
+        return (position % getDataBlockPayloadSize()) / CELL_SIZE;
     }
 
     /**
@@ -99,7 +102,7 @@ public class CellPosition {
      * @return
      */
     public int getOccupiedBytes() {
-        return getCellIndex() * Chunk.CELL_SIZE;
+        return getCellIndex() * CELL_SIZE;
     }
 
 }
