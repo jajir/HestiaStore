@@ -43,6 +43,7 @@ public class ChunkPairFile<K, V> implements SortedDataFileSearcher<K, V> {
         return search();
     }
 
+    // TODO rename it to openIteratorAtPosition
     @Override
     public PairIterator<K, V> search(final long position) {
         return new ChunkPairFileIterator<>(

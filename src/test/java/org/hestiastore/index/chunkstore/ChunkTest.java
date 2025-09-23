@@ -14,7 +14,7 @@ public class ChunkTest {
     @Test
     void test_of_bytes() {
         final ChunkHeader chunkHeader = ChunkHeader.of(Chunk.MAGIC_NUMBER,
-                VERSION, 9, TestData.PAYLOAD_9.calculateCrc());
+                VERSION, 9, TestData.CHUNK_PAYLOAD_9.calculateCrc());
         final Bytes chunkBytes = chunkHeader.getBytes().add(TestData.BYTES_9);
 
         final Chunk chunk = Chunk.of(chunkBytes);

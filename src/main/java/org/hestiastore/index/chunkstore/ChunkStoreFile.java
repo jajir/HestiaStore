@@ -23,7 +23,8 @@ public class ChunkStoreFile {
 
     public ChunkStoreReader openReader(final CellPosition chunkPosition) {
         final DataBlockByteReader dataBlockByteReader = new DataBlockByteReaderImpl(
-                dataBlockFile.openReader(chunkPosition.getDataBlockPosition()),
+                dataBlockFile
+                        .openReader(chunkPosition.getDataBlockStartPosition()),
                 dataBlockSize, chunkPosition.getCellIndex());
         return new ChunkStoreReaderImpl(dataBlockByteReader);
     }

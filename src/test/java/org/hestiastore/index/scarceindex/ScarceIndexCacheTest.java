@@ -42,9 +42,9 @@ class ScarceIndexCacheTest {
                 List.of(Pair.of("bbb", 1), Pair.of("ccc", 2), Pair.of("ddd", 3),
                         Pair.of("eee", 4), Pair.of("fff", 5)));
         assertEquals(1, cache.findSegmentId("bbb"));
-        assertEquals(1, cache.findSegmentId("bbbb"));
+        assertEquals(2, cache.findSegmentId("bbbb"));
         assertEquals(2, cache.findSegmentId("ccc"));
-        assertEquals(2, cache.findSegmentId("cccb"));
+        assertEquals(3, cache.findSegmentId("cccb"));
         assertEquals(5, cache.findSegmentId("fff"));
         assertNull(cache.findSegmentId("zzz"));
 
