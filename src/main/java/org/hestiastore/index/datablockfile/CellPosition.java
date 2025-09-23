@@ -37,7 +37,7 @@ public class CellPosition {
         return position;
     }
 
-    private int getDataBlockPayloadSize() {
+    int getDataBlockPayloadSize() {
         return dataBlockSize.getPayloadSize();
     }
 
@@ -59,13 +59,13 @@ public class CellPosition {
         return position == that.position;
     }
 
-    public DataBlockPosition getDataBlockPosition() {
+    public DataBlockPosition getDataBlockStartPosition() {
+        final int blockIndex = position / dataBlockSize.getPayloadSize();
         return DataBlockPosition
-                .of(position / dataBlockSize.getDataBlockSize());
+                .of(blockIndex * dataBlockSize.getDataBlockSize());
     }
 
     public int getFreeBytesInCurrentDataBlock() {
-
         return getDataBlockPayloadSize() - position % getDataBlockPayloadSize();
     }
 
@@ -92,8 +92,12 @@ public class CellPosition {
         return CellPosition.of(dataBlockSize, position + cells * CELL_SIZE);
     }
 
+    int getStartingByteInBlockOfCell() {
+        return position % getDataBlockPayloadSize();
+    }
+
     public int getCellIndex() {
-        return (position % getDataBlockPayloadSize()) / CELL_SIZE;
+        return (getStartingByteInBlockOfCell()) / CELL_SIZE;
     }
 
     /**

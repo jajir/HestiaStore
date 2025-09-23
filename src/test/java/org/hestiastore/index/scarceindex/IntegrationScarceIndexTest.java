@@ -31,7 +31,7 @@ class IntegrationScarceIndexTest {
         final ScarceIndex<String> index = makeIndex(List.of(P_BBB_1));
 
         assertEquals(13, index.get("bbb"));
-        assertNull(index.get("aaa"));
+        assertNull(index.get("ddd"));
         assertNull(index.get("ccc"));
 
         assertEquals("bbb", index.getMinKey());
@@ -55,11 +55,11 @@ class IntegrationScarceIndexTest {
         final ScarceIndex<String> index = makeIndex(
                 List.of(P_BBB_2, P_CCC_1, P_DDD, P_EEE, P_FFF_2));
 
-        assertNull(index.get("aaa"));
+        assertEquals(1, index.get("aaa"));
         assertEquals(1, index.get("bbb"));
         assertEquals(2, index.get("ccc"));
-        assertEquals(2, index.get("ccd"));
-        assertEquals(2, index.get("cee"));
+        assertEquals(3, index.get("ccd"));
+        assertEquals(3, index.get("cee"));
         assertEquals(5, index.get("fff"));
         assertNull(index.get("ggg"));
         assertEquals("bbb", index.getMinKey());
@@ -90,8 +90,8 @@ class IntegrationScarceIndexTest {
             writer.put(P_BBB_2);
         }
 
+        assertEquals(1, index.get("aaa"));
         assertEquals(1, index.get("bbb"));
-        assertNull(index.get("aaa"));
         assertNull(index.get("ccc"));
     }
 

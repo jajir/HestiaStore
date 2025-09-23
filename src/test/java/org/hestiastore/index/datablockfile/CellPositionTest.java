@@ -1,9 +1,7 @@
-package org.hestiastore.index.chunkstore;
+package org.hestiastore.index.datablockfile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.hestiastore.index.datablockfile.CellPosition;
-import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.junit.jupiter.api.Test;
 
 public class CellPositionTest {
@@ -14,7 +12,7 @@ public class CellPositionTest {
     @Test
     void test() {
         CellPosition position = CellPosition.of(DATA_BLOCK_SIZE, 1024);
-        assertEquals(1, position.getDataBlockPosition().getValue());
+        assertEquals(1024, position.getDataBlockStartPosition().getValue());
         assertEquals(1, position.getCellIndex());
         assertEquals(1024, position.getValue());
     }
@@ -82,4 +80,32 @@ public class CellPositionTest {
                 .getFreeBytesInCurrentDataBlock());
     }
 
+    @Test
+    void test_getDataBlockStartPosition() {
+        assertEquals(0, CellPosition.of(DATA_BLOCK_SIZE, 0)
+                .getDataBlockStartPosition().getValue());
+        assertEquals(0, CellPosition.of(DATA_BLOCK_SIZE, 1000)
+                .getDataBlockStartPosition().getValue());
+        assertEquals(1024, CellPosition.of(DATA_BLOCK_SIZE, 1023)
+                .getDataBlockStartPosition().getValue());
+        assertEquals(1024, CellPosition.of(DATA_BLOCK_SIZE, 1024)
+                .getDataBlockStartPosition().getValue());
+        assertEquals(6144, CellPosition.of(DATA_BLOCK_SIZE, 7000)
+                .getDataBlockStartPosition().getValue());
+    }
+
+    @Test
+    void test_example() {
+        final DataBlockSize dataBlockSize = DataBlockSize
+                .ofDataBlockSize(1024 * 3);
+        assertEquals(3072, dataBlockSize.getDataBlockSize());
+        assertEquals(3056, dataBlockSize.getPayloadSize());
+        final CellPosition position = CellPosition.of(dataBlockSize, 12224);
+        assertEquals(12224, position.getValue());
+        assertEquals(3056, position.getDataBlockPayloadSize());
+        assertEquals(12288, position.getDataBlockStartPosition().getValue());
+        assertEquals(0, position.getStartingByteInBlockOfCell());
+        assertEquals(0, position.getCellIndex());
+        assertEquals(0, position.getOccupiedBytes());
+    }
 }

@@ -21,10 +21,11 @@ public class ChunkStoreReaderImplTest {
     private static final int VERSION = 682;
 
     private static final ChunkHeader CHUNK_HEADER_9 = ChunkHeader.of(
-            Chunk.MAGIC_NUMBER, VERSION, 9, TestData.PAYLOAD_9.calculateCrc());
+            Chunk.MAGIC_NUMBER, VERSION, 9,
+            TestData.CHUNK_PAYLOAD_9.calculateCrc());
     private static final ChunkHeader CHUNK_HEADER_15 = ChunkHeader.of(
             Chunk.MAGIC_NUMBER, VERSION, 15,
-            TestData.PAYLOAD_15.calculateCrc());
+            TestData.CHUNK_PAYLOAD_15.calculateCrc());
 
     @Mock
     private DataBlockByteReader dataBlockByteReader;
@@ -54,7 +55,7 @@ public class ChunkStoreReaderImplTest {
         final Chunk chunk = reader.read();
         assertNotNull(chunk);
         assertEquals(CHUNK_HEADER_9, chunk.getHeader());
-        assertEquals(TestData.PAYLOAD_9, chunk.getPayload());
+        assertEquals(TestData.CHUNK_PAYLOAD_9, chunk.getPayload());
         assertEquals(TestData.BYTES_9, chunk.getPayload().getBytes());
 
         assertNull(reader.read());
@@ -75,13 +76,13 @@ public class ChunkStoreReaderImplTest {
         final Chunk chunk1 = reader.read();
         assertNotNull(chunk1);
         assertEquals(CHUNK_HEADER_9, chunk1.getHeader());
-        assertEquals(TestData.PAYLOAD_9, chunk1.getPayload());
+        assertEquals(TestData.CHUNK_PAYLOAD_9, chunk1.getPayload());
         assertEquals(TestData.BYTES_9, chunk1.getPayload().getBytes());
 
         final Chunk chunk2 = reader.read();
         assertNotNull(chunk2);
         assertEquals(CHUNK_HEADER_15, chunk2.getHeader());
-        assertEquals(TestData.PAYLOAD_15, chunk2.getPayload());
+        assertEquals(TestData.CHUNK_PAYLOAD_15, chunk2.getPayload());
         assertEquals(TestData.BYTES_15, chunk2.getPayload().getBytes());
 
         assertNull(reader.read());

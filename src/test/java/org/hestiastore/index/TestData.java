@@ -247,16 +247,20 @@ public final class TestData {
 
     public static final String STRING_9 = "test data";
     public static final Bytes BYTES_9 = Bytes.of(STRING_9.getBytes());
-    public static final ChunkPayload PAYLOAD_9 = ChunkPayload.of(BYTES_9);
+    public static final ChunkPayload CHUNK_PAYLOAD_9 = ChunkPayload.of(BYTES_9);
 
     public static final String STRING_15 = "super test data";
     public static final Bytes BYTES_15 = Bytes.of(STRING_15.getBytes());
-    public static final ChunkPayload PAYLOAD_15 = ChunkPayload.of(BYTES_15);
+    public static final ChunkPayload CHUNK_PAYLOAD_15 = ChunkPayload
+            .of(BYTES_15);
 
     public static final Bytes BYTES_154 = Bytes.of(BYTE_ARRAY_154);
-    public static final ChunkPayload PAYLOAD_154 = ChunkPayload.of(BYTES_154);
+    public static final ChunkPayload CHUNK_PAYLOAD_154 = ChunkPayload
+            .of(BYTES_154);
 
     public static final Bytes BYTES_1024 = Bytes.of(BYTE_ARRAY_1024);
+    public static final ChunkPayload CHUNK_PAYLOAD_1008 = ChunkPayload
+            .of(BYTES_1024.subBytes(0, 1008));
 
     public static final SegmentId SEGMENT_ID = SegmentId.of(13);
     public static final Pair<Integer, String> PAIR1 = Pair.of(1, "a");

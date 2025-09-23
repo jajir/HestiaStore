@@ -7,10 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.hestiastore.index.AbstractDataTest;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -577,14 +579,17 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withDiskIoBufferSize(3 * 1024)//
                 .withValueTypeDescriptor(tds).build();
 
+        final List<Pair<Integer, String>> pairs = new ArrayList<>();
         try (PairWriter<Integer, String> writer = seg.openWriter()) {
             for (int i = 0; i < 1000; i++) {
-                writer.put(Pair.of(i, "Ahoj"));
+                final Pair<Integer, String> p = Pair.of(i, "Ahoj");
+                writer.put(p);
+                pairs.add(p);
             }
         }
         seg.forceCompact();
-        assertEquals("Ahoj", seg.get(3));
 
+        AbstractDataTest.verifyIteratorData(pairs, seg.openIterator());
         for (int i = 0; i < 1000; i++) {
             assertEquals("Ahoj", seg.get(i), "Invalid value for key " + i);
         }
