@@ -7,12 +7,12 @@ public class DataBlockWriterImpl implements DataBlockWriter {
 
     private final FileWriter fileWriter;
 
-    private final int blockSize;
+    private final DataBlockSize blockSize;
 
     public DataBlockWriterImpl(final FileWriter fileWriter,
-            final int blockSize) {
+            final DataBlockSize blockSize) {
         this.fileWriter = Vldtn.requireNonNull(fileWriter, "fileWriter");
-        this.blockSize = blockSize;
+        this.blockSize = Vldtn.requireNonNull(blockSize, "blockSize");
     }
 
     @Override
@@ -24,7 +24,7 @@ public class DataBlockWriterImpl implements DataBlockWriter {
     public void write(final DataBlockPayload dataBlockPayload) {
         Vldtn.requireNonNull(dataBlockPayload, "dataBlockPayload");
         int actualPayloadSize = dataBlockPayload.getBytes().getData().length;
-        int requiredPayloadSize = blockSize - DataBlock.HEADER_SIZE;
+        int requiredPayloadSize = blockSize.getPayloadSize();
         if (actualPayloadSize != requiredPayloadSize) {
             throw new IllegalArgumentException(String.format(
                     "Payload size '%d' does not match expected payload size '%d'",
@@ -35,7 +35,7 @@ public class DataBlockWriterImpl implements DataBlockWriter {
     }
 
     private byte[] makeBlockData(final DataBlockPayload dataBlockPayload) {
-        final byte[] blockData = new byte[blockSize];
+        final byte[] blockData = new byte[blockSize.getDataBlockSize()];
         final DataBlockHeader header = DataBlockHeader
                 .of(DataBlock.MAGIC_NUMBER, dataBlockPayload.calculateCrc());
         System.arraycopy(header.toBytes().getData(), 0, blockData, 0,

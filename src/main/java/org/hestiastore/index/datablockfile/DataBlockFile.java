@@ -31,7 +31,7 @@ public class DataBlockFile {
         }
         if (directory.isFileExists(fileName)) {
             return new DataBlockReaderImpl(getFileReader(blockPosition),
-                    blockPosition, blockSize.getDataBlockSize());
+                    blockPosition, blockSize);
         } else {
             return new DataBlockReaderEmpty();
         }
@@ -45,10 +45,10 @@ public class DataBlockFile {
     }
 
     public DataBlockWriterTx getDataBlockWriterTx() {
-        return new DataBlockWriterTx(fileName, directory,
-                blockSize.getDataBlockSize());
+        return new DataBlockWriterTx(fileName, directory, blockSize);
     }
 
+    // TODO Is it necessary? Better expose object.
     public int getBlockSize() {
         return blockSize.getDataBlockSize();
     }

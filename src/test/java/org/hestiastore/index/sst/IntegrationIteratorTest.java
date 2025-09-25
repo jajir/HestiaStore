@@ -139,4 +139,21 @@ class IntegrationIteratorTest extends AbstractIndexTest {
         ));
     }
 
+    @Test
+    void test_basic_consistency() {
+        // verify data consistency after flush
+        verifyIndexSearch(index, Arrays.asList(//
+                Pair.of("a", 20), //
+                Pair.of("b", 30), //
+                Pair.of("c", 40) //
+        ));
+
+        // verify that data are in iterator after flush
+        verifyIndexData(index, Arrays.asList(//
+                Pair.of("a", 20), //
+                Pair.of("b", 30), //
+                Pair.of("c", 40) //
+        ));
+    }
+
 }

@@ -23,7 +23,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class DataBlockReaderImplTest {
 
-    private static final int BLOCK_SIZE = 1024;
+    private static final DataBlockSize BLOCK_SIZE = DataBlockSize
+            .ofDataBlockSize(1024);
 
     private static final DataBlockPosition BLOCK_POSITION = DataBlockPosition
             .of(2048);

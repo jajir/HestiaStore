@@ -175,7 +175,7 @@ public final class SegmentBuilder<K, V> {
         }
         if (segmentFiles == null) {
             segmentFiles = new SegmentFiles<>(directory, id, keyTypeDescriptor,
-                    valueTypeDescriptor, diskIoBufferSize);
+                    valueTypeDescriptor, segmentConf.getDiskIoBufferSize());
         }
         if (segmentPropertiesManager == null) {
             segmentPropertiesManager = new SegmentPropertiesManager(

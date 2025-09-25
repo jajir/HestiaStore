@@ -9,10 +9,10 @@ public class DataBlockWriterTx implements Commitable {
 
     private final String fileName;
     private final Directory directory;
-    private final int blockSize;
+    private final DataBlockSize blockSize;
 
     public DataBlockWriterTx(String fileName, Directory directory,
-            int blockSize) {
+            DataBlockSize blockSize) {
         this.fileName = Vldtn.requireNonNull(fileName, "fileName");
         this.directory = Vldtn.requireNonNull(directory, "directory");
         this.blockSize = blockSize;

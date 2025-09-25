@@ -8,11 +8,12 @@ import org.hestiastore.index.directory.FileReader;
 public class DataBlockReaderImpl implements DataBlockReader {
 
     private final FileReader fileReader;
-    private final int blockSize;
+    private final DataBlockSize blockSize;
     private int position;
 
     DataBlockReaderImpl(final FileReader fileReader,
-            final DataBlockPosition blockPosition, final int blockSize) {
+            final DataBlockPosition blockPosition,
+            final DataBlockSize blockSize) {
         this.fileReader = Vldtn.requireNonNull(fileReader, "fileReader");
         this.blockSize = blockSize;
         this.position = blockPosition.getValue();
@@ -25,16 +26,16 @@ public class DataBlockReaderImpl implements DataBlockReader {
 
     @Override
     public DataBlock read() {
-        final byte[] buffer = new byte[blockSize];
+        final byte[] buffer = new byte[blockSize.getDataBlockSize()];
         final int bytesRead = fileReader.read(buffer);
         if (bytesRead < 0) {
             return null; // End of file reached
         }
-        if (bytesRead != blockSize) {
+        if (bytesRead != blockSize.getDataBlockSize()) {
             throw new IndexException("Unable to read full block");
         }
         DataBlockPosition blockPosition = DataBlockPosition.of(position);
-        position += blockSize;
+        position += blockSize.getDataBlockSize();
         return new DataBlock(Bytes.of(buffer), blockPosition);
     }
 

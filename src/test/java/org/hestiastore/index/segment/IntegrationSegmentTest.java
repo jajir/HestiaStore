@@ -621,7 +621,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                         .withBloomFilterIndexSizeInBytes(0)//
                         .withDiskIoBufferSize(1 * 1024) //
                         .build(), //
-                2, // expectedNumberKeysInScarceIndex,
+                1, // expectedNumberKeysInScarceIndex,
                 10 // expectedNumberOfFile
         ), arguments(tdi, tds, dir2, Segment.<Integer, String>builder()//
                 .withDirectory(dir2)//
