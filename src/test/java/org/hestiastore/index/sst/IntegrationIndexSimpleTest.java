@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 class IntegrationIndexSimpleTest {
 
+    private static final int DISK_IO_BUFFER_SIZE = 6 * 1024; // 6KB
     private final Logger logger = LoggerFactory
             .getLogger(IntegrationIndexSimpleTest.class);
 
@@ -241,6 +242,7 @@ class IntegrationIndexSimpleTest {
                 .withValueClass(String.class)//
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tds) //
+                .withDiskIoBufferSizeInBytes(DISK_IO_BUFFER_SIZE)//
                 .withMaxNumberOfKeysInSegment(5) //
                 .withMaxNumberOfKeysInSegmentCache(3L) //
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(4L) //
@@ -278,6 +280,7 @@ class IntegrationIndexSimpleTest {
         return Segment.<Integer, String>builder()//
                 .withDirectory(directory)//
                 .withId(SegmentId.of(segmentId))//
+                .withDiskIoBufferSize(DISK_IO_BUFFER_SIZE)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//
                 .withMaxNumberOfKeysInIndexPage(2)//
