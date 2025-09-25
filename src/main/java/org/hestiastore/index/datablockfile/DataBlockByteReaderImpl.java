@@ -6,7 +6,6 @@ import org.hestiastore.index.Vldtn;
 public class DataBlockByteReaderImpl implements DataBlockByteReader {
 
     private final DataBlockReader dataBlockReader;
-    // TODO - use here DataBlockSize class
     private final int dataBlockPayloadSize;
 
     private DataBlock currentDataBlock = null;

@@ -246,7 +246,7 @@ class IntegrationIndexSimpleTest {
                 .withMaxNumberOfKeysInSegment(5) //
                 .withMaxNumberOfKeysInSegmentCache(3L) //
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(4L) //
-                .withMaxNumberOfKeysInSegmentIndexPage(2) //
+                .withMaxNumberOfKeysInSegmentChunk(2) //
                 .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
@@ -283,7 +283,7 @@ class IntegrationIndexSimpleTest {
                 .withDiskIoBufferSize(DISK_IO_BUFFER_SIZE)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//
-                .withMaxNumberOfKeysInIndexPage(2)//
+                .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
                 .withMaxNumberOfKeysInSegmentCache(2)//

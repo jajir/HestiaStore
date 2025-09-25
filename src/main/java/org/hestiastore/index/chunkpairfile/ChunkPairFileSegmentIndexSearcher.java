@@ -32,7 +32,7 @@ public class ChunkPairFileSegmentIndexSearcher<K, V>
     @Override
     public V search(final K key, final long startPosition) {
         try (PairIterator<K, V> fileReader = segmentIndexFile
-                .search(startPosition)) {
+                .openIteratorAtPosition(startPosition)) {
             for (int i = 0; i < maxNumberOfKeysInIndexChunk; i++) {
                 final Pair<K, V> pair = fileReader.next();
                 final int cmp = keyTypeComparator.compare(pair.getKey(), key);

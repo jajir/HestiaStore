@@ -23,9 +23,9 @@ public class DataBlockByteReaderTest {
             .of(TestData.BYTES_1024.subBytes(64, 128));
 
     private static final DataBlockHeader dataBlockHeader1 = DataBlockHeader
-            .of(DataBlock.MAGIC_NUMBER, dataBlockPayload1.calculateCrc());
+            .of(DataBlockHeader.MAGIC_NUMBER, dataBlockPayload1.calculateCrc());
     private static final DataBlockHeader dataBlockHeader2 = DataBlockHeader
-            .of(DataBlock.MAGIC_NUMBER, dataBlockPayload2.calculateCrc());
+            .of(DataBlockHeader.MAGIC_NUMBER, dataBlockPayload2.calculateCrc());
 
     private static final DataBlock dataBlock1 = DataBlock.of(
             dataBlockHeader1.toBytes().add(dataBlockPayload1.getBytes()),

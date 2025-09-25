@@ -11,7 +11,7 @@ public final class SegmentBuilder<K, V> {
     private static final int DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE
             * 5;
 
-    private static final int DEFAULT_MAX_NUMBER_OF_KEYS_IN_INDEX_PAGE = 1000;
+    private static final int DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK = 1000;
 
     private static final int DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES = 1024 * 4;
 
@@ -21,7 +21,7 @@ public final class SegmentBuilder<K, V> {
     private TypeDescriptor<V> valueTypeDescriptor;
     private long maxNumberOfKeysInSegmentCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
     private long maxNumberOfKeysInSegmentCacheDuringFlushing = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING;
-    private int maxNumberOfKeysInIndexPage = DEFAULT_MAX_NUMBER_OF_KEYS_IN_INDEX_PAGE;
+    private int maxNumberOfKeysInSegmentChunk = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK;
     private Integer bloomFilterNumberOfHashFunctions;
     private Integer bloomFilterIndexSizeInBytes;
     private Double bloomFilterProbabilityOfFalsePositive = null;
@@ -91,10 +91,10 @@ public final class SegmentBuilder<K, V> {
         return this;
     }
 
-    public SegmentBuilder<K, V> withMaxNumberOfKeysInIndexPage(
-            final int maxNumberOfKeysInIndexPage) {
-        this.maxNumberOfKeysInIndexPage = Vldtn.requireNonNull(
-                maxNumberOfKeysInIndexPage, "maxNumberOfKeysInIndexPage");
+    public SegmentBuilder<K, V> withMaxNumberOfKeysInSegmentChunk(
+            final int maxNumberOfKeysInSegmentChunk) {
+        this.maxNumberOfKeysInSegmentChunk = Vldtn.requireNonNull(
+                maxNumberOfKeysInSegmentChunk, "maxNumberOfKeysInSegmentChunk");
         return this;
     }
 
@@ -168,7 +168,7 @@ public final class SegmentBuilder<K, V> {
         if (segmentConf == null) {
             segmentConf = new SegmentConf(maxNumberOfKeysInSegmentCache,
                     maxNumberOfKeysInSegmentCacheDuringFlushing,
-                    maxNumberOfKeysInIndexPage,
+                    maxNumberOfKeysInSegmentChunk,
                     bloomFilterNumberOfHashFunctions,
                     bloomFilterIndexSizeInBytes,
                     bloomFilterProbabilityOfFalsePositive, diskIoBufferSize);

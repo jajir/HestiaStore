@@ -7,12 +7,13 @@ import org.hestiastore.index.chunkstore.ChunkStoreFile;
 import org.hestiastore.index.datablockfile.CellPosition;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.sorteddatafile.SortedDataFileSearcher;
+import org.hestiastore.index.sorteddatafile.SortedDataFileIteratorProvider;
 
 /**
  * Object providing search functionality for a chunk store.
  */
-public class ChunkStoreSearcher<K, V> implements SortedDataFileSearcher<K, V> {
+public class ChunkStoreSearcher<K, V>
+        implements SortedDataFileIteratorProvider<K, V> {
 
     private final ChunkStoreFile chunkStoreFile;
     private final DataBlockSize dataBlockSize;
@@ -34,7 +35,7 @@ public class ChunkStoreSearcher<K, V> implements SortedDataFileSearcher<K, V> {
     }
 
     @Override
-    public PairIterator<K, V> search(final long position) {
+    public PairIterator<K, V> openIteratorAtPosition(final long position) {
         return new ChunkPairFileIterator<>(
                 chunkStoreFile.openReader(
                         CellPosition.of(dataBlockSize, (int) position)),
@@ -43,7 +44,7 @@ public class ChunkStoreSearcher<K, V> implements SortedDataFileSearcher<K, V> {
     }
 
     @Override
-    public PairIteratorWithCurrent<K, V> search() {
+    public PairIteratorWithCurrent<K, V> openIterator() {
         return new ChunkPairFileIterator<>(
                 chunkStoreFile.openReader(CellPosition.of(dataBlockSize, 0)),
                 chunk -> new SingleChunkPairIterator<>(chunk, keyTypeDescriptor,

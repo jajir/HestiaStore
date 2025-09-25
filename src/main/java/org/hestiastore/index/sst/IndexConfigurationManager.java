@@ -74,9 +74,9 @@ public class IndexConfigurationManager<K, V> {
             builder.withMaxNumberOfSegmentsInCache(
                     defaults.getMaxNumberOfSegmentsInCache());
         }
-        if (conf.getMaxNumberOfKeysInSegmentIndexPage() == null) {
-            builder.withMaxNumberOfKeysInSegmentIndexPage(
-                    defaults.getMaxNumberOfKeysInSegmentIndexPage());
+        if (conf.getMaxNumberOfKeysInSegmentChunk() == null) {
+            builder.withMaxNumberOfKeysInSegmentChunk(
+                    defaults.getMaxNumberOfKeysInSegmentChunk());
         }
         // bloom filter
         if (conf.getBloomFilterIndexSizeInBytes() == null) {
@@ -264,14 +264,14 @@ public class IndexConfigurationManager<K, V> {
                 storedConf.getMaxNumberOfKeysInSegment(), //
                 indexConf.getMaxNumberOfKeysInSegment());
 
-        validateThatWasntChanged(indexConf
-                .getMaxNumberOfKeysInSegmentIndexPage() != null
-                && indexConf.getMaxNumberOfKeysInSegmentIndexPage() > 0
-                && !indexConf.getMaxNumberOfKeysInSegmentIndexPage().equals(
-                        storedConf.getMaxNumberOfKeysInSegmentIndexPage()), //
-                "MaxNumberOfKeysInSegmentIndexPage", //
-                storedConf.getMaxNumberOfKeysInSegmentIndexPage(), //
-                indexConf.getMaxNumberOfKeysInSegmentIndexPage());
+        validateThatWasntChanged(
+                indexConf.getMaxNumberOfKeysInSegmentChunk() != null
+                        && indexConf.getMaxNumberOfKeysInSegmentChunk() > 0
+                        && !indexConf.getMaxNumberOfKeysInSegmentChunk().equals(
+                                storedConf.getMaxNumberOfKeysInSegmentChunk()), //
+                "MaxNumberOfKeysInSegmentChunk", //
+                storedConf.getMaxNumberOfKeysInSegmentChunk(), //
+                indexConf.getMaxNumberOfKeysInSegmentChunk());
 
         validateThatWasntChanged(
                 indexConf.getBloomFilterIndexSizeInBytes() != null
@@ -409,8 +409,8 @@ public class IndexConfigurationManager<K, V> {
                         conf.getMaxNumberOfKeysInSegmentCache())//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(
                         conf.getMaxNumberOfKeysInSegmentCacheDuringFlushing())//
-                .withMaxNumberOfKeysInSegmentIndexPage(
-                        conf.getMaxNumberOfKeysInSegmentIndexPage())//
+                .withMaxNumberOfKeysInSegmentChunk(
+                        conf.getMaxNumberOfKeysInSegmentChunk())//
 
                 // Segment bloom filter properties
                 .withBloomFilterNumberOfHashFunctions(

@@ -23,9 +23,6 @@ public class CellStoreWriterImplTest {
             .of(TestData.DATA_BLOCK_SIZE, 0);
     private static final Bytes BYTES_64 = TestData.BYTES_1024.subBytes(0, 64);
     private static final Bytes BYTES_16 = TestData.BYTES_1024.subBytes(0, 16);
-    private static final Bytes BYTES_18 = TestData.BYTES_1024.subBytes(0, 18);
-    private static final Bytes BYTES_80 = TestData.BYTES_1024.subBytes(0, 80);
-    private static final Bytes BYTES_48 = TestData.BYTES_1024.subBytes(0, 48);
 
     @Mock
     private CellStoreWriterCursor cursor;

@@ -17,7 +17,7 @@ public class SegmentIndexSearcherDefaultSupplier<K, V>
     @Override
     public SegmentIndexSearcher<K, V> get() {
         return new SegmentIndexSearcherDefault<>(segmentFiles.getIndexFile(),
-                segmentConf.getMaxNumberOfKeysInIndexPage(),
+                segmentConf.getMaxNumberOfKeysInChunk(),
                 segmentFiles.getKeyTypeDescriptor().getComparator());
     }
 

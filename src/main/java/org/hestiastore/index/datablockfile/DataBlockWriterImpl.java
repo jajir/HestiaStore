@@ -36,13 +36,14 @@ public class DataBlockWriterImpl implements DataBlockWriter {
 
     private byte[] makeBlockData(final DataBlockPayload dataBlockPayload) {
         final byte[] blockData = new byte[blockSize.getDataBlockSize()];
-        final DataBlockHeader header = DataBlockHeader
-                .of(DataBlock.MAGIC_NUMBER, dataBlockPayload.calculateCrc());
+        final DataBlockHeader header = DataBlockHeader.of(
+                DataBlockHeader.MAGIC_NUMBER, dataBlockPayload.calculateCrc());
         System.arraycopy(header.toBytes().getData(), 0, blockData, 0,
-                DataBlock.HEADER_SIZE);
+                DataBlockHeader.HEADER_SIZE);
         // Copy the payload data after the header
         System.arraycopy(dataBlockPayload.getBytes().getData(), 0, blockData,
-                DataBlock.HEADER_SIZE, dataBlockPayload.getBytes().length());
+                DataBlockHeader.HEADER_SIZE,
+                dataBlockPayload.getBytes().length());
         return blockData;
     }
 

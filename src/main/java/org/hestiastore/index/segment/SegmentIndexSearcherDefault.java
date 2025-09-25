@@ -41,7 +41,7 @@ public class SegmentIndexSearcherDefault<K, V>
     @Override
     public V search(final K key, long startPosition) {
         try (PairIterator<K, V> iterator = chunkPairFile
-                .search(startPosition)) {
+                .openIteratorAtPosition(startPosition)) {
             for (int i = 0; iterator.hasNext()
                     && i < maxNumberOfKeysInIndexPage; i++) {
                 final Pair<K, V> pair = iterator.next();

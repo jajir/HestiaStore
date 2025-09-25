@@ -16,16 +16,6 @@ import org.hestiastore.index.Vldtn;
  * 
  */
 public final class Chunk {
-
-    // TODO move it to header
-    static final int HEADER_SIZE = 32;
-
-    /**
-     * "theodora" in ASCII
-     */
-    // TODO move it to header
-    public static final long MAGIC_NUMBER = 0x7468656F646F7261L;
-
     /**
      * Uncompressed chunk format version 1
      */
@@ -52,14 +42,14 @@ public final class Chunk {
     private Chunk(final Bytes bytes) {
         Vldtn.requireNonNull(bytes, "bytes");
         final ChunkHeader header = ChunkHeader
-                .of(bytes.subBytes(0, HEADER_SIZE));
+                .of(bytes.subBytes(0, ChunkHeader.HEADER_SIZE));
         final int requiredLength = header.getPayloadLength();
-        if (bytes.length() != requiredLength + HEADER_SIZE) {
+        if (bytes.length() != requiredLength + ChunkHeader.HEADER_SIZE) {
             throw new IllegalArgumentException(String.format(
                     "Chunk bytes length '%s' is not equal to required length '%s'",
                     bytes.length(), requiredLength));
         }
-        if (header.getMagicNumber() != MAGIC_NUMBER) {
+        if (header.getMagicNumber() != ChunkHeader.MAGIC_NUMBER) {
             throw new IllegalArgumentException(
                     "Invalid magic number in chunk header");
         }
@@ -71,16 +61,17 @@ public final class Chunk {
     }
 
     public ChunkPayload getPayload() {
-        return new ChunkPayload(bytes.subBytes(HEADER_SIZE, bytes.length()));
+        return new ChunkPayload(
+                bytes.subBytes(ChunkHeader.HEADER_SIZE, bytes.length()));
     }
 
     public ChunkHeader getHeader() {
-        return ChunkHeader.of(bytes.subBytes(0, HEADER_SIZE));
+        return ChunkHeader.of(bytes.subBytes(0, ChunkHeader.HEADER_SIZE));
     }
 
     void validate() {
         final ChunkHeader header = getHeader();
-        if (header.getMagicNumber() != MAGIC_NUMBER) {
+        if (header.getMagicNumber() != ChunkHeader.MAGIC_NUMBER) {
             throw new IllegalArgumentException(
                     "Invalid magic number in chunk header");
         }

@@ -60,7 +60,7 @@ class IntegrationSegmentWriteConsistencyTest {
                 .withId(id)//
                 .withKeyTypeDescriptor(TDI)//
                 .withValueTypeDescriptor(TDS)//
-                .withMaxNumberOfKeysInIndexPage(2)//
+                .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withMaxNumberOfKeysInSegmentCache(3)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .build();

@@ -48,13 +48,4 @@ public class DataBlockFile {
         return new DataBlockWriterTx(fileName, directory, blockSize);
     }
 
-    // TODO Is it necessary? Better expose object.
-    public int getBlockSize() {
-        return blockSize.getDataBlockSize();
-    }
-
-    public int getDataBlockPayloadSize() {
-        return blockSize.getPayloadSize();
-    }
-
 }

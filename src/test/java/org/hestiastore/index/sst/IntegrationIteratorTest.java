@@ -37,7 +37,7 @@ class IntegrationIteratorTest extends AbstractIndexTest {
                 .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(100L) //
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(200L)//
-                .withMaxNumberOfKeysInSegmentIndexPage(1000) //
+                .withMaxNumberOfKeysInSegmentChunk(1000) //
                 .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //

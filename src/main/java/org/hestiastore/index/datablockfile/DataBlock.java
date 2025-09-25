@@ -8,15 +8,6 @@ import org.hestiastore.index.Vldtn;
  */
 public final class DataBlock {
 
-    // TODO move it to header
-    public static final int HEADER_SIZE = 16;
-
-    // TODO move it to header
-    /**
-     * "nicholas" in ASCII
-     */
-    public static final long MAGIC_NUMBER = 0x6E6963686F6C6173L;
-
     private final Bytes bytes;
 
     private final DataBlockPosition position;
@@ -30,7 +21,7 @@ public final class DataBlock {
         this.bytes = Vldtn.requireNonNull(bytes, "bytes");
         this.position = Vldtn.requireNonNull(position, "position");
         final DataBlockHeader header = getHeader();
-        if (header.getMagicNumber() != MAGIC_NUMBER) {
+        if (header.getMagicNumber() != DataBlockHeader.MAGIC_NUMBER) {
             throw new IllegalArgumentException(
                     "Invalid magic number in data block header");
         }
@@ -42,11 +33,12 @@ public final class DataBlock {
 
     public DataBlockPayload getPayload() {
         return new DataBlockPayload(
-                bytes.subBytes(HEADER_SIZE, bytes.length()));
+                bytes.subBytes(DataBlockHeader.HEADER_SIZE, bytes.length()));
     }
 
     public DataBlockHeader getHeader() {
-        return DataBlockHeader.of(bytes.subBytes(0, HEADER_SIZE));
+        return DataBlockHeader
+                .of(bytes.subBytes(0, DataBlockHeader.HEADER_SIZE));
     }
 
     public Bytes getBytes() {
@@ -59,7 +51,7 @@ public final class DataBlock {
 
     void validate() {
         final DataBlockHeader header = getHeader();
-        if (header.getMagicNumber() != MAGIC_NUMBER) {
+        if (header.getMagicNumber() != DataBlockHeader.MAGIC_NUMBER) {
             throw new IllegalArgumentException(
                     "Invalid magic number in data block header");
         }

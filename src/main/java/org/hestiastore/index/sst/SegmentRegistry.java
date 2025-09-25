@@ -57,7 +57,7 @@ public class SegmentRegistry<K, V> {
         SegmentConf segmentConf = new SegmentConf(
                 conf.getMaxNumberOfKeysInSegmentCache(),
                 conf.getMaxNumberOfKeysInSegmentCacheDuringFlushing(),
-                conf.getMaxNumberOfKeysInSegmentIndexPage(),
+                conf.getMaxNumberOfKeysInSegmentChunk(),
                 conf.getBloomFilterNumberOfHashFunctions(),
                 conf.getBloomFilterIndexSizeInBytes(),
                 conf.getBloomFilterProbabilityOfFalsePositive(),
@@ -87,8 +87,8 @@ public class SegmentRegistry<K, V> {
                 .withSegmentPropertiesManager(segmentPropertiesManager)//
                 .withMaxNumberOfKeysInSegmentCache(
                         conf.getMaxNumberOfKeysInSegmentCache())//
-                .withMaxNumberOfKeysInIndexPage(
-                        conf.getMaxNumberOfKeysInSegmentIndexPage())//
+                .withMaxNumberOfKeysInSegmentChunk(
+                        conf.getMaxNumberOfKeysInSegmentChunk())//
                 .withValueTypeDescriptor(valueTypeDescriptor)//
                 .withBloomFilterNumberOfHashFunctions(
                         conf.getBloomFilterNumberOfHashFunctions())//

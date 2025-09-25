@@ -12,7 +12,7 @@ public interface IndexConfigurationDefault {
     int MAX_NUMBER_OF_KEYS_IN_SEGMENT = 10_000_000;
     long MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = 10_000;
     long MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING = 20_000;
-    int MAX_NUMBER_OF_KEYS_IN_SEGMENT_INDEX_PAGE = 1_000;
+    int MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK = 1_000;
     int MAX_NUMBER_OF_SEGMENTS_IN_CACHE = 10;
 
     int BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS = 3;
@@ -29,8 +29,8 @@ public interface IndexConfigurationDefault {
         return getMaxNumberOfKeysInSegmentCache() * 2L;
     }
 
-    default int getMaxNumberOfKeysInSegmentIndexPage() {
-        return MAX_NUMBER_OF_KEYS_IN_SEGMENT_INDEX_PAGE;
+    default int getMaxNumberOfKeysInSegmentChunk() {
+        return MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK;
     }
 
     default int getMaxNumberOfKeysInCache() {

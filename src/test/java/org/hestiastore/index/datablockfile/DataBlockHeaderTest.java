@@ -13,9 +13,9 @@ public class DataBlockHeaderTest {
 
     @Test
     void test_storeAndRetrieveHeader() {
-        DataBlockHeader header = DataBlockHeader.of(DataBlock.MAGIC_NUMBER,
-                CRC);
-        assertEquals(DataBlock.MAGIC_NUMBER, header.getMagicNumber());
+        DataBlockHeader header = DataBlockHeader
+                .of(DataBlockHeader.MAGIC_NUMBER, CRC);
+        assertEquals(DataBlockHeader.MAGIC_NUMBER, header.getMagicNumber());
         assertEquals(CRC, header.getCrc());
 
         Bytes headerBytes = header.toBytes();
@@ -26,7 +26,7 @@ public class DataBlockHeaderTest {
 
         DataBlockHeader header2 = DataBlockHeader.of(headerBytes);
 
-        assertEquals(DataBlock.MAGIC_NUMBER, header2.getMagicNumber());
+        assertEquals(DataBlockHeader.MAGIC_NUMBER, header2.getMagicNumber());
         assertEquals(CRC, header2.getCrc());
     }
 

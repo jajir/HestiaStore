@@ -4,7 +4,7 @@ public class SegmentConf {
 
     private final long maxNumberOfKeysInSegmentDeltaCache;
     private final long maxNumberOfKeysInDeltaCacheDuringWriting;
-    private final int maxNumberOfKeysInIndexPage;
+    private final int maxNumberOfKeysInChunk;
     private final Integer bloomFilterNumberOfHashFunctions;
     private final Integer bloomFilterIndexSizeInBytes;
     private final Double bloomFilterProbabilityOfFalsePositive;
@@ -12,14 +12,14 @@ public class SegmentConf {
 
     public SegmentConf(final long maxNumeberOfKeysInSegmentDeltaCache,
             final long maxNumberOfKeysInSegmentCacheDuringFlushing,
-            final int maxNumberOfKeysInIndexPage,
+            final int maxNumberOfKeysInChunk,
             final Integer bloomFilterNumberOfHashFunctions,
             final Integer bloomFilterIndexSizeInBytes,
             final Double bloomFilterProbabilityOfFalsePositive,
             final Integer diskIoBufferSize) {
         this.maxNumberOfKeysInSegmentDeltaCache = maxNumeberOfKeysInSegmentDeltaCache;
         this.maxNumberOfKeysInDeltaCacheDuringWriting = maxNumberOfKeysInSegmentCacheDuringFlushing;
-        this.maxNumberOfKeysInIndexPage = maxNumberOfKeysInIndexPage;
+        this.maxNumberOfKeysInChunk = maxNumberOfKeysInChunk;
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
         this.bloomFilterProbabilityOfFalsePositive = bloomFilterProbabilityOfFalsePositive;
@@ -29,7 +29,7 @@ public class SegmentConf {
     public SegmentConf(final SegmentConf segmentConf) {
         this.maxNumberOfKeysInSegmentDeltaCache = segmentConf.maxNumberOfKeysInSegmentDeltaCache;
         this.maxNumberOfKeysInDeltaCacheDuringWriting = segmentConf.maxNumberOfKeysInDeltaCacheDuringWriting;
-        this.maxNumberOfKeysInIndexPage = segmentConf.maxNumberOfKeysInIndexPage;
+        this.maxNumberOfKeysInChunk = segmentConf.maxNumberOfKeysInChunk;
         this.bloomFilterNumberOfHashFunctions = segmentConf.bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = segmentConf.bloomFilterIndexSizeInBytes;
         this.bloomFilterProbabilityOfFalsePositive = segmentConf.bloomFilterProbabilityOfFalsePositive;
@@ -46,9 +46,8 @@ public class SegmentConf {
         return maxNumberOfKeysInSegmentDeltaCache;
     }
 
-    // TODO rename it to MaxNumberOfKeysInIndexChunk
-    Integer getMaxNumberOfKeysInIndexPage() {
-        return maxNumberOfKeysInIndexPage;
+    Integer getMaxNumberOfKeysInChunk() {
+        return maxNumberOfKeysInChunk;
     }
 
     Integer getBloomFilterNumberOfHashFunctions() {

@@ -46,9 +46,8 @@ public class SingleChunkPairIteratorTest {
         }
 
         final Bytes fileBytes = directory.getFileBytes(FILE_NAME);
-        return Chunk.of(
-                ChunkHeader.of(Chunk.MAGIC_NUMBER, 1, fileBytes.length(), 321L),
-                fileBytes);
+        return Chunk.of(ChunkHeader.of(ChunkHeader.MAGIC_NUMBER, 1,
+                fileBytes.length(), 321L), fileBytes);
     }
 
     @Test

@@ -66,7 +66,7 @@ public class IntegerationNumberOfKeysIT {
                 .withValueTypeDescriptor(TYPE_DESCRIPTOR_LONG)//
                 .withMaxNumberOfKeysInSegmentCache(3)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(100)//
-                .withMaxNumberOfKeysInIndexPage(100)//
+                .withMaxNumberOfKeysInSegmentChunk(100)//
                 .withBloomFilterIndexSizeInBytes(0)// disable bloom filter
                 .withMaxNumberOfKeysInSegmentCache(1000)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(100_000)//

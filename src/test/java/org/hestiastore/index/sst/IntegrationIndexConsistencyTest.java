@@ -89,7 +89,7 @@ class IntegrationIndexConsistencyTest extends AbstractIndexTest {
                 .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(10L) //
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(12L)//
-                .withMaxNumberOfKeysInSegmentIndexPage(2) //
+                .withMaxNumberOfKeysInSegmentChunk(2) //
                 .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(0) //
                 .withBloomFilterNumberOfHashFunctions(4) //
