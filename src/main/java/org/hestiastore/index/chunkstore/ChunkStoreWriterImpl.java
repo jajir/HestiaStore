@@ -22,8 +22,8 @@ public class ChunkStoreWriterImpl implements ChunkStoreWriter {
     public CellPosition write(final ChunkPayload chunkPayload,
             final int version) {
         Vldtn.requireNonNull(chunkPayload, "chunkPayload");
-        final ChunkHeader header = ChunkHeader.of(Chunk.MAGIC_NUMBER, version,
-                chunkPayload.length(), chunkPayload.calculateCrc());
+        final ChunkHeader header = ChunkHeader.of(ChunkHeader.MAGIC_NUMBER,
+                version, chunkPayload.length(), chunkPayload.calculateCrc());
         final Bytes bufferToWrite = Bytes
                 .of(header.getBytes(), chunkPayload.getBytes())
                 .paddedToNextCell();

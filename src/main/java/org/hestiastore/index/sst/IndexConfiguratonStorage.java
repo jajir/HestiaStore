@@ -17,7 +17,7 @@ public class IndexConfiguratonStorage<K, V> {
 
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = "maxNumberOfKeysInSegmentCache";
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING = "maxNumberOfKeysInSegmentCacheDuringFlushing";
-    private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_INDEX_PAGE = "maxNumberOfKeysInSegmentIndexPage";
+    private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK = "maxNumberOfKeysInSegmentChunk";
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_CACHE = "maxNumberOfKeysInCache";
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT = "maxNumberOfKeysInSegment";
     private static final String PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE = "maxNumberOfSegmentsInCache";
@@ -61,8 +61,8 @@ public class IndexConfiguratonStorage<K, V> {
                         props.getLong(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE))//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(props.getLong(
                         PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING))//
-                .withMaxNumberOfKeysInSegmentIndexPage(props
-                        .getInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_INDEX_PAGE))//
+                .withMaxNumberOfKeysInSegmentChunk(
+                        props.getInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK))//
 
                 // Segment bloom filter properties
                 .withBloomFilterNumberOfHashFunctions(props
@@ -116,8 +116,8 @@ public class IndexConfiguratonStorage<K, V> {
         props.setLong(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING,
                 indexConfiguration
                         .getMaxNumberOfKeysInSegmentCacheDuringFlushing());
-        props.setInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_INDEX_PAGE,
-                indexConfiguration.getMaxNumberOfKeysInSegmentIndexPage());
+        props.setInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK,
+                indexConfiguration.getMaxNumberOfKeysInSegmentChunk());
 
         // Segment bloom filter properties
         props.setInt(PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,

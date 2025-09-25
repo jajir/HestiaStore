@@ -129,7 +129,7 @@ class IntegrationIndexTest extends AbstractIndexTest {
                 .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(3L) //
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(4L) //
-                .withMaxNumberOfKeysInSegmentIndexPage(2) //
+                .withMaxNumberOfKeysInSegmentChunk(2) //
                 .withMaxNumberOfKeysInCache(3) //
                 .withMaxNumberOfSegmentsInCache(3)
                 .withBloomFilterIndexSizeInBytes(1000) //

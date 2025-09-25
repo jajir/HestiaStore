@@ -36,7 +36,7 @@ class IndexConfigurationManagerTest {
             .withThreadSafe(false)//
             .withMaxNumberOfKeysInSegmentCache(11L)//
             .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22L) //
-            .withMaxNumberOfKeysInSegmentIndexPage(33)//
+            .withMaxNumberOfKeysInSegmentChunk(33)//
             .withMaxNumberOfKeysInSegment(44)//
             .withMaxNumberOfKeysInCache(55)//
             .withMaxNumberOfSegmentsInCache(66)//
@@ -354,7 +354,7 @@ class IndexConfigurationManagerTest {
                 .withLogEnabled(true)//
                 .withMaxNumberOfKeysInSegmentCache(11L)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22L) //
-                .withMaxNumberOfKeysInSegmentIndexPage(33)//
+                .withMaxNumberOfKeysInSegmentChunk(33)//
                 .withMaxNumberOfKeysInSegment(44)//
                 .withMaxNumberOfSegmentsInCache(66)//
                 .withMaxNumberOfKeysInCache(1000)
@@ -387,7 +387,7 @@ class IndexConfigurationManagerTest {
                 .withLogEnabled(true)//
                 .withMaxNumberOfKeysInSegmentCache(11L)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22L) //
-                .withMaxNumberOfKeysInSegmentIndexPage(33)//
+                .withMaxNumberOfKeysInSegmentChunk(33)//
                 .withMaxNumberOfKeysInSegment(44)//
                 .withMaxNumberOfSegmentsInCache(66)//
                 .withMaxNumberOfKeysInCache(1000)//
@@ -424,7 +424,7 @@ class IndexConfigurationManagerTest {
                 .withName("test_index")//
                 .withMaxNumberOfKeysInSegmentCache(11L)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22L) //
-                .withMaxNumberOfKeysInSegmentIndexPage(33)//
+                .withMaxNumberOfKeysInSegmentChunk(33)//
                 .withMaxNumberOfKeysInSegment(44)//
                 .withMaxNumberOfKeysInCache(55)//
                 .withMaxNumberOfSegmentsInCache(66)//
@@ -447,7 +447,7 @@ class IndexConfigurationManagerTest {
         assertEquals("test_index", ret.getIndexName());
         assertEquals(11L, ret.getMaxNumberOfKeysInSegmentCache());
         assertEquals(22L, ret.getMaxNumberOfKeysInSegmentCacheDuringFlushing());
-        assertEquals(33, ret.getMaxNumberOfKeysInSegmentIndexPage());
+        assertEquals(33, ret.getMaxNumberOfKeysInSegmentChunk());
         assertEquals(44, ret.getMaxNumberOfKeysInSegment());
         assertEquals(66, ret.getMaxNumberOfSegmentsInCache());
         assertEquals(1024, ret.getDiskIoBufferSize());
@@ -668,10 +668,10 @@ class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_mergeWithStored_maxNumberOfKeysInSegmentIndexPage() {
+    void test_mergeWithStored_maxNumberOfKeysInSegmentChunk() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withMaxNumberOfKeysInSegmentIndexPage(4620)//
+                .withMaxNumberOfKeysInSegmentChunk(4620)//
                 .build();
 
         when(storage.load()).thenReturn(CONFIG);
@@ -679,7 +679,7 @@ class IndexConfigurationManagerTest {
                 () -> manager.mergeWithStored(config));
 
         assertEquals(
-                "Value of 'MaxNumberOfKeysInSegmentIndexPage' is already "
+                "Value of 'MaxNumberOfKeysInSegmentChunk' is already "
                         + "set to '33' and can't be changed to '4620'",
                 e.getMessage());
     }

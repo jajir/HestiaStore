@@ -13,7 +13,7 @@ public class ChunkTest {
 
     @Test
     void test_of_bytes() {
-        final ChunkHeader chunkHeader = ChunkHeader.of(Chunk.MAGIC_NUMBER,
+        final ChunkHeader chunkHeader = ChunkHeader.of(ChunkHeader.MAGIC_NUMBER,
                 VERSION, 9, TestData.CHUNK_PAYLOAD_9.calculateCrc());
         final Bytes chunkBytes = chunkHeader.getBytes().add(TestData.BYTES_9);
 
@@ -21,7 +21,8 @@ public class ChunkTest {
 
         assertNotNull(chunk);
         assertEquals(VERSION, chunk.getHeader().getVersion());
-        assertEquals(Chunk.MAGIC_NUMBER, chunk.getHeader().getMagicNumber());
+        assertEquals(ChunkHeader.MAGIC_NUMBER,
+                chunk.getHeader().getMagicNumber());
     }
 
 }

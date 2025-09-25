@@ -386,7 +386,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withDirectory(directory)//
                 .withId(id)//
                 .withMaxNumberOfKeysInSegmentCache(13)//
-                .withMaxNumberOfKeysInIndexPage(3)//
+                .withMaxNumberOfKeysInSegmentChunk(3)//
                 .withKeyTypeDescriptor(tdi)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withValueTypeDescriptor(tds)//
@@ -451,7 +451,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withSegmentPropertiesManager(segmentPropertiesManager)//
                 .withSegmentDataProvider(dataProvider)//
                 .withMaxNumberOfKeysInSegmentCache(13)//
-                .withMaxNumberOfKeysInIndexPage(3)//
+                .withMaxNumberOfKeysInSegmentChunk(3)//
                 .withKeyTypeDescriptor(tdi)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withValueTypeDescriptor(tds)//
@@ -574,7 +574,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withId(id)//
                 .withKeyTypeDescriptor(tdi)//
                 .withBloomFilterIndexSizeInBytes(0)//
-                .withMaxNumberOfKeysInIndexPage(3)//
+                .withMaxNumberOfKeysInSegmentChunk(3)//
                 .withMaxNumberOfKeysInSegmentCache(5)//
                 .withDiskIoBufferSize(3 * 1024)//
                 .withValueTypeDescriptor(tds).build();
@@ -617,7 +617,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                         .withKeyTypeDescriptor(tdi)//
                         .withValueTypeDescriptor(tds)//
                         .withMaxNumberOfKeysInSegmentCache(10) //
-                        .withMaxNumberOfKeysInIndexPage(10)//
+                        .withMaxNumberOfKeysInSegmentChunk(10)//
                         .withBloomFilterIndexSizeInBytes(0)//
                         .withDiskIoBufferSize(1 * 1024) //
                         .build(), //
@@ -629,7 +629,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//
                 .withMaxNumberOfKeysInSegmentCache(3)//
-                .withMaxNumberOfKeysInIndexPage(1)//
+                .withMaxNumberOfKeysInSegmentChunk(1)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withDiskIoBufferSize(2 * 1024)//
                 .build(), //
@@ -641,7 +641,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//
                 .withMaxNumberOfKeysInSegmentCache(5)//
-                .withMaxNumberOfKeysInIndexPage(2)//
+                .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withDiskIoBufferSize(4 * 1024)//
                 .build(), //

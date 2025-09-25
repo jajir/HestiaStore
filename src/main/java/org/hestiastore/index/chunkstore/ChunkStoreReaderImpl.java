@@ -24,7 +24,7 @@ public class ChunkStoreReaderImpl implements ChunkStoreReader {
     @Override
     public Chunk read() {
         final Bytes headerBytes = dataBlockByteReader
-                .readExactly(Chunk.HEADER_SIZE);
+                .readExactly(ChunkHeader.HEADER_SIZE);
         final Optional<ChunkHeader> optChunkHeader = ChunkHeader
                 .optionalOf(headerBytes);
         if (optChunkHeader.isEmpty()) {

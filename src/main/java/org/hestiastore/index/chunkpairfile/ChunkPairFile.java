@@ -8,12 +8,13 @@ import org.hestiastore.index.datablockfile.CellPosition;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segment.SegmentIndexSearcher;
-import org.hestiastore.index.sorteddatafile.SortedDataFileSearcher;
+import org.hestiastore.index.sorteddatafile.SortedDataFileIteratorProvider;
 
 /**
  * Class allows read and write pairs from and to chunks.
  */
-public class ChunkPairFile<K, V> implements SortedDataFileSearcher<K, V> {
+public class ChunkPairFile<K, V>
+        implements SortedDataFileIteratorProvider<K, V> {
 
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
@@ -39,13 +40,8 @@ public class ChunkPairFile<K, V> implements SortedDataFileSearcher<K, V> {
                 keyTypeDescriptor, valueTypeDescriptor);
     }
 
-    public PairIteratorWithCurrent<K, V> openIterator() {
-        return search();
-    }
-
-    // TODO rename it to openIteratorAtPosition
     @Override
-    public PairIterator<K, V> search(final long position) {
+    public PairIterator<K, V> openIteratorAtPosition(final long position) {
         return new ChunkPairFileIterator<>(
                 chunkStoreFile.openReader(
                         CellPosition.of(dataBlockSize, (int) position)),
@@ -54,7 +50,7 @@ public class ChunkPairFile<K, V> implements SortedDataFileSearcher<K, V> {
     }
 
     @Override
-    public PairIteratorWithCurrent<K, V> search() {
+    public PairIteratorWithCurrent<K, V> openIterator() {
         return new ChunkPairFileIterator<>(
                 chunkStoreFile.openReader(CellPosition.of(dataBlockSize, 0)),
                 chunk -> new SingleChunkPairIterator<>(chunk, keyTypeDescriptor,

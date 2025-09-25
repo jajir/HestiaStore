@@ -69,15 +69,14 @@ class WriteTransactionTest {
 
                 });
 
-        final Exception e = assertThrows(IndexException.class,
+        final Exception e = assertThrows(RuntimeException.class,
                 () -> testTransaction.execute(writer -> {
                     writer.put(PAIR1);
                     writer.put(PAIR2);
                     throw new RuntimeException("My test exception");
                 }));
 
-        assertEquals("Error during writing pairs: My test exception",
-                e.getMessage());
+        assertEquals("My test exception", e.getMessage());
         verify(pairWriter).put(PAIR1);
         verify(pairWriter).put(PAIR2);
         verify(pairWriter, times(1)).close();
@@ -108,8 +107,7 @@ class WriteTransactionTest {
                     writer.put(PAIR2);
                 }));
 
-        assertEquals("Error during writing pairs: Closing exception",
-                e.getMessage());
+        assertEquals("Closing exception", e.getMessage());
         verify(pairWriter).put(PAIR1);
         verify(pairWriter).put(PAIR2);
         verify(pairWriter, times(1)).close();
@@ -139,8 +137,7 @@ class WriteTransactionTest {
                     writer.put(PAIR2);
                 }));
 
-        assertEquals("Error during writing pairs: open writer exception",
-                e.getMessage());
+        assertEquals("open writer exception", e.getMessage());
         verify(pairWriter, never()).put(PAIR1);
         verify(pairWriter, never()).put(PAIR2);
         verify(pairWriter, never()).close();

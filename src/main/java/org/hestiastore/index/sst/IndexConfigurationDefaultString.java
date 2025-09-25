@@ -15,7 +15,7 @@ public class IndexConfigurationDefaultString
     }
 
     @Override
-    public int getMaxNumberOfKeysInSegmentIndexPage() {
+    public int getMaxNumberOfKeysInSegmentChunk() {
         return 10_000;
     }
 

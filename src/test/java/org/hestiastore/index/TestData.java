@@ -275,12 +275,10 @@ public final class TestData {
     public static final List<Pair<Integer, String>> PAIR_LIST_EMPTY = Collections
             .emptyList();
 
-    public static final Chunk CHUNK_15 = Chunk.of(
-            ChunkHeader.of(Chunk.MAGIC_NUMBER, 1, BYTES_15.length(), 321L),
-            BYTES_15);
-    public static final Chunk CHUNK_154 = Chunk.of(
-            ChunkHeader.of(Chunk.MAGIC_NUMBER, 1, BYTES_154.length(), 321L),
-            BYTES_154);
+    public static final Chunk CHUNK_15 = Chunk.of(ChunkHeader.of(
+            ChunkHeader.MAGIC_NUMBER, 1, BYTES_15.length(), 321L), BYTES_15);
+    public static final Chunk CHUNK_154 = Chunk.of(ChunkHeader.of(
+            ChunkHeader.MAGIC_NUMBER, 1, BYTES_154.length(), 321L), BYTES_154);
 
     private TestData() {
         // Prevent instantiation

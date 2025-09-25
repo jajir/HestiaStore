@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.WriteTransaction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,13 +58,13 @@ class SegmentSplitterTest {
     private PairIterator<String, String> segmentIterator;
 
     @Mock
-    private SegmentFullWriterToSstFile<String, String> segmentFullWriter;
+    private PairWriter<String, String> segmentFullWriter;
 
     @Mock
     private WriteTransaction<String, String> segmentFullWriterTx;
 
     @Mock
-    private SegmentFullWriterToSstFile<String, String> lowerSegmentFullWriter;
+    private PairWriter<String, String> lowerSegmentFullWriter;
 
     @Mock
     private WriteTransaction<String, String> lowerSegmentWriteTx;

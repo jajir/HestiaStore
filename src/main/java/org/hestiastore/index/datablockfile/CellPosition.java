@@ -10,7 +10,6 @@ public class CellPosition {
     /**
      * Size of cell in bytes. Cell is smalles addresable unit in chunk store.
      * 
-     * TODO this is not correct place for this constant.
      */
     public static final int CELL_SIZE = 16;
 

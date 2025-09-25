@@ -106,7 +106,7 @@ class IntegrationIndexIteratorTest {
                 .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(3L) //
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(4L)
-                .withMaxNumberOfKeysInSegmentIndexPage(1) //
+                .withMaxNumberOfKeysInSegmentChunk(1) //
                 .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //

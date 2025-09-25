@@ -15,7 +15,7 @@ public class IndexConfiguration<K, V> {
      */
     private final Long maxNumberOfKeysInSegmentCache;
     private final Long maxNumberOfKeysInSegmentCacheDuringFlushing;
-    private final Integer maxNumberOfKeysInSegmentIndexPage;
+    private final Integer maxNumberOfKeysInSegmentChunk;
 
     /*
      * SST index configuration
@@ -50,7 +50,7 @@ public class IndexConfiguration<K, V> {
             final String valueTypeDescriptor, //
             final Long maxNumberOfKeysInSegmentCache, //
             final Long maxNumberOfKeysInSegmentCacheDuringFlushing, //
-            final Integer maxNumberOfKeysInSegmentIndexPage, //
+            final Integer maxNumberOfKeysInSegmentChunk, //
             final Integer maxNumberOfKeysInCache, //
             final Integer maxNumberOfKeysInSegment, //
             final Integer maxNumberOfSegmentsInCache, //
@@ -66,7 +66,7 @@ public class IndexConfiguration<K, V> {
         this.valueTypeDescriptor = valueTypeDescriptor;
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
         this.maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInSegmentCacheDuringFlushing;
-        this.maxNumberOfKeysInSegmentIndexPage = maxNumberOfKeysInSegmentIndexPage;
+        this.maxNumberOfKeysInSegmentChunk = maxNumberOfKeysInSegmentChunk;
         this.indexName = indexName;
         this.maxNumberOfKeysInSCache = maxNumberOfKeysInCache;
         this.maxNumberOfKeysInSegment = maxNumberOfKeysInSegment;
@@ -83,8 +83,8 @@ public class IndexConfiguration<K, V> {
         return maxNumberOfKeysInSegmentCache;
     }
 
-    public Integer getMaxNumberOfKeysInSegmentIndexPage() {
-        return maxNumberOfKeysInSegmentIndexPage;
+    public Integer getMaxNumberOfKeysInSegmentChunk() {
+        return maxNumberOfKeysInSegmentChunk;
     }
 
     public String getIndexName() {

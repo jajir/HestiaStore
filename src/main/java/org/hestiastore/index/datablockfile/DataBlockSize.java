@@ -27,7 +27,7 @@ public class DataBlockSize {
     }
 
     public int getPayloadSize() {
-        return size - DataBlock.HEADER_SIZE;
+        return size - DataBlockHeader.HEADER_SIZE;
     }
 
 }

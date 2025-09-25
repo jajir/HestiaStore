@@ -36,6 +36,16 @@ public class ChunkHeader {
     private static final ConvertorToBytes<Integer> INTEGER_CONVERTOR_TO_BYTES = TYPE_DESCRIPTOR_INTEGER
             .getConvertorToBytes();
 
+    /**
+     * Size of the chunk header in bytes.
+     */
+    static final int HEADER_SIZE = 32;
+
+    /**
+     * "theodora" in ASCII
+     */
+    public static final long MAGIC_NUMBER = 0x7468656F646F7261L;
+
     private final byte[] data;
 
     public static ChunkHeader of(final byte[] data) {
@@ -55,13 +65,13 @@ public class ChunkHeader {
         if (data == null) {
             return Optional.empty();
         }
-        if (data.length != Chunk.HEADER_SIZE) {
+        if (data.length != HEADER_SIZE) {
             return Optional.empty();
         }
         final byte[] buff = new byte[8];
         System.arraycopy(data, 0, buff, 0, 8);
         Long magic = LONG_CONVERTOR_FROM_BYTES.fromBytes(buff);
-        if (magic == null || !magic.equals(Chunk.MAGIC_NUMBER)) {
+        if (magic == null || !magic.equals(MAGIC_NUMBER)) {
             return Optional.empty();
         }
         return Optional.of(new ChunkHeader(data));
@@ -69,7 +79,7 @@ public class ChunkHeader {
 
     public static ChunkHeader of(final long magic, final int version,
             final int payloadLength, final Long crc) {
-        final byte[] data = new byte[Chunk.HEADER_SIZE];
+        final byte[] data = new byte[HEADER_SIZE];
         System.arraycopy(LONG_CONVERTOR_TO_BYTES.toBytes(magic), 0, data, 0, 8);
         System.arraycopy(INTEGER_CONVERTOR_TO_BYTES.toBytes(version), 0, data,
                 8, 4);
@@ -81,15 +91,15 @@ public class ChunkHeader {
 
     private ChunkHeader(final byte[] data) {
         this.data = Vldtn.requireNonNull(data, "data");
-        if (data.length != Chunk.HEADER_SIZE) {
+        if (data.length != HEADER_SIZE) {
             throw new IllegalArgumentException(String.format(
                     "Invalid chunk header size '%d', expected is '%d'",
-                    data.length, Chunk.HEADER_SIZE));
+                    data.length, HEADER_SIZE));
         }
-        if (getMagicNumber() != Chunk.MAGIC_NUMBER) {
+        if (getMagicNumber() != MAGIC_NUMBER) {
             throw new IllegalArgumentException(String.format(
                     "Invalid chunk magic number '%d', expected is '%d'",
-                    getMagicNumber(), Chunk.MAGIC_NUMBER));
+                    getMagicNumber(), MAGIC_NUMBER));
         }
     }
 

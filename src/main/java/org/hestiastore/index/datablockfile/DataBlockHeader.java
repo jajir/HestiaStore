@@ -21,6 +21,17 @@ public class DataBlockHeader {
     private static final ConvertorToBytes<Long> CONVERTOR_TO_BYTES = TYPE_DESCRIPTOR_LONG
             .getConvertorToBytes();
 
+    /**
+     * Size of header in bytes. Header is fixed size of 16 bytes (8 bytes magic
+     * number + 8 bytes CRC).
+     */
+    public static final int HEADER_SIZE = 16;
+
+    /**
+     * "nicholas" in ASCII
+     */
+    public static final long MAGIC_NUMBER = 0x6E6963686F6C6173L;
+
     private long magicNumber;
     private long crc;
 
@@ -58,7 +69,7 @@ public class DataBlockHeader {
     }
 
     public Bytes toBytes() {
-        final byte[] out = new byte[DataBlock.HEADER_SIZE];
+        final byte[] out = new byte[HEADER_SIZE];
         System.arraycopy(CONVERTOR_TO_BYTES.toBytes(magicNumber), 0, out, 0, 8);
         System.arraycopy(CONVERTOR_TO_BYTES.toBytes(crc), 0, out, 8, 8);
         return Bytes.of(out);

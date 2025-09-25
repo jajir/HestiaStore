@@ -21,10 +21,10 @@ public class ChunkStoreReaderImplTest {
     private static final int VERSION = 682;
 
     private static final ChunkHeader CHUNK_HEADER_9 = ChunkHeader.of(
-            Chunk.MAGIC_NUMBER, VERSION, 9,
+            ChunkHeader.MAGIC_NUMBER, VERSION, 9,
             TestData.CHUNK_PAYLOAD_9.calculateCrc());
     private static final ChunkHeader CHUNK_HEADER_15 = ChunkHeader.of(
-            Chunk.MAGIC_NUMBER, VERSION, 15,
+            ChunkHeader.MAGIC_NUMBER, VERSION, 15,
             TestData.CHUNK_PAYLOAD_15.calculateCrc());
 
     @Mock

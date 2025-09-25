@@ -48,7 +48,8 @@ public class DataBlockReaderImplTest {
     @Test
     void test_read() {
         final DataBlockHeader header = DataBlockHeader.of(
-                DataBlock.MAGIC_NUMBER, TestData.PAYLOAD_1008.calculateCrc());
+                DataBlockHeader.MAGIC_NUMBER,
+                TestData.PAYLOAD_1008.calculateCrc());
 
         byte[] bufferBytes = header.toBytes()
                 .add(TestData.PAYLOAD_1008.getBytes()).getData();
@@ -69,8 +70,8 @@ public class DataBlockReaderImplTest {
     void test_read_invalid_crc() {
         byte[] bufferBytes = new byte[1024];
         System.arraycopy(TestData.BYTE_ARRAY_1024, 0, bufferBytes, 0, 1024);
-        DataBlockHeader header = DataBlockHeader.of(DataBlock.MAGIC_NUMBER,
-                2131L);
+        DataBlockHeader header = DataBlockHeader
+                .of(DataBlockHeader.MAGIC_NUMBER, 2131L);
         System.arraycopy(header.toBytes().getData(), 0, bufferBytes, 0, 16);
 
         when(fileReader.read(any(byte[].class))).thenAnswer(invocation -> {

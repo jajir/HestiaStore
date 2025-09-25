@@ -17,13 +17,13 @@ public class ChunkHeaderTest {
 
     @Test
     void test_store_and_load() {
-        final ChunkHeader header1 = ChunkHeader.of(Chunk.MAGIC_NUMBER, VERSION,
-                PAYLOAD_LENGTH, CRC);
+        final ChunkHeader header1 = ChunkHeader.of(ChunkHeader.MAGIC_NUMBER,
+                VERSION, PAYLOAD_LENGTH, CRC);
 
         final byte[] data = header1.getBytes().getData();
         final ChunkHeader header2 = ChunkHeader.of(data);
 
-        assertEquals(Chunk.MAGIC_NUMBER, header2.getMagicNumber());
+        assertEquals(ChunkHeader.MAGIC_NUMBER, header2.getMagicNumber());
         assertEquals(VERSION, header2.getVersion());
         assertEquals(PAYLOAD_LENGTH, header2.getPayloadLength());
         assertEquals(CRC, header2.getCrc());
@@ -31,7 +31,7 @@ public class ChunkHeaderTest {
 
     @Test
     void test_of_invalid_byte_length() {
-        final byte[] data = new byte[Chunk.HEADER_SIZE + 1];
+        final byte[] data = new byte[ChunkHeader.HEADER_SIZE + 1];
 
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> ChunkHeader.of(data));
@@ -42,7 +42,7 @@ public class ChunkHeaderTest {
 
     @Test
     void test_of_invalid_magic_number() {
-        final byte[] data = new byte[Chunk.HEADER_SIZE];
+        final byte[] data = new byte[ChunkHeader.HEADER_SIZE];
 
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> ChunkHeader.of(data));
@@ -61,7 +61,7 @@ public class ChunkHeaderTest {
 
     @Test
     void test_optionalOf_invalid_data_size() {
-        final byte[] data = new byte[Chunk.HEADER_SIZE + 1];
+        final byte[] data = new byte[ChunkHeader.HEADER_SIZE + 1];
         final Optional<ChunkHeader> optionalHeader = ChunkHeader
                 .optionalOf(Bytes.of(data));
         assertEquals(Optional.empty(), optionalHeader);
@@ -69,7 +69,7 @@ public class ChunkHeaderTest {
 
     @Test
     void test_optionalOf_invalid_magic() {
-        final byte[] data = new byte[Chunk.HEADER_SIZE];
+        final byte[] data = new byte[ChunkHeader.HEADER_SIZE];
         final Optional<ChunkHeader> optionalHeader = ChunkHeader
                 .optionalOf(Bytes.of(data));
         assertEquals(Optional.empty(), optionalHeader);
@@ -77,8 +77,8 @@ public class ChunkHeaderTest {
 
     @Test
     void test_optionalOf() {
-        final ChunkHeader header1 = ChunkHeader.of(Chunk.MAGIC_NUMBER, VERSION,
-                PAYLOAD_LENGTH, CRC);
+        final ChunkHeader header1 = ChunkHeader.of(ChunkHeader.MAGIC_NUMBER,
+                VERSION, PAYLOAD_LENGTH, CRC);
         final byte[] data = header1.getBytes().getData();
         final Optional<ChunkHeader> optionalHeader = ChunkHeader
                 .optionalOf(Bytes.of(data));
