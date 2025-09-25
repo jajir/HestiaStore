@@ -3,7 +3,7 @@ package org.hestiastore.index.datablockfile;
 import org.hestiastore.index.Vldtn;
 
 /**
- * Specify position within a chunk store.
+ * Specify position within a chunk store and specify particular chunk.
  */
 public class CellPosition {
 
