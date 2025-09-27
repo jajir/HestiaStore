@@ -21,7 +21,7 @@ public class Bytes {
         return new Bytes(new byte[size]);
     }
 
-    // rename to concatrnate
+    //TODO rename to concat
     public static Bytes of(final Bytes data1, final Bytes data2) {
         Vldtn.requireNonNull(data1, "data1");
         Vldtn.requireNonNull(data2, "data2");
@@ -66,6 +66,7 @@ public class Bytes {
         return new Bytes(padded);
     }
 
+    //TODO rename it to concat
     public Bytes add(final Bytes bytes) {
         return Bytes.of(this, bytes);
     }
