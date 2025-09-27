@@ -29,5 +29,5 @@ public class DataBlockSize {
     public int getPayloadSize() {
         return size - DataBlockHeader.HEADER_SIZE;
     }
-
+    //TODO add equals, hashcode, and javadoc
 }
