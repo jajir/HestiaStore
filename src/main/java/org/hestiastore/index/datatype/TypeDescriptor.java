@@ -20,6 +20,7 @@ public interface TypeDescriptor<T> {
      */
     Comparator<T> getComparator();
 
+    //TODO add javadocs
     TypeReader<T> getTypeReader();
 
     TypeWriter<T> getTypeWriter();
@@ -38,7 +39,7 @@ public interface TypeDescriptor<T> {
     T getTombstone();
 
     /**
-     * Varify if given value is thombstone.
+     * Verify if given value is thombstone.
      * 
      * @param value
      * @return return <code>true</code> when given value is equal to thomstone
