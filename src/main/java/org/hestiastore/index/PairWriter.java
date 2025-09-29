@@ -11,6 +11,8 @@ package org.hestiastore.index;
  */
 public interface PairWriter<K, V> extends CloseableResource {
 
+    // TODO - rename put to write
+
     /**
      * Allows to insert key value pair somewhere.
      * 

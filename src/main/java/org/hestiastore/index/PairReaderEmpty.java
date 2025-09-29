@@ -5,11 +5,15 @@ package org.hestiastore.index;
  * 
  * It could be useful to represent empty input.
  * 
+ * 
+ * TODO remove it, Reader is just for low level operations.
+ * 
  * @author Honza
  *
  * @param<K> key type
  * @param <V> value type
  */
+@Deprecated
 public class PairReaderEmpty<K, V> implements PairSeekableReader<K, V> {
 
     /**

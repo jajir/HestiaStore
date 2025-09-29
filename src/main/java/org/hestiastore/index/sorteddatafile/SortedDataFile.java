@@ -1,17 +1,11 @@
 package org.hestiastore.index.sorteddatafile;
 
-import org.hestiastore.index.CloseablePairReader;
-import org.hestiastore.index.PairIteratorFromReader;
 import org.hestiastore.index.PairIteratorWithCurrent;
-import org.hestiastore.index.PairReaderEmpty;
-import org.hestiastore.index.PairSeekableReader;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.FileWriter;
 
-public class SortedDataFile<K, V>
-        implements SortedDataFileIteratorProvider<K, V> {
+public class SortedDataFile<K, V> {
 
     private final Directory directory;
 
@@ -51,42 +45,15 @@ public class SortedDataFile<K, V>
                 keyTypeDescriptor, valueTypeDescriptor, newDiskIoBufferSize);
     }
 
-    public CloseablePairReader<K, V> openReader() {
-        return openReader(0);
-    }
-
-    public CloseablePairReader<K, V> openReader(final long position) {
-        if (!directory.isFileExists(fileName)) {
-            return new PairReaderEmpty<>();
-        }
-        final DiffKeyReader<K> diffKeyReader = new DiffKeyReader<>(
-                keyTypeDescriptor.getConvertorFromBytes());
-        final SortedDataFileReader<K, V> reader = new SortedDataFileReader<>(
-                diffKeyReader, valueTypeDescriptor.getTypeReader(),
-                directory.getFileReader(fileName, diskIoBufferSize));
-        reader.skip(position);
-        return reader;
-    }
-
-    public PairSeekableReader<K, V> openSeekableReader() {
-        if (!directory.isFileExists(fileName)) {
-            return new PairReaderEmpty<>();
-        }
-        final DiffKeyReader<K> diffKeyReader = new DiffKeyReader<>(
-                keyTypeDescriptor.getConvertorFromBytes());
-        return new PairSeekableReaderImpl<>(diffKeyReader,
-                valueTypeDescriptor.getTypeReader(),
-                directory.getFileReaderSeekable(fileName));
-    }
-
-    @Override
-    public PairIteratorWithCurrent<K, V> openIteratorAtPosition(long position) {
-        return new PairIteratorFromReader<>(openReader(position));
-    }
-
-    @Override
     public PairIteratorWithCurrent<K, V> openIterator() {
-        return new PairIteratorFromReader<>(openReader());
+        if (!directory.isFileExists(fileName)) {
+            return new EmptyPairIteratorWithCurrent<>();
+        }
+        final DiffKeyReader<K> diffKeyReader = new DiffKeyReader<>(
+                keyTypeDescriptor.getConvertorFromBytes());
+        return new SortedDataFileIterator<>(diffKeyReader,
+                valueTypeDescriptor.getTypeReader(),
+                directory.getFileReader(fileName, diskIoBufferSize));
     }
 
     /**
@@ -98,21 +65,6 @@ public class SortedDataFile<K, V>
     public SortedDataFileWriterTx<K, V> openWriterTx() {
         return new SortedDataFileWriterTx<>(fileName, directory,
                 diskIoBufferSize, keyTypeDescriptor, valueTypeDescriptor);
-    }
-
-    @Deprecated
-    public SortedDataFileFullWriterTx<K, V> openFullWriterTx() {
-        return new SortedDataFileFullWriterTx<>(fileName, directory,
-                diskIoBufferSize, keyTypeDescriptor, valueTypeDescriptor);
-    }
-
-    @Deprecated
-    public SortedDataFileFullWriter<K, V> openWriter() {
-        final FileWriter fileWriter = directory.getFileWriter(fileName,
-                Directory.Access.OVERWRITE, diskIoBufferSize);
-        return new SortedDataFileWriterImpl<>(
-                valueTypeDescriptor.getTypeWriter(), fileWriter,
-                keyTypeDescriptor);
     }
 
     /**

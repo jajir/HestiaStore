@@ -4,12 +4,15 @@ import org.hestiastore.index.PairIterator;
 
 /**
  * Define functionality that allows to search through sorted data file.
+ * 
+ * TODO This interface could be removed.
  */
 public interface SortedDataFileIteratorProvider<K, V> {
 
     /**
      * Allows to read from specific position.
      *
+     * 
      * @param position the position in the file to start reading from
      * @return PairIterator that allows to read key-value pairs
      */
