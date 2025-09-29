@@ -4,7 +4,6 @@ import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.UniqueCache;
-import org.hestiastore.index.sorteddatafile.SortedDataFileWriter;
 
 /**
  * Class collect unsorted data, sort them and finally write them into SST delta
@@ -62,14 +61,15 @@ public final class SegmentDeltaCacheWriter<K, V> implements PairWriter<K, V> {
         segmentPropertiesManager.flush();
 
         // store cache
-        try (SortedDataFileWriter<K, V> writer = segmentFiles
+        segmentFiles
                 .getCacheSstFile(
                         segmentPropertiesManager.getAndIncreaseDeltaFileName())
-                .openWriter()) {
-            uniqueCache.getStream().forEach(pair -> {
-                writer.write(pair);
-            });
-        }
+                .openWriterTx().execute(writer -> {
+                    uniqueCache.getStream().forEach(pair -> {
+                        writer.put(pair);
+                    });
+                });
+
         uniqueCache.clear();
     }
 

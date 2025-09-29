@@ -11,7 +11,6 @@ import java.util.Random;
 import org.hestiastore.index.FileNameUtil;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIteratorWithCurrent;
-import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -154,11 +153,11 @@ class IntegrationSortTest extends AbstractSegmentTest {
 
     protected <M, N> void writePairs(final UnsortedDataFile<M, N> file,
             final List<Pair<M, N>> pairs) {
-        try (PairWriter<M, N> writer = file.openWriter()) {
+        file.openWriterTx().execute(writer -> {
             for (final Pair<M, N> pair : pairs) {
                 writer.put(pair);
             }
-        }
+        });
     }
 
 }

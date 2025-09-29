@@ -98,7 +98,7 @@ public class ScarceIndex<K> {
     }
 
     public ScarceIndexWriter<K> openWriter() {
-        return new ScarceIndexWriter<>(this, cacheDataFile.openWriter());
+        return new ScarceIndexWriter<>(this, cacheDataFile.openWriterTx());
     }
 
 }

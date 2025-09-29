@@ -82,7 +82,6 @@ public class SegmentFullWriterToChunkStore<K, V> implements PairWriter<K, V> {
         if (lastPair == null) {
             return;
         }
-        // TODO should return position object
         final long position = indexWriter.flush();
         scarceWriter.put(Pair.of(lastPair.getKey(), (int) position));
         scarceIndexKeyCounter.incrementAndGet();

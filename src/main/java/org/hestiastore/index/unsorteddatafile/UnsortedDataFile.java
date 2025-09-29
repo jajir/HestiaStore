@@ -52,14 +52,22 @@ public class UnsortedDataFile<K, V> {
         this.diskIoBufferSize = diskIoBufferSize;
     }
 
+    /**
+     * Opens an iterator for this file. If the file does not exist, an empty
+     * iterator is returned.
+     * 
+     * @return opened iterator
+     */
     public PairIterator<K, V> openIterator() {
         return new PairIteratorFromReader<>(openReader());
     }
 
+    @Deprecated
     public PairWriter<K, V> openWriter() {
         return openWriter(Access.OVERWRITE);
     }
 
+    @Deprecated
     public PairWriter<K, V> openWriter(final Access access) {
         Vldtn.requireNonNull(access, "access");
         Access used = null;
@@ -72,6 +80,23 @@ public class UnsortedDataFile<K, V> {
                 valueWriter, used, diskIoBufferSize);
     }
 
+    /**
+     * Opens a transaction writer for this file. If the file does not exist, it
+     * is created.
+     * 
+     * @return a UnsortedDataFileWriterTx instance
+     */
+    public UnsortedDataFileWriterTx<K, V> openWriterTx() {
+        return new UnsortedDataFileWriterTx<>(fileName, directory,
+                diskIoBufferSize, keyWriter, valueWriter);
+    }
+
+    /**
+     * Opens a streamer for this file. If the file does not exist, an empty
+     * streamer is returned.
+     * 
+     * @return opened streamer
+     */
     public UnsortedDataFileStreamer<K, V> openStreamer() {
         if (directory.isFileExists(fileName)) {
             final UnsortedDataFileSpliterator<K, V> spliterator = new UnsortedDataFileSpliterator<>(
@@ -82,6 +107,15 @@ public class UnsortedDataFile<K, V> {
         }
     }
 
+    /**
+     * Opens a reader for this file. If the file does not exist, an empty reader
+     * is returned.
+     * 
+     * @deprecated use {@link #openStreamer()} instead
+     * 
+     * 
+     * @return opened reader
+     */
     public CloseablePairReader<K, V> openReader() {
         return new UnsortedDataFileReader<>(keyReader, valueReader,
                 getFileReader());

@@ -16,7 +16,8 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
-import org.hestiastore.index.sorteddatafile.SortedDataFileWriter;
+import org.hestiastore.index.sorteddatafile.SortedDataFileFullWriter;
+import org.hestiastore.index.sorteddatafile.SortedDataFileFullWriterTx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -183,9 +184,9 @@ public final class KeySegmentCache<K> implements CloseableResource {
      */
     public void optionalyFlush() {
         if (isDirty) {
-            try (SortedDataFileWriter<K, SegmentId> writer = sdf.openWriter()) {
-                list.forEach((k, v) -> writer.write(Pair.of(k, v)));
-            }
+            sdf.openWriterTx().execute(writer -> {
+                list.forEach((k, v) -> writer.put(Pair.of(k, v)));
+            });
         }
         isDirty = false;
     }

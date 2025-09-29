@@ -3,7 +3,7 @@ package org.hestiastore.index.scarceindex;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.sorteddatafile.SortedDataFileWriter;
+import org.hestiastore.index.sorteddatafile.SortedDataFileWriterTx;
 
 /**
  * Encapsulate writing of new index data. When writer is closed cache is
@@ -12,22 +12,25 @@ import org.hestiastore.index.sorteddatafile.SortedDataFileWriter;
 public class ScarceIndexWriter<K> implements PairWriter<K, Integer> {
 
     private final ScarceIndex<K> scarceIndex;
-    private final SortedDataFileWriter<K, Integer> writer;
+    private final SortedDataFileWriterTx<K, Integer> writerTx;
+    private final PairWriter<K, Integer> writer;
 
     ScarceIndexWriter(final ScarceIndex<K> scarceIndex,
-            final SortedDataFileWriter<K, Integer> writer) {
+            final SortedDataFileWriterTx<K, Integer> writerTx) {
         this.scarceIndex = Vldtn.requireNonNull(scarceIndex, "scarceIndex");
-        this.writer = Vldtn.requireNonNull(writer, "writer");
+        this.writerTx = Vldtn.requireNonNull(writerTx, "writerTx");
+        this.writer = writerTx.openWriter();
     }
 
     @Override
     public void put(final Pair<K, Integer> pair) {
-        writer.write(pair);
+        writer.put(pair);
     }
 
     @Override
     public void close() {
         writer.close();
+        writerTx.commit();
         scarceIndex.loadCache();
     }
 

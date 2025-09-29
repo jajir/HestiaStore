@@ -16,17 +16,36 @@ public interface TypeDescriptor<T> {
     /**
      * Comparator of value.
      * 
-     * @return
+     * @return comparator
      */
     Comparator<T> getComparator();
 
-    //TODO add javadocs
+    /**
+     * Get class of described type.
+     * 
+     * @return class of described type
+     */
     TypeReader<T> getTypeReader();
 
+    /**
+     * Get class of described type.
+     * 
+     * @return class of described type
+     */
     TypeWriter<T> getTypeWriter();
 
+    /**
+     * Get class of described type.
+     * 
+     * @return class of described type
+     */
     ConvertorFromBytes<T> getConvertorFromBytes();
 
+    /**
+     * Get class of described type.
+     * 
+     * @return class of described type
+     */
     ConvertorToBytes<T> getConvertorToBytes();
 
     /**

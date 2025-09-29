@@ -6,7 +6,7 @@ import org.hestiastore.index.chunkstore.CellPosition;
 import org.hestiastore.index.chunkstore.ChunkPayload;
 import org.hestiastore.index.chunkstore.ChunkStoreWriter;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.sorteddatafile.SortedDataFileWriter;
+import org.hestiastore.index.sorteddatafile.SortedDataFileFullWriter;
 
 /**
  * A writer for chunk pair files. It writes key-value pairs to chunks and stores
@@ -15,7 +15,8 @@ import org.hestiastore.index.sorteddatafile.SortedDataFileWriter;
  * @param <K> The type of keys.
  * @param <V> The type of values.
  */
-public class ChunkPairFileWriter<K, V> implements SortedDataFileWriter<K, V> {
+public class ChunkPairFileWriter<K, V>
+        implements SortedDataFileFullWriter<K, V> {
 
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
@@ -45,6 +46,11 @@ public class ChunkPairFileWriter<K, V> implements SortedDataFileWriter<K, V> {
 
     @Override
     public void write(final Pair<K, V> pair) {
+        chunkPairWriter.put(pair);
+    }
+
+    @Override
+    public void put(final Pair<K, V> pair) {
         chunkPairWriter.put(pair);
     }
 

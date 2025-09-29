@@ -89,7 +89,25 @@ public class SortedDataFile<K, V>
         return new PairIteratorFromReader<>(openReader());
     }
 
-    public SortedDataFileWriter<K, V> openWriter() {
+    /**
+     * Opens a writer for the sorted data file. If the file already exists, it
+     * will be overwritten.
+     * 
+     * @return a writer for the sorted data file
+     */
+    public SortedDataFileWriterTx<K, V> openWriterTx() {
+        return new SortedDataFileWriterTx<>(fileName, directory,
+                diskIoBufferSize, keyTypeDescriptor, valueTypeDescriptor);
+    }
+
+    @Deprecated
+    public SortedDataFileFullWriterTx<K, V> openFullWriterTx() {
+        return new SortedDataFileFullWriterTx<>(fileName, directory,
+                diskIoBufferSize, keyTypeDescriptor, valueTypeDescriptor);
+    }
+
+    @Deprecated
+    public SortedDataFileFullWriter<K, V> openWriter() {
         final FileWriter fileWriter = directory.getFileWriter(fileName,
                 Directory.Access.OVERWRITE, diskIoBufferSize);
         return new SortedDataFileWriterImpl<>(
@@ -97,6 +115,9 @@ public class SortedDataFile<K, V>
                 keyTypeDescriptor);
     }
 
+    /**
+     * Deletes the underlying file. Does nothing if the file does not exist.
+     */
     public void delete() {
         directory.deleteFile(fileName);
     }

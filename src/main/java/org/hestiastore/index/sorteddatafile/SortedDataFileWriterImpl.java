@@ -10,7 +10,7 @@ import org.hestiastore.index.datatype.TypeWriter;
 import org.hestiastore.index.directory.FileWriter;
 
 public class SortedDataFileWriterImpl<K, V>
-        implements SortedDataFileWriter<K, V> {
+        implements SortedDataFileFullWriter<K, V> {
 
     private final TypeWriter<V> valueWriter;
 
@@ -80,12 +80,22 @@ public class SortedDataFileWriterImpl<K, V>
      *
      * @param pair required key value pair
      */
-    private void put(final Pair<K, V> pair) {
+    private void localPut(final Pair<K, V> pair) {
         final byte[] diffKey = diffKeyWriter.write(pair.getKey());
         fileWriter.write(diffKey);
         final int writenBytesInValue = valueWriter.write(fileWriter,
                 pair.getValue());
         position = position + diffKey.length + writenBytesInValue;
+    }
+
+    /**
+     * Puts the given key-value pair into the index.
+     *
+     * @param pair required key-value pair
+     */
+    @Override
+    public void put(final Pair<K, V> pair) {
+        write(pair);
     }
 
     /**
@@ -100,7 +110,7 @@ public class SortedDataFileWriterImpl<K, V>
         Vldtn.requireNonNull(pair.getValue(), "value");
         verifyKeyOrder(pair.getKey());
 
-        put(pair);
+        localPut(pair);
     }
 
     /**
@@ -119,7 +129,7 @@ public class SortedDataFileWriterImpl<K, V>
         diffKeyWriter = makeDiffKeyWriter();
 
         long lastPosition = position;
-        put(pair);
+        localPut(pair);
         return lastPosition;
     }
 
