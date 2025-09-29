@@ -28,14 +28,28 @@ public final class Chunk {
 
     private final Bytes bytes;
 
+    /**
+     * Create a chunk from raw bytes.
+     * 
+     * @param bytes the raw bytes of the chunk
+     * @return new chunk instance
+     */
     public static Chunk of(final Bytes bytes) {
         return new Chunk(bytes);
     }
 
+    /**
+     * Create a chunk from header and payload.
+     * 
+     * @param header  required chunk header
+     * @param payload required chunk payload
+     * @return new chunk instance
+     * @throws IllegalArgumentException if the chunk is invalid
+     */
     public static Chunk of(final ChunkHeader header, final Bytes payload) {
         Vldtn.requireNonNull(header, "header");
         Vldtn.requireNonNull(payload, "payload");
-        final Bytes bytes = Bytes.of(header.getBytes(), payload);
+        final Bytes bytes = Bytes.concat(header.getBytes(), payload);
         return new Chunk(bytes);
     }
 
@@ -56,30 +70,39 @@ public final class Chunk {
         this.bytes = bytes;
     }
 
+    /**
+     * Get the raw bytes of the chunk.
+     * 
+     * @return the raw bytes of the chunk
+     */
     public Bytes getBytes() {
         return bytes;
     }
 
+    /**
+     * Get the payload of the chunk.
+     * 
+     * @return the payload of the chunk
+     */
     public ChunkPayload getPayload() {
-        return new ChunkPayload(
-                bytes.subBytes(ChunkHeader.HEADER_SIZE, bytes.length()));
+        return ChunkPayload
+                .of(bytes.subBytes(ChunkHeader.HEADER_SIZE, bytes.length()));
     }
 
+    /**
+     * Get the header of the chunk.
+     * 
+     * @return the header of the chunk
+     */
     public ChunkHeader getHeader() {
         return ChunkHeader.of(bytes.subBytes(0, ChunkHeader.HEADER_SIZE));
     }
 
-    void validate() {
-        final ChunkHeader header = getHeader();
-        if (header.getMagicNumber() != ChunkHeader.MAGIC_NUMBER) {
-            throw new IllegalArgumentException(
-                    "Invalid magic number in chunk header");
-        }
-        if (header.getCrc() != calculateCrc()) {
-            throw new IllegalArgumentException("CRC mismatch in chunk header");
-        }
-    }
-
+    /**
+     * Calculate the CRC of the chunk payload.
+     * 
+     * @return the CRC of the chunk payload
+     */
     public long calculateCrc() {
         return getPayload().calculateCrc();
     }

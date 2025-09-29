@@ -1,10 +1,9 @@
 package org.hestiastore.index.chunkpairfile;
 
-import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.PairIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.chunkstore.CellPosition;
 import org.hestiastore.index.chunkstore.ChunkStoreFile;
-import org.hestiastore.index.datablockfile.CellPosition;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segment.SegmentIndexSearcher;
@@ -41,7 +40,8 @@ public class ChunkPairFile<K, V>
     }
 
     @Override
-    public PairIterator<K, V> openIteratorAtPosition(final long position) {
+    public PairIteratorWithCurrent<K, V> openIteratorAtPosition(
+            final long position) {
         return new ChunkPairFileIterator<>(
                 chunkStoreFile.openReader(
                         CellPosition.of(dataBlockSize, (int) position)),
@@ -57,6 +57,14 @@ public class ChunkPairFile<K, V>
                         valueTypeDescriptor));
     }
 
+    /**
+     * Returns segment index searcher that allows to search in main index file
+     * for given key from given position.
+     * 
+     * @param maxNumberOfKeysInIndexChunk maximum number of keys in index chunk;
+     *                                    used to optimize the search algorithm
+     * @return segment index searcher
+     */
     public SegmentIndexSearcher<K, V> getSegmentIndexSearcher(
             final int maxNumberOfKeysInIndexChunk) {
         return new ChunkPairFileSegmentIndexSearcher<>(getChunkStoreSearcher(),

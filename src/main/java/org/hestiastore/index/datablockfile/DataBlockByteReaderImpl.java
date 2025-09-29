@@ -3,6 +3,9 @@ package org.hestiastore.index.datablockfile;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 
+/**
+ * Implementation of {@link DataBlockByteReader}.
+ */
 public class DataBlockByteReaderImpl implements DataBlockByteReader {
 
     private final DataBlockReader dataBlockReader;
@@ -11,6 +14,14 @@ public class DataBlockByteReaderImpl implements DataBlockByteReader {
     private DataBlock currentDataBlock = null;
     private int currentBlockPosition = 0;
 
+    /**
+     * Creates a new instance of {@link DataBlockByteReaderImpl}.
+     *
+     * @param dataBlockReader  the data block reader
+     * @param dataBlockSize    the data block size
+     * @param initialCellIndex the initial cell index to start reading from
+     *                         (0-based)
+     */
     public DataBlockByteReaderImpl(final DataBlockReader dataBlockReader,
             final DataBlockSize dataBlockSize, final int initialCellIndex) {
         this.dataBlockReader = Vldtn.requireNonNull(dataBlockReader,
@@ -51,7 +62,7 @@ public class DataBlockByteReaderImpl implements DataBlockByteReader {
             final int bytesToReadFromCurrentBlock = Math
                     .min(remainingBytesToReadInChunk, bytesToread);
             chunkPayloadBytes = chunkPayloadBytes
-                    .add(currentDataBlock.getPayload().getBytes()
+                    .concat(currentDataBlock.getPayload().getBytes()
                             .subBytes(currentBlockPosition, currentBlockPosition
                                     + bytesToReadFromCurrentBlock));
             currentBlockPosition += bytesToReadFromCurrentBlock;

@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.Pair;
+import org.hestiastore.index.chunkstore.CellPosition;
 import org.hestiastore.index.chunkstore.ChunkStoreWriter;
-import org.hestiastore.index.datablockfile.CellPosition;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorLong;

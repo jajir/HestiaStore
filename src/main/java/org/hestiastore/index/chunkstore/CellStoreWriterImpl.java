@@ -2,12 +2,19 @@ package org.hestiastore.index.chunkstore;
 
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.datablockfile.CellPosition;
 
+/**
+ * Implementation of {@link CellStoreWriter}.
+ */
 public class CellStoreWriterImpl implements CellStoreWriter {
 
     private final CellStoreWriterCursor cursor;
 
+    /**
+     * Constructor.
+     * 
+     * @param cursor required the cursor to use for writing
+     */
     public CellStoreWriterImpl(final CellStoreWriterCursor cursor) {
         this.cursor = Vldtn.requireNonNull(cursor, "cursor");
     }

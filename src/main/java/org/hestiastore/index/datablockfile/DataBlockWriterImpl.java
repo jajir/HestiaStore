@@ -3,6 +3,9 @@ package org.hestiastore.index.datablockfile;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileWriter;
 
+/**
+ * Implementation of {@link DataBlockWriter}.
+ */
 public class DataBlockWriterImpl implements DataBlockWriter {
 
     private final FileWriter fileWriter;

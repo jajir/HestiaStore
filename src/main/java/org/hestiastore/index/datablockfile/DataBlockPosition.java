@@ -7,6 +7,12 @@ public class DataBlockPosition {
 
     private final int position;
 
+    /**
+     * Create data block position.
+     * 
+     * @param position data block position in bytes
+     * @return data block position
+     */
     public static DataBlockPosition of(final int position) {
         return new DataBlockPosition(position);
     }

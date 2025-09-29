@@ -3,7 +3,6 @@ package org.hestiastore.index.chunkstore;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.datablockfile.CellPosition;
 import org.hestiastore.index.datablockfile.DataBlockPayload;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datablockfile.DataBlockWriter;
@@ -19,6 +18,12 @@ public final class CellStoreWriterCursor implements CloseableResource {
     private CellPosition currentCellPosition;
     private Bytes currentDataBlock = null;
 
+    /**
+     * Create a new CellStoreWriterCursor.
+     *
+     * @param dataBlockWriter  required writer to write data blocks
+     * @param blockPayloadSize required size of the data block payload
+     */
     public CellStoreWriterCursor(final DataBlockWriter dataBlockWriter,
             final DataBlockSize blockPayloadSize) {
         this.dataBlockWriter = Vldtn.requireNonNull(dataBlockWriter,
@@ -35,7 +40,7 @@ public final class CellStoreWriterCursor implements CloseableResource {
      * @param bytes required bytes representings set of cells
      * @return position where will be written next cells
      */
-    CellPosition write(final Bytes bytes) {
+    public CellPosition write(final Bytes bytes) {
         Vldtn.requireNonNull(bytes, "bytes");
         Vldtn.requireCellSize(bytes.length(), "bytes");
 
@@ -63,7 +68,7 @@ public final class CellStoreWriterCursor implements CloseableResource {
     public void close() {
         if (currentDataBlock != null) {
             if (getAvailableBytes() > 0) {
-                currentDataBlock = Bytes.of(currentDataBlock,
+                currentDataBlock = Bytes.concat(currentDataBlock,
                         Bytes.of(new byte[getAvailableBytes()]));
                 dataBlockWriter.write(DataBlockPayload.of(currentDataBlock));
             } else {
@@ -74,11 +79,21 @@ public final class CellStoreWriterCursor implements CloseableResource {
         dataBlockWriter.close();
     }
 
+    /**
+     * Get number of available bytes in the current data block.
+     *
+     * @return number of available bytes in the current data block
+     */
     public int getAvailableBytes() {
         return currentCellPosition.getFreeBytesInCurrentDataBlock();
     }
 
-    CellPosition getNextCellPosition() {
+    /**
+     * Get position where will be written next cells.
+     *
+     * @return position where will be written next cells
+     */
+    public CellPosition getNextCellPosition() {
         return currentCellPosition;
     }
 
@@ -86,7 +101,7 @@ public final class CellStoreWriterCursor implements CloseableResource {
         if (currentDataBlock == null) {
             currentDataBlock = bytes;
         } else {
-            currentDataBlock = Bytes.of(currentDataBlock, bytes);
+            currentDataBlock = Bytes.concat(currentDataBlock, bytes);
         }
     }
 

@@ -28,10 +28,10 @@ public class DataBlockByteReaderTest {
             .of(DataBlockHeader.MAGIC_NUMBER, dataBlockPayload2.calculateCrc());
 
     private static final DataBlock dataBlock1 = DataBlock.of(
-            dataBlockHeader1.toBytes().add(dataBlockPayload1.getBytes()),
+            dataBlockHeader1.toBytes().concat(dataBlockPayload1.getBytes()),
             DataBlockPosition.of(0));
     private static final DataBlock dataBlock2 = DataBlock.of(
-            dataBlockHeader2.toBytes().add(dataBlockPayload2.getBytes()),
+            dataBlockHeader2.toBytes().concat(dataBlockPayload2.getBytes()),
             DataBlockPosition.of(128));
 
     @Mock

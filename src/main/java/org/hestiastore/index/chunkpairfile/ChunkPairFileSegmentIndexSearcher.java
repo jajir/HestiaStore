@@ -7,6 +7,9 @@ import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentIndexSearcher;
 
+/**
+ * Implementation of {@link SegmentIndexSearcher} for segment index file
+ */
 public class ChunkPairFileSegmentIndexSearcher<K, V>
         implements SegmentIndexSearcher<K, V> {
 
@@ -14,6 +17,14 @@ public class ChunkPairFileSegmentIndexSearcher<K, V>
     private final int maxNumberOfKeysInIndexChunk;
     private final Comparator<K> keyTypeComparator;
 
+    /**
+     * Constructor
+     *
+     * @param chunkStoreSearcher          required chunk store searcher for
+     *                                    segment index file
+     * @param maxNumberOfKeysInIndexChunk maximum number of keys in index chunk
+     * @param keyTypeComparator           required comparator for key type
+     */
     ChunkPairFileSegmentIndexSearcher(
             final ChunkStoreSearcher<K, V> chunkStoreSearcher,
             final int maxNumberOfKeysInIndexChunk,

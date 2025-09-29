@@ -1,6 +1,7 @@
 package org.hestiastore.index.datablockfile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.hestiastore.index.Bytes;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,14 @@ public class DataBlockPayloadTest {
         assertEquals(payload1, payload2);
 
         assertEquals(payload1.hashCode(), payload2.hashCode());
+    }
+
+    @Test
+    void test_required_Bytes() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> DataBlockPayload.of(null));
+
+        assertEquals("Property 'bytes' must not be null.", e.getMessage());
     }
 
 }

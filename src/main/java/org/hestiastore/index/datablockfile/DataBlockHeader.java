@@ -35,12 +35,25 @@ public class DataBlockHeader {
     private long magicNumber;
     private long crc;
 
+    /**
+     * Create DataBlockHeader from bytes. Bytes must be exactly 16 bytes long.
+     *
+     * @param bytes Bytes representing the DataBlockHeader.
+     * @return DataBlockHeader
+     */
     public static DataBlockHeader of(final Bytes bytes) {
         Vldtn.requireNonNull(bytes, "bytes");
         return new DataBlockHeader(extractMagicNumber(bytes),
                 extractCrc(bytes));
     }
 
+    /**
+     * Create DataBlockHeader from magic number and CRC.
+     *
+     * @param magicNumber required Magic number
+     * @param crc         required CRC
+     * @return DataBlockHeader instance
+     */
     public static DataBlockHeader of(final Long magicNumber, final Long crc) {
         return new DataBlockHeader(magicNumber, crc);
     }
@@ -50,10 +63,20 @@ public class DataBlockHeader {
         this.crc = Vldtn.requireNonNull(crc, "crc");
     }
 
+    /**
+     * Get magic number.
+     *
+     * @return magic number
+     */
     public long getMagicNumber() {
         return magicNumber;
     }
 
+    /**
+     * Get CRC.
+     *
+     * @return CRC
+     */
     public long getCrc() {
         return crc;
     }
@@ -68,6 +91,11 @@ public class DataBlockHeader {
         return CONVERTOR_FROM_BYTES.fromBytes(buff);
     }
 
+    /**
+     * Convert DataBlockHeader to bytes.
+     *
+     * @return Bytes representing the DataBlockHeader.
+     */
     public Bytes toBytes() {
         final byte[] out = new byte[HEADER_SIZE];
         System.arraycopy(CONVERTOR_TO_BYTES.toBytes(magicNumber), 0, out, 0, 8);
