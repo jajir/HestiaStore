@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.hestiastore.index.AbstractDataTest;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIteratorWithCurrent;
-import org.hestiastore.index.PairSeekableReader;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -43,46 +42,17 @@ class IntegrationSortedDataFileTest extends AbstractDataTest {
         sdf = null;
     }
 
-    long writeDataWithOneFullWrite() {
+    private long writeDataWithOneFullWrite() {
         long position = 0;
         sdf.openWriterTx().execute(writer -> {
-            // TODO test correct class, Diff key writer
+            writer.put(P1);
+            writer.put(P2);
+            writer.put(P3);
+            writer.put(P4);
+            writer.put(P5);
+            writer.put(P6);
         });
-        final SortedDataFileFullWriterTx<String, Integer> writerTx = sdf
-                .openFullWriterTx();
-        try (SortedDataFileFullWriter<String, Integer> writer = writerTx
-                .openWriter()) {
-            writer.write(P1);
-            writer.write(P2);
-            position = writer.writeFull(P3);
-            writer.write(P4);
-            writer.write(P5);
-            writer.write(P6);
-        }
-        writerTx.commit();
         return position;
-    }
-
-    @Test
-    void test_seekInFile() {
-        long position = writeDataWithOneFullWrite();
-
-        try (PairSeekableReader<String, Integer> reader = sdf
-                .openSeekableReader()) {
-            // verify reading from the beginning
-            verifyEquals(P1, reader.read());
-            verifyEquals(P2, reader.read());
-
-            // verify reading from saved position
-            reader.seek(position);
-            verifyEquals(P3, reader.read());
-            verifyEquals(P4, reader.read());
-
-            // verify reading from the beginning
-            reader.seek(0);
-            verifyEquals(P1, reader.read());
-            verifyEquals(P2, reader.read());
-        }
     }
 
     @Test
