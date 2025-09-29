@@ -9,6 +9,12 @@ public class DataBlockSize {
 
     private final int size;
 
+    /**
+     * Creates a new data block size.
+     * 
+     * @param size the size of each data block including header and payload
+     * @return new instance of DataBlockSize
+     */
     public static DataBlockSize ofDataBlockSize(final int size) {
         return new DataBlockSize(size);
     }
@@ -26,8 +32,33 @@ public class DataBlockSize {
         return size;
     }
 
+    /**
+     * Get payload size in bytes.
+     * 
+     * @return payload size in bytes
+     */
     public int getPayloadSize() {
         return size - DataBlockHeader.HEADER_SIZE;
     }
-    //TODO add equals, hashcode, and javadoc
+
+    @Override
+    public String toString() {
+        return "DataBlockSize [size=" + size + "]";
+    }
+
+    @Override
+    public int hashCode() {
+        return size;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (!(obj instanceof DataBlockSize))
+            return false;
+        DataBlockSize other = (DataBlockSize) obj;
+        return size == other.size;
+    }
+
 }

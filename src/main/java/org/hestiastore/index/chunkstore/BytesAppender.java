@@ -13,6 +13,11 @@ public class BytesAppender {
 
     private final List<Bytes> bytes = new ArrayList<>();
 
+    /**
+     * Append given bytes.
+     *
+     * @param data required data to append
+     */
     public void append(final byte[] data) {
         Vldtn.requireNonNull(data, "data");
         if (data.length == 0) {

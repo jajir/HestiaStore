@@ -3,8 +3,8 @@ package org.hestiastore.index.chunkpairfile;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.PairIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.chunkstore.CellPosition;
 import org.hestiastore.index.chunkstore.ChunkStoreFile;
-import org.hestiastore.index.datablockfile.CellPosition;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.sorteddatafile.SortedDataFileIteratorProvider;
@@ -20,6 +20,15 @@ public class ChunkStoreSearcher<K, V>
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
 
+    /**
+     * Constructor.
+     *
+     * @param chunkStoreFile      required chunk store file to search.
+     * @param dataBlockSize       required data block size used in the chunk
+     *                            store file.
+     * @param keyTypeDescriptor   required type descriptor for keys.
+     * @param valueTypeDescriptor required type descriptor for values.
+     */
     public ChunkStoreSearcher(final ChunkStoreFile chunkStoreFile,
             final DataBlockSize dataBlockSize,
             final TypeDescriptor<K> keyTypeDescriptor,

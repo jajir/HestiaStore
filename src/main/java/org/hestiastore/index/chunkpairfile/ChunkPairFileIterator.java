@@ -10,6 +10,14 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.Chunk;
 import org.hestiastore.index.chunkstore.ChunkStoreReader;
 
+/**
+ * Iterator over pairs stored in chunk pair file.
+ * 
+ * @author honza
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 public class ChunkPairFileIterator<K, V>
         implements PairIteratorWithCurrent<K, V> {
 
@@ -18,6 +26,12 @@ public class ChunkPairFileIterator<K, V>
 
     private PairIteratorWithCurrent<K, V> iterator;
 
+    /**
+     * Constructor.
+     * 
+     * @param chunkStoreReader required reader of chunks
+     * @param iteratorFactory  required factory of pair iterators for chunks
+     */
     public ChunkPairFileIterator(ChunkStoreReader chunkStoreReader,
             final Function<Chunk, PairIteratorWithCurrent<K, V>> iteratorFactory) {
         this.chunkStoreReader = Vldtn.requireNonNull(chunkStoreReader,

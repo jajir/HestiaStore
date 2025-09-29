@@ -21,6 +21,12 @@ public class SingleChunkPairWriterImpl<K, V>
 
     private final SortedDataFileWriter<K, V> writer;
 
+    /**
+     * Creates a new chunk writer.
+     * 
+     * @param keyTypeDescriptor   required key type descriptor
+     * @param valueTypeDescriptor required value type descriptor
+     */
     SingleChunkPairWriterImpl(final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor) {
         Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");

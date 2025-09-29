@@ -5,6 +5,10 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileWriter;
 
+/**
+ * A transaction for writing a data block file. The data is first written to a
+ * temporary file, which is then renamed to the target file name upon commit.
+ */
 public class DataBlockWriterTx implements Commitable {
 
     private final String fileName;

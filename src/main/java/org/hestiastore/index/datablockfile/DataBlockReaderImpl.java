@@ -5,6 +5,9 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileReader;
 
+/**
+ * Implementation of {@link DataBlockReader}.
+ */
 public class DataBlockReaderImpl implements DataBlockReader {
 
     private final FileReader fileReader;

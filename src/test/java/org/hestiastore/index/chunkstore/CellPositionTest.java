@@ -1,7 +1,8 @@
-package org.hestiastore.index.datablockfile;
+package org.hestiastore.index.chunkstore;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.junit.jupiter.api.Test;
 
 public class CellPositionTest {
@@ -104,7 +105,6 @@ public class CellPositionTest {
         assertEquals(12224, position.getValue());
         assertEquals(3056, position.getDataBlockPayloadSize());
         assertEquals(12288, position.getDataBlockStartPosition().getValue());
-        assertEquals(0, position.getStartingByteInBlockOfCell());
         assertEquals(0, position.getCellIndex());
         assertEquals(0, position.getOccupiedBytes());
     }

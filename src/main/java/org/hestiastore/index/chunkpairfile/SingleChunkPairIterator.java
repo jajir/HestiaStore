@@ -22,6 +22,13 @@ public class SingleChunkPairIterator<K, V>
 
     private final PairIteratorWithCurrent<K, V> iterator;
 
+    /**
+     * It creates an iterator over all pairs stored in the given chunk.
+     *
+     * @param chunk               required chunk to iterate over
+     * @param keyTypeDescriptor   required type descriptor of keys
+     * @param valueTypeDescriptor required type descriptor of values
+     */
     public SingleChunkPairIterator(final Chunk chunk,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor) {

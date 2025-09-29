@@ -8,6 +8,13 @@ import org.hestiastore.index.CloseableResource;
  */
 public interface DataBlockByteReader extends CloseableResource {
 
-    Bytes readExactly(int length); // may span multiple blocks
+    /**
+     * Read exactly the specified number of bytes, spanning multiple blocks if
+     * necessary.
+     * 
+     * @param length the number of bytes to read
+     * @return the bytes read
+     */
+    Bytes readExactly(int length);
 
 }

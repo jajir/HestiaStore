@@ -13,16 +13,34 @@ public class Bytes {
 
     private final byte[] data;
 
+    /**
+     * Create new Bytes instance from byte array.
+     * 
+     * @param data required byte array
+     * @return created Bytes instance
+     */
     public static Bytes of(final byte[] data) {
         return new Bytes(data);
     }
 
+    /**
+     * Allocate new Bytes instance with specified size.
+     * 
+     * @param size required size of the byte array
+     * @return created Bytes instance
+     */
     public static Bytes allocate(int size) {
         return new Bytes(new byte[size]);
     }
 
-    //TODO rename to concat
-    public static Bytes of(final Bytes data1, final Bytes data2) {
+    /**
+     * Concatenate two Bytes instances into a new one.
+     * 
+     * @param data1 first Bytes instance
+     * @param data2 second Bytes instance
+     * @return created Bytes instance
+     */
+    public static Bytes concat(final Bytes data1, final Bytes data2) {
         Vldtn.requireNonNull(data1, "data1");
         Vldtn.requireNonNull(data2, "data2");
         final byte[] combined = new byte[data1.length() + data2.length()];
@@ -36,6 +54,14 @@ public class Bytes {
         this.data = Vldtn.requireNonNull(data, "data");
     }
 
+    /**
+     * Returns a new Bytes instance that is a subarray of this instance,
+     * starting from startByte (inclusive) to endByte (exclusive).
+     * 
+     * @param startByte required start byte index (inclusive)
+     * @param endByte   required end byte index (exclusive)
+     * @return
+     */
     public Bytes subBytes(int startByte, int endByte) {
         Vldtn.requireBetween(startByte, 0, data.length, "startByte");
         Vldtn.requireBetween(endByte, 0, data.length, "endByte");
@@ -66,19 +92,42 @@ public class Bytes {
         return new Bytes(padded);
     }
 
-    //TODO rename it to concat
-    public Bytes add(final Bytes bytes) {
-        return Bytes.of(this, bytes);
+    /**
+     * Concatenate this Bytes instance with another one and return a new Bytes
+     * instance.
+     * 
+     * @param bytes required Bytes instance to concatenate
+     * @return created Bytes instance
+     */
+    public Bytes concat(final Bytes bytes) {
+        return Bytes.concat(this, bytes);
     }
 
+    /**
+     * Returns the underlying byte array.
+     * 
+     * @return the underlying byte array
+     */
     public byte[] getData() {
         return data;
     }
 
+    /**
+     * Returns the length of the byte array.
+     * 
+     * @return the length of the byte array
+     */
     public int length() {
         return data.length;
     }
 
+    /**
+     * 
+     * Returns a new Bytes instance padded with zeros to the next multiple of 16
+     * bytes. If the current size is already a multiple of 16, returns this.
+     * 
+     * @return a new Bytes instance padded to the next multiple of 16 bytes
+     */
     public Bytes paddedToNextCell() {
         int modulo = data.length % 16;
         if (modulo == 0) {

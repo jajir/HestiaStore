@@ -2,7 +2,6 @@ package org.hestiastore.index.chunkstore;
 
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.CloseableResource;
-import org.hestiastore.index.datablockfile.CellPosition;
 
 /**
  * Allows to write bytes into underlying block store.

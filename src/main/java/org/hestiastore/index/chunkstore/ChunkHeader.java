@@ -48,15 +48,34 @@ public class ChunkHeader {
 
     private final byte[] data;
 
+    /**
+     * Creates a chunk header from the given byte array.
+     * 
+     * @param data required byte array, must be exactly 32 bytes long
+     * @return the chunk header
+     */
     public static ChunkHeader of(final byte[] data) {
         return new ChunkHeader(data);
     }
 
+    /**
+     * Creates a chunk header from the given bytes.
+     * 
+     * @param bytes required bytes, must be exactly 32 bytes long
+     * @return the chunk header
+     */
     public static ChunkHeader of(final Bytes bytes) {
         Vldtn.requireNonNull(bytes, "bytes");
         return new ChunkHeader(bytes.getData());
     }
 
+    /**
+     * Creates an optional chunk header from the given bytes.
+     * 
+     * @param bytes bytes to create the chunk header from, can be null
+     * @return optional chunk header, empty if the given bytes are null, or not
+     *         exactly 32 bytes long, or the magic number is invalid
+     */
     public static Optional<ChunkHeader> optionalOf(final Bytes bytes) {
         if (bytes == null) {
             return Optional.empty();
@@ -77,6 +96,15 @@ public class ChunkHeader {
         return Optional.of(new ChunkHeader(data));
     }
 
+    /**
+     * Creates a chunk header from the given parameters.
+     * 
+     * @param magic         required magic number, must be {@link #MAGIC_NUMBER}
+     * @param version       required version, must be positive
+     * @param payloadLength required payload length, must be positive
+     * @param crc           required CRC32 code, must be positive
+     * @return the chunk header
+     */
     public static ChunkHeader of(final long magic, final int version,
             final int payloadLength, final Long crc) {
         final byte[] data = new byte[HEADER_SIZE];
@@ -103,28 +131,53 @@ public class ChunkHeader {
         }
     }
 
+    /**
+     * Returns the byte array representing the chunk header.
+     * 
+     * @return the byte array representing the chunk header
+     */
     public Bytes getBytes() {
         return Bytes.of(data);
     }
 
+    /**
+     * Returns the magic number.
+     * 
+     * @return the magic number
+     */
     public long getMagicNumber() {
         final byte[] buff = new byte[8];
         System.arraycopy(data, 0, buff, 0, 8);
         return LONG_CONVERTOR_FROM_BYTES.fromBytes(buff);
     }
 
+    /**
+     * Returns the version.
+     * 
+     * @return the version
+     */
     public int getVersion() {
         final byte[] buff = new byte[4];
         System.arraycopy(data, 8, buff, 0, 4);
         return INTEGER_CONVERTOR_FROM_BYTES.fromBytes(buff);
     }
 
+    /**
+     * Returns the payload length.
+     * 
+     * @return the payload length
+     */
     public int getPayloadLength() {
         final byte[] buff = new byte[4];
         System.arraycopy(data, 12, buff, 0, 4);
         return INTEGER_CONVERTOR_FROM_BYTES.fromBytes(buff);
     }
 
+    /**
+     * Returns the CRC32 code.
+     * 
+     * @return the CRC32 code
+     */
     public long getCrc() {
         final byte[] buff = new byte[8];
         System.arraycopy(data, 16, buff, 0, 8);

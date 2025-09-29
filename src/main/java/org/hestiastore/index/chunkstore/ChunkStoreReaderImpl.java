@@ -4,13 +4,21 @@ import java.util.Optional;
 
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.datablockfile.CellPosition;
 import org.hestiastore.index.datablockfile.DataBlockByteReader;
 
+/**
+ * Implementation of {@link ChunkStoreReader}.
+ */
 public class ChunkStoreReaderImpl implements ChunkStoreReader {
 
     private DataBlockByteReader dataBlockByteReader = null;
 
+    /**
+     * Constructor.
+     *
+     * @param dataBlockByteReader required data block byte reader
+     * @throws IllegalArgumentException when dataBlockByteReader is null
+     */
     public ChunkStoreReaderImpl(final DataBlockByteReader dataBlockByteReader) {
         this.dataBlockByteReader = Vldtn.requireNonNull(dataBlockByteReader,
                 "dataBlockByteReader");

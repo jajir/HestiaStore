@@ -52,7 +52,7 @@ public class DataBlockReaderImplTest {
                 TestData.PAYLOAD_1008.calculateCrc());
 
         byte[] bufferBytes = header.toBytes()
-                .add(TestData.PAYLOAD_1008.getBytes()).getData();
+                .concat(TestData.PAYLOAD_1008.getBytes()).getData();
 
         when(fileReader.read(any(byte[].class))).thenAnswer(invocation -> {
             byte[] buffer = invocation.getArgument(0);

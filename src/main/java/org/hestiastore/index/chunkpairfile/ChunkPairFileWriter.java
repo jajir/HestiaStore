@@ -2,12 +2,19 @@ package org.hestiastore.index.chunkpairfile;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.chunkstore.CellPosition;
 import org.hestiastore.index.chunkstore.ChunkPayload;
 import org.hestiastore.index.chunkstore.ChunkStoreWriter;
-import org.hestiastore.index.datablockfile.CellPosition;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.sorteddatafile.SortedDataFileWriter;
 
+/**
+ * A writer for chunk pair files. It writes key-value pairs to chunks and stores
+ * them in a chunk store.
+ *
+ * @param <K> The type of keys.
+ * @param <V> The type of values.
+ */
 public class ChunkPairFileWriter<K, V> implements SortedDataFileWriter<K, V> {
 
     private final TypeDescriptor<K> keyTypeDescriptor;
@@ -16,6 +23,14 @@ public class ChunkPairFileWriter<K, V> implements SortedDataFileWriter<K, V> {
 
     private SingleChunkPairWriter<K, V> chunkPairWriter;
 
+    /**
+     * Constructs a new ChunkPairFileWriter.
+     *
+     * @param chunkStoreWriter    required chunk store writer to write chunks
+     *                            to.
+     * @param keyTypeDescriptor   required type descriptor for keys.
+     * @param valueTypeDescriptor required type descriptor for values.
+     */
     ChunkPairFileWriter(final ChunkStoreWriter chunkStoreWriter,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor) {
