@@ -10,7 +10,8 @@ import org.hestiastore.index.chunkstore.Chunk;
 import org.hestiastore.index.chunkstore.ChunkHeader;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
-import org.hestiastore.index.sorteddatafile.SortedDataFileWriter;
+import org.hestiastore.index.sorteddatafile.SortedDataFileFullWriter;
+import org.hestiastore.index.sorteddatafile.SortedDataFileFullWriterTx;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,10 +41,13 @@ public class SingleChunkPairIteratorTest {
                 .withValueTypeDescriptor(TestData.TYPE_DESCRIPTOR_STRING) //
                 .withDiskIoBufferSize(1024)//
                 .build();
-        try (SortedDataFileWriter<Integer, String> writer = sortedDataFile
+        final SortedDataFileFullWriterTx<Integer, String> writerTx = sortedDataFile
+                .openFullWriterTx();
+        try (SortedDataFileFullWriter<Integer, String> writer = writerTx
                 .openWriter()) {
             pairList.forEach(writer::write);
         }
+        writerTx.commit();
 
         final Bytes fileBytes = directory.getFileBytes(FILE_NAME);
         return Chunk.of(ChunkHeader.of(ChunkHeader.MAGIC_NUMBER, 1,

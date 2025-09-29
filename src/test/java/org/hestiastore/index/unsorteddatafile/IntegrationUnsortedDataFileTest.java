@@ -36,11 +36,14 @@ class IntegrationUnsortedDataFileTest {
                 .build();
         assertNotNull(unsorted);
 
-        try (PairWriter<Integer, String> writer = unsorted.openWriter()) {
+        final UnsortedDataFileWriterTx<Integer, String> writerTx = unsorted
+                .openWriterTx();
+        try (PairWriter<Integer, String> writer = writerTx.openWriter()) {
             writer.put(Pair.of(4, "here"));
             writer.put(Pair.of(-12, "we"));
             writer.put(Pair.of(98, "go"));
         }
+        writerTx.commit();
 
         try (PairIterator<Integer, String> reader = unsorted.openIterator()) {
             while (reader.hasNext()) {

@@ -1,12 +1,13 @@
 package org.hestiastore.index.chunkpairfile;
 
 import org.hestiastore.index.Pair;
+import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkPayload;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
-import org.hestiastore.index.sorteddatafile.SortedDataFileWriter;
+import org.hestiastore.index.sorteddatafile.SortedDataFileWriterTx;
 
 /**
  * Simplest Chunk writer that writes all data into memmory and than create from
@@ -19,7 +20,8 @@ public class SingleChunkPairWriterImpl<K, V>
 
     private final MemDirectory directory = new MemDirectory();
 
-    private final SortedDataFileWriter<K, V> writer;
+    private final PairWriter<K, V> writer;
+    private final SortedDataFileWriterTx<K, V> txWriter;
 
     /**
      * Creates a new chunk writer.
@@ -38,18 +40,20 @@ public class SingleChunkPairWriterImpl<K, V>
                 .withValueTypeDescriptor(valueTypeDescriptor) //
                 .withDiskIoBufferSize(1024)//
                 .build();
-        this.writer = sortedDataFile.openWriter();
+        this.txWriter = sortedDataFile.openWriterTx();
+        this.writer = txWriter.openWriter();
     }
 
     @Override
     public void put(final Pair<K, V> pair) {
         Vldtn.requireNonNull(pair, "pair");
-        writer.write(pair);
+        writer.put(pair);
     }
 
     @Override
     public ChunkPayload close() {
         writer.close();
+        txWriter.commit();
         return ChunkPayload.of(directory.getFileBytes(CHUNK_FILE_NAME));
     }
 

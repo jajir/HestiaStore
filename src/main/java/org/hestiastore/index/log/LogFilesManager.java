@@ -1,6 +1,7 @@
 package org.hestiastore.index.log;
 
 import org.hestiastore.index.CloseablePairReader;
+import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
@@ -33,9 +34,14 @@ public class LogFilesManager<K, V> {
                 .build();
     }
 
+    @Deprecated
     CloseablePairReader<LoggedKey<K>, V> openReader(final String name) {
         UnsortedDataFile<LoggedKey<K>, V> log = getLogFile(name);
         return log.openReader();
+    }
+
+    PairIterator<LoggedKey<K>, V> openIterator(final String name) {
+        return getLogFile(name).openIterator();
     }
 
 }

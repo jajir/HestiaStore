@@ -93,9 +93,9 @@ public class DataFileSorter<K, V> {
     private void writeChunkToFile(final UniqueCache<K, V> cache,
             final int round, final int chunkCount) {
         final SortedDataFile<K, V> chunkFile = getChunkFile(round, chunkCount);
-        try (SortedDataFileWriter<K, V> writer = chunkFile.openWriter()) {
-            cache.getAsSortedList().forEach(pair -> writer.write(pair));
-        }
+        chunkFile.openWriterTx().execute(writer -> {
+            cache.getAsSortedList().forEach(pair -> writer.put(pair));
+        });
     }
 
     private SortedDataFile<K, V> getChunkFile(final int round,
@@ -144,13 +144,13 @@ public class DataFileSorter<K, V> {
             SortedDataFile<K, V> targetFile) {
         try (MergedPairIterator<K, V> iterator = new MergedPairIterator<>(
                 chunkFiles, keyTypeDescriptor.getComparator(), merger)) {
-            try (SortedDataFileWriter<K, V> writer = targetFile.openWriter()) {
+            targetFile.openWriterTx().execute(writer -> {
                 Pair<K, V> pair = null;
                 while (iterator.hasNext()) {
                     pair = iterator.next();
-                    writer.write(pair);
+                    writer.put(pair);
                 }
-            }
+            });
         }
     }
 

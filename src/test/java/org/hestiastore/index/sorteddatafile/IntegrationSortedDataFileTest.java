@@ -45,7 +45,13 @@ class IntegrationSortedDataFileTest extends AbstractDataTest {
 
     long writeDataWithOneFullWrite() {
         long position = 0;
-        try (SortedDataFileWriter<String, Integer> writer = sdf.openWriter()) {
+        sdf.openWriterTx().execute(writer -> {
+            // TODO test correct class, Diff key writer
+        });
+        final SortedDataFileFullWriterTx<String, Integer> writerTx = sdf
+                .openFullWriterTx();
+        try (SortedDataFileFullWriter<String, Integer> writer = writerTx
+                .openWriter()) {
             writer.write(P1);
             writer.write(P2);
             position = writer.writeFull(P3);
@@ -53,6 +59,7 @@ class IntegrationSortedDataFileTest extends AbstractDataTest {
             writer.write(P5);
             writer.write(P6);
         }
+        writerTx.commit();
         return position;
     }
 

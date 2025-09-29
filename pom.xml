@@ -22,7 +22,7 @@
 		<junit.platform.version>1.4.0</junit.platform.version>
 		<failsafe.plugin.version>3.5.3</failsafe.plugin.version>
 		<surefire.plugin.version>3.5.3</surefire.plugin.version>
-		<mockito.version>5.15.2</mockito.version>
+		<mockito.version>5.20.0</mockito.version>
 		<jacoco.version>0.8.13</jacoco.version>
 	</properties>
 	
@@ -153,9 +153,12 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>${surefire.plugin.version}</version>
 				<configuration>
-					<argLine>--add-opens java.base/java.lang=ALL-UNNAMED</argLine>
-					<argLine>@{argLine}</argLine>
-					<forkCount>1</forkCount>
+                    <argLine>
+                        @{argLine}
+                        --add-opens java.base/java.lang=ALL-UNNAMED
+                        -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar
+                     </argLine>
+                    <forkCount>1</forkCount>
 				</configuration>
 			</plugin>
 			<plugin>

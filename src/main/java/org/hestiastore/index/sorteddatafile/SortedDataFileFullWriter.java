@@ -1,9 +1,7 @@
 package org.hestiastore.index.sorteddatafile;
 
-import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.Pair;
-
-//TODO consider renaming, SortedPairWriter.
+import org.hestiastore.index.PairWriter;
 
 /**
  * Abstraction for writing to sorted data file.
@@ -11,8 +9,8 @@ import org.hestiastore.index.Pair;
  * @param <K> Key type
  * @param <V> Value type
  */
-// TODO remove it. It's implementations are different
-public interface SortedDataFileWriter<K, V> extends CloseableResource {
+// TODO fullWriteShould be implement in different place
+public interface SortedDataFileFullWriter<K, V> extends PairWriter<K, V> {
 
     void write(final Pair<K, V> pair);
 
