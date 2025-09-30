@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 
 public class SingleChunkPairIteratorTest {
 
-    private final static String FILE_NAME = "chunkpairfilewriter-test";
+    private static final String FILE_NAME = "chunkpairfilewriter-test";
 
     private MemDirectory directory;
 

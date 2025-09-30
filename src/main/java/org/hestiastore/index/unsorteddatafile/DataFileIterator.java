@@ -1,5 +1,6 @@
 package org.hestiastore.index.unsorteddatafile;
 
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import org.hestiastore.index.Pair;
@@ -37,7 +38,7 @@ public class DataFileIterator<K, V> implements PairIteratorWithCurrent<K, V> {
         this.keyTypeReader = Vldtn.requireNonNull(keyReader, "keyReader");
         this.valueTypeReader = Vldtn.requireNonNull(valueReader, "valueReader");
         this.reader = Vldtn.requireNonNull(reader, "reader");
-        next();
+        tryToReadNext();
     }
 
     @Override
@@ -47,7 +48,15 @@ public class DataFileIterator<K, V> implements PairIteratorWithCurrent<K, V> {
 
     @Override
     public Pair<K, V> next() {
+        if (next == null) {
+            throw new NoSuchElementException("No more elements");
+        }
         current = next;
+        tryToReadNext();
+        return current;
+    }
+
+    private void tryToReadNext() {
         final K key = keyTypeReader.read(reader);
         if (key == null) {
             next = null;
@@ -55,7 +64,6 @@ public class DataFileIterator<K, V> implements PairIteratorWithCurrent<K, V> {
             final V value = valueTypeReader.read(reader);
             next = new Pair<K, V>(key, value);
         }
-        return current;
     }
 
     @Override
