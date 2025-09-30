@@ -583,7 +583,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         try (PairWriter<Integer, String> writer = seg.openWriter()) {
             for (int i = 0; i < 1000; i++) {
                 final Pair<Integer, String> p = Pair.of(i, "Ahoj");
-                writer.put(p);
+                writer.write(p);
                 pairs.add(p);
             }
         }

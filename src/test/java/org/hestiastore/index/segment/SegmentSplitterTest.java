@@ -140,10 +140,10 @@ class SegmentSplitterTest {
                 .split(SEGMENT_ID);
 
         assertNotNull(result);
-        verify(lowerSegmentFullWriter, times(1)).put(PAIR1);
-        verify(lowerSegmentFullWriter, times(1)).put(PAIR2);
+        verify(lowerSegmentFullWriter, times(1)).write(PAIR1);
+        verify(lowerSegmentFullWriter, times(1)).write(PAIR2);
         verify(lowerSegmentFullWriter, times(1)).close();
-        verify(segmentFullWriter, times(1)).put(PAIR3);
+        verify(segmentFullWriter, times(1)).write(PAIR3);
         verify(segmentFullWriter, times(1)).close();
         verify(versionController, times(1)).changeVersion();
         verify(segmentIterator, times(1)).close();

@@ -45,12 +45,12 @@ class IntegrationSortedDataFileTest extends AbstractDataTest {
     private long writeDataWithOneFullWrite() {
         long position = 0;
         sdf.openWriterTx().execute(writer -> {
-            writer.put(P1);
-            writer.put(P2);
-            writer.put(P3);
-            writer.put(P4);
-            writer.put(P5);
-            writer.put(P6);
+            writer.write(P1);
+            writer.write(P2);
+            writer.write(P3);
+            writer.write(P4);
+            writer.write(P5);
+            writer.write(P6);
         });
         return position;
     }

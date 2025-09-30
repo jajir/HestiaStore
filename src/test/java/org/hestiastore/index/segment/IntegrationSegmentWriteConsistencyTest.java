@@ -40,14 +40,14 @@ class IntegrationSegmentWriteConsistencyTest {
         final SegmentId id = SegmentId.of(27);
         final Segment<Integer, String> seg1 = makeSegment(directory, id);
         try (PairWriter<Integer, String> writer = seg1.openWriter()) {
-            data.forEach(writer::put);
+            data.forEach(writer::write);
         }
         verifyDataIndex(seg1, data);
         seg1.close();
 
         final Segment<Integer, String> seg2 = makeSegment(directory, id);
         try (PairWriter<Integer, String> writer = seg2.openWriter()) {
-            updatedData.forEach(writer::put);
+            updatedData.forEach(writer::write);
         }
         verifyDataIndex(seg2, updatedData);
         seg2.close();

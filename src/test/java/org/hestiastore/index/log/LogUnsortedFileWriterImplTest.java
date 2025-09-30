@@ -19,7 +19,8 @@ class LogUnsortedFileWriterImplTest {
         try (final LogUnsortedFileWriterImpl<String, Integer> logWriter = new LogUnsortedFileWriterImpl<>(
                 writer)) {
             logWriter.post("kachna", 752);
-            verify(writer).put(LoggedKey.of(LogOperation.POST, "kachna"), 752);
+            verify(writer).write(LoggedKey.of(LogOperation.POST, "kachna"),
+                    752);
         }
     }
 
@@ -28,7 +29,7 @@ class LogUnsortedFileWriterImplTest {
         try (final LogUnsortedFileWriterImpl<String, Integer> logWriter = new LogUnsortedFileWriterImpl<>(
                 writer)) {
             logWriter.delete("kachna", 7527);
-            verify(writer).put(LoggedKey.of(LogOperation.DELETE, "kachna"),
+            verify(writer).write(LoggedKey.of(LogOperation.DELETE, "kachna"),
                     7527);
         }
     }

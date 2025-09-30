@@ -87,7 +87,7 @@ class IntegrationScarceIndexTest {
                 List.of(P_BBB_2, P_CCC_1, P_DDD, P_EEE, P_FFF_2));
 
         try (ScarceIndexWriter<String> writer = index.openWriter()) {
-            writer.put(P_BBB_2);
+            writer.write(P_BBB_2);
         }
 
         assertEquals(1, index.get("aaa"));
@@ -104,7 +104,7 @@ class IntegrationScarceIndexTest {
                 .build();
 
         try (ScarceIndexWriter<String> writer = index.openWriter()) {
-            pairs.forEach(writer::put);
+            pairs.forEach(writer::write);
         }
 
         return index;

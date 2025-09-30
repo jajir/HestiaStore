@@ -155,7 +155,7 @@ class IntegrationSortTest extends AbstractSegmentTest {
             final List<Pair<M, N>> pairs) {
         file.openWriterTx().execute(writer -> {
             for (final Pair<M, N> pair : pairs) {
-                writer.put(pair);
+                writer.write(pair);
             }
         });
     }

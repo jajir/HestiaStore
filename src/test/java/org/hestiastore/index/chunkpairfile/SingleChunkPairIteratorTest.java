@@ -40,7 +40,7 @@ public class SingleChunkPairIteratorTest {
                 .withDiskIoBufferSize(1024)//
                 .build();
         sortedDataFile.openWriterTx().execute(writer -> {
-            pairList.forEach(writer::put);
+            pairList.forEach(writer::write);
         });
 
         final Bytes fileBytes = directory.getFileBytes(FILE_NAME);

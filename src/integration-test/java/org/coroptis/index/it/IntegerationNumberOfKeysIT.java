@@ -76,7 +76,7 @@ public class IntegerationNumberOfKeysIT {
     private void writeData(final Segment<String, Long> segment) {
         try (PairWriter<String, Long> pairWriter = segment.openWriter()) {
             for (int i = 0; i < NUMBER_OF_TESTING_PAIRS; i++) {
-                pairWriter.put(wrap(i), RANDOM.nextLong());
+                pairWriter.write(wrap(i), RANDOM.nextLong());
             }
         }
     }

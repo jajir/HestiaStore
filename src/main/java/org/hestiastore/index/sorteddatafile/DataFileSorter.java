@@ -94,7 +94,7 @@ public class DataFileSorter<K, V> {
             final int round, final int chunkCount) {
         final SortedDataFile<K, V> chunkFile = getChunkFile(round, chunkCount);
         chunkFile.openWriterTx().execute(writer -> {
-            cache.getAsSortedList().forEach(pair -> writer.put(pair));
+            cache.getAsSortedList().forEach(pair -> writer.write(pair));
         });
     }
 
@@ -148,7 +148,7 @@ public class DataFileSorter<K, V> {
                 Pair<K, V> pair = null;
                 while (iterator.hasNext()) {
                     pair = iterator.next();
-                    writer.put(pair);
+                    writer.write(pair);
                 }
             });
         }

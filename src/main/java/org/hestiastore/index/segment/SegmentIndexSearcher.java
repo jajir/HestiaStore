@@ -7,9 +7,13 @@ import org.hestiastore.index.CloseableResource;
  * 
  * @author honza
  *
+ * 
+ * 
  * @param <K>
  * @param <V>
  */
+// TODO remove it.
+@Deprecated
 public interface SegmentIndexSearcher<K, V> extends CloseableResource {
 
     V search(K key, long startPosition);

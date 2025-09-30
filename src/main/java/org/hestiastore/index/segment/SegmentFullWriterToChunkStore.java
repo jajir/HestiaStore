@@ -59,7 +59,7 @@ public class SegmentFullWriterToChunkStore<K, V> implements PairWriter<K, V> {
     }
 
     @Override
-    public void put(final Pair<K, V> pair) {
+    public void write(final Pair<K, V> pair) {
         Vldtn.requireNonNull(pair, "pair");
 
         bloomFilterWriter.write(pair.getKey());
@@ -83,7 +83,7 @@ public class SegmentFullWriterToChunkStore<K, V> implements PairWriter<K, V> {
             return;
         }
         final long position = indexWriter.flush();
-        scarceWriter.put(Pair.of(lastPair.getKey(), (int) position));
+        scarceWriter.write(Pair.of(lastPair.getKey(), (int) position));
         scarceIndexKeyCounter.incrementAndGet();
         lastPair = null;
     }

@@ -1,12 +1,12 @@
 package org.hestiastore.index.chunkpairfile;
 
 import org.hestiastore.index.Pair;
+import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.CellPosition;
 import org.hestiastore.index.chunkstore.ChunkPayload;
 import org.hestiastore.index.chunkstore.ChunkStoreWriter;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.sorteddatafile.SortedDataFileFullWriter;
 
 /**
  * A writer for chunk pair files. It writes key-value pairs to chunks and stores
@@ -15,8 +15,7 @@ import org.hestiastore.index.sorteddatafile.SortedDataFileFullWriter;
  * @param <K> The type of keys.
  * @param <V> The type of values.
  */
-public class ChunkPairFileWriter<K, V>
-        implements SortedDataFileFullWriter<K, V> {
+public class ChunkPairFileWriter<K, V> implements PairWriter<K, V> {
 
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
@@ -49,17 +48,6 @@ public class ChunkPairFileWriter<K, V>
         chunkPairWriter.put(pair);
     }
 
-    @Override
-    public void put(final Pair<K, V> pair) {
-        chunkPairWriter.put(pair);
-    }
-
-    @Override
-    public long writeFull(final Pair<K, V> pair) {
-        chunkPairWriter.put(pair);
-        return flush();
-    }
-
     /**
      * Flushes the current chunk pair writer.
      *
@@ -70,6 +58,7 @@ public class ChunkPairFileWriter<K, V>
         chunkPairWriter = null; // reset for next write
         openNewChunkPairWriter();
         CellPosition chunkPosition = chunkStoreWriter.write(payload, 1);
+        // TODO return CellPosition
         return chunkPosition.getValue();
     }
 

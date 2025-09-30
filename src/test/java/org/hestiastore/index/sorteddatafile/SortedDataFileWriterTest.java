@@ -3,6 +3,7 @@ package org.hestiastore.index.sorteddatafile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import org.hestiastore.index.Pair;
@@ -90,10 +91,10 @@ class SortedDataFileWriterTest {
     }
 
     @Test
-    void test_writeFull_write_same_key() {
+    void test_write_write_same_key() {
         try (SortedDataFileWriterImpl<String, Integer> writer = new SortedDataFileWriterImpl<>(
                 valueWriter, fileWriter, stringTd)) {
-            writer.writeFull(PAIR_1);
+            writer.write(PAIR_1);
             final Exception e = assertThrows(IllegalArgumentException.class,
                     () -> writer.write(PAIR_0));
             assertTrue(e.getMessage()
@@ -115,31 +116,20 @@ class SortedDataFileWriterTest {
     }
 
     @Test
-    void test_writeFull_all_writes_are_full() {
-        try (SortedDataFileWriterImpl<String, Integer> writer = new SortedDataFileWriterImpl<>(
-                valueWriter, fileWriter, stringTd)) {
-            long ret = writer.writeFull(PAIR_1);
-            assertEquals(0, ret);
-
-            writer.write(PAIR_2);
-            ret = writer.writeFull(PAIR_3);
-            assertEquals(9, ret);
-
-            ret = writer.writeFull(PAIR_4);
-            assertEquals(15, ret);
-        }
-    }
-
-    @Test
-    void test_writeFull_mixed() {
+    void test_write_all_writes_are_full() {
         try (SortedDataFileWriterImpl<String, Integer> writer = new SortedDataFileWriterImpl<>(
                 valueWriter, fileWriter, stringTd)) {
             writer.write(PAIR_1);
-            writer.write(PAIR_2);
-            writer.write(PAIR_3);
+            verify(valueWriter, times(1)).write(fileWriter, 100);
 
-            long ret = writer.writeFull(PAIR_4);
-            assertEquals(12, ret);
+            writer.write(PAIR_2);
+            verify(valueWriter, times(1)).write(fileWriter, 200);
+
+            writer.write(PAIR_3);
+            verify(valueWriter, times(1)).write(fileWriter, 300);
+
+            writer.write(PAIR_4);
+            verify(valueWriter, times(1)).write(fileWriter, 400);
         }
     }
 

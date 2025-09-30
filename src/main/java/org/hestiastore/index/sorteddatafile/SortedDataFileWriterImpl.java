@@ -3,14 +3,14 @@ package org.hestiastore.index.sorteddatafile;
 import java.util.Comparator;
 
 import org.hestiastore.index.Pair;
+import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeWriter;
 import org.hestiastore.index.directory.FileWriter;
 
-public class SortedDataFileWriterImpl<K, V>
-        implements SortedDataFileFullWriter<K, V> {
+public class SortedDataFileWriterImpl<K, V> implements PairWriter<K, V> {
 
     private final TypeWriter<V> valueWriter;
 
@@ -76,29 +76,6 @@ public class SortedDataFileWriterImpl<K, V>
     }
 
     /**
-     * Allows to put new key value pair into index.
-     *
-     * @param pair required key value pair
-     */
-    private void localPut(final Pair<K, V> pair) {
-        final byte[] diffKey = diffKeyWriter.write(pair.getKey());
-        fileWriter.write(diffKey);
-        final int writenBytesInValue = valueWriter.write(fileWriter,
-                pair.getValue());
-        position = position + diffKey.length + writenBytesInValue;
-    }
-
-    /**
-     * Puts the given key-value pair into the index.
-     *
-     * @param pair required key-value pair
-     */
-    @Override
-    public void put(final Pair<K, V> pair) {
-        write(pair);
-    }
-
-    /**
      * Writes the given key-value pair.
      *
      * @param pair required key-value pair
@@ -110,27 +87,11 @@ public class SortedDataFileWriterImpl<K, V>
         Vldtn.requireNonNull(pair.getValue(), "value");
         verifyKeyOrder(pair.getKey());
 
-        localPut(pair);
-    }
-
-    /**
-     * Writes the given key-value pair, forcing all data to be written.
-     *
-     * @param pair required key-value pair
-     * @return position where will next data starts
-     */
-    @Override
-    public long writeFull(final Pair<K, V> pair) {
-        Vldtn.requireNonNull(pair, "pair");
-        Vldtn.requireNonNull(pair.getKey(), "key");
-        Vldtn.requireNonNull(pair.getValue(), "value");
-        verifyKeyOrder(pair.getKey());
-
-        diffKeyWriter = makeDiffKeyWriter();
-
-        long lastPosition = position;
-        localPut(pair);
-        return lastPosition;
+        final byte[] diffKey = diffKeyWriter.write(pair.getKey());
+        fileWriter.write(diffKey);
+        final int writenBytesInValue = valueWriter.write(fileWriter,
+                pair.getValue());
+        position = position + diffKey.length + writenBytesInValue;
     }
 
     @Override

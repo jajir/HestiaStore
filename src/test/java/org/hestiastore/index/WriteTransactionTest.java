@@ -42,12 +42,12 @@ class WriteTransactionTest {
                 });
 
         testTransaction.execute(writer -> {
-            writer.put(PAIR1);
-            writer.put(PAIR2);
+            writer.write(PAIR1);
+            writer.write(PAIR2);
         });
 
-        verify(pairWriter).put(PAIR1);
-        verify(pairWriter).put(PAIR2);
+        verify(pairWriter).write(PAIR1);
+        verify(pairWriter).write(PAIR2);
         verify(pairWriter, times(1)).close();
         verify(testTransaction, times(1)).commit();
     }
@@ -71,14 +71,14 @@ class WriteTransactionTest {
 
         final Exception e = assertThrows(RuntimeException.class,
                 () -> testTransaction.execute(writer -> {
-                    writer.put(PAIR1);
-                    writer.put(PAIR2);
+                    writer.write(PAIR1);
+                    writer.write(PAIR2);
                     throw new RuntimeException("My test exception");
                 }));
 
         assertEquals("My test exception", e.getMessage());
-        verify(pairWriter).put(PAIR1);
-        verify(pairWriter).put(PAIR2);
+        verify(pairWriter).write(PAIR1);
+        verify(pairWriter).write(PAIR2);
         verify(pairWriter, times(1)).close();
         verify(testTransaction, never()).commit();
     }
@@ -103,13 +103,13 @@ class WriteTransactionTest {
                 .close();
         final Exception e = assertThrows(IndexException.class,
                 () -> testTransaction.execute(writer -> {
-                    writer.put(PAIR1);
-                    writer.put(PAIR2);
+                    writer.write(PAIR1);
+                    writer.write(PAIR2);
                 }));
 
         assertEquals("Closing exception", e.getMessage());
-        verify(pairWriter).put(PAIR1);
-        verify(pairWriter).put(PAIR2);
+        verify(pairWriter).write(PAIR1);
+        verify(pairWriter).write(PAIR2);
         verify(pairWriter, times(1)).close();
         verify(testTransaction, never()).commit();
     }
@@ -133,13 +133,13 @@ class WriteTransactionTest {
 
         final Exception e = assertThrows(IndexException.class,
                 () -> testTransaction.execute(writer -> {
-                    writer.put(PAIR1);
-                    writer.put(PAIR2);
+                    writer.write(PAIR1);
+                    writer.write(PAIR2);
                 }));
 
         assertEquals("open writer exception", e.getMessage());
-        verify(pairWriter, never()).put(PAIR1);
-        verify(pairWriter, never()).put(PAIR2);
+        verify(pairWriter, never()).write(PAIR1);
+        verify(pairWriter, never()).write(PAIR2);
         verify(pairWriter, never()).close();
         verify(testTransaction, never()).commit();
     }

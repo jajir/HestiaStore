@@ -8,6 +8,14 @@ import org.hestiastore.index.CloseablePairReader;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.Vldtn;
 
+/**
+ * A spliterator that reads pairs from a {@link CloseablePairReader} and
+ * provides them to a consumer. The spliterator is sorted according to a
+ * specified {@link PairComparator}.
+ * 
+ * @param <K> the type of keys
+ * @param <V> the type of values
+ */
 public class PairReaderSpliterator<K, V> implements Spliterator<Pair<K, V>> {
 
     private final CloseablePairReader<K, V> pairReader;

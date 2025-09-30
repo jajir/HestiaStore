@@ -1,6 +1,5 @@
 package org.hestiastore.index.sorteddatafile;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.hestiastore.index.Pair;
@@ -37,7 +36,7 @@ class IntegrationSortedDataFileWriterTest {
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
         try (SortedDataFileWriterImpl<String, Byte> siw = new SortedDataFileWriterImpl<>(
                 byteTd.getTypeWriter(), fileWriter, stringTd)) {
-            assertEquals(0, siw.writeFull(P_AAABBB_1));
+            siw.write(P_AAABBB_1);
             assertThrows(IllegalArgumentException.class, () -> {
                 siw.write(P_AAA_0);
             });

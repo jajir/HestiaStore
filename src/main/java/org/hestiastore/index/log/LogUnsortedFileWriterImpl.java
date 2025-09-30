@@ -21,11 +21,11 @@ public final class LogUnsortedFileWriterImpl<K, V>
     }
 
     public void post(final K key, final V value) {
-        writer.put(LoggedKey.of(LogOperation.POST, key), value);
+        writer.write(LoggedKey.of(LogOperation.POST, key), value);
     }
 
     public void delete(final K key, final V value) {
-        writer.put(LoggedKey.of(LogOperation.DELETE, key), value);
+        writer.write(LoggedKey.of(LogOperation.DELETE, key), value);
     }
 
     @Override

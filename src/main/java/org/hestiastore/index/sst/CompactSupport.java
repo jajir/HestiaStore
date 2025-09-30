@@ -75,7 +75,7 @@ public class CompactSupport<K, V> {
         final Segment<K, V> segment = segmentRegistry
                 .getSegment(currentSegmentId);
         try (PairWriter<K, V> writer = segment.openWriter()) {
-            toSameSegment.forEach(writer::put);
+            toSameSegment.forEach(writer::write);
         }
         if (KeySegmentCache.FIRST_SEGMENT_ID.equals(currentSegmentId)) {
             // Segment containing highest key.
