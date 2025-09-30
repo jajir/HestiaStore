@@ -1,8 +1,6 @@
 package org.hestiastore.index.unsorteddatafile;
 
-import org.hestiastore.index.CloseablePairReader;
 import org.hestiastore.index.PairIterator;
-import org.hestiastore.index.PairIteratorFromReader;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeReader;
@@ -59,12 +57,7 @@ public class UnsortedDataFile<K, V> {
      * @return opened iterator
      */
     public PairIterator<K, V> openIterator() {
-        return new PairIteratorFromReader<>(openReader());
-    }
-
-    @Deprecated
-    public PairWriter<K, V> openWriter() {
-        return openWriter(Access.OVERWRITE);
+        return new DataFileIterator<>(keyReader, valueReader, getFileReader());
     }
 
     @Deprecated
@@ -99,26 +92,10 @@ public class UnsortedDataFile<K, V> {
      */
     public UnsortedDataFileStreamer<K, V> openStreamer() {
         if (directory.isFileExists(fileName)) {
-            final UnsortedDataFileSpliterator<K, V> spliterator = new UnsortedDataFileSpliterator<>(
-                    openReader());
-            return new UnsortedDataFileStreamer<>(spliterator);
+            return new UnsortedDataFileStreamer<>(openIterator());
         } else {
             return new UnsortedDataFileStreamer<>(null);
         }
-    }
-
-    /**
-     * Opens a reader for this file. If the file does not exist, an empty reader
-     * is returned.
-     * 
-     * @deprecated use {@link #openStreamer()} instead
-     * 
-     * 
-     * @return opened reader
-     */
-    public CloseablePairReader<K, V> openReader() {
-        return new UnsortedDataFileReader<>(keyReader, valueReader,
-                getFileReader());
     }
 
     private FileReader getFileReader() {

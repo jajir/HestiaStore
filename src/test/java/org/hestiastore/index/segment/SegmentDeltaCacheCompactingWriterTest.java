@@ -12,7 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class SegmentWriterTest {
+class SegmentDeltaCacheCompactingWriterTest {
 
     private static final Pair<Integer, String> PAIR_1 = Pair.of(1, "aaa");
     private static final Pair<Integer, String> PAIR_2 = Pair.of(2, "bbb");
@@ -37,7 +37,7 @@ class SegmentWriterTest {
                 .thenReturn(false);
         when(segmentCompacter.shouldBeCompactedDuringWriting(3))
                 .thenReturn(false);
-        try (final PairWriter<Integer, String> writer = new SegmentWriter<>(
+        try (final PairWriter<Integer, String> writer = new SegmentDeltaCacheCompactingWriter<>(
                 segmentCompacter, deltaCacheController)) {
             writer.write(PAIR_1);
             writer.write(PAIR_2);
@@ -64,7 +64,7 @@ class SegmentWriterTest {
                 .thenReturn(true);
         when(segmentCompacter.shouldBeCompactedDuringWriting(3))
                 .thenReturn(false);
-        try (final PairWriter<Integer, String> writer = new SegmentWriter<>(
+        try (final PairWriter<Integer, String> writer = new SegmentDeltaCacheCompactingWriter<>(
                 segmentCompacter, deltaCacheController)) {
             writer.write(PAIR_1);
             writer.write(PAIR_2);

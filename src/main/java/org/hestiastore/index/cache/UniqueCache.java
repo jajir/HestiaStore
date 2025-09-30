@@ -5,10 +5,8 @@ import java.util.List;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
-import org.hestiastore.index.CloseablePairReader;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
-import org.hestiastore.index.PairIteratorFromReader;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.sorteddatafile.PairComparator;
 
@@ -69,15 +67,6 @@ public class UniqueCache<K, V> {
                 .toList();
     }
 
-    /**
-     * It's unsorted.
-     * 
-     * @return
-     */
-    public CloseablePairReader<K, V> openReader() {
-        return new UniqueCacheReader<>(getStream().iterator());
-    }
-
     public List<Pair<K, V>> getAsSortedList() {
         return map.entrySet().stream()
                 .map(entry -> new Pair<K, V>(entry.getKey(), entry.getValue()))
@@ -93,16 +82,7 @@ public class UniqueCache<K, V> {
     }
 
     public PairIterator<K, V> getSortedIterator() {
-        return new PairIteratorFromReader<>(openSortedClonedReader());
-    }
-
-    /**
-     * It's sorted.
-     * 
-     * @return
-     */
-    private CloseablePairReader<K, V> openSortedClonedReader() {
-        return new UniqueCacheReader<>(getAsSortedList().iterator());
+        return PairIterator.make(getAsSortedList().iterator());
     }
 
     /**

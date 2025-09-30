@@ -1,12 +1,9 @@
 package org.hestiastore.index.log;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import java.util.List;
 
-import org.hestiastore.index.unsorteddatafile.UnsortedDataFileStreamer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,15 +29,6 @@ class LogImplTest {
     @BeforeEach
     void setUp() {
         log = new LogImpl<>(logWriter, logFileNamesManager, logFilesManager);
-    }
-
-    @Test
-    void test_openStreamer() {
-        when(logFileNamesManager.getSortedLogFiles()).thenReturn(data);
-        final UnsortedDataFileStreamer<LoggedKey<String>, String> streamer = log
-                .openStreamer();
-
-        assertNotNull(streamer);
     }
 
     @Test

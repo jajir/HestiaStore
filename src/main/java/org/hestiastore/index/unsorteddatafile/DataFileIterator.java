@@ -1,4 +1,4 @@
-package org.hestiastore.index.sorteddatafile;
+package org.hestiastore.index.unsorteddatafile;
 
 import java.util.Optional;
 
@@ -8,8 +8,13 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.directory.FileReader;
 
-public class SortedDataFileIterator<K, V>
-        implements PairIteratorWithCurrent<K, V> {
+/**
+ * An iterator over key-value pairs stored in a data file.
+ *
+ * @param <K> the type of keys
+ * @param <V> the type of values
+ */
+public class DataFileIterator<K, V> implements PairIteratorWithCurrent<K, V> {
 
     private final TypeReader<K> keyTypeReader;
     private final TypeReader<V> valueTypeReader;
@@ -18,7 +23,16 @@ public class SortedDataFileIterator<K, V>
     private Pair<K, V> current;
     private Pair<K, V> next;
 
-    public SortedDataFileIterator(final TypeReader<K> keyReader,
+    /**
+     * Constructs a new {@code DataFileIterator} with the specified key and
+     * value type readers and file reader.
+     *
+     * @param keyReader   required type reader for keys
+     * @param valueReader required type reader for values
+     * @param reader      required file reader to read from
+     * @throws IllegalArgumentException if any of the arguments is null
+     */
+    public DataFileIterator(final TypeReader<K> keyReader,
             final TypeReader<V> valueReader, final FileReader reader) {
         this.keyTypeReader = Vldtn.requireNonNull(keyReader, "keyReader");
         this.valueTypeReader = Vldtn.requireNonNull(valueReader, "valueReader");

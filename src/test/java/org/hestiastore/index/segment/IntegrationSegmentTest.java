@@ -580,7 +580,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withValueTypeDescriptor(tds).build();
 
         final List<Pair<Integer, String>> pairs = new ArrayList<>();
-        try (PairWriter<Integer, String> writer = seg.openWriter()) {
+        try (PairWriter<Integer, String> writer = seg.openDeltaCacheWriter()) {
             for (int i = 0; i < 1000; i++) {
                 final Pair<Integer, String> p = Pair.of(i, "Ahoj");
                 writer.write(p);

@@ -1,7 +1,5 @@
 package org.hestiastore.index.log;
 
-import org.hestiastore.index.unsorteddatafile.UnsortedDataFileStreamer;
-
 public interface Log<K, V> {
 
     static <M, N> LogBuilder<M, N> builder() {
@@ -23,13 +21,6 @@ public interface Log<K, V> {
      * @param value required value, it should be thomstone value
      */
     void delete(K key, V value);
-
-    /**
-     * Provide stream over all data from older log record to lastest one.
-     * 
-     * @return
-     */
-    UnsortedDataFileStreamer<LoggedKey<K>, V> openStreamer();
 
     /**
      * 

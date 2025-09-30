@@ -58,9 +58,9 @@ public class ChunkPairFileWriterTest {
         when(chunkStoreWriter.write(any(), anyInt()))
                 .thenReturn(CellPosition.of(DATA_BLOCK_SIZE, 2048));
         writer.write(Pair.of("key1", 1L));
-        long ret = writer.flush();
+        CellPosition ret = writer.flush();
 
-        assertEquals(2048, ret);
+        assertEquals(2048, ret.getValue());
         verify(chunkStoreWriter, times(1)).write(any(), anyInt());
     }
 

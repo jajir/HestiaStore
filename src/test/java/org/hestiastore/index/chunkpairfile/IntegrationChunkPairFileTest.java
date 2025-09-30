@@ -8,6 +8,7 @@ import java.util.Iterator;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.TestData;
+import org.hestiastore.index.chunkstore.CellPosition;
 import org.hestiastore.index.chunkstore.ChunkStoreFile;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.directory.Directory;
@@ -48,7 +49,7 @@ public class IntegrationChunkPairFileTest {
         // Write data
         ChunkPairFileWriterTx<Integer, String> writerTx = chunkPairFile
                 .openWriterTx();
-        long position = -1;
+        CellPosition position = null;
         try (final ChunkPairFileWriter<Integer, String> chunkPairFileWriter = writerTx
                 .openWriter()) {
             chunkPairFileWriter.write(TestData.PAIR1);
@@ -57,7 +58,7 @@ public class IntegrationChunkPairFileTest {
             position = chunkPairFileWriter.flush();
         }
         writerTx.commit();
-        assertEquals(0, position);
+        assertEquals(0, position.getValue());
 
         // Read data
         Iterator<Pair<Integer, String>> iterator = chunkPairFile.openIterator();

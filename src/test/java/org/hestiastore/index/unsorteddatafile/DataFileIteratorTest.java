@@ -1,4 +1,4 @@
-package org.hestiastore.index.sorteddatafile;
+package org.hestiastore.index.unsorteddatafile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -16,7 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class SortedDataFileIteratorTest {
+public class DataFileIteratorTest {
 
     @Mock
     private TypeReader<String> keyTypeReader;
@@ -27,13 +27,13 @@ public class SortedDataFileIteratorTest {
     @Mock
     private FileReader reader;
 
-    private SortedDataFileIterator<String, Integer> iterator;
+    private DataFileIterator<String, Integer> iterator;
 
     @Test
     void test_simple() {
         when(keyTypeReader.read(reader)).thenReturn("A", "B", "C", null);
         when(valueTypeReader.read(reader)).thenReturn(1, 2, 3, null);
-        iterator = new SortedDataFileIterator<>(keyTypeReader, valueTypeReader,
+        iterator = new DataFileIterator<>(keyTypeReader, valueTypeReader,
                 reader);
 
         assertTrue(iterator.hasNext());
@@ -48,7 +48,7 @@ public class SortedDataFileIteratorTest {
     @Test
     void test_empty() {
         when(keyTypeReader.read(reader)).thenReturn(null);
-        iterator = new SortedDataFileIterator<>(keyTypeReader, valueTypeReader,
+        iterator = new DataFileIterator<>(keyTypeReader, valueTypeReader,
                 reader);
 
         assertFalse(iterator.hasNext());
@@ -57,16 +57,14 @@ public class SortedDataFileIteratorTest {
     @Test
     void test_constructor_missing_keyTypeReader() {
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> new SortedDataFileIterator<>(null, valueTypeReader,
-                        reader));
+                () -> new DataFileIterator<>(null, valueTypeReader, reader));
         assertEquals("Property 'keyReader' must not be null.", e.getMessage());
     }
 
     @Test
     void test_constructor_missing_valueTypeReader() {
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> new SortedDataFileIterator<>(keyTypeReader, null,
-                        reader));
+                () -> new DataFileIterator<>(keyTypeReader, null, reader));
         assertEquals("Property 'valueReader' must not be null.",
                 e.getMessage());
     }
@@ -74,8 +72,8 @@ public class SortedDataFileIteratorTest {
     @Test
     void test_constructor_missing_reader() {
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> new SortedDataFileIterator<>(keyTypeReader,
-                        valueTypeReader, null));
+                () -> new DataFileIterator<>(keyTypeReader, valueTypeReader,
+                        null));
         assertEquals("Property 'reader' must not be null.", e.getMessage());
     }
 

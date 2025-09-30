@@ -15,7 +15,6 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.log.LoggedKey;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.Test;
@@ -99,10 +98,6 @@ class IntegrationIndexSimpleTest {
         // reopen index to make sure all log data at flushed at the disk
         index1.close();
         index1 = makeIndex(true);
-
-        final List<Pair<LoggedKey<Integer>, String>> list = index1
-                .getLogStreamer().stream().toList();
-        assertEquals(testData.size(), list.size());
     }
 
     @Test

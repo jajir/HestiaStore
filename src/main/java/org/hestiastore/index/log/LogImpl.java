@@ -1,7 +1,6 @@
 package org.hestiastore.index.log;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.unsorteddatafile.UnsortedDataFileStreamer;
 
 public class LogImpl<K, V> implements Log<K, V> {
 
@@ -17,11 +16,6 @@ public class LogImpl<K, V> implements Log<K, V> {
                 "logFileNamesManager");
         this.logFilesManager = Vldtn.requireNonNull(logFilesManager,
                 "logFilesManager");
-    }
-
-    public UnsortedDataFileStreamer<LoggedKey<K>, V> openStreamer() {
-        return new UnsortedDataFileStreamer<>(new LogFilesSpliterator<>(
-                logFilesManager, logFileNamesManager.getSortedLogFiles()));
     }
 
     @Override

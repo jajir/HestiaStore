@@ -74,7 +74,8 @@ public class IntegerationNumberOfKeysIT {
     }
 
     private void writeData(final Segment<String, Long> segment) {
-        try (PairWriter<String, Long> pairWriter = segment.openWriter()) {
+        try (PairWriter<String, Long> pairWriter = segment
+                .openDeltaCacheWriter()) {
             for (int i = 0; i < NUMBER_OF_TESTING_PAIRS; i++) {
                 pairWriter.write(wrap(i), RANDOM.nextLong());
             }
