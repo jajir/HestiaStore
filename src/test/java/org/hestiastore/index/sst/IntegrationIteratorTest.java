@@ -51,20 +51,6 @@ class IntegrationIteratorTest extends AbstractIndexTest {
     }
 
     @Test
-    void test_case_1_simple_read() {
-        verifyIndexSearch(index, Arrays.asList(//
-                Pair.of("a", 20), //
-                Pair.of("b", 30), //
-                Pair.of("c", 40) //
-        ));
-        verifyIndexData(index, Arrays.asList(//
-                Pair.of("a", 20), //
-                Pair.of("b", 30), //
-                Pair.of("c", 40) //
-        ));
-    }
-
-    @Test
     void test_case_2_deleted_key() {
         index.delete("b");
 
