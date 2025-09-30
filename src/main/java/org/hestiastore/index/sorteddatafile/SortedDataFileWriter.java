@@ -10,7 +10,14 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeWriter;
 import org.hestiastore.index.directory.FileWriter;
 
-public class SortedDataFileWriterImpl<K, V> implements PairWriter<K, V> {
+/**
+ * Writes key-value pairs into sorted data file. Keys must be in ascending
+ * order.
+ * 
+ * @param <K> key type
+ * @param <V> value type
+ */
+public class SortedDataFileWriter<K, V> implements PairWriter<K, V> {
 
     private final TypeWriter<V> valueWriter;
 
@@ -26,7 +33,14 @@ public class SortedDataFileWriterImpl<K, V> implements PairWriter<K, V> {
 
     private K previousKey = null;
 
-    public SortedDataFileWriterImpl(final TypeWriter<V> valueWriter,
+    /**
+     * Creates writer for sorted data file.
+     * 
+     * @param valueWriter       required value writer
+     * @param fileWriter        required file writer
+     * @param keyTypeDescriptor required key type descriptor
+     */
+    public SortedDataFileWriter(final TypeWriter<V> valueWriter,
             final FileWriter fileWriter,
             final TypeDescriptor<K> keyTypeDescriptor) {
         this.valueWriter = Vldtn.requireNonNull(valueWriter, "valueWriter");

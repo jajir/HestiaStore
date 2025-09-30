@@ -7,7 +7,7 @@ public class TypeDescriptorLong implements TypeDescriptor<Long> {
     /**
      * Thombstone value, use can't use it.
      */
-    private static final Long TOMBSTONE_VALUE = Long.MIN_VALUE + 1;
+    public static final Long TOMBSTONE_VALUE = Long.MIN_VALUE + 1;
 
     /**
      * How many bytes is required to store Integer.

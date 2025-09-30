@@ -196,11 +196,9 @@ public final class SegmentBuilder<K, V> {
         final SegmentSearcher<K, V> segmentSearcher = new SegmentSearcher<K, V>(
                 segmentFiles.getValueTypeDescriptor(), segmentIndexSearcher,
                 segmentDataProvider);
-        final SegmentManager<K, V> segmentManager = new SegmentManager<>(
-                segmentFiles, segmentConf);
         return new Segment<>(segmentFiles, segmentConf, versionController,
                 segmentPropertiesManager, segmentDataProvider, segmentSearcher,
-                segmentManager, segmentDataProvider);
+                segmentDataProvider);
     }
 
 }

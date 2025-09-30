@@ -30,7 +30,6 @@ public class Segment<K, V>
     private final SegmentCompacter<K, V> segmentCompacter;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
     private final SegmentSearcher<K, V> segmentSearcher;
-    private final SegmentManager<K, V> segmentManager;
     private final SegmentDataProvider<K, V> segmentCacheDataProvider;
 
     public static <M, N> SegmentBuilder<M, N> builder() {
@@ -43,7 +42,6 @@ public class Segment<K, V>
             final SegmentPropertiesManager segmentPropertiesManager,
             final SegmentDataProvider<K, V> segmentDataProvider,
             final SegmentSearcher<K, V> segmentSearcher,
-            final SegmentManager<K, V> segmentManager,
             final SegmentDataProvider<K, V> segmentCacheDataProvider) {
         this.segmentConf = Vldtn.requireNonNull(segmentConf, "segmentConf");
         this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
@@ -59,8 +57,6 @@ public class Segment<K, V>
                 segmentConf, versionController, segmentPropertiesManager);
         this.segmentSearcher = Vldtn.requireNonNull(segmentSearcher,
                 "segmentSearcher");
-        this.segmentManager = Vldtn.requireNonNull(segmentManager,
-                "segmentManager");
         this.segmentCacheDataProvider = Vldtn.requireNonNull(
                 segmentCacheDataProvider, "segmentCacheDataProvider");
     }
@@ -112,8 +108,7 @@ public class Segment<K, V>
     }
 
     WriteTransaction<K, V> openFullWriteTx() {
-        return new SegmentFullWriterTx<>(segmentManager, segmentFiles,
-                segmentPropertiesManager,
+        return new SegmentFullWriterTx<>(segmentFiles, segmentPropertiesManager,
                 segmentConf.getMaxNumberOfKeysInChunk(),
                 segmentCacheDataProvider, deltaCacheController);
     }
@@ -136,6 +131,22 @@ public class Segment<K, V>
     }
 
     /**
+     * Create new segment.
+     * 
+     * @param segmentId rqeuired segment id
+     * @return initialized segment
+     */
+    public Segment<K, V> createSegment(SegmentId segmentId) {
+        return Segment.<K, V>builder()
+                .withDirectory(segmentFiles.getDirectory())//
+                .withId(segmentId)//
+                .withKeyTypeDescriptor(segmentFiles.getKeyTypeDescriptor())//
+                .withValueTypeDescriptor(segmentFiles.getValueTypeDescriptor())//
+                .withSegmentConf(new SegmentConf(segmentConf))//
+                .build();
+    }
+
+    /**
      * Provide class that helps with segment splitting into two. It should be
      * used when segment is too big.
      * 
@@ -143,7 +154,7 @@ public class Segment<K, V>
      */
     public SegmentSplitter<K, V> getSegmentSplitter() {
         return new SegmentSplitter<>(this, segmentFiles, versionController,
-                segmentPropertiesManager, deltaCacheController, segmentManager);
+                segmentPropertiesManager, deltaCacheController);
     }
 
     @Override

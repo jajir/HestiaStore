@@ -22,7 +22,6 @@ public final class SegmentFiles<K, V> {
     private static final String INDEX_FILE_NAME_EXTENSION = ".index";
     private static final String SCARCE_FILE_NAME_EXTENSION = ".scarce";
     static final String CACHE_FILE_NAME_EXTENSION = ".cache";
-    private static final String TEMP_FILE_NAME_EXTENSION = ".tmp";
     private static final String BOOM_FILTER_FILE_NAME_EXTENSION = ".bloom-filter";
     private static final String PROPERTIES_FILENAME_EXTENSION = ".properties";
 
@@ -49,16 +48,6 @@ public final class SegmentFiles<K, V> {
         return id.getName() + CACHE_FILE_NAME_EXTENSION;
     }
 
-    String getTempIndexFileName() {
-        return id.getName() + TEMP_FILE_NAME_EXTENSION
-                + INDEX_FILE_NAME_EXTENSION;
-    }
-
-    String getTempScarceFileName() {
-        return id.getName() + TEMP_FILE_NAME_EXTENSION
-                + SCARCE_FILE_NAME_EXTENSION;
-    }
-
     String getScarceFileName() {
         return id.getName() + SCARCE_FILE_NAME_EXTENSION;
     }
@@ -75,7 +64,7 @@ public final class SegmentFiles<K, V> {
         return id.getName() + PROPERTIES_FILENAME_EXTENSION;
     }
 
-    SortedDataFile<K, V> getCacheSstFile() {
+    SortedDataFile<K, V> getCacheDataFile() {
         return SortedDataFile.<K, V>builder() //
                 .withDirectory(directory) //
                 .withFileName(getCacheFileName())//
@@ -85,7 +74,7 @@ public final class SegmentFiles<K, V> {
                 .build();
     }
 
-    SortedDataFile<K, V> getCacheSstFile(final String fileName) {
+    SortedDataFile<K, V> getDeltaCacheSortedDataFile(final String fileName) {
         return SortedDataFile.<K, V>builder() //
                 .withDirectory(directory) //
                 .withFileName(fileName)//
@@ -95,31 +84,10 @@ public final class SegmentFiles<K, V> {
                 .build();
     }
 
-    SortedDataFile<K, V> getIndexSstFileForIteration() {
-        return SortedDataFile.<K, V>builder() //
-                .withDirectory(directory) //
-                .withFileName(getIndexFileName())//
-                .withKeyTypeDescriptor(keyTypeDescriptor) //
-                .withValueTypeDescriptor(valueTypeDescriptor) //
-                .withDiskIoBufferSize(diskIoBufferSize)//
-                .build();
-    }
-
-    @Deprecated
-    SortedDataFile<K, V> getTempIndexFile() {
-        return SortedDataFile.<K, V>builder() //
-                .withDirectory(directory) //
-                .withFileName(getTempIndexFileName())//
-                .withKeyTypeDescriptor(keyTypeDescriptor) //
-                .withValueTypeDescriptor(valueTypeDescriptor) //
-                .withDiskIoBufferSize(diskIoBufferSize)//
-                .build();
-    }
-
-    ScarceIndex<K> getTempScarceIndex() {
+    ScarceIndex<K> getScarceIndex() {
         return ScarceIndex.<K>builder()//
                 .withDirectory(getDirectory())//
-                .withFileName(getTempScarceFileName())//
+                .withFileName(getScarceFileName())//
                 .withKeyTypeDescriptor(getKeyTypeDescriptor())//
                 .withDiskIoBufferSize(diskIoBufferSize) //
                 .build();

@@ -6,11 +6,11 @@ import java.util.stream.StreamSupport;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.PairIteratorStreamer;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.log.Log;
 import org.hestiastore.index.log.LoggedKey;
-import org.hestiastore.index.unsorteddatafile.UnsortedDataFileStreamer;
 
 public class IndexInternalSynchronized<K, V> extends SstIndexImpl<K, V> {
 
@@ -93,7 +93,7 @@ public class IndexInternalSynchronized<K, V> extends SstIndexImpl<K, V> {
     }
 
     @Override
-    public UnsortedDataFileStreamer<LoggedKey<K>, V> getLogStreamer() {
+    public PairIteratorStreamer<LoggedKey<K>, V> getLogStreamer() {
         lock.lock();
         try {
             return super.getLogStreamer();

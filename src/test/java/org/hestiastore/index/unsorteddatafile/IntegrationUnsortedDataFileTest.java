@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.PairIteratorStreamer;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -52,7 +53,7 @@ class IntegrationUnsortedDataFileTest {
             }
         }
 
-        try (UnsortedDataFileStreamer<Integer, String> streamer = unsorted
+        try (PairIteratorStreamer<Integer, String> streamer = unsorted
                 .openStreamer()) {
             streamer.stream().forEach(pair -> {
                 logger.debug(pair.toString());
@@ -73,7 +74,7 @@ class IntegrationUnsortedDataFileTest {
                 .build();
         assertNotNull(unsorted);
 
-        try (UnsortedDataFileStreamer<Integer, String> streamer = unsorted
+        try (PairIteratorStreamer<Integer, String> streamer = unsorted
                 .openStreamer()) {
             final long count = streamer.stream().count();
             assertEquals(0, count);

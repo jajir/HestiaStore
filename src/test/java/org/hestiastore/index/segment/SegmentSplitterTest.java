@@ -49,9 +49,6 @@ class SegmentSplitterTest {
     private SegmentDeltaCacheController<String, String> deltaCacheController;
 
     @Mock
-    private SegmentManager<String, String> segmentManager;
-
-    @Mock
     private SegmentStats segmentStats;
 
     @Mock
@@ -75,7 +72,7 @@ class SegmentSplitterTest {
     void setUp() {
         splitter = new SegmentSplitter<>(segment, segmentFiles,
                 versionController, segmentPropertiesManager,
-                deltaCacheController, segmentManager);
+                deltaCacheController);
     }
 
     @Test
@@ -126,7 +123,7 @@ class SegmentSplitterTest {
         when(segmentIterator.next()).thenReturn(PAIR1, PAIR2, PAIR3);
 
         // mock writing lower part to new segment
-        when(segmentManager.createSegment(SEGMENT_ID)).thenReturn(lowerSegment);
+        when(segment.createSegment(SEGMENT_ID)).thenReturn(lowerSegment);
         when(lowerSegment.openFullWriteTx()).thenReturn(lowerSegmentWriteTx);
         when(lowerSegmentWriteTx.openWriter())
                 .thenReturn(lowerSegmentFullWriter);

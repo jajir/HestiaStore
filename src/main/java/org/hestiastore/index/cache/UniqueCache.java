@@ -22,10 +22,22 @@ public class UniqueCache<K, V> {
     private final Comparator<K> keyComparator;
     private final TreeMap<K, V> map;
 
+    /**
+     * Create builder for unique cache.
+     * 
+     * @param <M> key type
+     * @param <N> value type
+     * @return builder
+     */
     public static <M, N> UniqueCacheBuilder<M, N> builder() {
         return new UniqueCacheBuilder<>();
     }
 
+    /**
+     * Create unique cache with given key comparator.
+     * 
+     * @param keyComparator required comparator for keys
+     */
     public UniqueCache(final Comparator<K> keyComparator) {
         this.keyComparator = Vldtn.requireNonNull(keyComparator,
                 "keyComparator");
@@ -39,19 +51,38 @@ public class UniqueCache<K, V> {
         map.merge(pair.getKey(), pair.getValue(), (oldVal, newVal) -> newVal);
     }
 
+    /**
+     * Get value for given key or null when there is no such key.
+     * 
+     * @param key required key
+     * @return value or null
+     */
     public V get(final K key) {
         Vldtn.requireNonNull(key, "key");
         return map.get(key);
     }
 
+    /**
+     * Clear all data in cache.
+     */
     public void clear() {
         map.clear();
     }
 
+    /**
+     * Get number of key value pairs in cache.
+     * 
+     * @return number of key value pairs in cache
+     */
     public int size() {
         return map.size();
     }
 
+    /**
+     * Is cache empty?
+     * 
+     * @return true when cache is empty
+     */
     public boolean isEmpty() {
         return map.isEmpty();
     }

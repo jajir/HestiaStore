@@ -34,7 +34,7 @@ class IntegrationSortedDataFileWriterTest {
         final Directory directory = new MemDirectory();
         final FileWriter fileWriter = directory.getFileWriter(FILE_NAME,
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
-        try (SortedDataFileWriterImpl<String, Byte> siw = new SortedDataFileWriterImpl<>(
+        try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(
                 byteTd.getTypeWriter(), fileWriter, stringTd)) {
             siw.write(P_AAABBB_1);
             assertThrows(IllegalArgumentException.class, () -> {
@@ -48,7 +48,7 @@ class IntegrationSortedDataFileWriterTest {
         final Directory directory = new MemDirectory();
         final FileWriter fileWriter = directory.getFileWriter(FILE_NAME,
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
-        try (SortedDataFileWriterImpl<String, Byte> siw = new SortedDataFileWriterImpl<>(
+        try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(
                 byteTd.getTypeWriter(), fileWriter, stringTd)) {
             siw.write(P_AAA_0);
             siw.write(P_ABBB_1);
@@ -62,7 +62,7 @@ class IntegrationSortedDataFileWriterTest {
         final Directory directory = new MemDirectory();
         final FileWriter fileWriter = directory.getFileWriter(FILE_NAME,
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
-        try (SortedDataFileWriterImpl<String, Byte> siw = new SortedDataFileWriterImpl<>(
+        try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(
                 byteTd.getTypeWriter(), fileWriter, stringTd)) {
             siw.write(P_AAA_0);
             siw.write(P_ABBB_1);
@@ -76,7 +76,7 @@ class IntegrationSortedDataFileWriterTest {
         final Directory directory = new MemDirectory();
         final FileWriter fileWriter = directory.getFileWriter(FILE_NAME,
                 Directory.Access.OVERWRITE, DISK_IO_BUFFER_SIZE);
-        try (SortedDataFileWriterImpl<String, Byte> siw = new SortedDataFileWriterImpl<>(
+        try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(
                 byteTd.getTypeWriter(), fileWriter, stringTd)) {
             assertThrows(IllegalArgumentException.class,
                     () -> siw.write(P_NULL_0));

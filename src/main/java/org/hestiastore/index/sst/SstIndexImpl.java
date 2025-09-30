@@ -5,6 +5,7 @@ import java.util.List;
 import org.hestiastore.index.F;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.PairIteratorStreamer;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.UniqueCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -14,7 +15,6 @@ import org.hestiastore.index.log.LoggedKey;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.sorteddatafile.PairComparator;
-import org.hestiastore.index.unsorteddatafile.UnsortedDataFileStreamer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -180,7 +180,7 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
     }
 
     @Override
-    public UnsortedDataFileStreamer<LoggedKey<K>, V> getLogStreamer() {
+    public PairIteratorStreamer<LoggedKey<K>, V> getLogStreamer() {
         return null;
     }
 
