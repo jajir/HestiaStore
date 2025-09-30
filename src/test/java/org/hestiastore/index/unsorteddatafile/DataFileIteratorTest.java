@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
+import java.util.NoSuchElementException;
+
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.directory.FileReader;
@@ -52,6 +54,18 @@ public class DataFileIteratorTest {
                 reader);
 
         assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    void test_NoSuchElement() {
+        when(keyTypeReader.read(reader)).thenReturn(null);
+        iterator = new DataFileIterator<>(keyTypeReader, valueTypeReader,
+                reader);
+
+        assertFalse(iterator.hasNext());
+        final Exception e = assertThrows(NoSuchElementException.class,
+                () -> iterator.next());
+        assertEquals("No more elements", e.getMessage());
     }
 
     @Test

@@ -11,9 +11,9 @@ import org.junit.jupiter.api.Test;
 
 public class ChunkHeaderTest {
 
-    private final static int VERSION = 1000000;
-    private final static int PAYLOAD_LENGTH = 12345;
-    private final static long CRC = 67890L;
+    private static final int VERSION = 1000000;
+    private static final int PAYLOAD_LENGTH = 12345;
+    private static final long CRC = 67890L;
 
     @Test
     void test_store_and_load() {
