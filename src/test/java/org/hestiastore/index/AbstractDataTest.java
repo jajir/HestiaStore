@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.hestiastore.index.segment.Segment;
+
 /**
  * Abstract class for data tests
  * 
@@ -80,6 +82,21 @@ public abstract class AbstractDataTest {
             final Pair<M, N> expectedPair = pairs.get(i);
             final Pair<M, N> realPair = data.get(i);
             assertEquals(expectedPair, realPair);
+        }
+    }
+
+    /**
+     * Convert segment data to list.
+     * 
+     * @param segment required segment
+     * @return list of pairs with data from segment
+     */
+    public static List<Pair<Integer, String>> segmentToList(
+            final Segment<Integer, String> segment) {
+        try (PairIterator<Integer, String> iterator = segment.openIterator()) {
+            final List<Pair<Integer, String>> out = new ArrayList<>();
+            iterator.forEachRemaining(out::add);
+            return out;
         }
     }
 

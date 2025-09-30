@@ -5,17 +5,9 @@ import org.hestiastore.index.Vldtn;
 public class LogImpl<K, V> implements Log<K, V> {
 
     private final LogWriter<K, V> logWriter;
-    private final LogFileNamesManager logFileNamesManager;
-    private final LogFilesManager<K, V> logFilesManager;
 
-    public LogImpl(final LogWriter<K, V> logWriter,
-            final LogFileNamesManager logFileNamesManager,
-            final LogFilesManager<K, V> logFilesManager) {
+    public LogImpl(final LogWriter<K, V> logWriter) {
         this.logWriter = Vldtn.requireNonNull(logWriter, "logWriter");
-        this.logFileNamesManager = Vldtn.requireNonNull(logFileNamesManager,
-                "logFileNamesManager");
-        this.logFilesManager = Vldtn.requireNonNull(logFilesManager,
-                "logFilesManager");
     }
 
     @Override

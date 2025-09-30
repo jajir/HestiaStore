@@ -33,8 +33,7 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
     private final BloomFilterWriter<K> bloomFilterWriter;
     private Pair<K, V> lastPair = null;
 
-    SegmentFullWriter(final SegmentFiles<K, V> segmentFiles,
-            final int maxNumberOfKeysInIndexPage,
+    SegmentFullWriter(final int maxNumberOfKeysInIndexPage,
             final SegmentDataProvider<K, V> segmentCacheDataProvider,
             final ChunkPairFileWriter<K, V> chunkPairFileWriter,
             final PairWriter<K, Integer> scarceWriter) {

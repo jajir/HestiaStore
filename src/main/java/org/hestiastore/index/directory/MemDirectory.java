@@ -9,13 +9,14 @@ import org.hestiastore.index.IndexException;
 
 public class MemDirectory implements Directory {
 
+    private static final String ERROR_MSG_NO_FILE = "There is no file '%s'";
     private final Map<String, byte[]> data = new HashMap<>();
 
     @Override
     public FileReader getFileReader(final String fileName) {
         if (!data.containsKey(fileName)) {
             throw new IndexException(
-                    String.format("There is no file '%s'", fileName));
+                    String.format(ERROR_MSG_NO_FILE, fileName));
         }
         return new MemFileReader(data.get(fileName));
     }
@@ -23,7 +24,7 @@ public class MemDirectory implements Directory {
     public Bytes getFileBytes(final String fileName) {
         if (!data.containsKey(fileName)) {
             throw new IndexException(
-                    String.format("There is no file '%s'", fileName));
+                    String.format(ERROR_MSG_NO_FILE, fileName));
         }
         return Bytes.of(data.get(fileName));
     }
@@ -37,7 +38,7 @@ public class MemDirectory implements Directory {
             final int bufferSize) {
         if (!data.containsKey(fileName)) {
             throw new IndexException(
-                    String.format("There is no file '%s'", fileName));
+                    String.format(ERROR_MSG_NO_FILE, fileName));
         }
         return new MemFileReader(data.get(fileName));
     }

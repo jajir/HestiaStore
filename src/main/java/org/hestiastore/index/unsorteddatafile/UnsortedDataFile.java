@@ -2,12 +2,10 @@ package org.hestiastore.index.unsorteddatafile;
 
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.PairIteratorStreamer;
-import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.datatype.TypeWriter;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.Directory.Access;
 import org.hestiastore.index.directory.FileReader;
 
 /**
@@ -59,19 +57,6 @@ public class UnsortedDataFile<K, V> {
      */
     public PairIterator<K, V> openIterator() {
         return new DataFileIterator<>(keyReader, valueReader, getFileReader());
-    }
-
-    @Deprecated
-    public PairWriter<K, V> openWriter(final Access access) {
-        Vldtn.requireNonNull(access, "access");
-        Access used = null;
-        if (directory.isFileExists(fileName)) {
-            used = access;
-        } else {
-            used = Access.OVERWRITE;
-        }
-        return new UnsortedDataFileWriter<>(directory, fileName, keyWriter,
-                valueWriter, used, diskIoBufferSize);
     }
 
     /**
