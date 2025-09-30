@@ -6,12 +6,12 @@ import java.util.stream.Stream;
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Pair;
+import org.hestiastore.index.PairIteratorStreamer;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.log.Log;
 import org.hestiastore.index.log.LoggedKey;
-import org.hestiastore.index.unsorteddatafile.UnsortedDataFileStreamer;
 
 public interface Index<K, V> extends CloseableResource {
 
@@ -126,7 +126,7 @@ public interface Index<K, V> extends CloseableResource {
         return getStream(SegmentWindow.unbounded());
     }
 
-    UnsortedDataFileStreamer<LoggedKey<K>, V> getLogStreamer();
+    PairIteratorStreamer<LoggedKey<K>, V> getLogStreamer();
 
     /**
      * Checks the internal consistency of all index segments and associated data

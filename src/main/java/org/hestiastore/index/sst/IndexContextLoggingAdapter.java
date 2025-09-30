@@ -3,9 +3,9 @@ package org.hestiastore.index.sst;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.Pair;
+import org.hestiastore.index.PairIteratorStreamer;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.log.LoggedKey;
-import org.hestiastore.index.unsorteddatafile.UnsortedDataFileStreamer;
 import org.slf4j.MDC;
 
 public class IndexContextLoggingAdapter<K, V> implements Index<K, V> {
@@ -98,7 +98,7 @@ public class IndexContextLoggingAdapter<K, V> implements Index<K, V> {
     }
 
     @Override
-    public UnsortedDataFileStreamer<LoggedKey<K>, V> getLogStreamer() {
+    public PairIteratorStreamer<LoggedKey<K>, V> getLogStreamer() {
         setContext();
         try {
             return index.getLogStreamer();

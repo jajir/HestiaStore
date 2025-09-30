@@ -31,7 +31,7 @@ public final class SegmentDeltaCache<K, V> {
         this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
         this.cache = UniqueCache.<K, V>builder()
                 .withKeyComparator(keyTypeDescriptor.getComparator())
-                .withSstFile(segmentFiles.getCacheSstFile()).build();
+                .withDataFile(segmentFiles.getCacheDataFile()).build();
         segmentPropertiesManager.getCacheDeltaFileNames()
                 .forEach(segmentDeltaFileName -> loadDataFromSegmentDeltaFile(
                         segmentFiles, segmentDeltaFileName));
@@ -41,7 +41,7 @@ public final class SegmentDeltaCache<K, V> {
             final SegmentFiles<K, V> segmentFiles,
             final String segmentDeltaFileName) {
         final SortedDataFile<K, V> dataFile = segmentFiles
-                .getCacheSstFile(segmentDeltaFileName);
+                .getDeltaCacheSortedDataFile(segmentDeltaFileName);
         try (PairIterator<K, V> iterator = dataFile.openIterator()) {
             while (iterator.hasNext()) {
                 cache.put(iterator.next());

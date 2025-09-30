@@ -40,7 +40,7 @@ public class ScarceIndex<K> {
 
     private final String fileName;
 
-    private final SortedDataFile<K, Integer> cacheDataFile;
+    private final SortedDataFile<K, Integer> sortedDataFile;
 
     private ScarceIndexCache<K> cache;
 
@@ -55,7 +55,7 @@ public class ScarceIndex<K> {
         this.fileName = Vldtn.requireNonNull(fileName, "fileName");
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
                 "keyTypeDescriptor");
-        this.cacheDataFile = SortedDataFile.<K, Integer>builder() //
+        this.sortedDataFile = SortedDataFile.<K, Integer>builder() //
                 .withDirectory(directory) //
                 .withFileName(fileName)//
                 .withKeyTypeDescriptor(keyTypeDescriptor) //
@@ -69,7 +69,7 @@ public class ScarceIndex<K> {
     public void loadCache() {
         ScarceIndexCache<K> tmp = new ScarceIndexCache<>(keyTypeDescriptor);
         if (directory.isFileExists(fileName)) {
-            try (PairIterator<K, Integer> pairIterator = cacheDataFile
+            try (PairIterator<K, Integer> pairIterator = sortedDataFile
                     .openIterator()) {
                 while (pairIterator.hasNext()) {
                     final Pair<K, Integer> pair = pairIterator.next();
@@ -97,8 +97,8 @@ public class ScarceIndex<K> {
         return cache.findSegmentId(key);
     }
 
-    public ScarceIndexWriter<K> openWriter() {
-        return new ScarceIndexWriter<>(this, cacheDataFile.openWriterTx());
+    public ScarceIndexWriterTx<K> openWriterTx() {
+        return new ScarceIndexWriterTx<>(this, sortedDataFile.openWriterTx());
     }
 
 }

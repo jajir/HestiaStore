@@ -1,6 +1,7 @@
 package org.hestiastore.index.unsorteddatafile;
 
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.PairIteratorStreamer;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeReader;
@@ -90,11 +91,11 @@ public class UnsortedDataFile<K, V> {
      * 
      * @return opened streamer
      */
-    public UnsortedDataFileStreamer<K, V> openStreamer() {
+    public PairIteratorStreamer<K, V> openStreamer() {
         if (directory.isFileExists(fileName)) {
-            return new UnsortedDataFileStreamer<>(openIterator());
+            return new PairIteratorStreamer<>(openIterator());
         } else {
-            return new UnsortedDataFileStreamer<>(null);
+            return new PairIteratorStreamer<>(null);
         }
     }
 

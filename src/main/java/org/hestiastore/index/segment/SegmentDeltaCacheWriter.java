@@ -62,7 +62,7 @@ public final class SegmentDeltaCacheWriter<K, V> implements PairWriter<K, V> {
 
         // store cache
         segmentFiles
-                .getCacheSstFile(
+                .getDeltaCacheSortedDataFile(
                         segmentPropertiesManager.getAndIncreaseDeltaFileName())
                 .openWriterTx().execute(writer -> {
                     uniqueCache.getStream().forEach(pair -> {

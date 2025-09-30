@@ -36,8 +36,7 @@ class SortedDataFileWriterTest {
     @Test
     void test_constructor_valueWriter_is_null() {
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> new SortedDataFileWriterImpl<>(null, fileWriter,
-                        stringTd));
+                () -> new SortedDataFileWriter<>(null, fileWriter, stringTd));
 
         assertEquals("Property 'valueWriter' must not be null.",
                 e.getMessage());
@@ -46,8 +45,7 @@ class SortedDataFileWriterTest {
     @Test
     void test_constructor_writer_is_null() {
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> new SortedDataFileWriterImpl<>(valueWriter, null,
-                        stringTd));
+                () -> new SortedDataFileWriter<>(valueWriter, null, stringTd));
 
         assertEquals("Property 'fileWriter' must not be null.", e.getMessage());
     }
@@ -55,7 +53,7 @@ class SortedDataFileWriterTest {
     @Test
     void test_constructor_keyTypeDescriptor_is_null() {
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> new SortedDataFileWriterImpl<>(valueWriter, fileWriter,
+                () -> new SortedDataFileWriter<>(valueWriter, fileWriter,
                         null));
 
         assertEquals("Property 'keyTypeDescriptor' must not be null.",
@@ -64,7 +62,7 @@ class SortedDataFileWriterTest {
 
     @Test
     void test_write_lower_key() {
-        try (SortedDataFileWriterImpl<String, Integer> writer = new SortedDataFileWriterImpl<>(
+        try (SortedDataFileWriter<String, Integer> writer = new SortedDataFileWriter<>(
                 valueWriter, fileWriter, stringTd)) {
             writer.write(PAIR_1);
             final Exception e = assertThrows(IllegalArgumentException.class,
@@ -78,7 +76,7 @@ class SortedDataFileWriterTest {
 
     @Test
     void test_write_same_key() {
-        try (SortedDataFileWriterImpl<String, Integer> writer = new SortedDataFileWriterImpl<>(
+        try (SortedDataFileWriter<String, Integer> writer = new SortedDataFileWriter<>(
                 valueWriter, fileWriter, stringTd)) {
             writer.write(PAIR_1);
             final Exception e = assertThrows(IllegalArgumentException.class,
@@ -92,7 +90,7 @@ class SortedDataFileWriterTest {
 
     @Test
     void test_write_write_same_key() {
-        try (SortedDataFileWriterImpl<String, Integer> writer = new SortedDataFileWriterImpl<>(
+        try (SortedDataFileWriter<String, Integer> writer = new SortedDataFileWriter<>(
                 valueWriter, fileWriter, stringTd)) {
             writer.write(PAIR_1);
             final Exception e = assertThrows(IllegalArgumentException.class,
@@ -106,7 +104,7 @@ class SortedDataFileWriterTest {
 
     @Test
     void test_write() {
-        try (SortedDataFileWriterImpl<String, Integer> writer = new SortedDataFileWriterImpl<>(
+        try (SortedDataFileWriter<String, Integer> writer = new SortedDataFileWriter<>(
                 valueWriter, fileWriter, stringTd)) {
             writer.write(PAIR_1);
             verify(valueWriter).write(fileWriter, 100);
@@ -117,7 +115,7 @@ class SortedDataFileWriterTest {
 
     @Test
     void test_write_all_writes_are_full() {
-        try (SortedDataFileWriterImpl<String, Integer> writer = new SortedDataFileWriterImpl<>(
+        try (SortedDataFileWriter<String, Integer> writer = new SortedDataFileWriter<>(
                 valueWriter, fileWriter, stringTd)) {
             writer.write(PAIR_1);
             verify(valueWriter, times(1)).write(fileWriter, 100);

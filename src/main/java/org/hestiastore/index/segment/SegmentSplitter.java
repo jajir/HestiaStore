@@ -2,8 +2,8 @@ package org.hestiastore.index.segment;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.hestiastore.index.F;
 import org.hestiastore.index.AtomicKey;
+import org.hestiastore.index.F;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.PairWriter;
@@ -25,14 +25,12 @@ public class SegmentSplitter<K, V> {
     private final VersionController versionController;
     private final SegmentPropertiesManager segmentPropertiesManager;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
-    private final SegmentManager<K, V> segmentManager;
 
     public SegmentSplitter(final Segment<K, V> segment,
             final SegmentFiles<K, V> segmentFiles,
             final VersionController versionController,
             final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentDeltaCacheController<K, V> deltaCacheController,
-            final SegmentManager<K, V> segmentManager) {
+            final SegmentDeltaCacheController<K, V> deltaCacheController) {
         this.segment = Vldtn.requireNonNull(segment, "segment");
         this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
         this.versionController = Vldtn.requireNonNull(versionController,
@@ -41,8 +39,6 @@ public class SegmentSplitter<K, V> {
                 segmentPropertiesManager, "segmentPropertiesManager");
         this.deltaCacheController = Vldtn.requireNonNull(deltaCacheController,
                 "deltaCacheController");
-        this.segmentManager = Vldtn.requireNonNull(segmentManager,
-                "segmentManager");
     }
 
     private SegmentStats getStats() {
@@ -88,8 +84,7 @@ public class SegmentSplitter<K, V> {
             throw new IllegalStateException(
                     "Splitting failed. Number of keys is too low.");
         }
-        final Segment<K, V> lowerSegment = segmentManager
-                .createSegment(segmentId);
+        final Segment<K, V> lowerSegment = segment.createSegment(segmentId);
 
         final AtomicKey<K> minKey = new AtomicKey<>();
         final AtomicKey<K> maxKey = new AtomicKey<>();

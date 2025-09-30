@@ -53,10 +53,12 @@ public class SegmentSearcher<K, V> implements CloseableResource {
             return null;
         }
 
-        // TODO optimize ifs with junits
+        if (out != null) {
+            return out;
+        }
 
         // look in bloom filter
-        if (out == null && getBloomFilter().isNotStored(key)) {
+        if (getBloomFilter().isNotStored(key)) {
             /*
              * It's sure that key is not in index.
              */
@@ -64,19 +66,16 @@ public class SegmentSearcher<K, V> implements CloseableResource {
         }
 
         // look in index file
-        if (out == null) {
-            final Integer position = getScarceIndex().get(key);
-            if (position == null) {
-                return null;
-            }
-            final V value = segmentIndexSearcher.search(key, position);
-            if (value == null) {
-                getBloomFilter().incrementFalsePositive();
-                return null;
-            }
-            return value;
+        final Integer position = getScarceIndex().get(key);
+        if (position == null) {
+            return null;
         }
-        return out;
+        final V value = segmentIndexSearcher.search(key, position);
+        if (value == null) {
+            getBloomFilter().incrementFalsePositive();
+            return null;
+        }
+        return value;
     }
 
     @Override

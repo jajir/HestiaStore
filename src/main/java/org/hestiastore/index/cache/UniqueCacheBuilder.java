@@ -18,7 +18,7 @@ public class UniqueCacheBuilder<K, V> {
 
     private SortedDataFile<K, V> sdf;
 
-    UniqueCacheBuilder() {
+    protected UniqueCacheBuilder() {
 
     }
 
@@ -28,9 +28,9 @@ public class UniqueCacheBuilder<K, V> {
         return this;
     }
 
-    public UniqueCacheBuilder<K, V> withSstFile(
-            final SortedDataFile<K, V> sstFile) {
-        this.sdf = sstFile;
+    public UniqueCacheBuilder<K, V> withDataFile(
+            final SortedDataFile<K, V> dataFile) {
+        this.sdf = dataFile;
         return this;
     }
 

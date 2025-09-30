@@ -8,7 +8,6 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilterWriter;
 import org.hestiastore.index.chunkpairfile.ChunkPairFileWriter;
 import org.hestiastore.index.chunkstore.CellPosition;
-import org.hestiastore.index.scarceindex.ScarceIndexWriter;
 
 /**
  * Allows to rewrite whole segment context including:
@@ -29,7 +28,7 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
 
     private final AtomicLong scarceIndexKeyCounter = new AtomicLong(0L);
     private final AtomicLong keyCounter = new AtomicLong(0L);
-    private final ScarceIndexWriter<K> scarceWriter;
+    private final PairWriter<K, Integer> scarceWriter;
     private final ChunkPairFileWriter<K, V> indexWriter;
     private final BloomFilterWriter<K> bloomFilterWriter;
     private Pair<K, V> lastPair = null;
@@ -37,10 +36,11 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
     SegmentFullWriter(final SegmentFiles<K, V> segmentFiles,
             final int maxNumberOfKeysInIndexPage,
             final SegmentDataProvider<K, V> segmentCacheDataProvider,
-            final ChunkPairFileWriter<K, V> chunkPairFileWriter) {
+            final ChunkPairFileWriter<K, V> chunkPairFileWriter,
+            final PairWriter<K, Integer> scarceWriter) {
         this.maxNumberOfKeysInIndexPage = Vldtn.requireNonNull(
                 maxNumberOfKeysInIndexPage, "maxNumberOfKeysInIndexPage");
-        this.scarceWriter = segmentFiles.getTempScarceIndex().openWriter();
+        this.scarceWriter = Vldtn.requireNonNull(scarceWriter, "scarceWriter");
         this.indexWriter = Vldtn.requireNonNull(chunkPairFileWriter,
                 "indexWriter");
         Vldtn.requireNonNull(segmentCacheDataProvider,
@@ -58,8 +58,6 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
         bloomFilterWriter.write(pair.getKey());
 
         lastPair = pair;
-        if (lastPair == null) {
-        }
 
         final long i = keyCounter.getAndIncrement() + 1;
         indexWriter.write(pair);

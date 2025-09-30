@@ -7,9 +7,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+/**
+ * Abstract class for data tests
+ * 
+ * Don't extend it, use static imports.
+ * 
+ */
 public abstract class AbstractDataTest {
-
-    // TODO stop extending from this class, reffer to it
 
     /**
      * Convert pair iterator data to list

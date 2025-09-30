@@ -82,13 +82,12 @@ class IntegrationScarceIndexTest {
 
     @Test
     void test_overwrite_index() {
-
         final ScarceIndex<String> index = makeIndex(
                 List.of(P_BBB_2, P_CCC_1, P_DDD, P_EEE, P_FFF_2));
 
-        try (ScarceIndexWriter<String> writer = index.openWriter()) {
+        index.openWriterTx().execute(writer -> {
             writer.write(P_BBB_2);
-        }
+        });
 
         assertEquals(1, index.get("aaa"));
         assertEquals(1, index.get("bbb"));
@@ -103,9 +102,9 @@ class IntegrationScarceIndexTest {
                 .withKeyTypeDescriptor(stringTd)//
                 .build();
 
-        try (ScarceIndexWriter<String> writer = index.openWriter()) {
+        index.openWriterTx().execute(writer -> {
             pairs.forEach(writer::write);
-        }
+        });
 
         return index;
     }
