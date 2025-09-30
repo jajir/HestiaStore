@@ -62,7 +62,7 @@ public abstract class AbstractSegmentTest extends AbstractDataTest {
      * @param seg   required segment
      * @param pairs required list of expected data in segment
      */
-    protected <M, N> void verifySegmentData(final Segment<M, N> seg,
+    public static <M, N> void verifySegmentData(final Segment<M, N> seg,
             final List<Pair<M, N>> pairs) {
         verifyIteratorData(pairs, seg.openIterator());
     }

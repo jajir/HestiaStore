@@ -1,7 +1,6 @@
 package org.hestiastore.index.log;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.directory.Directory.Access;
 import org.hestiastore.index.unsorteddatafile.UnsortedDataFile;
 
 public class LogWriter<K, V> {
@@ -32,7 +31,8 @@ public class LogWriter<K, V> {
             UnsortedDataFile<LoggedKey<K>, V> log = logFilesManager
                     .getLogFile(logFileNamessManager.getNewLogFileName());
             writer = new LogUnsortedFileWriterImpl<>(
-                    log.openWriter(Access.OVERWRITE));
+                    log.openWriterTx().openWriter());
+
         }
         return writer;
     }

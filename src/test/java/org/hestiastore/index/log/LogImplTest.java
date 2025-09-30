@@ -2,8 +2,6 @@ package org.hestiastore.index.log;
 
 import static org.mockito.Mockito.verify;
 
-import java.util.List;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,8 +10,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class LogImplTest {
-
-    private final List<String> data = List.of("wal-00012.log", "wal-00044.log");
 
     @Mock
     private LogWriter<String, String> logWriter;
@@ -28,7 +24,7 @@ class LogImplTest {
 
     @BeforeEach
     void setUp() {
-        log = new LogImpl<>(logWriter, logFileNamesManager, logFilesManager);
+        log = new LogImpl<>(logWriter);
     }
 
     @Test

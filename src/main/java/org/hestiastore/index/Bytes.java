@@ -70,9 +70,9 @@ public class Bytes {
                     "startByte must be less than or equal to endByte");
         }
         final int len = endByte - startByte;
-        byte[] data = new byte[len];
-        System.arraycopy(this.data, startByte, data, 0, len);
-        return new Bytes(data);
+        byte[] tmp = new byte[len];
+        System.arraycopy(this.data, startByte, tmp, 0, len);
+        return new Bytes(tmp);
     }
 
     /**

@@ -34,7 +34,7 @@ public class SingleChunkPairIterator<K, V>
             final TypeDescriptor<V> valueTypeDescriptor) {
         Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
         Vldtn.requireNonNull(valueTypeDescriptor, "valueTypeDescriptor");
-        Vldtn.requireNonNull(chunk, "chunk");
+        Vldtn.requireNonNull(chunk, CHUNK_FILE_NAME);
         directory.setFileBytes(CHUNK_FILE_NAME, chunk.getPayload().getBytes());
         final SortedDataFile<K, V> sortedDataFile = SortedDataFile
                 .<K, V>builder() //

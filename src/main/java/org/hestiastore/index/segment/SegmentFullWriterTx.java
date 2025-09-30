@@ -8,7 +8,6 @@ import org.hestiastore.index.scarceindex.ScarceIndexWriterTx;
 
 public class SegmentFullWriterTx<K, V> implements WriteTransaction<K, V> {
 
-    private final SegmentFiles<K, V> segmentFiles;
     private final SegmentPropertiesManager segmentPropertiesManager;
     private final int maxNumberOfKeysInIndexPage;
     private final SegmentDataProvider<K, V> segmentDataProvider;
@@ -24,7 +23,6 @@ public class SegmentFullWriterTx<K, V> implements WriteTransaction<K, V> {
             final SegmentDataProvider<K, V> dataProvider, //
             final SegmentDeltaCacheController<K, V> deltaCacheController//
     ) {
-        this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
         this.segmentPropertiesManager = Vldtn.requireNonNull(propertiesManager,
                 "segmentPropertiesManager");
         this.maxNumberOfKeysInIndexPage = maxNumberOfKeysInIndexPage;
@@ -39,7 +37,7 @@ public class SegmentFullWriterTx<K, V> implements WriteTransaction<K, V> {
     @Override
     public PairWriter<K, V> openWriter() {
         scarceIndexWriterTx.openWriter();
-        segmentFullWriter = new SegmentFullWriter<K, V>(segmentFiles,
+        segmentFullWriter = new SegmentFullWriter<K, V>(
                 maxNumberOfKeysInIndexPage, segmentDataProvider,
                 chunkPairFileWriterTx.openWriter(),
                 scarceIndexWriterTx.openWriter());

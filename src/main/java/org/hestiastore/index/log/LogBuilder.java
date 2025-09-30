@@ -42,7 +42,7 @@ public final class LogBuilder<K, V> {
                 valueTypeDescriptor);
         final LogWriter<K, V> logWriter = new LogWriter<>(logFileNamesManager,
                 logFilesManager);
-        return new LogImpl<>(logWriter, logFileNamesManager, logFilesManager);
+        return new LogImpl<>(logWriter);
     }
 
     public LogEmptyImpl<K, V> buildEmpty() {

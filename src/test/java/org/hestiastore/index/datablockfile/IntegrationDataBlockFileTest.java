@@ -83,7 +83,6 @@ public class IntegrationDataBlockFileTest {
         // Verify read
         try (DataBlockReader reader = dataBlockFile
                 .openReader(DataBlockPosition.of(1008 + 16))) {
-            // verifyBlock(reader.read(), TestData.PAYLOAD_1008);
             verifyBlock(reader.read(), TestData.PAYLOAD_1008_2);
             assertNull(reader.read());
         }
