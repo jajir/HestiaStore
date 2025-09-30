@@ -4,6 +4,7 @@ import org.hestiastore.index.PairIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.unsorteddatafile.DataFileIterator;
 
 public class SortedDataFile<K, V> {
 
@@ -73,7 +74,7 @@ public class SortedDataFile<K, V> {
         }
         final DiffKeyReader<K> diffKeyReader = new DiffKeyReader<>(
                 keyTypeDescriptor.getConvertorFromBytes());
-        return new SortedDataFileIterator<>(diffKeyReader,
+        return new DataFileIterator<>(diffKeyReader,
                 valueTypeDescriptor.getTypeReader(),
                 directory.getFileReader(fileName, diskIoBufferSize));
     }

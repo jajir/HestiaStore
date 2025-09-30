@@ -189,7 +189,7 @@ public final class SegmentBuilder<K, V> {
             segmentDataProvider = new SegmentDataProviderSimple<>(
                     segmentDataFactory);
         }
-        final SegmentIndexSearcherDefault<K, V> segmentIndexSearcher = new SegmentIndexSearcherDefault<>(
+        final SegmentIndexSearcher<K, V> segmentIndexSearcher = new SegmentIndexSearcher<>(
                 segmentFiles.getIndexFile(),
                 segmentConf.getMaxNumberOfKeysInChunk(),
                 segmentFiles.getKeyTypeDescriptor().getComparator());
@@ -197,14 +197,10 @@ public final class SegmentBuilder<K, V> {
                 segmentFiles.getValueTypeDescriptor(), segmentIndexSearcher,
                 segmentDataProvider);
         final SegmentManager<K, V> segmentManager = new SegmentManager<>(
-                segmentFiles, segmentPropertiesManager, segmentConf,
-                segmentDataProvider,
-                new SegmentDeltaCacheController<>(segmentFiles,
-                        segmentPropertiesManager, segmentDataProvider));
-
+                segmentFiles, segmentConf);
         return new Segment<>(segmentFiles, segmentConf, versionController,
                 segmentPropertiesManager, segmentDataProvider, segmentSearcher,
-                segmentManager);
+                segmentManager, segmentDataProvider);
     }
 
 }

@@ -181,7 +181,7 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
 
     @Override
     public UnsortedDataFileStreamer<LoggedKey<K>, V> getLogStreamer() {
-        return log.openStreamer();
+        return null;
     }
 
     @Override

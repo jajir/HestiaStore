@@ -17,4 +17,35 @@ import java.util.Iterator;
 public interface PairIterator<K, V>
         extends Iterator<Pair<K, V>>, CloseableResource {
 
+    /**
+     * Create pair iterator from standard iterator. Created iterator doesn't
+     * need to be closed.
+     * 
+     * @param <M>      key type
+     * @param <N>      value type
+     * @param iterator required iterator
+     * @return pair iterator
+     */
+    public static <M, N> PairIterator<M, N> make(
+            final Iterator<Pair<M, N>> iterator) {
+        Vldtn.requireNonNull(iterator, "iterator");
+        return new PairIterator<M, N>() {
+
+            @Override
+            public boolean hasNext() {
+                return iterator.hasNext();
+            }
+
+            @Override
+            public Pair<M, N> next() {
+                return iterator.next();
+            }
+
+            @Override
+            public void close() {
+                // nothing to close
+            }
+        };
+    }
+
 }

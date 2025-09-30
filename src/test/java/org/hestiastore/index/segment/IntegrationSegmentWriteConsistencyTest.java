@@ -39,14 +39,14 @@ class IntegrationSegmentWriteConsistencyTest {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
         final Segment<Integer, String> seg1 = makeSegment(directory, id);
-        try (PairWriter<Integer, String> writer = seg1.openWriter()) {
+        try (PairWriter<Integer, String> writer = seg1.openDeltaCacheWriter()) {
             data.forEach(writer::write);
         }
         verifyDataIndex(seg1, data);
         seg1.close();
 
         final Segment<Integer, String> seg2 = makeSegment(directory, id);
-        try (PairWriter<Integer, String> writer = seg2.openWriter()) {
+        try (PairWriter<Integer, String> writer = seg2.openDeltaCacheWriter()) {
             updatedData.forEach(writer::write);
         }
         verifyDataIndex(seg2, updatedData);

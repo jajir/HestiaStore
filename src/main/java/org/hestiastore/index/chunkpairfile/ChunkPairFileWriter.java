@@ -53,13 +53,11 @@ public class ChunkPairFileWriter<K, V> implements PairWriter<K, V> {
      *
      * @return The position of the written chunk.
      */
-    public long flush() {
-        ChunkPayload payload = chunkPairWriter.close();
+    public CellPosition flush() {
+        final ChunkPayload payload = chunkPairWriter.close();
         chunkPairWriter = null; // reset for next write
         openNewChunkPairWriter();
-        CellPosition chunkPosition = chunkStoreWriter.write(payload, 1);
-        // TODO return CellPosition
-        return chunkPosition.getValue();
+        return chunkStoreWriter.write(payload, 1);
     }
 
     @Override

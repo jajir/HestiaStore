@@ -31,6 +31,7 @@ public class Segment<K, V>
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
     private final SegmentSearcher<K, V> segmentSearcher;
     private final SegmentManager<K, V> segmentManager;
+    private final SegmentDataProvider<K, V> segmentCacheDataProvider;
 
     public static <M, N> SegmentBuilder<M, N> builder() {
         return new SegmentBuilder<>();
@@ -42,7 +43,8 @@ public class Segment<K, V>
             final SegmentPropertiesManager segmentPropertiesManager,
             final SegmentDataProvider<K, V> segmentDataProvider,
             final SegmentSearcher<K, V> segmentSearcher,
-            final SegmentManager<K, V> segmentManager) {
+            final SegmentManager<K, V> segmentManager,
+            final SegmentDataProvider<K, V> segmentCacheDataProvider) {
         this.segmentConf = Vldtn.requireNonNull(segmentConf, "segmentConf");
         this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
         logger.debug("Initializing segment '{}'", segmentFiles.getId());
@@ -59,6 +61,8 @@ public class Segment<K, V>
                 "segmentSearcher");
         this.segmentManager = Vldtn.requireNonNull(segmentManager,
                 "segmentManager");
+        this.segmentCacheDataProvider = Vldtn.requireNonNull(
+                segmentCacheDataProvider, "segmentCacheDataProvider");
     }
 
     public SegmentStats getStats() {
@@ -104,46 +108,27 @@ public class Segment<K, V>
      * @return return segment writer object
      */
     void executeFullWriteTx(final WriterFunction<K, V> writeFunction) {
-        new WriteTransaction<K, V>() {
-
-            private final SegmentFullWriterToChunkStore<K, V> segmentFullWriter = segmentManager
-                    .createSegmentFullWriterNew();
-
-            @Override
-            public PairWriter<K, V> openWriter() {
-                return segmentFullWriter;
-            }
-
-            @Override
-            public void commit() {
-                segmentFullWriter.commit();
-            }
-
-        }.execute(writeFunction);
+        openFullWriteTx().execute(writeFunction);
     }
 
     WriteTransaction<K, V> openFullWriteTx() {
-        return new WriteTransaction<K, V>() {
-
-            private final SegmentFullWriterToChunkStore<K, V> segmentFullWriter = segmentManager
-                    .createSegmentFullWriterNew();
-
-            @Override
-            public PairWriter<K, V> openWriter() {
-                return segmentFullWriter;
-            }
-
-            @Override
-            public void commit() {
-                segmentFullWriter.commit();
-            }
-
-        };
+        return new SegmentFullWriterTx<>(segmentManager, segmentFiles,
+                segmentPropertiesManager,
+                segmentConf.getMaxNumberOfKeysInChunk(),
+                segmentCacheDataProvider, deltaCacheController);
     }
 
-    public PairWriter<K, V> openWriter() {
+    /**
+     * Allows to open writer that will write to delta cache. When number of keys
+     * in segment exceeds certain threshold, delta cache will be flushed to
+     * disk.
+     * 
+     * It's not necesarry to run it in transaction because it's always new file.
+     */
+    public PairWriter<K, V> openDeltaCacheWriter() {
         versionController.changeVersion();
-        return new SegmentWriter<>(segmentCompacter, deltaCacheController);
+        return new SegmentDeltaCacheCompactingWriter<>(segmentCompacter,
+                deltaCacheController);
     }
 
     public V get(final K key) {

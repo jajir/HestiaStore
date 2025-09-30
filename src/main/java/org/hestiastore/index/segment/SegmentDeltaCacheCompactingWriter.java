@@ -14,7 +14,8 @@ import org.hestiastore.index.Vldtn;
  * @param <K>
  * @param <V>
  */
-public class SegmentWriter<K, V> implements PairWriter<K, V> {
+public class SegmentDeltaCacheCompactingWriter<K, V>
+        implements PairWriter<K, V> {
 
     private final SegmentCompacter<K, V> segmentCompacter;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
@@ -24,7 +25,8 @@ public class SegmentWriter<K, V> implements PairWriter<K, V> {
      */
     private SegmentDeltaCacheWriter<K, V> deltaCacheWriter;
 
-    public SegmentWriter(final SegmentCompacter<K, V> segmentCompacter,
+    public SegmentDeltaCacheCompactingWriter(
+            final SegmentCompacter<K, V> segmentCompacter,
             final SegmentDeltaCacheController<K, V> deltaCacheController) {
         this.segmentCompacter = Vldtn.requireNonNull(segmentCompacter,
                 "segmentCompacter");

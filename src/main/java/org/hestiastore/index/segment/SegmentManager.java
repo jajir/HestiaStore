@@ -9,40 +9,12 @@ import org.hestiastore.index.Vldtn;
 public class SegmentManager<K, V> {
 
     private final SegmentFiles<K, V> segmentFiles;
-    private final SegmentPropertiesManager segmentPropertiesManager;
     private final SegmentConf segmentConf;
-    private final SegmentDataProvider<K, V> segmentCacheDataProvider;
-    private final SegmentDeltaCacheController<K, V> deltaCacheController;
 
     public SegmentManager(final SegmentFiles<K, V> segmentFiles,
-            final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentConf segmentConf,
-            final SegmentDataProvider<K, V> segmentCacheDataProvider,
-            final SegmentDeltaCacheController<K, V> deltaCacheController) {
+            final SegmentConf segmentConf) {
         this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
-        this.segmentPropertiesManager = Vldtn.requireNonNull(
-                segmentPropertiesManager, "segmentPropertiesManager");
         this.segmentConf = Vldtn.requireNonNull(segmentConf, "segmentConf");
-        this.segmentCacheDataProvider = Vldtn.requireNonNull(
-                segmentCacheDataProvider, "segmentCacheDataProvider");
-        this.deltaCacheController = Vldtn.requireNonNull(deltaCacheController,
-                "deltaCacheController");
-    }
-
-    /**
-     * Allows to re-write all data in segment.
-     * 
-     * @return segment writer object
-     */
-    public SegmentFullWriterToChunkStore<K, V> createSegmentFullWriterNew() {
-        return new SegmentFullWriterToChunkStore<K, V>(segmentFiles,
-                segmentPropertiesManager,
-                segmentConf.getMaxNumberOfKeysInChunk(),
-                segmentCacheDataProvider, deltaCacheController);
-        // return new SegmentFullWriter<>(segmentFiles,
-        // segmentPropertiesManager,
-        // segmentConf.getMaxNumberOfKeysInIndexPage(),
-        // segmentCacheDataProvider, deltaCacheController);
     }
 
     /**

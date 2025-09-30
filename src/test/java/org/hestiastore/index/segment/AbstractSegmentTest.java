@@ -27,7 +27,7 @@ public abstract class AbstractSegmentTest extends AbstractDataTest {
      */
     protected <M, N> void writePairs(final Segment<M, N> seg,
             final List<Pair<M, N>> pairs) {
-        try (PairWriter<M, N> writer = seg.openWriter()) {
+        try (PairWriter<M, N> writer = seg.openDeltaCacheWriter()) {
             for (final Pair<M, N> pair : pairs) {
                 writer.write(pair);
             }
