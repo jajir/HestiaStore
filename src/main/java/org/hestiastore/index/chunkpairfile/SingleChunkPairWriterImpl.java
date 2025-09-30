@@ -47,7 +47,7 @@ public class SingleChunkPairWriterImpl<K, V>
     @Override
     public void put(final Pair<K, V> pair) {
         Vldtn.requireNonNull(pair, "pair");
-        writer.put(pair);
+        writer.write(pair);
     }
 
     @Override

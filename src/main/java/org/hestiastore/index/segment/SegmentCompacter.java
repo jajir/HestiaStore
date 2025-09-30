@@ -87,7 +87,7 @@ public final class SegmentCompacter<K, V> {
                 Pair<K, V> pair;
                 while (iterator.hasNext()) {
                     pair = iterator.next();
-                    writer.put(pair);
+                    writer.write(pair);
                 }
             }
         });

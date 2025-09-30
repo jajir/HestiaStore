@@ -1,5 +1,6 @@
 package org.hestiastore.index.sorteddatafile;
 
+import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -44,7 +45,7 @@ public class SortedDataFileWriterTx<K, V> implements WriteTransaction<K, V> {
      * @return a SortedDataFileWriter instance
      */
     @Override
-    public SortedDataFileFullWriter<K, V> openWriter() {
+    public PairWriter<K, V> openWriter() {
         final FileWriter fileWriter = directory.getFileWriter(fileName,
                 Directory.Access.OVERWRITE, diskIoBufferSize);
         return new SortedDataFileWriterImpl<>(

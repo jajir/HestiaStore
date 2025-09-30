@@ -39,15 +39,15 @@ class SegmentWriterTest {
                 .thenReturn(false);
         try (final PairWriter<Integer, String> writer = new SegmentWriter<>(
                 segmentCompacter, deltaCacheController)) {
-            writer.put(PAIR_1);
-            writer.put(PAIR_2);
-            writer.put(PAIR_3);
+            writer.write(PAIR_1);
+            writer.write(PAIR_2);
+            writer.write(PAIR_3);
         }
 
         // verify that writing to cache delta file name was done
-        verify(deltaCacheWriter).put(PAIR_1);
-        verify(deltaCacheWriter).put(PAIR_2);
-        verify(deltaCacheWriter).put(PAIR_3);
+        verify(deltaCacheWriter).write(PAIR_1);
+        verify(deltaCacheWriter).write(PAIR_2);
+        verify(deltaCacheWriter).write(PAIR_3);
 
         verify(segmentCompacter).shouldBeCompactedDuringWriting(1);
         verify(segmentCompacter).shouldBeCompactedDuringWriting(2);
@@ -66,15 +66,15 @@ class SegmentWriterTest {
                 .thenReturn(false);
         try (final PairWriter<Integer, String> writer = new SegmentWriter<>(
                 segmentCompacter, deltaCacheController)) {
-            writer.put(PAIR_1);
-            writer.put(PAIR_2);
-            writer.put(PAIR_3);
+            writer.write(PAIR_1);
+            writer.write(PAIR_2);
+            writer.write(PAIR_3);
         }
 
         // verify that writing to cache delta file name was done
-        verify(deltaCacheWriter).put(PAIR_1);
-        verify(deltaCacheWriter).put(PAIR_2);
-        verify(deltaCacheWriter).put(PAIR_3);
+        verify(deltaCacheWriter).write(PAIR_1);
+        verify(deltaCacheWriter).write(PAIR_2);
+        verify(deltaCacheWriter).write(PAIR_3);
 
         verify(segmentCompacter).shouldBeCompactedDuringWriting(1);
         verify(segmentCompacter).shouldBeCompactedDuringWriting(2);

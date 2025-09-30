@@ -42,9 +42,9 @@ public class SegmentWriter<K, V> implements PairWriter<K, V> {
     }
 
     @Override
-    public void put(final Pair<K, V> pair) {
+    public void write(final Pair<K, V> pair) {
         optionallyOpenDeltaCacheWriter();
-        deltaCacheWriter.put(pair);
+        deltaCacheWriter.write(pair);
         if (segmentCompacter.shouldBeCompactedDuringWriting(
                 deltaCacheWriter.getNumberOfKeys())) {
             deltaCacheWriter.close();

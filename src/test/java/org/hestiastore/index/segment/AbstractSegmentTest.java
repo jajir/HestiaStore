@@ -29,7 +29,7 @@ public abstract class AbstractSegmentTest extends AbstractDataTest {
             final List<Pair<M, N>> pairs) {
         try (PairWriter<M, N> writer = seg.openWriter()) {
             for (final Pair<M, N> pair : pairs) {
-                writer.put(pair);
+                writer.write(pair);
             }
         }
     }

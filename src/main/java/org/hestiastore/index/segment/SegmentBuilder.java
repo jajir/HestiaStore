@@ -189,10 +189,12 @@ public final class SegmentBuilder<K, V> {
             segmentDataProvider = new SegmentDataProviderSimple<>(
                     segmentDataFactory);
         }
-        final SegmentIndexSearcherSupplier<K, V> supplier = new SegmentIndexSearcherDefaultSupplier<>(
-                segmentFiles, segmentConf);
+        final SegmentIndexSearcherDefault<K, V> segmentIndexSearcher = new SegmentIndexSearcherDefault<>(
+                segmentFiles.getIndexFile(),
+                segmentConf.getMaxNumberOfKeysInChunk(),
+                segmentFiles.getKeyTypeDescriptor().getComparator());
         final SegmentSearcher<K, V> segmentSearcher = new SegmentSearcher<K, V>(
-                segmentFiles.getValueTypeDescriptor(), supplier.get(),
+                segmentFiles.getValueTypeDescriptor(), segmentIndexSearcher,
                 segmentDataProvider);
         final SegmentManager<K, V> segmentManager = new SegmentManager<>(
                 segmentFiles, segmentPropertiesManager, segmentConf,

@@ -6,6 +6,13 @@ import java.util.Optional;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIteratorWithCurrent;
 
+/**
+ * An empty pair iterator with current that always indicates no next element and
+ * has no current element.
+ * 
+ * @param <K> the key type
+ * @param <V> the value type
+ */
 public class EmptyPairIteratorWithCurrent<K, V>
         implements PairIteratorWithCurrent<K, V> {
 

@@ -9,7 +9,9 @@ package org.hestiastore.index;
  * @param<K> key type
  * @param <V> value type
  */
-public interface PairReader<K, V> {
+@Deprecated
+// TODO remove it
+public interface PairReader<K, V> extends Reader<Pair<K, V>> {
 
     /**
      * Try to read data.

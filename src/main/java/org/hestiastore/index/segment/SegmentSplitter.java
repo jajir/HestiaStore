@@ -106,7 +106,7 @@ public class SegmentSplitter<K, V> {
                         minKey.set(pair.getKey());
                     }
                     maxKey.set(pair.getKey());
-                    writer.put(pair);
+                    writer.write(pair);
                 }
             }
             lowerSegmentWriteTx.commit();
@@ -125,7 +125,7 @@ public class SegmentSplitter<K, V> {
                 try (PairWriter<K, V> writer = segmentWriteTx.openWriter()) {
                     while (iterator.hasNext()) {
                         final Pair<K, V> pair = iterator.next();
-                        writer.put(pair);
+                        writer.write(pair);
                         cxHigher.incrementAndGet();
                     }
                 }

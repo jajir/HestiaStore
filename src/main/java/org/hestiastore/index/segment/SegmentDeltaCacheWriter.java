@@ -66,7 +66,7 @@ public final class SegmentDeltaCacheWriter<K, V> implements PairWriter<K, V> {
                         segmentPropertiesManager.getAndIncreaseDeltaFileName())
                 .openWriterTx().execute(writer -> {
                     uniqueCache.getStream().forEach(pair -> {
-                        writer.put(pair);
+                        writer.write(pair);
                     });
                 });
 
@@ -74,7 +74,7 @@ public final class SegmentDeltaCacheWriter<K, V> implements PairWriter<K, V> {
     }
 
     @Override
-    public void put(Pair<K, V> pair) {
+    public void write(Pair<K, V> pair) {
         uniqueCache.put(pair);
         cx++;
         if (segmentCacheDataProvider.isLoaded()) {

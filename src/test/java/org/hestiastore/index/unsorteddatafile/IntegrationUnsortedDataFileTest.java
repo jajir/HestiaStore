@@ -39,9 +39,9 @@ class IntegrationUnsortedDataFileTest {
         final UnsortedDataFileWriterTx<Integer, String> writerTx = unsorted
                 .openWriterTx();
         try (PairWriter<Integer, String> writer = writerTx.openWriter()) {
-            writer.put(Pair.of(4, "here"));
-            writer.put(Pair.of(-12, "we"));
-            writer.put(Pair.of(98, "go"));
+            writer.write(Pair.of(4, "here"));
+            writer.write(Pair.of(-12, "we"));
+            writer.write(Pair.of(98, "go"));
         }
         writerTx.commit();
 

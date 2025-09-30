@@ -27,7 +27,7 @@ public class UnsortedDataFileWriter<K, V> implements PairWriter<K, V> {
     }
 
     @Override
-    public void put(final Pair<K, V> pair) {
+    public void write(final Pair<K, V> pair) {
         Vldtn.requireNonNull(pair, "pair");
         Vldtn.requireNonNull(pair.getKey(), "key");
         Vldtn.requireNonNull(pair.getValue(), "value");
