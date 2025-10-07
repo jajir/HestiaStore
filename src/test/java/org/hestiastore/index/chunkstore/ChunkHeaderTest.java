@@ -17,8 +17,9 @@ public class ChunkHeaderTest {
 
     @Test
     void test_store_and_load() {
+        final long flags = 42L;
         final ChunkHeader header1 = ChunkHeader.of(ChunkHeader.MAGIC_NUMBER,
-                VERSION, PAYLOAD_LENGTH, CRC);
+                VERSION, PAYLOAD_LENGTH, CRC, flags);
 
         final byte[] data = header1.getBytes().getData();
         final ChunkHeader header2 = ChunkHeader.of(data);
@@ -27,6 +28,7 @@ public class ChunkHeaderTest {
         assertEquals(VERSION, header2.getVersion());
         assertEquals(PAYLOAD_LENGTH, header2.getPayloadLength());
         assertEquals(CRC, header2.getCrc());
+        assertEquals(flags, header2.getFlags());
     }
 
     @Test
@@ -41,15 +43,12 @@ public class ChunkHeaderTest {
     }
 
     @Test
-    void test_of_invalid_magic_number() {
+    void test_of_allows_invalid_magic_number() {
         final byte[] data = new byte[ChunkHeader.HEADER_SIZE];
 
-        final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> ChunkHeader.of(data));
+        final ChunkHeader header = ChunkHeader.of(data);
 
-        assertEquals(
-                "Invalid chunk magic number '0', expected is '8388065835078349409'",
-                e.getMessage());
+        assertEquals(0L, header.getMagicNumber());
     }
 
     @Test
