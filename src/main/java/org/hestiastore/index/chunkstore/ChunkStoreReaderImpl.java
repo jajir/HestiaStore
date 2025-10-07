@@ -1,8 +1,8 @@
 package org.hestiastore.index.chunkstore;
 
+import java.util.List;
 import java.util.Optional;
 
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datablockfile.DataBlockByteReader;
 
@@ -12,6 +12,7 @@ import org.hestiastore.index.datablockfile.DataBlockByteReader;
 public class ChunkStoreReaderImpl implements ChunkStoreReader {
 
     private DataBlockByteReader dataBlockByteReader = null;
+    private final ChunkProcessor decodingProcessor;
 
     /**
      * Constructor.
@@ -19,9 +20,13 @@ public class ChunkStoreReaderImpl implements ChunkStoreReader {
      * @param dataBlockByteReader required data block byte reader
      * @throws IllegalArgumentException when dataBlockByteReader is null
      */
-    public ChunkStoreReaderImpl(final DataBlockByteReader dataBlockByteReader) {
+    public ChunkStoreReaderImpl(final DataBlockByteReader dataBlockByteReader,
+            final List<ChunkFilter> decodingChunkFilters) {
         this.dataBlockByteReader = Vldtn.requireNonNull(dataBlockByteReader,
                 "dataBlockByteReader");
+        final List<ChunkFilter> filters = List.copyOf(Vldtn
+                .requireNonNull(decodingChunkFilters, "decodingChunkFilters"));
+        this.decodingProcessor = new ChunkProcessor(filters);
     }
 
     @Override
@@ -31,40 +36,17 @@ public class ChunkStoreReaderImpl implements ChunkStoreReader {
 
     @Override
     public Chunk read() {
-        final Bytes headerBytes = dataBlockByteReader
-                .readExactly(ChunkHeader.HEADER_SIZE);
-        final Optional<ChunkHeader> optChunkHeader = ChunkHeader
-                .optionalOf(headerBytes);
-        if (optChunkHeader.isEmpty()) {
+        final Optional<ChunkData> optionalChunkData = ChunkData
+                .read(dataBlockByteReader);
+        if (optionalChunkData.isEmpty()) {
             return null;
         }
-        final ChunkHeader chunkHeader = optChunkHeader.get();
-        int requiredLength = chunkHeader.getPayloadLength();
-        int cellLength = convertLengthToWholeCells(requiredLength);
-        Bytes payload = dataBlockByteReader.readExactly(cellLength);
-        if (payload == null) {
-            throw new IllegalStateException(
-                    "Unexpected end of stream while reading chunk payload.");
-        }
-        if (cellLength != requiredLength) {
-            payload = payload.subBytes(0, requiredLength);
-        }
-        final Chunk out = Chunk.of(chunkHeader, payload);
-        if (chunkHeader.getCrc() != out.calculateCrc()) {
-            throw new IllegalArgumentException(String.format(
-                    "Invalid chunk CRC, expected: '%s', actual: '%s'",
-                    chunkHeader.getCrc(), out.calculateCrc()));
-        }
-        return out;
+        final ChunkData chunkData = decodingProcessor
+                .process(optionalChunkData.get());
+        final ChunkHeader chunkHeader = ChunkHeader.of(
+                chunkData.getMagicNumber(), chunkData.getVersion(),
+                chunkData.getPayload().length(), chunkData.getCrc(),
+                chunkData.getFlags());
+        return Chunk.of(chunkHeader, chunkData.getPayload());
     }
-
-    private int convertLengthToWholeCells(final int length) {
-        int out = length / CellPosition.CELL_SIZE;
-        if (length % CellPosition.CELL_SIZE != 0) {
-            out++;
-        }
-        return out * CellPosition.CELL_SIZE;
-
-    }
-
 }

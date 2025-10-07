@@ -51,7 +51,8 @@ public class ChunkStoreFile {
                 dataBlockFile
                         .openReader(chunkPosition.getDataBlockStartPosition()),
                 dataBlockSize, chunkPosition.getCellIndex());
-        return new ChunkStoreReaderImpl(dataBlockByteReader);
+        return new ChunkStoreReaderImpl(dataBlockByteReader,
+                decodingChunkFilters);
     }
 
     /**
@@ -60,7 +61,8 @@ public class ChunkStoreFile {
      * @return a ChunkStoreWriterTx for writing chunks
      */
     public ChunkStoreWriterTx openWriteTx() {
-        return new ChunkStoreWriterTx(dataBlockFile, dataBlockSize);
+        return new ChunkStoreWriterTx(dataBlockFile, dataBlockSize,
+                encodingChunkFilters);
     }
 
     /**

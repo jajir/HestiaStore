@@ -1,5 +1,7 @@
 package org.hestiastore.index.chunkstore;
 
+import java.util.List;
+
 import org.hestiastore.index.Commitable;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datablockfile.DataBlockFile;
@@ -13,6 +15,7 @@ public class ChunkStoreWriterTx implements Commitable {
 
     private final DataBlockWriterTx dataBlockWriterTx;
     private final DataBlockSize dataBlockSize;
+    private final List<ChunkFilter> encodingChunkFilters;
 
     /**
      * Creates a new chunk store writer transaction.
@@ -21,11 +24,14 @@ public class ChunkStoreWriterTx implements Commitable {
      * @param dataBlockSize required data block size for the chunk store.
      */
     public ChunkStoreWriterTx(final DataBlockFile blockDataFile,
-            final DataBlockSize dataBlockSize) {
+            final DataBlockSize dataBlockSize,
+            final List<ChunkFilter> encodingChunkFilters) {
         Vldtn.requireNonNull(blockDataFile, "blockDataFile");
         this.dataBlockWriterTx = blockDataFile.getDataBlockWriterTx();
         this.dataBlockSize = Vldtn.requireNonNull(dataBlockSize,
                 "dataBlockSize");
+        this.encodingChunkFilters = List
+                .copyOf(Vldtn.requireNonNull(encodingChunkFilters, "filters"));
     }
 
     /**
@@ -38,7 +44,7 @@ public class ChunkStoreWriterTx implements Commitable {
                 dataBlockWriterTx.openWriter(), dataBlockSize);
         final CellStoreWriterImpl cellStoreWriter = new CellStoreWriterImpl(
                 cursor);
-        return new ChunkStoreWriterImpl(cellStoreWriter);
+        return new ChunkStoreWriterImpl(cellStoreWriter, encodingChunkFilters);
     }
 
     @Override

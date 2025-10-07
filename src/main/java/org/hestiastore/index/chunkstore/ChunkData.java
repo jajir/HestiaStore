@@ -1,7 +1,10 @@
 package org.hestiastore.index.chunkstore;
 
+import java.util.Optional;
+
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.datablockfile.DataBlockByteReader;
 
 public class ChunkData {
 
@@ -64,6 +67,40 @@ public class ChunkData {
 
     public Bytes getPayload() {
         return payload;
+    }
+
+    static Optional<ChunkData> read(final DataBlockByteReader reader) {
+        final Bytes headerBytes = reader.readExactly(ChunkHeader.HEADER_SIZE);
+        if (headerBytes == null) {
+            return Optional.empty();
+        }
+        final Optional<ChunkHeader> optionalChunkHeader = ChunkHeader
+                .optionalOf(headerBytes);
+        if (optionalChunkHeader.isEmpty()) {
+            return Optional.empty();
+        }
+        final ChunkHeader chunkHeader = optionalChunkHeader.get();
+        final int payloadLength = chunkHeader.getPayloadLength();
+        final int cellLength = convertLengthToWholeCells(payloadLength);
+        Bytes payload = reader.readExactly(cellLength);
+        if (payload == null) {
+            throw new IllegalStateException(
+                    "Unexpected end of stream while reading chunk payload.");
+        }
+        if (cellLength != payloadLength) {
+            payload = payload.subBytes(0, payloadLength);
+        }
+        return Optional.of(ChunkData.of(chunkHeader.getFlags(),
+                chunkHeader.getCrc(), chunkHeader.getMagicNumber(),
+                chunkHeader.getVersion(), payload));
+    }
+
+    private static int convertLengthToWholeCells(final int length) {
+        int out = length / CellPosition.CELL_SIZE;
+        if (length % CellPosition.CELL_SIZE != 0) {
+            out++;
+        }
+        return out * CellPosition.CELL_SIZE;
     }
 
 }

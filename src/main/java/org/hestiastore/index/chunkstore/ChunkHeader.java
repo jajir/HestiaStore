@@ -150,7 +150,12 @@ public class ChunkHeader {
      * @return the chunk header
      */
     public static ChunkHeader of(final long magic, final int version,
-            final int payloadLength, final Long crc) {
+            final int payloadLength, final long crc) {
+        return of(magic, version, payloadLength, crc, 0L);
+    }
+
+    public static ChunkHeader of(final long magic, final int version,
+            final int payloadLength, final long crc, final long flags) {
         final byte[] data = new byte[HEADER_SIZE];
         System.arraycopy(LONG_CONVERTOR_TO_BYTES.toBytes(magic), 0, data, 0, 8);
         System.arraycopy(INTEGER_CONVERTOR_TO_BYTES.toBytes(version), 0, data,
@@ -158,6 +163,8 @@ public class ChunkHeader {
         System.arraycopy(INTEGER_CONVERTOR_TO_BYTES.toBytes(payloadLength), 0,
                 data, 12, 4);
         System.arraycopy(LONG_CONVERTOR_TO_BYTES.toBytes(crc), 0, data, 16, 8);
+        System.arraycopy(LONG_CONVERTOR_TO_BYTES.toBytes(flags), 0, data, 24,
+                8);
         return new ChunkHeader(data);
     }
 
@@ -167,11 +174,6 @@ public class ChunkHeader {
             throw new IllegalArgumentException(String.format(
                     "Invalid chunk header size '%d', expected is '%d'",
                     data.length, HEADER_SIZE));
-        }
-        if (getMagicNumber() != MAGIC_NUMBER) {
-            throw new IllegalArgumentException(String.format(
-                    "Invalid chunk magic number '%d', expected is '%d'",
-                    getMagicNumber(), MAGIC_NUMBER));
         }
     }
 
@@ -228,6 +230,17 @@ public class ChunkHeader {
         return LONG_CONVERTOR_FROM_BYTES.fromBytes(buff);
     }
 
+    /**
+     * Returns the chunk flags.
+     * 
+     * @return the chunk flags
+     */
+    public long getFlags() {
+        final byte[] buff = new byte[8];
+        System.arraycopy(data, 24, buff, 0, 8);
+        return LONG_CONVERTOR_FROM_BYTES.fromBytes(buff);
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o)
@@ -247,7 +260,7 @@ public class ChunkHeader {
     public String toString() {
         return "ChunkHeader{" + "magic=" + getMagicNumber() + ", version="
                 + getVersion() + ", payloadLength=" + getPayloadLength()
-                + ", crc=" + getCrc() + '}';
+                + ", crc=" + getCrc() + ", flags=" + getFlags() + '}';
     }
 
 }
