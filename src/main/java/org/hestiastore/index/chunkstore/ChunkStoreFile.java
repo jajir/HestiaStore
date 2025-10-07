@@ -1,5 +1,7 @@
 package org.hestiastore.index.chunkstore;
 
+import java.util.List;
+
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datablockfile.DataBlockByteReader;
 import org.hestiastore.index.datablockfile.DataBlockByteReaderImpl;
@@ -14,6 +16,8 @@ public class ChunkStoreFile {
 
     private final DataBlockFile dataBlockFile;
     private final DataBlockSize dataBlockSize;
+    private final List<ChunkFilter> encodingChunkFilters;
+    private final List<ChunkFilter> decodingChunkFilters;
 
     /**
      * Constructs a new ChunkStoreFile.
@@ -25,11 +29,15 @@ public class ChunkStoreFile {
      *                      file
      */
     public ChunkStoreFile(final Directory directory, final String fileName,
-            final DataBlockSize dataBlockSize) {
+            final DataBlockSize dataBlockSize,
+            final List<ChunkFilter> encodingChunkFilters,
+            final List<ChunkFilter> decodingChunkFilters) {
         this.dataBlockFile = new DataBlockFile(directory, fileName,
                 dataBlockSize);
         this.dataBlockSize = Vldtn.requireNonNull(dataBlockSize,
                 "dataBlockSize");
+        this.encodingChunkFilters = List.copyOf(encodingChunkFilters);
+        this.decodingChunkFilters = List.copyOf(decodingChunkFilters);
     }
 
     /**
@@ -62,6 +70,14 @@ public class ChunkStoreFile {
      */
     public CellPosition getFirstChunkStorePosition() {
         return CellPosition.of(dataBlockSize, 0);
+    }
+
+    List<ChunkFilter> getEncodingChunkFilters() {
+        return encodingChunkFilters;
+    }
+
+    List<ChunkFilter> getDecodingChunkFilters() {
+        return decodingChunkFilters;
     }
 
 }

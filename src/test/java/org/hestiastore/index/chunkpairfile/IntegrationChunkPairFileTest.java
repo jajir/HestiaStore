@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Iterator;
+import java.util.List;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.TestData;
@@ -32,7 +33,7 @@ public class IntegrationChunkPairFileTest {
     void setUp() {
         directory = new MemDirectory();
         ChunkStoreFile chunkStoreFile = new ChunkStoreFile(directory, FILE_NAME,
-                BLOCK_SIZE);
+                BLOCK_SIZE, List.of(), List.of());
         chunkPairFile = new ChunkPairFile<>(chunkStoreFile,
                 TestData.TYPE_DESCRIPTOR_INTEGER,
                 TestData.TYPE_DESCRIPTOR_STRING, BLOCK_SIZE);

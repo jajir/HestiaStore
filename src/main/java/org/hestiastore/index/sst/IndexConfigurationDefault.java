@@ -1,5 +1,13 @@
 package org.hestiastore.index.sst;
 
+import java.util.List;
+
+import org.hestiastore.index.chunkstore.ChunkFilter;
+import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
+import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
+import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberValidation;
+import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
+
 /**
  * Define contract, that define index configuration.
  * 
@@ -67,6 +75,16 @@ public interface IndexConfigurationDefault {
 
     default boolean isLogEnabled() {
         return false;
+    }
+
+    default List<ChunkFilter> getEncodingChunkFilters() {
+        return List.of(new ChunkFilterCrc32Writing(),
+                new ChunkFilterMagicNumberWriting());
+    }
+
+    default List<ChunkFilter> getDecodingChunkFilters() {
+        return List.of(new ChunkFilterMagicNumberValidation(),
+                new ChunkFilterCrc32Validation());
     }
 
 }

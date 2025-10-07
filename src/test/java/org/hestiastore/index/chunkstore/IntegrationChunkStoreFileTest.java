@@ -3,6 +3,8 @@ package org.hestiastore.index.chunkstore;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.util.List;
+
 import org.hestiastore.index.TestData;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.directory.Directory;
@@ -28,7 +30,7 @@ public class IntegrationChunkStoreFileTest {
     void setUp() {
         directory = new MemDirectory();
         chunkStoreFile = new ChunkStoreFile(directory, FILE_NAME,
-                DATABLOCK_SIZE);
+                DATABLOCK_SIZE, List.of(), List.of());
     }
 
     @AfterEach

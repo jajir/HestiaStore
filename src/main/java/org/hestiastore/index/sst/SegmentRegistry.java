@@ -61,14 +61,16 @@ public class SegmentRegistry<K, V> {
                 conf.getBloomFilterNumberOfHashFunctions(),
                 conf.getBloomFilterIndexSizeInBytes(),
                 conf.getBloomFilterProbabilityOfFalsePositive(),
-                conf.getDiskIoBufferSize());
+                conf.getDiskIoBufferSize(), conf.getEncodingChunkFilters(),
+                conf.getDecodingChunkFilters());
 
         final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
                 directory, segmentId);
 
         final SegmentFiles<K, V> segmentFiles = new SegmentFiles<>(directory,
                 segmentId, keyTypeDescriptor, valueTypeDescriptor,
-                conf.getDiskIoBufferSize());
+                conf.getDiskIoBufferSize(), conf.getEncodingChunkFilters(),
+                conf.getDecodingChunkFilters());
 
         final SegmentDataSupplier<K, V> segmentDataSupplier = new SegmentDataSupplier<>(
                 segmentFiles, segmentConf, segmentPropertiesManager);

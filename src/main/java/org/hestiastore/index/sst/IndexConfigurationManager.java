@@ -95,6 +95,12 @@ public class IndexConfigurationManager<K, V> {
             builder.withDiskIoBufferSizeInBytes(
                     defaults.getDiskIoBufferSizeInBytes());
         }
+        if (conf.getEncodingChunkFilters().isEmpty()) {
+            builder.withEncodingFilters(defaults.getEncodingChunkFilters());
+        }
+        if (conf.getDecodingChunkFilters().isEmpty()) {
+            builder.withDecodingFilters(defaults.getDecodingChunkFilters());
+        }
         return validate(builder.build());
     }
 
@@ -299,6 +305,22 @@ public class IndexConfigurationManager<K, V> {
                 "BloomFilterProbabilityOfFalsePositive", //
                 storedConf.getBloomFilterProbabilityOfFalsePositive(), //
                 indexConf.getBloomFilterProbabilityOfFalsePositive());
+
+        validateThatWasntChanged(
+                indexConf.getEncodingChunkFilters() != null
+                        && !indexConf.getEncodingChunkFilters().isEmpty()
+                        && !indexConf.getEncodingChunkFilters()
+                                .equals(storedConf.getEncodingChunkFilters()),
+                "EncodingChunkFilters", storedConf.getEncodingChunkFilters(),
+                indexConf.getEncodingChunkFilters());
+
+        validateThatWasntChanged(
+                indexConf.getDecodingChunkFilters() != null
+                        && !indexConf.getDecodingChunkFilters().isEmpty()
+                        && !indexConf.getDecodingChunkFilters()
+                                .equals(storedConf.getDecodingChunkFilters()),
+                "DecodingChunkFilters", storedConf.getDecodingChunkFilters(),
+                indexConf.getDecodingChunkFilters());
     }
 
     void validateThatWasntChanged(boolean wasChanged, final String propertyName,
@@ -368,6 +390,16 @@ public class IndexConfigurationManager<K, V> {
                             + " can't be divided by 1024 without reminder",
                     conf.getDiskIoBufferSize()));
         }
+        if (conf.getEncodingChunkFilters() == null
+                || conf.getEncodingChunkFilters().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Encoding chunk filters must not be empty.");
+        }
+        if (conf.getDecodingChunkFilters() == null
+                || conf.getDecodingChunkFilters().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Decoding chunk filters must not be empty.");
+        }
         return conf;
     }
 
@@ -387,7 +419,8 @@ public class IndexConfigurationManager<K, V> {
 
     private IndexConfigurationBuilder<K, V> makeBuilder(
             final IndexConfiguration<K, V> conf) {
-        return IndexConfiguration.<K, V>builder()//
+        final IndexConfigurationBuilder<K, V> builder = IndexConfiguration
+                .<K, V>builder()//
                 .withKeyClass(conf.getKeyClass()) //
                 .withValueClass(conf.getValueClass())//
                 .withKeyTypeDescriptor(conf.getKeyTypeDescriptor())//
@@ -418,8 +451,13 @@ public class IndexConfigurationManager<K, V> {
                 .withBloomFilterIndexSizeInBytes(
                         conf.getBloomFilterIndexSizeInBytes())//
                 .withBloomFilterProbabilityOfFalsePositive(
-                        conf.getBloomFilterProbabilityOfFalsePositive())//
-        ;
+                        conf.getBloomFilterProbabilityOfFalsePositive());
+
+        conf.getEncodingChunkFilters()
+                .forEach(builder::addEncodingFilter);
+        conf.getDecodingChunkFilters()
+                .forEach(builder::addDecodingFilter);
+        return builder;
     }
 
 }

@@ -2,6 +2,8 @@ package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.List;
+
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -24,7 +26,8 @@ public class SegmentBuilderFromConfTest {
                 3, // bloomFilterNumberOfHashFunctions
                 1024, // bloomFilterIndexSizeInBytes
                 0.01, // bloomFilterProbabilityOfFalsePositive
-                1024 // diskIoBufferSize
+                1024, // diskIoBufferSize
+                List.of(), List.of()
         );
         final SegmentBuilder<Integer, String> builder = Segment
                 .<Integer, String>builder()//

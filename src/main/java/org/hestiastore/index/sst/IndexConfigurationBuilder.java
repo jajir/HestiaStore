@@ -1,6 +1,11 @@
 package org.hestiastore.index.sst;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.datatype.TypeDescriptor;
 
 public class IndexConfigurationBuilder<K, V> {
@@ -25,6 +30,8 @@ public class IndexConfigurationBuilder<K, V> {
     private String valueTypeDescriptor;
     private Boolean logEnabled;
     private Boolean isThreadSafe;
+    private final List<ChunkFilter> encodingChunkFilters = new ArrayList<>();
+    private final List<ChunkFilter> decodingChunkFilters = new ArrayList<>();
 
     IndexConfigurationBuilder() {
 
@@ -147,6 +154,68 @@ public class IndexConfigurationBuilder<K, V> {
         return this;
     }
 
+    public IndexConfigurationBuilder<K, V> addEncodingFilter(
+            final ChunkFilter filter) {
+        encodingChunkFilters.add(Vldtn.requireNonNull(filter, "filter"));
+        return this;
+    }
+
+    public IndexConfigurationBuilder<K, V> addEncodingFilter(
+            final Class<? extends ChunkFilter> filterClass) {
+        return addEncodingFilter(instantiateFilter(filterClass));
+    }
+
+    public IndexConfigurationBuilder<K, V> withEncodingFilterClasses(
+            final Collection<Class<? extends ChunkFilter>> filterClasses) {
+        Vldtn.requireNonNull(filterClasses, "filterClasses");
+        encodingChunkFilters.clear();
+        for (final Class<? extends ChunkFilter> filterClass : filterClasses) {
+            addEncodingFilter(filterClass);
+        }
+        return this;
+    }
+
+    public IndexConfigurationBuilder<K, V> withEncodingFilters(
+            final Collection<ChunkFilter> filters) {
+        Vldtn.requireNonNull(filters, "filters");
+        encodingChunkFilters.clear();
+        for (final ChunkFilter filter : filters) {
+            addEncodingFilter(filter);
+        }
+        return this;
+    }
+
+    public IndexConfigurationBuilder<K, V> addDecodingFilter(
+            final ChunkFilter filter) {
+        decodingChunkFilters.add(Vldtn.requireNonNull(filter, "filter"));
+        return this;
+    }
+
+    public IndexConfigurationBuilder<K, V> addDecodingFilter(
+            final Class<? extends ChunkFilter> filterClass) {
+        return addDecodingFilter(instantiateFilter(filterClass));
+    }
+
+    public IndexConfigurationBuilder<K, V> withDecodingFilterClasses(
+            final Collection<Class<? extends ChunkFilter>> filterClasses) {
+        Vldtn.requireNonNull(filterClasses, "filterClasses");
+        decodingChunkFilters.clear();
+        for (final Class<? extends ChunkFilter> filterClass : filterClasses) {
+            addDecodingFilter(filterClass);
+        }
+        return this;
+    }
+
+    public IndexConfigurationBuilder<K, V> withDecodingFilters(
+            final Collection<ChunkFilter> filters) {
+        Vldtn.requireNonNull(filters, "filters");
+        decodingChunkFilters.clear();
+        for (final ChunkFilter filter : filters) {
+            addDecodingFilter(filter);
+        }
+        return this;
+    }
+
     public IndexConfiguration<K, V> build() {
         return new IndexConfiguration<K, V>(keyClass, valueClass,
                 keyTypeDescriptor, valueTypeDescriptor,
@@ -156,7 +225,22 @@ public class IndexConfigurationBuilder<K, V> {
                 maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache, indexName,
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
                 bloomFilterProbabilityOfFalsePositive, diskIoBufferSizeInBytes,
-                isThreadSafe, logEnabled);
+                isThreadSafe, logEnabled, encodingChunkFilters,
+                decodingChunkFilters);
+    }
+
+    private ChunkFilter instantiateFilter(
+            final Class<? extends ChunkFilter> filterClass) {
+        final Class<? extends ChunkFilter> requiredClass = Vldtn
+                .requireNonNull(filterClass, "filterClass");
+        try {
+            return requiredClass.getDeclaredConstructor().newInstance();
+        } catch (ReflectiveOperationException ex) {
+            throw new IllegalArgumentException(
+                    String.format("Unable to instantiate chunk filter '%s'",
+                            requiredClass.getName()),
+                    ex);
+        }
     }
 
 }

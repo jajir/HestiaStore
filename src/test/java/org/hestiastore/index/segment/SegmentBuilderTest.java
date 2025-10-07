@@ -6,6 +6,10 @@ package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
 
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -108,6 +112,49 @@ class SegmentBuilderTest {
 
         assertEquals(
                 "maxNumberOfKeysInSegmentCacheDuringFlushing must be higher than maxNumberOfKeysInSegmentCache",
+                e.getMessage());
+    }
+
+    @Test
+    void test_encodingChunkFilters_are_missing() {
+        final SegmentConf segmentConf = mock(SegmentConf.class);
+        when(segmentConf.getEncodingChunkFilters()).thenReturn(null);
+
+        final SegmentBuilder<Integer, String> builder = Segment
+                .<Integer, String>builder()//
+                .withDirectory(DIRECTORY)//
+                .withId(SEGMENT_ID)//
+                .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
+                .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
+                .withSegmentConf(segmentConf)//
+        ;
+
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> builder.build());
+
+        assertEquals("Property 'encodingChunkFilters' must not be null.",
+                e.getMessage());
+    }
+
+    @Test
+    void test_decodingChunkFilters_are_missing() {
+        final SegmentConf segmentConf = mock(SegmentConf.class);
+        when(segmentConf.getEncodingChunkFilters()).thenReturn(List.of());
+        when(segmentConf.getDecodingChunkFilters()).thenReturn(null);
+
+        final SegmentBuilder<Integer, String> builder = Segment
+                .<Integer, String>builder()//
+                .withDirectory(DIRECTORY)//
+                .withId(SEGMENT_ID)//
+                .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
+                .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
+                .withSegmentConf(segmentConf)//
+        ;
+
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> builder.build());
+
+        assertEquals("Property 'decodingChunkFilters' must not be null.",
                 e.getMessage());
     }
 }
