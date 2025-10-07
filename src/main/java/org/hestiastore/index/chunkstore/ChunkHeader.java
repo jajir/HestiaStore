@@ -12,13 +12,57 @@ import org.hestiastore.index.datatype.TypeDescriptorLong;
 
 /**
  * Represents the header of a chunk. It will contains:
- * <ul>
- * <li>Magic number to identify the chunk format - long</li>
- * <li>Version of the chunk format - int</li>
- * <li>Payload data length - int</li>
- * <li>CRC32 code - long</li>
- * </ul>
+ * <table>
+ * <tr>
+ * <th>Field</th>
+ * <th>Type</th>
+ * <th>Starts at (byte)</th>
+ * <th>Size (bytes)</th>
+ * </tr>
  * 
+ * 
+ * <tr>
+ * <td>Magic Number</td>
+ * <td>long</td>
+ * <td>0</td>
+ * <td>8</td>
+ * </tr>
+ * 
+ * 
+ * <tr>
+ * <td>Header version</td>
+ * <td>int</td>
+ * <td>8</td>
+ * <td>4</td>
+ * </tr>
+ * 
+ * 
+ * <tr>
+ * <td>Payload data length</td>
+ * <td>int</td>
+ * <td>12</td>
+ * <td>4</td>
+ * </tr>
+ * 
+ * 
+ * <tr>
+ * <td>CRC32 payload code</td>
+ * <td>long</td>
+ * <td>16</td>
+ * <td>8</td>
+ * </tr>
+ * 
+ * 
+ * <tr>
+ * <td>Flags for further usage. Flags closely describes the chunk content.</td>
+ * <td>long</td>
+ * <td>24</td>
+ * <td>8</td>
+ * </tr>
+ * 
+ * 
+ * </table>
+ * <ul>
  * Header will be always 32 bytes long.
  * 
  * Equals and hashCode are implemented based on the byte array content.
