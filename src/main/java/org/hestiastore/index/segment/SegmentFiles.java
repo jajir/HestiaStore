@@ -1,7 +1,10 @@
 package org.hestiastore.index.segment;
 
+import java.util.List;
+
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkpairfile.ChunkPairFile;
+import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkStoreFile;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -30,11 +33,15 @@ public final class SegmentFiles<K, V> {
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final int diskIoBufferSize;
+    private final List<ChunkFilter> encodingChunkFilters;
+    private final List<ChunkFilter> decodingChunkFilters;
 
     public SegmentFiles(final Directory directory, final SegmentId id,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
-            final int diskIoBufferSize) {
+            final int diskIoBufferSize,
+            final List<ChunkFilter> encodingChunkFilters,
+            final List<ChunkFilter> decodingChunkFilters) {
         this.directory = Vldtn.requireNonNull(directory, "directory");
         this.id = Vldtn.requireNonNull(id, "segmentId");
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
@@ -42,6 +49,8 @@ public final class SegmentFiles<K, V> {
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
         this.diskIoBufferSize = diskIoBufferSize;
+        this.encodingChunkFilters = List.copyOf(encodingChunkFilters);
+        this.decodingChunkFilters = List.copyOf(decodingChunkFilters);
     }
 
     String getCacheFileName() {
@@ -96,7 +105,8 @@ public final class SegmentFiles<K, V> {
     ChunkPairFile<K, V> getIndexFile() {
         final ChunkStoreFile chunkStoreFile = new ChunkStoreFile(getDirectory(),
                 getIndexFileName(),
-                DataBlockSize.ofDataBlockSize(diskIoBufferSize));
+                DataBlockSize.ofDataBlockSize(diskIoBufferSize),
+                encodingChunkFilters, decodingChunkFilters);
         return new ChunkPairFile<>(chunkStoreFile, keyTypeDescriptor,
                 valueTypeDescriptor,
                 DataBlockSize.ofDataBlockSize(diskIoBufferSize));
@@ -120,6 +130,14 @@ public final class SegmentFiles<K, V> {
 
     TypeDescriptor<V> getValueTypeDescriptor() {
         return valueTypeDescriptor;
+    }
+
+    List<ChunkFilter> getEncodingChunkFilters() {
+        return encodingChunkFilters;
+    }
+
+    List<ChunkFilter> getDecodingChunkFilters() {
+        return decodingChunkFilters;
     }
 
     void deleteFile(final String fileName) {

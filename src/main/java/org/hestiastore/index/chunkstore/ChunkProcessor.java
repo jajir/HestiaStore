@@ -12,12 +12,13 @@ public class ChunkProcessor {
         this.filters = Vldtn.requireNonNull(filters, "filters");
     }
 
-    public void process(final ChunkData data) {
+    public ChunkData process(final ChunkData data) {
         Vldtn.requireNonNull(data, "data");
         ChunkData current = data;
         for (final ChunkFilter filter : filters) {
             current = filter.apply(current);
         }
+        return current;
     }
 
 }

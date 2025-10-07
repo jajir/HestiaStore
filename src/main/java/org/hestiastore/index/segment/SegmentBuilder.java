@@ -1,8 +1,11 @@
 package org.hestiastore.index.segment;
 
+import java.util.List;
+
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.chunkstore.ChunkFilter;
 
 public final class SegmentBuilder<K, V> {
 
@@ -171,11 +174,19 @@ public final class SegmentBuilder<K, V> {
                     maxNumberOfKeysInSegmentChunk,
                     bloomFilterNumberOfHashFunctions,
                     bloomFilterIndexSizeInBytes,
-                    bloomFilterProbabilityOfFalsePositive, diskIoBufferSize);
+                    bloomFilterProbabilityOfFalsePositive, diskIoBufferSize,
+                    List.of(), List.of());
         }
         if (segmentFiles == null) {
+            final List<ChunkFilter> encodingChunkFilters = Vldtn.requireNonNull(
+                    segmentConf.getEncodingChunkFilters(),
+                    "encodingChunkFilters");
+            final List<ChunkFilter> decodingChunkFilters = Vldtn.requireNonNull(
+                    segmentConf.getDecodingChunkFilters(),
+                    "decodingChunkFilters");
             segmentFiles = new SegmentFiles<>(directory, id, keyTypeDescriptor,
-                    valueTypeDescriptor, segmentConf.getDiskIoBufferSize());
+                    valueTypeDescriptor, segmentConf.getDiskIoBufferSize(),
+                    encodingChunkFilters, decodingChunkFilters);
         }
         if (segmentPropertiesManager == null) {
             segmentPropertiesManager = new SegmentPropertiesManager(

@@ -1,5 +1,9 @@
 package org.hestiastore.index.sst;
 
+import java.util.List;
+
+import org.hestiastore.index.chunkstore.ChunkFilter;
+
 public class IndexConfiguration<K, V> {
 
     /**
@@ -33,6 +37,9 @@ public class IndexConfiguration<K, V> {
     private final Boolean threadSafe;
     private final Boolean logEnabled;
 
+    private final List<ChunkFilter> encodingChunkFilters;
+    private final List<ChunkFilter> decodingChunkFilters;
+
     /**
      * Creates a new instance of IndexConfigurationBuilder.
      *
@@ -59,7 +66,9 @@ public class IndexConfiguration<K, V> {
             final Integer bloomFilterIndexSizeInBytes, //
             final Double bloomFilterProbabilityOfFalsePositive, //
             final Integer diskIoBufferSize, final Boolean threadSafe,
-            final Boolean logEnabled) {
+            final Boolean logEnabled,
+            final List<ChunkFilter> encodingChunkFilters,
+            final List<ChunkFilter> decodingChunkFilters) {
         this.keyClass = keyClass;
         this.valueClass = valueClass;
         this.keyTypeDescriptor = keyTypeDescriptor;
@@ -77,6 +86,8 @@ public class IndexConfiguration<K, V> {
         this.diskIoBufferSize = diskIoBufferSize;
         this.threadSafe = threadSafe;
         this.logEnabled = logEnabled;
+        this.encodingChunkFilters = List.copyOf(encodingChunkFilters);
+        this.decodingChunkFilters = List.copyOf(decodingChunkFilters);
     }
 
     public Long getMaxNumberOfKeysInSegmentCache() {
@@ -145,5 +156,13 @@ public class IndexConfiguration<K, V> {
 
     public String getValueTypeDescriptor() {
         return valueTypeDescriptor;
+    }
+
+    public List<ChunkFilter> getEncodingChunkFilters() {
+        return encodingChunkFilters;
+    }
+
+    public List<ChunkFilter> getDecodingChunkFilters() {
+        return decodingChunkFilters;
     }
 }

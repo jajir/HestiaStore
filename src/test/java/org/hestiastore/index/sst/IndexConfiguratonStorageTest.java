@@ -4,8 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.bloomfilter.BloomFilterBuilder;
+import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
+import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
@@ -13,8 +18,13 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class IndexConfiguratonStorageTest {
+
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(IndexConfiguratonStorageTest.class);
 
     private static final String TD_STRING = TypeDescriptorShortString.class
             .getName();
@@ -60,6 +70,7 @@ class IndexConfiguratonStorageTest {
                 .withLogEnabled(true)//
                 .build();
         storage.save(config);
+        logConfigurationFile();
 
         final IndexConfiguration<String, Long> ret = storage.load();
         assertEquals(String.class, ret.getKeyClass());
@@ -87,6 +98,51 @@ class IndexConfiguratonStorageTest {
     }
 
     @Test
+    void test_save_and_load_with_filters() {
+        final IndexConfiguration<String, Long> config = IndexConfiguration
+                .<String, Long>builder()//
+                .withKeyClass(String.class)//
+                .withValueClass(Long.class)//
+                .withKeyTypeDescriptor(TD_STRING)//
+                .withValueTypeDescriptor(TD_LONG)//
+                .withName(INDX_NAME)//
+                .withMaxNumberOfKeysInSegmentCache(MAX_KEYS_IN_SEGMENT_CACHE)//
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(
+                        MAX_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING)//
+                .withMaxNumberOfKeysInSegmentChunk(MAX_INDEX_PAGE)//
+                .withMaxNumberOfKeysInCache(MAX_KEYS_CACHE)//
+                .withMaxNumberOfKeysInSegment(MAX_KEYS_SEGMENT)//
+                .withMaxNumberOfSegmentsInCache(MAX_SEGMENTS_CACHE)//
+                .withBloomFilterNumberOfHashFunctions(BLOOM_FILTER_HASH)//
+                .withBloomFilterIndexSizeInBytes(BLOOM_FILTER_INDEX_BYTES)//
+                .withBloomFilterProbabilityOfFalsePositive(
+                        BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE)//
+                .withDiskIoBufferSizeInBytes(DISK_IO_BUFFER)//
+                .withThreadSafe(true)//
+                .withLogEnabled(true)//
+                .withEncodingFilterClasses(List.of(ChunkFilterCrc32Writing.class,
+                        ChunkFilterMagicNumberWriting.class))//
+                .withDecodingFilterClasses(List.of(ChunkFilterMagicNumberWriting.class,
+                        ChunkFilterCrc32Writing.class))//
+                .build();
+        storage.save(config);
+        logConfigurationFile();
+
+        final IndexConfiguration<String, Long> loaded = storage.load();
+        assertEquals(2, loaded.getEncodingChunkFilters().size());
+        assertEquals(ChunkFilterCrc32Writing.class,
+                loaded.getEncodingChunkFilters().get(0).getClass());
+        assertEquals(ChunkFilterMagicNumberWriting.class,
+                loaded.getEncodingChunkFilters().get(1).getClass());
+
+        assertEquals(2, loaded.getDecodingChunkFilters().size());
+        assertEquals(ChunkFilterMagicNumberWriting.class,
+                loaded.getDecodingChunkFilters().get(0).getClass());
+        assertEquals(ChunkFilterCrc32Writing.class,
+                loaded.getDecodingChunkFilters().get(1).getClass());
+    }
+
+    @Test
     void test_save_and_load_empty_probability_of_false_positive() {
         final IndexConfiguration<String, Long> config = IndexConfiguration
                 .<String, Long>builder()//
@@ -109,6 +165,7 @@ class IndexConfiguratonStorageTest {
                 .withLogEnabled(true)//
                 .build();
         storage.save(config);
+        logConfigurationFile();
 
         final IndexConfiguration<String, Long> ret = storage.load();
         assertEquals(String.class, ret.getKeyClass());
@@ -158,6 +215,22 @@ class IndexConfiguratonStorageTest {
     void tearDown() {
         storage = null;
         directory = null;
+    }
+
+    private void logConfigurationFile() {
+        if (directory instanceof MemDirectory) {
+            final MemDirectory memDirectory = (MemDirectory) directory;
+            final String fileName = "index-configuration.properties";
+            if (memDirectory.isFileExists(fileName)) {
+                final String content = new String(
+                        memDirectory.getFileBytes(fileName).getData(),
+                        StandardCharsets.UTF_8);
+                LOGGER.info("{}:{}{}", fileName, System.lineSeparator(),
+                        content);
+            } else {
+                LOGGER.info("{} not present in directory", fileName);
+            }
+        }
     }
 
 }

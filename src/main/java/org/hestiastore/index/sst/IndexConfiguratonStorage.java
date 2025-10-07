@@ -1,7 +1,12 @@
 package org.hestiastore.index.sst;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilterBuilder;
+import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.Props;
 
@@ -25,6 +30,8 @@ public class IndexConfiguratonStorage<K, V> {
     private static final String PROP_BLOOM_FILTER_INDEX_SIZE_IN_BYTES = "bloomFilterIndexSizeInBytes";
     private static final String PROP_BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE = "bloomFilterProbabilityOfFalsePositive";
     private static final String PROP_DISK_IO_BUFFER_SIZE_IN_BYTES = "diskIoBufferSizeInBytes";
+    private static final String PROP_ENCODING_CHUNK_FILTERS = "encodingChunkFilters";
+    private static final String PROP_DECODING_CHUNK_FILTERS = "decodingChunkFilters";
 
     private static final String CONFIGURATION_FILENAME = "index-configuration.properties";
 
@@ -82,6 +89,18 @@ public class IndexConfiguratonStorage<K, V> {
         builder.withValueTypeDescriptor(
                 props.getString(PROP_VALUE_TYPE_DESCRIPTOR));
 
+        final String encodingFilters = props
+                .getString(PROP_ENCODING_CHUNK_FILTERS);
+        if (encodingFilters != null && !encodingFilters.isBlank()) {
+            builder.withEncodingFilters(parseFilterList(encodingFilters));
+        }
+
+        final String decodingFilters = props
+                .getString(PROP_DECODING_CHUNK_FILTERS);
+        if (decodingFilters != null && !decodingFilters.isBlank()) {
+            builder.withDecodingFilters(parseFilterList(decodingFilters));
+        }
+
         return builder.build();
     }
 
@@ -133,6 +152,10 @@ public class IndexConfiguratonStorage<K, V> {
             props.setDouble(PROP_BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE,
                     BloomFilterBuilder.DEFAULT_PROBABILITY_OF_FALSE_POSITIVE);
         }
+        props.setString(PROP_ENCODING_CHUNK_FILTERS,
+                serializeFilters(indexConfiguration.getEncodingChunkFilters()));
+        props.setString(PROP_DECODING_CHUNK_FILTERS,
+                serializeFilters(indexConfiguration.getDecodingChunkFilters()));
         props.writeData();
     }
 
@@ -147,6 +170,42 @@ public class IndexConfiguratonStorage<K, V> {
         } catch (ClassNotFoundException ex) {
             throw new IllegalArgumentException(
                     "Unable to load class: " + className, ex);
+        }
+    }
+
+    private List<ChunkFilter> parseFilterList(final String value) {
+        return Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(this::instantiateFilter)
+                .collect(Collectors.toList());
+    }
+
+    private String serializeFilters(final List<ChunkFilter> filters) {
+        if (filters == null || filters.isEmpty()) {
+            return "";
+        }
+        return filters.stream().map(filter -> filter.getClass().getName())
+                .collect(Collectors.joining(","));
+    }
+
+    private ChunkFilter instantiateFilter(final String className) {
+        final String requiredClassName = Vldtn.requireNonNull(className,
+                "className");
+        try {
+            final Class<?> clazz = Class.forName(requiredClassName);
+            if (!ChunkFilter.class.isAssignableFrom(clazz)) {
+                throw new IllegalArgumentException(String.format(
+                        "Class '%s' does not implement ChunkFilter",
+                        requiredClassName));
+            }
+            @SuppressWarnings("unchecked")
+            final Class<? extends ChunkFilter> filterClass = (Class<? extends ChunkFilter>) clazz;
+            return filterClass.getDeclaredConstructor().newInstance();
+        } catch (ReflectiveOperationException ex) {
+            throw new IllegalArgumentException(String.format(
+                    "Unable to instantiate chunk filter '%s'",
+                    requiredClassName), ex);
         }
     }
 

@@ -8,6 +8,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
+
+import org.hestiastore.index.chunkstore.ChunkFilter;
+import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
+import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
+import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberValidation;
+import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.junit.jupiter.api.AfterEach;
@@ -43,6 +50,11 @@ class IndexConfigurationManagerTest {
             .withDiskIoBufferSizeInBytes(1024)//
             .withBloomFilterIndexSizeInBytes(77)//
             .withBloomFilterNumberOfHashFunctions(88)//
+            .withEncodingFilterClasses(List.of(ChunkFilterCrc32Writing.class,
+                    ChunkFilterMagicNumberWriting.class))//
+            .withDecodingFilterClasses(List.of(
+                    ChunkFilterMagicNumberValidation.class,
+                    ChunkFilterCrc32Validation.class))//
             .build();
 
     @Mock
@@ -407,6 +419,55 @@ class IndexConfigurationManagerTest {
     }
 
     @Test
+    void test_save_encoding_filters_empty() {
+        final IndexConfiguration<Long, String> config = baseBuilder()
+                .withEncodingFilters(List.<ChunkFilter>of())
+                .withDecodingFilterClasses(
+                        List.of(ChunkFilterMagicNumberValidation.class))
+                .build();
+
+        final Exception ex = assertThrows(IllegalArgumentException.class,
+                () -> manager.save(config));
+
+        assertEquals("Encoding chunk filters must not be empty.",
+                ex.getMessage());
+    }
+
+    @Test
+    void test_save_decoding_filters_empty() {
+        final IndexConfiguration<Long, String> config = baseBuilder()
+                .withEncodingFilterClasses(
+                        List.of(ChunkFilterCrc32Writing.class))
+                .withDecodingFilters(List.<ChunkFilter>of()).build();
+
+        final Exception ex = assertThrows(IllegalArgumentException.class,
+                () -> manager.save(config));
+
+        assertEquals("Decoding chunk filters must not be empty.",
+                ex.getMessage());
+    }
+
+    @Test
+    void test_applyDefaults_adds_default_filters() {
+        final IndexConfiguration<Long, String> config = baseBuilder().build();
+
+        final IndexConfiguration<Long, String> withDefaults = manager
+                .applyDefaults(config);
+
+        assertEquals(2, withDefaults.getEncodingChunkFilters().size());
+        assertEquals(ChunkFilterCrc32Writing.class,
+                withDefaults.getEncodingChunkFilters().get(0).getClass());
+        assertEquals(ChunkFilterMagicNumberWriting.class,
+                withDefaults.getEncodingChunkFilters().get(1).getClass());
+
+        assertEquals(2, withDefaults.getDecodingChunkFilters().size());
+        assertEquals(ChunkFilterMagicNumberValidation.class,
+                withDefaults.getDecodingChunkFilters().get(0).getClass());
+        assertEquals(ChunkFilterCrc32Validation.class,
+                withDefaults.getDecodingChunkFilters().get(1).getClass());
+    }
+
+    @Test
     void test_save() {
         manager.save(CONFIG);
 
@@ -415,27 +476,9 @@ class IndexConfigurationManagerTest {
 
     @Test
     void test_mergeWithStored_used_stored_values() {
-        final IndexConfiguration<Long, String> config = IndexConfiguration
-                .<Long, String>builder()//
-                .withKeyClass(Long.class) //
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(TD_LONG)//
-                .withValueTypeDescriptor(TD_STRING)//
-                .withName("test_index")//
-                .withMaxNumberOfKeysInSegmentCache(11L)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22L) //
-                .withMaxNumberOfKeysInSegmentChunk(33)//
-                .withMaxNumberOfKeysInSegment(44)//
-                .withMaxNumberOfKeysInCache(55)//
-                .withMaxNumberOfSegmentsInCache(66)//
-                .withDiskIoBufferSizeInBytes(1024)//
-                .withBloomFilterIndexSizeInBytes(77)//
-                .withBloomFilterNumberOfHashFunctions(88)//
-                .build();
-
         when(storage.load()).thenReturn(CONFIG);
         final IndexConfiguration<Long, String> ret = manager
-                .mergeWithStored(config);
+                .mergeWithStored(CONFIG);
         // verify that unchanged object is not saved
         verify(storage, Mockito.times(0)).save(any());
 
@@ -684,6 +727,44 @@ class IndexConfigurationManagerTest {
                 e.getMessage());
     }
 
+    @Test
+    void test_mergeWithStored_encodingChunkFilters() {
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
+                .withEncodingFilters(List.of(new ChunkFilterCrc32Writing()))//
+                .build();
+
+        when(storage.load()).thenReturn(CONFIG);
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> manager.mergeWithStored(config));
+
+        assertEquals(
+                "Value of 'EncodingChunkFilters' is already set to '"
+                        + CONFIG.getEncodingChunkFilters()
+                        + "' and can't be changed to '"
+                        + config.getEncodingChunkFilters() + "'",
+                e.getMessage());
+    }
+
+    @Test
+    void test_mergeWithStored_decodingChunkFilters() {
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
+                .withDecodingFilters(List.of(new ChunkFilterMagicNumberValidation()))//
+                .build();
+
+        when(storage.load()).thenReturn(CONFIG);
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> manager.mergeWithStored(config));
+
+        assertEquals(
+                "Value of 'DecodingChunkFilters' is already set to '"
+                        + CONFIG.getDecodingChunkFilters()
+                        + "' and can't be changed to '"
+                        + config.getDecodingChunkFilters() + "'",
+                e.getMessage());
+    }
+
     @BeforeEach
     void setup() {
         manager = new IndexConfigurationManager<>(storage);
@@ -692,6 +773,28 @@ class IndexConfigurationManagerTest {
     @AfterEach
     void tearDown() {
         manager = null;
+    }
+
+    private IndexConfigurationBuilder<Long, String> baseBuilder() {
+        return IndexConfiguration.<Long, String>builder()//
+                .withKeyClass(Long.class)//
+                .withValueClass(String.class)//
+                .withKeyTypeDescriptor(TD_LONG)//
+                .withValueTypeDescriptor(TD_STRING)//
+                .withName("base_index")//
+                .withThreadSafe(true)//
+                .withLogEnabled(true)//
+                .withMaxNumberOfKeysInSegmentCache(11L)//
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22L)//
+                .withMaxNumberOfKeysInSegmentChunk(33)//
+                .withMaxNumberOfKeysInSegment(44)//
+                .withMaxNumberOfKeysInCache(55)//
+                .withMaxNumberOfSegmentsInCache(66)//
+                .withDiskIoBufferSizeInBytes(1024)//
+                .withBloomFilterIndexSizeInBytes(77)//
+                .withBloomFilterNumberOfHashFunctions(88)//
+                .withEncodingFilters(CONFIG.getEncodingChunkFilters())//
+                .withDecodingFilters(CONFIG.getDecodingChunkFilters());
     }
 
 }
