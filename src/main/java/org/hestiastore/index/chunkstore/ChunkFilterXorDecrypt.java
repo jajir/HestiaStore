@@ -15,7 +15,7 @@ public class ChunkFilterXorDecrypt implements ChunkFilter {
         }
         final Bytes restored = ChunkFilterXorEncrypt
                 .xorPayload(input.getPayload());
-        return input.withPayload(restored)
-                .withFlags(input.getFlags() & ~ChunkFilterXorEncrypt.FLAG_ENCRYPTED);
+        return input.withPayload(restored).withFlags(
+                input.getFlags() & ~ChunkFilterXorEncrypt.FLAG_ENCRYPTED);
     }
 }

@@ -1,5 +1,7 @@
 package org.hestiastore.index;
 
+import java.util.Collection;
+
 /**
  * Class provide validation methods. It ensure that error message is easy to
  * understand and consistent.
@@ -10,6 +12,17 @@ public final class Vldtn {
         // private constructor
     }
 
+    /**
+     * Validates that the provided object is not null.
+     * 
+     * @param <T>          the type of the object
+     * @param object       the object to validate
+     * @param propertyName the name of the property being validated, used in
+     *                     error messages
+     * @return the validated object
+     * @throws IllegalArgumentException if the object is null or propertyName is
+     *                                  null
+     */
     public static <T> T requireNonNull(final T object,
             final String propertyName) {
         if (propertyName == null) {
@@ -23,7 +36,16 @@ public final class Vldtn {
         return object;
     }
 
-    public static int requiredIoBufferSize(final int ioBufferSize) {
+    /**
+     * Validates that a given IO buffer size is greater than 0 and divisible by
+     * 1024.
+     *
+     * @param ioBufferSize the IO buffer size to validate
+     * @return the validated IO buffer size
+     * @throws IllegalArgumentException if the IO buffer size is less than or
+     *                                  equal to 0, or not divisible by 1024
+     */
+    public static int requireIoBufferSize(final int ioBufferSize) {
         if (ioBufferSize <= 0) {
             throw new IllegalArgumentException(
                     "Property 'ioBufferSize' must be greater than 0");
@@ -116,6 +138,27 @@ public final class Vldtn {
                     CELL_SIZE * 4, cellSize));
         }
         return cellSize;
+    }
+
+    /**
+     * Validates that the provided collection is not null and not empty.
+     * 
+     * @param <T>          the type of elements in the collection
+     * @param <C>          the type of the collection
+     * @param collection   the collection to validate
+     * @param propertyName the name of the property being validated, used in
+     *                     error messages
+     * @return the validated collection
+     * @throws IllegalArgumentException if the collection is null or empty
+     */
+    public static <T, C extends Collection<T>> C requireNotEmpty(
+            final C collection, final String propertyName) {
+        final C validatedCollection = requireNonNull(collection, propertyName);
+        if (validatedCollection.isEmpty()) {
+            throw new IllegalArgumentException(String
+                    .format("Property '%s' must not be empty.", propertyName));
+        }
+        return validatedCollection;
     }
 
 }

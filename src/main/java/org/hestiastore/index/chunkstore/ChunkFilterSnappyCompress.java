@@ -11,7 +11,7 @@ import org.xerial.snappy.Snappy;
  */
 public class ChunkFilterSnappyCompress implements ChunkFilter {
 
-    private static final long FLAG_COMPRESSED = 1L << 0;
+    static final long FLAG_COMPRESSED = 1L << BIT_POSITION_SNAPPY_COMPRESSION;
 
     @Override
     public ChunkData apply(final ChunkData input) {

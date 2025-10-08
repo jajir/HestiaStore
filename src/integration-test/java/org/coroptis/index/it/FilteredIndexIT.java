@@ -63,6 +63,7 @@ class FilteredIndexIT {
                 createConf)) {
             entries.forEach(index::put);
             index.flush();
+            index.compact();
             LOGGER.info("Created index with configuration: {}", createConf);
             logPropertiesFile(directory, "Created index properties file");
         }
@@ -98,8 +99,8 @@ class FilteredIndexIT {
                                 out.write(buffer, 0, read);
                             }
                         }
-                        final String content = out
-                                .toString(StandardCharsets.UTF_8);
+                        final String content = new String(out.toByteArray(),
+                                StandardCharsets.UTF_8);
                         LOGGER.info(
                                 "index-configuration.properties content:\n{}",
                                 content);

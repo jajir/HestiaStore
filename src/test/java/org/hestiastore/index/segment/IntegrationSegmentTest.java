@@ -15,6 +15,11 @@ import java.util.stream.Stream;
 import org.hestiastore.index.AbstractDataTest;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
+import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
+import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
+import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberValidation;
+import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
@@ -200,9 +205,22 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
     void test_duplicities() {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
-        final Segment<Integer, String> seg = Segment.<Integer, String>builder()
-                .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
-                .withBloomFilterIndexSizeInBytes(0).withValueTypeDescriptor(tds)
+        final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
+                .withDirectory(directory)//
+                .withId(id)//
+                .withKeyTypeDescriptor(tdi)//
+                .withBloomFilterIndexSizeInBytes(0)//
+                .withValueTypeDescriptor(tds)//
+                .withEncodingChunkFilters(//
+                        List.of(new ChunkFilterMagicNumberWriting(), //
+                                new ChunkFilterCrc32Writing(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
+                .withDecodingChunkFilters(//
+                        List.of(new ChunkFilterMagicNumberValidation(), //
+                                new ChunkFilterCrc32Validation(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
                 .build();
 
         writePairs(seg, Arrays.asList(//
@@ -239,10 +257,23 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
     void test_write_unordered() {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
-        final Segment<Integer, String> seg = Segment.<Integer, String>builder()
-                .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
+        final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
+                .withDirectory(directory)//
+                .withId(id)//
+                .withKeyTypeDescriptor(tdi)//
                 .withBloomFilterIndexSizeInBytes(0)//
-                .withValueTypeDescriptor(tds).build();
+                .withValueTypeDescriptor(tds)//
+                .withEncodingChunkFilters(//
+                        List.of(new ChunkFilterMagicNumberWriting(), //
+                                new ChunkFilterCrc32Writing(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
+                .withDecodingChunkFilters(//
+                        List.of(new ChunkFilterMagicNumberValidation(), //
+                                new ChunkFilterCrc32Validation(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
+                .build();
 
         writePairs(seg, Arrays.asList(//
                 Pair.of(5, "d"), //
@@ -278,9 +309,22 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
     void test_write_unordered_tombstone() {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
-        final Segment<Integer, String> seg = Segment.<Integer, String>builder()
-                .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
-                .withValueTypeDescriptor(tds).build();
+        final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
+                .withDirectory(directory)//
+                .withId(id)//
+                .withKeyTypeDescriptor(tdi)//
+                .withValueTypeDescriptor(tds)//
+                .withEncodingChunkFilters(//
+                        List.of(new ChunkFilterMagicNumberWriting(), //
+                                new ChunkFilterCrc32Writing(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
+                .withDecodingChunkFilters(//
+                        List.of(new ChunkFilterMagicNumberValidation(), //
+                                new ChunkFilterCrc32Validation(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
+                .build();
 
         writePairs(seg, Arrays.asList(//
                 Pair.of(5, "d"), //
@@ -346,6 +390,16 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withValueTypeDescriptor(tds)//
+                .withEncodingChunkFilters(//
+                        List.of(new ChunkFilterMagicNumberWriting(), //
+                                new ChunkFilterCrc32Writing(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
+                .withDecodingChunkFilters(//
+                        List.of(new ChunkFilterMagicNumberValidation(), //
+                                new ChunkFilterCrc32Validation(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
                 .build();
 
         writePairs(seg, Arrays.asList(//
@@ -390,6 +444,16 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withKeyTypeDescriptor(tdi)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withValueTypeDescriptor(tds)//
+                .withEncodingChunkFilters(//
+                        List.of(new ChunkFilterMagicNumberWriting(), //
+                                new ChunkFilterCrc32Writing(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
+                .withDecodingChunkFilters(//
+                        List.of(new ChunkFilterMagicNumberValidation(), //
+                                new ChunkFilterCrc32Validation(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
                 .build();
 
         writePairs(seg, Arrays.asList(//
@@ -432,7 +496,16 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 directory, segmentId);
 
         final SegmentFiles<Integer, String> segmentFiles = new SegmentFiles<>(
-                directory, segmentId, tdi, tds, 1024, List.of(), List.of());
+                directory, segmentId, tdi, tds, 1024, //
+                List.of(new ChunkFilterMagicNumberWriting(), //
+                        new ChunkFilterCrc32Writing(), //
+                        new ChunkFilterDoNothing()//
+                ), //
+                List.of(new ChunkFilterMagicNumberValidation(), //
+                        new ChunkFilterCrc32Validation(), //
+                        new ChunkFilterDoNothing()//
+                )//
+        );
 
         final SegmentDataSupplier<Integer, String> segmentDataSupplier = new SegmentDataSupplier<>(
                 segmentFiles, segmentConf, segmentPropertiesManager);
@@ -520,9 +593,22 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
     void test_write_unordered_tombstone_with_forceCompact() {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
-        final Segment<Integer, String> seg = Segment.<Integer, String>builder()
-                .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
-                .withBloomFilterIndexSizeInBytes(0).withValueTypeDescriptor(tds)
+        final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
+                .withDirectory(directory)//
+                .withId(id)//
+                .withKeyTypeDescriptor(tdi)//
+                .withBloomFilterIndexSizeInBytes(0)//
+                .withValueTypeDescriptor(tds)//
+                .withEncodingChunkFilters(//
+                        List.of(new ChunkFilterMagicNumberWriting(), //
+                                new ChunkFilterCrc32Writing(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
+                .withDecodingChunkFilters(//
+                        List.of(new ChunkFilterMagicNumberValidation(), //
+                                new ChunkFilterCrc32Validation(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
                 .build();
 
         writePairs(seg, Arrays.asList(//
@@ -578,7 +664,18 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withMaxNumberOfKeysInSegmentChunk(3)//
                 .withMaxNumberOfKeysInSegmentCache(5)//
                 .withDiskIoBufferSize(3 * 1024)//
-                .withValueTypeDescriptor(tds).build();
+                .withValueTypeDescriptor(tds)//
+                .withEncodingChunkFilters(//
+                        List.of(new ChunkFilterMagicNumberWriting(), //
+                                new ChunkFilterCrc32Writing(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
+                .withDecodingChunkFilters(//
+                        List.of(new ChunkFilterMagicNumberValidation(), //
+                                new ChunkFilterCrc32Validation(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
+                .build();
 
         final List<Pair<Integer, String>> pairs = new ArrayList<>();
         try (PairWriter<Integer, String> writer = seg.openDeltaCacheWriter()) {
@@ -621,6 +718,16 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                         .withMaxNumberOfKeysInSegmentChunk(10)//
                         .withBloomFilterIndexSizeInBytes(0)//
                         .withDiskIoBufferSize(1 * 1024) //
+                        .withEncodingChunkFilters(//
+                                List.of(new ChunkFilterMagicNumberWriting(), //
+                                        new ChunkFilterCrc32Writing(), //
+                                        new ChunkFilterDoNothing()//
+                                ))//
+                        .withDecodingChunkFilters(//
+                                List.of(new ChunkFilterMagicNumberValidation(), //
+                                        new ChunkFilterCrc32Validation(), //
+                                        new ChunkFilterDoNothing()//
+                                ))//
                         .build(), //
                 1, // expectedNumberKeysInScarceIndex,
                 10 // expectedNumberOfFile
@@ -633,6 +740,16 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withMaxNumberOfKeysInSegmentChunk(1)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withDiskIoBufferSize(2 * 1024)//
+                .withEncodingChunkFilters(//
+                        List.of(new ChunkFilterMagicNumberWriting(), //
+                                new ChunkFilterCrc32Writing(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
+                .withDecodingChunkFilters(//
+                        List.of(new ChunkFilterMagicNumberValidation(), //
+                                new ChunkFilterCrc32Validation(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
                 .build(), //
                 9, // expectedNumberKeysInScarceIndex
                 5// expectedNumberOfFile
@@ -645,6 +762,16 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withDiskIoBufferSize(4 * 1024)//
+                .withEncodingChunkFilters(//
+                        List.of(new ChunkFilterMagicNumberWriting(), //
+                                new ChunkFilterCrc32Writing(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
+                .withDecodingChunkFilters(//
+                        List.of(new ChunkFilterMagicNumberValidation(), //
+                                new ChunkFilterCrc32Validation(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
                 .build(), //
                 5, // expectedNumberKeysInScarceIndex
                 7 // expectedNumberOfFile

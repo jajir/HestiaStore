@@ -9,8 +9,12 @@ import java.util.List;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.bloomfilter.BloomFilterBuilder;
+import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
+import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberValidation;
 import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
+import org.hestiastore.index.chunkstore.ChunkFilterSnappyCompress;
+import org.hestiastore.index.chunkstore.ChunkFilterSnappyDecompress;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
@@ -120,26 +124,36 @@ class IndexConfiguratonStorageTest {
                 .withDiskIoBufferSizeInBytes(DISK_IO_BUFFER)//
                 .withThreadSafe(true)//
                 .withLogEnabled(true)//
-                .withEncodingFilterClasses(List.of(ChunkFilterCrc32Writing.class,
-                        ChunkFilterMagicNumberWriting.class))//
-                .withDecodingFilterClasses(List.of(ChunkFilterMagicNumberWriting.class,
-                        ChunkFilterCrc32Writing.class))//
+                .withEncodingFilterClasses(//
+                        List.of(ChunkFilterCrc32Writing.class, //
+                                ChunkFilterMagicNumberWriting.class, //
+                                ChunkFilterSnappyCompress.class//
+                        ))//
+                .withDecodingFilterClasses(//
+                        List.of(ChunkFilterSnappyDecompress.class, //
+                                ChunkFilterMagicNumberValidation.class, //
+                                ChunkFilterCrc32Validation.class//
+                        ))//
                 .build();
         storage.save(config);
         logConfigurationFile();
 
         final IndexConfiguration<String, Long> loaded = storage.load();
-        assertEquals(2, loaded.getEncodingChunkFilters().size());
+        assertEquals(3, loaded.getEncodingChunkFilters().size());
         assertEquals(ChunkFilterCrc32Writing.class,
                 loaded.getEncodingChunkFilters().get(0).getClass());
         assertEquals(ChunkFilterMagicNumberWriting.class,
                 loaded.getEncodingChunkFilters().get(1).getClass());
+        assertEquals(ChunkFilterSnappyCompress.class,
+                loaded.getEncodingChunkFilters().get(2).getClass());
 
-        assertEquals(2, loaded.getDecodingChunkFilters().size());
-        assertEquals(ChunkFilterMagicNumberWriting.class,
+        assertEquals(3, loaded.getDecodingChunkFilters().size());
+        assertEquals(ChunkFilterSnappyDecompress.class,
                 loaded.getDecodingChunkFilters().get(0).getClass());
-        assertEquals(ChunkFilterCrc32Writing.class,
+        assertEquals(ChunkFilterMagicNumberValidation.class,
                 loaded.getDecodingChunkFilters().get(1).getClass());
+        assertEquals(ChunkFilterCrc32Validation.class,
+                loaded.getDecodingChunkFilters().get(2).getClass());
     }
 
     @Test

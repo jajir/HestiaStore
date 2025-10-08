@@ -30,6 +30,16 @@ class ChunkProcessorTest {
     }
 
     @Test
+    void constructor_should_throw_when_filters_empty() {
+        final IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> new ChunkProcessor(List.of()));
+
+        assertEquals("Property 'filters' must not be empty.",
+                exception.getMessage());
+    }
+
+    @Test
     void process_should_throw_when_data_null() {
         final ChunkProcessor processor = new ChunkProcessor(
                 List.of(mock(ChunkFilter.class)));

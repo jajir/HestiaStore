@@ -32,7 +32,7 @@ public class SortedDataFile<K, V> {
                 "keyTypeDescriptor");
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
-        this.diskIoBufferSize = Vldtn.requiredIoBufferSize(diskIoBufferSize);
+        this.diskIoBufferSize = Vldtn.requireIoBufferSize(diskIoBufferSize);
     }
 
     /**

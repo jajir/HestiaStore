@@ -103,4 +103,114 @@ class ChunkDataTest {
         assertEquals(payloadLength, chunkData.getPayload().length());
         assertArrayEquals(payload, chunkData.getPayload().getData());
     }
+
+    @Test
+    void of_should_set_all_fields() {
+        final long flags = 0x0102030405060708L;
+        final long crc = 0x0A0B0C0D0E0F1011L;
+        final long magic = 0x1122334455667788L;
+        final int version = 42;
+        final byte[] data = new byte[] { 9, 8, 7, 6 };
+        final Bytes payload = Bytes.of(data);
+
+        final ChunkData chunk = ChunkData.of(flags, crc, magic, version,
+                payload);
+
+        assertEquals(flags, chunk.getFlags());
+        assertEquals(crc, chunk.getCrc());
+        assertEquals(magic, chunk.getMagicNumber());
+        assertEquals(version, chunk.getVersion());
+        assertArrayEquals(data, chunk.getPayload().getData());
+    }
+
+    @Test
+    void of_should_throw_when_payload_null() {
+        assertThrows(IllegalArgumentException.class,
+                () -> ChunkData.of(FLAGS, CRC, ChunkHeader.MAGIC_NUMBER,
+                        VERSION, null));
+    }
+
+    @Test
+    void withFlags_should_update_flags_and_keep_others() {
+        final ChunkData base = ChunkData.of(FLAGS, CRC, ChunkHeader.MAGIC_NUMBER,
+                VERSION, Bytes.of(new byte[] { 1, 2 }));
+        final long newFlags = 0x00000000F0F0F0F0L;
+
+        final ChunkData updated = base.withFlags(newFlags);
+
+        assertEquals(newFlags, updated.getFlags());
+        assertEquals(base.getCrc(), updated.getCrc());
+        assertEquals(base.getMagicNumber(), updated.getMagicNumber());
+        assertEquals(base.getVersion(), updated.getVersion());
+        assertEquals(base.getPayload(), updated.getPayload());
+    }
+
+    @Test
+    void withCrc_should_update_crc_and_keep_others() {
+        final ChunkData base = ChunkData.of(FLAGS, CRC, ChunkHeader.MAGIC_NUMBER,
+                VERSION, Bytes.of(new byte[] { 1, 2 }));
+        final long newCrc = 0x123456789ABCDEFL;
+
+        final ChunkData updated = base.withCrc(newCrc);
+
+        assertEquals(newCrc, updated.getCrc());
+        assertEquals(base.getFlags(), updated.getFlags());
+        assertEquals(base.getMagicNumber(), updated.getMagicNumber());
+        assertEquals(base.getVersion(), updated.getVersion());
+        assertEquals(base.getPayload(), updated.getPayload());
+    }
+
+    @Test
+    void withMagicNumber_should_update_magic_and_keep_others() {
+        final ChunkData base = ChunkData.of(FLAGS, CRC, ChunkHeader.MAGIC_NUMBER,
+                VERSION, Bytes.of(new byte[] { 1, 2 }));
+        final long newMagic = ChunkHeader.MAGIC_NUMBER + 111;
+
+        final ChunkData updated = base.withMagicNumber(newMagic);
+
+        assertEquals(newMagic, updated.getMagicNumber());
+        assertEquals(base.getFlags(), updated.getFlags());
+        assertEquals(base.getCrc(), updated.getCrc());
+        assertEquals(base.getVersion(), updated.getVersion());
+        assertEquals(base.getPayload(), updated.getPayload());
+    }
+
+    @Test
+    void withVersion_should_update_version_and_keep_others() {
+        final ChunkData base = ChunkData.of(FLAGS, CRC, ChunkHeader.MAGIC_NUMBER,
+                VERSION, Bytes.of(new byte[] { 1, 2 }));
+        final int newVersion = VERSION + 5;
+
+        final ChunkData updated = base.withVersion(newVersion);
+
+        assertEquals(newVersion, updated.getVersion());
+        assertEquals(base.getFlags(), updated.getFlags());
+        assertEquals(base.getCrc(), updated.getCrc());
+        assertEquals(base.getMagicNumber(), updated.getMagicNumber());
+        assertEquals(base.getPayload(), updated.getPayload());
+    }
+
+    @Test
+    void withPayload_should_update_payload_and_keep_others() {
+        final ChunkData base = ChunkData.of(FLAGS, CRC, ChunkHeader.MAGIC_NUMBER,
+                VERSION, Bytes.of(new byte[] { 1, 2 }));
+        final Bytes newPayload = Bytes.of(new byte[] { 9, 8, 7 });
+
+        final ChunkData updated = base.withPayload(newPayload);
+
+        assertEquals(newPayload, updated.getPayload());
+        assertEquals(base.getFlags(), updated.getFlags());
+        assertEquals(base.getCrc(), updated.getCrc());
+        assertEquals(base.getMagicNumber(), updated.getMagicNumber());
+        assertEquals(base.getVersion(), updated.getVersion());
+    }
+
+    @Test
+    void withPayload_should_throw_when_null() {
+        final ChunkData base = ChunkData.of(FLAGS, CRC, ChunkHeader.MAGIC_NUMBER,
+                VERSION, Bytes.of(new byte[] { 1, 2 }));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> base.withPayload(null));
+    }
 }

@@ -7,7 +7,7 @@ import org.hestiastore.index.Bytes;
  */
 public class ChunkFilterXorEncrypt implements ChunkFilter {
 
-    static final long FLAG_ENCRYPTED = 1L << 1;
+    static final long FLAG_ENCRYPTED = 1L << BIT_POSITION_XOR_ENCRYPT;
     private static final long DEFAULT_KEY = 0x9E3779B97F4A7C15L;
 
     @Override

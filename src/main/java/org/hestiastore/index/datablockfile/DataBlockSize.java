@@ -20,7 +20,7 @@ public class DataBlockSize {
     }
 
     private DataBlockSize(final int size) {
-        this.size = Vldtn.requiredIoBufferSize(size);
+        this.size = Vldtn.requireIoBufferSize(size);
     }
 
     /**

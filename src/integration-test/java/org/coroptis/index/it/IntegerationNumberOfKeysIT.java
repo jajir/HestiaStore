@@ -2,9 +2,15 @@ package org.coroptis.index.it;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.List;
 import java.util.Random;
 
 import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
+import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
+import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
+import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberValidation;
+import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -70,6 +76,16 @@ public class IntegerationNumberOfKeysIT {
                 .withBloomFilterIndexSizeInBytes(0)// disable bloom filter
                 .withMaxNumberOfKeysInSegmentCache(1000)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(100_000)//
+                .withEncodingChunkFilters(//
+                        List.of(new ChunkFilterMagicNumberWriting(), //
+                                new ChunkFilterCrc32Writing(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
+                .withDecodingChunkFilters(//
+                        List.of(new ChunkFilterMagicNumberValidation(), //
+                                new ChunkFilterCrc32Validation(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
                 .build();
     }
 

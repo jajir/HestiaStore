@@ -18,14 +18,17 @@ class ChunkFilterSnappyDecompressTest {
     @Test
     void apply_should_decompress_payload_and_clear_flag() throws IOException {
         final byte[] compressed = Snappy.compress(PAYLOAD.getData());
-        final ChunkData input = ChunkData.of(1L, 0L, ChunkHeader.MAGIC_NUMBER,
-                1, Bytes.of(compressed));
+        final ChunkData input = ChunkData.of(
+                ChunkFilterSnappyCompress.FLAG_COMPRESSED, 0L,
+                ChunkHeader.MAGIC_NUMBER, 1, Bytes.of(compressed));
         final ChunkFilterSnappyDecompress filter = new ChunkFilterSnappyDecompress();
 
         final ChunkData result = filter.apply(input);
 
         assertEquals(PAYLOAD, result.getPayload());
-        assertEquals(input.getFlags() & ~1L, result.getFlags());
+        assertEquals(
+                input.getFlags() & ~ChunkFilterSnappyCompress.FLAG_COMPRESSED,
+                result.getFlags());
         assertEquals(input.getMagicNumber(), result.getMagicNumber());
         assertEquals(input.getCrc(), result.getCrc());
         assertEquals(input.getVersion(), result.getVersion());
@@ -52,11 +55,10 @@ class ChunkFilterSnappyDecompressTest {
             }
         };
 
-        final IndexException exception = assertThrows(IndexException.class,
+        final Exception exception = assertThrows(IllegalStateException.class,
                 () -> filter.apply(input));
 
-        assertEquals("Unable to decompress chunk payload",
+        assertEquals("Chunk payload is not marked as Snappy compressed.",
                 exception.getMessage());
-        assertEquals(ioException, exception.getCause());
     }
 }
