@@ -30,7 +30,12 @@ public class IntegrationChunkStoreFileTest {
     void setUp() {
         directory = new MemDirectory();
         chunkStoreFile = new ChunkStoreFile(directory, FILE_NAME,
-                DATABLOCK_SIZE, List.of(), List.of());
+                DATABLOCK_SIZE,
+                List.of(new ChunkFilterMagicNumberWriting(),
+                        new ChunkFilterCrc32Writing(),
+                        new ChunkFilterDoNothing()),
+                List.of(new ChunkFilterCrc32Validation(),
+                        new ChunkFilterDoNothing()));
     }
 
     @AfterEach

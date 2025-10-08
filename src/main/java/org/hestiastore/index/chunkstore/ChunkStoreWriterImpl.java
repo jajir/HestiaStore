@@ -5,11 +5,12 @@ import java.util.List;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 
-
 /**
  * A writer for writing chunks to a chunk store.
  */
 public class ChunkStoreWriterImpl implements ChunkStoreWriter {
+
+    private static final long DEFAULT_LONG = -1L;
 
     private final CellStoreWriter cellStoreWriter;
     private final ChunkProcessor encodingProcessor;
@@ -25,8 +26,7 @@ public class ChunkStoreWriterImpl implements ChunkStoreWriter {
                 "cellStoreWriter");
         final List<ChunkFilter> filters = List
                 .copyOf(Vldtn.requireNonNull(encodingChunkFilters, "filters"));
-        this.encodingProcessor = filters.isEmpty() ? null
-                : new ChunkProcessor(filters);
+        this.encodingProcessor = new ChunkProcessor(filters);
     }
 
     @Override
@@ -38,16 +38,9 @@ public class ChunkStoreWriterImpl implements ChunkStoreWriter {
     public CellPosition write(final ChunkPayload chunkPayload,
             final int version) {
         Vldtn.requireNonNull(chunkPayload, "chunkPayload");
-        ChunkData chunkData = ChunkData.of(0L, 0L, ChunkHeader.MAGIC_NUMBER,
-                version, chunkPayload.getBytes());
-        if (encodingProcessor != null) {
-            chunkData = encodingProcessor.process(chunkData);
-        }
-        if (chunkData.getMagicNumber() != ChunkHeader.MAGIC_NUMBER) {
-            chunkData = chunkData.withMagicNumber(ChunkHeader.MAGIC_NUMBER);
-        }
-        final long crc = ChunkPayload.of(chunkData.getPayload()).calculateCrc();
-        chunkData = chunkData.withCrc(crc);
+        ChunkData chunkData = ChunkData.of(DEFAULT_LONG, DEFAULT_LONG,
+                DEFAULT_LONG, version, chunkPayload.getBytes());
+        chunkData = encodingProcessor.process(chunkData);
         final ChunkHeader header = ChunkHeader.of(chunkData.getMagicNumber(),
                 chunkData.getVersion(), chunkData.getPayload().length(),
                 chunkData.getCrc(), chunkData.getFlags());

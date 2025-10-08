@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
+import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberValidation;
+import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -27,7 +29,8 @@ public class SegmentBuilderFromConfTest {
                 1024, // bloomFilterIndexSizeInBytes
                 0.01, // bloomFilterProbabilityOfFalsePositive
                 1024, // diskIoBufferSize
-                List.of(), List.of()
+                List.of(new ChunkFilterMagicNumberWriting()), //
+                List.of(new ChunkFilterMagicNumberValidation())//
         );
         final SegmentBuilder<Integer, String> builder = Segment
                 .<Integer, String>builder()//
@@ -40,6 +43,14 @@ public class SegmentBuilderFromConfTest {
         Segment<Integer, String> seg = builder.build();
         SegmentConf ret = seg.getSegmentConf();
         assertEquals(1024, ret.getDiskIoBufferSize());
+
+        assertEquals(1, ret.getEncodingChunkFilters().size());
+        assertEquals(1, ret.getDecodingChunkFilters().size());
+
+        assertEquals(ChunkFilterMagicNumberWriting.class,
+                ret.getEncodingChunkFilters().get(0).getClass());
+        assertEquals(ChunkFilterMagicNumberValidation.class,
+                ret.getDecodingChunkFilters().get(0).getClass());
     }
 
 }

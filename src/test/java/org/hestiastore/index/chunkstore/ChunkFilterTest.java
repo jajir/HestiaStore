@@ -15,7 +15,8 @@ class ChunkFilterTest {
 
     @BeforeEach
     void setUp() {
-        baseData = ChunkData.of(0L, 0L, 0L, 1, PAYLOAD);
+        baseData = ChunkData.of(ChunkFilterSnappyCompress.FLAG_COMPRESSED, 0L,
+                0L, 1, PAYLOAD);
     }
 
     @Test
@@ -40,7 +41,7 @@ class ChunkFilterTest {
         assertEquals(PAYLOAD, decompressed.getPayload());
         // decompressing twice is invalid
         assertThrows(IllegalStateException.class,
-                () -> decompressor.apply(baseData));
+                () -> decompressor.apply(decompressed));
     }
 
     @Test
@@ -65,7 +66,8 @@ class ChunkFilterTest {
         final ChunkFilter decrypt = new ChunkFilterXorDecrypt();
         final ChunkData decrypted = decrypt.apply(encrypted);
         assertEquals(PAYLOAD, decrypted.getPayload());
-        assertEquals(0L, decrypted.getFlags());
+        assertEquals(24, encrypted.getFlags());
+        assertEquals(8, decrypted.getFlags());
         assertThrows(IllegalStateException.class,
                 () -> decrypt.apply(baseData));
     }

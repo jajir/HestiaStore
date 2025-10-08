@@ -36,7 +36,8 @@ public class ChunkStoreReaderImplTest {
 
     @BeforeEach
     void beforeEach() {
-        reader = new ChunkStoreReaderImpl(dataBlockByteReader, List.of());
+        reader = new ChunkStoreReaderImpl(dataBlockByteReader,
+                List.of(new ChunkFilterDoNothing()));
     }
 
     @AfterEach

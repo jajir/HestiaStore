@@ -5,6 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
+
+import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -39,6 +42,10 @@ class SegmentManagerTest {
                 segmentDataCache);
         when(conf.getMaxNumberOfKeysInSegmentCache()).thenReturn(2L);
         when(conf.getDiskIoBufferSize()).thenReturn(1024);
+        when(conf.getEncodingChunkFilters())
+                .thenReturn(List.of(new ChunkFilterDoNothing()));
+        when(conf.getDecodingChunkFilters())
+                .thenReturn(List.of(new ChunkFilterDoNothing()));
 
         final Segment<Integer, String> s1 = segmentRegistry
                 .getSegment(SegmentId.of(1));

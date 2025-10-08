@@ -28,7 +28,9 @@ class ChunkFilterSnappyCompressTest {
         final byte[] uncompressed = Snappy
                 .uncompress(result.getPayload().getData());
         assertEquals(PAYLOAD, Bytes.of(uncompressed));
-        assertTrue((result.getFlags() & 1L) != 0L,
+        assertTrue(
+                (result.getFlags()
+                        & ChunkFilterSnappyCompress.FLAG_COMPRESSED) != 0L,
                 "Compression flag should be set");
         assertEquals(input.getMagicNumber(), result.getMagicNumber());
         assertEquals(input.getCrc(), result.getCrc());

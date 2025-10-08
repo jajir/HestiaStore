@@ -11,6 +11,11 @@ import java.util.stream.Stream;
 
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
+import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
+import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
+import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberValidation;
+import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
@@ -282,6 +287,16 @@ class IntegrationIndexSimpleTest {
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
                 .withMaxNumberOfKeysInSegmentCache(2)//
+                .withEncodingChunkFilters(//
+                        List.of(new ChunkFilterMagicNumberWriting(), //
+                                new ChunkFilterCrc32Writing(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
+                .withDecodingChunkFilters(//
+                        List.of(new ChunkFilterMagicNumberValidation(), //
+                                new ChunkFilterCrc32Validation(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
                 .build();
     }
 

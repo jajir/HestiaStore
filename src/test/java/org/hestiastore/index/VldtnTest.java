@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
+import java.util.List;
 
 class VldtnTest {
 
@@ -31,32 +32,32 @@ class VldtnTest {
     }
 
     @Test
-    void test_ioBufferSize() {
-        assertEquals(1024, Vldtn.requiredIoBufferSize(1024));
+    void test_requireIoBufferSize() {
+        assertEquals(1024, Vldtn.requireIoBufferSize(1024));
     }
 
     @Test
-    void test_ioBufferSize_less_then_zero() {
+    void test_requireIoBufferSize_less_then_zero() {
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> Vldtn.requiredIoBufferSize(-1));
+                () -> Vldtn.requireIoBufferSize(-1));
 
         assertEquals("Property 'ioBufferSize' must be greater than 0",
                 e.getMessage());
     }
 
     @Test
-    void test_ioBufferSize_is_zero() {
+    void test_requireIoBufferSize_is_zero() {
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> Vldtn.requiredIoBufferSize(0));
+                () -> Vldtn.requireIoBufferSize(0));
 
         assertEquals("Property 'ioBufferSize' must be greater than 0",
                 e.getMessage());
     }
 
     @Test
-    void test_ioBufferSize_dividion_by_1024() {
+    void test_requireIoBufferSize_dividion_by_1024() {
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> Vldtn.requiredIoBufferSize(100000));
+                () -> Vldtn.requireIoBufferSize(100000));
 
         assertEquals(
                 "Propety 'ioBufferSize' must be divisible "
@@ -140,6 +141,34 @@ class VldtnTest {
                 () -> Vldtn.requireCellSize(20, null));
         assertEquals("Property 'propertyName' must not be null.",
                 e.getMessage());
+    }
+
+    @Test
+    void test_requireNotEmpty_returnsCollection() {
+        final List<String> data = List.of("a", "b");
+        assertSame(data, Vldtn.requireNotEmpty(data, "items"));
+    }
+
+    @Test
+    void test_requireNotEmpty_nullCollection() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireNotEmpty(null, "items"));
+        assertEquals("Property 'items' must not be null.", e.getMessage());
+    }
+
+    @Test
+    void test_requireNotEmpty_nullPropertyName() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireNotEmpty(List.of("a"), null));
+        assertEquals("Property 'propertyName' must not be null.",
+                e.getMessage());
+    }
+
+    @Test
+    void test_requireNotEmpty_emptyCollection() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireNotEmpty(List.of(), "items"));
+        assertEquals("Property 'items' must not be empty.", e.getMessage());
     }
 
 }
