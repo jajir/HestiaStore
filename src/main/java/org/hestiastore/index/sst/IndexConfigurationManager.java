@@ -1,8 +1,11 @@
 package org.hestiastore.index.sst;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -307,24 +310,50 @@ public class IndexConfigurationManager<K, V> {
                 indexConf.getBloomFilterProbabilityOfFalsePositive());
 
         validateThatWasntChanged(
-                indexConf.getEncodingChunkFilters() != null
-                        && !indexConf.getEncodingChunkFilters().isEmpty()
-                        && !indexConf.getEncodingChunkFilters()
-                                .equals(storedConf.getEncodingChunkFilters()),
+                wasntChanged(indexConf.getEncodingChunkFilters(),
+                        storedConf.getEncodingChunkFilters()),
                 "EncodingChunkFilters", storedConf.getEncodingChunkFilters(),
                 indexConf.getEncodingChunkFilters());
 
         validateThatWasntChanged(
-                indexConf.getDecodingChunkFilters() != null
-                        && !indexConf.getDecodingChunkFilters().isEmpty()
-                        && !indexConf.getDecodingChunkFilters()
-                                .equals(storedConf.getDecodingChunkFilters()),
+                wasntChanged(indexConf.getDecodingChunkFilters(),
+                        storedConf.getDecodingChunkFilters()),
                 "DecodingChunkFilters", storedConf.getDecodingChunkFilters(),
                 indexConf.getDecodingChunkFilters());
     }
 
-    void validateThatWasntChanged(boolean wasChanged, final String propertyName,
-            Object storedValue, Object newValue) {
+    final static Comparator<ChunkFilter> chunkFilterCmp = (f1, f2) -> {
+        int c = f1.getClass().getName().compareTo(f2.getClass().getName());
+        return c;
+    };
+
+    private <T> boolean equalLists(List<T> a, List<T> b,
+            Comparator<? super T> cmp) {
+        if (a.size() != b.size())
+            return false;
+        for (int i = 0; i < a.size(); i++) {
+            if (cmp.compare(a.get(i), b.get(i)) != 0)
+                return false;
+        }
+        return true;
+    }
+
+    private boolean wasntChanged(final List<ChunkFilter> indexFilters,
+            final List<ChunkFilter> storedFilters) {
+        if (indexFilters == null) {
+            return false;
+        }
+        if (indexFilters.isEmpty()) {
+            return false;
+        }
+        if (indexFilters.isEmpty()) {
+            return false;
+        }
+        return !equalLists(indexFilters, storedFilters, chunkFilterCmp);
+    }
+
+    private void validateThatWasntChanged(final boolean wasChanged,
+            final String propertyName, Object storedValue, Object newValue) {
         if (wasChanged) {
             throw new IllegalArgumentException(String.format(
                     "Value of '%s' is already set"
@@ -453,10 +482,8 @@ public class IndexConfigurationManager<K, V> {
                 .withBloomFilterProbabilityOfFalsePositive(
                         conf.getBloomFilterProbabilityOfFalsePositive());
 
-        conf.getEncodingChunkFilters()
-                .forEach(builder::addEncodingFilter);
-        conf.getDecodingChunkFilters()
-                .forEach(builder::addDecodingFilter);
+        conf.getEncodingChunkFilters().forEach(builder::addEncodingFilter);
+        conf.getDecodingChunkFilters().forEach(builder::addDecodingFilter);
         return builder;
     }
 
