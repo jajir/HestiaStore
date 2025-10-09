@@ -2,6 +2,7 @@ package org.hestiastore.index.sorteddatafile;
 
 import java.util.Comparator;
 
+import org.hestiastore.index.F;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.Vldtn;
@@ -67,22 +68,21 @@ public class SortedDataFileWriter<K, V> implements PairWriter<K, V> {
         if (previousKey != null) {
             final int cmp = keyComparator.compare(previousKey, key);
             if (cmp == 0) {
-                final String s2 = new String(keyConvertorToBytes.toBytes(key));
+                final String s2 = F.b64(keyConvertorToBytes.toBytes(key));
                 final String keyComapratorClassName = keyComparator.getClass()
                         .getSimpleName();
                 throw new IllegalArgumentException(String.format(
-                        "Attempt to insers same key as previous. Key is '%s' and comparator is '%s'",
+                        "Attempt to insert the same key as previous. Key(Base64)='%s', comparator='%s'",
                         s2, keyComapratorClassName));
             }
             if (cmp > 0) {
-                final String s1 = new String(
-                        keyConvertorToBytes.toBytes(previousKey));
-                final String s2 = new String(keyConvertorToBytes.toBytes(key));
+                final String s1 = F.b64(keyConvertorToBytes.toBytes(previousKey));
+                final String s2 = F.b64(keyConvertorToBytes.toBytes(key));
                 final String keyComapratorClassName = keyComparator.getClass()
                         .getSimpleName();
                 throw new IllegalArgumentException(String.format(
-                        "Attempt to insers key in invalid order. "
-                                + "Previous key is '%s', inserted key is '%s' and comparator is '%s'",
+                        "Attempt to insert key in invalid order. "
+                                + "previous(Base64)='%s', inserted(Base64)='%s', comparator='%s'",
                         s1, s2, keyComapratorClassName));
             }
         }

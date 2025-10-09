@@ -46,7 +46,7 @@ public class SortedDataFileWriterTx<K, V> implements WriteTransaction<K, V> {
      */
     @Override
     public PairWriter<K, V> openWriter() {
-        final FileWriter fileWriter = directory.getFileWriter(fileName,
+        final FileWriter fileWriter = directory.getFileWriter(getTempFileName(),
                 Directory.Access.OVERWRITE, diskIoBufferSize);
         return new SortedDataFileWriter<>(valueTypeDescriptor.getTypeWriter(),
                 fileWriter, keyTypeDescriptor);
