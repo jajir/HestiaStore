@@ -44,6 +44,7 @@ public class ByteTool {
      * @param index required index in byte array
      * @param full  required byte array
      * @return byte array
+     * @throws NegativeArraySizeException when index is out of range
      */
     public byte[] getRemainingBytesAfterIndex(final int index,
             final byte[] full) {

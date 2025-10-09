@@ -3,6 +3,7 @@ package org.hestiastore.index;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Locale;
+import java.util.Base64;
 
 /**
  * Class just format number with some separator.
@@ -45,6 +46,18 @@ public class F {
         DecimalFormat df = (DecimalFormat) NumberFormat
                 .getNumberInstance(Locale.getDefault());
         return df.format(number);
+    }
+
+    /**
+     * Formats arbitrary binary data as a Base64 string, safe for logs and
+     * error messages.
+     *
+     * @param data required byte array
+     * @return Base64-encoded string
+     */
+    public static final String b64(final byte[] data) {
+        Vldtn.requireNonNull(data, "data");
+        return Base64.getEncoder().encodeToString(data);
     }
 
 }

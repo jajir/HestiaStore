@@ -24,7 +24,7 @@ public class IndexContextLoggingAdapter<K, V> implements Index<K, V> {
     }
 
     private void clearContext() {
-        MDC.clear();
+        MDC.remove("index.name");
     }
 
     @Override

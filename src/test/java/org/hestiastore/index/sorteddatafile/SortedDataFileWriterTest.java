@@ -3,6 +3,9 @@ package org.hestiastore.index.sorteddatafile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -67,10 +70,14 @@ class SortedDataFileWriterTest {
             writer.write(PAIR_1);
             final Exception e = assertThrows(IllegalArgumentException.class,
                     () -> writer.write(PAIR_0));
-            assertTrue(e.getMessage()
-                    .startsWith("Attempt to insers key in invalid order. "
-                            + "Previous key is 'key1', inserted key is 'key0' and comparator "
-                            + "is"));
+            final String prevB64 = Base64.getEncoder().encodeToString(
+                    "key1".getBytes(StandardCharsets.UTF_8));
+            final String insB64 = Base64.getEncoder().encodeToString(
+                    "key0".getBytes(StandardCharsets.UTF_8));
+            assertTrue(e.getMessage().startsWith(
+                    "Attempt to insert key in invalid order. previous(Base64)='"
+                            + prevB64 + "', inserted(Base64)='" + insB64
+                            + "', comparator='"));
         }
     }
 
@@ -81,10 +88,14 @@ class SortedDataFileWriterTest {
             writer.write(PAIR_1);
             final Exception e = assertThrows(IllegalArgumentException.class,
                     () -> writer.write(PAIR_0));
-            assertTrue(e.getMessage()
-                    .startsWith("Attempt to insers key in invalid order. "
-                            + "Previous key is 'key1', inserted key is 'key0' and comparator "
-                            + "is"));
+            final String prevB64 = Base64.getEncoder().encodeToString(
+                    "key1".getBytes(StandardCharsets.UTF_8));
+            final String insB64 = Base64.getEncoder().encodeToString(
+                    "key0".getBytes(StandardCharsets.UTF_8));
+            assertTrue(e.getMessage().startsWith(
+                    "Attempt to insert key in invalid order. previous(Base64)='"
+                            + prevB64 + "', inserted(Base64)='" + insB64
+                            + "', comparator='"));
         }
     }
 
@@ -95,10 +106,14 @@ class SortedDataFileWriterTest {
             writer.write(PAIR_1);
             final Exception e = assertThrows(IllegalArgumentException.class,
                     () -> writer.write(PAIR_0));
-            assertTrue(e.getMessage()
-                    .startsWith("Attempt to insers key in invalid order. "
-                            + "Previous key is 'key1', inserted key is 'key0' and comparator "
-                            + "is"));
+            final String prevB64 = Base64.getEncoder().encodeToString(
+                    "key1".getBytes(StandardCharsets.UTF_8));
+            final String insB64 = Base64.getEncoder().encodeToString(
+                    "key0".getBytes(StandardCharsets.UTF_8));
+            assertTrue(e.getMessage().startsWith(
+                    "Attempt to insert key in invalid order. previous(Base64)='"
+                            + prevB64 + "', inserted(Base64)='" + insB64
+                            + "', comparator='"));
         }
     }
 
