@@ -3,6 +3,7 @@ package org.hestiastore.index.sst;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -52,9 +53,9 @@ class IndexConfigurationManagerTest {
             .withBloomFilterNumberOfHashFunctions(88)//
             .withEncodingFilterClasses(List.of(ChunkFilterCrc32Writing.class,
                     ChunkFilterMagicNumberWriting.class))//
-            .withDecodingFilterClasses(List.of(
-                    ChunkFilterMagicNumberValidation.class,
-                    ChunkFilterCrc32Validation.class))//
+            .withDecodingFilterClasses(
+                    List.of(ChunkFilterMagicNumberValidation.class,
+                            ChunkFilterCrc32Validation.class))//
             .build();
 
     @Mock
@@ -750,7 +751,8 @@ class IndexConfigurationManagerTest {
     void test_mergeWithStored_decodingChunkFilters() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withDecodingFilters(List.of(new ChunkFilterMagicNumberValidation()))//
+                .withDecodingFilters(
+                        List.of(new ChunkFilterMagicNumberValidation()))//
                 .build();
 
         when(storage.load()).thenReturn(CONFIG);
@@ -763,6 +765,22 @@ class IndexConfigurationManagerTest {
                         + "' and can't be changed to '"
                         + config.getDecodingChunkFilters() + "'",
                 e.getMessage());
+    }
+
+    @Test
+    void test_mergeWithStored_encodingChunkFilters_same_classes_different_instances() {
+        // stored configuration has two encoding filters configured by class in
+        // CONFIG
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
+                // Use the exact same filter classes as in CONFIG, but create
+                // new instances.
+                .withEncodingFilters(List.of(new ChunkFilterCrc32Writing(),
+                        new ChunkFilterMagicNumberWriting()))//
+                .build();
+
+        when(storage.load()).thenReturn(CONFIG);
+        manager.mergeWithStored(config);
     }
 
     @BeforeEach
