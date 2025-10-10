@@ -13,11 +13,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 
+ * A single on-disk index segment with delta-cache and compaction support.
+ * <p>
+ * Segment coordinates read and write operations for a bounded subset of the
+ * index data. It encapsulates the underlying files, provides search and
+ * iteration, accepts writes through a delta cache (with optional automatic
+ * compaction), and exposes utilities for statistics, consistency checking, and
+ * splitting oversized segments. Versioning is tracked via an optimistic lock to
+ * guard concurrent readers while updates occur.
+ *
  * @author honza
  *
- * @param <K>
- * @param <V>
+ * @param <K> key type stored in this segment
+ * @param <V> value type stored in this segment
  */
 public class Segment<K, V>
         implements CloseableResource, OptimisticLockObjectVersionProvider {
