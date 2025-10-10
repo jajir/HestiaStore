@@ -10,13 +10,13 @@
         <meta name="author" content="Jan Jirout">
       
       
-        <link rel="canonical" href="https://jajir.github.io/HestiaStore/development/release/">
+        <link rel="canonical" href="https://jajir.github.io/HestiaStore/architecture/datablock/">
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../segment/">
       
       
-        <link rel="next" href="../documentation/">
+        <link rel="next" href="../../development/">
       
       
       <link rel="icon" href="../../images/favicon.ico">
@@ -24,7 +24,7 @@
     
     
       
-        <title>Release - HestiaStore</title>
+        <title>Data block - HestiaStore</title>
       
     
     
@@ -76,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#releasing-a-new-version" class="md-skip">
+        <a href="#data-block-and-chunk-design-in-hestiastore" class="md-skip">
           Skip to content
         </a>
       
@@ -111,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Release
+              Data block
             
           </span>
         </div>
@@ -297,11 +297,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../architecture/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -319,13 +321,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../development/" class="md-tabs__link">
           
   
   
@@ -744,148 +744,6 @@
       
   
   
-  
-  
-    
-    
-      
-        
-          
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
-        
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../../architecture/" class="md-nav__link ">
-              
-  
-  
-  <span class="md-ellipsis">
-    Architecture
-    
-  </span>
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4">
-            <span class="md-nav__icon md-icon"></span>
-            Architecture
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../architecture/arch-index/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Index Architecture
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../architecture/segment/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Segment Design
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../architecture/datablock/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Data block
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
     
   
   
@@ -919,7 +777,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
         
           
           <div class="md-nav__link md-nav__container">
@@ -928,7 +786,7 @@
   
   
   <span class="md-ellipsis">
-    Development
+    Architecture
     
   </span>
   
@@ -936,19 +794,65 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
-            Development
+            Architecture
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../arch-index/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Index Architecture
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../segment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Segment Design
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -972,7 +876,7 @@
   
   
   <span class="md-ellipsis">
-    Release
+    Data block
     
   </span>
   
@@ -985,7 +889,7 @@
   
   
   <span class="md-ellipsis">
-    Release
+    Data block
     
   </span>
   
@@ -1008,46 +912,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#versioning-of-the-project" class="md-nav__link">
+  <a href="#block" class="md-nav__link">
     <span class="md-ellipsis">
-      ☝️ Versioning of the project
+      Block
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#branching-strategy" class="md-nav__link">
-    <span class="md-ellipsis">
-      🕊️ Branching strategy
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#release-prerequisites" class="md-nav__link">
-    <span class="md-ellipsis">
-      🧑‍💻 Release prerequisites
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="🧑‍💻 Release prerequisites">
+    <nav class="md-nav" aria-label="Block">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#provide-correct-package-signature" class="md-nav__link">
+  <a href="#key-characteristics" class="md-nav__link">
     <span class="md-ellipsis">
-      Provide correct package signature
+      Key Characteristics:
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#setup-maven-central-accout-secrets" class="md-nav__link">
+  <a href="#block-header-format" class="md-nav__link">
     <span class="md-ellipsis">
-      Setup maven central accout secrets
+      Block Header Format:
     </span>
   </a>
   
@@ -1059,73 +945,28 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#perform-release" class="md-nav__link">
+  <a href="#chunk" class="md-nav__link">
     <span class="md-ellipsis">
-      Perform release
+      Chunk
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Perform release">
+    <nav class="md-nav" aria-label="Chunk">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-checkout-the-main-branch" class="md-nav__link">
+  <a href="#key-characteristics_1" class="md-nav__link">
     <span class="md-ellipsis">
-      1. 🏷️ Checkout the main branch
+      Key Characteristics:
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-set-the-release-version" class="md-nav__link">
+  <a href="#chunk-header-format" class="md-nav__link">
     <span class="md-ellipsis">
-      2. 🔢 Set the Release Version
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-tag-and-push-the-release" class="md-nav__link">
-    <span class="md-ellipsis">
-      3. 🏷️ Tag and Push the Release
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-deploy-the-release" class="md-nav__link">
-    <span class="md-ellipsis">
-      4. 🚀 Deploy the Release
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#5-bump-to-the-next-snapshot-version" class="md-nav__link">
-    <span class="md-ellipsis">
-      5. 📈 Bump to the Next Snapshot Version
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#6-publish-the-release-on-github" class="md-nav__link">
-    <span class="md-ellipsis">
-      6. 📝 Publish the Release on GitHub
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#7-celebrate" class="md-nav__link">
-    <span class="md-ellipsis">
-      7. 🎉 Celebrate
+      Chunk Header Format:
     </span>
   </a>
   
@@ -1137,44 +978,11 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#helpful-commands" class="md-nav__link">
+  <a href="#relationships" class="md-nav__link">
     <span class="md-ellipsis">
-      🧰 Helpful Commands
+      Relationships
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="🧰 Helpful Commands">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#how-to-use-a-custom-settingsxml-file" class="md-nav__link">
-    <span class="md-ellipsis">
-      How to Use a Custom settings.xml File
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-to-set-the-maven-project-version" class="md-nav__link">
-    <span class="md-ellipsis">
-      How to Set the Maven Project Version
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#check-dependencies" class="md-nav__link">
-    <span class="md-ellipsis">
-      Check dependencies
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -1187,6 +995,79 @@
 
               
             
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../development/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Development
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Development
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
               
                 
   
@@ -1194,7 +1075,30 @@
   
   
     <li class="md-nav__item">
-      <a href="../documentation/" class="md-nav__link">
+      <a href="../../development/release/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Release
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/documentation/" class="md-nav__link">
         
   
   
@@ -1217,7 +1121,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../guides/" class="md-nav__link">
+      <a href="../../development/guides/" class="md-nav__link">
         
   
   
@@ -1267,46 +1171,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#versioning-of-the-project" class="md-nav__link">
+  <a href="#block" class="md-nav__link">
     <span class="md-ellipsis">
-      ☝️ Versioning of the project
+      Block
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#branching-strategy" class="md-nav__link">
-    <span class="md-ellipsis">
-      🕊️ Branching strategy
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#release-prerequisites" class="md-nav__link">
-    <span class="md-ellipsis">
-      🧑‍💻 Release prerequisites
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="🧑‍💻 Release prerequisites">
+    <nav class="md-nav" aria-label="Block">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#provide-correct-package-signature" class="md-nav__link">
+  <a href="#key-characteristics" class="md-nav__link">
     <span class="md-ellipsis">
-      Provide correct package signature
+      Key Characteristics:
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#setup-maven-central-accout-secrets" class="md-nav__link">
+  <a href="#block-header-format" class="md-nav__link">
     <span class="md-ellipsis">
-      Setup maven central accout secrets
+      Block Header Format:
     </span>
   </a>
   
@@ -1318,73 +1204,28 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#perform-release" class="md-nav__link">
+  <a href="#chunk" class="md-nav__link">
     <span class="md-ellipsis">
-      Perform release
+      Chunk
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Perform release">
+    <nav class="md-nav" aria-label="Chunk">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-checkout-the-main-branch" class="md-nav__link">
+  <a href="#key-characteristics_1" class="md-nav__link">
     <span class="md-ellipsis">
-      1. 🏷️ Checkout the main branch
+      Key Characteristics:
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-set-the-release-version" class="md-nav__link">
+  <a href="#chunk-header-format" class="md-nav__link">
     <span class="md-ellipsis">
-      2. 🔢 Set the Release Version
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-tag-and-push-the-release" class="md-nav__link">
-    <span class="md-ellipsis">
-      3. 🏷️ Tag and Push the Release
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-deploy-the-release" class="md-nav__link">
-    <span class="md-ellipsis">
-      4. 🚀 Deploy the Release
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#5-bump-to-the-next-snapshot-version" class="md-nav__link">
-    <span class="md-ellipsis">
-      5. 📈 Bump to the Next Snapshot Version
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#6-publish-the-release-on-github" class="md-nav__link">
-    <span class="md-ellipsis">
-      6. 📝 Publish the Release on GitHub
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#7-celebrate" class="md-nav__link">
-    <span class="md-ellipsis">
-      7. 🎉 Celebrate
+      Chunk Header Format:
     </span>
   </a>
   
@@ -1396,44 +1237,11 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#helpful-commands" class="md-nav__link">
+  <a href="#relationships" class="md-nav__link">
     <span class="md-ellipsis">
-      🧰 Helpful Commands
+      Relationships
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="🧰 Helpful Commands">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#how-to-use-a-custom-settingsxml-file" class="md-nav__link">
-    <span class="md-ellipsis">
-      How to Use a Custom settings.xml File
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-to-set-the-maven-project-version" class="md-nav__link">
-    <span class="md-ellipsis">
-      How to Set the Maven Project Version
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#check-dependencies" class="md-nav__link">
-    <span class="md-ellipsis">
-      Check dependencies
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -1456,116 +1264,118 @@
   
 
 
-<h1 id="releasing-a-new-version">🚀 Releasing a New Version</h1>
-<p>This is a step-by-step guide for making a new HestiaStore release.</p>
-<h2 id="versioning-of-the-project">☝️ Versioning of the project</h2>
-<p>The project uses the traditional versioning pattern known as Semantic Versioning, detailed at <a href="https://semver.org">https://semver.org</a>. The version number consists of three components separated by dots:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>0.3.6
-</code></pre></div>
-<p>Each number has the following meaning:</p>
+<h1 id="data-block-and-chunk-design-in-hestiastore">Data Block and Chunk Design in HestiaStore</h1>
+<p>This document describes the structure and purpose of <code>Block</code> and <code>Chunk</code> objects in the HestiaStore storage engine.</p>
+<p><img alt="Data block and chunk class diagram" src="../../images/datablock.png" /></p>
+<hr />
+<h2 id="block">Block</h2>
+<p>A <strong>Block</strong> is the lowest-level physical unit of storage. It has a fixed size (typically a multiple of 4KB) and is directly written to disk.</p>
+<h3 id="key-characteristics">Key Characteristics:</h3>
 <ul>
-<li><code>0</code> - Major project version. Project API could be incompatible between two major versions.</li>
-<li><code>3</code> - Minor project version. Contains changes in features, performance optimizations, and small improvements. Minor versions should be compatible.</li>
-<li><code>6</code> - Patch version. Bug fixing project release.</li>
+<li><strong>Fixed Size</strong>: Determined by <code>BlockFile#getBlockSize()</code>.</li>
+<li><strong>Header</strong>: Each block includes a header with metadata (e.g. magic number, CRC32 checksum, data length).</li>
+<li><strong>Payload</strong>: The remaining portion of the block contains user data (<code>getPayloadSize()</code> returns the usable size).</li>
 </ul>
-<p>There are also snapshot versions with version number <code>0.3.6-SNAPSHOT</code>. Snapshot versions should not be stored in the Maven repository.</p>
-<h2 id="branching-strategy">🕊️ Branching strategy</h2>
-<p><img alt="project branching" src="../../images/branching.png" /></p>
-<p>We use a simplified GitHub Flow:</p>
+<h3 id="block-header-format">Block Header Format:</h3>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4 B</td>
+<td><code>magic</code></td>
+<td>Identifier for block integrity check</td>
+</tr>
+<tr>
+<td>4</td>
+<td>4 B</td>
+<td><code>crc32</code></td>
+<td>CRC checksum for payload verification</td>
+</tr>
+<tr>
+<td>8</td>
+<td>4 B</td>
+<td><code>dataLength</code></td>
+<td>Actual size of data in the block</td>
+</tr>
+<tr>
+<td>12+</td>
+<td>N/A</td>
+<td><code>payload</code></td>
+<td>User data payload</td>
+</tr>
+</tbody>
+</table>
+<p>Blocks are stored and retrieved via the <code>BlockFile</code> abstraction.</p>
+<hr />
+<h2 id="chunk">Chunk</h2>
+<p>A <strong>Chunk</strong> represents a variable-sized, logical data unit stored inside a block. It is used to store optionally compressed sets of key-value pairs.</p>
+<h3 id="key-characteristics_1">Key Characteristics:</h3>
 <ul>
-<li><code>main</code>: the primary development and release branch. Small changes may be committed directly to <code>main</code>, while larger or experimental features must be developed in a separate branch and merged via pull request.</li>
-<li>Feature branches are created from <code>main</code> for larger or isolated changes. Use descriptive names like <code>feature/compression</code>, <code>fix/index-scan</code>, etc.</li>
+<li><strong>Variable Size</strong>: Can be smaller or span multiple blocks depending on compression.</li>
+<li><strong>Stored Inside Blocks</strong>: Uses the <code>BlockFile</code> to persist data.</li>
+<li><strong>Compressible</strong>: Designed for efficient compression and decompression.</li>
+<li><strong>Encapsulated Metadata</strong>: Chunks also have a header to ensure validity and interpretability.</li>
 </ul>
-<p>The deprecated <code>devel</code> branch has been removed and is no longer used.</p>
-<h2 id="release-prerequisites">🧑‍💻 Release prerequisites</h2>
-<p>The release will be published to Maven Central. Release configuration secrets are placed at the Maven settings file <code>~/.m2/settings.xml</code>.
-Adjust <code>settings.xml</code> in <code>~/.m2/settings.xml</code> as described in <a href="https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry">GitHub's official documentation on how to work with the GitHub Maven repository</a>. Generate a valid token and you are done.</p>
-<h3 id="provide-correct-package-signature">Provide correct package signature</h3>
-<p>In your <code>~/.m2/settings.xml</code> file, add the following section:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">&lt;settings&gt;</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span>...
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">   </span><span class="nt">&lt;profile&gt;</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">     </span><span class="nt">&lt;id&gt;</span>release<span class="nt">&lt;/id&gt;</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">       </span><span class="nt">&lt;properties&gt;</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">       </span><span class="nt">&lt;gpg.executable&gt;</span>gpg<span class="nt">&lt;/gpg.executable&gt;</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">       </span><span class="nt">&lt;gpg.passphrase&gt;</span>--pgp-password--<span class="nt">&lt;/gpg.passphrase&gt;</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">     </span><span class="nt">&lt;/properties&gt;</span><span class="w">      </span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">   </span><span class="nt">&lt;/profile&gt;</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span>...
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="nt">&lt;/settings&gt;</span>
-</code></pre></div>
-<h3 id="setup-maven-central-accout-secrets">Setup maven central accout secrets</h3>
-<p>This provides <code>org.sonatype.central:central-publishing-maven-plugin</code> plugin secrets to enable login to the Maven Central account where release data will be placed.
-You must have an account with a verified namespace <code>org.hestiastore</code> at <a href="https://central.sonatype.com/">central.sonatype.com</a>. From the <code>Account</code> section, generate a key and password. These should be added to:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">&lt;settings&gt;</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span>...
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">&lt;servers&gt;</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">        </span><span class="nt">&lt;server&gt;</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">            </span><span class="nt">&lt;id&gt;</span>central<span class="nt">&lt;/id&gt;</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">           </span><span class="nt">&lt;username&gt;</span>------<span class="nt">&lt;/username&gt;</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">           </span><span class="nt">&lt;password&gt;</span>---------------token---------------<span class="nt">&lt;/password&gt;</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">       </span><span class="nt">&lt;/server&gt;</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">    </span><span class="nt">&lt;/servers&gt;</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span>...
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="nt">&lt;/settings&gt;</span>
-</code></pre></div>
-<h2 id="perform-release">Perform release</h2>
-<p>Perform the following steps to create a new release:</p>
-<h3 id="1-checkout-the-main-branch">1. 🏷️ Checkout the <code>main</code> branch</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>git<span class="w"> </span>checkout<span class="w"> </span>main
-</code></pre></div>
-<h3 id="2-set-the-release-version">2. 🔢 Set the Release Version</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>mvn<span class="w"> </span>versions:set<span class="w"> </span>-DnewVersion<span class="o">=</span><span class="m">0</span>.0.12
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>git<span class="w"> </span>commit<span class="w"> </span>-am<span class="w"> </span><span class="s2">&quot;release: version 0.0.12&quot;</span>
-</code></pre></div>
-<h3 id="3-tag-and-push-the-release">3. 🏷️ Tag and Push the Release</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>git<span class="w"> </span>tag<span class="w"> </span>v0.0.12
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>git<span class="w"> </span>push<span class="w"> </span>--follow-tags
-</code></pre></div>
-<h3 id="4-deploy-the-release">4. 🚀 Deploy the Release</h3>
-<p>Deploy the release (can be later automated via GitHub Actions or done manually):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>mvn<span class="w"> </span>deploy<span class="w"> </span>-P<span class="w"> </span>release
-</code></pre></div>
-<h3 id="5-bump-to-the-next-snapshot-version">5. 📈 Bump to the Next Snapshot Version</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>mvn<span class="w"> </span>versions:set<span class="w"> </span>-DnewVersion<span class="o">=</span><span class="m">0</span>.0.13-SNAPSHOT
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>git<span class="w"> </span>commit<span class="w"> </span>-am<span class="w"> </span><span class="s2">&quot;post-release: bumped to 0.0.13-SNAPSHOT&quot;</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>git<span class="w"> </span>push
-</code></pre></div>
-<h3 id="6-publish-the-release-on-github">6. 📝 Publish the Release on GitHub</h3>
-<ol>
-<li>Go to <a href="https://github.com/jajir/HestiaStore/releases">https://github.com/jajir/HestiaStore/releases</a> and choose <code>Draft a new release</code>.</li>
-<li>From the drop-down box <code>target: main</code>, select <code>recent commits</code> and select the correct one with name <code>release: version 0.0.12</code>.</li>
-<li>From the drop-down box <code>Choose a tag</code> enter <code>release-0.0.12</code> and click <code>Create new tag: release ...</code>. Now in the repo, the tag clearly signals the new release.</li>
-<li>Release title should be <code>Release 0.0.3</code> and in the <code>Write</code> field, use the text generated from the template below:</li>
-<li>Press <code>Publish release</code>.</li>
-</ol>
-<p>Text template:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>Release to maven central:
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="sb">```xml</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="nt">&lt;dependencies&gt;</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span><span class="nt">&lt;dependency&gt;</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">    </span><span class="nt">&lt;groupId&gt;</span>org.hestiastore.index<span class="nt">&lt;/groupId&gt;</span>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">    </span><span class="nt">&lt;artifactId&gt;</span>core<span class="nt">&lt;/artifactId&gt;</span>
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">    </span><span class="nt">&lt;version&gt;</span>0.0.3<span class="nt">&lt;/version&gt;</span><span class="w"> </span><span class="cm">&lt;!-- Replace with the actual version --&gt;</span>
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">  </span><span class="nt">&lt;/dependency&gt;</span>
-<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="nt">&lt;/dependencies&gt;</span>
-<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="sb">```</span>
-</code></pre></div>
-<h3 id="7-celebrate">7. 🎉 Celebrate</h3>
-<p>That's it — the release is live and development can continue.</p>
-<h2 id="helpful-commands">🧰 Helpful Commands</h2>
-<p>At the beginning there may be problems. Here are a few tricks that help to gather more information.</p>
-<h3 id="how-to-use-a-custom-settingsxml-file">How to Use a Custom settings.xml File</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>mvn<span class="w"> </span>--settings<span class="w"> </span>./src/main/settings.xml<span class="w"> </span>clean<span class="w"> </span>deploy
-</code></pre></div>
-<h3 id="how-to-set-the-maven-project-version">How to Set the Maven Project Version</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>mvn<span class="w"> </span>versions:set<span class="w"> </span>-DnewVersion<span class="o">=</span><span class="m">1</span>.0.1-SNAPSHOT
-</code></pre></div>
-<h3 id="check-dependencies">Check dependencies</h3>
-<p>Try to update dependencies. Check them with:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>mvn<span class="w"> </span>versions:display-dependency-updates
-</code></pre></div>
+<h3 id="chunk-header-format">Chunk Header Format:</h3>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4 B</td>
+<td><code>magic</code></td>
+<td>Chunk type signature</td>
+</tr>
+<tr>
+<td>4</td>
+<td>4 B</td>
+<td><code>crc32</code></td>
+<td>CRC of compressed payload</td>
+</tr>
+<tr>
+<td>8</td>
+<td>4 B</td>
+<td><code>compressedLength</code></td>
+<td>Length of compressed data</td>
+</tr>
+<tr>
+<td>12</td>
+<td>4 B</td>
+<td><code>uncompressedLength</code></td>
+<td>Length of original (uncompressed) data</td>
+</tr>
+<tr>
+<td>16+</td>
+<td>N/A</td>
+<td><code>payload</code></td>
+<td>Compressed chunk data</td>
+</tr>
+</tbody>
+</table>
+<p>Chunks are managed through the <code>ChunkFileStore</code> and written using <code>ChunkWriter</code>.</p>
+<hr />
+<h2 id="relationships">Relationships</h2>
+<ul>
+<li><code>BlockFile</code> provides the persistent storage mechanism.</li>
+<li><code>ChunkFileStore</code> maps chunk positions to blocks and provides higher-level access.</li>
+<li>CRC validation is used in both blocks and chunks to ensure data consistency and detect corruption.</li>
+</ul>
+<hr />
 
 
 

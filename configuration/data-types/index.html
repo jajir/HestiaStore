@@ -404,6 +404,8 @@
       
         
       
+        
+      
     
     
     
@@ -464,6 +466,29 @@
   
   <span class="md-ellipsis">
     Alternatives
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../benchmark-results/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Benchmark Results
     
   </span>
   
@@ -810,6 +835,8 @@
       
         
       
+        
+      
     
     
     
@@ -893,6 +920,29 @@
   
   <span class="md-ellipsis">
     Segment Design
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/datablock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Data block
     
   </span>
   
@@ -1177,19 +1227,31 @@
 <td><code>java.lang.String</code></td>
 <td><code>TypeDescriptorShortString</code></td>
 <td>128</td>
-<td>UTF-8 encoding, prefixed with 2-byte length</td>
+<td>UTF-8 encoding, prefixed with 1-byte length, it's default string type descriptor</td>
 </tr>
 <tr>
 <td><code>java.lang.String</code></td>
 <td><code>TypeDescriptorString</code></td>
 <td>2 GB</td>
-<td>UTF-8 encoding, prefixed with 2-byte length</td>
+<td>UTF-8 encoding, prefixed with 4-byte length</td>
 </tr>
 <tr>
-<td><code>hestia.datatype.ByteArray</code></td>
+<td><code>org.hestiastore.index.datatype.ByteArray</code></td>
 <td><code>TypeDescriptorByteArray</code></td>
 <td>n</td>
 <td>Raw bytes, length determined by actual data</td>
+</tr>
+<tr>
+<td><code>org.hestiastore.index.datatype.NullValue</code></td>
+<td><code>TypeDescriptorNullValue</code></td>
+<td>0</td>
+<td>Usefulll when value is not needed. Doesn't occupy any space.</td>
+</tr>
+<tr>
+<td><code>org.hestiastore.index.datatype.CompositeValue</code></td>
+<td><code>TypeDescriptorCompositeValue</code></td>
+<td>n</td>
+<td>Represents multiple values.</td>
 </tr>
 </tbody>
 </table>
