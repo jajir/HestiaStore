@@ -14,8 +14,7 @@ import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
  * @author honza
  *
  */
-public interface IndexConfigurationDefault {
-
+public interface IndexConfigurationContract {
     int MAX_NUMBER_OF_KEYS_IN_CACHE = 4321;
     int MAX_NUMBER_OF_KEYS_IN_SEGMENT = 10_000_000;
     long MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = 10_000;

@@ -7,7 +7,7 @@ package org.hestiastore.index.sst;
  *
  */
 public class IndexConfigurationDefaultInteger
-        implements IndexConfigurationDefault {
+        implements IndexConfigurationContract {
 
     @Override
     public long getMaxNumberOfKeysInSegmentCache() {

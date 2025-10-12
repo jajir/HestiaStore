@@ -55,7 +55,7 @@ public class IndexConfigurationRegistry {
 
     }
 
-    private static final Map<Key, IndexConfigurationDefault> confs = new HashMap<>();
+    private static final Map<Key, IndexConfigurationContract> confs = new HashMap<>();
 
     static {
         addTypeDefaultConf(Integer.class,
@@ -65,25 +65,25 @@ public class IndexConfigurationRegistry {
     }
 
     public static final <T> void addTypeDefaultConf(final Class<T> clazz,
-            final IndexConfigurationDefault typeConfiguration) {
+            final IndexConfigurationContract typeConfiguration) {
         Vldtn.requireNonNull(clazz, "clazz");
         Vldtn.requireNonNull(typeConfiguration, "typeConfiguration");
         add(clazz, null, typeConfiguration);
     }
 
     public static final <T> void add(final Class<T> clazz, final String memory,
-            final IndexConfigurationDefault typeConfiguration) {
+            final IndexConfigurationContract typeConfiguration) {
         Vldtn.requireNonNull(clazz, "");
         Vldtn.requireNonNull(typeConfiguration, "typeConfiguration");
         confs.put(Key.of(clazz, memory), typeConfiguration);
     }
 
-    public static final <T> Optional<IndexConfigurationDefault> get(
+    public static final <T> Optional<IndexConfigurationContract> get(
             final Class<T> clazz) {
         return get(clazz, null);
     }
 
-    public static final <T> Optional<IndexConfigurationDefault> get(
+    public static final <T> Optional<IndexConfigurationContract> get(
             final Class<T> clazz, final String memory) {
         Vldtn.requireNonNull(clazz, "class");
         return Optional.ofNullable(confs.get(Key.of(clazz, memory)));
