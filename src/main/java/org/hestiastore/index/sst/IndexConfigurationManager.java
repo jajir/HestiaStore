@@ -43,14 +43,14 @@ public class IndexConfigurationManager<K, V> {
             builder.withValueTypeDescriptor(DataTypeDescriptorRegistry
                     .getTypeDescriptor(conf.getValueClass()));
         }
-        final Optional<IndexConfigurationDefault> oDefaults = IndexConfigurationRegistry
+        final Optional<IndexConfigurationContract> oDefaults = IndexConfigurationRegistry
                 .get(conf.getKeyClass());
         if (oDefaults.isEmpty()) {
             logger.debug("There is no default configuration for key class '{}'",
                     conf.getKeyClass());
             return validate(builder.build());
         }
-        final IndexConfigurationDefault defaults = oDefaults.get();
+        final IndexConfigurationContract defaults = oDefaults.get();
         if (conf.isLogEnabled() == null) {
             builder.withLogEnabled(defaults.isLogEnabled());
         }

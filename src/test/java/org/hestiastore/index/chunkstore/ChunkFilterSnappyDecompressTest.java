@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.io.IOException;
 
 import org.hestiastore.index.Bytes;
-import org.hestiastore.index.IndexException;
 import org.junit.jupiter.api.Test;
 import org.xerial.snappy.Snappy;
 
