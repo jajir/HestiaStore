@@ -161,8 +161,10 @@ public class Segment<K, V>
      * @return
      */
     public SegmentSplitter<K, V> getSegmentSplitter() {
+        final SegmentFilesRenamer segmentFilesRenamer = new SegmentFilesRenamer();
         return new SegmentSplitter<>(this, segmentFiles, versionController,
-                segmentPropertiesManager, deltaCacheController);
+                segmentPropertiesManager, deltaCacheController,
+                segmentFilesRenamer);
     }
 
     @Override

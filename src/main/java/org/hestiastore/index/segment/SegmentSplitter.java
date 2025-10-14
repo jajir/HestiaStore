@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
  * @param <K>
  * @param <V>
  */
+
 public class SegmentSplitter<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -25,12 +26,14 @@ public class SegmentSplitter<K, V> {
     private final VersionController versionController;
     private final SegmentPropertiesManager segmentPropertiesManager;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
+    private final SegmentFilesRenamer segmentFilesRenamer;
 
     public SegmentSplitter(final Segment<K, V> segment,
             final SegmentFiles<K, V> segmentFiles,
             final VersionController versionController,
             final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentDeltaCacheController<K, V> deltaCacheController) {
+            final SegmentDeltaCacheController<K, V> deltaCacheController,
+            final SegmentFilesRenamer segmentFilesRenamer) {
         this.segment = Vldtn.requireNonNull(segment, "segment");
         this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
         this.versionController = Vldtn.requireNonNull(versionController,
@@ -39,6 +42,8 @@ public class SegmentSplitter<K, V> {
                 segmentPropertiesManager, "segmentPropertiesManager");
         this.deltaCacheController = Vldtn.requireNonNull(deltaCacheController,
                 "deltaCacheController");
+        this.segmentFilesRenamer = Vldtn.requireNonNull(segmentFilesRenamer,
+                "segmentFilesRenamer");
     }
 
     private SegmentStats getStats() {
@@ -142,26 +147,15 @@ public class SegmentSplitter<K, V> {
                 }
                 return new SegmentSplitterResult<>(lowerSegment, minKey.get(),
                         maxKey.get(),
-                        SegmentSplitterResult.SegmentSplittingStatus.SPLITED);
+                        SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
             } else {
                 /**
                  * There are no more keys in segment, so just compact segment.
                  * 
                  * Data from lower segment have to be moved to current one.
                  */
-
-                // Moving segment main data file
-                segmentFiles.getDirectory().renameFile(
-                        lowerSegment.getSegmentFiles().getIndexFileName(),
-                        segmentFiles.getIndexFileName());
-                // Moving segment scarce index file
-                segmentFiles.getDirectory().renameFile(
-                        lowerSegment.getSegmentFiles().getScarceFileName(),
-                        segmentFiles.getScarceFileName());
-                // Moving bloom filter file
-                segmentFiles.getDirectory().renameFile(
-                        lowerSegment.getSegmentFiles().getBloomFilterFileName(),
-                        segmentFiles.getBloomFilterFileName());
+                segmentFilesRenamer.renameFiles(lowerSegment.getSegmentFiles(),
+                        segmentFiles);
 
                 deltaCacheController.clear();
 

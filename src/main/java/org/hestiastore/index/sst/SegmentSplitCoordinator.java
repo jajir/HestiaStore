@@ -59,7 +59,7 @@ public class SegmentSplitCoordinator<K, V> {
         final SegmentId newSegmentId = keySegmentCache.findNewSegmentId();
         final SegmentSplitterResult<K, V> result = segmentSplitter
                 .split(newSegmentId);
-        if (result.isSplited()) {
+        if (result.isSplit()) {
             keySegmentCache.insertSegment(result.getMaxKey(), newSegmentId);
             logger.debug("Splitting of segment '{}' to '{}' is done.",
                     segmentId, newSegmentId);

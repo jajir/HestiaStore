@@ -19,7 +19,7 @@ public class SegmentSplitterResult<K, V> {
         /**
          * Segment was split into two segments. Given segmentId is used.
          */
-        SPLITED
+        SPLIT
     }
 
     private final Segment<K, V> segment;
@@ -37,19 +37,48 @@ public class SegmentSplitterResult<K, V> {
                 "segmentSplittingStatus");
     }
 
-    public boolean isSplited() {
-        return status == SegmentSplittingStatus.SPLITED;
+    /**
+     * Checks if the segment was split into two segments.
+     *
+     * @return {@code true} if the segment was split; {@code false} otherwise
+     */
+    public boolean isSplit() {
+        return status == SegmentSplittingStatus.SPLIT;
     }
 
+    /**
+     * Returns the segment resulting from the split or compaction.
+     *
+     * @return the resulting {@link Segment}
+     */
     public Segment<K, V> getSegment() {
         return segment;
     }
 
+    /**
+     * Returns the maximum key in the segment after splitting.
+     *
+     * @return the maximum key
+     */
     public K getMaxKey() {
         return maxKey;
     }
 
+    /**
+     * Returns the minimum key in the segment after splitting.
+     *
+     * @return the minimum key
+     */
     public K getMinKey() {
         return minKey;
+    }
+
+    /**
+     * Returns the status of the segment after splitting.
+     *
+     * @return the segment splitting status
+     */
+    public SegmentSplittingStatus getStatus() {
+        return status;
     }
 }

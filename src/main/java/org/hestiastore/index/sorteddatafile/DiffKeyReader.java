@@ -65,6 +65,7 @@ public class DiffKeyReader<K> implements TypeReader<K> {
         return out;
     }
 
+    // TODO move it to ByteTool class
     private byte[] concatenateArrays(final byte[] firstBytes,
             final byte[] secondBytes) {
         final byte[] out = new byte[firstBytes.length + secondBytes.length];
