@@ -66,13 +66,16 @@ class SegmentSplitterTest {
     @Mock
     private WriteTransaction<String, String> lowerSegmentWriteTx;
 
+    @Mock
+    private SegmentFilesRenamer segmentFilesRenamer;
+
     private SegmentSplitter<String, String> splitter;
 
     @BeforeEach
     void setUp() {
         splitter = new SegmentSplitter<>(segment, segmentFiles,
                 versionController, segmentPropertiesManager,
-                deltaCacheController);
+                deltaCacheController, segmentFilesRenamer);
     }
 
     @Test
