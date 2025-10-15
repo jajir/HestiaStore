@@ -1,5 +1,8 @@
 package org.hestiastore.index.chunkpairfile;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.util.List;
 
 import org.hestiastore.index.AbstractDataTest;
@@ -60,12 +63,11 @@ public class SingleChunkPairIteratorTest {
 
     @Test
     void test_empty() {
-        final Chunk chunk = makeChunkFromPairList(TestData.PAIR_LIST_EMPTY);
-        SingleChunkPairIterator<Integer, String> iterator = new SingleChunkPairIterator<>(
-                chunk, TestData.TYPE_DESCRIPTOR_INTEGER,
-                TestData.TYPE_DESCRIPTOR_STRING);
-
-        AbstractDataTest.verifyIteratorData(TestData.PAIR_LIST_EMPTY, iterator);
+        final IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> makeChunkFromPairList(TestData.PAIR_LIST_EMPTY));
+        assertEquals("Property 'payloadLength' must be greater than 0",
+                exception.getMessage());
     }
 
 }

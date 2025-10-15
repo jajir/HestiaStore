@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.ByteBuffer;
 import java.util.Optional;
 
 import org.hestiastore.index.Bytes;
@@ -32,23 +33,25 @@ public class ChunkHeaderTest {
     }
 
     @Test
-    void test_of_invalid_byte_length() {
+    void test_of_invalid_header_size() {
         final byte[] data = new byte[ChunkHeader.HEADER_SIZE + 1];
 
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> ChunkHeader.of(data));
 
-        assertEquals("Invalid chunk header size '33', expected is '32'",
+        assertEquals("Invalid chunk header size '33', expected '32'",
                 e.getMessage());
     }
 
     @Test
-    void test_of_allows_invalid_magic_number() {
+    void test_of_invalid_magic_number() {
         final byte[] data = new byte[ChunkHeader.HEADER_SIZE];
 
-        final ChunkHeader header = ChunkHeader.of(data);
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> ChunkHeader.of(data));
 
-        assertEquals(0L, header.getMagicNumber());
+        assertEquals("Invalid chunk magic number '0', "
+                + "expected '8388065835078349409'", e.getMessage());
     }
 
     @Test
@@ -83,6 +86,30 @@ public class ChunkHeaderTest {
                 .optionalOf(Bytes.of(data));
         assertTrue(optionalHeader.isPresent());
         assertEquals(header1, optionalHeader.get());
+    }
+
+    @Test
+    void test_payload_length_must_not_be_negative() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> ChunkHeader.of(ChunkHeader.MAGIC_NUMBER, VERSION, -1,
+                        CRC));
+        assertEquals("Property 'payloadLength' must be greater than 0",
+                e.getMessage());
+    }
+
+    @Test
+    void test_of_invalid_payload_size() {
+        final ByteBuffer buffer = ByteBuffer.allocate(ChunkHeader.HEADER_SIZE);
+        buffer.putLong(ChunkHeader.MAGIC_NUMBER);
+        buffer.putInt(VERSION);
+        buffer.putInt(-1);
+        buffer.putLong(CRC);
+        buffer.putLong(0L);
+
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> ChunkHeader.of(buffer.array()));
+        assertEquals("Property 'payloadLength' must be greater than 0",
+                e.getMessage());
     }
 
 }
