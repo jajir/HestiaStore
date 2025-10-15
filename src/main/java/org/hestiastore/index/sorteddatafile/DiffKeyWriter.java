@@ -20,15 +20,12 @@ public class DiffKeyWriter<K> {
 
     private K previousKey;
 
-    private final ByteTool byteTool;
-
     public DiffKeyWriter(final ConvertorToBytes<K> convertorToBytes,
             final Comparator<K> keyComparator) {
         this.convertorToBytes = Vldtn.requireNonNull(convertorToBytes,
                 "convertorToBytes");
         this.keyComparator = Vldtn.requireNonNull(keyComparator,
                 "keyComparator");
-        byteTool = new ByteTool();
         previousKeyBytes = new byte[0];
         previousKey = null;
         logger.trace(
@@ -61,9 +58,9 @@ public class DiffKeyWriter<K> {
             }
         }
         final byte[] keyBytes = convertorToBytes.toBytes(key);
-        final int sharedByteLength = byteTool
-                .howMuchBytesIsSame(previousKeyBytes, keyBytes);
-        final byte[] diffBytes = byteTool
+        final int sharedByteLength = ByteTool
+                .countMatchingPrefixBytes(previousKeyBytes, keyBytes);
+        final byte[] diffBytes = ByteTool
                 .getRemainingBytesAfterIndex(sharedByteLength, keyBytes);
 
         final byte[] out = new byte[2 + diffBytes.length];
