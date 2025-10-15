@@ -1,17 +1,14 @@
 package org.hestiastore.index.chunkstore;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.datatype.ConvertorFromBytes;
-import org.hestiastore.index.datatype.ConvertorToBytes;
-import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.datatype.TypeDescriptorInteger;
-import org.hestiastore.index.datatype.TypeDescriptorLong;
 
 /**
- * Represents the header of a chunk. It will contains:
+ * if (bytes == null) { return Optional.empty(); } return
+ * ChunkHeaderCodec.decodeOptional(bytes.getData());
  * <table>
  * <tr>
  * <th>Field</th>
@@ -64,21 +61,8 @@ import org.hestiastore.index.datatype.TypeDescriptorLong;
  * </table>
  * <ul>
  * Header will be always 32 bytes long.
- * 
- * Equals and hashCode are implemented based on the byte array content.
  */
-public class ChunkHeader {
-
-    private static final TypeDescriptor<Long> TYPE_DESCRIPTOR_LONG = new TypeDescriptorLong();
-    private static final ConvertorFromBytes<Long> LONG_CONVERTOR_FROM_BYTES = TYPE_DESCRIPTOR_LONG
-            .getConvertorFromBytes();
-    private static final ConvertorToBytes<Long> LONG_CONVERTOR_TO_BYTES = TYPE_DESCRIPTOR_LONG
-            .getConvertorToBytes();
-    private static final TypeDescriptor<Integer> TYPE_DESCRIPTOR_INTEGER = new TypeDescriptorInteger();
-    private static final ConvertorFromBytes<Integer> INTEGER_CONVERTOR_FROM_BYTES = TYPE_DESCRIPTOR_INTEGER
-            .getConvertorFromBytes();
-    private static final ConvertorToBytes<Integer> INTEGER_CONVERTOR_TO_BYTES = TYPE_DESCRIPTOR_INTEGER
-            .getConvertorToBytes();
+public final class ChunkHeader {
 
     /**
      * Size of the chunk header in bytes.
@@ -90,7 +74,11 @@ public class ChunkHeader {
      */
     public static final long MAGIC_NUMBER = 0x7468656F646F7261L;
 
-    private final byte[] data;
+    private final long magicNumber;
+    private final int version;
+    private final int payloadLength;
+    private final long crc;
+    private final long flags;
 
     /**
      * Creates a chunk header from the given byte array.
@@ -99,7 +87,7 @@ public class ChunkHeader {
      * @return the chunk header
      */
     public static ChunkHeader of(final byte[] data) {
-        return new ChunkHeader(data);
+        return ChunkHeaderCodec.decode(data);
     }
 
     /**
@@ -110,7 +98,7 @@ public class ChunkHeader {
      */
     public static ChunkHeader of(final Bytes bytes) {
         Vldtn.requireNonNull(bytes, "bytes");
-        return new ChunkHeader(bytes.getData());
+        return ChunkHeaderCodec.decode(bytes.getData());
     }
 
     /**
@@ -124,20 +112,7 @@ public class ChunkHeader {
         if (bytes == null) {
             return Optional.empty();
         }
-        final byte[] data = bytes.getData();
-        if (data == null) {
-            return Optional.empty();
-        }
-        if (data.length != HEADER_SIZE) {
-            return Optional.empty();
-        }
-        final byte[] buff = new byte[8];
-        System.arraycopy(data, 0, buff, 0, 8);
-        Long magic = LONG_CONVERTOR_FROM_BYTES.fromBytes(buff);
-        if (magic == null || !magic.equals(MAGIC_NUMBER)) {
-            return Optional.empty();
-        }
-        return Optional.of(new ChunkHeader(data));
+        return ChunkHeaderCodec.decodeOptional(bytes.getData());
     }
 
     /**
@@ -154,27 +129,42 @@ public class ChunkHeader {
         return of(magic, version, payloadLength, crc, 0L);
     }
 
+    /**
+     * Creates a chunk header from the given parameters, including flags.
+     *
+     * @param magic         required magic number, must be {@link #MAGIC_NUMBER}
+     * @param version       required version, must be positive
+     * @param payloadLength required payload length, must be positive
+     * @param crc           required CRC32 code, must be positive
+     * @param flags         optional flags describing the payload, must be
+     *                      non-negative
+     * @return the chunk header
+     */
     public static ChunkHeader of(final long magic, final int version,
             final int payloadLength, final long crc, final long flags) {
-        final byte[] data = new byte[HEADER_SIZE];
-        System.arraycopy(LONG_CONVERTOR_TO_BYTES.toBytes(magic), 0, data, 0, 8);
-        System.arraycopy(INTEGER_CONVERTOR_TO_BYTES.toBytes(version), 0, data,
-                8, 4);
-        System.arraycopy(INTEGER_CONVERTOR_TO_BYTES.toBytes(payloadLength), 0,
-                data, 12, 4);
-        System.arraycopy(LONG_CONVERTOR_TO_BYTES.toBytes(crc), 0, data, 16, 8);
-        System.arraycopy(LONG_CONVERTOR_TO_BYTES.toBytes(flags), 0, data, 24,
-                8);
-        return new ChunkHeader(data);
+        return new ChunkHeader(magic, version, payloadLength, crc, flags);
     }
 
-    private ChunkHeader(final byte[] data) {
-        this.data = Vldtn.requireNonNull(data, "data");
-        if (data.length != HEADER_SIZE) {
+    ChunkHeader(final long magicNumber, final int version,
+            final int payloadLength, final long crc, final long flags) {
+        this.magicNumber = validateMagic(magicNumber);
+        this.version = version;
+        this.payloadLength = validatePayloadLength(payloadLength);
+        this.crc = crc;
+        this.flags = flags;
+    }
+
+    private static long validateMagic(final long magic) {
+        if (magic != MAGIC_NUMBER) {
             throw new IllegalArgumentException(String.format(
-                    "Invalid chunk header size '%d', expected is '%d'",
-                    data.length, HEADER_SIZE));
+                    "Invalid chunk magic number '%s', expected '%s'", magic,
+                    MAGIC_NUMBER));
         }
+        return magic;
+    }
+
+    private static int validatePayloadLength(final int payloadLength) {
+        return Vldtn.requireGreaterThanZero(payloadLength, "payloadLength");
     }
 
     /**
@@ -183,7 +173,7 @@ public class ChunkHeader {
      * @return the byte array representing the chunk header
      */
     public Bytes getBytes() {
-        return Bytes.of(data);
+        return Bytes.of(ChunkHeaderCodec.encode(this));
     }
 
     /**
@@ -192,9 +182,7 @@ public class ChunkHeader {
      * @return the magic number
      */
     public long getMagicNumber() {
-        final byte[] buff = new byte[8];
-        System.arraycopy(data, 0, buff, 0, 8);
-        return LONG_CONVERTOR_FROM_BYTES.fromBytes(buff);
+        return magicNumber;
     }
 
     /**
@@ -203,9 +191,7 @@ public class ChunkHeader {
      * @return the version
      */
     public int getVersion() {
-        final byte[] buff = new byte[4];
-        System.arraycopy(data, 8, buff, 0, 4);
-        return INTEGER_CONVERTOR_FROM_BYTES.fromBytes(buff);
+        return version;
     }
 
     /**
@@ -214,9 +200,7 @@ public class ChunkHeader {
      * @return the payload length
      */
     public int getPayloadLength() {
-        final byte[] buff = new byte[4];
-        System.arraycopy(data, 12, buff, 0, 4);
-        return INTEGER_CONVERTOR_FROM_BYTES.fromBytes(buff);
+        return payloadLength;
     }
 
     /**
@@ -225,9 +209,7 @@ public class ChunkHeader {
      * @return the CRC32 code
      */
     public long getCrc() {
-        final byte[] buff = new byte[8];
-        System.arraycopy(data, 16, buff, 0, 8);
-        return LONG_CONVERTOR_FROM_BYTES.fromBytes(buff);
+        return crc;
     }
 
     /**
@@ -236,9 +218,7 @@ public class ChunkHeader {
      * @return the chunk flags
      */
     public long getFlags() {
-        final byte[] buff = new byte[8];
-        System.arraycopy(data, 24, buff, 0, 8);
-        return LONG_CONVERTOR_FROM_BYTES.fromBytes(buff);
+        return flags;
     }
 
     @Override
@@ -248,12 +228,14 @@ public class ChunkHeader {
         if (!(o instanceof ChunkHeader))
             return false;
         final ChunkHeader that = (ChunkHeader) o;
-        return java.util.Arrays.equals(this.data, that.data);
+        return magicNumber == that.magicNumber && version == that.version
+                && payloadLength == that.payloadLength && crc == that.crc
+                && flags == that.flags;
     }
 
     @Override
     public int hashCode() {
-        return java.util.Arrays.hashCode(data);
+        return Objects.hash(magicNumber, version, payloadLength, crc, flags);
     }
 
     @Override
