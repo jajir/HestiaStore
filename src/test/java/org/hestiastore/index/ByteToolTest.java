@@ -9,10 +9,9 @@ class ByteToolTest {
 
     private static final byte[] BYTES_EMPTY_STR = "".getBytes();
     private static final byte[] BYTES_AHOJ_STR = "ahoj".getBytes();
-    private ByteTool bt = new ByteTool();
 
     @Test
-    void test_howMuchBytesIsSame() {
+    void test_countMatchingPrefixBytes() {
         testBytes("a", "a", 1);
         testBytes("aaaa", "aaaa", 4);
         testBytes("ahoj", "ahoj", 4);
@@ -26,16 +25,16 @@ class ByteToolTest {
         testBytes("", "", 0);
 
         assertThrows(NullPointerException.class,
-                () -> bt.howMuchBytesIsSame(BYTES_EMPTY_STR, null));
+                () -> ByteTool.countMatchingPrefixBytes(BYTES_EMPTY_STR, null));
         assertThrows(NullPointerException.class,
-                () -> bt.howMuchBytesIsSame(null, BYTES_EMPTY_STR));
+                () -> ByteTool.countMatchingPrefixBytes(null, BYTES_EMPTY_STR));
     }
 
     private void testBytes(final String a, final String b,
             final int expectedBytes) {
         final byte[] a1 = a.getBytes();
         final byte[] b1 = b.getBytes();
-        final int ret = bt.howMuchBytesIsSame(a1, b1);
+        final int ret = ByteTool.countMatchingPrefixBytes(a1, b1);
         assertEquals(expectedBytes, ret);
     }
 
@@ -45,15 +44,19 @@ class ByteToolTest {
         testFunction(0, "ahoj", "ahoj");
         testFunction(4, "ahoj", "");
 
-        assertThrows(NegativeArraySizeException.class,
-                () -> bt.getRemainingBytesAfterIndex(5, BYTES_AHOJ_STR));
+        assertThrows(IllegalArgumentException.class,
+                () -> ByteTool.getRemainingBytesAfterIndex(5, BYTES_AHOJ_STR));
+        assertThrows(IllegalArgumentException.class,
+                () -> ByteTool.getRemainingBytesAfterIndex(-1, BYTES_AHOJ_STR));
+        assertThrows(NullPointerException.class,
+                () -> ByteTool.getRemainingBytesAfterIndex(0, null));
     }
 
     private void testFunction(final int sharedLength, final String str,
             final String expectedResult) {
         final byte[] a1 = str.getBytes();
-        final byte[] retBytes = bt.getRemainingBytesAfterIndex(sharedLength,
-                a1);
+        final byte[] retBytes = ByteTool
+                .getRemainingBytesAfterIndex(sharedLength, a1);
         final String ret = new String(retBytes);
         assertEquals(expectedResult, ret);
     }
