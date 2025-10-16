@@ -1,5 +1,9 @@
 package org.hestiastore.index.scarceindex;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.Vldtn;
@@ -7,6 +11,8 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Scarce index contain map that contain just subset of keys from SST. It's a
@@ -34,7 +40,10 @@ public class ScarceIndex<K> {
 
     private static final TypeDescriptorInteger typeDescriptorInteger = new TypeDescriptorInteger();
 
-    private final TypeDescriptor<K> keyTypeDescriptor;
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(ScarceIndex.class);
+
+    private final Comparator<K> keyComparator;
 
     private final Directory directory;
 
@@ -42,7 +51,8 @@ public class ScarceIndex<K> {
 
     private final SortedDataFile<K, Integer> sortedDataFile;
 
-    private ScarceIndexCache<K> cache;
+    private final ScarceIndexValidator<K> validator;
+    private ScarceIndexSnapshot<K> snapshot;
 
     public static <M> ScarceIndexBuilder<M> builder() {
         return new ScarceIndexBuilder<M>();
@@ -53,8 +63,10 @@ public class ScarceIndex<K> {
             final int diskIoBufferSize) {
         this.directory = Vldtn.requireNonNull(directory, "directory");
         this.fileName = Vldtn.requireNonNull(fileName, "fileName");
-        this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
-                "keyTypeDescriptor");
+        Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
+        this.keyComparator = Vldtn.requireNonNull(
+                keyTypeDescriptor.getComparator(),
+                "keyTypeDescriptor.getComparator()");
         this.sortedDataFile = SortedDataFile.<K, Integer>builder() //
                 .withDirectory(directory) //
                 .withFileName(fileName)//
@@ -62,39 +74,51 @@ public class ScarceIndex<K> {
                 .withValueTypeDescriptor(typeDescriptorInteger)
                 .withDiskIoBufferSize(diskIoBufferSize) //
                 .build();
-        this.cache = new ScarceIndexCache<>(keyTypeDescriptor);
+        this.validator = new ScarceIndexValidator<>(keyComparator);
+        this.snapshot = new ScarceIndexSnapshot<>(keyComparator, List.of());
         loadCache();
     }
 
-    public void loadCache() {
-        ScarceIndexCache<K> tmp = new ScarceIndexCache<>(keyTypeDescriptor);
+    private final List<Pair<K, Integer>> loadCacheEntries() {
+        final List<Pair<K, Integer>> entries = new ArrayList<>();
         if (directory.isFileExists(fileName)) {
             try (PairIterator<K, Integer> pairIterator = sortedDataFile
                     .openIterator()) {
                 while (pairIterator.hasNext()) {
                     final Pair<K, Integer> pair = pairIterator.next();
-                    tmp.put(pair);
+                    entries.add(pair);
                 }
             }
         }
-        tmp.sanityCheck();
-        this.cache = tmp;
+        return entries;
+    }
+
+    public void loadCache() {
+        final ScarceIndexSnapshot<K> newSnapshot = new ScarceIndexSnapshot<>(
+                keyComparator, loadCacheEntries());
+        final boolean valid = validator.validate(newSnapshot,
+                message -> LOGGER.error(message));
+        if (!valid) {
+            throw new IllegalStateException(
+                    "Unable to load scarce index, sanity check failed.");
+        }
+        this.snapshot = newSnapshot;
     }
 
     public K getMaxKey() {
-        return cache.getMaxKey();
+        return snapshot.getMaxKey();
     }
 
     public K getMinKey() {
-        return cache.getMinKey();
+        return snapshot.getMinKey();
     }
 
     public int getKeyCount() {
-        return cache.getKeyCount();
+        return snapshot.getKeyCount();
     }
 
     public Integer get(final K key) {
-        return cache.findSegmentId(key);
+        return snapshot.findSegmentId(key);
     }
 
     public ScarceIndexWriterTx<K> openWriterTx() {
