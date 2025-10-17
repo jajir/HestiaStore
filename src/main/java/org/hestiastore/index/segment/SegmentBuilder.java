@@ -361,8 +361,7 @@ public final class SegmentBuilder<K, V> {
                 segmentConf.getMaxNumberOfKeysInChunk(),
                 segmentFiles.getKeyTypeDescriptor().getComparator());
         final SegmentSearcher<K, V> segmentSearcher = new SegmentSearcher<K, V>(
-                segmentFiles.getValueTypeDescriptor(), segmentIndexSearcher,
-                segmentDataProvider);
+                segmentFiles.getValueTypeDescriptor(), segmentIndexSearcher);
         return new Segment<>(segmentFiles, segmentConf, versionController,
                 segmentPropertiesManager, segmentDataProvider, segmentSearcher,
                 segmentDataProvider);
