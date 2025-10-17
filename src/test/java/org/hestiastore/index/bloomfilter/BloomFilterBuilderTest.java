@@ -3,6 +3,7 @@ package org.hestiastore.index.bloomfilter;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -147,18 +148,17 @@ class BloomFilterBuilderTest {
 
     @Test
     void test_missing_numberOfKeys() {
-        final BloomFilterBuilder<String> builder = BloomFilter.<String>builder()//
+        final BloomFilter<String> filter = BloomFilter.<String>builder()//
                 .withDirectory(directory)//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(TDS.getConvertorToBytes())//
                 .withProbabilityOfFalsePositive(0.0001)//
                 .withNumberOfHashFunctions(2)//
-        ;
-        final Exception e = assertThrows(IllegalStateException.class,
-                () -> builder.build());
+                .build();
 
-        assertNotNull(e);
-        assertEquals("Number of keys is not set.", e.getMessage());
+        assertNotNull(filter);
+        assertTrue(filter instanceof BloomFilterNull,
+                "Expected null-object BloomFilter when sizing is absent");
     }
 
     @Test

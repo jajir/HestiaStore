@@ -9,6 +9,8 @@ import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.WriteTransaction.WriterFunction;
+import org.hestiastore.index.bloomfilter.BloomFilter;
+import org.hestiastore.index.scarceindex.ScarceIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -135,7 +137,13 @@ public class Segment<K, V>
     }
 
     public V get(final K key) {
-        return segmentSearcher.get(key);
+        final SegmentDeltaCache<K, V> deltaCache = segmentCacheDataProvider
+                .getSegmentDeltaCache();
+        final BloomFilter<K> bloomFilter = segmentCacheDataProvider
+                .getBloomFilter();
+        final ScarceIndex<K> scarceIndex = segmentCacheDataProvider
+                .getScarceIndex();
+        return segmentSearcher.get(key, deltaCache, bloomFilter, scarceIndex);
     }
 
     /**

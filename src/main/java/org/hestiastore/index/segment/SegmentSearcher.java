@@ -21,34 +21,23 @@ public class SegmentSearcher<K, V> implements CloseableResource {
 
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final SegmentIndexSearcher<K, V> segmentIndexSearcher;
-    private final SegmentDataProvider<K, V> segmentCacheDataProvider;
 
     public SegmentSearcher(final TypeDescriptor<V> valueTypeDescriptor,
-            final SegmentIndexSearcher<K, V> segmentIndexSearcher,
-            final SegmentDataProvider<K, V> segmentDataProvider) {
+            final SegmentIndexSearcher<K, V> segmentIndexSearcher) {
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
-        this.segmentCacheDataProvider = Vldtn
-                .requireNonNull(segmentDataProvider, "segmentDataProvider");
         this.segmentIndexSearcher = Vldtn.requireNonNull(segmentIndexSearcher,
                 "segmentIndexSearcher");
     }
 
-    private SegmentDeltaCache<K, V> getDeltaCache() {
-        return segmentCacheDataProvider.getSegmentDeltaCache();
-    }
-
-    private ScarceIndex<K> getScarceIndex() {
-        return segmentCacheDataProvider.getScarceIndex();
-    }
-
-    private BloomFilter<K> getBloomFilter() {
-        return segmentCacheDataProvider.getBloomFilter();
-    }
-
-    public V get(final K key) {
+    public V get(final K key, final SegmentDeltaCache<K, V> deltaCache,
+            final BloomFilter<K> bloomFilter,
+            final ScarceIndex<K> scarceIndex) {
+        Vldtn.requireNonNull(deltaCache, "deltaCache");
+        Vldtn.requireNonNull(bloomFilter, "bloomFilter");
+        Vldtn.requireNonNull(scarceIndex, "scarceIndex");
         // look in cache
-        final V out = getDeltaCache().get(key);
+        final V out = deltaCache.get(key);
         if (valueTypeDescriptor.isTombstone(out)) {
             return null;
         }
@@ -58,7 +47,7 @@ public class SegmentSearcher<K, V> implements CloseableResource {
         }
 
         // look in bloom filter
-        if (getBloomFilter().isNotStored(key)) {
+        if (bloomFilter.isNotStored(key)) {
             /*
              * It's sure that key is not in index.
              */
@@ -66,13 +55,13 @@ public class SegmentSearcher<K, V> implements CloseableResource {
         }
 
         // look in index file
-        final Integer position = getScarceIndex().get(key);
+        final Integer position = scarceIndex.get(key);
         if (position == null) {
             return null;
         }
         final V value = segmentIndexSearcher.search(key, position);
         if (value == null) {
-            getBloomFilter().incrementFalsePositive();
+            bloomFilter.incrementFalsePositive();
             return null;
         }
         return value;

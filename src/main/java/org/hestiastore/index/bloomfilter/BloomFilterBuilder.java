@@ -82,7 +82,7 @@ public class BloomFilterBuilder<K> {
         Vldtn.requireNonNull(bloomFilterFileName, "bloomFilterFileName");
         Vldtn.requireNonNull(convertorToBytes, "convertorToBytes");
         if (numberOfKeys == null && indexSizeInBytes == null) {
-            throw new IllegalStateException("Number of keys is not set.");
+            return new BloomFilterNull<>();
         }
         if (probabilityOfFalsePositive <= 0) {
             throw new IllegalStateException(
@@ -105,7 +105,7 @@ public class BloomFilterBuilder<K> {
                         indexSizeInBytes / (double) numberOfKeys * Math.log(2));
             }
         }
-        return new BloomFilter<>(directory, bloomFilterFileName,
+        return new BloomFilterImpl<>(directory, bloomFilterFileName,
                 numberOfHashFunctions, indexSizeInBytes, convertorToBytes,
                 relatedObjectName, diskIoBufferSize);
     }

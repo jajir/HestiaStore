@@ -489,7 +489,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         final Directory directory = new MemDirectory();
         final SegmentId segmentId = SegmentId.of(27);
 
-        SegmentConf segmentConf = new SegmentConf(13L, 17L, 3, 0, 0, 0.0, 1024,
+        SegmentConf segmentConf = new SegmentConf(13L, 17L, 3, 2, 0, 0.01, 1024,
                 List.of(), List.of());
 
         final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
@@ -550,7 +550,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         ));
         /**
          * Writing to segment which doesn't require compaction doesn't load
-         * segmrnt data.
+         * segment data.
          */
         assertFalse(dataProvider.isLoaded());
 
@@ -563,7 +563,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         ));
 
         /**
-         * Index search shoud lead to load segment data.
+         * Index search should lead to load segment data.
          */
         assertTrue(dataProvider.isLoaded());
 
@@ -650,7 +650,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
      * DirectoryMem methods for gettin read and writer objecs. It's easy to
      * spot, that correct value was set buffer have strange value 3KB.
      * 
-     * @
+     * 
      */
     @Test
     void test_search_on_disk() {
@@ -716,7 +716,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                         .withValueTypeDescriptor(tds)//
                         .withMaxNumberOfKeysInSegmentCache(10) //
                         .withMaxNumberOfKeysInSegmentChunk(10)//
-                        .withBloomFilterIndexSizeInBytes(0)//
+                        .withBloomFilterIndexSizeInBytes(0)// .withBloomFilterProbabilityOfFalsePositive(0.01D)//
                         .withDiskIoBufferSize(1 * 1024) //
                         .withEncodingChunkFilters(//
                                 List.of(new ChunkFilterMagicNumberWriting(), //
@@ -739,6 +739,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withMaxNumberOfKeysInSegmentCache(3)//
                 .withMaxNumberOfKeysInSegmentChunk(1)//
                 .withBloomFilterIndexSizeInBytes(0)//
+                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
                 .withDiskIoBufferSize(2 * 1024)//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterMagicNumberWriting(), //
@@ -761,6 +762,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withMaxNumberOfKeysInSegmentCache(5)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withBloomFilterIndexSizeInBytes(0)//
+                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
                 .withDiskIoBufferSize(4 * 1024)//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterMagicNumberWriting(), //
