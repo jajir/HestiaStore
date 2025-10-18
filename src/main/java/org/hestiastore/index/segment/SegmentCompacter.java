@@ -14,23 +14,24 @@ public final class SegmentCompacter<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final Segment<K, V> segment;
-    private final SegmentConf segmentConf;
     private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
     private final SegmentPropertiesManager segmentPropertiesManager;
+    private final SegmentCompactionPolicy compactionPolicy;
 
     public SegmentCompacter(final Segment<K, V> segment,
             final SegmentFiles<K, V> segmentFiles,
-            final SegmentConf segmentConf,
             final VersionController versionController,
-            final SegmentPropertiesManager segmentPropertiesManager) {
+            final SegmentPropertiesManager segmentPropertiesManager,
+            final SegmentCompactionPolicy compactionPolicy) {
         this.segment = Vldtn.requireNonNull(segment, "segment");
         this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
-        this.segmentConf = Vldtn.requireNonNull(segmentConf, "segmentConf");
         this.versionController = Vldtn.requireNonNull(versionController,
                 "versionController");
         this.segmentPropertiesManager = Vldtn.requireNonNull(
                 segmentPropertiesManager, "segmentPropertiesManager");
+        this.compactionPolicy = Vldtn.requireNonNull(compactionPolicy,
+                "compactionPolicy");
     }
 
     /**
@@ -39,12 +40,10 @@ public final class SegmentCompacter<K, V> {
      * 
      * @return return <code>true</code> when segment was compacted.
      */
-    public boolean optionallyCompact() {
+    public void optionallyCompact() {
         if (shouldBeCompacted()) {
             forceCompact();
-            return true;
         }
-        return false;
     }
 
     /**
@@ -55,8 +54,7 @@ public final class SegmentCompacter<K, V> {
      */
     public boolean shouldBeCompacted() {
         final SegmentStats stats = segmentPropertiesManager.getSegmentStats();
-        return stats.getNumberOfKeysInDeltaCache() > segmentConf
-                .getMaxNumberOfKeysInDeltaCache();
+        return compactionPolicy.shouldCompact(stats);
     }
 
     /**
@@ -74,9 +72,8 @@ public final class SegmentCompacter<K, V> {
     public boolean shouldBeCompactedDuringWriting(
             final long numberOfKeysInLastDeltaFile) {
         final SegmentStats stats = segmentPropertiesManager.getSegmentStats();
-        return stats.getNumberOfKeysInDeltaCache()
-                + numberOfKeysInLastDeltaFile > segmentConf
-                        .getMaxNumberOfKeysInDeltaCacheDuringWriting();
+        return compactionPolicy
+                .shouldCompactDuringWriting(numberOfKeysInLastDeltaFile, stats);
     }
 
     public void forceCompact() {

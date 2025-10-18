@@ -33,8 +33,9 @@ class SegmentCompacterTest {
 
     @BeforeEach
     void setUp() {
-        sc = new SegmentCompacter<>(segment, segmentFiles, segmentConf,
-                versionController, segmentPropertiesManager);
+        sc = new SegmentCompacter<>(segment, segmentFiles, versionController,
+                segmentPropertiesManager,
+                new SegmentCompactionPolicy(segmentConf));
     }
 
     @Test
