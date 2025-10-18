@@ -471,7 +471,8 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         ));
         final SegmentSplitter<Integer, String> segSplitter = seg
                 .getSegmentSplitter();
-        assertTrue(segSplitter.shouldBeCompactedBeforeSplitting(10));
+        assertTrue(segSplitter.segmentSplitterPolicy()
+                .shouldBeCompactedBeforeSplitting(10));
 
         final SegmentSplitter<Integer, String> segmentSplitter = seg
                 .getSegmentSplitter();

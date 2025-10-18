@@ -73,9 +73,12 @@ class SegmentSplitterTest {
 
     @BeforeEach
     void setUp() {
+        final SegmentSplitterPolicy<String, String> segmentSplitterPolicy = new SegmentSplitterPolicy<>(
+                segmentPropertiesManager, deltaCacheController);
         splitter = new SegmentSplitter<>(segment, segmentFiles,
                 versionController, segmentPropertiesManager,
-                deltaCacheController, segmentFilesRenamer);
+                deltaCacheController, segmentFilesRenamer,
+                segmentSplitterPolicy);
     }
 
     @Test
@@ -86,7 +89,8 @@ class SegmentSplitterTest {
         when(deltaCacheController.getDeltaCacheSizeWithoutTombstones())
                 .thenReturn(1);
 
-        assertTrue(splitter.shouldBeCompactedBeforeSplitting(1000));
+        assertTrue(splitter.segmentSplitterPolicy()
+                .shouldBeCompactedBeforeSplitting(1000));
     }
 
     @Test
@@ -97,7 +101,8 @@ class SegmentSplitterTest {
         when(deltaCacheController.getDeltaCacheSizeWithoutTombstones())
                 .thenReturn(100);
 
-        assertFalse(splitter.shouldBeCompactedBeforeSplitting(1000));
+        assertFalse(splitter.segmentSplitterPolicy()
+                .shouldBeCompactedBeforeSplitting(1000));
     }
 
     @Test

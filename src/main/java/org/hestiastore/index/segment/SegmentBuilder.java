@@ -362,9 +362,16 @@ public final class SegmentBuilder<K, V> {
                 segmentFiles.getKeyTypeDescriptor().getComparator());
         final SegmentSearcher<K, V> segmentSearcher = new SegmentSearcher<K, V>(
                 segmentFiles.getValueTypeDescriptor(), segmentIndexSearcher);
+        final SegmentCompactionPolicy compactionPolicy = new SegmentCompactionPolicy(
+                segmentConf);
+        final SegmentDeltaCacheController<K, V> deltaCacheController = new SegmentDeltaCacheController<>(
+                segmentFiles, segmentPropertiesManager, segmentDataProvider);
+        final SegmentSplitterPolicy<K, V> segmentSplitterPolicy = new SegmentSplitterPolicy<>(
+                segmentPropertiesManager, deltaCacheController);
         return new Segment<>(segmentFiles, segmentConf, versionController,
-                segmentPropertiesManager, segmentDataProvider, segmentSearcher,
-                segmentDataProvider);
+                segmentPropertiesManager, segmentDataProvider,
+                deltaCacheController, segmentSearcher, segmentDataProvider,
+                compactionPolicy, segmentSplitterPolicy);
     }
 
 }

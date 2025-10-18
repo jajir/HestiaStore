@@ -37,8 +37,9 @@ public class SegmentSplitCoordinator<K, V> {
         Vldtn.requireNonNull(segment, "segment");
         final SegmentSplitter<K, V> segmentSplitter = segment
                 .getSegmentSplitter();
-        if (segmentSplitter.shouldBeCompactedBeforeSplitting(
-                conf.getMaxNumberOfKeysInSegment())) {
+        if (segmentSplitter.segmentSplitterPolicy()
+                .shouldBeCompactedBeforeSplitting(
+                        conf.getMaxNumberOfKeysInSegment())) {
             segment.forceCompact();
             if (shouldBeSplit(segment)) {
                 split(segment, segmentSplitter);

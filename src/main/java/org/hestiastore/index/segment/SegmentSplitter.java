@@ -17,7 +17,6 @@ import org.slf4j.LoggerFactory;
  * @param <K>
  * @param <V>
  */
-
 public class SegmentSplitter<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -27,13 +26,15 @@ public class SegmentSplitter<K, V> {
     private final SegmentPropertiesManager segmentPropertiesManager;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
     private final SegmentFilesRenamer segmentFilesRenamer;
+    private final SegmentSplitterPolicy<K, V> segmentSplitterPolicy;
 
     public SegmentSplitter(final Segment<K, V> segment,
             final SegmentFiles<K, V> segmentFiles,
             final VersionController versionController,
             final SegmentPropertiesManager segmentPropertiesManager,
             final SegmentDeltaCacheController<K, V> deltaCacheController,
-            final SegmentFilesRenamer segmentFilesRenamer) {
+            final SegmentFilesRenamer segmentFilesRenamer,
+            final SegmentSplitterPolicy<K, V> segmentSplitterPolicy) {
         this.segment = Vldtn.requireNonNull(segment, "segment");
         this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
         this.versionController = Vldtn.requireNonNull(versionController,
@@ -44,38 +45,12 @@ public class SegmentSplitter<K, V> {
                 "deltaCacheController");
         this.segmentFilesRenamer = Vldtn.requireNonNull(segmentFilesRenamer,
                 "segmentFilesRenamer");
+        this.segmentSplitterPolicy = Vldtn.requireNonNull(segmentSplitterPolicy,
+                "segmentSplitterPolicy");
     }
 
-    private SegmentStats getStats() {
-        return segmentPropertiesManager.getSegmentStats();
-    }
-
-    private static final float MINIMAL_PERCENTAGE_DIFFERENCE = 0.9F;
-
-    /**
-     * Method checks if segment should be compacted before splitting. It prevent
-     * situation when delta cache is full of thombstones and because of that
-     * segment is not eligible for splitting.
-     * 
-     * It lead to loading of delta cache into memory.
-     * 
-     * @return Return <code>true</code> if segment should be compacted before
-     *         splitting.
-     */
-    public boolean shouldBeCompactedBeforeSplitting(
-            long maxNumberOfKeysInSegment) {
-        final long estimatedNumberOfKeys = getEstimatedNumberOfKeys();
-        if (estimatedNumberOfKeys <= 3) {
-            return true;
-        }
-
-        /**
-         * It it's true than it seems that number of keys in segment after
-         * compacting will be lower about 10% to maximam allowed number of key
-         * in segment. So splitting is not necessary.
-         */
-        return estimatedNumberOfKeys < maxNumberOfKeysInSegment
-                * MINIMAL_PERCENTAGE_DIFFERENCE;
+    public SegmentSplitterPolicy<K, V> segmentSplitterPolicy() {
+        return segmentSplitterPolicy;
     }
 
     public SegmentSplitterResult<K, V> split(final SegmentId segmentId) {
@@ -83,7 +58,8 @@ public class SegmentSplitter<K, V> {
         logger.debug("Splitting of '{}' started", segmentFiles.getId());
         versionController.changeVersion();
 
-        final long estimatedNumberOfKeys = getEstimatedNumberOfKeys();
+        final long estimatedNumberOfKeys = segmentSplitterPolicy
+                .estimateNumberOfKeys();
         final long half = estimatedNumberOfKeys / 2;
         if (half <= 1) {
             throw new IllegalStateException(
@@ -174,20 +150,6 @@ public class SegmentSplitter<K, V> {
             }
         }
 
-    }
-
-    /*
-     * Real number of key is equals or lower than computed bellow. Keys in cache
-     * could already be in main index file of it can be keys with tombstone
-     * value.
-     * 
-     * It lead to loading of delta cache into memory.
-     * 
-     * @return return estimated number of keys in segment
-     */
-    private long getEstimatedNumberOfKeys() {
-        return getStats().getNumberOfKeysInSegment()
-                + deltaCacheController.getDeltaCacheSizeWithoutTombstones();
     }
 
 }
