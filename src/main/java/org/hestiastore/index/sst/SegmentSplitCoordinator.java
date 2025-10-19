@@ -4,6 +4,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentSplitter;
+import org.hestiastore.index.segment.SegmentSplitterPlan;
 import org.hestiastore.index.segment.SegmentSplitterResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,16 +38,26 @@ public class SegmentSplitCoordinator<K, V> {
         Vldtn.requireNonNull(segment, "segment");
         final SegmentSplitter<K, V> segmentSplitter = segment
                 .getSegmentSplitter();
-        if (segmentSplitter.segmentSplitterPolicy()
-                .shouldBeCompactedBeforeSplitting(
-                        conf.getMaxNumberOfKeysInSegment())) {
-            segment.forceCompact();
-            if (shouldBeSplit(segment)) {
-                split(segment, segmentSplitter);
-            }
-        } else {
-            split(segment, segmentSplitter);
+        final long maxNumberOfKeysInSegment = conf
+                .getMaxNumberOfKeysInSegment();
+        SegmentSplitterPlan<K, V> plan = segmentSplitter.createPlan();
+        if (!segmentSplitter.shouldSplit(plan, maxNumberOfKeysInSegment)) {
+            return;
         }
+        if (segmentSplitter.shouldBeCompactedBeforeSplitting(plan,
+                maxNumberOfKeysInSegment)) {
+            segment.forceCompact();
+            if (!shouldBeSplit(segment)) {
+                return;
+            }
+            plan = segmentSplitter.createPlan();
+            if (!segmentSplitter.shouldSplit(plan, maxNumberOfKeysInSegment)) {
+                return;
+            }
+        } else if (!shouldBeSplit(segment)) {
+            return;
+        }
+        split(segment, segmentSplitter, plan);
     }
 
     boolean shouldBeSplit(final Segment<K, V> segment) {
@@ -54,12 +65,13 @@ public class SegmentSplitCoordinator<K, V> {
     }
 
     private boolean split(final Segment<K, V> segment,
-            final SegmentSplitter<K, V> segmentSplitter) {
+            final SegmentSplitter<K, V> segmentSplitter,
+            final SegmentSplitterPlan<K, V> plan) {
         final SegmentId segmentId = segment.getId();
         logger.debug("Splitting of '{}' started.", segmentId);
         final SegmentId newSegmentId = keySegmentCache.findNewSegmentId();
         final SegmentSplitterResult<K, V> result = segmentSplitter
-                .split(newSegmentId);
+                .split(newSegmentId, plan);
         if (result.isSplit()) {
             keySegmentCache.insertSegment(result.getMaxKey(), newSegmentId);
             logger.debug("Splitting of segment '{}' to '{}' is done.",
