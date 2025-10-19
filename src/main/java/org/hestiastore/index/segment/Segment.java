@@ -40,8 +40,9 @@ public class Segment<K, V>
     private final SegmentCompacter<K, V> segmentCompacter;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
     private final SegmentSearcher<K, V> segmentSearcher;
-    private final SegmentDataProvider<K, V> segmentCacheDataProvider;
-    private final SegmentSplitterPolicy<K, V> segmentSplitterPolicy;
+    private final SegmentDataProvider<K, V> segmentDataProvider;
+    private final SegmentFactory<K, V> segmentFactory;
+    private final SegmentSplitter<K, V> segmentSplitter;
 
     public static <M, N> SegmentBuilder<M, N> builder() {
         return new SegmentBuilder<>();
@@ -54,31 +55,38 @@ public class Segment<K, V>
             final SegmentDataProvider<K, V> segmentDataProvider,
             final SegmentDeltaCacheController<K, V> segmentDeltaCacheController,
             final SegmentSearcher<K, V> segmentSearcher,
-            final SegmentDataProvider<K, V> segmentCacheDataProvider,
             final SegmentCompactionPolicy segmentCompactionPolicy,
             final SegmentSplitterPolicy<K, V> segmentSplitterPolicy) {
-        this.segmentConf = Vldtn.requireNonNull(segmentConf, "segmentConf");
-        this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
-        logger.debug("Initializing segment '{}'", segmentFiles.getId());
-        this.versionController = Vldtn.requireNonNull(versionController,
-                "versionController");
-        Vldtn.requireNonNull(segmentDataProvider, "segmentDataProvider");
-        this.segmentPropertiesManager = Vldtn.requireNonNull(
-                segmentPropertiesManager, "segmentPropertiesManager");
-        final SegmentCompactionPolicy validatedCompactionPolicy = Vldtn
-                .requireNonNull(segmentCompactionPolicy,
-                        "segmentCompactionPolicy");
-        this.deltaCacheController = Vldtn.requireNonNull(
-                segmentDeltaCacheController, "segmentDeltaCacheController");
-        this.segmentCompacter = new SegmentCompacter<>(this, segmentFiles,
-                versionController, segmentPropertiesManager,
-                validatedCompactionPolicy);
-        this.segmentSearcher = Vldtn.requireNonNull(segmentSearcher,
-                "segmentSearcher");
-        this.segmentCacheDataProvider = Vldtn.requireNonNull(
-                segmentCacheDataProvider, "segmentCacheDataProvider");
-        this.segmentSplitterPolicy = Vldtn.requireNonNull(segmentSplitterPolicy,
-                "segmentSplitterPolicy");
+    this.segmentConf = Vldtn.requireNonNull(segmentConf, "segmentConf");
+    this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
+    logger.debug("Initializing segment '{}'", segmentFiles.getId());
+    this.versionController = Vldtn.requireNonNull(versionController,
+        "versionController");
+    this.segmentDataProvider = Vldtn.requireNonNull(segmentDataProvider,
+        "segmentDataProvider");
+    this.segmentPropertiesManager = Vldtn.requireNonNull(
+        segmentPropertiesManager, "segmentPropertiesManager");
+    final SegmentCompactionPolicy validatedCompactionPolicy = Vldtn
+        .requireNonNull(segmentCompactionPolicy,
+            "segmentCompactionPolicy");
+    this.deltaCacheController = Vldtn.requireNonNull(
+        segmentDeltaCacheController, "segmentDeltaCacheController");
+    this.segmentCompacter = new SegmentCompacter<>(this, segmentFiles,
+        versionController, segmentPropertiesManager,
+        validatedCompactionPolicy);
+    this.segmentSearcher = Vldtn.requireNonNull(segmentSearcher,
+        "segmentSearcher");
+    final SegmentSplitterPolicy<K, V> validatedSplitterPolicy = Vldtn
+        .requireNonNull(segmentSplitterPolicy,
+            "segmentSplitterPolicy");
+    this.segmentFactory = new SegmentFactory<>(
+        segmentFiles.getDirectory(),
+        segmentFiles.getKeyTypeDescriptor(),
+        segmentFiles.getValueTypeDescriptor(), segmentConf);
+    this.segmentSplitter = new SegmentSplitter<>(this, segmentFiles,
+        versionController, segmentPropertiesManager,
+        segmentDeltaCacheController, new SegmentFilesRenamer(),
+        segmentFactory, validatedSplitterPolicy);
     }
 
     public SegmentStats getStats() {
@@ -130,7 +138,7 @@ public class Segment<K, V>
     WriteTransaction<K, V> openFullWriteTx() {
         return new SegmentFullWriterTx<>(segmentFiles, segmentPropertiesManager,
                 segmentConf.getMaxNumberOfKeysInChunk(),
-                segmentCacheDataProvider, deltaCacheController);
+                segmentDataProvider, deltaCacheController);
     }
 
     /**
@@ -147,11 +155,11 @@ public class Segment<K, V>
     }
 
     public V get(final K key) {
-        final SegmentDeltaCache<K, V> deltaCache = segmentCacheDataProvider
+        final SegmentDeltaCache<K, V> deltaCache = segmentDataProvider
                 .getSegmentDeltaCache();
-        final BloomFilter<K> bloomFilter = segmentCacheDataProvider
+        final BloomFilter<K> bloomFilter = segmentDataProvider
                 .getBloomFilter();
-        final ScarceIndex<K> scarceIndex = segmentCacheDataProvider
+        final ScarceIndex<K> scarceIndex = segmentDataProvider
                 .getScarceIndex();
         return segmentSearcher.get(key, deltaCache, bloomFilter, scarceIndex);
     }
@@ -163,13 +171,7 @@ public class Segment<K, V>
      * @return initialized segment
      */
     public Segment<K, V> createSegment(SegmentId segmentId) {
-        return Segment.<K, V>builder()
-                .withDirectory(segmentFiles.getDirectory())//
-                .withId(segmentId)//
-                .withKeyTypeDescriptor(segmentFiles.getKeyTypeDescriptor())//
-                .withValueTypeDescriptor(segmentFiles.getValueTypeDescriptor())//
-                .withSegmentConf(new SegmentConf(segmentConf))//
-                .build();
+        return segmentFactory.createSegment(segmentId);
     }
 
     /**
@@ -179,10 +181,7 @@ public class Segment<K, V>
      * @return
      */
     public SegmentSplitter<K, V> getSegmentSplitter() {
-        final SegmentFilesRenamer segmentFilesRenamer = new SegmentFilesRenamer();
-        return new SegmentSplitter<>(this, segmentFiles, versionController,
-                segmentPropertiesManager, deltaCacheController,
-                segmentFilesRenamer, segmentSplitterPolicy);
+        return segmentSplitter;
     }
 
     @Override

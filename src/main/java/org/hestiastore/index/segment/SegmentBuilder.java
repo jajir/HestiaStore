@@ -370,8 +370,8 @@ public final class SegmentBuilder<K, V> {
                 segmentPropertiesManager, deltaCacheController);
         return new Segment<>(segmentFiles, segmentConf, versionController,
                 segmentPropertiesManager, segmentDataProvider,
-                deltaCacheController, segmentSearcher, segmentDataProvider,
-                compactionPolicy, segmentSplitterPolicy);
+                deltaCacheController, segmentSearcher, compactionPolicy,
+                segmentSplitterPolicy);
     }
 
 }

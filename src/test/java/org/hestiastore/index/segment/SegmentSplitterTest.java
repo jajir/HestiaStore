@@ -69,6 +69,9 @@ class SegmentSplitterTest {
     @Mock
     private SegmentFilesRenamer segmentFilesRenamer;
 
+    @Mock
+    private SegmentFactory<String, String> segmentFactory;
+
     private SegmentSplitter<String, String> splitter;
 
     @BeforeEach
@@ -77,7 +80,7 @@ class SegmentSplitterTest {
                 segmentPropertiesManager, deltaCacheController);
         splitter = new SegmentSplitter<>(segment, segmentFiles,
                 versionController, segmentPropertiesManager,
-                deltaCacheController, segmentFilesRenamer,
+                deltaCacheController, segmentFilesRenamer, segmentFactory,
                 segmentSplitterPolicy);
     }
 
@@ -89,8 +92,10 @@ class SegmentSplitterTest {
         when(deltaCacheController.getDeltaCacheSizeWithoutTombstones())
                 .thenReturn(1);
 
-        assertTrue(splitter.segmentSplitterPolicy()
-                .shouldBeCompactedBeforeSplitting(1000));
+        final SegmentSplitterPlan<String, String> plan = splitter.createPlan();
+
+        assertTrue(splitter.shouldBeCompactedBeforeSplitting(plan, 1000));
+        assertFalse(splitter.shouldSplit(plan, 1000));
     }
 
     @Test
@@ -101,8 +106,10 @@ class SegmentSplitterTest {
         when(deltaCacheController.getDeltaCacheSizeWithoutTombstones())
                 .thenReturn(100);
 
-        assertFalse(splitter.segmentSplitterPolicy()
-                .shouldBeCompactedBeforeSplitting(1000));
+        final SegmentSplitterPlan<String, String> plan = splitter.createPlan();
+
+        assertFalse(splitter.shouldBeCompactedBeforeSplitting(plan, 1000));
+        assertTrue(splitter.shouldSplit(plan, 1000));
     }
 
     @Test
@@ -113,6 +120,13 @@ class SegmentSplitterTest {
                 });
         assertEquals("Property 'segmentId' must not be null.",
                 err.getMessage());
+    }
+
+    @Test
+    void test_split_plan_is_null() {
+        final Exception err = assertThrows(IllegalArgumentException.class,
+                () -> splitter.split(SEGMENT_ID, null));
+        assertEquals("Property 'plan' must not be null.", err.getMessage());
     }
 
     @SuppressWarnings("unchecked")
@@ -131,7 +145,7 @@ class SegmentSplitterTest {
         when(segmentIterator.next()).thenReturn(PAIR1, PAIR2, PAIR3);
 
         // mock writing lower part to new segment
-        when(segment.createSegment(SEGMENT_ID)).thenReturn(lowerSegment);
+        when(segmentFactory.createSegment(SEGMENT_ID)).thenReturn(lowerSegment);
         when(lowerSegment.openFullWriteTx()).thenReturn(lowerSegmentWriteTx);
         when(lowerSegmentWriteTx.openWriter())
                 .thenReturn(lowerSegmentFullWriter);
@@ -141,8 +155,10 @@ class SegmentSplitterTest {
         when(segment.openFullWriteTx()).thenReturn(segmentFullWriterTx);
         when(segmentFullWriterTx.openWriter()).thenReturn(segmentFullWriter);
 
+        final SegmentSplitterPlan<String, String> plan = splitter.createPlan();
+
         final SegmentSplitterResult<String, String> result = splitter
-                .split(SEGMENT_ID);
+                .split(SEGMENT_ID, plan);
 
         assertNotNull(result);
         verify(lowerSegmentFullWriter, times(1)).write(PAIR1);
@@ -164,8 +180,10 @@ class SegmentSplitterTest {
         when(deltaCacheController.getDeltaCacheSizeWithoutTombstones())
                 .thenReturn(1);
 
+        final SegmentSplitterPlan<String, String> plan = splitter.createPlan();
+
         final Exception err = assertThrows(IllegalStateException.class,
-                () -> splitter.split(SEGMENT_ID));
+                () -> splitter.split(SEGMENT_ID, plan));
         assertEquals("Splitting failed. Number of keys is too low.",
                 err.getMessage());
     }
