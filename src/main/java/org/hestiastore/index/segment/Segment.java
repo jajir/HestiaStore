@@ -43,6 +43,7 @@ public class Segment<K, V>
     private final SegmentDataProvider<K, V> segmentDataProvider;
     private final SegmentFactory<K, V> segmentFactory;
     private final SegmentSplitter<K, V> segmentSplitter;
+    private final SegmentSplitterPolicy<K, V> segmentSplitterPolicy;
 
     public static <M, N> SegmentBuilder<M, N> builder() {
         return new SegmentBuilder<>();
@@ -79,14 +80,16 @@ public class Segment<K, V>
     final SegmentSplitterPolicy<K, V> validatedSplitterPolicy = Vldtn
         .requireNonNull(segmentSplitterPolicy,
             "segmentSplitterPolicy");
+    this.segmentSplitterPolicy = validatedSplitterPolicy;
     this.segmentFactory = new SegmentFactory<>(
         segmentFiles.getDirectory(),
         segmentFiles.getKeyTypeDescriptor(),
         segmentFiles.getValueTypeDescriptor(), segmentConf);
-    this.segmentSplitter = new SegmentSplitter<>(this, segmentFiles,
-        versionController, segmentPropertiesManager,
-        segmentDeltaCacheController, new SegmentFilesRenamer(),
-        segmentFactory, validatedSplitterPolicy);
+    final SegmentReplacer<K, V> splitApplier = new SegmentReplacer<>(
+        new SegmentFilesRenamer(), segmentDeltaCacheController,
+        segmentPropertiesManager, segmentFiles);
+    this.segmentSplitter = new SegmentSplitter<>(this, versionController,
+        segmentFactory, splitApplier);
     }
 
     public SegmentStats getStats() {
@@ -175,13 +178,34 @@ public class Segment<K, V>
     }
 
     /**
-     * Provide class that helps with segment splitting into two. It should be
-     * used when segment is too big.
-     * 
-     * @return
+     * Returns a helper responsible for executing a split of this segment into
+     * two parts when the number of keys grows beyond a configured threshold.
+     * <p>
+     * The returned {@link SegmentSplitter} performs the splitting algorithm
+     * using a precomputed {@link SegmentSplitterPlan}. Callers are expected to
+     * decide when to split (e.g., via {@link #getSegmentSplitterPolicy()} and
+     * index configuration) and then invoke the splitter with a newly allocated
+     * {@link SegmentId} for the lower half.
+     *
+     * @return the splitter bound to this segment
      */
     public SegmentSplitter<K, V> getSegmentSplitter() {
         return segmentSplitter;
+    }
+
+    /**
+     * Returns the policy object that estimates the effective number of keys in
+     * this segment (on-disk + delta cache) and advises whether a compaction
+     * should take place before attempting to split.
+     * <p>
+     * Typical usage is to create a {@link SegmentSplitterPlan} from this
+     * policy, evaluate whether the split should occur based on index limits,
+     * and only then execute the split via {@link #getSegmentSplitter()}.
+     *
+     * @return the splitter policy associated with this segment
+     */
+    public SegmentSplitterPolicy<K, V> getSegmentSplitterPolicy() {
+        return segmentSplitterPolicy;
     }
 
     @Override

@@ -1,6 +1,4 @@
 package org.hestiastore.index.segment;
-
-import org.hestiastore.index.AtomicKey;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.Vldtn;
 
@@ -13,8 +11,8 @@ import org.hestiastore.index.Vldtn;
  */
 public final class SegmentSplitterPlan<K, V> {
 
-    private final AtomicKey<K> minKey = new AtomicKey<>();
-    private final AtomicKey<K> maxKey = new AtomicKey<>();
+    private K minKey;
+    private K maxKey;
     private long lowerCount;
     private long higherCount;
     private final long estimatedNumberOfKeys;
@@ -25,7 +23,7 @@ public final class SegmentSplitterPlan<K, V> {
         this.half = estimatedNumberOfKeys / 2;
     }
 
-    static <K, V> SegmentSplitterPlan<K, V> fromPolicy(
+    public static <K, V> SegmentSplitterPlan<K, V> fromPolicy(
             final SegmentSplitterPolicy<K, V> segmentSplitterPolicy) {
         Vldtn.requireNonNull(segmentSplitterPolicy, "segmentSplitterPolicy");
         final long estimatedNumberOfKeys = segmentSplitterPolicy
@@ -39,42 +37,43 @@ public final class SegmentSplitterPlan<K, V> {
 
     void recordLower(final Pair<K, V> pair) {
         Vldtn.requireNonNull(pair, "pair");
+        final K key = Vldtn.requireNonNull(pair.getKey(), "key");
         lowerCount++;
-        if (minKey.isEmpty()) {
-            minKey.set(pair.getKey());
+        if (minKey == null) {
+            minKey = key;
         }
-        maxKey.set(pair.getKey());
+        maxKey = key;
     }
 
     void recordUpper() {
         higherCount++;
     }
 
-    long lowerCount() {
+    long getLowerCount() {
         return lowerCount;
     }
 
-    long higherCount() {
+    long getHigherCount() {
         return higherCount;
     }
 
-    long estimatedNumberOfKeys() {
+    public long getEstimatedNumberOfKeys() {
         return estimatedNumberOfKeys;
     }
 
-    long half() {
+    long getHalf() {
         return half;
     }
 
-    boolean hasLowerKeys() {
-        return lowerCount > 0;
+    boolean isLowerSegmentEmpty() {
+        return lowerCount == 0;
     }
 
-    K minKey() {
-        return minKey.get();
+    K getMinKey() {
+        return minKey;
     }
 
-    K maxKey() {
-        return maxKey.get();
+    K getMaxKey() {
+        return maxKey;
     }
 }

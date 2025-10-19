@@ -37,9 +37,6 @@ class SegmentSplitterTest {
     private Segment<String, String> lowerSegment;
 
     @Mock
-    private SegmentFiles<String, String> segmentFiles;
-
-    @Mock
     private VersionController versionController;
 
     @Mock
@@ -67,21 +64,17 @@ class SegmentSplitterTest {
     private WriteTransaction<String, String> lowerSegmentWriteTx;
 
     @Mock
-    private SegmentFilesRenamer segmentFilesRenamer;
+    private SegmentFactory<String, String> segmentFactory;
 
     @Mock
-    private SegmentFactory<String, String> segmentFactory;
+    private SegmentReplacer<String, String> splitApplier;
 
     private SegmentSplitter<String, String> splitter;
 
     @BeforeEach
     void setUp() {
-        final SegmentSplitterPolicy<String, String> segmentSplitterPolicy = new SegmentSplitterPolicy<>(
-                segmentPropertiesManager, deltaCacheController);
-        splitter = new SegmentSplitter<>(segment, segmentFiles,
-                versionController, segmentPropertiesManager,
-                deltaCacheController, segmentFilesRenamer, segmentFactory,
-                segmentSplitterPolicy);
+        splitter = new SegmentSplitter<>(segment, versionController,
+                segmentFactory, splitApplier);
     }
 
     @Test
@@ -92,10 +85,14 @@ class SegmentSplitterTest {
         when(deltaCacheController.getDeltaCacheSizeWithoutTombstones())
                 .thenReturn(1);
 
-        final SegmentSplitterPlan<String, String> plan = splitter.createPlan();
+        final SegmentSplitterPolicy<String, String> policy = new SegmentSplitterPolicy<>(
+                segmentPropertiesManager, deltaCacheController);
+        final SegmentSplitterPlan<String, String> plan = SegmentSplitterPlan
+                .fromPolicy(policy);
 
-        assertTrue(splitter.shouldBeCompactedBeforeSplitting(plan, 1000));
-        assertFalse(splitter.shouldSplit(plan, 1000));
+        assertTrue(
+                policy.shouldBeCompactedBeforeSplitting(1000, plan.getEstimatedNumberOfKeys()));
+        assertFalse(plan.getEstimatedNumberOfKeys() >= 1000);
     }
 
     @Test
@@ -106,17 +103,29 @@ class SegmentSplitterTest {
         when(deltaCacheController.getDeltaCacheSizeWithoutTombstones())
                 .thenReturn(100);
 
-        final SegmentSplitterPlan<String, String> plan = splitter.createPlan();
+        final SegmentSplitterPolicy<String, String> policy = new SegmentSplitterPolicy<>(
+                segmentPropertiesManager, deltaCacheController);
+        final SegmentSplitterPlan<String, String> plan = SegmentSplitterPlan
+                .fromPolicy(policy);
 
-        assertFalse(splitter.shouldBeCompactedBeforeSplitting(plan, 1000));
-        assertTrue(splitter.shouldSplit(plan, 1000));
+        assertFalse(
+                policy.shouldBeCompactedBeforeSplitting(1000, plan.getEstimatedNumberOfKeys()));
+        assertTrue(plan.getEstimatedNumberOfKeys() >= 1000);
     }
 
     @Test
     void test_split_segmentId_is_null() {
+        when(segmentPropertiesManager.getSegmentStats()).thenReturn(segmentStats);
+        when(segmentStats.getNumberOfKeysInSegment()).thenReturn(2L);
+        when(deltaCacheController.getDeltaCacheSizeWithoutTombstones())
+                .thenReturn(1);
+        final SegmentSplitterPolicy<String, String> policy = new SegmentSplitterPolicy<>(
+                segmentPropertiesManager, deltaCacheController);
+        final SegmentSplitterPlan<String, String> plan = SegmentSplitterPlan
+                .fromPolicy(policy);
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> {
-                    splitter.split(null);
+                    splitter.split(null, plan);
                 });
         assertEquals("Property 'segmentId' must not be null.",
                 err.getMessage());
@@ -155,7 +164,10 @@ class SegmentSplitterTest {
         when(segment.openFullWriteTx()).thenReturn(segmentFullWriterTx);
         when(segmentFullWriterTx.openWriter()).thenReturn(segmentFullWriter);
 
-        final SegmentSplitterPlan<String, String> plan = splitter.createPlan();
+        final SegmentSplitterPolicy<String, String> policy = new SegmentSplitterPolicy<>(
+                segmentPropertiesManager, deltaCacheController);
+        final SegmentSplitterPlan<String, String> plan = SegmentSplitterPlan
+                .fromPolicy(policy);
 
         final SegmentSplitterResult<String, String> result = splitter
                 .split(SEGMENT_ID, plan);
@@ -180,7 +192,10 @@ class SegmentSplitterTest {
         when(deltaCacheController.getDeltaCacheSizeWithoutTombstones())
                 .thenReturn(1);
 
-        final SegmentSplitterPlan<String, String> plan = splitter.createPlan();
+        final SegmentSplitterPolicy<String, String> policy = new SegmentSplitterPolicy<>(
+                segmentPropertiesManager, deltaCacheController);
+        final SegmentSplitterPlan<String, String> plan = SegmentSplitterPlan
+                .fromPolicy(policy);
 
         final Exception err = assertThrows(IllegalStateException.class,
                 () -> splitter.split(SEGMENT_ID, plan));
