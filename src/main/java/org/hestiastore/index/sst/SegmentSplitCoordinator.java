@@ -5,6 +5,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentSplitter;
 import org.hestiastore.index.segment.SegmentSplitterPlan;
+import org.hestiastore.index.segment.SegmentSplitterPolicy;
 import org.hestiastore.index.segment.SegmentSplitterResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,22 +37,21 @@ public class SegmentSplitCoordinator<K, V> {
      */
     public void optionallySplit(final Segment<K, V> segment) {
         Vldtn.requireNonNull(segment, "segment");
-        final SegmentSplitter<K, V> segmentSplitter = segment
-                .getSegmentSplitter();
-        final long maxNumberOfKeysInSegment = conf
-                .getMaxNumberOfKeysInSegment();
-        SegmentSplitterPlan<K, V> plan = segmentSplitter.createPlan();
-        if (!segmentSplitter.shouldSplit(plan, maxNumberOfKeysInSegment)) {
+        final SegmentSplitter<K, V> segmentSplitter = segment.getSegmentSplitter();
+        final SegmentSplitterPolicy<K, V> policy = segment.getSegmentSplitterPolicy();
+        final long maxNumberOfKeysInSegment = conf.getMaxNumberOfKeysInSegment();
+        SegmentSplitterPlan<K, V> plan = SegmentSplitterPlan.fromPolicy(policy);
+        if (plan.getEstimatedNumberOfKeys() < maxNumberOfKeysInSegment) {
             return;
         }
-        if (segmentSplitter.shouldBeCompactedBeforeSplitting(plan,
-                maxNumberOfKeysInSegment)) {
+        if (policy.shouldBeCompactedBeforeSplitting(maxNumberOfKeysInSegment,
+                plan.getEstimatedNumberOfKeys())) {
             segment.forceCompact();
             if (!shouldBeSplit(segment)) {
                 return;
             }
-            plan = segmentSplitter.createPlan();
-            if (!segmentSplitter.shouldSplit(plan, maxNumberOfKeysInSegment)) {
+            plan = SegmentSplitterPlan.fromPolicy(policy);
+            if (plan.getEstimatedNumberOfKeys() < maxNumberOfKeysInSegment) {
                 return;
             }
         } else if (!shouldBeSplit(segment)) {

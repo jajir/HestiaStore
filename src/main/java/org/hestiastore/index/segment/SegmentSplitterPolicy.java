@@ -46,7 +46,7 @@ public final class SegmentSplitterPolicy<K, V> {
                 estimateNumberOfKeys());
     }
 
-    boolean shouldBeCompactedBeforeSplitting(
+    public boolean shouldBeCompactedBeforeSplitting(
             final long maxNumberOfKeysInSegment,
             final long estimatedNumberOfKeys) {
         if (estimatedNumberOfKeys <= 3) {

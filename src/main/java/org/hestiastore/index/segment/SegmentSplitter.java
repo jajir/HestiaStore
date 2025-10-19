@@ -18,86 +18,27 @@ public class SegmentSplitter<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final Segment<K, V> segment;
-    private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
-    private final SegmentPropertiesManager segmentPropertiesManager;
-    private final SegmentDeltaCacheController<K, V> deltaCacheController;
-    private final SegmentFilesRenamer segmentFilesRenamer;
     private final SegmentFactory<K, V> segmentFactory;
-    private final SegmentSplitterPolicy<K, V> segmentSplitterPolicy;
+    private final SegmentReplacer<K, V> splitApplier;
 
     public SegmentSplitter(final Segment<K, V> segment,
-            final SegmentFiles<K, V> segmentFiles,
             final VersionController versionController,
-            final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentDeltaCacheController<K, V> deltaCacheController,
-            final SegmentFilesRenamer segmentFilesRenamer,
             final SegmentFactory<K, V> segmentFactory,
-            final SegmentSplitterPolicy<K, V> segmentSplitterPolicy) {
+            final SegmentReplacer<K, V> splitApplier) {
         this.segment = Vldtn.requireNonNull(segment, "segment");
-        this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
         this.versionController = Vldtn.requireNonNull(versionController,
                 "versionController");
-        this.segmentPropertiesManager = Vldtn.requireNonNull(
-                segmentPropertiesManager, "segmentPropertiesManager");
-        this.deltaCacheController = Vldtn.requireNonNull(deltaCacheController,
-                "deltaCacheController");
-        this.segmentFilesRenamer = Vldtn.requireNonNull(segmentFilesRenamer,
-                "segmentFilesRenamer");
         this.segmentFactory = Vldtn.requireNonNull(segmentFactory,
                 "segmentFactory");
-        this.segmentSplitterPolicy = Vldtn.requireNonNull(segmentSplitterPolicy,
-                "segmentSplitterPolicy");
-    }
-
-    public boolean shouldBeCompactedBeforeSplitting(
-            final long maxNumberOfKeysInSegment) {
-        return segmentSplitterPolicy
-                .shouldBeCompactedBeforeSplitting(maxNumberOfKeysInSegment);
-    }
-
-    public boolean shouldSplit(final long maxNumberOfKeysInSegment) {
-        return segmentSplitterPolicy
-                .estimateNumberOfKeys() >= maxNumberOfKeysInSegment;
-    }
-
-    public long estimatedNumberOfKeys() {
-        return segmentSplitterPolicy.estimateNumberOfKeys();
-    }
-
-    public SegmentSplitterPlan<K, V> createPlan() {
-        return SegmentSplitterPlan.fromPolicy(segmentSplitterPolicy);
-    }
-
-    public boolean shouldSplit(final SegmentSplitterPlan<K, V> plan,
-            final long maxNumberOfKeysInSegment) {
-        Vldtn.requireNonNull(plan, "plan");
-        return plan.estimatedNumberOfKeys() >= maxNumberOfKeysInSegment;
-    }
-
-    public boolean shouldBeCompactedBeforeSplitting(
-            final SegmentSplitterPlan<K, V> plan,
-            final long maxNumberOfKeysInSegment) {
-        Vldtn.requireNonNull(plan, "plan");
-        return segmentSplitterPolicy.shouldBeCompactedBeforeSplitting(
-                maxNumberOfKeysInSegment, plan.estimatedNumberOfKeys());
-    }
-
-    public long estimatedNumberOfKeys(final SegmentSplitterPlan<K, V> plan) {
-        Vldtn.requireNonNull(plan, "plan");
-        return plan.estimatedNumberOfKeys();
-    }
-
-    public SegmentSplitterResult<K, V> split(final SegmentId segmentId) {
-        Vldtn.requireNonNull(segmentId, "segmentId");
-        return split(segmentId, createPlan());
+        this.splitApplier = Vldtn.requireNonNull(splitApplier, "splitApplier");
     }
 
     public SegmentSplitterResult<K, V> split(final SegmentId segmentId,
             final SegmentSplitterPlan<K, V> plan) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         Vldtn.requireNonNull(plan, "plan");
-        logger.debug("Splitting of '{}' started", segmentFiles.getId());
+        logger.debug("Splitting of '{}' started", segment.getId());
         versionController.changeVersion();
 
         if (!plan.isSplitFeasible()) {
@@ -109,7 +50,7 @@ public class SegmentSplitter<K, V> {
 
         try (PairIterator<K, V> iterator = segment.openIterator()) {
             writeLowerSegment(iterator, lowerSegment, plan);
-            if (!plan.hasLowerKeys()) {
+            if (plan.isLowerSegmentEmpty()) {
                 throw new IllegalStateException(
                         "Splitting failed. Lower segment doesn't contains any data");
             }
@@ -128,7 +69,7 @@ public class SegmentSplitter<K, V> {
         final WriteTransaction<K, V> lowerSegmentWriteTx = lowerSegment
                 .openFullWriteTx();
         try (PairWriter<K, V> writer = lowerSegmentWriteTx.openWriter()) {
-            while (plan.lowerCount() < plan.half() && iterator.hasNext()) {
+            while (plan.getLowerCount() < plan.getHalf() && iterator.hasNext()) {
                 final Pair<K, V> pair = iterator.next();
                 plan.recordLower(pair);
                 writer.write(pair);
@@ -154,38 +95,26 @@ public class SegmentSplitter<K, V> {
             logger.debug("Splitting of '{}' finished, '{}' was created. "
                     + "Estimated number of keys was '{}', "
                     + "half key was '{}' and real number of keys was '{}'.",
-                    segmentFiles.getId(), lowerSegment.getId(),
-                    F.fmt(plan.estimatedNumberOfKeys()), F.fmt(plan.half()),
-                    F.fmt(plan.lowerCount() + plan.higherCount()));
+                    segment.getId(), lowerSegment.getId(),
+                    F.fmt(plan.getEstimatedNumberOfKeys()), F.fmt(plan.getHalf()),
+                    F.fmt(plan.getLowerCount() + plan.getHigherCount()));
         }
-        if (plan.higherCount() == 0) {
+        if (plan.getHigherCount() == 0) {
             throw new IllegalStateException(String.format(
                     "Splitting failed. Higher segment doesn't contains any data. Estimated number of keys was '%s'",
-                    F.fmt(plan.estimatedNumberOfKeys())));
+                    F.fmt(plan.getEstimatedNumberOfKeys())));
         }
-        return new SegmentSplitterResult<>(lowerSegment, plan.minKey(),
-                plan.maxKey(),
+        return new SegmentSplitterResult<>(lowerSegment, plan.getMinKey(),
+                plan.getMaxKey(),
                 SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
     }
 
     private SegmentSplitterResult<K, V> compactCurrentSegment(
             final Segment<K, V> lowerSegment,
             final SegmentSplitterPlan<K, V> plan) {
-        segmentFilesRenamer.renameFiles(lowerSegment.getSegmentFiles(),
-                segmentFiles);
-
-        deltaCacheController.clear();
-
-        segmentPropertiesManager.setNumberOfKeysInCache(0);
-        final SegmentStats stats = lowerSegment.getSegmentPropertiesManager()
-                .getSegmentStats();
-        segmentPropertiesManager
-                .setNumberOfKeysInIndex(stats.getNumberOfKeysInSegment());
-        segmentPropertiesManager.setNumberOfKeysInScarceIndex(
-                stats.getNumberOfKeysInScarceIndex());
-        segmentPropertiesManager.flush();
-        return new SegmentSplitterResult<>(lowerSegment, plan.minKey(),
-                plan.maxKey(),
+        splitApplier.replaceWithLower(lowerSegment);
+        return new SegmentSplitterResult<>(lowerSegment, plan.getMinKey(),
+                plan.getMaxKey(),
                 SegmentSplitterResult.SegmentSplittingStatus.COMPACTED);
     }
 
