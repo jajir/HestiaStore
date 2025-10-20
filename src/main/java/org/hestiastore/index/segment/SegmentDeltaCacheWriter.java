@@ -69,7 +69,6 @@ public final class SegmentDeltaCacheWriter<K, V> implements PairWriter<K, V> {
         // increase number of keys in cache
         final int keysInCache = uniqueCache.size();
         segmentPropertiesManager.increaseNumberOfKeysInDeltaCache(keysInCache);
-        segmentPropertiesManager.flush();
 
         uniqueCache.clear();
     }

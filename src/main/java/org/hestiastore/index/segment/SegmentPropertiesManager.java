@@ -2,11 +2,16 @@ package org.hestiastore.index.segment;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.hestiastore.index.FileNameUtil;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.Props;
+import org.hestiastore.index.properties.PropertyStore;
+import org.hestiastore.index.properties.PropertyStoreimpl;
+import org.hestiastore.index.properties.PropertyTransaction;
+import org.hestiastore.index.properties.PropertyView;
+import org.hestiastore.index.properties.PropertyWriter;
 
 /**
  * 
@@ -22,13 +27,14 @@ public class SegmentPropertiesManager {
     private static final String PROPERTIES_FILENAME_EXTENSION = ".properties";
 
     private final SegmentId id;
-    private final Props props;
+    private final PropertyStore propertyStore;
 
     public SegmentPropertiesManager(final Directory directory,
             final SegmentId id) {
         Vldtn.requireNonNull(directory, "directory");
         this.id = Vldtn.requireNonNull(id, "segmentId");
-        this.props = new Props(directory, getPropertiesFilename());
+        this.propertyStore = new PropertyStoreimpl(directory,
+                getPropertiesFilename(), false);
     }
 
     private String getPropertiesFilename() {
@@ -36,21 +42,26 @@ public class SegmentPropertiesManager {
     }
 
     public SegmentStats getSegmentStats() {
-        return new SegmentStats(props.getLong(NUMBER_OF_KEYS_IN_DELTA_CACHE),
-                props.getLong(NUMBER_OF_KEYS_IN_MAIN_INDEX),
-                props.getLong(NUMBER_OF_KEYS_IN_SCARCE_INDEX));
+        final PropertyView view = propertyStore.snapshot();
+        return new SegmentStats(
+                view.getLong(NUMBER_OF_KEYS_IN_DELTA_CACHE),
+                view.getLong(NUMBER_OF_KEYS_IN_MAIN_INDEX),
+                view.getLong(NUMBER_OF_KEYS_IN_SCARCE_INDEX));
     }
 
     public void clearCacheDeltaFileNamesCouter() {
-        props.setInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, 0);
-        props.writeData();
+        updateTransaction(writer -> writer.setInt(
+                NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, 0));
     }
 
     public String getAndIncreaseDeltaFileName() {
-        int lastOne = props.getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);
-        props.setInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, lastOne + 1);
-        props.writeData();
-        return getDeltaString(lastOne);
+        final int counter = propertyStore.snapshot()
+                .getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);
+        final PropertyTransaction tx = propertyStore.beginTransaction();
+        tx.openPropertyWriter()
+                .setInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, counter + 1);
+        tx.close();
+        return getDeltaString(counter);
     }
 
     private String getDeltaString(final int segmentCacheDeltaFileId) {
@@ -66,7 +77,8 @@ public class SegmentPropertiesManager {
      */
     public List<String> getCacheDeltaFileNames() {
         final List<String> out = new ArrayList<>();
-        int lastOne = props.getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);
+        final PropertyView view = propertyStore.snapshot();
+        final int lastOne = view.getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);
         for (int i = 0; i < lastOne; i++) {
             out.add(getDeltaString(i));
         }
@@ -74,7 +86,8 @@ public class SegmentPropertiesManager {
     }
 
     public void setNumberOfKeysInCache(final long numberOfKeysInCache) {
-        props.setLong(NUMBER_OF_KEYS_IN_DELTA_CACHE, numberOfKeysInCache);
+        updateTransaction(writer -> writer.setLong(
+                NUMBER_OF_KEYS_IN_DELTA_CACHE, numberOfKeysInCache));
     }
 
     public void increaseNumberOfKeysInDeltaCache(final int howMuchKeys) {
@@ -83,8 +96,11 @@ public class SegmentPropertiesManager {
                     "Unable to increase numebr of keys in cache about value '%s'",
                     howMuchKeys));
         }
-        props.setLong(NUMBER_OF_KEYS_IN_DELTA_CACHE,
-                props.getLong(NUMBER_OF_KEYS_IN_DELTA_CACHE) + howMuchKeys);
+        final long current = propertyStore.snapshot()
+                .getLong(NUMBER_OF_KEYS_IN_DELTA_CACHE);
+        updateTransaction(
+                writer -> writer.setLong(NUMBER_OF_KEYS_IN_DELTA_CACHE,
+                        current + howMuchKeys));
     }
 
     public void incrementNumberOfKeysInCache() {
@@ -92,21 +108,25 @@ public class SegmentPropertiesManager {
     }
 
     public void setNumberOfKeysInIndex(final long numberOfKeysInIndex) {
-        props.setLong(NUMBER_OF_KEYS_IN_MAIN_INDEX, numberOfKeysInIndex);
+        updateTransaction(writer -> writer.setLong(
+                NUMBER_OF_KEYS_IN_MAIN_INDEX, numberOfKeysInIndex));
     }
 
     public void setNumberOfKeysInScarceIndex(
             final long numberOfKeysInScarceIndex) {
-        props.setLong(NUMBER_OF_KEYS_IN_SCARCE_INDEX,
-                numberOfKeysInScarceIndex);
+        updateTransaction(writer -> writer.setLong(
+                NUMBER_OF_KEYS_IN_SCARCE_INDEX, numberOfKeysInScarceIndex));
     }
 
     public long getNumberOfKeysInDeltaCache() {
         return getSegmentStats().getNumberOfKeysInDeltaCache();
     }
 
-    public void flush() {
-        props.writeData();
+    private void updateTransaction(final Consumer<PropertyWriter> updater) {
+        final PropertyTransaction tx = propertyStore.beginTransaction();
+        final PropertyWriter writer = tx.openPropertyWriter();
+        updater.accept(writer);
+        tx.close();
     }
 
 }
