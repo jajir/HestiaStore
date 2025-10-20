@@ -65,7 +65,7 @@ public class UnsortedDataFileBuilder<K, V> {
     }
 
     public UnsortedDataFile<K, V> build() {
-        return new UnsortedDataFile<>(directory, fileName, keyWriter,
+        return new UnsortedDataFileImpl<>(directory, fileName, keyWriter,
                 valueWriter, keyReader, valueReader, diskIoBufferSize);
     }
 
