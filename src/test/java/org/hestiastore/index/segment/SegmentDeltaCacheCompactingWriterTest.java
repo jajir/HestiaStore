@@ -20,9 +20,13 @@ class SegmentDeltaCacheCompactingWriterTest {
 
     @Mock
     private SegmentCompacter<Integer, String> segmentCompacter;
+    @Mock
+    private SegmentImpl<Integer, String> segment;
 
     @Mock
     private SegmentDeltaCacheController<Integer, String> deltaCacheController;
+    @Mock
+    private SegmentCompactionPolicyWithManager compactionPolicy;
 
     @Mock
     private SegmentDeltaCacheWriter<Integer, String> deltaCacheWriter;
@@ -31,14 +35,11 @@ class SegmentDeltaCacheCompactingWriterTest {
     void test_basic_writing() {
         when(deltaCacheController.openWriter()).thenReturn(deltaCacheWriter);
         when(deltaCacheWriter.getNumberOfKeys()).thenReturn(1L, 2L, 3L);
-        when(segmentCompacter.shouldBeCompactedDuringWriting(1))
-                .thenReturn(false);
-        when(segmentCompacter.shouldBeCompactedDuringWriting(2))
-                .thenReturn(false);
-        when(segmentCompacter.shouldBeCompactedDuringWriting(3))
-                .thenReturn(false);
+        when(compactionPolicy.shouldCompactDuringWriting(1)).thenReturn(false);
+        when(compactionPolicy.shouldCompactDuringWriting(2)).thenReturn(false);
+        when(compactionPolicy.shouldCompactDuringWriting(3)).thenReturn(false);
         try (final PairWriter<Integer, String> writer = new SegmentDeltaCacheCompactingWriter<>(
-                segmentCompacter, deltaCacheController)) {
+                segment, segmentCompacter, deltaCacheController, compactionPolicy)) {
             writer.write(PAIR_1);
             writer.write(PAIR_2);
             writer.write(PAIR_3);
@@ -49,23 +50,20 @@ class SegmentDeltaCacheCompactingWriterTest {
         verify(deltaCacheWriter).write(PAIR_2);
         verify(deltaCacheWriter).write(PAIR_3);
 
-        verify(segmentCompacter).shouldBeCompactedDuringWriting(1);
-        verify(segmentCompacter).shouldBeCompactedDuringWriting(2);
-        verify(segmentCompacter).shouldBeCompactedDuringWriting(3);
+        verify(compactionPolicy).shouldCompactDuringWriting(1);
+        verify(compactionPolicy).shouldCompactDuringWriting(2);
+        verify(compactionPolicy).shouldCompactDuringWriting(3);
     }
 
     @Test
     void test_compact_during_writing() {
         when(deltaCacheController.openWriter()).thenReturn(deltaCacheWriter);
         when(deltaCacheWriter.getNumberOfKeys()).thenReturn(1L, 2L, 3L);
-        when(segmentCompacter.shouldBeCompactedDuringWriting(1))
-                .thenReturn(false);
-        when(segmentCompacter.shouldBeCompactedDuringWriting(2))
-                .thenReturn(true);
-        when(segmentCompacter.shouldBeCompactedDuringWriting(3))
-                .thenReturn(false);
+        when(compactionPolicy.shouldCompactDuringWriting(1)).thenReturn(false);
+        when(compactionPolicy.shouldCompactDuringWriting(2)).thenReturn(true);
+        when(compactionPolicy.shouldCompactDuringWriting(3)).thenReturn(false);
         try (final PairWriter<Integer, String> writer = new SegmentDeltaCacheCompactingWriter<>(
-                segmentCompacter, deltaCacheController)) {
+                segment, segmentCompacter, deltaCacheController, compactionPolicy)) {
             writer.write(PAIR_1);
             writer.write(PAIR_2);
             writer.write(PAIR_3);
@@ -76,11 +74,11 @@ class SegmentDeltaCacheCompactingWriterTest {
         verify(deltaCacheWriter).write(PAIR_2);
         verify(deltaCacheWriter).write(PAIR_3);
 
-        verify(segmentCompacter).shouldBeCompactedDuringWriting(1);
-        verify(segmentCompacter).shouldBeCompactedDuringWriting(2);
-        verify(segmentCompacter).shouldBeCompactedDuringWriting(3);
+        verify(compactionPolicy).shouldCompactDuringWriting(1);
+        verify(compactionPolicy).shouldCompactDuringWriting(2);
+        verify(compactionPolicy).shouldCompactDuringWriting(3);
 
-        verify(segmentCompacter, times(1)).forceCompact();
+        verify(segmentCompacter, times(1)).forceCompact(segment);
     }
 
 }

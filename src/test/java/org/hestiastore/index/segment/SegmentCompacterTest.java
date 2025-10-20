@@ -15,10 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class SegmentCompacterTest {
 
     @Mock
-    private Segment<Integer, String> segment;
-
-    @Mock
-    private SegmentFiles<Integer, String> segmentFiles;
+    private SegmentImpl<Integer, String> segment;
 
     @Mock
     private SegmentConf segmentConf;
@@ -33,9 +30,10 @@ class SegmentCompacterTest {
 
     @BeforeEach
     void setUp() {
-        sc = new SegmentCompacter<>(segment, segmentFiles, versionController,
-                segmentPropertiesManager,
-                new SegmentCompactionPolicy(segmentConf));
+        sc = new SegmentCompacter<>(versionController,
+                new SegmentCompactionPolicyWithManager(
+                        new SegmentCompactionPolicy(segmentConf),
+                        segmentPropertiesManager));
     }
 
     @Test
@@ -44,41 +42,31 @@ class SegmentCompacterTest {
     }
 
     @Test
-    void test_shouldBeCompactedDuringWriting_yes() {
+    void test_policy_shouldCompactDuringWriting_yes() {
         when(segmentPropertiesManager.getSegmentStats())
                 .thenReturn(new SegmentStats(10, 1000L, 15));
         when(segmentConf.getMaxNumberOfKeysInDeltaCacheDuringWriting())
                 .thenReturn(20L);
 
-        assertTrue(sc.shouldBeCompactedDuringWriting(25));
+        SegmentCompactionPolicyWithManager policy = new SegmentCompactionPolicyWithManager(
+                new SegmentCompactionPolicy(segmentConf), segmentPropertiesManager);
+        assertTrue(policy.shouldCompactDuringWriting(25));
     }
 
     @Test
-    void test_shouldBeCompactedDuringWriting_no() {
+    void test_policy_shouldCompactDuringWriting_no() {
         when(segmentPropertiesManager.getSegmentStats())
                 .thenReturn(new SegmentStats(10, 1000L, 15));
         when(segmentConf.getMaxNumberOfKeysInDeltaCacheDuringWriting())
                 .thenReturn(30L);
 
-        assertFalse(sc.shouldBeCompactedDuringWriting(10));
+        SegmentCompactionPolicyWithManager policy = new SegmentCompactionPolicyWithManager(
+                new SegmentCompactionPolicy(segmentConf), segmentPropertiesManager);
+        assertFalse(policy.shouldCompactDuringWriting(10));
     }
 
-    @Test
-    void test_shouldBeCompacted_yes() {
-        when(segmentPropertiesManager.getSegmentStats())
-                .thenReturn(new SegmentStats(31, 1000L, 15));
-        when(segmentConf.getMaxNumberOfKeysInDeltaCache()).thenReturn(30L);
-
-        assertTrue(sc.shouldBeCompacted());
-    }
-
-    @Test
-    void test_shouldBeCompacted_no() {
-        when(segmentPropertiesManager.getSegmentStats())
-                .thenReturn(new SegmentStats(31, 1000L, 15));
-        when(segmentConf.getMaxNumberOfKeysInDeltaCache()).thenReturn(35L);
-
-        assertFalse(sc.shouldBeCompacted());
-    }
+    // 'shouldBeCompacted' is private now; compaction policy behavior
+    // is verified in SegmentCompactionPolicyTest. Here we keep
+    // 'shouldBeCompactedDuringWriting' covered above.
 
 }

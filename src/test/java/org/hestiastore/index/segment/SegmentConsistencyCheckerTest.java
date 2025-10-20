@@ -27,7 +27,7 @@ class SegmentConsistencyCheckerTest {
     private static final Pair<Integer, String> PAIR3 = Pair.of(3, "c");
 
     @Mock
-    private Segment<Integer, String> segment;
+    private SegmentImpl<Integer, String> segment;
 
     @Mock
     private PairIterator<Integer, String> iterator;

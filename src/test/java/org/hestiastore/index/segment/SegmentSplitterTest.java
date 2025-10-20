@@ -31,10 +31,10 @@ class SegmentSplitterTest {
     private static final Pair<String, String> PAIR3 = Pair.of("key3", "value3");
 
     @Mock
-    private Segment<String, String> segment;
+    private SegmentImpl<String, String> segment;
 
     @Mock
-    private Segment<String, String> lowerSegment;
+    private SegmentImpl<String, String> lowerSegment;
 
     @Mock
     private VersionController versionController;
@@ -64,9 +64,6 @@ class SegmentSplitterTest {
     private WriteTransaction<String, String> lowerSegmentWriteTx;
 
     @Mock
-    private SegmentFactory<String, String> segmentFactory;
-
-    @Mock
     private SegmentReplacer<String, String> splitApplier;
 
     private SegmentSplitter<String, String> splitter;
@@ -74,7 +71,7 @@ class SegmentSplitterTest {
     @BeforeEach
     void setUp() {
         splitter = new SegmentSplitter<>(segment, versionController,
-                segmentFactory, splitApplier);
+                splitApplier);
     }
 
     @Test
@@ -154,7 +151,7 @@ class SegmentSplitterTest {
         when(segmentIterator.next()).thenReturn(PAIR1, PAIR2, PAIR3);
 
         // mock writing lower part to new segment
-        when(segmentFactory.createSegment(SEGMENT_ID)).thenReturn(lowerSegment);
+        when(segment.createSegmentWithSameConfig(SEGMENT_ID)).thenReturn(lowerSegment);
         when(lowerSegment.openFullWriteTx()).thenReturn(lowerSegmentWriteTx);
         when(lowerSegmentWriteTx.openWriter())
                 .thenReturn(lowerSegmentFullWriter);

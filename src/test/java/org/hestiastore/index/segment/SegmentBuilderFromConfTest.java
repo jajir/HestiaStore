@@ -40,7 +40,7 @@ public class SegmentBuilderFromConfTest {
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
                 .withSegmentConf(conf)//
         ;
-        Segment<Integer, String> seg = builder.build();
+        SegmentImpl<Integer, String> seg = builder.build();
         SegmentConf ret = seg.getSegmentConf();
         assertEquals(1024, ret.getDiskIoBufferSize());
 

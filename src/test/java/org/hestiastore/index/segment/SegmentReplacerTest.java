@@ -26,7 +26,7 @@ class SegmentReplacerTest {
     private SegmentFiles<String, String> targetSegmentFiles;
 
     @Mock
-    private Segment<String, String> lowerSegment;
+    private SegmentImpl<String, String> lowerSegment;
 
     @Mock
     private SegmentPropertiesManager lowerSegmentProps;

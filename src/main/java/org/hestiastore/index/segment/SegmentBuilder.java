@@ -302,7 +302,7 @@ public final class SegmentBuilder<K, V> {
      * @throws IllegalArgumentException if required fields are missing or
      *                                  invalid
      */
-    public Segment<K, V> build() {
+    public SegmentImpl<K, V> build() {
         if (directory == null) {
             throw new IllegalArgumentException("Directory can't be null");
         }
@@ -362,16 +362,21 @@ public final class SegmentBuilder<K, V> {
                 segmentFiles.getKeyTypeDescriptor().getComparator());
         final SegmentSearcher<K, V> segmentSearcher = new SegmentSearcher<K, V>(
                 segmentFiles.getValueTypeDescriptor(), segmentIndexSearcher);
-        final SegmentCompactionPolicy compactionPolicy = new SegmentCompactionPolicy(
-                segmentConf);
+        final SegmentCompactionPolicyWithManager compactionPolicy =
+                SegmentCompactionPolicyWithManager.from(segmentConf, segmentPropertiesManager);
         final SegmentDeltaCacheController<K, V> deltaCacheController = new SegmentDeltaCacheController<>(
                 segmentFiles, segmentPropertiesManager, segmentDataProvider);
         final SegmentSplitterPolicy<K, V> segmentSplitterPolicy = new SegmentSplitterPolicy<>(
                 segmentPropertiesManager, deltaCacheController);
-        return new Segment<>(segmentFiles, segmentConf, versionController,
+        final SegmentCompacter<K, V> compacter = new SegmentCompacter<>(
+                versionController, compactionPolicy);
+        final SegmentReplacer<K, V> segmentReplacer = new SegmentReplacer<>(
+                new SegmentFilesRenamer(), deltaCacheController,
+                segmentPropertiesManager, segmentFiles);
+        return new SegmentImpl<>(segmentFiles, segmentConf, versionController,
                 segmentPropertiesManager, segmentDataProvider,
                 deltaCacheController, segmentSearcher, compactionPolicy,
-                segmentSplitterPolicy);
+                compacter, segmentReplacer, segmentSplitterPolicy);
     }
 
 }

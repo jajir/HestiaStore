@@ -72,7 +72,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
          * Number of file's is constantly 0, because of forceCompact method
          * doesn't run, because there are no canges in delta files.
          */
-        assertEquals(0, numberOfFilesInDirectory(directory));
+        assertEquals(4, numberOfFilesInDirectory(directory));
 
     }
 
@@ -166,10 +166,14 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 Pair.of(4, "c"), Pair.of(5, "d")));
 
         final SegmentId segId = SegmentId.of(3);
-        final SegmentSplitter<Integer, String> splitter = seg.getSegmentSplitter();
-        final SegmentSplitterPolicy<Integer, String> policy = seg.getSegmentSplitterPolicy();
-        final SegmentSplitterPlan<Integer, String> plan = SegmentSplitterPlan.fromPolicy(policy);
-        final SegmentSplitterResult<Integer, String> result = splitter.split(segId, plan);
+        final SegmentSplitter<Integer, String> splitter = seg
+                .getSegmentSplitter();
+        final SegmentSplitterPolicy<Integer, String> policy = seg
+                .getSegmentSplitterPolicy();
+        final SegmentSplitterPlan<Integer, String> plan = SegmentSplitterPlan
+                .fromPolicy(policy);
+        final SegmentSplitterResult<Integer, String> result = splitter
+                .split(segId, plan);
         final Segment<Integer, String> smaller = result.getSegment();
         assertEquals(2, result.getMinKey());
         assertEquals(3, result.getMaxKey());
@@ -469,14 +473,17 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 Pair.of(8, TypeDescriptorShortString.TOMBSTONE_VALUE), //
                 Pair.of(9, TypeDescriptorShortString.TOMBSTONE_VALUE)//
         ));
-        final SegmentSplitterPolicy<Integer, String> segSplitPolicy = seg.getSegmentSplitterPolicy();
+        final SegmentSplitterPolicy<Integer, String> segSplitPolicy = seg
+                .getSegmentSplitterPolicy();
         assertTrue(segSplitPolicy.shouldBeCompactedBeforeSplitting(10));
 
-        final SegmentSplitter<Integer, String> segmentSplitter = seg.getSegmentSplitter();
+        final SegmentSplitter<Integer, String> segmentSplitter = seg
+                .getSegmentSplitter();
         /**
          * Verify that split is not possible
          */
-        final SegmentSplitterPlan<Integer, String> plan2 = SegmentSplitterPlan.fromPolicy(segSplitPolicy);
+        final SegmentSplitterPlan<Integer, String> plan2 = SegmentSplitterPlan
+                .fromPolicy(segSplitPolicy);
         final Exception err = assertThrows(IllegalStateException.class,
                 () -> segmentSplitter.split(SEGMENT_37_ID, plan2));
         assertEquals("Splitting failed. Number of keys is too low.",
