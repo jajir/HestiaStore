@@ -8,7 +8,11 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilterBuilder;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.Props;
+import org.hestiastore.index.properties.PropertyStore;
+import org.hestiastore.index.properties.PropertyStoreimpl;
+import org.hestiastore.index.properties.PropertyTransaction;
+import org.hestiastore.index.properties.PropertyView;
+import org.hestiastore.index.properties.PropertyWriter;
 
 public class IndexConfiguratonStorage<K, V> {
 
@@ -42,60 +46,64 @@ public class IndexConfiguratonStorage<K, V> {
     }
 
     IndexConfiguration<K, V> load() {
-        final Props props = new Props(directory, CONFIGURATION_FILENAME, true);
-        final Class<K> keyClass = toClass(props.getString(PROP_KEY_CLASS));
-        final Class<V> valueClass = toClass(props.getString(PROP_VALUE_CLASS));
+        final PropertyStore props = new PropertyStoreimpl(directory,
+                CONFIGURATION_FILENAME, true);
+        final PropertyView propsView = props.snapshot();
+        final Class<K> keyClass = toClass(propsView.getString(PROP_KEY_CLASS));
+        final Class<V> valueClass = toClass(
+                propsView.getString(PROP_VALUE_CLASS));
         final IndexConfigurationBuilder<K, V> builder = IndexConfiguration
                 .<K, V>builder()//
                 .withKeyClass(keyClass) //
                 .withValueClass(valueClass)//
-                .withName(props.getString(PROP_INDEX_NAME))//
-                .withLogEnabled(props.getBoolean(PROP_USE_FULL_LOG))//
-                .withThreadSafe(props.getBoolean(PROP_IS_THREAD_SAFE))//
+                .withName(propsView.getString(PROP_INDEX_NAME))//
+                .withLogEnabled(propsView.getBoolean(PROP_USE_FULL_LOG))//
+                .withThreadSafe(propsView.getBoolean(PROP_IS_THREAD_SAFE))//
 
                 // Index runtime properties
                 .withMaxNumberOfKeysInCache(
-                        props.getInt(PROP_MAX_NUMBER_OF_KEYS_IN_CACHE))//
+                        propsView.getInt(PROP_MAX_NUMBER_OF_KEYS_IN_CACHE))//
                 .withMaxNumberOfSegmentsInCache(
-                        props.getInt(PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE))//
+                        propsView.getInt(PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE))//
                 .withMaxNumberOfKeysInSegment(
-                        props.getInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT))//
+                        propsView.getInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT))//
                 .withDiskIoBufferSizeInBytes(
-                        props.getInt(PROP_DISK_IO_BUFFER_SIZE_IN_BYTES))//
+                        propsView.getInt(PROP_DISK_IO_BUFFER_SIZE_IN_BYTES))//
 
                 // Segment properties
                 .withMaxNumberOfKeysInSegmentCache(
-                        props.getLong(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE))//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(props.getLong(
+                        propsView.getLong(
+                                PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE))//
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(propsView.getLong(
                         PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING))//
                 .withMaxNumberOfKeysInSegmentChunk(
-                        props.getInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK))//
+                        propsView.getInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK))//
 
                 // Segment bloom filter properties
-                .withBloomFilterNumberOfHashFunctions(props
+                .withBloomFilterNumberOfHashFunctions(propsView
                         .getInt(PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS))//
                 .withBloomFilterIndexSizeInBytes(
-                        props.getInt(PROP_BLOOM_FILTER_INDEX_SIZE_IN_BYTES))//
+                        propsView.getInt(PROP_BLOOM_FILTER_INDEX_SIZE_IN_BYTES))//
         ;
 
-        if (props.getDouble(
+        if (propsView.getDouble(
                 PROP_BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE) != 0) {
-            builder.withBloomFilterProbabilityOfFalsePositive(props.getDouble(
+            builder.withBloomFilterProbabilityOfFalsePositive(propsView.getDouble(
                     PROP_BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE));
         }
 
         builder.withKeyTypeDescriptor(
-                props.getString(PROP_KEY_TYPE_DESCRIPTOR));
+                propsView.getString(PROP_KEY_TYPE_DESCRIPTOR));
         builder.withValueTypeDescriptor(
-                props.getString(PROP_VALUE_TYPE_DESCRIPTOR));
+                propsView.getString(PROP_VALUE_TYPE_DESCRIPTOR));
 
-        final String encodingFilters = props
+        final String encodingFilters = propsView
                 .getString(PROP_ENCODING_CHUNK_FILTERS);
         if (encodingFilters != null && !encodingFilters.isBlank()) {
             builder.withEncodingFilters(parseFilterList(encodingFilters));
         }
 
-        final String decodingFilters = props
+        final String decodingFilters = propsView
                 .getString(PROP_DECODING_CHUNK_FILTERS);
         if (decodingFilters != null && !decodingFilters.isBlank()) {
             builder.withDecodingFilters(parseFilterList(decodingFilters));
@@ -105,58 +113,62 @@ public class IndexConfiguratonStorage<K, V> {
     }
 
     public void save(IndexConfiguration<K, V> indexConfiguration) {
-        final Props props = new Props(directory, CONFIGURATION_FILENAME);
-        props.setString(PROP_KEY_CLASS,
+        final PropertyStore props = new PropertyStoreimpl(directory,
+                CONFIGURATION_FILENAME, false);
+        final PropertyTransaction tx = props.beginTransaction();
+        final PropertyWriter writer = tx.openPropertyWriter();
+        writer.setString(PROP_KEY_CLASS,
                 indexConfiguration.getKeyClass().getName());
-        props.setString(PROP_VALUE_CLASS,
+        writer.setString(PROP_VALUE_CLASS,
                 indexConfiguration.getValueClass().getName());
-        props.setString(PROP_KEY_TYPE_DESCRIPTOR,
+        writer.setString(PROP_KEY_TYPE_DESCRIPTOR,
                 indexConfiguration.getKeyTypeDescriptor());
-        props.setString(PROP_VALUE_TYPE_DESCRIPTOR,
+        writer.setString(PROP_VALUE_TYPE_DESCRIPTOR,
                 indexConfiguration.getValueTypeDescriptor());
-        props.setString(PROP_INDEX_NAME, indexConfiguration.getIndexName());
-        props.setBoolean(PROP_USE_FULL_LOG, indexConfiguration.isLogEnabled());
-        props.setBoolean(PROP_IS_THREAD_SAFE,
+        writer.setString(PROP_INDEX_NAME, indexConfiguration.getIndexName());
+        writer.setBoolean(PROP_USE_FULL_LOG, indexConfiguration.isLogEnabled());
+        writer.setBoolean(PROP_IS_THREAD_SAFE,
                 indexConfiguration.isThreadSafe());
 
         // Index runtime properties
-        props.setLong(PROP_MAX_NUMBER_OF_KEYS_IN_CACHE,
+        writer.setLong(PROP_MAX_NUMBER_OF_KEYS_IN_CACHE,
                 indexConfiguration.getMaxNumberOfKeysInCache());
-        props.setInt(PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
+        writer.setInt(PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
                 indexConfiguration.getMaxNumberOfSegmentsInCache());
-        props.setInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT,
+        writer.setInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT,
                 indexConfiguration.getMaxNumberOfKeysInSegment());
-        props.setInt(PROP_DISK_IO_BUFFER_SIZE_IN_BYTES,
+        writer.setInt(PROP_DISK_IO_BUFFER_SIZE_IN_BYTES,
                 indexConfiguration.getDiskIoBufferSize());
 
         // Segment properties
-        props.setLong(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE,
+        writer.setLong(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE,
                 indexConfiguration.getMaxNumberOfKeysInSegmentCache());
-        props.setLong(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING,
+        writer.setLong(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING,
                 indexConfiguration
                         .getMaxNumberOfKeysInSegmentCacheDuringFlushing());
-        props.setInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK,
+        writer.setInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK,
                 indexConfiguration.getMaxNumberOfKeysInSegmentChunk());
 
         // Segment bloom filter properties
-        props.setInt(PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
+        writer.setInt(PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
                 indexConfiguration.getBloomFilterNumberOfHashFunctions());
-        props.setInt(PROP_BLOOM_FILTER_INDEX_SIZE_IN_BYTES,
+        writer.setInt(PROP_BLOOM_FILTER_INDEX_SIZE_IN_BYTES,
                 indexConfiguration.getBloomFilterIndexSizeInBytes());
         if (indexConfiguration
                 .getBloomFilterProbabilityOfFalsePositive() != null) {
-            props.setDouble(PROP_BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE,
+            writer.setDouble(PROP_BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE,
                     indexConfiguration
                             .getBloomFilterProbabilityOfFalsePositive());
         } else {
-            props.setDouble(PROP_BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE,
+            writer.setDouble(PROP_BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE,
                     BloomFilterBuilder.DEFAULT_PROBABILITY_OF_FALSE_POSITIVE);
         }
-        props.setString(PROP_ENCODING_CHUNK_FILTERS,
-                serializeFilters(indexConfiguration.getEncodingChunkFilters()));
-        props.setString(PROP_DECODING_CHUNK_FILTERS,
-                serializeFilters(indexConfiguration.getDecodingChunkFilters()));
-        props.writeData();
+        writer.setString(PROP_ENCODING_CHUNK_FILTERS, serializeFilters(
+                indexConfiguration.getEncodingChunkFilters()));
+
+        writer.setString(PROP_DECODING_CHUNK_FILTERS, serializeFilters(
+                indexConfiguration.getDecodingChunkFilters()));
+        tx.close();
     }
 
     boolean exists() {
@@ -174,10 +186,8 @@ public class IndexConfiguratonStorage<K, V> {
     }
 
     private List<ChunkFilter> parseFilterList(final String value) {
-        return Arrays.stream(value.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .map(this::instantiateFilter)
+        return Arrays.stream(value.split(",")).map(String::trim)
+                .filter(s -> !s.isEmpty()).map(this::instantiateFilter)
                 .collect(Collectors.toList());
     }
 
@@ -203,9 +213,10 @@ public class IndexConfiguratonStorage<K, V> {
             final Class<? extends ChunkFilter> filterClass = (Class<? extends ChunkFilter>) clazz;
             return filterClass.getDeclaredConstructor().newInstance();
         } catch (ReflectiveOperationException ex) {
-            throw new IllegalArgumentException(String.format(
-                    "Unable to instantiate chunk filter '%s'",
-                    requiredClassName), ex);
+            throw new IllegalArgumentException(
+                    String.format("Unable to instantiate chunk filter '%s'",
+                            requiredClassName),
+                    ex);
         }
     }
 

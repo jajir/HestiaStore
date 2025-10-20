@@ -57,6 +57,5 @@ public class SegmentFullWriterTx<K, V> implements WriteTransaction<K, V> {
                 .setNumberOfKeysInIndex(segmentFullWriter.getNumberKeys());
         segmentPropertiesManager.setNumberOfKeysInScarceIndex(
                 segmentFullWriter.getNumberKeysInScarceIndex());
-        segmentPropertiesManager.flush();
     }
 }

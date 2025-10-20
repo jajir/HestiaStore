@@ -41,6 +41,5 @@ final class SegmentReplacer<K, V> {
                 .setNumberOfKeysInIndex(stats.getNumberOfKeysInSegment());
         segmentPropertiesManager.setNumberOfKeysInScarceIndex(
                 stats.getNumberOfKeysInScarceIndex());
-        segmentPropertiesManager.flush();
     }
 }

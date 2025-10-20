@@ -56,7 +56,6 @@ class SegmentReplacerTest {
         verify(segmentPropertiesManager).setNumberOfKeysInCache(0);
         verify(segmentPropertiesManager).setNumberOfKeysInIndex(42L);
         verify(segmentPropertiesManager).setNumberOfKeysInScarceIndex(7);
-        verify(segmentPropertiesManager).flush();
     }
 
     @Test
