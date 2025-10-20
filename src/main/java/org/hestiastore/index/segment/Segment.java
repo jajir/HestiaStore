@@ -1,237 +1,160 @@
 package org.hestiastore.index.segment;
 
 import org.hestiastore.index.CloseableResource;
-import org.hestiastore.index.OptimisticLock;
 import org.hestiastore.index.OptimisticLockObjectVersionProvider;
 import org.hestiastore.index.PairIterator;
-import org.hestiastore.index.PairIteratorWithLock;
 import org.hestiastore.index.PairWriter;
-import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.WriteTransaction;
-import org.hestiastore.index.WriteTransaction.WriterFunction;
-import org.hestiastore.index.bloomfilter.BloomFilter;
-import org.hestiastore.index.scarceindex.ScarceIndex;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
- * A single on-disk index segment with delta-cache and compaction support.
+ * Public contract for a single on-disk index segment.
  * <p>
- * Segment coordinates read and write operations for a bounded subset of the
- * index data. It encapsulates the underlying files, provides search and
- * iteration, accepts writes through a delta cache (with optional automatic
- * compaction), and exposes utilities for statistics, consistency checking, and
- * splitting oversized segments. Versioning is tracked via an optimistic lock to
- * guard concurrent readers while updates occur.
+ * A segment stores a contiguous subset of the index, supports lookups and
+ * iteration, accepts writes via a delta cache, and can be compacted or split
+ * when it grows beyond configured limits. Implementations are responsible for
+ * coordinating on-disk files, caches and statistics while keeping readers safe
+ * through optimistic versioning.
  *
- * @author honza
+ * <strong>Thread-safety:</strong> Implementations are not thread-safe. If a
+ * segment instance is accessed from multiple threads, callers must provide
+ * external synchronization or higher-level concurrency control. The
+ * {@link #getVersion()} and the use of optimistic locks guard readers against
+ * in-place mutations, but do not make the segment API itself safe for
+ * concurrent mutation.
+ * 
+ * Please note that any write operation could leads to segment compacting. So
+ * write time could vary from fast operation (just write into cache) to long
+ * operation (compact segment).
  *
- * @param <K> key type stored in this segment
- * @param <V> value type stored in this segment
+ * <p>
+ * Key responsibilities exposed by this API: - Query: {@link #get(Object)},
+ * {@link #getStats()}, {@link #getNumberOfKeys()} - Writing (delta cache):
+ * {@link #openDeltaCacheWriter()} - Maintenance: {@link #optionallyCompact()},
+ * {@link #forceCompact()}, {@link #checkAndRepairConsistency()} - Splitting:
+ * {@link #getSegmentSplitterPolicy()}, {@link #getSegmentSplitter()},
+ * {@link #createSegmentWithSameConfig(SegmentId)} - Identity and lifecycle:
+ * {@link #getId()}, {@link #getVersion()}, {@link #close()}
+ *
+ * @param <K> key type
+ * @param <V> value type
  */
-public class Segment<K, V>
-        implements CloseableResource, OptimisticLockObjectVersionProvider {
+public interface Segment<K, V>
+        extends CloseableResource, OptimisticLockObjectVersionProvider {
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final SegmentConf segmentConf;
-    private final SegmentFiles<K, V> segmentFiles;
-    private final VersionController versionController;
-    private final SegmentPropertiesManager segmentPropertiesManager;
-    private final SegmentCompacter<K, V> segmentCompacter;
-    private final SegmentDeltaCacheController<K, V> deltaCacheController;
-    private final SegmentSearcher<K, V> segmentSearcher;
-    private final SegmentDataProvider<K, V> segmentDataProvider;
-    private final SegmentFactory<K, V> segmentFactory;
-    private final SegmentSplitter<K, V> segmentSplitter;
-    private final SegmentSplitterPolicy<K, V> segmentSplitterPolicy;
-
-    public static <M, N> SegmentBuilder<M, N> builder() {
+    /**
+     * Creates a new {@link SegmentBuilder} for constructing a segment with a
+     * fluent, validated API.
+     *
+     * @param <M> key type for the segment to be built
+     * @param <N> value type for the segment to be built
+     * @return a new builder instance
+     */
+    static <M, N> SegmentBuilder<M, N> builder() {
         return new SegmentBuilder<>();
     }
 
-    public Segment(final SegmentFiles<K, V> segmentFiles,
-            final SegmentConf segmentConf,
-            final VersionController versionController,
-            final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentDataProvider<K, V> segmentDataProvider,
-            final SegmentDeltaCacheController<K, V> segmentDeltaCacheController,
-            final SegmentSearcher<K, V> segmentSearcher,
-            final SegmentCompactionPolicy segmentCompactionPolicy,
-            final SegmentSplitterPolicy<K, V> segmentSplitterPolicy) {
-    this.segmentConf = Vldtn.requireNonNull(segmentConf, "segmentConf");
-    this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
-    logger.debug("Initializing segment '{}'", segmentFiles.getId());
-    this.versionController = Vldtn.requireNonNull(versionController,
-        "versionController");
-    this.segmentDataProvider = Vldtn.requireNonNull(segmentDataProvider,
-        "segmentDataProvider");
-    this.segmentPropertiesManager = Vldtn.requireNonNull(
-        segmentPropertiesManager, "segmentPropertiesManager");
-    final SegmentCompactionPolicy validatedCompactionPolicy = Vldtn
-        .requireNonNull(segmentCompactionPolicy,
-            "segmentCompactionPolicy");
-    this.deltaCacheController = Vldtn.requireNonNull(
-        segmentDeltaCacheController, "segmentDeltaCacheController");
-    this.segmentCompacter = new SegmentCompacter<>(this, segmentFiles,
-        versionController, segmentPropertiesManager,
-        validatedCompactionPolicy);
-    this.segmentSearcher = Vldtn.requireNonNull(segmentSearcher,
-        "segmentSearcher");
-    final SegmentSplitterPolicy<K, V> validatedSplitterPolicy = Vldtn
-        .requireNonNull(segmentSplitterPolicy,
-            "segmentSplitterPolicy");
-    this.segmentSplitterPolicy = validatedSplitterPolicy;
-    this.segmentFactory = new SegmentFactory<>(
-        segmentFiles.getDirectory(),
-        segmentFiles.getKeyTypeDescriptor(),
-        segmentFiles.getValueTypeDescriptor(), segmentConf);
-    final SegmentReplacer<K, V> splitApplier = new SegmentReplacer<>(
-        new SegmentFilesRenamer(), segmentDeltaCacheController,
-        segmentPropertiesManager, segmentFiles);
-    this.segmentSplitter = new SegmentSplitter<>(this, versionController,
-        segmentFactory, splitApplier);
-    }
-
-    public SegmentStats getStats() {
-        return segmentPropertiesManager.getSegmentStats();
-    }
-
-    public long getNumberOfKeys() {
-        return segmentPropertiesManager.getSegmentStats().getNumberOfKeys();
-    }
-
-    public void optionallyCompact() {
-        segmentCompacter.optionallyCompact();
-    }
-
-    public K checkAndRepairConsistency() {
-        final SegmentConsistencyChecker<K, V> consistencyChecker = new SegmentConsistencyChecker<>(
-                this, segmentFiles.getKeyTypeDescriptor().getComparator());
-        return consistencyChecker.checkAndRepairConsistency();
-    }
-
-    public PairIterator<K, V> openIterator() {
-        final PairIterator<K, V> mergedPairIterator = new MergeDeltaCacheWithIndexIterator<>(
-                segmentFiles.getIndexFile().openIterator(),
-                segmentFiles.getKeyTypeDescriptor(),
-                segmentFiles.getValueTypeDescriptor(),
-                deltaCacheController.getDeltaCache().getAsSortedList());
-        return new PairIteratorWithLock<>(mergedPairIterator,
-                new OptimisticLock(versionController), getId().toString());
-    }
-
-    public void forceCompact() {
-        if (!segmentPropertiesManager.getCacheDeltaFileNames().isEmpty()) {
-            segmentCompacter.forceCompact();
-        }
-    }
-
     /**
-     * Method should be called just from inside of this package. Method open
-     * direct writer to scarce index and main sst file.
-     * 
-     * Writer should be opend and closed as one atomic operation.
-     * 
-     * @return return segment writer object
-     */
-    void executeFullWriteTx(final WriterFunction<K, V> writeFunction) {
-        openFullWriteTx().execute(writeFunction);
-    }
-
-    WriteTransaction<K, V> openFullWriteTx() {
-        return new SegmentFullWriterTx<>(segmentFiles, segmentPropertiesManager,
-                segmentConf.getMaxNumberOfKeysInChunk(),
-                segmentDataProvider, deltaCacheController);
-    }
-
-    /**
-     * Allows to open writer that will write to delta cache. When number of keys
-     * in segment exceeds certain threshold, delta cache will be flushed to
-     * disk.
-     * 
-     * It's not necesarry to run it in transaction because it's always new file.
-     */
-    public PairWriter<K, V> openDeltaCacheWriter() {
-        versionController.changeVersion();
-        return new SegmentDeltaCacheCompactingWriter<>(segmentCompacter,
-                deltaCacheController);
-    }
-
-    public V get(final K key) {
-        final SegmentDeltaCache<K, V> deltaCache = segmentDataProvider
-                .getSegmentDeltaCache();
-        final BloomFilter<K> bloomFilter = segmentDataProvider
-                .getBloomFilter();
-        final ScarceIndex<K> scarceIndex = segmentDataProvider
-                .getScarceIndex();
-        return segmentSearcher.get(key, deltaCache, bloomFilter, scarceIndex);
-    }
-
-    /**
-     * Create new segment.
-     * 
-     * @param segmentId rqeuired segment id
-     * @return initialized segment
-     */
-    public Segment<K, V> createSegment(SegmentId segmentId) {
-        return segmentFactory.createSegment(segmentId);
-    }
-
-    /**
-     * Returns a helper responsible for executing a split of this segment into
-     * two parts when the number of keys grows beyond a configured threshold.
-     * <p>
-     * The returned {@link SegmentSplitter} performs the splitting algorithm
-     * using a precomputed {@link SegmentSplitterPlan}. Callers are expected to
-     * decide when to split (e.g., via {@link #getSegmentSplitterPolicy()} and
-     * index configuration) and then invoke the splitter with a newly allocated
-     * {@link SegmentId} for the lower half.
+     * Returns current statistics of this segment (e.g., number of keys in delta
+     * cache, index, and scarce index).
      *
-     * @return the splitter bound to this segment
+     * @return immutable snapshot of segment statistics
      */
-    public SegmentSplitter<K, V> getSegmentSplitter() {
-        return segmentSplitter;
-    }
+    SegmentStats getStats();
 
     /**
-     * Returns the policy object that estimates the effective number of keys in
-     * this segment (on-disk + delta cache) and advises whether a compaction
-     * should take place before attempting to split.
-     * <p>
-     * Typical usage is to create a {@link SegmentSplitterPlan} from this
-     * policy, evaluate whether the split should occur based on index limits,
-     * and only then execute the split via {@link #getSegmentSplitter()}.
+     * Returns the total number of keys in this segment (delta cache + on-disk
+     * index). Tombstones are accounted for according to implementation rules.
      *
-     * @return the splitter policy associated with this segment
+     * @return total number of keys visible to readers
      */
-    public SegmentSplitterPolicy<K, V> getSegmentSplitterPolicy() {
-        return segmentSplitterPolicy;
-    }
+    long getNumberOfKeys();
 
-    @Override
-    public void close() {
-        logger.debug("Closing segment '{}'", segmentFiles.getId());
-    }
+    /**
+     * Optionally compacts the segment if the compaction policy recommends it.
+     * Implementations may be a no-op when compaction is not needed.
+     */
+    void optionallyCompact();
 
-    public SegmentId getId() {
-        return segmentFiles.getId();
-    }
+    /**
+     * Forces compaction of this segment regardless of the current policy. This
+     * is typically an expensive, synchronous operation that rewrites on-disk
+     * data and updates related metadata.
+     */
+    void forceCompact();
 
-    @Override
-    public int getVersion() {
-        return versionController.getVersion();
-    }
+    /**
+     * Validates that the logical contents of this segment are consistent.
+     * Implementations may throw if an inconsistency is detected. When
+     * successful, returns the last key encountered or {@code null} if the
+     * segment is empty.
+     *
+     * @return last key in the segment, or {@code null} when empty
+     * @throws org.hestiastore.index.IndexException when keys are not strictly
+     *                                              increasing or data are
+     *                                              otherwise inconsistent
+     */
+    K checkAndRepairConsistency();
 
-    public SegmentFiles<K, V> getSegmentFiles() {
-        return segmentFiles;
-    }
+    /**
+     * Opens a read iterator over a consistent snapshot of the segment that
+     * merges the delta cache with the on-disk index. The caller is responsible
+     * for closing the returned iterator.
+     *
+     * Delta cache in already loaded into memory. Delta cache statys in memory
+     * until while segment in unloaded.
+     * 
+     * @return iterator over key/value pairs in key order
+     */
+    PairIterator<K, V> openIterator();
 
-    public SegmentConf getSegmentConf() {
-        return segmentConf;
-    }
+    /**
+     * Opens a writer that appends updates into the delta cache of this segment.
+     * Implementations may trigger compaction based on policy as data are
+     * written or when the writer is closed. The caller must close the writer to
+     * persist updates.
+     *
+     * @return writer for delta cache updates
+     */
+    PairWriter<K, V> openDeltaCacheWriter();
 
-    public SegmentPropertiesManager getSegmentPropertiesManager() {
-        return segmentPropertiesManager;
-    }
+    /**
+     * Performs a point lookup of a key in this segment, considering both the
+     * delta cache and the on-disk index.
+     *
+     * @param key key to look up (non-null)
+     * @return associated value or {@code null} if not present
+     */
+    V get(K key);
 
+    /**
+     * Creates a new empty segment sharing the same configuration and type
+     * descriptors as this segment, bound to the provided identifier. No data
+     * are copied.
+     *
+     * @param segmentId identifier for the new sibling segment
+     * @return a new segment with identical configuration
+     */
+    Segment<K, V> createSegmentWithSameConfig(SegmentId segmentId);
+
+    /**
+     * Returns the policy object that estimates the effective size of this
+     * segment and advises whether a split should be performed.
+     *
+     * @return splitter policy bound to this segment
+     */
+    SegmentSplitterPolicy<K, V> getSegmentSplitterPolicy();
+
+    /**
+     * Returns a helper responsible for splitting this segment into two parts
+     * (or compacting it, depending on the plan) when limits are exceeded.
+     *
+     * @return splitter bound to this segment
+     */
+    SegmentSplitter<K, V> getSegmentSplitter();
+
+    /**
+     * Returns this segment's identity.
+     *
+     * @return segment id
+     */
+    SegmentId getId();
 }

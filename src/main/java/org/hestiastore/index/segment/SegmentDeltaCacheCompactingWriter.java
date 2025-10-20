@@ -17,8 +17,10 @@ import org.hestiastore.index.Vldtn;
 public class SegmentDeltaCacheCompactingWriter<K, V>
         implements PairWriter<K, V> {
 
+    private final SegmentImpl<K, V> segment;
     private final SegmentCompacter<K, V> segmentCompacter;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
+    private final SegmentCompactionPolicyWithManager compactionPolicy;
 
     /**
      * holds current delta cache writer.
@@ -26,12 +28,17 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
     private SegmentDeltaCacheWriter<K, V> deltaCacheWriter;
 
     public SegmentDeltaCacheCompactingWriter(
+            final SegmentImpl<K, V> segment,
             final SegmentCompacter<K, V> segmentCompacter,
-            final SegmentDeltaCacheController<K, V> deltaCacheController) {
+            final SegmentDeltaCacheController<K, V> deltaCacheController,
+            final SegmentCompactionPolicyWithManager compactionPolicy) {
+        this.segment = Vldtn.requireNonNull(segment, "segment");
         this.segmentCompacter = Vldtn.requireNonNull(segmentCompacter,
                 "segmentCompacter");
         this.deltaCacheController = Vldtn.requireNonNull(deltaCacheController,
                 "deltaCacheController");
+        this.compactionPolicy = Vldtn.requireNonNull(compactionPolicy,
+                "compactionPolicy");
     }
 
     @Override
@@ -39,7 +46,7 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
         if (deltaCacheWriter != null) {
             deltaCacheWriter.close();
             deltaCacheWriter = null;
-            segmentCompacter.optionallyCompact();
+            segmentCompacter.optionallyCompact(segment);
         }
     }
 
@@ -47,11 +54,11 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
     public void write(final Pair<K, V> pair) {
         optionallyOpenDeltaCacheWriter();
         deltaCacheWriter.write(pair);
-        if (segmentCompacter.shouldBeCompactedDuringWriting(
-                deltaCacheWriter.getNumberOfKeys())) {
+        if (compactionPolicy
+                .shouldCompactDuringWriting(deltaCacheWriter.getNumberOfKeys())) {
             deltaCacheWriter.close();
             deltaCacheWriter = null;
-            segmentCompacter.forceCompact();
+            segmentCompacter.forceCompact(segment);
         }
     }
 

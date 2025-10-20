@@ -218,7 +218,7 @@ class SegmentBuilderTest {
 
     @Test
     void test_build_withProvidedChunkFilters() {
-        final Segment<Integer, String> segment = Segment
+        final SegmentImpl<Integer, String> segment = Segment
                 .<Integer, String>builder()//
                 .withDirectory(DIRECTORY)//
                 .withId(SEGMENT_ID)//

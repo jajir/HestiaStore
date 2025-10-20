@@ -13,23 +13,14 @@ import org.slf4j.LoggerFactory;
 public final class SegmentCompacter<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final Segment<K, V> segment;
-    private final SegmentFiles<K, V> segmentFiles;
     private final VersionController versionController;
-    private final SegmentPropertiesManager segmentPropertiesManager;
-    private final SegmentCompactionPolicy compactionPolicy;
+    private final SegmentCompactionPolicyWithManager compactionPolicy;
 
-    public SegmentCompacter(final Segment<K, V> segment,
-            final SegmentFiles<K, V> segmentFiles,
+    public SegmentCompacter(
             final VersionController versionController,
-            final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentCompactionPolicy compactionPolicy) {
-        this.segment = Vldtn.requireNonNull(segment, "segment");
-        this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
+            final SegmentCompactionPolicyWithManager compactionPolicy) {
         this.versionController = Vldtn.requireNonNull(versionController,
                 "versionController");
-        this.segmentPropertiesManager = Vldtn.requireNonNull(
-                segmentPropertiesManager, "segmentPropertiesManager");
         this.compactionPolicy = Vldtn.requireNonNull(compactionPolicy,
                 "compactionPolicy");
     }
@@ -40,43 +31,14 @@ public final class SegmentCompacter<K, V> {
      * 
      * @return return <code>true</code> when segment was compacted.
      */
-    public void optionallyCompact() {
-        if (shouldBeCompacted()) {
-            forceCompact();
+    public void optionallyCompact(final SegmentImpl<K, V> segment) {
+        if (compactionPolicy.shouldCompact()) {
+            forceCompact(segment);
         }
     }
 
-    /**
-     * Provide information if segment should be compacted. Method doesn't load
-     * segment data intomemory.
-     * 
-     * @return return <code>true</code> when segment should be compacted
-     */
-    public boolean shouldBeCompacted() {
-        final SegmentStats stats = segmentPropertiesManager.getSegmentStats();
-        return compactionPolicy.shouldCompact(stats);
-    }
-
-    /**
-     * Provide information if segment should be compacted.
-     * 
-     * Method should be used during writing data to segment. During writing to
-     * segmrnt is's reasonable to have more datat in deta chache than usually
-     * and compact once after all data writing.
-     * 
-     * @param numberOfKeysInLastDeltaFile required number of keys in last delta
-     *                                    cache file
-     * @return return <code>true</code> when segment should be compacted even
-     *         during writing.
-     */
-    public boolean shouldBeCompactedDuringWriting(
-            final long numberOfKeysInLastDeltaFile) {
-        final SegmentStats stats = segmentPropertiesManager.getSegmentStats();
-        return compactionPolicy
-                .shouldCompactDuringWriting(numberOfKeysInLastDeltaFile, stats);
-    }
-
-    public void forceCompact() {
+    public void forceCompact(final SegmentImpl<K, V> segment) {
+        final SegmentFiles<K, V> segmentFiles = segment.getSegmentFiles();
         logger.debug("Start of compacting '{}'", segmentFiles.getId());
         versionController.changeVersion();
         segment.executeFullWriteTx(writer -> {

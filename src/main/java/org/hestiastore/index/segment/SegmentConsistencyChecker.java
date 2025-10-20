@@ -12,10 +12,10 @@ import org.slf4j.LoggerFactory;
 public class SegmentConsistencyChecker<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final Segment<K, V> segment;
+    private final SegmentImpl<K, V> segment;
     private final Comparator<K> keyComparator;
 
-    SegmentConsistencyChecker(final Segment<K, V> segment,
+    SegmentConsistencyChecker(final SegmentImpl<K, V> segment,
             final Comparator<K> keyComparator) {
         this.segment = Vldtn.requireNonNull(segment, "segment");
         this.keyComparator = Vldtn.requireNonNull(keyComparator,

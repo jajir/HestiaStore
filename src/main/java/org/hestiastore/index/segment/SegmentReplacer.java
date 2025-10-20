@@ -27,7 +27,7 @@ final class SegmentReplacer<K, V> {
                 "targetSegmentFiles");
     }
 
-    void replaceWithLower(final Segment<K, V> lowerSegment) {
+    void replaceWithLower(final SegmentImpl<K, V> lowerSegment) {
         Vldtn.requireNonNull(lowerSegment, "lowerSegment");
         filesRenamer.renameFiles(lowerSegment.getSegmentFiles(),
                 targetSegmentFiles);
