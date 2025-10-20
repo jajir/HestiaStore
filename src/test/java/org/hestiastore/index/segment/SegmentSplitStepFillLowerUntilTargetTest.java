@@ -1,10 +1,10 @@
 package org.hestiastore.index.segment;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -14,13 +14,12 @@ import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.PairIteratorList;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.WriteTransaction;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.hestiastore.index.directory.MemDirectory;
 
 @ExtendWith(MockitoExtension.class)
 class SegmentSplitStepFillLowerUntilTargetTest {
