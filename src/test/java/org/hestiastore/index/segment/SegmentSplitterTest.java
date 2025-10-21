@@ -153,13 +153,13 @@ class SegmentSplitterTest {
         // mock writing lower part to new segment
         when(segment.createSegmentWithSameConfig(SEGMENT_ID)).thenReturn(lowerSegment);
         when(lowerSegment.openFullWriteTx()).thenReturn(lowerSegmentWriteTx);
-        when(lowerSegmentWriteTx.openWriter())
+        when(lowerSegmentWriteTx.open())
                 .thenReturn(lowerSegmentFullWriter);
 
         // mock writing upper part to current segment
 
         when(segment.openFullWriteTx()).thenReturn(segmentFullWriterTx);
-        when(segmentFullWriterTx.openWriter()).thenReturn(segmentFullWriter);
+        when(segmentFullWriterTx.open()).thenReturn(segmentFullWriter);
 
         final SegmentSplitterPolicy<String, String> policy = new SegmentSplitterPolicy<>(
                 segmentPropertiesManager, deltaCacheController);

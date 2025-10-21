@@ -77,7 +77,7 @@ public class DataBlockFile {
      *
      * @return a writer transaction for the data block file
      */
-    public DataBlockWriterTx getDataBlockWriterTx() {
+    public DataBlockWriterTx openWriterTx() {
         return new DataBlockWriterTx(fileName, directory, blockSize);
     }
 

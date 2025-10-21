@@ -111,7 +111,7 @@ class SegmentSplitStepFillLowerUntilTargetTest {
         final PairWriter<Integer, String> writer = org.mockito.Mockito
                 .mock(PairWriter.class);
         when(lower.openFullWriteTx()).thenReturn(tx);
-        when(tx.openWriter()).thenReturn(writer);
+        when(tx.open()).thenReturn(writer);
 
         final List<Pair<Integer, String>> data = List.of(Pair.of(1, "a"),
                 Pair.of(2, "b"), Pair.of(3, "c"), Pair.of(4, "d"));

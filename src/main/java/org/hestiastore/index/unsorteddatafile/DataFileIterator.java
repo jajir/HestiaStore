@@ -41,11 +41,25 @@ public class DataFileIterator<K, V> implements PairIteratorWithCurrent<K, V> {
         tryToReadNext();
     }
 
+    /**
+     * Indicates whether another key/value pair is available in the underlying
+     * file. The method does not advance the iterator.
+     *
+     * @return {@code true} when a subsequent entry can be returned by
+     *         {@link #next()}, otherwise {@code false}
+     */
     @Override
     public boolean hasNext() {
         return next != null;
     }
 
+    /**
+     * Returns the next key/value pair from the file and advances the iterator.
+     *
+     * @return the next {@link Pair}
+     * @throws NoSuchElementException if the iterator has already been
+     *                                exhausted
+     */
     @Override
     public Pair<K, V> next() {
         if (next == null) {
@@ -66,11 +80,23 @@ public class DataFileIterator<K, V> implements PairIteratorWithCurrent<K, V> {
         }
     }
 
+    /**
+     * Releases the underlying {@link FileReader}. It is safe to call multiple
+     * times.
+     */
     @Override
     public void close() {
         reader.close();
     }
 
+    /**
+     * Returns the most recently returned pair, if any. The value is only
+     * present after the first successful call to {@link #next()} and remains
+     * unchanged until the iterator advances again.
+     *
+     * @return optional containing the current pair or empty when iteration has
+     *         not started yet
+     */
     @Override
     public Optional<Pair<K, V>> getCurrent() {
         return Optional.ofNullable(current);

@@ -39,7 +39,7 @@ class IntegrationUnsortedDataFileTest {
 
         final UnsortedDataFileWriterTx<Integer, String> writerTx = unsorted
                 .openWriterTx();
-        try (PairWriter<Integer, String> writer = writerTx.openWriter()) {
+        try (PairWriter<Integer, String> writer = writerTx.open()) {
             writer.write(Pair.of(4, "here"));
             writer.write(Pair.of(-12, "we"));
             writer.write(Pair.of(98, "go"));

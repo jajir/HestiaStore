@@ -76,10 +76,9 @@ final class BloomFilterImpl<K> implements BloomFilter<K> {
     }
 
     @Override
-    public BloomFilterWriter<K> openWriter() {
-        return new BloomFilterWriter<>(convertorToBytes,
-                new Hash(new BitArray(indexSizeInBytes), numberOfHashFunctions),
-                this);
+    public BloomFilterWriterTx<K> openWriteTx() {
+        return new BloomFilterWriterTx<>(convertorToBytes,
+                numberOfHashFunctions, indexSizeInBytes, this);
     }
 
     @Override

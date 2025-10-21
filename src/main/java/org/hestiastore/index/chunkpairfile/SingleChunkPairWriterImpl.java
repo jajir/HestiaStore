@@ -41,7 +41,7 @@ public class SingleChunkPairWriterImpl<K, V>
                 .withDiskIoBufferSize(1024)//
                 .build();
         this.txWriter = sortedDataFile.openWriterTx();
-        this.writer = txWriter.openWriter();
+        this.writer = txWriter.open();
     }
 
     @Override

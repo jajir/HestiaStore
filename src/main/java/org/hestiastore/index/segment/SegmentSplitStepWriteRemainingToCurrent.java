@@ -20,7 +20,7 @@ final class SegmentSplitStepWriteRemainingToCurrent<K, V>
         Vldtn.requireNonNull(state.getLowerSegment(), "lowerSegment");
         final WriteTransaction<K, V> segmentWriteTx = ctx.getSegment()
                 .openFullWriteTx();
-        try (PairWriter<K, V> writer = segmentWriteTx.openWriter()) {
+        try (PairWriter<K, V> writer = segmentWriteTx.open()) {
             while (state.getIterator().hasNext()) {
                 final Pair<K, V> pair = state.getIterator().next();
                 writer.write(pair);

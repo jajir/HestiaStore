@@ -6,6 +6,7 @@ import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilterWriter;
+import org.hestiastore.index.bloomfilter.BloomFilterWriterTx;
 import org.hestiastore.index.chunkpairfile.ChunkPairFileWriter;
 import org.hestiastore.index.chunkstore.CellPosition;
 
@@ -30,6 +31,7 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
     private final AtomicLong keyCounter = new AtomicLong(0L);
     private final PairWriter<K, Integer> scarceWriter;
     private final ChunkPairFileWriter<K, V> indexWriter;
+    private final BloomFilterWriterTx<K> bloomFilterWriterTx;
     private final BloomFilterWriter<K> bloomFilterWriter;
     private Pair<K, V> lastPair = null;
 
@@ -45,8 +47,9 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
         Vldtn.requireNonNull(segmentCacheDataProvider,
                 "segmentCacheDataProvider");
         segmentCacheDataProvider.invalidate();
-        bloomFilterWriter = Vldtn.requireNonNull(
-                segmentCacheDataProvider.getBloomFilter().openWriter(),
+        bloomFilterWriterTx = segmentCacheDataProvider.getBloomFilter()
+                .openWriteTx();
+        bloomFilterWriter = Vldtn.requireNonNull(bloomFilterWriterTx.open(),
                 "bloomFilterWriter");
     }
 
@@ -84,7 +87,7 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
         // close all resources
         scarceWriter.close();
         indexWriter.close();
-        bloomFilterWriter.close();
+        bloomFilterWriterTx.commit();
     }
 
     public long getNumberKeys() {

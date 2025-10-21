@@ -19,7 +19,15 @@ public interface WriteTransaction<K, V> extends Commitable {
      *
      * @return a PairWriter instance for writing pairs
      */
-    PairWriter<K, V> openWriter();
+    default PairWriter<K, V> open() {
+        if (this instanceof GuardedWriteTransaction) {
+            @SuppressWarnings("unchecked")
+            final GuardedWriteTransaction<PairWriter<K, V>> transaction = (GuardedWriteTransaction<PairWriter<K, V>>) this;
+            return transaction.open();
+        }
+        throw new UnsupportedOperationException(
+                "Implementations must override open()");
+    }
 
     /**
      * Method execute write operation. It can be used directly of as pattern how
@@ -29,7 +37,7 @@ public interface WriteTransaction<K, V> extends Commitable {
      * @param writeFunction the function to apply
      */
     default void execute(final WriterFunction<K, V> writeFunction) {
-        try (PairWriter<K, V> writer = openWriter()) {
+        try (PairWriter<K, V> writer = open()) {
             writeFunction.apply(writer);
         }
         commit();

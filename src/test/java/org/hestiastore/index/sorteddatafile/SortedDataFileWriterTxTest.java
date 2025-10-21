@@ -14,7 +14,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Reproduces a real-life failure where SortedDataFileWriterTx commits by
- * renaming a non-existent temporary file (".tmp") because openWriter() writes
+ * renaming a non-existent temporary file (".tmp") because open() writes
  * into the final file name instead of the temp one.
  *
  * Expected: commit should succeed (writer writes to temp and commit renames
@@ -37,7 +37,7 @@ class SortedDataFileWriterTxTest {
         final SortedDataFileWriterTx<String, String> tx = new SortedDataFileWriterTx<>(
                 fileName, dir, bufferSize, td, td);
 
-        try (final PairWriter<String, String> w = tx.openWriter()) {
+        try (final PairWriter<String, String> w = tx.open()) {
             w.write(Pair.of("K", "V"));
         }
 

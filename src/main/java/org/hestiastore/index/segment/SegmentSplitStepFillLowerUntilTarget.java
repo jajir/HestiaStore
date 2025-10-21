@@ -19,7 +19,7 @@ final class SegmentSplitStepFillLowerUntilTarget<K, V>
         Vldtn.requireNonNull(state.getIterator(), "iterator");
         final WriteTransaction<K, V> lowerSegmentWriteTx = state
                 .getLowerSegment().openFullWriteTx();
-        try (PairWriter<K, V> writer = lowerSegmentWriteTx.openWriter()) {
+        try (PairWriter<K, V> writer = lowerSegmentWriteTx.open()) {
             while (ctx.getPlan().getLowerCount() < ctx.getPlan().getHalf()
                     && state.getIterator().hasNext()) {
                 final Pair<K, V> pair = state.getIterator().next();

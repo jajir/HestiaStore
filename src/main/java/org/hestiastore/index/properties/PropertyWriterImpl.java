@@ -2,7 +2,9 @@ package org.hestiastore.index.properties;
 
 import java.util.Map;
 
-final class PropertyWriterImpl implements PropertyWriter {
+import org.hestiastore.index.CloseableResource;
+
+final class PropertyWriterImpl implements PropertyWriter, CloseableResource {
 
     private final Map<String, String> workingCopy;
 
@@ -37,5 +39,10 @@ final class PropertyWriterImpl implements PropertyWriter {
     public PropertyWriter setBoolean(final String propertyKey,
             final boolean value) {
         return setString(propertyKey, String.valueOf(value));
+    }
+
+    @Override
+    public void close() {
+        // no-op, provided for transactional compatibility
     }
 }

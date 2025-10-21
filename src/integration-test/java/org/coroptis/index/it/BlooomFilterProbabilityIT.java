@@ -4,6 +4,7 @@ import java.util.Random;
 
 import org.hestiastore.index.bloomfilter.BloomFilter;
 import org.hestiastore.index.bloomfilter.BloomFilterWriter;
+import org.hestiastore.index.bloomfilter.BloomFilterWriterTx;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.AfterEach;
@@ -42,13 +43,14 @@ class BlooomFilterProbabilityIT {
     @Test
     void test_probability() {
         long cx = 0;
-        try (final BloomFilterWriter<Long> writer = bloomFilter.openWriter()) {
-            for (long i = 0; i < WRITE_KEYS_IN_FILTER; i++) {
-                if (!writer.write(i)) {
-                    cx++;
-                }
+        final BloomFilterWriterTx<Long> tx = bloomFilter.openWriteTx();
+        final BloomFilterWriter<Long> writer = tx.open();
+        for (long i = 0; i < WRITE_KEYS_IN_FILTER; i++) {
+            if (!writer.write(i)) {
+                cx++;
             }
         }
+        tx.commit();
         logger.info("Number of keys that were not stored: {}", cx);
 
         /**

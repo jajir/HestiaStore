@@ -41,7 +41,7 @@ public class ChunkPairFileWriterTx<K, V> implements Commitable {
      * @return the opened chunk pair file writer
      */
     public ChunkPairFileWriter<K, V> openWriter() {
-        return new ChunkPairFileWriter<>(chunkStoreWriterTx.openWriter(),
+        return new ChunkPairFileWriter<>(chunkStoreWriterTx.open(),
                 keyTypeDescriptor, valueTypeDescriptor);
     }
 

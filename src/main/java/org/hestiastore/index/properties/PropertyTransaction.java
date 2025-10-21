@@ -1,21 +1,50 @@
 package org.hestiastore.index.properties;
 
-/**
- * Transaction for mutating property changes that must propagate updates via a
- * dedicated {@link PropertyWriter}.
- */
-public interface PropertyTransaction extends AutoCloseable {
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 
-    /**
-     * Opens a writer that stages updates to the underlying property map.
-     */
-    PropertyWriter openPropertyWriter();
+import org.hestiastore.index.GuardedWriteTransaction;
+import org.hestiastore.index.Vldtn;
 
-    /**
-     * Persists any pending changes. Implementations must be idempotent so that
-     * repeated invocations have no additional effect. Calling this method is
-     * optional; omitting it leaves the staged changes unapplied.
-     */
+public final class PropertyTransaction
+        extends GuardedWriteTransaction<PropertyWriterImpl>
+        implements AutoCloseable {
+
+    private final Map<String, String> workingCopy;
+    private final Properties target;
+    private final PropertyStoreimpl store;
+
+    PropertyTransaction(final PropertyStoreimpl store,
+            final Properties target) {
+        this.store = Vldtn.requireNonNull(store, "store");
+        this.target = Vldtn.requireNonNull(target, "target");
+        this.workingCopy = new HashMap<>();
+        for (final String key : target.stringPropertyNames()) {
+            workingCopy.put(key, target.getProperty(key));
+        }
+    }
+
+    public PropertyWriter openPropertyWriter() {
+        return open();
+    }
+
     @Override
-    void close();
+    protected PropertyWriterImpl doOpen() {
+        return new PropertyWriterImpl(workingCopy);
+    }
+
+    @Override
+    protected void doCommit(final PropertyWriterImpl resource) {
+        resource.close();
+    }
+
+    @Override
+    public void close() {
+        target.clear();
+        for (final Map.Entry<String, String> entry : workingCopy.entrySet()) {
+            target.setProperty(entry.getKey(), entry.getValue());
+        }
+        store.writeToDisk(target);
+    }
 }

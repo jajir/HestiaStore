@@ -1,11 +1,15 @@
 package org.hestiastore.index.scarceindex;
 
+import org.hestiastore.index.GuardedPairWriter;
+import org.hestiastore.index.GuardedWriteTransaction;
 import org.hestiastore.index.PairWriter;
-import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.WriteTransaction;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.sorteddatafile.SortedDataFileWriterTx;
 
-public class ScarceIndexWriterTx<K> implements WriteTransaction<K, Integer> {
+public class ScarceIndexWriterTx<K>
+        extends GuardedWriteTransaction<PairWriter<K, Integer>>
+        implements WriteTransaction<K, Integer> {
 
     private final ScarceIndex<K> scarceIndex;
     private final SortedDataFileWriterTx<K, Integer> writerTx;
@@ -17,14 +21,14 @@ public class ScarceIndexWriterTx<K> implements WriteTransaction<K, Integer> {
     }
 
     @Override
-    public PairWriter<K, Integer> openWriter() {
-        return writerTx.openWriter();
+    protected PairWriter<K, Integer> doOpen() {
+        return new GuardedPairWriter<>(writerTx.open());
     }
 
     @Override
-    public void commit() {
+    protected void doCommit(final PairWriter<K, Integer> writer) {
+        writer.close();
         writerTx.commit();
         scarceIndex.loadCache();
     }
-
 }

@@ -17,12 +17,10 @@ public final class BloomFilterNull<K> implements BloomFilter<K> {
     private final BloomFilterStats stats = new BloomFilterStats();
 
     @Override
-    public BloomFilterWriter<K> openWriter() {
-        // Create a tiny hash structure so calls succeed without touching disk.
-        final Hash hash = new Hash(new BitArray(1), 1);
+    public BloomFilterWriterTx<K> openWriteTx() {
         @SuppressWarnings("unchecked")
         final ConvertorToBytes<K> convertor = (ConvertorToBytes<K>) NO_OP_CONVERTOR;
-        return new BloomFilterWriter<>(convertor, hash, this);
+        return new BloomFilterWriterTx<>(convertor, 1, 1, this);
     }
 
     @Override

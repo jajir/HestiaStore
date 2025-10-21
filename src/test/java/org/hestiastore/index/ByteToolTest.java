@@ -24,9 +24,9 @@ class ByteToolTest {
         testBytes("ahoj", "", 0);
         testBytes("", "", 0);
 
-        assertThrows(NullPointerException.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> ByteTool.countMatchingPrefixBytes(BYTES_EMPTY_STR, null));
-        assertThrows(NullPointerException.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> ByteTool.countMatchingPrefixBytes(null, BYTES_EMPTY_STR));
     }
 
@@ -48,7 +48,7 @@ class ByteToolTest {
                 () -> ByteTool.getRemainingBytesAfterIndex(5, BYTES_AHOJ_STR));
         assertThrows(IllegalArgumentException.class,
                 () -> ByteTool.getRemainingBytesAfterIndex(-1, BYTES_AHOJ_STR));
-        assertThrows(NullPointerException.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> ByteTool.getRemainingBytesAfterIndex(0, null));
     }
 
