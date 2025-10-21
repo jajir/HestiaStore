@@ -48,4 +48,23 @@ public final class ByteTool {
         System.arraycopy(full, index, out, 0, out.length);
         return out;
     }
+
+    /**
+     * Concatenates two byte arrays into a new array containing the contents of
+     * {@code first} followed by {@code second}.
+     *
+     * @param first  non-null first array
+     * @param second non-null second array
+     * @return new array comprising both inputs
+     * @throws IllegalArgumentException if any argument is {@code null}
+     */
+    public static byte[] concatenate(final byte[] first,
+            final byte[] second) {
+        Vldtn.requireNonNull(first, "first");
+        Vldtn.requireNonNull(second, "second");
+        final byte[] out = new byte[first.length + second.length];
+        System.arraycopy(first, 0, out, 0, first.length);
+        System.arraycopy(second, 0, out, first.length, second.length);
+        return out;
+    }
 }
