@@ -1,5 +1,6 @@
 package org.hestiastore.index.sorteddatafile;
 
+import org.hestiastore.index.ByteTool;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
 import org.hestiastore.index.datatype.TypeReader;
@@ -45,7 +46,7 @@ public class DiffKeyReader<K> implements TypeReader<K> {
         final byte[] diffBytes = new byte[keyLengthInBytes];
         read(fileReader, diffBytes);
         final byte[] sharedBytes = getBytes(previousKeyBytes, sharedByteLength);
-        final byte[] keyBytes = concatenateArrays(sharedBytes, diffBytes);
+        final byte[] keyBytes = ByteTool.concatenate(sharedBytes, diffBytes);
         previousKeyBytes = keyBytes;
         return keyConvertor.fromBytes(keyBytes);
     }
@@ -62,16 +63,6 @@ public class DiffKeyReader<K> implements TypeReader<K> {
     private byte[] getBytes(final byte[] bytes, final int howMany) {
         final byte[] out = new byte[howMany];
         System.arraycopy(bytes, 0, out, 0, howMany);
-        return out;
-    }
-
-    // TODO move it to ByteTool class
-    private byte[] concatenateArrays(final byte[] firstBytes,
-            final byte[] secondBytes) {
-        final byte[] out = new byte[firstBytes.length + secondBytes.length];
-        System.arraycopy(firstBytes, 0, out, 0, firstBytes.length);
-        System.arraycopy(secondBytes, 0, out, firstBytes.length,
-                secondBytes.length);
         return out;
     }
 

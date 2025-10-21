@@ -61,4 +61,18 @@ class ByteToolTest {
         assertEquals(expectedResult, ret);
     }
 
+    @Test
+    void test_concatenate() {
+        final byte[] first = new byte[] { 1, 2 };
+        final byte[] second = new byte[] { 3, 4, 5 };
+        final byte[] result = ByteTool.concatenate(first, second);
+
+        assertEquals(5, result.length);
+        assertEquals(1, result[0]);
+        assertEquals(2, result[1]);
+        assertEquals(3, result[2]);
+        assertEquals(4, result[3]);
+        assertEquals(5, result[4]);
+    }
+
 }
