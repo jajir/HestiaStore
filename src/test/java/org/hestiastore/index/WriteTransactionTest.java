@@ -30,7 +30,7 @@ class WriteTransactionTest {
                 new WriteTransaction<String, String>() {
 
                     @Override
-                    public PairWriter<String, String> openWriter() {
+                    public PairWriter<String, String> open() {
                         return pairWriter;
                     }
 
@@ -58,7 +58,7 @@ class WriteTransactionTest {
                 new WriteTransaction<String, String>() {
 
                     @Override
-                    public PairWriter<String, String> openWriter() {
+                    public PairWriter<String, String> open() {
                         return pairWriter;
                     }
 
@@ -89,7 +89,7 @@ class WriteTransactionTest {
                 new WriteTransaction<String, String>() {
 
                     @Override
-                    public PairWriter<String, String> openWriter() {
+                    public PairWriter<String, String> open() {
                         return pairWriter;
                     }
 
@@ -115,12 +115,12 @@ class WriteTransactionTest {
     }
 
     @Test
-    void test_exception_during_openWriter() {
+    void test_exception_during_open() {
         final WriteTransaction<String, String> testTransaction = spy(
                 new WriteTransaction<String, String>() {
 
                     @Override
-                    public PairWriter<String, String> openWriter() {
+                    public PairWriter<String, String> open() {
                         throw new IndexException("open writer exception");
                     }
 

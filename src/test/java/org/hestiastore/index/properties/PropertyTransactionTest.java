@@ -2,6 +2,7 @@ package org.hestiastore.index.properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 
 import java.util.Properties;
@@ -13,21 +14,21 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class PropertyTransactionImplTest {
+class PropertyTransactionTest {
 
     private Properties target;
 
     @Mock
     private PropertyStoreimpl store;
 
-    private PropertyTransactionImpl transaction;
+    private PropertyTransaction transaction;
 
     @BeforeEach
     void setUp() {
         target = new Properties();
         target.setProperty("alpha", "1");
         target.setProperty("beta", "2");
-        transaction = new PropertyTransactionImpl(store, target);
+        transaction = new PropertyTransaction(store, target);
     }
 
     @Test
@@ -51,7 +52,7 @@ class PropertyTransactionImplTest {
     @Test
     void writer_initialises_with_snapshot_values() {
         target.setProperty("delta", "original");
-        transaction = new PropertyTransactionImpl(store, target);
+        transaction = new PropertyTransaction(store, target);
 
         final PropertyWriter writer = transaction.openPropertyWriter();
         writer.setString("epsilon", "new-value");
@@ -61,5 +62,12 @@ class PropertyTransactionImplTest {
         assertEquals("original", target.getProperty("delta"));
         assertEquals("new-value", target.getProperty("epsilon"));
         verify(store).writeToDisk(target);
+    }
+
+    @Test
+    void opening_writer_twice_throws() {
+        transaction.openPropertyWriter();
+        assertThrows(IllegalStateException.class,
+                () -> transaction.openPropertyWriter());
     }
 }

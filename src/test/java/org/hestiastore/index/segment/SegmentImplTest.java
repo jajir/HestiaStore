@@ -18,6 +18,7 @@ import org.hestiastore.index.PairIteratorWithCurrent;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.bloomfilter.BloomFilter;
 import org.hestiastore.index.bloomfilter.BloomFilterWriter;
+import org.hestiastore.index.bloomfilter.BloomFilterWriterTx;
 import org.hestiastore.index.chunkpairfile.ChunkPairFile;
 import org.hestiastore.index.chunkpairfile.ChunkPairFileWriter;
 import org.hestiastore.index.chunkpairfile.ChunkPairFileWriterTx;
@@ -69,6 +70,8 @@ class SegmentImplTest {
     @Mock
     private BloomFilterWriter<Integer> bloomFilterWriter;
     @Mock
+    private BloomFilterWriterTx<Integer> bloomFilterWriterTx;
+    @Mock
     private ScarceIndex<Integer> scarceIndex;
     @Mock
     private ChunkPairFile<Integer, String> chunkPairFile;
@@ -102,14 +105,15 @@ class SegmentImplTest {
         when(chunkPairFile.openIterator()).thenReturn(indexIterator);
         when(segmentFiles.getScarceIndex()).thenReturn(scarceIndex);
         when(scarceIndex.openWriterTx()).thenReturn(scarceWriterTx);
-        when(scarceWriterTx.openWriter()).thenReturn(scarcePairWriter);
+        when(scarceWriterTx.open()).thenReturn(scarcePairWriter);
         doNothing().when(scarceIndex).loadCache();
         when(deltaCacheController.getDeltaCache()).thenReturn(deltaCache);
         when(deltaCache.getAsSortedList()).thenReturn(List.of());
         when(indexIterator.hasNext()).thenReturn(false);
         when(segmentDataProvider.getSegmentDeltaCache()).thenReturn(deltaCache);
         when(segmentDataProvider.getBloomFilter()).thenReturn(bloomFilter);
-        when(bloomFilter.openWriter()).thenReturn(bloomFilterWriter);
+        when(bloomFilter.openWriteTx()).thenReturn(bloomFilterWriterTx);
+        when(bloomFilterWriterTx.open()).thenReturn(bloomFilterWriter);
         doNothing().when(segmentDataProvider).invalidate();
         when(segmentDataProvider.getScarceIndex()).thenReturn(scarceIndex);
 

@@ -1,7 +1,5 @@
 package org.hestiastore.index;
 
-import java.util.Objects;
-
 /**
  * Utility helpers for working with byte arrays.
  */
@@ -20,8 +18,8 @@ public final class ByteTool {
      */
     public static int countMatchingPrefixBytes(final byte[] first,
             final byte[] second) {
-        Objects.requireNonNull(first, "First byte array is null.");
-        Objects.requireNonNull(second, "Second byte array is null.");
+        Vldtn.requireNonNull(first, "first");
+        Vldtn.requireNonNull(second, "second");
 
         final int limit = Math.min(first.length, second.length);
         int index = 0;
@@ -41,7 +39,7 @@ public final class ByteTool {
      */
     public static byte[] getRemainingBytesAfterIndex(final int index,
             final byte[] full) {
-        Objects.requireNonNull(full, "Byte array must not be null.");
+        Vldtn.requireNonNull(full, "full");
         if (index < 0 || index > full.length) {
             throw new IllegalArgumentException(String.format(
                     "Index '%d' is out of range 0..%d", index, full.length));

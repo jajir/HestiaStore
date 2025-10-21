@@ -23,9 +23,10 @@ class BloomFilterNullTest {
     @Test
     void openWriter_allowsSafeOperations() {
         assertDoesNotThrow(() -> {
-            try (BloomFilterWriter<String> writer = bloomFilter.openWriter()) {
-                writer.write("foo");
-            }
+            BloomFilterWriterTx<String> tx = bloomFilter.openWriteTx();
+            BloomFilterWriter<String> writer = tx.open();
+            writer.write("foo");
+            tx.commit();
         });
     }
 }

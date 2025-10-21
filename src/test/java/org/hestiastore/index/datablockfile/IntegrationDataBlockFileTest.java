@@ -37,8 +37,8 @@ public class IntegrationDataBlockFileTest {
     @Test
     void test_write_and_read_one_data_block() {
         // verify write
-        DataBlockWriterTx writerTx = dataBlockFile.getDataBlockWriterTx();
-        try (DataBlockWriter writer = writerTx.openWriter()) {
+        DataBlockWriterTx writerTx = dataBlockFile.openWriterTx();
+        try (DataBlockWriter writer = writerTx.open()) {
             writer.write(TestData.PAYLOAD_1008);
         }
         writerTx.commit();
@@ -54,8 +54,8 @@ public class IntegrationDataBlockFileTest {
     @Test
     void test_write_and_read_two_data_block() {
         // verify write
-        DataBlockWriterTx writerTx = dataBlockFile.getDataBlockWriterTx();
-        try (DataBlockWriter writer = writerTx.openWriter()) {
+        DataBlockWriterTx writerTx = dataBlockFile.openWriterTx();
+        try (DataBlockWriter writer = writerTx.open()) {
             writer.write(TestData.PAYLOAD_1008);
             writer.write(TestData.PAYLOAD_1008_2);
         }
@@ -73,8 +73,8 @@ public class IntegrationDataBlockFileTest {
     @Test
     void test_write_and_read_second_data_block() {
         // verify write
-        DataBlockWriterTx writerTx = dataBlockFile.getDataBlockWriterTx();
-        try (DataBlockWriter writer = writerTx.openWriter()) {
+        DataBlockWriterTx writerTx = dataBlockFile.openWriterTx();
+        try (DataBlockWriter writer = writerTx.open()) {
             writer.write(TestData.PAYLOAD_1008);
             writer.write(TestData.PAYLOAD_1008_2);
         }

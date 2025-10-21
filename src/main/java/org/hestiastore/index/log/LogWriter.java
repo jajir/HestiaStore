@@ -31,7 +31,7 @@ public class LogWriter<K, V> {
             UnsortedDataFile<LoggedKey<K>, V> log = logFilesManager
                     .getLogFile(logFileNamessManager.getNewLogFileName());
             writer = new LogUnsortedFileWriterImpl<>(
-                    log.openWriterTx().openWriter());
+                    log.openWriterTx().open());
 
         }
         return writer;

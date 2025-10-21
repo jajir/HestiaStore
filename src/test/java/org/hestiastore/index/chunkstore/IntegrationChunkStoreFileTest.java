@@ -49,7 +49,7 @@ public class IntegrationChunkStoreFileTest {
         // verify write
         ChunkStoreWriterTx writerTx = chunkStoreFile.openWriteTx();
         CellPosition position;
-        try (ChunkStoreWriter writer = writerTx.openWriter()) {
+        try (ChunkStoreWriter writer = writerTx.open()) {
             position = writer.write(TestData.CHUNK_PAYLOAD_154, VERSION);
         }
         writerTx.commit();
@@ -64,7 +64,7 @@ public class IntegrationChunkStoreFileTest {
         // verify write
         ChunkStoreWriterTx writerTx = chunkStoreFile.openWriteTx();
         final CellPosition[] positions = new CellPosition[3];
-        try (ChunkStoreWriter writer = writerTx.openWriter()) {
+        try (ChunkStoreWriter writer = writerTx.open()) {
             positions[0] = writer.write(TestData.CHUNK_PAYLOAD_1008, VERSION);
             positions[1] = writer.write(TestData.CHUNK_PAYLOAD_1008, VERSION);
             positions[2] = writer.write(TestData.CHUNK_PAYLOAD_1008, VERSION);

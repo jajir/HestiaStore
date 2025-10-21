@@ -1,8 +1,10 @@
 package org.hestiastore.index.unsorteddatafile;
 
+import org.hestiastore.index.GuardedPairWriter;
+import org.hestiastore.index.GuardedWriteTransaction;
 import org.hestiastore.index.PairWriter;
-import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.WriteTransaction;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeWriter;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.Directory.Access;
@@ -14,7 +16,9 @@ import org.hestiastore.index.directory.Directory.Access;
  * @param <K> the type of keys
  * @param <V> the type of values
  */
-public class UnsortedDataFileWriterTx<K, V> implements WriteTransaction<K, V> {
+public class UnsortedDataFileWriterTx<K, V>
+        extends GuardedWriteTransaction<PairWriter<K, V>>
+        implements WriteTransaction<K, V> {
 
     private static final String TEMP_FILE_SUFFIX = ".tmp";
     private final String fileName;
@@ -29,8 +33,8 @@ public class UnsortedDataFileWriterTx<K, V> implements WriteTransaction<K, V> {
      * @param fileName            required target file name
      * @param directory           required directory to write to
      * @param diskIoBufferSize    the size of the disk I/O buffer
-     * @param keyTypeDescriptor   required key type descriptor
-     * @param valueTypeDescriptor required value type descriptor
+     * @param keyWriter           required key writer
+     * @param valueWriter         required value writer
      */
     public UnsortedDataFileWriterTx(final String fileName,
             final Directory directory, final int diskIoBufferSize,
@@ -38,48 +42,24 @@ public class UnsortedDataFileWriterTx<K, V> implements WriteTransaction<K, V> {
         this.fileName = Vldtn.requireNonNull(fileName, "fileName");
         this.directory = Vldtn.requireNonNull(directory, "directory");
         this.diskIoBufferSize = diskIoBufferSize;
-
         this.keyWriter = Vldtn.requireNonNull(keyWriter, "keyWriter");
         this.valueWriter = Vldtn.requireNonNull(valueWriter, "valueWriter");
     }
 
-    /**
-     * Opens a UnsortedDataFileWriter to write unsorted key-value pairs to the
-     * temporary file.
-     *
-     * @return a UnsortedDataFileWriter instance
-     */
     @Override
-    public PairWriter<K, V> openWriter() {
-        return openWriter(Access.OVERWRITE);
-    }
-
-    /**
-     * Opens a UnsortedDataFileWriter to write unsorted key-value pairs to the
-     * temporary file.
-     *
-     * @param access required file access mode
-     * @return a UnsortedDataFileWriter instance
-     */
-    public PairWriter<K, V> openWriter(final Access access) {
-        Vldtn.requireNonNull(access, "access");
-        Access used = null;
-        if (directory.isFileExists(fileName)) {
-            used = access;
-        } else {
-            used = Access.OVERWRITE;
-        }
-        return new UnsortedDataFileWriter<>(directory, fileName, keyWriter,
-                valueWriter, used, diskIoBufferSize);
+    protected PairWriter<K, V> doOpen() {
+        final Access access = Access.OVERWRITE;
+        return new GuardedPairWriter<>(new UnsortedDataFileWriter<>(directory,
+                getTempFileName(), keyWriter, valueWriter, access,
+                diskIoBufferSize));
     }
 
     @Override
-    public void commit() {
+    protected void doCommit(final PairWriter<K, V> writer) {
         directory.renameFile(getTempFileName(), fileName);
     }
 
     private String getTempFileName() {
         return fileName + TEMP_FILE_SUFFIX;
     }
-
 }

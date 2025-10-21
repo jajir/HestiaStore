@@ -2,7 +2,7 @@ package org.hestiastore.index.properties;
 
 /**
  * Mutating writer that stages property changes before they are persisted by a
- * {@link PropertyTransaction}.
+ * {@link PropertyTransaction transaction}.
  */
 public interface PropertyWriter {
 

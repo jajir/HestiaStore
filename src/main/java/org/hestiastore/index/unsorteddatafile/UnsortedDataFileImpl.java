@@ -31,17 +31,29 @@ final class UnsortedDataFileImpl<K, V> implements UnsortedDataFile<K, V> {
         this.diskIoBufferSize = diskIoBufferSize;
     }
 
+    /**
+     * Opens a fresh iterator over the current file contents. The caller must
+     * close the iterator when finished.
+     */
     @Override
     public PairIterator<K, V> openIterator() {
         return new DataFileIterator<>(keyReader, valueReader, getFileReader());
     }
 
+    /**
+     * Creates a transactional writer that writes to a temporary file and
+     * promotes it upon commit.
+     */
     @Override
     public UnsortedDataFileWriterTx<K, V> openWriterTx() {
         return new UnsortedDataFileWriterTx<>(fileName, directory,
                 diskIoBufferSize, keyWriter, valueWriter);
     }
 
+    /**
+     * Provides a streaming view over the file contents. When the file does not
+     * exist the returned stream is empty.
+     */
     @Override
     public PairIteratorStreamer<K, V> openStreamer() {
         if (directory.isFileExists(fileName)) {

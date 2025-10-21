@@ -65,7 +65,7 @@ public final class PropertyStoreimpl implements PropertyStore {
     @Override
     public PropertyTransaction beginTransaction() {
         synchronized (properties) {
-            return new PropertyTransactionImpl(this, properties);
+            return new PropertyTransaction(this, properties);
         }
     }
 

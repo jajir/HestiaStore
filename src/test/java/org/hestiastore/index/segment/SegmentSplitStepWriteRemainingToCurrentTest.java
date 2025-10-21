@@ -130,7 +130,7 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
     @Test
     void writes_remaining_and_commits_and_returns_split() {
         when(segment.openFullWriteTx()).thenReturn(tx);
-        when(tx.openWriter()).thenReturn(writer);
+        when(tx.open()).thenReturn(writer);
 
         final var it = new PairIteratorList<Integer, String>(
                 List.of(Pair.of(1, "a"), Pair.of(2, "b")));

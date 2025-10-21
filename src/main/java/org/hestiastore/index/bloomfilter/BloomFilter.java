@@ -14,11 +14,11 @@ public interface BloomFilter<K> extends CloseableResource {
     }
 
     /**
-     * Create a writer that can add new keys into the filter.
+     * Create a transaction that stages writes to the bloom filter.
      *
-     * @return writer instance responsible for updating the backing structure
+     * @return transaction responsible for updating the backing structure
      */
-    BloomFilterWriter<K> openWriter();
+    BloomFilterWriterTx<K> openWriteTx();
 
     /**
      * Determine whether the filter guarantees the key is absent.
