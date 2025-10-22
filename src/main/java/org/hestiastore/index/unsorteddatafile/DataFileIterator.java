@@ -3,6 +3,7 @@ package org.hestiastore.index.unsorteddatafile;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
@@ -15,7 +16,8 @@ import org.hestiastore.index.directory.FileReader;
  * @param <K> the type of keys
  * @param <V> the type of values
  */
-public class DataFileIterator<K, V> implements PairIteratorWithCurrent<K, V> {
+public class DataFileIterator<K, V> extends AbstractCloseableResource
+        implements PairIteratorWithCurrent<K, V> {
 
     private final TypeReader<K> keyTypeReader;
     private final TypeReader<V> valueTypeReader;
@@ -85,7 +87,7 @@ public class DataFileIterator<K, V> implements PairIteratorWithCurrent<K, V> {
      * times.
      */
     @Override
-    public void close() {
+    protected void doClose() {
         reader.close();
     }
 

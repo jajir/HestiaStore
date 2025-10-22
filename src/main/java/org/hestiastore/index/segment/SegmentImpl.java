@@ -1,5 +1,6 @@
 package org.hestiastore.index.segment;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.OptimisticLock;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.PairIteratorWithLock;
@@ -27,7 +28,7 @@ import org.slf4j.LoggerFactory;
  * @param <K> key type stored in this segment
  * @param <V> value type stored in this segment
  */
-public class SegmentImpl<K, V> implements Segment<K, V> {
+public class SegmentImpl<K, V> extends AbstractCloseableResource implements Segment<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final SegmentConf segmentConf;
@@ -219,7 +220,7 @@ public class SegmentImpl<K, V> implements Segment<K, V> {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         logger.debug("Closing segment '{}'", segmentFiles.getId());
     }
 

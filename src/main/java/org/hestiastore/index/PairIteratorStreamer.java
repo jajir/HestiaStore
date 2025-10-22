@@ -10,7 +10,7 @@ import java.util.stream.StreamSupport;
  * @param <K> the type of keys
  * @param <V> the type of values
  */
-public class PairIteratorStreamer<K, V> implements CloseableResource {
+public class PairIteratorStreamer<K, V> extends AbstractCloseableResource {
 
     private final PairIterator<K, V> iterator;
 
@@ -37,11 +37,10 @@ public class PairIteratorStreamer<K, V> implements CloseableResource {
     }
 
     @Override
-    public void close() {
-        if (iterator == null) {
-            return;
+    protected void doClose() {
+        if (iterator != null) {
+            iterator.close();
         }
-        iterator.close();
     }
 
 }

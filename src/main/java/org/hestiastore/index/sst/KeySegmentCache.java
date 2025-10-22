@@ -8,7 +8,7 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
-import org.hestiastore.index.CloseableResource;
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.Vldtn;
@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
  *
  * @param <K>
  */
-public final class KeySegmentCache<K> implements CloseableResource {
+public final class KeySegmentCache<K> extends AbstractCloseableResource {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private static final TypeDescriptorSegmentId tdSegId = new TypeDescriptorSegmentId();
@@ -190,7 +190,7 @@ public final class KeySegmentCache<K> implements CloseableResource {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         optionalyFlush();
     }
 }

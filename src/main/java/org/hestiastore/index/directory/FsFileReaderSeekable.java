@@ -4,9 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.IndexException;
 
-public final class FsFileReaderSeekable implements FileReaderSeekable {
+public final class FsFileReaderSeekable extends AbstractCloseableResource
+        implements FileReaderSeekable {
 
     private final RandomAccessFile raf;
 
@@ -52,7 +54,7 @@ public final class FsFileReaderSeekable implements FileReaderSeekable {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         try {
             raf.close();
         } catch (IOException e) {

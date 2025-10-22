@@ -2,11 +2,13 @@ package org.hestiastore.index.sst;
 
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.Vldtn;
 
-public class PairIteratorSynchronized<K, V> implements PairIterator<K, V> {
+public class PairIteratorSynchronized<K, V> extends AbstractCloseableResource
+        implements PairIterator<K, V> {
 
     private final PairIterator<K, V> iterator;
     private final ReentrantLock lock;
@@ -38,7 +40,7 @@ public class PairIteratorSynchronized<K, V> implements PairIterator<K, V> {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         lock.lock();
         try {
             iterator.close();

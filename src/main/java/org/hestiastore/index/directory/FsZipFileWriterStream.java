@@ -7,9 +7,11 @@ import java.io.IOException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.IndexException;
 
-public final class FsZipFileWriterStream implements FileWriter {
+public final class FsZipFileWriterStream extends AbstractCloseableResource
+        implements FileWriter {
 
     private final ZipOutputStream fio;
 
@@ -28,7 +30,7 @@ public final class FsZipFileWriterStream implements FileWriter {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         try {
             fio.closeEntry();
             fio.close();

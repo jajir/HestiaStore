@@ -5,13 +5,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 
 public class MergeDeltaCacheWithIndexIterator<K, V>
-        implements PairIterator<K, V> {
+        extends AbstractCloseableResource implements PairIterator<K, V> {
 
     private final PairIterator<K, V> mainIterator;
     private final Iterator<Pair<K, V>> deltaCacheIterator;
@@ -42,11 +43,6 @@ public class MergeDeltaCacheWithIndexIterator<K, V>
         this.deltaCurrent = readNextPairFromCache();
 
         advance();
-    }
-
-    @Override
-    public void close() {
-        mainIterator.close();
     }
 
     @Override
@@ -114,5 +110,10 @@ public class MergeDeltaCacheWithIndexIterator<K, V>
         } else {
             return null;
         }
+    }
+
+    @Override
+    protected void doClose() {
+        mainIterator.close();
     }
 }

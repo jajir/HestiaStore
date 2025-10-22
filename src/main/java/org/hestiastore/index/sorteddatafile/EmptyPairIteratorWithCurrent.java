@@ -3,6 +3,7 @@ package org.hestiastore.index.sorteddatafile;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIteratorWithCurrent;
 
@@ -14,7 +15,7 @@ import org.hestiastore.index.PairIteratorWithCurrent;
  * @param <V> the value type
  */
 public class EmptyPairIteratorWithCurrent<K, V>
-        implements PairIteratorWithCurrent<K, V> {
+        extends AbstractCloseableResource implements PairIteratorWithCurrent<K, V> {
 
     @Override
     public boolean hasNext() {
@@ -27,13 +28,13 @@ public class EmptyPairIteratorWithCurrent<K, V>
     }
 
     @Override
-    public void close() {
-        // do nothing
+    public Optional<Pair<K, V>> getCurrent() {
+        return Optional.empty();
     }
 
     @Override
-    public Optional<Pair<K, V>> getCurrent() {
-        return Optional.empty();
+    protected void doClose() {
+        // nothing to release
     }
 
 }

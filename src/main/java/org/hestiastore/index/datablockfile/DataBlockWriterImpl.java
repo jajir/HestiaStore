@@ -1,12 +1,14 @@
 package org.hestiastore.index.datablockfile;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileWriter;
 
 /**
  * Implementation of {@link DataBlockWriter}.
  */
-public class DataBlockWriterImpl implements DataBlockWriter {
+public class DataBlockWriterImpl extends AbstractCloseableResource
+        implements DataBlockWriter {
 
     private final FileWriter fileWriter;
 
@@ -19,7 +21,7 @@ public class DataBlockWriterImpl implements DataBlockWriter {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         fileWriter.close();
     }
 

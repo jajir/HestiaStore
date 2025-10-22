@@ -1,5 +1,6 @@
 package org.hestiastore.index.unsorteddatafile;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.Vldtn;
@@ -12,7 +13,8 @@ import org.hestiastore.index.directory.FileWriter;
  * Streaming writer that appends unsorted key/value pairs to a file using the
  * provided serializers.
  */
-public class UnsortedDataFileWriter<K, V> implements PairWriter<K, V> {
+public class UnsortedDataFileWriter<K, V> extends AbstractCloseableResource
+        implements PairWriter<K, V> {
 
     private final TypeWriter<K> keyWriter;
     private final TypeWriter<V> valueWriter;
@@ -59,7 +61,7 @@ public class UnsortedDataFileWriter<K, V> implements PairWriter<K, V> {
      * Flushes and closes the underlying {@link FileWriter}.
      */
     @Override
-    public void close() {
+    protected void doClose() {
         fileWriter.close();
     }
 }

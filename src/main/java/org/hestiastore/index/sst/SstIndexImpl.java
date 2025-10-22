@@ -2,6 +2,7 @@ package org.hestiastore.index.sst;
 
 import java.util.List;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.F;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
@@ -18,7 +19,8 @@ import org.hestiastore.index.sorteddatafile.PairComparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
+public abstract class SstIndexImpl<K, V> extends AbstractCloseableResource
+        implements IndexInternal<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final IndexConfiguration<K, V> conf;
@@ -194,7 +196,7 @@ public abstract class SstIndexImpl<K, V> implements IndexInternal<K, V> {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         flushCache();
         log.close();
         indexState.onClose(this);

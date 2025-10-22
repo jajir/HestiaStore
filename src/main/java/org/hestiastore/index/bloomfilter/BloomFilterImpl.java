@@ -1,10 +1,10 @@
 package org.hestiastore.index.bloomfilter;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileReader;
-import org.hestiastore.index.directory.FileWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,9 +13,8 @@ import org.slf4j.LoggerFactory;
  *
  * @param <K> key type hashed by the filter
  */
-final class BloomFilterImpl<K> implements BloomFilter<K> {
-
-    private static final String TEMP_FILE_EXTENSION = ".tmp";
+final class BloomFilterImpl<K> extends AbstractCloseableResource
+        implements BloomFilter<K> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -77,27 +76,19 @@ final class BloomFilterImpl<K> implements BloomFilter<K> {
 
     @Override
     public BloomFilterWriterTx<K> openWriteTx() {
-        return new BloomFilterWriterTx<>(convertorToBytes,
-                numberOfHashFunctions, indexSizeInBytes, this);
+        return new BloomFilterWriterTx<>(directory, bloomFilterFileName,
+                convertorToBytes, numberOfHashFunctions, indexSizeInBytes,
+                diskIoBufferSize, this);
     }
 
     @Override
     public void setNewHash(final Hash newHash) {
         Vldtn.requireNonNull(newHash, "newHash");
         this.hash = newHash;
-        try (FileWriter writer = directory.getFileWriter(getTempFileName(),
-                Directory.Access.OVERWRITE, diskIoBufferSize)) {
-            writer.write(hash.getData());
-        }
-        directory.renameFile(getTempFileName(), bloomFilterFileName);
     }
 
     private boolean isExists() {
         return directory.isFileExists(bloomFilterFileName);
-    }
-
-    private String getTempFileName() {
-        return bloomFilterFileName + TEMP_FILE_EXTENSION;
     }
 
     @Override
@@ -133,7 +124,7 @@ final class BloomFilterImpl<K> implements BloomFilter<K> {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         logger.debug("Closing bloom filter for '{}'. {}", relatedObjectName,
                 bloomFilterStats.getStatsString());
     }

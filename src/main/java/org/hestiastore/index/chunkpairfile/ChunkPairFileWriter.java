@@ -1,5 +1,6 @@
 package org.hestiastore.index.chunkpairfile;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.Vldtn;
@@ -15,7 +16,8 @@ import org.hestiastore.index.datatype.TypeDescriptor;
  * @param <K> The type of keys.
  * @param <V> The type of values.
  */
-public class ChunkPairFileWriter<K, V> implements PairWriter<K, V> {
+public class ChunkPairFileWriter<K, V> extends AbstractCloseableResource
+        implements PairWriter<K, V> {
 
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
@@ -60,11 +62,6 @@ public class ChunkPairFileWriter<K, V> implements PairWriter<K, V> {
         return chunkStoreWriter.write(payload, 1);
     }
 
-    @Override
-    public void close() {
-        chunkStoreWriter.close();
-    }
-
     private void openNewChunkPairWriter() {
         if (this.chunkPairWriter != null) {
             throw new IllegalStateException(
@@ -72,6 +69,15 @@ public class ChunkPairFileWriter<K, V> implements PairWriter<K, V> {
         }
         this.chunkPairWriter = new SingleChunkPairWriterImpl<>(
                 keyTypeDescriptor, valueTypeDescriptor);
+    }
+
+    @Override
+    protected void doClose() {
+        if (chunkPairWriter != null) {
+            chunkPairWriter.close();
+            chunkPairWriter = null;
+        }
+        chunkStoreWriter.close();
     }
 
 }

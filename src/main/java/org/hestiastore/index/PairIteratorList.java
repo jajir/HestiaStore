@@ -5,11 +5,11 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
-public class PairIteratorList<K, V> implements PairIteratorWithCurrent<K, V> {
+public class PairIteratorList<K, V> extends AbstractCloseableResource
+        implements PairIteratorWithCurrent<K, V> {
 
     private final Iterator<Pair<K, V>> iterator;
     private Pair<K, V> currentPair = null;
-    private boolean closed = false;
 
     public PairIteratorList(final List<Pair<K, V>> list) {
         this(Vldtn.requireNonNull(list, "list").iterator());
@@ -21,12 +21,12 @@ public class PairIteratorList<K, V> implements PairIteratorWithCurrent<K, V> {
 
     @Override
     public boolean hasNext() {
-        return iterator.hasNext() && !closed;
+        return !wasClosed() && iterator.hasNext();
     }
 
     @Override
     public Optional<Pair<K, V>> getCurrent() {
-        if (closed) {
+        if (wasClosed()) {
             throw new NoSuchElementException();
         }
         return Optional.ofNullable(currentPair);
@@ -34,7 +34,7 @@ public class PairIteratorList<K, V> implements PairIteratorWithCurrent<K, V> {
 
     @Override
     public Pair<K, V> next() {
-        if (closed) {
+        if (wasClosed()) {
             throw new NoSuchElementException();
         }
         currentPair = iterator.next();
@@ -42,8 +42,7 @@ public class PairIteratorList<K, V> implements PairIteratorWithCurrent<K, V> {
     }
 
     @Override
-    public void close() {
-        closed = true;
+    protected void doClose() {
         currentPair = null;
     }
 

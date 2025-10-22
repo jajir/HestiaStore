@@ -1,12 +1,14 @@
 package org.hestiastore.index.datablockfile;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 
 /**
  * Implementation of {@link DataBlockByteReader}.
  */
-public class DataBlockByteReaderImpl implements DataBlockByteReader {
+public class DataBlockByteReaderImpl extends AbstractCloseableResource
+        implements DataBlockByteReader {
 
     private final DataBlockReader dataBlockReader;
     private final int dataBlockPayloadSize;
@@ -42,9 +44,8 @@ public class DataBlockByteReaderImpl implements DataBlockByteReader {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         dataBlockReader.close();
-
     }
 
     @Override

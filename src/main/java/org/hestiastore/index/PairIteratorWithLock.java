@@ -5,7 +5,8 @@ import java.util.NoSuchElementException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PairIteratorWithLock<K, V> implements PairIterator<K, V> {
+public class PairIteratorWithLock<K, V> extends AbstractCloseableResource
+        implements PairIterator<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final PairIterator<K, V> iterator;
@@ -43,7 +44,7 @@ public class PairIteratorWithLock<K, V> implements PairIterator<K, V> {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         iterator.close();
     }
 

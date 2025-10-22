@@ -29,7 +29,6 @@ public abstract class AbstractDataTest {
             final Stream<Pair<M, N>> iterator) {
         final ArrayList<Pair<M, N>> out = new ArrayList<>();
         iterator.forEach(pair -> out.add(pair));
-        iterator.close();
         return out;
     }
 

@@ -8,9 +8,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.IndexException;
 
-public final class FsFileReaderStream implements FileReader {
+public final class FsFileReaderStream extends AbstractCloseableResource
+        implements FileReader {
 
     private final BufferedInputStream bis;
 
@@ -26,7 +28,7 @@ public final class FsFileReaderStream implements FileReader {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         try {
             bis.close();
         } catch (IOException e) {

@@ -29,7 +29,8 @@ public interface PairIterator<K, V>
     public static <M, N> PairIterator<M, N> make(
             final Iterator<Pair<M, N>> iterator) {
         Vldtn.requireNonNull(iterator, "iterator");
-        return new PairIterator<M, N>() {
+        class Adapter extends AbstractCloseableResource
+                implements PairIterator<M, N> {
 
             @Override
             public boolean hasNext() {
@@ -42,10 +43,11 @@ public interface PairIterator<K, V>
             }
 
             @Override
-            public void close() {
+            protected void doClose() {
                 // nothing to close
             }
-        };
+        }
+        return new Adapter();
     }
 
 }

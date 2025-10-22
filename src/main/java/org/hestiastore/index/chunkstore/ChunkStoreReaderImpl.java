@@ -3,13 +3,15 @@ package org.hestiastore.index.chunkstore;
 import java.util.List;
 import java.util.Optional;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datablockfile.DataBlockByteReader;
 
 /**
  * Implementation of {@link ChunkStoreReader}.
  */
-public class ChunkStoreReaderImpl implements ChunkStoreReader {
+public class ChunkStoreReaderImpl extends AbstractCloseableResource
+        implements ChunkStoreReader {
 
     private DataBlockByteReader dataBlockByteReader = null;
     private final ChunkProcessor decodingProcessor;
@@ -30,7 +32,7 @@ public class ChunkStoreReaderImpl implements ChunkStoreReader {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         dataBlockByteReader.close();
     }
 
