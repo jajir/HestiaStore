@@ -1,6 +1,9 @@
 package org.hestiastore.index.bloomfilter;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.datatype.ConvertorToBytes;
+import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.MemDirectory;
 
 /**
  * No-op implementation of {@link BloomFilter}. It allows callers to rely on a
@@ -9,7 +12,8 @@ import org.hestiastore.index.datatype.ConvertorToBytes;
  *
  * @param <K> key type hashed by the filter
  */
-public final class BloomFilterNull<K> implements BloomFilter<K> {
+public final class BloomFilterNull<K> extends AbstractCloseableResource
+        implements BloomFilter<K> {
 
     private static final ConvertorToBytes<Object> NO_OP_CONVERTOR = value -> new byte[] {
             0 };
@@ -20,7 +24,9 @@ public final class BloomFilterNull<K> implements BloomFilter<K> {
     public BloomFilterWriterTx<K> openWriteTx() {
         @SuppressWarnings("unchecked")
         final ConvertorToBytes<K> convertor = (ConvertorToBytes<K>) NO_OP_CONVERTOR;
-        return new BloomFilterWriterTx<>(convertor, 1, 1, this);
+        final Directory directory = new MemDirectory();
+        return new BloomFilterWriterTx<>(directory, "bloomFilterNull",
+                convertor, 1, 1, 1, this);
     }
 
     @Override
@@ -56,7 +62,7 @@ public final class BloomFilterNull<K> implements BloomFilter<K> {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         // Nothing to close.
     }
 }

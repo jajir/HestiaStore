@@ -2,9 +2,9 @@ package org.hestiastore.index.properties;
 
 import java.util.Map;
 
-import org.hestiastore.index.CloseableResource;
+import org.hestiastore.index.AbstractCloseableResource;
 
-final class PropertyWriterImpl implements PropertyWriter, CloseableResource {
+final class PropertyWriterImpl extends AbstractCloseableResource implements PropertyWriter {
 
     private final Map<String, String> workingCopy;
 
@@ -42,7 +42,7 @@ final class PropertyWriterImpl implements PropertyWriter, CloseableResource {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         // no-op, provided for transactional compatibility
     }
 }

@@ -6,12 +6,13 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
 
 public final class MergedPairIterator<K, V>
-        implements PairIteratorWithCurrent<K, V> {
+        extends AbstractCloseableResource implements PairIteratorWithCurrent<K, V> {
 
     private final List<PairIteratorWithCurrent<K, V>> iterators;
     private final Comparator<K> keyComparator;
@@ -126,7 +127,7 @@ public final class MergedPairIterator<K, V>
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         for (final PairIteratorWithCurrent<K, V> iterator : iterators) {
             if (iterator.hasNext()) {
                 iterator.close();

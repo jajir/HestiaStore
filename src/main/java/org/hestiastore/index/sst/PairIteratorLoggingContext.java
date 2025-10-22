@@ -1,11 +1,13 @@
 package org.hestiastore.index.sst;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.Vldtn;
 import org.slf4j.MDC;
 
-public class PairIteratorLoggingContext<K, V> implements PairIterator<K, V> {
+public class PairIteratorLoggingContext<K, V> extends AbstractCloseableResource
+        implements PairIterator<K, V> {
 
     private final PairIterator<K, V> pairIterator;
     private final IndexConfiguration<K, V> indexConf;
@@ -37,7 +39,7 @@ public class PairIteratorLoggingContext<K, V> implements PairIterator<K, V> {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         setContext();
         try {
             pairIterator.close();

@@ -37,6 +37,14 @@ public abstract class GuardedWriteTransaction<T extends CloseableResource>
         if (committed) {
             throw new IllegalStateException("Transaction already committed");
         }
+        if (resource == null) {
+            throw new IllegalStateException(
+                    "Resource is null. Make sure that transaction was opened properly.");
+        }
+        if (!resource.wasClosed()) {
+            throw new IllegalStateException(
+                    "Resource must be closed before commit");
+        }
         committed = true;
         doCommit(resource);
     }

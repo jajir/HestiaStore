@@ -1,5 +1,6 @@
 package org.hestiastore.index.segment;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.Vldtn;
@@ -14,7 +15,8 @@ import org.hestiastore.index.cache.UniqueCache;
  * @param <K>
  * @param <V>
  */
-public final class SegmentDeltaCacheWriter<K, V> implements PairWriter<K, V> {
+public final class SegmentDeltaCacheWriter<K, V> extends AbstractCloseableResource
+        implements PairWriter<K, V> {
 
     /**
      * Cache will contains data written into this delta file.
@@ -54,7 +56,7 @@ public final class SegmentDeltaCacheWriter<K, V> implements PairWriter<K, V> {
      * delta cache.
      */
     @Override
-    public void close() {
+    protected void doClose() {
 
         // store cache
         segmentFiles

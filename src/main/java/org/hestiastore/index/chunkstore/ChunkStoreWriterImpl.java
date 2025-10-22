@@ -2,13 +2,15 @@ package org.hestiastore.index.chunkstore;
 
 import java.util.List;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 
 /**
  * A writer for writing chunks to a chunk store.
  */
-public class ChunkStoreWriterImpl implements ChunkStoreWriter {
+public class ChunkStoreWriterImpl extends AbstractCloseableResource
+        implements ChunkStoreWriter {
 
     private static final long DEFAULT_LONG = -1L;
 
@@ -30,7 +32,7 @@ public class ChunkStoreWriterImpl implements ChunkStoreWriter {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         cellStoreWriter.close();
     }
 

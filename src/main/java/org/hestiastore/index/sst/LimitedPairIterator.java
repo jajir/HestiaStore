@@ -3,11 +3,13 @@ package org.hestiastore.index.sst;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.Vldtn;
 
-public final class LimitedPairIterator<K, V> implements PairIterator<K, V> {
+public final class LimitedPairIterator<K, V> extends AbstractCloseableResource
+        implements PairIterator<K, V> {
 
     private final PairIterator<K, V> iterator;
     private final Comparator<K> keyComparator;
@@ -65,7 +67,7 @@ public final class LimitedPairIterator<K, V> implements PairIterator<K, V> {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         iterator.close();
     }
 

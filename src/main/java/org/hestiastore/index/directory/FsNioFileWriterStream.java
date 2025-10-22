@@ -6,10 +6,12 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.StandardOpenOption;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.directory.Directory.Access;
 
-public final class FsNioFileWriterStream implements FileWriter {
+public final class FsNioFileWriterStream extends AbstractCloseableResource
+        implements FileWriter {
 
     private final FileChannel channel;
 
@@ -65,7 +67,7 @@ public final class FsNioFileWriterStream implements FileWriter {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         try {
             channel.close();
         } catch (IOException e) {

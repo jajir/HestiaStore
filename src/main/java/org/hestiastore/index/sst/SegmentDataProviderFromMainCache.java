@@ -55,7 +55,6 @@ public class SegmentDataProviderFromMainCache<K, V>
 
     @Override
     public void invalidate() {
-        cache.getSegmentData(id).ifPresent(SegmentData::close);
         cache.invalidate(id);
     }
 

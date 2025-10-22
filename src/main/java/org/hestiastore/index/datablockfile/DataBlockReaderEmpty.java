@@ -1,9 +1,12 @@
 package org.hestiastore.index.datablockfile;
 
+import org.hestiastore.index.AbstractCloseableResource;
+
 /**
  * Data block reader that does not read any data.
  */
-public class DataBlockReaderEmpty implements DataBlockReader {
+public class DataBlockReaderEmpty extends AbstractCloseableResource
+        implements DataBlockReader {
 
     @Override
     public DataBlock read() {
@@ -12,8 +15,8 @@ public class DataBlockReaderEmpty implements DataBlockReader {
     }
 
     @Override
-    public void close() {
-        // Intention is to provide an empty implementation
+    protected void doClose() {
+        // Intentionally no-op
     }
 
 }

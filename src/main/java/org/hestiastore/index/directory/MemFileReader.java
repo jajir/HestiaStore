@@ -1,8 +1,10 @@
 package org.hestiastore.index.directory;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
 
-public class MemFileReader implements FileReader {
+public class MemFileReader extends AbstractCloseableResource
+        implements FileReader {
 
     private final byte[] data;
 
@@ -15,7 +17,7 @@ public class MemFileReader implements FileReader {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         position = -1;
     }
 

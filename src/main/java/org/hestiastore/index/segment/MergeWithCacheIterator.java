@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.Vldtn;
@@ -21,7 +22,8 @@ import org.hestiastore.index.datatype.TypeDescriptor;
  * @param <K>
  * @param <V>
  */
-public class MergeWithCacheIterator<K, V> implements PairIterator<K, V> {
+public class MergeWithCacheIterator<K, V> extends AbstractCloseableResource
+        implements PairIterator<K, V> {
 
     /**
      * Iterator contains main data with deleted items. Can't contains
@@ -171,7 +173,7 @@ public class MergeWithCacheIterator<K, V> implements PairIterator<K, V> {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         mainIterator.close();
         cacheKeyIterator.forEachRemaining(i -> {
             // intentionally do nothing

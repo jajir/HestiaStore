@@ -5,10 +5,12 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
 
-public class SegmentDeltaCachePairIterator<K, V> implements PairIterator<K, V> {
+public class SegmentDeltaCachePairIterator<K, V> extends AbstractCloseableResource
+        implements PairIterator<K, V> {
 
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
     private final Iterator<K> keyIterator;
@@ -37,7 +39,7 @@ public class SegmentDeltaCachePairIterator<K, V> implements PairIterator<K, V> {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         keyIterator.forEachRemaining(i -> {
             // intentionally do nothing, just move forward
         });

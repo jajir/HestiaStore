@@ -4,6 +4,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Function;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
@@ -19,7 +20,7 @@ import org.hestiastore.index.chunkstore.ChunkStoreReader;
  * @param <V> value type
  */
 public class ChunkPairFileIterator<K, V>
-        implements PairIteratorWithCurrent<K, V> {
+        extends AbstractCloseableResource implements PairIteratorWithCurrent<K, V> {
 
     private final ChunkStoreReader chunkStoreReader;
     private final Function<Chunk, PairIteratorWithCurrent<K, V>> iteratorFactory;
@@ -68,15 +69,6 @@ public class ChunkPairFileIterator<K, V>
     }
 
     @Override
-    public void close() {
-        if (iterator != null) {
-            iterator.close();
-        }
-        chunkStoreReader.close();
-        iterator = null;
-    }
-
-    @Override
     public Optional<Pair<K, V>> getCurrent() {
         if (iterator == null) {
             return Optional.empty();
@@ -93,6 +85,15 @@ public class ChunkPairFileIterator<K, V>
                 iterator = null;
             }
         }
+    }
+
+    @Override
+    protected void doClose() {
+        if (iterator != null) {
+            iterator.close();
+            iterator = null;
+        }
+        chunkStoreReader.close();
     }
 
 }

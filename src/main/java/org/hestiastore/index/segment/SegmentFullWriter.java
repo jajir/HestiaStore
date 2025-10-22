@@ -2,6 +2,7 @@ package org.hestiastore.index.segment;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.Vldtn;
@@ -23,7 +24,8 @@ import org.hestiastore.index.chunkstore.CellPosition;
  * @param <K> key type
  * @param <V> value type
  */
-public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
+public class SegmentFullWriter<K, V> extends AbstractCloseableResource
+        implements PairWriter<K, V> {
 
     private final int maxNumberOfKeysInIndexPage;
 
@@ -82,11 +84,12 @@ public class SegmentFullWriter<K, V> implements PairWriter<K, V> {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         flush();
         // close all resources
         scarceWriter.close();
         indexWriter.close();
+        bloomFilterWriter.close();
         bloomFilterWriterTx.commit();
     }
 

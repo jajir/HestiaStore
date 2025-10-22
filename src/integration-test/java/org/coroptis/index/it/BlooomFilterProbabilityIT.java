@@ -44,10 +44,11 @@ class BlooomFilterProbabilityIT {
     void test_probability() {
         long cx = 0;
         final BloomFilterWriterTx<Long> tx = bloomFilter.openWriteTx();
-        final BloomFilterWriter<Long> writer = tx.open();
-        for (long i = 0; i < WRITE_KEYS_IN_FILTER; i++) {
-            if (!writer.write(i)) {
-                cx++;
+        try (BloomFilterWriter<Long> writer = tx.open()) {
+            for (long i = 0; i < WRITE_KEYS_IN_FILTER; i++) {
+                if (!writer.write(i)) {
+                    cx++;
+                }
             }
         }
         tx.commit();

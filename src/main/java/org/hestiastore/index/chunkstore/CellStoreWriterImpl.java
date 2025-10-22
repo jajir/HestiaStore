@@ -1,12 +1,14 @@
 package org.hestiastore.index.chunkstore;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 
 /**
  * Implementation of {@link CellStoreWriter}.
  */
-public class CellStoreWriterImpl implements CellStoreWriter {
+public class CellStoreWriterImpl extends AbstractCloseableResource
+        implements CellStoreWriter {
 
     private final CellStoreWriterCursor cursor;
 
@@ -36,7 +38,7 @@ public class CellStoreWriterImpl implements CellStoreWriter {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         cursor.close();
     }
 

@@ -24,10 +24,10 @@ public class IndexInternalSynchronized<K, V> extends SstIndexImpl<K, V> {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         lock.lock();
         try {
-            super.close();
+            super.doClose();
         } finally {
             lock.unlock();
         }

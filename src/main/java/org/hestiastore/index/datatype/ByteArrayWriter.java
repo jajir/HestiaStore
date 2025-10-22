@@ -3,10 +3,12 @@ package org.hestiastore.index.datatype;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.directory.FileWriter;
 
-public class ByteArrayWriter implements FileWriter {
+public class ByteArrayWriter extends AbstractCloseableResource
+        implements FileWriter {
 
     private final ByteArrayOutputStream fio;
 
@@ -15,7 +17,7 @@ public class ByteArrayWriter implements FileWriter {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         try {
             fio.close();
         } catch (IOException e) {

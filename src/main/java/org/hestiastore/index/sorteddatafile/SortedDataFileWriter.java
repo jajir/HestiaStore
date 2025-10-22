@@ -2,6 +2,7 @@ package org.hestiastore.index.sorteddatafile;
 
 import java.util.Comparator;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.F;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
@@ -18,7 +19,8 @@ import org.hestiastore.index.directory.FileWriter;
  * @param <K> key type
  * @param <V> value type
  */
-public class SortedDataFileWriter<K, V> implements PairWriter<K, V> {
+public class SortedDataFileWriter<K, V> extends AbstractCloseableResource
+        implements PairWriter<K, V> {
 
     private final TypeWriter<V> valueWriter;
 
@@ -109,7 +111,7 @@ public class SortedDataFileWriter<K, V> implements PairWriter<K, V> {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         fileWriter.close();
     }
 

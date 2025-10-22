@@ -1,5 +1,6 @@
 package org.hestiastore.index.segment;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.Vldtn;
@@ -15,7 +16,7 @@ import org.hestiastore.index.Vldtn;
  * @param <V>
  */
 public class SegmentDeltaCacheCompactingWriter<K, V>
-        implements PairWriter<K, V> {
+        extends AbstractCloseableResource implements PairWriter<K, V> {
 
     private final SegmentImpl<K, V> segment;
     private final SegmentCompacter<K, V> segmentCompacter;
@@ -42,7 +43,7 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         if (deltaCacheWriter != null) {
             deltaCacheWriter.close();
             deltaCacheWriter = null;

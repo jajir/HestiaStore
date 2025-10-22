@@ -140,8 +140,9 @@ class BloomFilterTest {
     private void writeToFilter(final BloomFilter<String> bf,
             final List<String> testData) {
         final BloomFilterWriterTx<String> tx = bf.openWriteTx();
-        final BloomFilterWriter<String> writer = tx.open();
-        testData.forEach(key -> assertTrue(writer.write(key)));
+        try (final BloomFilterWriter<String> writer = tx.open()) {
+            testData.forEach(key -> assertTrue(writer.write(key)));
+        }
         tx.commit();
     }
 

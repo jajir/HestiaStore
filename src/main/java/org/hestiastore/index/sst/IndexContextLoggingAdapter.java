@@ -2,13 +2,15 @@ package org.hestiastore.index.sst;
 
 import java.util.stream.Stream;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIteratorStreamer;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.log.LoggedKey;
 import org.slf4j.MDC;
 
-public class IndexContextLoggingAdapter<K, V> implements Index<K, V> {
+public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
+        implements Index<K, V> {
 
     private final IndexConfiguration<K, V> indexConf;
     private final Index<K, V> index;
@@ -52,16 +54,6 @@ public class IndexContextLoggingAdapter<K, V> implements Index<K, V> {
         setContext();
         try {
             index.delete(key);
-        } finally {
-            clearContext();
-        }
-    }
-
-    @Override
-    public void close() {
-        setContext();
-        try {
-            index.close();
         } finally {
             clearContext();
         }
@@ -122,6 +114,16 @@ public class IndexContextLoggingAdapter<K, V> implements Index<K, V> {
         setContext();
         try {
             return index.getConfiguration();
+        } finally {
+            clearContext();
+        }
+    }
+
+    @Override
+    protected void doClose() {
+        setContext();
+        try {
+            index.close();
         } finally {
             clearContext();
         }

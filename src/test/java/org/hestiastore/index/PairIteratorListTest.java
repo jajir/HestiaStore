@@ -61,9 +61,6 @@ class PairIteratorListTest {
             assertTrue(iterator.hasNext());
             assertEquals(Pair.of(2, "ccc"), iterator.next());
             assertTrue(iterator.hasNext());
-
-            iterator.close();
-            assertFalse(iterator.hasNext());
         }
     }
 

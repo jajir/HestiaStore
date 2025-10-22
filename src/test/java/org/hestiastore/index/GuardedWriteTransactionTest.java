@@ -7,6 +7,19 @@ import org.junit.jupiter.api.Test;
 
 class GuardedWriteTransactionTest {
 
+    private static final class NullResourceTransaction
+            extends GuardedWriteTransaction<PairWriter<String, String>> {
+
+        @Override
+        protected PairWriter<String, String> doOpen() {
+            return null;
+        }
+
+        @Override
+        protected void doCommit(final PairWriter<String, String> resource) {
+        }
+    }
+
     private static final class RecordingTransaction
             extends GuardedWriteTransaction<PairWriter<String, String>> {
 
@@ -32,8 +45,8 @@ class GuardedWriteTransactionTest {
         }
     }
 
-    private static final class RecordingPairWriter implements
-            PairWriter<String, String> {
+    private static final class RecordingPairWriter extends
+            AbstractCloseableResource implements PairWriter<String, String> {
         int closeCount;
         int writeCount;
 
@@ -43,7 +56,7 @@ class GuardedWriteTransactionTest {
         }
 
         @Override
-        public void close() {
+        protected void doClose() {
             closeCount++;
         }
     }
@@ -67,6 +80,23 @@ class GuardedWriteTransactionTest {
         tx.open().close();
         tx.commit();
         assertThrows(IllegalStateException.class, tx::commit);
+    }
+
+    @Test
+    void commit_requires_resource_to_be_closed() {
+        final RecordingTransaction tx = new RecordingTransaction();
+        tx.open();
+        final Exception ex = assertThrows(IllegalStateException.class,
+                tx::commit);
+        assertEquals("Resource must be closed before commit", ex.getMessage());
+    }
+
+    @Test
+    void open_requires_non_null_resource() {
+        final NullResourceTransaction tx = new NullResourceTransaction();
+        final Exception ex = assertThrows(IllegalArgumentException.class,
+                tx::open);
+        assertEquals("Property 'resource' must not be null.", ex.getMessage());
     }
 
     @Test

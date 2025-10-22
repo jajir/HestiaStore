@@ -26,6 +26,7 @@ class BloomFilterNullTest {
             BloomFilterWriterTx<String> tx = bloomFilter.openWriteTx();
             BloomFilterWriter<String> writer = tx.open();
             writer.write("foo");
+            writer.close();
             tx.commit();
         });
     }

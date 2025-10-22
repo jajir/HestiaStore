@@ -3,8 +3,10 @@ package org.hestiastore.index.sst;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -123,4 +125,39 @@ class SegmentsIteratorTest {
         verify(pairIterator17, atLeastOnce()).close();
         assertFalse(iterator.hasNext());
     }
+
+    @Test
+    void test_close_does_throw_when_already_closed() {
+        when(segmentRegistry.getSegment(SEGMENT_ID_17)).thenReturn(segment17);
+        when(segment17.openIterator()).thenReturn(pairIterator17);
+
+        final ArrayList<SegmentId> ids = new ArrayList<>();
+        ids.add(SEGMENT_ID_17);
+
+        SegmentsIterator<String, String> iterator = new SegmentsIterator<>(ids,
+                segmentRegistry);
+        iterator.close();
+
+        assertThrows(IllegalStateException.class, iterator::close);
+    }
+
+    @Test
+    void test_make_sure_that_lastSegmentIterator_in_not_closed_double_time() {
+        when(segmentRegistry.getSegment(SEGMENT_ID_17)).thenReturn(segment17);
+        when(segment17.openIterator()).thenReturn(pairIterator17);
+        when(pairIterator17.hasNext()).thenReturn(true, false);
+        when(pairIterator17.next()).thenReturn(new Pair<>("key1", "value1"));
+
+        final ArrayList<SegmentId> ids = new ArrayList<>();
+        ids.add(SEGMENT_ID_17);
+
+        SegmentsIterator<String, String> iterator = new SegmentsIterator<>(ids,
+                segmentRegistry);
+        assertTrue(iterator.hasNext());
+        iterator.next();
+        iterator.close();
+
+        verify(pairIterator17, times(1)).close();
+    }
+
 }

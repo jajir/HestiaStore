@@ -3,6 +3,7 @@ package org.hestiastore.index.sst;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.Vldtn;
@@ -20,7 +21,8 @@ import org.slf4j.LoggerFactory;
  * @param <K>
  * @param <V>
  */
-class SegmentsIterator<K, V> implements PairIterator<K, V> {
+class SegmentsIterator<K, V> extends AbstractCloseableResource
+        implements PairIterator<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -43,6 +45,7 @@ class SegmentsIterator<K, V> implements PairIterator<K, V> {
     private void nextSegmentIterator() {
         if (currentIterator != null) {
             currentIterator.close();
+            currentIterator = null;
         }
         if (position < ids.size()) {
             final SegmentId segmentId = ids.get(position);
@@ -78,7 +81,7 @@ class SegmentsIterator<K, V> implements PairIterator<K, V> {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         if (currentIterator != null) {
             currentIterator.close();
         }

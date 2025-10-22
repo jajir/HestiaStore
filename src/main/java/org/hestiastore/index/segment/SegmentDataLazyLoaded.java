@@ -1,6 +1,6 @@
 package org.hestiastore.index.segment;
 
-import org.hestiastore.index.CloseableResource;
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilter;
 import org.hestiastore.index.scarceindex.ScarceIndex;
@@ -14,7 +14,7 @@ import org.hestiastore.index.scarceindex.ScarceIndex;
  * @param <V>
  */
 public final class SegmentDataLazyLoaded<K, V>
-        implements SegmentData<K, V>, CloseableResource {
+        extends AbstractCloseableResource implements SegmentData<K, V> {
 
     private final SegmentDataSupplier<K, V> segmentDataSupplier;
 
@@ -53,7 +53,7 @@ public final class SegmentDataLazyLoaded<K, V>
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         if (bloomFilter != null) {
             bloomFilter.close();
             bloomFilter = null;

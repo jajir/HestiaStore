@@ -27,7 +27,6 @@ public class ScarceIndexWriterTx<K>
 
     @Override
     protected void doCommit(final PairWriter<K, Integer> writer) {
-        writer.close();
         writerTx.commit();
         scarceIndex.loadCache();
     }

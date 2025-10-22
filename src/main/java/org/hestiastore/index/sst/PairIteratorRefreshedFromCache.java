@@ -2,6 +2,7 @@ package org.hestiastore.index.sst;
 
 import java.util.NoSuchElementException;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.Vldtn;
@@ -9,7 +10,7 @@ import org.hestiastore.index.cache.UniqueCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
 
 public class PairIteratorRefreshedFromCache<K, V>
-        implements PairIterator<K, V> {
+        extends AbstractCloseableResource implements PairIterator<K, V> {
 
     private final PairIterator<K, V> pairIterator;
     private final UniqueCache<K, V> cache;
@@ -42,7 +43,7 @@ public class PairIteratorRefreshedFromCache<K, V>
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         pairIterator.close();
     }
 

@@ -1,6 +1,6 @@
 package org.hestiastore.index.segment;
 
-import org.hestiastore.index.CloseableResource;
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilter;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -17,7 +17,7 @@ import org.hestiastore.index.scarceindex.ScarceIndex;
  * @param <K>
  * @param <V>
  */
-public class SegmentSearcher<K, V> implements CloseableResource {
+public class SegmentSearcher<K, V> extends AbstractCloseableResource {
 
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final SegmentIndexSearcher<K, V> segmentIndexSearcher;
@@ -68,7 +68,7 @@ public class SegmentSearcher<K, V> implements CloseableResource {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         segmentIndexSearcher.close();
     }
 

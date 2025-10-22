@@ -1,5 +1,6 @@
 package org.hestiastore.index.log;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.PairWriter;
 import org.hestiastore.index.Vldtn;
 
@@ -12,7 +13,7 @@ import org.hestiastore.index.Vldtn;
  * @param <V> value type
  */
 public final class LogUnsortedFileWriterImpl<K, V>
-        implements LogUnsortedFileWriter<K, V> {
+        extends AbstractCloseableResource implements LogUnsortedFileWriter<K, V> {
 
     private final PairWriter<LoggedKey<K>, V> writer;
 
@@ -29,7 +30,7 @@ public final class LogUnsortedFileWriterImpl<K, V>
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         writer.close();
     }
 

@@ -6,9 +6,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.zip.ZipInputStream;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.IndexException;
 
-public final class FsZipFileReaderStream implements FileReader {
+public final class FsZipFileReaderStream extends AbstractCloseableResource
+        implements FileReader {
 
     private final ZipInputStream bis;
 
@@ -22,7 +24,7 @@ public final class FsZipFileReaderStream implements FileReader {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         try {
             bis.close();
         } catch (IOException e) {

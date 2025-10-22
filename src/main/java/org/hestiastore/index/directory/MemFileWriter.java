@@ -3,9 +3,10 @@ package org.hestiastore.index.directory;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.IndexException;
 
-public class MemFileWriter implements FileWriter {
+public class MemFileWriter extends AbstractCloseableResource implements FileWriter {
 
     private final String fileName;
 
@@ -24,7 +25,7 @@ public class MemFileWriter implements FileWriter {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         try {
             fio.close();
         } catch (IOException e) {

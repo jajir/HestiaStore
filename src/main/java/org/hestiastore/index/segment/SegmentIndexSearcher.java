@@ -2,7 +2,7 @@ package org.hestiastore.index.segment;
 
 import java.util.Comparator;
 
-import org.hestiastore.index.CloseableResource;
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIterator;
 import org.hestiastore.index.Vldtn;
@@ -16,7 +16,7 @@ import org.hestiastore.index.chunkpairfile.ChunkPairFile;
  * @param <K>
  * @param <V>
  */
-public class SegmentIndexSearcher<K, V> implements CloseableResource {
+public class SegmentIndexSearcher<K, V> extends AbstractCloseableResource {
 
     private final ChunkPairFile<K, V> chunkPairFile;
     private final int maxNumberOfKeysInIndexPage;
@@ -34,8 +34,8 @@ public class SegmentIndexSearcher<K, V> implements CloseableResource {
     }
 
     @Override
-    public void close() {
-        // do intentionally nothing
+    protected void doClose() {
+        // intentionally no-op
     }
 
     public V search(final K key, long startPosition) {

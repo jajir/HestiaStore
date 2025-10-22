@@ -8,12 +8,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.directory.Directory.Access;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class FsFileWriterStream implements FileWriter {
+public final class FsFileWriterStream extends AbstractCloseableResource
+        implements FileWriter {
 
     private static final Logger logger = LoggerFactory
             .getLogger(FsFileWriterStream.class);
@@ -44,7 +46,7 @@ public final class FsFileWriterStream implements FileWriter {
     }
 
     @Override
-    public void close() {
+    protected void doClose() {
         try {
             fio.close();
         } catch (IOException e) {
