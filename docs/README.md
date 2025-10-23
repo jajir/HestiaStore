@@ -39,6 +39,18 @@ Features:
 
 Detailed methodology and full benchmark artifacts are available at [benchmark results](https://hestiastore.org/benchmark-results/).
 
+## 📦 Feature Comparison
+
+| Engine               | Persistence Type    | Compression | Transactions | Concurrency Model   | Dependencies     | Index Structure |
+|-----------------------|--------------------|--------------|---------------|---------------------|------------------|------------------|
+| **HestiaStoreBasic**     | Append-log segments | ⚙️ Optional | ❌ No          | 🧵 Multi-threaded    | 📦 None (JAR-only) | 🌲 Segment tree   |
+| **HestiaStoreCompress**  | Append-log segments | ✅ Yes      | ❌ No          | 🧵 Multi-threaded    | 📦 None (JAR-only) | 🌲 Segment tree   |
+| **RocksDB**              | LSM-tree          | ✅ Yes      | ⚙️ Optional    | ⚡ Highly concurrent | 🧩 Native library  | 🪜 LSM levels     |
+| **LevelDB**              | LSM-tree (Java)   | ✅ Yes      | ❌ No          | 🔀 Moderate          | 📦 None (JAR-only) | 🪜 LSM levels     |
+| **MapDB**                | B-tree            | ❌ No       | ⚙️ Optional    | 🧱 Thread-safe       | 📦 None (JAR-only) | 🌳 B-tree         |
+| **ChronicleMap**         | Memory-mapped     | ❌ No       | ❌ No          | 🔓 Lock-free         | 📦 None (JAR-only) | 🗺️ Hash map       |
+| **H2**                   | B-tree (SQL)      | ⚙️ Optional | ✅ Yes         | 🔁 Concurrent        | 📦 None (JAR-only) | 🌳 B-tree         |
+
 ## 🤝 Contributing
 
 We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING.md) before submitting a pull request.
