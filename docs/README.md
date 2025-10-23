@@ -41,14 +41,14 @@ Detailed methodology and full benchmark artifacts are available at [benchmark re
 
 ## 📦 Feature Comparison
 
-| Engine               |  Compression | Transactions | Concurrency Model   | Dependencies     | Index Structure |
-|-----------------------|--------------------|--------------|---------------|---------------------|------------------|------------------|
-| **HestiaStore**       |  ✅ Yes      | ❌ No          | 🧵 Multi-threaded    | 📦 None (JAR-only) | 🌲 Segment tree   |
-| **RocksDB**              |  ✅ Yes      | ⚙️ Optional    | ⚡ Highly concurrent | 🧩 Native library  | 🪜 LSM levels     |
-| **LevelDB**              |  ✅ Yes      | ❌ No          | 🔀 Moderate          | 📦 None (JAR-only) | 🪜 LSM levels     |
-| **MapDB**                |  ❌ No       | ⚙️ Optional    | 🧱 Thread-safe       | 📦 None (JAR-only) | 🌳 B-tree         |
-| **ChronicleMap**         |  ❌ No       | ❌ No          | 🔓 Lock-free         | 📦 None (JAR-only) | 🗺️ Hash map       |
-| **H2**                   |  ⚙️ Optional | ✅ Yes         | 🔁 Concurrent        | 📦 None (JAR-only) | 🌳 B-tree         |
+| Engine          |  Compression | Transactions | Concurrency Model | Dependencies | Index Structure |
+|-----------------|--------------|--------------|-------------------|--------------|-----------------|
+| **HestiaStore** |  ✅ Yes      | ❌ No       | 🧵 Multi-threaded | 📦 None (JAR-only) | 🌲 Segment tree   |
+| **RocksDB**     |  ✅ Yes      | ⚙️ Optional | ⚡ Highly concurrent| 🧩 Native library  | 🪜 LSM levels     |
+| **LevelDB**     |  ✅ Yes      | ❌ No       | 🔀 Moderate       | 📦 None (JAR-only) | 🪜 LSM levels     |
+| **MapDB**       |  ❌ No       | ⚙️ Optional | 🧱 Thread-safe    | 📦 None (JAR-only) | 🌳 B-tree         |
+| **ChronicleMap**|  ❌ No       | ❌ No       | 🔓 Lock-free      | 📦 None (JAR-only) | 🗺️ Hash map       |
+| **H2**          |  ⚙️ Optional | ✅ Yes      | 🔁 Concurrent     | 📦 None (JAR-only) | 🌳 B-tree         |
 
 ## 🤝 Contributing
 
