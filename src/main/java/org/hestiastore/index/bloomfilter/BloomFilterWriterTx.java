@@ -42,7 +42,7 @@ public final class BloomFilterWriterTx<K>
         final Hash hash = new Hash(new BitArray(indexSizeInBytes),
                 numberOfHashFunctions);
         return new BloomFilterWriter<>(convertorToBytes, hash, directory,
-                bloomFilterFileName, diskIoBufferSize);
+                getTempFileName(), diskIoBufferSize);
     }
 
     @Override
