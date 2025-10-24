@@ -1,0 +1,92 @@
+# https://squidfunk.github.io/mkdocs-material/
+
+site_name: HestiaStore
+site_url: https://jajir.github.io/HestiaStore/
+site_author: Jan Jirout
+
+repo_name: jajir/HestiaStore
+repo_url: https://github.com/jajir/HestiaStore
+
+nav:
+    - Home: 
+        - index.md    
+        - alternatives.md
+        - benchmark-results.md
+    - Getting Started:
+        - how-to-use/index.md
+        - Install: how-to-use/install.md
+        - examples: how-to-use/examples.md
+    - Configuration:
+        - configuration/index.md
+        - Data Types: configuration/data-types.md
+        - Logging: configuration/logging.md
+    - 'Architecture':
+        - architecture/index.md
+        - Index Architecture: architecture/arch-index.md
+        - Segment Design: architecture/segment.md
+        - Data block: architecture/datablock.md
+    - 'Development':
+        - development/index.md
+        - Release: development/release.md
+        - Documentation: development/documentation.md
+        - Guides: development/guides.md
+
+theme:
+    name: material
+    logo: images/logo-square.png
+    favicon: images/favicon.ico
+    font:
+        text: Roboto
+        code: Roboto Mono
+    features:
+#        - content.action.edit
+#        - content.action.view
+        - navigation.tabs
+        - navigation.tabs.sticky
+        - navigation.sections
+        - navigation.expand
+        - navigation.path # Breadcrumbs navidation 
+        - navigation.indexes # Compact section name with link
+        - toc.follow
+        - search.highlight
+        - search.share
+        - search.suggest
+
+    palette:
+        # Palette toggle for automatic mode
+        - media: "(prefers-color-scheme)"
+          toggle:
+                icon: material/brightness-auto
+                name: Switch to light mode
+
+        # Palette toggle for light mode
+        - media: "(prefers-color-scheme: light)"
+          scheme: default 
+          toggle:
+              icon: material/brightness-7
+              name: Switch to dark mode
+
+        # Palette toggle for dark mode
+        - media: "(prefers-color-scheme: dark)"
+          scheme: slate
+          toggle:
+            icon: material/brightness-4
+            name: Switch to system preference
+
+plugins:
+
+#    - build_plantuml:
+#        render: "server" # or "local" for local rendering
+#        bin_path: "/usr/local/bin/plantuml" # ignored when render: server
+#        server: "http://www.plantuml.com/plantuml" # offical plantuml server
+#        output_format: "png" # or "svg"
+#        diagram_root: "docs/diagrams" # should reside under docs_dir
+#        output_folder: "out"
+#        input_folder: "src"
+dev_addr: 127.0.0.1:8080
+
+
+markdown_extensions:
+    - pymdownx.highlight:
+        anchor_linenums: true
+    - pymdownx.superfences 
