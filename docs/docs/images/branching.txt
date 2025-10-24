@@ -1,0 +1,15 @@
+@startuml
+hide footbox
+entity "feature branch" as feature
+entity "main branch" as main
+database "release repository" as repo
+
+feature -> feature : develop new feature
+feature -> main : merge feature (via PR)
+
+main -> main : set version 1.0.12
+main -> repo : release 1.0.12 (mvn deploy)
+
+main -> main : set version 1.0.13-SNAPSHOT
+
+@enduml

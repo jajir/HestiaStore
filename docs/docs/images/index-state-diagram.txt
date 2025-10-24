@@ -1,0 +1,14 @@
+@startuml
+
+'Index state diagram
+
+New: Index preparing data, Index is not available
+Ready: Ready to work
+Close: Resources are freed, index is not available
+
+[*] --> New: Open Index
+New --> Ready: Lock resources
+Ready --> Close: Free all resources
+Close --> [*]
+
+@enduml

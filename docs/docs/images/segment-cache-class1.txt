@@ -1,0 +1,42 @@
+@startuml
+ 
+skin rose
+ 
+title Relationships - Class Diagram
+ 
+package segment{
+ 
+  class SegmentDataSupplier {
+    +getBloomFilter()
+    +getScarseIndex()
+    +getDeltaCache()
+  }
+ 
+  interface SegmentData {
+    +getBloomFilter()
+    +getScarseIndex()
+    +getDeltaCache()
+    +close()
+  }
+ 
+  class SegmentDataLazyLoading {
+ 
+  }
+ 
+  SegmentDataLazyLoading --|> SegmentData
+  SegmentDataLazyLoading --> SegmentDataSupplier
+ 
+  interface SegmentDataFactory {
+    +SegmentData getSegmentData()
+  }
+ 
+  SegmentDataFactory --> SegmentData
+ 
+  SegmentDataFactoryImpl --|> SegmentDataFactory
+ 
+  }
+ 
+  SegmentDataFactoryImpl --> SegmentDataLazyLoading
+ 
+@enduml
+ 
