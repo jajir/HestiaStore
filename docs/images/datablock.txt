@@ -31,7 +31,7 @@ package blockfile <<green>> {
   }
   
   interface BytesWriter {
-     + BlockPosition write(DataBytes blockData)
+     + BlockPosition write(Bytes blockData)
   }
   BytesWriter --|> Closeable
   
@@ -86,11 +86,11 @@ package chunkstore <<yellow>> {
     + int getCell(ChunkPositon chunkPositon)
   }
   
-  
   class ChunkHeader {
-    - magic
-    - crc32
-    - length
+    - int magic
+    - int crc32
+    - int length
+    - int formatVersion
   }
 
   class Chunk {
@@ -103,7 +103,7 @@ package chunkstore <<yellow>> {
   Chunk --> ChunkHeader
   
   interface ChunkWriter {
-     + ChunkPositon write(DataBytes blockData)
+     + ChunkPositon write(Bytes blockData)
   }
   ChunkWriter --|> Closeable
   
