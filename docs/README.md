@@ -60,7 +60,7 @@ Durability & Fit
 
 | Engine | Durability | Compression | Runtime Deps | Typical Fit |
 |:--|:--|:--|:--|:--|
-| HestiaStore | File-backed; commit on close | Supported | Pure Java (JAR-only) | Embedded KV with simple ops, large datasets |
+| HestiaStore | File-backed; commit on close | Snappy | Pure Java (JAR-only) | Embedded KV with simple ops, large datasets |
 | RocksDB | WAL + checkpoints (optional transactions) | Snappy/Zstd/LZ4 | Native library | High write throughput, low-latency reads |
 | LevelDB | File-backed; no transactions | Snappy | JAR-only port/native bindings | Lightweight LSM, smaller footprints |
 | MapDB | File-backed; optional TX | None/limited | Pure Java (JAR-only) | Simple embedded maps/sets |
