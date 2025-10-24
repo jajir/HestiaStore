@@ -1,0 +1,31 @@
+@startuml
+
+skin rose
+
+title Packages - Component Diagram
+
+actor "User" as user
+
+node "Index" as index {
+  interface "Index API" as api
+  component [Index cache] as indexCache
+  node "Segments" {
+    component "Segment 1" as segment1
+    component "Segment 2" as segment2
+  }
+} 
+
+database "File system\n" as fs {
+    component "Segment files 1" as files1
+    component "Segment files 2" as files2
+}
+
+
+
+api -down-> Segments
+user --( api
+api --> indexCache
+segment1 --> files1
+segment2 --> files2
+
+@enduml
