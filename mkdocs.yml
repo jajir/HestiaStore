@@ -9,9 +9,13 @@ repo_url: https://github.com/jajir/HestiaStore
 
 nav:
     - Home: 
-        - index.md    
-        - alternatives.md
+        - index.md
+        - Alternatives: alternatives.md
         - benchmark-results.md
+        - CHANGELOG.md
+        - CODE_OF_CONDUCT.md
+        - CONTRIBUTING.md
+        - SECURITY.md
     - Getting Started:
         - how-to-use/index.md
         - Install: how-to-use/install.md
