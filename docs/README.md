@@ -97,7 +97,7 @@ To include HestiaStore in your Maven project, add the following dependency to yo
   <dependency>
     <groupId>org.hestiastore.index</groupId>
     <artifactId>core</artifactId>
-    <version>0.0.3</version>
+    <version>0.0.5</version>
   </dependency>
 </dependencies>
 ```
@@ -128,6 +128,8 @@ index.put("Hello", "World");
 
 String value = index.get("Hello");
 System.out.println("Value for 'Hello': " + value);
+
+index.close();
 ```
 
 ## 🗺️ Roadmap
