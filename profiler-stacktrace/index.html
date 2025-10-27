@@ -13,10 +13,8 @@
         <link rel="canonical" href="https://jajir.github.io/HestiaStore/profiler-stacktrace/">
       
       
-        <link rel="prev" href="../SECURITY/">
+        <link rel="prev" href="../development/guides/">
       
-      
-        <link rel="next" href="../how-to-use/">
       
       
       <link rel="icon" href="../images/favicon.ico">
@@ -76,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#jvm-profiler-results" class="md-skip">
+        <a href="#jvm-profiler-results-yourkit" class="md-skip">
           Skip to content
         </a>
       
@@ -231,12 +229,10 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
+      <li class="md-tabs__item">
         <a href=".." class="md-tabs__link">
           
   
@@ -321,10 +317,12 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
+      <li class="md-tabs__item md-tabs__item--active">
         <a href="../development/" class="md-tabs__link">
           
   
@@ -393,8 +391,6 @@
       
   
   
-    
-  
   
   
     
@@ -416,25 +412,22 @@
       
         
       
-        
-      
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_1" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -451,13 +444,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="">
+              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_1">
             <span class="md-nav__icon md-icon"></span>
             Home
@@ -599,122 +592,6 @@
   
 
       </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-    
-  
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    JVM Profiling
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
-        
-  
-  
-  <span class="md-ellipsis">
-    JVM Profiling
-    
-  </span>
-  
-
-      </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#stacktraces" class="md-nav__link">
-    <span class="md-ellipsis">
-      Stacktraces
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Stacktraces">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#cca-40-byte-array-manipulations" class="md-nav__link">
-    <span class="md-ellipsis">
-      cca 40% byte array manipulations
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3" class="md-nav__link">
-    <span class="md-ellipsis">
-      3%
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#cca-21" class="md-nav__link">
-    <span class="md-ellipsis">
-      cca 21%
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#cca-18" class="md-nav__link">
-    <span class="md-ellipsis">
-      cca 18%
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1107,6 +984,8 @@
       
   
   
+    
+  
   
   
     
@@ -1122,22 +1001,25 @@
       
         
       
+        
+      
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
           <div class="md-nav__link md-nav__container">
@@ -1154,13 +1036,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Development
@@ -1238,6 +1120,149 @@
 
               
             
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    JVM Profiling
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    JVM Profiling
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-read-the-numbers" class="md-nav__link">
+    <span class="md-ellipsis">
+      🧭 How to read the numbers
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-findings-high-level" class="md-nav__link">
+    <span class="md-ellipsis">
+      📈 Key findings (high level)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#detailed-stacks-and-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      🧵 Detailed stacks and context
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🧵 Detailed stacks and context">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#40-byte-array-manipulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      ~40%: byte array manipulation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-file-open-overhead" class="md-nav__link">
+    <span class="md-ellipsis">
+      ~3%: file open overhead
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#21-sequential-reads-through-layered-streams" class="md-nav__link">
+    <span class="md-ellipsis">
+      ~21%: sequential reads through layered streams
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#18-closecleanup-cascades" class="md-nav__link">
+    <span class="md-ellipsis">
+      ~18%: close/cleanup cascades
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-to-improve-next-actionable" class="md-nav__link">
+    <span class="md-ellipsis">
+      🛠️ What to improve next (actionable)
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1272,46 +1297,64 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#stacktraces" class="md-nav__link">
+  <a href="#how-to-read-the-numbers" class="md-nav__link">
     <span class="md-ellipsis">
-      Stacktraces
+      🧭 How to read the numbers
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Stacktraces">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-findings-high-level" class="md-nav__link">
+    <span class="md-ellipsis">
+      📈 Key findings (high level)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#detailed-stacks-and-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      🧵 Detailed stacks and context
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🧵 Detailed stacks and context">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#cca-40-byte-array-manipulations" class="md-nav__link">
+  <a href="#40-byte-array-manipulation" class="md-nav__link">
     <span class="md-ellipsis">
-      cca 40% byte array manipulations
+      ~40%: byte array manipulation
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#3" class="md-nav__link">
+  <a href="#3-file-open-overhead" class="md-nav__link">
     <span class="md-ellipsis">
-      3%
+      ~3%: file open overhead
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#cca-21" class="md-nav__link">
+  <a href="#21-sequential-reads-through-layered-streams" class="md-nav__link">
     <span class="md-ellipsis">
-      cca 21%
+      ~21%: sequential reads through layered streams
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#cca-18" class="md-nav__link">
+  <a href="#18-closecleanup-cascades" class="md-nav__link">
     <span class="md-ellipsis">
-      cca 18%
+      ~18%: close/cleanup cascades
     </span>
   </a>
   
@@ -1319,6 +1362,15 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-to-improve-next-actionable" class="md-nav__link">
+    <span class="md-ellipsis">
+      🛠️ What to improve next (actionable)
+    </span>
+  </a>
   
 </li>
       
@@ -1341,19 +1393,26 @@
   
 
 
-<h1 id="jvm-profiler-results">JVM Profiler results</h1>
+<h1 id="jvm-profiler-results-yourkit">JVM profiler results (YourKit)</h1>
+<p>This page summarizes a profiling session focused on read and write performance. The goal was to identify where CPU time is spent and highlight concrete improvements.</p>
+<p>The workload: a separate generator produced roughly 100,000,000 key–value pairs and then executed read-heavy operations against HestiaStore 0.0.5 while YourKit captured CPU samples.</p>
+<p>Test environment: run on a Mac mini on 24.10.2025.</p>
 <p><img alt="Profiler result" src="../images/jvm-profiler-2025-10-24.png" /></p>
-<h2 id="stacktraces">Stacktraces</h2>
-<h3 id="cca-40-byte-array-manipulations">cca 40% byte array manipulations</h3>
-<p>It's multiple places. At the end it's System.arraycopy</p>
-<p>Focus areas for optimization:</p>
+<h2 id="how-to-read-the-numbers">🧭 How to read the numbers</h2>
+<p>Percentages shown below approximate the share of total CPU time across the whole run spent in each operation/stack. For example, “40% byte array manipulations” means about 40% of all CPU cycles were consumed in copying/transforming byte arrays end-to-end.</p>
+<h2 id="key-findings-high-level">📈 Key findings (high level)</h2>
 <ul>
-<li>Roughly 40% of CPU time sits in repeated <code>System.arraycopy</code> usage while shuffling byte arrays across chunk readers. Investigate buffer pooling and reduce intermediate copies during data block traversal.</li>
-<li>Sequential chunk reads consume about 21% of total time through multiple layered streams (<code>ChunkPairFileIterator</code>, <code>ChunkStoreReaderImpl</code>, etc.). Larger IO buffers or shared channel readers could cut back the number of small <code>read</code> calls flowing through <code>BufferedInputStream</code>.</li>
-<li>Cleanup takes another 18%. Closing nested streams triggers several cleaner invocations in sequence. Collapsing the close hierarchy or reusing readers for a batch might reduce that overhead.</li>
-<li>File open operations account for ~3%. Each lookup fetch repeatedly calls <code>FsDirectory.getFileReader</code>, creating new channels. Consider caching open channels or widening the scope of existing ones to lower syscall churn.</li>
+<li>~40% in byte array manipulation (ultimately <code>System.arraycopy</code>) across several layers while moving data between buffers and chunks.</li>
+<li>~21% in sequential reads through stacked streams and iterators, indicating many small reads and buffer boundaries.</li>
+<li>~18% during stream/channel closing (clean-up cascades), suggesting repeated finalization work per access.</li>
+<li>~3% in file open syscalls while creating new channels for short-lived reads.</li>
 </ul>
-<h3 id="3">3%</h3>
+<p>These four areas dominate the observed CPU budget for the scenario above.</p>
+<h2 id="detailed-stacks-and-context">🧵 Detailed stacks and context</h2>
+<h3 id="40-byte-array-manipulation">~40%: byte array manipulation</h3>
+<p>The hot paths converge on <code>System.arraycopy</code>, coming from multiple places in the chunk/data-block pipeline. This usually indicates extra copying between intermediate buffers.</p>
+<h3 id="3-file-open-overhead">~3%: file open overhead</h3>
+<p>Opening files repeatedly costs ~3% CPU. Consider reusing channels across related reads to reduce syscalls and JNI transitions.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>sun.nio.fs.UnixNativeDispatcher.open0(Native Method)
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>sun.nio.fs.UnixNativeDispatcher.open(UnixNativeDispatcher.java:72)
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>sun.nio.fs.UnixChannelFactory.open(UnixChannelFactory.java:258)
@@ -1395,7 +1454,8 @@
 <a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>com.coroptis.counting.CommandCount.countRound(CommandCount.java:48)
 <a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a>com.coroptis.counting.Main.main(Main.java:132)
 </code></pre></div>
-<h3 id="cca-21">cca 21%</h3>
+<h3 id="21-sequential-reads-through-layered-streams">~21%: sequential reads through layered streams</h3>
+<p>Reading through <code>BufferedInputStream</code> and custom readers accumulates overhead from many small reads and object boundaries.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>sun.nio.ch.ChannelInputStream.read(ChannelInputStream.java)
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>sun.nio.ch.ChannelInputStream.read(ChannelInputStream.java:103)
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>java.io.BufferedInputStream.read1(BufferedInputStream.java:345)
@@ -1439,7 +1499,8 @@
 <a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a>com.coroptis.counting.CommandCount.countRound(CommandCount.java:48)
 <a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a>com.coroptis.counting.Main.main(Main.java:132)
 </code></pre></div>
-<h3 id="cca-18">cca 18%</h3>
+<h3 id="18-closecleanup-cascades">~18%: close/cleanup cascades</h3>
+<p>Closing nested readers triggers multiple cleaner/finalization steps. Reusing readers or collapsing the close hierarchy could help.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>java.io.FileDescriptor.close0(Native Method)
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>java.io.FileDescriptor.close(FileDescriptor.java:304)
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>java.io.FileDescriptor$1.close(FileDescriptor.java:89)
@@ -1485,6 +1546,30 @@
 <a id="__codelineno-2-43" name="__codelineno-2-43" href="#__codelineno-2-43"></a>com.coroptis.counting.CommandCount.countRound(CommandCount.java:48)
 <a id="__codelineno-2-44" name="__codelineno-2-44" href="#__codelineno-2-44"></a>com.coroptis.counting.Main.main(Main.java:132)
 </code></pre></div>
+<h2 id="what-to-improve-next-actionable">🛠️ What to improve next (actionable)</h2>
+<ul>
+<li>Reduce copies in the read path<ul>
+<li>Pool and reuse byte buffers across <code>ChunkStoreReader</code>/<code>ChunkPairFileIterator</code>.</li>
+<li>Where feasible, write directly into the final consumer’s buffer instead of staging arrays.</li>
+</ul>
+</li>
+<li>Fewer, larger IO operations<ul>
+<li>Increase internal buffer sizes; align chunk/page boundaries to reduce partial reads.</li>
+<li>Consider a shared channel with a single buffering layer to avoid stacking multiple <code>BufferedInputStream</code>s.</li>
+</ul>
+</li>
+<li>Tame cleanup overhead<ul>
+<li>Scope readers over a batch of gets to amortize <code>close()</code> and cleaner activity.</li>
+<li>Ensure try-with-resources closes only once at the highest level; avoid redundant closes in nested layers.</li>
+</ul>
+</li>
+<li>Cut file-open churn<ul>
+<li>Cache open channels per data file with reference counting; close when idle for a period.</li>
+<li>If feasible, pre-open frequently accessed files at segment initialization.</li>
+</ul>
+</li>
+</ul>
+<p>These changes should collectively reclaim the majority of the observed CPU time in this profile.</p>
 
 
 
