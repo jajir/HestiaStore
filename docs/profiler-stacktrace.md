@@ -1,10 +1,19 @@
-# Problems
+# JVM Profiler results
+
+![Profiler result](./images/jvm-profiler-2025-10-24.png)
 
 ## Stacktraces
 
 ### cca 40% byte array manipulations
 
 It's multiple places. At the end it's System.arraycopy
+
+Focus areas for optimization:
+
+- Roughly 40% of CPU time sits in repeated `System.arraycopy` usage while shuffling byte arrays across chunk readers. Investigate buffer pooling and reduce intermediate copies during data block traversal.
+- Sequential chunk reads consume about 21% of total time through multiple layered streams (`ChunkPairFileIterator`, `ChunkStoreReaderImpl`, etc.). Larger IO buffers or shared channel readers could cut back the number of small `read` calls flowing through `BufferedInputStream`.
+- Cleanup takes another 18%. Closing nested streams triggers several cleaner invocations in sequence. Collapsing the close hierarchy or reusing readers for a batch might reduce that overhead.
+- File open operations account for ~3%. Each lookup fetch repeatedly calls `FsDirectory.getFileReader`, creating new channels. Consider caching open channels or widening the scope of existing ones to lower syscall churn.
 
 ### 3%
 

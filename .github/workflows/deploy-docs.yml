@@ -1,0 +1,71 @@
+name: Deploy MkDocs site
+
+on:
+  push:
+    # Restrict to your default branch; change to "master" if needed.
+    branches: [ main ]
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'mkdocs.yaml'
+  workflow_dispatch:
+
+# mkdocs gh-deploy will push to gh-pages; needs write permission.
+permissions:
+  contents: write
+
+# Avoid overlapping deploys if you push multiple times quickly.
+concurrency:
+  group: mkdocs-gh-deploy
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # mkdocs/ghp-import doesn't need full history, but zero is safest
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+          cache: 'pip'
+
+      - name: Install MkDocs + Material theme
+        run: |
+          python -m pip install --upgrade pip
+          pip install mkdocs mkdocs-material
+          # If you use extra Material features (social cards/diagrams), consider:
+          # pip install 'mkdocs-material[imaging]'
+
+      - name: Locate MkDocs config (yml or yaml)
+        run: |
+          if [ -f "mkdocs.yml" ]; then
+            echo "MKDOCS_CONFIG=mkdocs.yml" >> $GITHUB_ENV
+          elif [ -f "mkdocs.yaml" ]; then
+            echo "MKDOCS_CONFIG=mkdocs.yaml" >> $GITHUB_ENV
+          else
+            echo "ERROR: mkdocs.yml or mkdocs.yaml not found in repo root."
+            exit 1
+          fi
+
+      # Configure Git so mkdocs gh-deploy can push to gh-pages using the GITHUB_TOKEN
+      - name: Configure Git credentials for gh-deploy
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin \
+            https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+
+      # Optional: quick sanity build (surfacing errors before deploy)
+      - name: Build site (sanity check)
+        run: mkdocs build --clean --strict --config-file "$MKDOCS_CONFIG"
+
+      # Deploy to gh-pages branch; preserves your CNAME if it's beside mkdocs.yml
+      - name: Deploy with mkdocs gh-deploy
+        run: |
+          mkdocs gh-deploy \
+            --verbose \
