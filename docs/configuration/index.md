@@ -27,7 +27,7 @@ Index<Integer, Integer> index = Index.<Integer, Integer>create(directory, conf);
 
 Now let's look at particular parameters.
 
-# Index Directory
+## Index Directory
 
 Place where all data are stored. There are two already prepared types:
 
@@ -49,7 +49,7 @@ Its main purpose is to store index data in the file system. Create a file-system
 Directory directory = new FsDirectory(new File('my directory'));
 ```
 
-# Properties of `IndexConfiguration` class
+## Properties of `IndexConfiguration` class
 
 All properties are required and have the following meanings:
 
@@ -128,15 +128,15 @@ To **disable** bloom filter completle set:
 
 The settings for the Bloom filter can be adjusted using the following methods:
 
-#### Bloom filter size - `withBloomFilterIndexSizeInBytes()`
+### Bloom filter size - `withBloomFilterIndexSizeInBytes()`
 
 Sets the size of the Bloom filter in bytes. A value of 0 disables the use of the Bloom filter.
 
-#### Number of hash functions - `withBloomFilterNumberOfHashFunctions()`
+### Number of hash functions - `withBloomFilterNumberOfHashFunctions()`
 
 Sets the number of hash functions used in the Bloom filter.
 
-#### Probability of false positive - `withBloomFilterProbabilityOfFalsePositive()`
+### Probability of false positive - `withBloomFilterProbabilityOfFalsePositive()`
 
 Sets the probability of false positives. When `get(someKey)` is called on a segment, the Bloom filter is checked to determine if the value is not in the segment. It can return `true`, indicating that the key **could be** in the segment. If the Bloom filter indicates the key is in the segment but it's not found, that's a false positive. The probability of this occurring is a value between 0 and 1.
 
