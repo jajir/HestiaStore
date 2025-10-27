@@ -16,7 +16,6 @@ nav:
         - CODE_OF_CONDUCT.md
         - CONTRIBUTING.md
         - SECURITY.md
-        - JVM Profiling: profiler-stacktrace.md
     - Getting Started:
         - how-to-use/index.md
         - Install: how-to-use/install.md
@@ -35,6 +34,7 @@ nav:
         - Release: development/release.md
         - Documentation: development/documentation.md
         - Guides: development/guides.md
+        - JVM Profiling: profiler-stacktrace.md
 
 theme:
     name: material

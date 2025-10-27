@@ -1,21 +1,35 @@
-# JVM Profiler results
+# JVM profiler results (YourKit)
+
+This page summarizes a profiling session focused on read and write performance. The goal was to identify where CPU time is spent and highlight concrete improvements.
+
+The workload: a separate generator produced roughly 100,000,000 key–value pairs and then executed read-heavy operations against HestiaStore 0.0.5 while YourKit captured CPU samples.
+
+Test environment: run on a Mac mini on 24.10.2025.
 
 ![Profiler result](./images/jvm-profiler-2025-10-24.png)
 
-## Stacktraces
+## 🧭 How to read the numbers
 
-### cca 40% byte array manipulations
+Percentages shown below approximate the share of total CPU time across the whole run spent in each operation/stack. For example, “40% byte array manipulations” means about 40% of all CPU cycles were consumed in copying/transforming byte arrays end-to-end.
 
-It's multiple places. At the end it's System.arraycopy
+## 📈 Key findings (high level)
 
-Focus areas for optimization:
+- ~40% in byte array manipulation (ultimately `System.arraycopy`) across several layers while moving data between buffers and chunks.
+- ~21% in sequential reads through stacked streams and iterators, indicating many small reads and buffer boundaries.
+- ~18% during stream/channel closing (clean-up cascades), suggesting repeated finalization work per access.
+- ~3% in file open syscalls while creating new channels for short-lived reads.
 
-- Roughly 40% of CPU time sits in repeated `System.arraycopy` usage while shuffling byte arrays across chunk readers. Investigate buffer pooling and reduce intermediate copies during data block traversal.
-- Sequential chunk reads consume about 21% of total time through multiple layered streams (`ChunkPairFileIterator`, `ChunkStoreReaderImpl`, etc.). Larger IO buffers or shared channel readers could cut back the number of small `read` calls flowing through `BufferedInputStream`.
-- Cleanup takes another 18%. Closing nested streams triggers several cleaner invocations in sequence. Collapsing the close hierarchy or reusing readers for a batch might reduce that overhead.
-- File open operations account for ~3%. Each lookup fetch repeatedly calls `FsDirectory.getFileReader`, creating new channels. Consider caching open channels or widening the scope of existing ones to lower syscall churn.
+These four areas dominate the observed CPU budget for the scenario above.
 
-### 3%
+## 🧵 Detailed stacks and context
+
+### ~40%: byte array manipulation
+
+The hot paths converge on `System.arraycopy`, coming from multiple places in the chunk/data-block pipeline. This usually indicates extra copying between intermediate buffers.
+
+### ~3%: file open overhead
+
+Opening files repeatedly costs ~3% CPU. Consider reusing channels across related reads to reduce syscalls and JNI transitions.
 
 ```plaintext
 sun.nio.fs.UnixNativeDispatcher.open0(Native Method)
@@ -60,7 +74,9 @@ com.coroptis.counting.CommandCount.countRound(CommandCount.java:48)
 com.coroptis.counting.Main.main(Main.java:132)
 ```
 
-### cca 21%
+### ~21%: sequential reads through layered streams
+
+Reading through `BufferedInputStream` and custom readers accumulates overhead from many small reads and object boundaries.
 
 ```plaintext
 sun.nio.ch.ChannelInputStream.read(ChannelInputStream.java)
@@ -107,7 +123,9 @@ com.coroptis.counting.CommandCount.countRound(CommandCount.java:48)
 com.coroptis.counting.Main.main(Main.java:132)
 ```
 
-### cca 18%
+### ~18%: close/cleanup cascades
+
+Closing nested readers triggers multiple cleaner/finalization steps. Reusing readers or collapsing the close hierarchy could help.
 
 ```plaintext
 java.io.FileDescriptor.close0(Native Method)
@@ -155,3 +173,20 @@ com.coroptis.counting.CommandCount.computeNewStates(CommandCount.java:81)
 com.coroptis.counting.CommandCount.countRound(CommandCount.java:48)
 com.coroptis.counting.Main.main(Main.java:132)
 ```
+
+## 🛠️ What to improve next (actionable)
+
+- Reduce copies in the read path
+	- Pool and reuse byte buffers across `ChunkStoreReader`/`ChunkPairFileIterator`.
+	- Where feasible, write directly into the final consumer’s buffer instead of staging arrays.
+- Fewer, larger IO operations
+	- Increase internal buffer sizes; align chunk/page boundaries to reduce partial reads.
+	- Consider a shared channel with a single buffering layer to avoid stacking multiple `BufferedInputStream`s.
+- Tame cleanup overhead
+	- Scope readers over a batch of gets to amortize `close()` and cleaner activity.
+	- Ensure try-with-resources closes only once at the highest level; avoid redundant closes in nested layers.
+- Cut file-open churn
+	- Cache open channels per data file with reference counting; close when idle for a period.
+	- If feasible, pre-open frequently accessed files at segment initialization.
+
+These changes should collectively reclaim the majority of the observed CPU time in this profile.
