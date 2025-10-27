@@ -8,7 +8,7 @@ Please make sure there is an existing issue or create a new one that describes y
 
 ## 🧑‍💻 Code Style
 
-We follow a consistent Java coding style defined by the Eclipse formatter settings in [`./eclipse-formatter.xml`](./eclipse-formatter.xml). Please configure your IDE to use this formatter to keep the codebase consistent.
+We follow a consistent Java coding style defined by the Eclipse formatter settings in [`./eclipse-formatter.xml`](https://github.com/jajir/HestiaStore/blob/main/eclipse-formatter.xml). Please configure your IDE to use this formatter to keep the codebase consistent.
 
 ## 🧪 Code Quality Checks
 
