@@ -9,7 +9,7 @@ repo_url: https://github.com/jajir/HestiaStore
 
 nav:
     - Home: 
-        - index.md
+        - README.md
         - Alternatives: alternatives.md
         - benchmark-results.md
         - CHANGELOG.md
