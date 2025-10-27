@@ -10,13 +10,13 @@
         <meta name="author" content="Jan Jirout">
       
       
-        <link rel="canonical" href="https://jajir.github.io/HestiaStore/CONTRIBUTING/">
+        <link rel="canonical" href="https://jajir.github.io/HestiaStore/profiler-stacktrace/">
       
       
-        <link rel="prev" href="../CODE_OF_CONDUCT/">
+        <link rel="prev" href="../SECURITY/">
       
       
-        <link rel="next" href="../SECURITY/">
+        <link rel="next" href="../how-to-use/">
       
       
       <link rel="icon" href="../images/favicon.ico">
@@ -24,7 +24,7 @@
     
     
       
-        <title>Contributing to HestiaStore - HestiaStore</title>
+        <title>JVM Profiling - HestiaStore</title>
       
     
     
@@ -76,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#contributing-to-hestiastore" class="md-skip">
+        <a href="#jvm-profiler-results" class="md-skip">
           Skip to content
         </a>
       
@@ -111,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Contributing to HestiaStore
+              JVM Profiling
             
           </span>
         </div>
@@ -562,32 +562,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    Contributing to HestiaStore
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../CONTRIBUTING/" class="md-nav__link">
         
   
   
@@ -598,80 +576,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#before-you-start" class="md-nav__link">
-    <span class="md-ellipsis">
-      🧭 Before You Start
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#code-style" class="md-nav__link">
-    <span class="md-ellipsis">
-      🧑‍💻 Code Style
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#code-quality-checks" class="md-nav__link">
-    <span class="md-ellipsis">
-      🧪 Code Quality Checks
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#commit-and-submit" class="md-nav__link">
-    <span class="md-ellipsis">
-      🛠 Commit and Submit
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#review-process" class="md-nav__link">
-    <span class="md-ellipsis">
-      ⏳ Review Process
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#thanks" class="md-nav__link">
-    <span class="md-ellipsis">
-      🙌 Thanks
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -704,10 +608,32 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../profiler-stacktrace/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    JVM Profiling
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -718,6 +644,77 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#stacktraces" class="md-nav__link">
+    <span class="md-ellipsis">
+      Stacktraces
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Stacktraces">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cca-40-byte-array-manipulations" class="md-nav__link">
+    <span class="md-ellipsis">
+      cca 40% byte array manipulations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      3%
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cca-21" class="md-nav__link">
+    <span class="md-ellipsis">
+      cca 21%
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cca-18" class="md-nav__link">
+    <span class="md-ellipsis">
+      cca 18%
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1275,56 +1272,53 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#before-you-start" class="md-nav__link">
+  <a href="#stacktraces" class="md-nav__link">
     <span class="md-ellipsis">
-      🧭 Before You Start
+      Stacktraces
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Stacktraces">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cca-40-byte-array-manipulations" class="md-nav__link">
+    <span class="md-ellipsis">
+      cca 40% byte array manipulations
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#code-style" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
     <span class="md-ellipsis">
-      🧑‍💻 Code Style
+      3%
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#code-quality-checks" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#cca-21" class="md-nav__link">
     <span class="md-ellipsis">
-      🧪 Code Quality Checks
+      cca 21%
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#commit-and-submit" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#cca-18" class="md-nav__link">
     <span class="md-ellipsis">
-      🛠 Commit and Submit
+      cca 18%
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#review-process" class="md-nav__link">
-    <span class="md-ellipsis">
-      ⏳ Review Process
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#thanks" class="md-nav__link">
-    <span class="md-ellipsis">
-      🙌 Thanks
-    </span>
-  </a>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1347,45 +1341,150 @@
   
 
 
-<h1 id="contributing-to-hestiastore">Contributing to HestiaStore</h1>
-<p>Thank you for your interest in contributing to HestiaStore! We're excited to welcome your ideas, improvements, and bug fixes. Please follow the guidelines below to ensure a smooth and productive collaboration.</p>
-<h2 id="before-you-start">🧭 Before You Start</h2>
-<p>Please make sure there is an existing issue or create a new one that describes your intended change or feature. This helps us track and discuss proposals before any code is written.</p>
-<h2 id="code-style">🧑‍💻 Code Style</h2>
-<p>We follow a consistent Java coding style defined by the Eclipse formatter settings in <a href="./eclipse-formatter.xml"><code>./eclipse-formatter.xml</code></a>. Please configure your IDE to use this formatter to keep the codebase consistent.</p>
-<h2 id="code-quality-checks">🧪 Code Quality Checks</h2>
-<p>Before submitting your code, please verify the following:</p>
+<h1 id="jvm-profiler-results">JVM Profiler results</h1>
+<p><img alt="Profiler result" src="../images/jvm-profiler-2025-10-24.png" /></p>
+<h2 id="stacktraces">Stacktraces</h2>
+<h3 id="cca-40-byte-array-manipulations">cca 40% byte array manipulations</h3>
+<p>It's multiple places. At the end it's System.arraycopy</p>
+<p>Focus areas for optimization:</p>
 <ul>
-<li>✅ <strong>Run Site Checks</strong><br />
-  Execute <code>mvn clean site</code> to generate the project site and perform static analysis. This will highlight issues reported by:</li>
-<li>PMD</li>
-<li>Checkstyle</li>
-<li>
-<p>SpotBugs (formerly FindBugs)<br />
-  Please ensure your changes do not introduce new warnings or violations.</p>
-</li>
-<li>
-<p>✅ <strong>Test Coverage</strong><br />
-  All new code should be covered by unit tests. We use JUnit. Run tests and verify that your code is being exercised by checking the line coverage in the site reports.</p>
-</li>
-<li>
-<p>✅ <strong>Javadoc Comments</strong><br />
-  Public methods, classes, and significant internal logic should be documented using Javadoc. Clear documentation helps others understand and maintain the project.</p>
-</li>
+<li>Roughly 40% of CPU time sits in repeated <code>System.arraycopy</code> usage while shuffling byte arrays across chunk readers. Investigate buffer pooling and reduce intermediate copies during data block traversal.</li>
+<li>Sequential chunk reads consume about 21% of total time through multiple layered streams (<code>ChunkPairFileIterator</code>, <code>ChunkStoreReaderImpl</code>, etc.). Larger IO buffers or shared channel readers could cut back the number of small <code>read</code> calls flowing through <code>BufferedInputStream</code>.</li>
+<li>Cleanup takes another 18%. Closing nested streams triggers several cleaner invocations in sequence. Collapsing the close hierarchy or reusing readers for a batch might reduce that overhead.</li>
+<li>File open operations account for ~3%. Each lookup fetch repeatedly calls <code>FsDirectory.getFileReader</code>, creating new channels. Consider caching open channels or widening the scope of existing ones to lower syscall churn.</li>
 </ul>
-<h2 id="commit-and-submit">🛠 Commit and Submit</h2>
-<ol>
-<li>Make your changes in a separate branch.</li>
-<li>Push your branch to your fork or the main repo (if you have access).</li>
-<li>Open a <strong>Pull Request</strong> with a clear title and description.</li>
-<li>Link to the related issue or ticket.</li>
-</ol>
-<h2 id="review-process">⏳ Review Process</h2>
-<p>Once submitted, your PR will be reviewed by a maintainer. We may request changes or ask clarifying questions. Please be patient — reviews are important to keep the project healthy.</p>
-<h2 id="thanks">🙌 Thanks</h2>
-<p>We appreciate your contribution, whether it's code, documentation, or ideas. Your support makes HestiaStore better!</p>
-<hr />
-<p>💬 For questions, feel free to open a <a href="https://github.com/jajir/HestiaStore/issues">GitHub Issue</a>.</p>
+<h3 id="3">3%</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>sun.nio.fs.UnixNativeDispatcher.open0(Native Method)
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>sun.nio.fs.UnixNativeDispatcher.open(UnixNativeDispatcher.java:72)
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>sun.nio.fs.UnixChannelFactory.open(UnixChannelFactory.java:258)
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>sun.nio.fs.UnixChannelFactory.newFileChannel(UnixChannelFactory.java:133)
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>sun.nio.fs.UnixChannelFactory.newFileChannel(UnixChannelFactory.java:146)
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:259)
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>java.nio.file.Files.newByteChannel(Files.java:380)
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>java.nio.file.Files.newByteChannel(Files.java:432)
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>java.nio.file.spi.FileSystemProvider.newInputStream(FileSystemProvider.java:420)
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>java.nio.file.Files.newInputStream(Files.java:160)
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>org.hestiastore.index.directory.FsFileReaderStream.&lt;init&gt;(FsFileReaderStream.java:22)
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>org.hestiastore.index.directory.FsDirectory.getFileReader(FsDirectory.java:29)
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>org.hestiastore.index.datablockfile.DataBlockFile.getFileReader(DataBlockFile.java:69)
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>org.hestiastore.index.datablockfile.DataBlockFile.openReader(DataBlockFile.java:61)
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>org.hestiastore.index.chunkstore.ChunkStoreFile.openReader(ChunkStoreFile.java:52)
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>org.hestiastore.index.chunkpairfile.ChunkPairFile.openIteratorAtPosition(ChunkPairFile.java:42)
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>org.hestiastore.index.segment.SegmentIndexSearcher.search(SegmentIndexSearcher.java:43)
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>org.hestiastore.index.segment.SegmentSearcher.get(SegmentSearcher.java:62)
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>org.hestiastore.index.segment.SegmentImpl.get(SegmentImpl.java:166)
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>org.hestiastore.index.sst.SstIndexImpl.get(SstIndexImpl.java:163)
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>org.hestiastore.index.sst.IndexContextLoggingAdapter.get(IndexContextLoggingAdapter.java:46)
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>com.coroptis.counting.CommandCount.lambda$countBoard$0(CommandCount.java:102)
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>com.coroptis.counting.CommandCount$$Lambda.0x000000080023f0b0.accept()
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>java.util.ArrayList.forEach(ArrayList.java:1596)
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>com.coroptis.counting.CommandCount.countBoard(CommandCount.java:99)
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>com.coroptis.counting.CommandCount.lambda$computeNewStates$0(CommandCount.java:82)
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>com.coroptis.counting.CommandCount$$Lambda.0x000000080023e3c0.accept()
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>org.hestiastore.index.sst.PairIteratorToSpliterator.tryAdvance(PairIteratorToSpliterator.java:31)
+<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>java.util.Spliterator.forEachRemaining(Spliterator.java:332)
+<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+<a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+<a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+<a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+<a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+<a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+<a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>com.coroptis.counting.CommandCount.computeNewStates(CommandCount.java:81)
+<a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>com.coroptis.counting.CommandCount.countRound(CommandCount.java:48)
+<a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a>com.coroptis.counting.Main.main(Main.java:132)
+</code></pre></div>
+<h3 id="cca-21">cca 21%</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>sun.nio.ch.ChannelInputStream.read(ChannelInputStream.java)
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>sun.nio.ch.ChannelInputStream.read(ChannelInputStream.java:103)
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>java.io.BufferedInputStream.read1(BufferedInputStream.java:345)
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>java.io.BufferedInputStream.implRead(BufferedInputStream.java:420)
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>java.io.BufferedInputStream.read(BufferedInputStream.java:399)
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>java.io.FilterInputStream.read(FilterInputStream.java:95)
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>org.hestiastore.index.directory.FsFileReaderStream.read(FsFileReaderStream.java:51)
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>org.hestiastore.index.datablockfile.DataBlockReaderImpl.read(DataBlockReaderImpl.java:35)
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>org.hestiastore.index.datablockfile.DataBlockReaderImpl.read(DataBlockReaderImpl.java:12)
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>org.hestiastore.index.datablockfile.DataBlockByteReaderImpl.moveToNextDataBlock(DataBlockByteReaderImpl.java:84)
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>org.hestiastore.index.datablockfile.DataBlockByteReaderImpl.optionalyMoveToNextDataBlock(DataBlockByteReaderImpl.java:79)
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>org.hestiastore.index.datablockfile.DataBlockByteReaderImpl.readExactly(DataBlockByteReaderImpl.java:71)
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>org.hestiastore.index.chunkstore.ChunkData.read(ChunkData.java:85)
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>org.hestiastore.index.chunkstore.ChunkStoreReaderImpl.read(ChunkStoreReaderImpl.java:42)
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>org.hestiastore.index.chunkstore.ChunkStoreReaderImpl.read(ChunkStoreReaderImpl.java:13)
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>org.hestiastore.index.chunkpairfile.ChunkPairFileIterator.moveToNextChunk(ChunkPairFileIterator.java:81)
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>org.hestiastore.index.chunkpairfile.ChunkPairFileIterator.&lt;init&gt;(ChunkPairFileIterator.java:42)
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>org.hestiastore.index.chunkpairfile.ChunkPairFile.openIteratorAtPosition(ChunkPairFile.java:42)
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>org.hestiastore.index.segment.SegmentIndexSearcher.search(SegmentIndexSearcher.java:43)
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>org.hestiastore.index.segment.SegmentSearcher.get(SegmentSearcher.java:62)
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>org.hestiastore.index.segment.SegmentImpl.get(SegmentImpl.java:166)
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>org.hestiastore.index.sst.SstIndexImpl.get(SstIndexImpl.java:163)
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>org.hestiastore.index.sst.IndexContextLoggingAdapter.get(IndexContextLoggingAdapter.java:46)
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>com.coroptis.counting.CommandCount.lambda$countBoard$0(CommandCount.java:102)
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>com.coroptis.counting.CommandCount$$Lambda.0x000000080023f0b0.accept()
+<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>java.util.ArrayList.forEach(ArrayList.java:1596)
+<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>com.coroptis.counting.CommandCount.countBoard(CommandCount.java:99)
+<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>com.coroptis.counting.CommandCount.lambda$computeNewStates$0(CommandCount.java:82)
+<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>com.coroptis.counting.CommandCount$$Lambda.0x000000080023e3c0.accept()
+<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a>java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a>java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a>org.hestiastore.index.sst.PairIteratorToSpliterator.tryAdvance(PairIteratorToSpliterator.java:31)
+<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a>java.util.Spliterator.forEachRemaining(Spliterator.java:332)
+<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a>java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a>java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+<a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a>java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+<a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a>java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+<a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a>java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+<a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a>java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+<a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a>com.coroptis.counting.CommandCount.computeNewStates(CommandCount.java:81)
+<a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a>com.coroptis.counting.CommandCount.countRound(CommandCount.java:48)
+<a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a>com.coroptis.counting.Main.main(Main.java:132)
+</code></pre></div>
+<h3 id="cca-18">cca 18%</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>java.io.FileDescriptor.close0(Native Method)
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>java.io.FileDescriptor.close(FileDescriptor.java:304)
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>java.io.FileDescriptor$1.close(FileDescriptor.java:89)
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>sun.nio.ch.FileChannelImpl$Closer.run(FileChannelImpl.java:116)
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>jdk.internal.ref.CleanerImpl$PhantomCleanableRef.performCleanup(CleanerImpl.java:178)
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>jdk.internal.ref.PhantomCleanable.clean(PhantomCleanable.java:133)
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>sun.nio.ch.FileChannelImpl.implCloseChannel(FileChannelImpl.java:210)
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>java.nio.channels.spi.AbstractInterruptibleChannel.close(AbstractInterruptibleChannel.java:113)
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>sun.nio.ch.ChannelInputStream.close(ChannelInputStream.java:312)
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>java.io.BufferedInputStream.close(BufferedInputStream.java:618)
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>org.hestiastore.index.directory.FsFileReaderStream.doClose(FsFileReaderStream.java:33)
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>org.hestiastore.index.AbstractCloseableResource.close(AbstractCloseableResource.java:23)
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>org.hestiastore.index.datablockfile.DataBlockReaderImpl.doClose(DataBlockReaderImpl.java:29)
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>org.hestiastore.index.AbstractCloseableResource.close(AbstractCloseableResource.java:23)
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>org.hestiastore.index.datablockfile.DataBlockByteReaderImpl.doClose(DataBlockByteReaderImpl.java:48)
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>org.hestiastore.index.AbstractCloseableResource.close(AbstractCloseableResource.java:23)
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>org.hestiastore.index.chunkstore.ChunkStoreReaderImpl.doClose(ChunkStoreReaderImpl.java:36)
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>org.hestiastore.index.AbstractCloseableResource.close(AbstractCloseableResource.java:23)
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>org.hestiastore.index.chunkpairfile.ChunkPairFileIterator.doClose(ChunkPairFileIterator.java:96)
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>org.hestiastore.index.AbstractCloseableResource.close(AbstractCloseableResource.java:23)
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>org.hestiastore.index.segment.SegmentIndexSearcher.search(SegmentIndexSearcher.java:59)
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>org.hestiastore.index.segment.SegmentSearcher.get(SegmentSearcher.java:62)
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>org.hestiastore.index.segment.SegmentImpl.get(SegmentImpl.java:166)
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a>org.hestiastore.index.sst.SstIndexImpl.get(SstIndexImpl.java:163)
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a>org.hestiastore.index.sst.IndexContextLoggingAdapter.get(IndexContextLoggingAdapter.java:46)
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a>com.coroptis.counting.CommandCount.lambda$countBoard$0(CommandCount.java:102)
+<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a>com.coroptis.counting.CommandCount$$Lambda.0x000000080023f0b0.accept()
+<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a>java.util.ArrayList.forEach(ArrayList.java:1596)
+<a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a>com.coroptis.counting.CommandCount.countBoard(CommandCount.java:99)
+<a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a>com.coroptis.counting.CommandCount.lambda$computeNewStates$0(CommandCount.java:82)
+<a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a>com.coroptis.counting.CommandCount$$Lambda.0x000000080023e3c0.accept()
+<a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a>java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+<a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a>java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+<a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a>org.hestiastore.index.sst.PairIteratorToSpliterator.tryAdvance(PairIteratorToSpliterator.java:31)
+<a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a>java.util.Spliterator.forEachRemaining(Spliterator.java:332)
+<a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a>java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+<a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a>java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+<a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a>java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+<a id="__codelineno-2-39" name="__codelineno-2-39" href="#__codelineno-2-39"></a>java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+<a id="__codelineno-2-40" name="__codelineno-2-40" href="#__codelineno-2-40"></a>java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+<a id="__codelineno-2-41" name="__codelineno-2-41" href="#__codelineno-2-41"></a>java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+<a id="__codelineno-2-42" name="__codelineno-2-42" href="#__codelineno-2-42"></a>com.coroptis.counting.CommandCount.computeNewStates(CommandCount.java:81)
+<a id="__codelineno-2-43" name="__codelineno-2-43" href="#__codelineno-2-43"></a>com.coroptis.counting.CommandCount.countRound(CommandCount.java:48)
+<a id="__codelineno-2-44" name="__codelineno-2-44" href="#__codelineno-2-44"></a>com.coroptis.counting.Main.main(Main.java:132)
+</code></pre></div>
 
 
 
