@@ -569,11 +569,11 @@
         <li class="md-nav__item">
   <a href="#005" class="md-nav__link">
     <span class="md-ellipsis">
-      🚧 0.0.5
+      0.0.5
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="🚧 0.0.5">
+    <nav class="md-nav" aria-label="0.0.5">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -593,11 +593,11 @@
         <li class="md-nav__item">
   <a href="#004" class="md-nav__link">
     <span class="md-ellipsis">
-      🚧 0.0.4
+      0.0.4
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="🚧 0.0.4">
+    <nav class="md-nav" aria-label="0.0.4">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1280,11 +1280,11 @@
         <li class="md-nav__item">
   <a href="#005" class="md-nav__link">
     <span class="md-ellipsis">
-      🚧 0.0.5
+      0.0.5
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="🚧 0.0.5">
+    <nav class="md-nav" aria-label="0.0.5">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1304,11 +1304,11 @@
         <li class="md-nav__item">
   <a href="#004" class="md-nav__link">
     <span class="md-ellipsis">
-      🚧 0.0.4
+      0.0.4
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="🚧 0.0.4">
+    <nav class="md-nav" aria-label="0.0.4">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1356,28 +1356,31 @@
 <h1 id="changelog">Changelog</h1>
 <p>All notable changes to this project will be documented in this file.</p>
 <p>The format is based on <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a>.</p>
-<h2 id="005">🚧 0.0.5</h2>
+<h2 id="005">0.0.5</h2>
 <h3 id="added">✨ Added</h3>
 <ul>
-<li>Pages and datablock was introduces. System of storing data was significantly improved. (#31) (<a href="https://github.com/jajir/HestiaStore/issues">github.com</a>)</li>
+<li>Data blocks were introduced and the on-disk storage format was significantly improved.</li>
+<li>All disk writes now use a temporary file followed by an atomic rename; all streams are correctly closed.</li>
+<li>Data storage is configurable via the application configuration.</li>
+<li>Data in chunks and data blocks are validated using a magic number and CRC32.</li>
+<li>Added support for Snappy compression.</li>
 </ul>
-<h2 id="004">🚧 0.0.4</h2>
+<h2 id="004">0.0.4</h2>
 <h3 id="added_1">✨ Added</h3>
 <ul>
-<li>Add recovery support to rebuild indexes after failures. (#22) (<a href="https://github.com/jajir/HestiaStore/issues">github.com</a>)</li>
-<li>Introduce pages feature for segment-based indexing. (#31) (<a href="https://github.com/jajir/HestiaStore/issues">github.com</a>)</li>
-<li>Create <code>Directory</code> implementation using <code>java.nio</code>. (#50) (<a href="https://github.com/jajir/HestiaStore/issues">github.com</a>)</li>
-<li>Performance comparison framework for benchmark testing. (#60) (<a href="https://github.com/jajir/HestiaStore/issues">github.com</a>)</li>
-<li>Integration tests for deleting data and graceful degradation. (#76, #63) (<a href="https://github.com/jajir/HestiaStore/issues">github.com</a>)</li>
-<li>Test class for long-running index operations. (#49) (<a href="https://github.com/jajir/HestiaStore/issues">github.com</a>)</li>
+<li>Add recovery support to rebuild indexes after failures. (<a href="https://github.com/jajir/HestiaStore/issues/22">#22</a>)</li>
+<li>Introduce pages for segment-based indexing. (<a href="https://github.com/jajir/HestiaStore/issues/31">#31</a>)</li>
+<li>Create <code>Directory</code> implementation using <code>java.nio</code>. (<a href="https://github.com/jajir/HestiaStore/issues/50">#50</a>)</li>
+<li>Add a performance comparison framework for benchmark testing. (<a href="https://github.com/jajir/HestiaStore/issues/60">#60</a>)</li>
+<li>Add integration tests for deletion and graceful degradation. (<a href="https://github.com/jajir/HestiaStore/issues/76">#76</a>, <a href="https://github.com/jajir/HestiaStore/issues/63">#63</a>)</li>
+<li>Add a test class for long-running index operations. (<a href="https://github.com/jajir/HestiaStore/issues/49">#49</a>)</li>
 </ul>
 <h3 id="changed">🔧 Changed</h3>
 <ul>
-<li>Improved design of the <code>sorteddatafile</code> package for better modularity. (#59) (<a href="https://github.com/jajir/HestiaStore/issues">github.com</a>)</li>
-<li>Enhanced index configuration validation and parameter consistency. (#81) (<a href="https://github.com/jajir/HestiaStore/commits/main/">github.com</a>)</li>
-<li>Introduced limits on the number of delta files to prevent unbounded growth. (#75) (<a href="https://github.com/jajir/HestiaStore/issues">github.com</a>)</li>
+<li>Improve design of the <code>sorteddatafile</code> package for better modularity. (<a href="https://github.com/jajir/HestiaStore/issues/59">#59</a>)</li>
+<li>Enhance index configuration validation and parameter consistency. (<a href="https://github.com/jajir/HestiaStore/commit">#81</a>)</li>
+<li>Introduce limits on the number of delta files to prevent unbounded growth. (<a href="https://github.com/jajir/HestiaStore/issues/75">#75</a>)</li>
 </ul>
-<p>-</p>
 
 
 
