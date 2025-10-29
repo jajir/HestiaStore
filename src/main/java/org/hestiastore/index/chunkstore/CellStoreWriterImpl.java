@@ -30,9 +30,8 @@ public class CellStoreWriterImpl extends AbstractCloseableResource
         while (bufferToWrite != null && bufferToWrite.length() > 0) {
             int availableBytes = cursor.getAvailableBytes();
             int trimTo = Math.min(availableBytes, bufferToWrite.length());
-            cursor.write(bufferToWrite.subBytes(0, trimTo));
-            bufferToWrite = bufferToWrite.subBytes(trimTo,
-                    bufferToWrite.length());
+            cursor.write(bufferToWrite.slice(0, trimTo));
+            bufferToWrite = bufferToWrite.slice(trimTo, bufferToWrite.length());
         }
         return returnPosition;
     }

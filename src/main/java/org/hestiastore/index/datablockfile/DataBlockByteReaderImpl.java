@@ -64,7 +64,7 @@ public class DataBlockByteReaderImpl extends AbstractCloseableResource
                     .min(remainingBytesToReadInChunk, bytesToread);
             chunkPayloadBytes = chunkPayloadBytes
                     .concat(currentDataBlock.getPayload().getBytes()
-                            .subBytes(currentBlockPosition, currentBlockPosition
+                            .slice(currentBlockPosition, currentBlockPosition
                                     + bytesToReadFromCurrentBlock));
             currentBlockPosition += bytesToReadFromCurrentBlock;
             bytesToread -= bytesToReadFromCurrentBlock;

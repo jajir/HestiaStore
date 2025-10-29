@@ -59,16 +59,17 @@ public class Bytes implements ByteSequence {
     }
 
     /**
-     * Concatenate two Bytes instances into a new one.
-     * 
-     * @param data1 first Bytes instance
-     * @param data2 second Bytes instance
+     * Concatenate two byte sequences into a new Bytes instance.
+     *
+     * @param data1 first byte sequence
+     * @param data2 second byte sequence
      * @return created Bytes instance
      */
-    public static Bytes concat(final Bytes data1, final Bytes data2) {
+    public static Bytes concat(final ByteSequence data1,
+            final ByteSequence data2) {
         Vldtn.requireNonNull(data1, "data1");
         Vldtn.requireNonNull(data2, "data2");
-        final MutableBytes combined = MutableBytes
+        final MutableByteSequence combined = MutableByteSequence
                 .allocate(data1.length() + data2.length());
         combined.setBytes(0, data1);
         combined.setBytes(data1.length(), data2);
@@ -77,27 +78,6 @@ public class Bytes implements ByteSequence {
 
     private Bytes(final byte[] data) {
         this.data = Vldtn.requireNonNull(data, "data");
-    }
-
-    /**
-     * Returns a new Bytes instance that is a subarray of this instance,
-     * starting from startByte (inclusive) to endByte (exclusive).
-     * 
-     * @param startByte required start byte index (inclusive)
-     * @param endByte   required end byte index (exclusive)
-     * @return
-     */
-    public Bytes subBytes(int startByte, int endByte) {
-        Vldtn.requireBetween(startByte, 0, data.length, "startByte");
-        Vldtn.requireBetween(endByte, 0, data.length, "endByte");
-        if (startByte > endByte) {
-            throw new IllegalArgumentException(
-                    "startByte must be less than or equal to endByte");
-        }
-        final int len = endByte - startByte;
-        byte[] tmp = new byte[len];
-        System.arraycopy(this.data, startByte, tmp, 0, len);
-        return new Bytes(tmp);
     }
 
     /**
@@ -182,8 +162,20 @@ public class Bytes implements ByteSequence {
     }
 
     @Override
-    public ByteSequence slice(final int fromInclusive, final int toExclusive) {
-        return subBytes(fromInclusive, toExclusive);
+    public Bytes slice(final int fromInclusive, final int toExclusive) {
+        Vldtn.requireBetween(fromInclusive, 0, data.length, "fromInclusive");
+        Vldtn.requireBetween(toExclusive, 0, data.length, "toExclusive");
+        if (fromInclusive > toExclusive) {
+            throw new IllegalArgumentException(
+                    "fromInclusive must be less than or equal to toExclusive");
+        }
+        final int len = toExclusive - fromInclusive;
+        if (len == 0) {
+            return Bytes.EMPTY;
+        }
+        final byte[] slice = new byte[len];
+        System.arraycopy(data, fromInclusive, slice, 0, len);
+        return new Bytes(slice);
     }
 
     /**

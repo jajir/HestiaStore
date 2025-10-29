@@ -4,7 +4,7 @@ import java.util.Comparator;
 
 import org.hestiastore.index.ByteTool;
 import org.hestiastore.index.Bytes;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.MutableByteSequence;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.slf4j.Logger;
@@ -65,7 +65,8 @@ public class DiffKeyWriter<K> {
         final Bytes diffBytes = ByteTool
                 .getRemainingBytesAfterIndex(sharedByteLength, keyBytes);
 
-        final MutableBytes out = MutableBytes.allocate(2 + diffBytes.length());
+        final MutableByteSequence out = MutableByteSequence
+                .allocate(2 + diffBytes.length());
         out.setByte(0, (byte) sharedByteLength);
         out.setByte(1, (byte) diffBytes.length());
         out.setBytes(2, diffBytes);

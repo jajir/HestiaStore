@@ -1,21 +1,20 @@
 package org.hestiastore.index.bloomfilter;
 
-import java.util.Arrays;
-
 import org.hestiastore.index.Bytes;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.MutableByteSequence;
 import org.hestiastore.index.Vldtn;
 
 public class BitArray {
 
-    private final MutableBytes bytes;
+    private final MutableByteSequence bytes;
 
     public BitArray(final int length) {
-        this.bytes = MutableBytes.allocate(length);
+    this.bytes = MutableByteSequence.allocate(length);
     }
 
     public BitArray(final Bytes data) {
-        this.bytes = MutableBytes.copyOf(Vldtn.requireNonNull(data, "data"));
+    this.bytes = MutableByteSequence.copyOf(
+        Vldtn.requireNonNull(data, "data"));
     }
 
     /**
@@ -42,7 +41,6 @@ public class BitArray {
             bytes.setByte(byteIndex, (byte) newValue);
             return true;
         }
-        // FIXME set one byte in Bytes
     }
 
     public boolean get(final int index) {
@@ -68,7 +66,11 @@ public class BitArray {
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(bytes.array());
+        int result = 1;
+        for (int i = 0; i < bytes.length(); i++) {
+            result = 31 * result + bytes.getByte(i);
+        }
+        return result;
     }
 
     @Override
@@ -80,6 +82,14 @@ public class BitArray {
             return false;
         }
         BitArray that = (BitArray) other;
-        return Arrays.equals(bytes.array(), that.bytes.array());
+        if (bytes.length() != that.bytes.length()) {
+            return false;
+        }
+        for (int i = 0; i < bytes.length(); i++) {
+            if (bytes.getByte(i) != that.bytes.getByte(i)) {
+                return false;
+            }
+        }
+        return true;
     }
 }

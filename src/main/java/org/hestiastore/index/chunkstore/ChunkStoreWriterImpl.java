@@ -41,7 +41,8 @@ public class ChunkStoreWriterImpl extends AbstractCloseableResource
             final int version) {
         Vldtn.requireNonNull(chunkPayload, "chunkPayload");
         ChunkData chunkData = ChunkData.of(DEFAULT_LONG, DEFAULT_LONG,
-                DEFAULT_LONG, version, chunkPayload.getBytes());
+                DEFAULT_LONG, version,
+                org.hestiastore.index.Bytes.copyOf(chunkPayload.getBytes()));
         chunkData = encodingProcessor.process(chunkData);
         final ChunkHeader header = ChunkHeader.of(chunkData.getMagicNumber(),
                 chunkData.getVersion(), chunkData.getPayload().length(),

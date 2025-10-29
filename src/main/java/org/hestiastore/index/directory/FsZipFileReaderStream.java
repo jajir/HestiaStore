@@ -8,7 +8,7 @@ import java.util.zip.ZipInputStream;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.MutableByteSequence;
 import org.hestiastore.index.Vldtn;
 
 public final class FsZipFileReaderStream extends AbstractCloseableResource
@@ -44,10 +44,15 @@ public final class FsZipFileReaderStream extends AbstractCloseableResource
     }
 
     @Override
-    public int read(final MutableBytes bytes) {
-        final byte[] data = Vldtn.requireNonNull(bytes, "bytes").array();
+    public int read(final MutableByteSequence bytes) {
+        Vldtn.requireNonNull(bytes, "bytes");
+        final byte[] data = new byte[bytes.length()];
         try {
-            final int readBytes = bis.read(data, 0, bytes.length());
+            final int readBytes = bis.read(data, 0, data.length);
+            if (readBytes > 0) {
+        bytes.setBytes(0, MutableByteSequence.wrap(data), 0,
+            readBytes);
+            }
             return readBytes == bytes.length() ? readBytes : -1;
         } catch (IOException e) {
             throw new IndexException(e.getMessage(), e);

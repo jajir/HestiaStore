@@ -4,7 +4,7 @@ import java.util.Comparator;
 
 import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.MutableByteSequence;
 
 public class TypeDescriptorFloat implements TypeDescriptor<Float> {
 
@@ -31,7 +31,8 @@ public class TypeDescriptorFloat implements TypeDescriptor<Float> {
     @Override
     public TypeReader<Float> getTypeReader() {
         return fileReader -> {
-            final MutableBytes buffer = MutableBytes.allocate(REQUIRED_BYTES);
+            final MutableByteSequence buffer = MutableByteSequence
+                    .allocate(REQUIRED_BYTES);
             if (fileReader.read(buffer) == -1) {
                 return null;
             }
@@ -56,7 +57,8 @@ public class TypeDescriptorFloat implements TypeDescriptor<Float> {
             throw new IllegalArgumentException("Object can't be null");
         }
         int bits = Float.floatToIntBits(object);
-        final MutableBytes out = MutableBytes.allocate(REQUIRED_BYTES);
+    final MutableByteSequence out = MutableByteSequence
+        .allocate(REQUIRED_BYTES);
         out.setByte(0, (byte) (bits >> 24));
         out.setByte(1, (byte) (bits >> 16));
         out.setByte(2, (byte) (bits >> 8));

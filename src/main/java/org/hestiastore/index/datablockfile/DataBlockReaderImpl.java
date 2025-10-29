@@ -1,7 +1,7 @@
 package org.hestiastore.index.datablockfile;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.MutableByteSequence;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileReader;
@@ -31,8 +31,8 @@ public class DataBlockReaderImpl extends AbstractCloseableResource
 
     @Override
     public DataBlock read() {
-        final MutableBytes buffer = MutableBytes
-                .allocate(blockSize.getDataBlockSize());
+    final MutableByteSequence buffer = MutableByteSequence
+        .allocate(blockSize.getDataBlockSize());
         final int bytesRead = fileReader.read(buffer);
         if (bytesRead < 0) {
             return null; // End of file reached

@@ -2,7 +2,7 @@ package org.hestiastore.index.chunkstore;
 
 import java.util.Optional;
 
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.MutableByteSequence;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
 import org.hestiastore.index.datatype.ConvertorToBytes;
@@ -37,7 +37,7 @@ final class ChunkHeaderCodec {
         // utility class
     }
 
-    static ChunkHeader decode(final org.hestiastore.index.Bytes data) {
+    static ChunkHeader decode(final org.hestiastore.index.ByteSequence data) {
         Vldtn.requireNonNull(data, "data");
         if (data.length() != ChunkHeader.HEADER_SIZE) {
             throw new IllegalArgumentException(String.format(
@@ -55,7 +55,7 @@ final class ChunkHeaderCodec {
     }
 
     static Optional<ChunkHeader> decodeOptional(
-            final org.hestiastore.index.Bytes data) {
+            final org.hestiastore.index.ByteSequence data) {
         if (data == null) {
             return Optional.empty();
         }
@@ -66,8 +66,9 @@ final class ChunkHeaderCodec {
         }
     }
 
-    static org.hestiastore.index.Bytes encode(final ChunkHeader header) {
-        final MutableBytes out = MutableBytes.allocate(ChunkHeader.HEADER_SIZE);
+    static org.hestiastore.index.ByteSequence encode(final ChunkHeader header) {
+        final MutableByteSequence out = MutableByteSequence
+                .allocate(ChunkHeader.HEADER_SIZE);
         writeLong(out, MAGIC_OFFSET, header.getMagicNumber());
         writeInt(out, VERSION_OFFSET, header.getVersion());
         writeInt(out, PAYLOAD_LENGTH_OFFSET, header.getPayloadLength());
@@ -76,10 +77,10 @@ final class ChunkHeaderCodec {
         return out.toBytes();
     }
 
-    private static long readLong(final org.hestiastore.index.Bytes data,
+    private static long readLong(final org.hestiastore.index.ByteSequence data,
             final int offset) {
-        final org.hestiastore.index.Bytes buffer = data.subBytes(offset,
-                offset + 8);
+        final org.hestiastore.index.Bytes buffer = org.hestiastore.index.Bytes
+                .copyOf(data.slice(offset, offset + Long.BYTES));
         final Long value = LONG_FROM_BYTES.fromBytes(buffer);
         if (value == null) {
             throw new IllegalArgumentException(
@@ -88,10 +89,10 @@ final class ChunkHeaderCodec {
         return value;
     }
 
-    private static int readInt(final org.hestiastore.index.Bytes data,
+    private static int readInt(final org.hestiastore.index.ByteSequence data,
             final int offset) {
-        final org.hestiastore.index.Bytes buffer = data.subBytes(offset,
-                offset + 4);
+        final org.hestiastore.index.Bytes buffer = org.hestiastore.index.Bytes
+                .copyOf(data.slice(offset, offset + Integer.BYTES));
         final Integer value = INT_FROM_BYTES.fromBytes(buffer);
         if (value == null) {
             throw new IllegalArgumentException(
@@ -100,15 +101,15 @@ final class ChunkHeaderCodec {
         return value;
     }
 
-    private static void writeLong(final MutableBytes data, final int offset,
-            final long value) {
+    private static void writeLong(final MutableByteSequence data,
+            final int offset, final long value) {
         final org.hestiastore.index.Bytes bytes = LONG_TO_BYTES
                 .toBytesBuffer(value);
         data.setBytes(offset, bytes);
     }
 
-    private static void writeInt(final MutableBytes data, final int offset,
-            final int value) {
+    private static void writeInt(final MutableByteSequence data,
+            final int offset, final int value) {
         final org.hestiastore.index.Bytes bytes = INT_TO_BYTES
                 .toBytesBuffer(value);
         data.setBytes(offset, bytes);

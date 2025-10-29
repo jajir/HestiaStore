@@ -20,8 +20,8 @@ public class CellStoreWriterImplTest {
 
     private static final CellPosition CELL_POSITION_0 = CellPosition
             .of(TestData.DATA_BLOCK_SIZE, 0);
-    private static final Bytes BYTES_64 = TestData.BYTES_1024.subBytes(0, 64);
-    private static final Bytes BYTES_16 = TestData.BYTES_1024.subBytes(0, 16);
+    private static final Bytes BYTES_64 = TestData.BYTES_1024.slice(0, 64);
+    private static final Bytes BYTES_16 = TestData.BYTES_1024.slice(0, 16);
 
     @Mock
     private CellStoreWriterCursor cursor;

@@ -47,7 +47,8 @@ public final class ByteTool {
         if (remainingLength == 0) {
             return Bytes.EMPTY;
         }
-        final MutableBytes slice = MutableBytes.allocate(remainingLength);
+    final MutableByteSequence slice = MutableByteSequence
+        .allocate(remainingLength);
         slice.setBytes(0, full, index, remainingLength);
         return slice.toBytes();
     }
@@ -64,8 +65,8 @@ public final class ByteTool {
         Vldtn.requireNonNull(first, "first");
         Vldtn.requireNonNull(second, "second");
 
-        final MutableBytes out = MutableBytes
-                .allocate(first.length() + second.length());
+    final MutableByteSequence out = MutableByteSequence
+        .allocate(first.length() + second.length());
         out.setBytes(0, first);
         out.setBytes(first.length(), second);
         return out.toBytes();

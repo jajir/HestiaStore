@@ -56,7 +56,7 @@ public final class Chunk {
     private Chunk(final Bytes bytes) {
         Vldtn.requireNonNull(bytes, "bytes");
         final ChunkHeader header = ChunkHeader
-                .of(bytes.subBytes(0, ChunkHeader.HEADER_SIZE));
+                .of(bytes.slice(0, ChunkHeader.HEADER_SIZE));
         final int requiredLength = header.getPayloadLength();
         if (bytes.length() != requiredLength + ChunkHeader.HEADER_SIZE) {
             throw new IllegalArgumentException(String.format(
@@ -69,9 +69,9 @@ public final class Chunk {
     /**
      * Get the raw bytes of the chunk.
      * 
-     * @return the raw bytes of the chunk
+     * @return the raw byte sequence of the chunk
      */
-    public Bytes getBytes() {
+    public org.hestiastore.index.ByteSequence getBytes() {
         return bytes;
     }
 
@@ -82,7 +82,7 @@ public final class Chunk {
      */
     public ChunkPayload getPayload() {
         return ChunkPayload
-                .of(bytes.subBytes(ChunkHeader.HEADER_SIZE, bytes.length()));
+                .of(bytes.slice(ChunkHeader.HEADER_SIZE, bytes.length()));
     }
 
     /**
@@ -91,7 +91,7 @@ public final class Chunk {
      * @return the header of the chunk
      */
     public ChunkHeader getHeader() {
-        return ChunkHeader.of(bytes.subBytes(0, ChunkHeader.HEADER_SIZE));
+        return ChunkHeader.of(bytes.slice(0, ChunkHeader.HEADER_SIZE));
     }
 
     /**

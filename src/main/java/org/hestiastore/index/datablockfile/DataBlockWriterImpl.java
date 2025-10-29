@@ -2,7 +2,7 @@ package org.hestiastore.index.datablockfile;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Bytes;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.MutableByteSequence;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileWriter;
 
@@ -42,8 +42,8 @@ public class DataBlockWriterImpl extends AbstractCloseableResource
     }
 
     private Bytes makeBlockData(final DataBlockPayload dataBlockPayload) {
-        final MutableBytes blockData = MutableBytes
-                .allocate(blockSize.getDataBlockSize());
+    final MutableByteSequence blockData = MutableByteSequence
+        .allocate(blockSize.getDataBlockSize());
         final DataBlockHeader header = DataBlockHeader.of(
                 DataBlockHeader.MAGIC_NUMBER, dataBlockPayload.calculateCrc());
         blockData.setBytes(0, header.toBytes());

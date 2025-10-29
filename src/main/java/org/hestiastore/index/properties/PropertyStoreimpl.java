@@ -9,7 +9,7 @@ import java.util.Properties;
 
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.MutableByteSequence;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.Directory.Access;
@@ -54,11 +54,13 @@ public final class PropertyStoreimpl implements PropertyStore {
     private byte[] readEntireFile() {
         try (FileReader reader = directory.getFileReader(fileName)) {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            final MutableBytes buffer = MutableBytes.allocate(256);
-            final byte[] bufferArray = buffer.array();
+            final MutableByteSequence buffer = MutableByteSequence
+                    .allocate(256);
+            final byte[] chunk = new byte[buffer.length()];
             int read = reader.read(buffer);
             while (read != -1) {
-                baos.write(bufferArray, 0, read);
+                buffer.copyTo(0, chunk, 0, read);
+                baos.write(chunk, 0, read);
                 read = reader.read(buffer);
             }
             return baos.toByteArray();

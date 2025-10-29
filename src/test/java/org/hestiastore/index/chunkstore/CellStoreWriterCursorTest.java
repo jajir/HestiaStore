@@ -25,12 +25,11 @@ public class CellStoreWriterCursorTest {
 
     private static final DataBlockSize DATABLOCK_SIZE = DataBlockSize
             .ofDataBlockSize(1024);
-    private static final Bytes BYTES_1008 = TestData.BYTES_1024.subBytes(0,
-            1008);
-    private static final Bytes BYTES_16 = TestData.BYTES_1024.subBytes(0, 16);
-    private static final Bytes BYTES_18 = TestData.BYTES_1024.subBytes(0, 18);
+    private static final Bytes BYTES_1008 = TestData.BYTES_1024.slice(0, 1008);
+    private static final Bytes BYTES_16 = TestData.BYTES_1024.slice(0, 16);
+    private static final Bytes BYTES_18 = TestData.BYTES_1024.slice(0, 18);
     private static final Bytes BYTES_1024 = TestData.BYTES_1024;
-    private static final Bytes BYTES_48 = TestData.BYTES_1024.subBytes(0, 48);
+    private static final Bytes BYTES_48 = TestData.BYTES_1024.slice(0, 48);
 
     @Mock
     private DataBlockWriter dataBlockWriter;
@@ -69,7 +68,7 @@ public class CellStoreWriterCursorTest {
         verify(dataBlockWriter).write(argumentCaptor.capture());
         DataBlockPayload capturedValue = argumentCaptor.getValue();
 
-        assertEquals(BYTES_16, capturedValue.getBytes().subBytes(0, 16));
+        assertEquals(BYTES_16, capturedValue.getBytes().slice(0, 16));
 
         // verify that data block write wasn't called more than once
         verify(dataBlockWriter, times(1)).write(any(DataBlockPayload.class));
@@ -89,8 +88,8 @@ public class CellStoreWriterCursorTest {
         verify(dataBlockWriter, times(1)).write(argumentCaptor.capture());
         DataBlockPayload capturedValue = argumentCaptor.getValue();
 
-        assertEquals(BYTES_16, capturedValue.getBytes().subBytes(0, 16));
-        assertEquals(BYTES_48, capturedValue.getBytes().subBytes(16, 64));
+        assertEquals(BYTES_16, capturedValue.getBytes().slice(0, 16));
+        assertEquals(BYTES_48, capturedValue.getBytes().slice(16, 64));
 
         // verify that data block write wasn't called more than once
         verify(dataBlockWriter, times(1)).write(any(DataBlockPayload.class));

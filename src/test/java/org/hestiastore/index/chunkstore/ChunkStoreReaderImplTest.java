@@ -48,7 +48,7 @@ public class ChunkStoreReaderImplTest {
     @Test
     void test_one_chunk() {
         when(dataBlockByteReader.readExactly(32))//
-                .thenReturn(CHUNK_HEADER_9.getBytes())//
+                .thenReturn(Bytes.copyOf(CHUNK_HEADER_9.getBytes()))//
                 .thenReturn(Bytes.of(new byte[32]))// s
                 .thenReturn(null);
         when(dataBlockByteReader.readExactly(16))
@@ -68,8 +68,8 @@ public class ChunkStoreReaderImplTest {
     @Test
     void test_two_chunks() {
         when(dataBlockByteReader.readExactly(32))//
-                .thenReturn(CHUNK_HEADER_9.getBytes())//
-                .thenReturn(CHUNK_HEADER_15.getBytes())//
+                .thenReturn(Bytes.copyOf(CHUNK_HEADER_9.getBytes()))//
+                .thenReturn(Bytes.copyOf(CHUNK_HEADER_15.getBytes()))//
                 .thenReturn(null);
         when(dataBlockByteReader.readExactly(16))//
                 .thenReturn(TestData.BYTES_9.paddedTo(16))//

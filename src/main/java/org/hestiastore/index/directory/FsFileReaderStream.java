@@ -10,7 +10,7 @@ import java.nio.file.StandardOpenOption;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.MutableByteSequence;
 import org.hestiastore.index.Vldtn;
 
 public final class FsFileReaderStream extends AbstractCloseableResource
@@ -48,10 +48,17 @@ public final class FsFileReaderStream extends AbstractCloseableResource
     }
 
     @Override
-    public int read(final MutableBytes bytes) {
-        final byte[] data = Vldtn.requireNonNull(bytes, "bytes").array();
+    public int read(final MutableByteSequence bytes) {
+        Vldtn.requireNonNull(bytes, "bytes");
+        final byte[] data = new byte[bytes.length()];
         try {
-            return bis.read(data, 0, bytes.length());
+            final int read = bis.read(data, 0, data.length);
+            if (read > 0) {
+        final MutableByteSequence source = MutableByteSequence
+            .wrap(data);
+        bytes.setBytes(0, source, 0, read);
+            }
+            return read;
         } catch (IOException e) {
             throw new IndexException(e.getMessage(), e);
         }

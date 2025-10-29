@@ -1,6 +1,6 @@
 package org.hestiastore.index.directory;
 
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.MutableByteSequence;
 import org.hestiastore.index.Vldtn;
 
 public class BufferedReader {
@@ -17,7 +17,7 @@ public class BufferedReader {
         this.currentBufferPosition = currentPositioninBuffer;
         this.bufferSize = bufferSizeInBytes;
         buffer = new byte[bufferSizeInBytes];
-        currentBufferSize = fileReader.read(MutableBytes.wrap(buffer));
+    currentBufferSize = fileReader.read(MutableByteSequence.wrap(buffer));
     }
 
     public int read(final byte[] bytes) {
@@ -31,7 +31,8 @@ public class BufferedReader {
             currentBufferPosition += bytesRead;
             if (currentBufferPosition >= bufferSize) {
                 buffer = new byte[bufferSize]; // later remove it
-                currentBufferSize = fileReader.read(MutableBytes.wrap(buffer));
+        currentBufferSize = fileReader
+            .read(MutableByteSequence.wrap(buffer));
                 currentBufferPosition = 0;
             } else {
                 if (currentBufferPosition == currentBufferSize) {

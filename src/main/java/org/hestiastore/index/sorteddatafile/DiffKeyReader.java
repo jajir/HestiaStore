@@ -3,7 +3,7 @@ package org.hestiastore.index.sorteddatafile;
 import org.hestiastore.index.ByteTool;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.MutableByteSequence;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
 import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.directory.FileReader;
@@ -27,7 +27,7 @@ public class DiffKeyReader<K> implements TypeReader<K> {
         }
         final int keyLengthInBytes = fileReader.read();
         if (sharedByteLength == 0) {
-            final MutableBytes keyBuffer = MutableBytes
+            final MutableByteSequence keyBuffer = MutableByteSequence
                     .allocate(keyLengthInBytes);
             readFully(fileReader, keyBuffer);
             final Bytes keyBytes = keyBuffer.toBytes();
@@ -47,17 +47,18 @@ public class DiffKeyReader<K> implements TypeReader<K> {
                             + "Current key should share '%s' with previous key.",
                     s1, previousKey.length(), sharedByteLength));
         }
-        final MutableBytes diffBuffer = MutableBytes.allocate(keyLengthInBytes);
+        final MutableByteSequence diffBuffer = MutableByteSequence
+                .allocate(keyLengthInBytes);
         readFully(fileReader, diffBuffer);
         final Bytes diffBytes = diffBuffer.toBytes();
-        final Bytes sharedBytes = previousKey.subBytes(0, sharedByteLength);
+        final Bytes sharedBytes = previousKey.slice(0, sharedByteLength);
         final Bytes keyBytes = ByteTool.concatenate(sharedBytes, diffBytes);
         previousKey = keyBytes;
         return keyConvertor.fromBytes(keyBytes);
     }
 
     private void readFully(final FileReader fileReader,
-            final MutableBytes bytes) {
+            final MutableByteSequence bytes) {
         int read = fileReader.read(bytes);
         if (read != bytes.length()) {
             throw new IndexException(String.format(

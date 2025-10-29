@@ -4,7 +4,7 @@ import java.nio.charset.Charset;
 import java.util.Comparator;
 
 import org.hestiastore.index.Bytes;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.MutableByteSequence;
 import org.hestiastore.index.Vldtn;
 
 public final class TypeDescriptorFixedLengthString
@@ -74,7 +74,8 @@ public final class TypeDescriptorFixedLengthString
     @Override
     public TypeReader<String> getTypeReader() {
         return reader -> {
-            final MutableBytes buffer = MutableBytes.allocate(length);
+        final MutableByteSequence buffer = MutableByteSequence
+            .allocate(length);
             reader.read(buffer);
             return getConvertorFromBytes().fromBytes(buffer.toBytes());
         };

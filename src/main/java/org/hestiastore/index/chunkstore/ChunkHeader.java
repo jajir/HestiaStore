@@ -174,11 +174,11 @@ public final class ChunkHeader {
     }
 
     /**
-     * Returns the byte array representing the chunk header.
+     * Returns the byte sequence representing the chunk header.
      * 
-     * @return the byte array representing the chunk header
+     * @return the byte sequence representing the chunk header
      */
-    public Bytes getBytes() {
+    public org.hestiastore.index.ByteSequence getBytes() {
         return ChunkHeaderCodec.encode(this);
     }
 

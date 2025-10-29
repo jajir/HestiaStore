@@ -49,5 +49,6 @@ Index<Integer, Integer> index = Index.<Integer, Integer>create(directory, conf);
 
 ## Notes
 
-- All numeric types use big-endian byte order for consistent sorting and comparison.
-- `org.hestiastore.index.Bytes` encapsulates arbitrary binary content while providing equality, hashing, and lexicographic comparison helpers.
+* All numeric types use big-endian byte order for consistent sorting and comparison.
+* Public Java APIs expose byte content through the `ByteSequence` and `MutableByteSequence` interfaces. Concrete helpers such as `Bytes` and `MutableBytes` remain available for internal use, but they no longer appear in method signatures as parameter or return types.
+* `org.hestiastore.index.Bytes` encapsulates arbitrary binary content while providing equality, hashing, and lexicographic comparison helpers.

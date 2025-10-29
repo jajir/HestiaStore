@@ -58,7 +58,7 @@ class ChunkDataTest {
         final int payloadLength = 24;
         final ChunkHeader header = ChunkHeader.of(ChunkHeader.MAGIC_NUMBER,
                 VERSION, payloadLength, CRC, FLAGS);
-        doReturn(header.getBytes(), (Bytes) null).when(reader)
+        doReturn(Bytes.copyOf(header.getBytes()), (Bytes) null).when(reader)
                 .readExactly(ChunkHeader.HEADER_SIZE);
 
         assertThrows(IllegalStateException.class, () -> ChunkData.read(reader));
@@ -73,7 +73,7 @@ class ChunkDataTest {
         final byte[] paddedPayload = Arrays.copyOf(originalPayload, 16);
 
         when(reader.readExactly(ChunkHeader.HEADER_SIZE))
-                .thenReturn(header.getBytes());
+                .thenReturn(Bytes.copyOf(header.getBytes()));
         when(reader.readExactly(16)).thenReturn(Bytes.of(paddedPayload));
 
         final ChunkData chunkData = ChunkData.read(reader).orElseThrow();
@@ -95,7 +95,7 @@ class ChunkDataTest {
         final ChunkHeader header = ChunkHeader.of(ChunkHeader.MAGIC_NUMBER,
                 VERSION, payloadLength, CRC, FLAGS);
 
-        doReturn(header.getBytes(),
+        doReturn(Bytes.copyOf(header.getBytes()),
                 Bytes.of(Arrays.copyOf(payload, payload.length))).when(reader)
                 .readExactly(ChunkHeader.HEADER_SIZE);
 

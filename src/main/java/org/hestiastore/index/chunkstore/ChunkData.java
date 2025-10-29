@@ -88,7 +88,7 @@ public class ChunkData {
                     "Unexpected end of stream while reading chunk payload.");
         }
         if (cellLength != payloadLength) {
-            payload = payload.subBytes(0, payloadLength);
+            payload = payload.slice(0, payloadLength);
         }
         return Optional.of(ChunkData.of(chunkHeader.getFlags(),
                 chunkHeader.getCrc(), chunkHeader.getMagicNumber(),

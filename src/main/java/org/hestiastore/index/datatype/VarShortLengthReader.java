@@ -1,6 +1,6 @@
 package org.hestiastore.index.datatype;
 
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.MutableByteSequence;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileReader;
 
@@ -21,7 +21,7 @@ public class VarShortLengthReader<T> implements TypeReader<T> {
         if (length > 127) {
             throw new IllegalArgumentException("Converted type is too big");
         }
-        final MutableBytes bytes = MutableBytes.allocate(length);
+    final MutableByteSequence bytes = MutableByteSequence.allocate(length);
         reader.read(bytes);
         return convertor.fromBytes(bytes.toBytes());
     }

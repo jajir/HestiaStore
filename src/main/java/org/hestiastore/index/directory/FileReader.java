@@ -1,7 +1,7 @@
 package org.hestiastore.index.directory;
 
 import org.hestiastore.index.CloseableResource;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.MutableByteSequence;
 
 /**
  * With file reader it's not possible to go back. When one byte could be read
@@ -26,7 +26,7 @@ public interface FileReader extends CloseableResource {
      * @param bytes required Bytes wrapper
      * @return number of read bytes or -1 when end of file was reached
      */
-    int read(MutableBytes bytes);
+    int read(MutableByteSequence bytes);
 
     /**
      * Skip n bytes to specific position in file.

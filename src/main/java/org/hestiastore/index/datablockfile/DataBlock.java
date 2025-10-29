@@ -38,8 +38,8 @@ public final class DataBlock {
      * @return the payload of this data block
      */
     public DataBlockPayload getPayload() {
-        return DataBlockPayload.of(
-                bytes.subBytes(DataBlockHeader.HEADER_SIZE, bytes.length()));
+        return DataBlockPayload
+                .of(bytes.slice(DataBlockHeader.HEADER_SIZE, bytes.length()));
     }
 
     /**
@@ -48,8 +48,7 @@ public final class DataBlock {
      * @return the header of this data block
      */
     public DataBlockHeader getHeader() {
-        return DataBlockHeader
-                .of(bytes.subBytes(0, DataBlockHeader.HEADER_SIZE));
+        return DataBlockHeader.of(bytes.slice(0, DataBlockHeader.HEADER_SIZE));
     }
 
     /**

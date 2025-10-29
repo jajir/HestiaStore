@@ -18,9 +18,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class DataBlockByteReaderTest {
 
     private static final DataBlockPayload dataBlockPayload1 = DataBlockPayload
-            .of(TestData.BYTES_1024.subBytes(0, 64));
+            .of(TestData.BYTES_1024.slice(0, 64));
     private static final DataBlockPayload dataBlockPayload2 = DataBlockPayload
-            .of(TestData.BYTES_1024.subBytes(64, 128));
+            .of(TestData.BYTES_1024.slice(64, 128));
 
     private static final DataBlockHeader dataBlockHeader1 = DataBlockHeader
             .of(DataBlockHeader.MAGIC_NUMBER, dataBlockPayload1.calculateCrc());
@@ -73,7 +73,7 @@ public class DataBlockByteReaderTest {
         reader = new DataBlockByteReaderImpl(dataBlockReader, dataBlockSize, 2);
 
         final Bytes bytes1 = reader.readExactly(32);
-        final Bytes expectedBytes1 = TestData.BYTES_1024.subBytes(32, 32 + 32);
+        final Bytes expectedBytes1 = TestData.BYTES_1024.slice(32, 32 + 32);
         assertEquals(expectedBytes1, bytes1);
         assertNull(reader.readExactly(32));
     }
@@ -86,7 +86,7 @@ public class DataBlockByteReaderTest {
 
         final Bytes bytes1 = reader.readExactly(64);
 
-        assertEquals(TestData.BYTES_1024.subBytes(0, 64), bytes1);
+        assertEquals(TestData.BYTES_1024.slice(0, 64), bytes1);
         assertNull(reader.readExactly(64));
     }
 
@@ -98,10 +98,10 @@ public class DataBlockByteReaderTest {
                 .thenReturn(null);
 
         final Bytes bytes1 = reader.readExactly(64);
-        assertEquals(TestData.BYTES_1024.subBytes(0, 64), bytes1);
+        assertEquals(TestData.BYTES_1024.slice(0, 64), bytes1);
 
         final Bytes bytes2 = reader.readExactly(64);
-        assertEquals(TestData.BYTES_1024.subBytes(64, 128), bytes2);
+        assertEquals(TestData.BYTES_1024.slice(64, 128), bytes2);
 
         assertNull(reader.readExactly(64));
         assertNull(reader.readExactly(128));
@@ -115,7 +115,7 @@ public class DataBlockByteReaderTest {
                 .thenReturn(null);
 
         final Bytes bytes1 = reader.readExactly(96);
-        assertEquals(TestData.BYTES_1024.subBytes(0, 96), bytes1);
+        assertEquals(TestData.BYTES_1024.slice(0, 96), bytes1);
 
         assertNull(reader.readExactly(64));
         assertNull(reader.readExactly(128));

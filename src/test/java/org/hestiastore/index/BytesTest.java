@@ -28,9 +28,9 @@ public class BytesTest {
     }
 
     @Test
-    void test_subBytes() {
+    void test_slice() {
         final Bytes bytes = Bytes.of(TEST_DATA);
-        final Bytes bytes2 = bytes.subBytes(7, 11);
+        final Bytes bytes2 = bytes.slice(7, 11);
 
         final Bytes expect = Bytes.of("need".getBytes());
         assertEquals(expect, bytes2);
@@ -38,10 +38,10 @@ public class BytesTest {
     }
 
     @Test
-    void test_subBytes_err() {
+    void test_slice_err() {
         final Bytes bytes = Bytes.of(TEST_DATA);
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> bytes.subBytes(7, TEST_DATA.length + 1));
+                () -> bytes.slice(7, TEST_DATA.length + 1));
 
         assertEquals(
                 "Property 'endByte' must be between 0 and 63 (inclusive). Got: 64",
@@ -49,18 +49,18 @@ public class BytesTest {
     }
 
     @Test
-    void test_subBytes_allData() {
+    void test_slice_allData() {
         final Bytes bytes = Bytes.of(TEST_DATA);
-        final Bytes bytes2 = bytes.subBytes(0, TEST_DATA.length);
+        final Bytes bytes2 = bytes.slice(0, TEST_DATA.length);
 
         assertEquals(bytes, bytes2);
         assertEquals(bytes.hashCode(), bytes2.hashCode());
     }
 
     @Test
-    void test_subBytes_first_byte() {
+    void test_slice_first_byte() {
         final Bytes bytes = Bytes.of(TEST_DATA);
-        final Bytes bytes2 = bytes.subBytes(0, 1);
+        final Bytes bytes2 = bytes.slice(0, 1);
 
         final Bytes expect = Bytes.of("D".getBytes());
         assertEquals(expect, bytes2);
@@ -73,7 +73,7 @@ public class BytesTest {
         final Bytes padded = bytes.paddedTo(100);
 
         assertEquals(100, padded.length());
-        assertEquals(bytes, padded.subBytes(0, bytes.length()));
+        assertEquals(bytes, padded.slice(0, bytes.length()));
     }
 
     @Test
@@ -82,7 +82,7 @@ public class BytesTest {
         final Bytes padded = bytes.paddedTo(TEST_DATA.length - 2);
 
         assertEquals(TEST_DATA.length, padded.length());
-        assertEquals(bytes, padded.subBytes(0, bytes.length()));
+        assertEquals(bytes, padded.slice(0, bytes.length()));
     }
 
     @Test

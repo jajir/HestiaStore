@@ -109,6 +109,7 @@ public final class MutableBytes implements MutableByteSequence {
      *
      * @return immutable bytes containing the same data
      */
+    @Override
     public Bytes toBytes() {
         if (data.length == 0) {
             return Bytes.EMPTY;

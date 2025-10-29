@@ -4,7 +4,7 @@ import java.util.Comparator;
 
 import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.MutableByteSequence;
 
 public class TypeDescriptorLong implements TypeDescriptor<Long> {
 
@@ -76,7 +76,8 @@ public class TypeDescriptorLong implements TypeDescriptor<Long> {
     @Override
     public TypeReader<Long> getTypeReader() {
         return fileReader -> {
-            final MutableBytes buffer = MutableBytes.allocate(REQUIRED_BYTES);
+            final MutableByteSequence buffer = MutableByteSequence
+                    .allocate(REQUIRED_BYTES);
             if (fileReader.read(buffer) == -1) {
                 return null;
             }
@@ -96,7 +97,8 @@ public class TypeDescriptorLong implements TypeDescriptor<Long> {
     private Bytes getBytesBuffer(final Long value) {
         int pos = 0;
         long v = value.longValue();
-        final MutableBytes out = MutableBytes.allocate(REQUIRED_BYTES);
+        final MutableByteSequence out = MutableByteSequence
+                .allocate(REQUIRED_BYTES);
         out.setByte(pos++, (byte) ((v >>> BYTE_SHIFT_56) & BYTE_MASK));
         out.setByte(pos++, (byte) ((v >>> BYTE_SHIFT_48) & BYTE_MASK));
         out.setByte(pos++, (byte) ((v >>> BYTE_SHIFT_40) & BYTE_MASK));

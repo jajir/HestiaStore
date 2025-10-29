@@ -46,7 +46,7 @@ public class SingleChunkPairIteratorTest {
             pairList.forEach(writer::write);
         });
 
-        final Bytes fileBytes = directory.getFileBytes(FILE_NAME);
+        final Bytes fileBytes = Bytes.copyOf(directory.getFileBytes(FILE_NAME));
         return Chunk.of(ChunkHeader.of(ChunkHeader.MAGIC_NUMBER, 1,
                 fileBytes.length(), 321L), fileBytes);
     }

@@ -3,7 +3,7 @@ package org.hestiastore.index.log;
 import java.util.Comparator;
 
 import org.hestiastore.index.Bytes;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.MutableByteSequence;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
 import org.hestiastore.index.datatype.ConvertorToBytes;
@@ -35,7 +35,7 @@ public class TypeDescriptorLoggedKey<K>
                 throw new IllegalStateException(
                         "Log operation encoding must be exactly one byte");
             }
-            final MutableBytes out = MutableBytes
+            final MutableByteSequence out = MutableByteSequence
                     .allocate(1 + keyBytes.length());
             out.setByte(0, operationBytes.getByte(0));
             out.setBytes(1, keyBytes);
@@ -52,7 +52,7 @@ public class TypeDescriptorLoggedKey<K>
                         "LoggedKey encoding must contain at least one byte");
             }
             final byte operation = bytes.getByte(0);
-            final Bytes keyBytes = bytes.subBytes(1, bytes.length());
+            final Bytes keyBytes = bytes.slice(1, bytes.length());
             return LoggedKey.of(LogOperation.fromByte(operation),
                     tdKey.getConvertorFromBytes().fromBytes(keyBytes));
         };

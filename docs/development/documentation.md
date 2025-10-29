@@ -20,6 +20,7 @@ Prerequisites:
 ```bash
 brew install mkdocs-material
 ```
+
 * Some Markdown editor of your choice
 * GitHub personal access token with permission to read and write project pages.
 
@@ -37,13 +38,14 @@ The `mkdocs.yml` file in the root directory controls site structure, navigation,
 
 ### How to publish changes at hestiastore.org
 
-* From [github.com/jajir/HestiaStore](https://github.com/jajir/HestiaStore/) checkout branch `docs`. 
+* From [github.com/jajir/HestiaStore](https://github.com/jajir/HestiaStore/) checkout branch `docs`.
 * Make changes
 * Commit changes to `docs`
 * Pull again to be sure, that latest chnages from branch `gh-pages` is at local.
 * Then, run the following command locally:
 
-  ```bash
-  mkdocs gh-deploy
-  ```
-  In a few minutes (could be 15 minutes) new documentation will be published.
+```bash
+mkdocs gh-deploy
+```
+
+In a few minutes (could be 15 minutes) new documentation will be published.
