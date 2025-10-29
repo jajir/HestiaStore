@@ -7,7 +7,9 @@ import java.nio.channels.FileChannel;
 import java.nio.file.StandardOpenOption;
 
 import org.hestiastore.index.AbstractCloseableResource;
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.Vldtn;
 
 /**
  * Same as FsFileReaderStream but uses java.nio.
@@ -41,8 +43,9 @@ public final class FsNioFileReaderStream extends AbstractCloseableResource
     }
 
     @Override
-    public int read(final byte[] bytes) {
-        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+    public int read(final Bytes bytes) {
+        final byte[] data = Vldtn.requireNonNull(bytes, "bytes").getData();
+        final ByteBuffer buffer = ByteBuffer.wrap(data);
         try {
             return channel.read(buffer);
         } catch (IOException e) {

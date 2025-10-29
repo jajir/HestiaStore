@@ -1,5 +1,7 @@
 package org.hestiastore.index.datatype;
 
+import org.hestiastore.index.Bytes;
+
 /**
  * Instantiate object from byte array. Supposing that whole byte array is one
  * object.
@@ -13,6 +15,6 @@ package org.hestiastore.index.datatype;
  */
 public interface ConvertorFromBytes<T> {
 
-    T fromBytes(byte[] array);
+    T fromBytes(Bytes bytes);
 
 }

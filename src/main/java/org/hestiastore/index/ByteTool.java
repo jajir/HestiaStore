@@ -1,7 +1,7 @@
 package org.hestiastore.index;
 
 /**
- * Utility helpers for working with byte arrays.
+ * Utility helpers for working with {@link Bytes} instances.
  */
 public final class ByteTool {
 
@@ -10,61 +10,64 @@ public final class ByteTool {
     }
 
     /**
-     * Counts how many leading bytes are identical in both arrays.
+     * Counts how many leading bytes are identical in both buffers.
      *
-     * @param first  the first byte array
-     * @param second the second byte array
-     * @return number of matching bytes from the beginning of the arrays
+     * @param first  the first Bytes instance
+     * @param second the second Bytes instance
+     * @return number of matching bytes from the beginning of the buffers
      */
-    public static int countMatchingPrefixBytes(final byte[] first,
-            final byte[] second) {
+    public static int countMatchingPrefixBytes(final Bytes first,
+            final Bytes second) {
         Vldtn.requireNonNull(first, "first");
         Vldtn.requireNonNull(second, "second");
-
-        final int limit = Math.min(first.length, second.length);
+        // FIXME should avoid this just takes bytes from source
+        final byte[] firstData = first.getData();
+        final byte[] secondData = second.getData();
+        final int limit = Math.min(first.length(), second.length());
         int index = 0;
-        while (index < limit && first[index] == second[index]) {
+        while (index < limit && firstData[index] == secondData[index]) {
             index++;
         }
         return index;
     }
 
     /**
-     * Returns a slice of {@code full} starting at {@code index}.
+     * Returns a slice of {@code full} starting at {@code index} wrapped in
+     * Bytes.
      *
      * @param index start index (inclusive)
-     * @param full  source byte array
-     * @return remaining bytes from {@code index} to the end of {@code full}
-     * @throws IllegalArgumentException if {@code index} is out of range
+     * @param full  source Bytes instance
+     * @return Bytes containing remaining bytes from {@code index}
      */
-    public static byte[] getRemainingBytesAfterIndex(final int index,
-            final byte[] full) {
+    public static Bytes getRemainingBytesAfterIndex(final int index,
+            final Bytes full) {
         Vldtn.requireNonNull(full, "full");
-        if (index < 0 || index > full.length) {
+        if (index < 0 || index > full.length()) {
             throw new IllegalArgumentException(String.format(
-                    "Index '%d' is out of range 0..%d", index, full.length));
+                    "Index '%d' is out of range 0..%d", index, full.length()));
         }
-        final byte[] out = new byte[full.length - index];
-        System.arraycopy(full, index, out, 0, out.length);
-        return out;
+        final int remainingLength = full.length() - index;
+        final Bytes slice = Bytes.allocate(remainingLength);
+        System.arraycopy(full.getData(), index, slice.getData(), 0,
+                remainingLength);
+        return slice;
     }
 
     /**
-     * Concatenates two byte arrays into a new array containing the contents of
-     * {@code first} followed by {@code second}.
+     * Concatenates two Bytes instances into a new Bytes instance.
      *
-     * @param first  non-null first array
-     * @param second non-null second array
-     * @return new array comprising both inputs
-     * @throws IllegalArgumentException if any argument is {@code null}
+     * @param first  non-null first Bytes instance
+     * @param second non-null second Bytes instance
+     * @return new Bytes comprising both inputs
      */
-    public static byte[] concatenate(final byte[] first,
-            final byte[] second) {
+    public static Bytes concatenate(final Bytes first, final Bytes second) {
         Vldtn.requireNonNull(first, "first");
         Vldtn.requireNonNull(second, "second");
-        final byte[] out = new byte[first.length + second.length];
-        System.arraycopy(first, 0, out, 0, first.length);
-        System.arraycopy(second, 0, out, first.length, second.length);
+
+        final Bytes out = Bytes.allocate(first.length() + second.length());
+        System.arraycopy(first.getData(), 0, out.getData(), 0, first.length());
+        System.arraycopy(second.getData(), 0, out.getData(), first.length(),
+                second.length());
         return out;
     }
 }

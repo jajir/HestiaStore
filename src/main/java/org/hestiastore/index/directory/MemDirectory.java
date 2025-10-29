@@ -10,37 +10,40 @@ import org.hestiastore.index.IndexException;
 public class MemDirectory implements Directory {
 
     private static final String ERROR_MSG_NO_FILE = "There is no file '%s'";
-    private final Map<String, byte[]> data = new HashMap<>();
+    private final Map<String, Bytes> data = new HashMap<>();
 
     @Override
     public FileReader getFileReader(final String fileName) {
-        if (!data.containsKey(fileName)) {
+        final Bytes bytes = data.get(fileName);
+        if (bytes == null) {
             throw new IndexException(
                     String.format(ERROR_MSG_NO_FILE, fileName));
         }
-        return new MemFileReader(data.get(fileName));
+        return new MemFileReader(bytes);
     }
 
     public Bytes getFileBytes(final String fileName) {
-        if (!data.containsKey(fileName)) {
+        final Bytes bytes = data.get(fileName);
+        if (bytes == null) {
             throw new IndexException(
                     String.format(ERROR_MSG_NO_FILE, fileName));
         }
-        return Bytes.of(data.get(fileName));
+        return bytes;
     }
 
     public void setFileBytes(final String fileName, final Bytes bytes) {
-        data.put(fileName, bytes.getData());
+        data.put(fileName, bytes);
     }
 
     @Override
     public FileReader getFileReader(final String fileName,
             final int bufferSize) {
-        if (!data.containsKey(fileName)) {
+        final Bytes bytes = data.get(fileName);
+        if (bytes == null) {
             throw new IndexException(
                     String.format(ERROR_MSG_NO_FILE, fileName));
         }
-        return new MemFileReader(data.get(fileName));
+        return new MemFileReader(bytes);
     }
 
     @Override
@@ -63,25 +66,22 @@ public class MemDirectory implements Directory {
     public void renameFile(final String currentFileName,
             final String newFileName) {
         if (data.containsKey(currentFileName)) {
-            final byte[] tmp = data.remove(currentFileName);
+            final Bytes tmp = data.remove(currentFileName);
             data.put(newFileName, tmp);
         }
     }
 
-    void addFile(final String fileName, final byte[] bytes,
+    void addFile(final String fileName, final Bytes bytes,
             final Access access) {
         if (Access.OVERWRITE == access) {
             data.put(fileName, bytes);
         } else {
-            final byte[] a = data.get(fileName);
-            if (a == null) {
+            final Bytes existing = data.get(fileName);
+            if (existing == null) {
                 throw new IndexException(
                         String.format("No such file '%s'", fileName));
             }
-            byte[] c = new byte[a.length + bytes.length];
-            System.arraycopy(a, 0, c, 0, a.length);
-            System.arraycopy(bytes, 0, c, a.length, bytes.length);
-            data.put(fileName, c);
+            data.put(fileName, existing.concat(bytes));
         }
     }
 
@@ -112,12 +112,12 @@ public class MemDirectory implements Directory {
 
     @Override
     public FileReaderSeekable getFileReaderSeekable(final String fileName) {
-        final byte[] fileData = data.get(fileName);
+        final Bytes fileData = data.get(fileName);
         if (fileData == null) {
             throw new IllegalArgumentException(
                     String.format("No such file '%s'.", fileName));
         }
-        return new MemFileReaderSeekable(data.get(fileName));
+        return new MemFileReaderSeekable(fileData);
     }
 
 }

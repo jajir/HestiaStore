@@ -4,9 +4,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.hestiastore.index.AbstractCloseableResource;
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.Vldtn;
 
-public class MemFileWriter extends AbstractCloseableResource implements FileWriter {
+public class MemFileWriter extends AbstractCloseableResource
+        implements FileWriter {
 
     private final String fileName;
 
@@ -31,7 +34,7 @@ public class MemFileWriter extends AbstractCloseableResource implements FileWrit
         } catch (IOException e) {
             throw new IndexException(e.getMessage(), e);
         }
-        memDirectory.addFile(fileName, fio.toByteArray(), access);
+        memDirectory.addFile(fileName, Bytes.of(fio.toByteArray()), access);
     }
 
     @Override
@@ -40,9 +43,10 @@ public class MemFileWriter extends AbstractCloseableResource implements FileWrit
     }
 
     @Override
-    public void write(byte[] bytes) {
+    public void write(final Bytes bytes) {
+        final byte[] data = Vldtn.requireNonNull(bytes, "bytes").getData();
         try {
-            fio.write(bytes);
+            fio.write(data);
         } catch (IOException e) {
             throw new IndexException(e.getMessage(), e);
         }

@@ -3,6 +3,9 @@ package org.hestiastore.index.datatype;
 import java.nio.charset.Charset;
 import java.util.Comparator;
 
+import org.hestiastore.index.Bytes;
+import org.hestiastore.index.Vldtn;
+
 public class TypeDescriptorShortString implements TypeDescriptor<String> {
 
     private static final String CHARSET_ENCODING_NAME = "ISO_8859_1";
@@ -17,12 +20,18 @@ public class TypeDescriptorShortString implements TypeDescriptor<String> {
 
     @Override
     public ConvertorFromBytes<String> getConvertorFromBytes() {
-        return array -> new String(array, CHARSET_ENCODING);
+        return bytes -> {
+            Vldtn.requireNonNull(bytes, "bytes");
+            return new String(bytes.getData(), CHARSET_ENCODING);
+        };
     }
 
     @Override
     public ConvertorToBytes<String> getConvertorToBytes() {
-        return string -> string.getBytes(CHARSET_ENCODING);
+        return string -> {
+            Vldtn.requireNonNull(string, "string");
+            return Bytes.of(string.getBytes(CHARSET_ENCODING));
+        };
     }
 
     @Override

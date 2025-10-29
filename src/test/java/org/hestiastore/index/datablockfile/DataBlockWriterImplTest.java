@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.TestData;
 import org.hestiastore.index.directory.FileWriter;
 import org.junit.jupiter.api.AfterEach;
@@ -38,24 +39,26 @@ public class DataBlockWriterImplTest {
     @Test
     void test_write() {
         doAnswer(invocation -> {
-            final byte[] blockData = invocation.getArgument(0);
-            assertEquals(1024, blockData.length);
+            final Bytes blockData = invocation.getArgument(0, Bytes.class);
+            assertEquals(1024, blockData.length());
+            final byte[] data = blockData.getData();
 
             // Verify the magic number
             final byte[] longBytes = new byte[8];
-            System.arraycopy(blockData, 0, longBytes, 0, 8);
-            long magicNumber = TestData.LONG_CONVERTOR_FROM_BYTES
-                    .fromBytes(longBytes);
+            System.arraycopy(data, 0, longBytes, 0, 8);
+        long magicNumber = TestData.LONG_CONVERTOR_FROM_BYTES
+            .fromBytes(Bytes.of(longBytes));
             assertEquals(DataBlockHeader.MAGIC_NUMBER, magicNumber);
 
             // Verify the CRC
             final byte[] crcBytes = new byte[8];
-            System.arraycopy(blockData, 8, crcBytes, 0, 8);
-            long crc = TestData.LONG_CONVERTOR_FROM_BYTES.fromBytes(crcBytes);
+            System.arraycopy(data, 8, crcBytes, 0, 8);
+        long crc = TestData.LONG_CONVERTOR_FROM_BYTES
+            .fromBytes(Bytes.of(crcBytes));
             assertEquals(TestData.PAYLOAD_1008.calculateCrc(), crc);
 
             return null;
-        }).when(fileWriter).write(any(byte[].class));
+        }).when(fileWriter).write(any(Bytes.class));
         writer.write(TestData.PAYLOAD_1008);
     }
 

@@ -1,5 +1,6 @@
 package org.hestiastore.index.directory;
 
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.CloseableResource;
 
 /**
@@ -20,13 +21,12 @@ public interface FileReader extends CloseableResource {
     int read();
 
     /**
-     * Read all bytes to given field.
+     * Read all bytes into the provided Bytes instance.
      *
-     * @param bytes required byte array
-     * @return Return number of read bytes. When it's -1 than end of file was
-     *         reached.
+     * @param bytes required Bytes wrapper
+     * @return number of read bytes or -1 when end of file was reached
      */
-    int read(byte[] bytes);
+    int read(Bytes bytes);
 
     /**
      * Skip n bytes to specific position in file.

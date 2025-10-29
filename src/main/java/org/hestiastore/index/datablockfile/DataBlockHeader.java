@@ -82,12 +82,12 @@ public class DataBlockHeader {
     }
 
     private static long extractMagicNumber(final Bytes bytes) {
-        final byte[] buff = bytes.subBytes(0, 8).getData();
+        final Bytes buff = bytes.subBytes(0, 8);
         return CONVERTOR_FROM_BYTES.fromBytes(buff);
     }
 
     private static long extractCrc(final Bytes bytes) {
-        final byte[] buff = bytes.subBytes(8, 16).getData();
+        final Bytes buff = bytes.subBytes(8, 16);
         return CONVERTOR_FROM_BYTES.fromBytes(buff);
     }
 
@@ -97,10 +97,14 @@ public class DataBlockHeader {
      * @return Bytes representing the DataBlockHeader.
      */
     public Bytes toBytes() {
-        final byte[] out = new byte[HEADER_SIZE];
-        System.arraycopy(CONVERTOR_TO_BYTES.toBytes(magicNumber), 0, out, 0, 8);
-        System.arraycopy(CONVERTOR_TO_BYTES.toBytes(crc), 0, out, 8, 8);
-        return Bytes.of(out);
+        final Bytes out = Bytes.allocate(HEADER_SIZE);
+        final byte[] raw = out.getData();
+        System.arraycopy(
+                CONVERTOR_TO_BYTES.toBytesBuffer(magicNumber).getData(), 0, raw,
+                0, 8);
+        System.arraycopy(CONVERTOR_TO_BYTES.toBytesBuffer(crc).getData(), 0,
+                raw, 8, 8);
+        return out;
     }
 
 }

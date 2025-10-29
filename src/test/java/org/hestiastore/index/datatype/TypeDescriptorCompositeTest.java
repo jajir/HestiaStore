@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
+import org.hestiastore.index.Bytes;
 import org.junit.jupiter.api.Test;
 
 class TypeDescriptorCompositeTest {
@@ -24,8 +25,8 @@ class TypeDescriptorCompositeTest {
             final TypeDescriptor<CompositeValue> typeDescriptor,
             final CompositeValue value) {
 
-        final byte[] bytes = typeDescriptor.getConvertorToBytes()
-                .toBytes(value);
+        final Bytes bytes = typeDescriptor.getConvertorToBytes()
+                .toBytesBuffer(value);
 
         final CompositeValue readValue = typeDescriptor.getConvertorFromBytes()
                 .fromBytes(bytes);

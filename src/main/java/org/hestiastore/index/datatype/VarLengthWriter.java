@@ -1,5 +1,6 @@
 package org.hestiastore.index.datatype;
 
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileWriter;
 
@@ -16,12 +17,14 @@ public class VarLengthWriter<T> implements TypeWriter<T> {
 
     @Override
     public int write(final FileWriter writer, final T object) {
-        final byte[] out = convertor.toBytes(object);
-        if (out.length > Integer.MAX_VALUE) {
+        final Bytes out = convertor.toBytesBuffer(object);
+        if (out.length() > Integer.MAX_VALUE) {
             throw new IllegalArgumentException("Converted type is too big");
         }
-        writer.write(CONVERTOR_TO_BYTES.toBytes(out.length));
+        final Bytes lengthBytes = CONVERTOR_TO_BYTES
+                .toBytesBuffer(out.length());
+        writer.write(lengthBytes);
         writer.write(out);
-        return 1 + out.length;
+        return lengthBytes.length() + out.length();
     }
 }

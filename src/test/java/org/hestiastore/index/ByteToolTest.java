@@ -7,8 +7,8 @@ import org.junit.jupiter.api.Test;
 
 class ByteToolTest {
 
-    private static final byte[] BYTES_EMPTY_STR = "".getBytes();
-    private static final byte[] BYTES_AHOJ_STR = "ahoj".getBytes();
+    private static final Bytes BYTES_EMPTY = Bytes.of("".getBytes());
+    private static final Bytes BYTES_AHOJ = Bytes.of("ahoj".getBytes());
 
     @Test
     void test_countMatchingPrefixBytes() {
@@ -25,15 +25,15 @@ class ByteToolTest {
         testBytes("", "", 0);
 
         assertThrows(IllegalArgumentException.class,
-                () -> ByteTool.countMatchingPrefixBytes(BYTES_EMPTY_STR, null));
+                () -> ByteTool.countMatchingPrefixBytes(BYTES_EMPTY, null));
         assertThrows(IllegalArgumentException.class,
-                () -> ByteTool.countMatchingPrefixBytes(null, BYTES_EMPTY_STR));
+                () -> ByteTool.countMatchingPrefixBytes(null, BYTES_EMPTY));
     }
 
     private void testBytes(final String a, final String b,
             final int expectedBytes) {
-        final byte[] a1 = a.getBytes();
-        final byte[] b1 = b.getBytes();
+        final Bytes a1 = Bytes.of(a.getBytes());
+        final Bytes b1 = Bytes.of(b.getBytes());
         final int ret = ByteTool.countMatchingPrefixBytes(a1, b1);
         assertEquals(expectedBytes, ret);
     }
@@ -45,34 +45,34 @@ class ByteToolTest {
         testFunction(4, "ahoj", "");
 
         assertThrows(IllegalArgumentException.class,
-                () -> ByteTool.getRemainingBytesAfterIndex(5, BYTES_AHOJ_STR));
+                () -> ByteTool.getRemainingBytesAfterIndex(5, BYTES_AHOJ));
         assertThrows(IllegalArgumentException.class,
-                () -> ByteTool.getRemainingBytesAfterIndex(-1, BYTES_AHOJ_STR));
+                () -> ByteTool.getRemainingBytesAfterIndex(-1, BYTES_AHOJ));
         assertThrows(IllegalArgumentException.class,
-                () -> ByteTool.getRemainingBytesAfterIndex(0, null));
+                () -> ByteTool.getRemainingBytesAfterIndex(0, (Bytes) null));
     }
 
     private void testFunction(final int sharedLength, final String str,
             final String expectedResult) {
-        final byte[] a1 = str.getBytes();
-        final byte[] retBytes = ByteTool
-                .getRemainingBytesAfterIndex(sharedLength, a1);
-        final String ret = new String(retBytes);
-        assertEquals(expectedResult, ret);
+        final Bytes input = Bytes.of(str.getBytes());
+        final Bytes wrapped = ByteTool.getRemainingBytesAfterIndex(sharedLength,
+                input);
+        assertEquals(expectedResult, new String(wrapped.getData()));
     }
 
     @Test
     void test_concatenate() {
-        final byte[] first = new byte[] { 1, 2 };
-        final byte[] second = new byte[] { 3, 4, 5 };
-        final byte[] result = ByteTool.concatenate(first, second);
+        final Bytes first = Bytes.of(new byte[] { 1, 2 });
+        final Bytes second = Bytes.of(new byte[] { 3, 4, 5 });
+        final Bytes result = ByteTool.concatenate(first, second);
 
-        assertEquals(5, result.length);
-        assertEquals(1, result[0]);
-        assertEquals(2, result[1]);
-        assertEquals(3, result[2]);
-        assertEquals(4, result[3]);
-        assertEquals(5, result[4]);
+        assertEquals(5, result.length());
+        final byte[] out = result.getData();
+        assertEquals(1, out[0]);
+        assertEquals(2, out[1]);
+        assertEquals(3, out[2]);
+        assertEquals(4, out[3]);
+        assertEquals(5, out[4]);
     }
 
 }

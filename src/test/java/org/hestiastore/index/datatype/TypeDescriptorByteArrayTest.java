@@ -2,26 +2,27 @@ package org.hestiastore.index.datatype;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import org.hestiastore.index.Bytes;
 import org.junit.jupiter.api.Test;
 
 class TypeDescriptorByteArrayTest {
 
-    private static final TypeDescriptor<ByteArray> TDBA = new TypeDescriptorByteArray();
+    private static final TypeDescriptor<Bytes> TDBA = new TypeDescriptorByteArray();
 
     @Test
     void test_readWrite() {
-        testReadWrite(TDBA, ByteArray.of(new byte[] {}));
-        testReadWrite(TDBA, ByteArray.of(new byte[] { 0x0F, 0x00, 0x01 }));
-        testReadWrite(TDBA, ByteArray.of("Ahoj lidi".getBytes()));
+        testReadWrite(TDBA, Bytes.of(new byte[] {}));
+        testReadWrite(TDBA, Bytes.of(new byte[] { 0x0F, 0x00, 0x01 }));
+        testReadWrite(TDBA, Bytes.of("Ahoj lidi".getBytes()));
     }
 
-    private void testReadWrite(final TypeDescriptor<ByteArray> typeDescriptor,
-            final ByteArray value) {
+    private void testReadWrite(final TypeDescriptor<Bytes> typeDescriptor,
+            final Bytes value) {
 
-        final byte[] bytes = typeDescriptor.getConvertorToBytes()
-                .toBytes(value);
+        final Bytes bytes = typeDescriptor.getConvertorToBytes()
+                .toBytesBuffer(value);
 
-        final ByteArray readValue = typeDescriptor.getConvertorFromBytes()
+        final Bytes readValue = typeDescriptor.getConvertorFromBytes()
                 .fromBytes(bytes);
 
         assertEquals(value, readValue);

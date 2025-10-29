@@ -33,7 +33,7 @@ public class BloomFilterWriter<K> extends AbstractCloseableResource {
 
     public boolean write(final K key) {
         Vldtn.requireNonNull(key, "key");
-        return hash.store(convertorToBytes.toBytes(key));
+        return hash.store(convertorToBytes.toBytesBuffer(key));
     }
 
     @Override

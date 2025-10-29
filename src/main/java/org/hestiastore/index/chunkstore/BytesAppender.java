@@ -18,12 +18,12 @@ public class BytesAppender {
      *
      * @param data required data to append
      */
-    public void append(final byte[] data) {
-        Vldtn.requireNonNull(data, "data");
-        if (data.length == 0) {
+    public void append(final Bytes data) {
+        final Bytes validated = Vldtn.requireNonNull(data, "bytes");
+        if (validated.length() == 0) {
             return; // No need to append empty byte arrays
         }
-        bytes.add(Bytes.of(data));
+        bytes.add(validated);
     }
 
     /**

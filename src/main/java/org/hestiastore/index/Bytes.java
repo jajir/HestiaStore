@@ -24,6 +24,17 @@ public class Bytes {
     }
 
     /**
+     * Create new Bytes instance that copies the provided byte array.
+     *
+     * @param data required byte array
+     * @return created Bytes instance backed by a copy of the data
+     */
+    public static Bytes copyOf(final byte[] data) {
+        final byte[] safeData = Vldtn.requireNonNull(data, "data");
+        return new Bytes(Arrays.copyOf(safeData, safeData.length));
+    }
+
+    /**
      * Allocate new Bytes instance with specified size.
      * 
      * @param size required size of the byte array
@@ -110,6 +121,15 @@ public class Bytes {
      */
     public byte[] getData() {
         return data;
+    }
+
+    /**
+     * Returns a copy of the underlying byte array.
+     *
+     * @return new byte array containing the same content
+     */
+    public byte[] toByteArray() {
+        return Arrays.copyOf(data, data.length);
     }
 
     /**

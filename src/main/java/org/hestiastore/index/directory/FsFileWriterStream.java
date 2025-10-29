@@ -9,7 +9,9 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
 import org.hestiastore.index.AbstractCloseableResource;
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory.Access;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,9 +66,10 @@ public final class FsFileWriterStream extends AbstractCloseableResource
     }
 
     @Override
-    public void write(byte[] bytes) {
+    public void write(final Bytes bytes) {
+        final byte[] data = Vldtn.requireNonNull(bytes, "bytes").getData();
         try {
-            fio.write(bytes);
+            fio.write(data);
         } catch (IOException e) {
             throw new IndexException(e.getMessage(), e);
         }

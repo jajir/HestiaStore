@@ -1,6 +1,7 @@
 package org.hestiastore.index.sorteddatafile;
 
 import org.hestiastore.index.ByteTool;
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
 import org.hestiastore.index.datatype.TypeReader;
@@ -10,11 +11,11 @@ public class DiffKeyReader<K> implements TypeReader<K> {
 
     private final ConvertorFromBytes<K> keyConvertor;
 
-    private byte[] previousKeyBytes;
+    private Bytes previousKey;
 
     public DiffKeyReader(final ConvertorFromBytes<K> keyConvertor) {
         this.keyConvertor = keyConvertor;
-        previousKeyBytes = null;
+        previousKey = null;
     }
 
     @Override
@@ -25,45 +26,39 @@ public class DiffKeyReader<K> implements TypeReader<K> {
         }
         final int keyLengthInBytes = fileReader.read();
         if (sharedByteLength == 0) {
-            final byte[] keyBytes = new byte[keyLengthInBytes];
+            final Bytes keyBytes = Bytes.allocate(keyLengthInBytes);
             read(fileReader, keyBytes);
-            previousKeyBytes = keyBytes;
+            previousKey = keyBytes;
             return keyConvertor.fromBytes(keyBytes);
         }
-        if (previousKeyBytes == null) {
+        if (previousKey == null) {
             throw new IndexException(String
                     .format("Unable to read key because there should be '%s' "
                             + "bytes shared with previous key but there is no"
                             + " previous key", sharedByteLength));
         }
-        if (previousKeyBytes.length < sharedByteLength) {
-            final String s1 = new String(previousKeyBytes);
+        if (previousKey.length() < sharedByteLength) {
+            final String s1 = new String(previousKey.getData());
             throw new IndexException(String.format(
                     "Previous key is '%s' with length '%s'. "
                             + "Current key should share '%s' with previous key.",
-                    s1, previousKeyBytes.length, sharedByteLength));
+                    s1, previousKey.length(), sharedByteLength));
         }
-        final byte[] diffBytes = new byte[keyLengthInBytes];
+        final Bytes diffBytes = Bytes.allocate(keyLengthInBytes);
         read(fileReader, diffBytes);
-        final byte[] sharedBytes = getBytes(previousKeyBytes, sharedByteLength);
-        final byte[] keyBytes = ByteTool.concatenate(sharedBytes, diffBytes);
-        previousKeyBytes = keyBytes;
+        final Bytes sharedBytes = previousKey.subBytes(0, sharedByteLength);
+        final Bytes keyBytes = ByteTool.concatenate(sharedBytes, diffBytes);
+        previousKey = keyBytes;
         return keyConvertor.fromBytes(keyBytes);
     }
 
-    private void read(final FileReader fileReader, final byte[] bytes) {
+    private void read(final FileReader fileReader, final Bytes bytes) {
         int read = fileReader.read(bytes);
-        if (read != bytes.length) {
+        if (read != bytes.length()) {
             throw new IndexException(String.format(
                     "Reading of '%s' bytes failed just '%s' was read.",
-                    bytes.length, read));
+                    bytes.length(), read));
         }
-    }
-
-    private byte[] getBytes(final byte[] bytes, final int howMany) {
-        final byte[] out = new byte[howMany];
-        System.arraycopy(bytes, 0, out, 0, howMany);
-        return out;
     }
 
 }

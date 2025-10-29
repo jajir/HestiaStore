@@ -31,7 +31,7 @@ public class DataBlockReaderImpl extends AbstractCloseableResource
 
     @Override
     public DataBlock read() {
-        final byte[] buffer = new byte[blockSize.getDataBlockSize()];
+        final Bytes buffer = Bytes.allocate(blockSize.getDataBlockSize());
         final int bytesRead = fileReader.read(buffer);
         if (bytesRead < 0) {
             return null; // End of file reached
@@ -41,7 +41,7 @@ public class DataBlockReaderImpl extends AbstractCloseableResource
         }
         DataBlockPosition blockPosition = DataBlockPosition.of(position);
         position += blockSize.getDataBlockSize();
-        return new DataBlock(Bytes.of(buffer), blockPosition);
+        return new DataBlock(buffer, blockPosition);
     }
 
 }

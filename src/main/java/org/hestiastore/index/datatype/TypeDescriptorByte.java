@@ -2,6 +2,9 @@ package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
 
+import org.hestiastore.index.Bytes;
+import org.hestiastore.index.Vldtn;
+
 public class TypeDescriptorByte implements TypeDescriptor<Byte> {
 
     /**
@@ -11,21 +14,27 @@ public class TypeDescriptorByte implements TypeDescriptor<Byte> {
 
     @Override
     public ConvertorToBytes<Byte> getConvertorToBytes() {
-        return b -> {
-            final byte[] out = new byte[1];
-            out[0] = b;
-            return out;
-        };
+        return this::getBytesBuffer;
     }
 
     @Override
     public ConvertorFromBytes<Byte> getConvertorFromBytes() {
-        return bytes -> bytes[0];
+        return bytes -> {
+            Vldtn.requireNonNull(bytes, "bytes");
+            if (bytes.length() != 1) {
+                throw new IllegalArgumentException(
+                        "Byte value requires exactly one byte");
+            }
+            return bytes.getData()[0];
+        };
     }
 
     @Override
     public TypeReader<Byte> getTypeReader() {
-        return inputStream -> (byte) inputStream.read();
+        return reader -> {
+            final int read = reader.read();
+            return read == -1 ? null : (byte) read;
+        };
     }
 
     @Override
@@ -44,6 +53,13 @@ public class TypeDescriptorByte implements TypeDescriptor<Byte> {
     @Override
     public Byte getTombstone() {
         return TOMBSTONE_VALUE;
+    }
+
+    private Bytes getBytesBuffer(final Byte value) {
+        Vldtn.requireNonNull(value, "value");
+        final Bytes buffer = Bytes.allocate(1);
+        buffer.getData()[0] = value.byteValue();
+        return buffer;
     }
 
 }

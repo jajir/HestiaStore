@@ -3,6 +3,7 @@ package org.hestiastore.index.log;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -23,9 +24,10 @@ class TypeDescriptorLoggedKeyTest {
         final TypeDescriptorLoggedKey<Integer> tdlk = new TypeDescriptorLoggedKey<>(
                 TDI);
 
+        final Bytes bytes = tdlk.getConvertorToBytes()
+                .toBytesBuffer(LoggedKey.<Integer>of(LogOperation.POST, 87));
         final LoggedKey<Integer> k1 = tdlk.getConvertorFromBytes()
-                .fromBytes(tdlk.getConvertorToBytes()
-                        .toBytes(LoggedKey.<Integer>of(LogOperation.POST, 87)));
+                .fromBytes(bytes);
         assertEquals(87, k1.getKey());
         assertEquals(LogOperation.POST, k1.getLogOperation());
     }
@@ -35,9 +37,10 @@ class TypeDescriptorLoggedKeyTest {
         final TypeDescriptorLoggedKey<String> tdlk = new TypeDescriptorLoggedKey<>(
                 TDS);
 
+        final Bytes bytes = tdlk.getConvertorToBytes()
+                .toBytesBuffer(LoggedKey.<String>of(LogOperation.POST, "aaa"));
         final LoggedKey<String> k1 = tdlk.getConvertorFromBytes()
-                .fromBytes(tdlk.getConvertorToBytes().toBytes(
-                        LoggedKey.<String>of(LogOperation.POST, "aaa")));
+                .fromBytes(bytes);
         assertEquals("aaa", k1.getKey());
         assertEquals(LogOperation.POST, k1.getLogOperation());
     }
@@ -47,10 +50,11 @@ class TypeDescriptorLoggedKeyTest {
         final TypeDescriptorLoggedKey<String> tdlk = new TypeDescriptorLoggedKey<>(
                 TDS);
 
+        final Bytes bytes = tdlk.getConvertorToBytes()
+                .toBytesBuffer(LoggedKey.<String>of(LogOperation.POST,
+                        TypeDescriptorShortString.TOMBSTONE_VALUE));
         final LoggedKey<String> k1 = tdlk.getConvertorFromBytes()
-                .fromBytes(tdlk.getConvertorToBytes()
-                        .toBytes(LoggedKey.<String>of(LogOperation.POST,
-                                TypeDescriptorShortString.TOMBSTONE_VALUE)));
+                .fromBytes(bytes);
         assertEquals(TypeDescriptorShortString.TOMBSTONE_VALUE, k1.getKey());
         assertEquals(LogOperation.POST, k1.getLogOperation());
     }

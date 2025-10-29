@@ -8,7 +8,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.hestiastore.index.AbstractCloseableResource;
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.Vldtn;
 
 public final class FsZipFileWriterStream extends AbstractCloseableResource
         implements FileWriter {
@@ -49,9 +51,10 @@ public final class FsZipFileWriterStream extends AbstractCloseableResource
     }
 
     @Override
-    public void write(byte[] bytes) {
+    public void write(final Bytes bytes) {
+        final byte[] data = Vldtn.requireNonNull(bytes, "bytes").getData();
         try {
-            fio.write(bytes);
+            fio.write(data);
         } catch (IOException e) {
             throw new IndexException(e.getMessage(), e);
         }

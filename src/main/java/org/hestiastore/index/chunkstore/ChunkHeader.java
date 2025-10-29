@@ -87,7 +87,7 @@ public final class ChunkHeader {
      * @return the chunk header
      */
     public static ChunkHeader of(final byte[] data) {
-        return ChunkHeaderCodec.decode(data);
+        return ChunkHeaderCodec.decode(Bytes.of(data));
     }
 
     /**
@@ -98,7 +98,7 @@ public final class ChunkHeader {
      */
     public static ChunkHeader of(final Bytes bytes) {
         Vldtn.requireNonNull(bytes, "bytes");
-        return ChunkHeaderCodec.decode(bytes.getData());
+        return ChunkHeaderCodec.decode(bytes);
     }
 
     /**
@@ -112,7 +112,7 @@ public final class ChunkHeader {
         if (bytes == null) {
             return Optional.empty();
         }
-        return ChunkHeaderCodec.decodeOptional(bytes.getData());
+        return ChunkHeaderCodec.decodeOptional(bytes);
     }
 
     /**
@@ -173,7 +173,7 @@ public final class ChunkHeader {
      * @return the byte array representing the chunk header
      */
     public Bytes getBytes() {
-        return Bytes.of(ChunkHeaderCodec.encode(this));
+        return ChunkHeaderCodec.encode(this);
     }
 
     /**

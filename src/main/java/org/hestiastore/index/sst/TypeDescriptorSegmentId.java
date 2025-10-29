@@ -53,7 +53,7 @@ public class TypeDescriptorSegmentId implements TypeDescriptor<SegmentId> {
     @Override
     public ConvertorToBytes<SegmentId> getConvertorToBytes() {
         return segmentId -> tdi.getConvertorToBytes()
-                .toBytes(segmentId.getId());
+                .toBytesBuffer(segmentId.getId());
     }
 
     @Override

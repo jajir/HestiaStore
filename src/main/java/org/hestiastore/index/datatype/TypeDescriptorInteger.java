@@ -2,6 +2,8 @@ package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
 
+import org.hestiastore.index.Bytes;
+
 public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
 
     /**
@@ -41,7 +43,7 @@ public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
 
     @Override
     public ConvertorToBytes<Integer> getConvertorToBytes() {
-        return object -> getBytes(object);
+        return this::getBytesBuffer;
     }
 
     @Override
@@ -52,39 +54,46 @@ public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
     @Override
     public TypeReader<Integer> getTypeReader() {
         return fileReader -> {
-            final byte[] bytes = new byte[4];
-            if (fileReader.read(bytes) == -1) {
+            final Bytes buffer = Bytes.allocate(REQUIRED_BYTES);
+            if (fileReader.read(buffer) == -1) {
                 return null;
             }
-            return load(bytes, 0);
+            return load(buffer, 0);
         };
     }
 
     @Override
     public TypeWriter<Integer> getTypeWriter() {
         return (writer, object) -> {
-            writer.write(getBytes(object));
-            return 4;
+            final Bytes encoded = getBytesBuffer(object);
+            writer.write(encoded);
+            return encoded.length();
         };
     }
 
-    private byte[] getBytes(final Integer value) {
+    private Bytes getBytesBuffer(final Integer value) {
         int pos = 0;
         int v = value.intValue();
-        byte[] out = new byte[REQUIRED_BYTES];
-        out[pos++] = (byte) ((v >>> BYTE_SHIFT_24) & BYTE_MASK);
-        out[pos++] = (byte) ((v >>> BYTE_SHIFT_16) & BYTE_MASK);
-        out[pos++] = (byte) ((v >>> BYTE_SHIFT_8) & BYTE_MASK);
-        out[pos] = (byte) ((v >>> BYTE_SHIFT_0) & BYTE_MASK);
+        final Bytes out = Bytes.allocate(REQUIRED_BYTES);
+        final byte[] data = out.getData();
+        data[pos++] = (byte) ((v >>> BYTE_SHIFT_24) & BYTE_MASK);
+        data[pos++] = (byte) ((v >>> BYTE_SHIFT_16) & BYTE_MASK);
+        data[pos++] = (byte) ((v >>> BYTE_SHIFT_8) & BYTE_MASK);
+        data[pos] = (byte) ((v >>> BYTE_SHIFT_0) & BYTE_MASK);
         return out;
     }
 
-    private Integer load(final byte[] data, final int from) {
+    private Integer load(final Bytes data, final int from) {
+        if (data.length() < from + REQUIRED_BYTES) {
+            throw new IllegalArgumentException(
+                    "Not enough bytes to read an Integer value");
+        }
+        final byte[] raw = data.getData();
         int pos = from;
-        return data[pos++] << BYTE_SHIFT_24
-                | (data[pos++] & BYTE_MASK) << BYTE_SHIFT_16
-                | (data[pos++] & BYTE_MASK) << BYTE_SHIFT_8
-                | (data[pos] & BYTE_MASK);
+        return raw[pos++] << BYTE_SHIFT_24
+                | (raw[pos++] & BYTE_MASK) << BYTE_SHIFT_16
+                | (raw[pos++] & BYTE_MASK) << BYTE_SHIFT_8
+                | (raw[pos] & BYTE_MASK);
     }
 
     @Override

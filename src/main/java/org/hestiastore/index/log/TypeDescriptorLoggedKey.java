@@ -2,6 +2,7 @@ package org.hestiastore.index.log;
 
 import java.util.Comparator;
 
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
 import org.hestiastore.index.datatype.ConvertorToBytes;
@@ -23,13 +24,21 @@ public class TypeDescriptorLoggedKey<K>
 
     @Override
     public ConvertorToBytes<LoggedKey<K>> getConvertorToBytes() {
-        return b -> {
-            final byte[] f1 = TDLO.getConvertorToBytes()
-                    .toBytes(b.getLogOperation());
-            final byte[] f2 = tdKey.getConvertorToBytes().toBytes(b.getKey());
-            final byte[] out = new byte[1 + f2.length];
-            out[0] = f1[0];
-            System.arraycopy(f2, 0, out, 1, f2.length);
+        return loggedKey -> {
+            Vldtn.requireNonNull(loggedKey, "loggedKey");
+            final Bytes operationBytes = TDLO.getConvertorToBytes()
+                    .toBytesBuffer(loggedKey.getLogOperation());
+            final Bytes keyBytes = tdKey.getConvertorToBytes()
+                    .toBytesBuffer(loggedKey.getKey());
+            if (operationBytes.length() != 1) {
+                throw new IllegalStateException(
+                        "Log operation encoding must be exactly one byte");
+            }
+            final Bytes out = Bytes.allocate(1 + keyBytes.length());
+            final byte[] outData = out.getData();
+            outData[0] = operationBytes.getData()[0];
+            System.arraycopy(keyBytes.getData(), 0, outData, 1,
+                    keyBytes.length());
             return out;
         };
     }
@@ -37,10 +46,15 @@ public class TypeDescriptorLoggedKey<K>
     @Override
     public ConvertorFromBytes<LoggedKey<K>> getConvertorFromBytes() {
         return bytes -> {
-            final byte[] f2 = new byte[bytes.length - 1];
-            System.arraycopy(bytes, 1, f2, 0, bytes.length - 1);
-            return LoggedKey.of(LogOperation.fromByte(bytes[0]),
-                    tdKey.getConvertorFromBytes().fromBytes(f2));
+            Vldtn.requireNonNull(bytes, "bytes");
+            if (bytes.length() < 1) {
+                throw new IllegalArgumentException(
+                        "LoggedKey encoding must contain at least one byte");
+            }
+            final byte operation = bytes.getData()[0];
+            final Bytes keyBytes = bytes.subBytes(1, bytes.length());
+            return LoggedKey.of(LogOperation.fromByte(operation),
+                    tdKey.getConvertorFromBytes().fromBytes(keyBytes));
         };
     }
 

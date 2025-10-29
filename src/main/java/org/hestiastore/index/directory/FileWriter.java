@@ -1,11 +1,17 @@
 package org.hestiastore.index.directory;
 
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.CloseableResource;
 
 public interface FileWriter extends CloseableResource {
 
     void write(byte b);
 
-    void write(byte[] bytes);
+    /**
+     * Write all bytes stored inside the provided Bytes instance.
+     *
+     * @param bytes required Bytes wrapper
+     */
+    void write(Bytes bytes);
 
 }

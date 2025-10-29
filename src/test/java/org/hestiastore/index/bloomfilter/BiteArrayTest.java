@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.hestiastore.index.Bytes;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,7 +59,7 @@ class BiteArrayTest {
         // show at debug log -12 as binary
         byte[] b = new byte[1];
         b[0] = -12;
-        logger.debug(toBinaryString(b));
+        logger.debug(toBinaryString(Bytes.of(b)));
 
         // set firts byte to -12
         BitArray bitArray = new BitArray(BIT_ARRAY_SIZE);
@@ -71,7 +72,7 @@ class BiteArrayTest {
         log(bitArray);
 
         // verify that first byte is -12
-        assertEquals(-12, bitArray.getByteArray()[0]);
+        assertEquals(-12, bitArray.getBytes().getData()[0]);
     }
 
     @Test
@@ -107,7 +108,7 @@ class BiteArrayTest {
 
         // Assert
         assertTrue(result);
-        assertEquals((byte) 0b00100000, bitArray.getByteArray()[0]);
+        assertEquals((byte) 0b00100000, bitArray.getBytes().getData()[0]);
     }
 
     @Test
@@ -131,7 +132,7 @@ class BiteArrayTest {
 
         // Assert
         log(bitArray);
-        assertEquals((byte) 0b00100000, bitArray.getByteArray()[0]);
+        assertEquals((byte) 0b00100000, bitArray.getBytes().getData()[0]);
         assertTrue(result);
     }
 
@@ -145,7 +146,7 @@ class BiteArrayTest {
 
         // Assert
         log(bitArray);
-        assertEquals((byte) 0b00000000, bitArray.getByteArray()[0]);
+        assertEquals((byte) 0b00000000, bitArray.getBytes().getData()[0]);
         assertFalse(result);
     }
 
@@ -220,12 +221,12 @@ class BiteArrayTest {
     }
 
     private void log(final BitArray value) {
-        logger.debug(toBinaryString(value.getByteArray()));
+        logger.debug(toBinaryString(value.getBytes()));
     }
 
-    private String toBinaryString(byte[] data) {
+    private String toBinaryString(final Bytes data) {
         StringBuilder sb = new StringBuilder();
-        for (byte b : data) {
+        for (byte b : data.getData()) {
             sb.append(String.format("%8s", Integer.toBinaryString(b & 0xFF))
                     .replace(' ', '0'));
         }

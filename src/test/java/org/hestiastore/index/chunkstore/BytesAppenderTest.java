@@ -11,8 +11,8 @@ public class BytesAppenderTest {
     @Test
     void test_append() {
         BytesAppender appender = new BytesAppender();
-        appender.append(new byte[] { 1, 2, 3 });
-        appender.append(new byte[] { 4, 5, 6 });
+        appender.append(Bytes.of(new byte[] { 1, 2, 3 }));
+        appender.append(Bytes.of(new byte[] { 4, 5, 6 }));
         Bytes result = appender.getBytes();
         assertEquals(6, result.length());
         assertEquals(1, result.getData()[0]);
@@ -26,13 +26,13 @@ public class BytesAppenderTest {
     @Test
     void test_append_empty_array() {
         BytesAppender appender = new BytesAppender();
-        appender.append(new byte[0]);
-        appender.append(new byte[] { 1, 2, 3 });
-        appender.append(new byte[0]);
-        appender.append(new byte[] { 4, 5, 6 });
-        appender.append(new byte[0]);
-        appender.append(new byte[0]);
-        appender.append(new byte[0]);
+        appender.append(Bytes.EMPTY);
+        appender.append(Bytes.of(new byte[] { 1, 2, 3 }));
+        appender.append(Bytes.EMPTY);
+        appender.append(Bytes.of(new byte[] { 4, 5, 6 }));
+        appender.append(Bytes.EMPTY);
+        appender.append(Bytes.EMPTY);
+        appender.append(Bytes.EMPTY);
         Bytes result = appender.getBytes();
         assertEquals(6, result.length());
         assertEquals(1, result.getData()[0]);
@@ -49,7 +49,7 @@ public class BytesAppenderTest {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> appender.append(null));
 
-        assertEquals("Property 'data' must not be null.", e.getMessage());
+        assertEquals("Property 'bytes' must not be null.", e.getMessage());
     }
 
 }

@@ -1,5 +1,6 @@
 package org.hestiastore.index.datatype;
 
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileReader;
 
@@ -16,7 +17,7 @@ public class VarLengthReader<T> implements TypeReader<T> {
 
     @Override
     public T read(final FileReader reader) {
-        byte[] lengthBytes = new byte[4];
+        final Bytes lengthBytes = Bytes.allocate(4);
         reader.read(lengthBytes);
         int length = CONVERTOR_FROM_BYTES.fromBytes(lengthBytes);
         if (length < 0) {
@@ -25,7 +26,7 @@ public class VarLengthReader<T> implements TypeReader<T> {
         if (length > Integer.MAX_VALUE) {
             throw new IllegalArgumentException("Converted type is too big");
         }
-        byte[] bytes = new byte[length];
+        final Bytes bytes = Bytes.allocate(length);
         reader.read(bytes);
         return convertor.fromBytes(bytes);
     }

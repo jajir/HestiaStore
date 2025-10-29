@@ -4,7 +4,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.hestiastore.index.AbstractCloseableResource;
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileWriter;
 
 public class ByteArrayWriter extends AbstractCloseableResource
@@ -31,9 +33,10 @@ public class ByteArrayWriter extends AbstractCloseableResource
     }
 
     @Override
-    public void write(byte[] bytes) {
+    public void write(final Bytes bytes) {
+        final byte[] data = Vldtn.requireNonNull(bytes, "bytes").getData();
         try {
-            fio.write(bytes);
+            fio.write(data);
         } catch (IOException e) {
             throw new IndexException(e.getMessage(), e);
         }
@@ -41,6 +44,10 @@ public class ByteArrayWriter extends AbstractCloseableResource
 
     byte[] toByteArray() {
         return fio.toByteArray();
+    }
+
+    Bytes toBytes() {
+        return Bytes.of(fio.toByteArray());
     }
 
 }

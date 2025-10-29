@@ -2,6 +2,8 @@ package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
 
+import org.hestiastore.index.Bytes;
+
 public class TypeDescriptorFloat implements TypeDescriptor<Float> {
 
     /**
@@ -16,7 +18,7 @@ public class TypeDescriptorFloat implements TypeDescriptor<Float> {
 
     @Override
     public ConvertorToBytes<Float> getConvertorToBytes() {
-        return object -> getBytes(object);
+        return this::getBytesBuffer;
     }
 
     @Override
@@ -27,37 +29,38 @@ public class TypeDescriptorFloat implements TypeDescriptor<Float> {
     @Override
     public TypeReader<Float> getTypeReader() {
         return fileReader -> {
-            final byte[] bytes = new byte[REQUIRED_BYTES];
-            if (fileReader.read(bytes) == -1) {
+            final Bytes buffer = Bytes.allocate(REQUIRED_BYTES);
+            if (fileReader.read(buffer) == -1) {
                 return null;
             }
-            return load(bytes, 0);
+            return load(buffer, 0);
         };
     }
 
-    Float load(byte[] bytes, int offset) {
-        if (bytes.length < offset + REQUIRED_BYTES) {
+    Float load(Bytes bytes, int offset) {
+        if (bytes.length() < offset + REQUIRED_BYTES) {
             throw new IllegalArgumentException(
                     "Not enough bytes to read a Float value");
         }
-        int bits = ((bytes[offset] & 0xFF) << 24)
-                | ((bytes[offset + 1] & 0xFF) << 16)
-                | ((bytes[offset + 2] & 0xFF) << 8)
-                | (bytes[offset + 3] & 0xFF);
+        final byte[] raw = bytes.getData();
+        int bits = ((raw[offset] & 0xFF) << 24)
+                | ((raw[offset + 1] & 0xFF) << 16)
+                | ((raw[offset + 2] & 0xFF) << 8) | (raw[offset + 3] & 0xFF);
         return Float.intBitsToFloat(bits);
     }
 
-    byte[] getBytes(Float object) {
+    Bytes getBytesBuffer(Float object) {
         if (object == null) {
             throw new IllegalArgumentException("Object can't be null");
         }
         int bits = Float.floatToIntBits(object);
-        return new byte[] { //
-                (byte) (bits >> 24), //
-                (byte) (bits >> 16), //
-                (byte) (bits >> 8), //
-                (byte) bits //
-        };
+        final Bytes out = Bytes.allocate(REQUIRED_BYTES);
+        final byte[] data = out.getData();
+        data[0] = (byte) (bits >> 24);
+        data[1] = (byte) (bits >> 16);
+        data[2] = (byte) (bits >> 8);
+        data[3] = (byte) bits;
+        return out;
     }
 
     @Override
@@ -68,8 +71,9 @@ public class TypeDescriptorFloat implements TypeDescriptor<Float> {
     @Override
     public TypeWriter<Float> getTypeWriter() {
         return (writer, object) -> {
-            writer.write(getBytes(object));
-            return REQUIRED_BYTES;
+            final Bytes encoded = getBytesBuffer(object);
+            writer.write(encoded);
+            return encoded.length();
         };
     }
 

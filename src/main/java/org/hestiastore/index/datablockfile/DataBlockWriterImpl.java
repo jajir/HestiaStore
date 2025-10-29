@@ -1,6 +1,7 @@
 package org.hestiastore.index.datablockfile;
 
 import org.hestiastore.index.AbstractCloseableResource;
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileWriter;
 
@@ -35,18 +36,19 @@ public class DataBlockWriterImpl extends AbstractCloseableResource
                     "Payload size '%d' does not match expected payload size '%d'",
                     actualPayloadSize, requiredPayloadSize));
         }
-        byte[] blockData = makeBlockData(dataBlockPayload);
-        fileWriter.write(blockData);
+    final Bytes blockData = makeBlockData(dataBlockPayload);
+    fileWriter.write(blockData);
     }
 
-    private byte[] makeBlockData(final DataBlockPayload dataBlockPayload) {
-        final byte[] blockData = new byte[blockSize.getDataBlockSize()];
+    private Bytes makeBlockData(final DataBlockPayload dataBlockPayload) {
+    final Bytes blockData = Bytes.allocate(blockSize.getDataBlockSize());
+    final byte[] data = blockData.getData();
         final DataBlockHeader header = DataBlockHeader.of(
                 DataBlockHeader.MAGIC_NUMBER, dataBlockPayload.calculateCrc());
-        System.arraycopy(header.toBytes().getData(), 0, blockData, 0,
+    System.arraycopy(header.toBytes().getData(), 0, data, 0,
                 DataBlockHeader.HEADER_SIZE);
         // Copy the payload data after the header
-        System.arraycopy(dataBlockPayload.getBytes().getData(), 0, blockData,
+    System.arraycopy(dataBlockPayload.getBytes().getData(), 0, data,
                 DataBlockHeader.HEADER_SIZE,
                 dataBlockPayload.getBytes().length());
         return blockData;

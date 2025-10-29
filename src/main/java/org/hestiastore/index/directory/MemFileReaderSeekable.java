@@ -1,10 +1,12 @@
 package org.hestiastore.index.directory;
 
+import org.hestiastore.index.Bytes;
+
 public class MemFileReaderSeekable extends MemFileReader
         implements FileReaderSeekable {
 
-    MemFileReaderSeekable(final byte[] data) {
-        super(data);
+    MemFileReaderSeekable(final Bytes bytes) {
+        super(bytes);
     }
 
     @Override

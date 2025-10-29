@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
 
+import org.hestiastore.index.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -11,14 +12,15 @@ class FsStorageTest {
 
     private static final String FILE_NAME = "pok.txt";
 
-    private static final byte[] TEXT_LONG = ("This code stores a reference to an "
-            + "externally mutable object into the internal "
-            + "representation of the object.  If instances are accessed "
-            + "by untrusted code, and unchecked changes to the mutable "
-            + "object would compromise security or other important "
-            + "properties, you will need to do something different. "
-            + "Storing a copy of the object is better approach in many "
-            + "situations.").getBytes();
+    private static final Bytes TEXT_LONG = Bytes
+            .of(("This code stores a reference to an "
+                    + "externally mutable object into the internal "
+                    + "representation of the object.  If instances are accessed "
+                    + "by untrusted code, and unchecked changes to the mutable "
+                    + "object would compromise security or other important "
+                    + "properties, you will need to do something different. "
+                    + "Storing a copy of the object is better approach in many "
+                    + "situations.").getBytes());
 
     @TempDir
     protected File tempDir;
@@ -45,9 +47,9 @@ class FsStorageTest {
     }
 
     private String readStr(final FileReaderSeekable fr, final int length) {
-        final byte[] bytes = new byte[length];
+        final Bytes bytes = Bytes.allocate(length);
         fr.read(bytes);
-        return new String(bytes);
+        return new String(bytes.getData());
     }
 
 }

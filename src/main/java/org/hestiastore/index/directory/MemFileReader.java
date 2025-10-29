@@ -1,18 +1,20 @@
 package org.hestiastore.index.directory;
 
 import org.hestiastore.index.AbstractCloseableResource;
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 
 public class MemFileReader extends AbstractCloseableResource
         implements FileReader {
 
+    private final Bytes source;
     private final byte[] data;
 
     private int position;
 
-    public MemFileReader(final byte[] data) {
-        Vldtn.requireNonNull(data, "data");
-        this.data = data;
+    public MemFileReader(final Bytes bytes) {
+        this.source = Vldtn.requireNonNull(bytes, "bytes");
+        this.data = source.getData();
         position = 0;
     }
 
@@ -31,15 +33,15 @@ public class MemFileReader extends AbstractCloseableResource
     }
 
     @Override
-    public int read(final byte[] bytes) {
+    public int read(final Bytes bytes) {
+        final byte[] target = Vldtn.requireNonNull(bytes, "bytes").getData();
         if (position < data.length) {
-            // at least one byte will be read
-            int newPosition = position + bytes.length;
+            int newPosition = position + target.length;
             if (newPosition > data.length) {
                 newPosition = data.length;
             }
             final int toReadBytes = newPosition - position;
-            System.arraycopy(data, position, bytes, 0, toReadBytes);
+            System.arraycopy(data, position, target, 0, toReadBytes);
             position = newPosition;
             return toReadBytes;
         } else {

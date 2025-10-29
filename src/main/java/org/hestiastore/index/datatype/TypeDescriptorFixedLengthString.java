@@ -3,6 +3,9 @@ package org.hestiastore.index.datatype;
 import java.nio.charset.Charset;
 import java.util.Comparator;
 
+import org.hestiastore.index.Bytes;
+import org.hestiastore.index.Vldtn;
+
 public final class TypeDescriptorFixedLengthString
         implements TypeDescriptor<String> {
 
@@ -38,25 +41,27 @@ public final class TypeDescriptorFixedLengthString
 
     @Override
     public ConvertorFromBytes<String> getConvertorFromBytes() {
-        return array -> {
-            if (length != array.length) {
+        return bytes -> {
+            Vldtn.requireNonNull(bytes, "bytes");
+            if (length != bytes.length()) {
                 throw new IllegalArgumentException(String.format(
                         "Byte array length should be '%s' but is '%s'", length,
-                        array.length));
+                        bytes.length()));
             }
-            return new String(array, CHARSET_ENCODING);
+            return new String(bytes.getData(), CHARSET_ENCODING);
         };
     }
 
     @Override
     public ConvertorToBytes<String> getConvertorToBytes() {
         return string -> {
+            Vldtn.requireNonNull(string, "string");
             if (length != string.length()) {
                 throw new IllegalArgumentException(String.format(
                         "String length shoudlld be '%s' but is '%s'", length,
                         string.length()));
             }
-            return string.getBytes(CHARSET_ENCODING);
+            return Bytes.of(string.getBytes(CHARSET_ENCODING));
         };
     }
 
@@ -68,9 +73,9 @@ public final class TypeDescriptorFixedLengthString
     @Override
     public TypeReader<String> getTypeReader() {
         return reader -> {
-            final byte[] in = new byte[length];
-            reader.read(in);
-            return getConvertorFromBytes().fromBytes(in);
+            final Bytes buffer = Bytes.allocate(length);
+            reader.read(buffer);
+            return getConvertorFromBytes().fromBytes(buffer);
         };
     }
 

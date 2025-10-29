@@ -3,6 +3,9 @@ package org.hestiastore.index.datatype;
 import java.nio.charset.Charset;
 import java.util.Comparator;
 
+import org.hestiastore.index.Bytes;
+import org.hestiastore.index.Vldtn;
+
 /**
  * TypeDescriptor for String values. It uses ISO_8859_1 encoding. Max length of
  * string is over 2 GB, exactly Integer.MAX_VALUE.
@@ -21,12 +24,12 @@ public class TypeDescriptorString implements TypeDescriptor<String> {
 
     @Override
     public ConvertorFromBytes<String> getConvertorFromBytes() {
-        return array -> new String(array, CHARSET_ENCODING);
+        return this::asString;
     }
 
     @Override
     public ConvertorToBytes<String> getConvertorToBytes() {
-        return string -> string.getBytes(CHARSET_ENCODING);
+        return this::toBytesBuffer;
     }
 
     @Override
@@ -47,6 +50,16 @@ public class TypeDescriptorString implements TypeDescriptor<String> {
     @Override
     public String getTombstone() {
         return TOMBSTONE_VALUE;
+    }
+
+    private String asString(final Bytes bytes) {
+        Vldtn.requireNonNull(bytes, "bytes");
+        return new String(bytes.getData(), CHARSET_ENCODING);
+    }
+
+    private Bytes toBytesBuffer(final String value) {
+        Vldtn.requireNonNull(value, "value");
+        return Bytes.of(value.getBytes(CHARSET_ENCODING));
     }
 
     @Override

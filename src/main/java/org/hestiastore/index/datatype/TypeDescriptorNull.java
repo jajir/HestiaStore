@@ -5,6 +5,8 @@ import static org.hestiastore.index.datatype.NullValue.TOMBSTONE;
 
 import java.util.Comparator;
 
+import org.hestiastore.index.Bytes;
+
 /**
  * Greeat advantage of null value is that it occupied no space in the index.
  */
@@ -34,13 +36,13 @@ public class TypeDescriptorNull implements TypeDescriptor<NullValue> {
 
     @Override
     public ConvertorFromBytes<NullValue> getConvertorFromBytes() {
-        return byters -> NULL;
+        return bytes -> NULL;
     }
 
     @Override
     public ConvertorToBytes<NullValue> getConvertorToBytes() {
         // NullValue is represented by an empty byte array
-        return value -> new byte[0];
+        return value -> Bytes.EMPTY;
     }
 
     @Override

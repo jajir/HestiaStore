@@ -5,21 +5,23 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.directory.Directory.Access;
 import org.junit.jupiter.api.Test;
 
 class MemDirectoryTest {
 
-    private static final byte[] NAME = "Karel".getBytes();
-    private static final byte[] SURNAME = "Novotny".getBytes();
-    private static final byte[] TEXT = ("This code stores a reference to an "
-            + "externally mutable object into the internal "
-            + "representation of the object.  If instances are accessed "
-            + "by untrusted code, and unchecked changes to the mutable "
-            + "object would compromise security or other important "
-            + "properties, you will need to do something different. "
-            + "Storing a copy of the object is better approach in many "
-            + "situations.").getBytes();
+    private static final Bytes NAME = Bytes.of("Karel".getBytes());
+    private static final Bytes SURNAME = Bytes.of("Novotny".getBytes());
+    private static final Bytes TEXT = Bytes
+            .of(("This code stores a reference to an "
+                    + "externally mutable object into the internal "
+                    + "representation of the object.  If instances are accessed "
+                    + "by untrusted code, and unchecked changes to the mutable "
+                    + "object would compromise security or other important "
+                    + "properties, you will need to do something different. "
+                    + "Storing a copy of the object is better approach in many "
+                    + "situations.").getBytes());
 
     @Test
     void test_write_and_append() {
@@ -33,10 +35,10 @@ class MemDirectoryTest {
         fw.close();
 
         final FileReader fr = directory.getFileReader("pok");
-        byte[] read = new byte[NAME.length + SURNAME.length];
+        final Bytes read = Bytes.allocate(NAME.length() + SURNAME.length());
         fr.read(read);
 
-        assertEquals("KarelNovotny", new String(read));
+        assertEquals("KarelNovotny", new String(read.getData()));
     }
 
     @Test
@@ -51,10 +53,10 @@ class MemDirectoryTest {
         fw.close();
 
         final FileReader fr = directory.getFileReader("pok");
-        byte[] read = new byte[SURNAME.length];
+        final Bytes read = Bytes.allocate(SURNAME.length());
         fr.read(read);
 
-        assertEquals("Novotny", new String(read));
+        assertEquals("Novotny", new String(read.getData()));
     }
 
     @Test
@@ -115,9 +117,9 @@ class MemDirectoryTest {
     }
 
     private String readStr(final FileReader fr, final int length) {
-        final byte[] bytes = new byte[length];
+        final Bytes bytes = Bytes.allocate(length);
         fr.read(bytes);
-        return new String(bytes);
+        return new String(bytes.getData());
     }
 
 }

@@ -36,12 +36,12 @@ final class ChunkHeaderCodec {
         // utility class
     }
 
-    static ChunkHeader decode(final byte[] data) {
+    static ChunkHeader decode(final org.hestiastore.index.Bytes data) {
         Vldtn.requireNonNull(data, "data");
-        if (data.length != ChunkHeader.HEADER_SIZE) {
+        if (data.length() != ChunkHeader.HEADER_SIZE) {
             throw new IllegalArgumentException(String.format(
                     "Invalid chunk header size '%d', expected '%d'",
-                    data.length, ChunkHeader.HEADER_SIZE));
+                    data.length(), ChunkHeader.HEADER_SIZE));
         }
 
         final long magic = readLong(data, MAGIC_OFFSET);
@@ -53,7 +53,8 @@ final class ChunkHeaderCodec {
         return new ChunkHeader(magic, version, payloadLength, crc, flags);
     }
 
-    static Optional<ChunkHeader> decodeOptional(final byte[] data) {
+    static Optional<ChunkHeader> decodeOptional(
+            final org.hestiastore.index.Bytes data) {
         if (data == null) {
             return Optional.empty();
         }
@@ -64,19 +65,21 @@ final class ChunkHeaderCodec {
         }
     }
 
-    static byte[] encode(final ChunkHeader header) {
-        final byte[] data = new byte[ChunkHeader.HEADER_SIZE];
-        writeLong(data, MAGIC_OFFSET, header.getMagicNumber());
-        writeInt(data, VERSION_OFFSET, header.getVersion());
-        writeInt(data, PAYLOAD_LENGTH_OFFSET, header.getPayloadLength());
-        writeLong(data, CRC_OFFSET, header.getCrc());
-        writeLong(data, FLAGS_OFFSET, header.getFlags());
-        return data;
+    static org.hestiastore.index.Bytes encode(final ChunkHeader header) {
+        final org.hestiastore.index.Bytes out = org.hestiastore.index.Bytes
+                .allocate(ChunkHeader.HEADER_SIZE);
+        writeLong(out, MAGIC_OFFSET, header.getMagicNumber());
+        writeInt(out, VERSION_OFFSET, header.getVersion());
+        writeInt(out, PAYLOAD_LENGTH_OFFSET, header.getPayloadLength());
+        writeLong(out, CRC_OFFSET, header.getCrc());
+        writeLong(out, FLAGS_OFFSET, header.getFlags());
+        return out;
     }
 
-    private static long readLong(final byte[] data, final int offset) {
-        final byte[] buffer = new byte[8];
-        System.arraycopy(data, offset, buffer, 0, 8);
+    private static long readLong(final org.hestiastore.index.Bytes data,
+            final int offset) {
+        final org.hestiastore.index.Bytes buffer = data.subBytes(offset,
+                offset + 8);
         final Long value = LONG_FROM_BYTES.fromBytes(buffer);
         if (value == null) {
             throw new IllegalArgumentException(
@@ -85,9 +88,10 @@ final class ChunkHeaderCodec {
         return value;
     }
 
-    private static int readInt(final byte[] data, final int offset) {
-        final byte[] buffer = new byte[4];
-        System.arraycopy(data, offset, buffer, 0, 4);
+    private static int readInt(final org.hestiastore.index.Bytes data,
+            final int offset) {
+        final org.hestiastore.index.Bytes buffer = data.subBytes(offset,
+                offset + 4);
         final Integer value = INT_FROM_BYTES.fromBytes(buffer);
         if (value == null) {
             throw new IllegalArgumentException(
@@ -96,15 +100,17 @@ final class ChunkHeaderCodec {
         return value;
     }
 
-    private static void writeLong(final byte[] data, final int offset,
-            final long value) {
-        final byte[] bytes = LONG_TO_BYTES.toBytes(value);
-        System.arraycopy(bytes, 0, data, offset, 8);
+    private static void writeLong(final org.hestiastore.index.Bytes data,
+            final int offset, final long value) {
+        final org.hestiastore.index.Bytes bytes = LONG_TO_BYTES
+                .toBytesBuffer(value);
+        System.arraycopy(bytes.getData(), 0, data.getData(), offset, 8);
     }
 
-    private static void writeInt(final byte[] data, final int offset,
-            final int value) {
-        final byte[] bytes = INT_TO_BYTES.toBytes(value);
-        System.arraycopy(bytes, 0, data, offset, 4);
+    private static void writeInt(final org.hestiastore.index.Bytes data,
+            final int offset, final int value) {
+        final org.hestiastore.index.Bytes bytes = INT_TO_BYTES
+                .toBytesBuffer(value);
+        System.arraycopy(bytes.getData(), 0, data.getData(), offset, 4);
     }
 }

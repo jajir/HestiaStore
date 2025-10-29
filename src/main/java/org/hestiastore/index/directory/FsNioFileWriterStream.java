@@ -7,13 +7,16 @@ import java.nio.channels.FileChannel;
 import java.nio.file.StandardOpenOption;
 
 import org.hestiastore.index.AbstractCloseableResource;
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory.Access;
 
 public final class FsNioFileWriterStream extends AbstractCloseableResource
         implements FileWriter {
 
     private final FileChannel channel;
+    private final byte[] singleByte = new byte[1];
 
     public FsNioFileWriterStream(final File file, final Access access) {
         try {
@@ -41,21 +44,24 @@ public final class FsNioFileWriterStream extends AbstractCloseableResource
 
     @Override
     public void write(final byte b) {
-        write(new byte[] { b }, 0, 1);
+        singleByte[0] = b;
+        writeInternal(singleByte, 0, 1);
     }
 
-    @Override
-    public void write(byte[] data) {
-        write(data, 0, data.length);
-    }
-
-    public void write(byte[] data, int offset, int length) {
-        ByteBuffer buffer = ByteBuffer.wrap(data, offset, length);
+    private void writeInternal(final byte[] data, final int offset,
+            final int length) {
+        final ByteBuffer buffer = ByteBuffer.wrap(data, offset, length);
         try {
             channel.write(buffer);
         } catch (IOException e) {
             throw new IndexException("Error writing to file channel", e);
         }
+    }
+
+    @Override
+    public void write(final Bytes bytes) {
+        final byte[] data = Vldtn.requireNonNull(bytes, "bytes").getData();
+        writeInternal(data, 0, data.length);
     }
 
     public void flush() {

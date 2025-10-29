@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Comparator;
 
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -102,7 +103,7 @@ class DiffKeyWriterTest {
         DiffKeyWriter<String> diffWriter = new DiffKeyWriter<>(
                 tds.getConvertorToBytes(), Comparator.naturalOrder());
 
-        byte[] ret = diffWriter.write("aaa");
+        Bytes ret = diffWriter.write("aaa");
         verifyDiffKey(0, 3, "aaa", ret);
 
         ret = diffWriter.write("bbb");
@@ -117,12 +118,12 @@ class DiffKeyWriterTest {
 
     private void verifyDiffKey(final int expectedSharedByteLength,
             final int expectedBytesLength, final String expectedString,
-            final byte[] bytes) {
-        assertEquals(expectedSharedByteLength, (int) bytes[0],
+            final Bytes bytes) {
+        assertEquals(expectedSharedByteLength, bytes.getData()[0],
                 "shared byte length");
-        assertEquals(expectedBytesLength, (int) bytes[1], "byte length");
-        byte[] b = new byte[bytes.length - 2];
-        System.arraycopy(bytes, 2, b, 0, b.length);
+        assertEquals(expectedBytesLength, bytes.getData()[1], "byte length");
+        byte[] b = new byte[bytes.length() - 2];
+        System.arraycopy(bytes.getData(), 2, b, 0, b.length);
         String str = new String(b);
         assertEquals(expectedString, str, "string");
     }

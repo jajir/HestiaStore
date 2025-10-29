@@ -2,6 +2,7 @@ package org.hestiastore.index.log;
 
 import java.util.Comparator;
 
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -18,14 +19,22 @@ public class TypeDescriptorLogOperation
 
     @Override
     public ConvertorToBytes<LogOperation> getConvertorToBytes() {
-        return b -> {
-            return TDB.getConvertorToBytes().toBytes(b.getByte());
+        return operation -> {
+            Vldtn.requireNonNull(operation, "operation");
+            return TDB.getConvertorToBytes().toBytesBuffer(operation.getByte());
         };
     }
 
     @Override
     public ConvertorFromBytes<LogOperation> getConvertorFromBytes() {
-        return bytes -> LogOperation.fromByte(bytes[0]);
+        return bytes -> {
+            Vldtn.requireNonNull(bytes, "bytes");
+            if (bytes.length() != 1) {
+                throw new IllegalArgumentException(
+                        "LogOperation requires exactly one byte");
+            }
+            return LogOperation.fromByte(bytes.getData()[0]);
+        };
     }
 
     @Override

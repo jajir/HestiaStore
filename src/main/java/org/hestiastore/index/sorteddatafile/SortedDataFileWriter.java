@@ -3,6 +3,7 @@ package org.hestiastore.index.sorteddatafile;
 import java.util.Comparator;
 
 import org.hestiastore.index.AbstractCloseableResource;
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.F;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;
@@ -70,7 +71,8 @@ public class SortedDataFileWriter<K, V> extends AbstractCloseableResource
         if (previousKey != null) {
             final int cmp = keyComparator.compare(previousKey, key);
             if (cmp == 0) {
-                final String s2 = F.b64(keyConvertorToBytes.toBytes(key));
+                final String s2 = F
+                        .b64(keyConvertorToBytes.toBytesBuffer(key).getData());
                 final String keyComapratorClassName = keyComparator.getClass()
                         .getSimpleName();
                 throw new IllegalArgumentException(String.format(
@@ -78,8 +80,10 @@ public class SortedDataFileWriter<K, V> extends AbstractCloseableResource
                         s2, keyComapratorClassName));
             }
             if (cmp > 0) {
-                final String s1 = F.b64(keyConvertorToBytes.toBytes(previousKey));
-                final String s2 = F.b64(keyConvertorToBytes.toBytes(key));
+                final String s1 = F.b64(keyConvertorToBytes
+                        .toBytesBuffer(previousKey).getData());
+                final String s2 = F
+                        .b64(keyConvertorToBytes.toBytesBuffer(key).getData());
                 final String keyComapratorClassName = keyComparator.getClass()
                         .getSimpleName();
                 throw new IllegalArgumentException(String.format(
@@ -103,11 +107,11 @@ public class SortedDataFileWriter<K, V> extends AbstractCloseableResource
         Vldtn.requireNonNull(pair.getValue(), "value");
         verifyKeyOrder(pair.getKey());
 
-        final byte[] diffKey = diffKeyWriter.write(pair.getKey());
+        final Bytes diffKey = diffKeyWriter.write(pair.getKey());
         fileWriter.write(diffKey);
         final int writenBytesInValue = valueWriter.write(fileWriter,
                 pair.getValue());
-        position = position + diffKey.length + writenBytesInValue;
+        position = position + diffKey.length() + writenBytesInValue;
     }
 
     @Override

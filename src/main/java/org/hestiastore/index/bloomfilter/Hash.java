@@ -1,6 +1,7 @@
 package org.hestiastore.index.bloomfilter;
 
 import org.apache.commons.codec.digest.MurmurHash3;
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 
 /**
@@ -27,11 +28,10 @@ public final class Hash {
         this.numHashFunctions = numHashFunctions;
     }
 
-    public boolean store(final byte[] data) {
-        if (data == null) {
-            throw new NullPointerException("No data");
-        }
-        if (data.length == 0) {
+    public boolean store(final Bytes data) {
+        Vldtn.requireNonNull(data, "data");
+        final byte[] raw = data.getData();
+        if (raw.length == 0) {
             throw new IllegalArgumentException("Zero size of byte array");
         }
         final long bitSize = bitArray.bitSize();
@@ -39,8 +39,8 @@ public final class Hash {
             return true;
         }
 
-        int h1 = MurmurHash3.hash32x86(data, 0, data.length, 0);
-        int h2 = MurmurHash3.hash32x86(data, 0, data.length, h1);
+        int h1 = MurmurHash3.hash32x86(raw, 0, raw.length, 0);
+        int h2 = MurmurHash3.hash32x86(raw, 0, raw.length, h1);
 
         boolean bitsChanged = false;
         for (int i = 1; i <= numHashFunctions; i++) {
@@ -63,15 +63,14 @@ public final class Hash {
      * @return return <code>true</code> when it's sure that data are not in
      *         index. Otherwise return <code>false</code>.
      */
-    public boolean isNotStored(final byte[] data) {
+    public boolean isNotStored(final Bytes data) {
         return !isProbablyStored(data);
     }
 
-    public boolean isProbablyStored(final byte[] data) {
-        if (data == null) {
-            throw new NullPointerException("No data");
-        }
-        if (data.length == 0) {
+    public boolean isProbablyStored(final Bytes data) {
+        Vldtn.requireNonNull(data, "data");
+        final byte[] raw = data.getData();
+        if (raw.length == 0) {
             throw new IllegalArgumentException("Zero size of byte array");
         }
         long bitSize = bitArray.bitSize();
@@ -80,8 +79,8 @@ public final class Hash {
             return true;
         }
 
-        int h1 = MurmurHash3.hash32x86(data, 0, data.length, 0);
-        int h2 = MurmurHash3.hash32x86(data, 0, data.length, h1);
+        int h1 = MurmurHash3.hash32x86(raw, 0, raw.length, 0);
+        int h2 = MurmurHash3.hash32x86(raw, 0, raw.length, h1);
 
         for (int i = 1; i <= numHashFunctions; i++) {
             int combinedHash = h1 + (i * h2);
@@ -104,8 +103,8 @@ public final class Hash {
         return true;
     }
 
-    public byte[] getData() {
-        return bitArray.getByteArray();
+    public Bytes getData() {
+        return bitArray.getBytes();
     }
 
 }

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 
+import org.hestiastore.index.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -14,14 +15,17 @@ class FsFileReaderSeekableTest {
 
     private static final String TEXT = "Ahoj lidi!";
 
-    private static final byte[] TEXT_LONG = ("This code stores a reference to an "
-            + "externally mutable object into the internal "
-            + "representation of the object.  If instances are accessed "
-            + "by untrusted code, and unchecked changes to the mutable "
-            + "object would compromise security or other important "
-            + "properties, you will need to do something different. "
-            + "Storing a copy of the object is better approach in many "
-            + "situations.").getBytes();
+    private static final Bytes TEXT_BYTES = Bytes.of(TEXT.getBytes());
+
+    private static final Bytes TEXT_LONG = Bytes
+            .of(("This code stores a reference to an "
+                    + "externally mutable object into the internal "
+                    + "representation of the object.  If instances are accessed "
+                    + "by untrusted code, and unchecked changes to the mutable "
+                    + "object would compromise security or other important "
+                    + "properties, you will need to do something different. "
+                    + "Storing a copy of the object is better approach in many "
+                    + "situations.").getBytes());
 
     @TempDir
     protected File tempDir;
@@ -77,7 +81,7 @@ class FsFileReaderSeekableTest {
     private void test_overwrite_file(final Directory dir) {
         // Write data
         try (FileWriter fw = dir.getFileWriter(FILE_NAME)) {
-            fw.write(TEXT.getBytes());
+            fw.write(TEXT_BYTES);
         }
 
         // write empty file
@@ -87,7 +91,7 @@ class FsFileReaderSeekableTest {
 
         // assert no data are read
         try (FileReader fr = dir.getFileReader(FILE_NAME)) {
-            byte[] bytes = new byte[TEXT_LONG.length];
+            final Bytes bytes = Bytes.allocate(TEXT_LONG.length());
 
             final int loadedBytes = fr.read(bytes);
             assertEquals(-1, loadedBytes);
@@ -107,7 +111,7 @@ class FsFileReaderSeekableTest {
         // assert no data are read, but file exists
         assertTrue(dir.isFileExists(FILE_NAME));
         try (FileReader fr = dir.getFileReader(FILE_NAME)) {
-            byte[] bytes = new byte[TEXT_LONG.length];
+            final Bytes bytes = Bytes.allocate(TEXT_LONG.length());
 
             final int loadedBytes = fr.read(bytes);
             assertEquals(-1, loadedBytes);
@@ -116,11 +120,11 @@ class FsFileReaderSeekableTest {
 
     private void test_read_long_bytes(final Directory dir) {
         try (FileWriter fw = dir.getFileWriter(FILE_NAME)) {
-            fw.write(TEXT.getBytes());
+            fw.write(TEXT_BYTES);
         }
 
         try (FileReader fr = dir.getFileReader(FILE_NAME)) {
-            byte[] bytes = new byte[TEXT_LONG.length];
+            final Bytes bytes = Bytes.allocate(TEXT_LONG.length());
 
             final int loadedBytes = fr.read(bytes);
             assertEquals(10, loadedBytes);
@@ -129,16 +133,17 @@ class FsFileReaderSeekableTest {
 
     private void test_read_write_text(final Directory dir) {
         try (FileWriter fw = dir.getFileWriter(FILE_NAME)) {
-            fw.write(TEXT.getBytes());
+            fw.write(TEXT_BYTES);
         }
 
         try (FileReader fr = dir.getFileReader(FILE_NAME)) {
-            byte[] bytes = new byte[TEXT.getBytes().length];
+            final byte[] source = TEXT.getBytes();
+            final Bytes bytes = Bytes.allocate(source.length);
             final int loadedBytes = fr.read(bytes);
 
-            String pok = new String(bytes);
+            String pok = new String(bytes.getData(), 0, loadedBytes);
             assertEquals(TEXT, pok);
-            assertEquals(TEXT.getBytes().length, loadedBytes);
+            assertEquals(source.length, loadedBytes);
         }
 
     }

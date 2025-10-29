@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
@@ -52,10 +53,11 @@ public final class PropertyStoreimpl implements PropertyStore {
     private byte[] readEntireFile() {
         try (FileReader reader = directory.getFileReader(fileName)) {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            final byte[] buffer = new byte[256];
+            final Bytes buffer = Bytes.allocate(256);
+            final byte[] bufferArray = buffer.getData();
             int read = reader.read(buffer);
             while (read != -1) {
-                baos.write(buffer, 0, read);
+                baos.write(bufferArray, 0, read);
                 read = reader.read(buffer);
             }
             return baos.toByteArray();
@@ -84,7 +86,7 @@ public final class PropertyStoreimpl implements PropertyStore {
         final byte[] bytes = convertToBytes(propsToWrite);
         try (FileWriter writer = directory.getFileWriter(fileName,
                 Access.OVERWRITE)) {
-            writer.write(bytes);
+            writer.write(Bytes.of(bytes));
         }
     }
 

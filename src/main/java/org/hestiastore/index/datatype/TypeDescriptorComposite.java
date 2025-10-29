@@ -3,6 +3,7 @@ package org.hestiastore.index.datatype;
 import java.util.Comparator;
 import java.util.List;
 
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileReader;
@@ -13,7 +14,7 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
     private final VarLengthReader<CompositeValue> varLengthReader = new VarLengthReader<>(
             getConvertorFromBytes());
     private final VarLengthWriter<CompositeValue> varLengthWriter = new VarLengthWriter<>(
-            this::toBytes);
+            this::toBytesBuffer);
     private final List<TypeDescriptor<?>> elementTypes;
     private final CompositeValue tombstoneValue;
 
@@ -31,7 +32,7 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
 
     @Override
     public ConvertorToBytes<CompositeValue> getConvertorToBytes() {
-        return this::toBytes;
+        return this::toBytesBuffer;
     }
 
     @Override
@@ -65,7 +66,6 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
      *                        elementTypes.
      */
     @Override
-    @SuppressWarnings("unchecked")
     public Comparator<CompositeValue> getComparator() {
         return (a, b) -> {
             if (a.size() != elementTypes.size()
@@ -91,8 +91,7 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
                             + expectedClass.getName());
                 }
 
-                Comparator<Object> cmp = ((TypeDescriptor<Object>) elementTypes
-                        .get(i)).getComparator();
+                Comparator<Object> cmp = elementDescriptor(i).getComparator();
                 int result = cmp.compare(valA, valB);
                 if (result != 0) {
                     return result;
@@ -108,28 +107,32 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
         return tombstoneValue;
     }
 
-    @SuppressWarnings("unchecked")
-    public byte[] toBytes(final CompositeValue value) {
-        final ByteArrayWriter byteArrayWriter = new ByteArrayWriter();
-        for (int i = 0; i < elementTypes.size(); i++) {
-            final TypeWriter<Object> writer = ((TypeDescriptor<Object>) elementTypes
-                    .get(i)).getTypeWriter();
-            writer.write(byteArrayWriter, value.get(i));
+    private Bytes toBytesBuffer(final CompositeValue value) {
+        try (ByteArrayWriter byteArrayWriter = new ByteArrayWriter()) {
+            for (int i = 0; i < elementTypes.size(); i++) {
+                final TypeDescriptor<Object> descriptor = elementDescriptor(i);
+                final TypeWriter<Object> writer = descriptor.getTypeWriter();
+                writer.write(byteArrayWriter, value.get(i));
+            }
+            return byteArrayWriter.toBytes();
         }
-        return byteArrayWriter.toByteArray();
     }
 
-    @SuppressWarnings("unchecked")
-    public CompositeValue fromBytes(final byte[] bytes) {
+    public CompositeValue fromBytes(final Bytes bytes) {
         Vldtn.requireNonNull(bytes, "bytes");
         final FileReader fileReader = new MemFileReader(bytes);
         final Object[] out = new Object[elementTypes.size()];
         for (int i = 0; i < elementTypes.size(); i++) {
-            final TypeReader<Object> convertor = ((TypeDescriptor<Object>) elementTypes
-                    .get(i)).getTypeReader();
-            out[i] = convertor.read(fileReader);
+            final TypeDescriptor<Object> descriptor = elementDescriptor(i);
+            final TypeReader<Object> reader = descriptor.getTypeReader();
+            out[i] = reader.read(fileReader);
         }
         return new CompositeValue(out);
+    }
+
+    @SuppressWarnings("unchecked")
+    private TypeDescriptor<Object> elementDescriptor(final int index) {
+        return (TypeDescriptor<Object>) elementTypes.get(index);
     }
 
 }

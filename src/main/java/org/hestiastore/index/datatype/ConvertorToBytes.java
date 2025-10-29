@@ -1,5 +1,7 @@
 package org.hestiastore.index.datatype;
 
+import org.hestiastore.index.Bytes;
+
 /**
  * Convert object of some type into byte array.
  * <p>
@@ -12,6 +14,6 @@ package org.hestiastore.index.datatype;
  */
 public interface ConvertorToBytes<T> {
 
-    byte[] toBytes(T object);
+    Bytes toBytesBuffer(T object);
 
 }
