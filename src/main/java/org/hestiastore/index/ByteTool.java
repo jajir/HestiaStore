@@ -16,16 +16,13 @@ public final class ByteTool {
      * @param second the second Bytes instance
      * @return number of matching bytes from the beginning of the buffers
      */
-    public static int countMatchingPrefixBytes(final Bytes first,
-            final Bytes second) {
+    public static int countMatchingPrefixBytes(final ByteSequence first,
+            final ByteSequence second) {
         Vldtn.requireNonNull(first, "first");
         Vldtn.requireNonNull(second, "second");
-        // FIXME should avoid this just takes bytes from source
-        final byte[] firstData = first.getData();
-        final byte[] secondData = second.getData();
         final int limit = Math.min(first.length(), second.length());
         int index = 0;
-        while (index < limit && firstData[index] == secondData[index]) {
+        while (index < limit && first.getByte(index) == second.getByte(index)) {
             index++;
         }
         return index;
@@ -40,17 +37,19 @@ public final class ByteTool {
      * @return Bytes containing remaining bytes from {@code index}
      */
     public static Bytes getRemainingBytesAfterIndex(final int index,
-            final Bytes full) {
+            final ByteSequence full) {
         Vldtn.requireNonNull(full, "full");
         if (index < 0 || index > full.length()) {
             throw new IllegalArgumentException(String.format(
                     "Index '%d' is out of range 0..%d", index, full.length()));
         }
         final int remainingLength = full.length() - index;
-        final Bytes slice = Bytes.allocate(remainingLength);
-        System.arraycopy(full.getData(), index, slice.getData(), 0,
-                remainingLength);
-        return slice;
+        if (remainingLength == 0) {
+            return Bytes.EMPTY;
+        }
+        final MutableBytes slice = MutableBytes.allocate(remainingLength);
+        slice.setBytes(0, full, index, remainingLength);
+        return slice.toBytes();
     }
 
     /**
@@ -60,14 +59,15 @@ public final class ByteTool {
      * @param second non-null second Bytes instance
      * @return new Bytes comprising both inputs
      */
-    public static Bytes concatenate(final Bytes first, final Bytes second) {
+    public static Bytes concatenate(final ByteSequence first,
+            final ByteSequence second) {
         Vldtn.requireNonNull(first, "first");
         Vldtn.requireNonNull(second, "second");
 
-        final Bytes out = Bytes.allocate(first.length() + second.length());
-        System.arraycopy(first.getData(), 0, out.getData(), 0, first.length());
-        System.arraycopy(second.getData(), 0, out.getData(), first.length(),
-                second.length());
-        return out;
+        final MutableBytes out = MutableBytes
+                .allocate(first.length() + second.length());
+        out.setBytes(0, first);
+        out.setBytes(first.length(), second);
+        return out.toBytes();
     }
 }

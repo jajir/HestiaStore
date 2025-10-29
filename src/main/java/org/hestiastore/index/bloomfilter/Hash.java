@@ -30,7 +30,7 @@ public final class Hash {
 
     public boolean store(final Bytes data) {
         Vldtn.requireNonNull(data, "data");
-        final byte[] raw = data.getData();
+        final byte[] raw = data.toByteArray();
         if (raw.length == 0) {
             throw new IllegalArgumentException("Zero size of byte array");
         }
@@ -69,7 +69,7 @@ public final class Hash {
 
     public boolean isProbablyStored(final Bytes data) {
         Vldtn.requireNonNull(data, "data");
-        final byte[] raw = data.getData();
+        final byte[] raw = data.toByteArray();
         if (raw.length == 0) {
             throw new IllegalArgumentException("Zero size of byte array");
         }

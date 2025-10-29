@@ -16,7 +16,7 @@ class ChunkFilterSnappyDecompressTest {
 
     @Test
     void apply_should_decompress_payload_and_clear_flag() throws IOException {
-        final byte[] compressed = Snappy.compress(PAYLOAD.getData());
+        final byte[] compressed = Snappy.compress(PAYLOAD.toByteArray());
         final ChunkData input = ChunkData.of(
                 ChunkFilterSnappyCompress.FLAG_COMPRESSED, 0L,
                 ChunkHeader.MAGIC_NUMBER, 1, Bytes.of(compressed));

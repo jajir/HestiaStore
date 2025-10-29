@@ -2,19 +2,18 @@ package org.hestiastore.index.directory;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Bytes;
+import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.Vldtn;
 
 public class MemFileReader extends AbstractCloseableResource
         implements FileReader {
 
     private final Bytes source;
-    private final byte[] data;
 
     private int position;
 
     public MemFileReader(final Bytes bytes) {
         this.source = Vldtn.requireNonNull(bytes, "bytes");
-        this.data = source.getData();
         position = 0;
     }
 
@@ -25,23 +24,23 @@ public class MemFileReader extends AbstractCloseableResource
 
     @Override
     public int read() {
-        if (position < data.length) {
-            return data[position++];
+        if (position < source.length()) {
+            return source.getByte(position++) & 0xFF;
         } else {
             return -1;
         }
     }
 
     @Override
-    public int read(final Bytes bytes) {
-        final byte[] target = Vldtn.requireNonNull(bytes, "bytes").getData();
-        if (position < data.length) {
-            int newPosition = position + target.length;
-            if (newPosition > data.length) {
-                newPosition = data.length;
+    public int read(final MutableBytes bytes) {
+        Vldtn.requireNonNull(bytes, "bytes");
+        if (position < source.length()) {
+            int newPosition = position + bytes.length();
+            if (newPosition > source.length()) {
+                newPosition = source.length();
             }
             final int toReadBytes = newPosition - position;
-            System.arraycopy(data, position, target, 0, toReadBytes);
+            bytes.setBytes(0, source, position, toReadBytes);
             position = newPosition;
             return toReadBytes;
         } else {
@@ -50,7 +49,7 @@ public class MemFileReader extends AbstractCloseableResource
     }
 
     protected int getDataLength() {
-        return data.length;
+        return source.length();
     }
 
     protected void setPosition(final long position) {

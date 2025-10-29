@@ -7,7 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
 import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberValidation;
@@ -93,8 +93,8 @@ class FilteredIndexIT {
                     final FileReader reader = directory.getFileReader(name);
                     try (reader) {
                         final ByteArrayOutputStream out = new ByteArrayOutputStream();
-                        final Bytes buffer = Bytes.allocate(1024);
-                        final byte[] bufferArray = buffer.getData();
+                        final MutableBytes buffer = MutableBytes.allocate(1024);
+                        final byte[] bufferArray = buffer.array();
                         int read;
                         while ((read = reader.read(buffer)) != -1) {
                             if (read > 0) {

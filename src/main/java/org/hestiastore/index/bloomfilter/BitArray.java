@@ -1,18 +1,21 @@
 package org.hestiastore.index.bloomfilter;
 
+import java.util.Arrays;
+
 import org.hestiastore.index.Bytes;
+import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.Vldtn;
 
 public class BitArray {
 
-    private final Bytes bytes;
+    private final MutableBytes bytes;
 
     public BitArray(final int length) {
-        this(Bytes.allocate(length));
+        this.bytes = MutableBytes.allocate(length);
     }
 
     public BitArray(final Bytes data) {
-        this.bytes = Vldtn.requireNonNull(data, "data");
+        this.bytes = MutableBytes.copyOf(Vldtn.requireNonNull(data, "data"));
     }
 
     /**
@@ -23,36 +26,34 @@ public class BitArray {
      * @throws IndexOutOfBoundsException if the index is out of bounds
      */
     public boolean setBit(final int index) {
-        final byte[] data = bytes.getData();
-        if (index < 0 || index >= data.length * 8) {
+        if (index < 0 || index >= bytes.length() * 8) {
             throw new IndexOutOfBoundsException("Invalid index");
         }
 
         int byteIndex = index / 8;
         int bitIndex = index % 8;
 
-        int oldValue = data[byteIndex] & 0xff;
+        int oldValue = bytes.getByte(byteIndex) & 0xff;
         int newValue = oldValue | (1 << bitIndex);
 
         if (oldValue == newValue) {
             return false; // Bit was already set
         } else {
-            data[byteIndex] = (byte) newValue;
+            bytes.setByte(byteIndex, (byte) newValue);
             return true;
         }
-        //FIXME set one byte in Bytes
+        // FIXME set one byte in Bytes
     }
 
     public boolean get(final int index) {
-        final byte[] data = bytes.getData();
-        if (index < 0 || index >= data.length * 8) {
+        if (index < 0 || index >= bytes.length() * 8) {
             throw new IndexOutOfBoundsException("Invalid index");
         }
 
         int byteIndex = index / 8;
         int bitIndex = index % 8;
 
-        int b = data[byteIndex] & 0xff; // Convert byte to unsigned int
+        int b = bytes.getByte(byteIndex) & 0xff; // Convert byte to unsigned int
 
         return (b & (1 << bitIndex)) != 0;
     }
@@ -62,12 +63,12 @@ public class BitArray {
     }
 
     public Bytes getBytes() {
-        return bytes;
+        return bytes.toBytes();
     }
 
     @Override
     public int hashCode() {
-        return bytes.hashCode();
+        return Arrays.hashCode(bytes.array());
     }
 
     @Override
@@ -79,6 +80,6 @@ public class BitArray {
             return false;
         }
         BitArray that = (BitArray) other;
-        return bytes.equals(that.bytes);
+        return Arrays.equals(bytes.array(), that.bytes.array());
     }
 }

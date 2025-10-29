@@ -26,7 +26,7 @@ class ChunkFilterSnappyCompressTest {
         final ChunkData result = filter.apply(input);
 
         final byte[] uncompressed = Snappy
-                .uncompress(result.getPayload().getData());
+                .uncompress(result.getPayload().toByteArray());
         assertEquals(PAYLOAD, Bytes.of(uncompressed));
         assertTrue(
                 (result.getFlags()

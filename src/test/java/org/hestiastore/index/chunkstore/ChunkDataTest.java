@@ -83,7 +83,8 @@ class ChunkDataTest {
         assertEquals(ChunkHeader.MAGIC_NUMBER, chunkData.getMagicNumber());
         assertEquals(VERSION, chunkData.getVersion());
         assertEquals(payloadLength, chunkData.getPayload().length());
-        assertArrayEquals(originalPayload, chunkData.getPayload().getData());
+        assertArrayEquals(originalPayload,
+                chunkData.getPayload().toByteArray());
     }
 
     @Test
@@ -101,7 +102,7 @@ class ChunkDataTest {
         final ChunkData chunkData = ChunkData.read(reader).orElseThrow();
 
         assertEquals(payloadLength, chunkData.getPayload().length());
-        assertArrayEquals(payload, chunkData.getPayload().getData());
+        assertArrayEquals(payload, chunkData.getPayload().toByteArray());
     }
 
     @Test
@@ -120,20 +121,20 @@ class ChunkDataTest {
         assertEquals(crc, chunk.getCrc());
         assertEquals(magic, chunk.getMagicNumber());
         assertEquals(version, chunk.getVersion());
-        assertArrayEquals(data, chunk.getPayload().getData());
+        assertArrayEquals(data, chunk.getPayload().toByteArray());
     }
 
     @Test
     void of_should_throw_when_payload_null() {
-        assertThrows(IllegalArgumentException.class,
-                () -> ChunkData.of(FLAGS, CRC, ChunkHeader.MAGIC_NUMBER,
-                        VERSION, null));
+        assertThrows(IllegalArgumentException.class, () -> ChunkData.of(FLAGS,
+                CRC, ChunkHeader.MAGIC_NUMBER, VERSION, null));
     }
 
     @Test
     void withFlags_should_update_flags_and_keep_others() {
-        final ChunkData base = ChunkData.of(FLAGS, CRC, ChunkHeader.MAGIC_NUMBER,
-                VERSION, Bytes.of(new byte[] { 1, 2 }));
+        final ChunkData base = ChunkData.of(FLAGS, CRC,
+                ChunkHeader.MAGIC_NUMBER, VERSION,
+                Bytes.of(new byte[] { 1, 2 }));
         final long newFlags = 0x00000000F0F0F0F0L;
 
         final ChunkData updated = base.withFlags(newFlags);
@@ -147,8 +148,9 @@ class ChunkDataTest {
 
     @Test
     void withCrc_should_update_crc_and_keep_others() {
-        final ChunkData base = ChunkData.of(FLAGS, CRC, ChunkHeader.MAGIC_NUMBER,
-                VERSION, Bytes.of(new byte[] { 1, 2 }));
+        final ChunkData base = ChunkData.of(FLAGS, CRC,
+                ChunkHeader.MAGIC_NUMBER, VERSION,
+                Bytes.of(new byte[] { 1, 2 }));
         final long newCrc = 0x123456789ABCDEFL;
 
         final ChunkData updated = base.withCrc(newCrc);
@@ -162,8 +164,9 @@ class ChunkDataTest {
 
     @Test
     void withMagicNumber_should_update_magic_and_keep_others() {
-        final ChunkData base = ChunkData.of(FLAGS, CRC, ChunkHeader.MAGIC_NUMBER,
-                VERSION, Bytes.of(new byte[] { 1, 2 }));
+        final ChunkData base = ChunkData.of(FLAGS, CRC,
+                ChunkHeader.MAGIC_NUMBER, VERSION,
+                Bytes.of(new byte[] { 1, 2 }));
         final long newMagic = ChunkHeader.MAGIC_NUMBER + 111;
 
         final ChunkData updated = base.withMagicNumber(newMagic);
@@ -177,8 +180,9 @@ class ChunkDataTest {
 
     @Test
     void withVersion_should_update_version_and_keep_others() {
-        final ChunkData base = ChunkData.of(FLAGS, CRC, ChunkHeader.MAGIC_NUMBER,
-                VERSION, Bytes.of(new byte[] { 1, 2 }));
+        final ChunkData base = ChunkData.of(FLAGS, CRC,
+                ChunkHeader.MAGIC_NUMBER, VERSION,
+                Bytes.of(new byte[] { 1, 2 }));
         final int newVersion = VERSION + 5;
 
         final ChunkData updated = base.withVersion(newVersion);
@@ -192,8 +196,9 @@ class ChunkDataTest {
 
     @Test
     void withPayload_should_update_payload_and_keep_others() {
-        final ChunkData base = ChunkData.of(FLAGS, CRC, ChunkHeader.MAGIC_NUMBER,
-                VERSION, Bytes.of(new byte[] { 1, 2 }));
+        final ChunkData base = ChunkData.of(FLAGS, CRC,
+                ChunkHeader.MAGIC_NUMBER, VERSION,
+                Bytes.of(new byte[] { 1, 2 }));
         final Bytes newPayload = Bytes.of(new byte[] { 9, 8, 7 });
 
         final ChunkData updated = base.withPayload(newPayload);
@@ -207,8 +212,9 @@ class ChunkDataTest {
 
     @Test
     void withPayload_should_throw_when_null() {
-        final ChunkData base = ChunkData.of(FLAGS, CRC, ChunkHeader.MAGIC_NUMBER,
-                VERSION, Bytes.of(new byte[] { 1, 2 }));
+        final ChunkData base = ChunkData.of(FLAGS, CRC,
+                ChunkHeader.MAGIC_NUMBER, VERSION,
+                Bytes.of(new byte[] { 1, 2 }));
 
         assertThrows(IllegalArgumentException.class,
                 () -> base.withPayload(null));

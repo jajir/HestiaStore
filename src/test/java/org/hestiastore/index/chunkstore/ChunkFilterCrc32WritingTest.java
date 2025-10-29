@@ -20,7 +20,7 @@ class ChunkFilterCrc32WritingTest {
         final ChunkData result = filter.apply(input);
 
         final PureJavaCrc32 crc = new PureJavaCrc32();
-        crc.update(PAYLOAD.getData());
+        crc.update(PAYLOAD.toByteArray());
         assertEquals(crc.getValue(), result.getCrc());
         assertEquals(PAYLOAD, result.getPayload());
         assertEquals(input.getFlags(), result.getFlags());

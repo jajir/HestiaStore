@@ -3,6 +3,7 @@ package org.hestiastore.index.sorteddatafile;
 import org.hestiastore.index.ByteTool;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
 import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.directory.FileReader;
@@ -26,8 +27,10 @@ public class DiffKeyReader<K> implements TypeReader<K> {
         }
         final int keyLengthInBytes = fileReader.read();
         if (sharedByteLength == 0) {
-            final Bytes keyBytes = Bytes.allocate(keyLengthInBytes);
-            read(fileReader, keyBytes);
+            final MutableBytes keyBuffer = MutableBytes
+                    .allocate(keyLengthInBytes);
+            readFully(fileReader, keyBuffer);
+            final Bytes keyBytes = keyBuffer.toBytes();
             previousKey = keyBytes;
             return keyConvertor.fromBytes(keyBytes);
         }
@@ -38,21 +41,23 @@ public class DiffKeyReader<K> implements TypeReader<K> {
                             + " previous key", sharedByteLength));
         }
         if (previousKey.length() < sharedByteLength) {
-            final String s1 = new String(previousKey.getData());
+            final String s1 = new String(previousKey.toByteArray());
             throw new IndexException(String.format(
                     "Previous key is '%s' with length '%s'. "
                             + "Current key should share '%s' with previous key.",
                     s1, previousKey.length(), sharedByteLength));
         }
-        final Bytes diffBytes = Bytes.allocate(keyLengthInBytes);
-        read(fileReader, diffBytes);
+        final MutableBytes diffBuffer = MutableBytes.allocate(keyLengthInBytes);
+        readFully(fileReader, diffBuffer);
+        final Bytes diffBytes = diffBuffer.toBytes();
         final Bytes sharedBytes = previousKey.subBytes(0, sharedByteLength);
         final Bytes keyBytes = ByteTool.concatenate(sharedBytes, diffBytes);
         previousKey = keyBytes;
         return keyConvertor.fromBytes(keyBytes);
     }
 
-    private void read(final FileReader fileReader, final Bytes bytes) {
+    private void readFully(final FileReader fileReader,
+            final MutableBytes bytes) {
         int read = fileReader.read(bytes);
         if (read != bytes.length()) {
             throw new IndexException(String.format(

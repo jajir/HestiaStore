@@ -72,7 +72,7 @@ class BiteArrayTest {
         log(bitArray);
 
         // verify that first byte is -12
-        assertEquals(-12, bitArray.getBytes().getData()[0]);
+        assertEquals(-12, bitArray.getBytes().getByte(0));
     }
 
     @Test
@@ -108,7 +108,7 @@ class BiteArrayTest {
 
         // Assert
         assertTrue(result);
-        assertEquals((byte) 0b00100000, bitArray.getBytes().getData()[0]);
+        assertEquals((byte) 0b00100000, bitArray.getBytes().getByte(0));
     }
 
     @Test
@@ -132,7 +132,7 @@ class BiteArrayTest {
 
         // Assert
         log(bitArray);
-        assertEquals((byte) 0b00100000, bitArray.getBytes().getData()[0]);
+        assertEquals((byte) 0b00100000, bitArray.getBytes().getByte(0));
         assertTrue(result);
     }
 
@@ -146,7 +146,7 @@ class BiteArrayTest {
 
         // Assert
         log(bitArray);
-        assertEquals((byte) 0b00000000, bitArray.getBytes().getData()[0]);
+        assertEquals((byte) 0b00000000, bitArray.getBytes().getByte(0));
         assertFalse(result);
     }
 
@@ -226,7 +226,7 @@ class BiteArrayTest {
 
     private String toBinaryString(final Bytes data) {
         StringBuilder sb = new StringBuilder();
-        for (byte b : data.getData()) {
+        for (byte b : data.toByteArray()) {
             sb.append(String.format("%8s", Integer.toBinaryString(b & 0xFF))
                     .replace(' ', '0'));
         }

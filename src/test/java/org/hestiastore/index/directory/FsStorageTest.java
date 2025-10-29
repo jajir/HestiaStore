@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.File;
 
 import org.hestiastore.index.Bytes;
+import org.hestiastore.index.MutableBytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -47,9 +48,9 @@ class FsStorageTest {
     }
 
     private String readStr(final FileReaderSeekable fr, final int length) {
-        final Bytes bytes = Bytes.allocate(length);
-        fr.read(bytes);
-        return new String(bytes.getData());
+        final MutableBytes buffer = MutableBytes.allocate(length);
+        final int read = fr.read(buffer);
+        return new String(buffer.array(), 0, read);
     }
 
 }

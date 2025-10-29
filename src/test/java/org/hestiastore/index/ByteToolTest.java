@@ -48,8 +48,8 @@ class ByteToolTest {
                 () -> ByteTool.getRemainingBytesAfterIndex(5, BYTES_AHOJ));
         assertThrows(IllegalArgumentException.class,
                 () -> ByteTool.getRemainingBytesAfterIndex(-1, BYTES_AHOJ));
-        assertThrows(IllegalArgumentException.class,
-                () -> ByteTool.getRemainingBytesAfterIndex(0, (Bytes) null));
+        assertThrows(IllegalArgumentException.class, () -> ByteTool
+                .getRemainingBytesAfterIndex(0, (ByteSequence) null));
     }
 
     private void testFunction(final int sharedLength, final String str,
@@ -57,7 +57,7 @@ class ByteToolTest {
         final Bytes input = Bytes.of(str.getBytes());
         final Bytes wrapped = ByteTool.getRemainingBytesAfterIndex(sharedLength,
                 input);
-        assertEquals(expectedResult, new String(wrapped.getData()));
+        assertEquals(expectedResult, new String(wrapped.toByteArray()));
     }
 
     @Test
@@ -67,7 +67,7 @@ class ByteToolTest {
         final Bytes result = ByteTool.concatenate(first, second);
 
         assertEquals(5, result.length());
-        final byte[] out = result.getData();
+        final byte[] out = result.toByteArray();
         assertEquals(1, out[0]);
         assertEquals(2, out[1]);
         assertEquals(3, out[2]);

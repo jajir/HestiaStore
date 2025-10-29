@@ -119,11 +119,12 @@ class DiffKeyWriterTest {
     private void verifyDiffKey(final int expectedSharedByteLength,
             final int expectedBytesLength, final String expectedString,
             final Bytes bytes) {
-        assertEquals(expectedSharedByteLength, bytes.getData()[0],
-                "shared byte length");
-        assertEquals(expectedBytesLength, bytes.getData()[1], "byte length");
+        assertEquals(expectedSharedByteLength,
+                Byte.toUnsignedInt(bytes.getByte(0)), "shared byte length");
+        assertEquals(expectedBytesLength, Byte.toUnsignedInt(bytes.getByte(1)),
+                "byte length");
         byte[] b = new byte[bytes.length() - 2];
-        System.arraycopy(bytes.getData(), 2, b, 0, b.length);
+        bytes.copyTo(2, b, 0, b.length);
         String str = new String(b);
         assertEquals(expectedString, str, "string");
     }

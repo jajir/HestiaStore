@@ -2,7 +2,9 @@ package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
+import org.hestiastore.index.MutableBytes;
 
 public class TypeDescriptorLong implements TypeDescriptor<Long> {
 
@@ -74,7 +76,7 @@ public class TypeDescriptorLong implements TypeDescriptor<Long> {
     @Override
     public TypeReader<Long> getTypeReader() {
         return fileReader -> {
-            final Bytes buffer = Bytes.allocate(REQUIRED_BYTES);
+            final MutableBytes buffer = MutableBytes.allocate(REQUIRED_BYTES);
             if (fileReader.read(buffer) == -1) {
                 return null;
             }
@@ -94,34 +96,32 @@ public class TypeDescriptorLong implements TypeDescriptor<Long> {
     private Bytes getBytesBuffer(final Long value) {
         int pos = 0;
         long v = value.longValue();
-        final Bytes out = Bytes.allocate(REQUIRED_BYTES);
-        final byte[] data = out.getData();
-        data[pos++] = (byte) ((v >>> BYTE_SHIFT_56) & BYTE_MASK);
-        data[pos++] = (byte) ((v >>> BYTE_SHIFT_48) & BYTE_MASK);
-        data[pos++] = (byte) ((v >>> BYTE_SHIFT_40) & BYTE_MASK);
-        data[pos++] = (byte) ((v >>> BYTE_SHIFT_32) & BYTE_MASK);
-        data[pos++] = (byte) ((v >>> BYTE_SHIFT_24) & BYTE_MASK);
-        data[pos++] = (byte) ((v >>> BYTE_SHIFT_16) & BYTE_MASK);
-        data[pos++] = (byte) ((v >>> BYTE_SHIFT_8) & BYTE_MASK);
-        data[pos] = (byte) ((v >>> BYTE_SHIFT_0) & BYTE_MASK);
-        return out;
+        final MutableBytes out = MutableBytes.allocate(REQUIRED_BYTES);
+        out.setByte(pos++, (byte) ((v >>> BYTE_SHIFT_56) & BYTE_MASK));
+        out.setByte(pos++, (byte) ((v >>> BYTE_SHIFT_48) & BYTE_MASK));
+        out.setByte(pos++, (byte) ((v >>> BYTE_SHIFT_40) & BYTE_MASK));
+        out.setByte(pos++, (byte) ((v >>> BYTE_SHIFT_32) & BYTE_MASK));
+        out.setByte(pos++, (byte) ((v >>> BYTE_SHIFT_24) & BYTE_MASK));
+        out.setByte(pos++, (byte) ((v >>> BYTE_SHIFT_16) & BYTE_MASK));
+        out.setByte(pos++, (byte) ((v >>> BYTE_SHIFT_8) & BYTE_MASK));
+        out.setByte(pos, (byte) ((v >>> BYTE_SHIFT_0) & BYTE_MASK));
+        return out.toBytes();
     }
 
-    private Long load(final Bytes data, final int from) {
+    private Long load(final ByteSequence data, final int from) {
         if (data.length() < from + REQUIRED_BYTES) {
             throw new IllegalArgumentException(
                     "Not enough bytes to read a Long value");
         }
-        final byte[] raw = data.getData();
         int pos = from;
-        return ((long) (raw[pos++] & BYTE_MASK) << BYTE_SHIFT_56)
-                | ((long) (raw[pos++] & BYTE_MASK) << BYTE_SHIFT_48)
-                | ((long) (raw[pos++] & BYTE_MASK) << BYTE_SHIFT_40)
-                | ((long) (raw[pos++] & BYTE_MASK) << BYTE_SHIFT_32)
-                | ((long) (raw[pos++] & BYTE_MASK) << BYTE_SHIFT_24)
-                | ((long) (raw[pos++] & BYTE_MASK) << BYTE_SHIFT_16)
-                | ((long) (raw[pos++] & BYTE_MASK) << BYTE_SHIFT_8)
-                | ((long) (raw[pos] & BYTE_MASK) << BYTE_SHIFT_0);
+        return ((long) (data.getByte(pos++) & BYTE_MASK) << BYTE_SHIFT_56)
+                | ((long) (data.getByte(pos++) & BYTE_MASK) << BYTE_SHIFT_48)
+                | ((long) (data.getByte(pos++) & BYTE_MASK) << BYTE_SHIFT_40)
+                | ((long) (data.getByte(pos++) & BYTE_MASK) << BYTE_SHIFT_32)
+                | ((long) (data.getByte(pos++) & BYTE_MASK) << BYTE_SHIFT_24)
+                | ((long) (data.getByte(pos++) & BYTE_MASK) << BYTE_SHIFT_16)
+                | ((long) (data.getByte(pos++) & BYTE_MASK) << BYTE_SHIFT_8)
+                | ((long) (data.getByte(pos) & BYTE_MASK) << BYTE_SHIFT_0);
     }
 
     @Override

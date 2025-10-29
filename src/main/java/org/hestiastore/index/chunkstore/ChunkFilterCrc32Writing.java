@@ -10,7 +10,7 @@ public class ChunkFilterCrc32Writing implements ChunkFilter {
     @Override
     public ChunkData apply(final ChunkData input) {
         final PureJavaCrc32 crc = new PureJavaCrc32();
-        crc.update(input.getPayload().getData());
+        crc.update(input.getPayload().toByteArray());
         return input.withCrc(crc.getValue());
     }
 }

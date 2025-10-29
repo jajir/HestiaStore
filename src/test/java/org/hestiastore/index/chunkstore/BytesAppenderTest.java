@@ -15,12 +15,12 @@ public class BytesAppenderTest {
         appender.append(Bytes.of(new byte[] { 4, 5, 6 }));
         Bytes result = appender.getBytes();
         assertEquals(6, result.length());
-        assertEquals(1, result.getData()[0]);
-        assertEquals(2, result.getData()[1]);
-        assertEquals(3, result.getData()[2]);
-        assertEquals(4, result.getData()[3]);
-        assertEquals(5, result.getData()[4]);
-        assertEquals(6, result.getData()[5]);
+        assertEquals(1, result.getByte(0));
+        assertEquals(2, result.getByte(1));
+        assertEquals(3, result.getByte(2));
+        assertEquals(4, result.getByte(3));
+        assertEquals(5, result.getByte(4));
+        assertEquals(6, result.getByte(5));
     }
 
     @Test
@@ -35,12 +35,12 @@ public class BytesAppenderTest {
         appender.append(Bytes.EMPTY);
         Bytes result = appender.getBytes();
         assertEquals(6, result.length());
-        assertEquals(1, result.getData()[0]);
-        assertEquals(2, result.getData()[1]);
-        assertEquals(3, result.getData()[2]);
-        assertEquals(4, result.getData()[3]);
-        assertEquals(5, result.getData()[4]);
-        assertEquals(6, result.getData()[5]);
+        assertEquals(1, result.getByte(0));
+        assertEquals(2, result.getByte(1));
+        assertEquals(3, result.getByte(2));
+        assertEquals(4, result.getByte(3));
+        assertEquals(5, result.getByte(4));
+        assertEquals(6, result.getByte(5));
     }
 
     @Test

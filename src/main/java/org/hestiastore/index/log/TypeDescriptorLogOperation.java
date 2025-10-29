@@ -33,7 +33,7 @@ public class TypeDescriptorLogOperation
                 throw new IllegalArgumentException(
                         "LogOperation requires exactly one byte");
             }
-            return LogOperation.fromByte(bytes.getData()[0]);
+            return LogOperation.fromByte(bytes.getByte(0));
         };
     }
 

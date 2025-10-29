@@ -35,14 +35,15 @@ class ChunkFilterCrc32ValidationTest {
                 IllegalStateException.class, () -> filter.apply(input));
 
         assertEquals(
-                String.format("Invalid CRC32. Expected '%s' but calculated '%s'",
+                String.format(
+                        "Invalid CRC32. Expected '%s' but calculated '%s'",
                         crcValue, calculateCrc(PAYLOAD)),
                 exception.getMessage());
     }
 
     private static long calculateCrc(final Bytes data) {
         final PureJavaCrc32 crc = new PureJavaCrc32();
-        crc.update(data.getData());
+        crc.update(data.toByteArray());
         return crc.getValue();
     }
 }

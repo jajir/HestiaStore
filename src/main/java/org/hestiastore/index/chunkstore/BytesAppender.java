@@ -39,7 +39,7 @@ public class BytesAppender {
         final byte[] combined = new byte[length];
         int offset = 0;
         for (Bytes b : bytes) {
-            System.arraycopy(b.getData(), 0, combined, offset, b.length());
+            b.copyTo(0, combined, offset, b.length());
             offset += b.length();
         }
         return Bytes.of(combined);

@@ -9,8 +9,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.Vldtn;
 
 public final class FsFileReaderStream extends AbstractCloseableResource
@@ -48,10 +48,10 @@ public final class FsFileReaderStream extends AbstractCloseableResource
     }
 
     @Override
-    public int read(final Bytes bytes) {
-        final byte[] data = Vldtn.requireNonNull(bytes, "bytes").getData();
+    public int read(final MutableBytes bytes) {
+        final byte[] data = Vldtn.requireNonNull(bytes, "bytes").array();
         try {
-            return bis.read(data);
+            return bis.read(data, 0, bytes.length());
         } catch (IOException e) {
             throw new IndexException(e.getMessage(), e);
         }

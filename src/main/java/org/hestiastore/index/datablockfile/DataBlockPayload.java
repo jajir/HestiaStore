@@ -43,7 +43,7 @@ public class DataBlockPayload {
      */
     public long calculateCrc() {
         final PureJavaCrc32 crc = new PureJavaCrc32();
-        crc.update(bytes.getData());
+        crc.update(bytes.toByteArray());
         return crc.getValue();
     }
 

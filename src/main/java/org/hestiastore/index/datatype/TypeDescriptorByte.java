@@ -3,6 +3,7 @@ package org.hestiastore.index.datatype;
 import java.util.Comparator;
 
 import org.hestiastore.index.Bytes;
+import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.Vldtn;
 
 public class TypeDescriptorByte implements TypeDescriptor<Byte> {
@@ -25,7 +26,7 @@ public class TypeDescriptorByte implements TypeDescriptor<Byte> {
                 throw new IllegalArgumentException(
                         "Byte value requires exactly one byte");
             }
-            return bytes.getData()[0];
+            return bytes.getByte(0);
         };
     }
 
@@ -57,9 +58,9 @@ public class TypeDescriptorByte implements TypeDescriptor<Byte> {
 
     private Bytes getBytesBuffer(final Byte value) {
         Vldtn.requireNonNull(value, "value");
-        final Bytes buffer = Bytes.allocate(1);
-        buffer.getData()[0] = value.byteValue();
-        return buffer;
+        final MutableBytes buffer = MutableBytes.allocate(1);
+        buffer.setByte(0, value.byteValue());
+        return buffer.toBytes();
     }
 
 }

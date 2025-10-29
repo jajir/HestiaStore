@@ -25,8 +25,8 @@ public class ChunkFilterSnappyCompress implements ChunkFilter {
             final byte[] compressed = compressPayload(payload);
             final int compressedSize = compressed.length;
             if (logger.isDebugEnabled() && originalSize > 0) {
-                final double savings = 100.0
-                        * (originalSize - compressedSize) / originalSize;
+                final double savings = 100.0 * (originalSize - compressedSize)
+                        / originalSize;
                 logger.debug(
                         "Snappy compressed chunk: {} -> {} bytes (savings: {}%)",
                         originalSize, compressedSize,
@@ -41,6 +41,6 @@ public class ChunkFilterSnappyCompress implements ChunkFilter {
     }
 
     byte[] compressPayload(final Bytes payload) throws IOException {
-        return Snappy.compress(payload.getData());
+        return Snappy.compress(payload.toByteArray());
     }
 }

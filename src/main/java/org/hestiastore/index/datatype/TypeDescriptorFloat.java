@@ -2,7 +2,9 @@ package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
+import org.hestiastore.index.MutableBytes;
 
 public class TypeDescriptorFloat implements TypeDescriptor<Float> {
 
@@ -29,7 +31,7 @@ public class TypeDescriptorFloat implements TypeDescriptor<Float> {
     @Override
     public TypeReader<Float> getTypeReader() {
         return fileReader -> {
-            final Bytes buffer = Bytes.allocate(REQUIRED_BYTES);
+            final MutableBytes buffer = MutableBytes.allocate(REQUIRED_BYTES);
             if (fileReader.read(buffer) == -1) {
                 return null;
             }
@@ -37,15 +39,15 @@ public class TypeDescriptorFloat implements TypeDescriptor<Float> {
         };
     }
 
-    Float load(Bytes bytes, int offset) {
+    Float load(ByteSequence bytes, int offset) {
         if (bytes.length() < offset + REQUIRED_BYTES) {
             throw new IllegalArgumentException(
                     "Not enough bytes to read a Float value");
         }
-        final byte[] raw = bytes.getData();
-        int bits = ((raw[offset] & 0xFF) << 24)
-                | ((raw[offset + 1] & 0xFF) << 16)
-                | ((raw[offset + 2] & 0xFF) << 8) | (raw[offset + 3] & 0xFF);
+        int bits = ((bytes.getByte(offset) & 0xFF) << 24)
+                | ((bytes.getByte(offset + 1) & 0xFF) << 16)
+                | ((bytes.getByte(offset + 2) & 0xFF) << 8)
+                | (bytes.getByte(offset + 3) & 0xFF);
         return Float.intBitsToFloat(bits);
     }
 
@@ -54,13 +56,12 @@ public class TypeDescriptorFloat implements TypeDescriptor<Float> {
             throw new IllegalArgumentException("Object can't be null");
         }
         int bits = Float.floatToIntBits(object);
-        final Bytes out = Bytes.allocate(REQUIRED_BYTES);
-        final byte[] data = out.getData();
-        data[0] = (byte) (bits >> 24);
-        data[1] = (byte) (bits >> 16);
-        data[2] = (byte) (bits >> 8);
-        data[3] = (byte) bits;
-        return out;
+        final MutableBytes out = MutableBytes.allocate(REQUIRED_BYTES);
+        out.setByte(0, (byte) (bits >> 24));
+        out.setByte(1, (byte) (bits >> 16));
+        out.setByte(2, (byte) (bits >> 8));
+        out.setByte(3, (byte) bits);
+        return out.toBytes();
     }
 
     @Override

@@ -54,7 +54,7 @@ public class TypeDescriptorString implements TypeDescriptor<String> {
 
     private String asString(final Bytes bytes) {
         Vldtn.requireNonNull(bytes, "bytes");
-        return new String(bytes.getData(), CHARSET_ENCODING);
+        return new String(bytes.toByteArray(), CHARSET_ENCODING);
     }
 
     private Bytes toBytesBuffer(final String value) {

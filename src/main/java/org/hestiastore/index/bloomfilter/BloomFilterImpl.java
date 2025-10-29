@@ -1,7 +1,7 @@
 package org.hestiastore.index.bloomfilter;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.directory.Directory;
@@ -59,7 +59,8 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
         if (isExists() && indexSizeInBytes > 0) {
             try (FileReader reader = directory
                     .getFileReader(bloomFilterFileName, diskIoBufferSize)) {
-                final Bytes data = Bytes.allocate(indexSizeInBytes);
+                final MutableBytes data = MutableBytes
+                        .allocate(indexSizeInBytes);
                 final int readed = reader.read(data);
                 if (indexSizeInBytes != readed) {
                     throw new IllegalStateException(String.format(
@@ -67,7 +68,8 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
                                     + " index expected size is '%s' but '%s' was loaded",
                             bloomFilterFileName, indexSizeInBytes, readed));
                 }
-                hash = new Hash(new BitArray(data), numberOfHashFunctions);
+                hash = new Hash(new BitArray(data.toBytes()),
+                        numberOfHashFunctions);
             }
         } else {
             hash = null;

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.Bytes;
+import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.directory.Directory.Access;
 import org.junit.jupiter.api.Test;
 
@@ -35,10 +36,12 @@ class MemDirectoryTest {
         fw.close();
 
         final FileReader fr = directory.getFileReader("pok");
-        final Bytes read = Bytes.allocate(NAME.length() + SURNAME.length());
-        fr.read(read);
+        final MutableBytes read = MutableBytes
+                .allocate(NAME.length() + SURNAME.length());
+        final int bytesRead = fr.read(read);
 
-        assertEquals("KarelNovotny", new String(read.getData()));
+        assertEquals(read.length(), bytesRead);
+        assertEquals("KarelNovotny", new String(read.array(), 0, bytesRead));
     }
 
     @Test
@@ -53,10 +56,11 @@ class MemDirectoryTest {
         fw.close();
 
         final FileReader fr = directory.getFileReader("pok");
-        final Bytes read = Bytes.allocate(SURNAME.length());
-        fr.read(read);
+        final MutableBytes read = MutableBytes.allocate(SURNAME.length());
+        final int bytesRead = fr.read(read);
 
-        assertEquals("Novotny", new String(read.getData()));
+        assertEquals(read.length(), bytesRead);
+        assertEquals("Novotny", new String(read.array(), 0, bytesRead));
     }
 
     @Test
@@ -117,9 +121,9 @@ class MemDirectoryTest {
     }
 
     private String readStr(final FileReader fr, final int length) {
-        final Bytes bytes = Bytes.allocate(length);
-        fr.read(bytes);
-        return new String(bytes.getData());
+        final MutableBytes bytes = MutableBytes.allocate(length);
+        final int read = fr.read(bytes);
+        return new String(bytes.array(), 0, read);
     }
 
 }

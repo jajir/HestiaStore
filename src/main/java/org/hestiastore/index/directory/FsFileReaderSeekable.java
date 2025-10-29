@@ -5,8 +5,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.Vldtn;
 
 public final class FsFileReaderSeekable extends AbstractCloseableResource
@@ -32,11 +32,10 @@ public final class FsFileReaderSeekable extends AbstractCloseableResource
     }
 
     @Override
-    public int read(final Bytes bytes) {
-        // FIXME it's based on byte array connected to bytes
-        final byte[] data = Vldtn.requireNonNull(bytes, "bytes").getData();
+    public int read(final MutableBytes bytes) {
+        final byte[] data = Vldtn.requireNonNull(bytes, "bytes").array();
         try {
-            return raf.read(data);
+            return raf.read(data, 0, bytes.length());
         } catch (IOException e) {
             throw new IndexException(e.getMessage(), e);
         }

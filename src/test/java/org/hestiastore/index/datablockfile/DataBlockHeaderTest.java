@@ -21,7 +21,7 @@ public class DataBlockHeaderTest {
         Bytes headerBytes = header.toBytes();
         assertNotNull(headerBytes);
         assertEquals(16, headerBytes.length());
-        final String headerString = new String(headerBytes.getData());
+        final String headerString = new String(headerBytes.toByteArray());
         assertTrue(headerString.startsWith("nicholas"));
 
         DataBlockHeader header2 = DataBlockHeader.of(headerBytes);

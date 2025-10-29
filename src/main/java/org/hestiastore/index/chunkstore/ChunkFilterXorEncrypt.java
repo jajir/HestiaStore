@@ -18,12 +18,12 @@ public class ChunkFilterXorEncrypt implements ChunkFilter {
     }
 
     static Bytes xorPayload(final Bytes payload) {
-        final byte[] source = payload.getData();
-        final byte[] target = new byte[source.length];
-        for (int i = 0; i < source.length; i++) {
+        final int length = payload.length();
+        final byte[] target = new byte[length];
+        for (int i = 0; i < length; i++) {
             final int shift = (i % Long.BYTES) * 8;
             final int keyByte = (int) ((DEFAULT_KEY >>> shift) & 0xFF);
-            target[i] = (byte) (source[i] ^ keyByte);
+            target[i] = (byte) (payload.getByte(i) ^ keyByte);
         }
         return Bytes.of(target);
     }

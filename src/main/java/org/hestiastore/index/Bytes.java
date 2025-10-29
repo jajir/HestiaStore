@@ -7,7 +7,7 @@ import java.util.Arrays;
  * 
  * Main purpose is to encapsulate byte array and provide utility methods.
  */
-public class Bytes {
+public class Bytes implements ByteSequence {
 
     public static final Bytes EMPTY = new Bytes(new byte[0]);
 
@@ -35,6 +35,20 @@ public class Bytes {
     }
 
     /**
+     * Create new Bytes instance by copying a {@link ByteSequence}.
+     *
+     * @param sequence source byte sequence
+     * @return created Bytes instance backed by a copy of the sequence data
+     */
+    public static Bytes copyOf(final ByteSequence sequence) {
+        Vldtn.requireNonNull(sequence, "sequence");
+        if (sequence.isEmpty()) {
+            return EMPTY;
+        }
+        return new Bytes(sequence.toByteArray());
+    }
+
+    /**
      * Allocate new Bytes instance with specified size.
      * 
      * @param size required size of the byte array
@@ -54,11 +68,11 @@ public class Bytes {
     public static Bytes concat(final Bytes data1, final Bytes data2) {
         Vldtn.requireNonNull(data1, "data1");
         Vldtn.requireNonNull(data2, "data2");
-        final byte[] combined = new byte[data1.length() + data2.length()];
-        System.arraycopy(data1.getData(), 0, combined, 0, data1.length());
-        System.arraycopy(data2.getData(), 0, combined, data1.length(),
-                data2.length());
-        return new Bytes(combined);
+        final MutableBytes combined = MutableBytes
+                .allocate(data1.length() + data2.length());
+        combined.setBytes(0, data1);
+        combined.setBytes(data1.length(), data2);
+        return combined.toBytes();
     }
 
     private Bytes(final byte[] data) {
@@ -115,19 +129,11 @@ public class Bytes {
     }
 
     /**
-     * Returns the underlying byte array.
-     * 
-     * @return the underlying byte array
-     */
-    public byte[] getData() {
-        return data;
-    }
-
-    /**
      * Returns a copy of the underlying byte array.
      *
      * @return new byte array containing the same content
      */
+    @Override
     public byte[] toByteArray() {
         return Arrays.copyOf(data, data.length);
     }
@@ -137,8 +143,47 @@ public class Bytes {
      * 
      * @return the length of the byte array
      */
+    @Override
     public int length() {
         return data.length;
+    }
+
+    @Override
+    public byte getByte(final int index) {
+        final int maxIndex = data.length - 1;
+        if (index < 0 || index > maxIndex) {
+            throw new IllegalArgumentException(String.format(
+                    "Property 'index' must be between 0 and %d (inclusive). Got: %d",
+                    maxIndex, index));
+        }
+        return data[index];
+    }
+
+    @Override
+    public void copyTo(final int sourceOffset, final byte[] target,
+            final int targetOffset, final int length) {
+        Vldtn.requireNonNull(target, "target");
+        if (sourceOffset < 0 || length < 0 || sourceOffset > data.length
+                || sourceOffset + length > data.length) {
+            throw new IllegalArgumentException(String.format(
+                    "Property 'sourceOffset' with length %d exceeds capacity %d",
+                    length, data.length));
+        }
+        if (targetOffset < 0 || targetOffset > target.length
+                || targetOffset + length > target.length) {
+            throw new IllegalArgumentException(String.format(
+                    "Property 'targetOffset' with length %d exceeds capacity %d",
+                    length, target.length));
+        }
+        if (length == 0) {
+            return;
+        }
+        System.arraycopy(data, sourceOffset, target, targetOffset, length);
+    }
+
+    @Override
+    public ByteSequence slice(final int fromInclusive, final int toExclusive) {
+        return subBytes(fromInclusive, toExclusive);
     }
 
     /**

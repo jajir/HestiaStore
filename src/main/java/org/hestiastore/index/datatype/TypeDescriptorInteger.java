@@ -2,7 +2,9 @@ package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
+import org.hestiastore.index.MutableBytes;
 
 public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
 
@@ -54,7 +56,7 @@ public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
     @Override
     public TypeReader<Integer> getTypeReader() {
         return fileReader -> {
-            final Bytes buffer = Bytes.allocate(REQUIRED_BYTES);
+            final MutableBytes buffer = MutableBytes.allocate(REQUIRED_BYTES);
             if (fileReader.read(buffer) == -1) {
                 return null;
             }
@@ -74,26 +76,24 @@ public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
     private Bytes getBytesBuffer(final Integer value) {
         int pos = 0;
         int v = value.intValue();
-        final Bytes out = Bytes.allocate(REQUIRED_BYTES);
-        final byte[] data = out.getData();
-        data[pos++] = (byte) ((v >>> BYTE_SHIFT_24) & BYTE_MASK);
-        data[pos++] = (byte) ((v >>> BYTE_SHIFT_16) & BYTE_MASK);
-        data[pos++] = (byte) ((v >>> BYTE_SHIFT_8) & BYTE_MASK);
-        data[pos] = (byte) ((v >>> BYTE_SHIFT_0) & BYTE_MASK);
-        return out;
+        final MutableBytes out = MutableBytes.allocate(REQUIRED_BYTES);
+        out.setByte(pos++, (byte) ((v >>> BYTE_SHIFT_24) & BYTE_MASK));
+        out.setByte(pos++, (byte) ((v >>> BYTE_SHIFT_16) & BYTE_MASK));
+        out.setByte(pos++, (byte) ((v >>> BYTE_SHIFT_8) & BYTE_MASK));
+        out.setByte(pos, (byte) ((v >>> BYTE_SHIFT_0) & BYTE_MASK));
+        return out.toBytes();
     }
 
-    private Integer load(final Bytes data, final int from) {
+    private Integer load(final ByteSequence data, final int from) {
         if (data.length() < from + REQUIRED_BYTES) {
             throw new IllegalArgumentException(
                     "Not enough bytes to read an Integer value");
         }
-        final byte[] raw = data.getData();
         int pos = from;
-        return raw[pos++] << BYTE_SHIFT_24
-                | (raw[pos++] & BYTE_MASK) << BYTE_SHIFT_16
-                | (raw[pos++] & BYTE_MASK) << BYTE_SHIFT_8
-                | (raw[pos] & BYTE_MASK);
+        return data.getByte(pos++) << BYTE_SHIFT_24
+                | (data.getByte(pos++) & BYTE_MASK) << BYTE_SHIFT_16
+                | (data.getByte(pos++) & BYTE_MASK) << BYTE_SHIFT_8
+                | (data.getByte(pos) & BYTE_MASK);
     }
 
     @Override

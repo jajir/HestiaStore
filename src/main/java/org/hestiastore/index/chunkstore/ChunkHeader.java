@@ -7,8 +7,14 @@ import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 
 /**
- * if (bytes == null) { return Optional.empty(); } return
- * ChunkHeaderCodec.decodeOptional(bytes.getData());
+ * Example usage:
+ * 
+ * <pre>
+ * if (bytes == null) {
+ *     return Optional.empty();
+ * }
+ * return ChunkHeaderCodec.decodeOptional(bytes);
+ * </pre>
  * <table>
  * <tr>
  * <th>Field</th>

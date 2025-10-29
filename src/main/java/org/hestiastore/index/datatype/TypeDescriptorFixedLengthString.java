@@ -4,6 +4,7 @@ import java.nio.charset.Charset;
 import java.util.Comparator;
 
 import org.hestiastore.index.Bytes;
+import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.Vldtn;
 
 public final class TypeDescriptorFixedLengthString
@@ -48,7 +49,7 @@ public final class TypeDescriptorFixedLengthString
                         "Byte array length should be '%s' but is '%s'", length,
                         bytes.length()));
             }
-            return new String(bytes.getData(), CHARSET_ENCODING);
+            return new String(bytes.toByteArray(), CHARSET_ENCODING);
         };
     }
 
@@ -73,9 +74,9 @@ public final class TypeDescriptorFixedLengthString
     @Override
     public TypeReader<String> getTypeReader() {
         return reader -> {
-            final Bytes buffer = Bytes.allocate(length);
+            final MutableBytes buffer = MutableBytes.allocate(length);
             reader.read(buffer);
-            return getConvertorFromBytes().fromBytes(buffer);
+            return getConvertorFromBytes().fromBytes(buffer.toBytes());
         };
     }
 

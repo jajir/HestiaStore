@@ -2,7 +2,9 @@ package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
+import org.hestiastore.index.MutableBytes;
 
 public class TypeDescriptorDouble implements TypeDescriptor<Double> {
 
@@ -29,7 +31,7 @@ public class TypeDescriptorDouble implements TypeDescriptor<Double> {
     @Override
     public TypeReader<Double> getTypeReader() {
         return fileReader -> {
-            final Bytes buffer = Bytes.allocate(REQUIRED_BYTES);
+            final MutableBytes buffer = MutableBytes.allocate(REQUIRED_BYTES);
             if (fileReader.read(buffer) == -1) {
                 return null;
             }
@@ -37,20 +39,19 @@ public class TypeDescriptorDouble implements TypeDescriptor<Double> {
         };
     }
 
-    Double load(Bytes bytes, int offset) {
+    Double load(ByteSequence bytes, int offset) {
         if (bytes.length() < offset + REQUIRED_BYTES) {
             throw new IllegalArgumentException(
                     "Not enough bytes to read a Float value");
         }
-        final byte[] raw = bytes.getData();
-        long bits = ((long) (raw[offset] & 0xFF) << 56)
-                | ((long) (raw[offset + 1] & 0xFF) << 48)
-                | ((long) (raw[offset + 2] & 0xFF) << 40)
-                | ((long) (raw[offset + 3] & 0xFF) << 32)
-                | ((long) (raw[offset + 4] & 0xFF) << 24)
-                | ((long) (raw[offset + 5] & 0xFF) << 16)
-                | ((long) (raw[offset + 6] & 0xFF) << 8)
-                | (raw[offset + 7] & 0xFF);
+        long bits = ((long) (bytes.getByte(offset) & 0xFF) << 56)
+                | ((long) (bytes.getByte(offset + 1) & 0xFF) << 48)
+                | ((long) (bytes.getByte(offset + 2) & 0xFF) << 40)
+                | ((long) (bytes.getByte(offset + 3) & 0xFF) << 32)
+                | ((long) (bytes.getByte(offset + 4) & 0xFF) << 24)
+                | ((long) (bytes.getByte(offset + 5) & 0xFF) << 16)
+                | ((long) (bytes.getByte(offset + 6) & 0xFF) << 8)
+                | (bytes.getByte(offset + 7) & 0xFF);
         return Double.longBitsToDouble(bits);
     }
 
@@ -60,17 +61,16 @@ public class TypeDescriptorDouble implements TypeDescriptor<Double> {
         }
 
         long bits = Double.doubleToLongBits(object);
-        final Bytes out = Bytes.allocate(REQUIRED_BYTES);
-        final byte[] data = out.getData();
-        data[0] = (byte) (bits >> 56);
-        data[1] = (byte) (bits >> 48);
-        data[2] = (byte) (bits >> 40);
-        data[3] = (byte) (bits >> 32);
-        data[4] = (byte) (bits >> 24);
-        data[5] = (byte) (bits >> 16);
-        data[6] = (byte) (bits >> 8);
-        data[7] = (byte) bits;
-        return out;
+        final MutableBytes out = MutableBytes.allocate(REQUIRED_BYTES);
+        out.setByte(0, (byte) (bits >> 56));
+        out.setByte(1, (byte) (bits >> 48));
+        out.setByte(2, (byte) (bits >> 40));
+        out.setByte(3, (byte) (bits >> 32));
+        out.setByte(4, (byte) (bits >> 24));
+        out.setByte(5, (byte) (bits >> 16));
+        out.setByte(6, (byte) (bits >> 8));
+        out.setByte(7, (byte) bits);
+        return out.toBytes();
     }
 
     @Override

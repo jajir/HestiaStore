@@ -24,7 +24,7 @@ public class TypeDescriptorByteArray implements TypeDescriptor<Bytes> {
     public ConvertorFromBytes<Bytes> getConvertorFromBytes() {
         return bytes -> {
             final Bytes validated = Vldtn.requireNonNull(bytes, "bytes");
-            return Bytes.copyOf(validated.getData());
+            return Bytes.copyOf(validated);
         };
     }
 
@@ -32,7 +32,7 @@ public class TypeDescriptorByteArray implements TypeDescriptor<Bytes> {
     public ConvertorToBytes<Bytes> getConvertorToBytes() {
         return data -> {
             final Bytes validated = Vldtn.requireNonNull(data, "bytes");
-            return Bytes.copyOf(validated.getData());
+            return Bytes.copyOf(validated);
         };
     }
 
@@ -51,17 +51,17 @@ public class TypeDescriptorByteArray implements TypeDescriptor<Bytes> {
         return (left, right) -> {
             final Bytes leftValidated = Vldtn.requireNonNull(left, "left");
             final Bytes rightValidated = Vldtn.requireNonNull(right, "right");
-            final byte[] leftData = leftValidated.getData();
-            final byte[] rightData = rightValidated.getData();
-            final int limit = Math.min(leftData.length, rightData.length);
+            final int leftLength = leftValidated.length();
+            final int rightLength = rightValidated.length();
+            final int limit = Math.min(leftLength, rightLength);
             for (int i = 0; i < limit; i++) {
-                final int a = leftData[i] & 0xFF;
-                final int b = rightData[i] & 0xFF;
+                final int a = leftValidated.getByte(i) & 0xFF;
+                final int b = rightValidated.getByte(i) & 0xFF;
                 if (a != b) {
                     return a - b;
                 }
             }
-            return leftData.length - rightData.length;
+            return leftLength - rightLength;
         };
     }
 

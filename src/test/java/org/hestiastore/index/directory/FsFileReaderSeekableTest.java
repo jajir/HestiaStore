@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.File;
 
 import org.hestiastore.index.Bytes;
+import org.hestiastore.index.MutableBytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -91,7 +92,8 @@ class FsFileReaderSeekableTest {
 
         // assert no data are read
         try (FileReader fr = dir.getFileReader(FILE_NAME)) {
-            final Bytes bytes = Bytes.allocate(TEXT_LONG.length());
+            final MutableBytes bytes = MutableBytes
+                    .allocate(TEXT_LONG.length());
 
             final int loadedBytes = fr.read(bytes);
             assertEquals(-1, loadedBytes);
@@ -111,7 +113,8 @@ class FsFileReaderSeekableTest {
         // assert no data are read, but file exists
         assertTrue(dir.isFileExists(FILE_NAME));
         try (FileReader fr = dir.getFileReader(FILE_NAME)) {
-            final Bytes bytes = Bytes.allocate(TEXT_LONG.length());
+            final MutableBytes bytes = MutableBytes
+                    .allocate(TEXT_LONG.length());
 
             final int loadedBytes = fr.read(bytes);
             assertEquals(-1, loadedBytes);
@@ -124,7 +127,8 @@ class FsFileReaderSeekableTest {
         }
 
         try (FileReader fr = dir.getFileReader(FILE_NAME)) {
-            final Bytes bytes = Bytes.allocate(TEXT_LONG.length());
+            final MutableBytes bytes = MutableBytes
+                    .allocate(TEXT_LONG.length());
 
             final int loadedBytes = fr.read(bytes);
             assertEquals(10, loadedBytes);
@@ -138,10 +142,10 @@ class FsFileReaderSeekableTest {
 
         try (FileReader fr = dir.getFileReader(FILE_NAME)) {
             final byte[] source = TEXT.getBytes();
-            final Bytes bytes = Bytes.allocate(source.length);
+            final MutableBytes bytes = MutableBytes.allocate(source.length);
             final int loadedBytes = fr.read(bytes);
 
-            String pok = new String(bytes.getData(), 0, loadedBytes);
+            String pok = new String(bytes.array(), 0, loadedBytes);
             assertEquals(TEXT, pok);
             assertEquals(source.length, loadedBytes);
         }

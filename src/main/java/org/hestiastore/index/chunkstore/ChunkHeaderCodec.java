@@ -2,6 +2,7 @@ package org.hestiastore.index.chunkstore;
 
 import java.util.Optional;
 
+import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
 import org.hestiastore.index.datatype.ConvertorToBytes;
@@ -66,14 +67,13 @@ final class ChunkHeaderCodec {
     }
 
     static org.hestiastore.index.Bytes encode(final ChunkHeader header) {
-        final org.hestiastore.index.Bytes out = org.hestiastore.index.Bytes
-                .allocate(ChunkHeader.HEADER_SIZE);
+        final MutableBytes out = MutableBytes.allocate(ChunkHeader.HEADER_SIZE);
         writeLong(out, MAGIC_OFFSET, header.getMagicNumber());
         writeInt(out, VERSION_OFFSET, header.getVersion());
         writeInt(out, PAYLOAD_LENGTH_OFFSET, header.getPayloadLength());
         writeLong(out, CRC_OFFSET, header.getCrc());
         writeLong(out, FLAGS_OFFSET, header.getFlags());
-        return out;
+        return out.toBytes();
     }
 
     private static long readLong(final org.hestiastore.index.Bytes data,
@@ -100,17 +100,17 @@ final class ChunkHeaderCodec {
         return value;
     }
 
-    private static void writeLong(final org.hestiastore.index.Bytes data,
-            final int offset, final long value) {
+    private static void writeLong(final MutableBytes data, final int offset,
+            final long value) {
         final org.hestiastore.index.Bytes bytes = LONG_TO_BYTES
                 .toBytesBuffer(value);
-        System.arraycopy(bytes.getData(), 0, data.getData(), offset, 8);
+        data.setBytes(offset, bytes);
     }
 
-    private static void writeInt(final org.hestiastore.index.Bytes data,
-            final int offset, final int value) {
+    private static void writeInt(final MutableBytes data, final int offset,
+            final int value) {
         final org.hestiastore.index.Bytes bytes = INT_TO_BYTES
                 .toBytesBuffer(value);
-        System.arraycopy(bytes.getData(), 0, data.getData(), offset, 4);
+        data.setBytes(offset, bytes);
     }
 }

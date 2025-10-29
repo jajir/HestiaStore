@@ -9,7 +9,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -39,8 +39,8 @@ class DiffKeyReaderTest {
                 tds.getConvertorFromBytes());
 
         when(fileReader.read()).thenReturn(3).thenReturn(5);
-        when(fileReader.read(
-                argThat((Bytes bytes) -> bytes != null && bytes.length() == 5)))
+        when(fileReader.read(argThat(
+                (MutableBytes bytes) -> bytes != null && bytes.length() == 5)))
                 .thenAnswer(invocation -> {
                     loadStringToBytes(invocation, "prase");
                     return 5;
@@ -54,8 +54,8 @@ class DiffKeyReaderTest {
                 tds.getConvertorFromBytes());
 
         when(fileReader.read()).thenReturn(0).thenReturn(5);
-        when(fileReader.read(
-                argThat((Bytes bytes) -> bytes != null && bytes.length() == 5)))
+        when(fileReader.read(argThat(
+                (MutableBytes bytes) -> bytes != null && bytes.length() == 5)))
                 .thenAnswer(invocation -> {
                     loadStringToBytes(invocation, "prase");
                     return 5;
@@ -70,8 +70,8 @@ class DiffKeyReaderTest {
                 tds.getConvertorFromBytes());
 
         when(fileReader.read()).thenReturn(0).thenReturn(5);
-        when(fileReader.read(
-                argThat((Bytes bytes) -> bytes != null && bytes.length() == 5)))
+        when(fileReader.read(argThat(
+                (MutableBytes bytes) -> bytes != null && bytes.length() == 5)))
                 .thenAnswer(invocation -> {
                     return 3;
                 });
@@ -84,8 +84,8 @@ class DiffKeyReaderTest {
                 tds.getConvertorFromBytes());
 
         when(fileReader.read()).thenReturn(0).thenReturn(5);
-        when(fileReader.read(argThat((Bytes bytes) -> bytes != null
-                && Arrays.equals(new byte[5], bytes.getData()))))
+        when(fileReader.read(argThat((MutableBytes bytes) -> bytes != null
+                && Arrays.equals(new byte[5], bytes.array()))))
                 .thenAnswer(invocation -> {
                     loadStringToBytes(invocation, "prase");
                     return 5;
@@ -94,8 +94,8 @@ class DiffKeyReaderTest {
         assertEquals("prase", ret1);
 
         when(fileReader.read()).thenReturn(3).thenReturn(5);
-        when(fileReader.read(argThat((Bytes bytes) -> bytes != null
-                && Arrays.equals(new byte[5], bytes.getData()))))
+        when(fileReader.read(argThat((MutableBytes bytes) -> bytes != null
+                && Arrays.equals(new byte[5], bytes.array()))))
                 .thenAnswer(invocation -> {
                     loadStringToBytes(invocation, "lesni");
                     return 5;
@@ -110,8 +110,8 @@ class DiffKeyReaderTest {
                 tds.getConvertorFromBytes());
 
         when(fileReader.read()).thenReturn(0).thenReturn(5);
-        when(fileReader.read(
-                argThat((Bytes bytes) -> bytes != null && bytes.length() == 5)))
+        when(fileReader.read(argThat(
+                (MutableBytes bytes) -> bytes != null && bytes.length() == 5)))
                 .thenAnswer(invocation -> {
                     loadStringToBytes(invocation, "prase");
                     return 5;
@@ -129,8 +129,8 @@ class DiffKeyReaderTest {
                 tds.getConvertorFromBytes());
 
         when(fileReader.read()).thenReturn(0).thenReturn(5);
-        when(fileReader.read(argThat((Bytes bytes) -> bytes != null
-                && Arrays.equals(new byte[5], bytes.getData()))))
+        when(fileReader.read(argThat((MutableBytes bytes) -> bytes != null
+                && Arrays.equals(new byte[5], bytes.array()))))
                 .thenAnswer(invocation -> {
                     loadStringToBytes(invocation, "prase");
                     return 5;
@@ -139,15 +139,16 @@ class DiffKeyReaderTest {
         assertEquals("prase", ret1);
 
         when(fileReader.read()).thenReturn(3).thenReturn(5);
-        when(fileReader.read(argThat((Bytes bytes) -> bytes != null
-                && Arrays.equals(new byte[5], bytes.getData())))).thenReturn(3);
+        when(fileReader.read(argThat((MutableBytes bytes) -> bytes != null
+                && Arrays.equals(new byte[5], bytes.array())))).thenReturn(3);
         assertThrows(IndexException.class, () -> reader.read(fileReader));
     }
 
     private void loadStringToBytes(final InvocationOnMock invocation,
             final String str) {
-        final Bytes bytes = invocation.getArgument(0, Bytes.class);
-        final byte[] data = bytes.getData();
+        final MutableBytes bytes = invocation.getArgument(0,
+                MutableBytes.class);
+        final byte[] data = bytes.array();
         byte[] p = str.getBytes();
         for (int i = 0; i < 5; i++) {
             data[i] = p[i];

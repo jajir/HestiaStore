@@ -71,8 +71,8 @@ public class SortedDataFileWriter<K, V> extends AbstractCloseableResource
         if (previousKey != null) {
             final int cmp = keyComparator.compare(previousKey, key);
             if (cmp == 0) {
-                final String s2 = F
-                        .b64(keyConvertorToBytes.toBytesBuffer(key).getData());
+                final Bytes keyBytes = keyConvertorToBytes.toBytesBuffer(key);
+                final String s2 = F.b64(keyBytes.toByteArray());
                 final String keyComapratorClassName = keyComparator.getClass()
                         .getSimpleName();
                 throw new IllegalArgumentException(String.format(
@@ -80,10 +80,11 @@ public class SortedDataFileWriter<K, V> extends AbstractCloseableResource
                         s2, keyComapratorClassName));
             }
             if (cmp > 0) {
-                final String s1 = F.b64(keyConvertorToBytes
-                        .toBytesBuffer(previousKey).getData());
-                final String s2 = F
-                        .b64(keyConvertorToBytes.toBytesBuffer(key).getData());
+                final Bytes previousBytes = keyConvertorToBytes
+                        .toBytesBuffer(previousKey);
+                final Bytes keyBytes = keyConvertorToBytes.toBytesBuffer(key);
+                final String s1 = F.b64(previousBytes.toByteArray());
+                final String s2 = F.b64(keyBytes.toByteArray());
                 final String keyComapratorClassName = keyComparator.getClass()
                         .getSimpleName();
                 throw new IllegalArgumentException(String.format(

@@ -10,7 +10,7 @@ public class ChunkFilterCrc32Validation implements ChunkFilter {
     @Override
     public ChunkData apply(final ChunkData input) {
         final PureJavaCrc32 crc = new PureJavaCrc32();
-        crc.update(input.getPayload().getData());
+        crc.update(input.getPayload().toByteArray());
         final long calculated = crc.getValue();
         if (calculated != input.getCrc()) {
             throw new IllegalStateException(String.format(

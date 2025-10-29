@@ -237,7 +237,7 @@ class IndexConfiguratonStorageTest {
             final String fileName = "index-configuration.properties";
             if (memDirectory.isFileExists(fileName)) {
                 final String content = new String(
-                        memDirectory.getFileBytes(fileName).getData(),
+                        memDirectory.getFileBytes(fileName).toByteArray(),
                         StandardCharsets.UTF_8);
                 LOGGER.info("{}:{}{}", fileName, System.lineSeparator(),
                         content);

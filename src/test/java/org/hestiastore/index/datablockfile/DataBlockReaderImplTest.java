@@ -10,7 +10,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.TestData;
 import org.hestiastore.index.directory.FileReader;
@@ -53,17 +53,19 @@ public class DataBlockReaderImplTest {
                 TestData.PAYLOAD_1008.calculateCrc());
 
         byte[] bufferBytes = header.toBytes()
-                .concat(TestData.PAYLOAD_1008.getBytes()).getData();
+                .concat(TestData.PAYLOAD_1008.getBytes()).toByteArray();
 
-        when(fileReader.read(any(Bytes.class))).thenAnswer(invocation -> {
-            final Bytes buffer = invocation.getArgument(0, Bytes.class);
-            assertEquals(1024, buffer.length());
-            System.arraycopy(bufferBytes, 0, buffer.getData(), 0, 1024);
-            return 1024;
-        });
+        when(fileReader.read(any(MutableBytes.class)))
+                .thenAnswer(invocation -> {
+                    final MutableBytes buffer = invocation.getArgument(0,
+                            MutableBytes.class);
+                    assertEquals(1024, buffer.length());
+                    System.arraycopy(bufferBytes, 0, buffer.array(), 0, 1024);
+                    return 1024;
+                });
         DataBlock ret1 = reader.read();
         assertNotNull(ret1);
-        assertTrue(Arrays.equals(bufferBytes, ret1.getBytes().getData()));
+        assertTrue(Arrays.equals(bufferBytes, ret1.getBytes().toByteArray()));
         assertEquals(2048, ret1.getPosition().getValue());
     }
 
@@ -73,14 +75,16 @@ public class DataBlockReaderImplTest {
         System.arraycopy(TestData.BYTE_ARRAY_1024, 0, bufferBytes, 0, 1024);
         DataBlockHeader header = DataBlockHeader
                 .of(DataBlockHeader.MAGIC_NUMBER, 2131L);
-        System.arraycopy(header.toBytes().getData(), 0, bufferBytes, 0, 16);
+        header.toBytes().copyTo(0, bufferBytes, 0, 16);
 
-        when(fileReader.read(any(Bytes.class))).thenAnswer(invocation -> {
-            final Bytes buffer = invocation.getArgument(0, Bytes.class);
-            assertEquals(1024, buffer.length());
-            System.arraycopy(bufferBytes, 0, buffer.getData(), 0, 1024);
-            return 1024;
-        });
+        when(fileReader.read(any(MutableBytes.class)))
+                .thenAnswer(invocation -> {
+                    final MutableBytes buffer = invocation.getArgument(0,
+                            MutableBytes.class);
+                    assertEquals(1024, buffer.length());
+                    System.arraycopy(bufferBytes, 0, buffer.array(), 0, 1024);
+                    return 1024;
+                });
 
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> reader.read());
@@ -89,13 +93,15 @@ public class DataBlockReaderImplTest {
 
     @Test
     void test_read_invalidBlockSize_was_readed() {
-        when(fileReader.read(any(Bytes.class))).thenAnswer(invocation -> {
-            final Bytes buffer = invocation.getArgument(0, Bytes.class);
-            assertEquals(1024, buffer.length());
-            System.arraycopy(TestData.BYTE_ARRAY_1024, 0, buffer.getData(), 0,
-                    45);
-            return 45;
-        });
+        when(fileReader.read(any(MutableBytes.class)))
+                .thenAnswer(invocation -> {
+                    final MutableBytes buffer = invocation.getArgument(0,
+                            MutableBytes.class);
+                    assertEquals(1024, buffer.length());
+                    System.arraycopy(TestData.BYTE_ARRAY_1024, 0,
+                            buffer.array(), 0, 45);
+                    return 45;
+                });
         final Exception e = assertThrows(IndexException.class,
                 () -> reader.read());
 
@@ -104,7 +110,7 @@ public class DataBlockReaderImplTest {
 
     @Test
     void test_propagateException() {
-    when(fileReader.read(any(Bytes.class)))
+        when(fileReader.read(any(MutableBytes.class)))
                 .thenThrow(new IndexException("Test Exception"));
 
         assertThrows(IndexException.class, () -> reader.read());
@@ -112,7 +118,7 @@ public class DataBlockReaderImplTest {
 
     @Test
     void test_read_end_of_file() {
-    when(fileReader.read(any(Bytes.class))).thenReturn(-1, -1);
+        when(fileReader.read(any(MutableBytes.class))).thenReturn(-1, -1);
         assertNull(reader.read());
         assertNull(reader.read());
     }

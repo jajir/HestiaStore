@@ -44,7 +44,7 @@ public class MemFileWriter extends AbstractCloseableResource
 
     @Override
     public void write(final Bytes bytes) {
-        final byte[] data = Vldtn.requireNonNull(bytes, "bytes").getData();
+        final byte[] data = Vldtn.requireNonNull(bytes, "bytes").toByteArray();
         try {
             fio.write(data);
         } catch (IOException e) {

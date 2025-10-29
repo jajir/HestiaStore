@@ -22,7 +22,7 @@ public class ChunkHeaderTest {
         final ChunkHeader header1 = ChunkHeader.of(ChunkHeader.MAGIC_NUMBER,
                 VERSION, PAYLOAD_LENGTH, CRC, flags);
 
-        final byte[] data = header1.getBytes().getData();
+        final byte[] data = header1.getBytes().toByteArray();
         final ChunkHeader header2 = ChunkHeader.of(data);
 
         assertEquals(ChunkHeader.MAGIC_NUMBER, header2.getMagicNumber());
@@ -81,7 +81,7 @@ public class ChunkHeaderTest {
     void test_optionalOf() {
         final ChunkHeader header1 = ChunkHeader.of(ChunkHeader.MAGIC_NUMBER,
                 VERSION, PAYLOAD_LENGTH, CRC);
-        final byte[] data = header1.getBytes().getData();
+        final byte[] data = header1.getBytes().toByteArray();
         final Optional<ChunkHeader> optionalHeader = ChunkHeader
                 .optionalOf(Bytes.of(data));
         assertTrue(optionalHeader.isPresent());

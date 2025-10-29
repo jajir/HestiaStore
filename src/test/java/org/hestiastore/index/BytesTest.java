@@ -1,5 +1,6 @@
 package org.hestiastore.index;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -14,7 +15,7 @@ public class BytesTest {
     void test_storing() {
         final Bytes bytes = Bytes.of(TEST_DATA);
 
-        assertEquals(TEST_DATA, bytes.getData());
+        assertArrayEquals(TEST_DATA, bytes.toByteArray());
     }
 
     @Test

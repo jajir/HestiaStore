@@ -22,7 +22,7 @@ public class TypeDescriptorShortString implements TypeDescriptor<String> {
     public ConvertorFromBytes<String> getConvertorFromBytes() {
         return bytes -> {
             Vldtn.requireNonNull(bytes, "bytes");
-            return new String(bytes.getData(), CHARSET_ENCODING);
+            return new String(bytes.toByteArray(), CHARSET_ENCODING);
         };
     }
 

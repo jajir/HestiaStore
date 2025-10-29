@@ -41,20 +41,19 @@ public class DataBlockWriterImplTest {
         doAnswer(invocation -> {
             final Bytes blockData = invocation.getArgument(0, Bytes.class);
             assertEquals(1024, blockData.length());
-            final byte[] data = blockData.getData();
 
             // Verify the magic number
             final byte[] longBytes = new byte[8];
-            System.arraycopy(data, 0, longBytes, 0, 8);
-        long magicNumber = TestData.LONG_CONVERTOR_FROM_BYTES
-            .fromBytes(Bytes.of(longBytes));
+            blockData.copyTo(0, longBytes, 0, longBytes.length);
+            long magicNumber = TestData.LONG_CONVERTOR_FROM_BYTES
+                    .fromBytes(Bytes.of(longBytes));
             assertEquals(DataBlockHeader.MAGIC_NUMBER, magicNumber);
 
             // Verify the CRC
             final byte[] crcBytes = new byte[8];
-            System.arraycopy(data, 8, crcBytes, 0, 8);
-        long crc = TestData.LONG_CONVERTOR_FROM_BYTES
-            .fromBytes(Bytes.of(crcBytes));
+            blockData.copyTo(8, crcBytes, 0, crcBytes.length);
+            long crc = TestData.LONG_CONVERTOR_FROM_BYTES
+                    .fromBytes(Bytes.of(crcBytes));
             assertEquals(TestData.PAYLOAD_1008.calculateCrc(), crc);
 
             return null;

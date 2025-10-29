@@ -4,6 +4,7 @@ import java.util.Comparator;
 
 import org.hestiastore.index.ByteTool;
 import org.hestiastore.index.Bytes;
+import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.slf4j.Logger;
@@ -41,7 +42,7 @@ public class DiffKeyWriter<K> {
         if (previousKey != null) {
             final int cmp = keyComparator.compare(previousKey, key);
             if (cmp == 0) {
-                final String s2 = new String(keyBytes.getData());
+                final String s2 = new String(keyBytes.toByteArray());
                 final String keyComapratorClassName = keyComparator.getClass()
                         .getSimpleName();
                 throw new IllegalArgumentException(String.format(
@@ -49,8 +50,8 @@ public class DiffKeyWriter<K> {
                         s2, keyComapratorClassName));
             }
             if (cmp > 0) {
-                final String s1 = new String(previousKeyBytes.getData());
-                final String s2 = new String(keyBytes.getData());
+                final String s1 = new String(previousKeyBytes.toByteArray());
+                final String s2 = new String(keyBytes.toByteArray());
                 final String keyComapratorClassName = keyComparator.getClass()
                         .getSimpleName();
                 throw new IllegalArgumentException(String.format(
@@ -64,16 +65,14 @@ public class DiffKeyWriter<K> {
         final Bytes diffBytes = ByteTool
                 .getRemainingBytesAfterIndex(sharedByteLength, keyBytes);
 
-        final Bytes out = Bytes.allocate(2 + diffBytes.length());
-        final byte[] outData = out.getData();
-        outData[0] = (byte) sharedByteLength;
-        outData[1] = (byte) diffBytes.length();
-        System.arraycopy(diffBytes.getData(), 0, outData, 2,
-                diffBytes.length());
+        final MutableBytes out = MutableBytes.allocate(2 + diffBytes.length());
+        out.setByte(0, (byte) sharedByteLength);
+        out.setByte(1, (byte) diffBytes.length());
+        out.setBytes(2, diffBytes);
 
         previousKeyBytes = keyBytes;
         previousKey = key;
-        return out;
+        return out.toBytes();
     }
 
     public long close() {

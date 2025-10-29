@@ -1,6 +1,7 @@
 package org.hestiastore.index.datablockfile;
 
 import org.hestiastore.index.Bytes;
+import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
 import org.hestiastore.index.datatype.ConvertorToBytes;
@@ -97,14 +98,10 @@ public class DataBlockHeader {
      * @return Bytes representing the DataBlockHeader.
      */
     public Bytes toBytes() {
-        final Bytes out = Bytes.allocate(HEADER_SIZE);
-        final byte[] raw = out.getData();
-        System.arraycopy(
-                CONVERTOR_TO_BYTES.toBytesBuffer(magicNumber).getData(), 0, raw,
-                0, 8);
-        System.arraycopy(CONVERTOR_TO_BYTES.toBytesBuffer(crc).getData(), 0,
-                raw, 8, 8);
-        return out;
+        final MutableBytes out = MutableBytes.allocate(HEADER_SIZE);
+        out.setBytes(0, CONVERTOR_TO_BYTES.toBytesBuffer(magicNumber));
+        out.setBytes(8, CONVERTOR_TO_BYTES.toBytesBuffer(crc));
+        return out.toBytes();
     }
 
 }
