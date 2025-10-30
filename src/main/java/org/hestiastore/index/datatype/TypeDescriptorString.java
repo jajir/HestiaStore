@@ -3,6 +3,7 @@ package org.hestiastore.index.datatype;
 import java.nio.charset.Charset;
 import java.util.Comparator;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 
@@ -52,7 +53,7 @@ public class TypeDescriptorString implements TypeDescriptor<String> {
         return TOMBSTONE_VALUE;
     }
 
-    private String asString(final Bytes bytes) {
+    private String asString(final ByteSequence bytes) {
         Vldtn.requireNonNull(bytes, "bytes");
         return new String(bytes.toByteArray(), CHARSET_ENCODING);
     }

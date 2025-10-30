@@ -2,6 +2,7 @@ package org.hestiastore.index.datatype;
 
 import java.util.Arrays;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 
@@ -19,7 +20,7 @@ public class ByteArray implements Comparable<ByteArray> {
         return new ByteArray(data);
     }
 
-    public static ByteArray of(final Bytes bytes) {
+    public static ByteArray of(final ByteSequence bytes) {
         Vldtn.requireNonNull(bytes, "bytes");
         return new ByteArray(bytes.toByteArray());
     }

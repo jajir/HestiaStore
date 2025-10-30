@@ -2,6 +2,7 @@ package org.hestiastore.index.log;
 
 import java.util.Comparator;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.Vldtn;
@@ -52,7 +53,7 @@ public class TypeDescriptorLoggedKey<K>
                         "LoggedKey encoding must contain at least one byte");
             }
             final byte operation = bytes.getByte(0);
-            final Bytes keyBytes = bytes.subBytes(1, bytes.length());
+            final ByteSequence keyBytes = bytes.slice(1, bytes.length());
             return LoggedKey.of(LogOperation.fromByte(operation),
                     tdKey.getConvertorFromBytes().fromBytes(keyBytes));
         };

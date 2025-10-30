@@ -3,6 +3,7 @@ package org.hestiastore.index.datatype;
 import java.util.Comparator;
 import java.util.List;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
@@ -118,7 +119,7 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
         }
     }
 
-    public CompositeValue fromBytes(final Bytes bytes) {
+    public CompositeValue fromBytes(final ByteSequence bytes) {
         Vldtn.requireNonNull(bytes, "bytes");
         final FileReader fileReader = new MemFileReader(bytes);
         final Object[] out = new Object[elementTypes.size()];

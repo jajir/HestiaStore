@@ -1,18 +1,18 @@
 package org.hestiastore.index.directory;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.Vldtn;
 
 public class MemFileReader extends AbstractCloseableResource
         implements FileReader {
 
-    private final Bytes source;
+    private final ByteSequence source;
 
     private int position;
 
-    public MemFileReader(final Bytes bytes) {
+    public MemFileReader(final ByteSequence bytes) {
         this.source = Vldtn.requireNonNull(bytes, "bytes");
         position = 0;
     }

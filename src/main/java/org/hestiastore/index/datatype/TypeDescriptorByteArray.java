@@ -3,6 +3,7 @@ package org.hestiastore.index.datatype;
 import java.nio.charset.Charset;
 import java.util.Comparator;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 
@@ -23,7 +24,7 @@ public class TypeDescriptorByteArray implements TypeDescriptor<Bytes> {
     @Override
     public ConvertorFromBytes<Bytes> getConvertorFromBytes() {
         return bytes -> {
-            final Bytes validated = Vldtn.requireNonNull(bytes, "bytes");
+            final ByteSequence validated = Vldtn.requireNonNull(bytes, "bytes");
             return Bytes.copyOf(validated);
         };
     }
