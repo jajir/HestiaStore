@@ -55,6 +55,45 @@ class ByteToolTest {
                 .getRemainingBytesAfterIndex(0, (ByteSequence) null));
     }
 
+    @Test
+    void test_getRemainingBytesAfterIndex_zeroIndexReturnsOriginal() {
+        final Bytes input = Bytes.of(new byte[] { 0, 1, 2 });
+
+        assertSame(input, ByteTool.getRemainingBytesAfterIndex(0, input));
+    }
+
+    @Test
+    void test_getRemainingBytesAfterIndex_fullLengthReturnsEmpty() {
+        final Bytes input = Bytes.of(new byte[] { 0, 1, 2 });
+
+        assertSame(Bytes.EMPTY,
+                ByteTool.getRemainingBytesAfterIndex(input.length(), input));
+    }
+
+    @Test
+    void test_getRemainingBytesAfterIndex_returnsViewForBytes() {
+        final Bytes input = Bytes.of(new byte[] { 1, 2, 3, 4 });
+
+        final ByteSequence remainder = ByteTool.getRemainingBytesAfterIndex(2,
+                input);
+
+        assertTrue(remainder instanceof ByteSequenceView);
+        assertArrayEquals(new byte[] { 3, 4 }, remainder.toByteArray());
+    }
+
+    @Test
+    void test_getRemainingBytesAfterIndex_handlesConcatenatedSequence() {
+        final ByteSequence concatenated = ConcatenatedByteSequence.of(
+                Bytes.of(new byte[] { 1, 2, 3 }),
+                Bytes.of(new byte[] { 4, 5 }));
+
+        final ByteSequence remainder = ByteTool.getRemainingBytesAfterIndex(2,
+                concatenated);
+
+        assertTrue(remainder instanceof ConcatenatedByteSequence);
+        assertArrayEquals(new byte[] { 3, 4, 5 }, remainder.toByteArray());
+    }
+
     private void testFunction(final int sharedLength, final String str,
             final String expectedResult) {
         final Bytes input = Bytes.of(str.getBytes());

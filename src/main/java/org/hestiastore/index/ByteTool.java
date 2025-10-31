@@ -39,18 +39,18 @@ public final class ByteTool {
     public static ByteSequence getRemainingBytesAfterIndex(final int index,
             final ByteSequence full) {
         Vldtn.requireNonNull(full, "full");
-        if (index < 0 || index > full.length()) {
-            throw new IllegalArgumentException(String.format(
-                    "Index '%d' is out of range 0..%d", index, full.length()));
+        final int length = full.length();
+        if (index < 0 || index > length) {
+            throw new IllegalArgumentException(String
+                    .format("Index '%d' is out of range 0..%d", index, length));
         }
-        final int remainingLength = full.length() - index;
-        if (remainingLength == 0) {
+        if (index == length) {
             return Bytes.EMPTY;
         }
-        // FIXME remove slice from full
-        final MutableBytes slice = MutableBytes.allocate(remainingLength);
-        slice.setBytes(0, full, index, remainingLength);
-        return slice.toBytes();
+        if (index == 0) {
+            return full;
+        }
+        return full.slice(index, length);
     }
 
     /**
