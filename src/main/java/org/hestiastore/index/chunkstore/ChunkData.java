@@ -110,6 +110,7 @@ public class ChunkData {
         return out * CellPosition.CELL_SIZE;
     }
 
+    //FIXME this method should be removed
     private static Bytes toBytes(final ByteSequence sequence) {
         Vldtn.requireNonNull(sequence, "payload");
         if (sequence instanceof Bytes) {

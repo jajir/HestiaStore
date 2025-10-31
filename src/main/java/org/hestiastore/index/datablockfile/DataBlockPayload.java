@@ -22,6 +22,7 @@ public class DataBlockPayload {
      */
     public static DataBlockPayload of(final ByteSequence bytes) {
         Vldtn.requireNonNull(bytes, "bytes");
+        // FIXME remove copyOf
         return new DataBlockPayload(Bytes.copyOf(bytes));
     }
 

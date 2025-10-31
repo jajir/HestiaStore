@@ -111,6 +111,7 @@ public final class MutableBytes implements MutableByteSequence {
      *
      * @return immutable bytes containing the same data
      */
+    // FIXME remove it, replace with toByteSequence
     public Bytes toBytes() {
         if (data.length == 0) {
             return Bytes.EMPTY;

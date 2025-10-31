@@ -16,6 +16,7 @@ public class ByteArray implements Comparable<ByteArray> {
 
     private final byte[] data;
 
+    // FIXME remove this class
     public static ByteArray of(final byte[] data) {
         return new ByteArray(data);
     }

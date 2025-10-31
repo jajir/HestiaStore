@@ -40,6 +40,7 @@ public class DiffKeyWriter<K> {
     public ByteSequence write(final K key) {
         Vldtn.requireNonNull(key, "key");
         final ByteSequence keySequence = convertorToBytes.toBytesBuffer(key);
+        // FIXME remove following copyOf
         final Bytes keyBytes = keySequence instanceof Bytes
                 ? (Bytes) keySequence
                 : Bytes.copyOf(keySequence);

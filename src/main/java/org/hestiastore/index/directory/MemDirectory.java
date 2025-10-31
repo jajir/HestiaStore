@@ -12,6 +12,7 @@ import org.hestiastore.index.Vldtn;
 public class MemDirectory implements Directory {
 
     private static final String ERROR_MSG_NO_FILE = "There is no file '%s'";
+    // FIXME change it to ByteSequence
     private final Map<String, Bytes> data = new HashMap<>();
 
     @Override
@@ -33,8 +34,7 @@ public class MemDirectory implements Directory {
         return bytes;
     }
 
-    public void setFileBytes(final String fileName,
-            final ByteSequence bytes) {
+    public void setFileBytes(final String fileName, final ByteSequence bytes) {
         data.put(fileName, toBytes(bytes));
     }
 
@@ -124,9 +124,9 @@ public class MemDirectory implements Directory {
         return new MemFileReaderSeekable(fileData);
     }
 
+    // FIXME should be remve completly
     private static Bytes toBytes(final ByteSequence sequence) {
-        final ByteSequence validated = Vldtn.requireNonNull(sequence,
-                "bytes");
+        final ByteSequence validated = Vldtn.requireNonNull(sequence, "bytes");
         if (validated instanceof Bytes) {
             return (Bytes) validated;
         }

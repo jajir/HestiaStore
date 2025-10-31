@@ -36,6 +36,7 @@ public final class Chunk {
      * @return new chunk instance
      */
     public static Chunk of(final ByteSequence bytes) {
+        // FIXME remove toBytes
         return new Chunk(toBytes(bytes));
     }
 
@@ -51,6 +52,7 @@ public final class Chunk {
             final ByteSequence payload) {
         Vldtn.requireNonNull(header, "header");
         Vldtn.requireNonNull(payload, "payload");
+        // FIXME remove toBytes
         final Bytes headerBytes = toBytes(header.getBytes());
         final Bytes payloadBytes = toBytes(payload);
         final Bytes bytes = Bytes.concat(headerBytes, payloadBytes);
@@ -107,6 +109,7 @@ public final class Chunk {
         return getPayload().calculateCrc();
     }
 
+    // FIXME remove toBytes
     private static Bytes toBytes(final ByteSequence sequence) {
         if (sequence instanceof Bytes) {
             return (Bytes) sequence;

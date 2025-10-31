@@ -22,6 +22,7 @@ public class ChunkPayload {
      */
     public static ChunkPayload of(final ByteSequence bytes) {
         Vldtn.requireNonNull(bytes, "bytes");
+        // FIXME remove copyOf
         return new ChunkPayload(Bytes.copyOf(bytes));
     }
 

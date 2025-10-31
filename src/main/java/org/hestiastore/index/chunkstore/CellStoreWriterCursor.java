@@ -106,6 +106,7 @@ public final class CellStoreWriterCursor extends AbstractCloseableResource {
         }
     }
 
+    // FIXME remove this method
     private static Bytes toBytes(final ByteSequence bytes) {
         if (bytes instanceof Bytes) {
             return (Bytes) bytes;

@@ -27,6 +27,7 @@ public class CellStoreWriterImpl extends AbstractCloseableResource
         Vldtn.requireNonNull(bytes, "bytes");
         Vldtn.requireCellSize(bytes.length(), "bytes");
         final CellPosition returnPosition = cursor.getNextCellPosition();
+        // FIXME remove copyOf
         final Bytes bufferBytes = bytes instanceof Bytes ? (Bytes) bytes
                 : Bytes.copyOf(bytes);
         Bytes bufferToWrite = bufferBytes.paddedToNextCell();

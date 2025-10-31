@@ -25,6 +25,7 @@ public class TypeDescriptorByteArray implements TypeDescriptor<Bytes> {
     public ConvertorFromBytes<Bytes> getConvertorFromBytes() {
         return bytes -> {
             final ByteSequence validated = Vldtn.requireNonNull(bytes, "bytes");
+            // FIXME remove copyOf
             return Bytes.copyOf(validated);
         };
     }

@@ -24,6 +24,7 @@ public class BytesAppender {
         if (validated.length() == 0) {
             return; // No need to append empty byte arrays
         }
+        // FIXME remove following lines
         final Bytes toAdd = validated instanceof Bytes ? (Bytes) validated
                 : Bytes.copyOf(validated);
         bytes.add(toAdd);
