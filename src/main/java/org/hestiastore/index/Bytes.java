@@ -183,7 +183,16 @@ public class Bytes implements ByteSequence {
 
     @Override
     public ByteSequence slice(final int fromInclusive, final int toExclusive) {
-        return subBytes(fromInclusive, toExclusive);
+        Vldtn.requireBetween(fromInclusive, 0, data.length, "fromInclusive");
+        Vldtn.requireBetween(toExclusive, 0, data.length, "toExclusive");
+        if (fromInclusive > toExclusive) {
+            throw new IllegalArgumentException(
+                    "fromInclusive must be less than or equal to toExclusive");
+        }
+        if (fromInclusive == toExclusive) {
+            return Bytes.EMPTY;
+        }
+        return ByteSequenceView.of(data, fromInclusive, toExclusive);
     }
 
     /**

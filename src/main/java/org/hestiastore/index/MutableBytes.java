@@ -1,7 +1,5 @@
 package org.hestiastore.index;
 
-import java.util.Arrays;
-
 /**
  * Mutable byte buffer implementation backed by a byte array.
  */
@@ -87,7 +85,11 @@ public final class MutableBytes implements MutableByteSequence {
     public ByteSequence slice(final int fromInclusive, final int toExclusive) {
         validateRange(fromInclusive, toExclusive - fromInclusive, data.length,
                 "fromInclusive");
-        return Bytes.of(Arrays.copyOfRange(data, fromInclusive, toExclusive));
+        final int length = toExclusive - fromInclusive;
+        if (length == 0) {
+            return Bytes.EMPTY;
+        }
+        return ByteSequenceView.of(data, fromInclusive, toExclusive);
     }
 
     @Override

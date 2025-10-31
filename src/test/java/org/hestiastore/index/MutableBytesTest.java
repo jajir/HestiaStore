@@ -68,13 +68,31 @@ class MutableBytesTest {
     }
 
     @Test
-    void slice_returnsImmutableBytes() {
+    void slice_reflectsBackingData() {
         final MutableBytes buffer = MutableBytes
                 .wrap(new byte[] { 1, 2, 3, 4 });
 
         final ByteSequence slice = buffer.slice(1, 3);
 
-        assertEquals(Bytes.of(new byte[] { 2, 3 }), Bytes.copyOf(slice));
+        assertEquals(2, slice.length());
+        assertEquals(2, slice.getByte(0));
+
+        buffer.setByte(1, (byte) 9);
+
+        assertEquals(9, slice.getByte(0));
+
+        final byte[] copy = new byte[2];
+        slice.copyTo(0, copy, 0, copy.length);
+        assertArrayEquals(new byte[] { 9, 3 }, copy);
+    }
+
+    @Test
+    void slice_zeroLengthReturnsEmptyBytes() {
+        final MutableBytes buffer = MutableBytes.wrap(new byte[] { 1, 2, 3 });
+
+        final ByteSequence slice = buffer.slice(2, 2);
+
+        assertSame(Bytes.EMPTY, slice);
     }
 
     @Test

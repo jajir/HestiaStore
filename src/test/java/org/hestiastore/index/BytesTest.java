@@ -2,7 +2,9 @@ package org.hestiastore.index;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -92,6 +94,27 @@ public class BytesTest {
 
         assertEquals(63, bytes.length());
         assertEquals(64, padded.length());
+    }
+
+    @Test
+    void test_slice_returnsView() {
+        final Bytes bytes = Bytes.of(new byte[] { 1, 2, 3, 4 });
+
+        final ByteSequence slice = bytes.slice(1, 3);
+
+        assertTrue(slice instanceof ByteSequenceView);
+        final ByteSequenceView view = (ByteSequenceView) slice;
+        assertEquals(2, view.length());
+        assertEquals(2, view.getByte(0));
+    }
+
+    @Test
+    void test_slice_zeroLengthReturnsEmptyBytes() {
+        final Bytes bytes = Bytes.of(new byte[] { 1, 2, 3, 4 });
+
+        final ByteSequence slice = bytes.slice(2, 2);
+
+        assertSame(Bytes.EMPTY, slice);
     }
 
 }
