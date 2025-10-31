@@ -3,9 +3,11 @@ package org.hestiastore.index.directory;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Arrays;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.MutableByteSequence;
 import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.Vldtn;
 
@@ -32,10 +34,23 @@ public final class FsFileReaderSeekable extends AbstractCloseableResource
     }
 
     @Override
-    public int read(final MutableBytes bytes) {
-        final byte[] data = Vldtn.requireNonNull(bytes, "bytes").array();
+    public int read(final MutableByteSequence bytes) {
+        final MutableByteSequence buffer = Vldtn.requireNonNull(bytes, "bytes");
+        final int length = buffer.length();
+        final MutableBytes directBuffer = buffer instanceof MutableBytes
+                ? (MutableBytes) buffer
+                : null;
+        final byte[] data = directBuffer != null ? directBuffer.array()
+                : new byte[length];
         try {
-            return raf.read(data, 0, bytes.length());
+            final int readBytes = raf.read(data, 0, length);
+            if (directBuffer == null && readBytes > 0) {
+                buffer.setBytes(0,
+                        MutableBytes.wrap(readBytes == data.length ? data
+                                : Arrays.copyOf(data, readBytes)),
+                        0, readBytes);
+            }
+            return readBytes;
         } catch (IOException e) {
             throw new IndexException(e.getMessage(), e);
         }

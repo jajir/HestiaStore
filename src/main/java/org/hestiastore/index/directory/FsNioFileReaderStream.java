@@ -5,9 +5,11 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.MutableByteSequence;
 import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.Vldtn;
 
@@ -43,11 +45,24 @@ public final class FsNioFileReaderStream extends AbstractCloseableResource
     }
 
     @Override
-    public int read(final MutableBytes bytes) {
-        final byte[] data = Vldtn.requireNonNull(bytes, "bytes").array();
-        final ByteBuffer buffer = ByteBuffer.wrap(data, 0, bytes.length());
+    public int read(final MutableByteSequence bytes) {
+        final MutableByteSequence buffer = Vldtn.requireNonNull(bytes, "bytes");
+        final int length = buffer.length();
+        final MutableBytes directBuffer = buffer instanceof MutableBytes
+                ? (MutableBytes) buffer
+                : null;
+        final byte[] data = directBuffer != null ? directBuffer.array()
+                : new byte[length];
+        final ByteBuffer byteBuffer = ByteBuffer.wrap(data, 0, length);
         try {
-            return channel.read(buffer);
+            final int readBytes = channel.read(byteBuffer);
+            if (directBuffer == null && readBytes > 0) {
+                buffer.setBytes(0,
+                        MutableBytes.wrap(readBytes == data.length ? data
+                                : Arrays.copyOf(data, readBytes)),
+                        0, readBytes);
+            }
+            return readBytes;
         } catch (IOException e) {
             throw new IndexException(e.getMessage(), e);
         }

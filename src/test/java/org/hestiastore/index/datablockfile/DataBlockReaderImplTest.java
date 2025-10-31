@@ -12,6 +12,7 @@ import java.util.Arrays;
 
 import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
+import org.hestiastore.index.MutableByteSequence;
 import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.TestData;
@@ -59,12 +60,14 @@ public class DataBlockReaderImplTest {
                 .concat(asBytes(TestData.PAYLOAD_1008.getBytes()))
                 .toByteArray();
 
-        when(fileReader.read(any(MutableBytes.class)))
+        when(fileReader.read(any(MutableByteSequence.class)))
                 .thenAnswer(invocation -> {
-                    final MutableBytes buffer = invocation.getArgument(0,
-                            MutableBytes.class);
+                    final MutableByteSequence buffer = invocation.getArgument(0,
+                            MutableByteSequence.class);
                     assertEquals(1024, buffer.length());
-                    System.arraycopy(bufferBytes, 0, buffer.array(), 0, 1024);
+                    final MutableBytes mutableBuffer = (MutableBytes) buffer;
+                    System.arraycopy(bufferBytes, 0, mutableBuffer.array(), 0,
+                            1024);
                     return 1024;
                 });
         DataBlock ret1 = reader.read();
@@ -81,12 +84,14 @@ public class DataBlockReaderImplTest {
                 .of(DataBlockHeader.MAGIC_NUMBER, 2131L);
         header.getBytes().copyTo(0, bufferBytes, 0, 16);
 
-        when(fileReader.read(any(MutableBytes.class)))
+        when(fileReader.read(any(MutableByteSequence.class)))
                 .thenAnswer(invocation -> {
-                    final MutableBytes buffer = invocation.getArgument(0,
-                            MutableBytes.class);
+                    final MutableByteSequence buffer = invocation.getArgument(0,
+                            MutableByteSequence.class);
                     assertEquals(1024, buffer.length());
-                    System.arraycopy(bufferBytes, 0, buffer.array(), 0, 1024);
+                    final MutableBytes mutableBuffer = (MutableBytes) buffer;
+                    System.arraycopy(bufferBytes, 0, mutableBuffer.array(), 0,
+                            1024);
                     return 1024;
                 });
 
@@ -97,13 +102,14 @@ public class DataBlockReaderImplTest {
 
     @Test
     void test_read_invalidBlockSize_was_readed() {
-        when(fileReader.read(any(MutableBytes.class)))
+        when(fileReader.read(any(MutableByteSequence.class)))
                 .thenAnswer(invocation -> {
-                    final MutableBytes buffer = invocation.getArgument(0,
-                            MutableBytes.class);
+                    final MutableByteSequence buffer = invocation.getArgument(0,
+                            MutableByteSequence.class);
                     assertEquals(1024, buffer.length());
+                    final MutableBytes mutableBuffer = (MutableBytes) buffer;
                     System.arraycopy(TestData.BYTE_ARRAY_1024, 0,
-                            buffer.array(), 0, 45);
+                            mutableBuffer.array(), 0, 45);
                     return 45;
                 });
         final Exception e = assertThrows(IndexException.class,
@@ -114,7 +120,7 @@ public class DataBlockReaderImplTest {
 
     @Test
     void test_propagateException() {
-        when(fileReader.read(any(MutableBytes.class)))
+        when(fileReader.read(any(MutableByteSequence.class)))
                 .thenThrow(new IndexException("Test Exception"));
 
         assertThrows(IndexException.class, () -> reader.read());
@@ -122,7 +128,8 @@ public class DataBlockReaderImplTest {
 
     @Test
     void test_read_end_of_file() {
-        when(fileReader.read(any(MutableBytes.class))).thenReturn(-1, -1);
+        when(fileReader.read(any(MutableByteSequence.class))).thenReturn(-1,
+                -1);
         assertNull(reader.read());
         assertNull(reader.read());
     }

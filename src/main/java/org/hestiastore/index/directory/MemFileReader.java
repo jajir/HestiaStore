@@ -2,7 +2,7 @@ package org.hestiastore.index.directory;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.MutableByteSequence;
 import org.hestiastore.index.Vldtn;
 
 public class MemFileReader extends AbstractCloseableResource
@@ -32,7 +32,7 @@ public class MemFileReader extends AbstractCloseableResource
     }
 
     @Override
-    public int read(final MutableBytes bytes) {
+    public int read(final MutableByteSequence bytes) {
         Vldtn.requireNonNull(bytes, "bytes");
         if (position < source.length()) {
             int newPosition = position + bytes.length();
