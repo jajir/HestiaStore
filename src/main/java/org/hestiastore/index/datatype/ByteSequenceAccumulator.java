@@ -11,7 +11,7 @@ import org.hestiastore.index.directory.FileWriter;
 
 /**
  * In-memory {@link FileWriter} that buffers written bytes inside a growable
- * list of {@link Bytes} segments. Callers can append single bytes or
+ * list of {@link ByteSequence} segments. Callers can append single bytes or
  * {@link ByteSequence} instances and later retrieve the aggregated payload as
  * either a raw {@code byte[]} or immutable {@link Bytes} snapshot. Close the
  * writer to release resources associated with the stored segments.
@@ -19,7 +19,7 @@ import org.hestiastore.index.directory.FileWriter;
 public class ByteSequenceAccumulator extends AbstractCloseableResource
         implements FileWriter {
 
-    private final List<Bytes> segments;
+    private final List<ByteSequence> segments;
     private int totalLength;
 
     ByteSequenceAccumulator() {
@@ -42,13 +42,11 @@ public class ByteSequenceAccumulator extends AbstractCloseableResource
     @Override
     public void write(final ByteSequence bytes) {
         final ByteSequence checked = Vldtn.requireNonNull(bytes, "bytes");
-        // FIXME don't make defensive copy
-        final Bytes segment = Bytes.copyOf(checked);
-        if (segment.isEmpty()) {
+        if (checked.isEmpty()) {
             return;
         }
-        segments.add(segment);
-        totalLength += segment.length();
+        segments.add(checked);
+        totalLength += checked.length();
     }
 
     /**
@@ -59,10 +57,13 @@ public class ByteSequenceAccumulator extends AbstractCloseableResource
     byte[] toByteArray() {
         final byte[] out = new byte[totalLength];
         int offset = 0;
-        for (Bytes segment : segments) {
-            final byte[] data = segment.toByteArray();
-            System.arraycopy(data, 0, out, offset, data.length);
-            offset += data.length;
+        for (ByteSequence segment : segments) {
+            final int length = segment.length();
+            if (length == 0) {
+                continue;
+            }
+            segment.copyTo(0, out, offset, length);
+            offset += length;
         }
         return out;
     }

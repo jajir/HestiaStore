@@ -109,4 +109,16 @@ class ByteSequenceAccumulatorTest {
         }
     }
 
+    @Test
+    void writeSequence_reusesBackingBuffer() {
+        final MutableBytes buffer = MutableBytes.wrap(new byte[] { 1, 2, 3 });
+        try (ByteSequenceAccumulator writer = new ByteSequenceAccumulator()) {
+            writer.write(buffer.toByteSequence());
+
+            buffer.setByte(1, (byte) 9);
+
+            assertArrayEquals(new byte[] { 1, 9, 3 }, writer.toByteArray());
+        }
+    }
+
 }
