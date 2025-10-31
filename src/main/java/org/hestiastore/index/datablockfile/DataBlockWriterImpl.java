@@ -1,7 +1,7 @@
 package org.hestiastore.index.datablockfile;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileWriter;
@@ -37,11 +37,12 @@ public class DataBlockWriterImpl extends AbstractCloseableResource
                     "Payload size '%d' does not match expected payload size '%d'",
                     actualPayloadSize, requiredPayloadSize));
         }
-        final Bytes blockData = makeBlockData(dataBlockPayload);
+        final ByteSequence blockData = makeBlockData(dataBlockPayload);
         fileWriter.write(blockData);
     }
 
-    private Bytes makeBlockData(final DataBlockPayload dataBlockPayload) {
+    private ByteSequence makeBlockData(
+            final DataBlockPayload dataBlockPayload) {
         final MutableBytes blockData = MutableBytes
                 .allocate(blockSize.getDataBlockSize());
         final DataBlockHeader header = DataBlockHeader.of(

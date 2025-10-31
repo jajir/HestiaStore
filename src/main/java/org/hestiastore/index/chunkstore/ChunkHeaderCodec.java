@@ -3,7 +3,6 @@ package org.hestiastore.index.chunkstore;
 import java.util.Optional;
 
 import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
@@ -67,7 +66,7 @@ final class ChunkHeaderCodec {
         }
     }
 
-    static Bytes encode(final ChunkHeader header) {
+    static ByteSequence encode(final ChunkHeader header) {
         final MutableBytes out = MutableBytes.allocate(ChunkHeader.HEADER_SIZE);
         writeLong(out, MAGIC_OFFSET, header.getMagicNumber());
         writeInt(out, VERSION_OFFSET, header.getVersion());
