@@ -68,14 +68,14 @@ final class ChunkHeaderCodec {
     }
 
     static ByteSequence encode(final ChunkHeader header) {
+        Vldtn.requireNonNull(header, "header");
         final MutableBytes out = MutableBytes.allocate(ChunkHeader.HEADER_SIZE);
         writeLong(out, MAGIC_OFFSET, header.getMagicNumber());
         writeInt(out, VERSION_OFFSET, header.getVersion());
         writeInt(out, PAYLOAD_LENGTH_OFFSET, header.getPayloadLength());
         writeLong(out, CRC_OFFSET, header.getCrc());
         writeLong(out, FLAGS_OFFSET, header.getFlags());
-        // FIXME remove toBytes()
-        return out.toBytes();
+        return out.slice(0, out.length());
     }
 
     private static long readLong(final ByteSequence data, final int offset) {
