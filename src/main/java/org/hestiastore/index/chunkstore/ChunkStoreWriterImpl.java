@@ -49,15 +49,18 @@ public class ChunkStoreWriterImpl extends AbstractCloseableResource
         final ChunkHeader header = ChunkHeader.of(chunkData.getMagicNumber(),
                 chunkData.getVersion(), payload.length(), chunkData.getCrc(),
                 chunkData.getFlags());
-        // FIXME remove following copyOf
-        final Bytes payloadBytes = payload instanceof Bytes ? (Bytes) payload
-                : Bytes.copyOf(payload);
+        if (!(payload instanceof Bytes)) {
+            throw new IllegalStateException(
+                    "Chunk payload must be instance of Bytes.");
+        }
+        final Bytes payloadBytes = (Bytes) payload;
         final ByteSequence headerSequence = header.getBytes();
-        // FIXME remove copyOf
-        final Bytes headerBytes = headerSequence instanceof Bytes
-                ? (Bytes) headerSequence
-                : Bytes.copyOf(headerSequence);
-        final Bytes bufferToWrite = Bytes.concat(headerBytes, payloadBytes)
+        if (!(headerSequence instanceof Bytes)) {
+            throw new IllegalStateException(
+                    "Chunk header encoding must produce Bytes.");
+        }
+        final Bytes headerBytes = (Bytes) headerSequence;
+        final Bytes bufferToWrite = headerBytes.concat(payloadBytes)
                 .paddedToNextCell();
         return cellStoreWriter.write(bufferToWrite);
     }
