@@ -42,7 +42,6 @@ public class BitArray {
             bytes.setByte(byteIndex, (byte) newValue);
             return true;
         }
-        // FIXME set one byte in Bytes
     }
 
     public boolean get(final int index) {
