@@ -1,53 +1,53 @@
 package org.hestiastore.index.datatype;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
-import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileWriter;
 
 /**
- * In-memory {@link FileWriter} that buffers written bytes inside a
- * {@link ByteArrayOutputStream}. Callers can append single bytes or complete
+ * In-memory {@link FileWriter} that buffers written bytes inside a growable
+ * list of {@link Bytes} segments. Callers can append single bytes or
  * {@link ByteSequence} instances and later retrieve the aggregated payload as
  * either a raw {@code byte[]} or immutable {@link Bytes} snapshot. Close the
- * writer to release resources associated with the underlying stream.
+ * writer to release resources associated with the stored segments.
  */
 public class ByteArrayWriter extends AbstractCloseableResource
         implements FileWriter {
 
-    private final ByteArrayOutputStream fio;
+    private final List<Bytes> segments;
+    private int totalLength;
 
     ByteArrayWriter() {
-        this.fio = new ByteArrayOutputStream();
+        this.segments = new ArrayList<>();
+        this.totalLength = 0;
     }
 
     @Override
     protected void doClose() {
-        try {
-            fio.close();
-        } catch (IOException e) {
-            throw new IndexException(e.getMessage(), e);
-        }
+        segments.clear();
+        totalLength = 0;
     }
 
     @Override
     public void write(byte b) {
-        fio.write(b);
+        segments.add(Bytes.of(new byte[] { b }));
+        totalLength += 1;
     }
 
     @Override
     public void write(final ByteSequence bytes) {
-        final byte[] data = Vldtn.requireNonNull(bytes, "bytes").toByteArray();
-        try {
-            fio.write(data);
-        } catch (IOException e) {
-            throw new IndexException(e.getMessage(), e);
+        final ByteSequence checked = Vldtn.requireNonNull(bytes, "bytes");
+        final Bytes segment = Bytes.copyOf(checked);
+        if (segment.isEmpty()) {
+            return;
         }
+        segments.add(segment);
+        totalLength += segment.length();
     }
 
     /**
@@ -56,7 +56,14 @@ public class ByteArrayWriter extends AbstractCloseableResource
      * @return accumulated data as a new {@code byte[]} instance
      */
     byte[] toByteArray() {
-        return fio.toByteArray();
+        final byte[] out = new byte[totalLength];
+        int offset = 0;
+        for (Bytes segment : segments) {
+            final byte[] data = segment.toByteArray();
+            System.arraycopy(data, 0, out, offset, data.length);
+            offset += data.length;
+        }
+        return out;
     }
 
     /**
@@ -65,7 +72,7 @@ public class ByteArrayWriter extends AbstractCloseableResource
      * @return immutable representation of the written bytes
      */
     Bytes toBytes() {
-        return Bytes.of(fio.toByteArray());
+        return Bytes.of(toByteArray());
     }
 
 }
