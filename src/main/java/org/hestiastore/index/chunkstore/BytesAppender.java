@@ -3,6 +3,7 @@ package org.hestiastore.index.chunkstore;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 
@@ -18,12 +19,14 @@ public class BytesAppender {
      *
      * @param data required data to append
      */
-    public void append(final Bytes data) {
-        final Bytes validated = Vldtn.requireNonNull(data, "bytes");
+    public void append(final ByteSequence data) {
+        final ByteSequence validated = Vldtn.requireNonNull(data, "bytes");
         if (validated.length() == 0) {
             return; // No need to append empty byte arrays
         }
-        bytes.add(validated);
+        final Bytes toAdd = validated instanceof Bytes ? (Bytes) validated
+                : Bytes.copyOf(validated);
+        bytes.add(toAdd);
     }
 
     /**
@@ -31,7 +34,7 @@ public class BytesAppender {
      *
      * @return
      */
-    public Bytes getBytes() {
+    public ByteSequence getBytes() {
         int length = 0;
         for (Bytes b : bytes) {
             length += b.length();

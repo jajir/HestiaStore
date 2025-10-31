@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.TestData;
 import org.hestiastore.index.datablockfile.DataBlockPayload;
@@ -69,7 +70,7 @@ public class CellStoreWriterCursorTest {
         verify(dataBlockWriter).write(argumentCaptor.capture());
         DataBlockPayload capturedValue = argumentCaptor.getValue();
 
-        assertEquals(BYTES_16, capturedValue.getBytes().subBytes(0, 16));
+        assertEquals(BYTES_16, asBytes(capturedValue.getBytes().slice(0, 16)));
 
         // verify that data block write wasn't called more than once
         verify(dataBlockWriter, times(1)).write(any(DataBlockPayload.class));
@@ -89,8 +90,8 @@ public class CellStoreWriterCursorTest {
         verify(dataBlockWriter, times(1)).write(argumentCaptor.capture());
         DataBlockPayload capturedValue = argumentCaptor.getValue();
 
-        assertEquals(BYTES_16, capturedValue.getBytes().subBytes(0, 16));
-        assertEquals(BYTES_48, capturedValue.getBytes().subBytes(16, 64));
+        assertEquals(BYTES_16, asBytes(capturedValue.getBytes().slice(0, 16)));
+        assertEquals(BYTES_48, asBytes(capturedValue.getBytes().slice(16, 64)));
 
         // verify that data block write wasn't called more than once
         verify(dataBlockWriter, times(1)).write(any(DataBlockPayload.class));
@@ -145,6 +146,11 @@ public class CellStoreWriterCursorTest {
     @Test
     void test_write_null_bytes() {
         assertThrows(IllegalArgumentException.class, () -> cursor.write(null));
+    }
+
+    private static Bytes asBytes(final ByteSequence sequence) {
+        return sequence instanceof Bytes ? (Bytes) sequence
+                : Bytes.copyOf(sequence);
     }
 
     @BeforeEach

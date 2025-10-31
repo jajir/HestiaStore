@@ -1,7 +1,8 @@
 package org.hestiastore.index.datablockfile;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.ByteSequence;
+import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.Vldtn;
 
 /**
@@ -49,28 +50,34 @@ public class DataBlockByteReaderImpl extends AbstractCloseableResource
     }
 
     @Override
-    public Bytes readExactly(final int length) {
+    public ByteSequence readExactly(final int length) {
         Vldtn.requireGreaterThanZero(length, "length");
-        int bytesToread = Vldtn.requireCellSize(length, "length");
+        int bytesToRead = Vldtn.requireCellSize(length, "length");
         optionalyMoveToNextDataBlock();
-        Bytes chunkPayloadBytes = Bytes.EMPTY;
-        while (bytesToread > 0) {
-            if (currentDataBlock == null) {
-                return null;
-            }
+        if (currentDataBlock == null) {
+            return null;
+        }
+        final int totalBytesToRead = bytesToRead;
+        final MutableBytes result = MutableBytes.allocate(totalBytesToRead);
+        int offset = 0;
+        while (bytesToRead > 0) {
             final int remainingBytesToReadInChunk = dataBlockPayloadSize
                     - currentBlockPosition;
             final int bytesToReadFromCurrentBlock = Math
-                    .min(remainingBytesToReadInChunk, bytesToread);
-            chunkPayloadBytes = chunkPayloadBytes
-                    .concat(currentDataBlock.getPayload().getBytes()
-                            .subBytes(currentBlockPosition, currentBlockPosition
-                                    + bytesToReadFromCurrentBlock));
+                    .min(remainingBytesToReadInChunk, bytesToRead);
+            final ByteSequence payload = currentDataBlock.getPayload()
+                    .getBytes();
+            result.setBytes(offset, payload, currentBlockPosition,
+                    bytesToReadFromCurrentBlock);
+            offset += bytesToReadFromCurrentBlock;
             currentBlockPosition += bytesToReadFromCurrentBlock;
-            bytesToread -= bytesToReadFromCurrentBlock;
+            bytesToRead -= bytesToReadFromCurrentBlock;
             optionalyMoveToNextDataBlock();
+            if (bytesToRead > 0 && currentDataBlock == null) {
+                return null;
+            }
         }
-        return chunkPayloadBytes;
+        return result.toBytes();
     }
 
     private void optionalyMoveToNextDataBlock() {

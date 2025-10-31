@@ -3,6 +3,7 @@ package org.hestiastore.index.chunkpairfile;
 import java.util.Optional;
 
 import org.hestiastore.index.AbstractCloseableResource;
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
@@ -14,8 +15,8 @@ import org.hestiastore.index.sorteddatafile.SortedDataFile;
 /**
  * It allows to iterate over all pairs stored in one chunk.
  */
-public class SingleChunkPairIterator<K, V>
-        extends AbstractCloseableResource implements PairIteratorWithCurrent<K, V> {
+public class SingleChunkPairIterator<K, V> extends AbstractCloseableResource
+        implements PairIteratorWithCurrent<K, V> {
 
     private static final String CHUNK_FILE_NAME = "chunk";
 
@@ -36,7 +37,8 @@ public class SingleChunkPairIterator<K, V>
         Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
         Vldtn.requireNonNull(valueTypeDescriptor, "valueTypeDescriptor");
         Vldtn.requireNonNull(chunk, CHUNK_FILE_NAME);
-        directory.setFileBytes(CHUNK_FILE_NAME, chunk.getPayload().getBytes());
+        final ByteSequence payloadBytes = chunk.getPayload().getBytes();
+        directory.setFileBytes(CHUNK_FILE_NAME, payloadBytes);
         final SortedDataFile<K, V> sortedDataFile = SortedDataFile
                 .<K, V>builder() //
                 .withDirectory(directory) //

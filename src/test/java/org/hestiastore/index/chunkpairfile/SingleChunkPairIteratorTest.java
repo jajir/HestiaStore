@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.List;
 
 import org.hestiastore.index.AbstractDataTest;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.TestData;
 import org.hestiastore.index.chunkstore.Chunk;
@@ -46,7 +46,7 @@ public class SingleChunkPairIteratorTest {
             pairList.forEach(writer::write);
         });
 
-        final Bytes fileBytes = directory.getFileBytes(FILE_NAME);
+        final ByteSequence fileBytes = directory.getFileBytes(FILE_NAME);
         return Chunk.of(ChunkHeader.of(ChunkHeader.MAGIC_NUMBER, 1,
                 fileBytes.length(), 321L), fileBytes);
     }

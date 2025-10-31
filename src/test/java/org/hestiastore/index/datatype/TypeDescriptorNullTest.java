@@ -5,7 +5,7 @@ import static org.hestiastore.index.datatype.NullValue.TOMBSTONE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.ByteSequence;
 import org.junit.jupiter.api.Test;
 
 class TypeDescriptorNullTest {
@@ -24,7 +24,8 @@ class TypeDescriptorNullTest {
     @Test
     void test_readWrite_tombstone() {
         testReadWrite(TDN, NULL);
-        final Bytes bytes = TDN.getConvertorToBytes().toBytesBuffer(TOMBSTONE);
+        final ByteSequence bytes = TDN.getConvertorToBytes()
+                .toBytesBuffer(TOMBSTONE);
 
         final NullValue readValue = TDN.getConvertorFromBytes()
                 .fromBytes(bytes);
@@ -36,7 +37,7 @@ class TypeDescriptorNullTest {
     private void testReadWrite(final TypeDescriptor<NullValue> typeDescriptor,
             final NullValue value) {
 
-        final Bytes bytes = typeDescriptor.getConvertorToBytes()
+        final ByteSequence bytes = typeDescriptor.getConvertorToBytes()
                 .toBytesBuffer(value);
 
         final NullValue readValue = typeDescriptor.getConvertorFromBytes()

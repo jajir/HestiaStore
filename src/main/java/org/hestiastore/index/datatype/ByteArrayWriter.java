@@ -4,11 +4,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.hestiastore.index.AbstractCloseableResource;
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileWriter;
 
+//TODO add javadoc 
+//TODO reimplement with List of Bytes, don't use ByteArrayOutputStream
 public class ByteArrayWriter extends AbstractCloseableResource
         implements FileWriter {
 
@@ -33,7 +36,7 @@ public class ByteArrayWriter extends AbstractCloseableResource
     }
 
     @Override
-    public void write(final Bytes bytes) {
+    public void write(final ByteSequence bytes) {
         final byte[] data = Vldtn.requireNonNull(bytes, "bytes").toByteArray();
         try {
             fio.write(data);

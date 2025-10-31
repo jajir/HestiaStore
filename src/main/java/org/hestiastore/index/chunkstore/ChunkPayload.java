@@ -1,6 +1,7 @@
 package org.hestiastore.index.chunkstore;
 
 import org.apache.commons.codec.digest.PureJavaCrc32;
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 
@@ -19,8 +20,9 @@ public class ChunkPayload {
      * @param bytes required byte data for the chunk payload
      * @throws IllegalArgumentException if bytes is null
      */
-    public static ChunkPayload of(final Bytes bytes) {
-        return new ChunkPayload(bytes);
+    public static ChunkPayload of(final ByteSequence bytes) {
+        Vldtn.requireNonNull(bytes, "bytes");
+        return new ChunkPayload(Bytes.copyOf(bytes));
     }
 
     private ChunkPayload(final Bytes bytes) {
@@ -33,7 +35,7 @@ public class ChunkPayload {
      * 
      * @return the raw bytes of the chunk payload
      */
-    public Bytes getBytes() {
+    public ByteSequence getBytes() {
         return bytes;
     }
 

@@ -1,7 +1,8 @@
 package org.hestiastore.index.chunkstore;
 
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.AbstractCloseableResource;
+import org.hestiastore.index.ByteSequence;
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datablockfile.DataBlockPayload;
 import org.hestiastore.index.datablockfile.DataBlockSize;
@@ -40,7 +41,7 @@ public final class CellStoreWriterCursor extends AbstractCloseableResource {
      * @param bytes required bytes representings set of cells
      * @return position where will be written next cells
      */
-    public CellPosition write(final Bytes bytes) {
+    public CellPosition write(final ByteSequence bytes) {
         Vldtn.requireNonNull(bytes, "bytes");
         Vldtn.requireCellSize(bytes.length(), "bytes");
 
@@ -97,12 +98,19 @@ public final class CellStoreWriterCursor extends AbstractCloseableResource {
         return currentCellPosition;
     }
 
-    private void appendToCurrentDataBlock(final Bytes bytes) {
+    private void appendToCurrentDataBlock(final ByteSequence bytes) {
         if (currentDataBlock == null) {
-            currentDataBlock = bytes;
+            currentDataBlock = toBytes(bytes);
         } else {
-            currentDataBlock = Bytes.concat(currentDataBlock, bytes);
+            currentDataBlock = Bytes.concat(currentDataBlock, toBytes(bytes));
         }
+    }
+
+    private static Bytes toBytes(final ByteSequence bytes) {
+        if (bytes instanceof Bytes) {
+            return (Bytes) bytes;
+        }
+        return Bytes.copyOf(bytes);
     }
 
 }

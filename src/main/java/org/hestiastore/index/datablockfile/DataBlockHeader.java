@@ -1,6 +1,6 @@
 package org.hestiastore.index.datablockfile;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
@@ -42,7 +42,7 @@ public class DataBlockHeader {
      * @param bytes Bytes representing the DataBlockHeader.
      * @return DataBlockHeader
      */
-    public static DataBlockHeader of(final Bytes bytes) {
+    public static DataBlockHeader of(final ByteSequence bytes) {
         Vldtn.requireNonNull(bytes, "bytes");
         return new DataBlockHeader(extractMagicNumber(bytes),
                 extractCrc(bytes));
@@ -82,22 +82,22 @@ public class DataBlockHeader {
         return crc;
     }
 
-    private static long extractMagicNumber(final Bytes bytes) {
-        final Bytes buff = bytes.subBytes(0, 8);
+    private static long extractMagicNumber(final ByteSequence bytes) {
+        final ByteSequence buff = bytes.slice(0, 8);
         return CONVERTOR_FROM_BYTES.fromBytes(buff);
     }
 
-    private static long extractCrc(final Bytes bytes) {
-        final Bytes buff = bytes.subBytes(8, 16);
+    private static long extractCrc(final ByteSequence bytes) {
+        final ByteSequence buff = bytes.slice(8, 16);
         return CONVERTOR_FROM_BYTES.fromBytes(buff);
     }
 
     /**
-     * Convert DataBlockHeader to bytes.
+     * Returns the byte sequence representing this data block header.
      *
-     * @return Bytes representing the DataBlockHeader.
+     * @return byte sequence representing the DataBlockHeader
      */
-    public Bytes toBytes() {
+    public ByteSequence getBytes() {
         final MutableBytes out = MutableBytes.allocate(HEADER_SIZE);
         out.setBytes(0, CONVERTOR_TO_BYTES.toBytesBuffer(magicNumber));
         out.setBytes(8, CONVERTOR_TO_BYTES.toBytesBuffer(crc));

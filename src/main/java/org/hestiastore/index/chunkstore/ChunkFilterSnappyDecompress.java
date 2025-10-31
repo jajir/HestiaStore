@@ -2,6 +2,7 @@ package org.hestiastore.index.chunkstore;
 
 import java.io.IOException;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
 import org.xerial.snappy.Snappy;
@@ -28,7 +29,7 @@ public class ChunkFilterSnappyDecompress implements ChunkFilter {
         }
     }
 
-    byte[] decompressPayload(final Bytes payload) throws IOException {
+    byte[] decompressPayload(final ByteSequence payload) throws IOException {
         return Snappy.uncompress(payload.toByteArray());
     }
 }

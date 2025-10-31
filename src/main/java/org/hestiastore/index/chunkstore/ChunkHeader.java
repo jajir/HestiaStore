@@ -3,6 +3,7 @@ package org.hestiastore.index.chunkstore;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 
@@ -102,7 +103,7 @@ public final class ChunkHeader {
      * @param bytes required bytes, must be exactly 32 bytes long
      * @return the chunk header
      */
-    public static ChunkHeader of(final Bytes bytes) {
+    public static ChunkHeader of(final ByteSequence bytes) {
         Vldtn.requireNonNull(bytes, "bytes");
         return ChunkHeaderCodec.decode(bytes);
     }
@@ -114,7 +115,7 @@ public final class ChunkHeader {
      * @return optional chunk header, empty if the given bytes are null, or not
      *         exactly 32 bytes long, or the magic number is invalid
      */
-    public static Optional<ChunkHeader> optionalOf(final Bytes bytes) {
+    public static Optional<ChunkHeader> optionalOf(final ByteSequence bytes) {
         if (bytes == null) {
             return Optional.empty();
         }
@@ -174,11 +175,11 @@ public final class ChunkHeader {
     }
 
     /**
-     * Returns the byte array representing the chunk header.
+     * Returns the byte sequence representing the chunk header.
      * 
-     * @return the byte array representing the chunk header
+     * @return the byte sequence representing the chunk header
      */
-    public Bytes getBytes() {
+    public ByteSequence getBytes() {
         return ChunkHeaderCodec.encode(this);
     }
 

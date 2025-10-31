@@ -1,6 +1,6 @@
 package org.hestiastore.index.datatype;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileWriter;
 
@@ -14,7 +14,7 @@ public class VarShortLengthWriter<T> implements TypeWriter<T> {
 
     @Override
     public int write(final FileWriter writer, final T object) {
-        final Bytes out = convertor.toBytesBuffer(object);
+        final ByteSequence out = convertor.toBytesBuffer(object);
         if (out.length() > 127) {
             throw new IllegalArgumentException("Converted type is too big");
         }

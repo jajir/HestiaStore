@@ -6,6 +6,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.TestData;
 import org.junit.jupiter.api.AfterEach;
@@ -39,7 +40,7 @@ public class CellStoreWriterImplTest {
         verify(cursor).write(BYTES_64);
 
         // verify that cursor write wasn't called more than once
-        verify(cursor, times(1)).write(any(Bytes.class));
+        verify(cursor, times(1)).write(any(ByteSequence.class));
     }
 
     @Test
@@ -50,7 +51,7 @@ public class CellStoreWriterImplTest {
         writer.close();
 
         verify(cursor).write(BYTES_16);
-        verify(cursor, times(1)).write(any(Bytes.class));
+        verify(cursor, times(1)).write(any(ByteSequence.class));
     }
 
     @BeforeEach

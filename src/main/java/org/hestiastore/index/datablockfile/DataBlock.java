@@ -1,5 +1,6 @@
 package org.hestiastore.index.datablockfile;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 
@@ -13,9 +14,9 @@ public final class DataBlock {
 
     private final DataBlockPosition position;
 
-    public static DataBlock of(final Bytes bytes,
+    public static DataBlock of(final ByteSequence bytes,
             final DataBlockPosition position) {
-        return new DataBlock(bytes, position);
+        return new DataBlock(Bytes.copyOf(bytes), position);
     }
 
     DataBlock(final Bytes bytes, final DataBlockPosition position) {
@@ -57,7 +58,7 @@ public final class DataBlock {
      * 
      * @return the raw bytes of this data block
      */
-    public Bytes getBytes() {
+    public ByteSequence getBytes() {
         return bytes;
     }
 

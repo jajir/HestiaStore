@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Comparator;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ class TypeDescriptorLongTest {
     }
 
     private void assertEqualsBytes(Long number) {
-        final Bytes bytes = toBytes.toBytesBuffer(number);
+        final ByteSequence bytes = toBytes.toBytesBuffer(number);
         final Long ret = fromBytes.fromBytes(bytes);
         assertEquals(number, ret, String
                 .format("Expected '%s' byt returned was '%s'", number, ret));

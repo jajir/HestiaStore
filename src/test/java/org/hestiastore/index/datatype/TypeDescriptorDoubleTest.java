@@ -2,7 +2,7 @@ package org.hestiastore.index.datatype;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.ByteSequence;
 import org.junit.jupiter.api.Test;
 
 class TypeDescriptorDoubleTest {
@@ -24,7 +24,7 @@ class TypeDescriptorDoubleTest {
     private void testReadWrite(final TypeDescriptor<Double> typeDescriptor,
             final Double value) {
 
-        final Bytes bytes = typeDescriptor.getConvertorToBytes()
+        final ByteSequence bytes = typeDescriptor.getConvertorToBytes()
                 .toBytesBuffer(value);
 
         final Double readValue = typeDescriptor.getConvertorFromBytes()

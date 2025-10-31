@@ -2,6 +2,7 @@ package org.hestiastore.index.sorteddatafile;
 
 import java.util.Comparator;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.ByteTool;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.MutableBytes;
@@ -18,7 +19,7 @@ public class DiffKeyWriter<K> {
 
     private final Comparator<K> keyComparator;
 
-    private Bytes previousKeyBytes;
+    private ByteSequence previousKeyBytes;
 
     private K previousKey;
 
@@ -36,9 +37,12 @@ public class DiffKeyWriter<K> {
                 this.keyComparator.getClass().getSimpleName());
     }
 
-    public Bytes write(final K key) {
+    public ByteSequence write(final K key) {
         Vldtn.requireNonNull(key, "key");
-        final Bytes keyBytes = convertorToBytes.toBytesBuffer(key);
+        final ByteSequence keySequence = convertorToBytes.toBytesBuffer(key);
+        final Bytes keyBytes = keySequence instanceof Bytes
+                ? (Bytes) keySequence
+                : Bytes.copyOf(keySequence);
         if (previousKey != null) {
             final int cmp = keyComparator.compare(previousKey, key);
             if (cmp == 0) {
@@ -62,7 +66,7 @@ public class DiffKeyWriter<K> {
         }
         final int sharedByteLength = ByteTool
                 .countMatchingPrefixBytes(previousKeyBytes, keyBytes);
-        final Bytes diffBytes = ByteTool
+        final ByteSequence diffBytes = ByteTool
                 .getRemainingBytesAfterIndex(sharedByteLength, keyBytes);
 
         final MutableBytes out = MutableBytes.allocate(2 + diffBytes.length());

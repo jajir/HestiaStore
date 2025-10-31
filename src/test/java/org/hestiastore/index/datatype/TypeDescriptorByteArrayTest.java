@@ -2,6 +2,7 @@ package org.hestiastore.index.datatype;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.junit.jupiter.api.Test;
 
@@ -19,7 +20,7 @@ class TypeDescriptorByteArrayTest {
     private void testReadWrite(final TypeDescriptor<Bytes> typeDescriptor,
             final Bytes value) {
 
-        final Bytes bytes = typeDescriptor.getConvertorToBytes()
+        final ByteSequence bytes = typeDescriptor.getConvertorToBytes()
                 .toBytesBuffer(value);
 
         final Bytes readValue = typeDescriptor.getConvertorFromBytes()

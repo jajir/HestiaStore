@@ -2,6 +2,7 @@ package org.hestiastore.index.chunkstore;
 
 import java.util.Optional;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datablockfile.DataBlockByteReader;
@@ -24,8 +25,10 @@ public class ChunkData {
     }
 
     public static ChunkData of(final long flags, final long crc,
-            final long magicNumber, final int version, final Bytes payload) {
-        return new ChunkData(flags, crc, magicNumber, version, payload);
+            final long magicNumber, final int version,
+            final ByteSequence payload) {
+        return new ChunkData(flags, crc, magicNumber, version,
+                toBytes(payload));
     }
 
     public ChunkData withFlags(final long newFlags) {
@@ -44,9 +47,9 @@ public class ChunkData {
         return new ChunkData(flags, crc, magicNumber, newVersion, payload);
     }
 
-    public ChunkData withPayload(final Bytes newPayload) {
+    public ChunkData withPayload(final ByteSequence newPayload) {
         return new ChunkData(flags, crc, magicNumber, version,
-                Vldtn.requireNonNull(newPayload, "payload"));
+                toBytes(newPayload));
     }
 
     public long getCrc() {
@@ -65,15 +68,19 @@ public class ChunkData {
         return version;
     }
 
-    public Bytes getPayload() {
+    public ByteSequence getPayload() {
         return payload;
     }
 
     static Optional<ChunkData> read(final DataBlockByteReader reader) {
-        final Bytes headerBytes = reader.readExactly(ChunkHeader.HEADER_SIZE);
-        if (headerBytes == null) {
+        final ByteSequence headerSequence = reader
+                .readExactly(ChunkHeader.HEADER_SIZE);
+        if (headerSequence == null) {
             return Optional.empty();
         }
+        final Bytes headerBytes = headerSequence instanceof Bytes
+                ? (Bytes) headerSequence
+                : Bytes.copyOf(headerSequence);
         final Optional<ChunkHeader> optionalChunkHeader = ChunkHeader
                 .optionalOf(headerBytes);
         if (optionalChunkHeader.isEmpty()) {
@@ -82,13 +89,13 @@ public class ChunkData {
         final ChunkHeader chunkHeader = optionalChunkHeader.get();
         final int payloadLength = chunkHeader.getPayloadLength();
         final int cellLength = convertLengthToWholeCells(payloadLength);
-        Bytes payload = reader.readExactly(cellLength);
+        ByteSequence payload = reader.readExactly(cellLength);
         if (payload == null) {
             throw new IllegalStateException(
                     "Unexpected end of stream while reading chunk payload.");
         }
         if (cellLength != payloadLength) {
-            payload = payload.subBytes(0, payloadLength);
+            payload = payload.slice(0, payloadLength);
         }
         return Optional.of(ChunkData.of(chunkHeader.getFlags(),
                 chunkHeader.getCrc(), chunkHeader.getMagicNumber(),
@@ -103,4 +110,11 @@ public class ChunkData {
         return out * CellPosition.CELL_SIZE;
     }
 
+    private static Bytes toBytes(final ByteSequence sequence) {
+        Vldtn.requireNonNull(sequence, "payload");
+        if (sequence instanceof Bytes) {
+            return (Bytes) sequence;
+        }
+        return Bytes.copyOf(sequence);
+    }
 }

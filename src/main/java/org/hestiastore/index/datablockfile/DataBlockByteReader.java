@@ -1,6 +1,6 @@
 package org.hestiastore.index.datablockfile;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.CloseableResource;
 
 /**
@@ -15,6 +15,6 @@ public interface DataBlockByteReader extends CloseableResource {
      * @param length the number of bytes to read
      * @return the bytes read
      */
-    Bytes readExactly(int length);
+    ByteSequence readExactly(int length);
 
 }

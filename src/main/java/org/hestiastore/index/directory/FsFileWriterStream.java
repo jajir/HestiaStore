@@ -9,7 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory.Access;
@@ -66,7 +66,7 @@ public final class FsFileWriterStream extends AbstractCloseableResource
     }
 
     @Override
-    public void write(final Bytes bytes) {
+    public void write(final ByteSequence bytes) {
         final byte[] data = Vldtn.requireNonNull(bytes, "bytes").toByteArray();
         try {
             fio.write(data);

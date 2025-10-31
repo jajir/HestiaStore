@@ -1,5 +1,6 @@
 package org.hestiastore.index.chunkstore;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 
@@ -34,8 +35,8 @@ public final class Chunk {
      * @param bytes the raw bytes of the chunk
      * @return new chunk instance
      */
-    public static Chunk of(final Bytes bytes) {
-        return new Chunk(bytes);
+    public static Chunk of(final ByteSequence bytes) {
+        return new Chunk(toBytes(bytes));
     }
 
     /**
@@ -46,10 +47,13 @@ public final class Chunk {
      * @return new chunk instance
      * @throws IllegalArgumentException if the chunk is invalid
      */
-    public static Chunk of(final ChunkHeader header, final Bytes payload) {
+    public static Chunk of(final ChunkHeader header,
+            final ByteSequence payload) {
         Vldtn.requireNonNull(header, "header");
         Vldtn.requireNonNull(payload, "payload");
-        final Bytes bytes = Bytes.concat(header.getBytes(), payload);
+        final Bytes headerBytes = toBytes(header.getBytes());
+        final Bytes payloadBytes = toBytes(payload);
+        final Bytes bytes = Bytes.concat(headerBytes, payloadBytes);
         return new Chunk(bytes);
     }
 
@@ -71,7 +75,7 @@ public final class Chunk {
      * 
      * @return the raw bytes of the chunk
      */
-    public Bytes getBytes() {
+    public ByteSequence getBytes() {
         return bytes;
     }
 
@@ -101,5 +105,12 @@ public final class Chunk {
      */
     public long calculateCrc() {
         return getPayload().calculateCrc();
+    }
+
+    private static Bytes toBytes(final ByteSequence sequence) {
+        if (sequence instanceof Bytes) {
+            return (Bytes) sequence;
+        }
+        return Bytes.copyOf(sequence);
     }
 }

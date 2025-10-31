@@ -4,8 +4,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.Vldtn;
 
 public class MemDirectory implements Directory {
 
@@ -22,7 +24,7 @@ public class MemDirectory implements Directory {
         return new MemFileReader(bytes);
     }
 
-    public Bytes getFileBytes(final String fileName) {
+    public ByteSequence getFileBytes(final String fileName) {
         final Bytes bytes = data.get(fileName);
         if (bytes == null) {
             throw new IndexException(
@@ -31,8 +33,9 @@ public class MemDirectory implements Directory {
         return bytes;
     }
 
-    public void setFileBytes(final String fileName, final Bytes bytes) {
-        data.put(fileName, bytes);
+    public void setFileBytes(final String fileName,
+            final ByteSequence bytes) {
+        data.put(fileName, toBytes(bytes));
     }
 
     @Override
@@ -71,17 +74,18 @@ public class MemDirectory implements Directory {
         }
     }
 
-    void addFile(final String fileName, final Bytes bytes,
+    void addFile(final String fileName, final ByteSequence bytes,
             final Access access) {
         if (Access.OVERWRITE == access) {
-            data.put(fileName, bytes);
+            data.put(fileName, toBytes(bytes));
         } else {
             final Bytes existing = data.get(fileName);
             if (existing == null) {
                 throw new IndexException(
                         String.format("No such file '%s'", fileName));
             }
-            data.put(fileName, existing.concat(bytes));
+            final Bytes appendBytes = toBytes(bytes);
+            data.put(fileName, existing.concat(appendBytes));
         }
     }
 
@@ -118,6 +122,15 @@ public class MemDirectory implements Directory {
                     String.format("No such file '%s'.", fileName));
         }
         return new MemFileReaderSeekable(fileData);
+    }
+
+    private static Bytes toBytes(final ByteSequence sequence) {
+        final ByteSequence validated = Vldtn.requireNonNull(sequence,
+                "bytes");
+        if (validated instanceof Bytes) {
+            return (Bytes) validated;
+        }
+        return Bytes.copyOf(validated);
     }
 
 }

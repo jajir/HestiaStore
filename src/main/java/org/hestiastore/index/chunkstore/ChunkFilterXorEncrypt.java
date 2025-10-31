@@ -1,5 +1,6 @@
 package org.hestiastore.index.chunkstore;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 
 /**
@@ -12,12 +13,12 @@ public class ChunkFilterXorEncrypt implements ChunkFilter {
 
     @Override
     public ChunkData apply(final ChunkData input) {
-        final Bytes transformed = xorPayload(input.getPayload());
+        final ByteSequence transformed = xorPayload(input.getPayload());
         return input.withPayload(transformed)
                 .withFlags(input.getFlags() | FLAG_ENCRYPTED);
     }
 
-    static Bytes xorPayload(final Bytes payload) {
+    static ByteSequence xorPayload(final ByteSequence payload) {
         final int length = payload.length();
         final byte[] target = new byte[length];
         for (int i = 0; i < length; i++) {

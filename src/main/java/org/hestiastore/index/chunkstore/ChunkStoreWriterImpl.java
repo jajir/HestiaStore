@@ -3,6 +3,7 @@ package org.hestiastore.index.chunkstore;
 import java.util.List;
 
 import org.hestiastore.index.AbstractCloseableResource;
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 
@@ -43,11 +44,17 @@ public class ChunkStoreWriterImpl extends AbstractCloseableResource
         ChunkData chunkData = ChunkData.of(DEFAULT_LONG, DEFAULT_LONG,
                 DEFAULT_LONG, version, chunkPayload.getBytes());
         chunkData = encodingProcessor.process(chunkData);
+        final ByteSequence payload = chunkData.getPayload();
         final ChunkHeader header = ChunkHeader.of(chunkData.getMagicNumber(),
-                chunkData.getVersion(), chunkData.getPayload().length(),
+                chunkData.getVersion(), payload.length(),
                 chunkData.getCrc(), chunkData.getFlags());
-        final Bytes bufferToWrite = Bytes
-                .concat(header.getBytes(), chunkData.getPayload())
+        final Bytes payloadBytes = payload instanceof Bytes ? (Bytes) payload
+                : Bytes.copyOf(payload);
+        final ByteSequence headerSequence = header.getBytes();
+        final Bytes headerBytes = headerSequence instanceof Bytes
+                ? (Bytes) headerSequence
+                : Bytes.copyOf(headerSequence);
+        final Bytes bufferToWrite = Bytes.concat(headerBytes, payloadBytes)
                 .paddedToNextCell();
         return cellStoreWriter.write(bufferToWrite);
     }

@@ -1,6 +1,7 @@
 package org.hestiastore.index.chunkstore;
 
 import org.hestiastore.index.AbstractCloseableResource;
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 
@@ -22,11 +23,13 @@ public class CellStoreWriterImpl extends AbstractCloseableResource
     }
 
     @Override
-    public CellPosition write(final Bytes bytes) {
+    public CellPosition write(final ByteSequence bytes) {
         Vldtn.requireNonNull(bytes, "bytes");
         Vldtn.requireCellSize(bytes.length(), "bytes");
         final CellPosition returnPosition = cursor.getNextCellPosition();
-        Bytes bufferToWrite = bytes.paddedToNextCell();
+        final Bytes bufferBytes = bytes instanceof Bytes ? (Bytes) bytes
+                : Bytes.copyOf(bytes);
+        Bytes bufferToWrite = bufferBytes.paddedToNextCell();
         while (bufferToWrite != null && bufferToWrite.length() > 0) {
             int availableBytes = cursor.getAvailableBytes();
             int trimTo = Math.min(availableBytes, bufferToWrite.length());

@@ -2,7 +2,7 @@ package org.hestiastore.index.bloomfilter;
 
 import java.util.Arrays;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.Vldtn;
 
@@ -14,7 +14,7 @@ public class BitArray {
         this.bytes = MutableBytes.allocate(length);
     }
 
-    public BitArray(final Bytes data) {
+    public BitArray(final ByteSequence data) {
         this.bytes = MutableBytes.copyOf(Vldtn.requireNonNull(data, "data"));
     }
 
@@ -62,7 +62,7 @@ public class BitArray {
         return bytes.length() * 8;
     }
 
-    public Bytes getBytes() {
+    public ByteSequence getBytes() {
         return bytes.toBytes();
     }
 

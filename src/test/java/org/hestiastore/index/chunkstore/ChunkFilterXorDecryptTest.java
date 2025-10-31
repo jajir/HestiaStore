@@ -3,6 +3,7 @@ package org.hestiastore.index.chunkstore;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.junit.jupiter.api.Test;
 
@@ -13,7 +14,7 @@ class ChunkFilterXorDecryptTest {
 
     @Test
     void apply_should_decrypt_payload_and_clear_flag() {
-        final Bytes encryptedPayload = ChunkFilterXorEncrypt
+        final ByteSequence encryptedPayload = ChunkFilterXorEncrypt
                 .xorPayload(PAYLOAD);
         final long flags = ChunkFilterXorEncrypt.FLAG_ENCRYPTED | 8L;
         final ChunkData input = ChunkData.of(flags, 0L,

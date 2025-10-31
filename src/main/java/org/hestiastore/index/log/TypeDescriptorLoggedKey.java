@@ -3,7 +3,6 @@ package org.hestiastore.index.log;
 import java.util.Comparator;
 
 import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
@@ -28,9 +27,9 @@ public class TypeDescriptorLoggedKey<K>
     public ConvertorToBytes<LoggedKey<K>> getConvertorToBytes() {
         return loggedKey -> {
             Vldtn.requireNonNull(loggedKey, "loggedKey");
-            final Bytes operationBytes = TDLO.getConvertorToBytes()
+            final ByteSequence operationBytes = TDLO.getConvertorToBytes()
                     .toBytesBuffer(loggedKey.getLogOperation());
-            final Bytes keyBytes = tdKey.getConvertorToBytes()
+            final ByteSequence keyBytes = tdKey.getConvertorToBytes()
                     .toBytesBuffer(loggedKey.getKey());
             if (operationBytes.length() != 1) {
                 throw new IllegalStateException(

@@ -46,7 +46,7 @@ public class DataBlockWriterImpl extends AbstractCloseableResource
                 .allocate(blockSize.getDataBlockSize());
         final DataBlockHeader header = DataBlockHeader.of(
                 DataBlockHeader.MAGIC_NUMBER, dataBlockPayload.calculateCrc());
-        blockData.setBytes(0, header.toBytes());
+        blockData.setBytes(0, header.getBytes());
         // Copy the payload data after the header
         blockData.setBytes(DataBlockHeader.HEADER_SIZE,
                 dataBlockPayload.getBytes());

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
 import org.junit.jupiter.api.Test;
@@ -44,7 +45,8 @@ class ChunkFilterSnappyCompressTest {
         final IOException ioException = new IOException("compress-failed");
         final ChunkFilterSnappyCompress filter = new ChunkFilterSnappyCompress() {
             @Override
-            byte[] compressPayload(final Bytes payload) throws IOException {
+            byte[] compressPayload(final ByteSequence payload)
+                    throws IOException {
                 throw ioException;
             }
         };

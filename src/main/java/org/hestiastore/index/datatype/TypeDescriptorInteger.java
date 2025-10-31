@@ -3,7 +3,6 @@ package org.hestiastore.index.datatype;
 import java.util.Comparator;
 
 import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.MutableBytes;
 
 public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
@@ -67,13 +66,13 @@ public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
     @Override
     public TypeWriter<Integer> getTypeWriter() {
         return (writer, object) -> {
-            final Bytes encoded = getBytesBuffer(object);
+            final ByteSequence encoded = getBytesBuffer(object);
             writer.write(encoded);
             return encoded.length();
         };
     }
 
-    private Bytes getBytesBuffer(final Integer value) {
+    private ByteSequence getBytesBuffer(final Integer value) {
         int pos = 0;
         int v = value.intValue();
         final MutableBytes out = MutableBytes.allocate(REQUIRED_BYTES);

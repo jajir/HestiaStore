@@ -55,8 +55,8 @@ class ByteToolTest {
     private void testFunction(final int sharedLength, final String str,
             final String expectedResult) {
         final Bytes input = Bytes.of(str.getBytes());
-        final Bytes wrapped = ByteTool.getRemainingBytesAfterIndex(sharedLength,
-                input);
+        final ByteSequence wrapped = ByteTool
+                .getRemainingBytesAfterIndex(sharedLength, input);
         assertEquals(expectedResult, new String(wrapped.toByteArray()));
     }
 
@@ -64,7 +64,7 @@ class ByteToolTest {
     void test_concatenate() {
         final Bytes first = Bytes.of(new byte[] { 1, 2 });
         final Bytes second = Bytes.of(new byte[] { 3, 4, 5 });
-        final Bytes result = ByteTool.concatenate(first, second);
+        final ByteSequence result = ByteTool.concatenate(first, second);
 
         assertEquals(5, result.length());
         final byte[] out = result.toByteArray();

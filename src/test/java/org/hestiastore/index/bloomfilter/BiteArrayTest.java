@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -224,7 +225,7 @@ class BiteArrayTest {
         logger.debug(toBinaryString(value.getBytes()));
     }
 
-    private String toBinaryString(final Bytes data) {
+    private String toBinaryString(final ByteSequence data) {
         StringBuilder sb = new StringBuilder();
         for (byte b : data.toByteArray()) {
             sb.append(String.format("%8s", Integer.toBinaryString(b & 0xFF))

@@ -99,15 +99,13 @@ final class ChunkHeaderCodec {
 
     private static void writeLong(final MutableBytes data, final int offset,
             final long value) {
-        final org.hestiastore.index.Bytes bytes = LONG_TO_BYTES
-                .toBytesBuffer(value);
+        final ByteSequence bytes = LONG_TO_BYTES.toBytesBuffer(value);
         data.setBytes(offset, bytes);
     }
 
     private static void writeInt(final MutableBytes data, final int offset,
             final int value) {
-        final org.hestiastore.index.Bytes bytes = INT_TO_BYTES
-                .toBytesBuffer(value);
+        final ByteSequence bytes = INT_TO_BYTES.toBytesBuffer(value);
         data.setBytes(offset, bytes);
     }
 }

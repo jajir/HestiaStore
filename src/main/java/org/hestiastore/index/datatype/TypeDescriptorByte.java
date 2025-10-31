@@ -2,7 +2,7 @@ package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.Vldtn;
 
@@ -56,7 +56,7 @@ public class TypeDescriptorByte implements TypeDescriptor<Byte> {
         return TOMBSTONE_VALUE;
     }
 
-    private Bytes getBytesBuffer(final Byte value) {
+    private ByteSequence getBytesBuffer(final Byte value) {
         Vldtn.requireNonNull(value, "value");
         final MutableBytes buffer = MutableBytes.allocate(1);
         buffer.setByte(0, value.byteValue());

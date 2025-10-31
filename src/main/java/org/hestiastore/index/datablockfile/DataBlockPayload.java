@@ -1,6 +1,7 @@
 package org.hestiastore.index.datablockfile;
 
 import org.apache.commons.codec.digest.PureJavaCrc32;
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 
@@ -19,8 +20,9 @@ public class DataBlockPayload {
      * @param bytes The byte data to be encapsulated in the payload.
      * @return A new instance of DataBlockPayload containing the provided bytes.
      */
-    public static DataBlockPayload of(final Bytes bytes) {
-        return new DataBlockPayload(bytes);
+    public static DataBlockPayload of(final ByteSequence bytes) {
+        Vldtn.requireNonNull(bytes, "bytes");
+        return new DataBlockPayload(Bytes.copyOf(bytes));
     }
 
     private DataBlockPayload(final Bytes bytes) {
@@ -32,7 +34,7 @@ public class DataBlockPayload {
      *
      * @return The byte data of the payload.
      */
-    public Bytes getBytes() {
+    public ByteSequence getBytes() {
         return bytes;
     }
 

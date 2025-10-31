@@ -4,7 +4,6 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileReader;
@@ -108,7 +107,7 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
         return tombstoneValue;
     }
 
-    private Bytes toBytesBuffer(final CompositeValue value) {
+    private ByteSequence toBytesBuffer(final CompositeValue value) {
         try (ByteArrayWriter byteArrayWriter = new ByteArrayWriter()) {
             for (int i = 0; i < elementTypes.size(); i++) {
                 final TypeDescriptor<Object> descriptor = elementDescriptor(i);

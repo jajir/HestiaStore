@@ -3,6 +3,7 @@ package org.hestiastore.index.chunkstore;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.junit.jupiter.api.Test;
 
@@ -13,7 +14,7 @@ public class BytesAppenderTest {
         BytesAppender appender = new BytesAppender();
         appender.append(Bytes.of(new byte[] { 1, 2, 3 }));
         appender.append(Bytes.of(new byte[] { 4, 5, 6 }));
-        Bytes result = appender.getBytes();
+        ByteSequence result = appender.getBytes();
         assertEquals(6, result.length());
         assertEquals(1, result.getByte(0));
         assertEquals(2, result.getByte(1));
@@ -33,7 +34,7 @@ public class BytesAppenderTest {
         appender.append(Bytes.EMPTY);
         appender.append(Bytes.EMPTY);
         appender.append(Bytes.EMPTY);
-        Bytes result = appender.getBytes();
+        ByteSequence result = appender.getBytes();
         assertEquals(6, result.length());
         assertEquals(1, result.getByte(0));
         assertEquals(2, result.getByte(1));

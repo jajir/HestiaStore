@@ -10,6 +10,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 
+import org.hestiastore.index.ByteSequence;
+import org.hestiastore.index.Bytes;
 import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.TestData;
@@ -52,8 +54,10 @@ public class DataBlockReaderImplTest {
                 DataBlockHeader.MAGIC_NUMBER,
                 TestData.PAYLOAD_1008.calculateCrc());
 
-        byte[] bufferBytes = header.toBytes()
-                .concat(TestData.PAYLOAD_1008.getBytes()).toByteArray();
+        final Bytes headerBytes = asBytes(header.getBytes());
+        byte[] bufferBytes = headerBytes
+                .concat(asBytes(TestData.PAYLOAD_1008.getBytes()))
+                .toByteArray();
 
         when(fileReader.read(any(MutableBytes.class)))
                 .thenAnswer(invocation -> {
@@ -75,7 +79,7 @@ public class DataBlockReaderImplTest {
         System.arraycopy(TestData.BYTE_ARRAY_1024, 0, bufferBytes, 0, 1024);
         DataBlockHeader header = DataBlockHeader
                 .of(DataBlockHeader.MAGIC_NUMBER, 2131L);
-        header.toBytes().copyTo(0, bufferBytes, 0, 16);
+        header.getBytes().copyTo(0, bufferBytes, 0, 16);
 
         when(fileReader.read(any(MutableBytes.class)))
                 .thenAnswer(invocation -> {
@@ -123,4 +127,8 @@ public class DataBlockReaderImplTest {
         assertNull(reader.read());
     }
 
+    private static Bytes asBytes(final ByteSequence sequence) {
+        return sequence instanceof Bytes ? (Bytes) sequence
+                : Bytes.copyOf(sequence);
+    }
 }

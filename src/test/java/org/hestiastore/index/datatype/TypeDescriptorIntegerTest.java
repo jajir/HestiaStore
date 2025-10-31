@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Comparator;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.ByteSequence;
 import org.junit.jupiter.api.Test;
 
 class TypeDescriptorIntegerTest {
@@ -25,7 +25,7 @@ class TypeDescriptorIntegerTest {
     }
 
     private void assertEqualsBytes(Integer number) {
-        final Bytes bytes = toBytes.toBytesBuffer(number);
+        final ByteSequence bytes = toBytes.toBytesBuffer(number);
         final Integer ret = fromBytes.fromBytes(bytes);
         assertEquals(number, ret, String
                 .format("Expected '%s' byt returned was '%s'", number, ret));

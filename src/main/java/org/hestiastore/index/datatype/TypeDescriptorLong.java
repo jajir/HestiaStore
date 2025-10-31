@@ -3,7 +3,6 @@ package org.hestiastore.index.datatype;
 import java.util.Comparator;
 
 import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.MutableBytes;
 
 public class TypeDescriptorLong implements TypeDescriptor<Long> {
@@ -87,13 +86,13 @@ public class TypeDescriptorLong implements TypeDescriptor<Long> {
     @Override
     public TypeWriter<Long> getTypeWriter() {
         return (writer, object) -> {
-            final Bytes encoded = getBytesBuffer(object);
+            final ByteSequence encoded = getBytesBuffer(object);
             writer.write(encoded);
             return encoded.length();
         };
     }
 
-    private Bytes getBytesBuffer(final Long value) {
+    private ByteSequence getBytesBuffer(final Long value) {
         int pos = 0;
         long v = value.longValue();
         final MutableBytes out = MutableBytes.allocate(REQUIRED_BYTES);

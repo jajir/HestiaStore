@@ -3,6 +3,7 @@ package org.hestiastore.index.chunkstore;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.junit.jupiter.api.Test;
 
@@ -19,13 +20,19 @@ class ChunkFilterXorEncryptTest {
 
         final ChunkData result = filter.apply(input);
 
-        final Bytes expected = ChunkFilterXorEncrypt.xorPayload(PAYLOAD);
-        assertEquals(expected, result.getPayload());
+        final ByteSequence expectedSequence = ChunkFilterXorEncrypt
+                .xorPayload(PAYLOAD);
+        assertEquals(toBytes(expectedSequence), result.getPayload());
         assertNotEquals(PAYLOAD, result.getPayload());
         assertEquals(input.getFlags() | ChunkFilterXorEncrypt.FLAG_ENCRYPTED,
                 result.getFlags());
         assertEquals(input.getMagicNumber(), result.getMagicNumber());
         assertEquals(input.getCrc(), result.getCrc());
         assertEquals(input.getVersion(), result.getVersion());
+    }
+
+    private static Bytes toBytes(final ByteSequence sequence) {
+        return sequence instanceof Bytes ? (Bytes) sequence
+                : Bytes.copyOf(sequence);
     }
 }

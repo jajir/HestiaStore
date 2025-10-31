@@ -1,6 +1,6 @@
 package org.hestiastore.index.chunkstore;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.CloseableResource;
 
 /**
@@ -8,6 +8,6 @@ import org.hestiastore.index.CloseableResource;
  */
 public interface CellStoreWriter extends CloseableResource {
 
-    CellPosition write(Bytes bytes);
+    CellPosition write(ByteSequence bytes);
 
 }

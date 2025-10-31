@@ -3,7 +3,6 @@ package org.hestiastore.index.datatype;
 import java.util.Comparator;
 
 import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.MutableBytes;
 
 public class TypeDescriptorDouble implements TypeDescriptor<Double> {
@@ -55,7 +54,7 @@ public class TypeDescriptorDouble implements TypeDescriptor<Double> {
         return Double.longBitsToDouble(bits);
     }
 
-    Bytes getBytesBuffer(Double object) {
+    ByteSequence getBytesBuffer(Double object) {
         if (object == null) {
             throw new IllegalArgumentException("Object can't be null");
         }
@@ -81,7 +80,7 @@ public class TypeDescriptorDouble implements TypeDescriptor<Double> {
     @Override
     public TypeWriter<Double> getTypeWriter() {
         return (writer, object) -> {
-            final Bytes encoded = getBytesBuffer(object);
+            final ByteSequence encoded = getBytesBuffer(object);
             writer.write(encoded);
             return encoded.length();
         };

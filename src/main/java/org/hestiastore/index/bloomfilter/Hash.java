@@ -1,7 +1,7 @@
 package org.hestiastore.index.bloomfilter;
 
 import org.apache.commons.codec.digest.MurmurHash3;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Vldtn;
 
 /**
@@ -28,7 +28,7 @@ public final class Hash {
         this.numHashFunctions = numHashFunctions;
     }
 
-    public boolean store(final Bytes data) {
+    public boolean store(final ByteSequence data) {
         Vldtn.requireNonNull(data, "data");
         final byte[] raw = data.toByteArray();
         if (raw.length == 0) {
@@ -63,11 +63,11 @@ public final class Hash {
      * @return return <code>true</code> when it's sure that data are not in
      *         index. Otherwise return <code>false</code>.
      */
-    public boolean isNotStored(final Bytes data) {
+    public boolean isNotStored(final ByteSequence data) {
         return !isProbablyStored(data);
     }
 
-    public boolean isProbablyStored(final Bytes data) {
+    public boolean isProbablyStored(final ByteSequence data) {
         Vldtn.requireNonNull(data, "data");
         final byte[] raw = data.toByteArray();
         if (raw.length == 0) {
@@ -103,7 +103,7 @@ public final class Hash {
         return true;
     }
 
-    public Bytes getData() {
+    public ByteSequence getData() {
         return bitArray.getBytes();
     }
 

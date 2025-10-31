@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.TestData;
 import org.hestiastore.index.directory.FileWriter;
@@ -39,7 +40,11 @@ public class DataBlockWriterImplTest {
     @Test
     void test_write() {
         doAnswer(invocation -> {
-            final Bytes blockData = invocation.getArgument(0, Bytes.class);
+            final ByteSequence blockDataSequence = invocation
+                    .getArgument(0, ByteSequence.class);
+            final Bytes blockData = blockDataSequence instanceof Bytes
+                    ? (Bytes) blockDataSequence
+                    : Bytes.copyOf(blockDataSequence);
             assertEquals(1024, blockData.length());
 
             // Verify the magic number
@@ -57,7 +62,7 @@ public class DataBlockWriterImplTest {
             assertEquals(TestData.PAYLOAD_1008.calculateCrc(), crc);
 
             return null;
-        }).when(fileWriter).write(any(Bytes.class));
+        }).when(fileWriter).write(any(ByteSequence.class));
         writer.write(TestData.PAYLOAD_1008);
     }
 

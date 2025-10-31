@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.ByteSequence;
 import org.junit.jupiter.api.Test;
 
 public class DataBlockHeaderTest {
@@ -18,7 +18,7 @@ public class DataBlockHeaderTest {
         assertEquals(DataBlockHeader.MAGIC_NUMBER, header.getMagicNumber());
         assertEquals(CRC, header.getCrc());
 
-        Bytes headerBytes = header.toBytes();
+        ByteSequence headerBytes = header.getBytes();
         assertNotNull(headerBytes);
         assertEquals(16, headerBytes.length());
         final String headerString = new String(headerBytes.toByteArray());

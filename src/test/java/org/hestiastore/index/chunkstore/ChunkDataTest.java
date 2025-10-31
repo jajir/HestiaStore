@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import java.util.Arrays;
 import java.util.Optional;
 
+import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.datablockfile.DataBlockByteReader;
 import org.junit.jupiter.api.Test;
@@ -58,7 +59,7 @@ class ChunkDataTest {
         final int payloadLength = 24;
         final ChunkHeader header = ChunkHeader.of(ChunkHeader.MAGIC_NUMBER,
                 VERSION, payloadLength, CRC, FLAGS);
-        doReturn(header.getBytes(), (Bytes) null).when(reader)
+        doReturn(header.getBytes(), (ByteSequence) null).when(reader)
                 .readExactly(ChunkHeader.HEADER_SIZE);
 
         assertThrows(IllegalStateException.class, () -> ChunkData.read(reader));
