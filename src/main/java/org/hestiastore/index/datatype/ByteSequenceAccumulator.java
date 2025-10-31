@@ -19,6 +19,10 @@ import org.hestiastore.index.directory.FileWriter;
 public class ByteSequenceAccumulator extends AbstractCloseableResource
         implements FileWriter {
 
+    public static ByteSequenceAccumulator create() {
+        return new ByteSequenceAccumulator();
+    }
+
     private final List<ByteSequence> segments;
     private int totalLength;
 
@@ -73,7 +77,7 @@ public class ByteSequenceAccumulator extends AbstractCloseableResource
      *
      * @return immutable representation of the written bytes
      */
-    Bytes toBytes() {
+    public Bytes toBytes() {
         return Bytes.of(toByteArray());
     }
 
