@@ -1,7 +1,10 @@
 package org.hestiastore.index;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -66,13 +69,19 @@ class ByteToolTest {
         final Bytes second = Bytes.of(new byte[] { 3, 4, 5 });
         final ByteSequence result = ByteTool.concatenate(first, second);
 
+        assertTrue(result instanceof ConcatenatedByteSequence);
         assertEquals(5, result.length());
-        final byte[] out = result.toByteArray();
-        assertEquals(1, out[0]);
-        assertEquals(2, out[1]);
-        assertEquals(3, out[2]);
-        assertEquals(4, out[3]);
-        assertEquals(5, out[4]);
+        assertArrayEquals(new byte[] { 1, 2, 3, 4, 5 }, result.toByteArray());
+    }
+
+    @Test
+    void test_concatenateShortCircuitsEmptyOperands() {
+        final Bytes single = Bytes.of(new byte[] { 9 });
+        final ByteSequence first = ByteTool.concatenate(Bytes.EMPTY, single);
+        final ByteSequence second = ByteTool.concatenate(single, Bytes.EMPTY);
+
+        assertSame(single, first);
+        assertSame(single, second);
     }
 
 }

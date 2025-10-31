@@ -65,11 +65,6 @@ public final class ByteTool {
         Vldtn.requireNonNull(first, "first");
         Vldtn.requireNonNull(second, "second");
 
-        ///FIXME use ByteArrayWriter or create new class
-        final MutableBytes out = MutableBytes
-                .allocate(first.length() + second.length());
-        out.setBytes(0, first);
-        out.setBytes(first.length(), second);
-        return out.toBytes();
+        return ConcatenatedByteSequence.of(first, second);
     }
 }
