@@ -127,6 +127,27 @@ class MutableBytesTest {
     }
 
     @Test
+    void toImmutableBytes_sharesBackingArray() {
+        final MutableBytes buffer = MutableBytes.wrap(new byte[] { 4, 5 });
+
+        final Bytes view = buffer.toImmutableBytes();
+
+        assertEquals(2, view.length());
+        assertEquals(4, view.getByte(0));
+
+        buffer.setByte(0, (byte) 9);
+
+        assertEquals(9, view.getByte(0));
+    }
+
+    @Test
+    void toImmutableBytes_zeroLengthReturnsEmpty() {
+        final MutableBytes buffer = MutableBytes.allocate(0);
+
+        assertSame(Bytes.EMPTY, buffer.toImmutableBytes());
+    }
+
+    @Test
     void allocate_negativeSizeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> MutableBytes.allocate(-1));

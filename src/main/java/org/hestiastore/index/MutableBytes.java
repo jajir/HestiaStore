@@ -128,6 +128,19 @@ public final class MutableBytes implements MutableByteSequence {
         return ByteSequenceView.of(data, 0, data.length);
     }
 
+    /**
+     * Returns an immutable {@link Bytes} view over the current buffer without
+     * copying. Callers must not mutate the returned bytes.
+     *
+     * @return {@link Bytes} backed by this buffer's array
+     */
+    public Bytes toImmutableBytes() {
+        if (data.length == 0) {
+            return Bytes.EMPTY;
+        }
+        return Bytes.of(data);
+    }
+
     private void validateIndex(final int index) {
         if (index < 0 || index >= data.length) {
             throw new IllegalArgumentException(String.format(

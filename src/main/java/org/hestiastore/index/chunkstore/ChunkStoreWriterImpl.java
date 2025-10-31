@@ -27,7 +27,6 @@ public class ChunkStoreWriterImpl extends AbstractCloseableResource
             final List<ChunkFilter> encodingChunkFilters) {
         this.cellStoreWriter = Vldtn.requireNonNull(cellStoreWriter,
                 "cellStoreWriter");
-        // FIXME copyOf should be redundant
         final List<ChunkFilter> filters = List
                 .copyOf(Vldtn.requireNonNull(encodingChunkFilters, "filters"));
         this.encodingProcessor = new ChunkProcessor(filters);
@@ -55,9 +54,11 @@ public class ChunkStoreWriterImpl extends AbstractCloseableResource
         }
         final Bytes payloadBytes = (Bytes) payload;
         final ByteSequence headerSequence = header.getBytes();
-        final Bytes headerBytes = headerSequence instanceof Bytes
-                ? (Bytes) headerSequence
-                : Bytes.copyOf(headerSequence);
+        if (!(headerSequence instanceof Bytes)) {
+            throw new IllegalStateException(
+                    "Chunk header encoding must produce Bytes.");
+        }
+        final Bytes headerBytes = (Bytes) headerSequence;
         final Bytes bufferToWrite = headerBytes.concat(payloadBytes)
                 .paddedToNextCell();
         return cellStoreWriter.write(bufferToWrite);
