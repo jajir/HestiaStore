@@ -18,6 +18,7 @@ import org.hestiastore.index.directory.FileWriter;
  */
 public class ByteArrayWriter extends AbstractCloseableResource
         implements FileWriter {
+    // FIXME suggest better class name
 
     private final List<Bytes> segments;
     private int totalLength;
@@ -42,6 +43,7 @@ public class ByteArrayWriter extends AbstractCloseableResource
     @Override
     public void write(final ByteSequence bytes) {
         final ByteSequence checked = Vldtn.requireNonNull(bytes, "bytes");
+        // FIXME don't make defensive copy
         final Bytes segment = Bytes.copyOf(checked);
         if (segment.isEmpty()) {
             return;

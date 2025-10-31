@@ -74,6 +74,7 @@ final class ChunkHeaderCodec {
         writeInt(out, PAYLOAD_LENGTH_OFFSET, header.getPayloadLength());
         writeLong(out, CRC_OFFSET, header.getCrc());
         writeLong(out, FLAGS_OFFSET, header.getFlags());
+        // FIXME remove toBytes()
         return out.toBytes();
     }
 

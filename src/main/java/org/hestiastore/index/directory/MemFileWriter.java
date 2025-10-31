@@ -14,6 +14,7 @@ public class MemFileWriter extends AbstractCloseableResource
 
     private final String fileName;
 
+    // FIXME replace with ByteArrayWriter
     private final ByteArrayOutputStream fio;
 
     private final MemDirectory memDirectory;

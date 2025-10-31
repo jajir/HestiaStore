@@ -9,6 +9,7 @@ import org.hestiastore.index.datatype.ConvertorFromBytes;
 import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.directory.FileReader;
 
+//FIXME add javadocs
 public class DiffKeyReader<K> implements TypeReader<K> {
 
     private final ConvertorFromBytes<K> keyConvertor;
