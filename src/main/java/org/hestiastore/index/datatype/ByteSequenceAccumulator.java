@@ -16,14 +16,13 @@ import org.hestiastore.index.directory.FileWriter;
  * either a raw {@code byte[]} or immutable {@link Bytes} snapshot. Close the
  * writer to release resources associated with the stored segments.
  */
-public class ByteArrayWriter extends AbstractCloseableResource
+public class ByteSequenceAccumulator extends AbstractCloseableResource
         implements FileWriter {
-    // FIXME suggest better class name
 
     private final List<Bytes> segments;
     private int totalLength;
 
-    ByteArrayWriter() {
+    ByteSequenceAccumulator() {
         this.segments = new ArrayList<>();
         this.totalLength = 0;
     }

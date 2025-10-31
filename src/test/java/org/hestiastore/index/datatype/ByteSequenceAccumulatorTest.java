@@ -12,11 +12,11 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.MutableBytes;
 import org.junit.jupiter.api.Test;
 
-class ByteArrayWriterTest {
+class ByteSequenceAccumulatorTest {
 
     @Test
     void writeByte_appendsSingleByte() {
-        try (ByteArrayWriter writer = new ByteArrayWriter()) {
+        try (ByteSequenceAccumulator writer = new ByteSequenceAccumulator()) {
             writer.write((byte) 0x2A);
             writer.write((byte) 0x2B);
 
@@ -27,7 +27,7 @@ class ByteArrayWriterTest {
     @Test
     void writeSequence_appendsAllBytes() {
         final ByteSequence buffer = MutableBytes.wrap(new byte[] { 1, 2, 3 });
-        try (ByteArrayWriter writer = new ByteArrayWriter()) {
+        try (ByteSequenceAccumulator writer = new ByteSequenceAccumulator()) {
             writer.write(buffer);
             writer.write(buffer);
 
@@ -38,7 +38,7 @@ class ByteArrayWriterTest {
 
     @Test
     void writeSequence_nullThrows() {
-        try (ByteArrayWriter writer = new ByteArrayWriter()) {
+        try (ByteSequenceAccumulator writer = new ByteSequenceAccumulator()) {
             assertThrows(IllegalArgumentException.class,
                     () -> writer.write((ByteSequence) null));
         }
@@ -46,7 +46,7 @@ class ByteArrayWriterTest {
 
     @Test
     void toByteArray_returnsCopy() {
-        try (ByteArrayWriter writer = new ByteArrayWriter()) {
+        try (ByteSequenceAccumulator writer = new ByteSequenceAccumulator()) {
             writer.write((byte) 1);
 
             final byte[] first = writer.toByteArray();
@@ -58,7 +58,7 @@ class ByteArrayWriterTest {
 
     @Test
     void toBytes_returnsImmutableSnapshot() {
-        try (ByteArrayWriter writer = new ByteArrayWriter()) {
+        try (ByteSequenceAccumulator writer = new ByteSequenceAccumulator()) {
             writer.write((byte) 7);
             writer.write((byte) 8);
 
@@ -75,7 +75,7 @@ class ByteArrayWriterTest {
 
     @Test
     void close_wrapsIOExceptionAsIndexException() {
-        final ByteArrayWriter writer = new ByteArrayWriter() {
+        final ByteSequenceAccumulator writer = new ByteSequenceAccumulator() {
             @Override
             protected void doClose() {
                 throw new IndexException("boom", new RuntimeException());
@@ -89,7 +89,7 @@ class ByteArrayWriterTest {
 
     @Test
     void close_marksWriterClosedAndPreventsReclose() {
-        final ByteArrayWriter writer = new ByteArrayWriter();
+        final ByteSequenceAccumulator writer = new ByteSequenceAccumulator();
 
         assertFalse(writer.wasClosed());
 
@@ -102,7 +102,7 @@ class ByteArrayWriterTest {
     @Test
     void writeEmptySequence_doesNotChangeContent() {
         final ByteSequence empty = MutableBytes.wrap(new byte[0]);
-        try (ByteArrayWriter writer = new ByteArrayWriter()) {
+        try (ByteSequenceAccumulator writer = new ByteSequenceAccumulator()) {
             writer.write(empty);
 
             assertArrayEquals(new byte[0], writer.toByteArray());

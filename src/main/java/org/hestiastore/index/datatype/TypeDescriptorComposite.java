@@ -108,13 +108,13 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
     }
 
     private ByteSequence toBytesBuffer(final CompositeValue value) {
-        try (ByteArrayWriter byteArrayWriter = new ByteArrayWriter()) {
+        try (ByteSequenceAccumulator accumulator = new ByteSequenceAccumulator()) {
             for (int i = 0; i < elementTypes.size(); i++) {
                 final TypeDescriptor<Object> descriptor = elementDescriptor(i);
                 final TypeWriter<Object> writer = descriptor.getTypeWriter();
-                writer.write(byteArrayWriter, value.get(i));
+                writer.write(accumulator, value.get(i));
             }
-            return byteArrayWriter.toBytes();
+            return accumulator.toBytes();
         }
     }
 
