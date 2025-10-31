@@ -55,11 +55,9 @@ public class ChunkStoreWriterImpl extends AbstractCloseableResource
         }
         final Bytes payloadBytes = (Bytes) payload;
         final ByteSequence headerSequence = header.getBytes();
-        if (!(headerSequence instanceof Bytes)) {
-            throw new IllegalStateException(
-                    "Chunk header encoding must produce Bytes.");
-        }
-        final Bytes headerBytes = (Bytes) headerSequence;
+        final Bytes headerBytes = headerSequence instanceof Bytes
+                ? (Bytes) headerSequence
+                : Bytes.copyOf(headerSequence);
         final Bytes bufferToWrite = headerBytes.concat(payloadBytes)
                 .paddedToNextCell();
         return cellStoreWriter.write(bufferToWrite);

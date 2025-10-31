@@ -118,6 +118,16 @@ public final class MutableBytes implements MutableByteSequence {
         return Bytes.copyOf(data);
     }
 
+    /**
+     * Returns a lightweight {@link ByteSequence} view over the current buffer
+     * without copying the underlying array.
+     *
+     * @return byte sequence backed directly by this buffer's array
+     */
+    public ByteSequence toByteSequence() {
+        return ByteSequenceView.of(data, 0, data.length);
+    }
+
     private void validateIndex(final int index) {
         if (index < 0 || index >= data.length) {
             throw new IllegalArgumentException(String.format(

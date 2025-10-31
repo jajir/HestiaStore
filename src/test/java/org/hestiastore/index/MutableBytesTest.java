@@ -106,6 +106,27 @@ class MutableBytesTest {
     }
 
     @Test
+    void toByteSequence_reflectsBackingArray() {
+        final MutableBytes buffer = MutableBytes.wrap(new byte[] { 1, 2, 3 });
+
+        final ByteSequence view = buffer.toByteSequence();
+
+        assertEquals(3, view.length());
+        assertEquals(1, view.getByte(0));
+
+        buffer.setByte(0, (byte) 9);
+
+        assertEquals(9, view.getByte(0));
+    }
+
+    @Test
+    void toByteSequence_zeroLengthReturnsEmpty() {
+        final MutableBytes buffer = MutableBytes.allocate(0);
+
+        assertSame(Bytes.EMPTY, buffer.toByteSequence());
+    }
+
+    @Test
     void allocate_negativeSizeThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> MutableBytes.allocate(-1));

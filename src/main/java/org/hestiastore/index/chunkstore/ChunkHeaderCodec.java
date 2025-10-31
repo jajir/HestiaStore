@@ -3,7 +3,6 @@ package org.hestiastore.index.chunkstore;
 import java.util.Optional;
 
 import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.MutableByteSequence;
 import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.Vldtn;
@@ -76,7 +75,7 @@ final class ChunkHeaderCodec {
         writeInt(out, PAYLOAD_LENGTH_OFFSET, header.getPayloadLength());
         writeLong(out, CRC_OFFSET, header.getCrc());
         writeLong(out, FLAGS_OFFSET, header.getFlags());
-        return Bytes.of(out.array());
+        return out.toByteSequence();
     }
 
     private static long readLong(final ByteSequence data, final int offset) {
