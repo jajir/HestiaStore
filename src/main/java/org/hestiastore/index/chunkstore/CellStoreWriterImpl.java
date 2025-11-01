@@ -2,7 +2,6 @@ package org.hestiastore.index.chunkstore;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 
 /**
@@ -27,16 +26,23 @@ public class CellStoreWriterImpl extends AbstractCloseableResource
         Vldtn.requireNonNull(bytes, "bytes");
         Vldtn.requireCellSize(bytes.length(), "bytes");
         final CellPosition returnPosition = cursor.getNextCellPosition();
-        // FIXME remove copyOf
-        final Bytes bufferBytes = bytes instanceof Bytes ? (Bytes) bytes
-                : Bytes.copyOf(bytes);
-        Bytes bufferToWrite = bufferBytes.paddedToNextCell();
-        while (bufferToWrite != null && bufferToWrite.length() > 0) {
-            int availableBytes = cursor.getAvailableBytes();
-            int trimTo = Math.min(availableBytes, bufferToWrite.length());
-            cursor.write(bufferToWrite.subBytes(0, trimTo));
-            bufferToWrite = bufferToWrite.subBytes(trimTo,
-                    bufferToWrite.length());
+        final int totalLength = bytes.length();
+        int offset = 0;
+        while (offset < totalLength) {
+            final int availableBytes = cursor.getAvailableBytes();
+            if (availableBytes <= 0) {
+                throw new IllegalStateException(
+                        "Cursor reported no available bytes to write.");
+            }
+            final int chunkSize = Math.min(availableBytes,
+                    totalLength - offset);
+            if (chunkSize <= 0) {
+                throw new IllegalStateException(
+                        "Calculated chunk size must be greater than zero.");
+            }
+            final ByteSequence chunk = bytes.slice(offset, offset + chunkSize);
+            cursor.write(chunk);
+            offset += chunkSize;
         }
         return returnPosition;
     }
