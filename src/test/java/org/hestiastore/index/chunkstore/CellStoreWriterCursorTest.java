@@ -8,6 +8,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import org.hestiastore.index.ByteSequence;
+import org.hestiastore.index.ByteSequenceView;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.TestData;
 import org.hestiastore.index.datablockfile.DataBlockPayload;
@@ -96,6 +97,24 @@ public class CellStoreWriterCursorTest {
         // verify that data block write wasn't called more than once
         verify(dataBlockWriter, times(1)).write(any(DataBlockPayload.class));
         assertEquals(944, cursor.getAvailableBytes());
+    }
+
+    @Test
+    void test_write_byteSequenceView() {
+        final byte[] raw = TestData.BYTES_1024.toByteArray();
+        final ByteSequence view = ByteSequenceView.of(raw, 32, 64);
+
+        assertEquals(32, cursor.write(view).getValue());
+        cursor.close();
+
+        ArgumentCaptor<DataBlockPayload> argumentCaptor = ArgumentCaptor
+                .forClass(DataBlockPayload.class);
+
+        verify(dataBlockWriter).write(argumentCaptor.capture());
+        DataBlockPayload capturedValue = argumentCaptor.getValue();
+
+        assertEquals(asBytes(view),
+                asBytes(capturedValue.getBytes().slice(0, 32)));
     }
 
     @Test

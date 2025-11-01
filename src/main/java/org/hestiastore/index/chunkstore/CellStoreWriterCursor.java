@@ -3,6 +3,7 @@ package org.hestiastore.index.chunkstore;
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.ByteSequence;
 import org.hestiastore.index.Bytes;
+import org.hestiastore.index.ConcatenatedByteSequence;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datablockfile.DataBlockPayload;
 import org.hestiastore.index.datablockfile.DataBlockSize;
@@ -17,7 +18,7 @@ public final class CellStoreWriterCursor extends AbstractCloseableResource {
     private final DataBlockWriter dataBlockWriter;
     private final int dataBlockPayloadSize;
     private CellPosition currentCellPosition;
-    private Bytes currentDataBlock = null;
+    private ByteSequence currentDataBlock = null;
 
     /**
      * Create a new CellStoreWriterCursor.
@@ -69,13 +70,16 @@ public final class CellStoreWriterCursor extends AbstractCloseableResource {
     protected void doClose() {
         if (currentDataBlock != null) {
             if (getAvailableBytes() > 0) {
-                currentDataBlock = Bytes.concat(currentDataBlock,
-                        Bytes.of(new byte[getAvailableBytes()]));
-                dataBlockWriter.write(DataBlockPayload.of(currentDataBlock));
+                final ByteSequence padding = Bytes
+                        .of(new byte[getAvailableBytes()]);
+                final ByteSequence paddedBlock = ConcatenatedByteSequence
+                        .of(currentDataBlock, padding);
+                dataBlockWriter.write(DataBlockPayload.of(paddedBlock));
             } else {
                 throw new IllegalStateException(
                         "Data block is full, should have been written already");
             }
+            currentDataBlock = null;
         }
         dataBlockWriter.close();
     }
@@ -100,18 +104,10 @@ public final class CellStoreWriterCursor extends AbstractCloseableResource {
 
     private void appendToCurrentDataBlock(final ByteSequence bytes) {
         if (currentDataBlock == null) {
-            currentDataBlock = toBytes(bytes);
-        } else {
-            currentDataBlock = Bytes.concat(currentDataBlock, toBytes(bytes));
+            currentDataBlock = bytes;
+            return;
         }
-    }
-
-    // FIXME remove this method
-    private static Bytes toBytes(final ByteSequence bytes) {
-        if (bytes instanceof Bytes) {
-            return (Bytes) bytes;
-        }
-        return Bytes.copyOf(bytes);
+        currentDataBlock = ConcatenatedByteSequence.of(currentDataBlock, bytes);
     }
 
 }
