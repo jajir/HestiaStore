@@ -12,7 +12,7 @@ import org.hestiastore.index.Vldtn;
  */
 public class BytesAppender {
 
-    private final List<Bytes> bytes = new ArrayList<>();
+    private final List<ByteSequence> bytes = new ArrayList<>();
 
     /**
      * Append given bytes.
@@ -24,10 +24,7 @@ public class BytesAppender {
         if (validated.length() == 0) {
             return; // No need to append empty byte arrays
         }
-        // FIXME remove following lines
-        final Bytes toAdd = validated instanceof Bytes ? (Bytes) validated
-                : Bytes.copyOf(validated);
-        bytes.add(toAdd);
+        bytes.add(validated);
     }
 
     /**
@@ -37,14 +34,15 @@ public class BytesAppender {
      */
     public ByteSequence getBytes() {
         int length = 0;
-        for (Bytes b : bytes) {
-            length += b.length();
+        for (ByteSequence sequence : bytes) {
+            length += sequence.length();
         }
         final byte[] combined = new byte[length];
         int offset = 0;
-        for (Bytes b : bytes) {
-            b.copyTo(0, combined, offset, b.length());
-            offset += b.length();
+        for (ByteSequence sequence : bytes) {
+            final int chunkLength = sequence.length();
+            sequence.copyTo(0, combined, offset, chunkLength);
+            offset += chunkLength;
         }
         return Bytes.of(combined);
     }
