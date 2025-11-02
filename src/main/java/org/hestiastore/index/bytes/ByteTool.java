@@ -1,4 +1,6 @@
-package org.hestiastore.index;
+package org.hestiastore.index.bytes;
+
+import org.hestiastore.index.Vldtn;
 
 /**
  * Utility helpers for working with {@link Bytes} instances.

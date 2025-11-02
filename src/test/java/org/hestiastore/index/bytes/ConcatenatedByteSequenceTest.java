@@ -1,4 +1,4 @@
-package org.hestiastore.index;
+package org.hestiastore.index.bytes;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -100,6 +100,15 @@ class ConcatenatedByteSequenceTest {
     }
 
     @Test
+    void test_getByte_negativeIndexThrows() {
+        final ByteSequence concatenated = ConcatenatedByteSequence
+                .of(Bytes.of(new byte[] { 1 }), Bytes.of(new byte[] { 2 }));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> concatenated.getByte(-1));
+    }
+
+    @Test
     void test_copyTo_zeroLengthNoOp() {
         final ByteSequence concatenated = ConcatenatedByteSequence
                 .of(Bytes.of(new byte[] { 1, 2 }), Bytes.of(new byte[] { 3 }));
@@ -125,5 +134,80 @@ class ConcatenatedByteSequenceTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> concatenated.copyTo(0, null, 0, 1));
+    }
+
+    @Test
+    void test_copyTo_sourceRangeExceedsThrows() {
+        final ByteSequence concatenated = ConcatenatedByteSequence
+                .of(Bytes.of(new byte[] { 1, 2 }), Bytes.of(new byte[] { 3 }));
+        final byte[] target = new byte[3];
+
+        assertThrows(IllegalArgumentException.class,
+                () -> concatenated.copyTo(2, target, 0, 2));
+    }
+
+    @Test
+    void test_copyTo_targetRangeExceedsThrows() {
+        final ByteSequence concatenated = ConcatenatedByteSequence
+                .of(Bytes.of(new byte[] { 1, 2 }), Bytes.of(new byte[] { 3 }));
+        final byte[] target = new byte[2];
+
+        assertThrows(IllegalArgumentException.class,
+                () -> concatenated.copyTo(0, target, 1, 2));
+    }
+
+    @Test
+    void test_copyTo_negativeOffsetsThrow() {
+        final ByteSequence concatenated = ConcatenatedByteSequence
+                .of(Bytes.of(new byte[] { 1, 2 }), Bytes.of(new byte[] { 3 }));
+        final byte[] target = new byte[2];
+
+        assertThrows(IllegalArgumentException.class,
+                () -> concatenated.copyTo(-1, target, 0, 1));
+        assertThrows(IllegalArgumentException.class,
+                () -> concatenated.copyTo(0, target, -1, 1));
+    }
+
+    @Test
+    void test_slice_invalidRangesThrow() {
+        final ByteSequence concatenated = ConcatenatedByteSequence
+                .of(Bytes.of(new byte[] { 1, 2 }), Bytes.of(new byte[] { 3 }));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> concatenated.slice(-1, 2));
+        assertThrows(IllegalArgumentException.class,
+                () -> concatenated.slice(0, 4));
+        assertThrows(IllegalArgumentException.class,
+                () -> concatenated.slice(2, 1));
+    }
+
+    @Test
+    void test_length_overflowThrows() {
+        final ByteSequence huge = new ByteSequence() {
+            @Override
+            public int length() {
+                return Integer.MAX_VALUE;
+            }
+
+            @Override
+            public byte getByte(final int index) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public void copyTo(final int sourceOffset, final byte[] target,
+                    final int targetOffset, final int length) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public ByteSequence slice(final int fromInclusive,
+                    final int toExclusive) {
+                throw new UnsupportedOperationException();
+            }
+        };
+
+        assertThrows(ArithmeticException.class,
+                () -> ConcatenatedByteSequence.of(huge, huge));
     }
 }

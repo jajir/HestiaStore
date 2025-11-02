@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
 
-import org.hestiastore.index.Bytes;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.MutableBytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

@@ -3,8 +3,8 @@ package org.hestiastore.index.chunkstore;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.apache.commons.codec.digest.PureJavaCrc32;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceCrc32;
+import org.hestiastore.index.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 
 class ChunkFilterCrc32ValidationTest {
@@ -42,8 +42,8 @@ class ChunkFilterCrc32ValidationTest {
     }
 
     private static long calculateCrc(final Bytes data) {
-        final PureJavaCrc32 crc = new PureJavaCrc32();
-        crc.update(data.toByteArray());
+        final ByteSequenceCrc32 crc = new ByteSequenceCrc32();
+        crc.update(data);
         return crc.getValue();
     }
 }

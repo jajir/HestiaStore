@@ -3,7 +3,7 @@ package org.hestiastore.index.sorteddatafile;
 import java.util.Comparator;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.F;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.PairWriter;

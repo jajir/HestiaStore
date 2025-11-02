@@ -1,4 +1,4 @@
-package org.hestiastore.index;
+package org.hestiastore.index.bytes;
 
 /**
  * Provides read and write access to a mutable sequence of bytes.

@@ -5,7 +5,7 @@ import static org.hestiastore.index.datatype.NullValue.TOMBSTONE;
 
 import java.util.Comparator;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.Bytes;
 
 /**
  * Greeat advantage of null value is that it occupied no space in the index.

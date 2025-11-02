@@ -1,4 +1,4 @@
-package org.hestiastore.index;
+package org.hestiastore.index.bytes;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;

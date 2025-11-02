@@ -1,4 +1,6 @@
-package org.hestiastore.index;
+package org.hestiastore.index.bytes;
+
+import org.hestiastore.index.Vldtn;
 
 /**
  * Mutable byte buffer implementation backed by a byte array.
@@ -104,19 +106,6 @@ public final class MutableBytes implements MutableByteSequence {
         Vldtn.requireNonNull(source, "source");
         validateRange(targetOffset, length, data.length, "targetOffset");
         source.copyTo(sourceOffset, data, targetOffset, length);
-    }
-
-    /**
-     * Returns an immutable copy of the current buffer contents.
-     *
-     * @return immutable bytes containing the same data
-     */
-    // FIXME remove it, replace with toByteSequence
-    public Bytes toBytes() {
-        if (data.length == 0) {
-            return Bytes.EMPTY;
-        }
-        return Bytes.copyOf(data);
     }
 
     /**

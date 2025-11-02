@@ -1,7 +1,7 @@
 package org.hestiastore.index.chunkstore;
 
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.Bytes;
 
 /**
  * Applies a reversible XOR transformation over the payload bytes.

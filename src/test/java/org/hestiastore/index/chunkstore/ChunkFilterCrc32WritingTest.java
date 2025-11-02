@@ -2,8 +2,8 @@ package org.hestiastore.index.chunkstore;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.apache.commons.codec.digest.PureJavaCrc32;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceCrc32;
+import org.hestiastore.index.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 
 class ChunkFilterCrc32WritingTest {
@@ -19,8 +19,8 @@ class ChunkFilterCrc32WritingTest {
 
         final ChunkData result = filter.apply(input);
 
-        final PureJavaCrc32 crc = new PureJavaCrc32();
-        crc.update(PAYLOAD.toByteArray());
+        final ByteSequenceCrc32 crc = new ByteSequenceCrc32();
+        crc.update(PAYLOAD);
         assertEquals(crc.getValue(), result.getCrc());
         assertEquals(PAYLOAD, result.getPayload());
         assertEquals(input.getFlags(), result.getFlags());

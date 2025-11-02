@@ -1,6 +1,6 @@
 package org.hestiastore.index.datatype;
 
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileReader;
 
@@ -19,7 +19,8 @@ public class VarLengthReader<T> implements TypeReader<T> {
     public T read(final FileReader reader) {
         final MutableBytes lengthBytes = MutableBytes.allocate(4);
         reader.read(lengthBytes);
-        int length = CONVERTOR_FROM_BYTES.fromBytes(lengthBytes.toBytes());
+        int length = CONVERTOR_FROM_BYTES
+                .fromBytes(lengthBytes.toImmutableBytes());
         if (length < 0) {
             return null;
         }
@@ -28,7 +29,7 @@ public class VarLengthReader<T> implements TypeReader<T> {
         }
         final MutableBytes bytes = MutableBytes.allocate(length);
         reader.read(bytes);
-        return convertor.fromBytes(bytes.toBytes());
+        return convertor.fromBytes(bytes.toImmutableBytes());
     }
 
 }

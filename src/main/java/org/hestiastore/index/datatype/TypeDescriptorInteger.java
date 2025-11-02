@@ -2,8 +2,8 @@ package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
 
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.MutableBytes;
 
 public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
 
@@ -80,7 +80,7 @@ public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
         out.setByte(pos++, (byte) ((v >>> BYTE_SHIFT_16) & BYTE_MASK));
         out.setByte(pos++, (byte) ((v >>> BYTE_SHIFT_8) & BYTE_MASK));
         out.setByte(pos, (byte) ((v >>> BYTE_SHIFT_0) & BYTE_MASK));
-        return out.toBytes();
+        return out.toByteSequence();
     }
 
     private Integer load(final ByteSequence data, final int from) {

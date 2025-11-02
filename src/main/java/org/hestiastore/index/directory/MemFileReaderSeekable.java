@@ -1,6 +1,6 @@
 package org.hestiastore.index.directory;
 
-import org.hestiastore.index.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequence;
 
 public class MemFileReaderSeekable extends MemFileReader
         implements FileReaderSeekable {

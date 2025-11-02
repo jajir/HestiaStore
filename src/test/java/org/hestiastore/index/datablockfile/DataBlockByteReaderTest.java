@@ -1,12 +1,13 @@
 package org.hestiastore.index.datablockfile;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ConcatenatedByteSequence;
 import org.hestiastore.index.TestData;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,9 +20,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class DataBlockByteReaderTest {
 
     private static final DataBlockPayload dataBlockPayload1 = DataBlockPayload
-            .of(TestData.BYTES_1024.subBytes(0, 64));
+            .of(TestData.BYTES_1024.slice(0, 64));
     private static final DataBlockPayload dataBlockPayload2 = DataBlockPayload
-            .of(TestData.BYTES_1024.subBytes(64, 128));
+            .of(TestData.BYTES_1024.slice(64, 128));
 
     private static final DataBlockHeader dataBlockHeader1 = DataBlockHeader
             .of(DataBlockHeader.MAGIC_NUMBER, dataBlockPayload1.calculateCrc());
@@ -29,12 +30,12 @@ public class DataBlockByteReaderTest {
             .of(DataBlockHeader.MAGIC_NUMBER, dataBlockPayload2.calculateCrc());
 
     private static final DataBlock dataBlock1 = DataBlock.of(
-            asBytes(dataBlockHeader1.getBytes())
-                    .concat(asBytes(dataBlockPayload1.getBytes())),
+            ConcatenatedByteSequence.of(dataBlockHeader1.getBytes(),
+                    dataBlockPayload1.getBytes()),
             DataBlockPosition.of(0));
     private static final DataBlock dataBlock2 = DataBlock.of(
-            asBytes(dataBlockHeader2.getBytes())
-                    .concat(asBytes(dataBlockPayload2.getBytes())),
+            ConcatenatedByteSequence.of(dataBlockHeader2.getBytes(),
+                    dataBlockPayload2.getBytes()),
             DataBlockPosition.of(128));
 
     @Mock
@@ -76,8 +77,9 @@ public class DataBlockByteReaderTest {
         reader = new DataBlockByteReaderImpl(dataBlockReader, dataBlockSize, 2);
 
         final ByteSequence bytes1 = reader.readExactly(32);
-        final Bytes expectedBytes1 = TestData.BYTES_1024.subBytes(32, 32 + 32);
-        assertEquals(expectedBytes1, asBytes(bytes1));
+        final ByteSequence expectedBytes1 = TestData.BYTES_1024.slice(32,
+                32 + 32);
+        assertArrayEquals(expectedBytes1.toByteArray(), bytes1.toByteArray());
         assertNull(reader.readExactly(32));
     }
 
@@ -89,7 +91,8 @@ public class DataBlockByteReaderTest {
 
         final ByteSequence bytes1 = reader.readExactly(64);
 
-        assertEquals(TestData.BYTES_1024.subBytes(0, 64), asBytes(bytes1));
+        assertArrayEquals(TestData.BYTES_1024.slice(0, 64).toByteArray(),
+                bytes1.toByteArray());
         assertNull(reader.readExactly(64));
     }
 
@@ -101,10 +104,12 @@ public class DataBlockByteReaderTest {
                 .thenReturn(null);
 
         final ByteSequence bytes1 = reader.readExactly(64);
-        assertEquals(TestData.BYTES_1024.subBytes(0, 64), asBytes(bytes1));
+        assertArrayEquals(TestData.BYTES_1024.slice(0, 64).toByteArray(),
+                bytes1.toByteArray());
 
         final ByteSequence bytes2 = reader.readExactly(64);
-        assertEquals(TestData.BYTES_1024.subBytes(64, 128), asBytes(bytes2));
+        assertArrayEquals(TestData.BYTES_1024.slice(64, 128).toByteArray(),
+                bytes2.toByteArray());
 
         assertNull(reader.readExactly(64));
         assertNull(reader.readExactly(128));
@@ -118,7 +123,8 @@ public class DataBlockByteReaderTest {
                 .thenReturn(null);
 
         final ByteSequence bytes1 = reader.readExactly(96);
-        assertEquals(TestData.BYTES_1024.subBytes(0, 96), asBytes(bytes1));
+        assertArrayEquals(TestData.BYTES_1024.slice(0, 96).toByteArray(),
+                bytes1.toByteArray());
 
         assertNull(reader.readExactly(64));
         assertNull(reader.readExactly(128));
@@ -133,11 +139,4 @@ public class DataBlockByteReaderTest {
         assertNull(reader.readExactly(128));
     }
 
-    private static Bytes asBytes(final ByteSequence sequence) {
-        if (sequence == null) {
-            return null;
-        }
-        return sequence instanceof Bytes ? (Bytes) sequence
-                : Bytes.copyOf(sequence);
-    }
 }

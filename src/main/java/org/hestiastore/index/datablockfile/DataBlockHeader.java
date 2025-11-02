@@ -1,7 +1,7 @@
 package org.hestiastore.index.datablockfile;
 
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
 import org.hestiastore.index.datatype.ConvertorToBytes;
@@ -101,7 +101,7 @@ public class DataBlockHeader {
         final MutableBytes out = MutableBytes.allocate(HEADER_SIZE);
         out.setBytes(0, CONVERTOR_TO_BYTES.toBytesBuffer(magicNumber));
         out.setBytes(8, CONVERTOR_TO_BYTES.toBytesBuffer(crc));
-        return out.toBytes();
+        return out.toByteSequence();
     }
 
 }

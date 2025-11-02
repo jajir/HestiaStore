@@ -3,6 +3,7 @@ package org.hestiastore.index;
 import java.util.Collections;
 import java.util.List;
 
+import org.hestiastore.index.bytes.Bytes;
 import org.hestiastore.index.chunkstore.Chunk;
 import org.hestiastore.index.chunkstore.ChunkHeader;
 import org.hestiastore.index.chunkstore.ChunkPayload;
@@ -229,7 +230,7 @@ public final class TestData {
     public static final DataBlockPayload PAYLOAD_1008 = DataBlockPayload
             .of(Bytes.of(BYTE_ARRAY_1008));
     public static final DataBlockPayload PAYLOAD_1008_2 = DataBlockPayload
-            .of(Bytes.of(BYTE_ARRAY_1024).subBytes(0, 1008));
+            .of(Bytes.of(BYTE_ARRAY_1024).slice(0, 1008));
     public static final DataBlockPayload PAYLOAD_1024 = DataBlockPayload
             .of(Bytes.of(BYTE_ARRAY_1024));
 
@@ -260,7 +261,7 @@ public final class TestData {
 
     public static final Bytes BYTES_1024 = Bytes.of(BYTE_ARRAY_1024);
     public static final ChunkPayload CHUNK_PAYLOAD_1008 = ChunkPayload
-            .of(BYTES_1024.subBytes(0, 1008));
+            .of(BYTES_1024.slice(0, 1008));
 
     public static final SegmentId SEGMENT_ID = SegmentId.of(13);
     public static final Pair<Integer, String> PAIR1 = Pair.of(1, "a");

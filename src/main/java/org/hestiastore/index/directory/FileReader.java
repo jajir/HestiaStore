@@ -1,7 +1,7 @@
 package org.hestiastore.index.directory;
 
 import org.hestiastore.index.CloseableResource;
-import org.hestiastore.index.MutableByteSequence;
+import org.hestiastore.index.bytes.MutableByteSequence;
 
 /**
  * With file reader it's not possible to go back. When one byte could be read

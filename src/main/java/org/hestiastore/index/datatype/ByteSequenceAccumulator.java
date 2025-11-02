@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.Bytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileWriter;
 

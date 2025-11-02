@@ -12,8 +12,8 @@ import static org.mockito.Mockito.when;
 import java.util.Arrays;
 import java.util.Optional;
 
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.Bytes;
 import org.hestiastore.index.datablockfile.DataBlockByteReader;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

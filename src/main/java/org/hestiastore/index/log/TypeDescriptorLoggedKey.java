@@ -2,8 +2,8 @@ package org.hestiastore.index.log;
 
 import java.util.Comparator;
 
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
 import org.hestiastore.index.datatype.ConvertorToBytes;
@@ -39,7 +39,7 @@ public class TypeDescriptorLoggedKey<K>
                     .allocate(1 + keyBytes.length());
             out.setByte(0, operationBytes.getByte(0));
             out.setBytes(1, keyBytes);
-            return out.toBytes();
+            return out.toByteSequence();
         };
     }
 

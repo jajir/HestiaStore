@@ -6,9 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
-import org.apache.commons.codec.digest.PureJavaCrc32;
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequenceCrc32;
+import org.hestiastore.index.bytes.Bytes;
 import org.hestiastore.index.TestData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,7 +37,6 @@ class ChunkStoreWriterImplTest {
         final CellPosition position = writer.write(payload, VERSION);
 
         assertEquals(recorder.position, position);
-        assertTrue(recorder.written instanceof Bytes);
 
         final ByteSequence written = recorder.written;
         final int expectedLength = alignToCellSize(
@@ -96,8 +95,8 @@ class ChunkStoreWriterImplTest {
     }
 
     private long expectedCrc(final Bytes payload) {
-        final PureJavaCrc32 crc = new PureJavaCrc32();
-        crc.update(payload.toByteArray());
+        final ByteSequenceCrc32 crc = new ByteSequenceCrc32();
+        crc.update(payload);
         return crc.getValue();
     }
 

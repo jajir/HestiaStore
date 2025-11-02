@@ -7,7 +7,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.StandardOpenOption;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory.Access;

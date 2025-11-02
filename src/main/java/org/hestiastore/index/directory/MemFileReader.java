@@ -1,8 +1,8 @@
 package org.hestiastore.index.directory;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.MutableByteSequence;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.MutableByteSequence;
 import org.hestiastore.index.Vldtn;
 
 public class MemFileReader extends AbstractCloseableResource

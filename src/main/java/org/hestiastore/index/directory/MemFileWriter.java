@@ -1,8 +1,8 @@
 package org.hestiastore.index.directory;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.Bytes;
 import org.hestiastore.index.datatype.ByteSequenceAccumulator;
 import org.hestiastore.index.Vldtn;
 

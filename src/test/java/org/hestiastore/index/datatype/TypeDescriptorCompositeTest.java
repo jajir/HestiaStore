@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
-import org.hestiastore.index.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequence;
 import org.junit.jupiter.api.Test;
 
 class TypeDescriptorCompositeTest {

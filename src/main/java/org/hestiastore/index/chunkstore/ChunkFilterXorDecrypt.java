@@ -1,6 +1,6 @@
 package org.hestiastore.index.chunkstore;
 
-import org.hestiastore.index.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequence;
 
 /**
  * Reverses {@link ChunkFilterXorEncrypt} transformation.

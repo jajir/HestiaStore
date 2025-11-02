@@ -1,5 +1,6 @@
 package org.hestiastore.index.chunkstore;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -7,7 +8,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.Bytes;
 import org.hestiastore.index.TestData;
 import org.hestiastore.index.datablockfile.DataBlockByteReader;
 import org.junit.jupiter.api.AfterEach;
@@ -59,7 +60,8 @@ public class ChunkStoreReaderImplTest {
         assertNotNull(chunk);
         assertEquals(CHUNK_HEADER_9, chunk.getHeader());
         assertEquals(TestData.CHUNK_PAYLOAD_9, chunk.getPayload());
-        assertEquals(TestData.BYTES_9, chunk.getPayload().getBytes());
+        assertArrayEquals(TestData.BYTES_9.toByteArray(),
+                chunk.getPayload().getBytes().toByteArray());
 
         assertNull(reader.read());
         assertNull(reader.read());
@@ -80,13 +82,15 @@ public class ChunkStoreReaderImplTest {
         assertNotNull(chunk1);
         assertEquals(CHUNK_HEADER_9, chunk1.getHeader());
         assertEquals(TestData.CHUNK_PAYLOAD_9, chunk1.getPayload());
-        assertEquals(TestData.BYTES_9, chunk1.getPayload().getBytes());
+        assertArrayEquals(TestData.BYTES_9.toByteArray(),
+                chunk1.getPayload().getBytes().toByteArray());
 
         final Chunk chunk2 = reader.read();
         assertNotNull(chunk2);
         assertEquals(CHUNK_HEADER_15, chunk2.getHeader());
         assertEquals(TestData.CHUNK_PAYLOAD_15, chunk2.getPayload());
-        assertEquals(TestData.BYTES_15, chunk2.getPayload().getBytes());
+        assertArrayEquals(TestData.BYTES_15.toByteArray(),
+                chunk2.getPayload().getBytes().toByteArray());
 
         assertNull(reader.read());
         assertNull(reader.read());

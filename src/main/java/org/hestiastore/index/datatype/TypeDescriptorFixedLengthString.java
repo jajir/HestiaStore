@@ -3,8 +3,8 @@ package org.hestiastore.index.datatype;
 import java.nio.charset.Charset;
 import java.util.Comparator;
 
-import org.hestiastore.index.Bytes;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.Vldtn;
 
 public final class TypeDescriptorFixedLengthString
@@ -76,7 +76,8 @@ public final class TypeDescriptorFixedLengthString
         return reader -> {
             final MutableBytes buffer = MutableBytes.allocate(length);
             reader.read(buffer);
-            return getConvertorFromBytes().fromBytes(buffer.toBytes());
+            return getConvertorFromBytes()
+                    .fromBytes(buffer.toImmutableBytes());
         };
     }
 

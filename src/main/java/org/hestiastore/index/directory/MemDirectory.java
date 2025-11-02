@@ -4,20 +4,21 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ConcatenatedByteSequence;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.Vldtn;
 
 public class MemDirectory implements Directory {
 
     private static final String ERROR_MSG_NO_FILE = "There is no file '%s'";
-    // FIXME change it to ByteSequence
-    private final Map<String, Bytes> data = new HashMap<>();
+    private final Map<String, ByteSequence> data = new HashMap<>();
 
     @Override
     public FileReader getFileReader(final String fileName) {
-        final Bytes bytes = data.get(fileName);
+        final ByteSequence bytes = data.get(fileName);
         if (bytes == null) {
             throw new IndexException(
                     String.format(ERROR_MSG_NO_FILE, fileName));
@@ -26,7 +27,7 @@ public class MemDirectory implements Directory {
     }
 
     public ByteSequence getFileBytes(final String fileName) {
-        final Bytes bytes = data.get(fileName);
+        final ByteSequence bytes = data.get(fileName);
         if (bytes == null) {
             throw new IndexException(
                     String.format(ERROR_MSG_NO_FILE, fileName));
@@ -35,13 +36,13 @@ public class MemDirectory implements Directory {
     }
 
     public void setFileBytes(final String fileName, final ByteSequence bytes) {
-        data.put(fileName, toBytes(bytes));
+        data.put(fileName, normalize(bytes));
     }
 
     @Override
     public FileReader getFileReader(final String fileName,
             final int bufferSize) {
-        final Bytes bytes = data.get(fileName);
+        final ByteSequence bytes = data.get(fileName);
         if (bytes == null) {
             throw new IndexException(
                     String.format(ERROR_MSG_NO_FILE, fileName));
@@ -69,7 +70,7 @@ public class MemDirectory implements Directory {
     public void renameFile(final String currentFileName,
             final String newFileName) {
         if (data.containsKey(currentFileName)) {
-            final Bytes tmp = data.remove(currentFileName);
+            final ByteSequence tmp = data.remove(currentFileName);
             data.put(newFileName, tmp);
         }
     }
@@ -77,15 +78,16 @@ public class MemDirectory implements Directory {
     void addFile(final String fileName, final ByteSequence bytes,
             final Access access) {
         if (Access.OVERWRITE == access) {
-            data.put(fileName, toBytes(bytes));
+            data.put(fileName, normalize(bytes));
         } else {
-            final Bytes existing = data.get(fileName);
+            final ByteSequence existing = data.get(fileName);
             if (existing == null) {
                 throw new IndexException(
                         String.format("No such file '%s'", fileName));
             }
-            final Bytes appendBytes = toBytes(bytes);
-            data.put(fileName, existing.concat(appendBytes));
+            final ByteSequence appendBytes = normalize(bytes);
+            data.put(fileName,
+                    ConcatenatedByteSequence.of(existing, appendBytes));
         }
     }
 
@@ -116,7 +118,7 @@ public class MemDirectory implements Directory {
 
     @Override
     public FileReaderSeekable getFileReaderSeekable(final String fileName) {
-        final Bytes fileData = data.get(fileName);
+        final ByteSequence fileData = data.get(fileName);
         if (fileData == null) {
             throw new IllegalArgumentException(
                     String.format("No such file '%s'.", fileName));
@@ -124,13 +126,18 @@ public class MemDirectory implements Directory {
         return new MemFileReaderSeekable(fileData);
     }
 
-    // FIXME should be remve completly
-    private static Bytes toBytes(final ByteSequence sequence) {
+    private static ByteSequence normalize(final ByteSequence sequence) {
         final ByteSequence validated = Vldtn.requireNonNull(sequence, "bytes");
-        if (validated instanceof Bytes) {
-            return (Bytes) validated;
+        if (validated.isEmpty()) {
+            return Bytes.EMPTY;
         }
-        return Bytes.copyOf(validated);
+        if (validated instanceof Bytes) {
+            return validated;
+        }
+        if (validated instanceof MutableBytes) {
+            return ((MutableBytes) validated).toImmutableBytes();
+        }
+        return validated.slice(0, validated.length());
     }
 
 }

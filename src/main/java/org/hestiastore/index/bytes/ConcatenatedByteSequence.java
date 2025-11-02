@@ -1,4 +1,6 @@
-package org.hestiastore.index;
+package org.hestiastore.index.bytes;
+
+import org.hestiastore.index.Vldtn;
 
 /**
  * Lightweight {@link ByteSequence} implementation that presents two underlying
@@ -78,7 +80,8 @@ public final class ConcatenatedByteSequence implements ByteSequence {
         }
         if (remaining > 0) {
             final int secondOffset = currentSourceOffset - firstLength;
-            second.copyTo(secondOffset, target, currentTargetOffset, remaining);
+            second.copyTo(secondOffset, target, currentTargetOffset,
+                    remaining);
         }
     }
 

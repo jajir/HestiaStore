@@ -3,7 +3,7 @@ package org.hestiastore.index.chunkstore;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 
 class ChunkFilterMagicNumberValidationTest {

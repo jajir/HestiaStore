@@ -1,6 +1,6 @@
 package org.hestiastore.index.datatype;
 
-import org.hestiastore.index.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequence;
 
 /**
  * Convert object of some type into byte array.

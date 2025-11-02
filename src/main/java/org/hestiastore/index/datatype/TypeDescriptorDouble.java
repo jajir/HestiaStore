@@ -2,8 +2,8 @@ package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
 
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.MutableBytes;
 
 public class TypeDescriptorDouble implements TypeDescriptor<Double> {
 
@@ -69,7 +69,7 @@ public class TypeDescriptorDouble implements TypeDescriptor<Double> {
         out.setByte(5, (byte) (bits >> 16));
         out.setByte(6, (byte) (bits >> 8));
         out.setByte(7, (byte) bits);
-        return out.toBytes();
+        return out.toByteSequence();
     }
 
     @Override

@@ -2,9 +2,9 @@ package org.hestiastore.index.chunkstore;
 
 import java.util.Optional;
 
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.MutableByteSequence;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.MutableByteSequence;
+import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
 import org.hestiastore.index.datatype.ConvertorToBytes;

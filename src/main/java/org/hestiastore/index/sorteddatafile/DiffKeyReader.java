@@ -1,10 +1,10 @@
 package org.hestiastore.index.sorteddatafile;
 
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.ByteTool;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteTool;
+import org.hestiastore.index.bytes.Bytes;
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
 import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.directory.FileReader;
@@ -20,7 +20,7 @@ public class DiffKeyReader<K> implements TypeReader<K> {
 
     private final ConvertorFromBytes<K> keyConvertor;
 
-    private Bytes previousKey;
+    private ByteSequence previousKey;
 
     /**
      * Creates a reader that reconstructs keys using the supplied converter.
@@ -49,7 +49,7 @@ public class DiffKeyReader<K> implements TypeReader<K> {
             final MutableBytes keyBuffer = MutableBytes
                     .allocate(keyLengthInBytes);
             readFully(fileReader, keyBuffer);
-            final Bytes keyBytes = keyBuffer.toBytes();
+            final ByteSequence keyBytes = keyBuffer.toImmutableBytes();
             previousKey = keyBytes;
             return keyConvertor.fromBytes(keyBytes);
         }
@@ -68,14 +68,12 @@ public class DiffKeyReader<K> implements TypeReader<K> {
         }
         final MutableBytes diffBuffer = MutableBytes.allocate(keyLengthInBytes);
         readFully(fileReader, diffBuffer);
-        final ByteSequence diffBytes = diffBuffer.toBytes();
-        final Bytes sharedBytes = previousKey.subBytes(0, sharedByteLength);
+        final ByteSequence diffBytes = diffBuffer.toByteSequence();
+        final ByteSequence sharedBytes = previousKey.slice(0, sharedByteLength);
         final ByteSequence combined = ByteTool.concatenate(sharedBytes,
                 diffBytes);
-        final Bytes keyBytes = combined instanceof Bytes ? (Bytes) combined
-                : Bytes.copyOf(combined);
-        previousKey = keyBytes;
-        return keyConvertor.fromBytes(keyBytes);
+        previousKey = combined;
+        return keyConvertor.fromBytes(combined);
     }
 
     /**

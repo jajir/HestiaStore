@@ -1,4 +1,6 @@
-package org.hestiastore.index;
+package org.hestiastore.index.bytes;
+
+import org.hestiastore.index.Vldtn;
 
 /**
  * Lightweight {@link ByteSequence} implementation that shares the backing array

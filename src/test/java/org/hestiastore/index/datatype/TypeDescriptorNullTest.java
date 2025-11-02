@@ -5,7 +5,7 @@ import static org.hestiastore.index.datatype.NullValue.TOMBSTONE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-import org.hestiastore.index.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequence;
 import org.junit.jupiter.api.Test;
 
 class TypeDescriptorNullTest {

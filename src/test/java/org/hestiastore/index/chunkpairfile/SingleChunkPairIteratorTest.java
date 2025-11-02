@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.List;
 
 import org.hestiastore.index.AbstractDataTest;
-import org.hestiastore.index.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.Pair;
 import org.hestiastore.index.TestData;
 import org.hestiastore.index.chunkstore.Chunk;

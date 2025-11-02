@@ -1,8 +1,8 @@
 package org.hestiastore.index.datablockfile;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileWriter;
 
@@ -51,7 +51,7 @@ public class DataBlockWriterImpl extends AbstractCloseableResource
         // Copy the payload data after the header
         blockData.setBytes(DataBlockHeader.HEADER_SIZE,
                 dataBlockPayload.getBytes());
-        return blockData.toBytes();
+        return blockData.toByteSequence();
     }
 
 }

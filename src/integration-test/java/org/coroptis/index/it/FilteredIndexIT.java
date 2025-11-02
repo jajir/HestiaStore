@@ -7,7 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
 import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberValidation;

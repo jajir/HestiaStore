@@ -1,6 +1,6 @@
 package org.hestiastore.index.directory;
 
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.Vldtn;
 
 public class BufferedReader {

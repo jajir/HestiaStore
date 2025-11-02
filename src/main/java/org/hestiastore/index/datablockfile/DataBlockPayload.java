@@ -1,8 +1,9 @@
 package org.hestiastore.index.datablockfile;
 
-import org.apache.commons.codec.digest.PureJavaCrc32;
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequenceCrc32;
+import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.Vldtn;
 
 /**
@@ -11,7 +12,7 @@ import org.hestiastore.index.Vldtn;
  */
 public class DataBlockPayload {
 
-    private final Bytes bytes;
+    private final ByteSequence bytes;
 
     /**
      * Factory method to create a DataBlockPayload instance from the given
@@ -21,13 +22,11 @@ public class DataBlockPayload {
      * @return A new instance of DataBlockPayload containing the provided bytes.
      */
     public static DataBlockPayload of(final ByteSequence bytes) {
-        Vldtn.requireNonNull(bytes, "bytes");
-        // FIXME remove copyOf
-        return new DataBlockPayload(Bytes.copyOf(bytes));
+        return new DataBlockPayload(normalize(bytes));
     }
 
-    private DataBlockPayload(final Bytes bytes) {
-        this.bytes = Vldtn.requireNonNull(bytes, "bytes");
+    private DataBlockPayload(final ByteSequence bytes) {
+        this.bytes = normalize(bytes);
     }
 
     /**
@@ -45,8 +44,8 @@ public class DataBlockPayload {
      * @return The CRC checksum as a long value.
      */
     public long calculateCrc() {
-        final PureJavaCrc32 crc = new PureJavaCrc32();
-        crc.update(bytes.toByteArray());
+        final ByteSequenceCrc32 crc = new ByteSequenceCrc32();
+        crc.update(bytes);
         return crc.getValue();
     }
 
@@ -57,17 +56,51 @@ public class DataBlockPayload {
         if (!(o instanceof DataBlockPayload))
             return false;
         DataBlockPayload that = (DataBlockPayload) o;
-        return bytes.equals(that.bytes);
+        return contentEquals(bytes, that.bytes);
     }
 
     @Override
     public int hashCode() {
-        return bytes.hashCode();
+        int result = 1;
+        final int length = bytes.length();
+        for (int i = 0; i < length; i++) {
+            result = 31 * result + bytes.getByte(i);
+        }
+        return result;
     }
 
     @Override
     public String toString() {
         return "DataBlockPayload{" + "bytes=" + bytes + '}';
     }
+    private static boolean contentEquals(final ByteSequence first,
+            final ByteSequence second) {
+        if (first == second) {
+            return true;
+        }
+        final int length = first.length();
+        if (length != second.length()) {
+            return false;
+        }
+        for (int i = 0; i < length; i++) {
+            if (first.getByte(i) != second.getByte(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
 
+    private static ByteSequence normalize(final ByteSequence sequence) {
+        final ByteSequence validated = Vldtn.requireNonNull(sequence, "bytes");
+        if (validated.isEmpty()) {
+            return Bytes.EMPTY;
+        }
+        if (validated instanceof Bytes) {
+            return validated;
+        }
+        if (validated instanceof MutableBytes) {
+            return ((MutableBytes) validated).toImmutableBytes();
+        }
+        return validated.slice(0, validated.length());
+    }
 }

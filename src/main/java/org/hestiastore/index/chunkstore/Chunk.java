@@ -1,7 +1,7 @@
 package org.hestiastore.index.chunkstore;
 
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ConcatenatedByteSequence;
 import org.hestiastore.index.Vldtn;
 
 /**
@@ -27,7 +27,7 @@ public final class Chunk {
      */
     static final int VERSION_02_00 = 0xff_00_02_00;
 
-    private final Bytes bytes;
+    private final ByteSequence bytes;
 
     /**
      * Create a chunk from raw bytes.
@@ -36,8 +36,8 @@ public final class Chunk {
      * @return new chunk instance
      */
     public static Chunk of(final ByteSequence bytes) {
-        // FIXME remove toBytes
-        return new Chunk(toBytes(bytes));
+        final ByteSequence checked = Vldtn.requireNonNull(bytes, "bytes");
+        return new Chunk(checked);
     }
 
     /**
@@ -51,25 +51,34 @@ public final class Chunk {
     public static Chunk of(final ChunkHeader header,
             final ByteSequence payload) {
         Vldtn.requireNonNull(header, "header");
-        Vldtn.requireNonNull(payload, "payload");
-        // FIXME remove toBytes
-        final Bytes headerBytes = toBytes(header.getBytes());
-        final Bytes payloadBytes = toBytes(payload);
-        final Bytes bytes = Bytes.concat(headerBytes, payloadBytes);
-        return new Chunk(bytes);
+        final ByteSequence payloadBytes = Vldtn.requireNonNull(payload,
+                "payload");
+        final int declaredLength = header.getPayloadLength();
+        if (payloadBytes.length() != declaredLength) {
+            throw new IllegalArgumentException(String.format(
+                    "Payload size '%d' does not match header declared payload length '%d'",
+                    payloadBytes.length(), declaredLength));
+        }
+        final ByteSequence headerBytes = header.getBytes();
+        return new Chunk(
+                ConcatenatedByteSequence.of(headerBytes, payloadBytes));
     }
 
-    private Chunk(final Bytes bytes) {
-        Vldtn.requireNonNull(bytes, "bytes");
+    private Chunk(final ByteSequence bytes) {
+        this.bytes = Vldtn.requireNonNull(bytes, "bytes");
+        if (bytes.length() < ChunkHeader.HEADER_SIZE) {
+            throw new IllegalArgumentException(String.format(
+                    "Chunk bytes length '%s' is smaller than required header size '%s'",
+                    bytes.length(), ChunkHeader.HEADER_SIZE));
+        }
         final ChunkHeader header = ChunkHeader
-                .of(bytes.subBytes(0, ChunkHeader.HEADER_SIZE));
+                .of(bytes.slice(0, ChunkHeader.HEADER_SIZE));
         final int requiredLength = header.getPayloadLength();
         if (bytes.length() != requiredLength + ChunkHeader.HEADER_SIZE) {
             throw new IllegalArgumentException(String.format(
                     "Chunk bytes length '%s' is not equal to required length '%s'",
                     bytes.length(), requiredLength));
         }
-        this.bytes = bytes;
     }
 
     /**
@@ -88,7 +97,7 @@ public final class Chunk {
      */
     public ChunkPayload getPayload() {
         return ChunkPayload
-                .of(bytes.subBytes(ChunkHeader.HEADER_SIZE, bytes.length()));
+                .of(bytes.slice(ChunkHeader.HEADER_SIZE, bytes.length()));
     }
 
     /**
@@ -97,7 +106,7 @@ public final class Chunk {
      * @return the header of the chunk
      */
     public ChunkHeader getHeader() {
-        return ChunkHeader.of(bytes.subBytes(0, ChunkHeader.HEADER_SIZE));
+        return ChunkHeader.of(bytes.slice(0, ChunkHeader.HEADER_SIZE));
     }
 
     /**
@@ -107,13 +116,5 @@ public final class Chunk {
      */
     public long calculateCrc() {
         return getPayload().calculateCrc();
-    }
-
-    // FIXME remove toBytes
-    private static Bytes toBytes(final ByteSequence sequence) {
-        if (sequence instanceof Bytes) {
-            return (Bytes) sequence;
-        }
-        return Bytes.copyOf(sequence);
     }
 }

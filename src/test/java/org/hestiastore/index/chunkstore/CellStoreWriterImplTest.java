@@ -12,9 +12,9 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.ByteSequenceView;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequenceView;
+import org.hestiastore.index.bytes.Bytes;
 import org.hestiastore.index.TestData;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,8 +29,10 @@ public class CellStoreWriterImplTest {
 
     private static final CellPosition CELL_POSITION_0 = CellPosition
             .of(TestData.DATA_BLOCK_SIZE, 0);
-    private static final Bytes BYTES_64 = TestData.BYTES_1024.subBytes(0, 64);
-    private static final Bytes BYTES_16 = TestData.BYTES_1024.subBytes(0, 16);
+    private static final ByteSequence BYTES_64 = TestData.BYTES_1024.slice(0,
+            64);
+    private static final ByteSequence BYTES_16 = TestData.BYTES_1024.slice(0,
+            16);
 
     @Mock
     private CellStoreWriterCursor cursor;

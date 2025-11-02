@@ -1,6 +1,8 @@
-package org.hestiastore.index;
+package org.hestiastore.index.bytes;
 
 import java.util.Arrays;
+
+import org.hestiastore.index.Vldtn;
 
 /**
  * Block of data bytes.
@@ -72,32 +74,11 @@ public class Bytes implements ByteSequence {
                 .allocate(data1.length() + data2.length());
         combined.setBytes(0, data1);
         combined.setBytes(data1.length(), data2);
-        return combined.toBytes();
+        return combined.toImmutableBytes();
     }
 
     private Bytes(final byte[] data) {
         this.data = Vldtn.requireNonNull(data, "data");
-    }
-
-    /**
-     * Returns a new Bytes instance that is a subarray of this instance,
-     * starting from startByte (inclusive) to endByte (exclusive).
-     * 
-     * @param startByte required start byte index (inclusive)
-     * @param endByte   required end byte index (exclusive)
-     * @return
-     */
-    public Bytes subBytes(int startByte, int endByte) {
-        Vldtn.requireBetween(startByte, 0, data.length, "startByte");
-        Vldtn.requireBetween(endByte, 0, data.length, "endByte");
-        if (startByte > endByte) {
-            throw new IllegalArgumentException(
-                    "startByte must be less than or equal to endByte");
-        }
-        final int len = endByte - startByte;
-        byte[] tmp = new byte[len];
-        System.arraycopy(this.data, startByte, tmp, 0, len);
-        return new Bytes(tmp);
     }
 
     /**
@@ -128,14 +109,9 @@ public class Bytes implements ByteSequence {
         return Bytes.concat(this, bytes);
     }
 
-    /**
-     * Returns a copy of the underlying byte array.
-     *
-     * @return new byte array containing the same content
-     */
     @Override
     public byte[] toByteArray() {
-        return Arrays.copyOf(data, data.length);
+        return data;
     }
 
     /**

@@ -2,8 +2,8 @@ package org.hestiastore.index.bloomfilter;
 
 import java.util.Arrays;
 
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.Vldtn;
 
 public class BitArray {
@@ -62,7 +62,7 @@ public class BitArray {
     }
 
     public ByteSequence getBytes() {
-        return bytes.toBytes();
+        return bytes.toByteSequence();
     }
 
     @Override

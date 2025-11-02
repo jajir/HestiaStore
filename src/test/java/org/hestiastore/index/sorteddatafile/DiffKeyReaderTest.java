@@ -10,7 +10,7 @@ import static org.mockito.Mockito.when;
 import java.util.Arrays;
 
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.MutableByteSequence;
+import org.hestiastore.index.bytes.MutableByteSequence;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.FileReader;

@@ -1,6 +1,6 @@
 package org.hestiastore.index.datablockfile;
 
-import org.hestiastore.index.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.CloseableResource;
 
 /**

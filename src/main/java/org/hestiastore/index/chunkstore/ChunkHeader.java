@@ -3,8 +3,8 @@ package org.hestiastore.index.chunkstore;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.Bytes;
 import org.hestiastore.index.Vldtn;
 
 /**

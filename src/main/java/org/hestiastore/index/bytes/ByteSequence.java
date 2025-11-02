@@ -1,4 +1,4 @@
-package org.hestiastore.index;
+package org.hestiastore.index.bytes;
 
 /**
  * Provides read-only access to a contiguous sequence of bytes.

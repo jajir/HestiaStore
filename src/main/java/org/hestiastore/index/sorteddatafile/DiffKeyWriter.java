@@ -2,11 +2,11 @@ package org.hestiastore.index.sorteddatafile;
 
 import java.util.Comparator;
 
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.ByteTool;
-import org.hestiastore.index.Bytes;
-import org.hestiastore.index.MutableBytes;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteTool;
+import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,11 +39,8 @@ public class DiffKeyWriter<K> {
 
     public ByteSequence write(final K key) {
         Vldtn.requireNonNull(key, "key");
-        final ByteSequence keySequence = convertorToBytes.toBytesBuffer(key);
-        // FIXME remove following copyOf
-        final Bytes keyBytes = keySequence instanceof Bytes
-                ? (Bytes) keySequence
-                : Bytes.copyOf(keySequence);
+        final ByteSequence keyBytes = normalizeKey(
+                convertorToBytes.toBytesBuffer(key));
         if (previousKey != null) {
             final int cmp = keyComparator.compare(previousKey, key);
             if (cmp == 0) {
@@ -77,10 +74,25 @@ public class DiffKeyWriter<K> {
 
         previousKeyBytes = keyBytes;
         previousKey = key;
-        return out.toBytes();
+        return out.toByteSequence();
     }
 
     public long close() {
         return 0;
+    }
+
+    private static ByteSequence normalizeKey(final ByteSequence sequence) {
+        final ByteSequence validated = Vldtn.requireNonNull(sequence,
+                "keySequence");
+        if (validated.isEmpty()) {
+            return Bytes.EMPTY;
+        }
+        if (validated instanceof Bytes) {
+            return validated;
+        }
+        if (validated instanceof MutableBytes) {
+            return ((MutableBytes) validated).toImmutableBytes();
+        }
+        return validated.slice(0, validated.length());
     }
 }

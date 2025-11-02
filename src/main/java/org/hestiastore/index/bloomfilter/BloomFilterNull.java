@@ -1,7 +1,7 @@
 package org.hestiastore.index.bloomfilter;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.Bytes;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;

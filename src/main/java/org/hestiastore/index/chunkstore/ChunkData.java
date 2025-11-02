@@ -2,8 +2,9 @@ package org.hestiastore.index.chunkstore;
 
 import java.util.Optional;
 
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datablockfile.DataBlockByteReader;
 
@@ -13,22 +14,21 @@ public class ChunkData {
     private final long crc;
     private final long magicNumber;
     private final int version;
-    private final Bytes payload;
+    private final ByteSequence payload;
 
     private ChunkData(final long flags, final long crc, final long magicNumber,
-            final int version, final Bytes payload) {
+            final int version, final ByteSequence payload) {
         this.flags = flags;
         this.crc = crc;
         this.magicNumber = magicNumber;
         this.version = version;
-        this.payload = Vldtn.requireNonNull(payload, "payload");
+        this.payload = normalizePayload(payload);
     }
 
     public static ChunkData of(final long flags, final long crc,
             final long magicNumber, final int version,
             final ByteSequence payload) {
-        return new ChunkData(flags, crc, magicNumber, version,
-                toBytes(payload));
+        return new ChunkData(flags, crc, magicNumber, version, payload);
     }
 
     public ChunkData withFlags(final long newFlags) {
@@ -49,7 +49,7 @@ public class ChunkData {
 
     public ChunkData withPayload(final ByteSequence newPayload) {
         return new ChunkData(flags, crc, magicNumber, version,
-                toBytes(newPayload));
+                newPayload);
     }
 
     public long getCrc() {
@@ -78,11 +78,8 @@ public class ChunkData {
         if (headerSequence == null) {
             return Optional.empty();
         }
-        final Bytes headerBytes = headerSequence instanceof Bytes
-                ? (Bytes) headerSequence
-                : Bytes.copyOf(headerSequence);
         final Optional<ChunkHeader> optionalChunkHeader = ChunkHeader
-                .optionalOf(headerBytes);
+                .optionalOf(headerSequence);
         if (optionalChunkHeader.isEmpty()) {
             return Optional.empty();
         }
@@ -110,12 +107,18 @@ public class ChunkData {
         return out * CellPosition.CELL_SIZE;
     }
 
-    //FIXME this method should be removed
-    private static Bytes toBytes(final ByteSequence sequence) {
-        Vldtn.requireNonNull(sequence, "payload");
-        if (sequence instanceof Bytes) {
-            return (Bytes) sequence;
+    private static ByteSequence normalizePayload(final ByteSequence sequence) {
+        final ByteSequence validated = Vldtn.requireNonNull(sequence,
+                "payload");
+        if (validated.isEmpty()) {
+            return Bytes.EMPTY;
         }
-        return Bytes.copyOf(sequence);
+        if (validated instanceof Bytes) {
+            return validated;
+        }
+        if (validated instanceof MutableBytes) {
+            return ((MutableBytes) validated).toImmutableBytes();
+        }
+        return validated.slice(0, validated.length());
     }
 }

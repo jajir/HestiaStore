@@ -1,7 +1,7 @@
 package org.hestiastore.index.bloomfilter;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.directory.Directory;
@@ -68,7 +68,7 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
                                     + " index expected size is '%s' but '%s' was loaded",
                             bloomFilterFileName, indexSizeInBytes, readed));
                 }
-                hash = new Hash(new BitArray(data.toBytes()),
+                hash = new Hash(new BitArray(data.toByteSequence()),
                         numberOfHashFunctions);
             }
         } else {

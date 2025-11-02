@@ -1,6 +1,6 @@
 package org.hestiastore.index.datatype;
 
-import org.hestiastore.index.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequence;
 
 /**
  * Instantiate object from byte array. Supposing that whole byte array is one

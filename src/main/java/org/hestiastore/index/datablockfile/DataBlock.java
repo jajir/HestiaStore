@@ -1,7 +1,8 @@
 package org.hestiastore.index.datablockfile;
 
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.Vldtn;
 
 /**
@@ -10,17 +11,17 @@ import org.hestiastore.index.Vldtn;
  */
 public final class DataBlock {
 
-    private final Bytes bytes;
+    private final ByteSequence bytes;
 
     private final DataBlockPosition position;
 
     public static DataBlock of(final ByteSequence bytes,
             final DataBlockPosition position) {
-        return new DataBlock(Bytes.copyOf(bytes), position);
+        return new DataBlock(bytes, position);
     }
 
-    DataBlock(final Bytes bytes, final DataBlockPosition position) {
-        this.bytes = Vldtn.requireNonNull(bytes, "bytes");
+    DataBlock(final ByteSequence bytes, final DataBlockPosition position) {
+        this.bytes = normalize(bytes);
         this.position = Vldtn.requireNonNull(position, "position");
         final DataBlockHeader header = getHeader();
         if (header.getMagicNumber() != DataBlockHeader.MAGIC_NUMBER) {
@@ -40,7 +41,7 @@ public final class DataBlock {
      */
     public DataBlockPayload getPayload() {
         return DataBlockPayload.of(
-                bytes.subBytes(DataBlockHeader.HEADER_SIZE, bytes.length()));
+                bytes.slice(DataBlockHeader.HEADER_SIZE, bytes.length()));
     }
 
     /**
@@ -50,7 +51,7 @@ public final class DataBlock {
      */
     public DataBlockHeader getHeader() {
         return DataBlockHeader
-                .of(bytes.subBytes(0, DataBlockHeader.HEADER_SIZE));
+                .of(bytes.slice(0, DataBlockHeader.HEADER_SIZE));
     }
 
     /**
@@ -96,6 +97,20 @@ public final class DataBlock {
      */
     long calculateCrc() {
         return getPayload().calculateCrc();
+    }
+
+    private static ByteSequence normalize(final ByteSequence sequence) {
+        final ByteSequence validated = Vldtn.requireNonNull(sequence, "bytes");
+        if (validated.isEmpty()) {
+            return Bytes.EMPTY;
+        }
+        if (validated instanceof Bytes) {
+            return validated;
+        }
+        if (validated instanceof MutableBytes) {
+            return ((MutableBytes) validated).toImmutableBytes();
+        }
+        return validated.slice(0, validated.length());
     }
 
 }

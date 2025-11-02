@@ -1,5 +1,6 @@
 package org.hestiastore.index.chunkstore;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -7,9 +8,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.ByteSequenceView;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequenceView;
 import org.hestiastore.index.TestData;
 import org.hestiastore.index.datablockfile.DataBlockPayload;
 import org.hestiastore.index.datablockfile.DataBlockSize;
@@ -27,12 +27,15 @@ public class CellStoreWriterCursorTest {
 
     private static final DataBlockSize DATABLOCK_SIZE = DataBlockSize
             .ofDataBlockSize(1024);
-    private static final Bytes BYTES_1008 = TestData.BYTES_1024.subBytes(0,
+    private static final ByteSequence BYTES_1008 = TestData.BYTES_1024.slice(0,
             1008);
-    private static final Bytes BYTES_16 = TestData.BYTES_1024.subBytes(0, 16);
-    private static final Bytes BYTES_18 = TestData.BYTES_1024.subBytes(0, 18);
-    private static final Bytes BYTES_1024 = TestData.BYTES_1024;
-    private static final Bytes BYTES_48 = TestData.BYTES_1024.subBytes(0, 48);
+    private static final ByteSequence BYTES_16 = TestData.BYTES_1024.slice(0,
+            16);
+    private static final ByteSequence BYTES_18 = TestData.BYTES_1024.slice(0,
+            18);
+    private static final ByteSequence BYTES_48 = TestData.BYTES_1024.slice(0,
+            48);
+    private static final ByteSequence BYTES_1024 = TestData.BYTES_1024;
 
     @Mock
     private DataBlockWriter dataBlockWriter;
@@ -71,7 +74,8 @@ public class CellStoreWriterCursorTest {
         verify(dataBlockWriter).write(argumentCaptor.capture());
         DataBlockPayload capturedValue = argumentCaptor.getValue();
 
-        assertEquals(BYTES_16, asBytes(capturedValue.getBytes().slice(0, 16)));
+        assertArrayEquals(BYTES_16.toByteArray(),
+                capturedValue.getBytes().slice(0, 16).toByteArray());
 
         // verify that data block write wasn't called more than once
         verify(dataBlockWriter, times(1)).write(any(DataBlockPayload.class));
@@ -91,8 +95,10 @@ public class CellStoreWriterCursorTest {
         verify(dataBlockWriter, times(1)).write(argumentCaptor.capture());
         DataBlockPayload capturedValue = argumentCaptor.getValue();
 
-        assertEquals(BYTES_16, asBytes(capturedValue.getBytes().slice(0, 16)));
-        assertEquals(BYTES_48, asBytes(capturedValue.getBytes().slice(16, 64)));
+        assertArrayEquals(BYTES_16.toByteArray(),
+                capturedValue.getBytes().slice(0, 16).toByteArray());
+        assertArrayEquals(BYTES_48.toByteArray(),
+                capturedValue.getBytes().slice(16, 64).toByteArray());
 
         // verify that data block write wasn't called more than once
         verify(dataBlockWriter, times(1)).write(any(DataBlockPayload.class));
@@ -113,8 +119,8 @@ public class CellStoreWriterCursorTest {
         verify(dataBlockWriter).write(argumentCaptor.capture());
         DataBlockPayload capturedValue = argumentCaptor.getValue();
 
-        assertEquals(asBytes(view),
-                asBytes(capturedValue.getBytes().slice(0, 32)));
+        assertArrayEquals(view.toByteArray(),
+                capturedValue.getBytes().slice(0, 32).toByteArray());
     }
 
     @Test
@@ -165,11 +171,6 @@ public class CellStoreWriterCursorTest {
     @Test
     void test_write_null_bytes() {
         assertThrows(IllegalArgumentException.class, () -> cursor.write(null));
-    }
-
-    private static Bytes asBytes(final ByteSequence sequence) {
-        return sequence instanceof Bytes ? (Bytes) sequence
-                : Bytes.copyOf(sequence);
     }
 
     @BeforeEach

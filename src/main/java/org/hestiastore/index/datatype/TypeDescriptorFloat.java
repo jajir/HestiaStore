@@ -2,8 +2,8 @@ package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
 
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.MutableBytes;
 
 public class TypeDescriptorFloat implements TypeDescriptor<Float> {
 
@@ -60,7 +60,7 @@ public class TypeDescriptorFloat implements TypeDescriptor<Float> {
         out.setByte(1, (byte) (bits >> 16));
         out.setByte(2, (byte) (bits >> 8));
         out.setByte(3, (byte) bits);
-        return out.toBytes();
+        return out.toByteSequence();
     }
 
     @Override

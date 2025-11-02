@@ -7,9 +7,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.Bytes;
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.Directory.Access;

@@ -1,7 +1,7 @@
 package org.hestiastore.index.bloomfilter;
 
 import org.apache.commons.codec.digest.MurmurHash3;
-import org.hestiastore.index.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.Vldtn;
 
 /**

@@ -2,8 +2,8 @@ package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
 
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.Vldtn;
 
 public class TypeDescriptorByte implements TypeDescriptor<Byte> {
@@ -60,7 +60,7 @@ public class TypeDescriptorByte implements TypeDescriptor<Byte> {
         Vldtn.requireNonNull(value, "value");
         final MutableBytes buffer = MutableBytes.allocate(1);
         buffer.setByte(0, value.byteValue());
-        return buffer.toBytes();
+        return buffer.toByteSequence();
     }
 
 }

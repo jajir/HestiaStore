@@ -3,7 +3,7 @@ package org.hestiastore.index.sst;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.Bytes;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.NullValue;

@@ -10,7 +10,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.Bytes;
 import org.hestiastore.index.IndexException;
 import org.junit.jupiter.api.Test;
 

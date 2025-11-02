@@ -1,9 +1,9 @@
 package org.hestiastore.index.chunkstore;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.Bytes;
-import org.hestiastore.index.ConcatenatedByteSequence;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ConcatenatedByteSequence;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datablockfile.DataBlockPayload;
 import org.hestiastore.index.datablockfile.DataBlockSize;

@@ -1,36 +1,34 @@
-package org.hestiastore.index.chunkstore;
+package org.hestiastore.index.bytes;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 
 /**
- * Class allows to continuosly add bytes without periodic array copy calling.
+ * Allows appending multiple byte sequences without repeated copying.
  */
 public class BytesAppender {
 
     private final List<ByteSequence> bytes = new ArrayList<>();
 
     /**
-     * Append given bytes.
+     * Append the provided sequence to the accumulator.
      *
-     * @param data required data to append
+     * @param data sequence to append (must not be {@code null})
      */
     public void append(final ByteSequence data) {
         final ByteSequence validated = Vldtn.requireNonNull(data, "bytes");
         if (validated.length() == 0) {
-            return; // No need to append empty byte arrays
+            return; // skip empty sequences
         }
         bytes.add(validated);
     }
 
     /**
-     * Return concatenated all appended bytes.
+     * Concatenate and return all appended sequences as a single {@link ByteSequence}.
      *
-     * @return
+     * @return combined sequence
      */
     public ByteSequence getBytes() {
         int length = 0;
@@ -46,5 +44,4 @@ public class BytesAppender {
         }
         return Bytes.of(combined);
     }
-
 }

@@ -3,7 +3,7 @@ package org.hestiastore.index.datatype;
 import java.util.Comparator;
 import java.util.List;
 
-import org.hestiastore.index.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileReader;

@@ -1,8 +1,7 @@
 package org.hestiastore.index.chunkstore;
 
-import org.apache.commons.codec.digest.PureJavaCrc32;
-import org.hestiastore.index.ByteSequence;
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequenceCrc32;
 import org.hestiastore.index.Vldtn;
 
 /**
@@ -12,7 +11,7 @@ import org.hestiastore.index.Vldtn;
  */
 public class ChunkPayload {
 
-    private final Bytes bytes;
+    private final ByteSequence bytes;
 
     /**
      * Factory method to create a ChunkPayload instance from the given bytes.
@@ -21,13 +20,10 @@ public class ChunkPayload {
      * @throws IllegalArgumentException if bytes is null
      */
     public static ChunkPayload of(final ByteSequence bytes) {
-        Vldtn.requireNonNull(bytes, "bytes");
-        // FIXME remove copyOf
-        return new ChunkPayload(Bytes.copyOf(bytes));
+        return new ChunkPayload(Vldtn.requireNonNull(bytes, "bytes"));
     }
 
-    private ChunkPayload(final Bytes bytes) {
-        Vldtn.requireNonNull(bytes, "bytes");
+    private ChunkPayload(final ByteSequence bytes) {
         this.bytes = bytes;
     }
 
@@ -55,14 +51,19 @@ public class ChunkPayload {
      * @return the CRC of the chunk payload
      */
     public long calculateCrc() {
-        final PureJavaCrc32 crc = new PureJavaCrc32();
-        crc.update(bytes.toByteArray());
+        final ByteSequenceCrc32 crc = new ByteSequenceCrc32();
+        crc.update(bytes);
         return crc.getValue();
     }
 
     @Override
     public int hashCode() {
-        return bytes.hashCode();
+        int result = 1;
+        final int length = bytes.length();
+        for (int i = 0; i < length; i++) {
+            result = 31 * result + bytes.getByte(i);
+        }
+        return result;
     }
 
     @Override
@@ -74,7 +75,16 @@ public class ChunkPayload {
             return false;
         }
         final ChunkPayload other = (ChunkPayload) obj;
-        return bytes.equals(other.bytes);
+        final int length = bytes.length();
+        if (length != other.bytes.length()) {
+            return false;
+        }
+        for (int i = 0; i < length; i++) {
+            if (bytes.getByte(i) != other.bytes.getByte(i)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

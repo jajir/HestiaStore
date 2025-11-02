@@ -9,8 +9,8 @@ import java.util.Arrays;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.MutableByteSequence;
-import org.hestiastore.index.MutableBytes;
+import org.hestiastore.index.bytes.MutableByteSequence;
+import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.Vldtn;
 
 /**
