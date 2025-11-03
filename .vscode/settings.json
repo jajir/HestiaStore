@@ -1,7 +1,7 @@
 {
     "java.debug.settings.onBuildFailureProceed": true,
     "java.configuration.updateBuildConfiguration": "automatic",
-    "java.format.settings.url": "./eclipse-formatter.xml",
+    "java.format.settings.url": "./.vscode/eclipse-formatter.xml",
     "java.format.settings.profile": "mujSunFormatter",
     "editor.formatOnSave": true,
     "java.dependency.syncWithFolderExplorer": false,
