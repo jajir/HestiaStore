@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.bytes.MutableBytes;
 import org.junit.jupiter.api.Test;
@@ -62,13 +62,13 @@ class ByteSequenceAccumulatorTest {
             writer.write((byte) 7);
             writer.write((byte) 8);
 
-            final Bytes snapshot = writer.toBytes();
+            final ByteSequence snapshot = writer.toBytes();
 
-            assertEquals(Bytes.of(new byte[] { 7, 8 }), snapshot);
+            assertEquals(ByteSequences.wrap(new byte[] { 7, 8 }), snapshot);
 
             writer.write((byte) 9);
 
-            assertEquals(Bytes.of(new byte[] { 7, 8 }), snapshot);
+            assertEquals(ByteSequences.wrap(new byte[] { 7, 8 }), snapshot);
             assertArrayEquals(new byte[] { 7, 8, 9 }, writer.toByteArray());
         }
     }

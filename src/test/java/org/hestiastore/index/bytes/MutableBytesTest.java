@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +28,8 @@ class MutableBytesTest {
 
     @Test
     void copyOf_createsIndependentBuffer() {
-        final Bytes source = Bytes.of(new byte[] { 4, 5, 6 });
+        final ByteSequenceView source = ByteSequenceView
+                .of(new byte[] { 4, 5, 6 });
         final MutableBytes buffer = MutableBytes.copyOf(source);
 
         assertArrayEquals(new byte[] { 4, 5, 6 }, buffer.array());
@@ -49,7 +51,8 @@ class MutableBytesTest {
     @Test
     void setBytes_copiesFromSourceSequence() {
         final MutableBytes buffer = MutableBytes.allocate(5);
-        final Bytes source = Bytes.of(new byte[] { 9, 8, 7 });
+        final ByteSequenceView source = ByteSequenceView
+                .of(new byte[] { 9, 8, 7 });
 
         buffer.setBytes(1, source, 0, source.length());
 
@@ -92,7 +95,7 @@ class MutableBytesTest {
 
         final ByteSequence slice = buffer.slice(2, 2);
 
-        assertSame(Bytes.EMPTY, slice);
+        assertSame(ByteSequence.EMPTY, slice);
     }
 
     @Test
@@ -113,28 +116,30 @@ class MutableBytesTest {
     void toByteSequence_zeroLengthReturnsEmpty() {
         final MutableBytes buffer = MutableBytes.allocate(0);
 
-        assertSame(Bytes.EMPTY, buffer.toByteSequence());
+        assertSame(ByteSequence.EMPTY, buffer.toByteSequence());
     }
 
     @Test
     void toImmutableBytes_sharesBackingArray() {
         final MutableBytes buffer = MutableBytes.wrap(new byte[] { 4, 5 });
 
-        final Bytes view = buffer.toImmutableBytes();
+        final ByteSequence view = buffer.toImmutableBytes();
 
-        assertEquals(2, view.length());
-        assertEquals(4, view.getByte(0));
+        assertTrue(view instanceof ByteSequenceView);
+        final ByteSequenceView bytesView = (ByteSequenceView) view;
+        assertEquals(2, bytesView.length());
+        assertEquals(4, bytesView.getByte(0));
 
         buffer.setByte(0, (byte) 9);
 
-        assertEquals(9, view.getByte(0));
+        assertEquals(9, bytesView.getByte(0));
     }
 
     @Test
     void toImmutableBytes_zeroLengthReturnsEmpty() {
         final MutableBytes buffer = MutableBytes.allocate(0);
 
-        assertSame(Bytes.EMPTY, buffer.toImmutableBytes());
+        assertSame(ByteSequence.EMPTY, buffer.toImmutableBytes());
     }
 
     @Test
@@ -160,7 +165,8 @@ class MutableBytesTest {
     @Test
     void setBytes_outOfBoundsThrows() {
         final MutableBytes buffer = MutableBytes.allocate(2);
-        final Bytes source = Bytes.of(new byte[] { 1, 2, 3 });
+        final ByteSequenceView source = ByteSequenceView
+                .of(new byte[] { 1, 2, 3 });
 
         assertThrows(IllegalArgumentException.class,
                 () -> buffer.setBytes(0, source, 0, source.length()));
@@ -252,7 +258,8 @@ class MutableBytesTest {
     @Test
     void setBytes_zeroLengthAtCapacityAllowed() {
         final MutableBytes buffer = MutableBytes.wrap(new byte[] { 1, 2, 3 });
-        final Bytes source = Bytes.of(new byte[] { 7, 8, 9 });
+        final ByteSequenceView source = (ByteSequenceView) ByteSequences
+                .wrap(new byte[] { 7, 8, 9 });
 
         buffer.setBytes(3, source, 0, 0);
 
@@ -262,7 +269,8 @@ class MutableBytesTest {
     @Test
     void setBytes_negativeTargetOffsetThrows() {
         final MutableBytes buffer = MutableBytes.allocate(2);
-        final Bytes source = Bytes.of(new byte[] { 1 });
+        final ByteSequenceView source = (ByteSequenceView) ByteSequences
+                .wrap(new byte[] { 1 });
 
         assertThrows(IllegalArgumentException.class,
                 () -> buffer.setBytes(-1, source, 0, 1));
@@ -279,7 +287,8 @@ class MutableBytesTest {
     @Test
     void setBytes_negativeLengthThrows() {
         final MutableBytes buffer = MutableBytes.allocate(1);
-        final Bytes source = Bytes.of(new byte[] { 1 });
+        final ByteSequenceView source = (ByteSequenceView) ByteSequences
+                .wrap(new byte[] { 1 });
 
         assertThrows(IllegalArgumentException.class,
                 () -> buffer.setBytes(0, source, 0, -1));
@@ -288,7 +297,8 @@ class MutableBytesTest {
     @Test
     void setBytes_sourceRangeOutOfBoundsThrows() {
         final MutableBytes buffer = MutableBytes.allocate(2);
-        final Bytes source = Bytes.of(new byte[] { 1, 2 });
+        final ByteSequenceView source = (ByteSequenceView) ByteSequences
+                .wrap(new byte[] { 1, 2 });
 
         assertThrows(IllegalArgumentException.class,
                 () -> buffer.setBytes(0, source, 2, 1));

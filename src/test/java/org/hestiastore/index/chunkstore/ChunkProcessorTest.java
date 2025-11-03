@@ -10,20 +10,21 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.IndexException;
 import org.junit.jupiter.api.Test;
 
 class ChunkProcessorTest {
 
     private static final ChunkData SAMPLE_DATA = ChunkData.of(0L, 0L,
-            ChunkHeader.MAGIC_NUMBER, 1, Bytes.of(new byte[] { 1, 2, 3 }));
+            ChunkHeader.MAGIC_NUMBER, 1,
+            ByteSequences.wrap(new byte[] { 1, 2, 3 }));
 
     @Test
     void constructor_should_throw_when_filters_null() {
         final IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> new ChunkProcessor(null));
+                IllegalArgumentException.class, () -> new ChunkProcessor(null));
 
         assertEquals("Property 'filters' must not be null.",
                 exception.getMessage());

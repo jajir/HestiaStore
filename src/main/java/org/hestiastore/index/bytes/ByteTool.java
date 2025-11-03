@@ -3,7 +3,7 @@ package org.hestiastore.index.bytes;
 import org.hestiastore.index.Vldtn;
 
 /**
- * Utility helpers for working with {@link Bytes} instances.
+ * Utility helpers for working with {@link ByteSequenceView} instances.
  */
 public final class ByteTool {
 
@@ -47,7 +47,7 @@ public final class ByteTool {
                     .format("Index '%d' is out of range 0..%d", index, length));
         }
         if (index == length) {
-            return Bytes.EMPTY;
+            return ByteSequence.EMPTY;
         }
         if (index == 0) {
             return full;

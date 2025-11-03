@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
 import org.hestiastore.index.bytes.ConcatenatedByteSequence;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.bytes.MutableBytes;
@@ -129,9 +129,9 @@ public class MemDirectory implements Directory {
     private static ByteSequence normalize(final ByteSequence sequence) {
         final ByteSequence validated = Vldtn.requireNonNull(sequence, "bytes");
         if (validated.isEmpty()) {
-            return Bytes.EMPTY;
+            return ByteSequence.EMPTY;
         }
-        if (validated instanceof Bytes) {
+        if (validated instanceof ByteSequenceView) {
             return validated;
         }
         if (validated instanceof MutableBytes) {

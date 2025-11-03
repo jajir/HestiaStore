@@ -2,7 +2,7 @@ package org.hestiastore.index.chunkstore;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
 import org.hestiastore.index.bytes.ConcatenatedByteSequence;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datablockfile.DataBlockPayload;
@@ -70,7 +70,7 @@ public final class CellStoreWriterCursor extends AbstractCloseableResource {
     protected void doClose() {
         if (currentDataBlock != null) {
             if (getAvailableBytes() > 0) {
-                final ByteSequence padding = Bytes
+                final ByteSequence padding = ByteSequenceView
                         .of(new byte[getAvailableBytes()]);
                 final ByteSequence paddedBlock = ConcatenatedByteSequence
                         .of(currentDataBlock, padding);

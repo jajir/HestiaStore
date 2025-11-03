@@ -3,12 +3,12 @@ package org.hestiastore.index.chunkstore;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.hestiastore.index.bytes.ByteSequenceCrc32;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
 import org.junit.jupiter.api.Test;
 
 class ChunkFilterCrc32WritingTest {
 
-    private static final Bytes PAYLOAD = Bytes
+    private static final ByteSequenceView PAYLOAD = ByteSequenceView
             .of(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
 
     @Test

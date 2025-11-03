@@ -4,7 +4,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.Vldtn;
 
 /**
@@ -94,7 +95,7 @@ public final class ChunkHeader {
      * @return the chunk header
      */
     public static ChunkHeader of(final byte[] data) {
-        return ChunkHeaderCodec.decode(Bytes.of(data));
+        return ChunkHeaderCodec.decode(ByteSequences.wrap(data));
     }
 
     /**

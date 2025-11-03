@@ -8,7 +8,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequences;
+import org.hestiastore.index.bytes.ByteSequenceView;
 import org.hestiastore.index.TestData;
 import org.hestiastore.index.datablockfile.DataBlockByteReader;
 import org.junit.jupiter.api.AfterEach;
@@ -50,10 +51,10 @@ public class ChunkStoreReaderImplTest {
     void test_one_chunk() {
         when(dataBlockByteReader.readExactly(32))//
                 .thenReturn(CHUNK_HEADER_9.getBytes())//
-                .thenReturn(Bytes.of(new byte[32]))// s
+                .thenReturn(ByteSequences.wrap(new byte[32]))// s
                 .thenReturn(null);
         when(dataBlockByteReader.readExactly(16))
-                .thenReturn(TestData.BYTES_9.paddedTo(16))//
+                .thenReturn(ByteSequences.padToLength(TestData.BYTES_9, 16))//
                 .thenReturn(null);
 
         final Chunk chunk = reader.read();
@@ -74,8 +75,8 @@ public class ChunkStoreReaderImplTest {
                 .thenReturn(CHUNK_HEADER_15.getBytes())//
                 .thenReturn(null);
         when(dataBlockByteReader.readExactly(16))//
-                .thenReturn(TestData.BYTES_9.paddedTo(16))//
-                .thenReturn(TestData.BYTES_15.paddedTo(16))//
+                .thenReturn(ByteSequences.padToLength(TestData.BYTES_9, 16))//
+                .thenReturn(ByteSequences.padToLength(TestData.BYTES_15, 16))//
                 .thenReturn(null);
 
         final Chunk chunk1 = reader.read();

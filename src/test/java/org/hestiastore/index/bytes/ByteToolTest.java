@@ -10,8 +10,10 @@ import org.junit.jupiter.api.Test;
 
 class ByteToolTest {
 
-    private static final Bytes BYTES_EMPTY = Bytes.of("".getBytes());
-    private static final Bytes BYTES_AHOJ = Bytes.of("ahoj".getBytes());
+    private static final ByteSequence BYTES_EMPTY = ByteSequences
+            .wrap("".getBytes());
+    private static final ByteSequence BYTES_AHOJ = ByteSequences
+            .wrap("ahoj".getBytes());
 
     @Test
     void test_countMatchingPrefixBytes() {
@@ -35,8 +37,8 @@ class ByteToolTest {
 
     private void testBytes(final String a, final String b,
             final int expectedBytes) {
-        final Bytes a1 = Bytes.of(a.getBytes());
-        final Bytes b1 = Bytes.of(b.getBytes());
+        final ByteSequence a1 = ByteSequences.wrap(a.getBytes());
+        final ByteSequence b1 = ByteSequences.wrap(b.getBytes());
         final int ret = ByteTool.countMatchingPrefixBytes(a1, b1);
         assertEquals(expectedBytes, ret);
     }
@@ -57,22 +59,25 @@ class ByteToolTest {
 
     @Test
     void test_getRemainingBytesAfterIndex_zeroIndexReturnsOriginal() {
-        final Bytes input = Bytes.of(new byte[] { 0, 1, 2 });
+        final ByteSequenceView input = (ByteSequenceView) ByteSequences
+                .wrap(new byte[] { 0, 1, 2 });
 
         assertSame(input, ByteTool.getRemainingBytesAfterIndex(0, input));
     }
 
     @Test
     void test_getRemainingBytesAfterIndex_fullLengthReturnsEmpty() {
-        final Bytes input = Bytes.of(new byte[] { 0, 1, 2 });
+        final ByteSequenceView input = (ByteSequenceView) ByteSequences
+                .wrap(new byte[] { 0, 1, 2 });
 
-        assertSame(Bytes.EMPTY,
+        assertSame(ByteSequence.EMPTY,
                 ByteTool.getRemainingBytesAfterIndex(input.length(), input));
     }
 
     @Test
     void test_getRemainingBytesAfterIndex_returnsViewForBytes() {
-        final Bytes input = Bytes.of(new byte[] { 1, 2, 3, 4 });
+        final ByteSequenceView input = (ByteSequenceView) ByteSequences
+                .wrap(new byte[] { 1, 2, 3, 4 });
 
         final ByteSequence remainder = ByteTool.getRemainingBytesAfterIndex(2,
                 input);
@@ -84,8 +89,8 @@ class ByteToolTest {
     @Test
     void test_getRemainingBytesAfterIndex_handlesConcatenatedSequence() {
         final ByteSequence concatenated = ConcatenatedByteSequence.of(
-                Bytes.of(new byte[] { 1, 2, 3 }),
-                Bytes.of(new byte[] { 4, 5 }));
+                ByteSequences.wrap(new byte[] { 1, 2, 3 }),
+                ByteSequences.wrap(new byte[] { 4, 5 }));
 
         final ByteSequence remainder = ByteTool.getRemainingBytesAfterIndex(2,
                 concatenated);
@@ -96,7 +101,7 @@ class ByteToolTest {
 
     private void testFunction(final int sharedLength, final String str,
             final String expectedResult) {
-        final Bytes input = Bytes.of(str.getBytes());
+        final ByteSequence input = ByteSequences.wrap(str.getBytes());
         final ByteSequence wrapped = ByteTool
                 .getRemainingBytesAfterIndex(sharedLength, input);
         assertEquals(expectedResult, new String(wrapped.toByteArray()));
@@ -104,8 +109,8 @@ class ByteToolTest {
 
     @Test
     void test_concatenate() {
-        final Bytes first = Bytes.of(new byte[] { 1, 2 });
-        final Bytes second = Bytes.of(new byte[] { 3, 4, 5 });
+        final ByteSequence first = ByteSequences.wrap(new byte[] { 1, 2 });
+        final ByteSequence second = ByteSequences.wrap(new byte[] { 3, 4, 5 });
         final ByteSequence result = ByteTool.concatenate(first, second);
 
         assertTrue(result instanceof ConcatenatedByteSequence);
@@ -115,9 +120,11 @@ class ByteToolTest {
 
     @Test
     void test_concatenateShortCircuitsEmptyOperands() {
-        final Bytes single = Bytes.of(new byte[] { 9 });
-        final ByteSequence first = ByteTool.concatenate(Bytes.EMPTY, single);
-        final ByteSequence second = ByteTool.concatenate(single, Bytes.EMPTY);
+        final ByteSequence single = ByteSequences.wrap(new byte[] { 9 });
+        final ByteSequence first = ByteTool.concatenate(ByteSequence.EMPTY,
+                single);
+        final ByteSequence second = ByteTool.concatenate(single,
+                ByteSequence.EMPTY);
 
         assertSame(single, first);
         assertSame(single, second);

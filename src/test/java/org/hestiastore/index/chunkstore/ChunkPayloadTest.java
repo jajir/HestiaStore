@@ -7,7 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.zip.CRC32;
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.bytes.MutableBytes;
 import org.junit.jupiter.api.Test;
 
@@ -15,7 +16,8 @@ class ChunkPayloadTest {
 
     @Test
     void of_returnsSameInstanceWhenBytesAlreadyProvided() {
-        final Bytes data = Bytes.of(new byte[] { 1, 2, 3 });
+        final ByteSequenceView data = ByteSequenceView
+                .of(new byte[] { 1, 2, 3 });
 
         final ChunkPayload payload = ChunkPayload.of(data);
 
@@ -45,10 +47,11 @@ class ChunkPayloadTest {
     @Test
     void equals_comparesContent() {
         final ChunkPayload first = ChunkPayload
-                .of(Bytes.of(new byte[] { 1, 2, 3 }));
+                .of(ByteSequences.wrap(new byte[] { 1, 2, 3 }));
         final MutableBytes secondBuffer = MutableBytes
-                .copyOf(Bytes.of(new byte[] { 1, 2, 3 }));
-        final ChunkPayload second = ChunkPayload.of(secondBuffer.toByteSequence());
+                .copyOf(ByteSequences.wrap(new byte[] { 1, 2, 3 }));
+        final ChunkPayload second = ChunkPayload
+                .of(secondBuffer.toByteSequence());
 
         assertEquals(first, second);
         assertEquals(first.hashCode(), second.hashCode());
@@ -62,10 +65,7 @@ class ChunkPayloadTest {
 
     @Test
     void calculateCrc_matchesReferenceImplementation() {
-        final byte[][] samples = {
-                {},
-                { 0 },
-                { 1, 2, 3, 4 },
+        final byte[][] samples = { {}, { 0 }, { 1, 2, 3, 4 },
                 "chunk payload".getBytes(),
                 { (byte) 0xFF, (byte) 0xEE, (byte) 0xDD, (byte) 0xCC } };
 
@@ -73,7 +73,8 @@ class ChunkPayloadTest {
             final CRC32 reference = new CRC32();
             reference.update(sample, 0, sample.length);
 
-            final ChunkPayload payload = ChunkPayload.of(Bytes.of(sample));
+            final ChunkPayload payload = ChunkPayload
+                    .of(ByteSequences.wrap(sample));
 
             assertEquals(reference.getValue(), payload.calculateCrc());
         }

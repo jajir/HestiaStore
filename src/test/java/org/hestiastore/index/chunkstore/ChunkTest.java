@@ -6,7 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.bytes.ConcatenatedByteSequence;
 import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.TestData;
@@ -21,10 +22,11 @@ public class ChunkTest {
         final ChunkHeader chunkHeader = ChunkHeader.of(ChunkHeader.MAGIC_NUMBER,
                 VERSION, 9, TestData.CHUNK_PAYLOAD_9.calculateCrc());
         final ByteSequence headerSequence = chunkHeader.getBytes();
-        final Bytes headerBytes = headerSequence instanceof Bytes
-                ? (Bytes) headerSequence
-                : Bytes.copyOf(headerSequence);
-        final Bytes chunkBytes = Bytes.concat(headerBytes, TestData.BYTES_9);
+        final ByteSequence headerBytes = headerSequence instanceof ByteSequenceView
+                ? headerSequence
+                : ByteSequences.copyOf(headerSequence);
+        final ByteSequence chunkBytes = ConcatenatedByteSequence.of(headerBytes,
+                TestData.BYTES_9);
 
         final Chunk chunk = Chunk.of(chunkBytes);
 
@@ -80,8 +82,7 @@ public class ChunkTest {
 
         assertEquals(VERSION, chunk.getHeader().getVersion());
         assertEquals(TestData.BYTES_9.length(), chunk.getPayload().length());
-        assertSame(ConcatenatedByteSequence.class,
-                chunk.getBytes().getClass());
+        assertSame(ConcatenatedByteSequence.class, chunk.getBytes().getClass());
     }
 
     @Test
@@ -96,7 +97,8 @@ public class ChunkTest {
 
     @Test
     void ofBytes_headerTooSmallThrows() {
-        final MutableBytes serialized = MutableBytes.allocate(ChunkHeader.HEADER_SIZE - 1);
+        final MutableBytes serialized = MutableBytes
+                .allocate(ChunkHeader.HEADER_SIZE - 1);
 
         assertThrows(IllegalArgumentException.class,
                 () -> Chunk.of(serialized.toByteSequence()));
@@ -115,8 +117,7 @@ public class ChunkTest {
 
         assertEquals(ChunkHeader.HEADER_SIZE + payloadView.length(),
                 chunk.getBytes().length());
-        assertSame(ConcatenatedByteSequence.class,
-                chunk.getBytes().getClass());
+        assertSame(ConcatenatedByteSequence.class, chunk.getBytes().getClass());
 
         payloadBuffer.setByte(0, (byte) 0x7F);
         assertEquals(0x7F & 0xFF,

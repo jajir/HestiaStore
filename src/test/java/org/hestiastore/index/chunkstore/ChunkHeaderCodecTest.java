@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.ByteBuffer;
 
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
 import org.junit.jupiter.api.Test;
 
 class ChunkHeaderCodecTest {
@@ -37,7 +37,7 @@ class ChunkHeaderCodecTest {
 
         final ByteSequence encoded = ChunkHeaderCodec.encode(header);
 
-        assertTrue(encoded instanceof Bytes);
+        assertTrue(encoded instanceof ByteSequenceView);
         assertEquals(ChunkHeader.HEADER_SIZE, encoded.length());
         assertArrayEquals(expectedBytes(), encoded.toByteArray());
     }

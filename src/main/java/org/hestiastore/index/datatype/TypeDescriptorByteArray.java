@@ -3,11 +3,12 @@ package org.hestiastore.index.datatype;
 import java.nio.charset.Charset;
 import java.util.Comparator;
 
-import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.Bytes;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequences;
 
-public class TypeDescriptorByteArray implements TypeDescriptor<Bytes> {
+public class TypeDescriptorByteArray
+        implements TypeDescriptor<ByteSequence> {
 
     private static final String CHARSET_ENCODING_NAME = "ISO_8859_1";
 
@@ -17,42 +18,43 @@ public class TypeDescriptorByteArray implements TypeDescriptor<Bytes> {
     /**
      * Tombstones value, use can't use it.
      */
-    public static final Bytes TOMBSTONE_VALUE = Bytes
-            .of("(*&^%$#@!)-1eaa9b2c-3c11-11ee-be56-0242ac120002"
+    public static final ByteSequence TOMBSTONE_VALUE = ByteSequences
+            .copyOf("(*&^%$#@!)-1eaa9b2c-3c11-11ee-be56-0242ac120002"
                     .getBytes(CHARSET_ENCODING));
 
     @Override
-    public ConvertorFromBytes<Bytes> getConvertorFromBytes() {
+    public ConvertorFromBytes<ByteSequence> getConvertorFromBytes() {
         return bytes -> {
             final ByteSequence validated = Vldtn.requireNonNull(bytes, "bytes");
-            // FIXME remove copyOf
-            return Bytes.copyOf(validated);
+            return ByteSequences.copyOf(validated);
         };
     }
 
     @Override
-    public ConvertorToBytes<Bytes> getConvertorToBytes() {
+    public ConvertorToBytes<ByteSequence> getConvertorToBytes() {
         return data -> {
-            final Bytes validated = Vldtn.requireNonNull(data, "bytes");
-            return Bytes.copyOf(validated);
+            final ByteSequence validated = Vldtn.requireNonNull(data, "bytes");
+            return ByteSequences.copyOf(validated);
         };
     }
 
     @Override
-    public VarLengthWriter<Bytes> getTypeWriter() {
+    public VarLengthWriter<ByteSequence> getTypeWriter() {
         return new VarLengthWriter<>(getConvertorToBytes());
     }
 
     @Override
-    public VarLengthReader<Bytes> getTypeReader() {
+    public VarLengthReader<ByteSequence> getTypeReader() {
         return new VarLengthReader<>(getConvertorFromBytes());
     }
 
     @Override
-    public Comparator<Bytes> getComparator() {
+    public Comparator<ByteSequence> getComparator() {
         return (left, right) -> {
-            final Bytes leftValidated = Vldtn.requireNonNull(left, "left");
-            final Bytes rightValidated = Vldtn.requireNonNull(right, "right");
+            final ByteSequence leftValidated = Vldtn.requireNonNull(left,
+                    "left");
+            final ByteSequence rightValidated = Vldtn.requireNonNull(right,
+                    "right");
             final int leftLength = leftValidated.length();
             final int rightLength = rightValidated.length();
             final int limit = Math.min(leftLength, rightLength);
@@ -68,7 +70,7 @@ public class TypeDescriptorByteArray implements TypeDescriptor<Bytes> {
     }
 
     @Override
-    public Bytes getTombstone() {
+    public ByteSequence getTombstone() {
         return TOMBSTONE_VALUE;
     }
 

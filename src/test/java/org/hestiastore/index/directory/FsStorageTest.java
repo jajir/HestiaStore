@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
 
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
 import org.hestiastore.index.bytes.MutableBytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -13,7 +13,7 @@ class FsStorageTest {
 
     private static final String FILE_NAME = "pok.txt";
 
-    private static final Bytes TEXT_LONG = Bytes
+    private static final ByteSequenceView TEXT_LONG = ByteSequenceView
             .of(("This code stores a reference to an "
                     + "externally mutable object into the internal "
                     + "representation of the object.  If instances are accessed "

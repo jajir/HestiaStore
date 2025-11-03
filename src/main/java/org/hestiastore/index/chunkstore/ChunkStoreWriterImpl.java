@@ -5,7 +5,6 @@ import java.util.List;
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.Bytes;
 import org.hestiastore.index.bytes.ConcatenatedByteSequence;
 
 /**
@@ -68,6 +67,11 @@ public class ChunkStoreWriterImpl extends AbstractCloseableResource
                 new ZeroByteSequence(padding));
     }
 
+    /**
+     * Lightweight immutable sequence that represents a configurable number of
+     * zero bytes. The writer uses this to pad payloads out to full cell
+     * boundaries without allocating new arrays for every chunk.
+     */
     private static final class ZeroByteSequence implements ByteSequence {
 
         private final int length;
@@ -108,6 +112,13 @@ public class ChunkStoreWriterImpl extends AbstractCloseableResource
         }
 
         @Override
+        public byte[] toByteArray() {
+            final byte[] copy = new byte[length()];
+            copyTo(0, copy, 0, copy.length);
+            return copy;
+        }
+
+        @Override
         public ByteSequence slice(final int fromInclusive,
                 final int toExclusive) {
             if (fromInclusive < 0 || toExclusive < fromInclusive
@@ -117,7 +128,7 @@ public class ChunkStoreWriterImpl extends AbstractCloseableResource
             }
             final int newLength = toExclusive - fromInclusive;
             if (newLength == 0) {
-                return Bytes.EMPTY;
+                return ByteSequence.EMPTY;
             }
             return new ZeroByteSequence(newLength);
         }

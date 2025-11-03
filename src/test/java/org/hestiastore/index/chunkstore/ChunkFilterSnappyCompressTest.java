@@ -7,16 +7,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.IndexException;
 import org.junit.jupiter.api.Test;
 import org.xerial.snappy.Snappy;
 
 class ChunkFilterSnappyCompressTest {
 
-    private static final Bytes PAYLOAD = Bytes.of(new byte[] {
-            // intentionally repetitive to improve compression ratio
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 });
+    private static final ByteSequenceView PAYLOAD = ByteSequenceView
+            .of(new byte[] {
+                    // intentionally repetitive to improve compression ratio
+                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                    1 });
 
     @Test
     void apply_should_compress_payload_and_set_flag() throws IOException {
@@ -28,7 +31,7 @@ class ChunkFilterSnappyCompressTest {
 
         final byte[] uncompressed = Snappy
                 .uncompress(result.getPayload().toByteArray());
-        assertEquals(PAYLOAD, Bytes.of(uncompressed));
+        assertEquals(PAYLOAD, ByteSequences.wrap(uncompressed));
         assertTrue(
                 (result.getFlags()
                         & ChunkFilterSnappyCompress.FLAG_COMPRESSED) != 0L,

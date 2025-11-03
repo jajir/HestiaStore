@@ -2,7 +2,7 @@ package org.hestiastore.index.sorteddatafile;
 
 import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.bytes.ByteTool;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
@@ -25,7 +25,8 @@ public class DiffKeyReader<K> implements TypeReader<K> {
     /**
      * Creates a reader that reconstructs keys using the supplied converter.
      *
-     * @param keyConvertor converts raw {@link Bytes} into the logical key type
+     * @param keyConvertor converts raw {@link ByteSequenceView} into the
+     *                     logical key type
      */
     public DiffKeyReader(final ConvertorFromBytes<K> keyConvertor) {
         this.keyConvertor = keyConvertor;

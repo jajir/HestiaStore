@@ -6,6 +6,11 @@ package org.hestiastore.index.bytes;
 public interface ByteSequence {
 
     /**
+     * Shared immutable empty sequence instance.
+     */
+    ByteSequence EMPTY = ByteSequenceEmpty.INSTANCE;
+
+    /**
      * Returns the number of bytes contained in this sequence.
      *
      * @return length of the sequence
@@ -36,7 +41,7 @@ public interface ByteSequence {
      * storage, so callers must not mutate the underlying data while retaining
      * references to the slice unless that sharing is intentional. If an
      * isolated copy is required, use {@link #toByteArray()} or
-     * {@link Bytes#copyOf(byte[])} on the slice.
+     * {@link ByteSequences#copyOf(byte[])} on the slice.
      *
      * @param fromInclusive start index (inclusive)
      * @param toExclusive   end index (exclusive)
@@ -45,25 +50,11 @@ public interface ByteSequence {
     ByteSequence slice(int fromInclusive, int toExclusive);
 
     /**
-     * Copies the entire sequence into the provided destination array.
-     *
-     * @param target       destination byte array
-     * @param targetOffset index in the destination array to start writing to
-     */
-    default void copyTo(final byte[] target, final int targetOffset) {
-        copyTo(0, target, targetOffset, length());
-    }
-
-    /**
      * Returns the bytes of this sequence as a new array.
      *
      * @return copy of the sequence data
      */
-    default byte[] toByteArray() {
-        final byte[] copy = new byte[length()];
-        copyTo(0, copy, 0, copy.length);
-        return copy;
-    }
+    byte[] toByteArray();
 
     /**
      * Indicates whether this sequence is empty.

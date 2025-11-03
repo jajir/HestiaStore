@@ -26,7 +26,8 @@ public class BytesAppender {
     }
 
     /**
-     * Concatenate and return all appended sequences as a single {@link ByteSequence}.
+     * Concatenate and return all appended sequences as a single
+     * {@link ByteSequence}.
      *
      * @return combined sequence
      */
@@ -42,6 +43,6 @@ public class BytesAppender {
             sequence.copyTo(0, combined, offset, chunkLength);
             offset += chunkLength;
         }
-        return Bytes.of(combined);
+        return ByteSequences.wrap(combined);
     }
 }

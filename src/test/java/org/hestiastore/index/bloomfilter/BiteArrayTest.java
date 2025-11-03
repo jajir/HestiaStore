@@ -7,7 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +61,7 @@ class BiteArrayTest {
         // show at debug log -12 as binary
         byte[] b = new byte[1];
         b[0] = -12;
-        logger.debug(toBinaryString(Bytes.of(b)));
+        logger.debug(toBinaryString(ByteSequences.wrap(b)));
 
         // set firts byte to -12
         BitArray bitArray = new BitArray(BIT_ARRAY_SIZE);

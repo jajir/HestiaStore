@@ -3,7 +3,7 @@ package org.hestiastore.index.chunkstore;
 import java.io.IOException;
 
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
 import org.hestiastore.index.IndexException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +33,8 @@ public class ChunkFilterSnappyCompress implements ChunkFilter {
                         originalSize, compressedSize,
                         String.format("%.2f", savings));
             }
-            final Bytes compressedBytes = Bytes.of(compressed);
+            final ByteSequenceView compressedBytes = ByteSequenceView
+                    .of(compressed);
             return input.withPayload(compressedBytes)
                     .withFlags(input.getFlags() | FLAG_COMPRESSED);
         } catch (IOException ex) {

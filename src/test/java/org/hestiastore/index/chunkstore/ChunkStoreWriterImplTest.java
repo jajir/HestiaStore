@@ -8,7 +8,8 @@ import java.util.List;
 
 import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.bytes.ByteSequenceCrc32;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.TestData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,7 +32,8 @@ class ChunkStoreWriterImplTest {
 
     @Test
     void test_writeProducesPaddedBytes() {
-        final Bytes payloadBytes = Bytes.of(new byte[] { 1, 2, 3, 4, 5 });
+        final ByteSequenceView payloadBytes = ByteSequenceView
+                .of(new byte[] { 1, 2, 3, 4, 5 });
         final ChunkPayload payload = ChunkPayload.of(payloadBytes);
 
         final CellPosition position = writer.write(payload, VERSION);
@@ -72,7 +74,7 @@ class ChunkStoreWriterImplTest {
         for (int i = 0; i < data.length; i++) {
             data[i] = (byte) (i + 1);
         }
-        final ChunkPayload payload = ChunkPayload.of(Bytes.of(data));
+        final ChunkPayload payload = ChunkPayload.of(ByteSequences.wrap(data));
 
         writer.write(payload, VERSION);
 
@@ -94,7 +96,7 @@ class ChunkStoreWriterImplTest {
         return true;
     }
 
-    private long expectedCrc(final Bytes payload) {
+    private long expectedCrc(final ByteSequenceView payload) {
         final ByteSequenceCrc32 crc = new ByteSequenceCrc32();
         crc.update(payload);
         return crc.getValue();

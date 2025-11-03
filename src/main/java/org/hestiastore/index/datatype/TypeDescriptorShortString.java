@@ -3,7 +3,7 @@ package org.hestiastore.index.datatype;
 import java.nio.charset.Charset;
 import java.util.Comparator;
 
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.Vldtn;
 
 public class TypeDescriptorShortString implements TypeDescriptor<String> {
@@ -30,7 +30,7 @@ public class TypeDescriptorShortString implements TypeDescriptor<String> {
     public ConvertorToBytes<String> getConvertorToBytes() {
         return string -> {
             Vldtn.requireNonNull(string, "string");
-            return Bytes.of(string.getBytes(CHARSET_ENCODING));
+            return ByteSequences.wrap(string.getBytes(CHARSET_ENCODING));
         };
     }
 

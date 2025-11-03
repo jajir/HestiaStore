@@ -6,13 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.io.IOException;
 
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.junit.jupiter.api.Test;
 import org.xerial.snappy.Snappy;
 
 class ChunkFilterSnappyDecompressTest {
 
-    private static final Bytes PAYLOAD = Bytes
+    private static final ByteSequenceView PAYLOAD = ByteSequenceView
             .of(new byte[] { 10, 20, 30, 40, 50, 60, 70, 80 });
 
     @Test
@@ -20,7 +21,7 @@ class ChunkFilterSnappyDecompressTest {
         final byte[] compressed = Snappy.compress(PAYLOAD.toByteArray());
         final ChunkData input = ChunkData.of(
                 ChunkFilterSnappyCompress.FLAG_COMPRESSED, 0L,
-                ChunkHeader.MAGIC_NUMBER, 1, Bytes.of(compressed));
+                ChunkHeader.MAGIC_NUMBER, 1, ByteSequences.wrap(compressed));
         final ChunkFilterSnappyDecompress filter = new ChunkFilterSnappyDecompress();
 
         final ChunkData result = filter.apply(input);

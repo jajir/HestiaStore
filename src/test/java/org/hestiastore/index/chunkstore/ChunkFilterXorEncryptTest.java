@@ -4,13 +4,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.junit.jupiter.api.Test;
 
 class ChunkFilterXorEncryptTest {
 
-    private static final Bytes PAYLOAD = Bytes.of(
-            new byte[] { (byte) 0xDE, (byte) 0xAD, (byte) 0xBE, (byte) 0xEF });
+    private static final ByteSequenceView PAYLOAD = (ByteSequenceView) ByteSequences
+            .wrap(new byte[] { (byte) 0xDE, (byte) 0xAD, (byte) 0xBE,
+                    (byte) 0xEF });
 
     @Test
     void apply_should_encrypt_payload_and_set_flag() {
@@ -31,8 +33,7 @@ class ChunkFilterXorEncryptTest {
         assertEquals(input.getVersion(), result.getVersion());
     }
 
-    private static Bytes toBytes(final ByteSequence sequence) {
-        return sequence instanceof Bytes ? (Bytes) sequence
-                : Bytes.copyOf(sequence);
+    private static ByteSequence toBytes(final ByteSequence sequence) {
+        return ByteSequences.copyOf(sequence);
     }
 }

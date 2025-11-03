@@ -7,7 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.junit.jupiter.api.Test;
 
 public class ChunkHeaderTest {
@@ -65,7 +66,7 @@ public class ChunkHeaderTest {
     void test_optionalOf_invalid_data_size() {
         final byte[] data = new byte[ChunkHeader.HEADER_SIZE + 1];
         final Optional<ChunkHeader> optionalHeader = ChunkHeader
-                .optionalOf(Bytes.of(data));
+                .optionalOf(ByteSequences.wrap(data));
         assertEquals(Optional.empty(), optionalHeader);
     }
 
@@ -73,7 +74,7 @@ public class ChunkHeaderTest {
     void test_optionalOf_invalid_magic() {
         final byte[] data = new byte[ChunkHeader.HEADER_SIZE];
         final Optional<ChunkHeader> optionalHeader = ChunkHeader
-                .optionalOf(Bytes.of(data));
+                .optionalOf(ByteSequences.wrap(data));
         assertEquals(Optional.empty(), optionalHeader);
     }
 
@@ -83,7 +84,7 @@ public class ChunkHeaderTest {
                 VERSION, PAYLOAD_LENGTH, CRC);
         final byte[] data = header1.getBytes().toByteArray();
         final Optional<ChunkHeader> optionalHeader = ChunkHeader
-                .optionalOf(Bytes.of(data));
+                .optionalOf(ByteSequences.wrap(data));
         assertTrue(optionalHeader.isPresent());
         assertEquals(header1, optionalHeader.get());
     }

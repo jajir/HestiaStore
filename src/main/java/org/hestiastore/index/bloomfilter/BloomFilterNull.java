@@ -1,7 +1,7 @@
 package org.hestiastore.index.bloomfilter;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
@@ -16,7 +16,7 @@ import org.hestiastore.index.directory.MemDirectory;
 public final class BloomFilterNull<K> extends AbstractCloseableResource
         implements BloomFilter<K> {
 
-    private static final ConvertorToBytes<Object> NO_OP_CONVERTOR = value -> Bytes
+    private static final ConvertorToBytes<Object> NO_OP_CONVERTOR = value -> ByteSequenceView
             .of(new byte[] { 0 });
 
     private final BloomFilterStats stats = new BloomFilterStats();

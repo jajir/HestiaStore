@@ -11,8 +11,8 @@ class ConcatenatedByteSequenceTest {
 
     @Test
     void test_getByte_reflectsConcatenation() {
-        final ByteSequence first = Bytes.of(new byte[] { 1, 2, 3 });
-        final ByteSequence second = Bytes.of(new byte[] { 4, 5 });
+        final ByteSequence first = ByteSequences.wrap(new byte[] { 1, 2, 3 });
+        final ByteSequence second = ByteSequences.wrap(new byte[] { 4, 5 });
 
         final ByteSequence concatenated = ConcatenatedByteSequence.of(first,
                 second);
@@ -24,8 +24,8 @@ class ConcatenatedByteSequenceTest {
 
     @Test
     void test_copyTo_acrossBoundary() {
-        final ByteSequence first = Bytes.of(new byte[] { 1, 2, 3 });
-        final ByteSequence second = Bytes.of(new byte[] { 4, 5, 6 });
+        final ByteSequence first = ByteSequences.wrap(new byte[] { 1, 2, 3 });
+        final ByteSequence second = ByteSequences.wrap(new byte[] { 4, 5, 6 });
         final ByteSequence concatenated = ConcatenatedByteSequence.of(first,
                 second);
 
@@ -37,8 +37,9 @@ class ConcatenatedByteSequenceTest {
 
     @Test
     void test_slice_withinFirstDelegates() {
-        final ByteSequence first = Bytes.of(new byte[] { 1, 2, 3, 4 });
-        final ByteSequence second = Bytes.of(new byte[] { 5, 6 });
+        final ByteSequence first = ByteSequenceView
+                .of(new byte[] { 1, 2, 3, 4 });
+        final ByteSequence second = ByteSequences.wrap(new byte[] { 5, 6 });
         final ByteSequence concatenated = ConcatenatedByteSequence.of(first,
                 second);
 
@@ -49,8 +50,8 @@ class ConcatenatedByteSequenceTest {
 
     @Test
     void test_slice_withinSecondDelegates() {
-        final ByteSequence first = Bytes.of(new byte[] { 1, 2, 3 });
-        final ByteSequence second = Bytes.of(new byte[] { 4, 5, 6 });
+        final ByteSequence first = ByteSequences.wrap(new byte[] { 1, 2, 3 });
+        final ByteSequence second = ByteSequences.wrap(new byte[] { 4, 5, 6 });
         final ByteSequence concatenated = ConcatenatedByteSequence.of(first,
                 second);
 
@@ -61,8 +62,8 @@ class ConcatenatedByteSequenceTest {
 
     @Test
     void test_slice_acrossBoundaryCreatesNestedView() {
-        final ByteSequence first = Bytes.of(new byte[] { 1, 2, 3 });
-        final ByteSequence second = Bytes.of(new byte[] { 4, 5, 6 });
+        final ByteSequence first = ByteSequences.wrap(new byte[] { 1, 2, 3 });
+        final ByteSequence second = ByteSequences.wrap(new byte[] { 4, 5, 6 });
         final ByteSequence concatenated = ConcatenatedByteSequence.of(first,
                 second);
 
@@ -73,16 +74,17 @@ class ConcatenatedByteSequenceTest {
 
     @Test
     void test_of_emptyInputsReturnOtherOperand() {
-        final ByteSequence first = Bytes.EMPTY;
-        final ByteSequence second = Bytes.of(new byte[] { 9 });
+        final ByteSequence first = ByteSequence.EMPTY;
+        final ByteSequence second = ByteSequences.wrap(new byte[] { 9 });
 
         assertSame(second, ConcatenatedByteSequence.of(first, second));
-        assertSame(first, ConcatenatedByteSequence.of(first, Bytes.EMPTY));
+        assertSame(first,
+                ConcatenatedByteSequence.of(first, ByteSequence.EMPTY));
     }
 
     @Test
     void test_of_nullOperandsThrow() {
-        final ByteSequence valid = Bytes.of(new byte[] { 1 });
+        final ByteSequence valid = ByteSequences.wrap(new byte[] { 1 });
 
         assertThrows(IllegalArgumentException.class,
                 () -> ConcatenatedByteSequence.of(null, valid));
@@ -92,8 +94,9 @@ class ConcatenatedByteSequenceTest {
 
     @Test
     void test_getByte_outOfBoundsThrows() {
-        final ByteSequence concatenated = ConcatenatedByteSequence
-                .of(Bytes.of(new byte[] { 1 }), Bytes.of(new byte[] { 2 }));
+        final ByteSequence concatenated = ConcatenatedByteSequence.of(
+                ByteSequences.wrap(new byte[] { 1 }),
+                ByteSequences.wrap(new byte[] { 2 }));
 
         assertThrows(IllegalArgumentException.class,
                 () -> concatenated.getByte(2));
@@ -101,8 +104,9 @@ class ConcatenatedByteSequenceTest {
 
     @Test
     void test_getByte_negativeIndexThrows() {
-        final ByteSequence concatenated = ConcatenatedByteSequence
-                .of(Bytes.of(new byte[] { 1 }), Bytes.of(new byte[] { 2 }));
+        final ByteSequence concatenated = ConcatenatedByteSequence.of(
+                ByteSequences.wrap(new byte[] { 1 }),
+                ByteSequences.wrap(new byte[] { 2 }));
 
         assertThrows(IllegalArgumentException.class,
                 () -> concatenated.getByte(-1));
@@ -110,8 +114,9 @@ class ConcatenatedByteSequenceTest {
 
     @Test
     void test_copyTo_zeroLengthNoOp() {
-        final ByteSequence concatenated = ConcatenatedByteSequence
-                .of(Bytes.of(new byte[] { 1, 2 }), Bytes.of(new byte[] { 3 }));
+        final ByteSequence concatenated = ConcatenatedByteSequence.of(
+                ByteSequences.wrap(new byte[] { 1, 2 }),
+                ByteSequences.wrap(new byte[] { 3 }));
         final byte[] target = new byte[] { 9, 9, 9 };
 
         concatenated.copyTo(1, target, 0, 0);
@@ -121,16 +126,18 @@ class ConcatenatedByteSequenceTest {
 
     @Test
     void test_slice_emptyRangeReturnsEmpty() {
-        final ByteSequence concatenated = ConcatenatedByteSequence
-                .of(Bytes.of(new byte[] { 1, 2 }), Bytes.of(new byte[] { 3 }));
+        final ByteSequence concatenated = ConcatenatedByteSequence.of(
+                ByteSequences.wrap(new byte[] { 1, 2 }),
+                ByteSequences.wrap(new byte[] { 3 }));
 
-        assertSame(Bytes.EMPTY, concatenated.slice(1, 1));
+        assertSame(ByteSequence.EMPTY, concatenated.slice(1, 1));
     }
 
     @Test
     void test_copyTo_nullTargetThrows() {
-        final ByteSequence concatenated = ConcatenatedByteSequence
-                .of(Bytes.of(new byte[] { 1 }), Bytes.of(new byte[] { 2 }));
+        final ByteSequence concatenated = ConcatenatedByteSequence.of(
+                ByteSequences.wrap(new byte[] { 1 }),
+                ByteSequences.wrap(new byte[] { 2 }));
 
         assertThrows(IllegalArgumentException.class,
                 () -> concatenated.copyTo(0, null, 0, 1));
@@ -138,8 +145,9 @@ class ConcatenatedByteSequenceTest {
 
     @Test
     void test_copyTo_sourceRangeExceedsThrows() {
-        final ByteSequence concatenated = ConcatenatedByteSequence
-                .of(Bytes.of(new byte[] { 1, 2 }), Bytes.of(new byte[] { 3 }));
+        final ByteSequence concatenated = ConcatenatedByteSequence.of(
+                ByteSequences.wrap(new byte[] { 1, 2 }),
+                ByteSequences.wrap(new byte[] { 3 }));
         final byte[] target = new byte[3];
 
         assertThrows(IllegalArgumentException.class,
@@ -148,8 +156,9 @@ class ConcatenatedByteSequenceTest {
 
     @Test
     void test_copyTo_targetRangeExceedsThrows() {
-        final ByteSequence concatenated = ConcatenatedByteSequence
-                .of(Bytes.of(new byte[] { 1, 2 }), Bytes.of(new byte[] { 3 }));
+        final ByteSequence concatenated = ConcatenatedByteSequence.of(
+                ByteSequences.wrap(new byte[] { 1, 2 }),
+                ByteSequences.wrap(new byte[] { 3 }));
         final byte[] target = new byte[2];
 
         assertThrows(IllegalArgumentException.class,
@@ -158,8 +167,9 @@ class ConcatenatedByteSequenceTest {
 
     @Test
     void test_copyTo_negativeOffsetsThrow() {
-        final ByteSequence concatenated = ConcatenatedByteSequence
-                .of(Bytes.of(new byte[] { 1, 2 }), Bytes.of(new byte[] { 3 }));
+        final ByteSequence concatenated = ConcatenatedByteSequence.of(
+                ByteSequences.wrap(new byte[] { 1, 2 }),
+                ByteSequences.wrap(new byte[] { 3 }));
         final byte[] target = new byte[2];
 
         assertThrows(IllegalArgumentException.class,
@@ -170,8 +180,9 @@ class ConcatenatedByteSequenceTest {
 
     @Test
     void test_slice_invalidRangesThrow() {
-        final ByteSequence concatenated = ConcatenatedByteSequence
-                .of(Bytes.of(new byte[] { 1, 2 }), Bytes.of(new byte[] { 3 }));
+        final ByteSequence concatenated = ConcatenatedByteSequence.of(
+                ByteSequences.wrap(new byte[] { 1, 2 }),
+                ByteSequences.wrap(new byte[] { 3 }));
 
         assertThrows(IllegalArgumentException.class,
                 () -> concatenated.slice(-1, 2));
@@ -198,6 +209,13 @@ class ConcatenatedByteSequenceTest {
             public void copyTo(final int sourceOffset, final byte[] target,
                     final int targetOffset, final int length) {
                 throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public byte[] toByteArray() {
+                final byte[] copy = new byte[length()];
+                copyTo(0, copy, 0, copy.length);
+                return copy;
             }
 
             @Override

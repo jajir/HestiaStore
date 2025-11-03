@@ -4,7 +4,7 @@ import java.nio.charset.Charset;
 import java.util.Comparator;
 
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.Vldtn;
 
 /**
@@ -60,7 +60,7 @@ public class TypeDescriptorString implements TypeDescriptor<String> {
 
     private ByteSequence toBytesBuffer(final String value) {
         Vldtn.requireNonNull(value, "value");
-        return Bytes.of(value.getBytes(CHARSET_ENCODING));
+        return ByteSequences.wrap(value.getBytes(CHARSET_ENCODING));
     }
 
     @Override

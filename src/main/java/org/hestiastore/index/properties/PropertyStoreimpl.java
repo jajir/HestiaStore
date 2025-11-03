@@ -7,7 +7,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.Vldtn;
@@ -87,7 +88,7 @@ public final class PropertyStoreimpl implements PropertyStore {
         final byte[] bytes = convertToBytes(propsToWrite);
         try (FileWriter writer = directory.getFileWriter(fileName,
                 Access.OVERWRITE)) {
-            writer.write(Bytes.of(bytes));
+            writer.write(ByteSequences.wrap(bytes));
         }
     }
 

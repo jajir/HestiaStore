@@ -3,7 +3,7 @@ package org.hestiastore.index.sst;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.NullValue;
@@ -34,7 +34,8 @@ public class DataTypeDescriptorRegistry {
         addTypeDescriptor(String.class, new TypeDescriptorShortString());
         addTypeDescriptor(Float.class, new TypeDescriptorFloat());
         addTypeDescriptor(Double.class, new TypeDescriptorDouble());
-        addTypeDescriptor(Bytes.class, new TypeDescriptorByteArray());
+        addTypeDescriptor(ByteSequence.class,
+                new TypeDescriptorByteArray());
         addTypeDescriptor(NullValue.class, new TypeDescriptorNull());
     }
 

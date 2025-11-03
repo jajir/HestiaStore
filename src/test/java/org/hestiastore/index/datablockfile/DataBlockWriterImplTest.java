@@ -6,7 +6,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.TestData;
 import org.hestiastore.index.directory.FileWriter;
 import org.junit.jupiter.api.AfterEach;
@@ -40,25 +41,25 @@ public class DataBlockWriterImplTest {
     @Test
     void test_write() {
         doAnswer(invocation -> {
-            final ByteSequence blockDataSequence = invocation
-                    .getArgument(0, ByteSequence.class);
-            final Bytes blockData = blockDataSequence instanceof Bytes
-                    ? (Bytes) blockDataSequence
-                    : Bytes.copyOf(blockDataSequence);
+            final ByteSequence blockDataSequence = invocation.getArgument(0,
+                    ByteSequence.class);
+            final ByteSequence blockData = blockDataSequence instanceof ByteSequenceView
+                    ? blockDataSequence
+                    : ByteSequences.copyOf(blockDataSequence);
             assertEquals(1024, blockData.length());
 
             // Verify the magic number
             final byte[] longBytes = new byte[8];
             blockData.copyTo(0, longBytes, 0, longBytes.length);
             long magicNumber = TestData.LONG_CONVERTOR_FROM_BYTES
-                    .fromBytes(Bytes.of(longBytes));
+                    .fromBytes(ByteSequences.wrap(longBytes));
             assertEquals(DataBlockHeader.MAGIC_NUMBER, magicNumber);
 
             // Verify the CRC
             final byte[] crcBytes = new byte[8];
             blockData.copyTo(8, crcBytes, 0, crcBytes.length);
             long crc = TestData.LONG_CONVERTOR_FROM_BYTES
-                    .fromBytes(Bytes.of(crcBytes));
+                    .fromBytes(ByteSequences.wrap(crcBytes));
             assertEquals(TestData.PAYLOAD_1008.calculateCrc(), crc);
 
             return null;

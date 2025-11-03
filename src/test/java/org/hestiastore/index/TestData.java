@@ -3,7 +3,8 @@ package org.hestiastore.index;
 import java.util.Collections;
 import java.util.List;
 
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.chunkstore.Chunk;
 import org.hestiastore.index.chunkstore.ChunkHeader;
 import org.hestiastore.index.chunkstore.ChunkPayload;
@@ -228,11 +229,11 @@ public final class TestData {
             0x55, 0x77, 0x22, 0x44, 0x1E, 0x2E, 0x3E, 0x4E, 0x5E, 0x6E, 0x7D };
 
     public static final DataBlockPayload PAYLOAD_1008 = DataBlockPayload
-            .of(Bytes.of(BYTE_ARRAY_1008));
+            .of(ByteSequences.wrap(BYTE_ARRAY_1008));
     public static final DataBlockPayload PAYLOAD_1008_2 = DataBlockPayload
-            .of(Bytes.of(BYTE_ARRAY_1024).slice(0, 1008));
+            .of(ByteSequences.wrap(BYTE_ARRAY_1024).slice(0, 1008));
     public static final DataBlockPayload PAYLOAD_1024 = DataBlockPayload
-            .of(Bytes.of(BYTE_ARRAY_1024));
+            .of(ByteSequences.wrap(BYTE_ARRAY_1024));
 
     public static final TypeDescriptor<Long> TYPE_DESCRIPTOR_LONG = new TypeDescriptorLong();
     public static final ConvertorFromBytes<Long> LONG_CONVERTOR_FROM_BYTES = TYPE_DESCRIPTOR_LONG
@@ -247,19 +248,23 @@ public final class TestData {
             .ofDataBlockSize(1024);
 
     public static final String STRING_9 = "test data";
-    public static final Bytes BYTES_9 = Bytes.of(STRING_9.getBytes());
+    public static final ByteSequenceView BYTES_9 = ByteSequenceView
+            .of(STRING_9.getBytes());
     public static final ChunkPayload CHUNK_PAYLOAD_9 = ChunkPayload.of(BYTES_9);
 
     public static final String STRING_15 = "super test data";
-    public static final Bytes BYTES_15 = Bytes.of(STRING_15.getBytes());
+    public static final ByteSequenceView BYTES_15 = ByteSequenceView
+            .of(STRING_15.getBytes());
     public static final ChunkPayload CHUNK_PAYLOAD_15 = ChunkPayload
             .of(BYTES_15);
 
-    public static final Bytes BYTES_154 = Bytes.of(BYTE_ARRAY_154);
+    public static final ByteSequenceView BYTES_154 = ByteSequenceView
+            .of(BYTE_ARRAY_154);
     public static final ChunkPayload CHUNK_PAYLOAD_154 = ChunkPayload
             .of(BYTES_154);
 
-    public static final Bytes BYTES_1024 = Bytes.of(BYTE_ARRAY_1024);
+    public static final ByteSequenceView BYTES_1024 = ByteSequenceView
+            .of(BYTE_ARRAY_1024);
     public static final ChunkPayload CHUNK_PAYLOAD_1008 = ChunkPayload
             .of(BYTES_1024.slice(0, 1008));
 

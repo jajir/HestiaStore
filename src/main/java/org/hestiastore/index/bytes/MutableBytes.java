@@ -84,14 +84,21 @@ public final class MutableBytes implements MutableByteSequence {
     }
 
     @Override
+    public byte[] toByteArray() {
+        final byte[] copy = new byte[length()];
+        copyTo(0, copy, 0, copy.length);
+        return copy;
+    }
+
+    @Override
     public ByteSequence slice(final int fromInclusive, final int toExclusive) {
         validateRange(fromInclusive, toExclusive - fromInclusive, data.length,
                 "fromInclusive");
-        final int length = toExclusive - fromInclusive;
-        if (length == 0) {
-            return Bytes.EMPTY;
+        final int sliceLength = toExclusive - fromInclusive;
+        if (sliceLength == 0) {
+            return ByteSequence.EMPTY;
         }
-        return ByteSequenceView.of(data, fromInclusive, toExclusive);
+        return ByteSequenceView.of(data, fromInclusive, sliceLength);
     }
 
     @Override
@@ -115,20 +122,23 @@ public final class MutableBytes implements MutableByteSequence {
      * @return byte sequence backed directly by this buffer's array
      */
     public ByteSequence toByteSequence() {
+        if (data.length == 0) {
+            return ByteSequence.EMPTY;
+        }
         return ByteSequenceView.of(data, 0, data.length);
     }
 
     /**
-     * Returns an immutable {@link Bytes} view over the current buffer without
-     * copying. Callers must not mutate the returned bytes.
+     * Returns an immutable {@link ByteSequenceView} view over the current
+     * buffer without copying. Callers must not mutate the returned bytes.
      *
-     * @return {@link Bytes} backed by this buffer's array
+     * @return {@link ByteSequenceView} backed by this buffer's array
      */
-    public Bytes toImmutableBytes() {
+    public ByteSequence toImmutableBytes() {
         if (data.length == 0) {
-            return Bytes.EMPTY;
+            return ByteSequence.EMPTY;
         }
-        return Bytes.of(data);
+        return ByteSequenceView.of(data, 0, data.length);
     }
 
     private void validateIndex(final int index) {

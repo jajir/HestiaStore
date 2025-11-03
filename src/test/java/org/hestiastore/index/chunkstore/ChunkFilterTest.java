@@ -3,13 +3,15 @@ package org.hestiastore.index.chunkstore;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class ChunkFilterTest {
 
-    private static final Bytes PAYLOAD = Bytes.of(new byte[] { 1, 2, 3, 4, 5 });
+    private static final ByteSequenceView PAYLOAD = ByteSequenceView
+            .of(new byte[] { 1, 2, 3, 4, 5 });
 
     private ChunkData baseData;
 
@@ -27,7 +29,7 @@ class ChunkFilterTest {
         validateFilter.apply(withCrc); // should not throw
 
         final ChunkData broken = withCrc
-                .withPayload(Bytes.of(new byte[] { 42 }));
+                .withPayload(ByteSequences.wrap(new byte[] { 42 }));
         assertThrows(IllegalStateException.class,
                 () -> validateFilter.apply(broken));
     }

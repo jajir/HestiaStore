@@ -1,7 +1,8 @@
 package org.hestiastore.index.chunkstore;
 
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
+import org.hestiastore.index.bytes.ByteSequences;
 
 /**
  * Applies a reversible XOR transformation over the payload bytes.
@@ -26,6 +27,6 @@ public class ChunkFilterXorEncrypt implements ChunkFilter {
             final int keyByte = (int) ((DEFAULT_KEY >>> shift) & 0xFF);
             target[i] = (byte) (payload.getByte(i) ^ keyByte);
         }
-        return Bytes.of(target);
+        return ByteSequences.wrap(target);
     }
 }

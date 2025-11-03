@@ -20,7 +20,7 @@ class ByteSequenceCrc32Test {
             reference.update(sample, 0, sample.length);
 
             final ByteSequenceCrc32 underTest = new ByteSequenceCrc32();
-            underTest.update(Bytes.of(sample));
+            underTest.update(ByteSequences.wrap(sample));
 
             assertEquals(reference.getValue(), underTest.getValue());
         }
@@ -33,8 +33,8 @@ class ByteSequenceCrc32Test {
         reference.update(new byte[] { 4, 5 }, 0, 2);
 
         final ByteSequenceCrc32 underTest = new ByteSequenceCrc32();
-        underTest.update(Bytes.of(new byte[] { 1, 2, 3 }));
-        underTest.update(Bytes.of(new byte[] { 4, 5 }));
+        underTest.update(ByteSequences.wrap(new byte[] { 1, 2, 3 }));
+        underTest.update(ByteSequences.wrap(new byte[] { 4, 5 }));
 
         assertEquals(reference.getValue(), underTest.getValue());
     }

@@ -5,7 +5,7 @@ import java.util.Comparator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.bytes.ByteTool;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
 import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.slf4j.Logger;
@@ -29,7 +29,7 @@ public class DiffKeyWriter<K> {
                 "convertorToBytes");
         this.keyComparator = Vldtn.requireNonNull(keyComparator,
                 "keyComparator");
-        previousKeyBytes = Bytes.EMPTY;
+        previousKeyBytes = ByteSequence.EMPTY;
         previousKey = null;
         logger.trace(
                 "Initilizing with conventor to bytes '{}' and comparator '{}'",
@@ -85,9 +85,9 @@ public class DiffKeyWriter<K> {
         final ByteSequence validated = Vldtn.requireNonNull(sequence,
                 "keySequence");
         if (validated.isEmpty()) {
-            return Bytes.EMPTY;
+            return ByteSequence.EMPTY;
         }
-        if (validated instanceof Bytes) {
+        if (validated instanceof ByteSequenceView) {
             return validated;
         }
         if (validated instanceof MutableBytes) {

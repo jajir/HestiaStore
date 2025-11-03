@@ -13,7 +13,8 @@ import java.util.Arrays;
 import java.util.Optional;
 
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.datablockfile.DataBlockByteReader;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,7 +46,7 @@ class ChunkDataTest {
     void read_returns_empty_when_header_invalid() {
         final byte[] invalidHeaderBytes = new byte[ChunkHeader.HEADER_SIZE];
         when(reader.readExactly(ChunkHeader.HEADER_SIZE))
-                .thenReturn(Bytes.of(invalidHeaderBytes));
+                .thenReturn(ByteSequences.wrap(invalidHeaderBytes));
 
         final Optional<ChunkData> result = ChunkData.read(reader);
 
@@ -75,7 +76,8 @@ class ChunkDataTest {
 
         when(reader.readExactly(ChunkHeader.HEADER_SIZE))
                 .thenReturn(header.getBytes());
-        when(reader.readExactly(16)).thenReturn(Bytes.of(paddedPayload));
+        when(reader.readExactly(16))
+                .thenReturn(ByteSequences.wrap(paddedPayload));
 
         final ChunkData chunkData = ChunkData.read(reader).orElseThrow();
 
@@ -97,8 +99,8 @@ class ChunkDataTest {
                 VERSION, payloadLength, CRC, FLAGS);
 
         doReturn(header.getBytes(),
-                Bytes.of(Arrays.copyOf(payload, payload.length))).when(reader)
-                .readExactly(ChunkHeader.HEADER_SIZE);
+                ByteSequences.wrap(Arrays.copyOf(payload, payload.length)))
+                .when(reader).readExactly(ChunkHeader.HEADER_SIZE);
 
         final ChunkData chunkData = ChunkData.read(reader).orElseThrow();
 
@@ -113,7 +115,8 @@ class ChunkDataTest {
         final long magic = 0x1122334455667788L;
         final int version = 42;
         final byte[] data = new byte[] { 9, 8, 7, 6 };
-        final Bytes payload = Bytes.of(data);
+        final ByteSequenceView payload = (ByteSequenceView) ByteSequences
+                .wrap(data);
 
         final ChunkData chunk = ChunkData.of(flags, crc, magic, version,
                 payload);
@@ -135,7 +138,7 @@ class ChunkDataTest {
     void withFlags_should_update_flags_and_keep_others() {
         final ChunkData base = ChunkData.of(FLAGS, CRC,
                 ChunkHeader.MAGIC_NUMBER, VERSION,
-                Bytes.of(new byte[] { 1, 2 }));
+                ByteSequences.wrap(new byte[] { 1, 2 }));
         final long newFlags = 0x00000000F0F0F0F0L;
 
         final ChunkData updated = base.withFlags(newFlags);
@@ -151,7 +154,7 @@ class ChunkDataTest {
     void withCrc_should_update_crc_and_keep_others() {
         final ChunkData base = ChunkData.of(FLAGS, CRC,
                 ChunkHeader.MAGIC_NUMBER, VERSION,
-                Bytes.of(new byte[] { 1, 2 }));
+                ByteSequences.wrap(new byte[] { 1, 2 }));
         final long newCrc = 0x123456789ABCDEFL;
 
         final ChunkData updated = base.withCrc(newCrc);
@@ -167,7 +170,7 @@ class ChunkDataTest {
     void withMagicNumber_should_update_magic_and_keep_others() {
         final ChunkData base = ChunkData.of(FLAGS, CRC,
                 ChunkHeader.MAGIC_NUMBER, VERSION,
-                Bytes.of(new byte[] { 1, 2 }));
+                ByteSequences.wrap(new byte[] { 1, 2 }));
         final long newMagic = ChunkHeader.MAGIC_NUMBER + 111;
 
         final ChunkData updated = base.withMagicNumber(newMagic);
@@ -183,7 +186,7 @@ class ChunkDataTest {
     void withVersion_should_update_version_and_keep_others() {
         final ChunkData base = ChunkData.of(FLAGS, CRC,
                 ChunkHeader.MAGIC_NUMBER, VERSION,
-                Bytes.of(new byte[] { 1, 2 }));
+                ByteSequences.wrap(new byte[] { 1, 2 }));
         final int newVersion = VERSION + 5;
 
         final ChunkData updated = base.withVersion(newVersion);
@@ -199,8 +202,9 @@ class ChunkDataTest {
     void withPayload_should_update_payload_and_keep_others() {
         final ChunkData base = ChunkData.of(FLAGS, CRC,
                 ChunkHeader.MAGIC_NUMBER, VERSION,
-                Bytes.of(new byte[] { 1, 2 }));
-        final Bytes newPayload = Bytes.of(new byte[] { 9, 8, 7 });
+                ByteSequences.wrap(new byte[] { 1, 2 }));
+        final ByteSequenceView newPayload = ByteSequenceView
+                .of(new byte[] { 9, 8, 7 });
 
         final ChunkData updated = base.withPayload(newPayload);
 
@@ -215,7 +219,7 @@ class ChunkDataTest {
     void withPayload_should_throw_when_null() {
         final ChunkData base = ChunkData.of(FLAGS, CRC,
                 ChunkHeader.MAGIC_NUMBER, VERSION,
-                Bytes.of(new byte[] { 1, 2 }));
+                ByteSequences.wrap(new byte[] { 1, 2 }));
 
         assertThrows(IllegalArgumentException.class,
                 () -> base.withPayload(null));

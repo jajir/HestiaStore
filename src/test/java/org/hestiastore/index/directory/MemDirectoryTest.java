@@ -5,16 +5,18 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
 import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.directory.Directory.Access;
 import org.junit.jupiter.api.Test;
 
 class MemDirectoryTest {
 
-    private static final Bytes NAME = Bytes.of("Karel".getBytes());
-    private static final Bytes SURNAME = Bytes.of("Novotny".getBytes());
-    private static final Bytes TEXT = Bytes
+    private static final ByteSequenceView NAME = ByteSequenceView
+            .of("Karel".getBytes());
+    private static final ByteSequenceView SURNAME = ByteSequenceView
+            .of("Novotny".getBytes());
+    private static final ByteSequenceView TEXT = ByteSequenceView
             .of(("This code stores a reference to an "
                     + "externally mutable object into the internal "
                     + "representation of the object.  If instances are accessed "

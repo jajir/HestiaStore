@@ -2,7 +2,7 @@ package org.hestiastore.index.datablockfile;
 
 import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.bytes.ByteSequenceCrc32;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
 import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.Vldtn;
 
@@ -73,6 +73,7 @@ public class DataBlockPayload {
     public String toString() {
         return "DataBlockPayload{" + "bytes=" + bytes + '}';
     }
+
     private static boolean contentEquals(final ByteSequence first,
             final ByteSequence second) {
         if (first == second) {
@@ -93,9 +94,9 @@ public class DataBlockPayload {
     private static ByteSequence normalize(final ByteSequence sequence) {
         final ByteSequence validated = Vldtn.requireNonNull(sequence, "bytes");
         if (validated.isEmpty()) {
-            return Bytes.EMPTY;
+            return ByteSequence.EMPTY;
         }
-        if (validated instanceof Bytes) {
+        if (validated instanceof ByteSequenceView) {
             return validated;
         }
         if (validated instanceof MutableBytes) {

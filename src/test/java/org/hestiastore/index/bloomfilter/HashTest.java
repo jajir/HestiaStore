@@ -4,7 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.junit.jupiter.api.Test;
 
 class HashTest {
@@ -12,9 +13,9 @@ class HashTest {
     void testStore_simple() {
         Hash hash = new Hash(new BitArray(10), 3);
 
-        assertTrue(hash.store(Bytes.of("ahoj".getBytes())));
-        assertFalse(hash.store(Bytes.of("ahoj".getBytes())));
-        assertFalse(hash.store(Bytes.of("ahoj".getBytes())));
+        assertTrue(hash.store(ByteSequences.wrap("ahoj".getBytes())));
+        assertFalse(hash.store(ByteSequences.wrap("ahoj".getBytes())));
+        assertFalse(hash.store(ByteSequences.wrap("ahoj".getBytes())));
     }
 
     @Test
@@ -29,7 +30,7 @@ class HashTest {
         Hash hash = new Hash(new BitArray(10), 3);
 
         assertThrows(IllegalArgumentException.class,
-                () -> hash.store(Bytes.of(new byte[0])));
+                () -> hash.store(ByteSequences.wrap(new byte[0])));
     }
 
     @Test
@@ -45,41 +46,41 @@ class HashTest {
         Hash hash = new Hash(new BitArray(10), 3);
 
         assertThrows(IllegalArgumentException.class,
-                () -> hash.isNotStored(Bytes.of(new byte[0])));
+                () -> hash.isNotStored(ByteSequences.wrap(new byte[0])));
     }
 
     @Test
     void testIsNotStored_simple() {
         Hash hash = new Hash(new BitArray(10), 10);
 
-        assertTrue(hash.isNotStored(Bytes.of("ahoj".getBytes())));
-        hash.store(Bytes.of("ahoj".getBytes()));
-        assertFalse(hash.isNotStored(Bytes.of("ahoj".getBytes())));
-        assertTrue(hash.isNotStored(Bytes.of("kachna".getBytes())));
+        assertTrue(hash.isNotStored(ByteSequences.wrap("ahoj".getBytes())));
+        hash.store(ByteSequences.wrap("ahoj".getBytes()));
+        assertFalse(hash.isNotStored(ByteSequences.wrap("ahoj".getBytes())));
+        assertTrue(hash.isNotStored(ByteSequences.wrap("kachna".getBytes())));
     }
 
     @Test
     void testSmallSize() {
         Hash hash = new Hash(new BitArray(1), 1);
 
-        hash.store(Bytes.of("a".getBytes()));
-        hash.store(Bytes.of("b".getBytes()));
-        hash.store(Bytes.of("c".getBytes()));
-        hash.store(Bytes.of("d".getBytes()));
+        hash.store(ByteSequences.wrap("a".getBytes()));
+        hash.store(ByteSequences.wrap("b".getBytes()));
+        hash.store(ByteSequences.wrap("c".getBytes()));
+        hash.store(ByteSequences.wrap("d".getBytes()));
 
         // I'm sure this group is in index
-        assertFalse(hash.isNotStored(Bytes.of("a".getBytes())));
-        assertFalse(hash.isNotStored(Bytes.of("b".getBytes())));
-        assertFalse(hash.isNotStored(Bytes.of("c".getBytes())));
-        assertFalse(hash.isNotStored(Bytes.of("d".getBytes())));
+        assertFalse(hash.isNotStored(ByteSequences.wrap("a".getBytes())));
+        assertFalse(hash.isNotStored(ByteSequences.wrap("b".getBytes())));
+        assertFalse(hash.isNotStored(ByteSequences.wrap("c".getBytes())));
+        assertFalse(hash.isNotStored(ByteSequences.wrap("d".getBytes())));
 
         // this group have false positive
-        assertTrue(hash.isNotStored(Bytes.of("e".getBytes())));
-        assertTrue(hash.isNotStored(Bytes.of("f".getBytes())));
-        assertTrue(hash.isNotStored(Bytes.of("g".getBytes())));
-        assertFalse(hash.isNotStored(Bytes.of("h".getBytes())));
-        assertTrue(hash.isNotStored(Bytes.of("i".getBytes())));
-        assertFalse(hash.isNotStored(Bytes.of("j".getBytes())));
+        assertTrue(hash.isNotStored(ByteSequences.wrap("e".getBytes())));
+        assertTrue(hash.isNotStored(ByteSequences.wrap("f".getBytes())));
+        assertTrue(hash.isNotStored(ByteSequences.wrap("g".getBytes())));
+        assertFalse(hash.isNotStored(ByteSequences.wrap("h".getBytes())));
+        assertTrue(hash.isNotStored(ByteSequences.wrap("i".getBytes())));
+        assertFalse(hash.isNotStored(ByteSequences.wrap("j".getBytes())));
     }
 
     @Test

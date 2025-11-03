@@ -4,12 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.hestiastore.index.bytes.ByteSequenceCrc32;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
 import org.junit.jupiter.api.Test;
 
 class ChunkFilterCrc32ValidationTest {
 
-    private static final Bytes PAYLOAD = Bytes
+    private static final ByteSequenceView PAYLOAD = ByteSequenceView
             .of(new byte[] { 9, 8, 7, 6, 5, 4, 3, 2 });
 
     @Test
@@ -41,7 +41,7 @@ class ChunkFilterCrc32ValidationTest {
                 exception.getMessage());
     }
 
-    private static long calculateCrc(final Bytes data) {
+    private static long calculateCrc(final ByteSequenceView data) {
         final ByteSequenceCrc32 crc = new ByteSequenceCrc32();
         crc.update(data);
         return crc.getValue();

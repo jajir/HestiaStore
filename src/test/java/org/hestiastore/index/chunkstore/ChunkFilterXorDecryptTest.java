@@ -4,12 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
 import org.junit.jupiter.api.Test;
 
 class ChunkFilterXorDecryptTest {
 
-    private static final Bytes PAYLOAD = Bytes
+    private static final ByteSequenceView PAYLOAD = ByteSequenceView
             .of(new byte[] { 0, 1, 2, 3, 4, 5, 6, 7 });
 
     @Test

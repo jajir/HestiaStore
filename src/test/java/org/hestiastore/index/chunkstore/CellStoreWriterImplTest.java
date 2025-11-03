@@ -2,7 +2,8 @@ package org.hestiastore.index.chunkstore;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
@@ -13,8 +14,8 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 
 import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.bytes.ByteSequenceView;
-import org.hestiastore.index.bytes.Bytes;
 import org.hestiastore.index.TestData;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -72,15 +73,19 @@ public class CellStoreWriterImplTest {
         when(cursor.getAvailableBytes()).thenReturn(64);
         when(cursor.getNextCellPosition()).thenReturn(CELL_POSITION_0);
 
-        final ByteSequence sequence = ByteSequenceView
-                .of(TestData.BYTE_ARRAY_1024, 0, 64);
+        final byte[] backing = TestData.BYTE_ARRAY_1024.clone();
+        final ByteSequence sequence = ByteSequences.viewOf(backing, 0, 64);
 
         writer.write(sequence);
 
         final ArgumentCaptor<ByteSequence> captor = ArgumentCaptor
                 .forClass(ByteSequence.class);
         verify(cursor).write(captor.capture());
-        assertFalse(captor.getValue() instanceof Bytes);
+        assertTrue(sequence instanceof ByteSequenceView);
+        assertTrue(captor.getValue() instanceof ByteSequenceView);
+        backing[0] = 42;
+        assertEquals(42, sequence.getByte(0));
+        assertEquals(42, captor.getValue().getByte(0));
     }
 
     @Test

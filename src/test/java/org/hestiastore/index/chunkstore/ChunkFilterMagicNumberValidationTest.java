@@ -3,12 +3,13 @@ package org.hestiastore.index.chunkstore;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
 import org.junit.jupiter.api.Test;
 
 class ChunkFilterMagicNumberValidationTest {
 
-    private static final Bytes PAYLOAD = Bytes.of(new byte[] { 3, 1, 4, 1 });
+    private static final ByteSequenceView PAYLOAD = ByteSequenceView
+            .of(new byte[] { 3, 1, 4, 1 });
 
     @Test
     void apply_should_return_input_when_magic_number_matches() {

@@ -1,7 +1,7 @@
 package org.hestiastore.index.datablockfile;
 
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
 import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.Vldtn;
 
@@ -40,8 +40,8 @@ public final class DataBlock {
      * @return the payload of this data block
      */
     public DataBlockPayload getPayload() {
-        return DataBlockPayload.of(
-                bytes.slice(DataBlockHeader.HEADER_SIZE, bytes.length()));
+        return DataBlockPayload
+                .of(bytes.slice(DataBlockHeader.HEADER_SIZE, bytes.length()));
     }
 
     /**
@@ -50,8 +50,7 @@ public final class DataBlock {
      * @return the header of this data block
      */
     public DataBlockHeader getHeader() {
-        return DataBlockHeader
-                .of(bytes.slice(0, DataBlockHeader.HEADER_SIZE));
+        return DataBlockHeader.of(bytes.slice(0, DataBlockHeader.HEADER_SIZE));
     }
 
     /**
@@ -102,9 +101,9 @@ public final class DataBlock {
     private static ByteSequence normalize(final ByteSequence sequence) {
         final ByteSequence validated = Vldtn.requireNonNull(sequence, "bytes");
         if (validated.isEmpty()) {
-            return Bytes.EMPTY;
+            return ByteSequence.EMPTY;
         }
-        if (validated instanceof Bytes) {
+        if (validated instanceof ByteSequenceView) {
             return validated;
         }
         if (validated instanceof MutableBytes) {

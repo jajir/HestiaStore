@@ -9,7 +9,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.ByteSequenceView;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.TestData;
 import org.hestiastore.index.datablockfile.DataBlockPayload;
 import org.hestiastore.index.datablockfile.DataBlockSize;
@@ -108,7 +108,7 @@ public class CellStoreWriterCursorTest {
     @Test
     void test_write_byteSequenceView() {
         final byte[] raw = TestData.BYTES_1024.toByteArray();
-        final ByteSequence view = ByteSequenceView.of(raw, 32, 64);
+        final ByteSequence view = ByteSequences.viewOf(raw, 32, 64);
 
         assertEquals(32, cursor.write(view).getValue());
         cursor.close();

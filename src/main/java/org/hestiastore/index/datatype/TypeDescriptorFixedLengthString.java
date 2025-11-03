@@ -3,7 +3,7 @@ package org.hestiastore.index.datatype;
 import java.nio.charset.Charset;
 import java.util.Comparator;
 
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.Vldtn;
 
@@ -62,7 +62,7 @@ public final class TypeDescriptorFixedLengthString
                         "String length shoudlld be '%s' but is '%s'", length,
                         string.length()));
             }
-            return Bytes.of(string.getBytes(CHARSET_ENCODING));
+            return ByteSequences.wrap(string.getBytes(CHARSET_ENCODING));
         };
     }
 
@@ -76,8 +76,7 @@ public final class TypeDescriptorFixedLengthString
         return reader -> {
             final MutableBytes buffer = MutableBytes.allocate(length);
             reader.read(buffer);
-            return getConvertorFromBytes()
-                    .fromBytes(buffer.toImmutableBytes());
+            return getConvertorFromBytes().fromBytes(buffer.toImmutableBytes());
         };
     }
 

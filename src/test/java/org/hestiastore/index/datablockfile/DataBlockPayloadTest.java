@@ -3,12 +3,13 @@ package org.hestiastore.index.datablockfile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
 import org.junit.jupiter.api.Test;
 
 public class DataBlockPayloadTest {
 
-    private static final Bytes BYTES_1 = Bytes.of("test data".getBytes());
+    private static final ByteSequenceView BYTES_1 = ByteSequenceView
+            .of("test data".getBytes());
 
     @Test
     void test_equals() {

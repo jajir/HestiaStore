@@ -3,7 +3,7 @@ package org.hestiastore.index.chunkstore;
 import java.util.Optional;
 
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
 import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datablockfile.DataBlockByteReader;
@@ -48,8 +48,7 @@ public class ChunkData {
     }
 
     public ChunkData withPayload(final ByteSequence newPayload) {
-        return new ChunkData(flags, crc, magicNumber, version,
-                newPayload);
+        return new ChunkData(flags, crc, magicNumber, version, newPayload);
     }
 
     public long getCrc() {
@@ -111,9 +110,9 @@ public class ChunkData {
         final ByteSequence validated = Vldtn.requireNonNull(sequence,
                 "payload");
         if (validated.isEmpty()) {
-            return Bytes.EMPTY;
+            return ByteSequence.EMPTY;
         }
-        if (validated instanceof Bytes) {
+        if (validated instanceof ByteSequenceView) {
             return validated;
         }
         if (validated instanceof MutableBytes) {

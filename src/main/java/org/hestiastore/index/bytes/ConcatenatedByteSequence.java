@@ -80,16 +80,22 @@ public final class ConcatenatedByteSequence implements ByteSequence {
         }
         if (remaining > 0) {
             final int secondOffset = currentSourceOffset - firstLength;
-            second.copyTo(secondOffset, target, currentTargetOffset,
-                    remaining);
+            second.copyTo(secondOffset, target, currentTargetOffset, remaining);
         }
+    }
+
+    @Override
+    public byte[] toByteArray() {
+        final byte[] copy = new byte[length()];
+        copyTo(0, copy, 0, copy.length);
+        return copy;
     }
 
     @Override
     public ByteSequence slice(final int fromInclusive, final int toExclusive) {
         validateSliceRange(fromInclusive, toExclusive, totalLength);
         if (fromInclusive == toExclusive) {
-            return Bytes.EMPTY;
+            return ByteSequence.EMPTY;
         }
         if (toExclusive <= firstLength) {
             return first.slice(fromInclusive, toExclusive);

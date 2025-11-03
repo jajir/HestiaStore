@@ -5,7 +5,8 @@ import java.util.List;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.Bytes;
+import org.hestiastore.index.bytes.ByteSequenceView;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileWriter;
 
@@ -13,8 +14,8 @@ import org.hestiastore.index.directory.FileWriter;
  * In-memory {@link FileWriter} that buffers written bytes inside a growable
  * list of {@link ByteSequence} segments. Callers can append single bytes or
  * {@link ByteSequence} instances and later retrieve the aggregated payload as
- * either a raw {@code byte[]} or immutable {@link Bytes} snapshot. Close the
- * writer to release resources associated with the stored segments.
+ * either a raw {@code byte[]} or immutable {@link ByteSequenceView} snapshot.
+ * Close the writer to release resources associated with the stored segments.
  */
 public class ByteSequenceAccumulator extends AbstractCloseableResource
         implements FileWriter {
@@ -39,7 +40,7 @@ public class ByteSequenceAccumulator extends AbstractCloseableResource
 
     @Override
     public void write(byte b) {
-        segments.add(Bytes.of(new byte[] { b }));
+        segments.add(ByteSequences.wrap(new byte[] { b }));
         totalLength += 1;
     }
 
@@ -73,12 +74,13 @@ public class ByteSequenceAccumulator extends AbstractCloseableResource
     }
 
     /**
-     * Returns the buffered data as an immutable {@link Bytes} snapshot.
+     * Returns the buffered data as an immutable {@link ByteSequenceView}
+     * snapshot.
      *
      * @return immutable representation of the written bytes
      */
-    public Bytes toBytes() {
-        return Bytes.of(toByteArray());
+    public ByteSequence toBytes() {
+        return ByteSequences.wrap(toByteArray());
     }
 
 }

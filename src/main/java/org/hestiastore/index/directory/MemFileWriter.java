@@ -2,7 +2,6 @@ package org.hestiastore.index.directory;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.Bytes;
 import org.hestiastore.index.datatype.ByteSequenceAccumulator;
 import org.hestiastore.index.Vldtn;
 
@@ -27,7 +26,7 @@ public class MemFileWriter extends AbstractCloseableResource
 
     @Override
     protected void doClose() {
-        final Bytes data = buffer.toBytes();
+        final ByteSequence data = buffer.toBytes();
         buffer.close();
         memDirectory.addFile(fileName, data, access);
     }
