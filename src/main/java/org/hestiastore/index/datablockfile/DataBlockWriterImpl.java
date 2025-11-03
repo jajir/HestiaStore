@@ -51,7 +51,7 @@ public class DataBlockWriterImpl extends AbstractCloseableResource
         // Copy the payload data after the header
         blockData.setBytes(DataBlockHeader.HEADER_SIZE,
                 dataBlockPayload.getBytes());
-        return blockData.toByteSequence();
+        return blockData;
     }
 
 }

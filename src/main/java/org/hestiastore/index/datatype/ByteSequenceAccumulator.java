@@ -67,7 +67,7 @@ public class ByteSequenceAccumulator extends AbstractCloseableResource
             if (length == 0) {
                 continue;
             }
-            segment.copyTo(0, out, offset, length);
+            ByteSequences.copy(segment, 0, out, offset, length);
             offset += length;
         }
         return out;

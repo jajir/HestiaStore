@@ -101,7 +101,7 @@ public class DataBlockHeader {
         final MutableBytes out = MutableBytes.allocate(HEADER_SIZE);
         out.setBytes(0, CONVERTOR_TO_BYTES.toBytesBuffer(magicNumber));
         out.setBytes(8, CONVERTOR_TO_BYTES.toBytesBuffer(crc));
-        return out.toByteSequence();
+        return out;
     }
 
 }

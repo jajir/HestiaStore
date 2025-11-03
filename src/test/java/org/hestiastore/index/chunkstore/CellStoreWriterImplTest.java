@@ -2,21 +2,21 @@ package org.hestiastore.index.chunkstore;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
 
-import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.ByteSequences;
-import org.hestiastore.index.bytes.ByteSequenceView;
 import org.hestiastore.index.TestData;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequenceSlice;
+import org.hestiastore.index.bytes.ByteSequenceView;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -81,8 +81,7 @@ public class CellStoreWriterImplTest {
         final ArgumentCaptor<ByteSequence> captor = ArgumentCaptor
                 .forClass(ByteSequence.class);
         verify(cursor).write(captor.capture());
-        assertTrue(sequence instanceof ByteSequenceView);
-        assertTrue(captor.getValue() instanceof ByteSequenceView);
+        assertTrue(sequence instanceof ByteSequenceSlice);
         backing[0] = 42;
         assertEquals(42, sequence.getByte(0));
         assertEquals(42, captor.getValue().getByte(0));
@@ -130,7 +129,7 @@ public class CellStoreWriterImplTest {
     private static byte[] toArray(final ByteSequence sequence) {
         final byte[] array = new byte[sequence.length()];
         if (array.length > 0) {
-            sequence.copyTo(0, array, 0, array.length);
+            ByteSequences.copy(sequence, 0, array, 0, array.length);
         }
         return array;
     }

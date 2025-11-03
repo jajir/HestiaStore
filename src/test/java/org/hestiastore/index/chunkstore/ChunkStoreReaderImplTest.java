@@ -8,9 +8,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
-import org.hestiastore.index.bytes.ByteSequences;
-import org.hestiastore.index.bytes.ByteSequenceView;
 import org.hestiastore.index.TestData;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.datablockfile.DataBlockByteReader;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

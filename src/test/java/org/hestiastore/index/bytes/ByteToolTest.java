@@ -82,7 +82,7 @@ class ByteToolTest {
         final ByteSequence remainder = ByteTool.getRemainingBytesAfterIndex(2,
                 input);
 
-        assertTrue(remainder instanceof ByteSequenceView);
+        assertTrue(remainder instanceof ByteSequenceSlice);
         assertArrayEquals(new byte[] { 3, 4 }, remainder.toByteArray());
     }
 

@@ -3,10 +3,9 @@ package org.hestiastore.index.chunkstore;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.ByteSequenceView;
-import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequences;
 
 /**
  * Example usage:

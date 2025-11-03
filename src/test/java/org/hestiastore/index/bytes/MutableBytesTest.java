@@ -2,6 +2,7 @@ package org.hestiastore.index.bytes;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,7 +31,7 @@ class MutableBytesTest {
     void copyOf_createsIndependentBuffer() {
         final ByteSequenceView source = ByteSequenceView
                 .of(new byte[] { 4, 5, 6 });
-        final MutableBytes buffer = MutableBytes.copyOf(source);
+        final MutableBytes buffer = MutableBytesTestHelper.copyOf(source);
 
         assertArrayEquals(new byte[] { 4, 5, 6 }, buffer.array());
         buffer.setByte(0, (byte) 9);
@@ -65,7 +66,7 @@ class MutableBytesTest {
                 .wrap(new byte[] { 3, 4, 5, 6 });
         final byte[] target = new byte[2];
 
-        buffer.copyTo(1, target, 0, 2);
+        ByteSequences.copy(buffer, 1, target, 0, 2);
 
         assertArrayEquals(new byte[] { 4, 5 }, target);
     }
@@ -85,7 +86,7 @@ class MutableBytesTest {
         assertEquals(9, slice.getByte(0));
 
         final byte[] copy = new byte[2];
-        slice.copyTo(0, copy, 0, copy.length);
+        ByteSequences.copy(slice, 0, copy, 0, copy.length);
         assertArrayEquals(new byte[] { 9, 3 }, copy);
     }
 
@@ -99,47 +100,12 @@ class MutableBytesTest {
     }
 
     @Test
-    void toByteSequence_reflectsBackingArray() {
-        final MutableBytes buffer = MutableBytes.wrap(new byte[] { 1, 2, 3 });
-
-        final ByteSequence view = buffer.toByteSequence();
-
-        assertEquals(3, view.length());
-        assertEquals(1, view.getByte(0));
-
-        buffer.setByte(0, (byte) 9);
-
-        assertEquals(9, view.getByte(0));
-    }
-
-    @Test
-    void toByteSequence_zeroLengthReturnsEmpty() {
+    void toByteArray_zeroLengthReturnsEmptyArray() {
         final MutableBytes buffer = MutableBytes.allocate(0);
 
-        assertSame(ByteSequence.EMPTY, buffer.toByteSequence());
-    }
+        final byte[] copy = buffer.toByteArray();
 
-    @Test
-    void toImmutableBytes_sharesBackingArray() {
-        final MutableBytes buffer = MutableBytes.wrap(new byte[] { 4, 5 });
-
-        final ByteSequence view = buffer.toImmutableBytes();
-
-        assertTrue(view instanceof ByteSequenceView);
-        final ByteSequenceView bytesView = (ByteSequenceView) view;
-        assertEquals(2, bytesView.length());
-        assertEquals(4, bytesView.getByte(0));
-
-        buffer.setByte(0, (byte) 9);
-
-        assertEquals(9, bytesView.getByte(0));
-    }
-
-    @Test
-    void toImmutableBytes_zeroLengthReturnsEmpty() {
-        final MutableBytes buffer = MutableBytes.allocate(0);
-
-        assertSame(ByteSequence.EMPTY, buffer.toImmutableBytes());
+        assertEquals(0, copy.length);
     }
 
     @Test
@@ -181,7 +147,7 @@ class MutableBytesTest {
     @Test
     void copyOf_nullSequenceThrows() {
         assertThrows(IllegalArgumentException.class,
-                () -> MutableBytes.copyOf(null));
+                () -> MutableBytesTestHelper.copyOf(null));
     }
 
     @Test
@@ -189,7 +155,7 @@ class MutableBytesTest {
         final MutableBytes buffer = MutableBytes.wrap(new byte[] { 1, 2, 3 });
         final byte[] target = new byte[] { 9, 9, 9 };
 
-        buffer.copyTo(3, target, 1, 0);
+        ByteSequences.copy(buffer, 3, target, 1, 0);
 
         assertArrayEquals(new byte[] { 9, 9, 9 }, target);
     }
@@ -200,7 +166,7 @@ class MutableBytesTest {
         final byte[] target = new byte[2];
 
         assertThrows(IllegalArgumentException.class,
-                () -> buffer.copyTo(2, target, 0, 3));
+                () -> ByteSequences.copy(buffer, 2, target, 0, 3));
     }
 
     @Test
@@ -209,7 +175,7 @@ class MutableBytesTest {
         final byte[] target = new byte[1];
 
         assertThrows(IllegalArgumentException.class,
-                () -> buffer.copyTo(0, target, 0, 2));
+                () -> ByteSequences.copy(buffer, 0, target, 0, 2));
     }
 
     @Test
@@ -218,7 +184,7 @@ class MutableBytesTest {
         final byte[] target = new byte[1];
 
         assertThrows(IllegalArgumentException.class,
-                () -> buffer.copyTo(-1, target, 0, 1));
+                () -> ByteSequences.copy(buffer, -1, target, 0, 1));
     }
 
     @Test
@@ -227,7 +193,7 @@ class MutableBytesTest {
         final byte[] target = new byte[1];
 
         assertThrows(IllegalArgumentException.class,
-                () -> buffer.copyTo(0, target, -1, 1));
+                () -> ByteSequences.copy(buffer, 0, target, -1, 1));
     }
 
     @Test
@@ -236,7 +202,7 @@ class MutableBytesTest {
         final byte[] target = new byte[1];
 
         assertThrows(IllegalArgumentException.class,
-                () -> buffer.copyTo(0, target, 0, -1));
+                () -> ByteSequences.copy(buffer, 0, target, 0, -1));
     }
 
     @Test

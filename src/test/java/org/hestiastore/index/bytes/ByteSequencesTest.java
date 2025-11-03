@@ -74,8 +74,7 @@ class ByteSequencesTest {
 
         final ByteSequence copy = ByteSequences.copyOf(mutable);
 
-        assertTrue(copy instanceof ByteSequenceView);
-        assertSame(mutable.array(), ((ByteSequenceView) copy).toByteArray());
+        assertSame(mutable, copy);
     }
 
     @Test
@@ -91,18 +90,15 @@ class ByteSequencesTest {
     }
 
     @Test
-    void allocateReturnsMutableBytesFilledWithZeros() {
-        final ByteSequence sequence = ByteSequences.allocate(4);
+    void copyOfSliceReturnsSameInstance() {
+        final ByteSequence slice = ByteSequences.wrap(new byte[] { 4, 5, 6 })
+                .slice(1, 3);
 
-        assertTrue(sequence instanceof MutableBytes);
-        final MutableBytes mutable = (MutableBytes) sequence;
-        assertArrayEquals(new byte[4], mutable.array());
-    }
+        final ByteSequence copy = ByteSequences.copyOf(slice);
 
-    @Test
-    void allocateNegativeSizeThrows() {
-        assertThrows(IllegalArgumentException.class,
-                () -> ByteSequences.allocate(-1));
+        assertTrue(copy instanceof ByteSequenceView);
+        assertArrayEquals(slice.toByteArray(), copy.toByteArray());
+        assertNotSame(slice, copy);
     }
 
     @Test
@@ -225,5 +221,83 @@ class ByteSequencesTest {
     void contentHashCodeNullArgumentThrows() {
         assertThrows(IllegalArgumentException.class,
                 () -> ByteSequences.contentHashCode(null));
+    }
+
+    @Test
+    void copyCopiesRequestedRange() {
+        final ByteSequence source = ByteSequences
+                .wrap(new byte[] { 1, 2, 3, 4 });
+        final byte[] target = new byte[] { 9, 9, 9, 9 };
+
+        ByteSequences.copy(source, 1, target, 0, 2);
+
+        assertArrayEquals(new byte[] { 2, 3, 9, 9 }, target);
+    }
+
+    @Test
+    void copyZeroLengthLeavesTargetUntouched() {
+        final ByteSequence source = ByteSequences.wrap(new byte[] { 7, 8, 9 });
+        final byte[] target = new byte[] { 1, 2, 3 };
+
+        ByteSequences.copy(source, 2, target, 1, 0);
+
+        assertArrayEquals(new byte[] { 1, 2, 3 }, target);
+    }
+
+    @Test
+    void copyNullSourceThrows() {
+        assertThrows(IllegalArgumentException.class,
+                () -> ByteSequences.copy(null, 0, new byte[1], 0, 1));
+    }
+
+    @Test
+    void copySourceOffsetOutOfBoundsThrows() {
+        final ByteSequence source = ByteSequences.wrap(new byte[] { 1, 2 });
+
+        assertThrows(IllegalArgumentException.class,
+                () -> ByteSequences.copy(source, 2, new byte[1], 0, 1));
+    }
+
+    @Test
+    void copyTargetOffsetOutOfBoundsThrows() {
+        final ByteSequence source = ByteSequences.wrap(new byte[] { 1, 2 });
+
+        assertThrows(IllegalArgumentException.class,
+                () -> ByteSequences.copy(source, 0, new byte[1], 1, 1));
+    }
+
+    @Test
+    void copyFallbackHandlesNonCopyableSequence() {
+        final ByteSequence sequence = new ByteSequence() {
+
+            private final byte[] data = { 10, 11, 12 };
+
+            @Override
+            public int length() {
+                return data.length;
+            }
+
+            @Override
+            public byte getByte(final int index) {
+                return data[index];
+            }
+
+            @Override
+            public ByteSequence slice(final int fromInclusive,
+                    final int toExclusive) {
+                return ByteSequences.copyOf(Arrays.copyOfRange(data,
+                        fromInclusive, toExclusive));
+            }
+
+            @Override
+            public byte[] toByteArray() {
+                return Arrays.copyOf(data, data.length);
+            }
+        };
+
+        final byte[] target = new byte[3];
+        ByteSequences.copy(sequence, 0, target, 0, 3);
+
+        assertArrayEquals(new byte[] { 10, 11, 12 }, target);
     }
 }

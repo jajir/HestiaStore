@@ -11,6 +11,7 @@ import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.bytes.ConcatenatedByteSequence;
 import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.TestData;
+import org.hestiastore.index.bytes.MutableBytesTestHelper;
 import org.junit.jupiter.api.Test;
 
 public class ChunkTest {
@@ -46,7 +47,7 @@ public class ChunkTest {
         serialized.setBytes(0, header.getBytes());
         serialized.setBytes(ChunkHeader.HEADER_SIZE, TestData.BYTES_9);
 
-        final ByteSequence view = serialized.toByteSequence();
+        final ByteSequence view = serialized;
         final Chunk chunk = Chunk.of(view);
 
         assertEquals(VERSION, chunk.getHeader().getVersion());
@@ -74,10 +75,10 @@ public class ChunkTest {
         final ChunkHeader header = ChunkHeader.of(ChunkHeader.MAGIC_NUMBER,
                 VERSION, TestData.BYTES_9.length(),
                 TestData.CHUNK_PAYLOAD_9.calculateCrc());
-        final MutableBytes payload = MutableBytes
+        final MutableBytes payload = MutableBytesTestHelper
                 .copyOf(TestData.BYTES_9.slice(0, TestData.BYTES_9.length()));
 
-        final ByteSequence payloadView = payload.toByteSequence();
+        final ByteSequence payloadView = payload;
         final Chunk chunk = Chunk.of(header, payloadView);
 
         assertEquals(VERSION, chunk.getHeader().getVersion());
@@ -101,7 +102,7 @@ public class ChunkTest {
                 .allocate(ChunkHeader.HEADER_SIZE - 1);
 
         assertThrows(IllegalArgumentException.class,
-                () -> Chunk.of(serialized.toByteSequence()));
+                () -> Chunk.of(serialized));
     }
 
     @Test
@@ -109,9 +110,10 @@ public class ChunkTest {
         final ChunkHeader header = ChunkHeader.of(ChunkHeader.MAGIC_NUMBER,
                 VERSION, TestData.BYTES_9.length(),
                 TestData.CHUNK_PAYLOAD_9.calculateCrc());
-        final MutableBytes payloadBuffer = MutableBytes
+        final MutableBytes payloadBuffer = MutableBytesTestHelper
                 .copyOf(TestData.BYTES_9);
-        final ByteSequence payloadView = payloadBuffer.toByteSequence();
+
+        final ByteSequence payloadView = payloadBuffer;
 
         final Chunk chunk = Chunk.of(header, payloadView);
 

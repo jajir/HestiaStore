@@ -40,7 +40,7 @@ public class BytesAppender {
         int offset = 0;
         for (ByteSequence sequence : bytes) {
             final int chunkLength = sequence.length();
-            sequence.copyTo(0, combined, offset, chunkLength);
+            ByteSequences.copy(sequence, 0, combined, offset, chunkLength);
             offset += chunkLength;
         }
         return ByteSequences.wrap(combined);

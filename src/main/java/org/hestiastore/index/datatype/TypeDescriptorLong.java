@@ -104,7 +104,7 @@ public class TypeDescriptorLong implements TypeDescriptor<Long> {
         out.setByte(pos++, (byte) ((v >>> BYTE_SHIFT_16) & BYTE_MASK));
         out.setByte(pos++, (byte) ((v >>> BYTE_SHIFT_8) & BYTE_MASK));
         out.setByte(pos, (byte) ((v >>> BYTE_SHIFT_0) & BYTE_MASK));
-        return out.toByteSequence();
+        return out;
     }
 
     private Long load(final ByteSequence data, final int from) {

@@ -7,8 +7,6 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.Arrays;
-
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.bytes.MutableByteSequence;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -89,7 +87,7 @@ class DiffKeyReaderTest {
         when(fileReader.read()).thenReturn(0).thenReturn(5);
         when(fileReader
                 .read(argThat((MutableByteSequence bytes) -> bytes != null
-                        && Arrays.equals(new byte[5], bytes.toByteArray()))))
+                        && bytes.length() == 5)))
                 .thenAnswer(invocation -> {
                     loadStringToBytes(invocation, "prase");
                     return 5;
@@ -100,7 +98,7 @@ class DiffKeyReaderTest {
         when(fileReader.read()).thenReturn(3).thenReturn(5);
         when(fileReader
                 .read(argThat((MutableByteSequence bytes) -> bytes != null
-                        && Arrays.equals(new byte[5], bytes.toByteArray()))))
+                        && bytes.length() == 5)))
                 .thenAnswer(invocation -> {
                     loadStringToBytes(invocation, "lesni");
                     return 5;
@@ -137,7 +135,7 @@ class DiffKeyReaderTest {
         when(fileReader.read()).thenReturn(0).thenReturn(5);
         when(fileReader
                 .read(argThat((MutableByteSequence bytes) -> bytes != null
-                        && Arrays.equals(new byte[5], bytes.toByteArray()))))
+                        && bytes.length() == 5)))
                 .thenAnswer(invocation -> {
                     loadStringToBytes(invocation, "prase");
                     return 5;
@@ -148,7 +146,7 @@ class DiffKeyReaderTest {
         when(fileReader.read()).thenReturn(3).thenReturn(5);
         when(fileReader
                 .read(argThat((MutableByteSequence bytes) -> bytes != null
-                        && Arrays.equals(new byte[5], bytes.toByteArray()))))
+                        && bytes.length() == 5)))
                 .thenReturn(3);
         assertThrows(IndexException.class, () -> reader.read(fileReader));
     }

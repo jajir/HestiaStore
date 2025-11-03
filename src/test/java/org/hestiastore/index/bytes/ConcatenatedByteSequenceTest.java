@@ -30,7 +30,7 @@ class ConcatenatedByteSequenceTest {
                 second);
 
         final byte[] copy = new byte[4];
-        concatenated.copyTo(2, copy, 0, copy.length);
+        ByteSequences.copy(concatenated, 2, copy, 0, copy.length);
 
         assertArrayEquals(new byte[] { 3, 4, 5, 6 }, copy);
     }
@@ -119,9 +119,35 @@ class ConcatenatedByteSequenceTest {
                 ByteSequences.wrap(new byte[] { 3 }));
         final byte[] target = new byte[] { 9, 9, 9 };
 
-        concatenated.copyTo(1, target, 0, 0);
+        ByteSequences.copy(concatenated, 1, target, 0, 0);
 
         assertArrayEquals(new byte[] { 9, 9, 9 }, target);
+    }
+
+    @Test
+    void test_toByteArray_concatenatesBothSequences() {
+        final ByteSequence concatenated = ConcatenatedByteSequence.of(
+                ByteSequences.wrap(new byte[] { 1, 2, 3 }),
+                ByteSequences.wrap(new byte[] { 4, 5 }));
+
+        assertArrayEquals(new byte[] { 1, 2, 3, 4, 5 },
+                concatenated.toByteArray());
+    }
+
+    @Test
+    void test_toByteArray_handlesEmptyFirstSequence() {
+        final ByteSequence concatenated = ConcatenatedByteSequence.of(
+                ByteSequence.EMPTY, ByteSequences.wrap(new byte[] { 7, 8 }));
+
+        assertArrayEquals(new byte[] { 7, 8 }, concatenated.toByteArray());
+    }
+
+    @Test
+    void test_toByteArray_handlesEmptySecondSequence() {
+        final ByteSequence concatenated = ConcatenatedByteSequence.of(
+                ByteSequences.wrap(new byte[] { 7, 8 }), ByteSequence.EMPTY);
+
+        assertArrayEquals(new byte[] { 7, 8 }, concatenated.toByteArray());
     }
 
     @Test
@@ -140,7 +166,7 @@ class ConcatenatedByteSequenceTest {
                 ByteSequences.wrap(new byte[] { 2 }));
 
         assertThrows(IllegalArgumentException.class,
-                () -> concatenated.copyTo(0, null, 0, 1));
+                () -> ByteSequences.copy(concatenated, 0, null, 0, 1));
     }
 
     @Test
@@ -151,7 +177,7 @@ class ConcatenatedByteSequenceTest {
         final byte[] target = new byte[3];
 
         assertThrows(IllegalArgumentException.class,
-                () -> concatenated.copyTo(2, target, 0, 2));
+                () -> ByteSequences.copy(concatenated, 2, target, 0, 2));
     }
 
     @Test
@@ -162,7 +188,7 @@ class ConcatenatedByteSequenceTest {
         final byte[] target = new byte[2];
 
         assertThrows(IllegalArgumentException.class,
-                () -> concatenated.copyTo(0, target, 1, 2));
+                () -> ByteSequences.copy(concatenated, 0, target, 1, 2));
     }
 
     @Test
@@ -173,9 +199,9 @@ class ConcatenatedByteSequenceTest {
         final byte[] target = new byte[2];
 
         assertThrows(IllegalArgumentException.class,
-                () -> concatenated.copyTo(-1, target, 0, 1));
+                () -> ByteSequences.copy(concatenated, -1, target, 0, 1));
         assertThrows(IllegalArgumentException.class,
-                () -> concatenated.copyTo(0, target, -1, 1));
+                () -> ByteSequences.copy(concatenated, 0, target, -1, 1));
     }
 
     @Test
@@ -206,16 +232,8 @@ class ConcatenatedByteSequenceTest {
             }
 
             @Override
-            public void copyTo(final int sourceOffset, final byte[] target,
-                    final int targetOffset, final int length) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
             public byte[] toByteArray() {
-                final byte[] copy = new byte[length()];
-                copyTo(0, copy, 0, copy.length);
-                return copy;
+                return new byte[0];
             }
 
             @Override

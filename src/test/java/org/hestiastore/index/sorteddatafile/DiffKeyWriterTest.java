@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Comparator;
 
 import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -124,7 +125,7 @@ class DiffKeyWriterTest {
         assertEquals(expectedBytesLength, Byte.toUnsignedInt(bytes.getByte(1)),
                 "byte length");
         byte[] b = new byte[bytes.length() - 2];
-        bytes.copyTo(2, b, 0, b.length);
+        ByteSequences.copy(bytes, 2, b, 0, b.length);
         String str = new String(b);
         assertEquals(expectedString, str, "string");
     }

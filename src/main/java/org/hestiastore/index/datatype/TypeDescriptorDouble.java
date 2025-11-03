@@ -69,7 +69,7 @@ public class TypeDescriptorDouble implements TypeDescriptor<Double> {
         out.setByte(5, (byte) (bits >> 16));
         out.setByte(6, (byte) (bits >> 8));
         out.setByte(7, (byte) bits);
-        return out.toByteSequence();
+        return out;
     }
 
     @Override

@@ -75,7 +75,7 @@ final class ChunkHeaderCodec {
         writeInt(out, PAYLOAD_LENGTH_OFFSET, header.getPayloadLength());
         writeLong(out, CRC_OFFSET, header.getCrc());
         writeLong(out, FLAGS_OFFSET, header.getFlags());
-        return out.toImmutableBytes();
+        return out;
     }
 
     private static long readLong(final ByteSequence data, final int offset) {

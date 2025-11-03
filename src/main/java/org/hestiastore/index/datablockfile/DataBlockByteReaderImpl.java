@@ -77,7 +77,7 @@ public class DataBlockByteReaderImpl extends AbstractCloseableResource
                 return null;
             }
         }
-        return result.toByteSequence();
+        return result;
     }
 
     private void optionalyMoveToNextDataBlock() {

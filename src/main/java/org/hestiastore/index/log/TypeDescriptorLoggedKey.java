@@ -39,7 +39,7 @@ public class TypeDescriptorLoggedKey<K>
                     .allocate(1 + keyBytes.length());
             out.setByte(0, operationBytes.getByte(0));
             out.setBytes(1, keyBytes);
-            return out.toByteSequence();
+            return out;
         };
     }
 

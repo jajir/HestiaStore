@@ -7,11 +7,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import org.hestiastore.index.bytes.ByteSequenceView;
-import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.bytes.ByteSequences;
+import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.Directory.Access;
 import org.hestiastore.index.directory.FileReader;

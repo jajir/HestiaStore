@@ -6,7 +6,7 @@ import org.hestiastore.index.Vldtn;
  * Lightweight {@link ByteSequence} implementation that presents two underlying
  * sequences as a single contiguous view without copying.
  */
-public final class ConcatenatedByteSequence implements ByteSequence {
+public final class ConcatenatedByteSequence extends ByteSequenceCaching {
 
     private final ByteSequence first;
     private final ByteSequence second;
@@ -58,37 +58,21 @@ public final class ConcatenatedByteSequence implements ByteSequence {
     }
 
     @Override
-    public void copyTo(final int sourceOffset, final byte[] target,
-            final int targetOffset, final int length) {
-        Vldtn.requireNonNull(target, "target");
-        validateRange(sourceOffset, length, totalLength, "sourceOffset");
-        validateRange(targetOffset, length, target.length, "targetOffset");
-        if (length == 0) {
-            return;
+    protected byte[] computeByteArray() {
+        final byte[] firstBytes = first.toByteArray();
+        final byte[] secondBytes = second.toByteArray();
+        if (firstBytes.length == 0) {
+            return secondBytes;
         }
-        int remaining = length;
-        int currentSourceOffset = sourceOffset;
-        int currentTargetOffset = targetOffset;
-        if (currentSourceOffset < firstLength) {
-            final int firstAvailable = Math
-                    .min(firstLength - currentSourceOffset, remaining);
-            first.copyTo(currentSourceOffset, target, currentTargetOffset,
-                    firstAvailable);
-            currentSourceOffset += firstAvailable;
-            currentTargetOffset += firstAvailable;
-            remaining -= firstAvailable;
+        if (secondBytes.length == 0) {
+            return firstBytes;
         }
-        if (remaining > 0) {
-            final int secondOffset = currentSourceOffset - firstLength;
-            second.copyTo(secondOffset, target, currentTargetOffset, remaining);
-        }
-    }
-
-    @Override
-    public byte[] toByteArray() {
-        final byte[] copy = new byte[length()];
-        copyTo(0, copy, 0, copy.length);
-        return copy;
+        final byte[] combined = new byte[firstBytes.length
+                + secondBytes.length];
+        System.arraycopy(firstBytes, 0, combined, 0, firstBytes.length);
+        System.arraycopy(secondBytes, 0, combined, firstBytes.length,
+                secondBytes.length);
+        return combined;
     }
 
     @Override
@@ -135,20 +119,4 @@ public final class ConcatenatedByteSequence implements ByteSequence {
         }
     }
 
-    private static void validateRange(final int offset, final int length,
-            final int capacity, final String propertyName) {
-        if (offset < 0) {
-            throw new IllegalArgumentException(String.format(
-                    "Property '%s' must not be negative.", propertyName));
-        }
-        if (length < 0) {
-            throw new IllegalArgumentException(
-                    "Property 'length' must not be negative.");
-        }
-        if (offset > capacity || offset + length > capacity) {
-            throw new IllegalArgumentException(String.format(
-                    "Property '%s' with length %d exceeds capacity %d",
-                    propertyName, length, capacity));
-        }
-    }
 }

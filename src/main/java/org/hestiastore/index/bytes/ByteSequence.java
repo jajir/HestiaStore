@@ -26,16 +26,6 @@ public interface ByteSequence {
     byte getByte(int index);
 
     /**
-     * Copies bytes from this sequence into the provided target array.
-     *
-     * @param sourceOffset index in this sequence to start copying from
-     * @param target       destination byte array
-     * @param targetOffset index in the destination array to start writing to
-     * @param length       number of bytes to copy
-     */
-    void copyTo(int sourceOffset, byte[] target, int targetOffset, int length);
-
-    /**
      * Returns a slice of this sequence between the given offsets.
      * Implementations may return a lightweight view backed by the original
      * storage, so callers must not mutate the underlying data while retaining

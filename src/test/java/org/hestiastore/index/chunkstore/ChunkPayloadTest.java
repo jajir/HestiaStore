@@ -10,6 +10,7 @@ import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.bytes.ByteSequenceView;
 import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.bytes.MutableBytes;
+import org.hestiastore.index.bytes.MutableBytesTestHelper;
 import org.junit.jupiter.api.Test;
 
 class ChunkPayloadTest {
@@ -30,9 +31,8 @@ class ChunkPayloadTest {
         buffer.setByte(0, (byte) 1);
         buffer.setByte(1, (byte) 2);
         buffer.setByte(2, (byte) 3);
-        final ByteSequence view = buffer.toByteSequence();
 
-        final ChunkPayload payload = ChunkPayload.of(view);
+        final ChunkPayload payload = ChunkPayload.of(buffer);
 
         buffer.setByte(0, (byte) 9);
         assertEquals(9, payload.getBytes().getByte(0));
@@ -48,17 +48,15 @@ class ChunkPayloadTest {
     void equals_comparesContent() {
         final ChunkPayload first = ChunkPayload
                 .of(ByteSequences.wrap(new byte[] { 1, 2, 3 }));
-        final MutableBytes secondBuffer = MutableBytes
+        final MutableBytes secondBuffer = MutableBytesTestHelper
                 .copyOf(ByteSequences.wrap(new byte[] { 1, 2, 3 }));
-        final ChunkPayload second = ChunkPayload
-                .of(secondBuffer.toByteSequence());
+        final ChunkPayload second = ChunkPayload.of(secondBuffer);
 
         assertEquals(first, second);
         assertEquals(first.hashCode(), second.hashCode());
 
         secondBuffer.setByte(2, (byte) 9);
-        final ChunkPayload third = ChunkPayload
-                .of(secondBuffer.toByteSequence());
+        final ChunkPayload third = ChunkPayload.of(secondBuffer);
 
         assertNotEquals(first, third);
     }

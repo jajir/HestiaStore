@@ -60,7 +60,7 @@ public class TypeDescriptorByte implements TypeDescriptor<Byte> {
         Vldtn.requireNonNull(value, "value");
         final MutableBytes buffer = MutableBytes.allocate(1);
         buffer.setByte(0, value.byteValue());
-        return buffer.toByteSequence();
+        return buffer;
     }
 
 }

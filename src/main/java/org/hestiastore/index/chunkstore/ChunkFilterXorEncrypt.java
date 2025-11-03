@@ -1,7 +1,6 @@
 package org.hestiastore.index.chunkstore;
 
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.ByteSequenceView;
 import org.hestiastore.index.bytes.ByteSequences;
 
 /**

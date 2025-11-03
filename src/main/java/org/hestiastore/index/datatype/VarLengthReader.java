@@ -19,8 +19,7 @@ public class VarLengthReader<T> implements TypeReader<T> {
     public T read(final FileReader reader) {
         final MutableBytes lengthBytes = MutableBytes.allocate(4);
         reader.read(lengthBytes);
-        int length = CONVERTOR_FROM_BYTES
-                .fromBytes(lengthBytes.toImmutableBytes());
+        int length = CONVERTOR_FROM_BYTES.fromBytes(lengthBytes);
         if (length < 0) {
             return null;
         }
@@ -29,7 +28,7 @@ public class VarLengthReader<T> implements TypeReader<T> {
         }
         final MutableBytes bytes = MutableBytes.allocate(length);
         reader.read(bytes);
-        return convertor.fromBytes(bytes.toImmutableBytes());
+        return convertor.fromBytes(bytes);
     }
 
 }

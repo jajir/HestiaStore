@@ -23,7 +23,7 @@ public class VarShortLengthReader<T> implements TypeReader<T> {
         }
         final MutableBytes bytes = MutableBytes.allocate(length);
         reader.read(bytes);
-        return convertor.fromBytes(bytes.toImmutableBytes());
+        return convertor.fromBytes(bytes);
     }
 
 }

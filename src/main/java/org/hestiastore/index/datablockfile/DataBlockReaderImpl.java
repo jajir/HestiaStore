@@ -42,7 +42,7 @@ public class DataBlockReaderImpl extends AbstractCloseableResource
         }
         DataBlockPosition blockPosition = DataBlockPosition.of(position);
         position += blockSize.getDataBlockSize();
-        return new DataBlock(buffer.toImmutableBytes(), blockPosition);
+        return new DataBlock(buffer, blockPosition);
     }
 
 }

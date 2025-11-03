@@ -50,14 +50,14 @@ public class DataBlockWriterImplTest {
 
             // Verify the magic number
             final byte[] longBytes = new byte[8];
-            blockData.copyTo(0, longBytes, 0, longBytes.length);
+            ByteSequences.copy(blockData, 0, longBytes, 0, longBytes.length);
             long magicNumber = TestData.LONG_CONVERTOR_FROM_BYTES
                     .fromBytes(ByteSequences.wrap(longBytes));
             assertEquals(DataBlockHeader.MAGIC_NUMBER, magicNumber);
 
             // Verify the CRC
             final byte[] crcBytes = new byte[8];
-            blockData.copyTo(8, crcBytes, 0, crcBytes.length);
+            ByteSequences.copy(blockData, 8, crcBytes, 0, crcBytes.length);
             long crc = TestData.LONG_CONVERTOR_FROM_BYTES
                     .fromBytes(ByteSequences.wrap(crcBytes));
             assertEquals(TestData.PAYLOAD_1008.calculateCrc(), crc);

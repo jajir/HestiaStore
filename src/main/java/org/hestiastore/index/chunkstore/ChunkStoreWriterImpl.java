@@ -6,6 +6,7 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.bytes.ConcatenatedByteSequence;
+import org.hestiastore.index.bytes.ZeroByteSequence;
 
 /**
  * A writer for writing chunks to a chunk store.
@@ -66,72 +67,4 @@ public class ChunkStoreWriterImpl extends AbstractCloseableResource
         return ConcatenatedByteSequence.of(sequence,
                 new ZeroByteSequence(padding));
     }
-
-    /**
-     * Lightweight immutable sequence that represents a configurable number of
-     * zero bytes. The writer uses this to pad payloads out to full cell
-     * boundaries without allocating new arrays for every chunk.
-     */
-    private static final class ZeroByteSequence implements ByteSequence {
-
-        private final int length;
-
-        private ZeroByteSequence(final int length) {
-            this.length = length;
-        }
-
-        @Override
-        public int length() {
-            return length;
-        }
-
-        @Override
-        public byte getByte(final int index) {
-            if (index < 0 || index >= length) {
-                throw new IllegalArgumentException(String.format(
-                        "Property 'index' must be between 0 and %d (inclusive). Got: %d",
-                        Math.max(length - 1, 0), index));
-            }
-            return 0;
-        }
-
-        @Override
-        public void copyTo(final int sourceOffset, final byte[] target,
-                final int targetOffset, final int len) {
-            Vldtn.requireNonNull(target, "target");
-            if (sourceOffset < 0 || len < 0 || sourceOffset + len > length
-                    || targetOffset < 0 || targetOffset + len > target.length) {
-                throw new IllegalArgumentException(
-                        "Invalid copy range for zero padding");
-            }
-            if (len == 0) {
-                return;
-            }
-            java.util.Arrays.fill(target, targetOffset, targetOffset + len,
-                    (byte) 0);
-        }
-
-        @Override
-        public byte[] toByteArray() {
-            final byte[] copy = new byte[length()];
-            copyTo(0, copy, 0, copy.length);
-            return copy;
-        }
-
-        @Override
-        public ByteSequence slice(final int fromInclusive,
-                final int toExclusive) {
-            if (fromInclusive < 0 || toExclusive < fromInclusive
-                    || toExclusive > length) {
-                throw new IllegalArgumentException(
-                        "Invalid slice range for zero padding");
-            }
-            final int newLength = toExclusive - fromInclusive;
-            if (newLength == 0) {
-                return ByteSequence.EMPTY;
-            }
-            return new ZeroByteSequence(newLength);
-        }
-    }
-
 }

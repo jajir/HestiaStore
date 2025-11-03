@@ -14,8 +14,8 @@ public class BitArray {
         this.bytes = MutableBytes.allocate(length);
     }
 
-    public BitArray(final ByteSequence data) {
-        this.bytes = MutableBytes.copyOf(Vldtn.requireNonNull(data, "data"));
+    public BitArray(final MutableBytes data) {
+        this.bytes = Vldtn.requireNonNull(data, "data");
     }
 
     /**
@@ -62,7 +62,7 @@ public class BitArray {
     }
 
     public ByteSequence getBytes() {
-        return bytes.toByteSequence();
+        return bytes;
     }
 
     @Override

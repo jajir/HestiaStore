@@ -24,28 +24,6 @@ final class ByteSequenceEmpty implements ByteSequence {
     }
 
     @Override
-    public void copyTo(final int sourceOffset, final byte[] target,
-            final int targetOffset, final int length) {
-        if (target == null) {
-            throw new IllegalArgumentException(
-                    "Property 'target' must not be null.");
-        }
-        if (sourceOffset != 0) {
-            throw new IllegalArgumentException(
-                    "Property 'sourceOffset' must be 0 for an empty sequence.");
-        }
-        if (length != 0) {
-            throw new IllegalArgumentException(
-                    "Property 'length' must be 0 for an empty sequence.");
-        }
-        if (targetOffset < 0 || targetOffset > target.length) {
-            throw new IllegalArgumentException(String.format(
-                    "Property 'targetOffset' must be between 0 and %d (inclusive). Got: %d",
-                    target.length, targetOffset));
-        }
-    }
-
-    @Override
     public ByteSequence slice(final int fromInclusive, final int toExclusive) {
         if (fromInclusive != 0 || toExclusive != 0) {
             throw new IllegalArgumentException(
@@ -57,6 +35,22 @@ final class ByteSequenceEmpty implements ByteSequence {
     @Override
     public byte[] toByteArray() {
         return new byte[0];
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof ByteSequence)) {
+            return false;
+        }
+        return ((ByteSequence) obj).isEmpty();
+    }
+
+    @Override
+    public int hashCode() {
+        return 1;
     }
 
 }

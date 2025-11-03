@@ -10,9 +10,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
-import org.hestiastore.index.bytes.ByteSequenceView;
-import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.junit.jupiter.api.Test;
 
 class ChunkProcessorTest {

@@ -68,8 +68,7 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
                                     + " index expected size is '%s' but '%s' was loaded",
                             bloomFilterFileName, indexSizeInBytes, readed));
                 }
-                hash = new Hash(new BitArray(data.toByteSequence()),
-                        numberOfHashFunctions);
+                hash = new Hash(new BitArray(data), numberOfHashFunctions);
             }
         } else {
             hash = null;

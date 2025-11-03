@@ -5,13 +5,10 @@ import org.hestiastore.index.Vldtn;
 /**
  * Mutable byte buffer implementation backed by a byte array.
  */
-public final class MutableBytes implements MutableByteSequence {
+public final class MutableBytes extends ByteSequenceCaching
+        implements MutableByteSequence {
 
     private final byte[] data;
-
-    private MutableBytes(final byte[] data) {
-        this.data = Vldtn.requireNonNull(data, "data");
-    }
 
     /**
      * Allocates a new buffer of the requested size.
@@ -37,17 +34,8 @@ public final class MutableBytes implements MutableByteSequence {
         return new MutableBytes(array);
     }
 
-    /**
-     * Creates a mutable copy of the provided sequence.
-     *
-     * @param sequence source sequence
-     * @return mutable copy containing the same bytes
-     */
-    public static MutableBytes copyOf(final ByteSequence sequence) {
-        Vldtn.requireNonNull(sequence, "sequence");
-        final MutableBytes copy = allocate(sequence.length());
-        copy.setBytes(0, sequence);
-        return copy;
+    private MutableBytes(final byte[] data) {
+        this.data = Vldtn.requireNonNull(data, "data");
     }
 
     @Override
@@ -72,22 +60,8 @@ public final class MutableBytes implements MutableByteSequence {
     }
 
     @Override
-    public void copyTo(final int sourceOffset, final byte[] target,
-            final int targetOffset, final int length) {
-        Vldtn.requireNonNull(target, "target");
-        validateRange(sourceOffset, length, data.length, "sourceOffset");
-        validateRange(targetOffset, length, target.length, "targetOffset");
-        if (length == 0) {
-            return;
-        }
-        System.arraycopy(data, sourceOffset, target, targetOffset, length);
-    }
-
-    @Override
-    public byte[] toByteArray() {
-        final byte[] copy = new byte[length()];
-        copyTo(0, copy, 0, copy.length);
-        return copy;
+    protected byte[] computeByteArray() {
+        return data;
     }
 
     @Override
@@ -98,7 +72,7 @@ public final class MutableBytes implements MutableByteSequence {
         if (sliceLength == 0) {
             return ByteSequence.EMPTY;
         }
-        return ByteSequenceView.of(data, fromInclusive, sliceLength);
+        return ByteSequenceView.of(data).slice(fromInclusive, toExclusive);
     }
 
     @Override
@@ -112,33 +86,7 @@ public final class MutableBytes implements MutableByteSequence {
             final int sourceOffset, final int length) {
         Vldtn.requireNonNull(source, "source");
         validateRange(targetOffset, length, data.length, "targetOffset");
-        source.copyTo(sourceOffset, data, targetOffset, length);
-    }
-
-    /**
-     * Returns a lightweight {@link ByteSequence} view over the current buffer
-     * without copying the underlying array.
-     *
-     * @return byte sequence backed directly by this buffer's array
-     */
-    public ByteSequence toByteSequence() {
-        if (data.length == 0) {
-            return ByteSequence.EMPTY;
-        }
-        return ByteSequenceView.of(data, 0, data.length);
-    }
-
-    /**
-     * Returns an immutable {@link ByteSequenceView} view over the current
-     * buffer without copying. Callers must not mutate the returned bytes.
-     *
-     * @return {@link ByteSequenceView} backed by this buffer's array
-     */
-    public ByteSequence toImmutableBytes() {
-        if (data.length == 0) {
-            return ByteSequence.EMPTY;
-        }
-        return ByteSequenceView.of(data, 0, data.length);
+        ByteSequences.copy(source, sourceOffset, data, targetOffset, length);
     }
 
     private void validateIndex(final int index) {

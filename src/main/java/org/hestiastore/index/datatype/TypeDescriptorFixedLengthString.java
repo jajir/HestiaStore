@@ -76,7 +76,7 @@ public final class TypeDescriptorFixedLengthString
         return reader -> {
             final MutableBytes buffer = MutableBytes.allocate(length);
             reader.read(buffer);
-            return getConvertorFromBytes().fromBytes(buffer.toImmutableBytes());
+            return getConvertorFromBytes().fromBytes(buffer);
         };
     }
 

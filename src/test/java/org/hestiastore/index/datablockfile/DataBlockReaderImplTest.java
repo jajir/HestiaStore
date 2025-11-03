@@ -10,13 +10,13 @@ import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 
+import org.hestiastore.index.IndexException;
+import org.hestiastore.index.TestData;
 import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.bytes.ConcatenatedByteSequence;
 import org.hestiastore.index.bytes.MutableByteSequence;
 import org.hestiastore.index.bytes.MutableBytes;
-import org.hestiastore.index.IndexException;
-import org.hestiastore.index.TestData;
 import org.hestiastore.index.directory.FileReader;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -83,7 +83,7 @@ public class DataBlockReaderImplTest {
         System.arraycopy(TestData.BYTE_ARRAY_1024, 0, bufferBytes, 0, 1024);
         DataBlockHeader header = DataBlockHeader
                 .of(DataBlockHeader.MAGIC_NUMBER, 2131L);
-        header.getBytes().copyTo(0, bufferBytes, 0, 16);
+        ByteSequences.copy(header.getBytes(), 0, bufferBytes, 0, 16);
 
         when(fileReader.read(any(MutableByteSequence.class)))
                 .thenAnswer(invocation -> {
@@ -135,7 +135,4 @@ public class DataBlockReaderImplTest {
         assertNull(reader.read());
     }
 
-    private static ByteSequence asBytes(final ByteSequence sequence) {
-        return ByteSequences.copyOf(sequence);
-    }
 }

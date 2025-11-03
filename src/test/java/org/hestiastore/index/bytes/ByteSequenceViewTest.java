@@ -100,10 +100,9 @@ public class ByteSequenceViewTest {
 
         final ByteSequence slice = bytes.slice(1, 3);
 
-        assertTrue(slice instanceof ByteSequenceView);
-        final ByteSequenceView view = (ByteSequenceView) slice;
-        assertEquals(2, view.length());
-        assertEquals(2, view.getByte(0));
+        assertTrue(slice instanceof ByteSequenceSlice);
+        assertEquals(2, slice.length());
+        assertEquals(2, slice.getByte(0));
     }
 
     @Test
@@ -129,8 +128,8 @@ public class ByteSequenceViewTest {
 
         final ByteSequence copy = ByteSequences.copyOf(mutable);
 
+        assertSame(mutable, copy);
         assertArrayEquals(new byte[] { 1, 2, 3 }, copy.toByteArray());
-        assertSame(mutable.array(), copy.toByteArray());
     }
 
     @Test

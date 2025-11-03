@@ -131,13 +131,7 @@ public class MemDirectory implements Directory {
         if (validated.isEmpty()) {
             return ByteSequence.EMPTY;
         }
-        if (validated instanceof ByteSequenceView) {
-            return validated;
-        }
-        if (validated instanceof MutableBytes) {
-            return ((MutableBytes) validated).toImmutableBytes();
-        }
-        return validated.slice(0, validated.length());
+        return validated;
     }
 
 }

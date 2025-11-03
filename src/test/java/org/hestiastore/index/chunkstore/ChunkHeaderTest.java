@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 
-import org.hestiastore.index.bytes.ByteSequenceView;
 import org.hestiastore.index.bytes.ByteSequences;
 import org.junit.jupiter.api.Test;
 

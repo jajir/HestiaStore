@@ -24,7 +24,7 @@ public final class ByteSequences {
         if (validated.length == 0) {
             return ByteSequence.EMPTY;
         }
-        return ByteSequenceView.of(validated, 0, validated.length);
+        return ByteSequenceView.of(validated);
     }
 
     /**
@@ -48,7 +48,11 @@ public final class ByteSequences {
         if (length == 0) {
             return ByteSequence.EMPTY;
         }
-        return ByteSequenceView.of(validated, fromInclusive, length);
+        if (fromInclusive == 0 && toExclusive == validated.length) {
+            return ByteSequenceView.of(validated);
+        }
+        return ByteSequenceView.of(validated).slice(fromInclusive,
+                toExclusive);
     }
 
     /**
@@ -63,7 +67,7 @@ public final class ByteSequences {
             return ByteSequence.EMPTY;
         }
         final byte[] copy = Arrays.copyOf(validated, validated.length);
-        return ByteSequenceView.of(copy, 0, copy.length);
+        return ByteSequenceView.of(copy);
     }
 
     /**
@@ -83,25 +87,11 @@ public final class ByteSequences {
             return validated;
         }
         if (validated instanceof MutableBytes) {
-            return ((MutableBytes) validated).toImmutableBytes();
+            return validated;
         }
         final byte[] copy = new byte[validated.length()];
-        validated.copyTo(0, copy, 0, copy.length);
-        return ByteSequenceView.of(copy, 0, copy.length);
-    }
-
-    /**
-     * Allocates a zero-filled mutable buffer of the requested size.
-     *
-     * @param size number of bytes to allocate (must be {@code >= 0})
-     * @return mutable {@link ByteSequence} initialized with zeros
-     */
-    public static ByteSequence allocate(final int size) {
-        if (size < 0) {
-            throw new IllegalArgumentException(
-                    "Property 'size' must be greater than or equal to 0");
-        }
-        return MutableBytes.allocate(size);
+        copy(validated, 0, copy, 0, copy.length);
+        return ByteSequenceView.of(copy);
     }
 
     /**
@@ -126,8 +116,8 @@ public final class ByteSequences {
             return validated;
         }
         final byte[] data = new byte[targetLength];
-        validated.copyTo(0, data, 0, currentLength);
-        return ByteSequenceView.of(data, 0, data.length);
+        copy(validated, 0, data, 0, currentLength);
+        return ByteSequenceView.of(data);
     }
 
     /**
@@ -154,6 +144,44 @@ public final class ByteSequences {
         final int paddedLength = Math.addExact(currentLength,
                 cellSize - remainder);
         return padToLength(validated, paddedLength);
+    }
+
+    /**
+     * Copies bytes from {@code source} into {@code target}.
+     */
+    public static void copy(final ByteSequence source, final int sourceOffset,
+            final byte[] target, final int targetOffset, final int length) {
+        final ByteSequence validatedSource = Vldtn.requireNonNull(source,
+                "source");
+        final byte[] validatedTarget = Vldtn.requireNonNull(target, "target");
+        validateCopyRange(sourceOffset, length, validatedSource.length(),
+                "sourceOffset");
+        validateCopyRange(targetOffset, length, validatedTarget.length,
+                "targetOffset");
+        if (length == 0) {
+            return;
+        }
+        final ByteSequence slice = validatedSource.slice(sourceOffset,
+                sourceOffset + length);
+        final byte[] copy = slice.toByteArray();
+        System.arraycopy(copy, 0, validatedTarget, targetOffset, length);
+    }
+
+    private static void validateCopyRange(final int offset, final int len,
+            final int capacity, final String propertyName) {
+        if (offset < 0) {
+            throw new IllegalArgumentException(String.format(
+                    "Property '%s' must not be negative.", propertyName));
+        }
+        if (len < 0) {
+            throw new IllegalArgumentException(
+                    "Property 'length' must not be negative.");
+        }
+        if (offset > capacity || offset + len > capacity) {
+            throw new IllegalArgumentException(String.format(
+                    "Property '%s' with length %d exceeds capacity %d",
+                    propertyName, len, capacity));
+        }
     }
 
     /**

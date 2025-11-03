@@ -60,7 +60,7 @@ public class TypeDescriptorFloat implements TypeDescriptor<Float> {
         out.setByte(1, (byte) (bits >> 16));
         out.setByte(2, (byte) (bits >> 8));
         out.setByte(3, (byte) bits);
-        return out.toByteSequence();
+        return out;
     }
 
     @Override

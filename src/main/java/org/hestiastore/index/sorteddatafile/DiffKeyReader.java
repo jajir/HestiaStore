@@ -50,9 +50,8 @@ public class DiffKeyReader<K> implements TypeReader<K> {
             final MutableBytes keyBuffer = MutableBytes
                     .allocate(keyLengthInBytes);
             readFully(fileReader, keyBuffer);
-            final ByteSequence keyBytes = keyBuffer.toImmutableBytes();
-            previousKey = keyBytes;
-            return keyConvertor.fromBytes(keyBytes);
+            previousKey = keyBuffer;
+            return keyConvertor.fromBytes(previousKey);
         }
         if (previousKey == null) {
             throw new IndexException(String
@@ -69,7 +68,7 @@ public class DiffKeyReader<K> implements TypeReader<K> {
         }
         final MutableBytes diffBuffer = MutableBytes.allocate(keyLengthInBytes);
         readFully(fileReader, diffBuffer);
-        final ByteSequence diffBytes = diffBuffer.toByteSequence();
+        final ByteSequence diffBytes = diffBuffer;
         final ByteSequence sharedBytes = previousKey.slice(0, sharedByteLength);
         final ByteSequence combined = ByteTool.concatenate(sharedBytes,
                 diffBytes);
