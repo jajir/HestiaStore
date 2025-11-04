@@ -8,18 +8,15 @@ import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.Chunk;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.sorteddatafile.SortedDataFile;
+import org.hestiastore.index.directory.MemFileReader;
+import org.hestiastore.index.sorteddatafile.DiffKeyReader;
+import org.hestiastore.index.unsorteddatafile.DataFileIterator;
 
 /**
  * It allows to iterate over all entries stored in one chunk.
  */
 public class SingleChunkEntryIterator<K, V>
         extends AbstractCloseableResource implements EntryIteratorWithCurrent<K, V> {
-
-    private static final String CHUNK_FILE_NAME = "chunk";
-
-    private final MemDirectory directory = new MemDirectory();
 
     private final EntryIteratorWithCurrent<K, V> iterator;
 
@@ -35,17 +32,16 @@ public class SingleChunkEntryIterator<K, V>
             final TypeDescriptor<V> valueTypeDescriptor) {
         Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
         Vldtn.requireNonNull(valueTypeDescriptor, "valueTypeDescriptor");
-        Vldtn.requireNonNull(chunk, CHUNK_FILE_NAME);
-        directory.setFileBytes(CHUNK_FILE_NAME, chunk.getPayload().getBytes());
-        final SortedDataFile<K, V> sortedDataFile = SortedDataFile
-                .<K, V>builder() //
-                .withDirectory(directory) //
-                .withFileName(CHUNK_FILE_NAME)//
-                .withKeyTypeDescriptor(keyTypeDescriptor) //
-                .withValueTypeDescriptor(valueTypeDescriptor) //
-                .withDiskIoBufferSize(1024)//
-                .build();
-        this.iterator = sortedDataFile.openIterator();
+        Vldtn.requireNonNull(chunk, "chunk");
+
+        // Fast path: iterate directly over chunk payload bytes without
+        // constructing a Directory + SortedDataFile stack.
+        final byte[] data = chunk.getPayload().getBytes().getData();
+        final MemFileReader reader = new MemFileReader(data);
+        final DiffKeyReader<K> keyReader = new DiffKeyReader<>(
+                keyTypeDescriptor.getConvertorFromBytes());
+        this.iterator = new DataFileIterator<>(keyReader,
+                valueTypeDescriptor.getTypeReader(), reader);
     }
 
     @Override

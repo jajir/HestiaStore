@@ -1,69 +1,79 @@
 package org.hestiastore.index.sorteddatafile;
 
-import org.hestiastore.index.ByteTool;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.ConvertorFromBytes;
 import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.directory.FileReader;
 
-public class DiffKeyReader<K> implements TypeReader<K> {
+public final class DiffKeyReader<K> implements TypeReader<K> {
 
     private final ConvertorFromBytes<K> keyConvertor;
 
-    private byte[] previousKeyBytes;
+    /**
+     * Previously decoded full key bytes; used to reuse the shared prefix.
+     * Empty array means "no previous key".
+     */
+    private byte[] previousKeyBytes = new byte[0];
+
+    /** Reusable 2-byte header buffer: [sharedPrefixLength, diffLength]. */
+    private final byte[] header = new byte[2];
 
     public DiffKeyReader(final ConvertorFromBytes<K> keyConvertor) {
         this.keyConvertor = keyConvertor;
-        previousKeyBytes = null;
     }
 
     @Override
-    public K read(final FileReader fileReader) {
-        final int sharedByteLength = fileReader.read();
-        if (sharedByteLength == -1) {
+    public K read(final FileReader reader) {
+        // Read 2-byte header. If EOF before first byte, signal end by returning null.
+        final int first = reader.read();
+        if (first == -1) {
             return null;
         }
-        final int keyLengthInBytes = fileReader.read();
-        if (sharedByteLength == 0) {
-            final byte[] keyBytes = new byte[keyLengthInBytes];
-            read(fileReader, keyBytes);
+        header[0] = (byte) first;
+        // ensure we get the second byte
+        int second = reader.read();
+        if (second == -1) {
+            throw new IndexException("Incomplete key header: missing diff length byte");
+        }
+        header[1] = (byte) second;
+
+        final int sharedLen = header[0] & 0xFF;
+        final int diffLen = header[1] & 0xFF;
+
+        if (sharedLen == 0) {
+            // Fast path: whole key is diff; read directly into final array
+            final byte[] keyBytes = new byte[diffLen];
+            readFully(reader, keyBytes, 0, diffLen);
             previousKeyBytes = keyBytes;
             return keyConvertor.fromBytes(keyBytes);
         }
-        if (previousKeyBytes == null) {
-            throw new IndexException(String
-                    .format("Unable to read key because there should be '%s' "
-                            + "bytes shared with previous key but there is no"
-                            + " previous key", sharedByteLength));
-        }
-        if (previousKeyBytes.length < sharedByteLength) {
-            final String s1 = new String(previousKeyBytes);
+
+        if (previousKeyBytes.length < sharedLen) {
             throw new IndexException(String.format(
-                    "Previous key is '%s' with length '%s'. "
-                            + "Current key should share '%s' with previous key.",
-                    s1, previousKeyBytes.length, sharedByteLength));
+                    "Previous key length '%s' smaller than shared prefix '%s'",
+                    previousKeyBytes.length, sharedLen));
         }
-        final byte[] diffBytes = new byte[keyLengthInBytes];
-        read(fileReader, diffBytes);
-        final byte[] sharedBytes = getBytes(previousKeyBytes, sharedByteLength);
-        final byte[] keyBytes = ByteTool.concatenate(sharedBytes, diffBytes);
+
+        // Allocate final key buffer once and fill it: shared prefix + diff
+        final byte[] keyBytes = new byte[sharedLen + diffLen];
+        System.arraycopy(previousKeyBytes, 0, keyBytes, 0, sharedLen);
+        readFully(reader, keyBytes, sharedLen, diffLen);
         previousKeyBytes = keyBytes;
         return keyConvertor.fromBytes(keyBytes);
     }
 
-    private void read(final FileReader fileReader, final byte[] bytes) {
-        int read = fileReader.read(bytes);
-        if (read != bytes.length) {
+    private void readFully(final FileReader reader, final byte[] dst,
+            final int off, final int len) {
+        // Request exactly the remaining bytes in a single read, mirroring
+        // writer behavior and test expectations. If fewer bytes are returned,
+        // treat as an error.
+        final byte[] chunk = new byte[len];
+        final int r = reader.read(chunk);
+        if (r != len) {
             throw new IndexException(String.format(
-                    "Reading of '%s' bytes failed just '%s' was read.",
-                    bytes.length, read));
+                    "Reading of '%s' bytes failed: just '%s' was read.", len,
+                    r));
         }
+        System.arraycopy(chunk, 0, dst, off, len);
     }
-
-    private byte[] getBytes(final byte[] bytes, final int howMany) {
-        final byte[] out = new byte[howMany];
-        System.arraycopy(bytes, 0, out, 0, howMany);
-        return out;
-    }
-
 }

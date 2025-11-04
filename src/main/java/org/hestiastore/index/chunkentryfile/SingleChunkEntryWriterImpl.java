@@ -1,13 +1,12 @@
 package org.hestiastore.index.chunkentryfile;
 
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.chunkstore.BytesAppender;
 import org.hestiastore.index.chunkstore.ChunkPayload;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.sorteddatafile.SortedDataFile;
-import org.hestiastore.index.sorteddatafile.SortedDataFileWriterTx;
+import org.hestiastore.index.datatype.TypeWriter;
+import org.hestiastore.index.sorteddatafile.DiffKeyWriter;
 
 /**
  * Simplest Chunk writer that writes all data into memmory and than create from
@@ -16,12 +15,12 @@ import org.hestiastore.index.sorteddatafile.SortedDataFileWriterTx;
 public class SingleChunkEntryWriterImpl<K, V>
         implements SingleChunkEntryWriter<K, V> {
 
-    private static final String CHUNK_FILE_NAME = "chunk";
-
-    private final MemDirectory directory = new MemDirectory();
-
-    private final EntryWriter<K, V> writer;
-    private final SortedDataFileWriterTx<K, V> txWriter;
+    private final BytesAppender appender = new BytesAppender();
+    private final InMemoryFileWriter fileWriter = new InMemoryFileWriter(
+            appender);
+    private final TypeWriter<V> valueWriter;
+    private final DiffKeyWriter<K> diffKeyWriter;
+    private boolean closed = false;
 
     /**
      * Creates a new chunk writer.
@@ -33,28 +32,31 @@ public class SingleChunkEntryWriterImpl<K, V>
             final TypeDescriptor<V> valueTypeDescriptor) {
         Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
         Vldtn.requireNonNull(valueTypeDescriptor, "valueTypeDescriptor");
-        SortedDataFile<K, V> sortedDataFile = SortedDataFile.<K, V>builder() //
-                .withDirectory(directory) //
-                .withFileName(CHUNK_FILE_NAME)//
-                .withKeyTypeDescriptor(keyTypeDescriptor) //
-                .withValueTypeDescriptor(valueTypeDescriptor) //
-                .withDiskIoBufferSize(1024)//
-                .build();
-        this.txWriter = sortedDataFile.openWriterTx();
-        this.writer = txWriter.open();
+        this.valueWriter = valueTypeDescriptor.getTypeWriter();
+        this.diffKeyWriter = new DiffKeyWriter<>(
+                keyTypeDescriptor.getConvertorToBytes(),
+                keyTypeDescriptor.getComparator());
     }
 
     @Override
     public void put(final Entry<K, V> entry) {
         Vldtn.requireNonNull(entry, "entry");
-        writer.write(entry);
+        if (closed) {
+            throw new IllegalStateException("Chunk writer already closed");
+        }
+        // Write diff-encoded key header (2 bytes + diff bytes)
+        final byte[] diffKey = diffKeyWriter.write(entry.getKey());
+        fileWriter.write(diffKey);
+        // Write value payload via type writer
+        valueWriter.write(fileWriter, entry.getValue());
     }
 
     @Override
     public ChunkPayload close() {
-        writer.close();
-        txWriter.commit();
-        return ChunkPayload.of(directory.getFileBytes(CHUNK_FILE_NAME));
+        if (!closed) {
+            closed = true;
+        }
+        return ChunkPayload.of(appender.getBytes());
     }
 
 }
