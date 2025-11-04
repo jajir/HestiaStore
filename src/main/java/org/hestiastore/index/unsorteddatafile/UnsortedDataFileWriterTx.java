@@ -1,8 +1,8 @@
 package org.hestiastore.index.unsorteddatafile;
 
-import org.hestiastore.index.GuardedPairWriter;
+import org.hestiastore.index.GuardedEntryWriter;
 import org.hestiastore.index.GuardedWriteTransaction;
-import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeWriter;
@@ -10,14 +10,14 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.Directory.Access;
 
 /**
- * A transaction for writing unsorted key-value pairs to a temporary file. Upon
+ * A transaction for writing unsorted key-value entries to a temporary file. Upon
  * commit, the temporary file is renamed to the target file name.
  *
  * @param <K> the type of keys
  * @param <V> the type of values
  */
 public class UnsortedDataFileWriterTx<K, V>
-        extends GuardedWriteTransaction<PairWriter<K, V>>
+        extends GuardedWriteTransaction<EntryWriter<K, V>>
         implements WriteTransaction<K, V> {
 
     private static final String TEMP_FILE_SUFFIX = ".tmp";
@@ -47,15 +47,15 @@ public class UnsortedDataFileWriterTx<K, V>
     }
 
     @Override
-    protected PairWriter<K, V> doOpen() {
+    protected EntryWriter<K, V> doOpen() {
         final Access access = Access.OVERWRITE;
-        return new GuardedPairWriter<>(new UnsortedDataFileWriter<>(directory,
+        return new GuardedEntryWriter<>(new UnsortedDataFileWriter<>(directory,
                 getTempFileName(), keyWriter, valueWriter, access,
                 diskIoBufferSize));
     }
 
     @Override
-    protected void doCommit(final PairWriter<K, V> writer) {
+    protected void doCommit(final EntryWriter<K, V> writer) {
         directory.renameFile(getTempFileName(), fileName);
     }
 

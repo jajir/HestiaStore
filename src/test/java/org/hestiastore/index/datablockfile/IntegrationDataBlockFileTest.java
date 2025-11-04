@@ -16,7 +16,7 @@ public class IntegrationDataBlockFileTest {
     private static final DataBlockSize BLOCK_SIZE = DataBlockSize
             .ofDataBlockSize(1024);
 
-    private static final String FILE_NAME = "chunkpairfilewriter-test";
+    private static final String FILE_NAME = "chunkentryfilewriter-test";
 
     private Directory directory;
 

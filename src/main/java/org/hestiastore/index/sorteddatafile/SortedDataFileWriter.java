@@ -4,8 +4,8 @@ import java.util.Comparator;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.F;
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -13,14 +13,14 @@ import org.hestiastore.index.datatype.TypeWriter;
 import org.hestiastore.index.directory.FileWriter;
 
 /**
- * Writes key-value pairs into sorted data file. Keys must be in ascending
+ * Writes key-value entries into sorted data file. Keys must be in ascending
  * order.
  * 
  * @param <K> key type
  * @param <V> value type
  */
 public class SortedDataFileWriter<K, V> extends AbstractCloseableResource
-        implements PairWriter<K, V> {
+        implements EntryWriter<K, V> {
 
     private final TypeWriter<V> valueWriter;
 
@@ -92,21 +92,21 @@ public class SortedDataFileWriter<K, V> extends AbstractCloseableResource
     }
 
     /**
-     * Writes the given key-value pair.
+     * Writes the given key-value entry.
      *
-     * @param pair required key-value pair
+     * @param entry required key-value entry
      */
     @Override
-    public void write(final Pair<K, V> pair) {
-        Vldtn.requireNonNull(pair, "pair");
-        Vldtn.requireNonNull(pair.getKey(), "key");
-        Vldtn.requireNonNull(pair.getValue(), "value");
-        verifyKeyOrder(pair.getKey());
+    public void write(final Entry<K, V> entry) {
+        Vldtn.requireNonNull(entry, "entry");
+        Vldtn.requireNonNull(entry.getKey(), "key");
+        Vldtn.requireNonNull(entry.getValue(), "value");
+        verifyKeyOrder(entry.getKey());
 
-        final byte[] diffKey = diffKeyWriter.write(pair.getKey());
+        final byte[] diffKey = diffKeyWriter.write(entry.getKey());
         fileWriter.write(diffKey);
         final int writenBytesInValue = valueWriter.write(fileWriter,
-                pair.getValue());
+                entry.getValue());
         position = position + diffKey.length + writenBytesInValue;
     }
 

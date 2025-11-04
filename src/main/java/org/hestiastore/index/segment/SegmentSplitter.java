@@ -6,12 +6,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Splits a segment into two logical halves by streaming pairs in key order.
+ * Splits a segment into two logical halves by streaming entries in key order.
  * <p>
- * Algorithm: - Create a new “lower” segment and copy the first half of pairs
- * into it. - If there are no remaining pairs, replace the current segment with
+ * Algorithm: - Create a new “lower” segment and copy the first half of entries
+ * into it. - If there are no remaining entries, replace the current segment with
  * the lower segment (compaction outcome). - Otherwise, stream the remaining
- * pairs back into the current segment (splitting outcome).
+ * entries back into the current segment (splitting outcome).
  *
  * The caller supplies a precomputed {@link SegmentSplitterPlan} which carries
  * the target lower size and tracks statistics during the split.
@@ -43,7 +43,7 @@ public class SegmentSplitter<K, V> {
      * exception is thrown) - The caller provides a fresh {@code segmentId} for
      * the lower segment
      *
-     * Post-conditions: - Returns SPLIT when remaining pairs were written back
+     * Post-conditions: - Returns SPLIT when remaining entries were written back
      * to the current segment; otherwise COMPACTED when the current segment is
      * replaced by the lower segment.
      */

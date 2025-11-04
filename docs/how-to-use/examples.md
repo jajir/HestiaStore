@@ -34,7 +34,7 @@ public class Example {
 }
 ```
 
-This creates a simple in-memory index and stores a key-value pair.
+This creates a simple in-memory index and stores a key-value entry.
 
 When you have first example you can dive into [more advanced configuration](../configuration/index.md). There are explained details about `Directory` object and using custom Key/Value classes
 
@@ -126,7 +126,7 @@ In some cases could be useful to perform maintenance with data. There are follow
 
 ### 🌀 Stale Results from `index.getStream()`
 
-Data from `index.getStream()` method could be stale or invalid. It's corner case when next readed key value pair is changed. Index data streaming is splited internally into steps `hasNextElement()` and `getNextElement()`. Following example will show why it's no possible to use index cache:
+Data from `index.getStream()` method could be stale or invalid. It's corner case when next readed key value entry is changed. Index data streaming is splited internally into steps `hasNextElement()` and `getNextElement()`. Following example will show why it's no possible to use index cache:
 
 ```java
 index.hasNextElement(); // --> true

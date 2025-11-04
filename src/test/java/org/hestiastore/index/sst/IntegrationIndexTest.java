@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hestiastore.index.Pair;
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
@@ -26,16 +26,16 @@ class IntegrationIndexTest extends AbstractIndexTest {
     final TypeDescriptorShortString tds = new TypeDescriptorShortString();
     final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
 
-    private final List<Pair<Integer, String>> testData = List.of(
-            Pair.of(1, "bbb"), Pair.of(2, "ccc"), Pair.of(3, "dde"),
-            Pair.of(4, "ddf"), Pair.of(5, "ddg"), Pair.of(6, "ddh"),
-            Pair.of(7, "ddi"), Pair.of(8, "ddj"), Pair.of(9, "ddk"),
-            Pair.of(10, "ddl"), Pair.of(11, "ddm"));
+    private final List<Entry<Integer, String>> testData = List.of(
+            Entry.of(1, "bbb"), Entry.of(2, "ccc"), Entry.of(3, "dde"),
+            Entry.of(4, "ddf"), Entry.of(5, "ddg"), Entry.of(6, "ddh"),
+            Entry.of(7, "ddi"), Entry.of(8, "ddj"), Entry.of(9, "ddk"),
+            Entry.of(10, "ddl"), Entry.of(11, "ddm"));
 
     @Test
     void testBasic() {
         final Index<Integer, String> index = makeSstIndex(false);
-        writePairs(index, testData);
+        writeEntries(index, testData);
 
         /**
          * Calling of verifyIndexData before compact() will fail. It's by

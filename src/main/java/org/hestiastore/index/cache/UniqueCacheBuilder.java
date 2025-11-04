@@ -2,8 +2,8 @@ package org.hestiastore.index.cache;
 
 import java.util.Comparator;
 
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 
 /**
@@ -36,11 +36,11 @@ public class UniqueCacheBuilder<K, V> {
 
     public UniqueCache<K, V> build() {
         final UniqueCache<K, V> out = new UniqueCache<>(keyComparator);
-        try (PairIterator<K, V> iterator = sdf.openIterator()) {
-            Pair<K, V> pair = null;
+        try (EntryIterator<K, V> iterator = sdf.openIterator()) {
+            Entry<K, V> entry = null;
             while (iterator.hasNext()) {
-                pair = iterator.next();
-                out.put(pair);
+                entry = iterator.next();
+                out.put(entry);
             }
         }
         return out;

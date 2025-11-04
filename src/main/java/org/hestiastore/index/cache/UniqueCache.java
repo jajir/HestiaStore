@@ -5,10 +5,10 @@ import java.util.List;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.sorteddatafile.PairComparator;
+import org.hestiastore.index.sorteddatafile.EntryComparator;
 
 /**
  * Cache for index operation. When there are two operations with same key value
@@ -47,8 +47,8 @@ public class UniqueCache<K, V> {
     /**
      * When there is old value than old value is rewritten.
      */
-    public void put(final Pair<K, V> pair) {
-        map.merge(pair.getKey(), pair.getValue(), (oldVal, newVal) -> newVal);
+    public void put(final Entry<K, V> entry) {
+        map.merge(entry.getKey(), entry.getValue(), (oldVal, newVal) -> newVal);
     }
 
     /**
@@ -70,9 +70,9 @@ public class UniqueCache<K, V> {
     }
 
     /**
-     * Get number of key value pairs in cache.
+     * Get number of key value entries in cache.
      * 
-     * @return number of key value pairs in cache
+     * @return number of key value entries in cache
      */
     public int size() {
         return map.size();
@@ -92,16 +92,16 @@ public class UniqueCache<K, V> {
      * 
      * @return
      */
-    public List<Pair<K, V>> toList() {
+    public List<Entry<K, V>> toList() {
         return map.entrySet().stream()
-                .map(entry -> new Pair<K, V>(entry.getKey(), entry.getValue()))
+                .map(entry -> new Entry<K, V>(entry.getKey(), entry.getValue()))
                 .toList();
     }
 
-    public List<Pair<K, V>> getAsSortedList() {
+    public List<Entry<K, V>> getAsSortedList() {
         return map.entrySet().stream()
-                .map(entry -> new Pair<K, V>(entry.getKey(), entry.getValue()))
-                .sorted(new PairComparator<>(keyComparator))//
+                .map(entry -> new Entry<K, V>(entry.getKey(), entry.getValue()))
+                .sorted(new EntryComparator<>(keyComparator))//
                 .toList();
     }
 
@@ -112,18 +112,18 @@ public class UniqueCache<K, V> {
                 .toList();
     }
 
-    public PairIterator<K, V> getSortedIterator() {
-        return PairIterator.make(getAsSortedList().iterator());
+    public EntryIterator<K, V> getSortedIterator() {
+        return EntryIterator.make(getAsSortedList().iterator());
     }
 
     /**
-     * Get unsorted stream of key value pairs
+     * Get unsorted stream of key value entries
      * 
-     * @return unsorted stream of key value pairs
+     * @return unsorted stream of key value entries
      */
-    public Stream<Pair<K, V>> getStream() {
+    public Stream<Entry<K, V>> getStream() {
         return map.entrySet().stream()
-                .map(entry -> new Pair<K, V>(entry.getKey(), entry.getValue()));
+                .map(entry -> new Entry<K, V>(entry.getKey(), entry.getValue()));
     }
 
 }

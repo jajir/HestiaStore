@@ -1,8 +1,8 @@
 package org.hestiastore.index.segment;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.UniqueCache;
 
@@ -16,7 +16,7 @@ import org.hestiastore.index.cache.UniqueCache;
  * @param <V>
  */
 public final class SegmentDeltaCacheWriter<K, V> extends AbstractCloseableResource
-        implements PairWriter<K, V> {
+        implements EntryWriter<K, V> {
 
     /**
      * Cache will contains data written into this delta file.
@@ -63,8 +63,8 @@ public final class SegmentDeltaCacheWriter<K, V> extends AbstractCloseableResour
                 .getDeltaCacheSortedDataFile(
                         segmentPropertiesManager.getAndIncreaseDeltaFileName())
                 .openWriterTx().execute(writer -> {
-                    uniqueCache.getStream().forEach(pair -> {
-                        writer.write(pair);
+                    uniqueCache.getStream().forEach(entry -> {
+                        writer.write(entry);
                     });
                 });
 
@@ -76,11 +76,11 @@ public final class SegmentDeltaCacheWriter<K, V> extends AbstractCloseableResour
     }
 
     @Override
-    public void write(Pair<K, V> pair) {
-        uniqueCache.put(pair);
+    public void write(Entry<K, V> entry) {
+        uniqueCache.put(entry);
         cx++;
         if (segmentCacheDataProvider.isLoaded()) {
-            segmentCacheDataProvider.getSegmentDeltaCache().put(pair);
+            segmentCacheDataProvider.getSegmentDeltaCache().put(entry);
         }
     }
 

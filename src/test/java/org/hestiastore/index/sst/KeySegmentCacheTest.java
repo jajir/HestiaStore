@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 
-import org.hestiastore.index.Pair;
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
@@ -85,9 +85,9 @@ class KeySegmentCacheTest {
             /*
              * Verify that higher page key was updated.
              */
-            final List<Pair<String, SegmentId>> list = fif.getSegmentsAsStream()
+            final List<Entry<String, SegmentId>> list = fif.getSegmentsAsStream()
                     .toList();
-            assertEquals(Pair.of("zzz", SegmentId.of(4)), list.get(3));
+            assertEquals(Entry.of("zzz", SegmentId.of(4)), list.get(3));
         }
     }
 
@@ -101,9 +101,9 @@ class KeySegmentCacheTest {
             /*
              * Verify that higher page key was updated.
              */
-            final List<Pair<String, SegmentId>> list = fif.getSegmentsAsStream()
+            final List<Entry<String, SegmentId>> list = fif.getSegmentsAsStream()
                     .toList();
-            assertEquals(Pair.of("zzz", SegmentId.of(4)), list.get(3));
+            assertEquals(Entry.of("zzz", SegmentId.of(4)), list.get(3));
         }
     }
 
@@ -111,15 +111,15 @@ class KeySegmentCacheTest {
     void test_getSegmentsAsStream_print_data() {
         try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,
                 stringTd)) {
-            final List<Pair<String, SegmentId>> segments = fif
+            final List<Entry<String, SegmentId>> segments = fif
                     .getSegmentsAsStream().toList();
-            assertEquals("Pair[key='ahoj',value='segment-00001']",
+            assertEquals("Entry[key='ahoj',value='segment-00001']",
                     segments.get(0).toString());
-            assertEquals("Pair[key='betka',value='segment-00002']",
+            assertEquals("Entry[key='betka',value='segment-00002']",
                     segments.get(1).toString());
-            assertEquals("Pair[key='cukrar',value='segment-00003']",
+            assertEquals("Entry[key='cukrar',value='segment-00003']",
                     segments.get(2).toString());
-            assertEquals("Pair[key='kachna',value='segment-00004']",
+            assertEquals("Entry[key='kachna',value='segment-00004']",
                     segments.get(3).toString());
         }
     }
@@ -139,12 +139,12 @@ class KeySegmentCacheTest {
             /*
              * Verify that pages are returned as sorted stream.
              */
-            final List<Pair<String, SegmentId>> list = fif.getSegmentsAsStream()
+            final List<Entry<String, SegmentId>> list = fif.getSegmentsAsStream()
                     .toList();
-            assertEquals(Pair.of("ahoj", SegmentId.of(1)), list.get(0));
-            assertEquals(Pair.of("betka", SegmentId.of(2)), list.get(1));
-            assertEquals(Pair.of("cukrar", SegmentId.of(3)), list.get(2));
-            assertEquals(Pair.of("kachna", SegmentId.of(4)), list.get(3));
+            assertEquals(Entry.of("ahoj", SegmentId.of(1)), list.get(0));
+            assertEquals(Entry.of("betka", SegmentId.of(2)), list.get(1));
+            assertEquals(Entry.of("cukrar", SegmentId.of(3)), list.get(2));
+            assertEquals(Entry.of("kachna", SegmentId.of(4)), list.get(3));
         }
     }
 

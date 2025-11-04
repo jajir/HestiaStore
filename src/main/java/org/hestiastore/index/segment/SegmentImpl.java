@@ -2,9 +2,9 @@ package org.hestiastore.index.segment;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.OptimisticLock;
-import org.hestiastore.index.PairIterator;
-import org.hestiastore.index.PairIteratorWithLock;
-import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.EntryIteratorWithLock;
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.WriteTransaction.WriterFunction;
@@ -104,13 +104,13 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource implements Segm
     }
 
     @Override
-    public PairIterator<K, V> openIterator() {
-        final PairIterator<K, V> mergedPairIterator = new MergeDeltaCacheWithIndexIterator<>(
+    public EntryIterator<K, V> openIterator() {
+        final EntryIterator<K, V> mergedEntryIterator = new MergeDeltaCacheWithIndexIterator<>(
                 segmentFiles.getIndexFile().openIterator(),
                 segmentFiles.getKeyTypeDescriptor(),
                 segmentFiles.getValueTypeDescriptor(),
                 deltaCacheController.getDeltaCache().getAsSortedList());
-        return new PairIteratorWithLock<>(mergedPairIterator,
+        return new EntryIteratorWithLock<>(mergedEntryIterator,
                 new OptimisticLock(versionController), getId().toString());
     }
 
@@ -150,7 +150,7 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource implements Segm
      * It's not necesarry to run it in transaction because it's always new file.
      */
     @Override
-    public PairWriter<K, V> openDeltaCacheWriter() {
+    public EntryWriter<K, V> openDeltaCacheWriter() {
         versionController.changeVersion();
         return new SegmentDeltaCacheCompactingWriter<>(this, segmentCompacter,
                 deltaCacheController, segmentCompactionPolicy);

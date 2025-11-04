@@ -1,8 +1,8 @@
 package org.hestiastore.index.sorteddatafile;
 
-import org.hestiastore.index.GuardedPairWriter;
+import org.hestiastore.index.GuardedEntryWriter;
 import org.hestiastore.index.GuardedWriteTransaction;
-import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -10,7 +10,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileWriter;
 
 public class SortedDataFileWriterTx<K, V>
-        extends GuardedWriteTransaction<PairWriter<K, V>>
+        extends GuardedWriteTransaction<EntryWriter<K, V>>
         implements WriteTransaction<K, V> {
 
     private static final String TEMP_FILE_SUFFIX = ".tmp";
@@ -34,17 +34,17 @@ public class SortedDataFileWriterTx<K, V>
     }
 
     @Override
-    protected PairWriter<K, V> doOpen() {
+    protected EntryWriter<K, V> doOpen() {
         final FileWriter fileWriter = directory.getFileWriter(
                 getTempFileName(), Directory.Access.OVERWRITE,
                 diskIoBufferSize);
-        return new GuardedPairWriter<>(new SortedDataFileWriter<>(
+        return new GuardedEntryWriter<>(new SortedDataFileWriter<>(
                 valueTypeDescriptor.getTypeWriter(), fileWriter,
                 keyTypeDescriptor));
     }
 
     @Override
-    protected void doCommit(final PairWriter<K, V> writer) {
+    protected void doCommit(final EntryWriter<K, V> writer) {
         directory.renameFile(getTempFileName(), fileName);
     }
 

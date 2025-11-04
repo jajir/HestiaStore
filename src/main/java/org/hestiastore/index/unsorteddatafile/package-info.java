@@ -1,5 +1,5 @@
 /**
- * File storing unsorted and duplicated key value pairs.
+ * File storing unsorted and duplicated key value entries.
  * 
  * Unsorted file doesn't support appending of data. Newly appended data
  * overwrites old ones.

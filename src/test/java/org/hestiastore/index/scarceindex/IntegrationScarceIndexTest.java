@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.Collections;
 import java.util.List;
 
-import org.hestiastore.index.Pair;
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
@@ -17,14 +17,14 @@ class IntegrationScarceIndexTest {
     private static final String FILE_NAME = "pok.dat";
     private final TypeDescriptorShortString stringTd = new TypeDescriptorShortString();
 
-    private static final Pair<String, Integer> P_BBB_1 = Pair.of("bbb", 13);
-    private static final Pair<String, Integer> P_BBB_2 = Pair.of("bbb", 1);
-    private static final Pair<String, Integer> P_CCC_1 = Pair.of("ccc", 2);
-    private static final Pair<String, Integer> P_CCC_2 = Pair.of("ccc", 3);
-    private static final Pair<String, Integer> P_DDD = Pair.of("ddd", 3);
-    private static final Pair<String, Integer> P_EEE = Pair.of("eee", 4);
-    private static final Pair<String, Integer> P_FFF_1 = Pair.of("fff", 4);
-    private static final Pair<String, Integer> P_FFF_2 = Pair.of("fff", 5);
+    private static final Entry<String, Integer> P_BBB_1 = Entry.of("bbb", 13);
+    private static final Entry<String, Integer> P_BBB_2 = Entry.of("bbb", 1);
+    private static final Entry<String, Integer> P_CCC_1 = Entry.of("ccc", 2);
+    private static final Entry<String, Integer> P_CCC_2 = Entry.of("ccc", 3);
+    private static final Entry<String, Integer> P_DDD = Entry.of("ddd", 3);
+    private static final Entry<String, Integer> P_EEE = Entry.of("eee", 4);
+    private static final Entry<String, Integer> P_FFF_1 = Entry.of("fff", 4);
+    private static final Entry<String, Integer> P_FFF_2 = Entry.of("fff", 5);
 
     @Test
     void test_one_key() {
@@ -68,16 +68,16 @@ class IntegrationScarceIndexTest {
 
     @Test
     void test_insert_duplicite_keys() {
-        final List<Pair<String, Integer>> pairs = List.of(P_BBB_2, P_CCC_1,
+        final List<Entry<String, Integer>> entries = List.of(P_BBB_2, P_CCC_1,
                 P_CCC_2, P_EEE, P_FFF_2);
-        assertThrows(IllegalArgumentException.class, () -> makeIndex(pairs));
+        assertThrows(IllegalArgumentException.class, () -> makeIndex(entries));
     }
 
     @Test
     void test_sanity_check() {
-        final List<Pair<String, Integer>> pairs = List.of(P_BBB_2, P_CCC_1,
+        final List<Entry<String, Integer>> entries = List.of(P_BBB_2, P_CCC_1,
                 P_DDD, P_EEE, P_FFF_1);
-        assertThrows(IllegalStateException.class, () -> makeIndex(pairs));
+        assertThrows(IllegalStateException.class, () -> makeIndex(entries));
     }
 
     @Test
@@ -95,7 +95,7 @@ class IntegrationScarceIndexTest {
     }
 
     private ScarceIndex<String> makeIndex(
-            final List<Pair<String, Integer>> pairs) {
+            final List<Entry<String, Integer>> entries) {
         final MemDirectory directory = new MemDirectory();
         final ScarceIndex<String> index = ScarceIndex.<String>builder()
                 .withDirectory(directory).withFileName(FILE_NAME)//
@@ -103,7 +103,7 @@ class IntegrationScarceIndexTest {
                 .build();
 
         index.openWriterTx().execute(writer -> {
-            pairs.forEach(writer::write);
+            entries.forEach(writer::write);
         });
 
         return index;

@@ -3,7 +3,7 @@ package org.hestiastore.index.scarceindex;
 import java.util.Comparator;
 import java.util.function.Consumer;
 
-import org.hestiastore.index.Pair;
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
 
 /**
@@ -24,8 +24,8 @@ final class ScarceIndexValidator<K> {
         Vldtn.requireNonNull(errorConsumer, "errorConsumer");
 
         boolean valid = true;
-        Pair<K, Integer> previous = null;
-        for (final Pair<K, Integer> entry : snapshot.entries()) {
+        Entry<K, Integer> previous = null;
+        for (final Entry<K, Integer> entry : snapshot.entries()) {
             if (previous != null) {
                 if (comparator.compare(previous.getKey(),
                         entry.getKey()) >= 0) {

@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hestiastore.index.AbstractDataTest;
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.directory.Directory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,13 +23,13 @@ public abstract class AbstractSegmentTest extends AbstractDataTest {
      * @param <M>   key type
      * @param <N>   value type
      * @param seg   required segment
-     * @param pairs required list of pairs
+     * @param entries required list of entries
      */
-    protected <M, N> void writePairs(final Segment<M, N> seg,
-            final List<Pair<M, N>> pairs) {
-        try (PairWriter<M, N> writer = seg.openDeltaCacheWriter()) {
-            for (final Pair<M, N> pair : pairs) {
-                writer.write(pair);
+    protected <M, N> void writeEntries(final Segment<M, N> seg,
+            final List<Entry<M, N>> entries) {
+        try (EntryWriter<M, N> writer = seg.openDeltaCacheWriter()) {
+            for (final Entry<M, N> entry : entries) {
+                writer.write(entry);
             }
         }
     }
@@ -41,13 +41,13 @@ public abstract class AbstractSegmentTest extends AbstractDataTest {
      * @param <M>   key type
      * @param <N>   value type
      * @param seg   required segment
-     * @param pairs required list of pairs of key and expected value
+     * @param entries required list of entries of key and expected value
      */
     protected <M, N> void verifySegmentSearch(final Segment<M, N> seg,
-            final List<Pair<M, N>> pairs) {
-        pairs.forEach(pair -> {
-            final M key = pair.getKey();
-            final N expectedValue = pair.getValue();
+            final List<Entry<M, N>> entries) {
+        entries.forEach(entry -> {
+            final M key = entry.getKey();
+            final N expectedValue = entry.getValue();
             assertEquals(expectedValue, seg.get(key),
                     String.format("Unable to find value for key '%s'.", key));
         });
@@ -60,11 +60,11 @@ public abstract class AbstractSegmentTest extends AbstractDataTest {
      * @param <M>   key type
      * @param <N>   value type
      * @param seg   required segment
-     * @param pairs required list of expected data in segment
+     * @param entries required list of expected data in segment
      */
     public static <M, N> void verifySegmentData(final Segment<M, N> seg,
-            final List<Pair<M, N>> pairs) {
-        verifyIteratorData(pairs, seg.openIterator());
+            final List<Entry<M, N>> entries) {
+        verifyIteratorData(entries, seg.openIterator());
     }
 
     protected int numberOfFilesInDirectory(final Directory directory) {

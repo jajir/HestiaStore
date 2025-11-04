@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.EntryIterator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
@@ -20,7 +20,7 @@ class SegmentSplitStepOpenIteratorTest {
     @Mock
     private SegmentImpl<Integer, String> segment;
     @Mock
-    private PairIterator<Integer, String> it;
+    private EntryIterator<Integer, String> it;
 
     @BeforeEach
     void setup() {

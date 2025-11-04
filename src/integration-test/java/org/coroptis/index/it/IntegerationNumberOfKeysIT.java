@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.List;
 import java.util.Random;
 
-import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 public class IntegerationNumberOfKeysIT {
     private final SegmentId SEGMENT_ID = SegmentId.of(29);
     private static final Random RANDOM = new Random();
-    private static final int NUMBER_OF_TESTING_PAIRS = 1_000_000;
+    private static final int NUMBER_OF_TESTING_ENTRIES = 1_000_000;
     private static final TypeDescriptor<String> TYPE_DESCRIPTOR_STRING = new TypeDescriptorShortString();
     private static final TypeDescriptor<Long> TYPE_DESCRIPTOR_LONG = new TypeDescriptorLong();
 
@@ -41,7 +41,7 @@ public class IntegerationNumberOfKeysIT {
         writeData(segment);
         segment.forceCompact();
 
-        assertEquals(NUMBER_OF_TESTING_PAIRS, segment.getNumberOfKeys());
+        assertEquals(NUMBER_OF_TESTING_ENTRIES, segment.getNumberOfKeys());
         segment.close();
     }
 
@@ -53,14 +53,14 @@ public class IntegerationNumberOfKeysIT {
         segment.close();
         segment = getCommonBuilder();
 
-        assertEquals(NUMBER_OF_TESTING_PAIRS, segment.getNumberOfKeys());
+        assertEquals(NUMBER_OF_TESTING_ENTRIES, segment.getNumberOfKeys());
     }
 
     @Test
     void test_after_writing() {
         Segment<String, Long> segment = getCommonBuilder();
         writeData(segment);
-        assertEquals(NUMBER_OF_TESTING_PAIRS, segment.getNumberOfKeys());
+        assertEquals(NUMBER_OF_TESTING_ENTRIES, segment.getNumberOfKeys());
         segment.close();
     }
 
@@ -90,10 +90,10 @@ public class IntegerationNumberOfKeysIT {
     }
 
     private void writeData(final Segment<String, Long> segment) {
-        try (PairWriter<String, Long> pairWriter = segment
+        try (EntryWriter<String, Long> entryWriter = segment
                 .openDeltaCacheWriter()) {
-            for (int i = 0; i < NUMBER_OF_TESTING_PAIRS; i++) {
-                pairWriter.write(wrap(i), RANDOM.nextLong());
+            for (int i = 0; i < NUMBER_OF_TESTING_ENTRIES; i++) {
+                entryWriter.write(wrap(i), RANDOM.nextLong());
             }
         }
     }

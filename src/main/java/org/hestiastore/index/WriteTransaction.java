@@ -1,7 +1,7 @@
 package org.hestiastore.index;
 
 /**
- * Interface for write transactions that allow writing key-value pairs and
+ * Interface for write transactions that allow writing key-value entries and
  * committing changes.
  *
  * Interface allows easily and securely perform write operations including
@@ -15,14 +15,14 @@ package org.hestiastore.index;
 public interface WriteTransaction<K, V> extends Commitable {
 
     /**
-     * Opens a writer for writing key-value pairs.
+     * Opens a writer for writing key-value entries.
      *
-     * @return a PairWriter instance for writing pairs
+     * @return a EntryWriter instance for writing entries
      */
-    default PairWriter<K, V> open() {
+    default EntryWriter<K, V> open() {
         if (this instanceof GuardedWriteTransaction) {
             @SuppressWarnings("unchecked")
-            final GuardedWriteTransaction<PairWriter<K, V>> transaction = (GuardedWriteTransaction<PairWriter<K, V>>) this;
+            final GuardedWriteTransaction<EntryWriter<K, V>> transaction = (GuardedWriteTransaction<EntryWriter<K, V>>) this;
             return transaction.open();
         }
         throw new UnsupportedOperationException(
@@ -37,17 +37,17 @@ public interface WriteTransaction<K, V> extends Commitable {
      * @param writeFunction the function to apply
      */
     default void execute(final WriterFunction<K, V> writeFunction) {
-        try (PairWriter<K, V> writer = open()) {
+        try (EntryWriter<K, V> writer = open()) {
             writeFunction.apply(writer);
         }
         commit();
     }
 
     /**
-     * Function that is used to write pairs to the transaction.
+     * Function that is used to write entries to the transaction.
      */
     @FunctionalInterface
     interface WriterFunction<K, V> {
-        void apply(PairWriter<K, V> writer);
+        void apply(EntryWriter<K, V> writer);
     }
 }

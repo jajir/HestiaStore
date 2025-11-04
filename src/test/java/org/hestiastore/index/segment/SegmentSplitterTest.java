@@ -9,9 +9,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
-import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.WriteTransaction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,11 +24,11 @@ class SegmentSplitterTest {
 
     private static final SegmentId SEGMENT_ID = SegmentId.of(27);
 
-    private static final Pair<String, String> PAIR1 = Pair.of("key1", "value1");
+    private static final Entry<String, String> ENTRY1 = Entry.of("key1", "value1");
 
-    private static final Pair<String, String> PAIR2 = Pair.of("key2", "value2");
+    private static final Entry<String, String> ENTRY2 = Entry.of("key2", "value2");
 
-    private static final Pair<String, String> PAIR3 = Pair.of("key3", "value3");
+    private static final Entry<String, String> ENTRY3 = Entry.of("key3", "value3");
 
     @Mock
     private SegmentImpl<String, String> segment;
@@ -49,16 +49,16 @@ class SegmentSplitterTest {
     private SegmentStats segmentStats;
 
     @Mock
-    private PairIterator<String, String> segmentIterator;
+    private EntryIterator<String, String> segmentIterator;
 
     @Mock
-    private PairWriter<String, String> segmentFullWriter;
+    private EntryWriter<String, String> segmentFullWriter;
 
     @Mock
     private WriteTransaction<String, String> segmentFullWriterTx;
 
     @Mock
-    private PairWriter<String, String> lowerSegmentFullWriter;
+    private EntryWriter<String, String> lowerSegmentFullWriter;
 
     @Mock
     private WriteTransaction<String, String> lowerSegmentWriteTx;
@@ -148,7 +148,7 @@ class SegmentSplitterTest {
         when(segment.openIterator()).thenReturn(segmentIterator);
         when(segmentIterator.hasNext()).thenReturn(true, true, true, true,
                 false);
-        when(segmentIterator.next()).thenReturn(PAIR1, PAIR2, PAIR3);
+        when(segmentIterator.next()).thenReturn(ENTRY1, ENTRY2, ENTRY3);
 
         // mock writing lower part to new segment
         when(segment.createSegmentWithSameConfig(SEGMENT_ID)).thenReturn(lowerSegment);
@@ -170,10 +170,10 @@ class SegmentSplitterTest {
                 .split(SEGMENT_ID, plan);
 
         assertNotNull(result);
-        verify(lowerSegmentFullWriter, times(1)).write(PAIR1);
-        verify(lowerSegmentFullWriter, times(1)).write(PAIR2);
+        verify(lowerSegmentFullWriter, times(1)).write(ENTRY1);
+        verify(lowerSegmentFullWriter, times(1)).write(ENTRY2);
         verify(lowerSegmentFullWriter, times(1)).close();
-        verify(segmentFullWriter, times(1)).write(PAIR3);
+        verify(segmentFullWriter, times(1)).write(ENTRY3);
         verify(segmentFullWriter, times(1)).close();
         verify(versionController, times(1)).changeVersion();
         verify(segmentIterator, times(1)).close();

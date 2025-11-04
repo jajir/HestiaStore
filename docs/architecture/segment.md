@@ -11,7 +11,7 @@ Segment is core part of index. It represents one string sorted table file with:
 
 operations like write and get should be always consistent. What is written is read. Iteration behave differently. better than provide old data it stop providing any data.
 
-Let's have a followin key value pairs in main index:
+Let's have a followin key value entries in main index:
 
 ```text
 <a, 20 >
@@ -19,7 +19,7 @@ Let's have a followin key value pairs in main index:
 <c, 40 >
 ```
 
-In segment cache are following pairs:
+In segment cache are following entries:
 
 ```text
 <a, 25>
@@ -51,7 +51,7 @@ Any segment write operation will break segment iterator. It's easier way to secu
 
 In segment following object are cached:
 
-* SegmentDeltaCache - contains changed key value pair from segment
+* SegmentDeltaCache - contains changed key value entry from segment
 * BloomFilter - bloom filter data
 * ScarceIndex - scarce index data
 
@@ -70,7 +70,7 @@ The following image shows that `SegmentDatafactory` can be referenced from `Segm
 
 Opening segment writer immediatelly close all segment readers. When writing operation add key that is in index but is not in cache this value will not returned updated. 
 
-Putting new pair into segment is here:
+Putting new entry into segment is here:
 
 ![Segment writing sequence diagram](../images/segment-writing-seq.png)
 

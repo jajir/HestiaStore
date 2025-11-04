@@ -7,8 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Arrays;
 import java.util.List;
 
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -33,20 +33,20 @@ class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
     private Directory directory;
     private Segment<String, Integer> segment;
 
-    private final List<Pair<String, Integer>> indexFile = Arrays.asList(//
-            Pair.of("a", 20), //
-            Pair.of("b", 30), //
-            Pair.of("c", 40));
+    private final List<Entry<String, Integer>> indexFile = Arrays.asList(//
+            Entry.of("a", 20), //
+            Entry.of("b", 30), //
+            Entry.of("c", 40));
 
-    private final List<Pair<String, Integer>> deltaCache = Arrays.asList(//
-            Pair.of("a", 25), //
-            Pair.of("e", 28), //
-            Pair.of("b", tdi.getTombstone()));
+    private final List<Entry<String, Integer>> deltaCache = Arrays.asList(//
+            Entry.of("a", 25), //
+            Entry.of("e", 28), //
+            Entry.of("b", tdi.getTombstone()));
 
-    private final List<Pair<String, Integer>> resultData = Arrays.asList(//
-            Pair.of("a", 25), //
-            Pair.of("c", 40), //
-            Pair.of("e", 28));
+    private final List<Entry<String, Integer>> resultData = Arrays.asList(//
+            Entry.of("a", 25), //
+            Entry.of("c", 40), //
+            Entry.of("e", 28));
 
     @BeforeEach
     void setUp() {
@@ -70,9 +70,9 @@ class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
                         ))//
                 .build();
 
-        writePairs(segment, indexFile);
+        writeEntries(segment, indexFile);
         segment.forceCompact();
-        writePairs(segment, deltaCache);
+        writeEntries(segment, deltaCache);
         /*
          * Now Content of main sst index file and delta cache should be as
          * described in documentation
@@ -86,14 +86,14 @@ class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
     }
 
     @Test
-    void test_case_5_compact_after_addding_pair() {
-        try (final PairIterator<String, Integer> iterator = segment
+    void test_case_5_compact_after_addding_entry() {
+        try (final EntryIterator<String, Integer> iterator = segment
                 .openIterator()) {
             assertTrue(iterator.hasNext());
-            assertEquals(Pair.of("a", 25), iterator.next());
+            assertEquals(Entry.of("a", 25), iterator.next());
 
             // write <c, 10>
-            writePairs(segment, Arrays.asList(Pair.of("c", 10)));
+            writeEntries(segment, Arrays.asList(Entry.of("c", 10)));
             segment.forceCompact();
 
             assertFalse(iterator.hasNext());

@@ -6,8 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -26,12 +26,12 @@ class IntegrationSegmentWriteConsistencyTest {
 
     private final List<String> values = List.of("aaa", "bbb", "ccc", "ddd",
             "eee", "fff");
-    private final List<Pair<Integer, String>> data = IntStream
+    private final List<Entry<Integer, String>> data = IntStream
             .range(0, values.size() - 1)
-            .mapToObj(i -> Pair.of(i, values.get(i))).toList();
-    private final List<Pair<Integer, String>> updatedData = IntStream
+            .mapToObj(i -> Entry.of(i, values.get(i))).toList();
+    private final List<Entry<Integer, String>> updatedData = IntStream
             .range(0, values.size() - 1)
-            .mapToObj(i -> Pair.of(i, values.get(i + 1))).toList();
+            .mapToObj(i -> Entry.of(i, values.get(i + 1))).toList();
 
     /**
      * Test that updated data are correctly stored into index.
@@ -43,14 +43,14 @@ class IntegrationSegmentWriteConsistencyTest {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
         final Segment<Integer, String> seg1 = makeSegment(directory, id);
-        try (PairWriter<Integer, String> writer = seg1.openDeltaCacheWriter()) {
+        try (EntryWriter<Integer, String> writer = seg1.openDeltaCacheWriter()) {
             data.forEach(writer::write);
         }
         verifySegmentData(seg1, data);
         seg1.close();
 
         final Segment<Integer, String> seg2 = makeSegment(directory, id);
-        try (PairWriter<Integer, String> writer = seg2.openDeltaCacheWriter()) {
+        try (EntryWriter<Integer, String> writer = seg2.openDeltaCacheWriter()) {
             updatedData.forEach(writer::write);
         }
         verifySegmentData(seg2, updatedData);

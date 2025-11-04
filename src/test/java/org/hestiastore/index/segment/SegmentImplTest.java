@@ -12,16 +12,16 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
-import org.hestiastore.index.PairIteratorWithCurrent;
-import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.EntryIteratorWithCurrent;
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.bloomfilter.BloomFilter;
 import org.hestiastore.index.bloomfilter.BloomFilterWriter;
 import org.hestiastore.index.bloomfilter.BloomFilterWriterTx;
-import org.hestiastore.index.chunkpairfile.ChunkPairFile;
-import org.hestiastore.index.chunkpairfile.ChunkPairFileWriter;
-import org.hestiastore.index.chunkpairfile.ChunkPairFileWriterTx;
+import org.hestiastore.index.chunkentryfile.ChunkEntryFile;
+import org.hestiastore.index.chunkentryfile.ChunkEntryFileWriter;
+import org.hestiastore.index.chunkentryfile.ChunkEntryFileWriterTx;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -74,17 +74,17 @@ class SegmentImplTest {
     @Mock
     private ScarceIndex<Integer> scarceIndex;
     @Mock
-    private ChunkPairFile<Integer, String> chunkPairFile;
+    private ChunkEntryFile<Integer, String> chunkPairFile;
     @Mock
-    private ChunkPairFileWriterTx<Integer, String> chunkPairWriterTx;
+    private ChunkEntryFileWriterTx<Integer, String> chunkEntryWriterTx;
     @Mock
     private ScarceIndexWriterTx<Integer> scarceWriterTx;
     @Mock
-    private PairWriter<Integer, Integer> scarcePairWriter;
+    private EntryWriter<Integer, Integer> scarceEntryWriter;
     @Mock
-    private ChunkPairFileWriter<Integer, String> chunkPairWriter;
+    private ChunkEntryFileWriter<Integer, String> chunkEntryWriter;
     @Mock
-    private PairIteratorWithCurrent<Integer, String> indexIterator;
+    private EntryIteratorWithCurrent<Integer, String> indexIterator;
 
     private SegmentConf conf;
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
@@ -100,12 +100,12 @@ class SegmentImplTest {
         when(segmentFiles.getKeyTypeDescriptor()).thenReturn(tdi);
         when(segmentFiles.getValueTypeDescriptor()).thenReturn(tds);
         when(segmentFiles.getIndexFile()).thenReturn(chunkPairFile);
-        when(chunkPairFile.openWriterTx()).thenReturn(chunkPairWriterTx);
-        when(chunkPairWriterTx.openWriter()).thenReturn(chunkPairWriter);
+        when(chunkPairFile.openWriterTx()).thenReturn(chunkEntryWriterTx);
+        when(chunkEntryWriterTx.openWriter()).thenReturn(chunkEntryWriter);
         when(chunkPairFile.openIterator()).thenReturn(indexIterator);
         when(segmentFiles.getScarceIndex()).thenReturn(scarceIndex);
         when(scarceIndex.openWriterTx()).thenReturn(scarceWriterTx);
-        when(scarceWriterTx.open()).thenReturn(scarcePairWriter);
+        when(scarceWriterTx.open()).thenReturn(scarceEntryWriter);
         doNothing().when(scarceIndex).loadCache();
         when(deltaCacheController.getDeltaCache()).thenReturn(deltaCache);
         when(deltaCache.getAsSortedList()).thenReturn(List.of());
@@ -197,7 +197,7 @@ class SegmentImplTest {
 
     @Test
     void openDeltaCacheWriter_changes_version_and_returns_writer() {
-        try (PairWriter<Integer, String> writer = subject
+        try (EntryWriter<Integer, String> writer = subject
                 .openDeltaCacheWriter()) {
             assertNotNull(writer);
         }
@@ -207,7 +207,7 @@ class SegmentImplTest {
     @Test
     void openIterator_returns_non_null_and_closes() {
         when(indexIterator.hasNext()).thenReturn(false);
-        try (PairIterator<Integer, String> it = subject.openIterator()) {
+        try (EntryIterator<Integer, String> it = subject.openIterator()) {
             assertNotNull(it);
             assertFalse(it.hasNext());
         }
@@ -231,7 +231,7 @@ class SegmentImplTest {
         when(segmentPropertiesManager.getCacheDeltaFileNames())
                 .thenReturn(List.of());
         subject.forceCompact();
-        verify(chunkPairWriterTx).commit();
+        verify(chunkEntryWriterTx).commit();
         verify(scarceWriterTx).commit();
     }
 
@@ -244,8 +244,8 @@ class SegmentImplTest {
     @Test
     void checkAndRepairConsistency_invalid_order_throws() {
         when(indexIterator.hasNext()).thenReturn(true, true, true, false);
-        when(indexIterator.next()).thenReturn(Pair.of(1, "a"))
-                .thenReturn(Pair.of(3, "b")).thenReturn(Pair.of(2, "c"));
+        when(indexIterator.next()).thenReturn(Entry.of(1, "a"))
+                .thenReturn(Entry.of(3, "b")).thenReturn(Entry.of(2, "c"));
         assertThrows(org.hestiastore.index.IndexException.class,
                 () -> subject.checkAndRepairConsistency());
     }

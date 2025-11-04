@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hestiastore.index.AbstractDataTest;
-import org.hestiastore.index.Pair;
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.directory.Directory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,12 +22,12 @@ public abstract class AbstractIndexTest extends AbstractDataTest {
      * @param <M>   key type
      * @param <N>   value type
      * @param seg   required index
-     * @param pairs required list of pairs
+     * @param entries required list of entries
      */
-    protected <M, N> void writePairs(final Index<M, N> index,
-            final List<Pair<M, N>> pairs) {
-        for (final Pair<M, N> pair : pairs) {
-            index.put(pair);
+    protected <M, N> void writeEntries(final Index<M, N> index,
+            final List<Entry<M, N>> entries) {
+        for (final Entry<M, N> entry : entries) {
+            index.put(entry);
         }
     }
 
@@ -38,13 +38,13 @@ public abstract class AbstractIndexTest extends AbstractDataTest {
      * @param <M>   key type
      * @param <N>   value type
      * @param seg   required segment
-     * @param pairs required list of pairs of key and expected value
+     * @param entries required list of entries of key and expected value
      */
     protected <M, N> void verifyIndexSearch(final Index<M, N> index,
-            final List<Pair<M, N>> pairs) {
-        pairs.forEach(pair -> {
-            final M key = pair.getKey();
-            final N expectedValue = pair.getValue();
+            final List<Entry<M, N>> entries) {
+        entries.forEach(entry -> {
+            final M key = entry.getKey();
+            final N expectedValue = entry.getValue();
             assertEquals(expectedValue, index.get(key));
         });
     }
@@ -56,17 +56,17 @@ public abstract class AbstractIndexTest extends AbstractDataTest {
      * @param <M>   key type
      * @param <N>   value type
      * @param seg   required index
-     * @param pairs required list of expected data in index
+     * @param entries required list of expected data in index
      */
     protected <M, N> void verifyIndexData(final Index<M, N> index,
-            final List<Pair<M, N>> pairs) {
-        final List<Pair<M, N>> data = toList(
+            final List<Entry<M, N>> entries) {
+        final List<Entry<M, N>> data = toList(
                 index.getStream(SegmentWindow.unbounded()));
-        assertEquals(pairs.size(), data.size(),
-                "Unexpected number of pairs in index");
-        for (int i = 0; i < pairs.size(); i++) {
-            final Pair<M, N> expectedPair = pairs.get(i);
-            final Pair<M, N> realPair = data.get(i);
+        assertEquals(entries.size(), data.size(),
+                "Unexpected number of entries in index");
+        for (int i = 0; i < entries.size(); i++) {
+            final Entry<M, N> expectedPair = entries.get(i);
+            final Entry<M, N> realPair = data.get(i);
             assertEquals(expectedPair, realPair);
         }
     }

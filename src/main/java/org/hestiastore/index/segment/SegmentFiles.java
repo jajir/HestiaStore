@@ -3,7 +3,7 @@ package org.hestiastore.index.segment;
 import java.util.List;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.chunkpairfile.ChunkPairFile;
+import org.hestiastore.index.chunkentryfile.ChunkEntryFile;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkStoreFile;
 import org.hestiastore.index.datablockfile.DataBlockSize;
@@ -161,14 +161,14 @@ public final class SegmentFiles<K, V> {
     /**
      * Open a handle for the main segment index file.
      *
-     * @return chunk-pair file for the index
+     * @return chunk-entry file for the index
      */
-    ChunkPairFile<K, V> getIndexFile() {
+    ChunkEntryFile<K, V> getIndexFile() {
         final ChunkStoreFile chunkStoreFile = new ChunkStoreFile(getDirectory(),
                 getIndexFileName(),
                 DataBlockSize.ofDataBlockSize(diskIoBufferSize),
                 encodingChunkFilters, decodingChunkFilters);
-        return new ChunkPairFile<>(chunkStoreFile, keyTypeDescriptor,
+        return new ChunkEntryFile<>(chunkStoreFile, keyTypeDescriptor,
                 valueTypeDescriptor,
                 DataBlockSize.ofDataBlockSize(diskIoBufferSize));
     }

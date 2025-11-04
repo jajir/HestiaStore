@@ -23,7 +23,7 @@ class ItemConfiguration{
 }
 
 class Merger {
-  merge(K,V1, V2) : pair<K,V>
+  merge(K,V1, V2) : entry<K,V>
 }
 
 IndexConfiguration --> Directory

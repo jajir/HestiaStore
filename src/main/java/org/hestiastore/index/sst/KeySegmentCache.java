@@ -9,8 +9,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
@@ -66,10 +66,10 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
                 .build();
 
         this.list = new TreeMap<>(keyComparator);
-        try (PairIterator<K, SegmentId> reader = sdf.openIterator()) {
+        try (EntryIterator<K, SegmentId> reader = sdf.openIterator()) {
             while (reader.hasNext()) {
-                final Pair<K, SegmentId> pair = reader.next();
-                list.put(pair.getKey(), pair.getValue());
+                final Entry<K, SegmentId> entry = reader.next();
+                list.put(entry.getKey(), entry.getValue());
             }
         }
         checkUniqueSegmentIds();
@@ -101,8 +101,8 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
 
     public SegmentId findSegmentId(final K key) {
         Vldtn.requireNonNull(key, "key");
-        final Pair<K, SegmentId> pair = localFindSegmentForKey(key);
-        return pair == null ? null : pair.getValue();
+        final Entry<K, SegmentId> entry = localFindSegmentForKey(key);
+        return entry == null ? null : entry.getValue();
     }
 
     public SegmentId findNewSegmentId() {
@@ -111,8 +111,8 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
 
     public SegmentId insertKeyToSegment(final K key) {
         Vldtn.requireNonNull(key, "key");
-        final Pair<K, SegmentId> pair = localFindSegmentForKey(key);
-        if (pair == null) {
+        final Entry<K, SegmentId> entry = localFindSegmentForKey(key);
+        if (entry == null) {
             /*
              * Key is bigger that all key so it will at last segment. But key at
              * last segment is smaller than adding one. Because of that key have
@@ -121,17 +121,17 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
             isDirty = true;
             return updateMaxKey(key);
         } else {
-            return pair.getValue();
+            return entry.getValue();
         }
     }
 
-    private Pair<K, SegmentId> localFindSegmentForKey(final K key) {
+    private Entry<K, SegmentId> localFindSegmentForKey(final K key) {
         Vldtn.requireNonNull(key, "key");
         final Map.Entry<K, SegmentId> ceilingEntry = list.ceilingEntry(key);
         if (ceilingEntry == null) {
             return null;
         } else {
-            return Pair.of(ceilingEntry.getKey(), ceilingEntry.getValue());
+            return Entry.of(ceilingEntry.getKey(), ceilingEntry.getValue());
         }
     }
 
@@ -140,10 +140,10 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
             list.put(key, FIRST_SEGMENT_ID);
             return FIRST_SEGMENT_ID;
         } else {
-            final Pair<K, SegmentId> max = Pair.of(list.lastEntry().getKey(),
+            final Entry<K, SegmentId> max = Entry.of(list.lastEntry().getKey(),
                     list.lastEntry().getValue());
             list.remove(max.getKey());
-            final Pair<K, SegmentId> newMax = Pair.of(key, max.getValue());
+            final Entry<K, SegmentId> newMax = Entry.of(key, max.getValue());
             list.put(newMax.getKey(), newMax.getValue());
             return newMax.getValue();
         }
@@ -159,9 +159,9 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
         isDirty = true;
     }
 
-    public Stream<Pair<K, SegmentId>> getSegmentsAsStream() {
+    public Stream<Entry<K, SegmentId>> getSegmentsAsStream() {
         return list.entrySet().stream()
-                .map(entry -> Pair.of(entry.getKey(), entry.getValue()));
+                .map(entry -> Entry.of(entry.getKey(), entry.getValue()));
     }
 
     public List<SegmentId> getSegmentIds() {
@@ -183,7 +183,7 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
     public void optionalyFlush() {
         if (isDirty) {
             sdf.openWriterTx().execute(writer -> {
-                list.forEach((k, v) -> writer.write(Pair.of(k, v)));
+                list.forEach((k, v) -> writer.write(Entry.of(k, v)));
             });
         }
         isDirty = false;

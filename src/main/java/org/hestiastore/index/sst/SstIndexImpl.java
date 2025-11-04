@@ -4,9 +4,9 @@ import java.util.List;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.F;
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
-import org.hestiastore.index.PairIteratorStreamer;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.EntryIteratorStreamer;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.UniqueCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -15,7 +15,7 @@ import org.hestiastore.index.log.Log;
 import org.hestiastore.index.log.LoggedKey;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.sorteddatafile.PairComparator;
+import org.hestiastore.index.sorteddatafile.EntryComparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,10 +74,10 @@ public abstract class SstIndexImpl<K, V> extends AbstractCloseableResource
                     "Can't insert thombstone value '%s' into index", value));
         }
 
-        // add key value pair into WAL
+        // add key value entry into WAL
         log.post(key, value);
 
-        cache.put(Pair.of(key, value));
+        cache.put(Entry.of(key, value));
 
         if (cache.size() > conf.getMaxNumberOfKeysInCache()) {
             flushCache();
@@ -90,24 +90,24 @@ public abstract class SstIndexImpl<K, V> extends AbstractCloseableResource
      * @param segmentId required segment id
      * @return
      */
-    PairIterator<K, V> openSegmentIterator(final SegmentId segmentId) {
+    EntryIterator<K, V> openSegmentIterator(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         final Segment<K, V> seg = segmentRegistry.getSegment(segmentId);
         return seg.openIterator();
     }
 
     @Override
-    public PairIterator<K, V> openSegmentIterator(
+    public EntryIterator<K, V> openSegmentIterator(
             SegmentWindow segmentWindows) {
         if (segmentWindows == null) {
             segmentWindows = SegmentWindow.unbounded();
         }
-        final PairIterator<K, V> segmentIterator = new SegmentsIterator<>(
+        final EntryIterator<K, V> segmentIterator = new SegmentsIterator<>(
                 keySegmentCache.getSegmentIds(segmentWindows), segmentRegistry);
-        final PairIterator<K, V> iterratorFreshedFromCache = new PairIteratorRefreshedFromCache<>(
+        final EntryIterator<K, V> iterratorFreshedFromCache = new EntryIteratorRefreshedFromCache<>(
                 segmentIterator, cache, valueTypeDescriptor);
         if (conf.isContextLoggingEnabled()) {
-            return new PairIteratorLoggingContext<>(iterratorFreshedFromCache,
+            return new EntryIteratorLoggingContext<>(iterratorFreshedFromCache,
                     conf);
         } else {
             return iterratorFreshedFromCache;
@@ -117,13 +117,13 @@ public abstract class SstIndexImpl<K, V> extends AbstractCloseableResource
     private void flushCache() {
         if (logger.isDebugEnabled()) {
             logger.debug(
-                    "Cache compacting of '{}' key value pairs in cache started.",
+                    "Cache compacting of '{}' key value entries in cache started.",
                     F.fmt(cache.size()));
         }
         final CompactSupport<K, V> support = new CompactSupport<>(
                 segmentRegistry, keySegmentCache, keyTypeDescriptor);
         cache.getStream()
-                .sorted(new PairComparator<>(keyTypeDescriptor.getComparator()))
+                .sorted(new EntryComparator<>(keyTypeDescriptor.getComparator()))
                 .forEach(support::compact);
         support.compactRest();
         final List<SegmentId> segmentIds = support.getEligibleSegmentIds();
@@ -136,7 +136,7 @@ public abstract class SstIndexImpl<K, V> extends AbstractCloseableResource
         log.rotate();
         if (logger.isDebugEnabled()) {
             logger.debug(
-                    "Cache compacting is done. Cache contains '{}' key value pairs.",
+                    "Cache compacting is done. Cache contains '{}' key value entries.",
                     F.fmt(cache.size()));
         }
     }
@@ -182,11 +182,11 @@ public abstract class SstIndexImpl<K, V> extends AbstractCloseableResource
 
         log.delete(key, valueTypeDescriptor.getTombstone());
 
-        cache.put(Pair.of(key, valueTypeDescriptor.getTombstone()));
+        cache.put(Entry.of(key, valueTypeDescriptor.getTombstone()));
     }
 
     @Override
-    public PairIteratorStreamer<LoggedKey<K>, V> getLogStreamer() {
+    public EntryIteratorStreamer<LoggedKey<K>, V> getLogStreamer() {
         return null;
     }
 

@@ -16,13 +16,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class WriteTransactionTest {
 
-    private static final Pair<String, String> PAIR1 = new Pair<>("key1",
+    private static final Entry<String, String> ENTRY1 = new Entry<>("key1",
             "value1");
-    private static final Pair<String, String> PAIR2 = new Pair<>("key2",
+    private static final Entry<String, String> ENTRY2 = new Entry<>("key2",
             "value2");
 
     @Mock
-    private PairWriter<String, String> pairWriter;
+    private EntryWriter<String, String> entryWriter;
 
     @Test
     void test_basic_functionality() {
@@ -30,8 +30,8 @@ class WriteTransactionTest {
                 new WriteTransaction<String, String>() {
 
                     @Override
-                    public PairWriter<String, String> open() {
-                        return pairWriter;
+                    public EntryWriter<String, String> open() {
+                        return entryWriter;
                     }
 
                     @Override
@@ -42,13 +42,13 @@ class WriteTransactionTest {
                 });
 
         testTransaction.execute(writer -> {
-            writer.write(PAIR1);
-            writer.write(PAIR2);
+            writer.write(ENTRY1);
+            writer.write(ENTRY2);
         });
 
-        verify(pairWriter).write(PAIR1);
-        verify(pairWriter).write(PAIR2);
-        verify(pairWriter, times(1)).close();
+        verify(entryWriter).write(ENTRY1);
+        verify(entryWriter).write(ENTRY2);
+        verify(entryWriter, times(1)).close();
         verify(testTransaction, times(1)).commit();
     }
 
@@ -58,8 +58,8 @@ class WriteTransactionTest {
                 new WriteTransaction<String, String>() {
 
                     @Override
-                    public PairWriter<String, String> open() {
-                        return pairWriter;
+                    public EntryWriter<String, String> open() {
+                        return entryWriter;
                     }
 
                     @Override
@@ -71,15 +71,15 @@ class WriteTransactionTest {
 
         final Exception e = assertThrows(RuntimeException.class,
                 () -> testTransaction.execute(writer -> {
-                    writer.write(PAIR1);
-                    writer.write(PAIR2);
+                    writer.write(ENTRY1);
+                    writer.write(ENTRY2);
                     throw new RuntimeException("My test exception");
                 }));
 
         assertEquals("My test exception", e.getMessage());
-        verify(pairWriter).write(PAIR1);
-        verify(pairWriter).write(PAIR2);
-        verify(pairWriter, times(1)).close();
+        verify(entryWriter).write(ENTRY1);
+        verify(entryWriter).write(ENTRY2);
+        verify(entryWriter, times(1)).close();
         verify(testTransaction, never()).commit();
     }
 
@@ -89,8 +89,8 @@ class WriteTransactionTest {
                 new WriteTransaction<String, String>() {
 
                     @Override
-                    public PairWriter<String, String> open() {
-                        return pairWriter;
+                    public EntryWriter<String, String> open() {
+                        return entryWriter;
                     }
 
                     @Override
@@ -99,18 +99,18 @@ class WriteTransactionTest {
                     }
 
                 });
-        doThrow(new IndexException("Closing exception")).when(pairWriter)
+        doThrow(new IndexException("Closing exception")).when(entryWriter)
                 .close();
         final Exception e = assertThrows(IndexException.class,
                 () -> testTransaction.execute(writer -> {
-                    writer.write(PAIR1);
-                    writer.write(PAIR2);
+                    writer.write(ENTRY1);
+                    writer.write(ENTRY2);
                 }));
 
         assertEquals("Closing exception", e.getMessage());
-        verify(pairWriter).write(PAIR1);
-        verify(pairWriter).write(PAIR2);
-        verify(pairWriter, times(1)).close();
+        verify(entryWriter).write(ENTRY1);
+        verify(entryWriter).write(ENTRY2);
+        verify(entryWriter, times(1)).close();
         verify(testTransaction, never()).commit();
     }
 
@@ -120,7 +120,7 @@ class WriteTransactionTest {
                 new WriteTransaction<String, String>() {
 
                     @Override
-                    public PairWriter<String, String> open() {
+                    public EntryWriter<String, String> open() {
                         throw new IndexException("open writer exception");
                     }
 
@@ -133,14 +133,14 @@ class WriteTransactionTest {
 
         final Exception e = assertThrows(IndexException.class,
                 () -> testTransaction.execute(writer -> {
-                    writer.write(PAIR1);
-                    writer.write(PAIR2);
+                    writer.write(ENTRY1);
+                    writer.write(ENTRY2);
                 }));
 
         assertEquals("open writer exception", e.getMessage());
-        verify(pairWriter, never()).write(PAIR1);
-        verify(pairWriter, never()).write(PAIR2);
-        verify(pairWriter, never()).close();
+        verify(entryWriter, never()).write(ENTRY1);
+        verify(entryWriter, never()).write(ENTRY2);
+        verify(entryWriter, never()).close();
         verify(testTransaction, never()).commit();
     }
 

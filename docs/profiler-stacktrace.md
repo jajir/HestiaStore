@@ -2,7 +2,7 @@
 
 This page summarizes a profiling session focused on read and write performance. The goal was to identify where CPU time is spent and highlight concrete improvements.
 
-The workload: a separate generator produced roughly 100,000,000 key–value pairs and then executed read-heavy operations against HestiaStore 0.0.5 while YourKit captured CPU samples.
+The workload: a separate generator produced roughly 100,000,000 key–value entries and then executed read-heavy operations against HestiaStore 0.0.5 while YourKit captured CPU samples.
 
 Test environment: run on a Mac mini on 24.10.2025.
 
@@ -47,7 +47,7 @@ org.hestiastore.index.directory.FsDirectory.getFileReader(FsDirectory.java:29)
 org.hestiastore.index.datablockfile.DataBlockFile.getFileReader(DataBlockFile.java:69)
 org.hestiastore.index.datablockfile.DataBlockFile.openReader(DataBlockFile.java:61)
 org.hestiastore.index.chunkstore.ChunkStoreFile.openReader(ChunkStoreFile.java:52)
-org.hestiastore.index.chunkpairfile.ChunkPairFile.openIteratorAtPosition(ChunkPairFile.java:42)
+org.hestiastore.index.chunkentryfile.ChunkEntryFile.openIteratorAtPosition(ChunkEntryFile.java:42)
 org.hestiastore.index.segment.SegmentIndexSearcher.search(SegmentIndexSearcher.java:43)
 org.hestiastore.index.segment.SegmentSearcher.get(SegmentSearcher.java:62)
 org.hestiastore.index.segment.SegmentImpl.get(SegmentImpl.java:166)
@@ -61,7 +61,7 @@ com.coroptis.counting.CommandCount.lambda$computeNewStates$0(CommandCount.java:8
 com.coroptis.counting.CommandCount$$Lambda.0x000000080023e3c0.accept()
 java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
 java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
-org.hestiastore.index.sst.PairIteratorToSpliterator.tryAdvance(PairIteratorToSpliterator.java:31)
+org.hestiastore.index.sst.EntryIteratorToSpliterator.tryAdvance(EntryIteratorToSpliterator.java:31)
 java.util.Spliterator.forEachRemaining(Spliterator.java:332)
 java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
 java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
@@ -94,9 +94,9 @@ org.hestiastore.index.datablockfile.DataBlockByteReaderImpl.readExactly(DataBloc
 org.hestiastore.index.chunkstore.ChunkData.read(ChunkData.java:85)
 org.hestiastore.index.chunkstore.ChunkStoreReaderImpl.read(ChunkStoreReaderImpl.java:42)
 org.hestiastore.index.chunkstore.ChunkStoreReaderImpl.read(ChunkStoreReaderImpl.java:13)
-org.hestiastore.index.chunkpairfile.ChunkPairFileIterator.moveToNextChunk(ChunkPairFileIterator.java:81)
-org.hestiastore.index.chunkpairfile.ChunkPairFileIterator.<init>(ChunkPairFileIterator.java:42)
-org.hestiastore.index.chunkpairfile.ChunkPairFile.openIteratorAtPosition(ChunkPairFile.java:42)
+org.hestiastore.index.chunkentryfile.ChunkEntryFileIterator.moveToNextChunk(ChunkEntryFileIterator.java:81)
+org.hestiastore.index.chunkentryfile.ChunkEntryFileIterator.<init>(ChunkEntryFileIterator.java:42)
+org.hestiastore.index.chunkentryfile.ChunkEntryFile.openIteratorAtPosition(ChunkEntryFile.java:42)
 org.hestiastore.index.segment.SegmentIndexSearcher.search(SegmentIndexSearcher.java:43)
 org.hestiastore.index.segment.SegmentSearcher.get(SegmentSearcher.java:62)
 org.hestiastore.index.segment.SegmentImpl.get(SegmentImpl.java:166)
@@ -110,7 +110,7 @@ com.coroptis.counting.CommandCount.lambda$computeNewStates$0(CommandCount.java:8
 com.coroptis.counting.CommandCount$$Lambda.0x000000080023e3c0.accept()
 java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
 java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
-org.hestiastore.index.sst.PairIteratorToSpliterator.tryAdvance(PairIteratorToSpliterator.java:31)
+org.hestiastore.index.sst.EntryIteratorToSpliterator.tryAdvance(EntryIteratorToSpliterator.java:31)
 java.util.Spliterator.forEachRemaining(Spliterator.java:332)
 java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
 java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
@@ -146,7 +146,7 @@ org.hestiastore.index.datablockfile.DataBlockByteReaderImpl.doClose(DataBlockByt
 org.hestiastore.index.AbstractCloseableResource.close(AbstractCloseableResource.java:23)
 org.hestiastore.index.chunkstore.ChunkStoreReaderImpl.doClose(ChunkStoreReaderImpl.java:36)
 org.hestiastore.index.AbstractCloseableResource.close(AbstractCloseableResource.java:23)
-org.hestiastore.index.chunkpairfile.ChunkPairFileIterator.doClose(ChunkPairFileIterator.java:96)
+org.hestiastore.index.chunkentryfile.ChunkEntryFileIterator.doClose(ChunkEntryFileIterator.java:96)
 org.hestiastore.index.AbstractCloseableResource.close(AbstractCloseableResource.java:23)
 org.hestiastore.index.segment.SegmentIndexSearcher.search(SegmentIndexSearcher.java:59)
 org.hestiastore.index.segment.SegmentSearcher.get(SegmentSearcher.java:62)
@@ -161,7 +161,7 @@ com.coroptis.counting.CommandCount.lambda$computeNewStates$0(CommandCount.java:8
 com.coroptis.counting.CommandCount$$Lambda.0x000000080023e3c0.accept()
 java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
 java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
-org.hestiastore.index.sst.PairIteratorToSpliterator.tryAdvance(PairIteratorToSpliterator.java:31)
+org.hestiastore.index.sst.EntryIteratorToSpliterator.tryAdvance(EntryIteratorToSpliterator.java:31)
 java.util.Spliterator.forEachRemaining(Spliterator.java:332)
 java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
 java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
@@ -177,7 +177,7 @@ com.coroptis.counting.Main.main(Main.java:132)
 ## 🛠️ What to improve next (actionable)
 
 - Reduce copies in the read path
-	- Pool and reuse byte buffers across `ChunkStoreReader`/`ChunkPairFileIterator`.
+	- Pool and reuse byte buffers across `ChunkStoreReader`/`ChunkEntryFileIterator`.
 	- Where feasible, write directly into the final consumer’s buffer instead of staging arrays.
 - Fewer, larger IO operations
 	- Increase internal buffer sizes; align chunk/page boundaries to reduce partial reads.

@@ -8,35 +8,35 @@ import org.junit.jupiter.api.Test;
 class GuardedWriteTransactionTest {
 
     private static final class NullResourceTransaction
-            extends GuardedWriteTransaction<PairWriter<String, String>> {
+            extends GuardedWriteTransaction<EntryWriter<String, String>> {
 
         @Override
-        protected PairWriter<String, String> doOpen() {
+        protected EntryWriter<String, String> doOpen() {
             return null;
         }
 
         @Override
-        protected void doCommit(final PairWriter<String, String> resource) {
+        protected void doCommit(final EntryWriter<String, String> resource) {
         }
     }
 
     private static final class RecordingTransaction
-            extends GuardedWriteTransaction<PairWriter<String, String>> {
+            extends GuardedWriteTransaction<EntryWriter<String, String>> {
 
-        private final RecordingPairWriter delegateWriter = new RecordingPairWriter();
+        private final RecordingEntryWriter delegateWriter = new RecordingEntryWriter();
         private boolean committed;
 
         @Override
-        protected PairWriter<String, String> doOpen() {
+        protected EntryWriter<String, String> doOpen() {
             return delegateWriter;
         }
 
         @Override
-        protected void doCommit(final PairWriter<String, String> resource) {
+        protected void doCommit(final EntryWriter<String, String> resource) {
             committed = true;
         }
 
-        RecordingPairWriter delegateWriter() {
+        RecordingEntryWriter delegateWriter() {
             return delegateWriter;
         }
 
@@ -45,13 +45,13 @@ class GuardedWriteTransactionTest {
         }
     }
 
-    private static final class RecordingPairWriter extends
-            AbstractCloseableResource implements PairWriter<String, String> {
+    private static final class RecordingEntryWriter extends
+            AbstractCloseableResource implements EntryWriter<String, String> {
         int closeCount;
         int writeCount;
 
         @Override
-        public void write(final Pair<String, String> pair) {
+        public void write(final Entry<String, String> entry) {
             writeCount++;
         }
 
@@ -102,13 +102,13 @@ class GuardedWriteTransactionTest {
     @Test
     void writer_close_and_commit_delegate_once() {
         final RecordingTransaction tx = new RecordingTransaction();
-        PairWriter<String, String> writer = tx.open();
-        writer.write(Pair.of("k", "v"));
+        EntryWriter<String, String> writer = tx.open();
+        writer.write(Entry.of("k", "v"));
         writer.close();
 
         tx.commit();
 
-        RecordingPairWriter delegate = tx.delegateWriter();
+        RecordingEntryWriter delegate = tx.delegateWriter();
         assertEquals(1, delegate.writeCount);
         assertEquals(1, delegate.closeCount);
         assertEquals(true, tx.wasCommitted());

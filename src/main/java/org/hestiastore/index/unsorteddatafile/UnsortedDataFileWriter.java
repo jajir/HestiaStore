@@ -1,8 +1,8 @@
 package org.hestiastore.index.unsorteddatafile;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeWriter;
 import org.hestiastore.index.directory.Directory;
@@ -10,11 +10,11 @@ import org.hestiastore.index.directory.Directory.Access;
 import org.hestiastore.index.directory.FileWriter;
 
 /**
- * Streaming writer that appends unsorted key/value pairs to a file using the
+ * Streaming writer that appends unsorted key/value entries to a file using the
  * provided serializers.
  */
 public class UnsortedDataFileWriter<K, V> extends AbstractCloseableResource
-        implements PairWriter<K, V> {
+        implements EntryWriter<K, V> {
 
     private final TypeWriter<K> keyWriter;
     private final TypeWriter<V> valueWriter;
@@ -43,18 +43,18 @@ public class UnsortedDataFileWriter<K, V> extends AbstractCloseableResource
     }
 
     /**
-     * Serialises the supplied pair to the underlying file.
+     * Serialises the supplied entry to the underlying file.
      *
-     * @param pair key/value pair to write
-     * @throws IllegalArgumentException if the pair or any component is null
+     * @param entry key/value entry to write
+     * @throws IllegalArgumentException if the entry or any component is null
      */
     @Override
-    public void write(final Pair<K, V> pair) {
-        Vldtn.requireNonNull(pair, "pair");
-        Vldtn.requireNonNull(pair.getKey(), "key");
-        Vldtn.requireNonNull(pair.getValue(), "value");
-        keyWriter.write(fileWriter, pair.getKey());
-        valueWriter.write(fileWriter, pair.getValue());
+    public void write(final Entry<K, V> entry) {
+        Vldtn.requireNonNull(entry, "entry");
+        Vldtn.requireNonNull(entry.getKey(), "key");
+        Vldtn.requireNonNull(entry.getValue(), "value");
+        keyWriter.write(fileWriter, entry.getKey());
+        valueWriter.write(fileWriter, entry.getValue());
     }
 
     /**

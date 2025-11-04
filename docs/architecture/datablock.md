@@ -30,7 +30,7 @@ Blocks are stored and retrieved via the `BlockFile` abstraction.
 
 ## Chunk
 
-A **Chunk** represents a variable-sized, logical data unit stored inside a block. It is used to store optionally compressed sets of key-value pairs.
+A **Chunk** represents a variable-sized, logical data unit stored inside a block. It is used to store optionally compressed sets of key-value entries.
 
 ### Key Characteristics:
 - **Variable Size**: Can be smaller or span multiple blocks depending on compression.

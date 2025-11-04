@@ -1,6 +1,6 @@
 package org.hestiastore.index.sorteddatafile;
 
-import org.hestiastore.index.PairIteratorWithCurrent;
+import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
@@ -66,11 +66,11 @@ public class SortedDataFile<K, V> {
     /**
      * Opens an iterator for the sorted data file.
      * 
-     * @return a pair iterator for the sorted data file
+     * @return a entry iterator for the sorted data file
      */
-    public PairIteratorWithCurrent<K, V> openIterator() {
+    public EntryIteratorWithCurrent<K, V> openIterator() {
         if (!directory.isFileExists(fileName)) {
-            return new EmptyPairIteratorWithCurrent<>();
+            return new EmptyEntryIteratorWithCurrent<>();
         }
         final DiffKeyReader<K> diffKeyReader = new DiffKeyReader<>(
                 keyTypeDescriptor.getConvertorFromBytes());

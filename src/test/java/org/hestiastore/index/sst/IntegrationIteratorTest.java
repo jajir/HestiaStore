@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import java.util.Arrays;
 import java.util.List;
 
-import org.hestiastore.index.Pair;
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
@@ -21,10 +21,10 @@ class IntegrationIteratorTest extends AbstractIndexTest {
     private Directory directory;
     private Index<String, Integer> index;
 
-    private final List<Pair<String, Integer>> indexFile = Arrays.asList(//
-            Pair.of("a", 20), //
-            Pair.of("b", 30), //
-            Pair.of("c", 40));
+    private final List<Entry<String, Integer>> indexFile = Arrays.asList(//
+            Entry.of("a", 20), //
+            Entry.of("b", 30), //
+            Entry.of("c", 40));
 
     @BeforeEach
     void setUp() {
@@ -46,7 +46,7 @@ class IntegrationIteratorTest extends AbstractIndexTest {
                 .build();
         index = Index.<String, Integer>create(directory, conf);
 
-        writePairs(index, indexFile);
+        writeEntries(index, indexFile);
         index.compact();
     }
 
@@ -55,14 +55,14 @@ class IntegrationIteratorTest extends AbstractIndexTest {
         index.delete("b");
 
         verifyIndexSearch(index, Arrays.asList(//
-                Pair.of("a", 20), //
-                Pair.of("c", 40) //
+                Entry.of("a", 20), //
+                Entry.of("c", 40) //
         ));
         assertNull(index.get("b"));
 
         verifyIndexData(index, Arrays.asList(//
-                Pair.of("a", 20), //
-                Pair.of("c", 40) //
+                Entry.of("a", 20), //
+                Entry.of("c", 40) //
         ));
     }
 
@@ -72,15 +72,15 @@ class IntegrationIteratorTest extends AbstractIndexTest {
         index.put("e", 28);
 
         verifyIndexSearch(index, Arrays.asList(//
-                Pair.of("a", 20), //
-                Pair.of("e", 28), //
-                Pair.of("c", 40) //
+                Entry.of("a", 20), //
+                Entry.of("e", 28), //
+                Entry.of("c", 40) //
         ));
         assertNull(index.get("b"));
 
         verifyIndexData(index, Arrays.asList(//
-                Pair.of("a", 20), //
-                Pair.of("c", 40) //
+                Entry.of("a", 20), //
+                Entry.of("c", 40) //
         ));
     }
 
@@ -90,17 +90,17 @@ class IntegrationIteratorTest extends AbstractIndexTest {
 
         // verify that added value could be get by key
         verifyIndexSearch(index, Arrays.asList(//
-                Pair.of("a", 20), //
-                Pair.of("b", 30), //
-                Pair.of("c", 40), //
-                Pair.of("g", 13) //
+                Entry.of("a", 20), //
+                Entry.of("b", 30), //
+                Entry.of("c", 40), //
+                Entry.of("g", 13) //
         ));
 
         // verify that added value is not in iterator
         verifyIndexData(index, Arrays.asList(//
-                Pair.of("a", 20), //
-                Pair.of("b", 30), //
-                Pair.of("c", 40)//
+                Entry.of("a", 20), //
+                Entry.of("b", 30), //
+                Entry.of("c", 40)//
         ));
     }
 
@@ -112,16 +112,16 @@ class IntegrationIteratorTest extends AbstractIndexTest {
 
         // verify data consistency after flush
         verifyIndexSearch(index, Arrays.asList(//
-                Pair.of("a", 20), //
-                Pair.of("c", 40), //
-                Pair.of("g", 13) //
+                Entry.of("a", 20), //
+                Entry.of("c", 40), //
+                Entry.of("g", 13) //
         ));
 
         // verify that data are in iterator after flush
         verifyIndexData(index, Arrays.asList(//
-                Pair.of("a", 20), //
-                Pair.of("c", 40), //
-                Pair.of("g", 13)//
+                Entry.of("a", 20), //
+                Entry.of("c", 40), //
+                Entry.of("g", 13)//
         ));
     }
 
@@ -129,16 +129,16 @@ class IntegrationIteratorTest extends AbstractIndexTest {
     void test_basic_consistency() {
         // verify data consistency after flush
         verifyIndexSearch(index, Arrays.asList(//
-                Pair.of("a", 20), //
-                Pair.of("b", 30), //
-                Pair.of("c", 40) //
+                Entry.of("a", 20), //
+                Entry.of("b", 30), //
+                Entry.of("c", 40) //
         ));
 
         // verify that data are in iterator after flush
         verifyIndexData(index, Arrays.asList(//
-                Pair.of("a", 20), //
-                Pair.of("b", 30), //
-                Pair.of("c", 40) //
+                Entry.of("a", 20), //
+                Entry.of("b", 30), //
+                Entry.of("c", 40) //
         ));
     }
 

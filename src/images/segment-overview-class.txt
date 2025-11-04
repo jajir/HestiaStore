@@ -2,11 +2,11 @@
 
 class           Segment {
   + SegmentId SegmentId
-  + PairIterator openIterator()
+  + EntryIterator openIterator()
   + void openWriter()
   + void forceCompact()
   + SegmentSearcher openSearcher()
-  + PairWriter openWriter()
+  + EntryWriter openWriter()
   + void optionallyCompact()
   + SegmentSplitter.Result split()
 }

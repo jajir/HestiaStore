@@ -1,6 +1,6 @@
 package org.hestiastore.index.segment;
 
-import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 
 /**
@@ -62,8 +62,8 @@ public final class SegmentDeltaCacheController<K, V> {
      * 
      * @return
      */
-    public PairIterator<K, V> getSortedIterator() {
-        return new SegmentDeltaCachePairIterator<>(
+    public EntryIterator<K, V> getSortedIterator() {
+        return new SegmentDeltaCacheEntryIterator<>(
                 getDeltaCache().getSortedKeys(), this);
     }
 }

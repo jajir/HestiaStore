@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
-import org.hestiastore.index.Pair;
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
@@ -27,7 +27,7 @@ class IntegrationIndexConsistencyTest extends AbstractIndexTest {
     private final Logger logger = LoggerFactory
             .getLogger(IntegrationIndexConsistencyTest.class);
 
-    private static final int NUMBER_OF_TEST_PAIRS = 97;
+    private static final int NUMBER_OF_TEST_ENTRIES = 97;
     final Directory directory = new MemDirectory();
     final SegmentId id = SegmentId.of(27);
     final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
@@ -41,7 +41,7 @@ class IntegrationIndexConsistencyTest extends AbstractIndexTest {
     void test_basic_consistency() {
         final Index<Integer, Integer> index = makeIndex();
         for (int i = 0; i < 100; i++) {
-            writePairs(index, makeList(i));
+            writeEntries(index, makeList(i));
             index.flush();
             verifyIndexData(index, makeList(i));
         }
@@ -56,14 +56,14 @@ class IntegrationIndexConsistencyTest extends AbstractIndexTest {
     @Test
     void test_reading_of_updated_values() {
         final Index<Integer, Integer> index = makeIndex();
-        writePairs(index, makeList(0));
-        try (final Stream<Pair<Integer, Integer>> stream = index
+        writeEntries(index, makeList(0));
+        try (final Stream<Entry<Integer, Integer>> stream = index
                 .getStream(SegmentWindow.unbounded())) {
             final AtomicInteger acx = new AtomicInteger();
-            stream.forEach(pair -> {
+            stream.forEach(entry -> {
                 int cx = acx.incrementAndGet();
-                writePairs(index, makeList(cx));
-                logger.debug("{} {}", cx, pair);
+                writeEntries(index, makeList(cx));
+                logger.debug("{} {}", cx, entry);
                 verifyIndexData(index, makeList(cx));
             });
         }
@@ -72,9 +72,9 @@ class IntegrationIndexConsistencyTest extends AbstractIndexTest {
     @Test
     void test_search_for_missing_key_bigger_than_last_existing_one() {
         final Index<Integer, Integer> index = makeIndex();
-        writePairs(index, makeList(888));
+        writeEntries(index, makeList(888));
         index.flush();
-        for (int i = 0; i < NUMBER_OF_TEST_PAIRS; i++) {
+        for (int i = 0; i < NUMBER_OF_TEST_ENTRIES; i++) {
             assertNull(index.get(i * 2 + 1));
         }
     }
@@ -99,10 +99,10 @@ class IntegrationIndexConsistencyTest extends AbstractIndexTest {
         return Index.<Integer, Integer>create(directory, conf);
     }
 
-    protected List<Pair<Integer, Integer>> makeList(final int no) {
-        final List<Pair<Integer, Integer>> out = new ArrayList<>();
-        for (int i = 0; i < NUMBER_OF_TEST_PAIRS; i++) {
-            out.add(Pair.of(i * 2, no));
+    protected List<Entry<Integer, Integer>> makeList(final int no) {
+        final List<Entry<Integer, Integer>> out = new ArrayList<>();
+        for (int i = 0; i < NUMBER_OF_TEST_ENTRIES; i++) {
+            out.add(Entry.of(i * 2, no));
         }
         return out;
     }

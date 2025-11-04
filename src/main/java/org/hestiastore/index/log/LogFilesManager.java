@@ -1,6 +1,6 @@
 package org.hestiastore.index.log;
 
-import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
@@ -33,7 +33,7 @@ public class LogFilesManager<K, V> {
                 .build();
     }
 
-    PairIterator<LoggedKey<K>, V> openIterator(final String name) {
+    EntryIterator<LoggedKey<K>, V> openIterator(final String name) {
         return getLogFile(name).openIterator();
     }
 

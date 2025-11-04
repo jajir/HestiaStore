@@ -1,11 +1,11 @@
 package org.hestiastore.index.log;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.Vldtn;
 
 /**
- * Unsorted key value pairs log file.
+ * Unsorted key value entries log file.
  * 
  * @author honza
  *
@@ -15,9 +15,9 @@ import org.hestiastore.index.Vldtn;
 public final class LogUnsortedFileWriterImpl<K, V>
         extends AbstractCloseableResource implements LogUnsortedFileWriter<K, V> {
 
-    private final PairWriter<LoggedKey<K>, V> writer;
+    private final EntryWriter<LoggedKey<K>, V> writer;
 
-    public LogUnsortedFileWriterImpl(final PairWriter<LoggedKey<K>, V> writer) {
+    public LogUnsortedFileWriterImpl(final EntryWriter<LoggedKey<K>, V> writer) {
         this.writer = Vldtn.requireNonNull(writer, "writer");
     }
 

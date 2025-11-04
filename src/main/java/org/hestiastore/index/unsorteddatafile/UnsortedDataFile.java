@@ -1,7 +1,7 @@
 package org.hestiastore.index.unsorteddatafile;
 
-import org.hestiastore.index.PairIterator;
-import org.hestiastore.index.PairIteratorStreamer;
+import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.EntryIteratorStreamer;
 
 /**
  * Abstraction for unsorted key-value storage backed by the {@code Directory}
@@ -28,9 +28,9 @@ public interface UnsortedDataFile<K, V> {
      * Opens a point-in-time iterator over the file contents. The caller is
      * responsible for closing the returned iterator.
      *
-     * @return iterator providing access to all stored pairs
+     * @return iterator providing access to all stored entries
      */
-    PairIterator<K, V> openIterator();
+    EntryIterator<K, V> openIterator();
 
     /**
      * Opens a streaming view backed by an iterator. When the file does not
@@ -38,7 +38,7 @@ public interface UnsortedDataFile<K, V> {
      *
      * @return streaming adapter over the file contents
      */
-    PairIteratorStreamer<K, V> openStreamer();
+    EntryIteratorStreamer<K, V> openStreamer();
 
     /**
      * Opens a transactional writer that buffers data into a temporary file and

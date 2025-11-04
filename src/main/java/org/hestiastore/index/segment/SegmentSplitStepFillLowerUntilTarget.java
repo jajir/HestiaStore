@@ -1,7 +1,7 @@
 package org.hestiastore.index.segment;
 
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.Vldtn;
 
@@ -19,12 +19,12 @@ final class SegmentSplitStepFillLowerUntilTarget<K, V>
         Vldtn.requireNonNull(state.getIterator(), "iterator");
         final WriteTransaction<K, V> lowerSegmentWriteTx = state
                 .getLowerSegment().openFullWriteTx();
-        try (PairWriter<K, V> writer = lowerSegmentWriteTx.open()) {
+        try (EntryWriter<K, V> writer = lowerSegmentWriteTx.open()) {
             while (ctx.getPlan().getLowerCount() < ctx.getPlan().getHalf()
                     && state.getIterator().hasNext()) {
-                final Pair<K, V> pair = state.getIterator().next();
-                ctx.getPlan().recordLower(pair);
-                writer.write(pair);
+                final Entry<K, V> entry = state.getIterator().next();
+                ctx.getPlan().recordLower(entry);
+                writer.write(entry);
             }
         }
         lowerSegmentWriteTx.commit();

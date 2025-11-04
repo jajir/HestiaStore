@@ -1,5 +1,5 @@
 package org.hestiastore.index.segment;
-import org.hestiastore.index.Pair;
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
 
 /**
@@ -35,9 +35,9 @@ public final class SegmentSplitterPlan<K, V> {
         return half > 1;
     }
 
-    void recordLower(final Pair<K, V> pair) {
-        Vldtn.requireNonNull(pair, "pair");
-        final K key = Vldtn.requireNonNull(pair.getKey(), "key");
+    void recordLower(final Entry<K, V> entry) {
+        Vldtn.requireNonNull(entry, "entry");
+        final K key = Vldtn.requireNonNull(entry.getKey(), "key");
         lowerCount++;
         if (minKey == null) {
             minKey = key;

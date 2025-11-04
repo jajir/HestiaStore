@@ -13,8 +13,8 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.AbstractDataTest;
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -36,13 +36,13 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
 
-    private final List<Pair<Integer, String>> testDataSet = Arrays.asList(
-            Pair.of(2, "a"), Pair.of(5, "d"), Pair.of(10, "i"), Pair.of(8, "g"),
-            Pair.of(7, "f"), Pair.of(3, "b"), Pair.of(4, "c"), Pair.of(6, "e"),
-            Pair.of(9, "h"));
-    private final List<Pair<Integer, String>> sortedTestDataSet = testDataSet
-            .stream().sorted((pair1, pair2) -> {
-                return pair1.getKey() - pair2.getKey();
+    private final List<Entry<Integer, String>> testDataSet = Arrays.asList(
+            Entry.of(2, "a"), Entry.of(5, "d"), Entry.of(10, "i"), Entry.of(8, "g"),
+            Entry.of(7, "f"), Entry.of(3, "b"), Entry.of(4, "c"), Entry.of(6, "e"),
+            Entry.of(9, "h"));
+    private final List<Entry<Integer, String>> sortedTestDataSet = testDataSet
+            .stream().sorted((entry1, entry2) -> {
+                return entry1.getKey() - entry2.getKey();
             }).toList();
 
     @ParameterizedTest
@@ -65,7 +65,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         assertEquals(0, stats.getNumberOfKeysInScarceIndex());
 
         verifySegmentSearch(seg, Arrays.asList(// s
-                Pair.of(1, null) //
+                Entry.of(1, null) //
         ));
 
         /*
@@ -88,8 +88,8 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
          * Writing operation is here intentionally duplicated. It verifies, that
          * index consistency is kept.
          */
-        writePairs(seg, testDataSet);
-        writePairs(seg, testDataSet);
+        writeEntries(seg, testDataSet);
+        writeEntries(seg, testDataSet);
 
         verifyTestDataSet(seg);
 
@@ -120,8 +120,8 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
             final int expectedNumberKeysInScarceIndex,
             final int expectedNumberOfFiles) {
 
-        testDataSet.forEach(pair -> {
-            writePairs(seg, Arrays.asList(pair));
+        testDataSet.forEach(entry -> {
+            writeEntries(seg, Arrays.asList(entry));
         });
 
         verifyTestDataSet(seg);
@@ -143,11 +143,11 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         verifySegmentData(seg, sortedTestDataSet);
 
         verifySegmentSearch(seg, Arrays.asList(// s
-                Pair.of(11, null), //
-                Pair.of(2, "a"), //
-                Pair.of(3, "b"), //
-                Pair.of(4, "c"), //
-                Pair.of(5, "d")//
+                Entry.of(11, null), //
+                Entry.of(2, "a"), //
+                Entry.of(3, "b"), //
+                Entry.of(4, "c"), //
+                Entry.of(5, "d")//
         ));
 
     }
@@ -160,10 +160,10 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
             final int expectedNumberKeysInScarceIndex,
             final int expectedNumberOfFiles) {
 
-        writePairs(seg, Arrays.asList(Pair.of(2, "e"), Pair.of(3, "e"),
-                Pair.of(4, "e")));
-        writePairs(seg, Arrays.asList(Pair.of(2, "a"), Pair.of(3, "b"),
-                Pair.of(4, "c"), Pair.of(5, "d")));
+        writeEntries(seg, Arrays.asList(Entry.of(2, "e"), Entry.of(3, "e"),
+                Entry.of(4, "e")));
+        writeEntries(seg, Arrays.asList(Entry.of(2, "a"), Entry.of(3, "b"),
+                Entry.of(4, "c"), Entry.of(5, "d")));
 
         final SegmentId segId = SegmentId.of(3);
         final SegmentSplitter<Integer, String> splitter = seg
@@ -179,27 +179,27 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         assertEquals(3, result.getMaxKey());
 
         verifySegmentData(seg, Arrays.asList(//
-                Pair.of(4, "c"), //
-                Pair.of(5, "d") //
+                Entry.of(4, "c"), //
+                Entry.of(5, "d") //
         ));
 
         verifySegmentData(smaller, Arrays.asList(//
-                Pair.of(2, "a"), //
-                Pair.of(3, "b") //
+                Entry.of(2, "a"), //
+                Entry.of(3, "b") //
         ));
 
         verifySegmentSearch(seg, Arrays.asList(//
-                Pair.of(2, null), //
-                Pair.of(3, null), //
-                Pair.of(4, "c"), //
-                Pair.of(5, "d") //
+                Entry.of(2, null), //
+                Entry.of(3, null), //
+                Entry.of(4, "c"), //
+                Entry.of(5, "d") //
         ));
 
         verifySegmentSearch(smaller, Arrays.asList(//
-                Pair.of(2, "a"), //
-                Pair.of(3, "b"), //
-                Pair.of(4, null), //
-                Pair.of(5, null) //
+                Entry.of(2, "a"), //
+                Entry.of(3, "b"), //
+                Entry.of(4, null), //
+                Entry.of(5, null) //
         ));
 
         assertEquals(8, numberOfFilesInDirectoryP(directory));
@@ -227,14 +227,14 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                         ))//
                 .build();
 
-        writePairs(seg, Arrays.asList(//
-                Pair.of(2, "a"), //
-                Pair.of(3, "b"), //
-                Pair.of(3, "bb"), //
-                Pair.of(4, "c"), //
-                Pair.of(5, "d"), //
-                Pair.of(5, "dd"), //
-                Pair.of(5, "ddd")//
+        writeEntries(seg, Arrays.asList(//
+                Entry.of(2, "a"), //
+                Entry.of(3, "b"), //
+                Entry.of(3, "bb"), //
+                Entry.of(4, "c"), //
+                Entry.of(5, "d"), //
+                Entry.of(5, "dd"), //
+                Entry.of(5, "ddd")//
         ));
 
         assertEquals(4, seg.getStats().getNumberOfKeys());
@@ -242,18 +242,18 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         assertEquals(0, seg.getStats().getNumberOfKeysInSegment());
 
         verifySegmentData(seg, Arrays.asList(//
-                Pair.of(2, "a"), //
-                Pair.of(3, "bb"), //
-                Pair.of(4, "c"), //
-                Pair.of(5, "ddd") //
+                Entry.of(2, "a"), //
+                Entry.of(3, "bb"), //
+                Entry.of(4, "c"), //
+                Entry.of(5, "ddd") //
         ));
 
         verifySegmentSearch(seg, Arrays.asList(// s
-                Pair.of(6, null), //
-                Pair.of(2, "a"), //
-                Pair.of(3, "bb"), //
-                Pair.of(4, "c"), //
-                Pair.of(5, "ddd")//
+                Entry.of(6, null), //
+                Entry.of(2, "a"), //
+                Entry.of(3, "bb"), //
+                Entry.of(4, "c"), //
+                Entry.of(5, "ddd")//
         ));
     }
 
@@ -279,14 +279,14 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                         ))//
                 .build();
 
-        writePairs(seg, Arrays.asList(//
-                Pair.of(5, "d"), //
-                Pair.of(3, "b"), //
-                Pair.of(5, "dd"), //
-                Pair.of(2, "a"), //
-                Pair.of(3, "bb"), //
-                Pair.of(4, "c"), //
-                Pair.of(5, "ddd")//
+        writeEntries(seg, Arrays.asList(//
+                Entry.of(5, "d"), //
+                Entry.of(3, "b"), //
+                Entry.of(5, "dd"), //
+                Entry.of(2, "a"), //
+                Entry.of(3, "bb"), //
+                Entry.of(4, "c"), //
+                Entry.of(5, "ddd")//
         ));
 
         assertEquals(4, seg.getStats().getNumberOfKeys());
@@ -294,18 +294,18 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         assertEquals(0, seg.getStats().getNumberOfKeysInSegment());
 
         verifySegmentData(seg, Arrays.asList(//
-                Pair.of(2, "a"), //
-                Pair.of(3, "bb"), //
-                Pair.of(4, "c"), //
-                Pair.of(5, "ddd") //
+                Entry.of(2, "a"), //
+                Entry.of(3, "bb"), //
+                Entry.of(4, "c"), //
+                Entry.of(5, "ddd") //
         ));
 
         verifySegmentSearch(seg, Arrays.asList(//
-                Pair.of(6, null), //
-                Pair.of(2, "a"), //
-                Pair.of(3, "bb"), //
-                Pair.of(4, "c"), //
-                Pair.of(5, "ddd")//
+                Entry.of(6, null), //
+                Entry.of(2, "a"), //
+                Entry.of(3, "bb"), //
+                Entry.of(4, "c"), //
+                Entry.of(5, "ddd")//
         ));
     }
 
@@ -330,15 +330,15 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                         ))//
                 .build();
 
-        writePairs(seg, Arrays.asList(//
-                Pair.of(5, "d"), //
-                Pair.of(3, "b"), //
-                Pair.of(5, "dd"), //
-                Pair.of(2, "a"), //
-                Pair.of(3, "bb"), //
-                Pair.of(4, "c"), //
-                Pair.of(5, "ddd"), //
-                Pair.of(5, TypeDescriptorShortString.TOMBSTONE_VALUE)//
+        writeEntries(seg, Arrays.asList(//
+                Entry.of(5, "d"), //
+                Entry.of(3, "b"), //
+                Entry.of(5, "dd"), //
+                Entry.of(2, "a"), //
+                Entry.of(3, "bb"), //
+                Entry.of(4, "c"), //
+                Entry.of(5, "ddd"), //
+                Entry.of(5, TypeDescriptorShortString.TOMBSTONE_VALUE)//
         ));
 
         /**
@@ -350,16 +350,16 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         assertEquals(0, seg.getStats().getNumberOfKeysInSegment());
 
         verifySegmentData(seg, Arrays.asList(//
-                Pair.of(2, "a"), //
-                Pair.of(3, "bb"), //
-                Pair.of(4, "c") //
+                Entry.of(2, "a"), //
+                Entry.of(3, "bb"), //
+                Entry.of(4, "c") //
         ));
 
         verifySegmentSearch(seg, Arrays.asList(// s
-                Pair.of(5, null), //
-                Pair.of(2, "a"), //
-                Pair.of(3, "bb"), //
-                Pair.of(4, "c") //
+                Entry.of(5, null), //
+                Entry.of(2, "a"), //
+                Entry.of(3, "bb"), //
+                Entry.of(4, "c") //
         ));
     }
 
@@ -373,13 +373,13 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         for (int i = 0; i < 100; i++) {
             int a = i * 3;
             int b = i * 3 + 1;
-            writePairs(seg, Arrays.asList(//
-                    Pair.of(a, "a"), //
-                    Pair.of(b, "b") //
+            writeEntries(seg, Arrays.asList(//
+                    Entry.of(a, "a"), //
+                    Entry.of(b, "b") //
             ));
-            writePairs(seg, Arrays.asList(//
-                    Pair.of(a, tds.getTombstone()), //
-                    Pair.of(b, tds.getTombstone()) //
+            writeEntries(seg, Arrays.asList(//
+                    Entry.of(a, tds.getTombstone()), //
+                    Entry.of(b, tds.getTombstone()) //
             ));
             verifySegmentData(seg, Arrays.asList(//
             ));
@@ -406,18 +406,18 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                         ))//
                 .build();
 
-        writePairs(seg, Arrays.asList(//
-                Pair.of(2, "a"), //
-                Pair.of(2, tds.getTombstone()), //
-                Pair.of(3, "b"), //
-                Pair.of(3, "bb"), //
-                Pair.of(3, tds.getTombstone()), //
-                Pair.of(4, "c"), //
-                Pair.of(4, tds.getTombstone()), //
-                Pair.of(5, "d"), //
-                Pair.of(5, "dd"), //
-                Pair.of(5, "ddd"), //
-                Pair.of(5, tds.getTombstone()) //
+        writeEntries(seg, Arrays.asList(//
+                Entry.of(2, "a"), //
+                Entry.of(2, tds.getTombstone()), //
+                Entry.of(3, "b"), //
+                Entry.of(3, "bb"), //
+                Entry.of(3, tds.getTombstone()), //
+                Entry.of(4, "c"), //
+                Entry.of(4, tds.getTombstone()), //
+                Entry.of(5, "d"), //
+                Entry.of(5, "dd"), //
+                Entry.of(5, "ddd"), //
+                Entry.of(5, tds.getTombstone()) //
         ));
 
         assertEquals(4, seg.getStats().getNumberOfKeys());
@@ -428,11 +428,11 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         ));
 
         verifySegmentSearch(seg, Arrays.asList(// s
-                Pair.of(2, null), //
-                Pair.of(3, null), //
-                Pair.of(4, null), //
-                Pair.of(5, null), //
-                Pair.of(6, null)//
+                Entry.of(2, null), //
+                Entry.of(3, null), //
+                Entry.of(4, null), //
+                Entry.of(5, null), //
+                Entry.of(6, null)//
         ));
     }
 
@@ -460,18 +460,18 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                         ))//
                 .build();
 
-        writePairs(seg, Arrays.asList(//
-                Pair.of(25, "d"), //
-                Pair.of(15, "d"), //
-                Pair.of(1, TypeDescriptorShortString.TOMBSTONE_VALUE), //
-                Pair.of(2, TypeDescriptorShortString.TOMBSTONE_VALUE), //
-                Pair.of(3, TypeDescriptorShortString.TOMBSTONE_VALUE), //
-                Pair.of(4, TypeDescriptorShortString.TOMBSTONE_VALUE), //
-                Pair.of(5, TypeDescriptorShortString.TOMBSTONE_VALUE), //
-                Pair.of(6, TypeDescriptorShortString.TOMBSTONE_VALUE), //
-                Pair.of(7, TypeDescriptorShortString.TOMBSTONE_VALUE), //
-                Pair.of(8, TypeDescriptorShortString.TOMBSTONE_VALUE), //
-                Pair.of(9, TypeDescriptorShortString.TOMBSTONE_VALUE)//
+        writeEntries(seg, Arrays.asList(//
+                Entry.of(25, "d"), //
+                Entry.of(15, "d"), //
+                Entry.of(1, TypeDescriptorShortString.TOMBSTONE_VALUE), //
+                Entry.of(2, TypeDescriptorShortString.TOMBSTONE_VALUE), //
+                Entry.of(3, TypeDescriptorShortString.TOMBSTONE_VALUE), //
+                Entry.of(4, TypeDescriptorShortString.TOMBSTONE_VALUE), //
+                Entry.of(5, TypeDescriptorShortString.TOMBSTONE_VALUE), //
+                Entry.of(6, TypeDescriptorShortString.TOMBSTONE_VALUE), //
+                Entry.of(7, TypeDescriptorShortString.TOMBSTONE_VALUE), //
+                Entry.of(8, TypeDescriptorShortString.TOMBSTONE_VALUE), //
+                Entry.of(9, TypeDescriptorShortString.TOMBSTONE_VALUE)//
         ));
         final SegmentSplitterPolicy<Integer, String> segSplitPolicy = seg
                 .getSegmentSplitterPolicy();
@@ -539,20 +539,20 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
 
         assertFalse(dataProvider.isLoaded());
 
-        writePairs(seg, Arrays.asList(//
-                Pair.of(11, "aaa"), //
-                Pair.of(12, "aab"), //
-                Pair.of(13, "aac"), //
-                Pair.of(14, "aad"), //
-                Pair.of(15, "aae"), //
-                Pair.of(16, "aaf"), //
-                Pair.of(17, "aag"), //
-                Pair.of(18, "aah"), //
-                Pair.of(19, "aai"), //
-                Pair.of(20, "aaj"), //
-                Pair.of(21, "aak"), //
-                Pair.of(22, "aal"), //
-                Pair.of(9, TypeDescriptorShortString.TOMBSTONE_VALUE)//
+        writeEntries(seg, Arrays.asList(//
+                Entry.of(11, "aaa"), //
+                Entry.of(12, "aab"), //
+                Entry.of(13, "aac"), //
+                Entry.of(14, "aad"), //
+                Entry.of(15, "aae"), //
+                Entry.of(16, "aaf"), //
+                Entry.of(17, "aag"), //
+                Entry.of(18, "aah"), //
+                Entry.of(19, "aai"), //
+                Entry.of(20, "aaj"), //
+                Entry.of(21, "aak"), //
+                Entry.of(22, "aal"), //
+                Entry.of(9, TypeDescriptorShortString.TOMBSTONE_VALUE)//
         ));
         /**
          * Writing to segment which doesn't require compaction doesn't load
@@ -561,11 +561,11 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         assertFalse(dataProvider.isLoaded());
 
         verifySegmentSearch(seg, Arrays.asList(// s
-                Pair.of(9, null), //
-                Pair.of(12, "aab"), //
-                Pair.of(13, "aac"), //
-                Pair.of(14, "aad"), //
-                Pair.of(15, "aae") //
+                Entry.of(9, null), //
+                Entry.of(12, "aab"), //
+                Entry.of(13, "aac"), //
+                Entry.of(14, "aad"), //
+                Entry.of(15, "aae") //
         ));
 
         /**
@@ -617,15 +617,15 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                         ))//
                 .build();
 
-        writePairs(seg, Arrays.asList(//
-                Pair.of(5, "d"), //
-                Pair.of(3, "b"), //
-                Pair.of(5, "dd"), //
-                Pair.of(2, "a"), //
-                Pair.of(3, "bb"), //
-                Pair.of(4, "c"), //
-                Pair.of(5, "ddd"), //
-                Pair.of(5, TypeDescriptorShortString.TOMBSTONE_VALUE)//
+        writeEntries(seg, Arrays.asList(//
+                Entry.of(5, "d"), //
+                Entry.of(3, "b"), //
+                Entry.of(5, "dd"), //
+                Entry.of(2, "a"), //
+                Entry.of(3, "bb"), //
+                Entry.of(4, "c"), //
+                Entry.of(5, "ddd"), //
+                Entry.of(5, TypeDescriptorShortString.TOMBSTONE_VALUE)//
         ));
         seg.forceCompact();
 
@@ -634,16 +634,16 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         assertEquals(3, seg.getStats().getNumberOfKeysInSegment());
 
         verifySegmentData(seg, Arrays.asList(//
-                Pair.of(2, "a"), //
-                Pair.of(3, "bb"), //
-                Pair.of(4, "c") //
+                Entry.of(2, "a"), //
+                Entry.of(3, "bb"), //
+                Entry.of(4, "c") //
         ));
 
         verifySegmentSearch(seg, Arrays.asList(// s
-                Pair.of(5, null), //
-                Pair.of(2, "a"), //
-                Pair.of(3, "bb"), //
-                Pair.of(4, "c") //
+                Entry.of(5, null), //
+                Entry.of(2, "a"), //
+                Entry.of(3, "bb"), //
+                Entry.of(4, "c") //
         ));
     }
 
@@ -683,17 +683,17 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                         ))//
                 .build();
 
-        final List<Pair<Integer, String>> pairs = new ArrayList<>();
-        try (PairWriter<Integer, String> writer = seg.openDeltaCacheWriter()) {
+        final List<Entry<Integer, String>> entries = new ArrayList<>();
+        try (EntryWriter<Integer, String> writer = seg.openDeltaCacheWriter()) {
             for (int i = 0; i < 1000; i++) {
-                final Pair<Integer, String> p = Pair.of(i, "Ahoj");
+                final Entry<Integer, String> p = Entry.of(i, "Ahoj");
                 writer.write(p);
-                pairs.add(p);
+                entries.add(p);
             }
         }
         seg.forceCompact();
 
-        AbstractDataTest.verifyIteratorData(pairs, seg.openIterator());
+        AbstractDataTest.verifyIteratorData(entries, seg.openIterator());
         for (int i = 0; i < 1000; i++) {
             assertEquals("Ahoj", seg.get(i), "Invalid value for key " + i);
         }

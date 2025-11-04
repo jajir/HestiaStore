@@ -3,8 +3,8 @@ package org.hestiastore.index.sst;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.log.Log;
@@ -19,10 +19,10 @@ public class IndexInternalDefault<K, V> extends SstIndexImpl<K, V> {
     }
 
     @Override
-    public Stream<Pair<K, V>> getStream(final SegmentWindow segmentWindow) {
+    public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindow) {
         indexState.tryPerformOperation();
-        final PairIterator<K, V> iterator = openSegmentIterator(segmentWindow);
-        final PairIteratorToSpliterator<K, V> spliterator = new PairIteratorToSpliterator<K, V>(
+        final EntryIterator<K, V> iterator = openSegmentIterator(segmentWindow);
+        final EntryIteratorToSpliterator<K, V> spliterator = new EntryIteratorToSpliterator<K, V>(
                 iterator, keyTypeDescriptor);
         return StreamSupport.stream(spliterator, false).onClose(() -> {
             iterator.close();

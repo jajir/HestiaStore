@@ -11,8 +11,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIteratorList;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIteratorList;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -92,7 +92,7 @@ class SegmentSplitStepReplaceIfNoRemainingTest {
                 null);
         final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
         state.setIterator(
-                new PairIteratorList<Integer, String>(java.util.List.of()));
+                new EntryIteratorList<Integer, String>(java.util.List.of()));
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.perform(ctx, state));
         assertEquals("Property 'lowerSegment' must not be null.",
@@ -105,16 +105,16 @@ class SegmentSplitStepReplaceIfNoRemainingTest {
 
         // with items remaining
         final SegmentSplitState<Integer, String> state1 = new SegmentSplitState<>();
-        state1.setIterator(new PairIteratorList<Integer, String>(List.of()));
+        state1.setIterator(new EntryIteratorList<Integer, String>(List.of()));
         // Simulate remaining by custom iterator
-        state1.setIterator(new PairIteratorList<Integer, String>(
-                List.of(Pair.of(1, "a"))));
+        state1.setIterator(new EntryIteratorList<Integer, String>(
+                List.of(Entry.of(1, "a"))));
         // Plan with min/max set
         when(propsMgr.getSegmentStats()).thenReturn(new SegmentStats(0, 5, 0));
         when(deltaCtrl.getDeltaCacheSizeWithoutTombstones()).thenReturn(0);
         final SegmentSplitterPlan<Integer, String> plan = SegmentSplitterPlan
                 .fromPolicy(new SegmentSplitterPolicy<>(propsMgr, deltaCtrl));
-        plan.recordLower(org.hestiastore.index.Pair.of(0, "z"));
+        plan.recordLower(org.hestiastore.index.Entry.of(0, "z"));
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
                 null, null, plan, null);
         // Replace path: no elements remaining
@@ -127,7 +127,7 @@ class SegmentSplitStepReplaceIfNoRemainingTest {
         when(lowerSeg.getSegmentFiles()).thenReturn(lowerFiles);
         when(lowerSeg.getSegmentPropertiesManager()).thenReturn(lowerProps);
         state2.setLowerSegment(lowerSeg);
-        state2.setIterator(new PairIteratorList<Integer, String>(List.of()));
+        state2.setIterator(new EntryIteratorList<Integer, String>(List.of()));
         final var result = step.perform(ctx, state2);
         assertNotNull(result);
         verify(filesRenamer, times(1)).renameFiles(any(), any());
@@ -135,8 +135,8 @@ class SegmentSplitStepReplaceIfNoRemainingTest {
         // Remaining path: iterator has next
         final SegmentSplitState<Integer, String> state3 = new SegmentSplitState<>();
         state3.setLowerSegment(lowerSeg);
-        state3.setIterator(new PairIteratorList<Integer, String>(
-                List.of(Pair.of(1, "a"))));
+        state3.setIterator(new EntryIteratorList<Integer, String>(
+                List.of(Entry.of(1, "a"))));
         final var result2 = step.perform(ctx, state3);
         assertNull(result2);
     }

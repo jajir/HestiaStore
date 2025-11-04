@@ -6,29 +6,29 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 
 public class MergeDeltaCacheWithIndexIterator<K, V>
-        extends AbstractCloseableResource implements PairIterator<K, V> {
+        extends AbstractCloseableResource implements EntryIterator<K, V> {
 
-    private final PairIterator<K, V> mainIterator;
-    private final Iterator<Pair<K, V>> deltaCacheIterator;
+    private final EntryIterator<K, V> mainIterator;
+    private final Iterator<Entry<K, V>> deltaCacheIterator;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final Comparator<K> keyComparator;
 
-    private Pair<K, V> next = null;
+    private Entry<K, V> next = null;
 
-    private Pair<K, V> mainCurrent;
-    private Pair<K, V> deltaCurrent;
+    private Entry<K, V> mainCurrent;
+    private Entry<K, V> deltaCurrent;
 
     public MergeDeltaCacheWithIndexIterator(
-            final PairIterator<K, V> mainIterator,
+            final EntryIterator<K, V> mainIterator,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
-            final List<Pair<K, V>> sortedDeltaCache) {
+            final List<Entry<K, V>> sortedDeltaCache) {
 
         this.mainIterator = Vldtn.requireNonNull(mainIterator, "mainIterator");
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
@@ -51,11 +51,11 @@ public class MergeDeltaCacheWithIndexIterator<K, V>
     }
 
     @Override
-    public Pair<K, V> next() {
+    public Entry<K, V> next() {
         if (next == null) {
             throw new NoSuchElementException("No next element.");
         }
-        Pair<K, V> result = next;
+        Entry<K, V> result = next;
         advance();
         return result;
     }
@@ -64,7 +64,7 @@ public class MergeDeltaCacheWithIndexIterator<K, V>
         next = null;
         // Is there aany data to examine?
         while (mainCurrent != null || deltaCurrent != null) {
-            Pair<K, V> candidate;
+            Entry<K, V> candidate;
             if (mainCurrent == null) {
                 candidate = deltaCurrent;
                 deltaCurrent = readNextPairFromCache();
@@ -96,7 +96,7 @@ public class MergeDeltaCacheWithIndexIterator<K, V>
         }
     }
 
-    private Pair<K, V> readNextPairFromMain() {
+    private Entry<K, V> readNextPairFromMain() {
         if (mainIterator.hasNext()) {
             return mainIterator.next();
         } else {
@@ -104,7 +104,7 @@ public class MergeDeltaCacheWithIndexIterator<K, V>
         }
     }
 
-    private Pair<K, V> readNextPairFromCache() {
+    private Entry<K, V> readNextPairFromCache() {
         if (deltaCacheIterator.hasNext()) {
             return deltaCacheIterator.next();
         } else {

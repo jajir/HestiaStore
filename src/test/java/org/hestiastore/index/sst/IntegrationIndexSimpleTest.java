@@ -9,8 +9,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -37,11 +37,11 @@ class IntegrationIndexSimpleTest {
     final TypeDescriptorShortString tds = new TypeDescriptorShortString();
     final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
 
-    private final List<Pair<Integer, String>> testData = List.of(
-            Pair.of(1, "bbb"), Pair.of(2, "ccc"), Pair.of(3, "dde"),
-            Pair.of(4, "ddf"), Pair.of(5, "ddg"), Pair.of(6, "ddh"),
-            Pair.of(7, "ddi"), Pair.of(8, "ddj"), Pair.of(9, "ddk"),
-            Pair.of(10, "ddl"), Pair.of(11, "ddm"));
+    private final List<Entry<Integer, String>> testData = List.of(
+            Entry.of(1, "bbb"), Entry.of(2, "ccc"), Entry.of(3, "dde"),
+            Entry.of(4, "ddf"), Entry.of(5, "ddg"), Entry.of(6, "ddh"),
+            Entry.of(7, "ddi"), Entry.of(8, "ddj"), Entry.of(9, "ddk"),
+            Entry.of(10, "ddl"), Entry.of(11, "ddm"));
 
     @Test
     void testBasic() {
@@ -51,10 +51,10 @@ class IntegrationIndexSimpleTest {
 
         index1.compact();
 
-        try (final Stream<Pair<Integer, String>> stream = testData.stream()) {
-            stream.forEach(pair -> {
-                final String value = index1.get(pair.getKey());
-                assertEquals(pair.getValue(), value);
+        try (final Stream<Entry<Integer, String>> stream = testData.stream()) {
+            stream.forEach(entry -> {
+                final String value = index1.get(entry.getKey());
+                assertEquals(entry.getValue(), value);
             });
         }
         index1.compact();
@@ -63,33 +63,33 @@ class IntegrationIndexSimpleTest {
         assertEquals(14, numberOfFilesInDirectoryP(directory));
 
         final Index<Integer, String> index2 = makeSstIndex();
-        testData.stream().forEach(pair -> {
-            final String value = index2.get(pair.getKey());
-            assertEquals(pair.getValue(), value);
+        testData.stream().forEach(entry -> {
+            final String value = index2.get(entry.getKey());
+            assertEquals(entry.getValue(), value);
         });
 
-        List<Pair<Integer, String>> pairs1 = getSegmentData(1);
-        assertEquals(Pair.of(1, "bbb"), pairs1.get(0));
-        assertEquals(Pair.of(2, "ccc"), pairs1.get(1));
-        assertEquals(Pair.of(3, "dde"), pairs1.get(2));
-        assertEquals(Pair.of(4, "ddf"), pairs1.get(3));
-        assertEquals(4, pairs1.size());
+        List<Entry<Integer, String>> entries1 = getSegmentData(1);
+        assertEquals(Entry.of(1, "bbb"), entries1.get(0));
+        assertEquals(Entry.of(2, "ccc"), entries1.get(1));
+        assertEquals(Entry.of(3, "dde"), entries1.get(2));
+        assertEquals(Entry.of(4, "ddf"), entries1.get(3));
+        assertEquals(4, entries1.size());
 
-        List<Pair<Integer, String>> pairs2 = getSegmentData(2);
-        assertEquals(Pair.of(5, "ddg"), pairs2.get(0));
-        assertEquals(Pair.of(6, "ddh"), pairs2.get(1));
-        assertEquals(Pair.of(7, "ddi"), pairs2.get(2));
-        assertEquals(3, pairs2.size());
+        List<Entry<Integer, String>> entries2 = getSegmentData(2);
+        assertEquals(Entry.of(5, "ddg"), entries2.get(0));
+        assertEquals(Entry.of(6, "ddh"), entries2.get(1));
+        assertEquals(Entry.of(7, "ddi"), entries2.get(2));
+        assertEquals(3, entries2.size());
 
-        List<Pair<Integer, String>> pairs3 = getSegmentData(3);
-        assertEquals(0, pairs3.size());
+        List<Entry<Integer, String>> entries3 = getSegmentData(3);
+        assertEquals(0, entries3.size());
 
-        List<Pair<Integer, String>> pairs4 = getSegmentData(0);
-        assertEquals(Pair.of(8, "ddj"), pairs4.get(0));
-        assertEquals(Pair.of(9, "ddk"), pairs4.get(1));
-        assertEquals(Pair.of(10, "ddl"), pairs4.get(2));
-        assertEquals(Pair.of(11, "ddm"), pairs4.get(3));
-        assertEquals(4, pairs4.size());
+        List<Entry<Integer, String>> entries4 = getSegmentData(0);
+        assertEquals(Entry.of(8, "ddj"), entries4.get(0));
+        assertEquals(Entry.of(9, "ddk"), entries4.get(1));
+        assertEquals(Entry.of(10, "ddl"), entries4.get(2));
+        assertEquals(Entry.of(11, "ddm"), entries4.get(3));
+        assertEquals(4, entries4.size());
 
     }
 
@@ -111,9 +111,9 @@ class IntegrationIndexSimpleTest {
         testData.stream().forEach(index1::put);
         index1.flush();
 
-        try (final Stream<Pair<Integer, String>> stream = index1
+        try (final Stream<Entry<Integer, String>> stream = index1
                 .getStream(SegmentWindow.unbounded())) {
-            final List<Pair<Integer, String>> list = stream.toList();
+            final List<Entry<Integer, String>> list = stream.toList();
             assertEquals(testData.size(), list.size());
         }
 
@@ -131,9 +131,9 @@ class IntegrationIndexSimpleTest {
         testData.stream().forEach(index1::put);
         index1.flush();
 
-        final List<Pair<Integer, String>> list1 = index1
+        final List<Entry<Integer, String>> list1 = index1
                 .getStream(SegmentWindow.unbounded()).toList();
-        final List<Pair<Integer, String>> list2 = index1
+        final List<Entry<Integer, String>> list2 = index1
                 .getStream(SegmentWindow.unbounded()).toList();
         assertEquals(testData.size(), list1.size());
         assertEquals(testData.size(), list2.size());
@@ -152,7 +152,7 @@ class IntegrationIndexSimpleTest {
         index1.close();
 
         final Index<Integer, String> index2 = makeSstIndex();
-        final List<Pair<Integer, String>> list1 = index2
+        final List<Entry<Integer, String>> list1 = index2
                 .getStream(SegmentWindow.unbounded()).toList();
         assertEquals(testData.size(), list1.size());
     }
@@ -166,11 +166,11 @@ class IntegrationIndexSimpleTest {
     @Test
     void test_read_from_reopend_index_single_records() {
         final Index<Integer, String> index1 = makeSstIndex();
-        index1.put(Pair.of(2, "duck"));
+        index1.put(Entry.of(2, "duck"));
         index1.close();
 
         final Index<Integer, String> index2 = makeSstIndex();
-        final List<Pair<Integer, String>> list1 = index2
+        final List<Entry<Integer, String>> list1 = index2
                 .getStream(SegmentWindow.unbounded()).toList();
         assertEquals(1, list1.size());
     }
@@ -185,12 +185,12 @@ class IntegrationIndexSimpleTest {
         // generate data
         final List<String> values = List.of("aaa", "bbb", "ccc", "ddd", "eee",
                 "fff");
-        final List<Pair<Integer, String>> data = IntStream
+        final List<Entry<Integer, String>> data = IntStream
                 .range(0, values.size() - 1)
-                .mapToObj(i -> Pair.of(i, values.get(i))).toList();
-        final List<Pair<Integer, String>> updatedData = IntStream
+                .mapToObj(i -> Entry.of(i, values.get(i))).toList();
+        final List<Entry<Integer, String>> updatedData = IntStream
                 .range(0, values.size() - 1)
-                .mapToObj(i -> Pair.of(i, values.get(i + 1))).toList();
+                .mapToObj(i -> Entry.of(i, values.get(i + 1))).toList();
 
         final Index<Integer, String> index1 = makeSstIndex();
         data.stream().forEach(index1::put);
@@ -205,15 +205,15 @@ class IntegrationIndexSimpleTest {
     }
 
     private void verifyDataIndex(final Index<Integer, String> index,
-            final List<Pair<Integer, String>> data) {
-        final List<Pair<Integer, String>> indexData = index
+            final List<Entry<Integer, String>> data) {
+        final List<Entry<Integer, String>> indexData = index
                 .getStream(SegmentWindow.unbounded()).toList();
         assertEquals(data.size(), indexData.size());
         for (int i = 0; i < data.size(); i++) {
-            final Pair<Integer, String> pairData = data.get(i);
-            final Pair<Integer, String> pairIndex = indexData.get(i);
-            assertEquals(pairData.getKey(), pairIndex.getKey());
-            assertEquals(pairData.getValue(), pairIndex.getValue());
+            final Entry<Integer, String> entryData = data.get(i);
+            final Entry<Integer, String> entryIndex = indexData.get(i);
+            assertEquals(entryData.getKey(), entryIndex.getKey());
+            assertEquals(entryData.getValue(), entryIndex.getValue());
         }
     }
 
@@ -265,10 +265,10 @@ class IntegrationIndexSimpleTest {
         return cx.get();
     }
 
-    private List<Pair<Integer, String>> getSegmentData(final int segmentId) {
+    private List<Entry<Integer, String>> getSegmentData(final int segmentId) {
         final Segment<Integer, String> seg = makeSegment(segmentId);
-        final List<Pair<Integer, String>> out = new ArrayList<>();
-        try (PairIterator<Integer, String> iterator = seg.openIterator()) {
+        final List<Entry<Integer, String>> out = new ArrayList<>();
+        try (EntryIterator<Integer, String> iterator = seg.openIterator()) {
             while (iterator.hasNext()) {
                 out.add(iterator.next());
             }
