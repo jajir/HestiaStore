@@ -20,7 +20,7 @@
       
       
       <link rel="icon" href="../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.22">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.23">
     
     
       
@@ -1297,9 +1297,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#log-enabled-withlogenabled" class="md-nav__link">
+  <a href="#context-logging-enabled-withcontextloggingenabled" class="md-nav__link">
     <span class="md-ellipsis">
-      Log enabled - withLogEnabled()
+      Context logging enabled - withContextLoggingEnabled()
     </span>
   </a>
   
@@ -1447,7 +1447,7 @@
 <a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="p">.</span><span class="na">withMaxNumberOfKeysInCache</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="w"> </span><span class="c1">//</span>
 <a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="p">.</span><span class="na">withBloomFilterIndexSizeInBytes</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="c1">//</span>
 <a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">    </span><span class="p">.</span><span class="na">withBloomFilterNumberOfHashFunctions</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="w"> </span><span class="c1">//</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">    </span><span class="p">.</span><span class="na">withLogEnabled</span><span class="p">(</span><span class="kc">false</span><span class="p">)</span><span class="w"> </span><span class="c1">//</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">    </span><span class="p">.</span><span class="na">withContextLoggingEnabled</span><span class="p">(</span><span class="kc">false</span><span class="p">)</span><span class="w"> </span><span class="c1">//</span>
 <a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">    </span><span class="p">.</span><span class="na">withName</span><span class="p">(</span><span class="s">&quot;test_index&quot;</span><span class="p">)</span><span class="w"> </span><span class="c1">//</span>
 <a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
 <a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>
@@ -1491,8 +1491,16 @@
 <p>Limits the number of segments stored in memory. Useful for controlling memory usage.</p>
 <h3 id="thread-safe-withthreadsafe">Thread safe - <code>withThreadSafe()</code></h3>
 <p>Whether the index instance is safe for concurrent access by multiple threads. When it's set to <code>code</code> true than index will be synchronized between threads.</p>
-<h3 id="log-enabled-withlogenabled">Log enabled - <code>withLogEnabled()</code></h3>
-<p>Enables or disables write-ahead logging. Currently it's experimental feature.</p>
+<p>Default value is 'false'.</p>
+<h3 id="context-logging-enabled-withcontextloggingenabled">Context logging enabled - <code>withContextLoggingEnabled()</code></h3>
+<p>Controls whether the index wraps operations with MDC context propagation so log statements include the index name. When it's set on 'true' following loog message will contain set 'index' property:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nt">&lt;Console</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;indexAppender&quot;</span><span class="w"> </span><span class="na">target=</span><span class="s">&quot;SYSTEM_OUT&quot;</span><span class="nt">&gt;</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="nt">&lt;PatternLayout</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">        </span><span class="na">pattern=</span><span class="s">&quot;%d{ISO8601} %-5level [%t] index=&#39;%X{index.name}&#39; %-C{1.mv}: %msg%n%throwable&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="nt">&lt;/Console&gt;</span>
+</code></pre></div>
+<p>Default value is 'true'.</p>
+<p>Please note, that in highly intensive applications enabling this option could eat up to 40% of CPU time.</p>
 <h2 id="segment-related-configuration">Segment related configuration</h2>
 <h3 id="max-number-of-keys-in-segment-withmaxnumberofkeysinsegment">Max number of keys in segment - <code>withMaxNumberOfKeysInSegment()</code></h3>
 <p>Sets the maximum number of keys allowed in a single segment. Exceeding this splits the segment.</p>
@@ -1505,7 +1513,7 @@
 <h2 id="bloom-filter-configuration">Bloom filter configuration</h2>
 <p>A Bloom filter is a probabilistic data structure that efficiently tests whether an element is part of a set. You can find a detailed explanation on <a href="https://en.wikipedia.org/wiki/Bloom_filter">Wikipedia</a>. In this context, each segment has its own Bloom filter.</p>
 <p>To <strong>disable</strong> bloom filter completle set:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="w"> </span><span class="p">.</span><span class="na">withBloomFilterIndexSizeInBytes</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="w"> </span><span class="p">.</span><span class="na">withBloomFilterIndexSizeInBytes</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 </code></pre></div>
 <p>The settings for the Bloom filter can be adjusted using the following methods:</p>
 <h3 id="bloom-filter-size-withbloomfilterindexsizeinbytes">Bloom filter size - <code>withBloomFilterIndexSizeInBytes()</code></h3>
@@ -1517,7 +1525,7 @@
 <p>Usually, it's not necessary to adjust the Bloom filter settings.</p>
 <h2 id="changing-index-propertise">Changing Index propertise</h2>
 <p>Some parameters can be redefined when the index is opened.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">Index</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Index</span><span class="p">.</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="n">open</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span><span class="w"> </span><span class="n">conf</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">Index</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Index</span><span class="p">.</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="n">open</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span><span class="w"> </span><span class="n">conf</span><span class="p">);</span>
 </code></pre></div>
 <p>At allows to pass <code>IndexConfiguration</code> object and this way change configuration parameters. Fllowing table shou parameters that can be changed.  </p>
 <table>
@@ -1627,8 +1635,8 @@
 <td>index</td>
 </tr>
 <tr>
-<td>logEnabled</td>
-<td>If full logging is enabled</td>
+<td>contextLoggingEnabled</td>
+<td>If MDC-based context logging is enabled</td>
 <td>🟩</td>
 <td>index</td>
 </tr>
