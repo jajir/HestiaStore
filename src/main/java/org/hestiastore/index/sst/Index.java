@@ -59,8 +59,9 @@ public interface Index<K, V> extends CloseableResource {
                 .makeInstance(indexConf.getKeyTypeDescriptor());
         final TypeDescriptor<N> valueTypeDescriptor = DataTypeDescriptorRegistry
                 .makeInstance(indexConf.getValueTypeDescriptor());
-        Vldtn.requireNonNull(indexConf.isLogEnabled(), "isLogEnabled");
-        if (Boolean.TRUE.equals(indexConf.isLogEnabled())) {
+        Vldtn.requireNonNull(indexConf.isContextLoggingEnabled(),
+                "isContextLoggingEnabled");
+        if (Boolean.TRUE.equals(indexConf.isContextLoggingEnabled())) {
             log = Log.<M, N>builder()//
                     .withDirectory(directory)//
                     .withKeyTypeDescriptor(keyTypeDescriptor)//
@@ -70,16 +71,18 @@ public interface Index<K, V> extends CloseableResource {
             log = Log.<M, N>builder().buildEmpty();
         }
         Vldtn.requireNonNull(indexConf.isThreadSafe(), "isThreadSafe");
+        Index<M, N> index;
         if (Boolean.TRUE.equals(indexConf.isThreadSafe())) {
-            final IndexInternal<M, N> index = new IndexInternalSynchronized<>(
-                    directory, keyTypeDescriptor, valueTypeDescriptor,
-                    indexConf, log);
+            index = new IndexInternalSynchronized<>(directory,
+                    keyTypeDescriptor, valueTypeDescriptor, indexConf, log);
+        } else {
+            index = new IndexInternalDefault<>(directory, keyTypeDescriptor,
+                    valueTypeDescriptor, indexConf, log);
+        }
+        if (Boolean.TRUE.equals(indexConf.isContextLoggingEnabled())) {
             return new IndexContextLoggingAdapter<>(indexConf, index);
         } else {
-            final IndexInternal<M, N> index = new IndexInternalDefault<>(
-                    directory, keyTypeDescriptor, valueTypeDescriptor,
-                    indexConf, log);
-            return new IndexContextLoggingAdapter<>(indexConf, index);
+            return index;
         }
     }
 

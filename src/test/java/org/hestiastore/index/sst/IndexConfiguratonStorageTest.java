@@ -71,7 +71,7 @@ class IndexConfiguratonStorageTest {
                         BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE)//
                 .withDiskIoBufferSizeInBytes(4096)//
                 .withThreadSafe(true)//
-                .withLogEnabled(true)//
+                .withContextLoggingEnabled(true)//
                 .build();
         storage.save(config);
         logConfigurationFile();
@@ -98,7 +98,7 @@ class IndexConfiguratonStorageTest {
                 ret.getBloomFilterProbabilityOfFalsePositive());
         assertEquals(DISK_IO_BUFFER, ret.getDiskIoBufferSize());
         assertTrue(ret.isThreadSafe());
-        assertTrue(ret.isLogEnabled());
+        assertTrue(ret.isContextLoggingEnabled());
     }
 
     @Test
@@ -123,7 +123,7 @@ class IndexConfiguratonStorageTest {
                         BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE)//
                 .withDiskIoBufferSizeInBytes(DISK_IO_BUFFER)//
                 .withThreadSafe(true)//
-                .withLogEnabled(true)//
+                .withContextLoggingEnabled(true)//
                 .withEncodingFilterClasses(//
                         List.of(ChunkFilterCrc32Writing.class, //
                                 ChunkFilterMagicNumberWriting.class, //
@@ -176,7 +176,7 @@ class IndexConfiguratonStorageTest {
                 .withBloomFilterIndexSizeInBytes(2048)//
                 .withDiskIoBufferSizeInBytes(4096)//
                 .withThreadSafe(true)//
-                .withLogEnabled(true)//
+                .withContextLoggingEnabled(true)//
                 .build();
         storage.save(config);
         logConfigurationFile();
@@ -207,7 +207,7 @@ class IndexConfiguratonStorageTest {
                 ret.getBloomFilterProbabilityOfFalsePositive());
         assertEquals(DISK_IO_BUFFER, ret.getDiskIoBufferSize());
         assertTrue(ret.isThreadSafe());
-        assertTrue(ret.isLogEnabled());
+        assertTrue(ret.isContextLoggingEnabled());
     }
 
     @Test

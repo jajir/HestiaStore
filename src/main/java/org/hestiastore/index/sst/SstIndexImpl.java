@@ -106,8 +106,12 @@ public abstract class SstIndexImpl<K, V> extends AbstractCloseableResource
                 keySegmentCache.getSegmentIds(segmentWindows), segmentRegistry);
         final PairIterator<K, V> iterratorFreshedFromCache = new PairIteratorRefreshedFromCache<>(
                 segmentIterator, cache, valueTypeDescriptor);
-        return new PairIteratorLoggingContext<>(iterratorFreshedFromCache,
-                conf);
+        if (conf.isContextLoggingEnabled()) {
+            return new PairIteratorLoggingContext<>(iterratorFreshedFromCache,
+                    conf);
+        } else {
+            return iterratorFreshedFromCache;
+        }
     }
 
     private void flushCache() {

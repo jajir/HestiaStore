@@ -47,7 +47,7 @@ public class IndexConfiguration<K, V> {
 
     private final Integer diskIoBufferSize;
     private final Boolean threadSafe;
-    private final Boolean logEnabled;
+    private final Boolean contextLoggingEnabled;
 
     private final List<ChunkFilter> encodingChunkFilters;
     private final List<ChunkFilter> decodingChunkFilters;
@@ -78,7 +78,7 @@ public class IndexConfiguration<K, V> {
             final Integer bloomFilterIndexSizeInBytes, //
             final Double bloomFilterProbabilityOfFalsePositive, //
             final Integer diskIoBufferSize, final Boolean threadSafe,
-            final Boolean logEnabled,
+            final Boolean contextLoggingEnabled,
             final List<ChunkFilter> encodingChunkFilters,
             final List<ChunkFilter> decodingChunkFilters) {
         this.keyClass = keyClass;
@@ -97,7 +97,7 @@ public class IndexConfiguration<K, V> {
         this.bloomFilterProbabilityOfFalsePositive = bloomFilterProbabilityOfFalsePositive;
         this.diskIoBufferSize = diskIoBufferSize;
         this.threadSafe = threadSafe;
-        this.logEnabled = logEnabled;
+        this.contextLoggingEnabled = contextLoggingEnabled;
         this.encodingChunkFilters = List.copyOf(encodingChunkFilters);
         this.decodingChunkFilters = List.copyOf(decodingChunkFilters);
     }
@@ -215,13 +215,13 @@ public class IndexConfiguration<K, V> {
         return threadSafe;
     }
 
-    public Boolean isLogEnabled() {
+    public Boolean isContextLoggingEnabled() {
         /**
-         * Indicates whether write-ahead logging (WAL) is enabled.
+         * Indicates whether logging context propagation via MDC is enabled.
          *
-         * @return true if logging is enabled; otherwise false
+         * @return true if context logging is enabled; otherwise false
          */
-        return logEnabled;
+        return contextLoggingEnabled;
     }
 
     public Class<K> getKeyClass() {

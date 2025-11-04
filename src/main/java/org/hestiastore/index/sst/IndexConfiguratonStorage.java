@@ -21,7 +21,7 @@ public class IndexConfiguratonStorage<K, V> {
     private static final String PROP_KEY_TYPE_DESCRIPTOR = "keyTypeDescriptor";
     private static final String PROP_VALUE_TYPE_DESCRIPTOR = "valueTypeDescriptor";
     private static final String PROP_INDEX_NAME = "indexName";
-    private static final String PROP_USE_FULL_LOG = "logEnabled";
+    private static final String PROP_CONTEXT_LOGGING_ENABLED = "contextLoggingEnabled";
     private static final String PROP_IS_THREAD_SAFE = "isThreadSafe";
 
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = "maxNumberOfKeysInSegmentCache";
@@ -57,7 +57,8 @@ public class IndexConfiguratonStorage<K, V> {
                 .withKeyClass(keyClass) //
                 .withValueClass(valueClass)//
                 .withName(propsView.getString(PROP_INDEX_NAME))//
-                .withLogEnabled(propsView.getBoolean(PROP_USE_FULL_LOG))//
+                .withContextLoggingEnabled(
+                        propsView.getBoolean(PROP_CONTEXT_LOGGING_ENABLED))//
                 .withThreadSafe(propsView.getBoolean(PROP_IS_THREAD_SAFE))//
 
                 // Index runtime properties
@@ -126,7 +127,8 @@ public class IndexConfiguratonStorage<K, V> {
         writer.setString(PROP_VALUE_TYPE_DESCRIPTOR,
                 indexConfiguration.getValueTypeDescriptor());
         writer.setString(PROP_INDEX_NAME, indexConfiguration.getIndexName());
-        writer.setBoolean(PROP_USE_FULL_LOG, indexConfiguration.isLogEnabled());
+        writer.setBoolean(PROP_CONTEXT_LOGGING_ENABLED,
+                indexConfiguration.isContextLoggingEnabled());
         writer.setBoolean(PROP_IS_THREAD_SAFE,
                 indexConfiguration.isThreadSafe());
 

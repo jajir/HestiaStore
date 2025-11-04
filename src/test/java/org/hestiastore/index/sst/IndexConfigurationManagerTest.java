@@ -39,7 +39,7 @@ class IndexConfigurationManagerTest {
             .withKeyTypeDescriptor(TD_LONG)//
             .withValueTypeDescriptor(TD_STRING)//
             .withName("test_index")//
-            .withLogEnabled(false)//
+            .withContextLoggingEnabled(false)//
             .withThreadSafe(false)//
             .withMaxNumberOfKeysInSegmentCache(11L)//
             .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22L) //
@@ -152,7 +152,7 @@ class IndexConfigurationManagerTest {
         final Exception ex = assertThrows(IllegalArgumentException.class,
                 () -> manager.save(config));
 
-        assertEquals("Property 'isLogEnabled' must not be null.",
+        assertEquals("Property 'isContextLoggingEnabled' must not be null.",
                 ex.getMessage());
     }
 
@@ -166,7 +166,7 @@ class IndexConfigurationManagerTest {
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withThreadSafe(true)//
-                .withLogEnabled(true)//
+                .withContextLoggingEnabled(true)//
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -186,7 +186,7 @@ class IndexConfigurationManagerTest {
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withThreadSafe(true)//
-                .withLogEnabled(true)//
+                .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInCache(2)//
                 .build();
 
@@ -207,7 +207,7 @@ class IndexConfigurationManagerTest {
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withThreadSafe(true)//
-                .withLogEnabled(true)//
+                .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInCache(3)//
                 .build();
 
@@ -228,7 +228,7 @@ class IndexConfigurationManagerTest {
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withThreadSafe(true)//
-                .withLogEnabled(true)//
+                .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(3)//
                 .build();
@@ -250,7 +250,7 @@ class IndexConfigurationManagerTest {
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withThreadSafe(true)//
-                .withLogEnabled(true)//
+                .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(4)//
                 .build();
@@ -271,7 +271,7 @@ class IndexConfigurationManagerTest {
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withThreadSafe(true)//
-                .withLogEnabled(true)//
+                .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(4)//
                 .withMaxNumberOfSegmentsInCache(1)//
@@ -293,7 +293,7 @@ class IndexConfigurationManagerTest {
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withThreadSafe(true)//
-                .withLogEnabled(true)//
+                .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(4)//
                 .withMaxNumberOfSegmentsInCache(3)//
@@ -315,7 +315,7 @@ class IndexConfigurationManagerTest {
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withThreadSafe(true)//
-                .withLogEnabled(true)//
+                .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(4)//
                 .withMaxNumberOfSegmentsInCache(3)//
@@ -338,7 +338,7 @@ class IndexConfigurationManagerTest {
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withThreadSafe(true)//
-                .withLogEnabled(true)//
+                .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(4)//
                 .withMaxNumberOfSegmentsInCache(3)//
@@ -363,7 +363,7 @@ class IndexConfigurationManagerTest {
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withThreadSafe(true)//
-                .withLogEnabled(true)//
+                .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInSegmentCache(11L)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22L) //
                 .withMaxNumberOfKeysInSegmentChunk(33)//
@@ -396,7 +396,7 @@ class IndexConfigurationManagerTest {
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withThreadSafe(true)//
-                .withLogEnabled(true)//
+                .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInSegmentCache(11L)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22L) //
                 .withMaxNumberOfKeysInSegmentChunk(33)//
@@ -496,7 +496,7 @@ class IndexConfigurationManagerTest {
         assertEquals(1024, ret.getDiskIoBufferSize());
         assertEquals(77, ret.getBloomFilterIndexSizeInBytes());
         assertEquals(88, ret.getBloomFilterNumberOfHashFunctions());
-        assertFalse(ret.isLogEnabled());
+        assertFalse(ret.isContextLoggingEnabled());
         assertFalse(ret.isThreadSafe());
     }
 
@@ -549,10 +549,10 @@ class IndexConfigurationManagerTest {
     }
 
     @Test
-    void test_mergeWithStored_isLogEnabled() {
+    void test_mergeWithStored_isContextLoggingEnabled() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withLogEnabled(true)//
+                .withContextLoggingEnabled(true)//
                 .build();
 
         when(storage.load()).thenReturn(CONFIG);
@@ -561,7 +561,7 @@ class IndexConfigurationManagerTest {
         verify(storage, Mockito.times(1)).save(any());
         assertNotNull(ret);
 
-        assertEquals(true, ret.isLogEnabled());
+        assertEquals(true, ret.isContextLoggingEnabled());
     }
 
     @Test
@@ -800,7 +800,7 @@ class IndexConfigurationManagerTest {
                 .withValueTypeDescriptor(TD_STRING)//
                 .withName("base_index")//
                 .withThreadSafe(true)//
-                .withLogEnabled(true)//
+                .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInSegmentCache(11L)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22L)//
                 .withMaxNumberOfKeysInSegmentChunk(33)//

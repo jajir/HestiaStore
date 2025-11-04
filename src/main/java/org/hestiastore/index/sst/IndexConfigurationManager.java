@@ -51,8 +51,9 @@ public class IndexConfigurationManager<K, V> {
             return validate(builder.build());
         }
         final IndexConfigurationContract defaults = oDefaults.get();
-        if (conf.isLogEnabled() == null) {
-            builder.withLogEnabled(defaults.isLogEnabled());
+        if (conf.isContextLoggingEnabled() == null) {
+            builder.withContextLoggingEnabled(
+                    defaults.isContextLoggingEnabled());
         }
         if (conf.isThreadSafe() == null) {
             builder.withThreadSafe(defaults.isThreadSafe());
@@ -164,9 +165,11 @@ public class IndexConfigurationManager<K, V> {
             dirty = true;
         }
 
-        if (indexConf.isLogEnabled() != null && !indexConf.isLogEnabled()
-                .equals(storedConf.isLogEnabled())) {
-            builder.withLogEnabled(indexConf.isLogEnabled());
+        if (indexConf.isContextLoggingEnabled() != null
+                && !indexConf.isContextLoggingEnabled()
+                        .equals(storedConf.isContextLoggingEnabled())) {
+            builder.withContextLoggingEnabled(
+                    indexConf.isContextLoggingEnabled());
             dirty = true;
         }
 
@@ -370,7 +373,8 @@ public class IndexConfigurationManager<K, V> {
         Vldtn.requireNonNull(conf.getValueTypeDescriptor(),
                 "valueTypeDescriptor");
         Vldtn.requireNonNull(conf.isThreadSafe(), "isThreadSafe");
-        Vldtn.requireNonNull(conf.isLogEnabled(), "isLogEnabled");
+        Vldtn.requireNonNull(conf.isContextLoggingEnabled(),
+                "isContextLoggingEnabled");
 
         Vldtn.requireNonNull(conf.getMaxNumberOfKeysInCache(),
                 "MaxNumberOfKeysInCache");
@@ -454,7 +458,7 @@ public class IndexConfigurationManager<K, V> {
                 .withValueClass(conf.getValueClass())//
                 .withKeyTypeDescriptor(conf.getKeyTypeDescriptor())//
                 .withValueTypeDescriptor(conf.getValueTypeDescriptor())//
-                .withLogEnabled(conf.isLogEnabled())//
+                .withContextLoggingEnabled(conf.isContextLoggingEnabled())//
                 .withThreadSafe(conf.isThreadSafe())//
                 .withName(conf.getIndexName())//
 

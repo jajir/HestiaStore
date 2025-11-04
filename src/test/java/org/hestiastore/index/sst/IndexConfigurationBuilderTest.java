@@ -165,10 +165,10 @@ class IndexConfigurationBuilderTest {
     }
 
     @Test
-    void withLogEnabledSetsValue() {
+    void withContextLoggingEnabledSetsValue() {
         final IndexConfiguration<Integer, String> config = newBuilder()
-                .withLogEnabled(Boolean.FALSE).build();
-        assertFalse(config.isLogEnabled());
+                .withContextLoggingEnabled(Boolean.FALSE).build();
+        assertFalse(config.isContextLoggingEnabled());
     }
 
     @Test

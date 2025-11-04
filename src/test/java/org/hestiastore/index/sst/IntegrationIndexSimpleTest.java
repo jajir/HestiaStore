@@ -250,7 +250,7 @@ class IntegrationIndexSimpleTest {
                 .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
-                .withLogEnabled(withLog) //
+                .withContextLoggingEnabled(withLog) //
                 .withName("test_index") //
                 .build();
         return Index.create(directory, conf);
