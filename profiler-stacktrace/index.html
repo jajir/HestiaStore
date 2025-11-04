@@ -1395,7 +1395,7 @@
 
 <h1 id="jvm-profiler-results-yourkit">JVM profiler results (YourKit)</h1>
 <p>This page summarizes a profiling session focused on read and write performance. The goal was to identify where CPU time is spent and highlight concrete improvements.</p>
-<p>The workload: a separate generator produced roughly 100,000,000 key–value pairs and then executed read-heavy operations against HestiaStore 0.0.5 while YourKit captured CPU samples.</p>
+<p>The workload: a separate generator produced roughly 100,000,000 key–value entries and then executed read-heavy operations against HestiaStore 0.0.5 while YourKit captured CPU samples.</p>
 <p>Test environment: run on a Mac mini on 24.10.2025.</p>
 <p><img alt="Profiler result" src="../images/jvm-profiler-2025-10-24.png" /></p>
 <h2 id="how-to-read-the-numbers">🧭 How to read the numbers</h2>
@@ -1428,7 +1428,7 @@
 <a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>org.hestiastore.index.datablockfile.DataBlockFile.getFileReader(DataBlockFile.java:69)
 <a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>org.hestiastore.index.datablockfile.DataBlockFile.openReader(DataBlockFile.java:61)
 <a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>org.hestiastore.index.chunkstore.ChunkStoreFile.openReader(ChunkStoreFile.java:52)
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>org.hestiastore.index.chunkpairfile.ChunkPairFile.openIteratorAtPosition(ChunkPairFile.java:42)
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>org.hestiastore.index.chunkentryfile.ChunkEntryFile.openIteratorAtPosition(ChunkEntryFile.java:42)
 <a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>org.hestiastore.index.segment.SegmentIndexSearcher.search(SegmentIndexSearcher.java:43)
 <a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>org.hestiastore.index.segment.SegmentSearcher.get(SegmentSearcher.java:62)
 <a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>org.hestiastore.index.segment.SegmentImpl.get(SegmentImpl.java:166)
@@ -1442,7 +1442,7 @@
 <a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>com.coroptis.counting.CommandCount$$Lambda.0x000000080023e3c0.accept()
 <a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
 <a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
-<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>org.hestiastore.index.sst.PairIteratorToSpliterator.tryAdvance(PairIteratorToSpliterator.java:31)
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>org.hestiastore.index.sst.EntryIteratorToSpliterator.tryAdvance(EntryIteratorToSpliterator.java:31)
 <a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>java.util.Spliterator.forEachRemaining(Spliterator.java:332)
 <a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
 <a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
@@ -1471,9 +1471,9 @@
 <a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>org.hestiastore.index.chunkstore.ChunkData.read(ChunkData.java:85)
 <a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>org.hestiastore.index.chunkstore.ChunkStoreReaderImpl.read(ChunkStoreReaderImpl.java:42)
 <a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>org.hestiastore.index.chunkstore.ChunkStoreReaderImpl.read(ChunkStoreReaderImpl.java:13)
-<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>org.hestiastore.index.chunkpairfile.ChunkPairFileIterator.moveToNextChunk(ChunkPairFileIterator.java:81)
-<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>org.hestiastore.index.chunkpairfile.ChunkPairFileIterator.&lt;init&gt;(ChunkPairFileIterator.java:42)
-<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>org.hestiastore.index.chunkpairfile.ChunkPairFile.openIteratorAtPosition(ChunkPairFile.java:42)
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>org.hestiastore.index.chunkentryfile.ChunkEntryFileIterator.moveToNextChunk(ChunkEntryFileIterator.java:81)
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>org.hestiastore.index.chunkentryfile.ChunkEntryFileIterator.&lt;init&gt;(ChunkEntryFileIterator.java:42)
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>org.hestiastore.index.chunkentryfile.ChunkEntryFile.openIteratorAtPosition(ChunkEntryFile.java:42)
 <a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>org.hestiastore.index.segment.SegmentIndexSearcher.search(SegmentIndexSearcher.java:43)
 <a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>org.hestiastore.index.segment.SegmentSearcher.get(SegmentSearcher.java:62)
 <a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>org.hestiastore.index.segment.SegmentImpl.get(SegmentImpl.java:166)
@@ -1487,7 +1487,7 @@
 <a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>com.coroptis.counting.CommandCount$$Lambda.0x000000080023e3c0.accept()
 <a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a>java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
 <a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a>java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
-<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a>org.hestiastore.index.sst.PairIteratorToSpliterator.tryAdvance(PairIteratorToSpliterator.java:31)
+<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a>org.hestiastore.index.sst.EntryIteratorToSpliterator.tryAdvance(EntryIteratorToSpliterator.java:31)
 <a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a>java.util.Spliterator.forEachRemaining(Spliterator.java:332)
 <a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a>java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
 <a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a>java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
@@ -1519,7 +1519,7 @@
 <a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>org.hestiastore.index.AbstractCloseableResource.close(AbstractCloseableResource.java:23)
 <a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>org.hestiastore.index.chunkstore.ChunkStoreReaderImpl.doClose(ChunkStoreReaderImpl.java:36)
 <a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>org.hestiastore.index.AbstractCloseableResource.close(AbstractCloseableResource.java:23)
-<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>org.hestiastore.index.chunkpairfile.ChunkPairFileIterator.doClose(ChunkPairFileIterator.java:96)
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>org.hestiastore.index.chunkentryfile.ChunkEntryFileIterator.doClose(ChunkEntryFileIterator.java:96)
 <a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>org.hestiastore.index.AbstractCloseableResource.close(AbstractCloseableResource.java:23)
 <a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>org.hestiastore.index.segment.SegmentIndexSearcher.search(SegmentIndexSearcher.java:59)
 <a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>org.hestiastore.index.segment.SegmentSearcher.get(SegmentSearcher.java:62)
@@ -1534,7 +1534,7 @@
 <a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a>com.coroptis.counting.CommandCount$$Lambda.0x000000080023e3c0.accept()
 <a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a>java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
 <a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a>java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
-<a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a>org.hestiastore.index.sst.PairIteratorToSpliterator.tryAdvance(PairIteratorToSpliterator.java:31)
+<a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a>org.hestiastore.index.sst.EntryIteratorToSpliterator.tryAdvance(EntryIteratorToSpliterator.java:31)
 <a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a>java.util.Spliterator.forEachRemaining(Spliterator.java:332)
 <a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a>java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
 <a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a>java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
@@ -1549,7 +1549,7 @@
 <h2 id="what-to-improve-next-actionable">🛠️ What to improve next (actionable)</h2>
 <ul>
 <li>Reduce copies in the read path<ul>
-<li>Pool and reuse byte buffers across <code>ChunkStoreReader</code>/<code>ChunkPairFileIterator</code>.</li>
+<li>Pool and reuse byte buffers across <code>ChunkStoreReader</code>/<code>ChunkEntryFileIterator</code>.</li>
 <li>Where feasible, write directly into the final consumer’s buffer instead of staging arrays.</li>
 </ul>
 </li>

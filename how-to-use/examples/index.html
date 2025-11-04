@@ -1463,7 +1463,7 @@
 <a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="w">  </span><span class="p">}</span>
 <a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="p">}</span>
 </code></pre></div>
-<p>This creates a simple in-memory index and stores a key-value pair.</p>
+<p>This creates a simple in-memory index and stores a key-value entry.</p>
 <p>When you have first example you can dive into <a href="../../configuration/">more advanced configuration</a>. There are explained details about <code>Directory</code> object and using custom Key/Value classes</p>
 <h2 id="using-hestiastore-with-the-file-system">💾 Using HestiaStore with the File System</h2>
 <p>This is the most common scenario for storing data on persistent storage. Creating an index in a given directory can be done as follows:</p>
@@ -1528,7 +1528,7 @@
 </ul>
 <h2 id="limitations">⚠️ Limitations</h2>
 <h3 id="stale-results-from-indexgetstream">🌀 Stale Results from <code>index.getStream()</code></h3>
-<p>Data from <code>index.getStream()</code> method could be stale or invalid. It's corner case when next readed key value pair is changed. Index data streaming is splited internally into steps <code>hasNextElement()</code> and <code>getNextElement()</code>. Following example will show why it's no possible to use index cache:</p>
+<p>Data from <code>index.getStream()</code> method could be stale or invalid. It's corner case when next readed key value entry is changed. Index data streaming is splited internally into steps <code>hasNextElement()</code> and <code>getNextElement()</code>. Following example will show why it's no possible to use index cache:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">index</span><span class="p">.</span><span class="na">hasNextElement</span><span class="p">();</span><span class="w"> </span><span class="c1">// --&gt; true</span>
 </code></pre></div>
 <p>Now next element has to be known to be sure that exists. Let's suppose that in index is just one element <code>&lt;k1,v1&gt;</code>.</p>

@@ -1561,7 +1561,7 @@
 <h2 id="test-conditions">Test Conditions</h2>
 <ul>
 <li>Every benchmark in the plain-load suite runs inside the same controlled JVM environment with identical JVM flags and hardware resources. Runs start by wiping the working directory supplied through the <code>dir</code> system property, so each trial writes into a fresh, empty location.</li>
-<li>Execution stays single-threaded from warm-up through measurement. The test focuses purely on how quickly one writer can push key/value pairs into the storage engine without any coordination overhead from additional threads.</li>
+<li>Execution stays single-threaded from warm-up through measurement. The test focuses purely on how quickly one writer can push key/value entries into the storage engine without any coordination overhead from additional threads.</li>
 <li>Warm-up phases fill the database as aggressively as possible for several 20-second stretches. This stage is meant to trigger JIT compilation, populate caches, and let LevelDB settle into steady-state behaviour before any numbers are recorded.</li>
 <li>Measurement phases repeat the same single-threaded write loop. Throughput is observed over multiple 20-second intervals to capture stable, sustained insert performance rather than a burst.</li>
 <li>Each write operation uses a deterministic pseudo-random long (seed <code>324432L</code>) to generate a unique hash string via <code>HashDataProvider</code>. The payload is the constant text <code>"opice skace po stromech"</code>, so variability comes exclusively from the changing keys.</li>

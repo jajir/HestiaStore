@@ -95,7 +95,7 @@ package chunkstore <<yellow>> {
 
   class Chunk {
     - List<Bytes> bytes;
-    + addPair(pair pair)
+    + addPair(entry entry)
     + ChunkHeader getHeader()
   }
   Chunk --> ChunkPositon
