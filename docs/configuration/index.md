@@ -18,7 +18,7 @@ IndexConfiguration<Integer, Integer> conf = IndexConfiguration
     .withMaxNumberOfKeysInCache(3) //
     .withBloomFilterIndexSizeInBytes(0) //
     .withBloomFilterNumberOfHashFunctions(4) //
-    .withLogEnabled(false) //
+    .withContextLoggingEnabled(false) //
     .withName("test_index") //
     .build();
 
@@ -94,9 +94,22 @@ Limits the number of segments stored in memory. Useful for controlling memory us
 
 Whether the index instance is safe for concurrent access by multiple threads. When it's set to `code` true than index will be synchronized between threads.
 
-### Log enabled - `withLogEnabled()`
+Default value is 'false'.
 
-Enables or disables write-ahead logging. Currently it's experimental feature.
+### Context logging enabled - `withContextLoggingEnabled()`
+
+Controls whether the index wraps operations with MDC context propagation so log statements include the index name. When it's set on 'true' following loog message will contain set 'index' property:
+
+```xml
+<Console name="indexAppender" target="SYSTEM_OUT">
+    <PatternLayout
+        pattern="%d{ISO8601} %-5level [%t] index='%X{index.name}' %-C{1.mv}: %msg%n%throwable" />
+</Console>
+```
+
+Default value is 'true'.
+
+Please note, that in highly intensive applications enabling this option could eat up to 40% of CPU time.
 
 ## Segment related configuration
 
@@ -170,7 +183,7 @@ At allows to pass `IndexConfiguration` object and this way change configuration 
 | bloomFilterProbabilityOfFalsePositive       | Bloom filter - probability of false positives        | 🟥             | segment bloom filter |
 | diskIoBufferSize                            | Size of the disk I/O buffer                          | 🟩             | Disk IO              |
 | threadSafe                                  | If index is thread-safe                              | 🟩             | index                |
-| logEnabled                                  | If full logging is enabled                           | 🟩             | index                |
+| contextLoggingEnabled                       | If MDC-based context logging is enabled              | 🟩             | index                |
 
 # Add custom data type
 

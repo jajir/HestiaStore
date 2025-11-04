@@ -41,7 +41,7 @@ class IntegrationIteratorTest extends AbstractIndexTest {
                 .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
-                .withLogEnabled(false) //
+                .withContextLoggingEnabled(false) //
                 .withName("test_index") //
                 .build();
         index = Index.<String, Integer>create(directory, conf);

@@ -93,7 +93,7 @@ class IntegrationIndexConsistencyTest extends AbstractIndexTest {
                 .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(0) //
                 .withBloomFilterNumberOfHashFunctions(4) //
-                .withLogEnabled(false) //
+                .withContextLoggingEnabled(false) //
                 .withName("test_index") //
                 .build();
         return Index.<Integer, Integer>create(directory, conf);

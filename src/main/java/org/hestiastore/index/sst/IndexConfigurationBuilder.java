@@ -28,7 +28,7 @@ public class IndexConfigurationBuilder<K, V> {
     private Class<V> valueClass;
     private String keyTypeDescriptor;
     private String valueTypeDescriptor;
-    private Boolean logEnabled;
+    private Boolean contextLoggingEnabled;
     private Boolean isThreadSafe;
     private final List<ChunkFilter> encodingChunkFilters = new ArrayList<>();
     private final List<ChunkFilter> decodingChunkFilters = new ArrayList<>();
@@ -148,9 +148,9 @@ public class IndexConfigurationBuilder<K, V> {
         return this;
     }
 
-    public IndexConfigurationBuilder<K, V> withLogEnabled(
-            final Boolean useFullLog) {
-        this.logEnabled = useFullLog;
+    public IndexConfigurationBuilder<K, V> withContextLoggingEnabled(
+            final Boolean enabled) {
+        this.contextLoggingEnabled = enabled;
         return this;
     }
 
@@ -225,7 +225,7 @@ public class IndexConfigurationBuilder<K, V> {
                 maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache, indexName,
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
                 bloomFilterProbabilityOfFalsePositive, diskIoBufferSizeInBytes,
-                isThreadSafe, logEnabled, encodingChunkFilters,
+                isThreadSafe, contextLoggingEnabled, encodingChunkFilters,
                 decodingChunkFilters);
     }
 

@@ -134,7 +134,7 @@ class IntegrationIndexTest extends AbstractIndexTest {
                 .withMaxNumberOfSegmentsInCache(3)
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(3) //
-                .withLogEnabled(withLog) //
+                .withContextLoggingEnabled(withLog) //
                 .withThreadSafe(false)//
                 .withName("test_index") //
                 .build();

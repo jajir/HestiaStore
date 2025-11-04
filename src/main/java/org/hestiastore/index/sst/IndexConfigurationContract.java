@@ -72,8 +72,8 @@ public interface IndexConfigurationContract {
         return false;
     }
 
-    default boolean isLogEnabled() {
-        return false;
+    default boolean isContextLoggingEnabled() {
+        return true;
     }
 
     default List<ChunkFilter> getEncodingChunkFilters() {
