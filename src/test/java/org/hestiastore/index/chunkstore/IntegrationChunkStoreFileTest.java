@@ -20,7 +20,7 @@ public class IntegrationChunkStoreFileTest {
 
     private static final int VERSION = 3;
 
-    private static final String FILE_NAME = "chunkpairfilewriter-test";
+    private static final String FILE_NAME = "chunkentryfilewriter-test";
 
     private Directory directory;
 

@@ -5,8 +5,8 @@ import java.util.stream.Stream;
 
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIteratorStreamer;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIteratorStreamer;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
@@ -88,9 +88,9 @@ public interface Index<K, V> extends CloseableResource {
 
     void put(K key, V value);
 
-    default void put(final Pair<K, V> pair) {
-        Vldtn.requireNonNull(pair, "pair");
-        put(pair.getKey(), pair.getValue());
+    default void put(final Entry<K, V> entry) {
+        Vldtn.requireNonNull(entry, "entry");
+        put(entry.getKey(), entry.getValue());
     }
 
     V get(K key);
@@ -111,8 +111,8 @@ public interface Index<K, V> extends CloseableResource {
      * This method should be closed at the end of usage. For example:
      * 
      * <pre>
-     * try (final Stream&#60;Pair&#60;Integer, String&#62;&#62; stream = index.getStream()) {
-     *     final List&#60;Pair&#60;Integer, String&#62;&#62; list = stream
+     * try (final Stream&#60;Entry&#60;Integer, String&#62;&#62; stream = index.getStream()) {
+     *     final List&#60;Entry&#60;Integer, String&#62;&#62; list = stream
      *             .collect(Collectors.toList());
      *     // some other code
      * }
@@ -123,13 +123,13 @@ public interface Index<K, V> extends CloseableResource {
      *                       all segments are used.
      * @return stream of all data.
      */
-    Stream<Pair<K, V>> getStream(SegmentWindow segmentWindows);
+    Stream<Entry<K, V>> getStream(SegmentWindow segmentWindows);
 
-    default Stream<Pair<K, V>> getStream() {
+    default Stream<Entry<K, V>> getStream() {
         return getStream(SegmentWindow.unbounded());
     }
 
-    PairIteratorStreamer<LoggedKey<K>, V> getLogStreamer();
+    EntryIteratorStreamer<LoggedKey<K>, V> getLogStreamer();
 
     /**
      * Checks the internal consistency of all index segments and associated data

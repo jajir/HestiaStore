@@ -1,7 +1,7 @@
 package org.hestiastore.index.unsorteddatafile;
 
-import org.hestiastore.index.PairIterator;
-import org.hestiastore.index.PairIteratorStreamer;
+import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.EntryIteratorStreamer;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.datatype.TypeWriter;
@@ -36,7 +36,7 @@ final class UnsortedDataFileImpl<K, V> implements UnsortedDataFile<K, V> {
      * close the iterator when finished.
      */
     @Override
-    public PairIterator<K, V> openIterator() {
+    public EntryIterator<K, V> openIterator() {
         return new DataFileIterator<>(keyReader, valueReader, getFileReader());
     }
 
@@ -55,11 +55,11 @@ final class UnsortedDataFileImpl<K, V> implements UnsortedDataFile<K, V> {
      * exist the returned stream is empty.
      */
     @Override
-    public PairIteratorStreamer<K, V> openStreamer() {
+    public EntryIteratorStreamer<K, V> openStreamer() {
         if (directory.isFileExists(fileName)) {
-            return new PairIteratorStreamer<>(openIterator());
+            return new EntryIteratorStreamer<>(openIterator());
         } else {
-            return new PairIteratorStreamer<>(null);
+            return new EntryIteratorStreamer<>(null);
         }
     }
 

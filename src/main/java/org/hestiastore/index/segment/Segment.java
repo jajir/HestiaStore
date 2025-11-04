@@ -2,8 +2,8 @@ package org.hestiastore.index.segment;
 
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.OptimisticLockObjectVersionProvider;
-import org.hestiastore.index.PairIterator;
-import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.EntryWriter;
 
 /**
  * Public contract for a single on-disk index segment.
@@ -102,9 +102,9 @@ public interface Segment<K, V>
      * Delta cache in already loaded into memory. Delta cache statys in memory
      * until while segment in unloaded.
      * 
-     * @return iterator over key/value pairs in key order
+     * @return iterator over key/value entries in key order
      */
-    PairIterator<K, V> openIterator();
+    EntryIterator<K, V> openIterator();
 
     /**
      * Opens a writer that appends updates into the delta cache of this segment.
@@ -114,7 +114,7 @@ public interface Segment<K, V>
      *
      * @return writer for delta cache updates
      */
-    PairWriter<K, V> openDeltaCacheWriter();
+    EntryWriter<K, V> openDeltaCacheWriter();
 
     /**
      * Performs a point lookup of a key in this segment, considering both the

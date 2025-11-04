@@ -1,8 +1,8 @@
 package org.hestiastore.index.segment;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.Vldtn;
 
 /**
@@ -16,7 +16,7 @@ import org.hestiastore.index.Vldtn;
  * @param <V>
  */
 public class SegmentDeltaCacheCompactingWriter<K, V>
-        extends AbstractCloseableResource implements PairWriter<K, V> {
+        extends AbstractCloseableResource implements EntryWriter<K, V> {
 
     private final SegmentImpl<K, V> segment;
     private final SegmentCompacter<K, V> segmentCompacter;
@@ -52,9 +52,9 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
     }
 
     @Override
-    public void write(final Pair<K, V> pair) {
+    public void write(final Entry<K, V> entry) {
         optionallyOpenDeltaCacheWriter();
-        deltaCacheWriter.write(pair);
+        deltaCacheWriter.write(entry);
         if (compactionPolicy
                 .shouldCompactDuringWriting(deltaCacheWriter.getNumberOfKeys())) {
             deltaCacheWriter.close();

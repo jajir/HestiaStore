@@ -9,10 +9,10 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
-import org.hestiastore.index.PairIteratorList;
-import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.EntryIteratorList;
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.WriteTransaction;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -100,7 +100,7 @@ class SegmentSplitStepFillLowerUntilTargetTest {
     }
 
     @Test
-    void writes_pairs_until_half_and_commits() {
+    void writes_entries_until_half_and_commits() {
         @SuppressWarnings("unchecked")
         final SegmentImpl<Integer, String> lower = org.mockito.Mockito
                 .mock(SegmentImpl.class);
@@ -108,14 +108,14 @@ class SegmentSplitStepFillLowerUntilTargetTest {
         final WriteTransaction<Integer, String> tx = org.mockito.Mockito
                 .mock(WriteTransaction.class);
         @SuppressWarnings("unchecked")
-        final PairWriter<Integer, String> writer = org.mockito.Mockito
-                .mock(PairWriter.class);
+        final EntryWriter<Integer, String> writer = org.mockito.Mockito
+                .mock(EntryWriter.class);
         when(lower.openFullWriteTx()).thenReturn(tx);
         when(tx.open()).thenReturn(writer);
 
-        final List<Pair<Integer, String>> data = List.of(Pair.of(1, "a"),
-                Pair.of(2, "b"), Pair.of(3, "c"), Pair.of(4, "d"));
-        final PairIterator<Integer, String> it = new PairIteratorList<>(data);
+        final List<Entry<Integer, String>> data = List.of(Entry.of(1, "a"),
+                Entry.of(2, "b"), Entry.of(3, "c"), Entry.of(4, "d"));
+        final EntryIterator<Integer, String> it = new EntryIteratorList<>(data);
 
         final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
         state.setLowerSegment(lower);

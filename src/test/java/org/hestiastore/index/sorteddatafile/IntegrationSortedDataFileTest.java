@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.AbstractDataTest;
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIteratorWithCurrent;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -20,12 +20,12 @@ class IntegrationSortedDataFileTest extends AbstractDataTest {
     private static final String FILE_NAME = "pok.index";
     private static final TypeDescriptor<Integer> tdi = new TypeDescriptorInteger();
     private static final TypeDescriptor<String> tds = new TypeDescriptorShortString();
-    private static final Pair<String, Integer> P1 = Pair.of("a", 1);
-    private static final Pair<String, Integer> P2 = Pair.of("aaaaaa", 2);
-    private static final Pair<String, Integer> P3 = Pair.of("bbb", 3);
-    private static final Pair<String, Integer> P4 = Pair.of("bbbbbb", 4);
-    private static final Pair<String, Integer> P5 = Pair.of("ccc", 5);
-    private static final Pair<String, Integer> P6 = Pair.of("ccccccc", 6);
+    private static final Entry<String, Integer> P1 = Entry.of("a", 1);
+    private static final Entry<String, Integer> P2 = Entry.of("aaaaaa", 2);
+    private static final Entry<String, Integer> P3 = Entry.of("bbb", 3);
+    private static final Entry<String, Integer> P4 = Entry.of("bbbbbb", 4);
+    private static final Entry<String, Integer> P5 = Entry.of("ccc", 5);
+    private static final Entry<String, Integer> P6 = Entry.of("ccccccc", 6);
 
     private Directory dir;
     private SortedDataFile<String, Integer> sdf;
@@ -59,7 +59,7 @@ class IntegrationSortedDataFileTest extends AbstractDataTest {
     void test_iterator() {
         writeDataWithOneFullWrite();
 
-        try (PairIteratorWithCurrent<String, Integer> iterator = sdf
+        try (EntryIteratorWithCurrent<String, Integer> iterator = sdf
                 .openIterator()) {
 
             assertTrue(iterator.getCurrent().isEmpty());
@@ -78,8 +78,8 @@ class IntegrationSortedDataFileTest extends AbstractDataTest {
     }
 
     private void verifyNextElement(
-            PairIteratorWithCurrent<String, Integer> iterator,
-            Pair<String, Integer> expected) {
+            EntryIteratorWithCurrent<String, Integer> iterator,
+            Entry<String, Integer> expected) {
         assertTrue(iterator.hasNext());
         verifyEquals(expected, iterator.next());
         assertTrue(iterator.getCurrent().isPresent());

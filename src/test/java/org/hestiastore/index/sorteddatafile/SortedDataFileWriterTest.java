@@ -9,7 +9,7 @@ import java.util.Base64;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import org.hestiastore.index.Pair;
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.datatype.TypeWriter;
@@ -22,11 +22,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class SortedDataFileWriterTest {
 
-    private static final Pair<String, Integer> PAIR_0 = Pair.of("key0", -100);
-    private static final Pair<String, Integer> PAIR_1 = Pair.of("key1", 100);
-    private static final Pair<String, Integer> PAIR_2 = Pair.of("key2", 200);
-    private static final Pair<String, Integer> PAIR_3 = Pair.of("key3", 300);
-    private static final Pair<String, Integer> PAIR_4 = Pair.of("key4", 400);
+    private static final Entry<String, Integer> ENTRY_0 = Entry.of("key0", -100);
+    private static final Entry<String, Integer> ENTRY_1 = Entry.of("key1", 100);
+    private static final Entry<String, Integer> ENTRY_2 = Entry.of("key2", 200);
+    private static final Entry<String, Integer> ENTRY_3 = Entry.of("key3", 300);
+    private static final Entry<String, Integer> ENTRY_4 = Entry.of("key4", 400);
 
     private static final TypeDescriptor<String> stringTd = new TypeDescriptorShortString();
 
@@ -67,9 +67,9 @@ class SortedDataFileWriterTest {
     void test_write_lower_key() {
         try (SortedDataFileWriter<String, Integer> writer = new SortedDataFileWriter<>(
                 valueWriter, fileWriter, stringTd)) {
-            writer.write(PAIR_1);
+            writer.write(ENTRY_1);
             final Exception e = assertThrows(IllegalArgumentException.class,
-                    () -> writer.write(PAIR_0));
+                    () -> writer.write(ENTRY_0));
             final String prevB64 = Base64.getEncoder().encodeToString(
                     "key1".getBytes(StandardCharsets.UTF_8));
             final String insB64 = Base64.getEncoder().encodeToString(
@@ -85,9 +85,9 @@ class SortedDataFileWriterTest {
     void test_write_same_key() {
         try (SortedDataFileWriter<String, Integer> writer = new SortedDataFileWriter<>(
                 valueWriter, fileWriter, stringTd)) {
-            writer.write(PAIR_1);
+            writer.write(ENTRY_1);
             final Exception e = assertThrows(IllegalArgumentException.class,
-                    () -> writer.write(PAIR_0));
+                    () -> writer.write(ENTRY_0));
             final String prevB64 = Base64.getEncoder().encodeToString(
                     "key1".getBytes(StandardCharsets.UTF_8));
             final String insB64 = Base64.getEncoder().encodeToString(
@@ -103,9 +103,9 @@ class SortedDataFileWriterTest {
     void test_write_write_same_key() {
         try (SortedDataFileWriter<String, Integer> writer = new SortedDataFileWriter<>(
                 valueWriter, fileWriter, stringTd)) {
-            writer.write(PAIR_1);
+            writer.write(ENTRY_1);
             final Exception e = assertThrows(IllegalArgumentException.class,
-                    () -> writer.write(PAIR_0));
+                    () -> writer.write(ENTRY_0));
             final String prevB64 = Base64.getEncoder().encodeToString(
                     "key1".getBytes(StandardCharsets.UTF_8));
             final String insB64 = Base64.getEncoder().encodeToString(
@@ -121,9 +121,9 @@ class SortedDataFileWriterTest {
     void test_write() {
         try (SortedDataFileWriter<String, Integer> writer = new SortedDataFileWriter<>(
                 valueWriter, fileWriter, stringTd)) {
-            writer.write(PAIR_1);
+            writer.write(ENTRY_1);
             verify(valueWriter).write(fileWriter, 100);
-            writer.write(PAIR_2);
+            writer.write(ENTRY_2);
             verify(valueWriter).write(fileWriter, 200);
         }
     }
@@ -132,16 +132,16 @@ class SortedDataFileWriterTest {
     void test_write_all_writes_are_full() {
         try (SortedDataFileWriter<String, Integer> writer = new SortedDataFileWriter<>(
                 valueWriter, fileWriter, stringTd)) {
-            writer.write(PAIR_1);
+            writer.write(ENTRY_1);
             verify(valueWriter, times(1)).write(fileWriter, 100);
 
-            writer.write(PAIR_2);
+            writer.write(ENTRY_2);
             verify(valueWriter, times(1)).write(fileWriter, 200);
 
-            writer.write(PAIR_3);
+            writer.write(ENTRY_3);
             verify(valueWriter, times(1)).write(fileWriter, 300);
 
-            writer.write(PAIR_4);
+            writer.write(ENTRY_4);
             verify(valueWriter, times(1)).write(fileWriter, 400);
         }
     }

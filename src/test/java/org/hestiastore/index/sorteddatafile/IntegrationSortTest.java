@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Random;
 
 import org.hestiastore.index.FileNameUtil;
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIteratorWithCurrent;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -58,17 +58,17 @@ class IntegrationSortTest extends AbstractSegmentTest {
     @Test
     void test_sort_3_unique_keys_shufled() {
 
-        writePairs(unsorted, Arrays.asList(//
-                Pair.of("b", 30), //
-                Pair.of("a", 20), //
-                Pair.of("c", 40)));
+        writeEntries(unsorted, Arrays.asList(//
+                Entry.of("b", 30), //
+                Entry.of("a", 20), //
+                Entry.of("c", 40)));
 
         sorter.sort();
 
         verifyIteratorData(Arrays.asList(//
-                Pair.of("a", 20), //
-                Pair.of("b", 30), //
-                Pair.of("c", 40)//
+                Entry.of("a", 20), //
+                Entry.of("b", 30), //
+                Entry.of("c", 40)//
         ), sdf.openIterator());
 
         verifyNumberOfFiles(dir, 2);
@@ -77,17 +77,17 @@ class IntegrationSortTest extends AbstractSegmentTest {
     @Test
     void test_sort_3_duplicated_keys_shufled_merged() {
 
-        writePairs(unsorted, Arrays.asList(//
-                Pair.of("a", 30), //
-                Pair.of("a", 20), //
-                Pair.of("c", 40), //
-                Pair.of("a", 50)));
+        writeEntries(unsorted, Arrays.asList(//
+                Entry.of("a", 30), //
+                Entry.of("a", 20), //
+                Entry.of("c", 40), //
+                Entry.of("a", 50)));
 
         sorter.sort();
 
         verifyIteratorData(Arrays.asList(//
-                Pair.of("a", 50), //
-                Pair.of("c", 40)//
+                Entry.of("a", 50), //
+                Entry.of("c", 40)//
         ), sdf.openIterator());
 
         verifyNumberOfFiles(dir, 2);
@@ -95,7 +95,7 @@ class IntegrationSortTest extends AbstractSegmentTest {
 
     @Test
     void test_sort_no_data() {
-        writePairs(unsorted, Collections.emptyList());
+        writeEntries(unsorted, Collections.emptyList());
 
         sorter.sort();
 
@@ -106,14 +106,14 @@ class IntegrationSortTest extends AbstractSegmentTest {
 
     @Test
     void test_sort_100_unique_keys_shufled() {
-        final List<Pair<String, Integer>> data = new ArrayList<>();
+        final List<Entry<String, Integer>> data = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            data.add(Pair.of("key" + FileNameUtil.getPaddedId(i, 3), i));
+            data.add(Entry.of("key" + FileNameUtil.getPaddedId(i, 3), i));
         }
-        final List<Pair<String, Integer>> shufledData = new ArrayList<>(data);
+        final List<Entry<String, Integer>> shufledData = new ArrayList<>(data);
         Collections.shuffle(shufledData, RANDOM);
 
-        writePairs(unsorted, shufledData);
+        writeEntries(unsorted, shufledData);
 
         sorter.sort();
 
@@ -124,25 +124,25 @@ class IntegrationSortTest extends AbstractSegmentTest {
 
     @Test
     void test_sort_100_duplicated_keys_shufled() {
-        final List<Pair<String, Integer>> data = new ArrayList<>();
+        final List<Entry<String, Integer>> data = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             int id = RANDOM.nextInt(10);
-            data.add(Pair.of("key" + FileNameUtil.getPaddedId(id, 3), id));
+            data.add(Entry.of("key" + FileNameUtil.getPaddedId(id, 3), id));
         }
-        final List<Pair<String, Integer>> shufledData = new ArrayList<>(data);
+        final List<Entry<String, Integer>> shufledData = new ArrayList<>(data);
         Collections.shuffle(shufledData, RANDOM);
 
-        writePairs(unsorted, shufledData);
+        writeEntries(unsorted, shufledData);
 
         sorter.sort();
 
-        try (PairIteratorWithCurrent<String, Integer> iterator = sdf
+        try (EntryIteratorWithCurrent<String, Integer> iterator = sdf
                 .openIterator()) {
             int i = 0;
             while (iterator.hasNext()) {
-                final Pair<String, Integer> pair = iterator.next();
+                final Entry<String, Integer> entry = iterator.next();
                 assertEquals("key" + FileNameUtil.getPaddedId(i, 3),
-                        pair.getKey());
+                        entry.getKey());
                 i++;
             }
             assertEquals(10, i);
@@ -151,11 +151,11 @@ class IntegrationSortTest extends AbstractSegmentTest {
         verifyNumberOfFiles(dir, 2);
     }
 
-    protected <M, N> void writePairs(final UnsortedDataFile<M, N> file,
-            final List<Pair<M, N>> pairs) {
+    protected <M, N> void writeEntries(final UnsortedDataFile<M, N> file,
+            final List<Entry<M, N>> entries) {
         file.openWriterTx().execute(writer -> {
-            for (final Pair<M, N> pair : pairs) {
-                writer.write(pair);
+            for (final Entry<M, N> entry : entries) {
+                writer.write(entry);
             }
         });
     }

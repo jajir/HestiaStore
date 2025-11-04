@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.NoSuchElementException;
 
-import org.hestiastore.index.Pair;
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.directory.FileReader;
 import org.junit.jupiter.api.AfterEach;
@@ -39,11 +39,11 @@ public class DataFileIteratorTest {
                 reader);
 
         assertTrue(iterator.hasNext());
-        assertEquals(Pair.of("A", 1), iterator.next());
+        assertEquals(Entry.of("A", 1), iterator.next());
         assertTrue(iterator.hasNext());
-        assertEquals(Pair.of("B", 2), iterator.next());
+        assertEquals(Entry.of("B", 2), iterator.next());
         assertTrue(iterator.hasNext());
-        assertEquals(Pair.of("C", 3), iterator.next());
+        assertEquals(Entry.of("C", 3), iterator.next());
         assertFalse(iterator.hasNext());
     }
 

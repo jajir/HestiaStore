@@ -2,8 +2,8 @@ package org.hestiastore.index.segment;
 
 import java.util.List;
 
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.UniqueCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -42,16 +42,16 @@ public final class SegmentDeltaCache<K, V> {
             final String segmentDeltaFileName) {
         final SortedDataFile<K, V> dataFile = segmentFiles
                 .getDeltaCacheSortedDataFile(segmentDeltaFileName);
-        try (PairIterator<K, V> iterator = dataFile.openIterator()) {
+        try (EntryIterator<K, V> iterator = dataFile.openIterator()) {
             while (iterator.hasNext()) {
                 cache.put(iterator.next());
             }
         }
     }
 
-    public void put(final Pair<K, V> pair) {
-        Vldtn.requireNonNull(pair, "pair");
-        cache.put(pair);
+    public void put(final Entry<K, V> entry) {
+        Vldtn.requireNonNull(entry, "entry");
+        cache.put(entry);
     }
 
     public int size() {
@@ -62,7 +62,7 @@ public final class SegmentDeltaCache<K, V> {
         final TypeDescriptor<V> valueTypeDescriptor = segmentFiles
                 .getValueTypeDescriptor();
         return (int) cache.getStream().filter(
-                pair -> !valueTypeDescriptor.isTombstone(pair.getValue()))
+                entry -> !valueTypeDescriptor.isTombstone(entry.getValue()))
                 .count();
     }
 
@@ -78,7 +78,7 @@ public final class SegmentDeltaCache<K, V> {
         return cache.getSortedKeys();
     }
 
-    public List<Pair<K, V>> getAsSortedList() {
+    public List<Entry<K, V>> getAsSortedList() {
         return cache.getAsSortedList();
     }
 

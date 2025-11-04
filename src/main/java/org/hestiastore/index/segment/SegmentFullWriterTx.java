@@ -1,21 +1,21 @@
 package org.hestiastore.index.segment;
 
 import org.hestiastore.index.GuardedWriteTransaction;
-import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.WriteTransaction;
-import org.hestiastore.index.chunkpairfile.ChunkPairFileWriterTx;
+import org.hestiastore.index.chunkentryfile.ChunkEntryFileWriterTx;
 import org.hestiastore.index.scarceindex.ScarceIndexWriterTx;
 
 public class SegmentFullWriterTx<K, V>
-        extends GuardedWriteTransaction<PairWriter<K, V>>
+        extends GuardedWriteTransaction<EntryWriter<K, V>>
         implements WriteTransaction<K, V> {
 
     private final SegmentPropertiesManager segmentPropertiesManager;
     private final int maxNumberOfKeysInIndexPage;
     private final SegmentDataProvider<K, V> segmentDataProvider;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
-    private final ChunkPairFileWriterTx<K, V> chunkPairFileWriterTx;
+    private final ChunkEntryFileWriterTx<K, V> chunkPairFileWriterTx;
     private final ScarceIndexWriterTx<K> scarceIndexWriterTx;
     private SegmentFullWriter<K, V> segmentFullWriter;
 
@@ -36,8 +36,8 @@ public class SegmentFullWriterTx<K, V>
     }
 
     @Override
-    protected PairWriter<K, V> doOpen() {
-        final PairWriter<K, Integer> scarceWriter = scarceIndexWriterTx.open();
+    protected EntryWriter<K, V> doOpen() {
+        final EntryWriter<K, Integer> scarceWriter = scarceIndexWriterTx.open();
         segmentFullWriter = new SegmentFullWriter<>(maxNumberOfKeysInIndexPage,
                 segmentDataProvider, chunkPairFileWriterTx.openWriter(),
                 scarceWriter);
@@ -45,7 +45,7 @@ public class SegmentFullWriterTx<K, V>
     }
 
     @Override
-    protected void doCommit(final PairWriter<K, V> writer) {
+    protected void doCommit(final EntryWriter<K, V> writer) {
         scarceIndexWriterTx.commit();
         chunkPairFileWriterTx.commit();
         deltaCacheController.clear();

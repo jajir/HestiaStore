@@ -3,10 +3,10 @@ package org.hestiastore.index.segment;
 import java.util.Comparator;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.chunkpairfile.ChunkPairFile;
+import org.hestiastore.index.chunkentryfile.ChunkEntryFile;
 
 /**
  * Searcher for each search open file for read and skip given number of bytes.
@@ -18,11 +18,11 @@ import org.hestiastore.index.chunkpairfile.ChunkPairFile;
  */
 public class SegmentIndexSearcher<K, V> extends AbstractCloseableResource {
 
-    private final ChunkPairFile<K, V> chunkPairFile;
+    private final ChunkEntryFile<K, V> chunkPairFile;
     private final int maxNumberOfKeysInIndexPage;
     private final Comparator<K> keyTypeComparator;
 
-    SegmentIndexSearcher(final ChunkPairFile<K, V> chunkPairFile,
+    SegmentIndexSearcher(final ChunkEntryFile<K, V> chunkPairFile,
             final int maxNumberOfKeysInIndexPage,
             final Comparator<K> keyTypeComparator) {
         this.chunkPairFile = Vldtn.requireNonNull(chunkPairFile,
@@ -39,14 +39,14 @@ public class SegmentIndexSearcher<K, V> extends AbstractCloseableResource {
     }
 
     public V search(final K key, long startPosition) {
-        try (PairIterator<K, V> iterator = chunkPairFile
+        try (EntryIterator<K, V> iterator = chunkPairFile
                 .openIteratorAtPosition(startPosition)) {
             for (int i = 0; iterator.hasNext()
                     && i < maxNumberOfKeysInIndexPage; i++) {
-                final Pair<K, V> pair = iterator.next();
-                final int cmp = keyTypeComparator.compare(pair.getKey(), key);
+                final Entry<K, V> entry = iterator.next();
+                final int cmp = keyTypeComparator.compare(entry.getKey(), key);
                 if (cmp == 0) {
-                    return pair.getValue();
+                    return entry.getValue();
                 }
                 /**
                  * Keys are in ascending order. When searched key is smaller

@@ -12,8 +12,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.Test;
@@ -37,10 +37,10 @@ class SegmentsIteratorTest {
     private Segment<String, String> segment23;
 
     @Mock
-    private PairIterator<String, String> pairIterator17;
+    private EntryIterator<String, String> entryIterator17;
 
     @Mock
-    private PairIterator<String, String> pairIterator23;
+    private EntryIterator<String, String> entryIterator23;
 
     @Test
     void test_there_is_no_segment() {
@@ -56,9 +56,9 @@ class SegmentsIteratorTest {
     @Test
     void test_segments_in_one() {
         when(segmentRegistry.getSegment(SEGMENT_ID_17)).thenReturn(segment17);
-        when(segment17.openIterator()).thenReturn(pairIterator17);
-        when(pairIterator17.hasNext()).thenReturn(true, false);
-        when(pairIterator17.next()).thenReturn(new Pair<>("key1", "value1"));
+        when(segment17.openIterator()).thenReturn(entryIterator17);
+        when(entryIterator17.hasNext()).thenReturn(true, false);
+        when(entryIterator17.next()).thenReturn(new Entry<>("key1", "value1"));
 
         final ArrayList<SegmentId> tst = new ArrayList<SegmentId>();
         tst.add(SEGMENT_ID_17);
@@ -66,9 +66,9 @@ class SegmentsIteratorTest {
         try (SegmentsIterator<String, String> iterator = new SegmentsIterator<>(
                 tst, segmentRegistry)) {
             assertTrue(iterator.hasNext());
-            final Pair<String, String> pair1 = iterator.next();
-            assertEquals("key1", pair1.getKey());
-            assertEquals("value1", pair1.getValue());
+            final Entry<String, String> entry1 = iterator.next();
+            assertEquals("key1", entry1.getKey());
+            assertEquals("value1", entry1.getValue());
 
             assertFalse(iterator.hasNext());
             assertFalse(iterator.hasNext());
@@ -79,14 +79,14 @@ class SegmentsIteratorTest {
     @Test
     void test_segments_are_two() {
         when(segmentRegistry.getSegment(SEGMENT_ID_17)).thenReturn(segment17);
-        when(segment17.openIterator()).thenReturn(pairIterator17);
-        when(pairIterator17.hasNext()).thenReturn(true, false);
-        when(pairIterator17.next()).thenReturn(new Pair<>("key1", "value1"));
+        when(segment17.openIterator()).thenReturn(entryIterator17);
+        when(entryIterator17.hasNext()).thenReturn(true, false);
+        when(entryIterator17.next()).thenReturn(new Entry<>("key1", "value1"));
 
         when(segmentRegistry.getSegment(SEGMENT_ID_23)).thenReturn(segment23);
-        when(segment23.openIterator()).thenReturn(pairIterator23);
-        when(pairIterator23.hasNext()).thenReturn(true, false);
-        when(pairIterator23.next()).thenReturn(new Pair<>("key2", "value2"));
+        when(segment23.openIterator()).thenReturn(entryIterator23);
+        when(entryIterator23.hasNext()).thenReturn(true, false);
+        when(entryIterator23.next()).thenReturn(new Entry<>("key2", "value2"));
 
         final ArrayList<SegmentId> tst = new ArrayList<SegmentId>();
         tst.add(SEGMENT_ID_17);
@@ -95,14 +95,14 @@ class SegmentsIteratorTest {
         try (SegmentsIterator<String, String> iterator = new SegmentsIterator<>(
                 tst, segmentRegistry)) {
             assertTrue(iterator.hasNext());
-            final Pair<String, String> pair1 = iterator.next();
-            assertEquals("key1", pair1.getKey());
-            assertEquals("value1", pair1.getValue());
+            final Entry<String, String> entry1 = iterator.next();
+            assertEquals("key1", entry1.getKey());
+            assertEquals("value1", entry1.getValue());
 
             assertTrue(iterator.hasNext());
-            final Pair<String, String> pair2 = iterator.next();
-            assertEquals("key2", pair2.getKey());
-            assertEquals("value2", pair2.getValue());
+            final Entry<String, String> entry2 = iterator.next();
+            assertEquals("key2", entry2.getKey());
+            assertEquals("value2", entry2.getValue());
 
             assertFalse(iterator.hasNext());
             assertFalse(iterator.hasNext());
@@ -113,7 +113,7 @@ class SegmentsIteratorTest {
     @Test
     void testClose() {
         when(segmentRegistry.getSegment(SEGMENT_ID_17)).thenReturn(segment17);
-        when(segment17.openIterator()).thenReturn(pairIterator17);
+        when(segment17.openIterator()).thenReturn(entryIterator17);
 
         final ArrayList<SegmentId> tst = new ArrayList<SegmentId>();
         tst.add(SEGMENT_ID_17);
@@ -122,14 +122,14 @@ class SegmentsIteratorTest {
                 segmentRegistry);
         iterator.close();
 
-        verify(pairIterator17, atLeastOnce()).close();
+        verify(entryIterator17, atLeastOnce()).close();
         assertFalse(iterator.hasNext());
     }
 
     @Test
     void test_close_does_throw_when_already_closed() {
         when(segmentRegistry.getSegment(SEGMENT_ID_17)).thenReturn(segment17);
-        when(segment17.openIterator()).thenReturn(pairIterator17);
+        when(segment17.openIterator()).thenReturn(entryIterator17);
 
         final ArrayList<SegmentId> ids = new ArrayList<>();
         ids.add(SEGMENT_ID_17);
@@ -144,9 +144,9 @@ class SegmentsIteratorTest {
     @Test
     void test_make_sure_that_lastSegmentIterator_in_not_closed_double_time() {
         when(segmentRegistry.getSegment(SEGMENT_ID_17)).thenReturn(segment17);
-        when(segment17.openIterator()).thenReturn(pairIterator17);
-        when(pairIterator17.hasNext()).thenReturn(true, false);
-        when(pairIterator17.next()).thenReturn(new Pair<>("key1", "value1"));
+        when(segment17.openIterator()).thenReturn(entryIterator17);
+        when(entryIterator17.hasNext()).thenReturn(true, false);
+        when(entryIterator17.next()).thenReturn(new Entry<>("key1", "value1"));
 
         final ArrayList<SegmentId> ids = new ArrayList<>();
         ids.add(SEGMENT_ID_17);
@@ -157,7 +157,7 @@ class SegmentsIteratorTest {
         iterator.next();
         iterator.close();
 
-        verify(pairIterator17, times(1)).close();
+        verify(entryIterator17, times(1)).close();
     }
 
 }

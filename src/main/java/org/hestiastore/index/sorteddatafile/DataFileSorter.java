@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.hestiastore.index.FileNameUtil;
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
-import org.hestiastore.index.PairIteratorWithCurrent;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.UniqueCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -72,10 +72,10 @@ public class DataFileSorter<K, V> {
         final UniqueCache<K, V> cache = new UniqueCache<>(
                 keyTypeDescriptor.getComparator());
         int chunkCount = 0;
-        try (PairIterator<K, V> iterator = unsortedDataFile.openIterator()) {
+        try (EntryIterator<K, V> iterator = unsortedDataFile.openIterator()) {
             while (iterator.hasNext()) {
-                final Pair<K, V> pair = iterator.next();
-                cache.put(pair);
+                final Entry<K, V> entry = iterator.next();
+                cache.put(entry);
                 if (cache.size() >= maxNumberOfKeysInMemory) {
                     writeChunkToFile(cache, ROUND_ZERO, chunkCount);
                     cache.clear();
@@ -94,7 +94,7 @@ public class DataFileSorter<K, V> {
             final int round, final int chunkCount) {
         final SortedDataFile<K, V> chunkFile = getChunkFile(round, chunkCount);
         chunkFile.openWriterTx().execute(writer -> {
-            cache.getAsSortedList().forEach(pair -> writer.write(pair));
+            cache.getAsSortedList().forEach(entry -> writer.write(entry));
         });
     }
 
@@ -128,7 +128,7 @@ public class DataFileSorter<K, V> {
 
     private void mergeIndexFiles(final int round, final int fromFileIndex,
             final int toFileIndex, SortedDataFile<K, V> targetFile) {
-        final List<PairIteratorWithCurrent<K, V>> chunkFiles = new ArrayList<>(
+        final List<EntryIteratorWithCurrent<K, V>> chunkFiles = new ArrayList<>(
                 toFileIndex - fromFileIndex);
         for (int i = fromFileIndex; i < toFileIndex; i++) {
             chunkFiles.add(getChunkFile(round, i).openIterator());
@@ -140,15 +140,15 @@ public class DataFileSorter<K, V> {
     }
 
     private void mergeFiles(
-            final List<PairIteratorWithCurrent<K, V>> chunkFiles,
+            final List<EntryIteratorWithCurrent<K, V>> chunkFiles,
             SortedDataFile<K, V> targetFile) {
-        try (MergedPairIterator<K, V> iterator = new MergedPairIterator<>(
+        try (MergedEntryIterator<K, V> iterator = new MergedEntryIterator<>(
                 chunkFiles, keyTypeDescriptor.getComparator(), merger)) {
             targetFile.openWriterTx().execute(writer -> {
-                Pair<K, V> pair = null;
+                Entry<K, V> entry = null;
                 while (iterator.hasNext()) {
-                    pair = iterator.next();
-                    writer.write(pair);
+                    entry = iterator.next();
+                    writer.write(entry);
                 }
             });
         }

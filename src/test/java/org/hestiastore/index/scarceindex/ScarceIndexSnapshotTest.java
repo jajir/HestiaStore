@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.Comparator;
 import java.util.List;
 
-import org.hestiastore.index.Pair;
+import org.hestiastore.index.Entry;
 import org.junit.jupiter.api.Test;
 
 class ScarceIndexSnapshotTest {
@@ -18,7 +18,7 @@ class ScarceIndexSnapshotTest {
     @Test
     void test_findSegmentId_returnsMatchingValue() {
         final ScarceIndexSnapshot<String> snapshot = snapshot(List
-                .of(Pair.of("bbb", 1), Pair.of("ccc", 2), Pair.of("ddd", 3)));
+                .of(Entry.of("bbb", 1), Entry.of("ccc", 2), Entry.of("ddd", 3)));
 
         assertEquals(1, snapshot.findSegmentId("bbb"));
         assertEquals(2, snapshot.findSegmentId("ccc"));
@@ -29,7 +29,7 @@ class ScarceIndexSnapshotTest {
     @Test
     void test_findSegmentId_outOfRange() {
         final ScarceIndexSnapshot<String> snapshot = snapshot(
-                List.of(Pair.of("bbb", 1), Pair.of("ccc", 2)));
+                List.of(Entry.of("bbb", 1), Entry.of("ccc", 2)));
 
         assertEquals(1, snapshot.findSegmentId("aaa"));
         assertNull(snapshot.findSegmentId("ddd"));
@@ -54,14 +54,14 @@ class ScarceIndexSnapshotTest {
     @Test
     void test_findSegmentId_nullKey() {
         final ScarceIndexSnapshot<String> snapshot = snapshot(
-                List.of(Pair.of("bbb", 1)));
+                List.of(Entry.of("bbb", 1)));
 
         assertThrows(IllegalArgumentException.class,
                 () -> snapshot.findSegmentId(null));
     }
 
     private ScarceIndexSnapshot<String> snapshot(
-            final List<Pair<String, Integer>> entries) {
+            final List<Entry<String, Integer>> entries) {
         return new ScarceIndexSnapshot<>(COMPARATOR, entries);
     }
 

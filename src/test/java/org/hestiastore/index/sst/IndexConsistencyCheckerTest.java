@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.Pair;
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.segment.Segment;
@@ -36,7 +36,7 @@ class IndexConsistencyCheckerTest {
     @Mock
     private Segment<Integer, String> segment;
 
-    private Pair<Integer, SegmentId> segmentPair;
+    private Entry<Integer, SegmentId> segmentPair;
 
     private IndexConsistencyChecker<Integer, String> checker;
 
@@ -68,7 +68,7 @@ class IndexConsistencyCheckerTest {
     @Test
     void test_oneSegment_segmentKey_is_null() {
         when(keySegmentCache.getSegmentsAsStream())
-                .thenReturn(Stream.of(Pair.of(null, SEGMENT_ID)));
+                .thenReturn(Stream.of(Entry.of(null, SEGMENT_ID)));
 
         final Exception e = assertThrows(IndexException.class,
                 () -> checker.checkAndRepairConsistency());
@@ -82,7 +82,7 @@ class IndexConsistencyCheckerTest {
     @Test
     void test_oneSegment_segmentId_is_null() {
         when(keySegmentCache.getSegmentsAsStream())
-                .thenReturn(Stream.of(Pair.of(SEGMENT_MAX_KEY, null)));
+                .thenReturn(Stream.of(Entry.of(SEGMENT_MAX_KEY, null)));
 
         final Exception e = assertThrows(IndexException.class,
                 () -> checker.checkAndRepairConsistency());
@@ -145,7 +145,7 @@ class IndexConsistencyCheckerTest {
     void setUp() {
         checker = new IndexConsistencyChecker<>(keySegmentCache,
                 segmentRegistry, TYPE_DESCRIPTOR_INTEGER);
-        segmentPair = Pair.of(SEGMENT_MAX_KEY, SEGMENT_ID);
+        segmentPair = Entry.of(SEGMENT_MAX_KEY, SEGMENT_ID);
     }
 
     @AfterEach

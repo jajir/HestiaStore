@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
@@ -22,15 +22,15 @@ import org.slf4j.LoggerFactory;
  * @param <V>
  */
 class SegmentsIterator<K, V> extends AbstractCloseableResource
-        implements PairIterator<K, V> {
+        implements EntryIterator<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final SegmentRegistry<K, V> segmentRegistry;
     private final List<SegmentId> ids;
-    private Pair<K, V> currentPair = null;
-    private Pair<K, V> nextPair = null;
-    private PairIterator<K, V> currentIterator = null;
+    private Entry<K, V> currentEntry = null;
+    private Entry<K, V> nextEntry = null;
+    private EntryIterator<K, V> currentIterator = null;
 
     private int position = 0;
 
@@ -55,29 +55,29 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
             final Segment<K, V> segment = segmentRegistry.getSegment(segmentId);
             currentIterator = segment.openIterator();
             if (currentIterator.hasNext()) {
-                nextPair = currentIterator.next();
+                nextEntry = currentIterator.next();
             }
         }
     }
 
     @Override
     public boolean hasNext() {
-        return nextPair != null;
+        return nextEntry != null;
     }
 
     @Override
-    public Pair<K, V> next() {
-        if (nextPair == null) {
+    public Entry<K, V> next() {
+        if (nextEntry == null) {
             throw new NoSuchElementException("There no next element.");
         }
-        currentPair = nextPair;
-        nextPair = null;
+        currentEntry = nextEntry;
+        nextEntry = null;
         if (currentIterator.hasNext()) {
-            nextPair = currentIterator.next();
+            nextEntry = currentIterator.next();
         } else {
             nextSegmentIterator();
         }
-        return currentPair;
+        return currentEntry;
     }
 
     @Override
@@ -86,7 +86,7 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
             currentIterator.close();
         }
         currentIterator = null;
-        nextPair = null;
+        nextEntry = null;
     }
 
 }

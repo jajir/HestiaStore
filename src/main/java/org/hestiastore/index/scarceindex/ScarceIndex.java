@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -31,9 +31,9 @@ import org.slf4j.LoggerFactory;
  * <li>last key - higher key in main index file</li>
  * </ul>
  * 
- * Index contains no key value pairs when main index is empty. Index contains
- * one key value pair when main index contains just one key value pair. In all
- * other cases scarce index contain more than one key value pairs.
+ * Index contains no key value entries when main index is empty. Index contains
+ * one key value entry when main index contains just one key value entry. In all
+ * other cases scarce index contain more than one key value entries.
  * 
  */
 public class ScarceIndex<K> {
@@ -79,14 +79,14 @@ public class ScarceIndex<K> {
         loadCache();
     }
 
-    private final List<Pair<K, Integer>> loadCacheEntries() {
-        final List<Pair<K, Integer>> entries = new ArrayList<>();
+    private final List<Entry<K, Integer>> loadCacheEntries() {
+        final List<Entry<K, Integer>> entries = new ArrayList<>();
         if (directory.isFileExists(fileName)) {
-            try (PairIterator<K, Integer> pairIterator = sortedDataFile
+            try (EntryIterator<K, Integer> entryIterator = sortedDataFile
                     .openIterator()) {
-                while (pairIterator.hasNext()) {
-                    final Pair<K, Integer> pair = pairIterator.next();
-                    entries.add(pair);
+                while (entryIterator.hasNext()) {
+                    final Entry<K, Integer> entry = entryIterator.next();
+                    entries.add(entry);
                 }
             }
         }

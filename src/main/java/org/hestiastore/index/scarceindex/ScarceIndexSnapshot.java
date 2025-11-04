@@ -4,7 +4,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 
-import org.hestiastore.index.Pair;
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
 
 /**
@@ -15,10 +15,10 @@ import org.hestiastore.index.Vldtn;
 final class ScarceIndexSnapshot<K> {
 
     private final Comparator<K> comparator;
-    private final List<Pair<K, Integer>> entries;
+    private final List<Entry<K, Integer>> entries;
 
     ScarceIndexSnapshot(final Comparator<K> comparator,
-            final List<Pair<K, Integer>> entries) {
+            final List<Entry<K, Integer>> entries) {
         this.comparator = Vldtn.requireNonNull(comparator, "comparator");
         Vldtn.requireNonNull(entries, "entries");
         this.entries = List.copyOf(entries);
@@ -42,7 +42,7 @@ final class ScarceIndexSnapshot<K> {
         return entries.get(entries.size() - 1).getKey();
     }
 
-    Stream<Pair<K, Integer>> getSegments() {
+    Stream<Entry<K, Integer>> getSegments() {
         return entries.stream();
     }
 
@@ -55,7 +55,7 @@ final class ScarceIndexSnapshot<K> {
                 entries.get(entries.size() - 1).getKey()) > 0) {
             return null;
         }
-        for (final Pair<K, Integer> entry : entries) {
+        for (final Entry<K, Integer> entry : entries) {
             if (comparator.compare(key, entry.getKey()) <= 0) {
                 return entry.getValue();
             }
@@ -63,7 +63,7 @@ final class ScarceIndexSnapshot<K> {
         return null;
     }
 
-    List<Pair<K, Integer>> entries() {
+    List<Entry<K, Integer>> entries() {
         return entries;
     }
 

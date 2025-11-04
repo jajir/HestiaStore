@@ -3,10 +3,10 @@ package org.hestiastore.index.unsorteddatafile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
-import org.hestiastore.index.PairIteratorStreamer;
-import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.EntryIteratorStreamer;
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -39,24 +39,24 @@ class IntegrationUnsortedDataFileTest {
 
         final UnsortedDataFileWriterTx<Integer, String> writerTx = unsorted
                 .openWriterTx();
-        try (PairWriter<Integer, String> writer = writerTx.open()) {
-            writer.write(Pair.of(4, "here"));
-            writer.write(Pair.of(-12, "we"));
-            writer.write(Pair.of(98, "go"));
+        try (EntryWriter<Integer, String> writer = writerTx.open()) {
+            writer.write(Entry.of(4, "here"));
+            writer.write(Entry.of(-12, "we"));
+            writer.write(Entry.of(98, "go"));
         }
         writerTx.commit();
 
-        try (PairIterator<Integer, String> reader = unsorted.openIterator()) {
+        try (EntryIterator<Integer, String> reader = unsorted.openIterator()) {
             while (reader.hasNext()) {
-                final Pair<Integer, String> current = reader.next();
+                final Entry<Integer, String> current = reader.next();
                 logger.debug(current.toString());
             }
         }
 
-        try (PairIteratorStreamer<Integer, String> streamer = unsorted
+        try (EntryIteratorStreamer<Integer, String> streamer = unsorted
                 .openStreamer()) {
-            streamer.stream().forEach(pair -> {
-                logger.debug(pair.toString());
+            streamer.stream().forEach(entry -> {
+                logger.debug(entry.toString());
             });
         }
     }
@@ -74,7 +74,7 @@ class IntegrationUnsortedDataFileTest {
                 .build();
         assertNotNull(unsorted);
 
-        try (PairIteratorStreamer<Integer, String> streamer = unsorted
+        try (EntryIteratorStreamer<Integer, String> streamer = unsorted
                 .openStreamer()) {
             final long count = streamer.stream().count();
             assertEquals(0, count);

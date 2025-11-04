@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
-import org.hestiastore.index.Pair;
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.NullValue;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -25,16 +25,16 @@ class IntegrationIndexIteratorTest {
             .getLogger(IntegrationIndexIteratorTest.class);
 
     private final Directory directory = new MemDirectory();
-    private final List<Pair<Integer, String>> data = List.of(Pair.of(1, "bbb"),
-            Pair.of(2, "ccc"), Pair.of(3, "dde"), Pair.of(4, "ddf"),
-            Pair.of(5, "ddg"), Pair.of(6, "ddh"), Pair.of(7, "ddi"),
-            Pair.of(8, "ddj"), Pair.of(9, "ddk"), Pair.of(10, "ddl"),
-            Pair.of(11, "ddm"));
-    private final List<Pair<Integer, NullValue>> data2 = List.of(
-            Pair.of(1, NULL), Pair.of(2, NULL), Pair.of(3, NULL),
-            Pair.of(4, NULL), Pair.of(5, NULL), Pair.of(6, NULL),
-            Pair.of(7, NULL), Pair.of(8, NULL), Pair.of(9, NULL),
-            Pair.of(10, NULL), Pair.of(11, NULL));
+    private final List<Entry<Integer, String>> data = List.of(Entry.of(1, "bbb"),
+            Entry.of(2, "ccc"), Entry.of(3, "dde"), Entry.of(4, "ddf"),
+            Entry.of(5, "ddg"), Entry.of(6, "ddh"), Entry.of(7, "ddi"),
+            Entry.of(8, "ddj"), Entry.of(9, "ddk"), Entry.of(10, "ddl"),
+            Entry.of(11, "ddm"));
+    private final List<Entry<Integer, NullValue>> data2 = List.of(
+            Entry.of(1, NULL), Entry.of(2, NULL), Entry.of(3, NULL),
+            Entry.of(4, NULL), Entry.of(5, NULL), Entry.of(6, NULL),
+            Entry.of(7, NULL), Entry.of(8, NULL), Entry.of(9, NULL),
+            Entry.of(10, NULL), Entry.of(11, NULL));
 
     @Test
     void test_simple_index_building() {
@@ -88,8 +88,8 @@ class IntegrationIndexIteratorTest {
         index1.compact();
         logger.debug("verify that after that point no segment "
                 + "is loaded into memory.");
-        index1.getStream(SegmentWindow.unbounded()).forEach(pair -> {
-            assertTrue(data.contains(pair));
+        index1.getStream(SegmentWindow.unbounded()).forEach(entry -> {
+            assertTrue(data.contains(entry));
         });
 
         assertEquals(data.size(),

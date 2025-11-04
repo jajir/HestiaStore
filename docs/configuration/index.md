@@ -84,7 +84,7 @@ Type descriptor for the value class. Required for non-default types.
 
 ### Max number of keys in cache - `withMaxNumberOfKeysInCache()`
 
-Sets the maximum number of key-value pairs allowed in the in-memory cache before flushing.
+Sets the maximum number of key-value entries allowed in the in-memory cache before flushing.
 
 ### Max number of segments in cache - `withMaxNumberOfSegmentsInCache()`
 

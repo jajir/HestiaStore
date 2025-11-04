@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import java.io.File;
 
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FsDirectory;
@@ -37,8 +37,8 @@ class SortedDataFileWriterTxTest {
         final SortedDataFileWriterTx<String, String> tx = new SortedDataFileWriterTx<>(
                 fileName, dir, bufferSize, td, td);
 
-        try (final PairWriter<String, String> w = tx.open()) {
-            w.write(Pair.of("K", "V"));
+        try (final EntryWriter<String, String> w = tx.open()) {
+            w.write(Entry.of("K", "V"));
         }
 
         // This currently fails because tmp file was never created.

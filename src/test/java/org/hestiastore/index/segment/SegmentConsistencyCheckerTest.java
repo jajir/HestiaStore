@@ -6,8 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.junit.jupiter.api.AfterEach;
@@ -22,15 +22,15 @@ class SegmentConsistencyCheckerTest {
 
     private static final SegmentId SEGMENT_ID = SegmentId.of(13);
     private static final TypeDescriptor<Integer> TYPE_DESCRIPTOR_INTEGER = new TypeDescriptorInteger();
-    private static final Pair<Integer, String> PAIR1 = Pair.of(1, "a");
-    private static final Pair<Integer, String> PAIR2 = Pair.of(2, "b");
-    private static final Pair<Integer, String> PAIR3 = Pair.of(3, "c");
+    private static final Entry<Integer, String> ENTRY1 = Entry.of(1, "a");
+    private static final Entry<Integer, String> ENTRY2 = Entry.of(2, "b");
+    private static final Entry<Integer, String> ENTRY3 = Entry.of(3, "c");
 
     @Mock
     private SegmentImpl<Integer, String> segment;
 
     @Mock
-    private PairIterator<Integer, String> iterator;
+    private EntryIterator<Integer, String> iterator;
 
     private SegmentConsistencyChecker<Integer, String> checker;
 
@@ -49,8 +49,8 @@ class SegmentConsistencyCheckerTest {
         when(segment.openIterator()).thenReturn(iterator);
         when(segment.getId()).thenReturn(SEGMENT_ID);
         when(iterator.hasNext()).thenReturn(true, true, true, false);
-        when(iterator.next()).thenReturn(PAIR1).thenReturn(PAIR2)
-                .thenReturn(PAIR3);
+        when(iterator.next()).thenReturn(ENTRY1).thenReturn(ENTRY2)
+                .thenReturn(ENTRY3);
 
         final Integer lastKey = checker.checkAndRepairConsistency();
         assertEquals(3, lastKey);
@@ -61,8 +61,8 @@ class SegmentConsistencyCheckerTest {
         when(segment.openIterator()).thenReturn(iterator);
         when(segment.getId()).thenReturn(SEGMENT_ID);
         when(iterator.hasNext()).thenReturn(true, true, true, false);
-        when(iterator.next()).thenReturn(PAIR1).thenReturn(PAIR3)
-                .thenReturn(PAIR3);
+        when(iterator.next()).thenReturn(ENTRY1).thenReturn(ENTRY3)
+                .thenReturn(ENTRY3);
 
         final Exception e = assertThrows(IndexException.class,
                 () -> checker.checkAndRepairConsistency());
@@ -78,8 +78,8 @@ class SegmentConsistencyCheckerTest {
         when(segment.openIterator()).thenReturn(iterator);
         when(segment.getId()).thenReturn(SEGMENT_ID);
         when(iterator.hasNext()).thenReturn(true, true, true, false);
-        when(iterator.next()).thenReturn(PAIR1).thenReturn(PAIR3)
-                .thenReturn(PAIR2);
+        when(iterator.next()).thenReturn(ENTRY1).thenReturn(ENTRY3)
+                .thenReturn(ENTRY2);
 
         final Exception e = assertThrows(IndexException.class,
                 () -> checker.checkAndRepairConsistency());

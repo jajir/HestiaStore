@@ -7,8 +7,8 @@ import java.util.NoSuchElementException;
 import java.util.function.Function;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 
@@ -23,13 +23,13 @@ import org.hestiastore.index.datatype.TypeDescriptor;
  * @param <V>
  */
 public class MergeWithCacheIterator<K, V> extends AbstractCloseableResource
-        implements PairIterator<K, V> {
+        implements EntryIterator<K, V> {
 
     /**
      * Iterator contains main data with deleted items. Can't contains
      * tombstones.
      */
-    private final PairIterator<K, V> mainIterator;
+    private final EntryIterator<K, V> mainIterator;
 
     /**
      * Cached data iterator. Can contains tombstones.
@@ -42,11 +42,11 @@ public class MergeWithCacheIterator<K, V> extends AbstractCloseableResource
 
     private final Function<K, V> cacheValueGetter;
 
-    private Pair<K, V> currentPair = null;
-    private Pair<K, V> nextMainPair = null;
+    private Entry<K, V> currentEntry = null;
+    private Entry<K, V> nextMainPair = null;
     private K nextCacheKey = null;
 
-    public MergeWithCacheIterator(final PairIterator<K, V> mainIterator,
+    public MergeWithCacheIterator(final EntryIterator<K, V> mainIterator,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final List<K> sortedKeysFromCache,
@@ -73,35 +73,35 @@ public class MergeWithCacheIterator<K, V> extends AbstractCloseableResource
     }
 
     @Override
-    public Pair<K, V> next() {
+    public Entry<K, V> next() {
         if (nextMainPair == null) {
             if (nextCacheKey == null) {
                 throw new NoSuchElementException("There no next element.");
             } else {
-                currentPair = nextCacheIterator();
+                currentEntry = nextCacheIterator();
                 tryToremoveTombstone();
             }
         } else {
             if (nextCacheKey == null) {
-                currentPair = nextMainIterator();
+                currentEntry = nextMainIterator();
                 tryToremoveTombstone();
             } else {
                 // both next elements exists
-                currentPair = nextBothIterators();
+                currentEntry = nextBothIterators();
             }
         }
-        return currentPair;
+        return currentEntry;
     }
 
-    private Pair<K, V> nextBothIterators() {
+    private Entry<K, V> nextBothIterators() {
         final int cmp = keyComparator.compare(nextMainPair.getKey(),
                 nextCacheKey);
         if (cmp < 0) {
-            Pair<K, V> out = nextMainIterator();
+            Entry<K, V> out = nextMainIterator();
             tryToremoveTombstone();
             return out;
         } else if (cmp == 0) {
-            final Pair<K, V> nextCachePair = getCachedPair(nextCacheKey);
+            final Entry<K, V> nextCachePair = getCachedPair(nextCacheKey);
             if (valueTypeDescriptor.isTombstone(nextCachePair.getValue())) {
                 nextMainIterator();
                 nextCacheIterator();
@@ -114,15 +114,15 @@ public class MergeWithCacheIterator<K, V> extends AbstractCloseableResource
             nextCacheIterator();
             tryToremoveTombstone();
         } else {
-            Pair<K, V> out = nextCacheIterator();
+            Entry<K, V> out = nextCacheIterator();
             tryToremoveTombstone();
             return out;
         }
-        return currentPair;
+        return currentEntry;
     }
 
-    private Pair<K, V> nextMainIterator() {
-        final Pair<K, V> outPair = nextMainPair;
+    private Entry<K, V> nextMainIterator() {
+        final Entry<K, V> outPair = nextMainPair;
         if (mainIterator.hasNext()) {
             nextMainPair = mainIterator.next();
         } else {
@@ -131,8 +131,8 @@ public class MergeWithCacheIterator<K, V> extends AbstractCloseableResource
         return outPair;
     }
 
-    private Pair<K, V> nextCacheIterator() {
-        final Pair<K, V> outPair = nextCacheKey == null ? null
+    private Entry<K, V> nextCacheIterator() {
+        final Entry<K, V> outPair = nextCacheKey == null ? null
                 : getCachedPair(nextCacheKey);
         if (cacheKeyIterator.hasNext()) {
             nextCacheKey = cacheKeyIterator.next();
@@ -146,7 +146,7 @@ public class MergeWithCacheIterator<K, V> extends AbstractCloseableResource
         if (nextCacheKey == null) {
             return;
         }
-        final Pair<K, V> nextCachePair = getCachedPair(nextCacheKey);
+        final Entry<K, V> nextCachePair = getCachedPair(nextCacheKey);
         if (nextMainPair == null) {
             if (valueTypeDescriptor.isTombstone(nextCachePair.getValue())) {
                 nextCacheIterator();
@@ -167,9 +167,9 @@ public class MergeWithCacheIterator<K, V> extends AbstractCloseableResource
         }
     }
 
-    private Pair<K, V> getCachedPair(final K cachedKey) {
+    private Entry<K, V> getCachedPair(final K cachedKey) {
         final V value = cacheValueGetter.apply(cachedKey);
-        return Pair.of(cachedKey, value);
+        return Entry.of(cachedKey, value);
     }
 
     @Override

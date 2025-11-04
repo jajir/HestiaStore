@@ -18,45 +18,45 @@ import org.hestiastore.index.segment.Segment;
 public abstract class AbstractDataTest {
 
     /**
-     * Convert pair iterator data to list
+     * Convert entry iterator data to list
      * 
      * @param <M>      key type
      * @param <N>      value type
      * @param iterator
-     * @returnlist of pairs with data from list
+     * @returnlist of entries with data from list
      */
-    protected <M, N> List<Pair<M, N>> toList(
-            final Stream<Pair<M, N>> iterator) {
-        final ArrayList<Pair<M, N>> out = new ArrayList<>();
-        iterator.forEach(pair -> out.add(pair));
+    protected <M, N> List<Entry<M, N>> toList(
+            final Stream<Entry<M, N>> iterator) {
+        final ArrayList<Entry<M, N>> out = new ArrayList<>();
+        iterator.forEach(entry -> out.add(entry));
         return out;
     }
 
     /**
-     * Compare two key value pairs.
+     * Compare two key value entries.
      * 
-     * @param expectedPair expected pair
-     * @param pair         verified pair
+     * @param expectedPair expected entry
+     * @param entry         verified entry
      */
-    protected void verifyEquals(final Pair<String, Integer> expectedPair,
-            final Pair<String, Integer> pair) {
+    protected void verifyEquals(final Entry<String, Integer> expectedPair,
+            final Entry<String, Integer> entry) {
         assertNotNull(expectedPair);
-        assertNotNull(pair);
-        assertEquals(expectedPair.getKey(), pair.getKey());
-        assertEquals(expectedPair.getValue(), pair.getValue());
+        assertNotNull(entry);
+        assertEquals(expectedPair.getKey(), entry.getKey());
+        assertEquals(expectedPair.getValue(), entry.getValue());
     }
 
     /**
-     * Convert pair iterator data to list
+     * Convert entry iterator data to list
      * 
      * @param <M>      key type
      * @param <N>      value type
      * @param iterator
-     * @returnlist of pairs with data from list
+     * @returnlist of entries with data from list
      */
-    protected static <M, N> List<Pair<M, N>> toList(
-            final PairIterator<M, N> iterator) {
-        final ArrayList<Pair<M, N>> out = new ArrayList<>();
+    protected static <M, N> List<Entry<M, N>> toList(
+            final EntryIterator<M, N> iterator) {
+        final ArrayList<Entry<M, N>> out = new ArrayList<>();
         while (iterator.hasNext()) {
             out.add(iterator.next());
         }
@@ -69,17 +69,17 @@ public abstract class AbstractDataTest {
      * 
      * @param <M>          key type
      * @param <N>          value type
-     * @param pairs        required list of expected data in segment
-     * @param pairIterator required pair iterator
+     * @param entries        required list of expected data in segment
+     * @param entryIterator required entry iterator
      */
-    public static <M, N> void verifyIteratorData(final List<Pair<M, N>> pairs,
-            final PairIterator<M, N> pairIterator) {
-        final List<Pair<M, N>> data = toList(pairIterator);
-        assertEquals(pairs.size(), data.size(),
+    public static <M, N> void verifyIteratorData(final List<Entry<M, N>> entries,
+            final EntryIterator<M, N> entryIterator) {
+        final List<Entry<M, N>> data = toList(entryIterator);
+        assertEquals(entries.size(), data.size(),
                 "Unexpected iterator data size");
-        for (int i = 0; i < pairs.size(); i++) {
-            final Pair<M, N> expectedPair = pairs.get(i);
-            final Pair<M, N> realPair = data.get(i);
+        for (int i = 0; i < entries.size(); i++) {
+            final Entry<M, N> expectedPair = entries.get(i);
+            final Entry<M, N> realPair = data.get(i);
             assertEquals(expectedPair, realPair);
         }
     }
@@ -88,12 +88,12 @@ public abstract class AbstractDataTest {
      * Convert segment data to list.
      * 
      * @param segment required segment
-     * @return list of pairs with data from segment
+     * @return list of entries with data from segment
      */
-    public static List<Pair<Integer, String>> segmentToList(
+    public static List<Entry<Integer, String>> segmentToList(
             final Segment<Integer, String> segment) {
-        try (PairIterator<Integer, String> iterator = segment.openIterator()) {
-            final List<Pair<Integer, String>> out = new ArrayList<>();
+        try (EntryIterator<Integer, String> iterator = segment.openIterator()) {
+            final List<Entry<Integer, String>> out = new ArrayList<>();
             iterator.forEachRemaining(out::add);
             return out;
         }

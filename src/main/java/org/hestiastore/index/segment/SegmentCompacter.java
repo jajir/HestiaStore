@@ -1,7 +1,7 @@
 package org.hestiastore.index.segment;
 
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,11 +42,11 @@ public final class SegmentCompacter<K, V> {
         logger.debug("Start of compacting '{}'", segmentFiles.getId());
         versionController.changeVersion();
         segment.executeFullWriteTx(writer -> {
-            try (PairIterator<K, V> iterator = segment.openIterator()) {
-                Pair<K, V> pair;
+            try (EntryIterator<K, V> iterator = segment.openIterator()) {
+                Entry<K, V> entry;
                 while (iterator.hasNext()) {
-                    pair = iterator.next();
-                    writer.write(pair);
+                    entry = iterator.next();
+                    writer.write(entry);
                 }
             }
         });

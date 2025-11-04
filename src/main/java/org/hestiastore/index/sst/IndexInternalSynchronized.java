@@ -4,9 +4,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
-import org.hestiastore.index.PairIteratorStreamer;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.EntryIteratorStreamer;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.log.Log;
@@ -74,15 +74,15 @@ public class IndexInternalSynchronized<K, V> extends SstIndexImpl<K, V> {
     }
 
     @Override
-    public Stream<Pair<K, V>> getStream(SegmentWindow segmentWindow) {
+    public Stream<Entry<K, V>> getStream(SegmentWindow segmentWindow) {
         lock.lock();
         try {
             indexState.tryPerformOperation();
-            final PairIterator<K, V> iterator = openSegmentIterator(
+            final EntryIterator<K, V> iterator = openSegmentIterator(
                     segmentWindow);
-            final PairIterator<K, V> synchronizedIterator = new PairIteratorSynchronized<>(
+            final EntryIterator<K, V> synchronizedIterator = new EntryIteratorSynchronized<>(
                     iterator, lock);
-            final PairIteratorToSpliterator<K, V> spliterator = new PairIteratorToSpliterator<K, V>(
+            final EntryIteratorToSpliterator<K, V> spliterator = new EntryIteratorToSpliterator<K, V>(
                     synchronizedIterator, keyTypeDescriptor);
             return StreamSupport.stream(spliterator, false).onClose(() -> {
                 iterator.close();
@@ -93,7 +93,7 @@ public class IndexInternalSynchronized<K, V> extends SstIndexImpl<K, V> {
     }
 
     @Override
-    public PairIteratorStreamer<LoggedKey<K>, V> getLogStreamer() {
+    public EntryIteratorStreamer<LoggedKey<K>, V> getLogStreamer() {
         lock.lock();
         try {
             return super.getLogStreamer();

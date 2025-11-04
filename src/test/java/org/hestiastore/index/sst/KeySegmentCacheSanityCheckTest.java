@@ -2,7 +2,7 @@ package org.hestiastore.index.sst;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.hestiastore.index.Pair;
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
@@ -27,12 +27,12 @@ class KeySegmentCacheSanityCheckTest {
                 directory, "index.map", stringTd, integerTd, 1024);
 
         sdf.openWriterTx().execute(writer -> {
-            writer.write(Pair.of("aaa", SegmentId.of(1)));
-            writer.write(Pair.of("bbb", SegmentId.of(2)));
-            writer.write(Pair.of("ccc", SegmentId.of(3)));
-            writer.write(Pair.of("ddd", SegmentId.of(4)));
-            writer.write(Pair.of("eee", SegmentId.of(5)));
-            writer.write(Pair.of("fff", SegmentId.of(3)));
+            writer.write(Entry.of("aaa", SegmentId.of(1)));
+            writer.write(Entry.of("bbb", SegmentId.of(2)));
+            writer.write(Entry.of("ccc", SegmentId.of(3)));
+            writer.write(Entry.of("ddd", SegmentId.of(4)));
+            writer.write(Entry.of("eee", SegmentId.of(5)));
+            writer.write(Entry.of("fff", SegmentId.of(3)));
         });
         assertThrows(IllegalStateException.class, () -> {
             try (KeySegmentCache<String> fif = new KeySegmentCache<>(directory,

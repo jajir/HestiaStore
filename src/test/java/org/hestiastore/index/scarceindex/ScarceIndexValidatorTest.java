@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import org.hestiastore.index.Pair;
+import org.hestiastore.index.Entry;
 import org.junit.jupiter.api.Test;
 
 class ScarceIndexValidatorTest {
@@ -21,7 +21,7 @@ class ScarceIndexValidatorTest {
                 COMPARATOR);
         final ScarceIndexSnapshot<String> snapshot = new ScarceIndexSnapshot<>(
                 COMPARATOR,
-                List.of(Pair.of("a", 1), Pair.of("b", 2), Pair.of("c", 3)));
+                List.of(Entry.of("a", 1), Entry.of("b", 2), Entry.of("c", 3)));
 
         final List<String> messages = new ArrayList<>();
         final boolean result = validator.validate(snapshot, messages::add);
@@ -36,7 +36,7 @@ class ScarceIndexValidatorTest {
                 COMPARATOR);
         final ScarceIndexSnapshot<String> snapshot = new ScarceIndexSnapshot<>(
                 COMPARATOR,
-                List.of(Pair.of("b", 2), Pair.of("a", 3), Pair.of("c", 1)));
+                List.of(Entry.of("b", 2), Entry.of("a", 3), Entry.of("c", 1)));
 
         final List<String> messages = new ArrayList<>();
         final boolean result = validator.validate(snapshot, messages::add);

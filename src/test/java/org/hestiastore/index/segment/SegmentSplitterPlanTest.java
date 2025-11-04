@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
-import org.hestiastore.index.Pair;
+import org.hestiastore.index.Entry;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -40,7 +40,7 @@ class SegmentSplitterPlanTest {
     @Test
     void isLowerSegmentEmpty_after_recordLower_false() {
         final SegmentSplitterPlan<String, String> plan = newPlan();
-        plan.recordLower(Pair.of("k1", "v1"));
+        plan.recordLower(Entry.of("k1", "v1"));
         assertFalse(plan.isLowerSegmentEmpty());
     }
 }

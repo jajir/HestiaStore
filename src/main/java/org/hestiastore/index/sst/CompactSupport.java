@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.hestiastore.index.F;
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segment.Segment;
@@ -17,7 +17,7 @@ public class CompactSupport<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final List<Pair<K, V>> toSameSegment = new ArrayList<>();
+    private final List<Entry<K, V>> toSameSegment = new ArrayList<>();
     private final KeySegmentCache<K> keySegmentCache;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final TypeDescriptor<K> keyTypeDescriptor;
@@ -39,22 +39,22 @@ public class CompactSupport<K, V> {
                 "keyTypeDescriptor");
     }
 
-    public void compact(final Pair<K, V> pair) {
-        Vldtn.requireNonNull(pair, "pair");
-        final K segmentKey = pair.getKey();
+    public void compact(final Entry<K, V> entry) {
+        Vldtn.requireNonNull(entry, "entry");
+        final K segmentKey = entry.getKey();
         final SegmentId segmentId = keySegmentCache
                 .insertKeyToSegment(segmentKey);
         if (currentSegmentId == null) {
             currentSegmentId = segmentId;
-            toSameSegment.add(pair);
+            toSameSegment.add(entry);
             return;
         }
         if (currentSegmentId == segmentId) {
-            toSameSegment.add(pair);
+            toSameSegment.add(entry);
         } else {
             /* Write all keys to index and clean cache and set new pageId */
             flushToCurrentSegment();
-            toSameSegment.add(pair);
+            toSameSegment.add(entry);
             currentSegmentId = segmentId;
         }
     }
@@ -69,17 +69,17 @@ public class CompactSupport<K, V> {
 
     private void flushToCurrentSegment() {
         if (logger.isDebugEnabled()) {
-            logger.debug("Flushing '{}' key value pairs into segment '{}'.",
+            logger.debug("Flushing '{}' key value entries into segment '{}'.",
                     F.fmt(toSameSegment.size()), currentSegmentId);
         }
         final Segment<K, V> segment = segmentRegistry
                 .getSegment(currentSegmentId);
-        try (PairWriter<K, V> writer = segment.openDeltaCacheWriter()) {
+        try (EntryWriter<K, V> writer = segment.openDeltaCacheWriter()) {
             toSameSegment.forEach(writer::write);
         }
         if (KeySegmentCache.FIRST_SEGMENT_ID.equals(currentSegmentId)) {
             // Segment containing highest key.
-            toSameSegment.stream().map(Pair::getKey)
+            toSameSegment.stream().map(Entry::getKey)
                     .max(keyTypeDescriptor.getComparator()).ifPresent(key -> {
                         // Update segment cache with highest key.
                         keySegmentCache.insertKeyToSegment(key);

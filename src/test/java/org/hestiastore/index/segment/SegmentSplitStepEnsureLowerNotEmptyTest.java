@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
-import org.hestiastore.index.Pair;
+import org.hestiastore.index.Entry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -67,7 +67,7 @@ class SegmentSplitStepEnsureLowerNotEmptyTest {
                 () -> step.perform(ctxEmpty, new SegmentSplitState<>()));
 
         final SegmentSplitterPlan<Integer, String> plan = planWithEstimate(10);
-        plan.recordLower(Pair.of(1, "a"));
+        plan.recordLower(Entry.of(1, "a"));
         final SegmentSplitContext<Integer, String> ctxNonEmpty = new SegmentSplitContext<>(
                 null, null, plan, null);
         assertDoesNotThrow(

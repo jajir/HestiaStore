@@ -2,7 +2,7 @@ package org.hestiastore.index.sorteddatafile;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.hestiastore.index.Pair;
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorByte;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
@@ -12,17 +12,17 @@ import org.junit.jupiter.api.Test;
 
 class IntegrationSortedDataFileWriterTest {
 
-    private static final Pair<String, Byte> P_AAABBB_1 = new Pair<>("aaabbb",
+    private static final Entry<String, Byte> P_AAABBB_1 = new Entry<>("aaabbb",
             (byte) 1);
-    private static final Pair<String, Byte> P_AAA_0 = new Pair<>("aaa",
+    private static final Entry<String, Byte> P_AAA_0 = new Entry<>("aaa",
             (byte) 0);
-    private static final Pair<String, Byte> P_ABBB_1 = new Pair<>("abbb",
+    private static final Entry<String, Byte> P_ABBB_1 = new Entry<>("abbb",
             (byte) 1);
-    private static final Pair<String, Byte> P_AAAA_2 = new Pair<>("aaaa",
+    private static final Entry<String, Byte> P_AAAA_2 = new Entry<>("aaaa",
             (byte) 2);
-    private static final Pair<String, Byte> P_ABBB_2 = new Pair<>("abbb",
+    private static final Entry<String, Byte> P_ABBB_2 = new Entry<>("abbb",
             (byte) 2);
-    private static final Pair<String, Byte> P_NULL_0 = new Pair<>(null,
+    private static final Entry<String, Byte> P_NULL_0 = new Entry<>(null,
             (byte) 0);
     private static final int DISK_IO_BUFFER_SIZE = 1024;
     private static final String FILE_NAME = "pok.dat";

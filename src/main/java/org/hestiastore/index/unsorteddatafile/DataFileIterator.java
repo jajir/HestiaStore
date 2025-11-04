@@ -4,27 +4,27 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIteratorWithCurrent;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.directory.FileReader;
 
 /**
- * An iterator over key-value pairs stored in a data file.
+ * An iterator over key-value entries stored in a data file.
  *
  * @param <K> the type of keys
  * @param <V> the type of values
  */
 public class DataFileIterator<K, V> extends AbstractCloseableResource
-        implements PairIteratorWithCurrent<K, V> {
+        implements EntryIteratorWithCurrent<K, V> {
 
     private final TypeReader<K> keyTypeReader;
     private final TypeReader<V> valueTypeReader;
     private final FileReader reader;
 
-    private Pair<K, V> current;
-    private Pair<K, V> next;
+    private Entry<K, V> current;
+    private Entry<K, V> next;
 
     /**
      * Constructs a new {@code DataFileIterator} with the specified key and
@@ -44,7 +44,7 @@ public class DataFileIterator<K, V> extends AbstractCloseableResource
     }
 
     /**
-     * Indicates whether another key/value pair is available in the underlying
+     * Indicates whether another key/value entry is available in the underlying
      * file. The method does not advance the iterator.
      *
      * @return {@code true} when a subsequent entry can be returned by
@@ -56,14 +56,14 @@ public class DataFileIterator<K, V> extends AbstractCloseableResource
     }
 
     /**
-     * Returns the next key/value pair from the file and advances the iterator.
+     * Returns the next key/value entry from the file and advances the iterator.
      *
-     * @return the next {@link Pair}
+     * @return the next {@link Entry}
      * @throws NoSuchElementException if the iterator has already been
      *                                exhausted
      */
     @Override
-    public Pair<K, V> next() {
+    public Entry<K, V> next() {
         if (next == null) {
             throw new NoSuchElementException("No more elements");
         }
@@ -78,7 +78,7 @@ public class DataFileIterator<K, V> extends AbstractCloseableResource
             next = null;
         } else {
             final V value = valueTypeReader.read(reader);
-            next = new Pair<K, V>(key, value);
+            next = new Entry<K, V>(key, value);
         }
     }
 
@@ -92,15 +92,15 @@ public class DataFileIterator<K, V> extends AbstractCloseableResource
     }
 
     /**
-     * Returns the most recently returned pair, if any. The value is only
+     * Returns the most recently returned entry, if any. The value is only
      * present after the first successful call to {@link #next()} and remains
      * unchanged until the iterator advances again.
      *
-     * @return optional containing the current pair or empty when iteration has
+     * @return optional containing the current entry or empty when iteration has
      *         not started yet
      */
     @Override
-    public Optional<Pair<K, V>> getCurrent() {
+    public Optional<Entry<K, V>> getCurrent() {
         return Optional.ofNullable(current);
     }
 

@@ -3,8 +3,8 @@ package org.hestiastore.index.sst;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIteratorStreamer;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIteratorStreamer;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.log.LoggedKey;
 import org.slf4j.MDC;
@@ -133,10 +133,10 @@ public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
      * streaming-related logs include the index name.
      *
      * @param segmentWindows segment selection to stream
-     * @return stream of key-value pairs from the selected segments
+     * @return stream of key-value entries from the selected segments
      */
     @Override
-    public Stream<Pair<K, V>> getStream(final SegmentWindow segmentWindows) {
+    public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindows) {
         setContext();
         try {
             return index.getStream(segmentWindows);
@@ -152,7 +152,7 @@ public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
      * @return streamer that emits logged keys and values
      */
     @Override
-    public PairIteratorStreamer<LoggedKey<K>, V> getLogStreamer() {
+    public EntryIteratorStreamer<LoggedKey<K>, V> getLogStreamer() {
         setContext();
         try {
             return index.getLogStreamer();

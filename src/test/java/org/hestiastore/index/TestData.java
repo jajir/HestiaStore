@@ -263,16 +263,16 @@ public final class TestData {
             .of(BYTES_1024.subBytes(0, 1008));
 
     public static final SegmentId SEGMENT_ID = SegmentId.of(13);
-    public static final Pair<Integer, String> PAIR1 = Pair.of(1, "a");
-    public static final Pair<Integer, String> PAIR2 = Pair.of(2, "b");
-    public static final Pair<Integer, String> PAIR3 = Pair.of(3, "c");
-    public static final Pair<Integer, String> PAIR4 = Pair.of(4, "d");
-    public static final Pair<Integer, String> PAIR5 = Pair.of(5, "e");
+    public static final Entry<Integer, String> ENTRY1 = Entry.of(1, "a");
+    public static final Entry<Integer, String> ENTRY2 = Entry.of(2, "b");
+    public static final Entry<Integer, String> ENTRY3 = Entry.of(3, "c");
+    public static final Entry<Integer, String> ENTRY4 = Entry.of(4, "d");
+    public static final Entry<Integer, String> ENTRY5 = Entry.of(5, "e");
 
-    public static final List<Pair<Integer, String>> PAIR_LIST_3 = List.of(PAIR1,
-            PAIR2, PAIR3);
+    public static final List<Entry<Integer, String>> ENTRY_LIST_3 = List.of(ENTRY1,
+            ENTRY2, ENTRY3);
 
-    public static final List<Pair<Integer, String>> PAIR_LIST_EMPTY = Collections
+    public static final List<Entry<Integer, String>> ENTRY_LIST_EMPTY = Collections
             .emptyList();
 
     public static final Chunk CHUNK_15 = Chunk.of(ChunkHeader.of(

@@ -7,8 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -66,7 +66,7 @@ class IntegrationSegmentConsistencyTest extends AbstractSegmentTest {
     @Test
     void test_consistency() {
         for (int i = 0; i < MAX_LOOP; i++) {
-            writePairs(seg, makeList(i));
+            writeEntries(seg, makeList(i));
             verifySegmentData(seg, makeList(i));
         }
     }
@@ -77,29 +77,29 @@ class IntegrationSegmentConsistencyTest extends AbstractSegmentTest {
      */
     @Test
     void test_iterator_should_close_after_data_update() {
-        writePairs(seg, makeList(0));
-        final PairIterator<Integer, Integer> iterator = seg.openIterator();
+        writeEntries(seg, makeList(0));
+        final EntryIterator<Integer, Integer> iterator = seg.openIterator();
         assertTrue(iterator.hasNext());
-        assertEquals(Pair.of(0, 0), iterator.next());
+        assertEquals(Entry.of(0, 0), iterator.next());
 
         assertTrue(iterator.hasNext());
-        assertEquals(Pair.of(1, 0), iterator.next());
+        assertEquals(Entry.of(1, 0), iterator.next());
 
         assertTrue(iterator.hasNext());
-        assertEquals(Pair.of(2, 0), iterator.next());
+        assertEquals(Entry.of(2, 0), iterator.next());
 
         assertTrue(iterator.hasNext());
-        assertEquals(Pair.of(3, 0), iterator.next());
+        assertEquals(Entry.of(3, 0), iterator.next());
 
-        writePairs(seg, makeList(8));
+        writeEntries(seg, makeList(8));
 
         assertFalse(iterator.hasNext());
     }
 
-    private List<Pair<Integer, Integer>> makeList(final int no) {
-        final List<Pair<Integer, Integer>> out = new ArrayList<>();
+    private List<Entry<Integer, Integer>> makeList(final int no) {
+        final List<Entry<Integer, Integer>> out = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            out.add(Pair.of(i, no));
+            out.add(Entry.of(i, no));
         }
         return out;
     }

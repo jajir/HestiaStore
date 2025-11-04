@@ -3,8 +3,8 @@ package org.hestiastore.index.segment;
 import java.util.Comparator;
 
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIterator;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,20 +32,20 @@ public class SegmentConsistencyChecker<K, V> {
     public K checkAndRepairConsistency() {
         logger.debug("Checking segment '{}'", segment.getId());
         K previousKey = null;
-        try (PairIterator<K, V> iterator = segment.openIterator()) {
+        try (EntryIterator<K, V> iterator = segment.openIterator()) {
             while (iterator.hasNext()) {
-                final Pair<K, V> pair = iterator.next();
+                final Entry<K, V> entry = iterator.next();
                 if (previousKey == null) {
-                    previousKey = pair.getKey();
+                    previousKey = entry.getKey();
                     continue;
                 }
-                if (keyComparator.compare(previousKey, pair.getKey()) >= 0) {
+                if (keyComparator.compare(previousKey, entry.getKey()) >= 0) {
                     throw new IndexException(String.format(
                             "Keys in segment '%s' are not sorted. "
                                     + "Key '%s' have to higher than key '%s'.",
-                            segment.getId(), pair.getKey(), previousKey));
+                            segment.getId(), entry.getKey(), previousKey));
                 }
-                previousKey = pair.getKey();
+                previousKey = entry.getKey();
             }
         }
         if (previousKey == null) {

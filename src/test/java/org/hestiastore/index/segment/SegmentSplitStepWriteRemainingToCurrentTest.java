@@ -9,9 +9,9 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
-import org.hestiastore.index.Pair;
-import org.hestiastore.index.PairIteratorList;
-import org.hestiastore.index.PairWriter;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIteratorList;
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.WriteTransaction;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +34,7 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
     @Mock
     private WriteTransaction<Integer, String> tx;
     @Mock
-    private PairWriter<Integer, String> writer;
+    private EntryWriter<Integer, String> writer;
 
     private SegmentSplitStepWriteRemainingToCurrent<Integer, String> step;
 
@@ -101,7 +101,7 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
         when(dc.getDeltaCacheSizeWithoutTombstones()).thenReturn(0);
         final SegmentSplitterPlan<Integer, String> plan = SegmentSplitterPlan
                 .fromPolicy(new SegmentSplitterPolicy<>(spm, dc));
-        plan.recordLower(Pair.of(0, "z"));
+        plan.recordLower(Entry.of(0, "z"));
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.perform(
                         new SegmentSplitContext<>(segment, null, plan, null),
@@ -115,10 +115,10 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
         when(dc.getDeltaCacheSizeWithoutTombstones()).thenReturn(0);
         final SegmentSplitterPlan<Integer, String> plan = SegmentSplitterPlan
                 .fromPolicy(new SegmentSplitterPolicy<>(spm, dc));
-        plan.recordLower(Pair.of(0, "z"));
+        plan.recordLower(Entry.of(0, "z"));
         final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
-        state.setIterator(new PairIteratorList<Integer, String>(
-                java.util.List.of(Pair.of(1, "a"))));
+        state.setIterator(new EntryIteratorList<Integer, String>(
+                java.util.List.of(Entry.of(1, "a"))));
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.perform(
                         new SegmentSplitContext<>(segment, null, plan, null),
@@ -132,14 +132,14 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
         when(segment.openFullWriteTx()).thenReturn(tx);
         when(tx.open()).thenReturn(writer);
 
-        final var it = new PairIteratorList<Integer, String>(
-                List.of(Pair.of(1, "a"), Pair.of(2, "b")));
+        final var it = new EntryIteratorList<Integer, String>(
+                List.of(Entry.of(1, "a"), Entry.of(2, "b")));
 
         final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
         state.setIterator(it);
         state.setLowerSegment(lowerSegment);
         final SegmentSplitterPlan<Integer, String> plan = planWithEstimate(10);
-        plan.recordLower(Pair.of(0, "z"));
+        plan.recordLower(Entry.of(0, "z"));
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
                 segment, null, plan, null);
         final var res = step.perform(ctx, state);
