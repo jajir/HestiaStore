@@ -3,11 +3,9 @@ package org.hestiastore.index.sorteddatafile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
-import java.util.Arrays;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -27,7 +25,14 @@ class DiffKeyReaderTest {
         final DiffKeyReader<String> reader = new DiffKeyReader<>(
                 tds.getConvertorFromBytes());
 
-        when(fileReader.read()).thenReturn(-1);
+        // header not fully read => reader returns null
+        when(fileReader.read(any(byte[].class))).thenAnswer(inv -> {
+            final byte[] h = (byte[]) inv.getArguments()[0];
+            if (h == null) {
+                return -1;
+            }
+            return -1; // simulate EOF on header
+        });
         final String ret = reader.read(fileReader);
         assertNull(ret);
     }
@@ -37,10 +42,22 @@ class DiffKeyReaderTest {
         final DiffKeyReader<String> reader = new DiffKeyReader<>(
                 tds.getConvertorFromBytes());
 
-        when(fileReader.read()).thenReturn(3).thenReturn(5);
-        when(fileReader.read(new byte[5])).thenAnswer(invocation -> {
-            loadStringToByteArray(invocation, "prase");
-            return 5;
+        // shared=3, keyLen=5 on the very first key -> invalid (needs previous)
+        when(fileReader.read(any(byte[].class))).thenAnswer(inv -> {
+            final byte[] buf = (byte[]) inv.getArguments()[0];
+            if (buf == null) {
+                return -1;
+            }
+            if (buf.length == 2) {
+                buf[0] = 3;
+                buf[1] = 5;
+                return 2;
+            }
+            if (buf.length == 5) {
+                loadStringToByteArray(inv, "prase");
+                return 5;
+            }
+            return -1;
         });
         assertThrows(IndexException.class, () -> reader.read(fileReader));
     }
@@ -50,10 +67,19 @@ class DiffKeyReaderTest {
         final DiffKeyReader<String> reader = new DiffKeyReader<>(
                 tds.getConvertorFromBytes());
 
-        when(fileReader.read()).thenReturn(0).thenReturn(5);
-        when(fileReader.read(new byte[5])).thenAnswer(invocation -> {
-            loadStringToByteArray(invocation, "prase");
-            return 5;
+        // shared=0, keyLen=5 -> full key "prase"
+        when(fileReader.read(any(byte[].class))).thenAnswer(inv -> {
+            final byte[] buf = (byte[]) inv.getArguments()[0];
+            if (buf.length == 2) {
+                buf[0] = 0;
+                buf[1] = 5;
+                return 2;
+            }
+            if (buf.length == 5) {
+                loadStringToByteArray(inv, "prase");
+                return 5;
+            }
+            return -1;
         });
         final String ret = reader.read(fileReader);
         assertEquals("prase", ret);
@@ -64,9 +90,18 @@ class DiffKeyReaderTest {
         final DiffKeyReader<String> reader = new DiffKeyReader<>(
                 tds.getConvertorFromBytes());
 
-        when(fileReader.read()).thenReturn(0).thenReturn(5);
-        when(fileReader.read(new byte[5])).thenAnswer(invocation -> {
-            return 3;
+        // shared=0, keyLen=5 then partial payload read
+        when(fileReader.read(any(byte[].class))).thenAnswer(inv -> {
+            final byte[] buf = (byte[]) inv.getArguments()[0];
+            if (buf.length == 2) {
+                buf[0] = 0;
+                buf[1] = 5;
+                return 2;
+            }
+            if (buf.length == 5) {
+                return 3; // simulate partial read
+            }
+            return -1;
         });
         assertThrows(IndexException.class, () -> reader.read(fileReader));
     }
@@ -76,23 +111,38 @@ class DiffKeyReaderTest {
         final DiffKeyReader<String> reader = new DiffKeyReader<>(
                 tds.getConvertorFromBytes());
 
-        when(fileReader.read()).thenReturn(0).thenReturn(5);
-        when(fileReader
-                .read(argThat(array -> Arrays.equals(new byte[5], array))))
-                .thenAnswer(invocation -> {
-                    loadStringToByteArray(invocation, "prase");
-                    return 5;
-                });
+        // Use stateful answer to simulate two records
+        when(fileReader.read(any(byte[].class))).thenAnswer(new org.mockito.stubbing.Answer<Integer>() {
+            int step = 0;
+            @Override
+            public Integer answer(org.mockito.invocation.InvocationOnMock inv) {
+                final byte[] buf = (byte[]) inv.getArguments()[0];
+                if (buf.length == 2) {
+                    if (step == 0) {
+                        buf[0] = 0; buf[1] = 5; // first record full
+                    } else {
+                        buf[0] = 3; buf[1] = 5; // second record shares 3 bytes
+                    }
+                    return 2;
+                }
+                if (buf.length == 5) {
+                    if (step == 0) {
+                        loadStringToByteArray(inv, "prase");
+                        step = 1;
+                        return 5;
+                    } else {
+                        loadStringToByteArray(inv, "lesni");
+                        step = 2;
+                        return 5;
+                    }
+                }
+                return -1;
+            }
+        });
         final String ret1 = reader.read(fileReader);
         assertEquals("prase", ret1);
 
-        when(fileReader.read()).thenReturn(3).thenReturn(5);
-        when(fileReader
-                .read(argThat(array -> Arrays.equals(new byte[5], array))))
-                .thenAnswer(invocation -> {
-                    loadStringToByteArray(invocation, "lesni");
-                    return 5;
-                });
+        // Second: shared=3, len=5 with diff "lesni" => handled by stateful answer
         final String ret2 = reader.read(fileReader);
         assertEquals("pralesni", ret2);
     }
@@ -102,15 +152,35 @@ class DiffKeyReaderTest {
         final DiffKeyReader<String> reader = new DiffKeyReader<>(
                 tds.getConvertorFromBytes());
 
-        when(fileReader.read()).thenReturn(0).thenReturn(5);
-        when(fileReader.read(new byte[5])).thenAnswer(invocation -> {
-            loadStringToByteArray(invocation, "prase");
-            return 5;
+        // First full key
+        when(fileReader.read(any(byte[].class))).thenAnswer(new org.mockito.stubbing.Answer<Integer>() {
+            int step = 0;
+            @Override
+            public Integer answer(org.mockito.invocation.InvocationOnMock inv) {
+                final byte[] buf = (byte[]) inv.getArguments()[0];
+                if (buf.length == 2) {
+                    if (step == 0) {
+                        buf[0] = 0; buf[1] = 5;
+                        return 2;
+                    } else {
+                        buf[0] = 11; buf[1] = 5; // inconsistent shared length
+                        return 2;
+                    }
+                }
+                if (buf.length == 5) {
+                    if (step == 0) {
+                        loadStringToByteArray(inv, "prase");
+                        step = 1;
+                        return 5;
+                    }
+                }
+                return -1;
+            }
         });
         final String ret1 = reader.read(fileReader);
         assertEquals("prase", ret1);
 
-        when(fileReader.read()).thenReturn(11).thenReturn(5);
+        // Second header claims more shared bytes than previous key length -> error
         assertThrows(IndexException.class, () -> reader.read(fileReader));
     }
 
@@ -119,28 +189,43 @@ class DiffKeyReaderTest {
         final DiffKeyReader<String> reader = new DiffKeyReader<>(
                 tds.getConvertorFromBytes());
 
-        when(fileReader.read()).thenReturn(0).thenReturn(5);
-        when(fileReader
-                .read(argThat(array -> Arrays.equals(new byte[5], array))))
-                .thenAnswer(invocation -> {
-                    loadStringToByteArray(invocation, "prase");
-                    return 5;
-                });
+        // First full key
+        when(fileReader.read(any(byte[].class))).thenAnswer(new org.mockito.stubbing.Answer<Integer>() {
+            int step = 0;
+            @Override
+            public Integer answer(org.mockito.invocation.InvocationOnMock inv) {
+                final byte[] buf = (byte[]) inv.getArguments()[0];
+                if (buf.length == 2) {
+                    if (step == 0) {
+                        buf[0] = 0; buf[1] = 5; return 2;
+                    } else {
+                        buf[0] = 3; buf[1] = 5; return 2; // second header
+                    }
+                }
+                if (buf.length == 5) {
+                    if (step == 0) {
+                        loadStringToByteArray(inv, "prase");
+                        step = 1;
+                        return 5;
+                    } else {
+                        return 3; // partial read for diff
+                    }
+                }
+                return -1;
+            }
+        });
         final String ret1 = reader.read(fileReader);
         assertEquals("prase", ret1);
 
-        when(fileReader.read()).thenReturn(3).thenReturn(5);
-        when(fileReader
-                .read(argThat(array -> Arrays.equals(new byte[5], array))))
-                .thenReturn(3);
+        // Second: partial diff read -> error (handled by answer above)
         assertThrows(IndexException.class, () -> reader.read(fileReader));
     }
 
     private void loadStringToByteArray(final InvocationOnMock invocation,
             final String str) {
         final byte[] bytes = (byte[]) invocation.getArguments()[0];
-        byte[] p = str.getBytes();
-        for (int i = 0; i < 5; i++) {
+        final byte[] p = str.getBytes();
+        for (int i = 0; i < p.length; i++) {
             bytes[i] = p[i];
         }
     }

@@ -8,7 +8,8 @@ import org.hestiastore.index.directory.FileWriter;
 /**
  * Simple in-memory FileWriter backed by BytesAppender.
  */
-class InMemoryFileWriter extends AbstractCloseableResource implements FileWriter {
+class InMemoryFileWriter extends AbstractCloseableResource
+        implements FileWriter {
     private final BytesAppender appender;
     private boolean closed = false;
 
@@ -40,4 +41,3 @@ class InMemoryFileWriter extends AbstractCloseableResource implements FileWriter
         }
     }
 }
-
