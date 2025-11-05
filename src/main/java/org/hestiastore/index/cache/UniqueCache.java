@@ -2,13 +2,13 @@ package org.hestiastore.index.cache;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.TreeMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.sorteddatafile.EntryComparator;
+
+import it.unimi.dsi.fastutil.objects.Object2ObjectRBTreeMap;
 
 /**
  * Cache for index operation. When there are two operations with same key value
@@ -20,7 +20,7 @@ import org.hestiastore.index.sorteddatafile.EntryComparator;
 public class UniqueCache<K, V> {
 
     private final Comparator<K> keyComparator;
-    private final TreeMap<K, V> map;
+    private final Map<K, V> map;
 
     /**
      * Create builder for unique cache.
@@ -41,7 +41,7 @@ public class UniqueCache<K, V> {
     public UniqueCache(final Comparator<K> keyComparator) {
         this.keyComparator = Vldtn.requireNonNull(keyComparator,
                 "keyComparator");
-        this.map = new TreeMap<>(keyComparator);
+        this.map = new Object2ObjectRBTreeMap<>(keyComparator);
     }
 
     /**
@@ -87,21 +87,10 @@ public class UniqueCache<K, V> {
         return map.isEmpty();
     }
 
-    /**
-     * It's unsorted.
-     * 
-     * @return
-     */
-    public List<Entry<K, V>> toList() {
-        return map.entrySet().stream()
-                .map(entry -> new Entry<K, V>(entry.getKey(), entry.getValue()))
-                .toList();
-    }
-
     public List<Entry<K, V>> getAsSortedList() {
         return map.entrySet().stream()
                 .map(entry -> new Entry<K, V>(entry.getKey(), entry.getValue()))
-                .sorted(new EntryComparator<>(keyComparator))//
+                // .sorted(new EntryComparator<>(keyComparator))//
                 .toList();
     }
 
@@ -112,18 +101,17 @@ public class UniqueCache<K, V> {
                 .toList();
     }
 
-    public EntryIterator<K, V> getSortedIterator() {
-        return EntryIterator.make(getAsSortedList().iterator());
-    }
-
     /**
      * Get unsorted stream of key value entries
      * 
      * @return unsorted stream of key value entries
      */
     public Stream<Entry<K, V>> getStream() {
-        return map.entrySet().stream()
-                .map(entry -> new Entry<K, V>(entry.getKey(), entry.getValue()));
+        return map//
+                .entrySet()//
+                .stream()//
+                .map(entry -> //
+                new Entry<K, V>(entry.getKey(), entry.getValue()));
     }
 
 }

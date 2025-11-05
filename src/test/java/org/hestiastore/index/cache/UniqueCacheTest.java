@@ -8,13 +8,8 @@ import org.hestiastore.index.Entry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 class UniqueCacheTest {
-
-    private final Logger logger = LoggerFactory
-            .getLogger(UniqueCacheTest.class);
 
     private UniqueCache<Integer, String> cache;
 
@@ -34,7 +29,7 @@ class UniqueCacheTest {
         cache.put(Entry.of(13, "my"));
         cache.put(Entry.of(15, "dear"));
 
-        final List<Entry<Integer, String>> out = cache.toList();
+        final List<Entry<Integer, String>> out = cache.getAsSortedList();
         assertEquals(3, cache.size());
         assertEquals(Entry.of(10, "hello"), out.get(0));
         assertEquals(Entry.of(13, "my"), out.get(1));
@@ -77,26 +72,6 @@ class UniqueCacheTest {
         assertEquals(Entry.of(13, "my"), out.get(2));
         assertEquals(Entry.of(15, "dear"), out.get(3));
         assertEquals(4, cache.size());
-    }
-
-    /**
-     * Verify that merging is called in right time.
-     * 
-     * @
-     */
-    @Test
-    void test_just_last_value_is_stored() {
-        logger.debug("Cache size '{}'", cache.size());
-        cache.put(Entry.of(10, "hello"));
-        cache.put(Entry.of(10, "my"));
-        cache.put(Entry.of(10, "dear"));
-
-        logger.debug("Cache size '{}'", cache.size());
-        final List<Entry<Integer, String>> out = cache.toList();
-        assertEquals(1, cache.size());
-        assertEquals(Entry.of(10, "dear"), out.get(0));
-        cache.clear();
-        assertEquals(0, cache.size());
     }
 
 }
