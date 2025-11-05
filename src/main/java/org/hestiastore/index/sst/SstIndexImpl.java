@@ -122,11 +122,15 @@ public abstract class SstIndexImpl<K, V> extends AbstractCloseableResource
         }
         final CompactSupport<K, V> support = new CompactSupport<>(
                 segmentRegistry, keySegmentCache, keyTypeDescriptor);
+        // FIXME remove streams
+        // FIXME there is a duplicated sorting
         cache.getStream()
-                .sorted(new EntryComparator<>(keyTypeDescriptor.getComparator()))
+                .sorted(new EntryComparator<>(
+                        keyTypeDescriptor.getComparator()))
                 .forEach(support::compact);
         support.compactRest();
         final List<SegmentId> segmentIds = support.getEligibleSegmentIds();
+        // FIXME remove streams
         segmentIds.stream()//
                 .map(segmentRegistry::getSegment)//
                 .filter(segmentSplitCoordinator::shouldBeSplit)//

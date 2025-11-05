@@ -79,6 +79,7 @@ public class CompactSupport<K, V> {
         }
         if (KeySegmentCache.FIRST_SEGMENT_ID.equals(currentSegmentId)) {
             // Segment containing highest key.
+            // FIXME remove streams
             toSameSegment.stream().map(Entry::getKey)
                     .max(keyTypeDescriptor.getComparator()).ifPresent(key -> {
                         // Update segment cache with highest key.
