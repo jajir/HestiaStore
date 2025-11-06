@@ -10,8 +10,6 @@ import java.util.Map;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
 
-import it.unimi.dsi.fastutil.objects.Object2ObjectRBTreeMap;
-
 /**
  * Cache for index operation. When there are two operations with same key value
  * than just latest is stored. Because just last one is valid.
