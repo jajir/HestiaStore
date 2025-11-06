@@ -1,16 +1,23 @@
 # 🚀 Getting Started
 
-> **Note:** HestiaStore is a library, not a standalone application. It is designed to be integrated into a larger system to provide efficient storage and retrieval of large volumes of key-value entries.
+> Note: HestiaStore is a library, not a standalone application. It is designed to be integrated into a larger system to provide efficient storage and retrieval of large volumes of key‑value entries.
 
-HestiaStore is a Java library distributed as a JAR file. It can be directly and easily used in any Java application. To get started, first refer to the installation guide and then explore usage examples.
+HestiaStore is a Java library distributed as a JAR. To get started quickly:
+
+- Install
+- Example (copy/paste )
+- Troubleshooting
 
 ## 💡 Use Cases
 
-The library is suitable for scenarios requiring storage of large amounts of key-value entries. HestiaStore is especially effective when:
+HestiaStore is especially effective when you need to:
 
-* Store billions of key-value entries
-* Cloud storage is not an option
-* You need to search key-value entries efficiently
-* Values must be persisted to disk
+- Store billions of key‑value entries on local disks
+- Perform efficient point lookups with bounded memory
+- Persist values to disk without external databases
+- Avoid cloud storage or network‑attached stores
 
-If all key-value entries can be held in memory, it's usually better and faster to use an in-memory structure like `java.util.HashMap`. For smaller datasets, a traditional relational database may be more appropriate.
+When not to use:
+
+- If all key‑value entries fit in RAM, prefer  (or similar) for speed and simplicity.
+- For small datasets with relational queries, a traditional RDBMS may be simpler to operate.
