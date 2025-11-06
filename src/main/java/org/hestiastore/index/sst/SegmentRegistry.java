@@ -55,8 +55,8 @@ public class SegmentRegistry<K, V> {
         Vldtn.requireNonNull(segmentId, "segmentId");
 
         SegmentConf segmentConf = new SegmentConf(
-                conf.getMaxNumberOfKeysInSegmentCache(),
-                conf.getMaxNumberOfKeysInSegmentCacheDuringFlushing(),
+                conf.getMaxNumberOfKeysInSegmentCache().intValue(),
+                conf.getMaxNumberOfKeysInSegmentCacheDuringFlushing().intValue(),
                 conf.getMaxNumberOfKeysInSegmentChunk(),
                 conf.getBloomFilterNumberOfHashFunctions(),
                 conf.getBloomFilterIndexSizeInBytes(),
@@ -88,7 +88,7 @@ public class SegmentRegistry<K, V> {
                 .withSegmentFiles(segmentFiles)//
                 .withSegmentPropertiesManager(segmentPropertiesManager)//
                 .withMaxNumberOfKeysInSegmentCache(
-                        conf.getMaxNumberOfKeysInSegmentCache())//
+                        conf.getMaxNumberOfKeysInSegmentCache().intValue())//
                 .withMaxNumberOfKeysInSegmentChunk(
                         conf.getMaxNumberOfKeysInSegmentChunk())//
                 .withValueTypeDescriptor(valueTypeDescriptor)//

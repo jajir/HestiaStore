@@ -33,11 +33,12 @@ class IndexConfigurationDefaultsUsageTest {
             final IndexConfiguration<Integer, String> actual = index
                     .getConfiguration();
 
-            assertEquals(defaults.getMaxNumberOfKeysInSegmentCache(),
+            assertEquals((int) defaults.getMaxNumberOfKeysInSegmentCache(),
                     actual.getMaxNumberOfKeysInSegmentCache(),
                     "Segment cache size must come from contract defaults");
             assertEquals(
-                    defaults.getMaxNumberOfKeysInSegmentCacheDuringFlushing(),
+                    (int) defaults
+                            .getMaxNumberOfKeysInSegmentCacheDuringFlushing(),
                     actual.getMaxNumberOfKeysInSegmentCacheDuringFlushing(),
                     "Flushing cache size must come from contract defaults");
             assertEquals(defaults.getMaxNumberOfKeysInSegmentChunk(),

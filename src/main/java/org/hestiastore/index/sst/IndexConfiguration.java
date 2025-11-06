@@ -29,8 +29,8 @@ public class IndexConfiguration<K, V> {
     /*
      * Segments configuration
      */
-    private final Long maxNumberOfKeysInSegmentCache;
-    private final Long maxNumberOfKeysInSegmentCacheDuringFlushing;
+    private final Integer maxNumberOfKeysInSegmentCache;
+    private final Integer maxNumberOfKeysInSegmentCacheDuringFlushing;
     private final Integer maxNumberOfKeysInSegmentChunk;
 
     /*
@@ -67,8 +67,8 @@ public class IndexConfiguration<K, V> {
             final Class<V> valueClass, //
             final String keyTypeDescriptor, //
             final String valueTypeDescriptor, //
-            final Long maxNumberOfKeysInSegmentCache, //
-            final Long maxNumberOfKeysInSegmentCacheDuringFlushing, //
+            final Integer maxNumberOfKeysInSegmentCache, //
+            final Integer maxNumberOfKeysInSegmentCacheDuringFlushing, //
             final Integer maxNumberOfKeysInSegmentChunk, //
             final Integer maxNumberOfKeysInCache, //
             final Integer maxNumberOfKeysInSegment, //
@@ -102,7 +102,7 @@ public class IndexConfiguration<K, V> {
         this.decodingChunkFilters = List.copyOf(decodingChunkFilters);
     }
 
-    public Long getMaxNumberOfKeysInSegmentCache() {
+    public Integer getMaxNumberOfKeysInSegmentCache() {
         /**
          * Returns the maximum number of keys held in the in-memory segment cache.
          *
@@ -186,7 +186,7 @@ public class IndexConfiguration<K, V> {
         return maxNumberOfSegmentsInCache;
     }
 
-    public Long getMaxNumberOfKeysInSegmentCacheDuringFlushing() {
+    public Integer getMaxNumberOfKeysInSegmentCacheDuringFlushing() {
         /**
          * Returns the maximum number of keys allowed in segment cache during
          * flushing operations.

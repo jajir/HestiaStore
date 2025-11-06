@@ -16,7 +16,7 @@ class SegmentCompactionPolicyTest {
 
     @BeforeEach
     void setUp() {
-        final SegmentConf segmentConf = new SegmentConf(10L, 25L, 3, null, null,
+        final SegmentConf segmentConf = new SegmentConf(10, 25, 3, null, null,
                 null, 1024, List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()));
         policy = new SegmentCompactionPolicy(segmentConf);

@@ -6,8 +6,8 @@ import org.hestiastore.index.chunkstore.ChunkFilter;
 
 public class SegmentConf {
 
-    private final long maxNumberOfKeysInSegmentDeltaCache;
-    private final long maxNumberOfKeysInDeltaCacheDuringWriting;
+    private final int maxNumberOfKeysInSegmentDeltaCache;
+    private final int maxNumberOfKeysInDeltaCacheDuringWriting;
     private final int maxNumberOfKeysInChunk;
     private final Integer bloomFilterNumberOfHashFunctions;
     private final Integer bloomFilterIndexSizeInBytes;
@@ -16,8 +16,8 @@ public class SegmentConf {
     private final List<ChunkFilter> encodingChunkFilters;
     private final List<ChunkFilter> decodingChunkFilters;
 
-    public SegmentConf(final long maxNumeberOfKeysInSegmentDeltaCache,
-            final long maxNumberOfKeysInSegmentCacheDuringFlushing,
+    public SegmentConf(final int maxNumeberOfKeysInSegmentDeltaCache,
+            final int maxNumberOfKeysInSegmentCacheDuringFlushing,
             final int maxNumberOfKeysInChunk,
             final Integer bloomFilterNumberOfHashFunctions,
             final Integer bloomFilterIndexSizeInBytes,
@@ -54,7 +54,7 @@ public class SegmentConf {
      * 
      * @return return number of keys in delta cache
      */
-    long getMaxNumberOfKeysInDeltaCache() {
+    int getMaxNumberOfKeysInDeltaCache() {
         return maxNumberOfKeysInSegmentDeltaCache;
     }
 
@@ -80,7 +80,7 @@ public class SegmentConf {
      * 
      * @return
      */
-    long getMaxNumberOfKeysInDeltaCacheDuringWriting() {
+    int getMaxNumberOfKeysInDeltaCacheDuringWriting() {
         return maxNumberOfKeysInDeltaCacheDuringWriting;
     }
 
