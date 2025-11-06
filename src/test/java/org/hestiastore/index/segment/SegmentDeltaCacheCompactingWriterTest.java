@@ -34,12 +34,13 @@ class SegmentDeltaCacheCompactingWriterTest {
     @Test
     void test_basic_writing() {
         when(deltaCacheController.openWriter()).thenReturn(deltaCacheWriter);
-        when(deltaCacheWriter.getNumberOfKeys()).thenReturn(1L, 2L, 3L);
+        when(deltaCacheWriter.getNumberOfKeys()).thenReturn(1, 2, 3);
         when(compactionPolicy.shouldCompactDuringWriting(1)).thenReturn(false);
         when(compactionPolicy.shouldCompactDuringWriting(2)).thenReturn(false);
         when(compactionPolicy.shouldCompactDuringWriting(3)).thenReturn(false);
         try (final EntryWriter<Integer, String> writer = new SegmentDeltaCacheCompactingWriter<>(
-                segment, segmentCompacter, deltaCacheController, compactionPolicy)) {
+                segment, segmentCompacter, deltaCacheController,
+                compactionPolicy)) {
             writer.write(ENTRY_1);
             writer.write(ENTRY_2);
             writer.write(ENTRY_3);
@@ -58,12 +59,13 @@ class SegmentDeltaCacheCompactingWriterTest {
     @Test
     void test_compact_during_writing() {
         when(deltaCacheController.openWriter()).thenReturn(deltaCacheWriter);
-        when(deltaCacheWriter.getNumberOfKeys()).thenReturn(1L, 2L, 3L);
+        when(deltaCacheWriter.getNumberOfKeys()).thenReturn(1, 2, 3);
         when(compactionPolicy.shouldCompactDuringWriting(1)).thenReturn(false);
         when(compactionPolicy.shouldCompactDuringWriting(2)).thenReturn(true);
         when(compactionPolicy.shouldCompactDuringWriting(3)).thenReturn(false);
         try (final EntryWriter<Integer, String> writer = new SegmentDeltaCacheCompactingWriter<>(
-                segment, segmentCompacter, deltaCacheController, compactionPolicy)) {
+                segment, segmentCompacter, deltaCacheController,
+                compactionPolicy)) {
             writer.write(ENTRY_1);
             writer.write(ENTRY_2);
             writer.write(ENTRY_3);

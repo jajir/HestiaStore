@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -12,12 +11,11 @@ import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryWriter;
+import org.hestiastore.index.WriteTransaction.WriterFunction;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
-import org.hestiastore.index.WriteTransaction.WriterFunction;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -30,9 +28,10 @@ class SegmentDeltaCacheWriterTest {
     private SegmentPropertiesManager propertiesManager;
     @Mock
     private SegmentDataProvider<Integer, String> dataProvider;
-
     @Mock
     private SortedDataFile<Integer, String> deltaFile;
+    @Mock
+    private SegmentDeltaCache<Integer, String> segmentDeltaCache;
 
     @SuppressWarnings("unchecked")
     private void stubWriteTransactionToCaptureWrites(
@@ -43,7 +42,8 @@ class SegmentDeltaCacheWriterTest {
         when(deltaFile.openWriterTx()).thenReturn(tx);
         when(segmentFiles.getDeltaCacheSortedDataFile(any()))
                 .thenReturn(deltaFile);
-        // execute: invoke writer function with our mock writer and capture calls
+        // execute: invoke writer function with our mock writer and capture
+        // calls
         org.mockito.Mockito.doAnswer(inv -> {
             final WriterFunction<Integer, String> fn = inv.getArgument(0);
             org.mockito.Mockito.doAnswer(inv2 -> {
@@ -56,7 +56,7 @@ class SegmentDeltaCacheWriterTest {
         }).when(tx).execute(any());
     }
 
-    private SegmentDeltaCacheWriter<Integer, String> newWriter(long max) {
+    private SegmentDeltaCacheWriter<Integer, String> newWriter(int max) {
         when(segmentFiles.getKeyTypeDescriptor())
                 .thenReturn(new TypeDescriptorInteger());
         return new SegmentDeltaCacheWriter<>(segmentFiles, propertiesManager,
@@ -66,15 +66,18 @@ class SegmentDeltaCacheWriterTest {
     @Test
     void constructor_validates_arguments() {
         // nulls
-        assertThrows(IllegalArgumentException.class, () -> new SegmentDeltaCacheWriter<>(
-                null, propertiesManager, dataProvider, 1));
-        assertThrows(IllegalArgumentException.class, () -> new SegmentDeltaCacheWriter<>(
-                segmentFiles, null, dataProvider, 1));
+        assertThrows(IllegalArgumentException.class,
+                () -> new SegmentDeltaCacheWriter<>(null, propertiesManager,
+                        dataProvider, 1));
+        assertThrows(IllegalArgumentException.class,
+                () -> new SegmentDeltaCacheWriter<>(segmentFiles, null,
+                        dataProvider, 1));
         // stub key TD for next call where dataProvider is null
         when(segmentFiles.getKeyTypeDescriptor())
                 .thenReturn(new TypeDescriptorInteger());
-        assertThrows(IllegalArgumentException.class, () -> new SegmentDeltaCacheWriter<>(
-                segmentFiles, propertiesManager, null, 1));
+        assertThrows(IllegalArgumentException.class,
+                () -> new SegmentDeltaCacheWriter<>(segmentFiles,
+                        propertiesManager, null, 1));
 
         // invalid max
         final Exception e1 = assertThrows(IllegalArgumentException.class,
@@ -91,21 +94,20 @@ class SegmentDeltaCacheWriterTest {
                 e2.getMessage());
     }
 
-    // removed public getter for configured max; validation is still covered below
+    // removed public getter for configured max; validation is still covered
+    // below
 
     @Test
     void write_increments_counter_and_updates_cache_when_loaded() {
         when(dataProvider.isLoaded()).thenReturn(true);
-        final SegmentDeltaCache<Integer, String> dc = mock(
-                SegmentDeltaCache.class);
-        when(dataProvider.getSegmentDeltaCache()).thenReturn(dc);
+        when(dataProvider.getSegmentDeltaCache()).thenReturn(segmentDeltaCache);
 
         final SegmentDeltaCacheWriter<Integer, String> writer = newWriter(10);
         writer.write(Entry.of(2, "B"));
         writer.write(Entry.of(1, "A"));
         assertEquals(2, writer.getNumberOfKeys());
-        verify(dc).put(Entry.of(2, "B"));
-        verify(dc).put(Entry.of(1, "A"));
+        verify(segmentDeltaCache).put(Entry.of(2, "B"));
+        verify(segmentDeltaCache).put(Entry.of(1, "A"));
     }
 
     @Test
@@ -145,18 +147,19 @@ class SegmentDeltaCacheWriterTest {
 
     @Test
     void controller_openWriter_constructs_writer_without_error() {
-        final long max = 777;
+        final int max = 777;
         final SegmentDeltaCacheController<Integer, String> controller = new SegmentDeltaCacheController<>(
                 segmentFiles, propertiesManager, dataProvider, max);
         when(segmentFiles.getKeyTypeDescriptor())
                 .thenReturn(new TypeDescriptorInteger());
-        final SegmentDeltaCacheWriter<Integer, String> writer = controller.openWriter();
+        final SegmentDeltaCacheWriter<Integer, String> writer = controller
+                .openWriter();
         assertNotNull(writer);
     }
 
     @Test
     void controller_openWriter_throws_for_invalid_max() {
-        final long invalidMax = 0;
+        final int invalidMax = 0;
         final SegmentDeltaCacheController<Integer, String> controller = new SegmentDeltaCacheController<>(
                 segmentFiles, propertiesManager, dataProvider, invalidMax);
         assertThrows(IllegalArgumentException.class, controller::openWriter);
