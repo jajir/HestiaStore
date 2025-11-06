@@ -625,6 +625,8 @@
       
         
       
+        
+      
     
     
     
@@ -708,7 +710,30 @@
   
   
   <span class="md-ellipsis">
-    examples
+    Examples
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Troubleshooting
     
   </span>
   
@@ -1208,18 +1233,27 @@
 
 <h1 id="getting-started">🚀 Getting Started</h1>
 <blockquote>
-<p><strong>Note:</strong> HestiaStore is a library, not a standalone application. It is designed to be integrated into a larger system to provide efficient storage and retrieval of large volumes of key-value entries.</p>
+<p>Note: HestiaStore is a library, not a standalone application. It is designed to be integrated into a larger system to provide efficient storage and retrieval of large volumes of key‑value entries.</p>
 </blockquote>
-<p>HestiaStore is a Java library distributed as a JAR file. It can be directly and easily used in any Java application. To get started, first refer to the installation guide and then explore usage examples.</p>
-<h2 id="use-cases">💡 Use Cases</h2>
-<p>The library is suitable for scenarios requiring storage of large amounts of key-value entries. HestiaStore is especially effective when:</p>
+<p>HestiaStore is a Java library distributed as a JAR. To get started quickly:</p>
 <ul>
-<li>Store billions of key-value entries</li>
-<li>Cloud storage is not an option</li>
-<li>You need to search key-value entries efficiently</li>
-<li>Values must be persisted to disk</li>
+<li>Install</li>
+<li>Example (copy/paste )</li>
+<li>Troubleshooting</li>
 </ul>
-<p>If all key-value entries can be held in memory, it's usually better and faster to use an in-memory structure like <code>java.util.HashMap</code>. For smaller datasets, a traditional relational database may be more appropriate.</p>
+<h2 id="use-cases">💡 Use Cases</h2>
+<p>HestiaStore is especially effective when you need to:</p>
+<ul>
+<li>Store billions of key‑value entries on local disks</li>
+<li>Perform efficient point lookups with bounded memory</li>
+<li>Persist values to disk without external databases</li>
+<li>Avoid cloud storage or network‑attached stores</li>
+</ul>
+<p>When not to use:</p>
+<ul>
+<li>If all key‑value entries fit in RAM, prefer  (or similar) for speed and simplicity.</li>
+<li>For small datasets with relational queries, a traditional RDBMS may be simpler to operate.</li>
+</ul>
 
 
 

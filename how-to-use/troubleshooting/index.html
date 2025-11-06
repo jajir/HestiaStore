@@ -10,13 +10,13 @@
         <meta name="author" content="Jan Jirout">
       
       
-        <link rel="canonical" href="https://jajir.github.io/HestiaStore/development/documentation/">
+        <link rel="canonical" href="https://jajir.github.io/HestiaStore/how-to-use/troubleshooting/">
       
       
-        <link rel="prev" href="../release/">
+        <link rel="prev" href="../examples/">
       
       
-        <link rel="next" href="../guides/">
+        <link rel="next" href="../../configuration/">
       
       
       <link rel="icon" href="../../images/favicon.ico">
@@ -24,7 +24,7 @@
     
     
       
-        <title>Documentation - HestiaStore</title>
+        <title>Troubleshooting - HestiaStore</title>
       
     
     
@@ -76,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#documentation" class="md-skip">
+        <a href="#troubleshooting" class="md-skip">
           Skip to content
         </a>
       
@@ -111,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Documentation
+              Troubleshooting
             
           </span>
         </div>
@@ -253,11 +253,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../how-to-use/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -319,13 +321,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../development/" class="md-tabs__link">
           
   
   
@@ -610,6 +610,8 @@
       
   
   
+    
+  
   
   
     
@@ -629,22 +631,23 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../how-to-use/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   
@@ -657,13 +660,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             Getting Started
@@ -679,7 +682,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../how-to-use/install/" class="md-nav__link">
+      <a href="../install/" class="md-nav__link">
         
   
   
@@ -702,7 +705,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../how-to-use/examples/" class="md-nav__link">
+      <a href="../examples/" class="md-nav__link">
         
   
   
@@ -722,10 +725,32 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../how-to-use/troubleshooting/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Troubleshooting
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -736,6 +761,89 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#lock-file-prevents-opening" class="md-nav__link">
+    <span class="md-ellipsis">
+      🔒 ".lock" File Prevents Opening
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#consistency-errors-indexexception" class="md-nav__link">
+    <span class="md-ellipsis">
+      🧩 Consistency Errors (IndexException)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dependency-resolution-fails" class="md-nav__link">
+    <span class="md-ellipsis">
+      📦 Dependency Resolution Fails
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#java-version-mismatch" class="md-nav__link">
+    <span class="md-ellipsis">
+      ☕ Java Version Mismatch
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#permission-or-path-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      📁 Permission or Path Errors
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stale-streaming-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      🔄 Stale Streaming Results
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#need-more-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      ❓ Need More Help?
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1011,8 +1119,6 @@
       
   
   
-    
-  
   
   
     
@@ -1034,23 +1140,22 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../../development/" class="md-nav__link ">
               
   
   
@@ -1063,13 +1168,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Development
@@ -1085,7 +1190,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../release/" class="md-nav__link">
+      <a href="../../development/release/" class="md-nav__link">
         
   
   
@@ -1105,32 +1210,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    Documentation
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../development/documentation/" class="md-nav__link">
         
   
   
@@ -1141,59 +1224,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#how-to-make-changes-to-hestiastoreorg" class="md-nav__link">
-    <span class="md-ellipsis">
-      How to make changes to HestiaStore.org
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="How to make changes to HestiaStore.org">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#page-editing-and-viewing-documentation-locally" class="md-nav__link">
-    <span class="md-ellipsis">
-      Page editing and viewing documentation locally
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-to-publish-changes-at-hestiastoreorg" class="md-nav__link">
-    <span class="md-ellipsis">
-      How to publish changes at hestiastore.org
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1206,7 +1236,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../guides/" class="md-nav__link">
+      <a href="../../development/guides/" class="md-nav__link">
         
   
   
@@ -1279,35 +1309,65 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#how-to-make-changes-to-hestiastoreorg" class="md-nav__link">
+  <a href="#lock-file-prevents-opening" class="md-nav__link">
     <span class="md-ellipsis">
-      How to make changes to HestiaStore.org
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="How to make changes to HestiaStore.org">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#page-editing-and-viewing-documentation-locally" class="md-nav__link">
-    <span class="md-ellipsis">
-      Page editing and viewing documentation locally
+      🔒 ".lock" File Prevents Opening
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#how-to-publish-changes-at-hestiastoreorg" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#consistency-errors-indexexception" class="md-nav__link">
     <span class="md-ellipsis">
-      How to publish changes at hestiastore.org
+      🧩 Consistency Errors (IndexException)
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#dependency-resolution-fails" class="md-nav__link">
+    <span class="md-ellipsis">
+      📦 Dependency Resolution Fails
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#java-version-mismatch" class="md-nav__link">
+    <span class="md-ellipsis">
+      ☕ Java Version Mismatch
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#permission-or-path-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      📁 Permission or Path Errors
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stale-streaming-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      🔄 Stale Streaming Results
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#need-more-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      ❓ Need More Help?
+    </span>
+  </a>
   
 </li>
       
@@ -1330,42 +1390,58 @@
   
 
 
-<h1 id="documentation">Documentation</h1>
-<p>Documentation is available in the following locations:</p>
+<h1 id="troubleshooting">🛠️ Troubleshooting</h1>
+<p>Common issues and quick fixes.</p>
+<h2 id="lock-file-prevents-opening">🔒 ".lock" File Prevents Opening</h2>
 <ul>
-<li><strong><code>mvn site</code></strong> - Includes detailed project reports from PMC, checkstyle, JUnit test line coverage, and Javadocs. It's not published.</li>
-<li><strong><a href="https://github.com/jajir/HestiaStore/">GitHub project</a></strong> - Simple technical development oriented site</li>
-<li><strong><a href="https://hestiastore.org">HestiaStore.org site</a></strong> - Detailed, user-focused information</li>
+<li>Cause: Another process holds the index open, or a previous run did not close cleanly.</li>
+<li>Fix: Ensure the process using the index has terminated and closed the index. If safe, remove the stale .lock file after verifying no process uses the directory.</li>
 </ul>
-<p>Following text is about HestiaStore.org site documentation.</p>
-<h2 id="how-to-make-changes-to-hestiastoreorg">How to make changes to HestiaStore.org</h2>
-<p>HestiaStore.org site documentation is served from the main project branch <code>gh-pages</code>. Publishing a new site version involves generating HTML from Markdown and pushing it to <code>gh-pages</code>.</p>
-<p>Prerequisites:</p>
+<h2 id="consistency-errors-indexexception">🧩 Consistency Errors (IndexException)</h2>
 <ul>
-<li>Installed git</li>
-<li>Site generating tool mkdocs-material - as described at <a href="https://squidfunk.github.io/mkdocs-material/">https://squidfunk.github.io/mkdocs-material/</a>. It is user-friendly and easy to work with. In case of MacOS install it with:</li>
+<li>Symptom: Consistency checks fail or reads behave unexpectedly after a crash.</li>
+<li>Fix: Run checkAndRepairConsistency(). If it still fails, restore from a backup.</li>
 </ul>
-<p><div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>brew<span class="w"> </span>install<span class="w"> </span>mkdocs-material
-</code></pre></div>
-* Some Markdown editor of your choice
-* GitHub personal access token with permission to read and write project pages.</p>
-<h3 id="page-editing-and-viewing-documentation-locally">Page editing and viewing documentation locally</h3>
-<p>From project checkout branch <code>docs</code>, there are all source files for main site. Markdown files for documentation are located in the directory <code>docs</code>. To preview documentation changes locally, run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>mkdocs<span class="w"> </span>serve
-</code></pre></div>
-<p>Now at <a href="http://127.0.0.1:8080/HestiaStore/">http://127.0.0.1:8080/HestiaStore/</a> should display the documentation.</p>
-<p>The <code>mkdocs.yml</code> file in the root directory controls site structure, navigation, and theme. For more information see mkdocs-material documentation.</p>
-<h3 id="how-to-publish-changes-at-hestiastoreorg">How to publish changes at hestiastore.org</h3>
+<h2 id="dependency-resolution-fails">📦 Dependency Resolution Fails</h2>
 <ul>
-<li>From <a href="https://github.com/jajir/HestiaStore/">github.com/jajir/HestiaStore</a> checkout branch <code>docs</code>. </li>
-<li>Make changes</li>
-<li>Commit changes to <code>docs</code></li>
-<li>Pull again to be sure, that latest chnages from branch <code>gh-pages</code> is at local.</li>
-<li>Then, run the following command locally:</li>
+<li>
+<p>Maven: run the command below and confirm org.hestiastore.index:core is present.</p>
+<p>mvn dependency:tree</p>
+</li>
+<li>
+<p>Gradle: run the command below for dependency insight.</p>
+<p>./gradlew dependencyInsight --dependency org.hestiastore.index:core</p>
+</li>
+<li>
+<p>Also verify you used the latest version from Maven Central.</p>
+</li>
 </ul>
-<p><div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>mkdocs<span class="w"> </span>gh-deploy
-</code></pre></div>
-  In a few minutes (could be 15 minutes) new documentation will be published.</p>
+<h2 id="java-version-mismatch">☕ Java Version Mismatch</h2>
+<ul>
+<li>Ensure Java 11+ is used (Java 17 recommended). Check with java -version and align your IDE or CI JDK.</li>
+</ul>
+<h2 id="permission-or-path-errors">📁 Permission or Path Errors</h2>
+<ul>
+<li>Ensure your process has read/write permissions to the target directory.</li>
+<li>Use absolute paths for clarity in services or containers.</li>
+</ul>
+<h2 id="stale-streaming-results">🔄 Stale Streaming Results</h2>
+<ul>
+<li>Call flush() before streaming if you require latest writes.</li>
+<li>Avoid put() or delete() while iterating a stream.</li>
+</ul>
+<h2 id="need-more-help">❓ Need More Help?</h2>
+<ul>
+<li>Search existing tickets: <a href="https://github.com/jajir/HestiaStore/issues?q=is%3Aissue">https://github.com/jajir/HestiaStore/issues?q=is%3Aissue</a></li>
+<li>Open a new ticket: <a href="https://github.com/jajir/HestiaStore/issues/new/choose">https://github.com/jajir/HestiaStore/issues/new/choose</a></li>
+</ul>
+<p>When opening a ticket, please include:</p>
+<ul>
+<li>Your Java version (run <code>java -version</code>)</li>
+<li>HestiaStore version and build tool (Maven/Gradle)</li>
+<li>Minimal code snippet or steps to reproduce</li>
+<li>Relevant logs/stack traces and OS info</li>
+</ul>
 
 
 
