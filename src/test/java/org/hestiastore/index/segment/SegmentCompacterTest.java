@@ -46,7 +46,7 @@ class SegmentCompacterTest {
         when(segmentPropertiesManager.getSegmentStats())
                 .thenReturn(new SegmentStats(10, 1000L, 15));
         when(segmentConf.getMaxNumberOfKeysInDeltaCacheDuringWriting())
-                .thenReturn(20L);
+                .thenReturn(20);
 
         SegmentCompactionPolicyWithManager policy = new SegmentCompactionPolicyWithManager(
                 new SegmentCompactionPolicy(segmentConf), segmentPropertiesManager);
@@ -58,7 +58,7 @@ class SegmentCompacterTest {
         when(segmentPropertiesManager.getSegmentStats())
                 .thenReturn(new SegmentStats(10, 1000L, 15));
         when(segmentConf.getMaxNumberOfKeysInDeltaCacheDuringWriting())
-                .thenReturn(30L);
+                .thenReturn(30);
 
         SegmentCompactionPolicyWithManager policy = new SegmentCompactionPolicyWithManager(
                 new SegmentCompactionPolicy(segmentConf), segmentPropertiesManager);

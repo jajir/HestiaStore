@@ -29,8 +29,8 @@ public final class SegmentBuilder<K, V> {
     private SegmentId id;
     private TypeDescriptor<K> keyTypeDescriptor;
     private TypeDescriptor<V> valueTypeDescriptor;
-    private long maxNumberOfKeysInSegmentCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
-    private long maxNumberOfKeysInSegmentCacheDuringFlushing = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING;
+    private int maxNumberOfKeysInSegmentCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
+    private int maxNumberOfKeysInSegmentCacheDuringFlushing = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING;
     private int maxNumberOfKeysInSegmentChunk = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK;
     private Integer bloomFilterNumberOfHashFunctions;
     private Integer bloomFilterIndexSizeInBytes;
@@ -141,7 +141,7 @@ public final class SegmentBuilder<K, V> {
      * @return this builder for chaining
      */
     public SegmentBuilder<K, V> withMaxNumberOfKeysInSegmentCache(
-            final long maxNumberOfKeysInSegmentCache) {
+            final int maxNumberOfKeysInSegmentCache) {
         this.maxNumberOfKeysInSegmentCache = Vldtn.requireNonNull(
                 maxNumberOfKeysInSegmentCache, "maxNumberOfKeysInSegmentCache");
         return this;
@@ -156,7 +156,7 @@ public final class SegmentBuilder<K, V> {
      * @return this builder for chaining
      */
     public SegmentBuilder<K, V> withMaxNumberOfKeysInSegmentCacheDuringFlushing(
-            final long maxNumberOfKeysInSegmentCacheDuringFlushing) {
+            final int maxNumberOfKeysInSegmentCacheDuringFlushing) {
         this.maxNumberOfKeysInSegmentCacheDuringFlushing = Vldtn.requireNonNull(
                 maxNumberOfKeysInSegmentCacheDuringFlushing,
                 "maxNumberOfKeysInSegmentCacheDuringFlushing");
@@ -330,8 +330,8 @@ public final class SegmentBuilder<K, V> {
         if (segmentConf == null) {
             Vldtn.requireNotEmpty(encodingChunkFilters, "encodingChunkFilters");
             Vldtn.requireNotEmpty(decodingChunkFilters, "decodingChunkFilters");
-            segmentConf = new SegmentConf(maxNumberOfKeysInSegmentCache,
-                    maxNumberOfKeysInSegmentCacheDuringFlushing,
+            segmentConf = new SegmentConf((int) maxNumberOfKeysInSegmentCache,
+                    (int) maxNumberOfKeysInSegmentCacheDuringFlushing,
                     maxNumberOfKeysInSegmentChunk,
                     bloomFilterNumberOfHashFunctions,
                     bloomFilterIndexSizeInBytes,

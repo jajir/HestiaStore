@@ -17,8 +17,8 @@ import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
 public interface IndexConfigurationContract {
     int MAX_NUMBER_OF_KEYS_IN_CACHE = 4321;
     int MAX_NUMBER_OF_KEYS_IN_SEGMENT = 10_000_000;
-    long MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = 10_000;
-    long MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING = 20_000;
+    int MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = 10_000;
+    int MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING = 20_000;
     int MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK = 1_000;
     int MAX_NUMBER_OF_SEGMENTS_IN_CACHE = 10;
 
@@ -28,12 +28,12 @@ public interface IndexConfigurationContract {
 
     int DISK_IO_BUFFER_SIZE_IN_BYTES = 1024 * 8;
 
-    default long getMaxNumberOfKeysInSegmentCache() {
+    default int getMaxNumberOfKeysInSegmentCache() {
         return MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
     }
 
-    default long getMaxNumberOfKeysInSegmentCacheDuringFlushing() {
-        return getMaxNumberOfKeysInSegmentCache() * 2L;
+    default int getMaxNumberOfKeysInSegmentCacheDuringFlushing() {
+        return getMaxNumberOfKeysInSegmentCache() * 2;
     }
 
     default int getMaxNumberOfKeysInSegmentChunk() {

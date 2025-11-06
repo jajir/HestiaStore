@@ -10,8 +10,8 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 
 public class IndexConfigurationBuilder<K, V> {
 
-    private Long maxNumberOfKeysInSegmentCache;
-    private Long maxNumberOfKeysInSegmentCacheDuringFlushing;
+    private Integer maxNumberOfKeysInSegmentCache;
+    private Integer maxNumberOfKeysInSegmentCacheDuringFlushing;
     private Integer maxNumberOfKeysInSegmentChunk;
     private Integer maxNumberOfKeysInCache;
     private Integer maxNumberOfKeysInSegment;
@@ -84,6 +84,14 @@ public class IndexConfigurationBuilder<K, V> {
 
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentCache(
             final Long maxNumberOfKeysInSegmentCache) {
+        this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache == null
+                ? null
+                : maxNumberOfKeysInSegmentCache.intValue();
+        return this;
+    }
+
+    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentCache(
+            final Integer maxNumberOfKeysInSegmentCache) {
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
         return this;
     }
@@ -114,6 +122,14 @@ public class IndexConfigurationBuilder<K, V> {
 
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentCacheDuringFlushing(
             final Long maxNumberOfKeysInSegmentCacheDuringFlushing) {
+        this.maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInSegmentCacheDuringFlushing == null
+                ? null
+                : maxNumberOfKeysInSegmentCacheDuringFlushing.intValue();
+        return this;
+    }
+
+    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentCacheDuringFlushing(
+            final Integer maxNumberOfKeysInSegmentCacheDuringFlushing) {
         this.maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInSegmentCacheDuringFlushing;
         return this;
     }

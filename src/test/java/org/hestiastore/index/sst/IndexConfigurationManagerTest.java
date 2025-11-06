@@ -488,8 +488,8 @@ class IndexConfigurationManagerTest {
         assertEquals(TD_LONG, ret.getKeyTypeDescriptor());
         assertEquals(TD_STRING, ret.getValueTypeDescriptor());
         assertEquals("test_index", ret.getIndexName());
-        assertEquals(11L, ret.getMaxNumberOfKeysInSegmentCache());
-        assertEquals(22L, ret.getMaxNumberOfKeysInSegmentCacheDuringFlushing());
+        assertEquals(11, ret.getMaxNumberOfKeysInSegmentCache());
+        assertEquals(22, ret.getMaxNumberOfKeysInSegmentCacheDuringFlushing());
         assertEquals(33, ret.getMaxNumberOfKeysInSegmentChunk());
         assertEquals(44, ret.getMaxNumberOfKeysInSegment());
         assertEquals(66, ret.getMaxNumberOfSegmentsInCache());

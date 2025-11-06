@@ -40,7 +40,10 @@ class SegmentManagerTest {
         final SegmentRegistry<Integer, String> segmentRegistry = new SegmentRegistry<>(
                 directory, keyTypeDescriptor, valueTypeDescriptor, conf,
                 segmentDataCache);
-        when(conf.getMaxNumberOfKeysInSegmentCache()).thenReturn(2L);
+        when(conf.getMaxNumberOfKeysInSegmentCache()).thenReturn(2);
+        when(conf.getMaxNumberOfKeysInSegmentCacheDuringFlushing())
+                .thenReturn(3);
+        when(conf.getMaxNumberOfKeysInSegmentChunk()).thenReturn(1);
         when(conf.getDiskIoBufferSize()).thenReturn(1024);
         when(conf.getEncodingChunkFilters())
                 .thenReturn(List.of(new ChunkFilterDoNothing()));

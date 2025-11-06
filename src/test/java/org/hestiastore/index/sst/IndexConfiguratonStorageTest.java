@@ -81,9 +81,9 @@ class IndexConfiguratonStorageTest {
         assertEquals(Long.class, ret.getValueClass());
         assertEquals(TD_STRING, ret.getKeyTypeDescriptor());
         assertEquals(TD_LONG, ret.getValueTypeDescriptor());
-        assertEquals(MAX_KEYS_IN_SEGMENT_CACHE,
+        assertEquals((int) MAX_KEYS_IN_SEGMENT_CACHE,
                 ret.getMaxNumberOfKeysInSegmentCache());
-        assertEquals(MAX_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING,
+        assertEquals((int) MAX_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING,
                 ret.getMaxNumberOfKeysInSegmentCacheDuringFlushing());
         assertEquals(MAX_INDEX_PAGE, ret.getMaxNumberOfKeysInSegmentChunk());
         assertEquals(MAX_KEYS_CACHE, ret.getMaxNumberOfKeysInCache());
@@ -186,9 +186,9 @@ class IndexConfiguratonStorageTest {
         assertEquals(Long.class, ret.getValueClass());
         assertEquals(TD_STRING, ret.getKeyTypeDescriptor());
         assertEquals(TD_LONG, ret.getValueTypeDescriptor());
-        assertEquals(MAX_KEYS_IN_SEGMENT_CACHE,
+        assertEquals((int) MAX_KEYS_IN_SEGMENT_CACHE,
                 ret.getMaxNumberOfKeysInSegmentCache());
-        assertEquals(MAX_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING,
+        assertEquals((int) MAX_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING,
                 ret.getMaxNumberOfKeysInSegmentCacheDuringFlushing());
         assertEquals(MAX_INDEX_PAGE, ret.getMaxNumberOfKeysInSegmentChunk());
         assertEquals(MAX_KEYS_CACHE, ret.getMaxNumberOfKeysInCache());

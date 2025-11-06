@@ -10,7 +10,7 @@ public class IndexConfigurationDefaultString
         implements IndexConfigurationContract {
 
     @Override
-    public long getMaxNumberOfKeysInSegmentCache() {
+    public int getMaxNumberOfKeysInSegmentCache() {
         return 500_000;
     }
 

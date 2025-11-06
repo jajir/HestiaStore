@@ -495,7 +495,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         final Directory directory = new MemDirectory();
         final SegmentId segmentId = SegmentId.of(27);
 
-        SegmentConf segmentConf = new SegmentConf(13L, 17L, 3, 2, 0, 0.01, 1024,
+        SegmentConf segmentConf = new SegmentConf(13, 17, 3, 2, 0, 0.01, 1024,
                 List.of(), List.of());
 
         final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
