@@ -15,8 +15,8 @@ import org.hestiastore.index.cache.UniqueCache;
  * @param <K>
  * @param <V>
  */
-public final class SegmentDeltaCacheWriter<K, V> extends AbstractCloseableResource
-        implements EntryWriter<K, V> {
+public final class SegmentDeltaCacheWriter<K, V>
+        extends AbstractCloseableResource implements EntryWriter<K, V> {
 
     /**
      * Cache will contains data written into this delta file.
@@ -63,11 +63,11 @@ public final class SegmentDeltaCacheWriter<K, V> extends AbstractCloseableResour
                 .getDeltaCacheSortedDataFile(
                         segmentPropertiesManager.getAndIncreaseDeltaFileName())
                 .openWriterTx().execute(writer -> {
-                    uniqueCache.getStream().forEach(entry -> {
+                    for (final Entry<K, V> entry : uniqueCache
+                            .getAsSortedList()) {
                         writer.write(entry);
-                    });
+                    }
                 });
-
         // increase number of keys in cache
         final int keysInCache = uniqueCache.size();
         segmentPropertiesManager.increaseNumberOfKeysInDeltaCache(keysInCache);

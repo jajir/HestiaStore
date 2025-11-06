@@ -61,9 +61,13 @@ public final class SegmentDeltaCache<K, V> {
     public int sizeWithoutTombstones() {
         final TypeDescriptor<V> valueTypeDescriptor = segmentFiles
                 .getValueTypeDescriptor();
-        return (int) cache.getStream().filter(
-                entry -> !valueTypeDescriptor.isTombstone(entry.getValue()))
-                .count();
+        int count = 0;
+        for (final Entry<K, V> entry : cache.getAsSortedList()) {
+            if (!valueTypeDescriptor.isTombstone(entry.getValue())) {
+                count++;
+            }
+        }
+        return count;
     }
 
     public void evictAll() {
@@ -72,10 +76,6 @@ public final class SegmentDeltaCache<K, V> {
 
     public V get(final K key) {
         return cache.get(key);
-    }
-
-    public List<K> getSortedKeys() {
-        return cache.getSortedKeys();
     }
 
     public List<Entry<K, V>> getAsSortedList() {

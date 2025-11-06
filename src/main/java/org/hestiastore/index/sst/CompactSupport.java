@@ -1,13 +1,13 @@
 package org.hestiastore.index.sst;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import org.hestiastore.index.F;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.slf4j.Logger;
@@ -20,23 +20,24 @@ public class CompactSupport<K, V> {
     private final List<Entry<K, V>> toSameSegment = new ArrayList<>();
     private final KeySegmentCache<K> keySegmentCache;
     private final SegmentRegistry<K, V> segmentRegistry;
-    private final TypeDescriptor<K> keyTypeDescriptor;
+    private final Comparator<K> keyComparator;
     private SegmentId currentSegmentId = null;
+    private K currentBatchMaxKey = null;
 
     /**
      * List of segment's ids eligible for compacting.
      */
-    private List<SegmentId> eligibleSegments = new ArrayList<>();
+    private final List<SegmentId> eligibleSegments = new ArrayList<>();
 
     CompactSupport(final SegmentRegistry<K, V> segmentRegistry,
             final KeySegmentCache<K> keySegmentCache,
-            final TypeDescriptor<K> keyTypeDescriptor) {
+            final Comparator<K> keyComparator) {
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
         this.keySegmentCache = Vldtn.requireNonNull(keySegmentCache,
                 "keySegmentCache");
-        this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
-                "keyTypeDescriptor");
+        this.keyComparator = Vldtn.requireNonNull(keyComparator,
+                "keyComparator");
     }
 
     public void compact(final Entry<K, V> entry) {
@@ -47,19 +48,23 @@ public class CompactSupport<K, V> {
         if (currentSegmentId == null) {
             currentSegmentId = segmentId;
             toSameSegment.add(entry);
+            updateBatchMax(entry.getKey());
             return;
         }
-        if (currentSegmentId == segmentId) {
+        if (currentSegmentId.equals(segmentId)) {
             toSameSegment.add(entry);
+            updateBatchMax(entry.getKey());
         } else {
             /* Write all keys to index and clean cache and set new pageId */
             flushToCurrentSegment();
             toSameSegment.add(entry);
             currentSegmentId = segmentId;
+            currentBatchMaxKey = null;
+            updateBatchMax(entry.getKey());
         }
     }
 
-    public void compactRest() {
+    public void flush() {
         if (currentSegmentId == null) {
             return;
         }
@@ -79,17 +84,16 @@ public class CompactSupport<K, V> {
         }
         if (KeySegmentCache.FIRST_SEGMENT_ID.equals(currentSegmentId)) {
             // Segment containing highest key.
-            // FIXME remove streams
-            toSameSegment.stream().map(Entry::getKey)
-                    .max(keyTypeDescriptor.getComparator()).ifPresent(key -> {
-                        // Update segment cache with highest key.
-                        keySegmentCache.insertKeyToSegment(key);
-                        keySegmentCache.optionalyFlush();
-                    });
+            if (currentBatchMaxKey != null) {
+                // Update segment cache with highest key.
+                keySegmentCache.insertKeyToSegment(currentBatchMaxKey);
+                keySegmentCache.optionalyFlush();
+            }
         }
 
         eligibleSegments.add(currentSegmentId);
         toSameSegment.clear();
+        currentBatchMaxKey = null;
         logger.debug("Flushing to segment '{}' was done.", currentSegmentId);
     }
 
@@ -100,7 +104,17 @@ public class CompactSupport<K, V> {
      * @return list of segment eligible form compacting
      */
     public List<SegmentId> getEligibleSegmentIds() {
-        return eligibleSegments;
+        return List.copyOf(eligibleSegments);
+    }
+
+    private void updateBatchMax(final K key) {
+        if (currentBatchMaxKey == null) {
+            currentBatchMaxKey = key;
+            return;
+        }
+        if (keyComparator.compare(key, currentBatchMaxKey) > 0) {
+            currentBatchMaxKey = key;
+        }
     }
 
 }
