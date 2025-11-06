@@ -41,17 +41,6 @@ public class UniqueCache<K, V> {
      * 
      * @param keyComparator required comparator for keys
      */
-    public UniqueCache(final Comparator<K> keyComparator) {
-        this.keyComparator = Vldtn.requireNonNull(keyComparator,
-                "keyComparator");
-        this.map = new Object2ObjectRBTreeMap<>(keyComparator);
-    }
-
-    /**
-     * Create unique cache with given key comparator.
-     * 
-     * @param keyComparator required comparator for keys
-     */
     public UniqueCache(final Comparator<K> keyComparator, int initialCapacity) {
         this.keyComparator = Vldtn.requireNonNull(keyComparator,
                 "keyComparator");
