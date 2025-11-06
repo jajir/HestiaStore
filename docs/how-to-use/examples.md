@@ -1,159 +1,148 @@
 # 📚 Examples of HestiaStore Usage
 
-## 👋 Hello World Example
+This page shows common usage patterns with correct imports and short explanations.
+
+## 👋 Hello World (In‑Memory)
+
+Simple example that creates in‑memory storage, then opens an index in this storage, writes one key‑value pair, and closes the index.
 
 ```java
-import com.hestiastore.index.Index;
-import com.hestiastore.index.IndexFactory;
+import org.hestiastore.index.sst.Index;
+import org.hestiastore.index.sst.IndexConfiguration;
+import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.MemDirectory;
 
 public class Example {
   public static void main(String[] args) {
-        // Create an in-memory file system abstraction
-        final Directory directory = new MemDirectory();
+    // Create an in‑memory directory implementation
+    Directory directory = new MemDirectory();
 
-        // Prepare index configuration
-        final IndexConfiguration<String, String> conf = IndexConfiguration
-                .<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withName("test_index") //
-                .build();
+    // Prepare index configuration
+    IndexConfiguration<String, String> conf = IndexConfiguration
+        .<String, String>builder()
+        .withKeyClass(String.class)
+        .withValueClass(String.class)
+        .withName("test_index")
+        .build();
 
-        // create new index
-        Index<String, String> index = Index.<String, String>create(directory,
-                conf);
-
-        // Perform basic operations with the index
-        index.put("Hello", "World");
-
-        String value = index.get("Hello");
-        System.out.println("Value for 'Hello': " + value);
-
-        index.close();
+    // Index is AutoCloseable — prefer try‑with‑resources
+    try (Index<String, String> index = Index.create(directory, conf)) {
+      index.put("Hello", "World");
+      String value = index.get("Hello");
+      System.out.println("Value for Hello: " + value);
+    }
   }
 }
 ```
 
-This creates a simple in-memory index and stores a key-value entry.
+Once this works, explore the advanced [configuration](../../configuration) for directory types and custom key/value classes.
 
-When you have first example you can dive into [more advanced configuration](../configuration/index.md). There are explained details about `Directory` object and using custom Key/Value classes
+## 💾 Filesystem Usage
 
-## 💾 Using HestiaStore with the File System
-
-This is the most common scenario for storing data on persistent storage. Creating an index in a given directory can be done as follows:
+Storing data to the file system is the main function of the library. A file system directory can be used like this:
 
 ```java
-Directory directory = System.getProperty(new File("./index-directory"));
+import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.FsDirectory;
+import java.io.File;
 
-// Prepare index configuration
-final IndexConfiguration<String, String> conf = IndexConfiguration
-        .<String, String>builder()//
-        .withKeyClass(String.class)//
-        .withValueClass(String.class)//
-        .withName("test_index") //
-        .build();
-
-// create new index
-Index<String, String> index = Index.<String, String>create(directory,
-        conf);
-
+// Create a file system directory
+Directory directory = new FsDirectory(new File("../some/directory/"));
 ```
 
 This immediately creates the initial index files and makes it ready to use.
 
-> **Note** When the index starts working with a directory, it locks it with a `.lock` file. When the index is closed, the `.lock` file is removed. This prevents other applications from simultaneously modifying the index data.
-
+> Note: When an index works with a directory, it locks it with a `.lock` file. When the index is closed, the lock is removed.
 
 ## 📂 Opening an Existing Index
 
-Please note that Index uses separate methods for creating an index and for opening an already existing index. To open an already existing index, use:
+Use a dedicated open method for existing indexes:
 
 ```java
-IndexConfiguration<String, String> conf = IndexConfiguration
-        .<String, String>builder()//
-        .withKeyClass(String.class)//
-        .withValueClass(String.class)//
-        .withName("test_index") //
-        .build();
+import org.hestiastore.index.sst.Index;
+import org.hestiastore.index.sst.IndexConfiguration;
 
-Index<String, String> index = Index.<String, String>open(directory, conf);
+IndexConfiguration<String, String> conf = IndexConfiguration
+    .<String, String>builder()
+    .withKeyClass(String.class)
+    .withValueClass(String.class)
+    .withName("test_index")
+    .build();
+
+Index<String, String> index = Index.open(directory, conf);
 ```
 
 ## ✍️ Data Manipulation
 
-There are two methods `put` and `get` using them is straightforward:
+Put and get are straightforward:
 
 ```java
 index.put("Hello", "World");
-
 String value = index.get("Hello");
 ```
 
-Stored values are immediately available. Command ordering could be random.
+Stored values are immediately available.
 
 ## 📈 Sequential Data Reading
 
-Reading from index could be done like this:
+Read all entries in ascending key order:
 
 ```java
-index.getStream(null).forEach(entry -> {
-
-  // Do what have to be done
-    System.out.println("Entry: " + entry);
-    
+index.getStream().forEach(entry -> {
+  System.out.println("Entry: " + entry);
 });
 ```
 
-Data are returned in ascending ordering. This ordering can't be changed. Index stores data in segments. In some cases could be usefull to sequentially read just some segments. Segment could be selected by object `SegmentWindow`
+Select a subset of entries by segment window (offset, limit):
 
 ```java
-SegmentWindow window = SegmentWindow.of(1000, 10);
+import org.hestiastore.index.sst.SegmentWindow;
 
-index.getStream(window).forEach(entry -> {
-    System.out.println("Entry: " + entry);
-});
+// Only data from selected segments will be returned
+SegmentWindow window = SegmentWindow.of(1000, 10);
+index.getStream(window).forEach(entry -> System.out.println(entry));
 ```
 
 ## 🧹 Data Maintenance
 
-In some cases could be useful to perform maintenance with data. There are following operations with `Index`:
+Maintenance operations available on Index:
 
-- `flush()` It flush all data from memory to disk to ensure that all data is safely stored. It make sure that data are stored. Could be called before index iterating and when user want to be sure, that all data are stored.
-- `checkAndRepairConsistency()` It verify that meta data about data in index are consistent. Some problems coudl repair. When index is beyond repair it fails.
-- `compact();` Goes through all segments add compact main segment data with temporal files. It can save disk space.
+- `flush()` Flushes in‑memory data to disk. Useful before iterating or when you need to ensure data is durable.
+- `checkAndRepairConsistency()` Verifies metadata and segment consistency and attempts repairs; fails if beyond repair.
+- `compact()` Compacts segments and can reduce disk usage.
+
+```java
+// After flush, all data changes are persisted. It is similar to a transaction commit.
+index.flush();
+
+// Verify consistency or try to repair
+index.checkAndRepairConsistency();
+
+// Data may be fragmented; this recalculates all segments
+index.compact();
+```
 
 ## ⚠️ Limitations
 
-### 🌀 Stale Results from `index.getStream()`
+### 🌀 Streaming Consistency
 
-Data from `index.getStream()` method could be stale or invalid. It's corner case when next readed key value entry is changed. Index data streaming is splited internally into steps `hasNextElement()` and `getNextElement()`. Following example will show why it's no possible to use index cache:
+Streaming uses a snapshot at iteration time and does not use the index cache to avoid mid‑iteration mutations breaking iteration. To reduce stale results:
 
-```java
-index.hasNextElement(); // --> true
-```
-
-Now next element has to be known to be sure that exists. Let's suppose that in index is just one element `<k1,v1>`.
-
-```java
-index.delete("k1");
-index.nextElement(); // --> fail
-```
-
-last operation will fail because there is not possible to find next element because `<k1,v1>` was deleted. To prevent this problem index cache is not used during index streaming. If all index content should be streamed than before streaming should be `compact()` method and during streaming data shouldn't be changed.
-
-To be sure that all data is read than before reading perform `Index.flush()` and during iterating avoid using of `Index.put()` and `Index.delete()` operations.
+- Call `flush()` before streaming if recent writes must be included.
+- Avoid calling `put()` or `delete()` while iterating a stream.
+- For full snapshot reads, consider `compact()` beforehand to simplify segments.
 
 ### 🔒 Thread Safety
 
-> **Note:** Index is not thread-safe by default. Use `.withThreadSafe(true)` in the configuration to enable thread safety.
+Index is not thread‑safe by default. Enable synchronization via configuration. See option [withThreadSafe](../../configuration#thread-safe-withthreadsafe).
 
 ## 🧨 Exception Handling
 
-Here are exceptions that could be throws from HestiaStore:
+Common runtime exceptions you may encounter:
 
-- `NullPointerException` -  When something fails really badly. For example when disk reading fails or when user delete part of configuration file.
-- `IndexException` - Usually indicated internal HestiaStore problem with data consistency.
-- `IllegalArgumentException` - validation error, for example when key type is not specified. It's also thrown when some object is not initialized correctly.
-- `IllegalStateException` - When HestiaStore is in inconsistent state and is unable to recover.
+- `NullPointerException` – Severe I/O or unexpected nulls (e.g., corrupted files).
+- `IndexException` – Internal consistency issues detected by the index.
+- `IllegalArgumentException` – Validation errors (e.g., missing key type).
+- `IllegalStateException` – Inconsistent state preventing recovery.
 
-All exceptions are runtime exceptions and doesn't have to be explicitly handled.
+All exceptions are runtime exceptions and do not need explicit catching.

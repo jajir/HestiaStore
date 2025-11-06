@@ -19,7 +19,8 @@ nav:
     - Getting Started:
         - how-to-use/index.md
         - Install: how-to-use/install.md
-        - examples: how-to-use/examples.md
+        - Examples: how-to-use/examples.md
+        - Troubleshooting: how-to-use/troubleshooting.md
     - Configuration:
         - configuration/index.md
         - Data Types: configuration/data-types.md
