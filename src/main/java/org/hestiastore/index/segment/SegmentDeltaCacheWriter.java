@@ -35,14 +35,33 @@ public final class SegmentDeltaCacheWriter<K, V>
      */
     private long cx = 0;
 
+    /**
+     * Creates a writer that aggregates updates into a delta cache file.
+     *
+     * @param segmentFiles                       required segment files accessor
+     * @param segmentPropertiesManager           required properties manager for
+     *                                           stats and file names
+     * @param segmentCacheDataProvider           required data provider to
+     *                                           update in-memory cache when
+     *                                           loaded
+     * @param maxNumberOfKeysInSegmentDeltaCache expected upper bound of keys
+     *                                           collected in this delta file;
+     *                                           must be greater than 0
+     * @throws IllegalArgumentException when any argument is invalid or the
+     *                                  provided max is not greater than 0
+     */
     public SegmentDeltaCacheWriter(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentDataProvider<K, V> segmentCacheDataProvider) {
+            final SegmentDataProvider<K, V> segmentCacheDataProvider,
+            final long maxNumberOfKeysInSegmentDeltaCache) {
         this.segmentPropertiesManager = Vldtn.requireNonNull(
                 segmentPropertiesManager, "segmentPropertiesManager");
         this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
+        Vldtn.requireGreaterThanZero((int) maxNumberOfKeysInSegmentDeltaCache,
+                "maxNumberOfKeysInSegmentDeltaCache");
         this.uniqueCache = new UniqueCache<>(
-                segmentFiles.getKeyTypeDescriptor().getComparator());
+                segmentFiles.getKeyTypeDescriptor().getComparator(),
+                (int) maxNumberOfKeysInSegmentDeltaCache);
         this.segmentCacheDataProvider = Vldtn.requireNonNull(
                 segmentCacheDataProvider, "segmentCacheDataProvider");
     }
@@ -50,6 +69,8 @@ public final class SegmentDeltaCacheWriter<K, V>
     public long getNumberOfKeys() {
         return cx;
     }
+
+    
 
     /**
      * Finally writes data to segment delta file and update numbed of keys in
