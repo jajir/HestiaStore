@@ -1,6 +1,10 @@
 package org.hestiastore.index.cache;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
@@ -72,6 +76,53 @@ class UniqueCacheTest {
         assertEquals(Entry.of(13, "my"), out.get(2));
         assertEquals(Entry.of(15, "dear"), out.get(3));
         assertEquals(4, cache.size());
+    }
+
+    @Test
+    void test_last_value_wins_for_same_key() {
+        cache.put(Entry.of(10, "hello"));
+        cache.put(Entry.of(10, "my"));
+        cache.put(Entry.of(10, "dear"));
+
+        final List<Entry<Integer, String>> out = cache.getAsSortedList();
+        assertEquals(1, cache.size());
+        assertEquals(Entry.of(10, "dear"), out.get(0));
+    }
+
+    @Test
+    void test_constructor_null_comparator_throws() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> new UniqueCache<Integer, String>(null));
+        assertEquals("Property 'keyComparator' must not be null.",
+                e.getMessage());
+    }
+
+    @Test
+    void test_get_with_null_key_throws() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> cache.get(null));
+        assertEquals("Property 'key' must not be null.", e.getMessage());
+    }
+
+    @Test
+    void test_get_non_existing_returns_null() {
+        cache.put(Entry.of(1, "a"));
+        cache.put(Entry.of(2, "b"));
+        assertNull(cache.get(100));
+    }
+
+    @Test
+    void test_isEmpty_and_size_consistency() {
+        assertTrue(cache.isEmpty());
+        assertEquals(0, cache.size());
+
+        cache.put(Entry.of(7, "x"));
+        assertFalse(cache.isEmpty());
+        assertEquals(1, cache.size());
+
+        cache.clear();
+        assertTrue(cache.isEmpty());
+        assertEquals(0, cache.size());
     }
 
 }

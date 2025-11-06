@@ -28,7 +28,7 @@ public class SingleChunkEntryWriterImpl<K, V>
      * @param keyTypeDescriptor   required key type descriptor
      * @param valueTypeDescriptor required value type descriptor
      */
-    SingleChunkEntryWriterImpl(final TypeDescriptor<K> keyTypeDescriptor,
+    public SingleChunkEntryWriterImpl(final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor) {
         Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
         Vldtn.requireNonNull(valueTypeDescriptor, "valueTypeDescriptor");
@@ -45,7 +45,7 @@ public class SingleChunkEntryWriterImpl<K, V>
             throw new IllegalStateException("Chunk writer already closed");
         }
         // Write diff-encoded key header (2 bytes + diff bytes)
-        // FIXME following line eats about 4% of CPU time in whole index write
+        // TODO following line eats up to 4% of CPU time in write benchmark
         final byte[] diffKey = diffKeyWriter.write(entry.getKey());
         fileWriter.write(diffKey);
         // Write value payload via type writer

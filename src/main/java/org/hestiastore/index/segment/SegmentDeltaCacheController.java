@@ -1,6 +1,5 @@
 package org.hestiastore.index.segment;
 
-import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 
 /**
@@ -56,14 +55,4 @@ public final class SegmentDeltaCacheController<K, V> {
         segmentPropertiesManager.clearCacheDeltaFileNamesCouter();
     }
 
-    /**
-     * Iterator will provide correct data event when some data are written to
-     * delta cache.
-     * 
-     * @return
-     */
-    public EntryIterator<K, V> getSortedIterator() {
-        return new SegmentDeltaCacheEntryIterator<>(
-                getDeltaCache().getSortedKeys(), this);
-    }
 }

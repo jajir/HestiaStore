@@ -1,9 +1,11 @@
 package org.hestiastore.index.cache;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
@@ -19,8 +21,9 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectRBTreeMap;
  */
 public class UniqueCache<K, V> {
 
-    private final Comparator<K> keyComparator;
     private final Map<K, V> map;
+
+    private final Comparator<K> keyComparator;
 
     /**
      * Create builder for unique cache.
@@ -45,10 +48,21 @@ public class UniqueCache<K, V> {
     }
 
     /**
+     * Create unique cache with given key comparator.
+     * 
+     * @param keyComparator required comparator for keys
+     */
+    public UniqueCache(final Comparator<K> keyComparator, int initialCapacity) {
+        this.keyComparator = Vldtn.requireNonNull(keyComparator,
+                "keyComparator");
+        this.map = new HashMap<>(initialCapacity, 0.75F);
+    }
+
+    /**
      * When there is old value than old value is rewritten.
      */
     public void put(final Entry<K, V> entry) {
-        map.merge(entry.getKey(), entry.getValue(), (oldVal, newVal) -> newVal);
+        map.put(entry.getKey(), entry.getValue());
     }
 
     /**
@@ -87,31 +101,45 @@ public class UniqueCache<K, V> {
         return map.isEmpty();
     }
 
+    /**
+     * Get all entries as sorted list.
+     * 
+     * Ih have to be sorted, because returned list is used for merging with
+     * other data sources.
+     * 
+     * @return sorted list of entries
+     */
     public List<Entry<K, V>> getAsSortedList() {
-        return map.entrySet().stream()
-                .map(entry -> new Entry<K, V>(entry.getKey(), entry.getValue()))
-                // .sorted(new EntryComparator<>(keyComparator))//
-                .toList();
-    }
+        final int n = map.size();
+        if (n == 0)
+            return List.of();
 
-    public List<K> getSortedKeys() {
-        return map.entrySet().stream()//
-                .map(entry -> entry.getKey())//
-                .sorted(keyComparator)//
-                .toList();
+        @SuppressWarnings("unchecked")
+        Map.Entry<K, V>[] a = map.entrySet().toArray(new Map.Entry[n]);
+
+        /**
+         * Sort array of map entries by key using the provided key comparator.
+         * From performance point view it's best option for larger arrays.
+         */
+        Arrays.parallelSort(a, Map.Entry.comparingByKey(keyComparator));
+
+        var out = new ArrayList<Entry<K, V>>(n);
+        for (int i = 0; i < n; i++) {
+            var e = a[i];
+            out.add(new Entry<>(e.getKey(), e.getValue()));
+        }
+        return out;
     }
 
     /**
-     * Get unsorted stream of key value entries
+     * Get all entries as list.
      * 
-     * @return unsorted stream of key value entries
+     * @return list of entries
      */
-    public Stream<Entry<K, V>> getStream() {
-        return map//
-                .entrySet()//
-                .stream()//
-                .map(entry -> //
-                new Entry<K, V>(entry.getKey(), entry.getValue()));
+    public List<Entry<K, V>> getAsList() {
+        return map.entrySet().stream()//
+                .map(entry -> new Entry<K, V>(entry.getKey(), entry.getValue()))
+                .toList();
     }
 
 }

@@ -3,10 +3,10 @@ package org.hestiastore.index.sst;
 import java.util.List;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.F;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.EntryIteratorStreamer;
+import org.hestiastore.index.F;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.UniqueCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -15,7 +15,6 @@ import org.hestiastore.index.log.Log;
 import org.hestiastore.index.log.LoggedKey;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.sorteddatafile.EntryComparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +49,8 @@ public abstract class SstIndexImpl<K, V> extends AbstractCloseableResource
                 "valueTypeDescriptor");
         this.conf = Vldtn.requireNonNull(conf, "conf");
         this.cache = new UniqueCache<K, V>(
-                this.keyTypeDescriptor.getComparator());
+                this.keyTypeDescriptor.getComparator(),
+                conf.getMaxNumberOfKeysInCache());
         this.keySegmentCache = new KeySegmentCache<>(directory,
                 keyTypeDescriptor);
         final SegmentDataCache<K, V> segmentDataCache = new SegmentDataCache<>(
@@ -121,20 +121,17 @@ public abstract class SstIndexImpl<K, V> extends AbstractCloseableResource
                     F.fmt(cache.size()));
         }
         final CompactSupport<K, V> support = new CompactSupport<>(
-                segmentRegistry, keySegmentCache, keyTypeDescriptor);
-        // FIXME remove streams
-        // FIXME there is a duplicated sorting
-        cache.getStream()
-                .sorted(new EntryComparator<>(
-                        keyTypeDescriptor.getComparator()))
-                .forEach(support::compact);
-        support.compactRest();
+                segmentRegistry, keySegmentCache,
+                keyTypeDescriptor.getComparator());
+        cache.getAsSortedList().forEach(support::compact);
+        support.flush();
         final List<SegmentId> segmentIds = support.getEligibleSegmentIds();
-        // FIXME remove streams
-        segmentIds.stream()//
-                .map(segmentRegistry::getSegment)//
-                .filter(segmentSplitCoordinator::shouldBeSplit)//
-                .forEach(segmentSplitCoordinator::optionallySplit);
+        for (final SegmentId segmentId : segmentIds) {
+            final Segment<K, V> segment = segmentRegistry.getSegment(segmentId);
+            if (segmentSplitCoordinator.shouldBeSplit(segment)) {
+                segmentSplitCoordinator.optionallySplit(segment);
+            }
+        }
         cache.clear();
         keySegmentCache.optionalyFlush();
         log.rotate();
