@@ -84,4 +84,42 @@ class UniqueCacheBuilderTest {
                 // intentionally not setting data file
                 .build());
     }
+
+    @Test
+    void test_build_with_initial_capacity() {
+        final List<Entry<Integer, String>> data = List.of(
+                Entry.of(10, "A"), Entry.of(20, "B"), Entry.of(30, "C"));
+        final EntryIteratorWithCurrent<Integer, String> iterator = new EntryIteratorList<>(data);
+        when(sdf.openIterator()).thenReturn(iterator);
+
+        final UniqueCache<Integer, String> cache = UniqueCache.<Integer, String>builder()
+                .withKeyComparator(Integer::compareTo)
+                .withDataFile(sdf)
+                .withInitialCapacity(128)
+                .build();
+
+        assertEquals(3, cache.size());
+        final List<Entry<Integer, String>> out = cache.getAsSortedList();
+        assertEquals(Entry.of(10, "A"), out.get(0));
+        assertEquals(Entry.of(20, "B"), out.get(1));
+        assertEquals(Entry.of(30, "C"), out.get(2));
+    }
+
+    @Test
+    void test_withInitialCapacity_zero_throws() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> UniqueCache.<Integer, String>builder()
+                        .withInitialCapacity(0));
+        assertEquals("Property 'initialCapacity' must be greater than 0",
+                e.getMessage());
+    }
+
+    @Test
+    void test_withInitialCapacity_negative_throws() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> UniqueCache.<Integer, String>builder()
+                        .withInitialCapacity(-10));
+        assertEquals("Property 'initialCapacity' must be greater than 0",
+                e.getMessage());
+    }
 }

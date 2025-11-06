@@ -19,7 +19,7 @@ class UniqueCacheTest {
 
     @BeforeEach
     void setup() {
-        cache = new UniqueCache<>((i1, i2) -> i1 - i2);
+        cache = new UniqueCache<>((i1, i2) -> i1 - i2, 100);
     }
 
     @AfterEach
@@ -92,7 +92,7 @@ class UniqueCacheTest {
     @Test
     void test_constructor_null_comparator_throws() {
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> new UniqueCache<Integer, String>(null));
+                () -> new UniqueCache<Integer, String>(null, 100));
         assertEquals("Property 'keyComparator' must not be null.",
                 e.getMessage());
     }

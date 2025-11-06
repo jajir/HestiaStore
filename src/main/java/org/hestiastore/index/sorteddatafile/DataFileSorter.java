@@ -36,13 +36,13 @@ public class DataFileSorter<K, V> {
     private final SortedDataFile<K, V> targetSortedDataFile;
     private final Merger<K, V> merger;
     private final TypeDescriptor<K> keyTypeDescriptor;
-    private final long maxNumberOfKeysInMemory;
+    private final int maxNumberOfKeysInMemory;
 
     public DataFileSorter(final UnsortedDataFile<K, V> unsortedDataFile,
             final SortedDataFile<K, V> sortedDataFile,
             final Merger<K, V> merger,
             final TypeDescriptor<K> keyTypeDescriptor,
-            final long maxNumberOfKeysInMemory) {
+            final int maxNumberOfKeysInMemory) {
         this.unsortedDataFile = Vldtn.requireNonNull(unsortedDataFile,
                 "unsortedDataFile");
         this.targetSortedDataFile = Vldtn.requireNonNull(sortedDataFile,
@@ -70,7 +70,7 @@ public class DataFileSorter<K, V> {
 
     private int splitToChunks() {
         final UniqueCache<K, V> cache = new UniqueCache<>(
-                keyTypeDescriptor.getComparator());
+                keyTypeDescriptor.getComparator(), maxNumberOfKeysInMemory);
         int chunkCount = 0;
         try (EntryIterator<K, V> iterator = unsortedDataFile.openIterator()) {
             while (iterator.hasNext()) {
