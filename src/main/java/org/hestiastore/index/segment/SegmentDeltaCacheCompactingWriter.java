@@ -28,8 +28,7 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
      */
     private SegmentDeltaCacheWriter<K, V> deltaCacheWriter;
 
-    public SegmentDeltaCacheCompactingWriter(
-            final SegmentImpl<K, V> segment,
+    public SegmentDeltaCacheCompactingWriter(final SegmentImpl<K, V> segment,
             final SegmentCompacter<K, V> segmentCompacter,
             final SegmentDeltaCacheController<K, V> deltaCacheController,
             final SegmentCompactionPolicyWithManager compactionPolicy) {
@@ -55,8 +54,8 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
     public void write(final Entry<K, V> entry) {
         optionallyOpenDeltaCacheWriter();
         deltaCacheWriter.write(entry);
-        if (compactionPolicy
-                .shouldCompactDuringWriting(deltaCacheWriter.getNumberOfKeys())) {
+        if (compactionPolicy.shouldCompactDuringWriting(
+                deltaCacheWriter.getNumberOfKeys())) {
             deltaCacheWriter.close();
             deltaCacheWriter = null;
             segmentCompacter.forceCompact(segment);

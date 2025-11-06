@@ -33,7 +33,7 @@ public final class SegmentDeltaCacheWriter<K, V>
      * Consider using this number, it could be higher. Because of this delta
      * file will contains update command or tombstones.
      */
-    private long cx = 0;
+    private int cx = 0;
 
     /**
      * Creates a writer that aggregates updates into a delta cache file.
@@ -53,24 +53,22 @@ public final class SegmentDeltaCacheWriter<K, V>
     public SegmentDeltaCacheWriter(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentPropertiesManager,
             final SegmentDataProvider<K, V> segmentCacheDataProvider,
-            final long maxNumberOfKeysInSegmentDeltaCache) {
+            final int maxNumberOfKeysInSegmentDeltaCache) {
         this.segmentPropertiesManager = Vldtn.requireNonNull(
                 segmentPropertiesManager, "segmentPropertiesManager");
         this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
-        Vldtn.requireGreaterThanZero((int) maxNumberOfKeysInSegmentDeltaCache,
+        Vldtn.requireGreaterThanZero(maxNumberOfKeysInSegmentDeltaCache,
                 "maxNumberOfKeysInSegmentDeltaCache");
         this.uniqueCache = new UniqueCache<>(
                 segmentFiles.getKeyTypeDescriptor().getComparator(),
-                (int) maxNumberOfKeysInSegmentDeltaCache);
+                maxNumberOfKeysInSegmentDeltaCache);
         this.segmentCacheDataProvider = Vldtn.requireNonNull(
                 segmentCacheDataProvider, "segmentCacheDataProvider");
     }
 
-    public long getNumberOfKeys() {
+    public int getNumberOfKeys() {
         return cx;
     }
-
-    
 
     /**
      * Finally writes data to segment delta file and update numbed of keys in
