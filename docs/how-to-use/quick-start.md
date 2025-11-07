@@ -1,4 +1,5 @@
-# 📚 Examples of HestiaStore Usage
+
+# ⚡ Quick Start
 
 This page shows common usage patterns with correct imports and short explanations.
 
