@@ -705,12 +705,12 @@
   
   
     <li class="md-nav__item">
-      <a href="examples/" class="md-nav__link">
+      <a href="quick-start/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Examples
+    Quick Start
     
   </span>
   
@@ -1238,7 +1238,7 @@
 <p>HestiaStore is a Java library distributed as a JAR. To get started quickly:</p>
 <ul>
 <li><a href="install/">Install</a> — add the dependency via Maven/Gradle.</li>
-<li><a href="examples/">Examples (copy/paste)</a> — minimal in‑memory and filesystem examples.</li>
+<li><a href="quick-start/">Quick Start</a> — minimal in‑memory and filesystem examples.</li>
 <li><a href="troubleshooting/">Troubleshooting</a> — common issues, .lock files, and how to get help.</li>
 </ul>
 <h2 id="use-cases">💡 Use Cases</h2>
@@ -1249,9 +1249,9 @@
 <li>Persist values to disk without external databases</li>
 <li>Avoid cloud storage or network‑attached stores</li>
 </ul>
-<p>When not to use:</p>
+<p>When not to use HestiaStore:</p>
 <ul>
-<li>If all key‑value entries fit in RAM, prefer  (or similar) for speed and simplicity.</li>
+<li>If all key‑value entries fit in RAM, prefer an in‑memory map (e.g., <code>HashMap</code> or <code>ConcurrentHashMap</code>) for speed and simplicity.</li>
 <li>For small datasets with relational queries, a traditional RDBMS may be simpler to operate.</li>
 </ul>
 
