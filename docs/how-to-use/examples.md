@@ -35,7 +35,7 @@ public class Example {
 }
 ```
 
-Once this works, explore the advanced [configuration](../../configuration) for directory types and custom key/value classes.
+Once this works, explore the advanced [configuration](../configuration/index.md) for directory types and custom key/value classes.
 
 ## 💾 Filesystem Usage
 
@@ -134,7 +134,7 @@ Streaming uses a snapshot at iteration time and does not use the index cache to 
 
 ### 🔒 Thread Safety
 
-Index is not thread‑safe by default. Enable synchronization via configuration. See option [withThreadSafe](../../configuration#thread-safe-withthreadsafe).
+Index is not thread‑safe by default. Enable synchronization via configuration. See option [withThreadSafe](../configuration/index.md#thread-safe-withthreadsafe).
 
 ## 🧨 Exception Handling
 
