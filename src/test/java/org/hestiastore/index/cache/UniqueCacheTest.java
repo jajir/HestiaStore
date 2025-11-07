@@ -63,7 +63,7 @@ class UniqueCacheTest {
      * @
      */
     @Test
-    void test_stream_sorting() {
+    void test_getAsSortedList_sorting() {
         cache.put(Entry.of(15, "dear"));
         cache.put(Entry.of(13, "my"));
         cache.put(Entry.of(-199, "hello"));
