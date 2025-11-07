@@ -796,6 +796,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#exception-attempt-to-insert-the-same-key-as-previous" class="md-nav__link">
+    <span class="md-ellipsis">
+      ⚠️ Exception 'Attempt to insert the same key as previous'
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dependency-resolution-fails" class="md-nav__link">
     <span class="md-ellipsis">
       📦 Dependency Resolution Fails
@@ -1327,6 +1336,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#exception-attempt-to-insert-the-same-key-as-previous" class="md-nav__link">
+    <span class="md-ellipsis">
+      ⚠️ Exception 'Attempt to insert the same key as previous'
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dependency-resolution-fails" class="md-nav__link">
     <span class="md-ellipsis">
       📦 Dependency Resolution Fails
@@ -1402,6 +1420,25 @@
 <li>Symptom: Consistency checks fail or reads behave unexpectedly after a crash.</li>
 <li>Fix: Run checkAndRepairConsistency(). If it still fails, restore from a backup.</li>
 </ul>
+<h2 id="exception-attempt-to-insert-the-same-key-as-previous">⚠️ Exception 'Attempt to insert the same key as previous'</h2>
+<p>When followin exception appears in logs. Than it's probably problem with inconsistent implementaion of custom data type. Please look at <a href="../../configuration/data-types/#custom-data-types">custom type configuration</a></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>xception in thread &quot;main&quot; java.lang.IllegalArgumentException: Attempt to insert the same key as previous. Key(Base64)=&#39;QUFHR0JHQkFBVERTU1BTUw==&#39;, comparator=&#39;DtFixedLengthByteArray$$Lambda/0x0000000800214238&#39;
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    at org.hestiastore.index.sorteddatafile.SortedDataFileWriter.verifyKeyOrder(SortedDataFileWriter.java:76)
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    at org.hestiastore.index.sorteddatafile.SortedDataFileWriter.write(SortedDataFileWriter.java:104)
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    at org.hestiastore.index.GuardedEntryWriter.write(GuardedEntryWriter.java:18)
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    at org.hestiastore.index.segment.SegmentDeltaCacheWriter.lambda$doClose$0(SegmentDeltaCacheWriter.java:87)
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    at org.hestiastore.index.WriteTransaction.execute(WriteTransaction.java:41)
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    at org.hestiastore.index.segment.SegmentDeltaCacheWriter.doClose(SegmentDeltaCacheWriter.java:84)
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    at org.hestiastore.index.AbstractCloseableResource.close(AbstractCloseableResource.java:23)
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    at org.hestiastore.index.segment.SegmentDeltaCacheCompactingWriter.doClose(SegmentDeltaCacheCompactingWriter.java:47)
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    at org.hestiastore.index.AbstractCloseableResource.close(AbstractCloseableResource.java:23)
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    at org.hestiastore.index.sst.CompactSupport.flushToCurrentSegment(CompactSupport.java:84)
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    at org.hestiastore.index.sst.CompactSupport.compact(CompactSupport.java:59)
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    at org.hestiastore.index.sst.SstIndexImpl.flushCache(SstIndexImpl.java:126)
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    at org.hestiastore.index.sst.SstIndexImpl.put(SstIndexImpl.java:83)
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    at org.hestiastore.index.sst.Index.put(Index.java:93)
+</code></pre></div>
 <h2 id="dependency-resolution-fails">📦 Dependency Resolution Fails</h2>
 <ul>
 <li>

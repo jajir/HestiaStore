@@ -882,6 +882,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#why-register-your-custom-type-descriptor" class="md-nav__link">
+    <span class="md-ellipsis">
+      Why Register Your Custom Type Descriptor
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#how-to-use-new-data-type" class="md-nav__link">
     <span class="md-ellipsis">
       How to use new Data Type
@@ -899,6 +908,15 @@
   <a href="#notes" class="md-nav__link">
     <span class="md-ellipsis">
       Notes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#equality-hashing-and-sorting-contracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Equality, Hashing, and Sorting Contracts
     </span>
   </a>
   
@@ -1289,6 +1307,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#why-register-your-custom-type-descriptor" class="md-nav__link">
+    <span class="md-ellipsis">
+      Why Register Your Custom Type Descriptor
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#how-to-use-new-data-type" class="md-nav__link">
     <span class="md-ellipsis">
       How to use new Data Type
@@ -1306,6 +1333,15 @@
   <a href="#notes" class="md-nav__link">
     <span class="md-ellipsis">
       Notes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#equality-hashing-and-sorting-contracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Equality, Hashing, and Sorting Contracts
     </span>
   </a>
   
@@ -1417,6 +1453,14 @@
 <li>Implement the <code>TypeDescriptor&lt;T&gt;</code> interface. It's just a collection of simple interfaces which allows store data type to bytes and restore it from byte array</li>
 <li>Optionallly register it using <code>org.hestiastore.index.sst.DataTypeDescriptorRegistry.addTypeDescriptor(Class, descriptor)</code>.</li>
 </ol>
+<h3 id="why-register-your-custom-type-descriptor">Why Register Your Custom Type Descriptor</h3>
+<p>Registering your <code>TypeDescriptor</code> with <code>DataTypeDescriptorRegistry</code> is not mandatory, but it brings benefits:</p>
+<ul>
+<li>Simpler configuration defaults: When building an <code>IndexConfiguration</code> you can specify only <code>keyClass</code>/<code>valueClass</code>. The manager auto-fills <code>keyTypeDescriptor</code>/<code>valueTypeDescriptor</code> from the registry, so you don’t have to wire descriptors everywhere.</li>
+<li>Consistency and validation: A single registry reduces mismatches between classes and descriptors. The configuration manager can validate and prevent accidental overriding of fixed properties because the descriptor identity is explicit.</li>
+<li>Future-proofing: Sharing an index between services or running offline maintenance works seamlessly as long as your descriptor type is on the classpath.</li>
+</ul>
+<p>Important: If you register using a <code>TypeDescriptor</code> instance, its class will be saved. That class must have a public no-args constructor (the system instantiates it reflectively). If this is not possible, you can register using the explicit class name overload <code>addTypeDescriptor(Class, String)</code>.</p>
 <h3 id="how-to-use-new-data-type">How to use new Data Type</h3>
 <p>During Index configuration new data type descriptor can by directly used:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">IndexConfiguration</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="w"> </span><span class="n">conf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IndexConfiguration</span>
@@ -1435,6 +1479,46 @@
 <li>All numeric types use big-endian byte order for consistent sorting and comparison.</li>
 <li><code>ByteArray</code> is a wrapper class designed to support <code>equals()</code>, <code>hashCode()</code>, and lexicographic comparison. It can be used for binary blobs or hash digests.</li>
 </ul>
+<h2 id="equality-hashing-and-sorting-contracts">Equality, Hashing, and Sorting Contracts</h2>
+<p>When you define custom key types (or use low-level binary types), it is critical that equality, hashing, and ordering behave consistently. HestiaStore relies on these properties to deduplicate updates in memory, to merge data from multiple sources, and to safely write strictly-increasing keys to disk.</p>
+<p>Why this matters</p>
+<ul>
+<li>In-memory caches coalesce multiple updates to the same key before flush. If the cache cannot recognize “the same key”, duplicate keys can slip through.</li>
+<li>During flushing and compaction, keys are iterated in sorted order and written by <code>SortedDataFileWriter</code>. That writer requires strictly increasing keys. Two adjacent keys that are equal under the comparator will cause a hard failure.</li>
+<li>Merging/lookup structures assume a total and stable order; a non-transitive or unstable comparator leads to undefined behavior.</li>
+</ul>
+<p>Typical failure mode when the contract is broken</p>
+<ul>
+<li>Using raw <code>byte[]</code> as a key: <code>byte[]</code> uses reference equality and identity-based <code>hashCode()</code>. If your comparator compares by content (e.g., lexicographically), then two different <code>byte[]</code> instances with the same content are NOT equal to <code>HashMap</code>, but ARE equal to the comparator. The cache keeps both, sorts them, and the writer sees two adjacent equal keys and throws an exception like:</li>
+<li>"Attempt to insert the same key as previous. Key(Base64)='…'"</li>
+</ul>
+<p>Contracts to follow</p>
+<ul>
+<li>equals/hashCode consistency: If <code>a.equals(b)</code> is <code>true</code>, then <code>a.hashCode() == b.hashCode()</code> must also be <code>true</code>.</li>
+<li>Comparator total order: The comparator returned by your <code>TypeDescriptor#getComparator()</code> must be total (anti-symmetric, transitive, and consistent), and must define the uniqueness of keys.</li>
+<li>Comparator consistency with equality: If the system uses hash-based maps anywhere for keys of type <code>K</code>, ensure that <code>compare(a, b) == 0</code> implies <code>a.equals(b)</code>. This avoids having one part of the system see two objects as the same key while another part sees them as different. If you cannot satisfy this for a given JVM type (e.g., raw <code>byte[]</code>), wrap it in a type that does (e.g., <code>ByteArray</code>).</li>
+<li>Stable order vs. encoding: Keep the comparator consistent with the intended semantics of your keys and their encoding. For numbers encoded big-endian, natural numeric order is the correct comparator.</li>
+</ul>
+<p>Practical guidance</p>
+<ul>
+<li>Do NOT use raw <code>byte[]</code> as keys. Use <code>org.hestiastore.index.datatype.ByteArray</code> or another wrapper that implements content-based <code>equals()</code>, <code>hashCode()</code>, and a lexicographic <code>compareTo</code>.</li>
+<li>For fixed-length binary keys, prefer a wrapper or a fixed-length <code>String</code> (<code>TypeDescriptorFixedLengthString</code>) if your domain allows it.</li>
+<li>Avoid lossy comparators (e.g., comparing only a prefix) unless that prefix truly defines key identity. Otherwise, distinct keys will be treated as equal under the comparator and collapse unintentionally.</li>
+<li>Ensure your comparator never depends on mutable or external state; it must be stable for the lifetime of the index.</li>
+</ul>
+<p>How to self-check</p>
+<ul>
+<li>Property checks you can add to tests when introducing a new key type <code>K</code> and comparator <code>cmp</code>:</li>
+<li>For many random pairs <code>(a, b)</code>: if <code>cmp.compare(a, b) == 0</code>, then assert <code>a.equals(b)</code> and <code>a.hashCode() == b.hashCode()</code>.</li>
+<li>For many triples <code>(a, b, c)</code>: assert transitivity: if <code>cmp.compare(a, b) &lt;= 0</code> and <code>cmp.compare(b, c) &lt;= 0</code> then <code>cmp.compare(a, c) &lt;= 0</code>.</li>
+<li>Round-trip through caches: insert duplicates under the comparator, ensure only the latest value is kept, and iteration returns strictly increasing unique keys.</li>
+</ul>
+<p>Example: byte[] vs. ByteArray</p>
+<ul>
+<li>Bad (will fail): using <code>byte[]</code> as keys with a content comparator. Two different arrays with the same content will be considered different by a hash-based map but equal by the comparator, leading to duplicate adjacent keys during write.</li>
+<li>Good: using <code>ByteArray</code> as keys. <code>ByteArray</code> implements content-based <code>equals()</code>, <code>hashCode()</code>, and lexicographic <code>compareTo</code>, so all parts of the system agree on key identity and ordering.</li>
+</ul>
+<p>By following these contracts, you ensure that updates are correctly deduplicated, merges are deterministic, and on-disk files maintain the strict key ordering required for safe reads and compactions.</p>
 
 
 
