@@ -5,7 +5,7 @@
 HestiaStore is a Java library distributed as a JAR. To get started quickly:
 
 - [Install](install.md) — add the dependency via Maven/Gradle.
-- [Examples (copy/paste)](examples.md) — minimal in‑memory and filesystem examples.
+- [Quick Start](quick-start.md) — minimal in‑memory and filesystem examples.
 - [Troubleshooting](troubleshooting.md) — common issues, .lock files, and how to get help.
 
 ## 💡 Use Cases
@@ -17,7 +17,7 @@ HestiaStore is especially effective when you need to:
 - Persist values to disk without external databases
 - Avoid cloud storage or network‑attached stores
 
-When not to use:
+When not to use HestiaStore:
 
-- If all key‑value entries fit in RAM, prefer  (or similar) for speed and simplicity.
+- If all key‑value entries fit in RAM, prefer an in‑memory map (e.g., `HashMap` or `ConcurrentHashMap`) for speed and simplicity.
 - For small datasets with relational queries, a traditional RDBMS may be simpler to operate.

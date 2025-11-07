@@ -19,7 +19,7 @@ nav:
     - Getting Started:
         - how-to-use/index.md
         - Install: how-to-use/install.md
-        - Examples: how-to-use/examples.md
+        - Quick Start: how-to-use/quick-start.md
         - Troubleshooting: how-to-use/troubleshooting.md
     - Configuration:
         - configuration/index.md

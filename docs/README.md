@@ -1,9 +1,9 @@
 ![HestiaStore logo](./images/logo.png)
 
-[![Build (master)](https://github.com/jajir/HestiaStore/actions/workflows/maven.yml/badge.svg?branch=master)](https://github.com/jajir/HestiaStore/actions/workflows/maven.yml?query=branch%3Amain)
+[![Build (main)](https://github.com/jajir/HestiaStore/actions/workflows/maven.yml/badge.svg?branch=main)](https://github.com/jajir/HestiaStore/actions/workflows/maven.yml?query=branch%3Amain)
 ![test results](https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/badge-main.svg)
 ![line coverage](https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/jacoco-badge-main.svg)
-![OWAPS dependency check](https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/badge-owasp-main.svg)
+![OWASP dependency check](https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/badge-owasp-main.svg)
 [![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/10654/badge)](https://www.bestpractices.dev/projects/10654)
 ![Maven Central Version](https://img.shields.io/maven-central/v/org.hestiastore.index/core)
@@ -12,19 +12,19 @@
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=jajir_HestiaStore&metric=bugs)](https://sonarcloud.io/summary/new_code?id=jajir_HestiaStore)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=jajir_HestiaStore&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=jajir_HestiaStore)
 
-HestiaStore is a lightweight, embeddable key-value storage engine optimized for billions of records, designed to run in a single directory with high performance and minimal configuration.
+HestiaStore is a lightweight, embeddable key‑value storage engine optimized for billions of records, designed to run in a single directory with high performance and minimal configuration.
 
 Features:
 
 ```plaintext
  • Pure Java (no native dependencies), easy to embed
  • 200k+ ops/s; predictable I/O with configurable buffering
- • In-memory or file-backed storage, zero-config setup
+ • In‑memory or file‑backed storage, zero‑config setup
  • Pluggable filters: Snappy compression, CRC32 integrity, magic-number validation
  • Bloom filter for fast negative lookups (tunable false-positive rate)
  • Segmented SST structure with sparse index for efficient range scans
  • Custom key/value types via type descriptors
- • Single-writer, multi-reader (optional synchronized mode)
+ • Single‑writer, multi‑reader (optional synchronized mode)
  • Test-friendly MemDirectory for fast, isolated tests
  • Roadmap: write-ahead logging and advanced compaction
 ```
@@ -78,11 +78,11 @@ We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING
 
 ## 📚 Documentation
 
-- [HestiaStore Index architecture](https://hestiastore.org/architecture/arch-index/)
-- [How to use HestiaStore](https://hestiastore.org/how-to-use/) including some examples
-- [Index configuration](https://hestiastore.org/configuration/) and configuration properties explaining
-- [Library Logging](https://hestiastore.org/configuration/logging/) How to setup loggin
-- [Project versioning and how to release](https://hestiastore.org/development/release/) snapshot and new version
+- [Index architecture](https://hestiastore.org/architecture/arch-index/)
+- [Getting started](https://hestiastore.org/how-to-use/) with a quick start and examples
+- [Configuration](https://hestiastore.org/configuration/) — properties overview and guidance
+- [Logging](https://hestiastore.org/configuration/logging/) — how to set up logging
+- [Releases](https://hestiastore.org/development/release/) — versioning and release process
 
 <!--
 * [Segment implementation details](segment.md)
@@ -97,12 +97,12 @@ To include HestiaStore in your Maven project, add the following dependency to yo
   <dependency>
     <groupId>org.hestiastore.index</groupId>
     <artifactId>core</artifactId>
-    <version>0.0.5</version>
+    <version><!--latest verson--></version>
   </dependency>
 </dependencies>
 ```
 
-Replace the version number with the latest available from Maven Central.
+Replace the version number with the latest available from Maven Central [org.hestiastore.index:core](https://central.sonatype.com/artifact/org.hestiastore.index/core).
 
 **Note**: HestiaStore requires Java 17 or newer.
 
@@ -132,13 +132,15 @@ System.out.println("Value for 'Hello': " + value);
 index.close();
 ```
 
+For more integration details, see the [Getting Started](how-to-use/index.md) section.
+
 ## 🗺️ Roadmap
 
 Planned improvements include:
 
 - Enhance Javadoc documentation
 - Implement data consistency verification using checksums
-- Complete the implementation of Write-Ahead Logging (WAH)
+- Complete the implementation of Write‑Ahead Logging (WAL)
 
 For detailed tasks and progress, see the [GitHub Issues](https://github.com/jajir/HestiaStore/issues) page.
 
