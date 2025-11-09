@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="420" viewBox="0 0 1000 420">
+  <style>
+        text { fill: currentColor; dominant-baseline: middle; }
+        .label { font: 500 20px "Inter", "Helvetica Neue", Arial, sans-serif; }
+        .value { font: 18px "IBM Plex Mono", "Courier New", monospace; }
+    </style>
+  <rect x="0" y="10" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
+  <text class="label" x="20" y="30">ChronicleMap</text>
+  <rect x="250" y="17" width="11" height="26" rx="6" ry="6" fill="#4E79A7" stroke="#42668D" stroke-width="2" />
+  <text class="value" x="277" y="30">5,954 ops/s</text>
+  <rect x="0" y="70" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
+  <text class="label" x="20" y="90">H2</text>
+  <rect x="250" y="77" width="25" height="26" rx="6" ry="6" fill="#F28E2B" stroke="#CD7824" stroke-width="2" />
+  <text class="value" x="291" y="90">13,458 ops/s</text>
+  <rect x="0" y="130" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
+  <text class="label" x="20" y="150">HestiaStoreBasic</text>
+  <rect x="250" y="137" width="380" height="26" rx="6" ry="6" fill="#E15759" stroke="#BF494B" stroke-width="2" />
+  <text class="value" x="646" y="150">197,128 ops/s</text>
+  <rect x="0" y="190" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
+  <text class="label" x="20" y="210">HestiaStoreCompress</text>
+  <rect x="250" y="197" width="390" height="26" rx="6" ry="6" fill="#76B7B2" stroke="#649B97" stroke-width="2" />
+  <text class="value" x="656" y="210">202,273 ops/s</text>
+  <rect x="0" y="250" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
+  <text class="label" x="20" y="270">LevelDB</text>
+  <rect x="250" y="257" width="87" height="26" rx="6" ry="6" fill="#59A14F" stroke="#4B8843" stroke-width="2" />
+  <text class="value" x="353" y="270">45,263 ops/s</text>
+  <rect x="0" y="310" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
+  <text class="label" x="20" y="330">MapDB</text>
+  <rect x="250" y="317" width="8" height="26" rx="6" ry="6" fill="#EDC948" stroke="#C9AA3D" stroke-width="2" />
+  <text class="value" x="274" y="330">2,946 ops/s</text>
+  <rect x="0" y="370" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
+  <text class="label" x="20" y="390">RocksDB</text>
+  <rect x="250" y="377" width="590" height="26" rx="6" ry="6" fill="#B07AA1" stroke="#956788" stroke-width="2" />
+  <text class="value" x="856" y="390">305,712 ops/s</text>
+</svg>

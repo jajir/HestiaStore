@@ -8,32 +8,39 @@ repo_name: jajir/HestiaStore
 repo_url: https://github.com/jajir/HestiaStore
 
 nav:
-    - Home: 
-        - README.md
+    - Home: README.md
+    - Why HestiaStore:
+        - Reliability Overview: reliability.md
+        - Benchmarks: benchmark-results.md
+        - Security: SECURITY.md
         - Alternatives: alternatives.md
-        - benchmark-results.md
-        - CHANGELOG.md
-        - CODE_OF_CONDUCT.md
-        - CONTRIBUTING.md
-        - SECURITY.md
+        - Quality & Testing: quality.md
     - Getting Started:
-        - how-to-use/index.md
+        - Overview: how-to-use/index.md
         - Install: how-to-use/install.md
         - Quick Start: how-to-use/quick-start.md
         - Troubleshooting: how-to-use/troubleshooting.md
+        - API Reference: https://javadoc.io/doc/org.hestiastore.index/core  
     - Configuration:
-        - configuration/index.md
+        - Overview: configuration/index.md
         - Data Types: configuration/data-types.md
         - Logging: configuration/logging.md
-    - 'Architecture':
-        - architecture/index.md
+    - Architecture:
+        - Overview: architecture/index.md
         - Index Architecture: architecture/arch-index.md
         - Segment Design: architecture/segment.md
-        - Data block: architecture/datablock.md
-    - 'Development':
-        - development/index.md
-        - Release: development/release.md
-        - Documentation: development/documentation.md
+        - Data Block: architecture/datablock.md
+#    - Operations:
+#        - Production Guide: operations/index.md
+#        - Performance Tuning: operations/tuning.md
+#        - Backup & Restore: operations/backup-restore.md
+#        - Observability: operations/monitoring.md
+    - Community:
+        - Changelog: CHANGELOG.md
+        - Release Process: development/release.md
+        - Contributing: CONTRIBUTING.md
+        - Code of Conduct: CODE_OF_CONDUCT.md
+        - Development Docs: development/documentation.md
         - Guides: development/guides.md
         - JVM Profiling: profiler-stacktrace.md
 
