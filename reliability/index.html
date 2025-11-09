@@ -10,9 +10,13 @@
         <meta name="author" content="Jan Jirout">
       
       
-        <link rel="canonical" href="https://jajir.github.io/HestiaStore/development/">
+        <link rel="canonical" href="https://jajir.github.io/HestiaStore/reliability/">
       
       
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../benchmark-results/">
       
       
       <link rel="icon" href="../images/favicon.ico">
@@ -20,7 +24,7 @@
     
     
       
-        <title>Development - HestiaStore</title>
+        <title>Reliability Overview - HestiaStore</title>
       
     
     
@@ -72,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#development" class="md-skip">
+        <a href="#reliability-overview" class="md-skip">
           Skip to content
         </a>
       
@@ -107,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Development
+              Reliability Overview
             
           </span>
         </div>
@@ -246,11 +250,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../reliability/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
           
   
   
@@ -428,8 +434,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -447,21 +455,22 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
-        
-          
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
             
   
   
@@ -474,7 +483,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             Why HestiaStore
@@ -485,10 +494,19 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../reliability/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -499,6 +517,7 @@
   
 
       </a>
+      
     </li>
   
 
@@ -1120,7 +1139,7 @@
   
   
     <li class="md-nav__item">
-      <a href="release/" class="md-nav__link">
+      <a href="../development/release/" class="md-nav__link">
         
   
   
@@ -1189,7 +1208,7 @@
   
   
     <li class="md-nav__item">
-      <a href="documentation/" class="md-nav__link">
+      <a href="../development/documentation/" class="md-nav__link">
         
   
   
@@ -1212,7 +1231,7 @@
   
   
     <li class="md-nav__item">
-      <a href="guides/" class="md-nav__link">
+      <a href="../development/guides/" class="md-nav__link">
         
   
   
@@ -1295,8 +1314,14 @@
   
 
 
-<h1 id="development">Development</h1>
-<p>Here are some development related topiscs.</p>
+<h1 id="reliability-overview">Reliability Overview</h1>
+<p>This page summarizes how HestiaStore approaches reliability and stability.</p>
+<ul>
+<li>Benchmarks: see benchmark-results.md for throughput and resource use.</li>
+<li>Security: see SECURITY.md for reporting and handling practices.</li>
+<li>Quality signals: CI, coverage, static analysis, and dependency checks (see badges on the Home page).</li>
+</ul>
+<p>More detail to be added.</p>
 
 
 
