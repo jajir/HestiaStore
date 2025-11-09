@@ -1,4 +1,4 @@
-![HestiaStore logo](./images/logo.png)
+# ![HestiaStore logo](./images/logo.png)
 
 [![Build (main)](https://github.com/jajir/HestiaStore/actions/workflows/maven.yml/badge.svg?branch=main)](https://github.com/jajir/HestiaStore/actions/workflows/maven.yml?query=branch%3Amain)
 ![test results](https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/badge-main.svg)
@@ -30,6 +30,12 @@ Features:
 ```
 
 ## 🚀 Performance Comparison
+
+### Benchmark throughput (ops/s, higher is better)
+
+The following benchmark compares similar products by writing simple key-value pairs into a map. It includes a 3-minute warm-up to prime caches, followed by a 4-minute measurement period. Tests were performed on a 2024 Mac mini with 16 GB RAM.
+
+![Performace comparision](./images/table.svg)
 
 | Engine | Score [ops/s] | Occupied space | CPU Usage |
 |:-------|--------------:|---------------:|----------:|
