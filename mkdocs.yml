@@ -27,9 +27,25 @@ nav:
         - Logging: configuration/logging.md
     - Architecture:
         - Overview: architecture/index.md
-        - Index Architecture: architecture/arch-index.md
-        - Segment Design: architecture/segment.md
-        - Data Block: architecture/datablock.md
+        - Core Building Blocks:
+            - Sparse Index: architecture/arch-index.md
+            - Segments & Compaction: architecture/segment.md
+            - Data Block Format: architecture/datablock.md
+        - Data Flow:
+            - Write Path: architecture/write-path.md
+            - Read Path: architecture/read-path.md
+        - Reliability:
+            - Consistency & Recovery: architecture/recovery.md
+            - Filters & Integrity: architecture/filters.md
+        - Performance:
+            - Caching Strategy: architecture/caching.md
+            - Performance Model & Sizing: architecture/performance.md
+        - Concurrency:
+            - Access Model: architecture/concurrency.md
+        - Reference:
+            - On-Disk Layout & File Names: architecture/on-disk-layout.md
+            - Limitations & Trade-offs: architecture/limits.md
+            - Glossary: architecture/glossary.md
 #    - Operations:
 #        - Production Guide: operations/index.md
 #        - Performance Tuning: operations/tuning.md
