@@ -10,24 +10,28 @@
         <meta name="author" content="Jan Jirout">
       
       
-        <link rel="canonical" href="https://jajir.github.io/HestiaStore/development/">
+        <link rel="canonical" href="https://jajir.github.io/HestiaStore/architecture/performance/">
       
       
+        <link rel="prev" href="../caching/">
       
       
-      <link rel="icon" href="../images/favicon.ico">
+        <link rel="next" href="../concurrency/">
+      
+      
+      <link rel="icon" href="../../images/favicon.ico">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.23">
     
     
       
-        <title>Development - HestiaStore</title>
+        <title>Performance Model & Sizing - HestiaStore</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.84d31ad4.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.84d31ad4.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -46,7 +50,7 @@
       
     
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -72,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#development" class="md-skip">
+        <a href="#performance-model-sizing" class="md-skip">
           Skip to content
         </a>
       
@@ -88,9 +92,9 @@
 
 <header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="HestiaStore" class="md-header__button md-logo" aria-label="HestiaStore" data-md-component="logo">
+    <a href="../.." title="HestiaStore" class="md-header__button md-logo" aria-label="HestiaStore" data-md-component="logo">
       
-  <img src="../images/logo-square.png" alt="logo">
+  <img src="../../images/logo-square.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -107,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Development
+              Performance Model & Sizing
             
           </span>
         </div>
@@ -229,7 +233,7 @@
   
   
     <li class="md-tabs__item">
-      <a href=".." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         
   
   
@@ -250,7 +254,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../reliability/" class="md-tabs__link">
+        <a href="../../reliability/" class="md-tabs__link">
           
   
   
@@ -272,7 +276,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../how-to-use/" class="md-tabs__link">
+        <a href="../../how-to-use/" class="md-tabs__link">
           
   
   
@@ -294,7 +298,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../configuration/" class="md-tabs__link">
+        <a href="../../configuration/" class="md-tabs__link">
           
   
   
@@ -312,11 +316,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../architecture/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -338,7 +344,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../CHANGELOG/" class="md-tabs__link">
+        <a href="../../CHANGELOG/" class="md-tabs__link">
           
   
   
@@ -380,9 +386,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="HestiaStore" class="md-nav__button md-logo" aria-label="HestiaStore" data-md-component="logo">
+    <a href="../.." title="HestiaStore" class="md-nav__button md-logo" aria-label="HestiaStore" data-md-component="logo">
       
-  <img src="../images/logo-square.png" alt="logo">
+  <img src="../../images/logo-square.png" alt="logo">
 
     </a>
     HestiaStore
@@ -409,7 +415,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -488,7 +494,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reliability/" class="md-nav__link">
+      <a href="../../reliability/" class="md-nav__link">
         
   
   
@@ -511,7 +517,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../benchmark-results/" class="md-nav__link">
+      <a href="../../benchmark-results/" class="md-nav__link">
         
   
   
@@ -534,7 +540,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../SECURITY/" class="md-nav__link">
+      <a href="../../SECURITY/" class="md-nav__link">
         
   
   
@@ -557,7 +563,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../alternatives/" class="md-nav__link">
+      <a href="../../alternatives/" class="md-nav__link">
         
   
   
@@ -580,7 +586,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../quality/" class="md-nav__link">
+      <a href="../../quality/" class="md-nav__link">
         
   
   
@@ -643,7 +649,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../how-to-use/" class="md-nav__link ">
+            <a href="../../how-to-use/" class="md-nav__link ">
               
   
   
@@ -678,7 +684,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to-use/install/" class="md-nav__link">
+      <a href="../../how-to-use/install/" class="md-nav__link">
         
   
   
@@ -701,7 +707,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to-use/quick-start/" class="md-nav__link">
+      <a href="../../how-to-use/quick-start/" class="md-nav__link">
         
   
   
@@ -724,7 +730,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to-use/troubleshooting/" class="md-nav__link">
+      <a href="../../how-to-use/troubleshooting/" class="md-nav__link">
         
   
   
@@ -806,7 +812,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../configuration/" class="md-nav__link ">
+            <a href="../../configuration/" class="md-nav__link ">
               
   
   
@@ -841,7 +847,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../configuration/data-types/" class="md-nav__link">
+      <a href="../../configuration/data-types/" class="md-nav__link">
         
   
   
@@ -864,7 +870,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../configuration/logging/" class="md-nav__link">
+      <a href="../../configuration/logging/" class="md-nav__link">
         
   
   
@@ -891,6 +897,8 @@
       
   
   
+    
+  
   
   
     
@@ -916,22 +924,23 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../architecture/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   
@@ -944,13 +953,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Architecture
@@ -980,10 +989,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -992,7 +1004,7 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_2" >
         
           
-          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="">
             
   
   
@@ -1019,7 +1031,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/arch-index/" class="md-nav__link">
+      <a href="../arch-index/" class="md-nav__link">
         
   
   
@@ -1042,7 +1054,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/segment/" class="md-nav__link">
+      <a href="../segment/" class="md-nav__link">
         
   
   
@@ -1065,7 +1077,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/datablock/" class="md-nav__link">
+      <a href="../datablock/" class="md-nav__link">
         
   
   
@@ -1108,10 +1120,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -1120,7 +1135,7 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_3" >
         
           
-          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="">
             
   
   
@@ -1147,7 +1162,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/write-path/" class="md-nav__link">
+      <a href="../write-path/" class="md-nav__link">
         
   
   
@@ -1170,7 +1185,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/read-path/" class="md-nav__link">
+      <a href="../read-path/" class="md-nav__link">
         
   
   
@@ -1213,10 +1228,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -1225,7 +1243,7 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_4" >
         
           
-          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="">
             
   
   
@@ -1252,7 +1270,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/recovery/" class="md-nav__link">
+      <a href="../recovery/" class="md-nav__link">
         
   
   
@@ -1275,7 +1293,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/filters/" class="md-nav__link">
+      <a href="../filters/" class="md-nav__link">
         
   
   
@@ -1303,8 +1321,10 @@
                 
   
   
+    
   
   
+  
     
     
       
@@ -1317,20 +1337,21 @@
     
       
       
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
         
           
+          
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_5" >
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" checked>
         
           
-          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="">
             
   
   
@@ -1343,7 +1364,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5_5">
             <span class="md-nav__icon md-icon"></span>
             Performance
@@ -1357,7 +1378,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/caching/" class="md-nav__link">
+      <a href="../caching/" class="md-nav__link">
         
   
   
@@ -1377,10 +1398,32 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../architecture/performance/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Performance Model & Sizing
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1391,6 +1434,107 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#mental-model-hot-paths" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mental Model (Hot Paths)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#io-patterns-and-amplification" class="md-nav__link">
+    <span class="md-ellipsis">
+      I/O Patterns and Amplification
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-knobs-what-they-do" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Knobs (What They Do)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#memory-sizing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Memory Sizing
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cpu-sizing" class="md-nav__link">
+    <span class="md-ellipsis">
+      CPU Sizing
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#practical-tuning-recipes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Practical Tuning Recipes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#observability-and-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Observability and Validation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#code-pointers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Code Pointers
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-glossary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Related Glossary
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1421,10 +1565,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -1433,7 +1580,7 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_6" >
         
           
-          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="">
             
   
   
@@ -1460,7 +1607,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/concurrency/" class="md-nav__link">
+      <a href="../concurrency/" class="md-nav__link">
         
   
   
@@ -1505,10 +1652,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -1517,7 +1667,7 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_7" >
         
           
-          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="">
             
   
   
@@ -1544,7 +1694,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/on-disk-layout/" class="md-nav__link">
+      <a href="../on-disk-layout/" class="md-nav__link">
         
   
   
@@ -1567,7 +1717,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/limits/" class="md-nav__link">
+      <a href="../limits/" class="md-nav__link">
         
   
   
@@ -1590,7 +1740,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/glossary/" class="md-nav__link">
+      <a href="../glossary/" class="md-nav__link">
         
   
   
@@ -1689,7 +1839,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../CHANGELOG/" class="md-nav__link">
+      <a href="../../CHANGELOG/" class="md-nav__link">
         
   
   
@@ -1712,7 +1862,7 @@
   
   
     <li class="md-nav__item">
-      <a href="release/" class="md-nav__link">
+      <a href="../../development/release/" class="md-nav__link">
         
   
   
@@ -1735,7 +1885,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../CONTRIBUTING/" class="md-nav__link">
+      <a href="../../CONTRIBUTING/" class="md-nav__link">
         
   
   
@@ -1758,7 +1908,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../CODE_OF_CONDUCT/" class="md-nav__link">
+      <a href="../../CODE_OF_CONDUCT/" class="md-nav__link">
         
   
   
@@ -1781,7 +1931,7 @@
   
   
     <li class="md-nav__item">
-      <a href="documentation/" class="md-nav__link">
+      <a href="../../development/documentation/" class="md-nav__link">
         
   
   
@@ -1804,7 +1954,7 @@
   
   
     <li class="md-nav__item">
-      <a href="guides/" class="md-nav__link">
+      <a href="../../development/guides/" class="md-nav__link">
         
   
   
@@ -1827,7 +1977,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../profiler-stacktrace/" class="md-nav__link">
+      <a href="../../profiler-stacktrace/" class="md-nav__link">
         
   
   
@@ -1870,6 +2020,95 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#mental-model-hot-paths" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mental Model (Hot Paths)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#io-patterns-and-amplification" class="md-nav__link">
+    <span class="md-ellipsis">
+      I/O Patterns and Amplification
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-knobs-what-they-do" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Knobs (What They Do)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#memory-sizing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Memory Sizing
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cpu-sizing" class="md-nav__link">
+    <span class="md-ellipsis">
+      CPU Sizing
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#practical-tuning-recipes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Practical Tuning Recipes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#observability-and-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Observability and Validation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#code-pointers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Code Pointers
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-glossary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Related Glossary
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1887,8 +2126,137 @@
   
 
 
-<h1 id="development">Development</h1>
-<p>Here are some development related topiscs.</p>
+<h1 id="performance-model-sizing">Performance Model &amp; Sizing</h1>
+<p>This page summarizes how HestiaStore achieves high throughput and predictable latency, and how to size the main knobs. All claims map to code so you can verify behavior.</p>
+<h2 id="mental-model-hot-paths">Mental Model (Hot Paths)</h2>
+<ul>
+<li>Put/Delete:</li>
+<li>O(1) to update in‑memory write buffer (<code>UniqueCache</code>).</li>
+<li>Batched flush sorts unique keys (parallel sort over entries) and writes per‑segment delta files sequentially.</li>
+<li>
+<p>Optional compaction merges delta files into the main SST (sequential chunk write).</p>
+</li>
+<li>
+<p>Get (negative):</p>
+</li>
+<li>
+<p>O(k) Bloom probe (k = hash functions), no disk I/O when filter says “absent”.</p>
+</li>
+<li>
+<p>Get (positive):</p>
+</li>
+<li>Locate target segment via key→segment map (in‑memory TreeMap ceiling lookup).</li>
+<li>Seek into <code>.index</code> by sparse index pointer, then bounded local scan of at most <code>maxNumberOfKeysInSegmentChunk</code> entries in ascending order. Typically one chunk read.</li>
+</ul>
+<h2 id="io-patterns-and-amplification">I/O Patterns and Amplification</h2>
+<ul>
+<li>Sequential writes: delta files and SST chunks append sequentially via transactional writers (<code>*.tmp</code> + rename).</li>
+<li>Sequential reads: positive get reads one chunk and scans ≤ N keys (N = <code>maxNumberOfKeysInSegmentChunk</code>).</li>
+<li>Negative reads: avoid disk I/O via Bloom filter unless false positive.</li>
+<li>Alignment and block size:</li>
+<li>Chunk store uses fixed 16‑byte cells with data blocks sized by <code>diskIoBufferSize</code> (divisible by 1024). Payloads are padded to whole cells for easy positioning.</li>
+<li>Code: <code>chunkstore/CellPosition.java</code>, <code>datablockfile/DataBlockSize.java</code>, <code>Vldtn#requireIoBufferSize</code>.</li>
+</ul>
+<h2 id="key-knobs-what-they-do">Key Knobs (What They Do)</h2>
+<ul>
+<li><code>maxNumberOfKeysInCache</code> (index‑level write buffer)</li>
+<li>
+<p>Higher ⇒ fewer flushes, larger batches, better write throughput; uses more RAM during bursts.</p>
+</li>
+<li>
+<p><code>maxNumberOfKeysInSegmentChunk</code> (sparse index cadence)</p>
+</li>
+<li>
+<p>Lower ⇒ smaller local scan window (read latency) with more sparse‑index entries; slightly more write work during compaction.</p>
+</li>
+<li>
+<p>Bloom filter sizing: <code>bloomFilterIndexSizeInBytes</code>, <code>bloomFilterNumberOfHashFunctions</code>, or target probability</p>
+</li>
+<li>From <code>BloomFilterBuilder</code>: m = −(n ln p)/(ln2)^2, k ≈ m/n·ln2. Larger m lowers false positives and I/O on negative lookups at the cost of RAM and disk for the filter.</li>
+<li>
+<p>Code: <code>bloomfilter/BloomFilterBuilder.java</code>.</p>
+</li>
+<li>
+<p><code>maxNumberOfSegmentsInCache</code> (SegmentData LRU)</p>
+</li>
+<li>
+<p>Number of segments whose Bloom + sparse index + delta cache can be resident. Too small ⇒ thrash; too large ⇒ memory waste.</p>
+</li>
+<li>
+<p><code>diskIoBufferSize</code></p>
+</li>
+<li>
+<p>Sets data‑block size for chunk store and buffers for file readers/writers. Choose 4–64 KiB depending on device. Must be divisible by 1024.</p>
+</li>
+<li>
+<p>Encoding/Decoding filters (CRC, magic, Snappy, XOR)</p>
+</li>
+<li>
+<p>Snappy reduces I/O on compressible values at CPU cost. CRC + magic are lightweight integrity guards and on by default.</p>
+</li>
+<li>
+<p>Context logging (<code>isContextLoggingEnabled</code>)</p>
+</li>
+<li>Writes an unsorted log entry per operation for observability. Disable if you need minimum overhead.</li>
+</ul>
+<h2 id="memory-sizing">Memory Sizing</h2>
+<ul>
+<li>Index write buffer: up to <code>maxNumberOfKeysInCache</code> entries (latest per key). Backed by a HashMap.</li>
+<li>Per‑segment delta overlay (in memory): when a segment is loaded, delta files are folded into a <code>UniqueCache</code>. Upper bound approximates number of unique keys across delta files (see segment properties).</li>
+<li>Bloom filter: fully memory‑mapped in RAM when present; <code>indexSizeInBytes</code> bytes per segment plus metadata. Code: <code>bloomfilter/BloomFilterImpl.java</code>.</li>
+<li>SegmentData LRU: holds delta cache + Bloom + scarce index for up to <code>maxNumberOfSegmentsInCache</code> segments; evictions call <code>close()</code> to free memory.</li>
+</ul>
+<h2 id="cpu-sizing">CPU Sizing</h2>
+<ul>
+<li>Put path: hashing and HashMap work; occasional sort on flush (parallel sort over entries) and CRC/magic/Snappy filters on compaction.</li>
+<li>Get path: a few compares, at most N key compares during the bounded scan, optional Snappy decompression on read.</li>
+<li>Enabling context logging adds a small write per operation.</li>
+</ul>
+<h2 id="practical-tuning-recipes">Practical Tuning Recipes</h2>
+<ul>
+<li>Write‑heavy ingestion:</li>
+<li>Increase <code>maxNumberOfKeysInCache</code> to batch and reduce flushes.</li>
+<li>Consider enabling Snappy if values are highly compressible and I/O bound.</li>
+<li>
+<p>Keep <code>maxNumberOfKeysInSegmentChunk</code> moderate (e.g., 512–2048) to keep sparse index size reasonable during compaction.</p>
+</li>
+<li>
+<p>Read‑latency sensitive point lookups:</p>
+</li>
+<li>Ensure Bloom filters are sized adequately (lower false positive rate with larger <code>indexSizeInBytes</code>).</li>
+<li>Reduce <code>maxNumberOfKeysInSegmentChunk</code> to shrink the local scan window.</li>
+<li>
+<p>Increase <code>maxNumberOfSegmentsInCache</code> so hot segments stay resident.</p>
+</li>
+<li>
+<p>Mixed workloads:</p>
+</li>
+<li>Start with defaults; adjust Bloom size and segment LRU to fit your hot set; validate with counters and filter stats.</li>
+</ul>
+<h2 id="observability-and-validation">Observability and Validation</h2>
+<ul>
+<li>Bloom stats: <code>BloomFilter.getStatistics()</code> reports avoided disk accesses and false‑positive rate. Code: <code>bloomfilter/BloomFilterStats</code>.</li>
+<li>Operation counters: <code>sst/Stats</code> exposes get/put/delete counts (logged on close in <code>SstIndexImpl#doClose</code>).</li>
+<li>Consistency: after unexpected shutdown, run <code>Index.checkAndRepairConsistency()</code>; optionally <code>compact()</code> to reclaim locality.</li>
+</ul>
+<h2 id="code-pointers">Code Pointers</h2>
+<ul>
+<li>Write buffer and flush: <code>src/main/java/org/hestiastore/index/sst/SstIndexImpl.java</code>, <code>src/main/java/org/hestiastore/index/sst/CompactSupport.java</code></li>
+<li>Read path bounds: <code>src/main/java/org/hestiastore/index/segment/SegmentSearcher.java</code>, <code>.../SegmentIndexSearcher.java</code></li>
+<li>Bloom filter: <code>src/main/java/org/hestiastore/index/bloomfilter/*</code></li>
+<li>Chunked I/O and filters: <code>src/main/java/org/hestiastore/index/chunkstore/*</code></li>
+<li>Segment sizing/splitting: <code>src/main/java/org/hestiastore/index/sst/SegmentSplitCoordinator.java</code>, <code>src/main/java/org/hestiastore/index/segment/SegmentSplitter*.java</code></li>
+</ul>
+<h2 id="related-glossary">Related Glossary</h2>
+<ul>
+<li><a href="../glossary/#main-sst">Main SST</a></li>
+<li><a href="../glossary/#sparse-index-scarce-index">Sparse Index</a></li>
+<li><a href="../glossary/#bloom-filter">Bloom Filter</a></li>
+<li><a href="../glossary/#uniquecache">UniqueCache</a></li>
+<li><a href="../glossary/#delta-cache">Delta Cache</a></li>
+<li><a href="../glossary/#compaction">Compaction</a></li>
+<li><a href="../glossary/#write-transaction">Write Transaction</a></li>
+</ul>
 
 
 
@@ -1937,10 +2305,10 @@
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.f55a23d4.min.js"></script>
+      <script src="../../assets/javascripts/bundle.f55a23d4.min.js"></script>
       
     
   </body>

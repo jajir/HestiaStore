@@ -10,24 +10,28 @@
         <meta name="author" content="Jan Jirout">
       
       
-        <link rel="canonical" href="https://jajir.github.io/HestiaStore/development/">
+        <link rel="canonical" href="https://jajir.github.io/HestiaStore/architecture/write-path/">
       
       
+        <link rel="prev" href="../datablock/">
       
       
-      <link rel="icon" href="../images/favicon.ico">
+        <link rel="next" href="../read-path/">
+      
+      
+      <link rel="icon" href="../../images/favicon.ico">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.23">
     
     
       
-        <title>Development - HestiaStore</title>
+        <title>Write Path - HestiaStore</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.84d31ad4.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.84d31ad4.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -46,7 +50,7 @@
       
     
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -72,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#development" class="md-skip">
+        <a href="#write-path" class="md-skip">
           Skip to content
         </a>
       
@@ -88,9 +92,9 @@
 
 <header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="HestiaStore" class="md-header__button md-logo" aria-label="HestiaStore" data-md-component="logo">
+    <a href="../.." title="HestiaStore" class="md-header__button md-logo" aria-label="HestiaStore" data-md-component="logo">
       
-  <img src="../images/logo-square.png" alt="logo">
+  <img src="../../images/logo-square.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -107,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Development
+              Write Path
             
           </span>
         </div>
@@ -229,7 +233,7 @@
   
   
     <li class="md-tabs__item">
-      <a href=".." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         
   
   
@@ -250,7 +254,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../reliability/" class="md-tabs__link">
+        <a href="../../reliability/" class="md-tabs__link">
           
   
   
@@ -272,7 +276,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../how-to-use/" class="md-tabs__link">
+        <a href="../../how-to-use/" class="md-tabs__link">
           
   
   
@@ -294,7 +298,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../configuration/" class="md-tabs__link">
+        <a href="../../configuration/" class="md-tabs__link">
           
   
   
@@ -312,11 +316,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../architecture/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -338,7 +344,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../CHANGELOG/" class="md-tabs__link">
+        <a href="../../CHANGELOG/" class="md-tabs__link">
           
   
   
@@ -380,9 +386,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="HestiaStore" class="md-nav__button md-logo" aria-label="HestiaStore" data-md-component="logo">
+    <a href="../.." title="HestiaStore" class="md-nav__button md-logo" aria-label="HestiaStore" data-md-component="logo">
       
-  <img src="../images/logo-square.png" alt="logo">
+  <img src="../../images/logo-square.png" alt="logo">
 
     </a>
     HestiaStore
@@ -409,7 +415,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -488,7 +494,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reliability/" class="md-nav__link">
+      <a href="../../reliability/" class="md-nav__link">
         
   
   
@@ -511,7 +517,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../benchmark-results/" class="md-nav__link">
+      <a href="../../benchmark-results/" class="md-nav__link">
         
   
   
@@ -534,7 +540,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../SECURITY/" class="md-nav__link">
+      <a href="../../SECURITY/" class="md-nav__link">
         
   
   
@@ -557,7 +563,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../alternatives/" class="md-nav__link">
+      <a href="../../alternatives/" class="md-nav__link">
         
   
   
@@ -580,7 +586,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../quality/" class="md-nav__link">
+      <a href="../../quality/" class="md-nav__link">
         
   
   
@@ -643,7 +649,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../how-to-use/" class="md-nav__link ">
+            <a href="../../how-to-use/" class="md-nav__link ">
               
   
   
@@ -678,7 +684,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to-use/install/" class="md-nav__link">
+      <a href="../../how-to-use/install/" class="md-nav__link">
         
   
   
@@ -701,7 +707,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to-use/quick-start/" class="md-nav__link">
+      <a href="../../how-to-use/quick-start/" class="md-nav__link">
         
   
   
@@ -724,7 +730,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to-use/troubleshooting/" class="md-nav__link">
+      <a href="../../how-to-use/troubleshooting/" class="md-nav__link">
         
   
   
@@ -806,7 +812,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../configuration/" class="md-nav__link ">
+            <a href="../../configuration/" class="md-nav__link ">
               
   
   
@@ -841,7 +847,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../configuration/data-types/" class="md-nav__link">
+      <a href="../../configuration/data-types/" class="md-nav__link">
         
   
   
@@ -864,7 +870,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../configuration/logging/" class="md-nav__link">
+      <a href="../../configuration/logging/" class="md-nav__link">
         
   
   
@@ -891,6 +897,8 @@
       
   
   
+    
+  
   
   
     
@@ -916,22 +924,23 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../architecture/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   
@@ -944,13 +953,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Architecture
@@ -980,10 +989,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -992,7 +1004,7 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_2" >
         
           
-          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="">
             
   
   
@@ -1019,7 +1031,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/arch-index/" class="md-nav__link">
+      <a href="../arch-index/" class="md-nav__link">
         
   
   
@@ -1042,7 +1054,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/segment/" class="md-nav__link">
+      <a href="../segment/" class="md-nav__link">
         
   
   
@@ -1065,7 +1077,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/datablock/" class="md-nav__link">
+      <a href="../datablock/" class="md-nav__link">
         
   
   
@@ -1093,8 +1105,10 @@
                 
   
   
+    
   
   
+  
     
     
       
@@ -1107,20 +1121,21 @@
     
       
       
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
         
           
+          
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_3" >
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" checked>
         
           
-          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="">
             
   
   
@@ -1133,7 +1148,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5_3">
             <span class="md-nav__icon md-icon"></span>
             Data Flow
@@ -1144,10 +1159,32 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../architecture/write-path/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Write Path
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1158,6 +1195,161 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#highlevel-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      High‑Level Flow
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#entry-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      Entry Points
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optional-context-log" class="md-nav__link">
+    <span class="md-ellipsis">
+      Optional Context Log
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unique-write-buffer-indexlevel" class="md-nav__link">
+    <span class="md-ellipsis">
+      Unique Write Buffer (Index‑Level)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flush-and-routing-to-segments" class="md-nav__link">
+    <span class="md-ellipsis">
+      Flush and Routing to Segments
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#segment-delta-cache-files-transactional" class="md-nav__link">
+    <span class="md-ellipsis">
+      Segment Delta Cache Files (Transactional)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ondisk-merge-compaction" class="md-nav__link">
+    <span class="md-ellipsis">
+      On‑Disk Merge (Compaction)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#segment-splitting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Segment Splitting
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#delete-semantics-tombstones" class="md-nav__link">
+    <span class="md-ellipsis">
+      Delete Semantics (Tombstones)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#durability-and-atomicity" class="md-nav__link">
+    <span class="md-ellipsis">
+      Durability and Atomicity
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-knobs-affecting-writes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration Knobs Affecting Writes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#integrity-filters-on-the-write-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      Integrity Filters on the Write Path
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sequence-put" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sequence (Put)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-to-look-in-the-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      Where to Look in the Code
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-glossary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Related Glossary
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1170,7 +1362,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/read-path/" class="md-nav__link">
+      <a href="../read-path/" class="md-nav__link">
         
   
   
@@ -1213,10 +1405,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -1225,7 +1420,7 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_4" >
         
           
-          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="">
             
   
   
@@ -1252,7 +1447,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/recovery/" class="md-nav__link">
+      <a href="../recovery/" class="md-nav__link">
         
   
   
@@ -1275,7 +1470,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/filters/" class="md-nav__link">
+      <a href="../filters/" class="md-nav__link">
         
   
   
@@ -1318,10 +1513,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -1330,7 +1528,7 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_5" >
         
           
-          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="">
             
   
   
@@ -1357,7 +1555,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/caching/" class="md-nav__link">
+      <a href="../caching/" class="md-nav__link">
         
   
   
@@ -1380,7 +1578,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/performance/" class="md-nav__link">
+      <a href="../performance/" class="md-nav__link">
         
   
   
@@ -1421,10 +1619,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -1433,7 +1634,7 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_6" >
         
           
-          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="">
             
   
   
@@ -1460,7 +1661,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/concurrency/" class="md-nav__link">
+      <a href="../concurrency/" class="md-nav__link">
         
   
   
@@ -1505,10 +1706,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -1517,7 +1721,7 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_7" >
         
           
-          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="">
             
   
   
@@ -1544,7 +1748,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/on-disk-layout/" class="md-nav__link">
+      <a href="../on-disk-layout/" class="md-nav__link">
         
   
   
@@ -1567,7 +1771,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/limits/" class="md-nav__link">
+      <a href="../limits/" class="md-nav__link">
         
   
   
@@ -1590,7 +1794,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/glossary/" class="md-nav__link">
+      <a href="../glossary/" class="md-nav__link">
         
   
   
@@ -1689,7 +1893,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../CHANGELOG/" class="md-nav__link">
+      <a href="../../CHANGELOG/" class="md-nav__link">
         
   
   
@@ -1712,7 +1916,7 @@
   
   
     <li class="md-nav__item">
-      <a href="release/" class="md-nav__link">
+      <a href="../../development/release/" class="md-nav__link">
         
   
   
@@ -1735,7 +1939,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../CONTRIBUTING/" class="md-nav__link">
+      <a href="../../CONTRIBUTING/" class="md-nav__link">
         
   
   
@@ -1758,7 +1962,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../CODE_OF_CONDUCT/" class="md-nav__link">
+      <a href="../../CODE_OF_CONDUCT/" class="md-nav__link">
         
   
   
@@ -1781,7 +1985,7 @@
   
   
     <li class="md-nav__item">
-      <a href="documentation/" class="md-nav__link">
+      <a href="../../development/documentation/" class="md-nav__link">
         
   
   
@@ -1804,7 +2008,7 @@
   
   
     <li class="md-nav__item">
-      <a href="guides/" class="md-nav__link">
+      <a href="../../development/guides/" class="md-nav__link">
         
   
   
@@ -1827,7 +2031,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../profiler-stacktrace/" class="md-nav__link">
+      <a href="../../profiler-stacktrace/" class="md-nav__link">
         
   
   
@@ -1870,6 +2074,149 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#highlevel-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      High‑Level Flow
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#entry-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      Entry Points
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optional-context-log" class="md-nav__link">
+    <span class="md-ellipsis">
+      Optional Context Log
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unique-write-buffer-indexlevel" class="md-nav__link">
+    <span class="md-ellipsis">
+      Unique Write Buffer (Index‑Level)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flush-and-routing-to-segments" class="md-nav__link">
+    <span class="md-ellipsis">
+      Flush and Routing to Segments
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#segment-delta-cache-files-transactional" class="md-nav__link">
+    <span class="md-ellipsis">
+      Segment Delta Cache Files (Transactional)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ondisk-merge-compaction" class="md-nav__link">
+    <span class="md-ellipsis">
+      On‑Disk Merge (Compaction)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#segment-splitting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Segment Splitting
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#delete-semantics-tombstones" class="md-nav__link">
+    <span class="md-ellipsis">
+      Delete Semantics (Tombstones)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#durability-and-atomicity" class="md-nav__link">
+    <span class="md-ellipsis">
+      Durability and Atomicity
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-knobs-affecting-writes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration Knobs Affecting Writes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#integrity-filters-on-the-write-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      Integrity Filters on the Write Path
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sequence-put" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sequence (Put)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-to-look-in-the-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      Where to Look in the Code
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-glossary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Related Glossary
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1887,8 +2234,156 @@
   
 
 
-<h1 id="development">Development</h1>
-<p>Here are some development related topiscs.</p>
+<h1 id="write-path">Write Path</h1>
+<p>This page describes how a write travels through HestiaStore from the API call to on‑disk structures, highlighting buffering, compaction, and atomicity. It maps directly to the code so you can cross‑check behavior and tune configuration.</p>
+<h2 id="highlevel-flow">High‑Level Flow</h2>
+<ol>
+<li>API call: <code>Index.put(key, value)</code> or <code>Index.delete(key)</code></li>
+<li>Optional context log append (debug/trace log, not a durability WAL)</li>
+<li>In‑memory unique write buffer accepts the latest value per key</li>
+<li>Threshold‑based flush routes buffered writes to target segments</li>
+<li>Segment delta caches persist sorted updates as transactional files</li>
+<li>Segment compaction merges delta caches into the main SST + sparse index + bloom filter</li>
+<li>Optional segment split when size thresholds are exceeded</li>
+</ol>
+<p>Writes become durable when flushed to segment files. Closing the index performs a flush.</p>
+<h2 id="entry-points">Entry Points</h2>
+<ul>
+<li><code>Index.put(K,V)</code> and <code>Index.delete(K)</code> validate input, update counters, and delegate to the internal implementation.</li>
+<li>Two internal variants exist:</li>
+<li>Default: <code>IndexInternalDefault</code> (non‑synchronized)</li>
+<li>Synchronized: <code>IndexInternalSynchronized</code> (for thread‑safe access)</li>
+</ul>
+<p>Key classes: <code>sst/Index.java</code>, <code>sst/IndexInternalDefault.java</code>.</p>
+<h2 id="optional-context-log">Optional Context Log</h2>
+<p>If <code>IndexConfiguration.isContextLoggingEnabled()</code> is true, each write is mirrored to an append‑only log file under <code>docs</code> directory using type‑safe serializers. This is intended for observability and debugging, not recovery. The writer rotates on flush or close to start a new file. When disabled, a no‑op log is used.</p>
+<p>Key classes: <code>log/LogImpl</code>, <code>log/LogWriter</code>, <code>log/LogUnsortedFileWriterImpl</code>, <code>log/LoggedKey</code>.</p>
+<p>Notes:</p>
+<ul>
+<li>The log is not used for crash recovery; a real write‑ahead log is on the roadmap.</li>
+<li>Log files are written via transactional temp files and atomic rename on rotate.</li>
+</ul>
+<h2 id="unique-write-buffer-indexlevel">Unique Write Buffer (Index‑Level)</h2>
+<p>Every <code>put</code>/<code>delete</code> is first stored in an in‑memory unique cache that holds only the latest value per key. When the buffer exceeds <code>maxNumberOfKeysInCache</code>, the index flushes.</p>
+<ul>
+<li>Structure: <code>UniqueCache</code> keyed by K with comparator ordering.</li>
+<li>Behavior:</li>
+<li>New write replaces any previous value for the same key.</li>
+<li>Reads consult this buffer first (read‑after‑write visibility without disk I/O).</li>
+<li>Deletes are represented as a tombstone value from the value type descriptor.</li>
+<li>Trigger: <code>cache.size() &gt; conf.getMaxNumberOfKeysInCache()</code> calls <code>flushCache()</code>.</li>
+</ul>
+<p>Key classes: <code>cache/UniqueCache</code>, <code>sst/SstIndexImpl#put</code>, <code>sst/SstIndexImpl#delete</code>.</p>
+<h2 id="flush-and-routing-to-segments">Flush and Routing to Segments</h2>
+<p>On flush, buffered entries are sorted and routed to target segments based on the key‑to‑segment map. Routing is incremental and batched per target segment for locality.</p>
+<p>Flow:</p>
+<p>1) Sort unique cache entries by key.
+2) For each key, find the target segment id via <code>KeySegmentCache.insertKeyToSegment</code>.
+3) Buffer entries to the current segment; when switching segments, write the batch to that segment’s delta cache and continue.
+4) After all entries are written, optionally split segments that exceed size thresholds.
+5) Clear the unique buffer, flush the key‑segment map (if changed), and rotate the context log.</p>
+<p>Key classes: <code>sst/CompactSupport</code>, <code>sst/KeySegmentCache</code>, <code>sst/SegmentSplitCoordinator</code>.</p>
+<h2 id="segment-delta-cache-files-transactional">Segment Delta Cache Files (Transactional)</h2>
+<p>Writes land in a segment’s delta cache as sorted key/value files. Each delta file is written transactionally:</p>
+<ul>
+<li>Data is written to <code>segmentId-delta-XXX.cache.tmp</code> and atomically renamed on commit.</li>
+<li>Segment properties track counts and delta file numbering.</li>
+<li>If the segment data is currently cached in memory, the delta cache is also updated in‑memory to keep reads fresh.</li>
+</ul>
+<p>Key classes: <code>segment/SegmentDeltaCacheWriter</code>, <code>segment/SegmentPropertiesManager</code>, <code>sorteddatafile/SortedDataFileWriterTx</code>.</p>
+<h2 id="ondisk-merge-compaction">On‑Disk Merge (Compaction)</h2>
+<p>Compaction merges the main SST with all delta cache files into a new consistent state and rebuilds auxiliary structures:</p>
+<ul>
+<li>Main SST (chunked file) written via <code>ChunkEntryFileWriter</code> and <code>ChunkStoreWriterTx</code>.</li>
+<li>Sparse index ("scarce index") updated every Nth key to accelerate seeks.</li>
+<li>Bloom filter rebuilt from keys to accelerate negative lookups.</li>
+<li>Delta cache is cleared on successful commit.</li>
+</ul>
+<p>Triggers:</p>
+<ul>
+<li>Opportunistic: after delta writes, if policy advises compaction.</li>
+<li>Forced: explicitly via <code>compact()</code> or before certain operations like splitting.</li>
+</ul>
+<p>Atomicity:</p>
+<ul>
+<li>All writers use temp files (<code>.tmp</code>) and <code>rename</code> to commit.</li>
+<li>Bloom filter writes inside a dedicated transaction (<code>BloomFilterWriterTx</code>).</li>
+</ul>
+<p>Key classes: <code>segment/SegmentCompacter</code>, <code>segment/SegmentFullWriterTx</code>, <code>segment/SegmentFullWriter</code>, <code>bloomfilter/BloomFilterWriterTx</code>, <code>scarceindex/*</code>.</p>
+<h2 id="segment-splitting">Segment Splitting</h2>
+<p>When a segment grows beyond <code>maxNumberOfKeysInSegment</code>, the split coordinator computes a plan, optionally compacts first, and then splits into two segments. The key‑to‑segment map is updated with the new segment’s max key.</p>
+<p>Key classes: <code>sst/SegmentSplitCoordinator</code>, <code>segment/SegmentSplitter</code>, <code>segment/SegmentSplitterPlan</code>, <code>sst/KeySegmentCache</code>.</p>
+<h2 id="delete-semantics-tombstones">Delete Semantics (Tombstones)</h2>
+<p>Deletes write a tombstone value:</p>
+<ul>
+<li>Buffered in the unique cache and delta cache like any other update.</li>
+<li>During compaction, tombstones suppress older values and may be dropped if safe.</li>
+<li>Reads treat tombstones as absent.</li>
+</ul>
+<p>Key classes: <code>sst/SstIndexImpl#delete</code>, <code>datatype/TypeDescriptor#getTombstone</code>, <code>segment/SegmentSearcher</code>.</p>
+<h2 id="durability-and-atomicity">Durability and Atomicity</h2>
+<ul>
+<li>Transactional writers use a temp file + atomic rename to ensure either the old state or the new state is visible after a crash.</li>
+<li>Index <code>close()</code> and explicit <code>flush()</code> drive persistence of buffered writes.</li>
+<li>Optional context log is not a durability mechanism; it rotates on flush.</li>
+</ul>
+<h2 id="configuration-knobs-affecting-writes">Configuration Knobs Affecting Writes</h2>
+<ul>
+<li><code>maxNumberOfKeysInCache</code> – triggers flush of the index‑level buffer.</li>
+<li><code>maxNumberOfKeysInSegmentCache</code> / <code>…DuringFlushing</code> – bounds delta cache growth.</li>
+<li><code>maxNumberOfKeysInSegmentChunk</code> – controls sparse index sampling cadence.</li>
+<li><code>maxNumberOfKeysInSegment</code> – split threshold per segment.</li>
+<li><code>bloomFilter*</code> – Bloom filter size/hash tuning.</li>
+<li><code>diskIoBufferSize</code> – I/O buffer sizing for on‑disk writers.</li>
+<li><code>encoding/decodingChunkFilters</code> – write/read pipelines (e.g., Snappy, CRC32, magic number).</li>
+<li><code>threadSafe</code> – choose synchronized index variant.</li>
+</ul>
+<p>See: <code>sst/IndexConfiguration</code> and <code>sst/IndexConfigurationBuilder</code>.</p>
+<h2 id="integrity-filters-on-the-write-path">Integrity Filters on the Write Path</h2>
+<p>The chunk writer applies a filter pipeline when persisting chunk payloads:</p>
+<ul>
+<li>Magic number writing</li>
+<li>CRC32 computation</li>
+<li>Optional Snappy compression</li>
+</ul>
+<p>These produce a self‑describing chunk header and robust payload handling.</p>
+<p>Key classes: <code>chunkstore/ChunkProcessor</code>, <code>chunkstore/ChunkFilterMagicNumberWriting</code>, <code>chunkstore/ChunkFilterCrc32Writing</code>, <code>chunkstore/ChunkFilterSnappyCompress</code>.</p>
+<h2 id="sequence-put">Sequence (Put)</h2>
+<p>1) <code>Index.put(k,v)</code> → validate inputs; forbid direct tombstone values
+2) Optional: append to context log and keep writer open until rotate
+3) Buffer latest <code>(k,v)</code> into unique cache (replaces any prior value for k)
+4) If buffer over threshold → flushCache:
+   - Route sorted entries by key to segments
+   - For each target segment: write a new delta cache file (transactional)
+   - Optionally compact the segment and optionally split if too large
+   - Clear unique cache, flush key‑segment map, rotate log</p>
+<h2 id="where-to-look-in-the-code">Where to Look in the Code</h2>
+<ul>
+<li>Index entry points and buffering: <code>src/main/java/org/hestiastore/index/sst/SstIndexImpl.java</code></li>
+<li>Segment write/merge path: <code>src/main/java/org/hestiastore/index/segment/*</code></li>
+<li>Chunk store and filters: <code>src/main/java/org/hestiastore/index/chunkstore/*</code></li>
+<li>Delta and sorted file writers: <code>src/main/java/org/hestiastore/index/sorteddatafile/*</code></li>
+<li>Context log (optional): <code>src/main/java/org/hestiastore/index/log/*</code></li>
+</ul>
+<p>For the read path and on‑disk layout, see the related pages:</p>
+<ul>
+<li>Read Path: <code>architecture/read-path.md</code></li>
+<li>On‑Disk Layout &amp; File Names: <code>architecture/on-disk-layout.md</code></li>
+<li>Filters &amp; Integrity: <code>architecture/filters.md</code></li>
+</ul>
+<h2 id="related-glossary">Related Glossary</h2>
+<ul>
+<li><a href="../glossary/#segment">Segment</a></li>
+<li><a href="../glossary/#uniquecache">UniqueCache</a></li>
+<li><a href="../glossary/#delta-cache">Delta Cache</a></li>
+<li><a href="../glossary/#flush">Flush</a></li>
+<li><a href="../glossary/#compaction">Compaction</a></li>
+<li><a href="../glossary/#split">Split</a></li>
+<li><a href="../glossary/#write-transaction">Write Transaction</a></li>
+<li><a href="../glossary/#filters-chunk-filters">Filters</a></li>
+<li><a href="../glossary/#tombstone">Tombstone</a></li>
+<li><a href="../glossary/#context-log">Context Log</a></li>
+</ul>
 
 
 
@@ -1937,10 +2432,10 @@
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.f55a23d4.min.js"></script>
+      <script src="../../assets/javascripts/bundle.f55a23d4.min.js"></script>
       
     
   </body>
