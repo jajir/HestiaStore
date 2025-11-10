@@ -31,21 +31,19 @@ Features:
 
 ## 🚀 Performance Comparison
 
-### Benchmark throughput (ops/s, higher is better)
+All tests were performed on a 2024 Mac mini with 16 GB RAM. After few test executions it seemd that absolute numbers are not important, relations are important.
 
-The following benchmark compares similar products by writing simple key-value pairs into a map. It includes a 3-minute warm-up to prime caches, followed by a 4-minute measurement period. Tests were performed on a 2024 Mac mini with 16 GB RAM.
+### Benchmark `write` throughput (ops/s, higher is better)
 
-![Performace comparision](./images/table.svg)
+The following benchmark compares similar products by writing simple key-value pairs into a map. It includes a 3-minute warm-up to prime caches, followed by a 4-minute measurement period.
 
-| Engine | Score [ops/s] | Occupied space | CPU Usage |
-|:-------|--------------:|---------------:|----------:|
-| ChronicleMap |         5 954 | 20.54 GB | 7% |
-| H2 |        13 458 | 8 KB | 21% |
-| HestiaStoreBasic |       208 723 | 9.71 GB | 6% |
-| HestiaStoreCompress |       197 335 | 4.97 GB | 6% |
-| LevelDB |        45 263 | 1.4 GB | 17% |
-| MapDB |         2 946 | 496 MB | 14% |
-| RocksDB |       305 712 | 7.74 GB | 6% |
+![Performace comparision](./images/out-write.svg)
+
+### Benchmark `read` throughput (ops/s, higher is better)
+
+The read benchmark measures random lookups over the same pre-populated dataset produced by the write test. Each engine is opened on that data and a single client issues random reads of existing keys (no deletes). A 3-minute warm-up primes OS and engine caches, followed by a 4-minute measurement window.
+
+![Performace comparision](./images/out-read.svg)
 
 Detailed methodology and full benchmark artifacts are available at [benchmark results](https://hestiastore.org/benchmark-results/).
 
