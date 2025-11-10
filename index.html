@@ -473,9 +473,18 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#benchmark-throughput-opss-higher-is-better" class="md-nav__link">
+  <a href="#benchmark-write-throughput-opss-higher-is-better" class="md-nav__link">
     <span class="md-ellipsis">
-      Benchmark throughput (ops/s, higher is better)
+      Benchmark write throughput (ops/s, higher is better)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#benchmark-read-throughput-opss-higher-is-better" class="md-nav__link">
+    <span class="md-ellipsis">
+      Benchmark read throughput (ops/s, higher is better)
     </span>
   </a>
   
@@ -2011,9 +2020,18 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#benchmark-throughput-opss-higher-is-better" class="md-nav__link">
+  <a href="#benchmark-write-throughput-opss-higher-is-better" class="md-nav__link">
     <span class="md-ellipsis">
-      Benchmark throughput (ops/s, higher is better)
+      Benchmark write throughput (ops/s, higher is better)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#benchmark-read-throughput-opss-higher-is-better" class="md-nav__link">
+    <span class="md-ellipsis">
+      Benchmark read throughput (ops/s, higher is better)
     </span>
   </a>
   
@@ -2123,63 +2141,13 @@
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a> • Roadmap: write-ahead logging and advanced compaction
 </code></pre></div>
 <h2 id="performance-comparison">🚀 Performance Comparison</h2>
-<h3 id="benchmark-throughput-opss-higher-is-better">Benchmark throughput (ops/s, higher is better)</h3>
-<p>The following benchmark compares similar products by writing simple key-value pairs into a map. It includes a 3-minute warm-up to prime caches, followed by a 4-minute measurement period. Tests were performed on a 2024 Mac mini with 16 GB RAM.</p>
-<p><img alt="Performace comparision" src="images/table.svg" /></p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Engine</th>
-<th style="text-align: right;">Score [ops/s]</th>
-<th style="text-align: right;">Occupied space</th>
-<th style="text-align: right;">CPU Usage</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">ChronicleMap</td>
-<td style="text-align: right;">5 954</td>
-<td style="text-align: right;">20.54 GB</td>
-<td style="text-align: right;">7%</td>
-</tr>
-<tr>
-<td style="text-align: left;">H2</td>
-<td style="text-align: right;">13 458</td>
-<td style="text-align: right;">8 KB</td>
-<td style="text-align: right;">21%</td>
-</tr>
-<tr>
-<td style="text-align: left;">HestiaStoreBasic</td>
-<td style="text-align: right;">208 723</td>
-<td style="text-align: right;">9.71 GB</td>
-<td style="text-align: right;">6%</td>
-</tr>
-<tr>
-<td style="text-align: left;">HestiaStoreCompress</td>
-<td style="text-align: right;">197 335</td>
-<td style="text-align: right;">4.97 GB</td>
-<td style="text-align: right;">6%</td>
-</tr>
-<tr>
-<td style="text-align: left;">LevelDB</td>
-<td style="text-align: right;">45 263</td>
-<td style="text-align: right;">1.4 GB</td>
-<td style="text-align: right;">17%</td>
-</tr>
-<tr>
-<td style="text-align: left;">MapDB</td>
-<td style="text-align: right;">2 946</td>
-<td style="text-align: right;">496 MB</td>
-<td style="text-align: right;">14%</td>
-</tr>
-<tr>
-<td style="text-align: left;">RocksDB</td>
-<td style="text-align: right;">305 712</td>
-<td style="text-align: right;">7.74 GB</td>
-<td style="text-align: right;">6%</td>
-</tr>
-</tbody>
-</table>
+<p>All tests were performed on a 2024 Mac mini with 16 GB RAM. After few test executions it seemd that absolute numbers are not important, relations are important.</p>
+<h3 id="benchmark-write-throughput-opss-higher-is-better">Benchmark <code>write</code> throughput (ops/s, higher is better)</h3>
+<p>The following benchmark compares similar products by writing simple key-value pairs into a map. It includes a 3-minute warm-up to prime caches, followed by a 4-minute measurement period.</p>
+<p><img alt="Performace comparision" src="images/out-write.svg" /></p>
+<h3 id="benchmark-read-throughput-opss-higher-is-better">Benchmark <code>read</code> throughput (ops/s, higher is better)</h3>
+<p>The read benchmark measures random lookups over the same pre-populated dataset produced by the write test. Each engine is opened on that data and a single client issues random reads of existing keys (no deletes). A 3-minute warm-up primes OS and engine caches, followed by a 4-minute measurement window.</p>
+<p><img alt="Performace comparision" src="images/out-read.svg" /></p>
 <p>Detailed methodology and full benchmark artifacts are available at <a href="https://hestiastore.org/benchmark-results/">benchmark results</a>.</p>
 <h2 id="feature-comparison">📊 Feature Comparison</h2>
 <p>Architecture &amp; Concurrency</p>
