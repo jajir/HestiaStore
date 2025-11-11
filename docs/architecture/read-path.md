@@ -1,8 +1,8 @@
-# Read Path
+# 📖 Read Path
 
 This page explains how reads resolve values with low latency and predictable I/O. It walks through point lookups, range iteration, and the interplay of caches, Bloom filter, and the sparse index, mapped to concrete classes in the codebase.
 
-## High‑Level Flow (Point Lookup)
+## 🧭 High‑Level Flow (Point Lookup)
 
 1. API call: `Index.get(key)`
 1. Check the index‑level unique buffer (latest in‑process writes)
@@ -11,7 +11,7 @@ This page explains how reads resolve values with low latency and predictable I/O
 
 Lookups are read‑after‑write consistent thanks to the in‑memory buffers.
 
-## Entry Point and First‑Level Cache
+## 🚪 Entry Point and First‑Level Cache
 
 - `sst/SstIndexImpl#get(K)` does:
   - Check the index‑level `UniqueCache` (holds latest writes prior to flush)
@@ -26,7 +26,7 @@ Key classes: `sst/SstIndexImpl.java`, `sst/KeySegmentCache.java`, `cache/UniqueC
 - Cache hit and tombstone → treat as absent
 - Otherwise fall back to the segment path below
 
-## Per‑Segment Read Path
+## 🧩 Per‑Segment Read Path
 
 `segment/SegmentImpl#get(key)` uses `SegmentSearcher` with lazily loaded segment data:
 
@@ -38,7 +38,7 @@ Key classes: `sst/SstIndexImpl.java`, `sst/KeySegmentCache.java`, `cache/UniqueC
 
 Key classes: `segment/SegmentSearcher.java`, `segment/SegmentIndexSearcher.java`, `scarceindex/ScarceIndex.java`, `bloomfilter/BloomFilter.java`.
 
-## Range Scans and Full Iteration
+## 🔁 Range Scans and Full Iteration
 
 - `Index.getStream()` and `Index.openSegmentIterator(...)` produce iterators over all data:
   - `sst/SegmentsIterator` chains `Segment.openIterator()` across all segments in order.
@@ -48,7 +48,7 @@ Key classes: `segment/SegmentSearcher.java`, `segment/SegmentIndexSearcher.java`
 
 Key classes: `sst/SegmentsIterator.java`, `segment/MergeDeltaCacheWithIndexIterator.java`, `sst/EntryIteratorRefreshedFromCache.java`, `EntryIteratorWithLock.java`, `OptimisticLock.java`.
 
-## Read‑After‑Write Semantics
+## 🔄 Read‑After‑Write Semantics
 
 Two layers provide immediate visibility of recent writes:
 
@@ -57,7 +57,7 @@ Two layers provide immediate visibility of recent writes:
 
 Deletes are represented as tombstones by the value type descriptor. The read path treats a tombstone as “not found”.
 
-## Complexity and I/O Characteristics
+## 🧮 Complexity and I/O Characteristics
 
 - Index‑level cache probe: O(1) hash map
 - Segment delta cache probe: O(1) hash map
@@ -68,7 +68,7 @@ Deletes are represented as tombstones by the value type descriptor. The read pat
 
 These choices keep random access bounded and predictable, with sequential I/O for scans.
 
-## Configuration Knobs Affecting Reads
+## ⚙️ Configuration Knobs Affecting Reads
 
 - `maxNumberOfKeysInSegmentChunk` — upper bound of keys per chunk; also the window size for a local scan from the sparse index pointer
 - Bloom filter parameters — `numberOfHashFunctions`, `indexSizeInBytes`, `falsePositiveProbability`
@@ -77,7 +77,7 @@ These choices keep random access bounded and predictable, with sequential I/O fo
 
 See: `sst/IndexConfiguration` and `segment/SegmentConf`.
 
-## Integrity on the Read Path
+## 🛡️ Integrity on the Read Path
 
 Decoding applies the inverse of the write pipeline when reading chunks:
 
@@ -89,7 +89,7 @@ Errors surface as exceptions; partial reads do not corrupt state.
 
 Key classes: `chunkstore/ChunkStoreReaderImpl`, `chunkstore/ChunkFilterMagicNumberValidation`, `chunkstore/ChunkFilterCrc32Validation`, `chunkstore/ChunkFilterSnappyDecompress`.
 
-## Where to Look in the Code
+## 🧩 Where to Look in the Code
 
 - Point lookup orchestration: `src/main/java/org/hestiastore/index/sst/SstIndexImpl.java`
 - Segment search path: `src/main/java/org/hestiastore/index/segment/SegmentSearcher.java`
@@ -97,7 +97,7 @@ Key classes: `chunkstore/ChunkStoreReaderImpl`, `chunkstore/ChunkFilterMagicNumb
 - Iteration and merging: `src/main/java/org/hestiastore/index/segment/MergeDeltaCacheWithIndexIterator.java`
 - Iterator safety: `src/main/java/org/hestiastore/index/EntryIteratorWithLock.java`
  
-## Related Glossary
+## 🔗 Related Glossary
 
 - [Segment](glossary.md#segment)
 - [Delta Cache](glossary.md#delta-cache)

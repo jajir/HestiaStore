@@ -1,8 +1,8 @@
-# Development
+# 🛠️ Development
 
 Here are some development related topiscs.
 
-## How to run JMH benchmarks
+## 🧪 How to run JMH benchmarks
 
 Follow this steps:
 * Compile whole project and create pacakge containing all benchmarks data
@@ -43,11 +43,11 @@ SequentialFileWritingBenchmark.test_with_buffer_64KB  avgt    4  275.944 ±  128
 
 When some JMH benchmark class is changed command `mvn package` have to be run.
 
-### Possible problems
+### ⚠️ Possible problems
 
 Generally JMH is quite fragile. Small changes broke JMH benchmark execution. Usually helps rebuild project and start again as described above.
 
-## Load test
+## 🧭 Load test
 
 Runnign JVM should be inspected with some profiller. For profilling is usefull to hae long running task to watch it. Go to project `load-test`. Following command show all optional parameters:
 

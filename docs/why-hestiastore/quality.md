@@ -1,4 +1,4 @@
-# Quality & Testing
+# ✅ Quality & Testing
 
 An overview of how HestiaStore ensures consistent quality:
 
@@ -8,4 +8,3 @@ An overview of how HestiaStore ensures consistent quality:
 - Dependency vulnerability scanning (OWASP Dependency Check).
 
 Links and details to be expanded.
-

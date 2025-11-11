@@ -31,7 +31,7 @@ Features:
 
 ## 🚀 Performance Comparison
 
-All tests were performed on a 2024 Mac mini with 16 GB RAM. After few test executions it seemd that absolute numbers are not important, relations are important.
+All tests ran on a 2024 Mac mini with 16 GB RAM. Absolute numbers vary between runs, so focus on relative differences.
 
 ### Benchmark `write` throughput (ops/s, higher is better)
 
@@ -39,13 +39,23 @@ The following benchmark compares similar products by writing simple key-value pa
 
 ![Performace comparision](./images/out-write.svg)
 
+Detailed methodology and full benchmark artifacts are available at [benchmark results](https://hestiastore.org/why-hestiastore/out-write/).
+
 ### Benchmark `read` throughput (ops/s, higher is better)
 
 The read benchmark measures random lookups over the same pre-populated dataset produced by the write test. Each engine is opened on that data and a single client issues random reads of existing keys (no deletes). A 3-minute warm-up primes OS and engine caches, followed by a 4-minute measurement window.
 
 ![Performace comparision](./images/out-read.svg)
 
-Detailed methodology and full benchmark artifacts are available at [benchmark results](https://hestiastore.org/benchmark-results/).
+Detailed methodology and full benchmark artifacts are available at [benchmark results](https://hestiastore.org/why-hestiastore/out-read/).
+
+### Benchmark `sequential read` throughput (ops/s, higher is better)
+
+The sequential read benchmark scans the same pre‑populated dataset in key order using each engine’s iterator. Each engine is opened on that data and a single client performs a forward scan across all entries. A 3‑minute warm‑up primes OS and engine caches, followed by a 4‑minute measurement window.
+
+![Performace comparision](./images/out-sequential.svg)
+
+Detailed methodology and full benchmark artifacts are available at [benchmark results](https://hestiastore.org/why-hestiastore/out-sequential/).
 
 ## 📊 Feature Comparison
 

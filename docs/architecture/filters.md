@@ -1,10 +1,10 @@
-# Filters & Integrity
+# 🧪 Filters & Integrity
 
 HestiaStore persists segment data in chunked files. Each chunk carries a small header and a payload processed by an ordered filter pipeline. Filters provide integrity (magic number, CRC32), optional compression, and optional reversible transformations. The same concept exists on both the write path (encoding pipeline) and read path (decoding pipeline).
 
 This page summarizes what the filters do, how they are ordered, and how to configure them.
 
-## Chunk Header and Flags
+## 🏷️ Chunk Header and Flags
 
 Every chunk has a header with these fields:
 
@@ -21,7 +21,7 @@ Flag bit positions (see `src/main/java/org/hestiastore/index/chunkstore/ChunkFil
 - 3 — Snappy compression
 - 4 — XOR encryption (reversible obfuscation)
 
-## Encoding Pipeline (Write Path)
+## ✍️ Encoding Pipeline (Write Path)
 
 Write path constructs a `ChunkData` and passes it through a `ChunkProcessor` configured with encoding filters. The writer then combines the resulting header and (possibly transformed) payload and writes padded bytes to the underlying cell store.
 
@@ -35,7 +35,7 @@ Why this order:
 - CRC32 computed on the plaintext payload gives a strong data‑integrity check after decoding (you must decompress/decrypt before CRC validation on read).
 - Magic‑number header flag is a quick consistency guard before attempting other transforms.
 
-## Decoding Pipeline (Read Path)
+## 📖 Decoding Pipeline (Read Path)
 
 Read path pulls a raw chunk, parses the header, then applies the decoding filters in order. The final `ChunkData` is used to rebuild a consistent `Chunk` instance with the validated header and payload.
 
@@ -49,7 +49,7 @@ Notes:
 - Validation filters check the corresponding header flag (when provided) and throw an exception if the precondition fails (e.g., “not marked as compressed”).
 - CRC validation recomputes CRC32 on the current payload and compares to the header value.
 
-## Available Filters
+## 🧰 Available Filters
 
 Integrity
 - Magic number writing/validation: `ChunkFilterMagicNumberWriting`, `ChunkFilterMagicNumberValidation`
@@ -68,7 +68,7 @@ Transformations
 Utility
 - No‑op: `ChunkFilterDoNothing` (testing/bench harnesses)
 
-## Configuration
+## ⚙️ Configuration
 
 Filters are configured on the index through the fluent builder and then stored in the index configuration:
 
@@ -89,12 +89,12 @@ Constraints:
 - Filter lists must not be empty; `ChunkProcessor` enforces this.
 - Decoding order must mirror the inverse of encoding for transforms like compression/encryption. If you enable Snappy or XOR, include the matching decode filters in the correct order.
 
-## Error Handling and Safety
+## 🛡️ Error Handling and Safety
 
 - Validation failures (wrong magic, CRC mismatch, missing flags) throw exceptions and abort the read; no partial state is committed.
 - Writes are protected by transactional temp‑file + atomic rename; a failed write never exposes a partially written chunk to readers.
 
-## Examples
+## 📋 Examples
 
 Enable Snappy compression with correct decode order:
 
@@ -118,7 +118,7 @@ builder
   .addDecodingFilter(new ChunkFilterXorDecrypt());
 ```
 
-## Code Pointers
+## 🧩 Code Pointers
 
 - Pipeline engine: `src/main/java/org/hestiastore/index/chunkstore/ChunkProcessor.java`
 - Filters: `src/main/java/org/hestiastore/index/chunkstore/ChunkFilter*.java`
@@ -126,7 +126,7 @@ builder
 - Reader path: `src/main/java/org/hestiastore/index/chunkstore/ChunkStoreReaderImpl.java`
 - Configuration defaults: `src/main/java/org/hestiastore/index/sst/IndexConfigurationContract.java`
 
-## Related Glossary
+## 🔗 Related Glossary
 
 - [Filters](glossary.md#filters-chunk-filters)
 - [Chunk](glossary.md#chunk)

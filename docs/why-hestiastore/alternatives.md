@@ -1,4 +1,4 @@
-# Alternatives
+# 🔀 Alternatives
 
 HestiaStore is one of many available solutions for key-value storage. When selecting the right tool, it's important to consider which one best fits your needs. Here are some key evaluation criteria:
 

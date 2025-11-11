@@ -1,8 +1,8 @@
-# Write Path
+# ✍️ Write Path
 
 This page describes how a write travels through HestiaStore from the API call to on‑disk structures, highlighting buffering, compaction, and atomicity. It maps directly to the code so you can cross‑check behavior and tune configuration.
 
-## High‑Level Flow
+## 🧭 High‑Level Flow
 
 1. API call: `Index.put(key, value)` or `Index.delete(key)`
 1. Optional context log append (debug/trace log, not a durability WAL)
@@ -14,7 +14,7 @@ This page describes how a write travels through HestiaStore from the API call to
 
 Writes become durable when flushed to segment files. Closing the index performs a flush.
 
-## Entry Points
+## 🚪 Entry Points
 
 - `Index.put(K,V)` and `Index.delete(K)` validate input, update counters, and delegate to the internal implementation.
 - Two internal variants exist:
@@ -23,7 +23,7 @@ Writes become durable when flushed to segment files. Closing the index performs 
 
 Key classes: `sst/Index.java`, `sst/IndexInternalDefault.java`.
 
-## Optional Context Log
+## 🗒️ Optional Context Log
 
 If `IndexConfiguration.isContextLoggingEnabled()` is true, each write is mirrored to an append‑only log file under `docs` directory using type‑safe serializers. This is intended for observability and debugging, not recovery. The writer rotates on flush or close to start a new file. When disabled, a no‑op log is used.
 
@@ -34,7 +34,7 @@ Notes:
 - The log is not used for crash recovery; a real write‑ahead log is on the roadmap.
 - Log files are written via transactional temp files and atomic rename on rotate.
 
-## Unique Write Buffer (Index‑Level)
+## 🧰 Unique Write Buffer (Index‑Level)
 
 Every `put`/`delete` is first stored in an in‑memory unique cache that holds only the latest value per key. When the buffer exceeds `maxNumberOfKeysInCache`, the index flushes.
 
@@ -47,7 +47,7 @@ Every `put`/`delete` is first stored in an in‑memory unique cache that holds o
 
 Key classes: `cache/UniqueCache`, `sst/SstIndexImpl#put`, `sst/SstIndexImpl#delete`.
 
-## Flush and Routing to Segments
+## 🚚 Flush and Routing to Segments
 
 On flush, buffered entries are sorted and routed to target segments based on the key‑to‑segment map. Routing is incremental and batched per target segment for locality.
 
@@ -61,7 +61,7 @@ Flow:
 
 Key classes: `sst/CompactSupport`, `sst/KeySegmentCache`, `sst/SegmentSplitCoordinator`.
 
-## Segment Delta Cache Files (Transactional)
+## 🗂️ Segment Delta Cache Files (Transactional)
 
 Writes land in a segment’s delta cache as sorted key/value files. Each delta file is written transactionally:
 
@@ -71,7 +71,7 @@ Writes land in a segment’s delta cache as sorted key/value files. Each delta f
 
 Key classes: `segment/SegmentDeltaCacheWriter`, `segment/SegmentPropertiesManager`, `sorteddatafile/SortedDataFileWriterTx`.
 
-## On‑Disk Merge (Compaction)
+## 🧹 On‑Disk Merge (Compaction)
 
 Compaction merges the main SST with all delta cache files into a new consistent state and rebuilds auxiliary structures:
 
@@ -92,13 +92,13 @@ Atomicity:
 
 Key classes: `segment/SegmentCompacter`, `segment/SegmentFullWriterTx`, `segment/SegmentFullWriter`, `bloomfilter/BloomFilterWriterTx`, `scarceindex/*`.
 
-## Segment Splitting
+## ✂️ Segment Splitting
 
 When a segment grows beyond `maxNumberOfKeysInSegment`, the split coordinator computes a plan, optionally compacts first, and then splits into two segments. The key‑to‑segment map is updated with the new segment’s max key.
 
 Key classes: `sst/SegmentSplitCoordinator`, `segment/SegmentSplitter`, `segment/SegmentSplitterPlan`, `sst/KeySegmentCache`.
 
-## Delete Semantics (Tombstones)
+## 🪦 Delete Semantics (Tombstones)
 
 Deletes write a tombstone value:
 
@@ -108,13 +108,13 @@ Deletes write a tombstone value:
 
 Key classes: `sst/SstIndexImpl#delete`, `datatype/TypeDescriptor#getTombstone`, `segment/SegmentSearcher`.
 
-## Durability and Atomicity
+## 💾 Durability and Atomicity
 
 - Transactional writers use a temp file + atomic rename to ensure either the old state or the new state is visible after a crash.
 - Index `close()` and explicit `flush()` drive persistence of buffered writes.
 - Optional context log is not a durability mechanism; it rotates on flush.
 
-## Configuration Knobs Affecting Writes
+## ⚙️ Configuration Knobs Affecting Writes
 
 - `maxNumberOfKeysInCache` – triggers flush of the index‑level buffer.
 - `maxNumberOfKeysInSegmentCache` / `…DuringFlushing` – bounds delta cache growth.
@@ -127,7 +127,7 @@ Key classes: `sst/SstIndexImpl#delete`, `datatype/TypeDescriptor#getTombstone`, 
 
 See: `sst/IndexConfiguration` and `sst/IndexConfigurationBuilder`.
 
-## Integrity Filters on the Write Path
+## 🛡️ Integrity Filters on the Write Path
 
 The chunk writer applies a filter pipeline when persisting chunk payloads:
 
@@ -139,7 +139,7 @@ These produce a self‑describing chunk header and robust payload handling.
 
 Key classes: `chunkstore/ChunkProcessor`, `chunkstore/ChunkFilterMagicNumberWriting`, `chunkstore/ChunkFilterCrc32Writing`, `chunkstore/ChunkFilterSnappyCompress`.
 
-## Sequence (Put)
+## 🔢 Sequence (Put)
 
 1) `Index.put(k,v)` → validate inputs; forbid direct tombstone values
 2) Optional: append to context log and keep writer open until rotate
@@ -150,7 +150,7 @@ Key classes: `chunkstore/ChunkProcessor`, `chunkstore/ChunkFilterMagicNumberWrit
    - Optionally compact the segment and optionally split if too large
    - Clear unique cache, flush key‑segment map, rotate log
 
-## Where to Look in the Code
+## 🧩 Where to Look in the Code
 
 - Index entry points and buffering: `src/main/java/org/hestiastore/index/sst/SstIndexImpl.java`
 - Segment write/merge path: `src/main/java/org/hestiastore/index/segment/*`

@@ -1,4 +1,4 @@
-# Performance Tuning
+# 🔧 Performance Tuning
 
 Guidance for tuning HestiaStore performance.
 
@@ -7,4 +7,3 @@ Guidance for tuning HestiaStore performance.
 - I/O characteristics and caching
 
 Content to be expanded.
-

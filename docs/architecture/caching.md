@@ -1,15 +1,15 @@
-# Caching Strategy
+# 🗄️ Caching Strategy
 
 HestiaStore uses a few focused caches to deliver read‑after‑write visibility and predictable read latency while keeping memory bounded. This page outlines each layer, how it is populated/evicted, and which configuration knobs control sizing.
 
-## Goals
+## 🎯 Goals
 
 - Read‑after‑write consistency without synchronous disk I/O
 - Bound the working set in memory via LRU at the segment layer
 - Keep read I/O predictable: avoid random seeks with Bloom filter + sparse index
 - Make flush/compact operations deterministic and safe
 
-## Layers Overview
+## 🧱 Layers Overview
 
 - Index write buffer: in‑memory, unique latest value per key
   - Class: `cache/UniqueCache`
@@ -33,7 +33,7 @@ HestiaStore uses a few focused caches to deliver read‑after‑write visibility
 - Key→segment map: max‑key to SegmentId mapping
   - Class: `sst/KeySegmentCache` (TreeMap, persisted to `index.map`)
 
-## Write‑Time Caches
+## ✍️ Write‑Time Caches
 
 ### Index write buffer (UniqueCache)
 
@@ -51,7 +51,7 @@ Code: `sst/SstIndexImpl#put`, `sst/SstIndexImpl#delete`, `sst/SstIndexImpl#flush
 
 Code: `segment/SegmentDeltaCacheWriter`, `segment/SegmentDeltaCacheController`, `segment/SegmentCompacter`, `segment/SegmentFullWriterTx#doCommit`.
 
-## Read‑Time Caches
+## 📖 Read‑Time Caches
 
 - Top‑level overlay: `Index.get(k)` checks the index write buffer first. Iterators are also overlaid with `EntryIteratorRefreshedFromCache` so scans see most recent writes.
 - Per‑segment overlay: `SegmentDeltaCache` is consulted before the Bloom filter + sparse index path. If it returns a tombstone, the key is absent.
@@ -63,14 +63,14 @@ Code: `segment/SegmentDeltaCacheWriter`, `segment/SegmentDeltaCacheController`, 
 
 Code: `sst/SstIndexImpl#get`, `segment/SegmentImpl#get`, `segment/SegmentSearcher`, `sst/EntryIteratorRefreshedFromCache`, `sst/SegmentDataCache`.
 
-## Eviction and Lifecycle
+## ♻️ Eviction and Lifecycle
 
 - UniqueCache (index write buffer): no incremental eviction; cleared on flush.
 - SegmentDataCache (LRU of SegmentData): evicts least‑recently‑used segment; eviction closes Bloom filter and clears delta cache via `close()` hook.
 - SegmentDeltaCache: cleared and files removed after compaction via `SegmentDeltaCacheController.clear()`; rebuilt on demand from delta files.
 - KeySegmentCache: persisted via `optionalyFlush()` when updated; survives process restarts by reading `index.map`.
 
-## Configuration Knobs
+## ⚙️ Configuration Knobs
 
 Index‑level:
 - `IndexConfiguration.getMaxNumberOfKeysInCache()` — size of the index write buffer (triggers flush)
@@ -90,32 +90,32 @@ I/O buffering:
 
 See: `sst/IndexConfiguration`, `segment/SegmentConf`.
 
-## Warm‑Up Strategies
+## 🔥 Warm‑Up Strategies
 
 - Point warm‑up: issue representative `get(key)` calls; this loads the target segments’ Bloom filter and sparse index into the LRU.
 - Segment warm‑up: iterate a small range to prime chunk readers and caches.
 - Global warm‑up: a bounded `index.getStream(SegmentWindow.limit(N))` over initial segments to seed the LRU without scanning the full dataset.
 
-## Observability
+## 🧭 Observability
 
 - Bloom filter effectiveness and false‑positive rate: `bloomfilter/BloomFilterStats`, accessible via `BloomFilter.getStatistics()`.
 - Index operation counters (coarse): `sst/Stats` increments on get/put/delete.
 
-## Tuning Guidance
+## 🛠️ Tuning Guidance
 
 - Throughput‑oriented writes: increase `maxNumberOfKeysInCache` to batch more before flushing; monitor memory and flush latency.
 - Read‑heavy workloads touching few segments: increase `maxNumberOfSegmentsInCache` so the working set of segments (Bloom + scarce + delta) stays resident.
 - Space‑sensitive deployments: reduce Bloom filter size (may increase false positives and extra reads) or disable compression filters to trade CPU for I/O.
 - Latency‑sensitive point lookups: ensure Bloom filter is sized adequately; keep segments’ working set in the LRU; consider slightly smaller `maxNumberOfKeysInSegmentChunk` to narrow the local scan window.
 
-## Code Pointers
+## 🧩 Code Pointers
 
 - Index write buffer: `src/main/java/org/hestiastore/index/sst/SstIndexImpl.java`
 - Segment caches and providers: `src/main/java/org/hestiastore/index/sst/*SegmentData*`, `src/main/java/org/hestiastore/index/segment/SegmentData*`
 - LRU cache: `src/main/java/org/hestiastore/index/cache/CacheLru.java`
 - Key→segment map: `src/main/java/org/hestiastore/index/sst/KeySegmentCache.java`
 
-## Related Glossary
+## 🔗 Related Glossary
 
 - [UniqueCache](glossary.md#uniquecache)
 - [Delta Cache](glossary.md#delta-cache)

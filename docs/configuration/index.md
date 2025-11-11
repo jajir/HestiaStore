@@ -1,4 +1,4 @@
-# Configuration
+# ⚙️ Configuration
 
 Don’t be afraid to experiment—if a configuration is missing or invalid, the Index will fail fast, helping you catch issues early.
 
@@ -27,11 +27,11 @@ Index<Integer, Integer> index = Index.<Integer, Integer>create(directory, conf);
 
 Now let's look at particular parameters.
 
-## Index Directory
+## 📁 Index Directory
 
 Place where all data are stored. There are two already prepared types:
 
-## In Memory
+## 🧠 In Memory
 
 All data are stored in memory. It's created like this:
 
@@ -41,7 +41,7 @@ Directory directory = new MemDirectory();
 
 It's usefull for testing purposes.
 
-## File system
+## 💾 File system
 
 Its main purpose is to store index data in the file system. Create a file-system-based directory like this:
 
@@ -49,13 +49,13 @@ Its main purpose is to store index data in the file system. Create a file-system
 Directory directory = new FsDirectory(new File('my directory'));
 ```
 
-## Properties of `IndexConfiguration` class
+## 🧾 Properties of `IndexConfiguration` class
 
 All properties are required and have the following meanings:
 
-## Index related configuration
+## 🧱 Index related configuration
 
-### Key class - `withKeyClass()`
+### 🔑 Key class - `withKeyClass()`
 
 A `Class` object that represents the type of keys used in the index. Only instances of this class may be inserted. While any Java class is technically supported, it's recommended to use simple, compact types for performance reasons. Predefined classes are:
 
@@ -66,37 +66,37 @@ A `Class` object that represents the type of keys used in the index. Only instan
 
 If a different class is used, the key type descriptor must be set using the `withKeyTypeDescriptor()` method from the builder. If you use a custom class, you must implement the `com.hestiastore.index.datatype.TypeDescriptor` interface to describe how the type is serialized and compared.
 
-### Value class - `withValueClass()`
+### 🧲 Value class - `withValueClass()`
 
 Required. Specifies the Java class used for values. The same rules that apply to the key class also apply to the value class.
 
-### Index name - `withName()`
+### 🏷️ Index name - `withName()`
 
 Required. Assigns a logical name to the index. This can be useful in diagnostics and logging.
 
-### Key type descriptor - `withKeyTypeDescriptor()`
+### 🧩 Key type descriptor - `withKeyTypeDescriptor()`
 
 Type descriptor for the key class. Required for non-default types.
 
-### Value type descriptor - `withValueTypeDescriptor()`
+### 🧩 Value type descriptor - `withValueTypeDescriptor()`
 
 Type descriptor for the value class. Required for non-default types.
 
-### Max number of keys in cache - `withMaxNumberOfKeysInCache()`
+### 🗃️ Max number of keys in cache - `withMaxNumberOfKeysInCache()`
 
 Sets the maximum number of key-value entries allowed in the in-memory cache before flushing.
 
-### Max number of segments in cache - `withMaxNumberOfSegmentsInCache()`
+### 🧱 Max number of segments in cache - `withMaxNumberOfSegmentsInCache()`
 
 Limits the number of segments stored in memory. Useful for controlling memory usage.
 
-### Thread safe - `withThreadSafe()`
+### 🔒 Thread safe - `withThreadSafe()`
 
 Whether the index instance is safe for concurrent access by multiple threads. When it's set to `code` true than index will be synchronized between threads.
 
 Default value is 'false'.
 
-### Context logging enabled - `withContextLoggingEnabled()`
+### 🗒️ Context logging enabled - `withContextLoggingEnabled()`
 
 Controls whether the index wraps operations with MDC context propagation so log statements include the index name. When it's set on 'true' following loog message will contain set 'index' property:
 
@@ -111,25 +111,25 @@ Default value is 'true'.
 
 Please note, that in highly intensive applications enabling this option could eat up to 40% of CPU time.
 
-## Segment related configuration
+## 🧩 Segment related configuration
 
-### Max number of keys in segment - `withMaxNumberOfKeysInSegment()`
+### 📏 Max number of keys in segment - `withMaxNumberOfKeysInSegment()`
 
 Sets the maximum number of keys allowed in a single segment. Exceeding this splits the segment.
 
-### Max number of keys in segment cache - `withMaxNumberOfKeysInSegmentCache()`
+### 🗃️ Max number of keys in segment cache - `withMaxNumberOfKeysInSegmentCache()`
 
 Defines how many keys can be cached from a segment during regular operation.
 
-### Max number of keys in segment cache during flushing - `withMaxNumberOfKeysInSegmentCacheDuringFlushing()`
+### 🚿 Max number of keys in segment cache during flushing - `withMaxNumberOfKeysInSegmentCacheDuringFlushing()`
 
 Specifies the maximum number of keys that can be temporarily cached from a segment during flushing.
 
-### Max number of keys in segment index page - `withMaxNumberOfKeysInSegmentIndexPage()`
+### 📑 Max number of keys in segment index page - `withMaxNumberOfKeysInSegmentIndexPage()`
 
 Defines the number of keys in the index page for a segment. This impacts lookup efficiency.
 
-## Bloom filter configuration
+## 🌸 Bloom filter configuration
 
 A Bloom filter is a probabilistic data structure that efficiently tests whether an element is part of a set. You can find a detailed explanation on [Wikipedia](https://en.wikipedia.org/wiki/Bloom_filter). In this context, each segment has its own Bloom filter.
 
@@ -141,21 +141,21 @@ To **disable** bloom filter completle set:
 
 The settings for the Bloom filter can be adjusted using the following methods:
 
-### Bloom filter size - `withBloomFilterIndexSizeInBytes()`
+### 📦 Bloom filter size - `withBloomFilterIndexSizeInBytes()`
 
 Sets the size of the Bloom filter in bytes. A value of 0 disables the use of the Bloom filter.
 
-### Number of hash functions - `withBloomFilterNumberOfHashFunctions()`
+### 🔢 Number of hash functions - `withBloomFilterNumberOfHashFunctions()`
 
 Sets the number of hash functions used in the Bloom filter.
 
-### Probability of false positive - `withBloomFilterProbabilityOfFalsePositive()`
+### 📈 Probability of false positive - `withBloomFilterProbabilityOfFalsePositive()`
 
 Sets the probability of false positives. When `get(someKey)` is called on a segment, the Bloom filter is checked to determine if the value is not in the segment. It can return `true`, indicating that the key **could be** in the segment. If the Bloom filter indicates the key is in the segment but it's not found, that's a false positive. The probability of this occurring is a value between 0 and 1.
 
 Usually, it's not necessary to adjust the Bloom filter settings.
 
-## Changing Index propertise
+## ✏️ Changing Index propertise
 
 Some parameters can be redefined when the index is opened.
 
@@ -185,6 +185,6 @@ At allows to pass `IndexConfiguration` object and this way change configuration 
 | threadSafe                                  | If index is thread-safe                              | 🟩             | index                |
 | contextLoggingEnabled                       | If MDC-based context logging is enabled              | 🟩             | index                |
 
-# Add custom data type
+# ➕ Add custom data type
 
 HestiaStore have to know how to work with new data type. So first is create implementatio of `com.hestiastore.index.datatype.TypeDescriptor`. Than during index creation set let index know about your implementation by `withKeyTypeDescriptor`. And it's done.

@@ -1,4 +1,4 @@
-# Documentation
+# 📚 Documentation
 
 Documentation is available in the following locations:
 

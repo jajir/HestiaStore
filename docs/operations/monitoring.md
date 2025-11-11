@@ -1,4 +1,4 @@
-# Observability
+# 📈 Observability
 
 Monitoring and logging guidance for HestiaStore.
 
@@ -7,4 +7,3 @@ Monitoring and logging guidance for HestiaStore.
 - Common alerts and thresholds
 
 Content to be expanded.
-

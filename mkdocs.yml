@@ -10,11 +10,14 @@ repo_url: https://github.com/jajir/HestiaStore
 nav:
     - Home: README.md
     - Why HestiaStore:
-        - Reliability Overview: reliability.md
-        - Benchmarks: benchmark-results.md
+        - Overview: why-hestiastore/index.md
+        - Alternatives: why-hestiastore/alternatives.md
+        - Benchmarks:
+          - Write test: why-hestiastore/out-write.md
+          - Read test: why-hestiastore/out-read.md
+          - Sequential read test: why-hestiastore/out-sequential.md
         - Security: SECURITY.md
-        - Alternatives: alternatives.md
-        - Quality & Testing: quality.md
+        - Quality & Testing: why-hestiastore/quality.md
     - Getting Started:
         - Overview: how-to-use/index.md
         - Install: how-to-use/install.md
@@ -58,7 +61,7 @@ nav:
         - Code of Conduct: CODE_OF_CONDUCT.md
         - Development Docs: development/documentation.md
         - Guides: development/guides.md
-        - JVM Profiling: profiler-stacktrace.md
+        - JVM Profiling: development/profiler-stacktrace.md
 
 theme:
     name: material
