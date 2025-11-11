@@ -1,4 +1,4 @@
-# Backup & Restore
+# 💾 Backup & Restore
 
 Approaches for backing up and restoring HestiaStore data.
 
@@ -7,4 +7,3 @@ Approaches for backing up and restoring HestiaStore data.
 - Restore and validation steps
 
 Content to be expanded.
-

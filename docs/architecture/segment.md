@@ -1,4 +1,4 @@
-# Segment implementation
+# 🧱 Segment implementation
 
 Segment is core part of index. It represents one string sorted table file with:
 
@@ -7,7 +7,7 @@ Segment is core part of index. It represents one string sorted table file with:
 * Bloom filter for faster evaluating if key is in index
 * Scarce index for faster searching for data in main index
 
-## Segment put/get and iterate consistency
+## 🔄 Segment put/get and iterate consistency
 
 operations like write and get should be always consistent. What is written is read. Iteration behave differently. better than provide old data it stop providing any data.
 
@@ -47,7 +47,7 @@ iterator.read() --> null
 
 Any segment write operation will break segment iterator. It's easier way to secure segment consistency.  
 
-## Caching of segment data
+## 🗄️ Caching of segment data
 
 In segment following object are cached:
 
@@ -66,11 +66,10 @@ The following image shows that `SegmentDatafactory` can be referenced from `Segm
 
 ![Cache related object relations](../images/segment-cache-class2.png)
 
-## Writing to segment
+## ✍️ Writing to segment
 
 Opening segment writer immediatelly close all segment readers. When writing operation add key that is in index but is not in cache this value will not returned updated. 
 
 Putting new entry into segment is here:
 
 ![Segment writing sequence diagram](../images/segment-writing-seq.png)
-

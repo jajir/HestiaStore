@@ -1,9 +1,9 @@
-# HestiaStore Benchmark Results
+# 📊 HestiaStore Benchmark Results
 
-## Test Conditions
+## 🧪 Test Conditions
 
 - Every benchmark in the plain-load suite runs inside the same controlled JVM environment with identical JVM flags and hardware resources. Runs start by wiping the working directory supplied through the `dir` system property, so each trial writes into a fresh, empty location.
-- Execution stays single-threaded from warm-up through measurement. The test focuses purely on how quickly one writer can push key/value entries into the storage engine without any coordination overhead from additional threads.
+- Execution stays single-threaded from warm-up through measurement. The test focuses purely on how quickly one writer can push key/value pairs into the storage engine without any coordination overhead from additional threads.
 - Warm-up phases fill the database as aggressively as possible for several 20-second stretches. This stage is meant to trigger JIT compilation, populate caches, and let LevelDB settle into steady-state behaviour before any numbers are recorded.
 - Measurement phases repeat the same single-threaded write loop. Throughput is observed over multiple 20-second intervals to capture stable, sustained insert performance rather than a burst.
 - Each write operation uses a deterministic pseudo-random long (seed `324432L`) to generate a unique hash string via `HashDataProvider`. The payload is the constant text `"opice skace po stromech"`, so variability comes exclusively from the changing keys.
@@ -11,14 +11,12 @@
 - Test was performed at Mac mini 2024, 16 GB, macOS 15.6.1 (24G90).
 
 
-## Benchmark Results
+## 🏁 Benchmark Results
 
 | Engine       | Score [ops/s]     | ScoreError | Confidence Interval [ops/s] | Occupied space | CPU Usage |
 |:--------------|-----------------:|-----------:|-----------------------------:|---------------:|---------:|
 | ChronicleMap |           5 954 |     1 765 | 4 189 .. 7 719              | 20.54 GB       | 7%         |
 | H2           |          13 458 |     5 144 | 8 314 .. 18 601             | 8 KB           | 21%        |
-| HestiaStoreBasic |         208 723 |   123 398 | 85 325 .. 332 122           | 9.71 GB        | 6%         |
-| HestiaStoreCompress |         197 335 |   110 268 | 87 068 .. 307 603           | 4.97 GB        | 6%         |
 | LevelDB      |          45 263 |    10 913 | 34 350 .. 56 176            | 1.4 GB         | 17%        |
 | MapDB        |           2 946 |       326 | 2 620 .. 3 272              | 496 MB         | 14%        |
 | RocksDB      |         305 712 |    78 929 | 226 783 .. 384 641          | 7.74 GB        | 6%         |
@@ -35,24 +33,24 @@ meaning of columns:
 - Occupied space : amount of disk space occupied by the engine's data structures (lower is better). It is measured after flushing last data to disk.
 - CPU Usage: average CPU usage during the benchmark (lower is better). Please note, that it includes all system processes, not only the benchmarked engine.
 
-## Raw JSON Files
+## 📄 Raw JSON Files
 
-### results-ChronicleMap-my.json
+### results-write-ChronicleMap-my.json
 
 ```json
 {
-  "totalDirectorySize" : 22049472512,
-  "fileCount" : 1,
-  "usedMemoryBytes" : 27947104,
-  "cpuBefore" : 603274000,
-  "cpuAfter" : 1097938000,
-  "startTime" : 261108533575583,
-  "endTime" : 261814614016416,
-  "cpuUsage" : 0.07005774008077877
+    "totalDirectorySize": 22049472512,
+    "fileCount": 1,
+    "usedMemoryBytes": 27947104,
+    "cpuBefore": 603274000,
+    "cpuAfter": 1097938000,
+    "startTime": 261108533575583,
+    "endTime": 261814614016416,
+    "cpuUsage": 0.07005774008077877
 }
 ```
 
-### results-ChronicleMap.json
+### results-write-ChronicleMap.json
 
 ```json
 [
@@ -151,7 +149,7 @@ meaning of columns:
 
 ```
 
-### results-H2-my.json
+### results-write-H2-my.json
 
 ```json
 {
@@ -166,7 +164,7 @@ meaning of columns:
 }
 ```
 
-### results-H2.json
+### results-write-H2.json
 
 ```json
 [
@@ -250,203 +248,57 @@ meaning of columns:
 
 ```
 
-### results-HestiaStoreBasic-my.json
+### results-write-HestiaStoreBasic-my.json
 
 ```json
 {
-  "totalDirectorySize" : 10421104485,
-  "fileCount" : 202,
-  "usedMemoryBytes" : 29532080,
-  "cpuBefore" : 630093000,
-  "cpuAfter" : 1321420000,
-  "startTime" : 251981038188791,
-  "endTime" : 253079760397708,
-  "cpuUsage" : 0.06292099990237153
+  "totalDirectorySize" : 3889698398,
+  "fileCount" : 38,
+  "usedMemoryBytes" : 28606416,
+  "cpuBefore" : 552320000,
+  "cpuAfter" : 729480000,
+  "startTime" : 1401225500145958,
+  "endTime" : 1401225903588125,
+  "cpuUsage" : 43.91211789222816
 }
 ```
 
-### results-HestiaStoreBasic.json
+### results-write-HestiaStoreBasic.json
 
 ```json
 [
-    {
-        "jmhVersion" : "1.37",
-        "benchmark" : "org.hestiastore.index.benchmark.plainload.TestHestiaStoreBasic.write",
-        "mode" : "thrpt",
-        "threads" : 1,
-        "forks" : 1,
-        "jvm" : "/opt/homebrew/Cellar/openjdk@21/21.0.7/libexec/openjdk.jdk/Contents/Home/bin/java",
-        "jvmArgs" : [
-            "-Ddir=/Volumes/ponrava/test-index",
-            "-Dengine=HestiaStoreBasic"
-        ],
-        "jdkVersion" : "21.0.7",
-        "vmName" : "OpenJDK 64-Bit Server VM",
-        "vmVersion" : "21.0.7",
-        "warmupIterations" : 10,
-        "warmupTime" : "20 s",
-        "warmupBatchSize" : 1,
-        "measurementIterations" : 25,
-        "measurementTime" : "20 s",
-        "measurementBatchSize" : 1,
-        "primaryMetric" : {
-            "score" : 208723.46372734453,
-            "scoreError" : 123398.4009790847,
-            "scoreConfidence" : [
-                85325.06274825982,
-                332121.86470642925
-            ],
-            "scorePercentiles" : {
-                "0.0" : 554.7618862826042,
-                "50.0" : 162041.0809319436,
-                "90.0" : 470075.70756668044,
-                "95.0" : 492127.1980588706,
-                "99.0" : 499252.60276788153,
-                "99.9" : 499252.60276788153,
-                "99.99" : 499252.60276788153,
-                "99.999" : 499252.60276788153,
-                "99.9999" : 499252.60276788153,
-                "100.0" : 499252.60276788153
-            },
-            "scoreUnit" : "ops/s",
-            "rawData" : [
-                [
-                    192122.76396490858,
-                    176314.5105152991,
-                    172106.25195735498,
-                    162041.0809319436,
-                    132489.04192779973,
-                    107779.73836212876,
-                    499252.60276788153,
-                    554.7618862826042,
-                    475501.2537378453,
-                    17154.979375749186,
-                    466458.67678590387,
-                    21687.044020994686,
-                    405378.4078260152,
-                    56166.83893309033,
-                    403344.39251664525,
-                    51301.04051122623,
-                    352834.9371019776,
-                    74215.05428872978,
-                    301901.0548791414,
-                    90049.73992580615,
-                    142494.71288749005,
-                    52679.915185932994,
-                    393918.62679864746,
-                    88953.57519155115,
-                    381385.5909032691
-                ]
-            ]
-        },
-        "secondaryMetrics" : {
-        }
-    }
 ]
 
 
 
 ```
 
-### results-HestiaStoreCompress-my.json
+### results-write-HestiaStoreCompress-my.json
 
 ```json
 {
-  "totalDirectorySize" : 5333604997,
-  "fileCount" : 138,
-  "usedMemoryBytes" : 29625800,
-  "cpuBefore" : 588216000,
-  "cpuAfter" : 1276584000,
-  "startTime" : 253080135943875,
-  "endTime" : 254157304657416,
-  "cpuUsage" : 0.06390530947906137
+  "totalDirectorySize" : 3889698398,
+  "fileCount" : 38,
+  "usedMemoryBytes" : 28689648,
+  "cpuBefore" : 529915000,
+  "cpuAfter" : 697688000,
+  "startTime" : 1401226232499375,
+  "endTime" : 1401226604772458,
+  "cpuUsage" : 45.067185263029074
 }
 ```
 
-### results-HestiaStoreCompress.json
+### results-write-HestiaStoreCompress.json
 
 ```json
 [
-    {
-        "jmhVersion" : "1.37",
-        "benchmark" : "org.hestiastore.index.benchmark.plainload.TestHestiaStoreCompress.write",
-        "mode" : "thrpt",
-        "threads" : 1,
-        "forks" : 1,
-        "jvm" : "/opt/homebrew/Cellar/openjdk@21/21.0.7/libexec/openjdk.jdk/Contents/Home/bin/java",
-        "jvmArgs" : [
-            "-Ddir=/Volumes/ponrava/test-index",
-            "-Dengine=HestiaStoreCompress"
-        ],
-        "jdkVersion" : "21.0.7",
-        "vmName" : "OpenJDK 64-Bit Server VM",
-        "vmVersion" : "21.0.7",
-        "warmupIterations" : 10,
-        "warmupTime" : "20 s",
-        "warmupBatchSize" : 1,
-        "measurementIterations" : 25,
-        "measurementTime" : "20 s",
-        "measurementBatchSize" : 1,
-        "primaryMetric" : {
-            "score" : 197335.45368451648,
-            "scoreError" : 110267.72261413459,
-            "scoreConfidence" : [
-                87067.7310703819,
-                307603.1762986511
-            ],
-            "scorePercentiles" : {
-                "0.0" : 19837.659319775263,
-                "50.0" : 159121.5187040372,
-                "90.0" : 446727.6608323127,
-                "95.0" : 471450.60560908867,
-                "99.0" : 471589.3418364573,
-                "99.9" : 471589.3418364573,
-                "99.99" : 471589.3418364573,
-                "99.999" : 471589.3418364573,
-                "99.9999" : 471589.3418364573,
-                "100.0" : 471589.3418364573
-            },
-            "scoreUnit" : "ops/s",
-            "rawData" : [
-                [
-                    189366.44800340827,
-                    182001.5193574798,
-                    170531.69717638704,
-                    162364.86104533979,
-                    159121.5187040372,
-                    125406.93654261202,
-                    106902.16819859736,
-                    471589.3418364573,
-                    20815.987134208288,
-                    471126.8877452286,
-                    19837.659319775263,
-                    430461.50955703534,
-                    41763.59810876514,
-                    373047.7099334711,
-                    70686.69226237234,
-                    352984.1656029356,
-                    76161.28448556861,
-                    331142.4783053942,
-                    83170.7709646383,
-                    300736.0137753263,
-                    91106.90765487481,
-                    153934.20182376896,
-                    59495.64115310968,
-                    398898.761738379,
-                    90731.58168374155
-                ]
-            ]
-        },
-        "secondaryMetrics" : {
-        }
-    }
 ]
 
 
 
 ```
 
-### results-LevelDB-my.json
+### results-write-LevelDB-my.json
 
 ```json
 {
@@ -461,7 +313,7 @@ meaning of columns:
 }
 ```
 
-### results-LevelDB.json
+### results-write-LevelDB.json
 
 ```json
 [
@@ -545,7 +397,7 @@ meaning of columns:
 
 ```
 
-### results-MapDB-my.json
+### results-write-MapDB-my.json
 
 ```json
 {
@@ -560,7 +412,7 @@ meaning of columns:
 }
 ```
 
-### results-MapDB.json
+### results-write-MapDB.json
 
 ```json
 [
@@ -644,7 +496,7 @@ meaning of columns:
 
 ```
 
-### results-RocksDB-my.json
+### results-write-RocksDB-my.json
 
 ```json
 {
@@ -659,7 +511,7 @@ meaning of columns:
 }
 ```
 
-### results-RocksDB.json
+### results-write-RocksDB.json
 
 ```json
 [

@@ -1,4 +1,4 @@
-# Data types
+# 🧩 Data types
 
 HestiaStore supports a variety of data types for storing keys and values in a binary-efficient and consistent manner. Each data type is associated with a `TypeDescriptor`, which handles serialization, deserialization, comparison, and hashing logic.
 
@@ -17,7 +17,7 @@ Below is a list of the supported data types and their characteristics.
 | `org.hestiastore.index.datatype.NullValue` | `TypeDescriptorNullValue`   | 0                   | Usefulll when value is not needed. Doesn't occupy any space. |
 | `org.hestiastore.index.datatype.CompositeValue` | `TypeDescriptorCompositeValue`   | n                   | Represents multiple values.  |
 
-## Custom Data Types
+## 🧰 Custom Data Types
 
 HestiaStore allows advanced users to define custom `TypeDescriptor` implementations for handling specialized serialization strategies or complex types. Main usecases:
 
@@ -30,7 +30,7 @@ To create a new data type:
 1. Implement the `TypeDescriptor<T>` interface. It's just a collection of simple interfaces which allows store data type to bytes and restore it from byte array
 2. Optionallly register it using `org.hestiastore.index.sst.DataTypeDescriptorRegistry.addTypeDescriptor(Class, descriptor)`.
 
-### Why Register Your Custom Type Descriptor
+### 💡 Why Register Your Custom Type Descriptor
 
 Registering your `TypeDescriptor` with `DataTypeDescriptorRegistry` is not mandatory, but it brings benefits:
 
@@ -40,7 +40,7 @@ Registering your `TypeDescriptor` with `DataTypeDescriptorRegistry` is not manda
 
 Important: If you register using a `TypeDescriptor` instance, its class will be saved. That class must have a public no-args constructor (the system instantiates it reflectively). If this is not possible, you can register using the explicit class name overload `addTypeDescriptor(Class, String)`.
 
-### How to use new Data Type
+### 🧪 How to use new Data Type
 
 During Index configuration new data type descriptor can by directly used:
 
@@ -57,12 +57,12 @@ IndexConfiguration<Integer, Integer> conf = IndexConfiguration
 Index<Integer, Integer> index = Index.<Integer, Integer>create(directory, conf);
 ```
 
-## Notes
+## 📝 Notes
 
 * All numeric types use big-endian byte order for consistent sorting and comparison.
 * `ByteArray` is a wrapper class designed to support `equals()`, `hashCode()`, and lexicographic comparison. It can be used for binary blobs or hash digests.
 
-## Equality, Hashing, and Sorting Contracts
+## ⚖️ Equality, Hashing, and Sorting Contracts
 
 When you define custom key types (or use low-level binary types), it is critical that equality, hashing, and ordering behave consistently. HestiaStore relies on these properties to deduplicate updates in memory, to merge data from multiple sources, and to safely write strictly-increasing keys to disk.
 

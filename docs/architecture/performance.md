@@ -1,8 +1,8 @@
-# Performance Model & Sizing
+# 🚀 Performance Model & Sizing
 
 This page summarizes how HestiaStore achieves high throughput and predictable latency, and how to size the main knobs. All claims map to code so you can verify behavior.
 
-## Mental Model (Hot Paths)
+## 🧠 Mental Model (Hot Paths)
 
 - Put/Delete:
   - O(1) to update in‑memory write buffer (`UniqueCache`).
@@ -16,7 +16,7 @@ This page summarizes how HestiaStore achieves high throughput and predictable la
   - Locate target segment via key→segment map (in‑memory TreeMap ceiling lookup).
   - Seek into `.index` by sparse index pointer, then bounded local scan of at most `maxNumberOfKeysInSegmentChunk` entries in ascending order. Typically one chunk read.
 
-## I/O Patterns and Amplification
+## 💽 I/O Patterns and Amplification
 
 - Sequential writes: delta files and SST chunks append sequentially via transactional writers (`*.tmp` + rename).
 - Sequential reads: positive get reads one chunk and scans ≤ N keys (N = `maxNumberOfKeysInSegmentChunk`).
@@ -25,7 +25,7 @@ This page summarizes how HestiaStore achieves high throughput and predictable la
   - Chunk store uses fixed 16‑byte cells with data blocks sized by `diskIoBufferSize` (divisible by 1024). Payloads are padded to whole cells for easy positioning.
   - Code: `chunkstore/CellPosition.java`, `datablockfile/DataBlockSize.java`, `Vldtn#requireIoBufferSize`.
 
-## Key Knobs (What They Do)
+## ⚙️ Key Knobs (What They Do)
 
 - `maxNumberOfKeysInCache` (index‑level write buffer)
   - Higher ⇒ fewer flushes, larger batches, better write throughput; uses more RAM during bursts.
@@ -49,20 +49,20 @@ This page summarizes how HestiaStore achieves high throughput and predictable la
 - Context logging (`isContextLoggingEnabled`)
   - Writes an unsorted log entry per operation for observability. Disable if you need minimum overhead.
 
-## Memory Sizing
+## 🧮 Memory Sizing
 
 - Index write buffer: up to `maxNumberOfKeysInCache` entries (latest per key). Backed by a HashMap.
 - Per‑segment delta overlay (in memory): when a segment is loaded, delta files are folded into a `UniqueCache`. Upper bound approximates number of unique keys across delta files (see segment properties).
 - Bloom filter: fully memory‑mapped in RAM when present; `indexSizeInBytes` bytes per segment plus metadata. Code: `bloomfilter/BloomFilterImpl.java`.
 - SegmentData LRU: holds delta cache + Bloom + scarce index for up to `maxNumberOfSegmentsInCache` segments; evictions call `close()` to free memory.
 
-## CPU Sizing
+## 🧠 CPU Sizing
 
 - Put path: hashing and HashMap work; occasional sort on flush (parallel sort over entries) and CRC/magic/Snappy filters on compaction.
 - Get path: a few compares, at most N key compares during the bounded scan, optional Snappy decompression on read.
 - Enabling context logging adds a small write per operation.
 
-## Practical Tuning Recipes
+## 🧪 Practical Tuning Recipes
 
 - Write‑heavy ingestion:
   - Increase `maxNumberOfKeysInCache` to batch and reduce flushes.
@@ -77,13 +77,13 @@ This page summarizes how HestiaStore achieves high throughput and predictable la
 - Mixed workloads:
   - Start with defaults; adjust Bloom size and segment LRU to fit your hot set; validate with counters and filter stats.
 
-## Observability and Validation
+## 🔎 Observability and Validation
 
 - Bloom stats: `BloomFilter.getStatistics()` reports avoided disk accesses and false‑positive rate. Code: `bloomfilter/BloomFilterStats`.
 - Operation counters: `sst/Stats` exposes get/put/delete counts (logged on close in `SstIndexImpl#doClose`).
 - Consistency: after unexpected shutdown, run `Index.checkAndRepairConsistency()`; optionally `compact()` to reclaim locality.
 
-## Code Pointers
+## 🧩 Code Pointers
 
 - Write buffer and flush: `src/main/java/org/hestiastore/index/sst/SstIndexImpl.java`, `src/main/java/org/hestiastore/index/sst/CompactSupport.java`
 - Read path bounds: `src/main/java/org/hestiastore/index/segment/SegmentSearcher.java`, `.../SegmentIndexSearcher.java`
@@ -91,7 +91,7 @@ This page summarizes how HestiaStore achieves high throughput and predictable la
 - Chunked I/O and filters: `src/main/java/org/hestiastore/index/chunkstore/*`
 - Segment sizing/splitting: `src/main/java/org/hestiastore/index/sst/SegmentSplitCoordinator.java`, `src/main/java/org/hestiastore/index/segment/SegmentSplitter*.java`
 
-## Related Glossary
+## 🔗 Related Glossary
 
 - [Main SST](glossary.md#main-sst)
 - [Sparse Index](glossary.md#sparse-index-scarce-index)

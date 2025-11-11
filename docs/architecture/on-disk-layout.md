@@ -1,8 +1,8 @@
-# On-Disk Layout & File Names
+# 💾 On-Disk Layout & File Names
 
 This page documents the files HestiaStore writes into an index directory, their naming conventions, how they evolve over time, and the atomic commit pattern used to keep them consistent.
 
-## Directory Layout (One Index per Directory)
+## 📂 Directory Layout (One Index per Directory)
 
 Top-level files:
 - `index.map` — Global key→segment map (max key per segment). Sorted key→SegmentId pairs. Updated atomically.
@@ -20,7 +20,7 @@ Notes:
 - Segment ids are zero‑based and padded: `segment-00000`, `segment-00001`, …
 - Delta file counters are padded to 3 digits.
 
-## Naming and Extensions
+## 🏷️ Naming and Extensions
 
 - Main data: `.index` (chunked SST)
 - Sparse index: `.scarce` (sorted key→int pointer)
@@ -32,7 +32,7 @@ Notes:
 
 Code: `segment/SegmentFiles.java`, `sst/KeySegmentCache.java`, `log/LogFileNamesManager.java`.
 
-## Atomic Commit Pattern (`*.tmp` + rename)
+## 🧨 Atomic Commit Pattern (`*.tmp` + rename)
 
 All persistent writers follow the same pattern:
 1) `openWriter()` returns a writer bound to a temporary file (usually `*.tmp`).
@@ -50,14 +50,14 @@ Code pointers:
 - Bloom filter: `bloomfilter/BloomFilterWriterTx`
 - Unsorted log: `unsorteddatafile/UnsortedDataFileWriterTx`
 
-## Segment Lifecycle
+## 🔄 Segment Lifecycle
 
 1) New writes accumulate in the index write buffer; on flush they are routed by key into per‑segment delta files `segment-xxxxx-delta-YYY.cache`.
 2) Reads consult delta cache first, then `.bloom-filter` and `.scarce` to bound the probe into `.index`.
 3) Compaction rewrites `.index`, `.scarce`, and `.bloom-filter` transactionally; on success, delta files are deleted and the in‑memory delta cache is cleared.
 4) When a segment grows beyond the threshold, it is split: a new `segment-xxxxx` appears and `index.map` is updated atomically.
 
-## Chunked SST Anatomy
+## 🧬 Chunked SST Anatomy
 
 The `.index` file is a sequence of fixed‑cell chunks stored in a data‑block file. Each chunk has:
 - Header: magic number, version, payload length, CRC32, flags
@@ -67,12 +67,12 @@ Filters add robustness and optional compression/obfuscation; their flags and ord
 
 Code: `chunkstore/*`, `chunkentryfile/*`.
 
-## Compatibility
+## 🔁 Compatibility
 
 - Header fields (magic, version) allow future readers to validate format.
 - Sparse index and Bloom filter are rebuilt during compaction; no upgrade step is required beyond re‑writing segments if formats change in the future.
 
-## Example Directory (minimal)
+## 📁 Example Directory (minimal)
 
 ```
 index.map
@@ -84,7 +84,7 @@ segment-00000-delta-000.cache   # present until compaction
 # wal-00000.log                 # only if context logging is enabled
 ```
 
-## Related Glossary
+## 🔗 Related Glossary
 
 - [SegmentId](glossary.md#segmentid)
 - [Main SST](glossary.md#main-sst)

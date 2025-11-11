@@ -1,10 +1,10 @@
-# Architecture
+# 🧭 Architecture
 
 Here is described basic index concepts. This page explain you how to correctly configure index.
 
 ![basic index architecture](../images/architecture.png)
 
-## Operation consistency
+## 🧩 Operation consistency
 
 The `getStream()` method can sometimes return inconsistent results, occasionally omitting some items. This can occur in the following scenarios:
 
@@ -17,7 +17,7 @@ Updating values in the index using `put()` or deleting keys using `delete()` doe
 
 Other operations, like `get()`, remain consistently reliable.
 
-## States
+## 📊 States
 
 Index could be in following states:
 

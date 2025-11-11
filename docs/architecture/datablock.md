@@ -1,4 +1,4 @@
-# Data Block and Chunk Design in HestiaStore
+# 📦 Data Block and Chunk Design in HestiaStore
 
 
 This document describes the structure and purpose of `Block` and `Chunk` objects in the HestiaStore storage engine.
@@ -7,7 +7,7 @@ This document describes the structure and purpose of `Block` and `Chunk` objects
 
 ---
 
-## Block
+## 🧱 Block
 
 A **Block** is the lowest-level physical unit of storage. It has a fixed size (typically a multiple of 4KB) and is directly written to disk.
 
@@ -28,7 +28,7 @@ Blocks are stored and retrieved via the `BlockFile` abstraction.
 
 ---
 
-## Chunk
+## 📦 Chunk
 
 A **Chunk** represents a variable-sized, logical data unit stored inside a block. It is used to store optionally compressed sets of key-value entries.
 
@@ -51,7 +51,7 @@ Chunks are managed through the `ChunkFileStore` and written using `ChunkWriter`.
 
 ---
 
-## Relationships
+## 🔗 Relationships
 
 - `BlockFile` provides the persistent storage mechanism.
 - `ChunkFileStore` maps chunk positions to blocks and provides higher-level access.

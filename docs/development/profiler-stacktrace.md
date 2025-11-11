@@ -1,4 +1,4 @@
-# JVM profiler results (YourKit)
+# 🔬 JVM profiler results (YourKit)
 
 This page summarizes a profiling session focused on read and write performance. The goal was to identify where CPU time is spent and highlight concrete improvements.
 
@@ -6,7 +6,7 @@ The workload: a separate generator produced roughly 100,000,000 key–value entr
 
 Test environment: run on a Mac mini on 24.10.2025.
 
-![Profiler result](./images/jvm-profiler-2025-10-24.png)
+![Profiler result](../images/jvm-profiler-2025-10-24.png)
 
 ## 🧭 How to read the numbers
 

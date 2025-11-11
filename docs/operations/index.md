@@ -1,4 +1,4 @@
-# Production Guide
+# 🏭 Production Guide
 
 Operational guidance for running HestiaStore in production.
 
@@ -7,7 +7,7 @@ Operational guidance for running HestiaStore in production.
 - Backup and restore strategy
 - Observability and logging
 
-## After Unexpected Shutdown
+## ⚠️ After Unexpected Shutdown
 
 Recommended steps to verify integrity and reclaim optimal layout:
 

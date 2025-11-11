@@ -1,14 +1,14 @@
-# Consistency & Recovery
+# 🛟 Consistency & Recovery
 
 This page explains HestiaStore’s crash safety model and commit semantics. There is no WAL‑based crash recovery or multi‑operation transactions. Durability is driven by explicit flushes and by the fact that all data files are written via temporary files and atomically renamed on commit.
 
-## Scope and Guarantees
+## 📜 Scope and Guarantees
 
 - No automatic recovery: the system does not replay a WAL or roll back partial groups of operations after a crash.
 - Durability boundary: calling `flush()` or closing the index persists all writes that happened before the call. Writes that are only in memory (index‑level buffer) and not flushed are not durable.
 - Atomic file replacement: data files are written to `*.tmp` and made visible via `rename` only after the writer is closed and the transaction is committed. A crash cannot produce partially written visible files.
 
-## Where Writes Become Durable
+## 💾 Where Writes Become Durable
 
 - Index‑level buffer → disk: `Index.flush()` drains the in‑memory unique buffer into segment delta cache files. On close, the index also flushes.
 - Segment merge/compaction: when a segment compacts, the new main SST, sparse index, and Bloom filter are built via transactional writers; on commit they atomically replace the old ones.
@@ -16,7 +16,7 @@ This page explains HestiaStore’s crash safety model and commit semantics. Ther
 
 Relevant code: `sst/SstIndexImpl#flush()`, `sst/CompactSupport`, `sst/KeySegmentCache#optionalyFlush()`.
 
-## Transactional Write Primitives
+## ✍️ Transactional Write Primitives
 
 All main data files follow the same pattern: write to a temporary file, then atomically rename on `commit()`.
 
@@ -30,7 +30,7 @@ Key classes:
 - `chunkstore/ChunkStoreWriterTx` and `chunkentryfile/ChunkEntryFileWriterTx` → layered over `DataBlockWriterTx`
 - `bloomfilter/BloomFilterWriterTx` → writes new filter and swaps it in on commit
 
-## File Types and Commit Paths
+## 🗂️ File Types and Commit Paths
 
 - Segment delta cache files
   - Writer: `segment/SegmentDeltaCacheWriter`
@@ -49,25 +49,25 @@ Key classes:
   - Writer: `SortedDataFileWriterTx.execute(…)` inside `KeySegmentCache.optionalyFlush()`
   - Ensures the map is replaced atomically.
 
-## What Is Not Transactional
+## 🚫 What Is Not Transactional
 
 - Segment properties (counts and delta‑file numbering) are persisted via an overwrite (`Directory.Access.OVERWRITE`). They are updated after data files are committed, and are not critical to data correctness. If a crash corrupts or desynchronizes this metadata, the reader logic remains safe (e.g., missing delta file names yield empty reads) and you can re‑establish consistency via the checker below.
 
 Code: `properties/PropertyStoreimpl` and `SegmentPropertiesManager`.
 
-## Failure Model (Examples)
+## 💥 Failure Model (Examples)
 
 - Crash while writing a delta file before commit: only `*.tmp` exists; it is ignored on boot; prior state remains valid.
 - Crash after committing a Bloom filter but before committing SST/sparse index: Bloom filter is ahead of data, which is safe (may increase positives but never produce false negatives).
 - Crash after committing SST/sparse index but before properties update: data is fully committed; metadata may lag but does not affect correctness.
 
-## Consistency Check and Repair
+## 🧰 Consistency Check and Repair
 
 - Run `Index.checkAndRepairConsistency()` after an unexpected shutdown to verify that segments are well‑formed and sorted and that the key→segment map is coherent. This walks all segments, checks ordering and basic invariants, and raises an error if it finds non‑recoverable issues.
 
 Key classes: `sst/IndexConsistencyChecker`, `segment/SegmentConsistencyChecker`.
 
-## Developer Notes: `open()`/`commit()` and `*.tmp`
+## 👩‍💻 Developer Notes: `open()`/`commit()` and `*.tmp`
 
 - `open()` returns a writer bound to a temporary file (typically with a `.tmp` suffix). You must close the writer before calling `commit()`.
 - `commit()` performs an atomic `rename(temp, final)` so either the old file or the new file is visible on disk.
@@ -79,13 +79,13 @@ Examples in code:
 - `datablockfile/DataBlockWriterTx#open()` → `commit()` renames temp to final
 - `bloomfilter/BloomFilterWriterTx#open()` → `commit()` renames temp to final and swaps hash
 
-## Practical Guidance
+## 🧭 Practical Guidance
 
 - Call `flush()` on periodic boundaries and always before shutdown to persist in‑memory writes.
 - After a crash, reopen the index and run `checkAndRepairConsistency()`; optionally trigger a `compact()` to collapse delta caches.
 - Remember there is no WAL: durability is guaranteed at the `flush()`/close boundaries and via atomic file replacement for all data files.
 
-## Related Glossary
+## 🔗 Related Glossary
 
 - [Flush](glossary.md#flush)
 - [Write Transaction](glossary.md#write-transaction)
