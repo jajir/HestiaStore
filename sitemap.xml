@@ -21,26 +21,6 @@
          <lastmod>2025-11-11</lastmod>
     </url>
     <url>
-         <loc>https://jajir.github.io/HestiaStore/alternatives/</loc>
-         <lastmod>2025-11-11</lastmod>
-    </url>
-    <url>
-         <loc>https://jajir.github.io/HestiaStore/benchmark-results/</loc>
-         <lastmod>2025-11-11</lastmod>
-    </url>
-    <url>
-         <loc>https://jajir.github.io/HestiaStore/profiler-stacktrace/</loc>
-         <lastmod>2025-11-11</lastmod>
-    </url>
-    <url>
-         <loc>https://jajir.github.io/HestiaStore/quality/</loc>
-         <lastmod>2025-11-11</lastmod>
-    </url>
-    <url>
-         <loc>https://jajir.github.io/HestiaStore/reliability/</loc>
-         <lastmod>2025-11-11</lastmod>
-    </url>
-    <url>
          <loc>https://jajir.github.io/HestiaStore/architecture/</loc>
          <lastmod>2025-11-11</lastmod>
     </url>
@@ -121,6 +101,10 @@
          <lastmod>2025-11-11</lastmod>
     </url>
     <url>
+         <loc>https://jajir.github.io/HestiaStore/development/profiler-stacktrace/</loc>
+         <lastmod>2025-11-11</lastmod>
+    </url>
+    <url>
          <loc>https://jajir.github.io/HestiaStore/development/release/</loc>
          <lastmod>2025-11-11</lastmod>
     </url>
@@ -154,6 +138,30 @@
     </url>
     <url>
          <loc>https://jajir.github.io/HestiaStore/operations/tuning/</loc>
+         <lastmod>2025-11-11</lastmod>
+    </url>
+    <url>
+         <loc>https://jajir.github.io/HestiaStore/why-hestiastore/</loc>
+         <lastmod>2025-11-11</lastmod>
+    </url>
+    <url>
+         <loc>https://jajir.github.io/HestiaStore/why-hestiastore/alternatives/</loc>
+         <lastmod>2025-11-11</lastmod>
+    </url>
+    <url>
+         <loc>https://jajir.github.io/HestiaStore/why-hestiastore/out-read/</loc>
+         <lastmod>2025-11-11</lastmod>
+    </url>
+    <url>
+         <loc>https://jajir.github.io/HestiaStore/why-hestiastore/out-sequential/</loc>
+         <lastmod>2025-11-11</lastmod>
+    </url>
+    <url>
+         <loc>https://jajir.github.io/HestiaStore/why-hestiastore/out-write/</loc>
+         <lastmod>2025-11-11</lastmod>
+    </url>
+    <url>
+         <loc>https://jajir.github.io/HestiaStore/why-hestiastore/quality/</loc>
          <lastmod>2025-11-11</lastmod>
     </url>
 </urlset>

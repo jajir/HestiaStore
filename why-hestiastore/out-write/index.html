@@ -10,28 +10,31 @@
         <meta name="author" content="Jan Jirout">
       
       
-        <link rel="canonical" href="https://jajir.github.io/HestiaStore/benchmark-results/">
+        <link rel="canonical" href="https://jajir.github.io/HestiaStore/why-hestiastore/out-write/">
       
       
-        <link rel="prev" href="../reliability/">
+        <link rel="prev" href="../alternatives/">
       
       
-        <link rel="next" href="../SECURITY/">
+        <link rel="next" href="../out-read/">
       
-      
-      <link rel="icon" href="../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.23">
-    
-    
-      
-        <title>Benchmarks - HestiaStore</title>
-      
-    
-    
-      <link rel="stylesheet" href="../assets/stylesheets/main.84d31ad4.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+      <link rel="icon" href="../../images/favicon.ico">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+    
+    
+      
+        <title>Write test - HestiaStore</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.618322db.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -50,11 +53,10 @@
       
     
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
-    
     
     
   </head>
@@ -92,9 +94,9 @@
 
 <header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="HestiaStore" class="md-header__button md-logo" aria-label="HestiaStore" data-md-component="logo">
+    <a href="../.." title="HestiaStore" class="md-header__button md-logo" aria-label="HestiaStore" data-md-component="logo">
       
-  <img src="../images/logo-square.png" alt="logo">
+  <img src="../../images/logo-square.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -111,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Benchmarks
+              Write test
             
           </span>
         </div>
@@ -233,7 +235,7 @@
   
   
     <li class="md-tabs__item">
-      <a href=".." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         
   
   
@@ -256,7 +258,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../reliability/" class="md-tabs__link">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -278,7 +280,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../how-to-use/" class="md-tabs__link">
+        <a href="../../how-to-use/" class="md-tabs__link">
           
   
   
@@ -300,7 +302,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../configuration/" class="md-tabs__link">
+        <a href="../../configuration/" class="md-tabs__link">
           
   
   
@@ -322,7 +324,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../architecture/" class="md-tabs__link">
+        <a href="../../architecture/" class="md-tabs__link">
           
   
   
@@ -344,7 +346,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../CHANGELOG/" class="md-tabs__link">
+        <a href="../../CHANGELOG/" class="md-tabs__link">
           
   
   
@@ -386,9 +388,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="HestiaStore" class="md-nav__button md-logo" aria-label="HestiaStore" data-md-component="logo">
+    <a href="../.." title="HestiaStore" class="md-nav__button md-logo" aria-label="HestiaStore" data-md-component="logo">
       
-  <img src="../images/logo-square.png" alt="logo">
+  <img src="../../images/logo-square.png" alt="logo">
 
     </a>
     HestiaStore
@@ -415,14 +417,19 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     Home
+  
+
     
   </span>
+  
   
 
       </a>
@@ -441,6 +448,8 @@
     
     
       
+        
+          
         
       
         
@@ -470,25 +479,43 @@
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
-            
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
   
   
   <span class="md-ellipsis">
+    
+  
     Why HestiaStore
+  
+
     
   </span>
   
+  
 
-            <span class="md-nav__icon md-icon"></span>
-          </label>
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
-            Why HestiaStore
+            
+  
+    Why HestiaStore
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
             
               
                 
@@ -497,14 +524,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../reliability/" class="md-nav__link">
+      <a href="../alternatives/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Reliability Overview
+    
+  
+    Alternatives
+  
+
     
   </span>
+  
   
 
       </a>
@@ -512,6 +544,71 @@
   
 
               
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmarks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
             
               
                 
@@ -534,9 +631,14 @@
   
   
   <span class="md-ellipsis">
-    Benchmarks
+    
+  
+    Write test
+  
+
     
   </span>
+  
   
 
           <span class="md-nav__icon md-icon"></span>
@@ -547,9 +649,14 @@
   
   
   <span class="md-ellipsis">
-    Benchmarks
+    
+  
+    Write test
+  
+
     
   </span>
+  
   
 
       </a>
@@ -572,7 +679,9 @@
         <li class="md-nav__item">
   <a href="#test-conditions" class="md-nav__link">
     <span class="md-ellipsis">
-      Test Conditions
+      
+        🧪 Test Conditions
+      
     </span>
   </a>
   
@@ -581,7 +690,9 @@
         <li class="md-nav__item">
   <a href="#benchmark-results" class="md-nav__link">
     <span class="md-ellipsis">
-      Benchmark Results
+      
+        🏁 Benchmark Results
+      
     </span>
   </a>
   
@@ -590,134 +701,164 @@
         <li class="md-nav__item">
   <a href="#raw-json-files" class="md-nav__link">
     <span class="md-ellipsis">
-      Raw JSON Files
+      
+        📄 Raw JSON Files
+      
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Raw JSON Files">
+    <nav class="md-nav" aria-label="📄 Raw JSON Files">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#results-chroniclemap-myjson" class="md-nav__link">
+  <a href="#results-write-chroniclemap-myjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-ChronicleMap-my.json
+      
+        results-write-ChronicleMap-my.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-chroniclemapjson" class="md-nav__link">
+  <a href="#results-write-chroniclemapjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-ChronicleMap.json
+      
+        results-write-ChronicleMap.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-h2-myjson" class="md-nav__link">
+  <a href="#results-write-h2-myjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-H2-my.json
+      
+        results-write-H2-my.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-h2json" class="md-nav__link">
+  <a href="#results-write-h2json" class="md-nav__link">
     <span class="md-ellipsis">
-      results-H2.json
+      
+        results-write-H2.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-hestiastorebasic-myjson" class="md-nav__link">
+  <a href="#results-write-hestiastorebasic-myjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-HestiaStoreBasic-my.json
+      
+        results-write-HestiaStoreBasic-my.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-hestiastorebasicjson" class="md-nav__link">
+  <a href="#results-write-hestiastorebasicjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-HestiaStoreBasic.json
+      
+        results-write-HestiaStoreBasic.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-hestiastorecompress-myjson" class="md-nav__link">
+  <a href="#results-write-hestiastorecompress-myjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-HestiaStoreCompress-my.json
+      
+        results-write-HestiaStoreCompress-my.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-hestiastorecompressjson" class="md-nav__link">
+  <a href="#results-write-hestiastorecompressjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-HestiaStoreCompress.json
+      
+        results-write-HestiaStoreCompress.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-leveldb-myjson" class="md-nav__link">
+  <a href="#results-write-leveldb-myjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-LevelDB-my.json
+      
+        results-write-LevelDB-my.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-leveldbjson" class="md-nav__link">
+  <a href="#results-write-leveldbjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-LevelDB.json
+      
+        results-write-LevelDB.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-mapdb-myjson" class="md-nav__link">
+  <a href="#results-write-mapdb-myjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-MapDB-my.json
+      
+        results-write-MapDB-my.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-mapdbjson" class="md-nav__link">
+  <a href="#results-write-mapdbjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-MapDB.json
+      
+        results-write-MapDB.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-rocksdb-myjson" class="md-nav__link">
+  <a href="#results-write-rocksdb-myjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-RocksDB-my.json
+      
+        results-write-RocksDB-my.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-rocksdbjson" class="md-nav__link">
+  <a href="#results-write-rocksdbjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-RocksDB.json
+      
+        results-write-RocksDB.json
+      
     </span>
   </a>
   
@@ -744,14 +885,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../SECURITY/" class="md-nav__link">
+      <a href="../out-read/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Security
+    
+  
+    Read test
+  
+
     
   </span>
+  
   
 
       </a>
@@ -767,14 +913,55 @@
   
   
     <li class="md-nav__item">
-      <a href="../alternatives/" class="md-nav__link">
+      <a href="../out-sequential/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Alternatives
+    
+  
+    Sequential read test
+  
+
     
   </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SECURITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
   
 
       </a>
@@ -795,9 +982,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     Quality & Testing
+  
+
     
   </span>
+  
   
 
       </a>
@@ -853,14 +1045,19 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../how-to-use/" class="md-nav__link ">
+            <a href="../../how-to-use/" class="md-nav__link ">
               
   
   
   <span class="md-ellipsis">
+    
+  
     Getting Started
+  
+
     
   </span>
+  
   
 
             </a>
@@ -875,7 +1072,11 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
-            Getting Started
+            
+  
+    Getting Started
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -888,14 +1089,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to-use/install/" class="md-nav__link">
+      <a href="../../how-to-use/install/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     Install
+  
+
     
   </span>
+  
   
 
       </a>
@@ -911,14 +1117,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to-use/quick-start/" class="md-nav__link">
+      <a href="../../how-to-use/quick-start/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     Quick Start
+  
+
     
   </span>
+  
   
 
       </a>
@@ -934,14 +1145,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to-use/troubleshooting/" class="md-nav__link">
+      <a href="../../how-to-use/troubleshooting/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     Troubleshooting
+  
+
     
   </span>
+  
   
 
       </a>
@@ -962,9 +1178,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     API Reference
+  
+
     
   </span>
+  
   
 
       </a>
@@ -1016,14 +1237,19 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../configuration/" class="md-nav__link ">
+            <a href="../../configuration/" class="md-nav__link ">
               
   
   
   <span class="md-ellipsis">
+    
+  
     Configuration
+  
+
     
   </span>
+  
   
 
             </a>
@@ -1038,7 +1264,11 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
-            Configuration
+            
+  
+    Configuration
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -1051,14 +1281,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../configuration/data-types/" class="md-nav__link">
+      <a href="../../configuration/data-types/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     Data Types
+  
+
     
   </span>
+  
   
 
       </a>
@@ -1074,14 +1309,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../configuration/logging/" class="md-nav__link">
+      <a href="../../configuration/logging/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     Logging
+  
+
     
   </span>
+  
   
 
       </a>
@@ -1141,14 +1381,19 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../architecture/" class="md-nav__link ">
+            <a href="../../architecture/" class="md-nav__link ">
               
   
   
   <span class="md-ellipsis">
+    
+  
     Architecture
+  
+
     
   </span>
+  
   
 
             </a>
@@ -1163,7 +1408,11 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
-            Architecture
+            
+  
+    Architecture
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -1207,9 +1456,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     Core Building Blocks
+  
+
     
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -1218,7 +1472,11 @@
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5_2">
             <span class="md-nav__icon md-icon"></span>
-            Core Building Blocks
+            
+  
+    Core Building Blocks
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -1229,14 +1487,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/arch-index/" class="md-nav__link">
+      <a href="../../architecture/arch-index/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     Sparse Index
+  
+
     
   </span>
+  
   
 
       </a>
@@ -1252,14 +1515,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/segment/" class="md-nav__link">
+      <a href="../../architecture/segment/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     Segments & Compaction
+  
+
     
   </span>
+  
   
 
       </a>
@@ -1275,14 +1543,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/datablock/" class="md-nav__link">
+      <a href="../../architecture/datablock/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     Data Block Format
+  
+
     
   </span>
+  
   
 
       </a>
@@ -1335,9 +1608,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     Data Flow
+  
+
     
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -1346,7 +1624,11 @@
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5_3">
             <span class="md-nav__icon md-icon"></span>
-            Data Flow
+            
+  
+    Data Flow
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -1357,14 +1639,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/write-path/" class="md-nav__link">
+      <a href="../../architecture/write-path/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     Write Path
+  
+
     
   </span>
+  
   
 
       </a>
@@ -1380,14 +1667,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/read-path/" class="md-nav__link">
+      <a href="../../architecture/read-path/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     Read Path
+  
+
     
   </span>
+  
   
 
       </a>
@@ -1440,9 +1732,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     Reliability
+  
+
     
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -1451,7 +1748,11 @@
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5_4">
             <span class="md-nav__icon md-icon"></span>
-            Reliability
+            
+  
+    Reliability
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -1462,14 +1763,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/recovery/" class="md-nav__link">
+      <a href="../../architecture/recovery/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     Consistency & Recovery
+  
+
     
   </span>
+  
   
 
       </a>
@@ -1485,14 +1791,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/filters/" class="md-nav__link">
+      <a href="../../architecture/filters/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     Filters & Integrity
+  
+
     
   </span>
+  
   
 
       </a>
@@ -1545,9 +1856,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     Performance
+  
+
     
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -1556,7 +1872,11 @@
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5_5">
             <span class="md-nav__icon md-icon"></span>
-            Performance
+            
+  
+    Performance
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -1567,14 +1887,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/caching/" class="md-nav__link">
+      <a href="../../architecture/caching/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     Caching Strategy
+  
+
     
   </span>
+  
   
 
       </a>
@@ -1590,14 +1915,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/performance/" class="md-nav__link">
+      <a href="../../architecture/performance/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     Performance Model & Sizing
+  
+
     
   </span>
+  
   
 
       </a>
@@ -1648,9 +1978,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     Concurrency
+  
+
     
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -1659,7 +1994,11 @@
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5_6">
             <span class="md-nav__icon md-icon"></span>
-            Concurrency
+            
+  
+    Concurrency
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -1670,14 +2009,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/concurrency/" class="md-nav__link">
+      <a href="../../architecture/concurrency/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     Access Model
+  
+
     
   </span>
+  
   
 
       </a>
@@ -1732,9 +2076,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     Reference
+  
+
     
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -1743,7 +2092,11 @@
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5_7">
             <span class="md-nav__icon md-icon"></span>
-            Reference
+            
+  
+    Reference
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -1754,14 +2107,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/on-disk-layout/" class="md-nav__link">
+      <a href="../../architecture/on-disk-layout/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     On-Disk Layout & File Names
+  
+
     
   </span>
+  
   
 
       </a>
@@ -1777,14 +2135,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/limits/" class="md-nav__link">
+      <a href="../../architecture/limits/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     Limitations & Trade-offs
+  
+
     
   </span>
+  
   
 
       </a>
@@ -1800,14 +2163,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/glossary/" class="md-nav__link">
+      <a href="../../architecture/glossary/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     Glossary
+  
+
     
   </span>
+  
   
 
       </a>
@@ -1877,9 +2245,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     Community
+  
+
     
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -1888,7 +2261,11 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
-            Community
+            
+  
+    Community
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -1899,14 +2276,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../CHANGELOG/" class="md-nav__link">
+      <a href="../../CHANGELOG/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     Changelog
+  
+
     
   </span>
+  
   
 
       </a>
@@ -1922,14 +2304,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../development/release/" class="md-nav__link">
+      <a href="../../development/release/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     Release Process
+  
+
     
   </span>
+  
   
 
       </a>
@@ -1945,14 +2332,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../CONTRIBUTING/" class="md-nav__link">
+      <a href="../../CONTRIBUTING/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     Contributing
+  
+
     
   </span>
+  
   
 
       </a>
@@ -1968,14 +2360,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../CODE_OF_CONDUCT/" class="md-nav__link">
+      <a href="../../CODE_OF_CONDUCT/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     Code of Conduct
+  
+
     
   </span>
+  
   
 
       </a>
@@ -1991,14 +2388,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../development/documentation/" class="md-nav__link">
+      <a href="../../development/documentation/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     Development Docs
+  
+
     
   </span>
+  
   
 
       </a>
@@ -2014,14 +2416,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../development/guides/" class="md-nav__link">
+      <a href="../../development/guides/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     Guides
+  
+
     
   </span>
+  
   
 
       </a>
@@ -2037,14 +2444,19 @@
   
   
     <li class="md-nav__item">
-      <a href="../profiler-stacktrace/" class="md-nav__link">
+      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
+    
+  
     JVM Profiling
+  
+
     
   </span>
+  
   
 
       </a>
@@ -2089,7 +2501,9 @@
         <li class="md-nav__item">
   <a href="#test-conditions" class="md-nav__link">
     <span class="md-ellipsis">
-      Test Conditions
+      
+        🧪 Test Conditions
+      
     </span>
   </a>
   
@@ -2098,7 +2512,9 @@
         <li class="md-nav__item">
   <a href="#benchmark-results" class="md-nav__link">
     <span class="md-ellipsis">
-      Benchmark Results
+      
+        🏁 Benchmark Results
+      
     </span>
   </a>
   
@@ -2107,134 +2523,164 @@
         <li class="md-nav__item">
   <a href="#raw-json-files" class="md-nav__link">
     <span class="md-ellipsis">
-      Raw JSON Files
+      
+        📄 Raw JSON Files
+      
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Raw JSON Files">
+    <nav class="md-nav" aria-label="📄 Raw JSON Files">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#results-chroniclemap-myjson" class="md-nav__link">
+  <a href="#results-write-chroniclemap-myjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-ChronicleMap-my.json
+      
+        results-write-ChronicleMap-my.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-chroniclemapjson" class="md-nav__link">
+  <a href="#results-write-chroniclemapjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-ChronicleMap.json
+      
+        results-write-ChronicleMap.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-h2-myjson" class="md-nav__link">
+  <a href="#results-write-h2-myjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-H2-my.json
+      
+        results-write-H2-my.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-h2json" class="md-nav__link">
+  <a href="#results-write-h2json" class="md-nav__link">
     <span class="md-ellipsis">
-      results-H2.json
+      
+        results-write-H2.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-hestiastorebasic-myjson" class="md-nav__link">
+  <a href="#results-write-hestiastorebasic-myjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-HestiaStoreBasic-my.json
+      
+        results-write-HestiaStoreBasic-my.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-hestiastorebasicjson" class="md-nav__link">
+  <a href="#results-write-hestiastorebasicjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-HestiaStoreBasic.json
+      
+        results-write-HestiaStoreBasic.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-hestiastorecompress-myjson" class="md-nav__link">
+  <a href="#results-write-hestiastorecompress-myjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-HestiaStoreCompress-my.json
+      
+        results-write-HestiaStoreCompress-my.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-hestiastorecompressjson" class="md-nav__link">
+  <a href="#results-write-hestiastorecompressjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-HestiaStoreCompress.json
+      
+        results-write-HestiaStoreCompress.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-leveldb-myjson" class="md-nav__link">
+  <a href="#results-write-leveldb-myjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-LevelDB-my.json
+      
+        results-write-LevelDB-my.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-leveldbjson" class="md-nav__link">
+  <a href="#results-write-leveldbjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-LevelDB.json
+      
+        results-write-LevelDB.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-mapdb-myjson" class="md-nav__link">
+  <a href="#results-write-mapdb-myjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-MapDB-my.json
+      
+        results-write-MapDB-my.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-mapdbjson" class="md-nav__link">
+  <a href="#results-write-mapdbjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-MapDB.json
+      
+        results-write-MapDB.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-rocksdb-myjson" class="md-nav__link">
+  <a href="#results-write-rocksdb-myjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-RocksDB-my.json
+      
+        results-write-RocksDB-my.json
+      
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#results-rocksdbjson" class="md-nav__link">
+  <a href="#results-write-rocksdbjson" class="md-nav__link">
     <span class="md-ellipsis">
-      results-RocksDB.json
+      
+        results-write-RocksDB.json
+      
     </span>
   </a>
   
@@ -2255,6 +2701,73 @@
           
           
             <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../.." class="md-path__link">
+        
+  <span class="md-ellipsis">
+    Home
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Why HestiaStore
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="./" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Benchmarks
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
               <article class="md-content__inner md-typeset">
                 
                   
@@ -2264,18 +2777,18 @@
   
 
 
-<h1 id="hestiastore-benchmark-results">HestiaStore Benchmark Results</h1>
-<h2 id="test-conditions">Test Conditions</h2>
+<h1 id="hestiastore-benchmark-results">📊 HestiaStore Benchmark Results</h1>
+<h2 id="test-conditions">🧪 Test Conditions</h2>
 <ul>
 <li>Every benchmark in the plain-load suite runs inside the same controlled JVM environment with identical JVM flags and hardware resources. Runs start by wiping the working directory supplied through the <code>dir</code> system property, so each trial writes into a fresh, empty location.</li>
-<li>Execution stays single-threaded from warm-up through measurement. The test focuses purely on how quickly one writer can push key/value entries into the storage engine without any coordination overhead from additional threads.</li>
+<li>Execution stays single-threaded from warm-up through measurement. The test focuses purely on how quickly one writer can push key/value pairs into the storage engine without any coordination overhead from additional threads.</li>
 <li>Warm-up phases fill the database as aggressively as possible for several 20-second stretches. This stage is meant to trigger JIT compilation, populate caches, and let LevelDB settle into steady-state behaviour before any numbers are recorded.</li>
 <li>Measurement phases repeat the same single-threaded write loop. Throughput is observed over multiple 20-second intervals to capture stable, sustained insert performance rather than a burst.</li>
 <li>Each write operation uses a deterministic pseudo-random long (seed <code>324432L</code>) to generate a unique hash string via <code>HashDataProvider</code>. The payload is the constant text <code>"opice skace po stromech"</code>, so variability comes exclusively from the changing keys.</li>
 <li>After measurements complete, the map is closed and the directory remains available for inspection. The log records how many keys were created, providing a quick sanity check that the run processed the expected volume.</li>
 <li>Test was performed at Mac mini 2024, 16 GB, macOS 15.6.1 (24G90).</li>
 </ul>
-<h2 id="benchmark-results">Benchmark Results</h2>
+<h2 id="benchmark-results">🏁 Benchmark Results</h2>
 <table>
 <thead>
 <tr>
@@ -2303,22 +2816,6 @@
 <td style="text-align: right;">8 314 .. 18 601</td>
 <td style="text-align: right;">8 KB</td>
 <td style="text-align: right;">21%</td>
-</tr>
-<tr>
-<td style="text-align: left;">HestiaStoreBasic</td>
-<td style="text-align: right;">208 723</td>
-<td style="text-align: right;">123 398</td>
-<td style="text-align: right;">85 325 .. 332 122</td>
-<td style="text-align: right;">9.71 GB</td>
-<td style="text-align: right;">6%</td>
-</tr>
-<tr>
-<td style="text-align: left;">HestiaStoreCompress</td>
-<td style="text-align: right;">197 335</td>
-<td style="text-align: right;">110 268</td>
-<td style="text-align: right;">87 068 .. 307 603</td>
-<td style="text-align: right;">4.97 GB</td>
-<td style="text-align: right;">6%</td>
 </tr>
 <tr>
 <td style="text-align: left;">LevelDB</td>
@@ -2358,20 +2855,20 @@
 <li>Occupied space : amount of disk space occupied by the engine's data structures (lower is better). It is measured after flushing last data to disk.</li>
 <li>CPU Usage: average CPU usage during the benchmark (lower is better). Please note, that it includes all system processes, not only the benchmarked engine.</li>
 </ul>
-<h2 id="raw-json-files">Raw JSON Files</h2>
-<h3 id="results-chroniclemap-myjson">results-ChronicleMap-my.json</h3>
+<h2 id="raw-json-files">📄 Raw JSON Files</h2>
+<h3 id="results-write-chroniclemap-myjson">results-write-ChronicleMap-my.json</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">&quot;totalDirectorySize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">22049472512</span><span class="p">,</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">&quot;fileCount&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">&quot;usedMemoryBytes&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">27947104</span><span class="p">,</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="nt">&quot;cpuBefore&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">603274000</span><span class="p">,</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="nt">&quot;cpuAfter&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1097938000</span><span class="p">,</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="nt">&quot;startTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">261108533575583</span><span class="p">,</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="nt">&quot;endTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">261814614016416</span><span class="p">,</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="nt">&quot;cpuUsage&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">0.07005774008077877</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="nt">&quot;totalDirectorySize&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">22049472512</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">&quot;fileCount&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nt">&quot;usedMemoryBytes&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">27947104</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="nt">&quot;cpuBefore&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">603274000</span><span class="p">,</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="nt">&quot;cpuAfter&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1097938000</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="nt">&quot;startTime&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">261108533575583</span><span class="p">,</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="nt">&quot;endTime&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">261814614016416</span><span class="p">,</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="nt">&quot;cpuUsage&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.07005774008077877</span>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">}</span>
 </code></pre></div>
-<h3 id="results-chroniclemapjson">results-ChronicleMap.json</h3>
+<h3 id="results-write-chroniclemapjson">results-write-ChronicleMap.json</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">[</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="p">{</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">        </span><span class="nt">&quot;jmhVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.37&quot;</span><span class="p">,</span>
@@ -2464,7 +2961,7 @@
 <a id="__codelineno-1-90" name="__codelineno-1-90" href="#__codelineno-1-90"></a><span class="w">    </span><span class="p">}</span>
 <a id="__codelineno-1-91" name="__codelineno-1-91" href="#__codelineno-1-91"></a><span class="p">]</span>
 </code></pre></div>
-<h3 id="results-h2-myjson">results-H2-my.json</h3>
+<h3 id="results-write-h2-myjson">results-write-H2-my.json</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">&quot;totalDirectorySize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">8192</span><span class="p">,</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">&quot;fileCount&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
@@ -2476,7 +2973,7 @@
 <a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">  </span><span class="nt">&quot;cpuUsage&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">0.2057086547657931</span>
 <a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="p">}</span>
 </code></pre></div>
-<h3 id="results-h2json">results-H2.json</h3>
+<h3 id="results-write-h2json">results-write-H2.json</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">[</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="p">{</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">        </span><span class="nt">&quot;jmhVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.37&quot;</span><span class="p">,</span>
@@ -2554,185 +3051,39 @@
 <a id="__codelineno-3-75" name="__codelineno-3-75" href="#__codelineno-3-75"></a><span class="w">    </span><span class="p">}</span>
 <a id="__codelineno-3-76" name="__codelineno-3-76" href="#__codelineno-3-76"></a><span class="p">]</span>
 </code></pre></div>
-<h3 id="results-hestiastorebasic-myjson">results-HestiaStoreBasic-my.json</h3>
+<h3 id="results-write-hestiastorebasic-myjson">results-write-HestiaStoreBasic-my.json</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">&quot;totalDirectorySize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">10421104485</span><span class="p">,</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">&quot;fileCount&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">202</span><span class="p">,</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="nt">&quot;usedMemoryBytes&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">29532080</span><span class="p">,</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="nt">&quot;cpuBefore&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">630093000</span><span class="p">,</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span><span class="nt">&quot;cpuAfter&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1321420000</span><span class="p">,</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">  </span><span class="nt">&quot;startTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">251981038188791</span><span class="p">,</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">  </span><span class="nt">&quot;endTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">253079760397708</span><span class="p">,</span>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">  </span><span class="nt">&quot;cpuUsage&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">0.06292099990237153</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">&quot;totalDirectorySize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">3889698398</span><span class="p">,</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">&quot;fileCount&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">38</span><span class="p">,</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="nt">&quot;usedMemoryBytes&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">28606416</span><span class="p">,</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="nt">&quot;cpuBefore&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">552320000</span><span class="p">,</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span><span class="nt">&quot;cpuAfter&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">729480000</span><span class="p">,</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">  </span><span class="nt">&quot;startTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1401225500145958</span><span class="p">,</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">  </span><span class="nt">&quot;endTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1401225903588125</span><span class="p">,</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">  </span><span class="nt">&quot;cpuUsage&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">43.91211789222816</span>
 <a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="p">}</span>
 </code></pre></div>
-<h3 id="results-hestiastorebasicjson">results-HestiaStoreBasic.json</h3>
+<h3 id="results-write-hestiastorebasicjson">results-write-HestiaStoreBasic.json</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">[</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span><span class="p">{</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">        </span><span class="nt">&quot;jmhVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.37&quot;</span><span class="p">,</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">        </span><span class="nt">&quot;benchmark&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;org.hestiastore.index.benchmark.plainload.TestHestiaStoreBasic.write&quot;</span><span class="p">,</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">        </span><span class="nt">&quot;mode&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;thrpt&quot;</span><span class="p">,</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">        </span><span class="nt">&quot;threads&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">        </span><span class="nt">&quot;forks&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">        </span><span class="nt">&quot;jvm&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/opt/homebrew/Cellar/openjdk@21/21.0.7/libexec/openjdk.jdk/Contents/Home/bin/java&quot;</span><span class="p">,</span>
-<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">        </span><span class="nt">&quot;jvmArgs&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">            </span><span class="s2">&quot;-Ddir=/Volumes/ponrava/test-index&quot;</span><span class="p">,</span>
-<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">            </span><span class="s2">&quot;-Dengine=HestiaStoreBasic&quot;</span>
-<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="w">        </span><span class="p">],</span>
-<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="w">        </span><span class="nt">&quot;jdkVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;21.0.7&quot;</span><span class="p">,</span>
-<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="w">        </span><span class="nt">&quot;vmName&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;OpenJDK 64-Bit Server VM&quot;</span><span class="p">,</span>
-<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="w">        </span><span class="nt">&quot;vmVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;21.0.7&quot;</span><span class="p">,</span>
-<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="w">        </span><span class="nt">&quot;warmupIterations&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
-<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="w">        </span><span class="nt">&quot;warmupTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20 s&quot;</span><span class="p">,</span>
-<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="w">        </span><span class="nt">&quot;warmupBatchSize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a><span class="w">        </span><span class="nt">&quot;measurementIterations&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">25</span><span class="p">,</span>
-<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a><span class="w">        </span><span class="nt">&quot;measurementTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20 s&quot;</span><span class="p">,</span>
-<a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a><span class="w">        </span><span class="nt">&quot;measurementBatchSize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a><span class="w">        </span><span class="nt">&quot;primaryMetric&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a><span class="w">            </span><span class="nt">&quot;score&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">208723.46372734453</span><span class="p">,</span>
-<a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a><span class="w">            </span><span class="nt">&quot;scoreError&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">123398.4009790847</span><span class="p">,</span>
-<a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a><span class="w">            </span><span class="nt">&quot;scoreConfidence&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-5-26" name="__codelineno-5-26" href="#__codelineno-5-26"></a><span class="w">                </span><span class="mf">85325.06274825982</span><span class="p">,</span>
-<a id="__codelineno-5-27" name="__codelineno-5-27" href="#__codelineno-5-27"></a><span class="w">                </span><span class="mf">332121.86470642925</span>
-<a id="__codelineno-5-28" name="__codelineno-5-28" href="#__codelineno-5-28"></a><span class="w">            </span><span class="p">],</span>
-<a id="__codelineno-5-29" name="__codelineno-5-29" href="#__codelineno-5-29"></a><span class="w">            </span><span class="nt">&quot;scorePercentiles&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-5-30" name="__codelineno-5-30" href="#__codelineno-5-30"></a><span class="w">                </span><span class="nt">&quot;0.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">554.7618862826042</span><span class="p">,</span>
-<a id="__codelineno-5-31" name="__codelineno-5-31" href="#__codelineno-5-31"></a><span class="w">                </span><span class="nt">&quot;50.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">162041.0809319436</span><span class="p">,</span>
-<a id="__codelineno-5-32" name="__codelineno-5-32" href="#__codelineno-5-32"></a><span class="w">                </span><span class="nt">&quot;90.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">470075.70756668044</span><span class="p">,</span>
-<a id="__codelineno-5-33" name="__codelineno-5-33" href="#__codelineno-5-33"></a><span class="w">                </span><span class="nt">&quot;95.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">492127.1980588706</span><span class="p">,</span>
-<a id="__codelineno-5-34" name="__codelineno-5-34" href="#__codelineno-5-34"></a><span class="w">                </span><span class="nt">&quot;99.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">499252.60276788153</span><span class="p">,</span>
-<a id="__codelineno-5-35" name="__codelineno-5-35" href="#__codelineno-5-35"></a><span class="w">                </span><span class="nt">&quot;99.9&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">499252.60276788153</span><span class="p">,</span>
-<a id="__codelineno-5-36" name="__codelineno-5-36" href="#__codelineno-5-36"></a><span class="w">                </span><span class="nt">&quot;99.99&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">499252.60276788153</span><span class="p">,</span>
-<a id="__codelineno-5-37" name="__codelineno-5-37" href="#__codelineno-5-37"></a><span class="w">                </span><span class="nt">&quot;99.999&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">499252.60276788153</span><span class="p">,</span>
-<a id="__codelineno-5-38" name="__codelineno-5-38" href="#__codelineno-5-38"></a><span class="w">                </span><span class="nt">&quot;99.9999&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">499252.60276788153</span><span class="p">,</span>
-<a id="__codelineno-5-39" name="__codelineno-5-39" href="#__codelineno-5-39"></a><span class="w">                </span><span class="nt">&quot;100.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">499252.60276788153</span>
-<a id="__codelineno-5-40" name="__codelineno-5-40" href="#__codelineno-5-40"></a><span class="w">            </span><span class="p">},</span>
-<a id="__codelineno-5-41" name="__codelineno-5-41" href="#__codelineno-5-41"></a><span class="w">            </span><span class="nt">&quot;scoreUnit&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ops/s&quot;</span><span class="p">,</span>
-<a id="__codelineno-5-42" name="__codelineno-5-42" href="#__codelineno-5-42"></a><span class="w">            </span><span class="nt">&quot;rawData&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-5-43" name="__codelineno-5-43" href="#__codelineno-5-43"></a><span class="w">                </span><span class="p">[</span>
-<a id="__codelineno-5-44" name="__codelineno-5-44" href="#__codelineno-5-44"></a><span class="w">                    </span><span class="mf">192122.76396490858</span><span class="p">,</span>
-<a id="__codelineno-5-45" name="__codelineno-5-45" href="#__codelineno-5-45"></a><span class="w">                    </span><span class="mf">176314.5105152991</span><span class="p">,</span>
-<a id="__codelineno-5-46" name="__codelineno-5-46" href="#__codelineno-5-46"></a><span class="w">                    </span><span class="mf">172106.25195735498</span><span class="p">,</span>
-<a id="__codelineno-5-47" name="__codelineno-5-47" href="#__codelineno-5-47"></a><span class="w">                    </span><span class="mf">162041.0809319436</span><span class="p">,</span>
-<a id="__codelineno-5-48" name="__codelineno-5-48" href="#__codelineno-5-48"></a><span class="w">                    </span><span class="mf">132489.04192779973</span><span class="p">,</span>
-<a id="__codelineno-5-49" name="__codelineno-5-49" href="#__codelineno-5-49"></a><span class="w">                    </span><span class="mf">107779.73836212876</span><span class="p">,</span>
-<a id="__codelineno-5-50" name="__codelineno-5-50" href="#__codelineno-5-50"></a><span class="w">                    </span><span class="mf">499252.60276788153</span><span class="p">,</span>
-<a id="__codelineno-5-51" name="__codelineno-5-51" href="#__codelineno-5-51"></a><span class="w">                    </span><span class="mf">554.7618862826042</span><span class="p">,</span>
-<a id="__codelineno-5-52" name="__codelineno-5-52" href="#__codelineno-5-52"></a><span class="w">                    </span><span class="mf">475501.2537378453</span><span class="p">,</span>
-<a id="__codelineno-5-53" name="__codelineno-5-53" href="#__codelineno-5-53"></a><span class="w">                    </span><span class="mf">17154.979375749186</span><span class="p">,</span>
-<a id="__codelineno-5-54" name="__codelineno-5-54" href="#__codelineno-5-54"></a><span class="w">                    </span><span class="mf">466458.67678590387</span><span class="p">,</span>
-<a id="__codelineno-5-55" name="__codelineno-5-55" href="#__codelineno-5-55"></a><span class="w">                    </span><span class="mf">21687.044020994686</span><span class="p">,</span>
-<a id="__codelineno-5-56" name="__codelineno-5-56" href="#__codelineno-5-56"></a><span class="w">                    </span><span class="mf">405378.4078260152</span><span class="p">,</span>
-<a id="__codelineno-5-57" name="__codelineno-5-57" href="#__codelineno-5-57"></a><span class="w">                    </span><span class="mf">56166.83893309033</span><span class="p">,</span>
-<a id="__codelineno-5-58" name="__codelineno-5-58" href="#__codelineno-5-58"></a><span class="w">                    </span><span class="mf">403344.39251664525</span><span class="p">,</span>
-<a id="__codelineno-5-59" name="__codelineno-5-59" href="#__codelineno-5-59"></a><span class="w">                    </span><span class="mf">51301.04051122623</span><span class="p">,</span>
-<a id="__codelineno-5-60" name="__codelineno-5-60" href="#__codelineno-5-60"></a><span class="w">                    </span><span class="mf">352834.9371019776</span><span class="p">,</span>
-<a id="__codelineno-5-61" name="__codelineno-5-61" href="#__codelineno-5-61"></a><span class="w">                    </span><span class="mf">74215.05428872978</span><span class="p">,</span>
-<a id="__codelineno-5-62" name="__codelineno-5-62" href="#__codelineno-5-62"></a><span class="w">                    </span><span class="mf">301901.0548791414</span><span class="p">,</span>
-<a id="__codelineno-5-63" name="__codelineno-5-63" href="#__codelineno-5-63"></a><span class="w">                    </span><span class="mf">90049.73992580615</span><span class="p">,</span>
-<a id="__codelineno-5-64" name="__codelineno-5-64" href="#__codelineno-5-64"></a><span class="w">                    </span><span class="mf">142494.71288749005</span><span class="p">,</span>
-<a id="__codelineno-5-65" name="__codelineno-5-65" href="#__codelineno-5-65"></a><span class="w">                    </span><span class="mf">52679.915185932994</span><span class="p">,</span>
-<a id="__codelineno-5-66" name="__codelineno-5-66" href="#__codelineno-5-66"></a><span class="w">                    </span><span class="mf">393918.62679864746</span><span class="p">,</span>
-<a id="__codelineno-5-67" name="__codelineno-5-67" href="#__codelineno-5-67"></a><span class="w">                    </span><span class="mf">88953.57519155115</span><span class="p">,</span>
-<a id="__codelineno-5-68" name="__codelineno-5-68" href="#__codelineno-5-68"></a><span class="w">                    </span><span class="mf">381385.5909032691</span>
-<a id="__codelineno-5-69" name="__codelineno-5-69" href="#__codelineno-5-69"></a><span class="w">                </span><span class="p">]</span>
-<a id="__codelineno-5-70" name="__codelineno-5-70" href="#__codelineno-5-70"></a><span class="w">            </span><span class="p">]</span>
-<a id="__codelineno-5-71" name="__codelineno-5-71" href="#__codelineno-5-71"></a><span class="w">        </span><span class="p">},</span>
-<a id="__codelineno-5-72" name="__codelineno-5-72" href="#__codelineno-5-72"></a><span class="w">        </span><span class="nt">&quot;secondaryMetrics&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-5-73" name="__codelineno-5-73" href="#__codelineno-5-73"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-5-74" name="__codelineno-5-74" href="#__codelineno-5-74"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-5-75" name="__codelineno-5-75" href="#__codelineno-5-75"></a><span class="p">]</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="p">]</span>
 </code></pre></div>
-<h3 id="results-hestiastorecompress-myjson">results-HestiaStoreCompress-my.json</h3>
+<h3 id="results-write-hestiastorecompress-myjson">results-write-HestiaStoreCompress-my.json</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">&quot;totalDirectorySize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">5333604997</span><span class="p">,</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="nt">&quot;fileCount&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">138</span><span class="p">,</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="nt">&quot;usedMemoryBytes&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">29625800</span><span class="p">,</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span><span class="nt">&quot;cpuBefore&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">588216000</span><span class="p">,</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span><span class="nt">&quot;cpuAfter&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1276584000</span><span class="p">,</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">  </span><span class="nt">&quot;startTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">253080135943875</span><span class="p">,</span>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">  </span><span class="nt">&quot;endTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">254157304657416</span><span class="p">,</span>
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">  </span><span class="nt">&quot;cpuUsage&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">0.06390530947906137</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">&quot;totalDirectorySize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">3889698398</span><span class="p">,</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="nt">&quot;fileCount&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">38</span><span class="p">,</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="nt">&quot;usedMemoryBytes&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">28689648</span><span class="p">,</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span><span class="nt">&quot;cpuBefore&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">529915000</span><span class="p">,</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span><span class="nt">&quot;cpuAfter&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">697688000</span><span class="p">,</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">  </span><span class="nt">&quot;startTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1401226232499375</span><span class="p">,</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">  </span><span class="nt">&quot;endTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1401226604772458</span><span class="p">,</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">  </span><span class="nt">&quot;cpuUsage&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">45.067185263029074</span>
 <a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="p">}</span>
 </code></pre></div>
-<h3 id="results-hestiastorecompressjson">results-HestiaStoreCompress.json</h3>
+<h3 id="results-write-hestiastorecompressjson">results-write-HestiaStoreCompress.json</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="p">[</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span><span class="p">{</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">        </span><span class="nt">&quot;jmhVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.37&quot;</span><span class="p">,</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">        </span><span class="nt">&quot;benchmark&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;org.hestiastore.index.benchmark.plainload.TestHestiaStoreCompress.write&quot;</span><span class="p">,</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">        </span><span class="nt">&quot;mode&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;thrpt&quot;</span><span class="p">,</span>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">        </span><span class="nt">&quot;threads&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">        </span><span class="nt">&quot;forks&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">        </span><span class="nt">&quot;jvm&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/opt/homebrew/Cellar/openjdk@21/21.0.7/libexec/openjdk.jdk/Contents/Home/bin/java&quot;</span><span class="p">,</span>
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">        </span><span class="nt">&quot;jvmArgs&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="w">            </span><span class="s2">&quot;-Ddir=/Volumes/ponrava/test-index&quot;</span><span class="p">,</span>
-<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="w">            </span><span class="s2">&quot;-Dengine=HestiaStoreCompress&quot;</span>
-<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="w">        </span><span class="p">],</span>
-<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="w">        </span><span class="nt">&quot;jdkVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;21.0.7&quot;</span><span class="p">,</span>
-<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="w">        </span><span class="nt">&quot;vmName&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;OpenJDK 64-Bit Server VM&quot;</span><span class="p">,</span>
-<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="w">        </span><span class="nt">&quot;vmVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;21.0.7&quot;</span><span class="p">,</span>
-<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="w">        </span><span class="nt">&quot;warmupIterations&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
-<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="w">        </span><span class="nt">&quot;warmupTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20 s&quot;</span><span class="p">,</span>
-<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a><span class="w">        </span><span class="nt">&quot;warmupBatchSize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a><span class="w">        </span><span class="nt">&quot;measurementIterations&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">25</span><span class="p">,</span>
-<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a><span class="w">        </span><span class="nt">&quot;measurementTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20 s&quot;</span><span class="p">,</span>
-<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a><span class="w">        </span><span class="nt">&quot;measurementBatchSize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a><span class="w">        </span><span class="nt">&quot;primaryMetric&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a><span class="w">            </span><span class="nt">&quot;score&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">197335.45368451648</span><span class="p">,</span>
-<a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a><span class="w">            </span><span class="nt">&quot;scoreError&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">110267.72261413459</span><span class="p">,</span>
-<a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a><span class="w">            </span><span class="nt">&quot;scoreConfidence&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a><span class="w">                </span><span class="mf">87067.7310703819</span><span class="p">,</span>
-<a id="__codelineno-7-27" name="__codelineno-7-27" href="#__codelineno-7-27"></a><span class="w">                </span><span class="mf">307603.1762986511</span>
-<a id="__codelineno-7-28" name="__codelineno-7-28" href="#__codelineno-7-28"></a><span class="w">            </span><span class="p">],</span>
-<a id="__codelineno-7-29" name="__codelineno-7-29" href="#__codelineno-7-29"></a><span class="w">            </span><span class="nt">&quot;scorePercentiles&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-7-30" name="__codelineno-7-30" href="#__codelineno-7-30"></a><span class="w">                </span><span class="nt">&quot;0.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">19837.659319775263</span><span class="p">,</span>
-<a id="__codelineno-7-31" name="__codelineno-7-31" href="#__codelineno-7-31"></a><span class="w">                </span><span class="nt">&quot;50.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">159121.5187040372</span><span class="p">,</span>
-<a id="__codelineno-7-32" name="__codelineno-7-32" href="#__codelineno-7-32"></a><span class="w">                </span><span class="nt">&quot;90.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">446727.6608323127</span><span class="p">,</span>
-<a id="__codelineno-7-33" name="__codelineno-7-33" href="#__codelineno-7-33"></a><span class="w">                </span><span class="nt">&quot;95.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">471450.60560908867</span><span class="p">,</span>
-<a id="__codelineno-7-34" name="__codelineno-7-34" href="#__codelineno-7-34"></a><span class="w">                </span><span class="nt">&quot;99.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">471589.3418364573</span><span class="p">,</span>
-<a id="__codelineno-7-35" name="__codelineno-7-35" href="#__codelineno-7-35"></a><span class="w">                </span><span class="nt">&quot;99.9&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">471589.3418364573</span><span class="p">,</span>
-<a id="__codelineno-7-36" name="__codelineno-7-36" href="#__codelineno-7-36"></a><span class="w">                </span><span class="nt">&quot;99.99&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">471589.3418364573</span><span class="p">,</span>
-<a id="__codelineno-7-37" name="__codelineno-7-37" href="#__codelineno-7-37"></a><span class="w">                </span><span class="nt">&quot;99.999&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">471589.3418364573</span><span class="p">,</span>
-<a id="__codelineno-7-38" name="__codelineno-7-38" href="#__codelineno-7-38"></a><span class="w">                </span><span class="nt">&quot;99.9999&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">471589.3418364573</span><span class="p">,</span>
-<a id="__codelineno-7-39" name="__codelineno-7-39" href="#__codelineno-7-39"></a><span class="w">                </span><span class="nt">&quot;100.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">471589.3418364573</span>
-<a id="__codelineno-7-40" name="__codelineno-7-40" href="#__codelineno-7-40"></a><span class="w">            </span><span class="p">},</span>
-<a id="__codelineno-7-41" name="__codelineno-7-41" href="#__codelineno-7-41"></a><span class="w">            </span><span class="nt">&quot;scoreUnit&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ops/s&quot;</span><span class="p">,</span>
-<a id="__codelineno-7-42" name="__codelineno-7-42" href="#__codelineno-7-42"></a><span class="w">            </span><span class="nt">&quot;rawData&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-7-43" name="__codelineno-7-43" href="#__codelineno-7-43"></a><span class="w">                </span><span class="p">[</span>
-<a id="__codelineno-7-44" name="__codelineno-7-44" href="#__codelineno-7-44"></a><span class="w">                    </span><span class="mf">189366.44800340827</span><span class="p">,</span>
-<a id="__codelineno-7-45" name="__codelineno-7-45" href="#__codelineno-7-45"></a><span class="w">                    </span><span class="mf">182001.5193574798</span><span class="p">,</span>
-<a id="__codelineno-7-46" name="__codelineno-7-46" href="#__codelineno-7-46"></a><span class="w">                    </span><span class="mf">170531.69717638704</span><span class="p">,</span>
-<a id="__codelineno-7-47" name="__codelineno-7-47" href="#__codelineno-7-47"></a><span class="w">                    </span><span class="mf">162364.86104533979</span><span class="p">,</span>
-<a id="__codelineno-7-48" name="__codelineno-7-48" href="#__codelineno-7-48"></a><span class="w">                    </span><span class="mf">159121.5187040372</span><span class="p">,</span>
-<a id="__codelineno-7-49" name="__codelineno-7-49" href="#__codelineno-7-49"></a><span class="w">                    </span><span class="mf">125406.93654261202</span><span class="p">,</span>
-<a id="__codelineno-7-50" name="__codelineno-7-50" href="#__codelineno-7-50"></a><span class="w">                    </span><span class="mf">106902.16819859736</span><span class="p">,</span>
-<a id="__codelineno-7-51" name="__codelineno-7-51" href="#__codelineno-7-51"></a><span class="w">                    </span><span class="mf">471589.3418364573</span><span class="p">,</span>
-<a id="__codelineno-7-52" name="__codelineno-7-52" href="#__codelineno-7-52"></a><span class="w">                    </span><span class="mf">20815.987134208288</span><span class="p">,</span>
-<a id="__codelineno-7-53" name="__codelineno-7-53" href="#__codelineno-7-53"></a><span class="w">                    </span><span class="mf">471126.8877452286</span><span class="p">,</span>
-<a id="__codelineno-7-54" name="__codelineno-7-54" href="#__codelineno-7-54"></a><span class="w">                    </span><span class="mf">19837.659319775263</span><span class="p">,</span>
-<a id="__codelineno-7-55" name="__codelineno-7-55" href="#__codelineno-7-55"></a><span class="w">                    </span><span class="mf">430461.50955703534</span><span class="p">,</span>
-<a id="__codelineno-7-56" name="__codelineno-7-56" href="#__codelineno-7-56"></a><span class="w">                    </span><span class="mf">41763.59810876514</span><span class="p">,</span>
-<a id="__codelineno-7-57" name="__codelineno-7-57" href="#__codelineno-7-57"></a><span class="w">                    </span><span class="mf">373047.7099334711</span><span class="p">,</span>
-<a id="__codelineno-7-58" name="__codelineno-7-58" href="#__codelineno-7-58"></a><span class="w">                    </span><span class="mf">70686.69226237234</span><span class="p">,</span>
-<a id="__codelineno-7-59" name="__codelineno-7-59" href="#__codelineno-7-59"></a><span class="w">                    </span><span class="mf">352984.1656029356</span><span class="p">,</span>
-<a id="__codelineno-7-60" name="__codelineno-7-60" href="#__codelineno-7-60"></a><span class="w">                    </span><span class="mf">76161.28448556861</span><span class="p">,</span>
-<a id="__codelineno-7-61" name="__codelineno-7-61" href="#__codelineno-7-61"></a><span class="w">                    </span><span class="mf">331142.4783053942</span><span class="p">,</span>
-<a id="__codelineno-7-62" name="__codelineno-7-62" href="#__codelineno-7-62"></a><span class="w">                    </span><span class="mf">83170.7709646383</span><span class="p">,</span>
-<a id="__codelineno-7-63" name="__codelineno-7-63" href="#__codelineno-7-63"></a><span class="w">                    </span><span class="mf">300736.0137753263</span><span class="p">,</span>
-<a id="__codelineno-7-64" name="__codelineno-7-64" href="#__codelineno-7-64"></a><span class="w">                    </span><span class="mf">91106.90765487481</span><span class="p">,</span>
-<a id="__codelineno-7-65" name="__codelineno-7-65" href="#__codelineno-7-65"></a><span class="w">                    </span><span class="mf">153934.20182376896</span><span class="p">,</span>
-<a id="__codelineno-7-66" name="__codelineno-7-66" href="#__codelineno-7-66"></a><span class="w">                    </span><span class="mf">59495.64115310968</span><span class="p">,</span>
-<a id="__codelineno-7-67" name="__codelineno-7-67" href="#__codelineno-7-67"></a><span class="w">                    </span><span class="mf">398898.761738379</span><span class="p">,</span>
-<a id="__codelineno-7-68" name="__codelineno-7-68" href="#__codelineno-7-68"></a><span class="w">                    </span><span class="mf">90731.58168374155</span>
-<a id="__codelineno-7-69" name="__codelineno-7-69" href="#__codelineno-7-69"></a><span class="w">                </span><span class="p">]</span>
-<a id="__codelineno-7-70" name="__codelineno-7-70" href="#__codelineno-7-70"></a><span class="w">            </span><span class="p">]</span>
-<a id="__codelineno-7-71" name="__codelineno-7-71" href="#__codelineno-7-71"></a><span class="w">        </span><span class="p">},</span>
-<a id="__codelineno-7-72" name="__codelineno-7-72" href="#__codelineno-7-72"></a><span class="w">        </span><span class="nt">&quot;secondaryMetrics&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-7-73" name="__codelineno-7-73" href="#__codelineno-7-73"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-7-74" name="__codelineno-7-74" href="#__codelineno-7-74"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-7-75" name="__codelineno-7-75" href="#__codelineno-7-75"></a><span class="p">]</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="p">]</span>
 </code></pre></div>
-<h3 id="results-leveldb-myjson">results-LevelDB-my.json</h3>
+<h3 id="results-write-leveldb-myjson">results-write-LevelDB-my.json</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">    </span><span class="nt">&quot;totalDirectorySize&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1508330468</span><span class="p">,</span>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="nt">&quot;fileCount&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">754</span><span class="p">,</span>
@@ -2744,7 +3095,7 @@
 <a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">    </span><span class="nt">&quot;cpuUsage&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.1675880023099229</span>
 <a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="p">}</span>
 </code></pre></div>
-<h3 id="results-leveldbjson">results-LevelDB.json</h3>
+<h3 id="results-write-leveldbjson">results-write-LevelDB.json</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="p">[</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">    </span><span class="p">{</span>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">        </span><span class="nt">&quot;jmhVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.37&quot;</span><span class="p">,</span>
@@ -2822,7 +3173,7 @@
 <a id="__codelineno-9-75" name="__codelineno-9-75" href="#__codelineno-9-75"></a><span class="w">    </span><span class="p">}</span>
 <a id="__codelineno-9-76" name="__codelineno-9-76" href="#__codelineno-9-76"></a><span class="p">]</span>
 </code></pre></div>
-<h3 id="results-mapdb-myjson">results-MapDB-my.json</h3>
+<h3 id="results-write-mapdb-myjson">results-write-MapDB-my.json</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="p">{</span>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="nt">&quot;totalDirectorySize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">520093696</span><span class="p">,</span>
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">  </span><span class="nt">&quot;fileCount&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
@@ -2834,7 +3185,7 @@
 <a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="w">  </span><span class="nt">&quot;cpuUsage&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">0.13922725511802747</span>
 <a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="p">}</span>
 </code></pre></div>
-<h3 id="results-mapdbjson">results-MapDB.json</h3>
+<h3 id="results-write-mapdbjson">results-write-MapDB.json</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="p">[</span>
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">    </span><span class="p">{</span>
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">        </span><span class="nt">&quot;jmhVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.37&quot;</span><span class="p">,</span>
@@ -2912,7 +3263,7 @@
 <a id="__codelineno-11-75" name="__codelineno-11-75" href="#__codelineno-11-75"></a><span class="w">    </span><span class="p">}</span>
 <a id="__codelineno-11-76" name="__codelineno-11-76" href="#__codelineno-11-76"></a><span class="p">]</span>
 </code></pre></div>
-<h3 id="results-rocksdb-myjson">results-RocksDB-my.json</h3>
+<h3 id="results-write-rocksdb-myjson">results-write-RocksDB-my.json</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="p">{</span>
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="nt">&quot;totalDirectorySize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">8306458361</span><span class="p">,</span>
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span><span class="nt">&quot;fileCount&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">143</span><span class="p">,</span>
@@ -2924,7 +3275,7 @@
 <a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="w">  </span><span class="nt">&quot;cpuUsage&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">0.0648233165590143</span>
 <a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="p">}</span>
 </code></pre></div>
-<h3 id="results-rocksdbjson">results-RocksDB.json</h3>
+<h3 id="results-write-rocksdbjson">results-write-RocksDB.json</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="p">[</span>
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">    </span><span class="p">{</span>
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">        </span><span class="nt">&quot;jmhVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.37&quot;</span><span class="p">,</span>
@@ -3049,10 +3400,11 @@
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.f55a23d4.min.js"></script>
+      <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>
       
     
   </body>
