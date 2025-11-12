@@ -1,6 +1,6 @@
-# 📊 HestiaStore Benchmark Results
+# HestiaStore Benchmark Results
 
-## 🧪 Test Conditions - Sequential Read Benchmarks
+## Test Conditions - Sequential Read Benchmarks
 
 - Each sequential scenario uses the same JVM flags, hardware, and scratch directory handling as the write/read suites. The `dir` property is cleaned before every run to guarantee a fresh start.
 - Setup writes 10 000 000 deterministic key/value pairs (seed `324432L`) into the engine. Keys are generated via `HashDataProvider` so that the exact ordering is reproducible across runs.
@@ -8,17 +8,18 @@
 - Measurement iterations continue sequential scans, looping back to the first key whenever the end is reached. This focuses on sustained read throughput when data is consumed in order.
 - The read workload remains single-threaded; each invocation issues exactly one lookup to keep measurements comparable with the other suites.
 - Directories remain on disk after the run so disk usage and auxiliary metrics can be collected by reporting scripts.
+- Tests for HestiaStoreStream use dedicated stream API. Without using Stream API is performance visible in line HestiaStoreBasic.
 - Tests executed on Mac mini 2024, 16 GB RAM, macOS 15.6.1 (24G90).
 
 
-## 🏁 Benchmark Results
+## Benchmark Results
 
 | Engine       | Score [ops/s]     | ScoreError | Confidence Interval [ops/s] | Occupied space | CPU Usage |
 |:--------------|-----------------:|-----------:|-----------------------------:|---------------:|---------:|
 | ChronicleMap |       1 707 702 |    82 988 | 1 624 713 .. 1 790 690      | 2.03 GB        | 13%        |
 | H2           |         364 687 |    43 577 | 321 110 .. 408 264          | 8 KB           | 14%        |
 | HestiaStoreBasic |             592 |        68 | 524 .. 660                  | 507.94 MB      | 15%        |
-| HestiaStoreCompress |             579 |        21 | 558 .. 600                  | 283.94 MB      | 12%        |
+| HestiaStoreStream |       4 792 777 |   144 132 | 4 648 646 .. 4 936 909      | 283.94 MB      | 12%        |
 | LevelDB      |         190 698 |     6 694 | 184 004 .. 197 391          | 363.32 MB      | 10%        |
 | MapDB        |           1 528 |       228 | 1 300 .. 1 756              | 1.3 GB         | 5%         |
 | RocksDB      |         109 551 |    10 513 | 99 038 .. 120 064           | 324.23 MB      | 10%        |
@@ -35,7 +36,7 @@ meaning of columns:
 - Occupied space : amount of disk space occupied by the engine's data structures (lower is better). It is measured after flushing last data to disk.
 - CPU Usage: average CPU usage during the benchmark (lower is better). Please note, that it includes all system processes, not only the benchmarked engine.
 
-## 📄 Raw JSON Files
+## Raw JSON Files
 
 ### results-sequential-ChronicleMap-my.json
 
@@ -346,35 +347,35 @@ meaning of columns:
 
 ```
 
-### results-sequential-HestiaStoreCompress-my.json
+### results-sequential-HestiaStoreStream-my.json
 
 ```json
 {
-  "totalDirectorySize" : 297736212,
+  "totalDirectorySize" : 297736210,
   "fileCount" : 10,
-  "usedMemoryBytes" : 31814624,
-  "cpuBefore" : 784831000,
-  "cpuAfter" : 1751503000,
-  "startTime" : 1695741332849583,
-  "endTime" : 1696540408683833,
-  "cpuUsage" : 0.12097374974520449
+  "usedMemoryBytes" : 31879856,
+  "cpuBefore" : 705656000,
+  "cpuAfter" : 1654368000,
+  "startTime" : 1738846165288208,
+  "endTime" : 1739625462973208,
+  "cpuUsage" : 0.12173935817607363
 }
 ```
 
-### results-sequential-HestiaStoreCompress.json
+### results-sequential-HestiaStoreStream.json
 
 ```json
 [
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "org.hestiastore.index.benchmark.plainload.TestHestiaStoreCompressSequential.readSequential",
+        "benchmark" : "org.hestiastore.index.benchmark.plainload.TestHestiaStoreCompressSequential2.readSequentialStream",
         "mode" : "thrpt",
         "threads" : 1,
         "forks" : 1,
         "jvm" : "/opt/homebrew/Cellar/openjdk@21/21.0.7/libexec/openjdk.jdk/Contents/Home/bin/java",
         "jvmArgs" : [
             "-Ddir=/Volumes/ponrava/test-index",
-            "-Dengine=HestiaStoreCompressSequential"
+            "-Dengine=HestiaStoreCompressSequential2"
         ],
         "jdkVersion" : "21.0.7",
         "vmName" : "OpenJDK 64-Bit Server VM",
@@ -386,52 +387,52 @@ meaning of columns:
         "measurementTime" : "20 s",
         "measurementBatchSize" : 1,
         "primaryMetric" : {
-            "score" : 579.2671737952969,
-            "scoreError" : 21.20896705947782,
+            "score" : 4792777.446329955,
+            "scoreError" : 144131.89712030266,
             "scoreConfidence" : [
-                558.0582067358191,
-                600.4761408547747
+                4648645.5492096525,
+                4936909.343450258
             ],
             "scorePercentiles" : {
-                "0.0" : 538.0085575502201,
-                "50.0" : 569.1268956502537,
-                "90.0" : 622.9421936201803,
-                "95.0" : 628.4146974981362,
-                "99.0" : 628.6708008502843,
-                "99.9" : 628.6708008502843,
-                "99.99" : 628.6708008502843,
-                "99.999" : 628.6708008502843,
-                "99.9999" : 628.6708008502843,
-                "100.0" : 628.6708008502843
+                "0.0" : 4253292.20242851,
+                "50.0" : 4793888.0753746815,
+                "90.0" : 4990279.774572669,
+                "95.0" : 5013138.2306711,
+                "99.0" : 5014745.693444231,
+                "99.9" : 5014745.693444231,
+                "99.99" : 5014745.693444231,
+                "99.999" : 5014745.693444231,
+                "99.9999" : 5014745.693444231,
+                "100.0" : 5014745.693444231
             },
             "scoreUnit" : "ops/s",
             "rawData" : [
                 [
-                    581.0312396259001,
-                    538.0085575502201,
-                    556.0033643078693,
-                    553.5761552382322,
-                    601.5430301154041,
-                    591.7130559031767,
-                    567.7389537490321,
-                    563.2301074166437,
-                    611.019441219389,
-                    542.367699091461,
-                    569.1268956502537,
-                    542.8819876305789,
-                    556.4745826414146,
-                    544.4936116382441,
-                    568.8482848217772,
-                    628.6708008502843,
-                    619.6922406937736,
-                    584.145367802547,
-                    604.8376955846254,
-                    604.5253199000348,
-                    595.3429879614237,
-                    608.4717977329998,
-                    554.5312388149274,
-                    565.5878059324225,
-                    627.8171230097905
+                    4940897.010906559,
+                    4811267.514070776,
+                    4793888.0753746815,
+                    4253292.20242851,
+                    4445228.221274129,
+                    4374010.689731631,
+                    4708902.625330204,
+                    4950020.989303642,
+                    4977541.301487473,
+                    4870900.688786804,
+                    5009387.484200462,
+                    4930047.971332142,
+                    4927043.182530843,
+                    4728505.515544281,
+                    5014745.693444231,
+                    4908131.309611777,
+                    4971694.40708881,
+                    4747109.83595018,
+                    4782049.903774503,
+                    4891229.719922479,
+                    4793055.605468624,
+                    4765577.03327685,
+                    4763952.21497315,
+                    4771201.630097632,
+                    4689755.332338488
                 ]
             ]
         },
