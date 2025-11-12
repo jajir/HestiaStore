@@ -7,30 +7,30 @@
     </style>
   <rect x="0" y="10" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
   <text class="label" x="20" y="30">ChronicleMap</text>
-  <rect x="250" y="17" width="590" height="26" rx="6" ry="6" fill="#4E79A7" stroke="#42668D" stroke-width="2" />
-  <text class="value" x="856" y="30">1,707,702 ops/s</text>
+  <rect x="250" y="17" width="210" height="26" rx="6" ry="6" fill="#4E79A7" stroke="#42668D" stroke-width="2" />
+  <text class="value" x="476" y="30">1,707,702 ops/s</text>
   <rect x="0" y="70" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
   <text class="label" x="20" y="90">H2</text>
-  <rect x="250" y="77" width="125" height="26" rx="6" ry="6" fill="#F28E2B" stroke="#CD7824" stroke-width="2" />
-  <text class="value" x="391" y="90">364,687 ops/s</text>
+  <rect x="250" y="77" width="44" height="26" rx="6" ry="6" fill="#F28E2B" stroke="#CD7824" stroke-width="2" />
+  <text class="value" x="310" y="90">364,687 ops/s</text>
   <rect x="0" y="130" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
   <text class="label" x="20" y="150">HestiaStoreBasic</text>
   <rect x="250" y="137" width="8" height="26" rx="6" ry="6" fill="#E15759" stroke="#BF494B" stroke-width="2" />
   <text class="value" x="274" y="150">592 ops/s</text>
   <rect x="0" y="190" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
-  <text class="label" x="20" y="210">HestiaStoreCompress</text>
-  <rect x="250" y="197" width="8" height="26" rx="6" ry="6" fill="#76B7B2" stroke="#649B97" stroke-width="2" />
-  <text class="value" x="274" y="210">579 ops/s</text>
+  <text class="label" x="20" y="210">HestiaStoreStream</text>
+  <rect x="250" y="197" width="590" height="26" rx="6" ry="6" fill="#76B7B2" stroke="#649B97" stroke-width="2" />
+  <text class="value" x="856" y="210">4,792,777 ops/s</text>
   <rect x="0" y="250" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
   <text class="label" x="20" y="270">LevelDB</text>
-  <rect x="250" y="257" width="65" height="26" rx="6" ry="6" fill="#59A14F" stroke="#4B8843" stroke-width="2" />
-  <text class="value" x="331" y="270">190,698 ops/s</text>
+  <rect x="250" y="257" width="23" height="26" rx="6" ry="6" fill="#59A14F" stroke="#4B8843" stroke-width="2" />
+  <text class="value" x="289" y="270">190,698 ops/s</text>
   <rect x="0" y="310" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
   <text class="label" x="20" y="330">MapDB</text>
   <rect x="250" y="317" width="8" height="26" rx="6" ry="6" fill="#EDC948" stroke="#C9AA3D" stroke-width="2" />
   <text class="value" x="274" y="330">1,528 ops/s</text>
   <rect x="0" y="370" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
   <text class="label" x="20" y="390">RocksDB</text>
-  <rect x="250" y="377" width="37" height="26" rx="6" ry="6" fill="#B07AA1" stroke="#956788" stroke-width="2" />
-  <text class="value" x="303" y="390">109,551 ops/s</text>
+  <rect x="250" y="377" width="13" height="26" rx="6" ry="6" fill="#B07AA1" stroke="#956788" stroke-width="2" />
+  <text class="value" x="279" y="390">109,551 ops/s</text>
 </svg>
