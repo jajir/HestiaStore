@@ -2760,11 +2760,12 @@
 <h2 id="roadmap">🗺️ Roadmap</h2>
 <p>Planned improvements include:</p>
 <ul>
-<li>Enhance Javadoc documentation</li>
-<li>Implement data consistency verification using checksums</li>
-<li>Complete the implementation of Write‑Ahead Logging (WAL)</li>
+<li>Full Multithreaded Storage Engine – Currently this is the biggest performance limitation. Disk I/O consumes only about 40% of available CPU, leaving significant unused capacity.</li>
+<li>Consider Transaction Support – It’s not yet clear whether transactions are a required feature, but this should be evaluated.</li>
+<li>Implement Asynchronous I/O – Explore alternative approaches for file system access. Replace the current java.io-based implementation.</li>
+<li>Example Application – Provide a simple, easy-to-run demo application that demonstrates HestiaStore’s capabilities.
+For detailed tasks and progress, see the <a href="https://github.com/jajir/HestiaStore/issues">GitHub Issues</a> page.</li>
 </ul>
-<p>For detailed tasks and progress, see the <a href="https://github.com/jajir/HestiaStore/issues">GitHub Issues</a> page.</p>
 <h2 id="need-help-or-have-questions">❓ Need Help or Have Questions?</h2>
 <p>If you encounter a bug, have a feature request, or need help using HestiaStore, please <a href="https://github.com/jajir/HestiaStore/issues">create an issue</a>.</p>
 
