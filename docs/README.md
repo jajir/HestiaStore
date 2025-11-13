@@ -152,10 +152,10 @@ For more integration details, see the [Getting Started](how-to-use/index.md) sec
 
 Planned improvements include:
 
-- Enhance Javadoc documentation
-- Implement data consistency verification using checksums
-- Complete the implementation of Write‑Ahead Logging (WAL)
-
+- Full Multithreaded Storage Engine – Currently this is the biggest performance limitation. Disk I/O consumes only about 40% of available CPU, leaving significant unused capacity.
+- Consider Transaction Support – It’s not yet clear whether transactions are a required feature, but this should be evaluated.
+- Implement Asynchronous I/O – Explore alternative approaches for file system access. Replace the current java.io-based implementation.
+- Example Application – Provide a simple, easy-to-run demo application that demonstrates HestiaStore’s capabilities.
 For detailed tasks and progress, see the [GitHub Issues](https://github.com/jajir/HestiaStore/issues) page.
 
 ## ❓ Need Help or Have Questions?
