@@ -70,8 +70,6 @@ public class IntegerationNumberOfKeysIT {
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(TYPE_DESCRIPTOR_STRING)//
                 .withValueTypeDescriptor(TYPE_DESCRIPTOR_LONG)//
-                .withMaxNumberOfKeysInSegmentCache(3)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(100)//
                 .withMaxNumberOfKeysInSegmentChunk(100)//
                 .withBloomFilterIndexSizeInBytes(0)// disable bloom filter
                 .withMaxNumberOfKeysInSegmentCache(1000)//

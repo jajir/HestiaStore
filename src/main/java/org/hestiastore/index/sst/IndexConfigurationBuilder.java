@@ -14,6 +14,7 @@ public class IndexConfigurationBuilder<K, V> {
     private Integer maxNumberOfKeysInSegmentCacheDuringFlushing;
     private Integer maxNumberOfKeysInSegmentChunk;
     private Integer maxNumberOfKeysInCache;
+    private Integer maxNumberOfKeysInReadCache;
     private Integer maxNumberOfKeysInSegment;
     private Integer maxNumberOfSegmentsInCache;
 
@@ -105,6 +106,12 @@ public class IndexConfigurationBuilder<K, V> {
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInCache(
             final Integer maxNumberOfKeysInCache) {
         this.maxNumberOfKeysInCache = maxNumberOfKeysInCache;
+        return this;
+    }
+
+    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInReadCache(
+            final Integer maxNumberOfKeysInReadCache) {
+        this.maxNumberOfKeysInReadCache = maxNumberOfKeysInReadCache;
         return this;
     }
 
@@ -238,7 +245,8 @@ public class IndexConfigurationBuilder<K, V> {
                 maxNumberOfKeysInSegmentCache,
                 maxNumberOfKeysInSegmentCacheDuringFlushing,
                 maxNumberOfKeysInSegmentChunk, maxNumberOfKeysInCache,
-                maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache, indexName,
+                maxNumberOfKeysInReadCache, maxNumberOfKeysInSegment,
+                maxNumberOfSegmentsInCache, indexName,
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
                 bloomFilterProbabilityOfFalsePositive, diskIoBufferSizeInBytes,
                 isThreadSafe, contextLoggingEnabled, encodingChunkFilters,
