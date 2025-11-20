@@ -37,7 +37,13 @@ public class IndexConfiguration<K, V> {
      * SST index configuration
      */
     private final String indexName;
-    private final Integer maxNumberOfKeysInSCache;
+    private final Integer maxNumberOfKeysInCache;
+    /**
+     * Maximum number of keys held in the read-side cache used to accelerate
+     * point lookups. When {@code null} or set to {@code 0}, the read cache is
+     * considered disabled.
+     */
+    private final Integer maxNumberOfKeysInReadCache;
     private final Integer maxNumberOfKeysInSegment;
     private final Integer maxNumberOfSegmentsInCache;
 
@@ -71,6 +77,7 @@ public class IndexConfiguration<K, V> {
             final Integer maxNumberOfKeysInSegmentCacheDuringFlushing, //
             final Integer maxNumberOfKeysInSegmentChunk, //
             final Integer maxNumberOfKeysInCache, //
+            final Integer maxNumberOfKeysInReadCache, //
             final Integer maxNumberOfKeysInSegment, //
             final Integer maxNumberOfSegmentsInCache, //
             final String indexName, //
@@ -89,7 +96,8 @@ public class IndexConfiguration<K, V> {
         this.maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInSegmentCacheDuringFlushing;
         this.maxNumberOfKeysInSegmentChunk = maxNumberOfKeysInSegmentChunk;
         this.indexName = indexName;
-        this.maxNumberOfKeysInSCache = maxNumberOfKeysInCache;
+        this.maxNumberOfKeysInCache = maxNumberOfKeysInCache;
+        this.maxNumberOfKeysInReadCache = maxNumberOfKeysInReadCache;
         this.maxNumberOfKeysInSegment = maxNumberOfKeysInSegment;
         this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
@@ -104,7 +112,8 @@ public class IndexConfiguration<K, V> {
 
     public Integer getMaxNumberOfKeysInSegmentCache() {
         /**
-         * Returns the maximum number of keys held in the in-memory segment cache.
+         * Returns the maximum number of keys held in the in-memory segment
+         * cache.
          *
          * @return max keys in segment cache
          */
@@ -136,7 +145,17 @@ public class IndexConfiguration<K, V> {
          *
          * @return max keys in index cache
          */
-        return maxNumberOfKeysInSCache;
+        return maxNumberOfKeysInCache;
+    }
+
+    public Integer getMaxNumberOfKeysInReadCache() {
+        /**
+         * Returns the maximum number of keys kept in the read-side cache used
+         * for accelerating point lookups.
+         *
+         * @return max keys in read cache, or {@code null} when not specified
+         */
+        return maxNumberOfKeysInReadCache;
     }
 
     public Integer getMaxNumberOfKeysInSegment() {
@@ -244,8 +263,8 @@ public class IndexConfiguration<K, V> {
 
     public String getKeyTypeDescriptor() {
         /**
-         * Returns the fully qualified class name of the key type descriptor used
-         * for serialization.
+         * Returns the fully qualified class name of the key type descriptor
+         * used for serialization.
          *
          * @return key type descriptor class name
          */
@@ -254,8 +273,8 @@ public class IndexConfiguration<K, V> {
 
     public String getValueTypeDescriptor() {
         /**
-         * Returns the fully qualified class name of the value type descriptor used
-         * for serialization.
+         * Returns the fully qualified class name of the value type descriptor
+         * used for serialization.
          *
          * @return value type descriptor class name
          */

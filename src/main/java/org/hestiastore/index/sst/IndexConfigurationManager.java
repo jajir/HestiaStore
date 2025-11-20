@@ -74,6 +74,10 @@ public class IndexConfigurationManager<K, V> {
             builder.withMaxNumberOfKeysInCache(
                     defaults.getMaxNumberOfKeysInCache());
         }
+        if (conf.getMaxNumberOfKeysInReadCache() == null) {
+            builder.withMaxNumberOfKeysInReadCache(
+                    defaults.getMaxNumberOfKeysInReadCache());
+        }
         if (conf.getMaxNumberOfSegmentsInCache() == null) {
             builder.withMaxNumberOfSegmentsInCache(
                     defaults.getMaxNumberOfSegmentsInCache());
@@ -165,6 +169,12 @@ public class IndexConfigurationManager<K, V> {
             dirty = true;
         }
 
+        if (isMaxNumberOfKeysInReadCacheOverriden(storedConf, indexConf)) {
+            builder.withMaxNumberOfKeysInReadCache(
+                    indexConf.getMaxNumberOfKeysInReadCache());
+            dirty = true;
+        }
+
         if (indexConf.isContextLoggingEnabled() != null
                 && !indexConf.isContextLoggingEnabled()
                         .equals(storedConf.isContextLoggingEnabled())) {
@@ -229,6 +239,15 @@ public class IndexConfigurationManager<K, V> {
                 && indexConf.getMaxNumberOfKeysInCache() > 0
                 && !indexConf.getMaxNumberOfKeysInCache()
                         .equals(storedConf.getMaxNumberOfKeysInCache());
+    }
+
+    private boolean isMaxNumberOfKeysInReadCacheOverriden(
+            final IndexConfiguration<K, V> storedConf,
+            final IndexConfiguration<K, V> indexConf) {
+        return indexConf.getMaxNumberOfKeysInReadCache() != null
+                && indexConf.getMaxNumberOfKeysInReadCache() > 0
+                && !indexConf.getMaxNumberOfKeysInReadCache()
+                        .equals(storedConf.getMaxNumberOfKeysInReadCache());
     }
 
     void validateThatFixPropertiesAreNotOverriden(
@@ -464,6 +483,8 @@ public class IndexConfigurationManager<K, V> {
 
                 // Index runtime properties
                 .withMaxNumberOfKeysInCache(conf.getMaxNumberOfKeysInCache())//
+                .withMaxNumberOfKeysInReadCache(
+                        conf.getMaxNumberOfKeysInReadCache())//
                 .withMaxNumberOfSegmentsInCache(
                         conf.getMaxNumberOfSegmentsInCache())//
                 .withMaxNumberOfKeysInSegment(

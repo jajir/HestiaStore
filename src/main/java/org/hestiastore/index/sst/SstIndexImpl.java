@@ -1,6 +1,7 @@
 package org.hestiastore.index.sst;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
@@ -8,6 +9,8 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.EntryIteratorStreamer;
 import org.hestiastore.index.F;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.cache.Cache;
+import org.hestiastore.index.cache.CacheLru;
 import org.hestiastore.index.cache.UniqueCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
@@ -26,6 +29,13 @@ public abstract class SstIndexImpl<K, V> extends AbstractCloseableResource
     protected final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final UniqueCache<K, V> cache;
+    /**
+     * Read-side cache keyed by {@code K}. It stores values fetched from
+     * segments to speed up repeated point lookups. When the configured maximum
+     * size is zero or {@code null}, this field is {@code null} and no read
+     * caching is performed.
+     */
+    private final Cache<K, V> readCache;
     private final KeySegmentCache<K> keySegmentCache;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentSplitCoordinator<K, V> segmentSplitCoordinator;
@@ -51,6 +61,14 @@ public abstract class SstIndexImpl<K, V> extends AbstractCloseableResource
         this.cache = new UniqueCache<K, V>(
                 this.keyTypeDescriptor.getComparator(),
                 conf.getMaxNumberOfKeysInCache());
+        if (conf.getMaxNumberOfKeysInReadCache() != null
+                && conf.getMaxNumberOfKeysInReadCache() > 0) {
+            this.readCache = new CacheLru<>(
+                    conf.getMaxNumberOfKeysInReadCache(), (k, v) -> {
+                    });
+        } else {
+            this.readCache = null;
+        }
         this.keySegmentCache = new KeySegmentCache<>(directory,
                 keyTypeDescriptor);
         final SegmentDataCache<K, V> segmentDataCache = new SegmentDataCache<>(
@@ -78,6 +96,7 @@ public abstract class SstIndexImpl<K, V> extends AbstractCloseableResource
         log.post(key, value);
 
         cache.put(Entry.of(key, value));
+        invalidateReadCacheEntry(key);
 
         if (cache.size() > conf.getMaxNumberOfKeysInCache()) {
             flushCache();
@@ -158,21 +177,31 @@ public abstract class SstIndexImpl<K, V> extends AbstractCloseableResource
         Vldtn.requireNonNull(key, "key");
         stats.incGetCx();
 
-        final V out = cache.get(key);
-        if (out == null) {
-            final SegmentId id = keySegmentCache.findSegmentId(key);
-            if (id == null) {
+        final V cachedWrite = cache.get(key);
+        if (cachedWrite != null) {
+            if (valueTypeDescriptor.isTombstone(cachedWrite)) {
                 return null;
             }
-            final Segment<K, V> segment = segmentRegistry.getSegment(id);
-            return segment.get(key);
-        } else {
-            if (valueTypeDescriptor.isTombstone(out)) {
-                return null;
-            } else {
-                return out;
+            return cachedWrite;
+        }
+
+        if (readCache != null) {
+            final Optional<V> cachedRead = readCache.get(key);
+            if (cachedRead.isPresent()) {
+                return cachedRead.get();
             }
         }
+
+        final SegmentId id = keySegmentCache.findSegmentId(key);
+        if (id == null) {
+            return null;
+        }
+        final Segment<K, V> segment = segmentRegistry.getSegment(id);
+        final V value = segment.get(key);
+        if (value != null && readCache != null) {
+            readCache.put(key, value);
+        }
+        return value;
     }
 
     @Override
@@ -184,6 +213,7 @@ public abstract class SstIndexImpl<K, V> extends AbstractCloseableResource
         log.delete(key, valueTypeDescriptor.getTombstone());
 
         cache.put(Entry.of(key, valueTypeDescriptor.getTombstone()));
+        invalidateReadCacheEntry(key);
     }
 
     @Override
@@ -198,11 +228,13 @@ public abstract class SstIndexImpl<K, V> extends AbstractCloseableResource
         final IndexConsistencyChecker<K, V> checker = new IndexConsistencyChecker<>(
                 keySegmentCache, segmentRegistry, keyTypeDescriptor);
         checker.checkAndRepairConsistency();
+        invalidateReadCacheAll();
     }
 
     @Override
     protected void doClose() {
         flushCache();
+        invalidateReadCacheAll();
         log.close();
         indexState.onClose(this);
         segmentRegistry.close();
@@ -226,6 +258,18 @@ public abstract class SstIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     public IndexConfiguration<K, V> getConfiguration() {
         return conf;
+    }
+
+    private void invalidateReadCacheEntry(final K key) {
+        if (readCache != null) {
+            readCache.ivalidate(key);
+        }
+    }
+
+    private void invalidateReadCacheAll() {
+        if (readCache != null) {
+            readCache.invalidateAll();
+        }
     }
 
 }
