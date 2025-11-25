@@ -118,7 +118,7 @@ public final class Vldtn {
      * @throws IllegalArgumentException if {@code propertyName} is null or value
      *                                  is not greater than zero
      */
-    public static long requirePositiveLong(final long value,
+    public static long requireGreaterThanZero(final long value,
             final String propertyName) {
         if (propertyName == null) {
             throw new IllegalArgumentException(

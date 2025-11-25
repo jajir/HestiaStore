@@ -31,7 +31,7 @@ public final class CacheLru<K, V> implements Cache<K, V> {
             final BiConsumer<K, V> evictedElementConsumer) {
         this.evictedElementConsumer = Vldtn.requireNonNull(
                 evictedElementConsumer, "evictedElementConsumer");
-        Vldtn.requirePositiveLong(limit, "limit");
+        Vldtn.requireGreaterThanZero(limit, "limit");
         Vldtn.requireLessThan(limit, Integer.MAX_VALUE, "limit");
         this.limit = limit;
         this.cache = new HashMap<>((int) limit);
