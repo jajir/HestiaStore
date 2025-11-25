@@ -8,34 +8,32 @@ import java.util.function.BiConsumer;
 import org.hestiastore.index.Vldtn;
 
 /**
- * Simple implementation of LRU algorithm.
- * 
- * @author honza
+ * Simple in-memory LRU cache that keeps track of the last access counter for
+ * each entry and removes the least recently used element whenever the size
+ * limit is reached. A {@link BiConsumer} can be supplied to observe evictions,
+ * which is useful for releasing external resources when a cached value falls
+ * out of the window.
  *
- * @param <K>
- * @param <V>
+ * @param <K> key type
+ * @param <V> value type
  */
 public final class CacheLru<K, V> implements Cache<K, V> {
 
     private final long limit;
 
-    private final Map<K, CacheLruElement<V>> cache;
+    private final Map<K, CacheElement<V>> cache;
 
-    private final BiConsumer<K, V> evictedElement;
+    private final BiConsumer<K, V> evictedElementConsumer;
 
     private long accessCx = 0;
 
-    public CacheLru(final long limit, final BiConsumer<K, V> evictedElement) {
+    public CacheLru(final long limit,
+            final BiConsumer<K, V> evictedElementConsumer) {
+        this.evictedElementConsumer = Vldtn.requireNonNull(
+                evictedElementConsumer, "evictedElementConsumer");
+        Vldtn.requirePositiveLong(limit, "limit");
+        Vldtn.requireLessThan(limit, Integer.MAX_VALUE, "limit");
         this.limit = limit;
-        this.evictedElement = Vldtn.requireNonNull(evictedElement,
-                "evictedElement");
-        if (limit <= 0) {
-            throw new IllegalArgumentException("Limit must be greater than 0");
-        }
-        if (limit > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException(
-                    "Limit must be less than " + Integer.MAX_VALUE);
-        }
         this.cache = new HashMap<>((int) limit);
     }
 
@@ -43,19 +41,40 @@ public final class CacheLru<K, V> implements Cache<K, V> {
     public void put(final K key, final V value) {
         Vldtn.requireNonNull(key, "key");
         Vldtn.requireNonNull(value, "value");
+        optionalyRemoveSomeElements();
+        cache.put(key, new CacheValueElement<V>(value, accessCx));
+        accessCx++;
+    }
+
+    public void putNull(final K key) {
+        Vldtn.requireNonNull(key, "key");
+        optionalyRemoveSomeElements();
+        cache.put(key, new CacheNullElement<V>(accessCx));
+        accessCx++;
+    }
+
+    private void optionalyRemoveSomeElements() {
         if (cache.size() >= limit) {
             final K keyToRemove = getOlderElement();
-            final CacheLruElement<V> element = cache.remove(keyToRemove);
+            final CacheElement<V> element = cache.remove(keyToRemove);
             final V removedValue = element.getValue();
-            evictedElement.accept(keyToRemove, removedValue);
+            evictedElementConsumer.accept(keyToRemove, removedValue);
         }
-        cache.put(key, new CacheLruElement<V>(value, accessCx));
+    }
+
+    public CacheElement<V> getCacheElement(final K key) {
+        final CacheElement<V> element = cache.get(key);
+        if (element == null) {
+            return null;
+        }
+        element.setCx(accessCx);
         accessCx++;
+        return element;
     }
 
     @Override
     public Optional<V> get(final K key) {
-        final CacheLruElement<V> element = cache.get(key);
+        final CacheElement<V> element = cache.get(key);
         if (element == null) {
             return Optional.empty();
         }
@@ -67,8 +86,8 @@ public final class CacheLru<K, V> implements Cache<K, V> {
     private K getOlderElement() {
         long minCx = Long.MAX_VALUE;
         K minKey = null;
-        for (final Map.Entry<K, CacheLruElement<V>> entry : cache.entrySet()) {
-            final CacheLruElement<V> element = entry.getValue();
+        for (final Map.Entry<K, CacheElement<V>> entry : cache.entrySet()) {
+            final CacheElement<V> element = entry.getValue();
             if (element.getCx() < minCx) {
                 minCx = element.getCx();
                 minKey = entry.getKey();
@@ -80,15 +99,20 @@ public final class CacheLru<K, V> implements Cache<K, V> {
     @Override
     public void ivalidate(final K key) {
         Vldtn.requireNonNull(key, "key");
-        final CacheLruElement<V> value = cache.remove(key);
+        final CacheElement<V> value = cache.remove(key);
         if (value != null) {
-            evictedElement.accept(key, value.getValue());
+            evictedElementConsumer.accept(key, value.getValue());
         }
     }
 
     @Override
     public void invalidateAll() {
-        cache.forEach((k, v) -> evictedElement.accept(k, v.getValue()));
+        cache.forEach((k, v) -> {
+            if (v.isNull()) {
+                return;
+            }
+            evictedElementConsumer.accept(k, v.getValue());
+        });
         cache.clear();
     }
 

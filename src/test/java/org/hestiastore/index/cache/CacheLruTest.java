@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.util.function.BiConsumer;
 
@@ -12,105 +14,181 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @ExtendWith(MockitoExtension.class)
 class CacheLruTest {
 
-    private final Logger logger = LoggerFactory.getLogger(CacheLruTest.class);
-
-    private final BiConsumer<Integer, CacheElement> evictedElement = (k, v) -> {
-        v.invalidate();
-        logger.debug("Removing cached element <'{}','{}'>", k, v);
-    };
-
     @Mock
-    private CacheElement value1;
-
-    @Mock
-    private CacheElement value2;
-
-    @Mock
-    private CacheElement value3;
-
-    @Mock
-    private CacheElement value4;
+    private BiConsumer<Integer, String> evictionListener;
 
     @Test
-    void test_basic_operations() {
-        Cache<Integer, String> cache = new CacheLru<>(5, (k, v) -> {
-            // do nothing
-            fail();
-        });
-        cache.put(1, "a");
-        cache.put(2, "b");
-        cache.put(3, "c");
+    void putAndGetReturnStoredValues() {
+        Cache<Integer, String> cache = new CacheLru<>(3, failOnEviction());
 
-        assertEquals("c", cache.get(3).get());
-        assertEquals("b", cache.get(2).get());
-        assertEquals("a", cache.get(1).get());
-        assertTrue(cache.get(-2233).isEmpty());
+        cache.put(1, "one");
+        cache.put(2, "two");
+        cache.put(3, "three");
+
+        assertEquals("three", cache.get(3).get());
+        assertEquals("two", cache.get(2).get());
+        assertEquals("one", cache.get(1).get());
+        assertTrue(cache.get(999).isEmpty());
     }
 
     @Test
-    void test_remove_size_exceeding_element() {
-        Cache<Integer, CacheElement> cache = new CacheLru<>(2, (k, v) -> {
-            v.invalidate();
-            logger.debug("Removing cached element <'{}','{}'>", k, v);
-        });
-        cache.put(1, value1);
-        cache.put(2, value2);
-        assertEquals(value1, cache.get(1).get());
-        cache.put(3, value3);
+    void evictsLeastRecentlyUsedEntryWhenLimitReached() {
+        Cache<Integer, String> cache = new CacheLru<>(2, evictionListener);
 
-        assertEquals(value3, cache.get(3).get());
-        assertEquals(value1, cache.get(1).get());
+        cache.put(1, "one");
+        cache.put(2, "two");
+        cache.put(3, "three"); // should evict key 1
+
+        assertTrue(cache.get(1).isEmpty());
+        assertEquals("two", cache.get(2).get());
+        assertEquals("three", cache.get(3).get());
+        verify(evictionListener).accept(1, "one");
+    }
+
+    @Test
+    void getUpdatesRecency() {
+        Cache<Integer, String> cache = new CacheLru<>(2, evictionListener);
+
+        cache.put(1, "one");
+        cache.put(2, "two");
+        cache.get(1); // makes key 1 most recently used
+        cache.put(3, "three"); // should evict key 2
+
         assertTrue(cache.get(2).isEmpty());
-        verify(value2).invalidate();
+        assertEquals("one", cache.get(1).get());
+        assertEquals("three", cache.get(3).get());
+        verify(evictionListener).accept(2, "two");
     }
 
     @Test
-    void test_invalidate_one_element() {
-        Cache<Integer, CacheElement> cache = new CacheLru<>(5, (k, v) -> {
-            // this
-            v.invalidate();
-        });
-        cache.put(2, value1);
+    void putNullEntryCannotBeRead() {
+        CacheLru<Integer, String> cache = new CacheLru<>(1, failOnEviction());
 
-        assertEquals(value1, cache.get(2).get());
-        cache.ivalidate(2);
-        assertTrue(cache.get(2).isEmpty());
-        verify(value1).invalidate();
+        cache.putNull(1);
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class, () -> cache.get(1));
+        assertEquals("Null element does not have a value",
+                exception.getMessage());
     }
 
     @Test
-    void test_invalidateAll() {
-        Cache<Integer, CacheElement> cache = new CacheLru<>(2, evictedElement);
-        cache.put(1, value1);
-        cache.put(2, value2);
+    void ivalidateRemovesKeyAndNotifiesListener() {
+        Cache<Integer, String> cache = new CacheLru<>(3, evictionListener);
+
+        cache.put(1, "one");
+        cache.put(2, "two");
+        cache.ivalidate(1);
+
+        assertTrue(cache.get(1).isEmpty());
+        assertEquals("two", cache.get(2).get());
+        verify(evictionListener).accept(1, "one");
+    }
+
+    @Test
+    void invalidateAllClearsCacheAndNotifiesForEachEntry() {
+        Cache<Integer, String> cache = new CacheLru<>(3, evictionListener);
+
+        cache.put(1, "one");
+        cache.put(2, "two");
+        cache.put(3, "three");
+
         cache.invalidateAll();
+
         assertTrue(cache.get(1).isEmpty());
         assertTrue(cache.get(2).isEmpty());
-        verify(value1).invalidate();
-        verify(value2).invalidate();
+        assertTrue(cache.get(3).isEmpty());
+        verify(evictionListener).accept(1, "one");
+        verify(evictionListener).accept(2, "two");
+        verify(evictionListener).accept(3, "three");
     }
 
     @Test
-    void test_constructor_limit_too_high() {
-        final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> new CacheLru<>(((long) Integer.MAX_VALUE) + 2L,
-                        evictedElement));
+    void constructorRejectsNullEvictionListener() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class, () -> new CacheLru<>(2, null));
 
-        assertEquals("Limit must be less than 2147483647", e.getMessage());
+        assertEquals("Property 'evictedElementConsumer' must not be null.",
+                exception.getMessage());
     }
 
     @Test
-    void test_constructor_limit_too_low() {
-        final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> new CacheLru<>(-1, evictedElement));
+    void constructorRejectsLimitTooHigh() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> new CacheLru<>(((long) Integer.MAX_VALUE) + 1L,
+                        evictionListener));
 
-        assertEquals("Limit must be greater than 0", e.getMessage());
+        assertEquals("Property 'limit' must be less than 2147483647",
+                exception.getMessage());
+        verifyNoInteractions(evictionListener);
+    }
+
+    @Test
+    void constructorRejectsLimitTooLow() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> new CacheLru<>(0, evictionListener));
+
+        assertEquals("Property 'limit' must be greater than 0",
+                exception.getMessage());
+        verifyNoInteractions(evictionListener);
+    }
+
+    @Test
+    void putRejectsNullKey() {
+        CacheLru<Integer, String> cache = new CacheLru<>(1, evictionListener);
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class, () -> cache.put(null, "value"));
+
+        assertEquals("Property 'key' must not be null.",
+                exception.getMessage());
+        verifyNoInteractions(evictionListener);
+    }
+
+    @Test
+    void putRejectsNullValue() {
+        CacheLru<Integer, String> cache = new CacheLru<>(1, evictionListener);
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class, () -> cache.put(1, null));
+
+        assertEquals("Property 'value' must not be null.",
+                exception.getMessage());
+        verifyNoInteractions(evictionListener);
+    }
+
+    @Test
+    void putNullRejectsNullKey() {
+        CacheLru<Integer, String> cache = new CacheLru<>(1, evictionListener);
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class, () -> cache.putNull(null));
+
+        assertEquals("Property 'key' must not be null.",
+                exception.getMessage());
+        verifyNoInteractions(evictionListener);
+    }
+
+    @Test
+    void ivalidateRejectsNullKey() {
+        Cache<Integer, String> cache = new CacheLru<>(1, evictionListener);
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class, () -> cache.ivalidate(null));
+
+        assertEquals("Property 'key' must not be null.",
+                exception.getMessage());
+        verify(evictionListener, never()).accept(null, null);
+    }
+
+    private BiConsumer<Integer, String> failOnEviction() {
+        return (key, value) -> fail("Eviction listener should not be invoked");
     }
 
 }

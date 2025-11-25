@@ -1,7 +1,6 @@
 package org.hestiastore.index.sst;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
@@ -9,7 +8,7 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.EntryIteratorStreamer;
 import org.hestiastore.index.F;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.cache.Cache;
+import org.hestiastore.index.cache.CacheElement;
 import org.hestiastore.index.cache.CacheLru;
 import org.hestiastore.index.cache.UniqueCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -35,7 +34,7 @@ public abstract class SstIndexImpl<K, V> extends AbstractCloseableResource
      * size is zero or {@code null}, this field is {@code null} and no read
      * caching is performed.
      */
-    private final Cache<K, V> readCache;
+    private final CacheLru<K, V> readCache;
     private final KeySegmentCache<K> keySegmentCache;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentSplitCoordinator<K, V> segmentSplitCoordinator;
@@ -61,6 +60,7 @@ public abstract class SstIndexImpl<K, V> extends AbstractCloseableResource
         this.cache = new UniqueCache<K, V>(
                 this.keyTypeDescriptor.getComparator(),
                 conf.getMaxNumberOfKeysInCache());
+        // TODO read cache disabling should not be done here.
         if (conf.getMaxNumberOfKeysInReadCache() != null
                 && conf.getMaxNumberOfKeysInReadCache() > 0) {
             this.readCache = new CacheLru<>(
@@ -186,22 +186,34 @@ public abstract class SstIndexImpl<K, V> extends AbstractCloseableResource
         }
 
         if (readCache != null) {
-            final Optional<V> cachedRead = readCache.get(key);
-            if (cachedRead.isPresent()) {
-                return cachedRead.get();
+            final CacheElement<V> cachedRead = readCache.getCacheElement(key);
+            if (cachedRead != null) {
+                if (cachedRead.isNull()) {
+                    return null;
+                }
+                return cachedRead.getValue();
             }
         }
 
+        final V value = getFromSegment(key);
+        if (readCache != null) {
+            if (value == null) {
+                readCache.putNull(key);
+            } else {
+                readCache.put(key, value);
+            }
+        }
+
+        return value;
+    }
+
+    private V getFromSegment(final K key) {
         final SegmentId id = keySegmentCache.findSegmentId(key);
         if (id == null) {
             return null;
         }
         final Segment<K, V> segment = segmentRegistry.getSegment(id);
-        final V value = segment.get(key);
-        if (value != null && readCache != null) {
-            readCache.put(key, value);
-        }
-        return value;
+        return segment.get(key);
     }
 
     @Override
