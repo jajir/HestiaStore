@@ -83,6 +83,7 @@ public class IndexConfigurationBuilder<K, V> {
         return this;
     }
 
+    // TODO remove it
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentCache(
             final Long maxNumberOfKeysInSegmentCache) {
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache == null
@@ -127,6 +128,7 @@ public class IndexConfigurationBuilder<K, V> {
         return this;
     }
 
+    // TODO remove it
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentCacheDuringFlushing(
             final Long maxNumberOfKeysInSegmentCacheDuringFlushing) {
         this.maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInSegmentCacheDuringFlushing == null

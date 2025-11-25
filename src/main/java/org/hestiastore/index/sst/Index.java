@@ -13,8 +13,26 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.log.Log;
 import org.hestiastore.index.log.LoggedKey;
 
+/**
+ * High-level contract for an SST-backed index that supports creating/opening
+ * instances, point mutations (put/delete), range streaming, log inspection, and
+ * consistency checks. Concrete implementations are created through the static
+ * factory helpers which take care of configuration handling.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 public interface Index<K, V> extends CloseableResource {
 
+    /**
+     * Creates a brand new index in the supplied directory. Default values are
+     * applied to the provided configuration, then both the configuration and
+     * the on-disk structures are persisted.
+     *
+     * @param directory backing directory for the index
+     * @param indexConf requested configuration overrides
+     * @return a newly created index instance
+     */
     static <M, N> Index<M, N> create(final Directory directory,
             final IndexConfiguration<M, N> indexConf) {
         final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
@@ -25,6 +43,14 @@ public interface Index<K, V> extends CloseableResource {
         return openIndex(directory, conf);
     }
 
+    /**
+     * Opens an existing index, merging the provided configuration overrides
+     * with the stored configuration on disk.
+     *
+     * @param directory backing directory that already contains the index
+     * @param indexConf configuration overrides to apply
+     * @return index instance backed by the updated configuration
+     */
     static <M, N> Index<M, N> open(final Directory directory,
             final IndexConfiguration<M, N> indexConf) {
         final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
@@ -34,12 +60,24 @@ public interface Index<K, V> extends CloseableResource {
         return openIndex(directory, mergedConf);
     }
 
+    /**
+     * Opens an existing index using the configuration stored on disk.
+     *
+     * @param directory backing directory with an existing index
+     * @return index instance backed by the persisted configuration
+     */
     static <M, N> Index<M, N> open(final Directory directory) {
         final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
                 new IndexConfiguratonStorage<>(directory));
         return openIndex(directory, confManager.loadExisting());
     }
 
+    /**
+     * Attempts to open an index when it may or may not exist.
+     *
+     * @param directory backing directory that may contain an index
+     * @return optional index instance if the configuration was found
+     */
     static <M, N> Optional<Index<M, N>> tryOpen(final Directory directory) {
         final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
                 new IndexConfiguratonStorage<>(directory));
@@ -86,17 +124,42 @@ public interface Index<K, V> extends CloseableResource {
         }
     }
 
+    /**
+     * Inserts or updates a single entry in the index.
+     *
+     * @param key   key to write
+     * @param value value to associate with the key
+     */
     void put(K key, V value);
 
+    /**
+     * Convenience overload that accepts a pre-built {@link Entry}.
+     *
+     * @param entry key/value pair to write
+     */
     default void put(final Entry<K, V> entry) {
         Vldtn.requireNonNull(entry, "entry");
         put(entry.getKey(), entry.getValue());
     }
 
+    /**
+     * Performs a point lookup for the given key.
+     *
+     * @param key key to search for
+     * @return stored value or {@code null} when no entry exists
+     */
     V get(K key);
 
+    /**
+     * Deletes (tombstones) the provided key.
+     *
+     * @param key key to remove from the index
+     */
     void delete(K key);
 
+    /**
+     * Forces a compaction pass over in-memory and on-disk data structures.
+     */
     void compact();
 
     /**
@@ -125,10 +188,20 @@ public interface Index<K, V> extends CloseableResource {
      */
     Stream<Entry<K, V>> getStream(SegmentWindow segmentWindows);
 
+    /**
+     * Convenience shortcut for streaming all segments.
+     *
+     * @return sequential stream of all entries
+     */
     default Stream<Entry<K, V>> getStream() {
         return getStream(SegmentWindow.unbounded());
     }
 
+    /**
+     * Provides a streaming view over the write-ahead log, if enabled.
+     *
+     * @return streamer over logged keys and their values
+     */
     EntryIteratorStreamer<LoggedKey<K>, V> getLogStreamer();
 
     /**
@@ -165,9 +238,10 @@ public interface Index<K, V> extends CloseableResource {
     void checkAndRepairConsistency();
 
     /**
-     * Returns the configuration of the index.
+     * Returns the configuration this index was opened with (merged with
+     * defaults where appropriate).
      *
-     * @return the configuration of the index
+     * @return effective configuration
      */
     IndexConfiguration<K, V> getConfiguration();
 }

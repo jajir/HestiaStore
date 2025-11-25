@@ -109,6 +109,53 @@ public final class Vldtn {
         return value;
     }
 
+    /**
+     * Validates that the provided long value is greater than zero.
+     *
+     * @param value        long value to validate
+     * @param propertyName name of the property for error reporting
+     * @return the original value when validation passes
+     * @throws IllegalArgumentException if {@code propertyName} is null or value
+     *                                  is not greater than zero
+     */
+    public static long requirePositiveLong(final long value,
+            final String propertyName) {
+        if (propertyName == null) {
+            throw new IllegalArgumentException(
+                    "Property 'propertyName' must not be null.");
+        }
+        if (value <= 0) {
+            throw new IllegalArgumentException(String.format(
+                    "Property '%s' must be greater than 0", propertyName));
+        }
+        return value;
+    }
+
+    /**
+     * Validates that the provided long value is strictly less than the given
+     * upper bound.
+     *
+     * @param value        the value to validate
+     * @param maxExclusive exclusive upper bound
+     * @param propertyName name of the property for error reporting
+     * @return the original value when validation passes
+     * @throws IllegalArgumentException if {@code propertyName} is null or value
+     *                                  is not less than {@code maxExclusive}
+     */
+    public static long requireLessThan(final long value,
+            final long maxExclusive, final String propertyName) {
+        if (propertyName == null) {
+            throw new IllegalArgumentException(
+                    "Property 'propertyName' must not be null.");
+        }
+        if (value >= maxExclusive) {
+            throw new IllegalArgumentException(String.format(
+                    "Property '%s' must be less than %d", propertyName,
+                    maxExclusive));
+        }
+        return value;
+    }
+
     private static final int CELL_SIZE = 16;
 
     /**

@@ -9,6 +9,15 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.log.Log;
 
+/**
+ * Default single-threaded implementation of {@link IndexInternal}. It inherits
+ * the bulk of the SST-backed index behavior from {@link SstIndexImpl} and only
+ * exposes an {@link #getStream(SegmentWindow)} implementation that converts the
+ * low-level iterator into a Java {@link Stream}.
+ *
+ * @param <K> key type handled by the index
+ * @param <V> value type handled by the index
+ */
 public class IndexInternalDefault<K, V> extends SstIndexImpl<K, V> {
 
     public IndexInternalDefault(final Directory directory,
@@ -18,6 +27,11 @@ public class IndexInternalDefault<K, V> extends SstIndexImpl<K, V> {
         super(directory, keyTypeDescriptor, valueTypeDescriptor, conf, log);
     }
 
+    /**
+     * Streams over entries contained in the given segment window. The returned
+     * stream is non-parallel and closes the underlying iterator when the stream
+     * is closed by the caller.
+     */
     @Override
     public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindow) {
         indexState.tryPerformOperation();

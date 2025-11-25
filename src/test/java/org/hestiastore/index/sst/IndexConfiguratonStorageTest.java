@@ -37,6 +37,7 @@ class IndexConfiguratonStorageTest {
 
     private IndexConfiguratonStorage<String, Long> storage;
 
+    private static final int MAX_KEYS_IN_READ_CACHE = 87979;
     private static final long MAX_KEYS_IN_SEGMENT_CACHE = 5000L;
     private static final long MAX_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING = 5777;
     private static final int MAX_INDEX_PAGE = 256;
@@ -57,6 +58,7 @@ class IndexConfiguratonStorageTest {
                 .withValueClass(Long.class)//
                 .withKeyTypeDescriptor(TD_STRING)//
                 .withValueTypeDescriptor(TD_LONG)//
+                .withMaxNumberOfKeysInReadCache(MAX_KEYS_IN_READ_CACHE)//
                 .withMaxNumberOfKeysInSegmentCache(MAX_KEYS_IN_SEGMENT_CACHE)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(
                         MAX_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING)//
@@ -81,6 +83,8 @@ class IndexConfiguratonStorageTest {
         assertEquals(Long.class, ret.getValueClass());
         assertEquals(TD_STRING, ret.getKeyTypeDescriptor());
         assertEquals(TD_LONG, ret.getValueTypeDescriptor());
+        assertEquals(MAX_KEYS_IN_READ_CACHE,
+                ret.getMaxNumberOfKeysInReadCache());
         assertEquals((int) MAX_KEYS_IN_SEGMENT_CACHE,
                 ret.getMaxNumberOfKeysInSegmentCache());
         assertEquals((int) MAX_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING,
@@ -110,6 +114,7 @@ class IndexConfiguratonStorageTest {
                 .withKeyTypeDescriptor(TD_STRING)//
                 .withValueTypeDescriptor(TD_LONG)//
                 .withName(INDX_NAME)//
+                .withMaxNumberOfKeysInReadCache(MAX_KEYS_IN_READ_CACHE)//
                 .withMaxNumberOfKeysInSegmentCache(MAX_KEYS_IN_SEGMENT_CACHE)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(
                         MAX_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING)//
@@ -164,6 +169,7 @@ class IndexConfiguratonStorageTest {
                 .withValueClass(Long.class)//
                 .withKeyTypeDescriptor(TD_STRING)//
                 .withValueTypeDescriptor(TD_LONG)//
+                .withMaxNumberOfKeysInReadCache(MAX_KEYS_IN_READ_CACHE)//
                 .withMaxNumberOfKeysInSegmentCache(MAX_KEYS_IN_SEGMENT_CACHE)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(
                         MAX_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING)//
