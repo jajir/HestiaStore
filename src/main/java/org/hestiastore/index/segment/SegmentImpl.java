@@ -9,6 +9,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.WriteTransaction.WriterFunction;
 import org.hestiastore.index.bloomfilter.BloomFilter;
+import org.hestiastore.index.directory.FileReaderSeekable;
 import org.hestiastore.index.scarceindex.ScarceIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +44,8 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     private final SegmentSplitter<K, V> segmentSplitter;
     private final SegmentSplitterPolicy<K, V> segmentSplitterPolicy;
     private final SegmentCompactionPolicyWithManager segmentCompactionPolicy;
+    private SegmentIndexSearcher<K, V> segmentIndexSearcher;
+    private FileReaderSeekable seekableReader;
 
     // Reduced constructors: keep only the most complex constructor below.
 
@@ -164,7 +167,8 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
                 .getSegmentDeltaCache();
         final BloomFilter<K> bloomFilter = segmentDataProvider.getBloomFilter();
         final ScarceIndex<K> scarceIndex = segmentDataProvider.getScarceIndex();
-        return segmentSearcher.get(key, deltaCache, bloomFilter, scarceIndex);
+        return segmentSearcher.get(key, deltaCache, bloomFilter, scarceIndex,
+                getSegmentIndexSearcher());
     }
 
     /**
@@ -222,6 +226,7 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
 
     @Override
     protected void doClose() {
+        resetSegmentIndexSearcher();
         logger.debug("Closing segment '{}'", segmentFiles.getId());
     }
 
@@ -245,6 +250,43 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
 
     public SegmentPropertiesManager getSegmentPropertiesManager() {
         return segmentPropertiesManager;
+    }
+
+    SegmentIndexSearcher<K, V> getSegmentIndexSearcher() {
+        if (segmentIndexSearcher == null) {
+            segmentIndexSearcher = new SegmentIndexSearcher<>(
+                    segmentFiles.getIndexFile(),
+                    segmentConf.getMaxNumberOfKeysInChunk(),
+                    segmentFiles.getKeyTypeDescriptor().getComparator(),
+                    getSeekableReader());
+        }
+        return segmentIndexSearcher;
+    }
+
+    FileReaderSeekable getSeekableReader() {
+        if (seekableReader == null) {
+            final String indexFileName = segmentFiles.getIndexFileName();
+            if (segmentFiles.getDirectory().isFileExists(indexFileName)) {
+                seekableReader = segmentFiles.getDirectory()
+                        .getFileReaderSeekable(indexFileName);
+            }
+        }
+        return seekableReader;
+    }
+
+    void resetSegmentIndexSearcher() {
+        if (segmentIndexSearcher != null) {
+            segmentIndexSearcher.close();
+            segmentIndexSearcher = null;
+        }
+        resetSeekableReader();
+    }
+
+    void resetSeekableReader() {
+        if (seekableReader != null) {
+            seekableReader.close();
+            seekableReader = null;
+        }
     }
 
 }

@@ -6,6 +6,7 @@ import org.hestiastore.index.chunkstore.CellPosition;
 import org.hestiastore.index.chunkstore.ChunkStoreFile;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.TypeDescriptor;
+import org.hestiastore.index.directory.FileReaderSeekable;
 
 /**
  * Class allows read and write entries from and to chunks.
@@ -41,6 +42,16 @@ public class ChunkEntryFile<K, V> {
         return new ChunkEntryFileIterator<>(
                 chunkStoreFile.openReader(
                         CellPosition.of(dataBlockSize, (int) position)),
+                chunk -> new SingleChunkEntryIterator<>(chunk, keyTypeDescriptor,
+                        valueTypeDescriptor));
+    }
+
+    public EntryIteratorWithCurrent<K, V> openIteratorAtPosition(
+            final long position, final FileReaderSeekable seekableReader) {
+        return new ChunkEntryFileIterator<>(
+                chunkStoreFile.openReader(
+                        CellPosition.of(dataBlockSize, (int) position),
+                        seekableReader),
                 chunk -> new SingleChunkEntryIterator<>(chunk, keyTypeDescriptor,
                         valueTypeDescriptor));
     }

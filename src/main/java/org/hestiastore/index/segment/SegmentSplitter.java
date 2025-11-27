@@ -52,6 +52,7 @@ public class SegmentSplitter<K, V> {
         Vldtn.requireNonNull(segmentId, "segmentId");
         Vldtn.requireNonNull(plan, "plan");
         logger.debug("Splitting of '{}' started", segment.getId());
+        segment.resetSegmentIndexSearcher();
         versionController.changeVersion();
 
         final SegmentSplitContext<K, V> ctx = new SegmentSplitContext<>(segment,

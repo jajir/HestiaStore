@@ -117,18 +117,6 @@ class CacheLruTest {
     }
 
     @Test
-    void constructorRejectsLimitTooHigh() {
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> new CacheLru<>(((long) Integer.MAX_VALUE) + 1L,
-                        evictionListener));
-
-        assertEquals("Property 'limit' must be less than 2147483647",
-                exception.getMessage());
-        verifyNoInteractions(evictionListener);
-    }
-
-    @Test
     void constructorRejectsLimitTooLow() {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,

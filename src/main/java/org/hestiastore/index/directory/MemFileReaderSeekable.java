@@ -13,7 +13,7 @@ public class MemFileReaderSeekable extends MemFileReader
             throw new IllegalArgumentException(
                     String.format("Seek position '%s' is invalid", position));
         }
-        if (position >= getDataLength()) {
+        if (position > getDataLength()) {
             throw new IllegalArgumentException(String.format(
                     "Seek position '%s' is out of data size", position));
         }

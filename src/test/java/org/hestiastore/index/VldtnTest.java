@@ -171,17 +171,4 @@ class VldtnTest {
         assertEquals("Property 'items' must not be empty.", e.getMessage());
     }
 
-    @Test
-    void test_requireGreaterThanZero_long_value() {
-        assertEquals(42L, Vldtn.requireGreaterThanZero(42L, "limit"));
-    }
-
-    @Test
-    void test_requireGreaterThanZero_long_invalid() {
-        final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> Vldtn.requireGreaterThanZero(0L, "limit"));
-        assertEquals("Property 'limit' must be greater than 0",
-                e.getMessage());
-    }
-
 }

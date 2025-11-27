@@ -2,7 +2,7 @@ package org.hestiastore.index.datablockfile;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.FileReader;
+import org.hestiastore.index.directory.FileReaderSeekable;
 
 /**
  * Data block file is a file that contains data blocks of fixed size. Each data
@@ -52,23 +52,44 @@ public class DataBlockFile {
      * @return a reader for the specified data block
      */
     public DataBlockReader openReader(final DataBlockPosition blockPosition) {
+        return openReader(blockPosition, null);
+    }
+
+    /**
+     * Opens a reader for the specified block position using the provided
+     * seekable reader when present.
+     *
+     * @param blockPosition the position of the data block to read
+     * @param seekableReader optional seekable reader to reuse; when {@code null}
+     *                       a new reader is created and owned by the returned
+     *                       {@link DataBlockReader}
+     * @return a reader for the specified data block
+     */
+    public DataBlockReader openReader(final DataBlockPosition blockPosition,
+            final FileReaderSeekable seekableReader) {
         Vldtn.requireNonNull(blockPosition, "blockPosition");
         if (blockPosition.getValue() < FIRST_BLOCK.getValue()) {
             throw new IllegalArgumentException(String.format(
                     "Block position must be >= '%s'", FIRST_BLOCK.getValue()));
         }
         if (directory.isFileExists(fileName)) {
-            return new DataBlockReaderImpl(getFileReader(blockPosition),
-                    blockPosition, blockSize);
+            final FileReaderSeekable reader = getFileReader(blockPosition,
+                    seekableReader);
+            final boolean closeOnClose = seekableReader == null;
+            return new DataBlockReaderImpl(reader, blockPosition, blockSize,
+                    closeOnClose);
         } else {
             return new DataBlockReaderEmpty();
         }
     }
 
-    private FileReader getFileReader(final DataBlockPosition blockPosition) {
-        FileReader out = directory.getFileReader(fileName,
-                blockSize.getDataBlockSize());
-        out.skip(blockPosition.getValue());
+    private FileReaderSeekable getFileReader(final DataBlockPosition blockPosition,
+            final FileReaderSeekable seekableReader) {
+        FileReaderSeekable out = seekableReader;
+        if (out == null) {
+            out = directory.getFileReaderSeekable(fileName);
+        }
+        out.seek(blockPosition.getValue());
         return out;
     }
 
