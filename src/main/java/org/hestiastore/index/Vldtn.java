@@ -110,28 +110,6 @@ public final class Vldtn {
     }
 
     /**
-     * Validates that the provided long value is greater than zero.
-     *
-     * @param value        long value to validate
-     * @param propertyName name of the property for error reporting
-     * @return the original value when validation passes
-     * @throws IllegalArgumentException if {@code propertyName} is null or value
-     *                                  is not greater than zero
-     */
-    public static long requireGreaterThanZero(final long value,
-            final String propertyName) {
-        if (propertyName == null) {
-            throw new IllegalArgumentException(
-                    "Property 'propertyName' must not be null.");
-        }
-        if (value <= 0) {
-            throw new IllegalArgumentException(String.format(
-                    "Property '%s' must be greater than 0", propertyName));
-        }
-        return value;
-    }
-
-    /**
      * Validates that the provided long value is strictly less than the given
      * upper bound.
      *

@@ -40,6 +40,7 @@ public final class SegmentCompacter<K, V> {
     public void forceCompact(final SegmentImpl<K, V> segment) {
         final SegmentFiles<K, V> segmentFiles = segment.getSegmentFiles();
         logger.debug("Start of compacting '{}'", segmentFiles.getId());
+        segment.resetSegmentIndexSearcher();
         versionController.changeVersion();
         segment.executeFullWriteTx(writer -> {
             try (EntryIterator<K, V> iterator = segment.openIterator()) {

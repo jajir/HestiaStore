@@ -356,12 +356,8 @@ public final class SegmentBuilder<K, V> {
             segmentDataProvider = new SegmentDataProviderSimple<>(
                     segmentDataFactory);
         }
-        final SegmentIndexSearcher<K, V> segmentIndexSearcher = new SegmentIndexSearcher<>(
-                segmentFiles.getIndexFile(),
-                segmentConf.getMaxNumberOfKeysInChunk(),
-                segmentFiles.getKeyTypeDescriptor().getComparator());
         final SegmentSearcher<K, V> segmentSearcher = new SegmentSearcher<K, V>(
-                segmentFiles.getValueTypeDescriptor(), segmentIndexSearcher);
+                segmentFiles.getValueTypeDescriptor());
         final SegmentCompactionPolicyWithManager compactionPolicy =
                 SegmentCompactionPolicyWithManager.from(segmentConf, segmentPropertiesManager);
         final SegmentDeltaCacheController<K, V> deltaCacheController = new SegmentDeltaCacheController<>(

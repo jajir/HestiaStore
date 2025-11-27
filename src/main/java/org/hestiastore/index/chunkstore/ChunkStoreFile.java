@@ -8,6 +8,7 @@ import org.hestiastore.index.datablockfile.DataBlockByteReaderImpl;
 import org.hestiastore.index.datablockfile.DataBlockFile;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.FileReaderSeekable;
 
 /**
  * A file that stores chunks of data in a chunk store.
@@ -47,9 +48,15 @@ public class ChunkStoreFile {
      * @return a ChunkStoreReader for reading the chunk
      */
     public ChunkStoreReader openReader(final CellPosition chunkPosition) {
+        return openReader(chunkPosition, null);
+    }
+
+    public ChunkStoreReader openReader(final CellPosition chunkPosition,
+            final FileReaderSeekable seekableReader) {
         final DataBlockByteReader dataBlockByteReader = new DataBlockByteReaderImpl(
                 dataBlockFile
-                        .openReader(chunkPosition.getDataBlockStartPosition()),
+                        .openReader(chunkPosition.getDataBlockStartPosition(),
+                                seekableReader),
                 dataBlockSize, chunkPosition.getCellIndex());
         return new ChunkStoreReaderImpl(dataBlockByteReader,
                 decodingChunkFilters);

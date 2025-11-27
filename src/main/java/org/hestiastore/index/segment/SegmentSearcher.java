@@ -20,22 +20,20 @@ import org.hestiastore.index.scarceindex.ScarceIndex;
 public class SegmentSearcher<K, V> extends AbstractCloseableResource {
 
     private final TypeDescriptor<V> valueTypeDescriptor;
-    private final SegmentIndexSearcher<K, V> segmentIndexSearcher;
 
-    public SegmentSearcher(final TypeDescriptor<V> valueTypeDescriptor,
-            final SegmentIndexSearcher<K, V> segmentIndexSearcher) {
+    public SegmentSearcher(final TypeDescriptor<V> valueTypeDescriptor) {
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
-        this.segmentIndexSearcher = Vldtn.requireNonNull(segmentIndexSearcher,
-                "segmentIndexSearcher");
     }
 
     public V get(final K key, final SegmentDeltaCache<K, V> deltaCache,
             final BloomFilter<K> bloomFilter,
-            final ScarceIndex<K> scarceIndex) {
+            final ScarceIndex<K> scarceIndex,
+            final SegmentIndexSearcher<K, V> segmentIndexSearcher) {
         Vldtn.requireNonNull(deltaCache, "deltaCache");
         Vldtn.requireNonNull(bloomFilter, "bloomFilter");
         Vldtn.requireNonNull(scarceIndex, "scarceIndex");
+        Vldtn.requireNonNull(segmentIndexSearcher, "segmentIndexSearcher");
         // look in cache
         final V out = deltaCache.get(key);
         if (valueTypeDescriptor.isTombstone(out)) {
@@ -69,7 +67,7 @@ public class SegmentSearcher<K, V> extends AbstractCloseableResource {
 
     @Override
     protected void doClose() {
-        segmentIndexSearcher.close();
+        // intentionally no-op
     }
 
 }

@@ -19,7 +19,7 @@ import org.hestiastore.index.Vldtn;
  */
 public final class CacheLru<K, V> implements Cache<K, V> {
 
-    private final long limit;
+    private final int limit;
 
     private final Map<K, CacheElement<V>> cache;
 
@@ -27,14 +27,13 @@ public final class CacheLru<K, V> implements Cache<K, V> {
 
     private long accessCx = 0;
 
-    public CacheLru(final long limit,
+    public CacheLru(final int limit,
             final BiConsumer<K, V> evictedElementConsumer) {
         this.evictedElementConsumer = Vldtn.requireNonNull(
                 evictedElementConsumer, "evictedElementConsumer");
         Vldtn.requireGreaterThanZero(limit, "limit");
-        Vldtn.requireLessThan(limit, Integer.MAX_VALUE, "limit");
         this.limit = limit;
-        this.cache = new HashMap<>((int) limit);
+        this.cache = new HashMap<>(limit);
     }
 
     @Override

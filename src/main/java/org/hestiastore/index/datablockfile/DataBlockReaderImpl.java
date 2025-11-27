@@ -4,7 +4,7 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.directory.FileReader;
+import org.hestiastore.index.directory.FileReaderSeekable;
 
 /**
  * Implementation of {@link DataBlockReader}.
@@ -12,21 +12,26 @@ import org.hestiastore.index.directory.FileReader;
 public class DataBlockReaderImpl extends AbstractCloseableResource
         implements DataBlockReader {
 
-    private final FileReader fileReader;
+    private final FileReaderSeekable fileReader;
     private final DataBlockSize blockSize;
+    private final boolean closeReaderOnClose;
     private int position;
 
-    DataBlockReaderImpl(final FileReader fileReader,
+    DataBlockReaderImpl(final FileReaderSeekable fileReader,
             final DataBlockPosition blockPosition,
-            final DataBlockSize blockSize) {
+            final DataBlockSize blockSize,
+            final boolean closeReaderOnClose) {
         this.fileReader = Vldtn.requireNonNull(fileReader, "fileReader");
         this.blockSize = blockSize;
         this.position = blockPosition.getValue();
+        this.closeReaderOnClose = closeReaderOnClose;
     }
 
     @Override
     protected void doClose() {
-        fileReader.close();
+        if (closeReaderOnClose) {
+            fileReader.close();
+        }
     }
 
     @Override

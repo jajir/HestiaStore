@@ -12,7 +12,7 @@ import java.util.Arrays;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.TestData;
-import org.hestiastore.index.directory.FileReader;
+import org.hestiastore.index.directory.FileReaderSeekable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,14 +30,14 @@ public class DataBlockReaderImplTest {
             .of(2048);
 
     @Mock
-    private FileReader fileReader;
+    private FileReaderSeekable fileReader;
 
     private DataBlockReaderImpl reader;
 
     @BeforeEach
     void beforeEach() {
         reader = new DataBlockReaderImpl(fileReader, BLOCK_POSITION,
-                BLOCK_SIZE);
+                BLOCK_SIZE, true);
     }
 
     @AfterEach

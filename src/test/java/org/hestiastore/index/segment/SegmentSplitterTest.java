@@ -175,6 +175,7 @@ class SegmentSplitterTest {
         verify(lowerSegmentFullWriter, times(1)).close();
         verify(segmentFullWriter, times(1)).write(ENTRY3);
         verify(segmentFullWriter, times(1)).close();
+        verify(segment, times(1)).resetSegmentIndexSearcher();
         verify(versionController, times(1)).changeVersion();
         verify(segmentIterator, times(1)).close();
         verify(lowerSegmentWriteTx, times(1)).commit();

@@ -4,9 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -68,6 +71,10 @@ class SegmentImplTest {
     @Mock
     private BloomFilter<Integer> bloomFilter;
     @Mock
+    private org.hestiastore.index.directory.Directory directory;
+    @Mock
+    private org.hestiastore.index.directory.FileReaderSeekable seekableReader;
+    @Mock
     private BloomFilterWriter<Integer> bloomFilterWriter;
     @Mock
     private BloomFilterWriterTx<Integer> bloomFilterWriterTx;
@@ -100,6 +107,11 @@ class SegmentImplTest {
         when(segmentFiles.getKeyTypeDescriptor()).thenReturn(tdi);
         when(segmentFiles.getValueTypeDescriptor()).thenReturn(tds);
         when(segmentFiles.getIndexFile()).thenReturn(chunkPairFile);
+        when(segmentFiles.getIndexFileName()).thenReturn("segment.index");
+        when(segmentFiles.getDirectory()).thenReturn(directory);
+        when(directory.isFileExists("segment.index")).thenReturn(true);
+        when(directory.getFileReaderSeekable("segment.index"))
+                .thenReturn(seekableReader);
         when(chunkPairFile.openWriterTx()).thenReturn(chunkEntryWriterTx);
         when(chunkEntryWriterTx.openWriter()).thenReturn(chunkEntryWriter);
         when(chunkPairFile.openIterator()).thenReturn(indexIterator);
@@ -189,10 +201,30 @@ class SegmentImplTest {
 
     @Test
     void get_uses_searcher_and_provider() {
-        when(segmentSearcher.get(123, deltaCache, bloomFilter, scarceIndex))
-                .thenReturn("val");
+        when(segmentSearcher.get(eq(123), eq(deltaCache), eq(bloomFilter),
+                eq(scarceIndex), any())).thenReturn("val");
         assertEquals("val", subject.get(123));
-        verify(segmentSearcher).get(123, deltaCache, bloomFilter, scarceIndex);
+        verify(segmentSearcher).get(eq(123), eq(deltaCache), eq(bloomFilter),
+                eq(scarceIndex), any());
+    }
+
+    @Test
+    void segmentIndexSearcher_is_lazy_and_cached() {
+        final SegmentIndexSearcher<Integer, String> first = subject
+                .getSegmentIndexSearcher();
+        final SegmentIndexSearcher<Integer, String> second = subject
+                .getSegmentIndexSearcher();
+        assertSame(first, second);
+    }
+
+    @Test
+    void resetSegmentIndexSearcher_recreates_instance() {
+        final SegmentIndexSearcher<Integer, String> first = subject
+                .getSegmentIndexSearcher();
+        subject.resetSegmentIndexSearcher();
+        final SegmentIndexSearcher<Integer, String> second = subject
+                .getSegmentIndexSearcher();
+        assertNotSame(first, second);
     }
 
     @Test
