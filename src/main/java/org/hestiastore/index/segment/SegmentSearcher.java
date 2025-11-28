@@ -1,6 +1,9 @@
 package org.hestiastore.index.segment;
 
+import java.util.List;
+
 import org.hestiastore.index.AbstractCloseableResource;
+import org.hestiastore.index.Filter;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilter;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -19,50 +22,27 @@ import org.hestiastore.index.scarceindex.ScarceIndex;
  */
 public class SegmentSearcher<K, V> extends AbstractCloseableResource {
 
-    private final TypeDescriptor<V> valueTypeDescriptor;
+    private final List<Filter<SegmentSearcherContext<K, V>, SegmentSearcherResult<V>>> steps;
 
     public SegmentSearcher(final TypeDescriptor<V> valueTypeDescriptor) {
-        this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
-                "valueTypeDescriptor");
+        this.steps = List.of(//
+                new SegmentSearcherStepDeltaCache<>(
+                        Vldtn.requireNonNull(valueTypeDescriptor,
+                                "valueTypeDescriptor")), //
+                new SegmentSearcherStepBloomFilter<>(), //
+                new SegmentSearcherStepIndexFile<>()//
+        );
     }
 
-    public V get(final K key, final SegmentDeltaCache<K, V> deltaCache,
-            final BloomFilter<K> bloomFilter,
-            final ScarceIndex<K> scarceIndex,
+    public V get(final K key, final SegmentDataProvider<K, V> segmentDataProvider,
             final SegmentIndexSearcher<K, V> segmentIndexSearcher) {
-        Vldtn.requireNonNull(deltaCache, "deltaCache");
-        Vldtn.requireNonNull(bloomFilter, "bloomFilter");
-        Vldtn.requireNonNull(scarceIndex, "scarceIndex");
-        Vldtn.requireNonNull(segmentIndexSearcher, "segmentIndexSearcher");
-        // look in cache
-        final V out = deltaCache.get(key);
-        if (valueTypeDescriptor.isTombstone(out)) {
-            return null;
-        }
-
-        if (out != null) {
-            return out;
-        }
-
-        // look in bloom filter
-        if (bloomFilter.isNotStored(key)) {
-            /*
-             * It's sure that key is not in index.
-             */
-            return null;
-        }
-
-        // look in index file
-        final Integer position = scarceIndex.get(key);
-        if (position == null) {
-            return null;
-        }
-        final V value = segmentIndexSearcher.search(key, position);
-        if (value == null) {
-            bloomFilter.incrementFalsePositive();
-            return null;
-        }
-        return value;
+        final SegmentSearcherContext<K, V> ctx = SegmentSearcherContext.of(key,
+                segmentDataProvider, segmentIndexSearcher);
+        final SegmentSearcherResult<V> result = new SegmentSearcherResult<>();
+        final SegmentSearcherPipeline<K, V> pipeline = new SegmentSearcherPipeline<>(
+                steps);
+        pipeline.run(ctx, result);
+        return result.getValue();
     }
 
     @Override

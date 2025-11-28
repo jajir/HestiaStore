@@ -201,11 +201,10 @@ class SegmentImplTest {
 
     @Test
     void get_uses_searcher_and_provider() {
-        when(segmentSearcher.get(eq(123), eq(deltaCache), eq(bloomFilter),
-                eq(scarceIndex), any())).thenReturn("val");
+        when(segmentSearcher.get(eq(123), eq(segmentDataProvider), any()))
+                .thenReturn("val");
         assertEquals("val", subject.get(123));
-        verify(segmentSearcher).get(eq(123), eq(deltaCache), eq(bloomFilter),
-                eq(scarceIndex), any());
+        verify(segmentSearcher).get(eq(123), eq(segmentDataProvider), any());
     }
 
     @Test
