@@ -83,15 +83,6 @@ public class IndexConfigurationBuilder<K, V> {
         return this;
     }
 
-    // TODO remove it
-    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentCache(
-            final Long maxNumberOfKeysInSegmentCache) {
-        this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache == null
-                ? null
-                : maxNumberOfKeysInSegmentCache.intValue();
-        return this;
-    }
-
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentCache(
             final Integer maxNumberOfKeysInSegmentCache) {
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
@@ -125,15 +116,6 @@ public class IndexConfigurationBuilder<K, V> {
     public IndexConfigurationBuilder<K, V> withMaxNumberOfSegmentsInCache(
             final Integer maxNumberOfSegmentsInCache) {
         this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
-        return this;
-    }
-
-    // TODO remove it
-    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentCacheDuringFlushing(
-            final Long maxNumberOfKeysInSegmentCacheDuringFlushing) {
-        this.maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInSegmentCacheDuringFlushing == null
-                ? null
-                : maxNumberOfKeysInSegmentCacheDuringFlushing.intValue();
         return this;
     }
 

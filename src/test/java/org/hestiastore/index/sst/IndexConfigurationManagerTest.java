@@ -41,8 +41,8 @@ class IndexConfigurationManagerTest {
             .withName("test_index")//
             .withContextLoggingEnabled(false)//
             .withThreadSafe(false)//
-            .withMaxNumberOfKeysInSegmentCache(11L)//
-            .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22L) //
+            .withMaxNumberOfKeysInSegmentCache(11)//
+            .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22) //
             .withMaxNumberOfKeysInSegmentChunk(33)//
             .withMaxNumberOfKeysInSegment(44)//
             .withMaxNumberOfKeysInCache(55)//
@@ -319,7 +319,7 @@ class IndexConfigurationManagerTest {
                 .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(4)//
                 .withMaxNumberOfSegmentsInCache(3)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(2L) //
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(2) //
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -342,8 +342,8 @@ class IndexConfigurationManagerTest {
                 .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(4)//
                 .withMaxNumberOfSegmentsInCache(3)//
-                .withMaxNumberOfKeysInSegmentCache(11L)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(5L) //
+                .withMaxNumberOfKeysInSegmentCache(11)//
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(5) //
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -364,8 +364,8 @@ class IndexConfigurationManagerTest {
                 .withValueTypeDescriptor(TD_STRING)//
                 .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInSegmentCache(11L)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22L) //
+                .withMaxNumberOfKeysInSegmentCache(11)//
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22) //
                 .withMaxNumberOfKeysInSegmentChunk(33)//
                 .withMaxNumberOfKeysInSegment(44)//
                 .withMaxNumberOfSegmentsInCache(66)//
@@ -397,8 +397,8 @@ class IndexConfigurationManagerTest {
                 .withValueTypeDescriptor(TD_STRING)//
                 .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInSegmentCache(11L)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22L) //
+                .withMaxNumberOfKeysInSegmentCache(11)//
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22) //
                 .withMaxNumberOfKeysInSegmentChunk(33)//
                 .withMaxNumberOfKeysInSegment(44)//
                 .withMaxNumberOfSegmentsInCache(66)//
@@ -520,7 +520,7 @@ class IndexConfigurationManagerTest {
     void test_mergeWithStored_maxNumberOfKeysInSegmentCache() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withMaxNumberOfKeysInSegmentCache(8L)//
+                .withMaxNumberOfKeysInSegmentCache(8)//
                 .build();
 
         when(storage.load()).thenReturn(CONFIG);
@@ -801,8 +801,8 @@ class IndexConfigurationManagerTest {
                 .withName("base_index")//
                 .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInSegmentCache(11L)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22L)//
+                .withMaxNumberOfKeysInSegmentCache(11)//
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22)//
                 .withMaxNumberOfKeysInSegmentChunk(33)//
                 .withMaxNumberOfKeysInSegment(44)//
                 .withMaxNumberOfKeysInCache(55)//
