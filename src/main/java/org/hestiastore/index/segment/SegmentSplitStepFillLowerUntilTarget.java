@@ -2,15 +2,15 @@ package org.hestiastore.index.segment;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryWriter;
+import org.hestiastore.index.Filter;
 import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.Vldtn;
 
 final class SegmentSplitStepFillLowerUntilTarget<K, V>
-        implements SegmentSplitStep<K, V> {
+        implements Filter<SegmentSplitContext<K, V>, SegmentSplitState<K, V>> {
 
     @Override
-    public SegmentSplitterResult<K, V> perform(
-            final SegmentSplitContext<K, V> ctx,
+    public boolean filter(final SegmentSplitContext<K, V> ctx,
             final SegmentSplitState<K, V> state) {
         Vldtn.requireNonNull(ctx, "ctx");
         Vldtn.requireNonNull(state, "state");
@@ -28,6 +28,6 @@ final class SegmentSplitStepFillLowerUntilTarget<K, V>
             }
         }
         lowerSegmentWriteTx.commit();
-        return null;
+        return true;
     }
 }

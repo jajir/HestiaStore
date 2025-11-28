@@ -52,14 +52,14 @@ class SegmentSplitStepFillLowerUntilTargetTest {
     @Test
     void test_missing_ctx() {
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.perform(null, new SegmentSplitState<>()));
+                () -> step.filter(null, new SegmentSplitState<>()));
         assertEquals("Property 'ctx' must not be null.", err.getMessage());
     }
 
     @Test
     void test_missing_state() {
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.perform(
+                () -> step.filter(
                         new SegmentSplitContext<>(null, null, null, null),
                         null));
         assertEquals("Property 'state' must not be null.", err.getMessage());
@@ -68,7 +68,7 @@ class SegmentSplitStepFillLowerUntilTargetTest {
     @Test
     void test_missing_plan() {
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.perform(
+                () -> step.filter(
                         new SegmentSplitContext<>(null, null, null, null),
                         new SegmentSplitState<>()));
         assertEquals("Property 'plan' must not be null.", err.getMessage());
@@ -79,7 +79,7 @@ class SegmentSplitStepFillLowerUntilTargetTest {
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
                 null, null, feasiblePlan(), null);
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.perform(ctx, new SegmentSplitState<>()));
+                () -> step.filter(ctx, new SegmentSplitState<>()));
         assertEquals("Property 'lowerSegment' must not be null.",
                 err.getMessage());
     }
@@ -95,7 +95,7 @@ class SegmentSplitStepFillLowerUntilTargetTest {
                 .mock(SegmentImpl.class);
         state.setLowerSegment(lower);
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.perform(ctx, state));
+                () -> step.filter(ctx, state));
         assertEquals("Property 'iterator' must not be null.", err.getMessage());
     }
 
@@ -122,7 +122,7 @@ class SegmentSplitStepFillLowerUntilTargetTest {
         state.setIterator(it);
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
                 null, null, feasiblePlan(), null);
-        step.perform(ctx, state);
+        step.filter(ctx, state);
         // half of 6 is 3; expect 3 writes
         verify(writer, times(3)).write(any());
         verify(tx).commit();

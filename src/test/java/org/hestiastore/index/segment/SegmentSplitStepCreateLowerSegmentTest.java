@@ -35,14 +35,14 @@ class SegmentSplitStepCreateLowerSegmentTest {
     @Test
     void test_missing_ctx() {
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.perform(null, new SegmentSplitState<>()));
+                () -> step.filter(null, new SegmentSplitState<>()));
         assertEquals("Property 'ctx' must not be null.", err.getMessage());
     }
 
     @Test
     void test_missing_state() {
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.perform(
+                () -> step.filter(
                         new SegmentSplitContext<>(null, null, null, null),
                         null));
         assertEquals("Property 'state' must not be null.", err.getMessage());
@@ -51,7 +51,7 @@ class SegmentSplitStepCreateLowerSegmentTest {
     @Test
     void test_missing_segment() {
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.perform(new SegmentSplitContext<>(null, null, null,
+                () -> step.filter(new SegmentSplitContext<>(null, null, null,
                         SegmentId.of(1)), new SegmentSplitState<>()));
         assertEquals("Property 'segment' must not be null.", err.getMessage());
     }
@@ -59,7 +59,7 @@ class SegmentSplitStepCreateLowerSegmentTest {
     @Test
     void test_missing_lowerSegmentId() {
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.perform(
+                () -> step.filter(
                         new SegmentSplitContext<>(segment, null, null, null),
                         new SegmentSplitState<>()));
         assertEquals("Property 'lowerSegmentId' must not be null.",
@@ -74,7 +74,7 @@ class SegmentSplitStepCreateLowerSegmentTest {
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
                 segment, null, null, id);
         final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
-        step.perform(ctx, state);
+        step.filter(ctx, state);
         verify(segment).createSegmentWithSameConfig(id);
         assertNotNull(state.getLowerSegment());
     }
