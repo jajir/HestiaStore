@@ -76,10 +76,10 @@ class IndexConfigurationBuilderTest {
 
     @Test
     void withMaxNumberOfKeysInSegmentCacheSetsValue() {
-        final long value = 123L;
+        final int value = 123;
         final IndexConfiguration<Integer, String> config = newBuilder()
                 .withMaxNumberOfKeysInSegmentCache(value).build();
-        assertEquals((int) value, config.getMaxNumberOfKeysInSegmentCache());
+        assertEquals(value, config.getMaxNumberOfKeysInSegmentCache());
     }
 
     @Test
@@ -124,11 +124,11 @@ class IndexConfigurationBuilderTest {
 
     @Test
     void withMaxNumberOfKeysInSegmentCacheDuringFlushingSetsValue() {
-        final long value = 987L;
+        final int value = 987;
         final IndexConfiguration<Integer, String> config = newBuilder()
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(value)
                 .build();
-        assertEquals((int) value,
+        assertEquals(value,
                 config.getMaxNumberOfKeysInSegmentCacheDuringFlushing());
     }
 

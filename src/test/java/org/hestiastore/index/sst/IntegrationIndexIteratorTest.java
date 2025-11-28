@@ -104,8 +104,8 @@ class IntegrationIndexIteratorTest {
                 .withKeyTypeDescriptor(TD_INTEGER) //
                 .withValueTypeDescriptor(TD_STRING) //
                 .withMaxNumberOfKeysInSegment(4) //
-                .withMaxNumberOfKeysInSegmentCache(3L) //
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(4L)
+                .withMaxNumberOfKeysInSegmentCache(3) //
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(4)
                 .withMaxNumberOfKeysInSegmentChunk(1) //
                 .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(1000) //

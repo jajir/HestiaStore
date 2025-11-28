@@ -244,8 +244,8 @@ class IntegrationIndexSimpleTest {
                 .withValueTypeDescriptor(tds) //
                 .withDiskIoBufferSizeInBytes(DISK_IO_BUFFER_SIZE)//
                 .withMaxNumberOfKeysInSegment(5) //
-                .withMaxNumberOfKeysInSegmentCache(3L) //
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(4L) //
+                .withMaxNumberOfKeysInSegmentCache(3) //
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(4) //
                 .withMaxNumberOfKeysInSegmentChunk(2) //
                 .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(1000) //

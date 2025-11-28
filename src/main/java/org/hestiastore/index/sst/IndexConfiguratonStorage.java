@@ -76,10 +76,11 @@ public class IndexConfiguratonStorage<K, V> {
 
                 // Segment properties
                 .withMaxNumberOfKeysInSegmentCache(
-                        propsView.getLong(
+                        (int) propsView.getLong(
                                 PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE))//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(propsView.getLong(
-                        PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING))//
+                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(
+                        (int) propsView.getLong(
+                                PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING))//
                 .withMaxNumberOfKeysInSegmentChunk(
                         propsView.getInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK))//
 
