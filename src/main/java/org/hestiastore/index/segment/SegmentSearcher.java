@@ -5,9 +5,7 @@ import java.util.List;
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Filter;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.bloomfilter.BloomFilter;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.scarceindex.ScarceIndex;
 
 /**
  * Object use in memory cache and bloom filter. Only one instance for one
@@ -26,15 +24,15 @@ public class SegmentSearcher<K, V> extends AbstractCloseableResource {
 
     public SegmentSearcher(final TypeDescriptor<V> valueTypeDescriptor) {
         this.steps = List.of(//
-                new SegmentSearcherStepDeltaCache<>(
-                        Vldtn.requireNonNull(valueTypeDescriptor,
-                                "valueTypeDescriptor")), //
+                new SegmentSearcherStepDeltaCache<>(Vldtn.requireNonNull(
+                        valueTypeDescriptor, "valueTypeDescriptor")), //
                 new SegmentSearcherStepBloomFilter<>(), //
                 new SegmentSearcherStepIndexFile<>()//
         );
     }
 
-    public V get(final K key, final SegmentDataProvider<K, V> segmentDataProvider,
+    public V get(final K key,
+            final SegmentDataProvider<K, V> segmentDataProvider,
             final SegmentIndexSearcher<K, V> segmentIndexSearcher) {
         final SegmentSearcherContext<K, V> ctx = SegmentSearcherContext.of(key,
                 segmentDataProvider, segmentIndexSearcher);

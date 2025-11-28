@@ -1,16 +1,14 @@
 package org.hestiastore.index.segment;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.OptimisticLock;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.EntryIteratorWithLock;
 import org.hestiastore.index.EntryWriter;
+import org.hestiastore.index.OptimisticLock;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.WriteTransaction.WriterFunction;
-import org.hestiastore.index.bloomfilter.BloomFilter;
 import org.hestiastore.index.directory.FileReaderSeekable;
-import org.hestiastore.index.scarceindex.ScarceIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
