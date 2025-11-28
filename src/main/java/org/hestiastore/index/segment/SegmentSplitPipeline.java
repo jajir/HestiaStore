@@ -2,22 +2,31 @@ package org.hestiastore.index.segment;
 
 import java.util.List;
 
-final class SegmentSplitPipeline<K, V> {
+import org.hestiastore.index.AbstractChainOfFilters;
+import org.hestiastore.index.Filter;
 
-    private final List<SegmentSplitStep<K, V>> steps;
+/**
+ * Executes the ordered set of split steps for a single segment split.
+ * <p>
+ * Delegates step execution to the shared {@link AbstractChainOfFilters}
+ * machinery and ensures the iterator opened by earlier steps is always closed.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
+final class SegmentSplitPipeline<K, V>
+        extends AbstractChainOfFilters<SegmentSplitContext<K, V>, SegmentSplitState<K, V>> {
 
-    SegmentSplitPipeline(final List<SegmentSplitStep<K, V>> steps) {
-        this.steps = List.copyOf(steps);
+    SegmentSplitPipeline(final List<Filter<SegmentSplitContext<K, V>, SegmentSplitState<K, V>>> steps) {
+        super(List.copyOf(steps));
     }
 
     SegmentSplitterResult<K, V> run(final SegmentSplitContext<K, V> ctx) {
         final SegmentSplitState<K, V> state = new SegmentSplitState<>();
         try {
-            for (final SegmentSplitStep<K, V> step : steps) {
-                final SegmentSplitterResult<K, V> res = step.perform(ctx, state);
-                if (res != null) {
-                    return res;
-                }
+            filter(ctx, state);
+            if (state.getResult() != null) {
+                return state.getResult();
             }
             throw new IllegalStateException(
                     "Split pipeline produced no result");

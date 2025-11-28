@@ -61,14 +61,14 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
     @Test
     void test_missing_ctx() {
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.perform(null, new SegmentSplitState<>()));
+                () -> step.filter(null, new SegmentSplitState<>()));
         assertEquals("Property 'ctx' must not be null.", err.getMessage());
     }
 
     @Test
     void test_missing_state() {
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.perform(
+                () -> step.filter(
                         new SegmentSplitContext<>(null, null, null, null),
                         null));
         assertEquals("Property 'state' must not be null.", err.getMessage());
@@ -79,7 +79,7 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
         when(spm.getSegmentStats()).thenReturn(new SegmentStats(0, 5, 0));
         when(dc.getDeltaCacheSizeWithoutTombstones()).thenReturn(0);
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.perform(new SegmentSplitContext<>(null, null,
+                () -> step.filter(new SegmentSplitContext<>(null, null,
                         SegmentSplitterPlan.fromPolicy(
                                 new SegmentSplitterPolicy<>(spm, dc)),
                         null), new SegmentSplitState<>()));
@@ -89,7 +89,7 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
     @Test
     void test_missing_plan() {
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.perform(
+                () -> step.filter(
                         new SegmentSplitContext<>(segment, null, null, null),
                         new SegmentSplitState<>()));
         assertEquals("Property 'plan' must not be null.", err.getMessage());
@@ -103,7 +103,7 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
                 .fromPolicy(new SegmentSplitterPolicy<>(spm, dc));
         plan.recordLower(Entry.of(0, "z"));
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.perform(
+                () -> step.filter(
                         new SegmentSplitContext<>(segment, null, plan, null),
                         new SegmentSplitState<>()));
         assertEquals("Property 'iterator' must not be null.", err.getMessage());
@@ -120,7 +120,7 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
         state.setIterator(new EntryIteratorList<Integer, String>(
                 java.util.List.of(Entry.of(1, "a"))));
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.perform(
+                () -> step.filter(
                         new SegmentSplitContext<>(segment, null, plan, null),
                         state));
         assertEquals("Property 'lowerSegment' must not be null.",
@@ -142,10 +142,10 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
         plan.recordLower(Entry.of(0, "z"));
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
                 segment, null, plan, null);
-        final var res = step.perform(ctx, state);
+        step.filter(ctx, state);
         verify(writer, times(2)).write(any());
         verify(tx).commit();
         assertEquals(SegmentSplitterResult.SegmentSplittingStatus.SPLIT,
-                res.getStatus());
+                state.getResult().getStatus());
     }
 }

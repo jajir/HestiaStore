@@ -54,14 +54,14 @@ class SegmentSplitStepReplaceIfNoRemainingTest {
     @Test
     void test_missing_ctx() {
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.perform(null, new SegmentSplitState<>()));
+                () -> step.filter(null, new SegmentSplitState<>()));
         assertEquals("Property 'ctx' must not be null.", err.getMessage());
     }
 
     @Test
     void test_missing_state() {
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.perform(
+                () -> step.filter(
                         new SegmentSplitContext<>(null, null, null, null),
                         null));
         assertEquals("Property 'state' must not be null.", err.getMessage());
@@ -77,7 +77,7 @@ class SegmentSplitStepReplaceIfNoRemainingTest {
                         new SegmentSplitterPolicy<>(propsMgr, deltaCtrl)),
                 null);
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.perform(ctx, new SegmentSplitState<>()));
+                () -> step.filter(ctx, new SegmentSplitState<>()));
         assertEquals("Property 'iterator' must not be null.", err.getMessage());
     }
 
@@ -94,7 +94,7 @@ class SegmentSplitStepReplaceIfNoRemainingTest {
         state.setIterator(
                 new EntryIteratorList<Integer, String>(java.util.List.of()));
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.perform(ctx, state));
+                () -> step.filter(ctx, state));
         assertEquals("Property 'lowerSegment' must not be null.",
                 err.getMessage());
     }
@@ -128,8 +128,8 @@ class SegmentSplitStepReplaceIfNoRemainingTest {
         when(lowerSeg.getSegmentPropertiesManager()).thenReturn(lowerProps);
         state2.setLowerSegment(lowerSeg);
         state2.setIterator(new EntryIteratorList<Integer, String>(List.of()));
-        final var result = step.perform(ctx, state2);
-        assertNotNull(result);
+        step.filter(ctx, state2);
+        assertNotNull(state2.getResult());
         verify(filesRenamer, times(1)).renameFiles(any(), any());
 
         // Remaining path: iterator has next
@@ -137,7 +137,7 @@ class SegmentSplitStepReplaceIfNoRemainingTest {
         state3.setLowerSegment(lowerSeg);
         state3.setIterator(new EntryIteratorList<Integer, String>(
                 List.of(Entry.of(1, "a"))));
-        final var result2 = step.perform(ctx, state3);
-        assertNull(result2);
+        step.filter(ctx, state3);
+        assertNull(state3.getResult());
     }
 }
