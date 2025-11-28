@@ -1,7 +1,6 @@
 package org.hestiastore.index.segment;
 
 import java.util.Comparator;
-import java.util.function.Supplier;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
@@ -33,11 +32,13 @@ public class SegmentIndexSearcher<K, V> extends AbstractCloseableResource {
     /**
      * Creates a searcher bound to an index file and lookup limits.
      *
-     * @param chunkPairFile chunk-entry file representing the index
+     * @param chunkPairFile              chunk-entry file representing the index
      * @param maxNumberOfKeysInIndexPage maximum number of entries to scan from
-     *            the start position
-     * @param keyTypeComparator comparator used for key ordering in the index
-     * @param seekableReader optional shared reader to reuse across lookups
+     *                                   the start position
+     * @param keyTypeComparator          comparator used for key ordering in the
+     *                                   index
+     * @param seekableReader             optional shared reader to reuse across
+     *                                   lookups
      */
     SegmentIndexSearcher(final ChunkEntryFile<K, V> chunkPairFile,
             final int maxNumberOfKeysInIndexPage,
@@ -60,7 +61,7 @@ public class SegmentIndexSearcher<K, V> extends AbstractCloseableResource {
     /**
      * Searches for a key starting at the provided index position.
      *
-     * @param key target key
+     * @param key           target key
      * @param startPosition byte offset provided by the scarce index
      * @return value when found, otherwise {@code null}
      */

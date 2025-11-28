@@ -162,12 +162,7 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
 
     @Override
     public V get(final K key) {
-        // TODO following code is not ideal, because it eagerly loads all data
-        final SegmentDeltaCache<K, V> deltaCache = segmentDataProvider
-                .getSegmentDeltaCache();
-        final BloomFilter<K> bloomFilter = segmentDataProvider.getBloomFilter();
-        final ScarceIndex<K> scarceIndex = segmentDataProvider.getScarceIndex();
-        return segmentSearcher.get(key, deltaCache, bloomFilter, scarceIndex,
+        return segmentSearcher.get(key, segmentDataProvider,
                 getSegmentIndexSearcher());
     }
 
