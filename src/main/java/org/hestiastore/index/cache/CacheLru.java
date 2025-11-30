@@ -56,8 +56,10 @@ public final class CacheLru<K, V> implements Cache<K, V> {
         if (cache.size() >= limit) {
             final K keyToRemove = getOlderElement();
             final CacheElement<V> element = cache.remove(keyToRemove);
-            final V removedValue = element.getValue();
-            evictedElementConsumer.accept(keyToRemove, removedValue);
+            if (!element.isNull()) {
+                final V removedValue = element.getValue();
+                evictedElementConsumer.accept(keyToRemove, removedValue);
+            }
         }
     }
 
@@ -99,7 +101,7 @@ public final class CacheLru<K, V> implements Cache<K, V> {
     public void ivalidate(final K key) {
         Vldtn.requireNonNull(key, "key");
         final CacheElement<V> value = cache.remove(key);
-        if (value != null) {
+        if (value != null && !value.isNull()) {
             evictedElementConsumer.accept(key, value.getValue());
         }
     }
