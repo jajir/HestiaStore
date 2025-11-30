@@ -4,7 +4,7 @@ This page explains how reads resolve values with low latency and predictable I/O
 
 ## 🧭 High‑Level Flow (Point Lookup)
 
-1. API call: `Index.get(key)`
+1. API call: `SegmentIndex.get(key)`
 1. Check the index‑level unique buffer (latest in‑process writes)
 1. Locate the target segment using the key→segment map
 1. Inside the segment: consult delta cache → Bloom filter → sparse index → local scan
@@ -13,12 +13,12 @@ Lookups are read‑after‑write consistent thanks to the in‑memory buffers.
 
 ## 🚪 Entry Point and First‑Level Cache
 
-- `sst/SstIndexImpl#get(K)` does:
+- `segmentindex/SegmentIndexImpl#get(K)` does:
   - Check the index‑level `UniqueCache` (holds latest writes prior to flush)
   - If miss, find `SegmentId` via `KeySegmentCache.findSegmentId(key)`
   - Delegate to `Segment.get(key)`
 
-Key classes: `sst/SstIndexImpl.java`, `sst/KeySegmentCache.java`, `cache/UniqueCache.java`.
+Key classes: `segmentindex/SegmentIndexImpl.java`, `segmentindex/KeySegmentCache.java`, `cache/UniqueCache.java`.
 
 ### Behavior
 
@@ -36,23 +36,23 @@ Key classes: `sst/SstIndexImpl.java`, `sst/KeySegmentCache.java`, `cache/UniqueC
 1. Local scan: within at most N keys (`maxNumberOfKeysInIndexPage`) starting at that chunk, compare keys in ascending order and stop as soon as the target is found or passed.
 1. If the sparse index pointed us into the file but no exact key was found, mark a false positive on the Bloom filter for metrics and return absent.
 
-Key classes: `segment/SegmentSearcher.java`, `segment/SegmentIndexSearcher.java`, `scarceindex/ScarceIndex.java`, `bloomfilter/BloomFilter.java`.
+Key classes: `segment/SegmentSearcher.java`, `segment/SegmentIndexSearcher.java`, `scarceindex/ScarceSegmentIndex.java`, `bloomfilter/BloomFilter.java`.
 
 ## 🔁 Range Scans and Full Iteration
 
-- `Index.getStream()` and `Index.openSegmentIterator(...)` produce iterators over all data:
-  - `sst/SegmentsIterator` chains `Segment.openIterator()` across all segments in order.
+- `SegmentIndex.getStream()` and `SegmentIndex.openSegmentIterator(...)` produce iterators over all data:
+  - `segmentindex/SegmentsIterator` chains `Segment.openIterator()` across all segments in order.
   - `segment/SegmentImpl.openIterator()` merges the on‑disk main SST with the segment’s delta cache via `MergeDeltaCacheWithIndexIterator`, skipping tombstones.
   - The per‑segment iterator is wrapped with `EntryIteratorWithLock` using an `OptimisticLock`. If a write changes the segment version mid‑scan, the iterator stops gracefully (no partial records).
   - At the top level, `EntryIteratorRefreshedFromCache` overlays the index‑level unique buffer so that the iterator sees the latest writes even before they’re flushed to disk.
 
-Key classes: `sst/SegmentsIterator.java`, `segment/MergeDeltaCacheWithIndexIterator.java`, `sst/EntryIteratorRefreshedFromCache.java`, `EntryIteratorWithLock.java`, `OptimisticLock.java`.
+Key classes: `segmentindex/SegmentsIterator.java`, `segment/MergeDeltaCacheWithIndexIterator.java`, `segmentindex/EntryIteratorRefreshedFromCache.java`, `EntryIteratorWithLock.java`, `OptimisticLock.java`.
 
 ## 🔄 Read‑After‑Write Semantics
 
 Two layers provide immediate visibility of recent writes:
 
-- Index‑level `UniqueCache` (pre‑flush) is checked first by `Index.get` and overlaid on iterators.
+- Index‑level `UniqueCache` (pre‑flush) is checked first by `SegmentIndex.get` and overlaid on iterators.
 - Segment delta cache (post‑flush) is kept in memory when loaded; writes to a new delta file also update the in‑memory delta cache when present.
 
 Deletes are represented as tombstones by the value type descriptor. The read path treats a tombstone as “not found”.
@@ -75,7 +75,7 @@ These choices keep random access bounded and predictable, with sequential I/O fo
 - `diskIoBufferSize` — affects chunk and data block I/O buffering
 - Encoding/decoding filters — enable CRC32, magic number and optional Snappy compression on read/write paths
 
-See: `sst/IndexConfiguration` and `segment/SegmentConf`.
+See: `segmentindex/IndexConfiguration` and `segment/SegmentConf`.
 
 ## 🛡️ Integrity on the Read Path
 
@@ -91,7 +91,7 @@ Key classes: `chunkstore/ChunkStoreReaderImpl`, `chunkstore/ChunkFilterMagicNumb
 
 ## 🧩 Where to Look in the Code
 
-- Point lookup orchestration: `src/main/java/org/hestiastore/index/sst/SstIndexImpl.java`
+- Point lookup orchestration: `src/main/java/org/hestiastore/index/segmentindex/SegmentIndexImpl.java`
 - Segment search path: `src/main/java/org/hestiastore/index/segment/SegmentSearcher.java`
 - Sparse index: `src/main/java/org/hestiastore/index/scarceindex/*`
 - Iteration and merging: `src/main/java/org/hestiastore/index/segment/MergeDeltaCacheWithIndexIterator.java`

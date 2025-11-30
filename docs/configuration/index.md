@@ -1,6 +1,6 @@
 # ⚙️ Configuration
 
-Don’t be afraid to experiment—if a configuration is missing or invalid, the Index will fail fast, helping you catch issues early.
+Don’t be afraid to experiment—if a configuration is missing or invalid, the SegmentIndex will fail fast, helping you catch issues early.
 
 The index is configured using the `IndexConfiguration` class. All essential index properties are configurable through the builder. See the example below:
 
@@ -22,12 +22,12 @@ IndexConfiguration<Integer, Integer> conf = IndexConfiguration
     .withName("test_index") //
     .build();
 
-Index<Integer, Integer> index = Index.<Integer, Integer>create(directory, conf);
+SegmentIndex<Integer, Integer> index = SegmentIndex.<Integer, Integer>create(directory, conf);
 ```
 
 Now let's look at particular parameters.
 
-## 📁 Index Directory
+## 📁 SegmentIndex Directory
 
 Place where all data are stored. There are two already prepared types:
 
@@ -53,7 +53,7 @@ Directory directory = new FsDirectory(new File('my directory'));
 
 All properties are required and have the following meanings:
 
-## 🧱 Index related configuration
+## 🧱 SegmentIndex related configuration
 
 ### 🔑 Key class - `withKeyClass()`
 
@@ -70,7 +70,7 @@ If a different class is used, the key type descriptor must be set using the `wit
 
 Required. Specifies the Java class used for values. The same rules that apply to the key class also apply to the value class.
 
-### 🏷️ Index name - `withName()`
+### 🏷️ SegmentIndex name - `withName()`
 
 Required. Assigns a logical name to the index. This can be useful in diagnostics and logging.
 
@@ -155,12 +155,12 @@ Sets the probability of false positives. When `get(someKey)` is called on a segm
 
 Usually, it's not necessary to adjust the Bloom filter settings.
 
-## ✏️ Changing Index propertise
+## ✏️ Changing SegmentIndex propertise
 
 Some parameters can be redefined when the index is opened.
 
 ```java
-Index<String, String> index = Index.<String, String>open(directory, conf);
+SegmentIndex<String, String> index = SegmentIndex.<String, String>open(directory, conf);
 ```
 
 At allows to pass `IndexConfiguration` object and this way change configuration parameters. Fllowing table shou parameters that can be changed.  

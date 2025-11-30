@@ -4,7 +4,7 @@ import java.util.Objects;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilter;
-import org.hestiastore.index.scarceindex.ScarceIndex;
+import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 
 /**
  * When any getter is called than new instance of object is created and
@@ -52,8 +52,8 @@ public final class SegmentDataSupplier<K, V> {
                 .build();
     }
 
-    public ScarceIndex<K> getScarceIndex() {
-        return ScarceIndex.<K>builder()//
+    public ScarceSegmentIndex<K> getScarceIndex() {
+        return ScarceSegmentIndex.<K>builder()//
                 .withDirectory(segmentFiles.getDirectory())//
                 .withFileName(segmentFiles.getScarceFileName())//
                 .withKeyTypeDescriptor(segmentFiles.getKeyTypeDescriptor())//

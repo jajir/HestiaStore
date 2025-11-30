@@ -28,7 +28,7 @@ class IntegrationScarceIndexTest {
 
     @Test
     void test_one_key() {
-        final ScarceIndex<String> index = makeIndex(List.of(P_BBB_1));
+        final ScarceSegmentIndex<String> index = makeIndex(List.of(P_BBB_1));
 
         assertEquals(13, index.get("bbb"));
         assertNull(index.get("ddd"));
@@ -40,7 +40,7 @@ class IntegrationScarceIndexTest {
 
     @Test
     void test_empty() {
-        final ScarceIndex<String> index = makeIndex(Collections.emptyList());
+        final ScarceSegmentIndex<String> index = makeIndex(Collections.emptyList());
 
         assertNull(index.get("aaa"));
         assertNull(index.get("bbb"));
@@ -52,7 +52,7 @@ class IntegrationScarceIndexTest {
 
     @Test
     void test_one_multiple() {
-        final ScarceIndex<String> index = makeIndex(
+        final ScarceSegmentIndex<String> index = makeIndex(
                 List.of(P_BBB_2, P_CCC_1, P_DDD, P_EEE, P_FFF_2));
 
         assertEquals(1, index.get("aaa"));
@@ -82,7 +82,7 @@ class IntegrationScarceIndexTest {
 
     @Test
     void test_overwrite_index() {
-        final ScarceIndex<String> index = makeIndex(
+        final ScarceSegmentIndex<String> index = makeIndex(
                 List.of(P_BBB_2, P_CCC_1, P_DDD, P_EEE, P_FFF_2));
 
         index.openWriterTx().execute(writer -> {
@@ -94,10 +94,10 @@ class IntegrationScarceIndexTest {
         assertNull(index.get("ccc"));
     }
 
-    private ScarceIndex<String> makeIndex(
+    private ScarceSegmentIndex<String> makeIndex(
             final List<Entry<String, Integer>> entries) {
         final MemDirectory directory = new MemDirectory();
-        final ScarceIndex<String> index = ScarceIndex.<String>builder()
+        final ScarceSegmentIndex<String> index = ScarceSegmentIndex.<String>builder()
                 .withDirectory(directory).withFileName(FILE_NAME)//
                 .withKeyTypeDescriptor(stringTd)//
                 .build();

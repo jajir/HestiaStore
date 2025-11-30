@@ -3,7 +3,7 @@ package org.hestiastore.index.segment;
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilter;
-import org.hestiastore.index.scarceindex.ScarceIndex;
+import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 
 /**
  * Provide cached lazy loaded instances of segment data objects.
@@ -20,7 +20,7 @@ public final class SegmentDataLazyLoaded<K, V>
 
     private SegmentDeltaCache<K, V> deltaCache;
     private BloomFilter<K> bloomFilter;
-    private ScarceIndex<K> scarceIndex;
+    private ScarceSegmentIndex<K> scarceIndex;
 
     public SegmentDataLazyLoaded(
             final SegmentDataSupplier<K, V> segmentDataSupplier) {
@@ -45,7 +45,7 @@ public final class SegmentDataLazyLoaded<K, V>
     }
 
     @Override
-    public ScarceIndex<K> getScarceIndex() {
+    public ScarceSegmentIndex<K> getScarceIndex() {
         if (scarceIndex == null) {
             scarceIndex = segmentDataSupplier.getScarceIndex();
         }

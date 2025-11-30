@@ -40,8 +40,8 @@ public final class ScarceIndexBuilder<K> {
         return this;
     }
 
-    public ScarceIndex<K> build() {
-        return new ScarceIndex<K>(directory, fileName, keyTypeDescriptor,
+    public ScarceSegmentIndex<K> build() {
+        return new ScarceSegmentIndex<K>(directory, fileName, keyTypeDescriptor,
                 diskIoBufferSize);
     }
 

@@ -51,7 +51,7 @@ This page summarizes how HestiaStore achieves high throughput and predictable la
 
 ## 🧮 Memory Sizing
 
-- Index write buffer: up to `maxNumberOfKeysInCache` entries (latest per key). Backed by a HashMap.
+- SegmentIndex write buffer: up to `maxNumberOfKeysInCache` entries (latest per key). Backed by a HashMap.
 - Per‑segment delta overlay (in memory): when a segment is loaded, delta files are folded into a `UniqueCache`. Upper bound approximates number of unique keys across delta files (see segment properties).
 - Bloom filter: fully memory‑mapped in RAM when present; `indexSizeInBytes` bytes per segment plus metadata. Code: `bloomfilter/BloomFilterImpl.java`.
 - SegmentData LRU: holds delta cache + Bloom + scarce index for up to `maxNumberOfSegmentsInCache` segments; evictions call `close()` to free memory.
@@ -80,16 +80,16 @@ This page summarizes how HestiaStore achieves high throughput and predictable la
 ## 🔎 Observability and Validation
 
 - Bloom stats: `BloomFilter.getStatistics()` reports avoided disk accesses and false‑positive rate. Code: `bloomfilter/BloomFilterStats`.
-- Operation counters: `sst/Stats` exposes get/put/delete counts (logged on close in `SstIndexImpl#doClose`).
-- Consistency: after unexpected shutdown, run `Index.checkAndRepairConsistency()`; optionally `compact()` to reclaim locality.
+- Operation counters: `segmentindex/Stats` exposes get/put/delete counts (logged on close in `SegmentIndexImpl#doClose`).
+- Consistency: after unexpected shutdown, run `SegmentIndex.checkAndRepairConsistency()`; optionally `compact()` to reclaim locality.
 
 ## 🧩 Code Pointers
 
-- Write buffer and flush: `src/main/java/org/hestiastore/index/sst/SstIndexImpl.java`, `src/main/java/org/hestiastore/index/sst/CompactSupport.java`
+- Write buffer and flush: `src/main/java/org/hestiastore/index/segmentindex/SegmentIndexImpl.java`, `src/main/java/org/hestiastore/index/segmentindex/CompactSupport.java`
 - Read path bounds: `src/main/java/org/hestiastore/index/segment/SegmentSearcher.java`, `.../SegmentIndexSearcher.java`
 - Bloom filter: `src/main/java/org/hestiastore/index/bloomfilter/*`
 - Chunked I/O and filters: `src/main/java/org/hestiastore/index/chunkstore/*`
-- Segment sizing/splitting: `src/main/java/org/hestiastore/index/sst/SegmentSplitCoordinator.java`, `src/main/java/org/hestiastore/index/segment/SegmentSplitter*.java`
+- Segment sizing/splitting: `src/main/java/org/hestiastore/index/segmentindex/SegmentSplitCoordinator.java`, `src/main/java/org/hestiastore/index/segment/SegmentSplitter*.java`
 
 ## 🔗 Related Glossary
 

@@ -140,7 +140,7 @@ public class CellPosition {
     /**
      * Get index of cell within data block.
      * 
-     * @return Index of cell within data block.
+     * @return SegmentIndex of cell within data block.
      */
     public int getCellIndex() {
         return (getStartingByteInBlockOfCell()) / CELL_SIZE;

@@ -2,7 +2,7 @@ package org.hestiastore.index.segment;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilter;
-import org.hestiastore.index.scarceindex.ScarceIndex;
+import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 
 /**
  * Provider of segment data. It's support invalidate segment data in memory.
@@ -35,7 +35,7 @@ public class SegmentDataProviderSimple<K, V>
     }
 
     @Override
-    public ScarceIndex<K> getScarceIndex() {
+    public ScarceSegmentIndex<K> getScarceIndex() {
         return getSegmentData().getScarceIndex();
     }
 

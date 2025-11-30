@@ -2,7 +2,7 @@
 
 This page documents the files HestiaStore writes into an index directory, their naming conventions, how they evolve over time, and the atomic commit pattern used to keep them consistent.
 
-## 📂 Directory Layout (One Index per Directory)
+## 📂 Directory Layout (One SegmentIndex per Directory)
 
 Top-level files:
 - `index.map` — Global key→segment map (max key per segment). Sorted key→SegmentId pairs. Updated atomically.
@@ -30,7 +30,7 @@ Notes:
 - Key→segment map: `index.map`
 - Context log: `wal-xxxxx.log`
 
-Code: `segment/SegmentFiles.java`, `sst/KeySegmentCache.java`, `log/LogFileNamesManager.java`.
+Code: `segment/SegmentFiles.java`, `segmentindex/KeySegmentCache.java`, `log/LogFileNamesManager.java`.
 
 ## 🧨 Atomic Commit Pattern (`*.tmp` + rename)
 

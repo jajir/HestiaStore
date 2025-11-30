@@ -6,7 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.bloomfilter.BloomFilter;
-import org.hestiastore.index.scarceindex.ScarceIndex;
+import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -22,7 +22,7 @@ class SegmentDataLazyLoaderTest {
     private BloomFilter<Integer> bloomFilter;
 
     @Mock
-    private ScarceIndex<Integer> scarceIndex;
+    private ScarceSegmentIndex<Integer> scarceIndex;
 
     @Mock
     private SegmentDeltaCache<Integer, String> segmentDeltaCache;

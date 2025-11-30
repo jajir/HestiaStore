@@ -4,18 +4,18 @@ HestiaStore offers two usage modes: a fast, non‑synchronized default intended 
 
 ## 🧬 Variants
 
-- Default (non‑synchronized): `sst/SstIndexImpl`
+- Default (non‑synchronized): `segmentindex/SegmentIndexImpl`
   - Highest throughput, minimal coordination overhead.
   - Not thread‑safe: internal structures (maps, caches) are not synchronized.
   - Use from a single thread, or add your own external synchronization.
 
-- Thread‑safe: `sst/IndexInternalSynchronized`
+- Thread‑safe: `segmentindex/IndexInternalSynchronized`
   - Enabled via `IndexConfigurationBuilder.withThreadSafe(true)`.
   - Wraps all public operations (`put`, `get`, `delete`, `flush`, `compact`, `getStream`, `checkAndRepairConsistency`) in a single `ReentrantLock`.
   - Iterators returned by `getStream` are wrapped with `EntryIteratorSynchronized` to take/release the lock for `hasNext`/`next`/`close` calls.
   - Trade‑off: simple and safe, but long scans will contend with writers due to coarse locking.
 
-Code pointers: `sst/IndexInternalSynchronized.java`, `sst/EntryIteratorSynchronized.java`.
+Code pointers: `segmentindex/IndexInternalSynchronized.java`, `segmentindex/EntryIteratorSynchronized.java`.
 
 ## 🔐 Process Exclusivity
 
@@ -25,7 +25,7 @@ Opening an index acquires a directory file lock to prevent two processes from us
 - On close: the lock file is removed in `IndexStateReady#onClose`.
 - Any operation before “ready” or after “closed” throws an error (`IndexState*`).
 
-Code pointers: `sst/IndexStateNew.java`, `sst/IndexStateReady.java`, `sst/IndexStateClose.java`, `directory/FsFileLock.java`.
+Code pointers: `segmentindex/IndexStateNew.java`, `segmentindex/IndexStateReady.java`, `segmentindex/IndexStateClose.java`, `directory/FsFileLock.java`.
 
 ## 🧪 Reader Isolation (Optimistic Lock)
 
@@ -66,7 +66,7 @@ IndexConfiguration<Integer, String> conf = IndexConfiguration.<Integer, String>b
     // ... type descriptors and other settings ...
     .withThreadSafe(true)
     .build();
-Index<Integer, String> index = Index.create(directory, conf);
+SegmentIndex<Integer, String> index = SegmentIndex.create(directory, conf);
 ```
 
 - For high read concurrency with minimal contention, prefer the default variant and place your own read/write locks at a higher level if needed.

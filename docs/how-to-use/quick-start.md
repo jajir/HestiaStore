@@ -8,8 +8,8 @@ This page shows common usage patterns with correct imports and short explanation
 Simple example that creates in‑memory storage, then opens an index in this storage, writes one key‑value pair, and closes the index.
 
 ```java
-import org.hestiastore.index.sst.Index;
-import org.hestiastore.index.sst.IndexConfiguration;
+import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 
@@ -26,8 +26,8 @@ public class Example {
         .withName("test_index")
         .build();
 
-    // Index is AutoCloseable — prefer try‑with‑resources
-    try (Index<String, String> index = Index.create(directory, conf)) {
+    // SegmentIndex is AutoCloseable — prefer try‑with‑resources
+    try (SegmentIndex<String, String> index = SegmentIndex.create(directory, conf)) {
       index.put("Hello", "World");
       String value = index.get("Hello");
       System.out.println("Value for Hello: " + value);
@@ -60,8 +60,8 @@ This immediately creates the initial index files and makes it ready to use.
 Use a dedicated open method for existing indexes:
 
 ```java
-import org.hestiastore.index.sst.Index;
-import org.hestiastore.index.sst.IndexConfiguration;
+import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.hestiastore.index.segmentindex.IndexConfiguration;
 
 IndexConfiguration<String, String> conf = IndexConfiguration
     .<String, String>builder()
@@ -70,7 +70,7 @@ IndexConfiguration<String, String> conf = IndexConfiguration
     .withName("test_index")
     .build();
 
-Index<String, String> index = Index.open(directory, conf);
+SegmentIndex<String, String> index = SegmentIndex.open(directory, conf);
 ```
 
 ## ✍️ Data Manipulation
@@ -97,7 +97,7 @@ index.getStream().forEach(entry -> {
 Select a subset of entries by segment window (offset, limit):
 
 ```java
-import org.hestiastore.index.sst.SegmentWindow;
+import org.hestiastore.index.segmentindex.SegmentWindow;
 
 // Only data from selected segments will be returned
 SegmentWindow window = SegmentWindow.of(1000, 10);

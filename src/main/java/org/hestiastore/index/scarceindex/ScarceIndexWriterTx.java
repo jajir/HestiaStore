@@ -11,10 +11,10 @@ public class ScarceIndexWriterTx<K>
         extends GuardedWriteTransaction<EntryWriter<K, Integer>>
         implements WriteTransaction<K, Integer> {
 
-    private final ScarceIndex<K> scarceIndex;
+    private final ScarceSegmentIndex<K> scarceIndex;
     private final SortedDataFileWriterTx<K, Integer> writerTx;
 
-    ScarceIndexWriterTx(final ScarceIndex<K> scarceIndex,
+    ScarceIndexWriterTx(final ScarceSegmentIndex<K> scarceIndex,
             final SortedDataFileWriterTx<K, Integer> writerTx) {
         this.scarceIndex = Vldtn.requireNonNull(scarceIndex, "scarceIndex");
         this.writerTx = Vldtn.requireNonNull(writerTx, "writerTx");

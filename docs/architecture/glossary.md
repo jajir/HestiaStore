@@ -3,13 +3,13 @@
 Concise definitions of terms used across HestiaStore’s architecture, with links and code pointers.
 
 ## 🧱 Segment
-Bounded shard of the index stored on disk with its own files: main SST (`.index`), sparse index (`.scarce`), Bloom filter (`.bloom-filter`), properties, and optional delta caches. See also: On‑Disk Layout. Code: `segment/*`, `sst/SegmentRegistry.java`.
+Bounded shard of the index stored on disk with its own files: main SST (`.index`), sparse index (`.scarce`), Bloom filter (`.bloom-filter`), properties, and optional delta caches. See also: On‑Disk Layout. Code: `segment/*`, `segmentindex/SegmentRegistry.java`.
 
 ## 🏷️ SegmentId
 Stable integer id rendered as `segment-00000`, used to name per‑segment files. Code: `segment/SegmentId.java`.
 
 ## 🗺️ Key-to-Segment Map
-Global sorted map of max key → SegmentId that routes lookups and flushes. Persisted as `index.map`. Code: `sst/KeySegmentCache.java`.
+Global sorted map of max key → SegmentId that routes lookups and flushes. Persisted as `index.map`. Code: `segmentindex/KeySegmentCache.java`.
 
 ## 📚 Main SST
 On‑disk, chunked Sorted String Table containing sorted key/value entries for a segment. Code: `chunkentryfile/*`, `chunkstore/*`.
@@ -24,25 +24,25 @@ Per‑segment overlay of recent updates, materialized as sorted `.cache` files a
 In‑memory map that keeps only the latest value per key. Used at the index‑level write buffer and inside the delta overlay. Code: `cache/UniqueCache*.java`.
 
 ## 🚿 Flush
-Drains the index‑level write buffer, routes entries to per‑segment delta caches, and updates `index.map`. Code: `sst/SstIndexImpl#flush()`, `sst/CompactSupport.java`.
+Drains the index‑level write buffer, routes entries to per‑segment delta caches, and updates `index.map`. Code: `segmentindex/SegmentIndexImpl#flush()`, `segmentindex/CompactSupport.java`.
 
 ## 🧹 Compaction
 Segment rewrite that merges main SST with delta caches into fresh `.index`, `.scarce`, and `.bloom-filter` files, then clears delta caches. Code: `segment/SegmentCompacter.java`, `segment/SegmentFullWriter*.java`.
 
 ## ✂️ Split
-When a segment grows beyond `maxNumberOfKeysInSegment`, it is split into two; `index.map` is updated with a new max key and SegmentId. Code: `sst/SegmentSplitCoordinator.java`, `segment/SegmentSplitter*.java`.
+When a segment grows beyond `maxNumberOfKeysInSegment`, it is split into two; `index.map` is updated with a new max key and SegmentId. Code: `segmentindex/SegmentSplitCoordinator.java`, `segment/SegmentSplitter*.java`.
 
-## 🔍 Sparse Index (Scarce Index)
+## 🔍 Sparse SegmentIndex (Scarce Index)
 Per‑segment, sorted sample of keys that points to chunk start positions in the main SST to bound local scans. Code: `scarceindex/*`.
 
 ## 🌸 Bloom Filter
 Per‑segment probabilistic set that quickly proves absence and reduces on‑disk probes; rebuilt during compaction. Code: `bloomfilter/*`.
 
 ## 🧪 Filters (Chunk Filters)
-Pluggable transformations applied to chunk payloads on write and inverted on read (magic number, CRC32, Snappy, XOR). Configured per index. Code: `chunkstore/ChunkFilter*.java`; config via `sst/IndexConfigurationBuilder`.
+Pluggable transformations applied to chunk payloads on write and inverted on read (magic number, CRC32, Snappy, XOR). Configured per index. Code: `chunkstore/ChunkFilter*.java`; config via `segmentindex/IndexConfigurationBuilder`.
 
 ## 🪦 Tombstone
-Special value denoting deletion; read path treats it as absent and compaction drops obsolete values. Provided by the value type descriptor. Code: `datatype/TypeDescriptor#getTombstone()`, used in `sst/SstIndexImpl#delete()`.
+Special value denoting deletion; read path treats it as absent and compaction drops obsolete values. Provided by the value type descriptor. Code: `datatype/TypeDescriptor#getTombstone()`, used in `segmentindex/SegmentIndexImpl#delete()`.
 
 ## 🧾 Entry
 Immutable key/value pair used across iterators and writers. Code: `index/Entry.java`.
@@ -57,16 +57,16 @@ Pattern that enforces open → close → commit, guaranteeing atomic file replac
 File I/O backend (FS, memory, zip) providing readers/writers and atomic rename. Code: `directory/*`.
 
 ## 🧩 SegmentData and Provider
-Lazy containers and providers for per‑segment heavyweight structures (delta cache, Bloom, sparse index). Often cached via LRU. Code: `segment/SegmentData*.java`, `sst/SegmentDataCache.java`, `sst/SegmentDataProviderFromMainCache.java`.
+Lazy containers and providers for per‑segment heavyweight structures (delta cache, Bloom, sparse index). Often cached via LRU. Code: `segment/SegmentData*.java`, `segmentindex/SegmentDataCache.java`, `segmentindex/SegmentDataProviderFromMainCache.java`.
 
 ## 🪟 SegmentWindow
-Offset/limit window for streaming across segments, analogous to SQL OFFSET/LIMIT. Code: `sst/SegmentWindow.java`.
+Offset/limit window for streaming across segments, analogous to SQL OFFSET/LIMIT. Code: `segmentindex/SegmentWindow.java`.
 
 ## 📊 Stats
-Simple counters for get/put/delete to observe workload shape. Code: `sst/Stats.java`.
+Simple counters for get/put/delete to observe workload shape. Code: `segmentindex/Stats.java`.
 
 ## 🧰 Consistency Checker
-Utilities to verify sortedness and segment/map coherence after unexpected shutdowns; can repair certain metadata issues. Code: `sst/IndexConsistencyChecker.java`, `segment/SegmentConsistencyChecker.java`.
+Utilities to verify sortedness and segment/map coherence after unexpected shutdowns; can repair certain metadata issues. Code: `segmentindex/IndexConsistencyChecker.java`, `segment/SegmentConsistencyChecker.java`.
 
 ## 🗒️ Context Log
 Optional append‑only log of operations for observability (not a recovery WAL). Code: `log/*`.

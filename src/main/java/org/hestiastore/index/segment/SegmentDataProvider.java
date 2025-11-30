@@ -1,7 +1,7 @@
 package org.hestiastore.index.segment;
 
 import org.hestiastore.index.bloomfilter.BloomFilter;
-import org.hestiastore.index.scarceindex.ScarceIndex;
+import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 
 /**
  * Provide access to main data object that are considerably large in memory.
@@ -25,7 +25,7 @@ public interface SegmentDataProvider<K, V> {
 
     BloomFilter<K> getBloomFilter();
 
-    ScarceIndex<K> getScarceIndex();
+    ScarceSegmentIndex<K> getScarceIndex();
 
     /**
      * Invalidate object in memory. Could be used in both scenarios: to free

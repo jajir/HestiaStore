@@ -2,9 +2,9 @@ package org.coroptis.index.it;
 
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.sst.Index;
-import org.hestiastore.index.sst.IndexConfiguration;
-import org.hestiastore.index.sst.SegmentWindow;
+import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.junit.jupiter.api.Test;
 
 public class ExampleIT {
@@ -23,7 +23,7 @@ public class ExampleIT {
                 .build();
 
         // create new index
-        Index<String, String> index = Index.<String, String>create(directory,
+        SegmentIndex<String, String> index = SegmentIndex.<String, String>create(directory,
                 conf);
 
         // Do some work with the index
@@ -45,7 +45,7 @@ public class ExampleIT {
                 .withName("test_index") //
                 .build();
 
-        Index<String, String> index = Index.<String, String>open(directory,
+        SegmentIndex<String, String> index = SegmentIndex.<String, String>open(directory,
                 conf);
 
         index.getStream().forEach(entry -> {
