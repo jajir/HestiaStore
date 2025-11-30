@@ -34,6 +34,7 @@ nav:
             - Sparse Index: architecture/arch-index.md
             - Segments & Compaction: architecture/segment.md
             - Data Block Format: architecture/datablock.md
+            - Chain of Filters: architecture/chain-of-filters.md
         - Data Flow:
             - Write Path: architecture/write-path.md
             - Read Path: architecture/read-path.md
