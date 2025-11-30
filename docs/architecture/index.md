@@ -9,6 +9,7 @@ This section explains how HestiaStore works under the hood: the core on‑disk s
 - [Read Path](read-path.md) — delta cache first, then Bloom + sparse index to a bounded on‑disk scan.
 - [Consistency & Recovery](recovery.md) — crash‑safety model (no WAL), transactional writers, and check/repair steps.
 - [Filters & Integrity](filters.md) — magic number, CRC32, Snappy, and XOR pipelines on write/read.
+- [Chain of Filters](chain-of-filters.md) — shared pipeline helper used by segment search and split flows.
 - [Caching Strategy](caching.md) — index write buffer, per‑segment caches (Bloom/scarce/delta), LRU, and warm‑up.
 - [Performance Model & Sizing](performance.md) — key tuning knobs, I/O patterns, and practical recipes.
 - [Concurrency](concurrency.md) — thread‑safe mode, per‑segment iteration safety, and process exclusivity.
