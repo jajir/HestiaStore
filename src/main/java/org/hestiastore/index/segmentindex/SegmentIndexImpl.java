@@ -98,9 +98,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         cache.put(Entry.of(key, value));
         invalidateReadCacheEntry(key);
 
-        if (cache.size() > conf.getMaxNumberOfKeysInCache()) {
-            flushCache();
-        }
+        flushCacheIfNeeded();
     }
 
     /**
@@ -133,7 +131,13 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         }
     }
 
-    private void flushCache() {
+    void flushCacheIfNeeded() {
+        if (cache.size() > conf.getMaxNumberOfKeysInCache()) {
+            flushCache();
+        }
+    }
+
+    protected void flushCache() {
         if (logger.isDebugEnabled()) {
             logger.debug(
                     "Cache compacting of '{}' key value entries in cache started.",
@@ -226,6 +230,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
         cache.put(Entry.of(key, valueTypeDescriptor.getTombstone()));
         invalidateReadCacheEntry(key);
+        flushCacheIfNeeded();
     }
 
     @Override
