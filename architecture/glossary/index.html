@@ -2138,10 +2138,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#sparse-index-scarce-index" class="md-nav__link">
+  <a href="#sparse-segmentindex-scarce-index" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🔍 Sparse Index (Scarce Index)
+        🔍 Sparse SegmentIndex (Scarce Index)
       
     </span>
   </a>
@@ -2714,10 +2714,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#sparse-index-scarce-index" class="md-nav__link">
+  <a href="#sparse-segmentindex-scarce-index" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🔍 Sparse Index (Scarce Index)
+        🔍 Sparse SegmentIndex (Scarce Index)
       
     </span>
   </a>
@@ -2945,11 +2945,11 @@
 <h1 id="glossary">📖 Glossary</h1>
 <p>Concise definitions of terms used across HestiaStore’s architecture, with links and code pointers.</p>
 <h2 id="segment">🧱 Segment</h2>
-<p>Bounded shard of the index stored on disk with its own files: main SST (<code>.index</code>), sparse index (<code>.scarce</code>), Bloom filter (<code>.bloom-filter</code>), properties, and optional delta caches. See also: On‑Disk Layout. Code: <code>segment/*</code>, <code>sst/SegmentRegistry.java</code>.</p>
+<p>Bounded shard of the index stored on disk with its own files: main SST (<code>.index</code>), sparse index (<code>.scarce</code>), Bloom filter (<code>.bloom-filter</code>), properties, and optional delta caches. See also: On‑Disk Layout. Code: <code>segment/*</code>, <code>segmentindex/SegmentRegistry.java</code>.</p>
 <h2 id="segmentid">🏷️ SegmentId</h2>
 <p>Stable integer id rendered as <code>segment-00000</code>, used to name per‑segment files. Code: <code>segment/SegmentId.java</code>.</p>
 <h2 id="key-to-segment-map">🗺️ Key-to-Segment Map</h2>
-<p>Global sorted map of max key → SegmentId that routes lookups and flushes. Persisted as <code>index.map</code>. Code: <code>sst/KeySegmentCache.java</code>.</p>
+<p>Global sorted map of max key → SegmentId that routes lookups and flushes. Persisted as <code>index.map</code>. Code: <code>segmentindex/KeySegmentCache.java</code>.</p>
 <h2 id="main-sst">📚 Main SST</h2>
 <p>On‑disk, chunked Sorted String Table containing sorted key/value entries for a segment. Code: <code>chunkentryfile/*</code>, <code>chunkstore/*</code>.</p>
 <h2 id="chunk">📦 Chunk</h2>
@@ -2959,19 +2959,19 @@
 <h2 id="uniquecache">🧰 UniqueCache</h2>
 <p>In‑memory map that keeps only the latest value per key. Used at the index‑level write buffer and inside the delta overlay. Code: <code>cache/UniqueCache*.java</code>.</p>
 <h2 id="flush">🚿 Flush</h2>
-<p>Drains the index‑level write buffer, routes entries to per‑segment delta caches, and updates <code>index.map</code>. Code: <code>sst/SstIndexImpl#flush()</code>, <code>sst/CompactSupport.java</code>.</p>
+<p>Drains the index‑level write buffer, routes entries to per‑segment delta caches, and updates <code>index.map</code>. Code: <code>segmentindex/SegmentIndexImpl#flush()</code>, <code>segmentindex/CompactSupport.java</code>.</p>
 <h2 id="compaction">🧹 Compaction</h2>
 <p>Segment rewrite that merges main SST with delta caches into fresh <code>.index</code>, <code>.scarce</code>, and <code>.bloom-filter</code> files, then clears delta caches. Code: <code>segment/SegmentCompacter.java</code>, <code>segment/SegmentFullWriter*.java</code>.</p>
 <h2 id="split">✂️ Split</h2>
-<p>When a segment grows beyond <code>maxNumberOfKeysInSegment</code>, it is split into two; <code>index.map</code> is updated with a new max key and SegmentId. Code: <code>sst/SegmentSplitCoordinator.java</code>, <code>segment/SegmentSplitter*.java</code>.</p>
-<h2 id="sparse-index-scarce-index">🔍 Sparse Index (Scarce Index)</h2>
+<p>When a segment grows beyond <code>maxNumberOfKeysInSegment</code>, it is split into two; <code>index.map</code> is updated with a new max key and SegmentId. Code: <code>segmentindex/SegmentSplitCoordinator.java</code>, <code>segment/SegmentSplitter*.java</code>.</p>
+<h2 id="sparse-segmentindex-scarce-index">🔍 Sparse SegmentIndex (Scarce Index)</h2>
 <p>Per‑segment, sorted sample of keys that points to chunk start positions in the main SST to bound local scans. Code: <code>scarceindex/*</code>.</p>
 <h2 id="bloom-filter">🌸 Bloom Filter</h2>
 <p>Per‑segment probabilistic set that quickly proves absence and reduces on‑disk probes; rebuilt during compaction. Code: <code>bloomfilter/*</code>.</p>
 <h2 id="filters-chunk-filters">🧪 Filters (Chunk Filters)</h2>
-<p>Pluggable transformations applied to chunk payloads on write and inverted on read (magic number, CRC32, Snappy, XOR). Configured per index. Code: <code>chunkstore/ChunkFilter*.java</code>; config via <code>sst/IndexConfigurationBuilder</code>.</p>
+<p>Pluggable transformations applied to chunk payloads on write and inverted on read (magic number, CRC32, Snappy, XOR). Configured per index. Code: <code>chunkstore/ChunkFilter*.java</code>; config via <code>segmentindex/IndexConfigurationBuilder</code>.</p>
 <h2 id="tombstone">🪦 Tombstone</h2>
-<p>Special value denoting deletion; read path treats it as absent and compaction drops obsolete values. Provided by the value type descriptor. Code: <code>datatype/TypeDescriptor#getTombstone()</code>, used in <code>sst/SstIndexImpl#delete()</code>.</p>
+<p>Special value denoting deletion; read path treats it as absent and compaction drops obsolete values. Provided by the value type descriptor. Code: <code>datatype/TypeDescriptor#getTombstone()</code>, used in <code>segmentindex/SegmentIndexImpl#delete()</code>.</p>
 <h2 id="entry">🧾 Entry</h2>
 <p>Immutable key/value pair used across iterators and writers. Code: <code>index/Entry.java</code>.</p>
 <h2 id="entryiterator">🔁 EntryIterator</h2>
@@ -2981,13 +2981,13 @@
 <h2 id="directory-abstraction">📁 Directory (Abstraction)</h2>
 <p>File I/O backend (FS, memory, zip) providing readers/writers and atomic rename. Code: <code>directory/*</code>.</p>
 <h2 id="segmentdata-and-provider">🧩 SegmentData and Provider</h2>
-<p>Lazy containers and providers for per‑segment heavyweight structures (delta cache, Bloom, sparse index). Often cached via LRU. Code: <code>segment/SegmentData*.java</code>, <code>sst/SegmentDataCache.java</code>, <code>sst/SegmentDataProviderFromMainCache.java</code>.</p>
+<p>Lazy containers and providers for per‑segment heavyweight structures (delta cache, Bloom, sparse index). Often cached via LRU. Code: <code>segment/SegmentData*.java</code>, <code>segmentindex/SegmentDataCache.java</code>, <code>segmentindex/SegmentDataProviderFromMainCache.java</code>.</p>
 <h2 id="segmentwindow">🪟 SegmentWindow</h2>
-<p>Offset/limit window for streaming across segments, analogous to SQL OFFSET/LIMIT. Code: <code>sst/SegmentWindow.java</code>.</p>
+<p>Offset/limit window for streaming across segments, analogous to SQL OFFSET/LIMIT. Code: <code>segmentindex/SegmentWindow.java</code>.</p>
 <h2 id="stats">📊 Stats</h2>
-<p>Simple counters for get/put/delete to observe workload shape. Code: <code>sst/Stats.java</code>.</p>
+<p>Simple counters for get/put/delete to observe workload shape. Code: <code>segmentindex/Stats.java</code>.</p>
 <h2 id="consistency-checker">🧰 Consistency Checker</h2>
-<p>Utilities to verify sortedness and segment/map coherence after unexpected shutdowns; can repair certain metadata issues. Code: <code>sst/IndexConsistencyChecker.java</code>, <code>segment/SegmentConsistencyChecker.java</code>.</p>
+<p>Utilities to verify sortedness and segment/map coherence after unexpected shutdowns; can repair certain metadata issues. Code: <code>segmentindex/IndexConsistencyChecker.java</code>, <code>segment/SegmentConsistencyChecker.java</code>.</p>
 <h2 id="context-log">🗒️ Context Log</h2>
 <p>Optional append‑only log of operations for observability (not a recovery WAL). Code: <code>log/*</code>.</p>
 

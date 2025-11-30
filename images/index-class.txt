@@ -1,6 +1,6 @@
 @startuml
 
-class Index<K, V> {
+class SegmentIndex<K, V> {
   + void put(Entry<K, V> entry)
   + put(K key, V value)
   + V get(K key);

@@ -2709,7 +2709,7 @@
 </ul>
 <h2 id="memory-sizing">🧮 Memory Sizing</h2>
 <ul>
-<li>Index write buffer: up to <code>maxNumberOfKeysInCache</code> entries (latest per key). Backed by a HashMap.</li>
+<li>SegmentIndex write buffer: up to <code>maxNumberOfKeysInCache</code> entries (latest per key). Backed by a HashMap.</li>
 <li>Per‑segment delta overlay (in memory): when a segment is loaded, delta files are folded into a <code>UniqueCache</code>. Upper bound approximates number of unique keys across delta files (see segment properties).</li>
 <li>Bloom filter: fully memory‑mapped in RAM when present; <code>indexSizeInBytes</code> bytes per segment plus metadata. Code: <code>bloomfilter/BloomFilterImpl.java</code>.</li>
 <li>SegmentData LRU: holds delta cache + Bloom + scarce index for up to <code>maxNumberOfSegmentsInCache</code> segments; evictions call <code>close()</code> to free memory.</li>
@@ -2744,16 +2744,16 @@
 <h2 id="observability-and-validation">🔎 Observability and Validation</h2>
 <ul>
 <li>Bloom stats: <code>BloomFilter.getStatistics()</code> reports avoided disk accesses and false‑positive rate. Code: <code>bloomfilter/BloomFilterStats</code>.</li>
-<li>Operation counters: <code>sst/Stats</code> exposes get/put/delete counts (logged on close in <code>SstIndexImpl#doClose</code>).</li>
-<li>Consistency: after unexpected shutdown, run <code>Index.checkAndRepairConsistency()</code>; optionally <code>compact()</code> to reclaim locality.</li>
+<li>Operation counters: <code>segmentindex/Stats</code> exposes get/put/delete counts (logged on close in <code>SegmentIndexImpl#doClose</code>).</li>
+<li>Consistency: after unexpected shutdown, run <code>SegmentIndex.checkAndRepairConsistency()</code>; optionally <code>compact()</code> to reclaim locality.</li>
 </ul>
 <h2 id="code-pointers">🧩 Code Pointers</h2>
 <ul>
-<li>Write buffer and flush: <code>src/main/java/org/hestiastore/index/sst/SstIndexImpl.java</code>, <code>src/main/java/org/hestiastore/index/sst/CompactSupport.java</code></li>
+<li>Write buffer and flush: <code>src/main/java/org/hestiastore/index/segmentindex/SegmentIndexImpl.java</code>, <code>src/main/java/org/hestiastore/index/segmentindex/CompactSupport.java</code></li>
 <li>Read path bounds: <code>src/main/java/org/hestiastore/index/segment/SegmentSearcher.java</code>, <code>.../SegmentIndexSearcher.java</code></li>
 <li>Bloom filter: <code>src/main/java/org/hestiastore/index/bloomfilter/*</code></li>
 <li>Chunked I/O and filters: <code>src/main/java/org/hestiastore/index/chunkstore/*</code></li>
-<li>Segment sizing/splitting: <code>src/main/java/org/hestiastore/index/sst/SegmentSplitCoordinator.java</code>, <code>src/main/java/org/hestiastore/index/segment/SegmentSplitter*.java</code></li>
+<li>Segment sizing/splitting: <code>src/main/java/org/hestiastore/index/segmentindex/SegmentSplitCoordinator.java</code>, <code>src/main/java/org/hestiastore/index/segment/SegmentSplitter*.java</code></li>
 </ul>
 <h2 id="related-glossary">🔗 Related Glossary</h2>
 <ul>

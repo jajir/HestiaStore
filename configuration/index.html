@@ -2286,10 +2286,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#index-directory" class="md-nav__link">
+  <a href="#segmentindex-directory" class="md-nav__link">
     <span class="md-ellipsis">
       
-        📁 Index Directory
+        📁 SegmentIndex Directory
       
     </span>
   </a>
@@ -2330,15 +2330,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#index-related-configuration" class="md-nav__link">
+  <a href="#segmentindex-related-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🧱 Index related configuration
+        🧱 SegmentIndex related configuration
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="🧱 Index related configuration">
+    <nav class="md-nav" aria-label="🧱 SegmentIndex related configuration">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2364,10 +2364,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#index-name-withname" class="md-nav__link">
+  <a href="#segmentindex-name-withname" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🏷️ Index name - withName()
+        🏷️ SegmentIndex name - withName()
       
     </span>
   </a>
@@ -2557,10 +2557,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#changing-index-propertise" class="md-nav__link">
+  <a href="#changing-segmentindex-propertise" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ✏️ Changing Index propertise
+        ✏️ Changing SegmentIndex propertise
       
     </span>
   </a>
@@ -2636,7 +2636,7 @@
 
 
 <h1 id="configuration">⚙️ Configuration</h1>
-<p>Don’t be afraid to experiment—if a configuration is missing or invalid, the Index will fail fast, helping you catch issues early.</p>
+<p>Don’t be afraid to experiment—if a configuration is missing or invalid, the SegmentIndex will fail fast, helping you catch issues early.</p>
 <p>The index is configured using the <code>IndexConfiguration</code> class. All essential index properties are configurable through the builder. See the example below:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">IndexConfiguration</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="w"> </span><span class="n">conf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IndexConfiguration</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="p">.</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">()</span><span class="c1">//</span>
@@ -2655,10 +2655,10 @@
 <a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">    </span><span class="p">.</span><span class="na">withName</span><span class="p">(</span><span class="s">&quot;test_index&quot;</span><span class="p">)</span><span class="w"> </span><span class="c1">//</span>
 <a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
 <a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="n">Index</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Index</span><span class="p">.</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="n">create</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span><span class="w"> </span><span class="n">conf</span><span class="p">);</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="n">SegmentIndex</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SegmentIndex</span><span class="p">.</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="n">create</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span><span class="w"> </span><span class="n">conf</span><span class="p">);</span>
 </code></pre></div>
 <p>Now let's look at particular parameters.</p>
-<h2 id="index-directory">📁 Index Directory</h2>
+<h2 id="segmentindex-directory">📁 SegmentIndex Directory</h2>
 <p>Place where all data are stored. There are two already prepared types:</p>
 <h2 id="in-memory">🧠 In Memory</h2>
 <p>All data are stored in memory. It's created like this:</p>
@@ -2671,7 +2671,7 @@
 </code></pre></div>
 <h2 id="properties-of-indexconfiguration-class">🧾 Properties of <code>IndexConfiguration</code> class</h2>
 <p>All properties are required and have the following meanings:</p>
-<h2 id="index-related-configuration">🧱 Index related configuration</h2>
+<h2 id="segmentindex-related-configuration">🧱 SegmentIndex related configuration</h2>
 <h3 id="key-class-withkeyclass">🔑 Key class - <code>withKeyClass()</code></h3>
 <p>A <code>Class</code> object that represents the type of keys used in the index. Only instances of this class may be inserted. While any Java class is technically supported, it's recommended to use simple, compact types for performance reasons. Predefined classes are:</p>
 <ul>
@@ -2683,7 +2683,7 @@
 <p>If a different class is used, the key type descriptor must be set using the <code>withKeyTypeDescriptor()</code> method from the builder. If you use a custom class, you must implement the <code>com.hestiastore.index.datatype.TypeDescriptor</code> interface to describe how the type is serialized and compared.</p>
 <h3 id="value-class-withvalueclass">🧲 Value class - <code>withValueClass()</code></h3>
 <p>Required. Specifies the Java class used for values. The same rules that apply to the key class also apply to the value class.</p>
-<h3 id="index-name-withname">🏷️ Index name - <code>withName()</code></h3>
+<h3 id="segmentindex-name-withname">🏷️ SegmentIndex name - <code>withName()</code></h3>
 <p>Required. Assigns a logical name to the index. This can be useful in diagnostics and logging.</p>
 <h3 id="key-type-descriptor-withkeytypedescriptor">🧩 Key type descriptor - <code>withKeyTypeDescriptor()</code></h3>
 <p>Type descriptor for the key class. Required for non-default types.</p>
@@ -2727,9 +2727,9 @@
 <h3 id="probability-of-false-positive-withbloomfilterprobabilityoffalsepositive">📈 Probability of false positive - <code>withBloomFilterProbabilityOfFalsePositive()</code></h3>
 <p>Sets the probability of false positives. When <code>get(someKey)</code> is called on a segment, the Bloom filter is checked to determine if the value is not in the segment. It can return <code>true</code>, indicating that the key <strong>could be</strong> in the segment. If the Bloom filter indicates the key is in the segment but it's not found, that's a false positive. The probability of this occurring is a value between 0 and 1.</p>
 <p>Usually, it's not necessary to adjust the Bloom filter settings.</p>
-<h2 id="changing-index-propertise">✏️ Changing Index propertise</h2>
+<h2 id="changing-segmentindex-propertise">✏️ Changing SegmentIndex propertise</h2>
 <p>Some parameters can be redefined when the index is opened.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">Index</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Index</span><span class="p">.</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="n">open</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span><span class="w"> </span><span class="n">conf</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">SegmentIndex</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SegmentIndex</span><span class="p">.</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="n">open</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span><span class="w"> </span><span class="n">conf</span><span class="p">);</span>
 </code></pre></div>
 <p>At allows to pass <code>IndexConfiguration</code> object and this way change configuration parameters. Fllowing table shou parameters that can be changed.  </p>
 <table>

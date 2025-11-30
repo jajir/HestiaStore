@@ -2,7 +2,7 @@
 
 'Index state diagram
 
-New: Index preparing data, Index is not available
+New: SegmentIndex preparing data, SegmentIndex is not available
 Ready: Ready to work
 Close: Resources are freed, index is not available
 

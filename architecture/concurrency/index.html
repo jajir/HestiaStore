@@ -2594,21 +2594,21 @@
 <p>HestiaStore offers two usage modes: a fast, non‑synchronized default intended for single‑threaded (or externally synchronized) use, and an opt‑in thread‑safe variant that serializes operations with a coarse lock. Iteration is protected with an optimistic lock so scans don’t observe torn updates.</p>
 <h2 id="variants">🧬 Variants</h2>
 <ul>
-<li>Default (non‑synchronized): <code>sst/SstIndexImpl</code></li>
+<li>Default (non‑synchronized): <code>segmentindex/SegmentIndexImpl</code></li>
 <li>Highest throughput, minimal coordination overhead.</li>
 <li>Not thread‑safe: internal structures (maps, caches) are not synchronized.</li>
 <li>
 <p>Use from a single thread, or add your own external synchronization.</p>
 </li>
 <li>
-<p>Thread‑safe: <code>sst/IndexInternalSynchronized</code></p>
+<p>Thread‑safe: <code>segmentindex/IndexInternalSynchronized</code></p>
 </li>
 <li>Enabled via <code>IndexConfigurationBuilder.withThreadSafe(true)</code>.</li>
 <li>Wraps all public operations (<code>put</code>, <code>get</code>, <code>delete</code>, <code>flush</code>, <code>compact</code>, <code>getStream</code>, <code>checkAndRepairConsistency</code>) in a single <code>ReentrantLock</code>.</li>
 <li>Iterators returned by <code>getStream</code> are wrapped with <code>EntryIteratorSynchronized</code> to take/release the lock for <code>hasNext</code>/<code>next</code>/<code>close</code> calls.</li>
 <li>Trade‑off: simple and safe, but long scans will contend with writers due to coarse locking.</li>
 </ul>
-<p>Code pointers: <code>sst/IndexInternalSynchronized.java</code>, <code>sst/EntryIteratorSynchronized.java</code>.</p>
+<p>Code pointers: <code>segmentindex/IndexInternalSynchronized.java</code>, <code>segmentindex/EntryIteratorSynchronized.java</code>.</p>
 <h2 id="process-exclusivity">🔐 Process Exclusivity</h2>
 <p>Opening an index acquires a directory file lock to prevent two processes from using the same directory at once:</p>
 <ul>
@@ -2616,7 +2616,7 @@
 <li>On close: the lock file is removed in <code>IndexStateReady#onClose</code>.</li>
 <li>Any operation before “ready” or after “closed” throws an error (<code>IndexState*</code>).</li>
 </ul>
-<p>Code pointers: <code>sst/IndexStateNew.java</code>, <code>sst/IndexStateReady.java</code>, <code>sst/IndexStateClose.java</code>, <code>directory/FsFileLock.java</code>.</p>
+<p>Code pointers: <code>segmentindex/IndexStateNew.java</code>, <code>segmentindex/IndexStateReady.java</code>, <code>segmentindex/IndexStateClose.java</code>, <code>directory/FsFileLock.java</code>.</p>
 <h2 id="reader-isolation-optimistic-lock">🧪 Reader Isolation (Optimistic Lock)</h2>
 <p>Segment reads are protected by an optimistic lock based on a monotonically increasing version:</p>
 <ul>
@@ -2658,7 +2658,7 @@
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="c1">// ... type descriptors and other settings ...</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="p">.</span><span class="na">withThreadSafe</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">Index</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Index</span><span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span><span class="w"> </span><span class="n">conf</span><span class="p">);</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">SegmentIndex</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SegmentIndex</span><span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span><span class="w"> </span><span class="n">conf</span><span class="p">);</span>
 </code></pre></div>
 <ul>
 <li>For high read concurrency with minimal contention, prefer the default variant and place your own read/write locks at a higher level if needed.</li>

@@ -2666,11 +2666,11 @@
 </ul>
 <h2 id="where-writes-become-durable">💾 Where Writes Become Durable</h2>
 <ul>
-<li>Index‑level buffer → disk: <code>Index.flush()</code> drains the in‑memory unique buffer into segment delta cache files. On close, the index also flushes.</li>
+<li>Index‑level buffer → disk: <code>SegmentIndex.flush()</code> drains the in‑memory unique buffer into segment delta cache files. On close, the index also flushes.</li>
 <li>Segment merge/compaction: when a segment compacts, the new main SST, sparse index, and Bloom filter are built via transactional writers; on commit they atomically replace the old ones.</li>
 <li>Key→segment map (<code>index.map</code>): persisted via a transactional sorted data writer during flush or when updated.</li>
 </ul>
-<p>Relevant code: <code>sst/SstIndexImpl#flush()</code>, <code>sst/CompactSupport</code>, <code>sst/KeySegmentCache#optionalyFlush()</code>.</p>
+<p>Relevant code: <code>segmentindex/SegmentIndexImpl#flush()</code>, <code>segmentindex/CompactSupport</code>, <code>segmentindex/KeySegmentCache#optionalyFlush()</code>.</p>
 <h2 id="transactional-write-primitives">✍️ Transactional Write Primitives</h2>
 <p>All main data files follow the same pattern: write to a temporary file, then atomically rename on <code>commit()</code>.</p>
 <ul>
@@ -2724,9 +2724,9 @@
 </ul>
 <h2 id="consistency-check-and-repair">🧰 Consistency Check and Repair</h2>
 <ul>
-<li>Run <code>Index.checkAndRepairConsistency()</code> after an unexpected shutdown to verify that segments are well‑formed and sorted and that the key→segment map is coherent. This walks all segments, checks ordering and basic invariants, and raises an error if it finds non‑recoverable issues.</li>
+<li>Run <code>SegmentIndex.checkAndRepairConsistency()</code> after an unexpected shutdown to verify that segments are well‑formed and sorted and that the key→segment map is coherent. This walks all segments, checks ordering and basic invariants, and raises an error if it finds non‑recoverable issues.</li>
 </ul>
-<p>Key classes: <code>sst/IndexConsistencyChecker</code>, <code>segment/SegmentConsistencyChecker</code>.</p>
+<p>Key classes: <code>segmentindex/IndexConsistencyChecker</code>, <code>segment/SegmentConsistencyChecker</code>.</p>
 <h2 id="developer-notes-opencommit-and-tmp">👩‍💻 Developer Notes: <code>open()</code>/<code>commit()</code> and <code>*.tmp</code></h2>
 <ul>
 <li><code>open()</code> returns a writer bound to a temporary file (typically with a <code>.tmp</code> suffix). You must close the writer before calling <code>commit()</code>.</li>

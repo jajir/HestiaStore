@@ -1780,10 +1780,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#index-write-buffer-uniquecache" class="md-nav__link">
+  <a href="#segmentindex-write-buffer-uniquecache" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Index write buffer (UniqueCache)
+        SegmentIndex write buffer (UniqueCache)
       
     </span>
   </a>
@@ -2534,10 +2534,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#index-write-buffer-uniquecache" class="md-nav__link">
+  <a href="#segmentindex-write-buffer-uniquecache" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Index write buffer (UniqueCache)
+        SegmentIndex write buffer (UniqueCache)
       
     </span>
   </a>
@@ -2745,9 +2745,9 @@
 </ul>
 <h2 id="layers-overview">🧱 Layers Overview</h2>
 <ul>
-<li>Index write buffer: in‑memory, unique latest value per key</li>
+<li>SegmentIndex write buffer: in‑memory, unique latest value per key</li>
 <li>Class: <code>cache/UniqueCache</code></li>
-<li>Owner: <code>sst/SstIndexImpl</code> (top‑level)</li>
+<li>Owner: <code>segmentindex/SegmentIndexImpl</code> (top‑level)</li>
 <li>
 <p>Purpose: absorb writes and provide immediate visibility before flush</p>
 </li>
@@ -2761,7 +2761,7 @@
 <li>
 <p>Segment data LRU: cache of heavyweight per‑segment objects</p>
 </li>
-<li>Classes: <code>sst/SegmentDataCache</code> (LRU), values are <code>segment/SegmentData</code> (lazy container)</li>
+<li>Classes: <code>segmentindex/SegmentDataCache</code> (LRU), values are <code>segment/SegmentData</code> (lazy container)</li>
 <li>
 <p>Contents: delta cache, Bloom filter, sparse index (scarce index)</p>
 </li>
@@ -2780,16 +2780,16 @@
 <li>
 <p>Key→segment map: max‑key to SegmentId mapping</p>
 </li>
-<li>Class: <code>sst/KeySegmentCache</code> (TreeMap, persisted to <code>index.map</code>)</li>
+<li>Class: <code>segmentindex/KeySegmentCache</code> (TreeMap, persisted to <code>index.map</code>)</li>
 </ul>
 <h2 id="writetime-caches">✍️ Write‑Time Caches</h2>
-<h3 id="index-write-buffer-uniquecache">Index write buffer (UniqueCache)</h3>
+<h3 id="segmentindex-write-buffer-uniquecache">SegmentIndex write buffer (UniqueCache)</h3>
 <ul>
-<li>On <code>Index.put/delete</code>, the write is stored in an index‑level <code>UniqueCache</code>.</li>
+<li>On <code>SegmentIndex.put/delete</code>, the write is stored in an index‑level <code>UniqueCache</code>.</li>
 <li>Replaces any prior value for the same key; deletes are represented as a tombstone value.</li>
 <li>Triggered flush (<code>cache.size() &gt; maxNumberOfKeysInCache</code>) routes sorted writes to target segments and clears the buffer.</li>
 </ul>
-<p>Code: <code>sst/SstIndexImpl#put</code>, <code>sst/SstIndexImpl#delete</code>, <code>sst/SstIndexImpl#flushCache</code>, <code>cache/UniqueCache</code>.</p>
+<p>Code: <code>segmentindex/SegmentIndexImpl#put</code>, <code>segmentindex/SegmentIndexImpl#delete</code>, <code>segmentindex/SegmentIndexImpl#flushCache</code>, <code>cache/UniqueCache</code>.</p>
 <h3 id="segment-delta-cache">Segment delta cache</h3>
 <ul>
 <li>Flush writes become per‑segment delta files via <code>SegmentDeltaCacheWriter</code> (transactional temp file + rename).</li>
@@ -2799,17 +2799,17 @@
 <p>Code: <code>segment/SegmentDeltaCacheWriter</code>, <code>segment/SegmentDeltaCacheController</code>, <code>segment/SegmentCompacter</code>, <code>segment/SegmentFullWriterTx#doCommit</code>.</p>
 <h2 id="readtime-caches">📖 Read‑Time Caches</h2>
 <ul>
-<li>Top‑level overlay: <code>Index.get(k)</code> checks the index write buffer first. Iterators are also overlaid with <code>EntryIteratorRefreshedFromCache</code> so scans see most recent writes.</li>
+<li>Top‑level overlay: <code>SegmentIndex.get(k)</code> checks the index write buffer first. Iterators are also overlaid with <code>EntryIteratorRefreshedFromCache</code> so scans see most recent writes.</li>
 <li>Per‑segment overlay: <code>SegmentDeltaCache</code> is consulted before the Bloom filter + sparse index path. If it returns a tombstone, the key is absent.</li>
 <li>Heavy objects (Bloom filter, scarce index, delta cache) are obtained via a provider backed by LRU:</li>
-<li><code>sst/SegmentDataCache</code> holds <code>segment/SegmentData</code> instances with an LRU limit; eviction calls <code>close()</code> on the container.</li>
+<li><code>segmentindex/SegmentDataCache</code> holds <code>segment/SegmentData</code> instances with an LRU limit; eviction calls <code>close()</code> on the container.</li>
 <li>Providers: <code>segment/SegmentDataProvider</code> implementations<ul>
-<li><code>sst/SegmentDataProviderFromMainCache</code> — returns/creates from the LRU</li>
+<li><code>segmentindex/SegmentDataProviderFromMainCache</code> — returns/creates from the LRU</li>
 <li><code>segment/SegmentDataProviderSimple</code> — simple local holder (used in wiring/tests)</li>
 </ul>
 </li>
 </ul>
-<p>Code: <code>sst/SstIndexImpl#get</code>, <code>segment/SegmentImpl#get</code>, <code>segment/SegmentSearcher</code>, <code>sst/EntryIteratorRefreshedFromCache</code>, <code>sst/SegmentDataCache</code>.</p>
+<p>Code: <code>segmentindex/SegmentIndexImpl#get</code>, <code>segment/SegmentImpl#get</code>, <code>segment/SegmentSearcher</code>, <code>segmentindex/EntryIteratorRefreshedFromCache</code>, <code>segmentindex/SegmentDataCache</code>.</p>
 <h2 id="eviction-and-lifecycle">♻️ Eviction and Lifecycle</h2>
 <ul>
 <li>UniqueCache (index write buffer): no incremental eviction; cleared on flush.</li>
@@ -2830,7 +2830,7 @@
 - <code>bloomFilterProbabilityOfFalsePositive</code></p>
 <p>I/O buffering:
 - <code>diskIoBufferSize</code> — affects memory used by readers/writers across files</p>
-<p>See: <code>sst/IndexConfiguration</code>, <code>segment/SegmentConf</code>.</p>
+<p>See: <code>segmentindex/IndexConfiguration</code>, <code>segment/SegmentConf</code>.</p>
 <h2 id="warmup-strategies">🔥 Warm‑Up Strategies</h2>
 <ul>
 <li>Point warm‑up: issue representative <code>get(key)</code> calls; this loads the target segments’ Bloom filter and sparse index into the LRU.</li>
@@ -2840,7 +2840,7 @@
 <h2 id="observability">🧭 Observability</h2>
 <ul>
 <li>Bloom filter effectiveness and false‑positive rate: <code>bloomfilter/BloomFilterStats</code>, accessible via <code>BloomFilter.getStatistics()</code>.</li>
-<li>Index operation counters (coarse): <code>sst/Stats</code> increments on get/put/delete.</li>
+<li>SegmentIndex operation counters (coarse): <code>segmentindex/Stats</code> increments on get/put/delete.</li>
 </ul>
 <h2 id="tuning-guidance">🛠️ Tuning Guidance</h2>
 <ul>
@@ -2851,10 +2851,10 @@
 </ul>
 <h2 id="code-pointers">🧩 Code Pointers</h2>
 <ul>
-<li>Index write buffer: <code>src/main/java/org/hestiastore/index/sst/SstIndexImpl.java</code></li>
-<li>Segment caches and providers: <code>src/main/java/org/hestiastore/index/sst/*SegmentData*</code>, <code>src/main/java/org/hestiastore/index/segment/SegmentData*</code></li>
+<li>SegmentIndex write buffer: <code>src/main/java/org/hestiastore/index/segmentindex/SegmentIndexImpl.java</code></li>
+<li>Segment caches and providers: <code>src/main/java/org/hestiastore/index/segmentindex/*SegmentData*</code>, <code>src/main/java/org/hestiastore/index/segment/SegmentData*</code></li>
 <li>LRU cache: <code>src/main/java/org/hestiastore/index/cache/CacheLru.java</code></li>
-<li>Key→segment map: <code>src/main/java/org/hestiastore/index/sst/KeySegmentCache.java</code></li>
+<li>Key→segment map: <code>src/main/java/org/hestiastore/index/segmentindex/KeySegmentCache.java</code></li>
 </ul>
 <h2 id="related-glossary">🔗 Related Glossary</h2>
 <ul>

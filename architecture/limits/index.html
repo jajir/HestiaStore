@@ -2667,7 +2667,7 @@
 </ul>
 <h2 id="concurrency">🔒 Concurrency</h2>
 <ul>
-<li>Default build is not thread‑safe: <code>SstIndexImpl</code> favors throughput with no internal locking. Use one writer thread (and coordinate readers), or enable the synchronized variant.</li>
+<li>Default build is not thread‑safe: <code>SegmentIndexImpl</code> favors throughput with no internal locking. Use one writer thread (and coordinate readers), or enable the synchronized variant.</li>
 <li>Thread‑safe mode uses a coarse <code>ReentrantLock</code>: <code>IndexInternalSynchronized</code> serializes all ops; long scans contend with writes. Iterators in this mode take/release the same lock per step.</li>
 <li>Optimistic iteration: Segment iterators may stop early if a write bumps the version during a scan (by design). Re‑open the iterator to continue. See <code>EntryIteratorWithLock</code>.</li>
 </ul>
@@ -2686,7 +2686,7 @@
 <li>Bloom filter sizing and hash functions</li>
 <li>Encoding/decoding filter lists (order and membership)</li>
 </ul>
-<p>Attempts to change these raise an error in <code>IndexConfigurationManager.validateThatWasntChanged</code>. To change them, create a new index and bulk‑copy data (read + write) or export/import. See <code>sst/IndexConfigurationManager.java</code>.</p>
+<p>Attempts to change these raise an error in <code>IndexConfigurationManager.validateThatWasntChanged</code>. To change them, create a new index and bulk‑copy data (read + write) or export/import. See <code>segmentindex/IndexConfigurationManager.java</code>.</p>
 <h2 id="data-model-and-semantics">🧠 Data Model and Semantics</h2>
 <ul>
 <li>Strictly increasing keys: All on‑disk structures assume ascending order; compaction and consistency checks enforce it. Incorrect comparators or inconsistent key ordering will fail. Code: <code>segment/SegmentConsistencyChecker.java</code>.</li>

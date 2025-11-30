@@ -2600,12 +2600,12 @@
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    at org.hestiastore.index.AbstractCloseableResource.close(AbstractCloseableResource.java:23)
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    at org.hestiastore.index.segment.SegmentDeltaCacheCompactingWriter.doClose(SegmentDeltaCacheCompactingWriter.java:47)
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    at org.hestiastore.index.AbstractCloseableResource.close(AbstractCloseableResource.java:23)
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    at org.hestiastore.index.sst.CompactSupport.flushToCurrentSegment(CompactSupport.java:84)
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    at org.hestiastore.index.sst.CompactSupport.compact(CompactSupport.java:59)
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    at org.hestiastore.index.segmentindex.CompactSupport.flushToCurrentSegment(CompactSupport.java:84)
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    at org.hestiastore.index.segmentindex.CompactSupport.compact(CompactSupport.java:59)
 <a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    at org.hestiastore.index.sst.SstIndexImpl.flushCache(SstIndexImpl.java:126)
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    at org.hestiastore.index.sst.SstIndexImpl.put(SstIndexImpl.java:83)
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    at org.hestiastore.index.sst.Index.put(Index.java:93)
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    at org.hestiastore.index.segmentindex.SegmentIndexImpl.flushCache(SegmentIndexImpl.java:126)
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    at org.hestiastore.index.segmentindex.SegmentIndexImpl.put(SegmentIndexImpl.java:83)
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    at org.hestiastore.index.segmentindex.SegmentIndex.put(SegmentIndex.java:93)
 </code></pre></div>
 <h2 id="dependency-resolution-fails">📦 Dependency Resolution Fails</h2>
 <ul>

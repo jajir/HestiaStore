@@ -2694,7 +2694,7 @@
 <h2 id="configuration">⚙️ Configuration</h2>
 <p>Filters are configured on the index through the fluent builder and then stored in the index configuration:</p>
 <ul>
-<li>API: <code>sst/IndexConfigurationBuilder</code></li>
+<li>API: <code>segmentindex/IndexConfigurationBuilder</code></li>
 <li><code>addEncodingFilter(ChunkFilter)</code> / <code>addEncodingFilter(Class&lt;? extends ChunkFilter&gt;)</code></li>
 <li><code>addDecodingFilter(ChunkFilter)</code> / <code>addDecodingFilter(Class&lt;? extends ChunkFilter&gt;)</code></li>
 <li><code>withEncodingFilters(Collection&lt;ChunkFilter&gt;)</code></li>
@@ -2737,7 +2737,7 @@
 <li>Filters: <code>src/main/java/org/hestiastore/index/chunkstore/ChunkFilter*.java</code></li>
 <li>Writer path: <code>src/main/java/org/hestiastore/index/chunkstore/ChunkStoreWriterImpl.java</code></li>
 <li>Reader path: <code>src/main/java/org/hestiastore/index/chunkstore/ChunkStoreReaderImpl.java</code></li>
-<li>Configuration defaults: <code>src/main/java/org/hestiastore/index/sst/IndexConfigurationContract.java</code></li>
+<li>Configuration defaults: <code>src/main/java/org/hestiastore/index/segmentindex/IndexConfigurationContract.java</code></li>
 </ul>
 <h2 id="related-glossary">🔗 Related Glossary</h2>
 <ul>

@@ -2694,7 +2694,7 @@
 <p>This page explains how reads resolve values with low latency and predictable I/O. It walks through point lookups, range iteration, and the interplay of caches, Bloom filter, and the sparse index, mapped to concrete classes in the codebase.</p>
 <h2 id="highlevel-flow-point-lookup">🧭 High‑Level Flow (Point Lookup)</h2>
 <ol>
-<li>API call: <code>Index.get(key)</code></li>
+<li>API call: <code>SegmentIndex.get(key)</code></li>
 <li>Check the index‑level unique buffer (latest in‑process writes)</li>
 <li>Locate the target segment using the key→segment map</li>
 <li>Inside the segment: consult delta cache → Bloom filter → sparse index → local scan</li>
@@ -2702,12 +2702,12 @@
 <p>Lookups are read‑after‑write consistent thanks to the in‑memory buffers.</p>
 <h2 id="entry-point-and-firstlevel-cache">🚪 Entry Point and First‑Level Cache</h2>
 <ul>
-<li><code>sst/SstIndexImpl#get(K)</code> does:</li>
+<li><code>segmentindex/SegmentIndexImpl#get(K)</code> does:</li>
 <li>Check the index‑level <code>UniqueCache</code> (holds latest writes prior to flush)</li>
 <li>If miss, find <code>SegmentId</code> via <code>KeySegmentCache.findSegmentId(key)</code></li>
 <li>Delegate to <code>Segment.get(key)</code></li>
 </ul>
-<p>Key classes: <code>sst/SstIndexImpl.java</code>, <code>sst/KeySegmentCache.java</code>, <code>cache/UniqueCache.java</code>.</p>
+<p>Key classes: <code>segmentindex/SegmentIndexImpl.java</code>, <code>segmentindex/KeySegmentCache.java</code>, <code>cache/UniqueCache.java</code>.</p>
 <h3 id="behavior">Behavior</h3>
 <ul>
 <li>Cache hit and non‑tombstone → return value</li>
@@ -2723,20 +2723,20 @@
 <li>Local scan: within at most N keys (<code>maxNumberOfKeysInIndexPage</code>) starting at that chunk, compare keys in ascending order and stop as soon as the target is found or passed.</li>
 <li>If the sparse index pointed us into the file but no exact key was found, mark a false positive on the Bloom filter for metrics and return absent.</li>
 </ol>
-<p>Key classes: <code>segment/SegmentSearcher.java</code>, <code>segment/SegmentIndexSearcher.java</code>, <code>scarceindex/ScarceIndex.java</code>, <code>bloomfilter/BloomFilter.java</code>.</p>
+<p>Key classes: <code>segment/SegmentSearcher.java</code>, <code>segment/SegmentIndexSearcher.java</code>, <code>scarceindex/ScarceSegmentIndex.java</code>, <code>bloomfilter/BloomFilter.java</code>.</p>
 <h2 id="range-scans-and-full-iteration">🔁 Range Scans and Full Iteration</h2>
 <ul>
-<li><code>Index.getStream()</code> and <code>Index.openSegmentIterator(...)</code> produce iterators over all data:</li>
-<li><code>sst/SegmentsIterator</code> chains <code>Segment.openIterator()</code> across all segments in order.</li>
+<li><code>SegmentIndex.getStream()</code> and <code>SegmentIndex.openSegmentIterator(...)</code> produce iterators over all data:</li>
+<li><code>segmentindex/SegmentsIterator</code> chains <code>Segment.openIterator()</code> across all segments in order.</li>
 <li><code>segment/SegmentImpl.openIterator()</code> merges the on‑disk main SST with the segment’s delta cache via <code>MergeDeltaCacheWithIndexIterator</code>, skipping tombstones.</li>
 <li>The per‑segment iterator is wrapped with <code>EntryIteratorWithLock</code> using an <code>OptimisticLock</code>. If a write changes the segment version mid‑scan, the iterator stops gracefully (no partial records).</li>
 <li>At the top level, <code>EntryIteratorRefreshedFromCache</code> overlays the index‑level unique buffer so that the iterator sees the latest writes even before they’re flushed to disk.</li>
 </ul>
-<p>Key classes: <code>sst/SegmentsIterator.java</code>, <code>segment/MergeDeltaCacheWithIndexIterator.java</code>, <code>sst/EntryIteratorRefreshedFromCache.java</code>, <code>EntryIteratorWithLock.java</code>, <code>OptimisticLock.java</code>.</p>
+<p>Key classes: <code>segmentindex/SegmentsIterator.java</code>, <code>segment/MergeDeltaCacheWithIndexIterator.java</code>, <code>segmentindex/EntryIteratorRefreshedFromCache.java</code>, <code>EntryIteratorWithLock.java</code>, <code>OptimisticLock.java</code>.</p>
 <h2 id="readafterwrite-semantics">🔄 Read‑After‑Write Semantics</h2>
 <p>Two layers provide immediate visibility of recent writes:</p>
 <ul>
-<li>Index‑level <code>UniqueCache</code> (pre‑flush) is checked first by <code>Index.get</code> and overlaid on iterators.</li>
+<li>Index‑level <code>UniqueCache</code> (pre‑flush) is checked first by <code>SegmentIndex.get</code> and overlaid on iterators.</li>
 <li>Segment delta cache (post‑flush) is kept in memory when loaded; writes to a new delta file also update the in‑memory delta cache when present.</li>
 </ul>
 <p>Deletes are represented as tombstones by the value type descriptor. The read path treats a tombstone as “not found”.</p>
@@ -2757,7 +2757,7 @@
 <li><code>diskIoBufferSize</code> — affects chunk and data block I/O buffering</li>
 <li>Encoding/decoding filters — enable CRC32, magic number and optional Snappy compression on read/write paths</li>
 </ul>
-<p>See: <code>sst/IndexConfiguration</code> and <code>segment/SegmentConf</code>.</p>
+<p>See: <code>segmentindex/IndexConfiguration</code> and <code>segment/SegmentConf</code>.</p>
 <h2 id="integrity-on-the-read-path">🛡️ Integrity on the Read Path</h2>
 <p>Decoding applies the inverse of the write pipeline when reading chunks:</p>
 <ul>
@@ -2769,7 +2769,7 @@
 <p>Key classes: <code>chunkstore/ChunkStoreReaderImpl</code>, <code>chunkstore/ChunkFilterMagicNumberValidation</code>, <code>chunkstore/ChunkFilterCrc32Validation</code>, <code>chunkstore/ChunkFilterSnappyDecompress</code>.</p>
 <h2 id="where-to-look-in-the-code">🧩 Where to Look in the Code</h2>
 <ul>
-<li>Point lookup orchestration: <code>src/main/java/org/hestiastore/index/sst/SstIndexImpl.java</code></li>
+<li>Point lookup orchestration: <code>src/main/java/org/hestiastore/index/segmentindex/SegmentIndexImpl.java</code></li>
 <li>Segment search path: <code>src/main/java/org/hestiastore/index/segment/SegmentSearcher.java</code></li>
 <li>Sparse index: <code>src/main/java/org/hestiastore/index/scarceindex/*</code></li>
 <li>Iteration and merging: <code>src/main/java/org/hestiastore/index/segment/MergeDeltaCacheWithIndexIterator.java</code></li>
