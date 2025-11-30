@@ -47,7 +47,7 @@ HestiaStore is designed to run as a component within a trusted local application
 | Unauthorized file access   | ❌         | No access control; relies on OS permissions |
 | File corruption            | 🚫         | Partial protection through optional WAL |
 | Memory data leakage        | ❌         | JVM memory is not encrypted or zeroed |
-| Index inconsistency        | ⚠️         | Recovery possible using `checkAndRepairConsistency()` |
+| SegmentIndex inconsistency        | ⚠️         | Recovery possible using `checkAndRepairConsistency()` |
 
 ## 🛡️ Trust Boundaries
 

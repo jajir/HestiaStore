@@ -9,7 +9,7 @@ import org.hestiastore.index.chunkstore.ChunkStoreFile;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.scarceindex.ScarceIndex;
+import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 
 /**
@@ -149,8 +149,8 @@ public final class SegmentFiles<K, V> {
      *
      * @return scarce index instance
      */
-    ScarceIndex<K> getScarceIndex() {
-        return ScarceIndex.<K>builder()//
+    ScarceSegmentIndex<K> getScarceIndex() {
+        return ScarceSegmentIndex.<K>builder()//
                 .withDirectory(getDirectory())//
                 .withFileName(getScarceFileName())//
                 .withKeyTypeDescriptor(getKeyTypeDescriptor())//

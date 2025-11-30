@@ -10,11 +10,11 @@ This page explains HestiaStore’s crash safety model and commit semantics. Ther
 
 ## 💾 Where Writes Become Durable
 
-- Index‑level buffer → disk: `Index.flush()` drains the in‑memory unique buffer into segment delta cache files. On close, the index also flushes.
+- Index‑level buffer → disk: `SegmentIndex.flush()` drains the in‑memory unique buffer into segment delta cache files. On close, the index also flushes.
 - Segment merge/compaction: when a segment compacts, the new main SST, sparse index, and Bloom filter are built via transactional writers; on commit they atomically replace the old ones.
 - Key→segment map (`index.map`): persisted via a transactional sorted data writer during flush or when updated.
 
-Relevant code: `sst/SstIndexImpl#flush()`, `sst/CompactSupport`, `sst/KeySegmentCache#optionalyFlush()`.
+Relevant code: `segmentindex/SegmentIndexImpl#flush()`, `segmentindex/CompactSupport`, `segmentindex/KeySegmentCache#optionalyFlush()`.
 
 ## ✍️ Transactional Write Primitives
 
@@ -63,9 +63,9 @@ Code: `properties/PropertyStoreimpl` and `SegmentPropertiesManager`.
 
 ## 🧰 Consistency Check and Repair
 
-- Run `Index.checkAndRepairConsistency()` after an unexpected shutdown to verify that segments are well‑formed and sorted and that the key→segment map is coherent. This walks all segments, checks ordering and basic invariants, and raises an error if it finds non‑recoverable issues.
+- Run `SegmentIndex.checkAndRepairConsistency()` after an unexpected shutdown to verify that segments are well‑formed and sorted and that the key→segment map is coherent. This walks all segments, checks ordering and basic invariants, and raises an error if it finds non‑recoverable issues.
 
-Key classes: `sst/IndexConsistencyChecker`, `segment/SegmentConsistencyChecker`.
+Key classes: `segmentindex/IndexConsistencyChecker`, `segment/SegmentConsistencyChecker`.
 
 ## 👩‍💻 Developer Notes: `open()`/`commit()` and `*.tmp`
 

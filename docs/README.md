@@ -22,7 +22,7 @@ Features:
  • In‑memory or file‑backed storage, zero‑config setup
  • Pluggable filters: Snappy compression, CRC32 integrity, magic-number validation
  • Bloom filter for fast negative lookups (tunable false-positive rate)
- • Segmented SST structure with sparse index for efficient range scans
+ • Segmented structure with sparse index for efficient range scans
  • Custom key/value types via type descriptors
  • Single‑writer, multi‑reader (optional synchronized mode)
  • Test-friendly MemDirectory for fast, isolated tests
@@ -135,7 +135,7 @@ IndexConfiguration<String, String> conf = IndexConfiguration
         .build();
 
 // Create a new index
-Index<String, String> index = Index.<String, String>create(directory, conf);
+SegmentIndex<String, String> index = SegmentIndex.<String, String>create(directory, conf);
 
 // Perform basic operations
 index.put("Hello", "World");

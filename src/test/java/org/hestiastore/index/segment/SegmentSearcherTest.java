@@ -9,7 +9,7 @@ import static org.mockito.Mockito.when;
 import org.hestiastore.index.TestData;
 import org.hestiastore.index.bloomfilter.BloomFilter;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
-import org.hestiastore.index.scarceindex.ScarceIndex;
+import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,7 +30,7 @@ public class SegmentSearcherTest {
     private BloomFilter<String> bloomFilter;
 
     @Mock
-    private ScarceIndex<String> scarceIndex;
+    private ScarceSegmentIndex<String> scarceIndex;
 
     @Mock
     private SegmentDataProvider<String, Long> segmentDataProvider;

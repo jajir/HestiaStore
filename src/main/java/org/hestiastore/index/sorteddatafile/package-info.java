@@ -9,7 +9,7 @@
  * 
  * Represent one file containing sorted key value entry.
  * <p>
- * Index have separate writing phase from search phase.
+ * SegmentIndex have separate writing phase from search phase.
  * </p>
  * 
  * @author jajir

@@ -27,12 +27,12 @@ xception in thread "main" java.lang.IllegalArgumentException: Attempt to insert 
     at org.hestiastore.index.AbstractCloseableResource.close(AbstractCloseableResource.java:23)
     at org.hestiastore.index.segment.SegmentDeltaCacheCompactingWriter.doClose(SegmentDeltaCacheCompactingWriter.java:47)
     at org.hestiastore.index.AbstractCloseableResource.close(AbstractCloseableResource.java:23)
-    at org.hestiastore.index.sst.CompactSupport.flushToCurrentSegment(CompactSupport.java:84)
-    at org.hestiastore.index.sst.CompactSupport.compact(CompactSupport.java:59)
+    at org.hestiastore.index.segmentindex.CompactSupport.flushToCurrentSegment(CompactSupport.java:84)
+    at org.hestiastore.index.segmentindex.CompactSupport.compact(CompactSupport.java:59)
     at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-    at org.hestiastore.index.sst.SstIndexImpl.flushCache(SstIndexImpl.java:126)
-    at org.hestiastore.index.sst.SstIndexImpl.put(SstIndexImpl.java:83)
-    at org.hestiastore.index.sst.Index.put(Index.java:93)
+    at org.hestiastore.index.segmentindex.SegmentIndexImpl.flushCache(SegmentIndexImpl.java:126)
+    at org.hestiastore.index.segmentindex.SegmentIndexImpl.put(SegmentIndexImpl.java:83)
+    at org.hestiastore.index.segmentindex.SegmentIndex.put(SegmentIndex.java:93)
 ```
 
 ## 📦 Dependency Resolution Fails

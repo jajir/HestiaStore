@@ -1,7 +1,7 @@
 package org.hestiastore.index.segment;
 
 import org.hestiastore.index.bloomfilter.BloomFilter;
-import org.hestiastore.index.scarceindex.ScarceIndex;
+import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 
 /**
  * Provides access to heavyweight, segment-scoped data structures such as the
@@ -39,7 +39,7 @@ public interface SegmentData<K, V> {
      *
      * @return scarce index instance
      */
-    ScarceIndex<K> getScarceIndex();
+    ScarceSegmentIndex<K> getScarceIndex();
 
     /**
      * Releases resources held by this data container (e.g., closes Bloom

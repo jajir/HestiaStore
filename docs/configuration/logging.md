@@ -53,7 +53,7 @@ You can control verbosity by modifying the `<logger>` or `<Root>` levels:
 <Root level="INFO">
 ```
 
-## 🚫 Disabling Index Logs
+## 🚫 Disabling SegmentIndex Logs
 
 If you want to disable index-specific logging entirely, remove or comment out the `org.hestiastore.index` logger section. Alternatively log level for package could be set to "ERROR".
 

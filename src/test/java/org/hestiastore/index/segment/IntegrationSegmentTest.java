@@ -569,7 +569,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         ));
 
         /**
-         * Index search should lead to load segment data.
+         * SegmentIndex search should lead to load segment data.
          */
         assertTrue(dataProvider.isLoaded());
 

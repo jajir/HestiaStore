@@ -2,7 +2,7 @@ package org.hestiastore.index.segment;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilter;
-import org.hestiastore.index.scarceindex.ScarceIndex;
+import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 
 /**
  * Immutable inputs for a single segment search operation.
@@ -44,7 +44,7 @@ final class SegmentSearcherContext<K, V> {
                 "bloomFilter");
     }
 
-    ScarceIndex<K> getScarceIndex() {
+    ScarceSegmentIndex<K> getScarceIndex() {
         return Vldtn.requireNonNull(segmentDataProvider.getScarceIndex(),
                 "scarceIndex");
     }

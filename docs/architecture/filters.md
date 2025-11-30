@@ -72,7 +72,7 @@ Utility
 
 Filters are configured on the index through the fluent builder and then stored in the index configuration:
 
-- API: `sst/IndexConfigurationBuilder`
+- API: `segmentindex/IndexConfigurationBuilder`
   - `addEncodingFilter(ChunkFilter)` / `addEncodingFilter(Class<? extends ChunkFilter>)`
   - `addDecodingFilter(ChunkFilter)` / `addDecodingFilter(Class<? extends ChunkFilter>)`
   - `withEncodingFilters(Collection<ChunkFilter>)`
@@ -124,7 +124,7 @@ builder
 - Filters: `src/main/java/org/hestiastore/index/chunkstore/ChunkFilter*.java`
 - Writer path: `src/main/java/org/hestiastore/index/chunkstore/ChunkStoreWriterImpl.java`
 - Reader path: `src/main/java/org/hestiastore/index/chunkstore/ChunkStoreReaderImpl.java`
-- Configuration defaults: `src/main/java/org/hestiastore/index/sst/IndexConfigurationContract.java`
+- Configuration defaults: `src/main/java/org/hestiastore/index/segmentindex/IndexConfigurationContract.java`
 
 ## 🔗 Related Glossary
 

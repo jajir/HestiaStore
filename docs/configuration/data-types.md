@@ -28,7 +28,7 @@ HestiaStore allows advanced users to define custom `TypeDescriptor` implementati
 To create a new data type:
 
 1. Implement the `TypeDescriptor<T>` interface. It's just a collection of simple interfaces which allows store data type to bytes and restore it from byte array
-2. Optionallly register it using `org.hestiastore.index.sst.DataTypeDescriptorRegistry.addTypeDescriptor(Class, descriptor)`.
+2. Optionallly register it using `org.hestiastore.index.segmentindex.DataTypeDescriptorRegistry.addTypeDescriptor(Class, descriptor)`.
 
 ### 💡 Why Register Your Custom Type Descriptor
 
@@ -42,7 +42,7 @@ Important: If you register using a `TypeDescriptor` instance, its class will be 
 
 ### 🧪 How to use new Data Type
 
-During Index configuration new data type descriptor can by directly used:
+During SegmentIndex configuration new data type descriptor can by directly used:
 
 ```java
 IndexConfiguration<Integer, Integer> conf = IndexConfiguration
@@ -54,7 +54,7 @@ IndexConfiguration<Integer, Integer> conf = IndexConfiguration
         ...
     .build();
 
-Index<Integer, Integer> index = Index.<Integer, Integer>create(directory, conf);
+SegmentIndex<Integer, Integer> index = SegmentIndex.<Integer, Integer>create(directory, conf);
 ```
 
 ## 📝 Notes

@@ -19,7 +19,7 @@ Example (Java):
 
 ```java
 // Open existing index (types omitted for brevity)
-Index<Integer, String> index = Index.open(directory);
+SegmentIndex<Integer, String> index = SegmentIndex.open(directory);
 
 // 1) Verify internal consistency (throws IndexException on irreparable issues)
 index.checkAndRepairConsistency();

@@ -3,7 +3,7 @@ package org.hestiastore.index.segment;
 import org.hestiastore.index.FileNameUtil;
 
 /**
- * Index segments consisting of Sorted String Table (sst).
+ * SegmentIndex segments consisting of Sorted String Table (sst).
  * 
  * @author honza
  *

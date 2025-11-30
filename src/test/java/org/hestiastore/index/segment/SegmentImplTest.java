@@ -34,7 +34,7 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.scarceindex.ScarceIndex;
+import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 import org.hestiastore.index.scarceindex.ScarceIndexWriterTx;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -79,7 +79,7 @@ class SegmentImplTest {
     @Mock
     private BloomFilterWriterTx<Integer> bloomFilterWriterTx;
     @Mock
-    private ScarceIndex<Integer> scarceIndex;
+    private ScarceSegmentIndex<Integer> scarceIndex;
     @Mock
     private ChunkEntryFile<Integer, String> chunkPairFile;
     @Mock

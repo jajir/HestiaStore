@@ -11,9 +11,9 @@ HestiaStore uses a few focused caches to deliver read‑after‑write visibility
 
 ## 🧱 Layers Overview
 
-- Index write buffer: in‑memory, unique latest value per key
+- SegmentIndex write buffer: in‑memory, unique latest value per key
   - Class: `cache/UniqueCache`
-  - Owner: `sst/SstIndexImpl` (top‑level)
+  - Owner: `segmentindex/SegmentIndexImpl` (top‑level)
   - Purpose: absorb writes and provide immediate visibility before flush
 
 - Segment delta cache: per‑segment overlay of recent writes
@@ -21,7 +21,7 @@ HestiaStore uses a few focused caches to deliver read‑after‑write visibility
   - Purpose: hold sorted updates for a segment between compactions; also backs reads
 
 - Segment data LRU: cache of heavyweight per‑segment objects
-  - Classes: `sst/SegmentDataCache` (LRU), values are `segment/SegmentData` (lazy container)
+  - Classes: `segmentindex/SegmentDataCache` (LRU), values are `segment/SegmentData` (lazy container)
   - Contents: delta cache, Bloom filter, sparse index (scarce index)
 
 - Bloom filter: per‑segment probabilistic set for negative checks
@@ -31,17 +31,17 @@ HestiaStore uses a few focused caches to deliver read‑after‑write visibility
   - Classes: `scarceindex/ScarceIndex`, `ScarceIndexSnapshot`
 
 - Key→segment map: max‑key to SegmentId mapping
-  - Class: `sst/KeySegmentCache` (TreeMap, persisted to `index.map`)
+  - Class: `segmentindex/KeySegmentCache` (TreeMap, persisted to `index.map`)
 
 ## ✍️ Write‑Time Caches
 
-### Index write buffer (UniqueCache)
+### SegmentIndex write buffer (UniqueCache)
 
-- On `Index.put/delete`, the write is stored in an index‑level `UniqueCache`.
+- On `SegmentIndex.put/delete`, the write is stored in an index‑level `UniqueCache`.
 - Replaces any prior value for the same key; deletes are represented as a tombstone value.
 - Triggered flush (`cache.size() > maxNumberOfKeysInCache`) routes sorted writes to target segments and clears the buffer.
 
-Code: `sst/SstIndexImpl#put`, `sst/SstIndexImpl#delete`, `sst/SstIndexImpl#flushCache`, `cache/UniqueCache`.
+Code: `segmentindex/SegmentIndexImpl#put`, `segmentindex/SegmentIndexImpl#delete`, `segmentindex/SegmentIndexImpl#flushCache`, `cache/UniqueCache`.
 
 ### Segment delta cache
 
@@ -53,15 +53,15 @@ Code: `segment/SegmentDeltaCacheWriter`, `segment/SegmentDeltaCacheController`, 
 
 ## 📖 Read‑Time Caches
 
-- Top‑level overlay: `Index.get(k)` checks the index write buffer first. Iterators are also overlaid with `EntryIteratorRefreshedFromCache` so scans see most recent writes.
+- Top‑level overlay: `SegmentIndex.get(k)` checks the index write buffer first. Iterators are also overlaid with `EntryIteratorRefreshedFromCache` so scans see most recent writes.
 - Per‑segment overlay: `SegmentDeltaCache` is consulted before the Bloom filter + sparse index path. If it returns a tombstone, the key is absent.
 - Heavy objects (Bloom filter, scarce index, delta cache) are obtained via a provider backed by LRU:
-  - `sst/SegmentDataCache` holds `segment/SegmentData` instances with an LRU limit; eviction calls `close()` on the container.
+  - `segmentindex/SegmentDataCache` holds `segment/SegmentData` instances with an LRU limit; eviction calls `close()` on the container.
   - Providers: `segment/SegmentDataProvider` implementations
-    - `sst/SegmentDataProviderFromMainCache` — returns/creates from the LRU
+    - `segmentindex/SegmentDataProviderFromMainCache` — returns/creates from the LRU
     - `segment/SegmentDataProviderSimple` — simple local holder (used in wiring/tests)
 
-Code: `sst/SstIndexImpl#get`, `segment/SegmentImpl#get`, `segment/SegmentSearcher`, `sst/EntryIteratorRefreshedFromCache`, `sst/SegmentDataCache`.
+Code: `segmentindex/SegmentIndexImpl#get`, `segment/SegmentImpl#get`, `segment/SegmentSearcher`, `segmentindex/EntryIteratorRefreshedFromCache`, `segmentindex/SegmentDataCache`.
 
 ## ♻️ Eviction and Lifecycle
 
@@ -88,7 +88,7 @@ Bloom filter sizing:
 I/O buffering:
 - `diskIoBufferSize` — affects memory used by readers/writers across files
 
-See: `sst/IndexConfiguration`, `segment/SegmentConf`.
+See: `segmentindex/IndexConfiguration`, `segment/SegmentConf`.
 
 ## 🔥 Warm‑Up Strategies
 
@@ -99,7 +99,7 @@ See: `sst/IndexConfiguration`, `segment/SegmentConf`.
 ## 🧭 Observability
 
 - Bloom filter effectiveness and false‑positive rate: `bloomfilter/BloomFilterStats`, accessible via `BloomFilter.getStatistics()`.
-- Index operation counters (coarse): `sst/Stats` increments on get/put/delete.
+- SegmentIndex operation counters (coarse): `segmentindex/Stats` increments on get/put/delete.
 
 ## 🛠️ Tuning Guidance
 
@@ -110,10 +110,10 @@ See: `sst/IndexConfiguration`, `segment/SegmentConf`.
 
 ## 🧩 Code Pointers
 
-- Index write buffer: `src/main/java/org/hestiastore/index/sst/SstIndexImpl.java`
-- Segment caches and providers: `src/main/java/org/hestiastore/index/sst/*SegmentData*`, `src/main/java/org/hestiastore/index/segment/SegmentData*`
+- SegmentIndex write buffer: `src/main/java/org/hestiastore/index/segmentindex/SegmentIndexImpl.java`
+- Segment caches and providers: `src/main/java/org/hestiastore/index/segmentindex/*SegmentData*`, `src/main/java/org/hestiastore/index/segment/SegmentData*`
 - LRU cache: `src/main/java/org/hestiastore/index/cache/CacheLru.java`
-- Key→segment map: `src/main/java/org/hestiastore/index/sst/KeySegmentCache.java`
+- Key→segment map: `src/main/java/org/hestiastore/index/segmentindex/KeySegmentCache.java`
 
 ## 🔗 Related Glossary
 
