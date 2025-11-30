@@ -1,5 +1,6 @@
 package org.hestiastore.index.cache;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -62,6 +63,18 @@ class CacheLruTest {
         assertEquals("one", cache.get(1).get());
         assertEquals("three", cache.get(3).get());
         verify(evictionListener).accept(2, "two");
+    }
+
+    @Test
+    void evictionOfNullElementDoesNotThrowOrNotify() {
+        CacheLru<Integer, String> cache = new CacheLru<>(1, evictionListener);
+
+        cache.putNull(1); // cache is full with a null marker
+
+        assertDoesNotThrow(() -> cache.put(2, "two")); // triggers eviction
+
+        assertEquals("two", cache.get(2).get());
+        verifyNoInteractions(evictionListener);
     }
 
     @Test
