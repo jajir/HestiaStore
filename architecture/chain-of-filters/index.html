@@ -10,13 +10,13 @@
         <meta name="author" content="Jan Jirout">
       
       
-        <link rel="canonical" href="https://jajir.github.io/HestiaStore/development/guides/">
+        <link rel="canonical" href="https://jajir.github.io/HestiaStore/architecture/chain-of-filters/">
       
       
-        <link rel="prev" href="../documentation/">
+        <link rel="prev" href="../datablock/">
       
       
-        <link rel="next" href="../profiler-stacktrace/">
+        <link rel="next" href="../write-path/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Guides - HestiaStore</title>
+        <title>Chain of Filters - HestiaStore</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#development" class="md-skip">
+        <a href="#chain-of-filters" class="md-skip">
           Skip to content
         </a>
       
@@ -113,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Guides
+              Chain of Filters
             
           </span>
         </div>
@@ -318,11 +318,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../architecture/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -340,12 +342,10 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
+      <li class="md-tabs__item">
         <a href="../../CHANGELOG/" class="md-tabs__link">
           
   
@@ -1095,6 +1095,8 @@
       
   
   
+    
+  
   
   
     
@@ -1120,22 +1122,23 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../architecture/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   
@@ -1153,13 +1156,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1176,8 +1179,10 @@
                 
   
   
+    
   
   
+  
     
     
       
@@ -1194,20 +1199,21 @@
     
       
       
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
         
           
+          
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_2" >
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" checked>
         
           
-          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="">
             
   
   
@@ -1225,7 +1231,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1243,7 +1249,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/arch-index/" class="md-nav__link">
+      <a href="../arch-index/" class="md-nav__link">
         
   
   
@@ -1271,7 +1277,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segment/" class="md-nav__link">
+      <a href="../segment/" class="md-nav__link">
         
   
   
@@ -1299,7 +1305,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/datablock/" class="md-nav__link">
+      <a href="../datablock/" class="md-nav__link">
         
   
   
@@ -1324,10 +1330,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../architecture/chain-of-filters/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chain of Filters
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1343,6 +1376,98 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#mechanics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ⚙️ Mechanics
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#typical-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🛠️ Typical Usage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-it-is-used" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📍 Where It Is Used
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📍 Where It Is Used">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#segment-searcher-pipeline-read-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Segment Searcher Pipeline (read path)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#segment-split-pipeline-splitcompaction-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Segment Split Pipeline (split/compaction path)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guidelines-for-adding-new-pipelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ✅ Guidelines for Adding New Pipelines
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1375,10 +1500,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -1387,7 +1515,7 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_3" >
         
           
-          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="">
             
   
   
@@ -1423,7 +1551,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/write-path/" class="md-nav__link">
+      <a href="../write-path/" class="md-nav__link">
         
   
   
@@ -1451,7 +1579,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/read-path/" class="md-nav__link">
+      <a href="../read-path/" class="md-nav__link">
         
   
   
@@ -1499,10 +1627,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -1511,7 +1642,7 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_4" >
         
           
-          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="">
             
   
   
@@ -1547,7 +1678,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/recovery/" class="md-nav__link">
+      <a href="../recovery/" class="md-nav__link">
         
   
   
@@ -1575,7 +1706,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/filters/" class="md-nav__link">
+      <a href="../filters/" class="md-nav__link">
         
   
   
@@ -1623,10 +1754,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -1635,7 +1769,7 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_5" >
         
           
-          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="">
             
   
   
@@ -1671,7 +1805,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/caching/" class="md-nav__link">
+      <a href="../caching/" class="md-nav__link">
         
   
   
@@ -1699,7 +1833,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/performance/" class="md-nav__link">
+      <a href="../performance/" class="md-nav__link">
         
   
   
@@ -1745,10 +1879,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -1757,7 +1894,7 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_6" >
         
           
-          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="">
             
   
   
@@ -1793,7 +1930,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/concurrency/" class="md-nav__link">
+      <a href="../concurrency/" class="md-nav__link">
         
   
   
@@ -1843,10 +1980,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -1855,7 +1995,7 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_7" >
         
           
-          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="">
             
   
   
@@ -1891,7 +2031,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/on-disk-layout/" class="md-nav__link">
+      <a href="../on-disk-layout/" class="md-nav__link">
         
   
   
@@ -1919,7 +2059,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/limits/" class="md-nav__link">
+      <a href="../limits/" class="md-nav__link">
         
   
   
@@ -1947,7 +2087,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/glossary/" class="md-nav__link">
+      <a href="../glossary/" class="md-nav__link">
         
   
   
@@ -1987,10 +2127,8 @@
       
   
   
-    
   
   
-  
     
     
       
@@ -2012,22 +2150,21 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
             
   
   
@@ -2045,7 +2182,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2091,7 +2228,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../release/" class="md-nav__link">
+      <a href="../../development/release/" class="md-nav__link">
         
   
   
@@ -2175,7 +2312,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../documentation/" class="md-nav__link">
+      <a href="../../development/documentation/" class="md-nav__link">
         
   
   
@@ -2200,37 +2337,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Guides
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../development/guides/" class="md-nav__link">
         
   
   
@@ -2246,87 +2356,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#how-to-run-jmh-benchmarks" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        🧪 How to run JMH benchmarks
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="🧪 How to run JMH benchmarks">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#possible-problems" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ⚠️ Possible problems
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#load-test" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        🧭 Load test
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#development_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Development
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-to-get-segment-disk-size" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How to get segment disk size
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2339,7 +2368,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../profiler-stacktrace/" class="md-nav__link">
+      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
         
   
   
@@ -2394,22 +2423,55 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#how-to-run-jmh-benchmarks" class="md-nav__link">
+  <a href="#mechanics" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🧪 How to run JMH benchmarks
+        ⚙️ Mechanics
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="🧪 How to run JMH benchmarks">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#typical-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🛠️ Typical Usage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-it-is-used" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📍 Where It Is Used
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📍 Where It Is Used">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#possible-problems" class="md-nav__link">
+  <a href="#segment-searcher-pipeline-read-path" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ⚠️ Possible problems
+        Segment Searcher Pipeline (read path)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#segment-split-pipeline-splitcompaction-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Segment Split Pipeline (split/compaction path)
       
     </span>
   </a>
@@ -2422,32 +2484,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#load-test" class="md-nav__link">
+  <a href="#guidelines-for-adding-new-pipelines" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🧭 Load test
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#development_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Development
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-to-get-segment-disk-size" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How to get segment disk size
+        ✅ Guidelines for Adding New Pipelines
       
     </span>
   </a>
@@ -2497,10 +2537,28 @@
     
     
       <li class="md-path__item">
-        <a href="../../CHANGELOG/" class="md-path__link">
+        <a href="../" class="md-path__link">
           
   <span class="md-ellipsis">
-    Community
+    Architecture
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../arch-index/" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Core Building Blocks
   </span>
 
         </a>
@@ -2522,83 +2580,87 @@
   
 
 
-<h1 id="development">🛠️ Development</h1>
-<p>Here are some development related topiscs.</p>
-<h2 id="how-to-run-jmh-benchmarks">🧪 How to run JMH benchmarks</h2>
-<p>Follow this steps:
-* Compile whole project and create pacakge containing all benchmarks data
-* Go to <code>jmh-benchmarks</code>
-* Execute it, with temp directory in <code>target</code> directory</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>mvn<span class="w"> </span>clean<span class="w"> </span>install
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>jmh-benchmarks
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>java<span class="w"> </span>-Ddir<span class="o">=</span>./target/<span class="w"> </span>-jar<span class="w"> </span>target/jmh-benchmarks.jar
+<h1 id="chain-of-filters">🔗 Chain of Filters</h1>
+<p><code>AbstractChainOfFilters</code> is the small engine that runs ordered pipelines inside the index. It accepts an immutable context object plus a mutable result carrier and iterates over a list of <code>Filter&lt;Context, Result&gt;</code> steps. Each step returns <code>true</code> to continue or <code>false</code> to short-circuit, which is how we cheaply exit when work is already finished (cache hits) or impossible (invalid plan).</p>
+<h2 id="mechanics">⚙️ Mechanics</h2>
+<ul>
+<li>The base class keeps the ordered <code>List&lt;Filter&lt;Context, Result&gt;&gt;</code> and exposes a single <code>filter(context, result)</code> method that drives the loop.</li>
+<li>Steps see the immutable context and may update the mutable result; they must return <code>false</code> once they have produced a terminal outcome so the chain stops immediately.</li>
+<li>Subclasses wrap the call to <code>filter</code> so they can prepare state/result objects and handle cleanup. Example: <code>SegmentSplitPipeline#run</code> closes the iterator in a <code>finally</code> block even when a step short-circuits.</li>
+<li>Filters are regular classes that implement <code>Filter&lt;Context, Result&gt;</code> and can be reused or composed in different orders when building a pipeline.</li>
+</ul>
+<h2 id="typical-usage">🛠️ Typical Usage</h2>
+<p>1) Define small, focused filters:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">ValidateInput</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">Filter</span><span class="o">&lt;</span><span class="n">RequestCtx</span><span class="p">,</span><span class="w"> </span><span class="n">ProcessingState</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="nd">@Override</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="nf">filter</span><span class="p">(</span><span class="kd">final</span><span class="w"> </span><span class="n">RequestCtx</span><span class="w"> </span><span class="n">ctx</span><span class="p">,</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">ProcessingState</span><span class="w"> </span><span class="n">state</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">ctx</span><span class="p">.</span><span class="na">isValid</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">            </span><span class="n">state</span><span class="p">.</span><span class="na">fail</span><span class="p">(</span><span class="s">&quot;missing fields&quot;</span><span class="p">);</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="kc">false</span><span class="p">;</span><span class="w"> </span><span class="c1">// stop the chain early</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="kc">true</span><span class="p">;</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">}</span>
 </code></pre></div>
-<p>Specific JMH benchmark class could be run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>java<span class="w"> </span>-Ddir<span class="o">=</span>./target/<span class="w"> </span>-jar<span class="w"> </span>target/jmh-benchmarks.jar<span class="w"> </span>SegmentSearchBenchmark
+<p>2) Compose them into a pipeline subclass that owns setup/teardown:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">ProcessingPipeline</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">        </span><span class="kd">extends</span><span class="w"> </span><span class="n">AbstractChainOfFilters</span><span class="o">&lt;</span><span class="n">RequestCtx</span><span class="p">,</span><span class="w"> </span><span class="n">ProcessingState</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="n">ProcessingPipeline</span><span class="p">(</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">            </span><span class="kd">final</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Filter</span><span class="o">&lt;</span><span class="n">RequestCtx</span><span class="p">,</span><span class="w"> </span><span class="n">ProcessingState</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">steps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">        </span><span class="kd">super</span><span class="p">(</span><span class="n">List</span><span class="p">.</span><span class="na">copyOf</span><span class="p">(</span><span class="n">steps</span><span class="p">));</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="n">ProcessingState</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="kd">final</span><span class="w"> </span><span class="n">RequestCtx</span><span class="w"> </span><span class="n">ctx</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">        </span><span class="kd">final</span><span class="w"> </span><span class="n">ProcessingState</span><span class="w"> </span><span class="n">state</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ProcessingState</span><span class="p">();</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">        </span><span class="n">filter</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span><span class="w"> </span><span class="n">state</span><span class="p">);</span><span class="w"> </span><span class="c1">// short-circuit rules apply</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">state</span><span class="p">;</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="p">}</span>
 </code></pre></div>
-<p>result could look like:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Benchmark                                             Mode  Cnt    Score      Error  Units
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>SequentialFileReadingBenchmark.test_with_buffer_01KB  avgt    4   70.747 ±   42.480  ms/op
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>SequentialFileReadingBenchmark.test_with_buffer_02KB  avgt    4   60.009 ±   52.899  ms/op
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>SequentialFileReadingBenchmark.test_with_buffer_04KB  avgt    4   51.254 ±   30.112  ms/op
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>SequentialFileReadingBenchmark.test_with_buffer_08KB  avgt    4   48.600 ±   28.892  ms/op
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>SequentialFileReadingBenchmark.test_with_buffer_16KB  avgt    4   48.471 ±   25.665  ms/op
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>SequentialFileReadingBenchmark.test_with_buffer_32KB  avgt    4   45.256 ±   24.986  ms/op
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>SequentialFileReadingBenchmark.test_with_buffer_64KB  avgt    4   45.204 ±   24.867  ms/op
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>SequentialFileWritingBenchmark.test_with_buffer_01KB  avgt    4  238.075 ±   75.311  ms/op
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>SequentialFileWritingBenchmark.test_with_buffer_02KB  avgt    4  271.272 ±   64.747  ms/op
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>SequentialFileWritingBenchmark.test_with_buffer_04KB  avgt    4  276.001 ±   45.815  ms/op
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>SequentialFileWritingBenchmark.test_with_buffer_08KB  avgt    4  352.189 ± 1140.814  ms/op
-<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>SequentialFileWritingBenchmark.test_with_buffer_16KB  avgt    4  258.806 ±   44.693  ms/op
-<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>SequentialFileWritingBenchmark.test_with_buffer_32KB  avgt    4  276.246 ±  135.019  ms/op
-<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>SequentialFileWritingBenchmark.test_with_buffer_64KB  avgt    4  275.944 ±  128.835  ms/op
+<h2 id="where-it-is-used">📍 Where It Is Used</h2>
+<h3 id="segment-searcher-pipeline-read-path">Segment Searcher Pipeline (read path)</h3>
+<p><code>SegmentSearcherPipeline</code> (<code>src/main/java/org/hestiastore/index/segment/SegmentSearcherPipeline.java</code>) runs a three-step lookup when serving <code>SegmentSearcher#get</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kd">final</span><span class="w"> </span><span class="n">SegmentSearcherPipeline</span><span class="o">&lt;</span><span class="n">K</span><span class="p">,</span><span class="w"> </span><span class="n">V</span><span class="o">&gt;</span><span class="w"> </span><span class="n">pipeline</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">SegmentSearcherPipeline</span><span class="o">&lt;&gt;</span><span class="p">(</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">        </span><span class="n">List</span><span class="p">.</span><span class="na">of</span><span class="p">(</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">            </span><span class="k">new</span><span class="w"> </span><span class="n">SegmentSearcherStepDeltaCache</span><span class="o">&lt;&gt;</span><span class="p">(</span><span class="n">valueTypeDescriptor</span><span class="p">),</span><span class="w"> </span><span class="c1">// stop if cached hit or tombstone</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">            </span><span class="k">new</span><span class="w"> </span><span class="n">SegmentSearcherStepBloomFilter</span><span class="o">&lt;&gt;</span><span class="p">(),</span><span class="w">                   </span><span class="c1">// stop if bloom says “definitely not”</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">            </span><span class="k">new</span><span class="w"> </span><span class="n">SegmentSearcherStepIndexFile</span><span class="o">&lt;&gt;</span><span class="p">()));</span><span class="w">                   </span><span class="c1">// stop after sparse-index + on-disk read</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">pipeline</span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="p">);</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="na">getValue</span><span class="p">();</span>
 </code></pre></div>
-<p>When some JMH benchmark class is changed command <code>mvn package</code> have to be run.</p>
-<h3 id="possible-problems">⚠️ Possible problems</h3>
-<p>Generally JMH is quite fragile. Small changes broke JMH benchmark execution. Usually helps rebuild project and start again as described above.</p>
-<h2 id="load-test">🧭 Load test</h2>
-<p>Runnign JVM should be inspected with some profiller. For profilling is usefull to hae long running task to watch it. Go to project <code>load-test</code>. Following command show all optional parameters:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>java<span class="w"> </span>-jar<span class="w"> </span>target/load-test.jar<span class="w"> </span>com.coroptis.index.loadtest.Main<span class="w"> </span>--help
+<ul>
+<li>Short-circuits: cache hit/tombstone, Bloom filter negative, or sparse-index probe missing/false-positive correction.</li>
+<li>Context/result types: <code>SegmentSearcherContext</code> carries the key plus caches/searcher; <code>SegmentSearcherResult</code> holds the found value (or <code>null</code> when absent).</li>
+</ul>
+<h3 id="segment-split-pipeline-splitcompaction-path">Segment Split Pipeline (split/compaction path)</h3>
+<p><code>SegmentSplitPipeline</code> (<code>src/main/java/org/hestiastore/index/segment/SegmentSplitPipeline.java</code>) orchestrates the per-segment split flow inside <code>SegmentSplitter#split</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kd">final</span><span class="w"> </span><span class="n">SegmentSplitPipeline</span><span class="o">&lt;</span><span class="n">K</span><span class="p">,</span><span class="w"> </span><span class="n">V</span><span class="o">&gt;</span><span class="w"> </span><span class="n">pipeline</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">SegmentSplitPipeline</span><span class="o">&lt;&gt;</span><span class="p">(</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">        </span><span class="n">List</span><span class="p">.</span><span class="na">of</span><span class="p">(</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">            </span><span class="k">new</span><span class="w"> </span><span class="n">SegmentSplitStepValidateFeasibility</span><span class="o">&lt;&gt;</span><span class="p">(),</span><span class="w">      </span><span class="c1">// throws if plan is invalid</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">            </span><span class="k">new</span><span class="w"> </span><span class="n">SegmentSplitStepOpenIterator</span><span class="o">&lt;&gt;</span><span class="p">(),</span><span class="w">             </span><span class="c1">// opens streaming iterator</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">            </span><span class="k">new</span><span class="w"> </span><span class="n">SegmentSplitStepCreateLowerSegment</span><span class="o">&lt;&gt;</span><span class="p">(),</span><span class="w">       </span><span class="c1">// prepares target segment</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">            </span><span class="k">new</span><span class="w"> </span><span class="n">SegmentSplitStepFillLowerUntilTarget</span><span class="o">&lt;&gt;</span><span class="p">(),</span><span class="w">     </span><span class="c1">// writes first half</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">            </span><span class="k">new</span><span class="w"> </span><span class="n">SegmentSplitStepEnsureLowerNotEmpty</span><span class="o">&lt;&gt;</span><span class="p">(),</span><span class="w">      </span><span class="c1">// guardrail for tiny splits</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">            </span><span class="k">new</span><span class="w"> </span><span class="n">SegmentSplitStepReplaceIfNoRemaining</span><span class="o">&lt;&gt;</span><span class="p">(</span><span class="n">segmentReplacer</span><span class="p">),</span><span class="w"> </span><span class="c1">// compaction path, may stop here</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">            </span><span class="k">new</span><span class="w"> </span><span class="n">SegmentSplitStepWriteRemainingToCurrent</span><span class="o">&lt;&gt;</span><span class="p">()</span><span class="w">   </span><span class="c1">// split path, always stops after writing</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">        </span><span class="p">));</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="kd">final</span><span class="w"> </span><span class="n">SegmentSplitterResult</span><span class="o">&lt;</span><span class="n">K</span><span class="p">,</span><span class="w"> </span><span class="n">V</span><span class="o">&gt;</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pipeline</span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
 </code></pre></div>
-<p>Theer are two main supported operations. First is data generating. It's could be usefull to place in java profilling agent. It could look like:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>java<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span>-agentpath:/Applications/YourKit-Java-Profiler-2023.9.app/Contents/Resources/bin/mac/libyjpagent.dylib<span class="o">=</span><span class="nv">exceptions</span><span class="o">=</span>disable,delay<span class="o">=</span><span class="m">10000</span>,listen<span class="o">=</span>all<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span>-jar<span class="w"> </span>target/load-test.jar<span class="w"> </span>com.coroptis.index.loadtest.Main<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span>--write<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span>--directory<span class="w"> </span>/Volumes/LaCie/test/<span class="w">  </span><span class="se">\</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span>--count<span class="w"> </span>5_000_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span>--max-number-of-keys-in-cache<span class="w"> </span>5_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span>--max-number-of-keys-in-segment<span class="w"> </span>10_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">    </span>--max-number-of-keys-in-segment-cache<span class="w"> </span>500_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">    </span>--max-number-of-keys-in-segment-cache-during-flushing<span class="w"> </span>2_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">    </span>--max-number-of-keys-in-segment-index-page<span class="w"> </span>1_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">    </span>--bloom-filter-index-size-in-bytes<span class="w"> </span>10_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">    </span>--bloom-filter-number-of-hash-functions<span class="w"> </span><span class="m">2</span>
-</code></pre></div>
-<p>It will generate 210 GB of testing data. Furst search test can be performed like this:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>java<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span>-agentpath:/Applications/YourKit-Java-Profiler-2023.9.app/Contents/Resources/bin/mac/libyjpagent.dylib<span class="o">=</span><span class="nv">exceptions</span><span class="o">=</span>disable,delay<span class="o">=</span><span class="m">10000</span>,listen<span class="o">=</span>all<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span>-jar<span class="w"> </span>target/load-test.jar<span class="w"> </span>com.coroptis.index.loadtest.Main<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span>--search<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">    </span>--directory<span class="w"> </span>/Volumes/LaCie/test/<span class="w">  </span><span class="se">\</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">    </span>--count<span class="w"> </span>5_000_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">    </span>--max-key<span class="w"> </span>5_000_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">    </span>--max-number-of-keys-in-cache<span class="w"> </span>5_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">    </span>--max-number-of-keys-in-segment<span class="w"> </span>10_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">    </span>--max-number-of-keys-in-segment-cache<span class="w"> </span>500_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">    </span>--max-number-of-keys-in-segment-cache-during-flushing<span class="w"> </span>2_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="w">    </span>--max-number-of-keys-in-segment-index-page<span class="w"> </span>1_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="w">    </span>--bloom-filter-index-size-in-bytes<span class="w"> </span>10_000_000<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="w">    </span>--bloom-filter-number-of-hash-functions<span class="w"> </span><span class="m">2</span>
-</code></pre></div>
-<h2 id="development_1">Development</h2>
-<p>Mockito requires reflective access to non-public parts in a Java module. It could be manually open by passing following parameter as jvm parameter:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>--add-opens=java.base/java.lang=ALL-UNNAMED
-</code></pre></div>
-<h2 id="how-to-get-segment-disk-size">How to get segment disk size</h2>
-<p>On apple try:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>diskutil  info /Volumes/LaCie
-</code></pre></div>
+<ul>
+<li>Short-circuits: compaction path (<code>SegmentSplitStepReplaceIfNoRemaining</code>) replaces the original segment and stops; the final write step stops after producing the split result.</li>
+<li>Context/result types: <code>SegmentSplitContext</code> carries the segment, version controller, plan, and IDs; <code>SegmentSplitState</code> owns the iterator, lower-segment handle, and final <code>SegmentSplitterResult</code>.</li>
+<li>Safety: <code>SegmentSplitPipeline#run</code> wraps <code>filter</code> so the opened iterator closes even when a step throws or short-circuits.</li>
+</ul>
+<h2 id="guidelines-for-adding-new-pipelines">✅ Guidelines for Adding New Pipelines</h2>
+<ul>
+<li>Keep steps single-purpose and side-effect aware; ensure they set a final result before returning <code>false</code>.</li>
+<li>Copy the incoming steps list (<code>List.copyOf(...)</code>) to avoid accidental reordering at runtime.</li>
+<li>When resources need cleanup, wrap the <code>filter</code> invocation in a <code>try/finally</code> inside your subclass.</li>
+<li>Pair unit tests with short-circuit cases; see <code>src/test/java/org/hestiastore/index/AbstractChainOfFiltersTest.java</code> for a minimal example.</li>
+</ul>
 
 
 
