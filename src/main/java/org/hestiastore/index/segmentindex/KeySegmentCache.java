@@ -106,7 +106,7 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
     }
 
     public SegmentId findNewSegmentId() {
-        return SegmentId.of((int) (getSegmentsAsStream().count()));
+        return SegmentId.of(list.isEmpty() ? 0 : list.lastEntry().getValue().getId() + 1);
     }
 
     public SegmentId insertKeyToSegment(final K key) {
