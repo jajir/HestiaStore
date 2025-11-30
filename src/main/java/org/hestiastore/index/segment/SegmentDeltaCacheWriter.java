@@ -76,6 +76,9 @@ public final class SegmentDeltaCacheWriter<K, V>
      */
     @Override
     protected void doClose() {
+        if (uniqueCache.isEmpty()) {
+            return;
+        }
 
         // store cache
         segmentFiles

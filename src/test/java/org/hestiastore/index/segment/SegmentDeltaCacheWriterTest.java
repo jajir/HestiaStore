@@ -3,7 +3,9 @@ package org.hestiastore.index.segment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -143,6 +145,18 @@ class SegmentDeltaCacheWriterTest {
 
         // properties updated by number of unique keys
         verify(propertiesManager).increaseNumberOfKeysInDeltaCache(3);
+    }
+
+    @Test
+    void close_does_nothing_when_cache_is_empty() {
+        final SegmentDeltaCacheWriter<Integer, String> writer = newWriter(10);
+
+        writer.close();
+
+        assertTrue(writer.getNumberOfKeys() == 0);
+        verify(propertiesManager, never()).increaseNumberOfKeysInDeltaCache(
+                anyInt());
+        verify(segmentFiles, never()).getDeltaCacheSortedDataFile(any());
     }
 
     @Test
