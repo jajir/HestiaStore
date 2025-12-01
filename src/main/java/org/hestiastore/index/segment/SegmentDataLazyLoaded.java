@@ -30,6 +30,7 @@ public final class SegmentDataLazyLoaded<K, V>
 
     @Override
     public SegmentDeltaCache<K, V> getSegmentDeltaCache() {
+        requireOpen();
         if (deltaCache == null) {
             deltaCache = segmentDataSupplier.getSegmentDeltaCache();
         }
@@ -38,6 +39,7 @@ public final class SegmentDataLazyLoaded<K, V>
 
     @Override
     public BloomFilter<K> getBloomFilter() {
+        requireOpen();
         if (bloomFilter == null) {
             bloomFilter = segmentDataSupplier.getBloomFilter();
         }
@@ -46,6 +48,7 @@ public final class SegmentDataLazyLoaded<K, V>
 
     @Override
     public ScarceSegmentIndex<K> getScarceIndex() {
+        requireOpen();
         if (scarceIndex == null) {
             scarceIndex = segmentDataSupplier.getScarceIndex();
         }
@@ -66,6 +69,13 @@ public final class SegmentDataLazyLoaded<K, V>
             scarceIndex = null;
         }
 
+    }
+
+    private void requireOpen() {
+        if (wasClosed()) {
+            throw new IllegalStateException(
+                    "SegmentDataLazyLoaded is already closed");
+        }
     }
 
 }

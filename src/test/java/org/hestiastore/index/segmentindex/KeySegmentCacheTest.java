@@ -21,6 +21,22 @@ class KeySegmentCacheTest {
     }
 
     @Test
+    void findNewSegmentIdUsesHighestIdNotKeyOrder() {
+        final KeySegmentCache<Integer> cache = newCacheWithEntries(List.of(
+                Entry.of(10, SegmentId.of(5)), Entry.of(20, SegmentId.of(1))));
+        // highest id is 5 even though its key is lower
+        assertEquals(SegmentId.of(6), cache.findNewSegmentId());
+    }
+
+    @Test
+    void findNewSegmentIdBridgesGaps() {
+        final KeySegmentCache<Integer> cache = newCacheWithEntries(
+                List.of(Entry.of(5, SegmentId.of(1)),
+                        Entry.of(6, SegmentId.of(3))));
+        assertEquals(SegmentId.of(4), cache.findNewSegmentId());
+    }
+
+    @Test
     void findNewSegmentIdStartsAtZeroWhenEmpty() {
         final KeySegmentCache<Integer> cache = newCacheWithEntries(List.of());
         assertEquals(SegmentId.of(0), cache.findNewSegmentId());
@@ -45,7 +61,9 @@ class KeySegmentCacheTest {
                 .withValueTypeDescriptor(new TypeDescriptorSegmentId())//
                 .build();
         // seed file contents
-        sdf.openWriterTx().execute(writer -> entries.forEach(writer::write));
+        sdf.openWriterTx().execute(writer -> entries.stream()
+                .sorted((e1, e2) -> Integer.compare(e1.getKey(), e2.getKey()))
+                .forEach(writer::write));
         return new KeySegmentCache<>(dir, new TypeDescriptorInteger());
     }
 }

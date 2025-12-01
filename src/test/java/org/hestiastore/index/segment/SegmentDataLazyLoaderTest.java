@@ -1,6 +1,7 @@
 package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -85,6 +86,20 @@ class SegmentDataLazyLoaderTest {
         verify(supplier, times(0)).getScarceIndex();
         verify(supplier, times(1)).getSegmentDeltaCache();
         verify(segmentDeltaCache, times(1)).evictAll();
+    }
+
+    @Test
+    void getters_throw_after_close() {
+        final SegmentDataLazyLoaded<Integer, String> loader = new SegmentDataLazyLoaded<>(
+                supplier);
+        loader.close();
+
+        assertThrows(IllegalStateException.class, loader::getBloomFilter);
+        assertThrows(IllegalStateException.class, loader::getScarceIndex);
+        assertThrows(IllegalStateException.class, loader::getSegmentDeltaCache);
+        verify(supplier, times(0)).getBloomFilter();
+        verify(supplier, times(0)).getScarceIndex();
+        verify(supplier, times(0)).getSegmentDeltaCache();
     }
 
 }
