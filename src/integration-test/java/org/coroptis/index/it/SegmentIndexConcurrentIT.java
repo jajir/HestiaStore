@@ -1,6 +1,7 @@
 package org.coroptis.index.it;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Comparator;
 import java.util.Map;
@@ -12,6 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 import org.hestiastore.index.Entry;
@@ -76,11 +78,13 @@ class SegmentIndexConcurrentIT {
 
         final int threads = 4;
         final int operationsPerThread = 200;
+        final int keySpace = 50;
         final ExecutorService executor = Executors.newFixedThreadPool(threads);
         final CountDownLatch startGate = new CountDownLatch(1);
         final CountDownLatch doneGate = new CountDownLatch(threads);
         final Queue<Op> operations = new ConcurrentLinkedQueue<>();
         final AtomicLong seq = new AtomicLong(0);
+        final ReentrantLock operationLogLock = new ReentrantLock(true);
 
         for (int t = 0; t < threads; t++) {
             final int threadId = t;
@@ -88,17 +92,27 @@ class SegmentIndexConcurrentIT {
                 final Random rnd = new Random(12345L + threadId);
                 startGate.await();
                 for (int i = 0; i < operationsPerThread; i++) {
-                    final int key = rnd.nextInt(50);
+                    final int key = rnd.nextInt(keySpace);
                     final double p = rnd.nextDouble();
                     if (p < 0.6) {
                         final int value = rnd.nextInt(10_000);
-                        index.put(key, value);
-                        operations.add(new Op(seq.incrementAndGet(), OpType.PUT,
-                                key, value));
+                        operationLogLock.lock();
+                        try {
+                            index.put(key, value);
+                            operations.add(new Op(seq.incrementAndGet(),
+                                    OpType.PUT, key, value));
+                        } finally {
+                            operationLogLock.unlock();
+                        }
                     } else if (p < 0.9) {
-                        index.delete(key);
-                        operations.add(new Op(seq.incrementAndGet(),
-                                OpType.DELETE, key, null));
+                        operationLogLock.lock();
+                        try {
+                            index.delete(key);
+                            operations.add(new Op(seq.incrementAndGet(),
+                                    OpType.DELETE, key, null));
+                        } finally {
+                            operationLogLock.unlock();
+                        }
                     } else {
                         index.get(key); // exercise reads
                     }
@@ -109,8 +123,11 @@ class SegmentIndexConcurrentIT {
         }
 
         startGate.countDown();
-        doneGate.await(30, TimeUnit.SECONDS);
-        executor.shutdownNow();
+        final boolean completed = doneGate.await(30, TimeUnit.SECONDS);
+        assertTrue(completed, "All tasks should finish before verification");
+        executor.shutdown();
+        assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS),
+                "Executor did not terminate cleanly");
 
         index.flush();
 
