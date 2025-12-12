@@ -34,6 +34,7 @@ class SegmentIndexImplFlushTest {
         index.flushCacheIfNeeded(); // explicit call to cover method directly
 
         assertEquals(0, index.flushCalls);
+        index.close();
     }
 
     @Test
@@ -46,6 +47,7 @@ class SegmentIndexImplFlushTest {
         index.put(3, "three"); // exceeds limit
 
         assertEquals(1, index.flushCalls);
+        index.close();
     }
 
     @Test
@@ -57,6 +59,7 @@ class SegmentIndexImplFlushTest {
         index.delete(2); // exceeds limit
 
         assertEquals(1, index.flushCalls);
+        index.close();
     }
 
     private IndexConfiguration<Integer, String> buildConfWithCacheLimit(
@@ -85,7 +88,8 @@ class SegmentIndexImplFlushTest {
                 .build();
     }
 
-    private final class TestableIndex extends IndexInternalDefault<Integer, String> {
+    private final class TestableIndex
+            extends IndexInternalDefault<Integer, String> {
 
         private int flushCalls = 0;
 
