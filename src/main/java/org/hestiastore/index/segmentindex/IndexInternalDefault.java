@@ -7,7 +7,6 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.log.Log;
 
 /**
  * Default single-threaded implementation of {@link IndexInternal}. It inherits
@@ -23,8 +22,8 @@ public class IndexInternalDefault<K, V> extends SegmentIndexImpl<K, V> {
     public IndexInternalDefault(final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
-            final IndexConfiguration<K, V> conf, final Log<K, V> log) {
-        super(directory, keyTypeDescriptor, valueTypeDescriptor, conf, log);
+            final IndexConfiguration<K, V> conf) {
+        super(directory, keyTypeDescriptor, valueTypeDescriptor, conf);
     }
 
     /**

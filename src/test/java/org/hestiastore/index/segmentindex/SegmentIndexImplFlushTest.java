@@ -9,17 +9,9 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.log.Log;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-@ExtendWith(MockitoExtension.class)
 class SegmentIndexImplFlushTest {
-
-    @Mock
-    private Log<Integer, String> log;
 
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
@@ -27,7 +19,7 @@ class SegmentIndexImplFlushTest {
     @Test
     void flushCacheIfNeeded_skipsFlushWhenAtOrBelowLimit() {
         final TestableIndex index = new TestableIndex(
-                buildConfWithCacheLimit(2), new MemDirectory(), log);
+                buildConfWithCacheLimit(2), new MemDirectory());
 
         index.put(1, "one");
         index.put(2, "two"); // cache size == limit
@@ -39,7 +31,7 @@ class SegmentIndexImplFlushTest {
     @Test
     void flushCacheIfNeeded_triggersFlushWhenPutExceedsLimit() {
         final TestableIndex index = new TestableIndex(
-                buildConfWithCacheLimit(2), new MemDirectory(), log);
+                buildConfWithCacheLimit(2), new MemDirectory());
 
         index.put(1, "one");
         index.put(2, "two");
@@ -51,7 +43,7 @@ class SegmentIndexImplFlushTest {
     @Test
     void deleteUsesFlushCacheIfNeededWhenLimitExceeded() {
         final TestableIndex index = new TestableIndex(
-                buildConfWithCacheLimit(1), new MemDirectory(), log);
+                buildConfWithCacheLimit(1), new MemDirectory());
 
         index.delete(1); // cache size == limit
         index.delete(2); // exceeds limit
@@ -90,8 +82,8 @@ class SegmentIndexImplFlushTest {
         private int flushCalls = 0;
 
         TestableIndex(final IndexConfiguration<Integer, String> conf,
-                final Directory directory, final Log<Integer, String> log) {
-            super(directory, tdi, tds, conf, log);
+                final Directory directory) {
+            super(directory, tdi, tds, conf);
         }
 
         @Override

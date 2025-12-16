@@ -5,7 +5,6 @@ import java.util.List;
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
-import org.hestiastore.index.EntryIteratorStreamer;
 import org.hestiastore.index.F;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.CacheElement;
@@ -13,8 +12,6 @@ import org.hestiastore.index.cache.CacheLru;
 import org.hestiastore.index.cache.UniqueCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.log.Log;
-import org.hestiastore.index.log.LoggedKey;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.slf4j.Logger;
@@ -38,14 +35,13 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final KeySegmentCache<K> keySegmentCache;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentSplitCoordinator<K, V> segmentSplitCoordinator;
-    private final Log<K, V> log;
     private final Stats stats = new Stats();
     protected IndexState<K, V> indexState;
 
     protected SegmentIndexImpl(final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
-            final IndexConfiguration<K, V> conf, final Log<K, V> log) {
+            final IndexConfiguration<K, V> conf) {
         if (directory == null) {
             throw new IllegalArgumentException("Directory was no specified.");
         }
@@ -53,7 +49,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         indexState = new IndexStateNew<>(directory);
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
                 "keyTypeDescriptor");
-        this.log = Vldtn.requireNonNull(log, "log");
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
         this.conf = Vldtn.requireNonNull(conf, "conf");
@@ -93,8 +88,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         }
 
         // add key value entry into WAL
-        log.post(key, value);
-
         cache.put(Entry.of(key, value));
         invalidateReadCacheEntry(key);
 
@@ -157,7 +150,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         }
         cache.clear();
         keySegmentCache.optionalyFlush();
-        log.rotate();
         if (logger.isDebugEnabled()) {
             logger.debug(
                     "Cache compacting is done. Cache contains '{}' key value entries.",
@@ -226,16 +218,9 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         Vldtn.requireNonNull(key, "key");
         stats.incDeleteCx();
 
-        log.delete(key, valueTypeDescriptor.getTombstone());
-
         cache.put(Entry.of(key, valueTypeDescriptor.getTombstone()));
         invalidateReadCacheEntry(key);
         flushCacheIfNeeded();
-    }
-
-    @Override
-    public EntryIteratorStreamer<LoggedKey<K>, V> getLogStreamer() {
-        return null;
     }
 
     @Override
@@ -252,7 +237,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     protected void doClose() {
         flushCache();
         invalidateReadCacheAll();
-        log.close();
         indexState.onClose(this);
         segmentRegistry.close();
         if (logger.isDebugEnabled()) {

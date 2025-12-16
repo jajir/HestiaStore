@@ -5,20 +5,17 @@ import java.util.stream.Stream;
 
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.EntryIteratorStreamer;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.log.Log;
-import org.hestiastore.index.log.LoggedKey;
 
 /**
  * High-level contract for the segment-index layer that sits above individual
  * segments. It supports creating/opening instances, point mutations
- * (put/delete), range streaming, log inspection, and consistency checks.
- * Concrete implementations are created through the static factory helpers which
- * take care of configuration handling.
+ * (put/delete), range streaming, and consistency checks. Concrete
+ * implementations are created through the static factory helpers which take
+ * care of configuration handling.
  *
  * @param <K> key type
  * @param <V> value type
@@ -93,31 +90,22 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     }
 
     private static <M, N> SegmentIndex<M, N> openIndex(
-            final Directory directory, final IndexConfiguration<M, N> indexConf) {
-        Log<M, N> log = null;
+            final Directory directory,
+            final IndexConfiguration<M, N> indexConf) {
         final TypeDescriptor<M> keyTypeDescriptor = DataTypeDescriptorRegistry
                 .makeInstance(indexConf.getKeyTypeDescriptor());
         final TypeDescriptor<N> valueTypeDescriptor = DataTypeDescriptorRegistry
                 .makeInstance(indexConf.getValueTypeDescriptor());
         Vldtn.requireNonNull(indexConf.isContextLoggingEnabled(),
                 "isContextLoggingEnabled");
-        if (Boolean.TRUE.equals(indexConf.isContextLoggingEnabled())) {
-            log = Log.<M, N>builder()//
-                    .withDirectory(directory)//
-                    .withKeyTypeDescriptor(keyTypeDescriptor)//
-                    .withValueTypeDescriptor(valueTypeDescriptor)//
-                    .build();
-        } else {
-            log = Log.<M, N>builder().buildEmpty();
-        }
         Vldtn.requireNonNull(indexConf.isThreadSafe(), "isThreadSafe");
         SegmentIndex<M, N> index;
         if (Boolean.TRUE.equals(indexConf.isThreadSafe())) {
             index = new IndexInternalSynchronized<>(directory,
-                    keyTypeDescriptor, valueTypeDescriptor, indexConf, log);
+                    keyTypeDescriptor, valueTypeDescriptor, indexConf);
         } else {
             index = new IndexInternalDefault<>(directory, keyTypeDescriptor,
-                    valueTypeDescriptor, indexConf, log);
+                    valueTypeDescriptor, indexConf);
         }
         if (Boolean.TRUE.equals(indexConf.isContextLoggingEnabled())) {
             return new IndexContextLoggingAdapter<>(indexConf, index);
@@ -198,13 +186,6 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     default Stream<Entry<K, V>> getStream() {
         return getStream(SegmentWindow.unbounded());
     }
-
-    /**
-     * Provides a streaming view over the write-ahead log, if enabled.
-     *
-     * @return streamer over logged keys and their values
-     */
-    EntryIteratorStreamer<LoggedKey<K>, V> getLogStreamer();
 
     /**
      * Checks the internal consistency of all index segments and associated data

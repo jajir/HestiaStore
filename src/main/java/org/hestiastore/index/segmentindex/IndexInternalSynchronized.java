@@ -6,11 +6,8 @@ import java.util.stream.StreamSupport;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
-import org.hestiastore.index.EntryIteratorStreamer;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.log.Log;
-import org.hestiastore.index.log.LoggedKey;
 
 public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
 
@@ -19,8 +16,8 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
     public IndexInternalSynchronized(final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
-            final IndexConfiguration<K, V> conf, final Log<K, V> log) {
-        super(directory, keyTypeDescriptor, valueTypeDescriptor, conf, log);
+            final IndexConfiguration<K, V> conf) {
+        super(directory, keyTypeDescriptor, valueTypeDescriptor, conf);
     }
 
     @Override
@@ -87,16 +84,6 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
             return StreamSupport.stream(spliterator, false).onClose(() -> {
                 iterator.close();
             });
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    @Override
-    public EntryIteratorStreamer<LoggedKey<K>, V> getLogStreamer() {
-        lock.lock();
-        try {
-            return super.getLogStreamer();
         } finally {
             lock.unlock();
         }
