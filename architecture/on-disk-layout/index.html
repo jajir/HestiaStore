@@ -2616,8 +2616,7 @@
 <p>This page documents the files HestiaStore writes into an index directory, their naming conventions, how they evolve over time, and the atomic commit pattern used to keep them consistent.</p>
 <h2 id="directory-layout-one-segmentindex-per-directory">📂 Directory Layout (One SegmentIndex per Directory)</h2>
 <p>Top-level files:
-- <code>index.map</code> — Global key→segment map (max key per segment). Sorted key→SegmentId pairs. Updated atomically.
-- <code>wal-00000.log</code>, <code>wal-00001.log</code>, … — Optional context logs if enabled. Useful for observability; not a recovery WAL.</p>
+- <code>index.map</code> — Global key→segment map (max key per segment). Sorted key→SegmentId pairs. Updated atomically.</p>
 <p>Per‑segment files for segment <code>segment-00000</code>:
 - <code>segment-00000.index</code> — Main SST in chunked format (ChunkStoreFile). Holds sorted key/value entries in chunks.
 - <code>segment-00000.scarce</code> — Sparse index (key→chunk start position) to accelerate probes into <code>.index</code>.
@@ -2636,9 +2635,8 @@
 <li>Segment metadata: <code>.properties</code></li>
 <li>Delta/overlay: <code>.cache</code> (both seed cache and delta files)</li>
 <li>Key→segment map: <code>index.map</code></li>
-<li>Context log: <code>wal-xxxxx.log</code></li>
 </ul>
-<p>Code: <code>segment/SegmentFiles.java</code>, <code>segmentindex/KeySegmentCache.java</code>, <code>log/LogFileNamesManager.java</code>.</p>
+<p>Code: <code>segment/SegmentFiles.java</code>, <code>segmentindex/KeySegmentCache.java</code>.</p>
 <h2 id="atomic-commit-pattern-tmp-rename">🧨 Atomic Commit Pattern (<code>*.tmp</code> + rename)</h2>
 <p>All persistent writers follow the same pattern:
 1) <code>openWriter()</code> returns a writer bound to a temporary file (usually <code>*.tmp</code>).
@@ -2651,8 +2649,7 @@
 - Delta cache: <code>sorteddatafile/SortedDataFileWriterTx</code> (used by <code>SegmentDeltaCacheWriter</code>)
 - Main SST: <code>chunkentryfile/ChunkEntryFileWriterTx</code> → <code>chunkstore/ChunkStoreWriterTx</code> → <code>datablockfile/DataBlockWriterTx</code>
 - Sparse index: <code>scarceindex/ScarceIndexWriterTx</code>
-- Bloom filter: <code>bloomfilter/BloomFilterWriterTx</code>
-- Unsorted log: <code>unsorteddatafile/UnsortedDataFileWriterTx</code></p>
+- Bloom filter: <code>bloomfilter/BloomFilterWriterTx</code></p>
 <h2 id="segment-lifecycle">🔄 Segment Lifecycle</h2>
 <p>1) New writes accumulate in the index write buffer; on flush they are routed by key into per‑segment delta files <code>segment-xxxxx-delta-YYY.cache</code>.
 2) Reads consult delta cache first, then <code>.bloom-filter</code> and <code>.scarce</code> to bound the probe into <code>.index</code>.
@@ -2676,7 +2673,6 @@
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>segment-00000.bloom-filter
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>segment-00000.properties
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>segment-00000-delta-000.cache   # present until compaction
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a># wal-00000.log                 # only if context logging is enabled
 </code></pre></div>
 <h2 id="related-glossary">🔗 Related Glossary</h2>
 <ul>

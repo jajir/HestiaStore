@@ -1514,17 +1514,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#optional-context-log" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        🗒️ Optional Context Log
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#unique-write-buffer-indexlevel" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2538,17 +2527,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#optional-context-log" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        🗒️ Optional Context Log
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#unique-write-buffer-indexlevel" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2771,7 +2749,6 @@
 <h2 id="highlevel-flow">🧭 High‑Level Flow</h2>
 <ol>
 <li>API call: <code>SegmentIndex.put(key, value)</code> or <code>SegmentIndex.delete(key)</code></li>
-<li>Optional context log append (debug/trace log, not a durability WAL)</li>
 <li>In‑memory unique write buffer accepts the latest value per key</li>
 <li>Threshold‑based flush routes buffered writes to target segments</li>
 <li>Segment delta caches persist sorted updates as transactional files</li>
@@ -2787,14 +2764,6 @@
 <li>Synchronized: <code>IndexInternalSynchronized</code> (for thread‑safe access)</li>
 </ul>
 <p>Key classes: <code>segmentindex/SegmentIndex.java</code>, <code>segmentindex/IndexInternalDefault.java</code>.</p>
-<h2 id="optional-context-log">🗒️ Optional Context Log</h2>
-<p>If <code>IndexConfiguration.isContextLoggingEnabled()</code> is true, each write is mirrored to an append‑only log file under <code>docs</code> directory using type‑safe serializers. This is intended for observability and debugging, not recovery. The writer rotates on flush or close to start a new file. When disabled, a no‑op log is used.</p>
-<p>Key classes: <code>log/LogImpl</code>, <code>log/LogWriter</code>, <code>log/LogUnsortedFileWriterImpl</code>, <code>log/LoggedKey</code>.</p>
-<p>Notes:</p>
-<ul>
-<li>The log is not used for crash recovery; a real write‑ahead log is on the roadmap.</li>
-<li>Log files are written via transactional temp files and atomic rename on rotate.</li>
-</ul>
 <h2 id="unique-write-buffer-indexlevel">🧰 Unique Write Buffer (Index‑Level)</h2>
 <p>Every <code>put</code>/<code>delete</code> is first stored in an in‑memory unique cache that holds only the latest value per key. When the buffer exceeds <code>maxNumberOfKeysInCache</code>, the index flushes.</p>
 <ul>
@@ -2813,7 +2782,7 @@
 2) For each key, find the target segment id via <code>KeySegmentCache.insertKeyToSegment</code>.
 3) Buffer entries to the current segment; when switching segments, write the batch to that segment’s delta cache and continue.
 4) After all entries are written, optionally split segments that exceed size thresholds.
-5) Clear the unique buffer, flush the key‑segment map (if changed), and rotate the context log.</p>
+5) Clear the unique buffer and flush the key‑segment map (if changed).</p>
 <p>Key classes: <code>segmentindex/CompactSupport</code>, <code>segmentindex/KeySegmentCache</code>, <code>segmentindex/SegmentSplitCoordinator</code>.</p>
 <h2 id="segment-delta-cache-files-transactional">🗂️ Segment Delta Cache Files (Transactional)</h2>
 <p>Writes land in a segment’s delta cache as sorted key/value files. Each delta file is written transactionally:</p>
@@ -2857,7 +2826,6 @@
 <ul>
 <li>Transactional writers use a temp file + atomic rename to ensure either the old state or the new state is visible after a crash.</li>
 <li>SegmentIndex <code>close()</code> and explicit <code>flush()</code> drive persistence of buffered writes.</li>
-<li>Optional context log is not a durability mechanism; it rotates on flush.</li>
 </ul>
 <h2 id="configuration-knobs-affecting-writes">⚙️ Configuration Knobs Affecting Writes</h2>
 <ul>
@@ -2882,20 +2850,18 @@
 <p>Key classes: <code>chunkstore/ChunkProcessor</code>, <code>chunkstore/ChunkFilterMagicNumberWriting</code>, <code>chunkstore/ChunkFilterCrc32Writing</code>, <code>chunkstore/ChunkFilterSnappyCompress</code>.</p>
 <h2 id="sequence-put">🔢 Sequence (Put)</h2>
 <p>1) <code>SegmentIndex.put(k,v)</code> → validate inputs; forbid direct tombstone values
-2) Optional: append to context log and keep writer open until rotate
-3) Buffer latest <code>(k,v)</code> into unique cache (replaces any prior value for k)
-4) If buffer over threshold → flushCache:
+2) Buffer latest <code>(k,v)</code> into unique cache (replaces any prior value for k)
+3) If buffer over threshold → flushCache:
    - Route sorted entries by key to segments
    - For each target segment: write a new delta cache file (transactional)
    - Optionally compact the segment and optionally split if too large
-   - Clear unique cache, flush key‑segment map, rotate log</p>
+   - Clear unique cache, flush key‑segment map</p>
 <h2 id="where-to-look-in-the-code">🧩 Where to Look in the Code</h2>
 <ul>
 <li>SegmentIndex entry points and buffering: <code>src/main/java/org/hestiastore/index/segmentindex/SegmentIndexImpl.java</code></li>
 <li>Segment write/merge path: <code>src/main/java/org/hestiastore/index/segment/*</code></li>
 <li>Chunk store and filters: <code>src/main/java/org/hestiastore/index/chunkstore/*</code></li>
 <li>Delta and sorted file writers: <code>src/main/java/org/hestiastore/index/sorteddatafile/*</code></li>
-<li>Context log (optional): <code>src/main/java/org/hestiastore/index/log/*</code></li>
 </ul>
 <p>For the read path and on‑disk layout, see the related pages:</p>
 <ul>

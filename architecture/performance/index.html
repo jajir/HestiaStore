@@ -2699,13 +2699,7 @@
 <li>
 <p>Encoding/Decoding filters (CRC, magic, Snappy, XOR)</p>
 </li>
-<li>
-<p>Snappy reduces I/O on compressible values at CPU cost. CRC + magic are lightweight integrity guards and on by default.</p>
-</li>
-<li>
-<p>Context logging (<code>isContextLoggingEnabled</code>)</p>
-</li>
-<li>Writes an unsorted log entry per operation for observability. Disable if you need minimum overhead.</li>
+<li>Snappy reduces I/O on compressible values at CPU cost. CRC + magic are lightweight integrity guards and on by default.</li>
 </ul>
 <h2 id="memory-sizing">🧮 Memory Sizing</h2>
 <ul>
@@ -2718,7 +2712,6 @@
 <ul>
 <li>Put path: hashing and HashMap work; occasional sort on flush (parallel sort over entries) and CRC/magic/Snappy filters on compaction.</li>
 <li>Get path: a few compares, at most N key compares during the bounded scan, optional Snappy decompression on read.</li>
-<li>Enabling context logging adds a small write per operation.</li>
 </ul>
 <h2 id="practical-tuning-recipes">🧪 Practical Tuning Recipes</h2>
 <ul>
