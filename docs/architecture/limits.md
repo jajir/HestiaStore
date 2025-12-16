@@ -19,7 +19,6 @@ This page lists the most important constraints and design trade‑offs so you ca
 
 - Per‑segment SST size bounded by 32‑bit positions: Sparse index stores an `Integer` position and readers cast to `int` (`ChunkEntryFile#openIteratorAtPosition((int)position)`). Keep a single `.index` file below ~2 GiB. Use multiple segments to scale. Code: `chunkentryfile/ChunkEntryFile.java`, `scarceindex/*`.
 - Data‑block and cell sizing constraints: `diskIoBufferSize` must be divisible by 1024; chunk cell size is fixed at 16 bytes. Payloads pad to whole cells (space overhead). Code: `Vldtn#requireIoBufferSize`, `chunkstore/CellPosition.java`.
-- Log file rollover ceiling: Context logging keeps up to 99,999 files (`wal-xxxxx.log`). Hitting this throws. Code: `log/LogFileNamesManager`.
 
 ## 🧱 Configuration Immutability
 

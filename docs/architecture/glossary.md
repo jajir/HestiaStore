@@ -67,6 +67,3 @@ Simple counters for get/put/delete to observe workload shape. Code: `segmentinde
 
 ## 🧰 Consistency Checker
 Utilities to verify sortedness and segment/map coherence after unexpected shutdowns; can repair certain metadata issues. Code: `segmentindex/IndexConsistencyChecker.java`, `segment/SegmentConsistencyChecker.java`.
-
-## 🗒️ Context Log
-Optional append‑only log of operations for observability (not a recovery WAL). Code: `log/*`.

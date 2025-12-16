@@ -5,7 +5,6 @@ This page describes how a write travels through HestiaStore from the API call to
 ## 🧭 High‑Level Flow
 
 1. API call: `SegmentIndex.put(key, value)` or `SegmentIndex.delete(key)`
-1. Optional context log append (debug/trace log, not a durability WAL)
 1. In‑memory unique write buffer accepts the latest value per key
 1. Threshold‑based flush routes buffered writes to target segments
 1. Segment delta caches persist sorted updates as transactional files
@@ -22,17 +21,6 @@ Writes become durable when flushed to segment files. Closing the index performs 
   - Synchronized: `IndexInternalSynchronized` (for thread‑safe access)
 
 Key classes: `segmentindex/SegmentIndex.java`, `segmentindex/IndexInternalDefault.java`.
-
-## 🗒️ Optional Context Log
-
-If `IndexConfiguration.isContextLoggingEnabled()` is true, each write is mirrored to an append‑only log file under `docs` directory using type‑safe serializers. This is intended for observability and debugging, not recovery. The writer rotates on flush or close to start a new file. When disabled, a no‑op log is used.
-
-Key classes: `log/LogImpl`, `log/LogWriter`, `log/LogUnsortedFileWriterImpl`, `log/LoggedKey`.
-
-Notes:
-
-- The log is not used for crash recovery; a real write‑ahead log is on the roadmap.
-- Log files are written via transactional temp files and atomic rename on rotate.
 
 ## 🧰 Unique Write Buffer (Index‑Level)
 
@@ -57,7 +45,7 @@ Flow:
 2) For each key, find the target segment id via `KeySegmentCache.insertKeyToSegment`.
 3) Buffer entries to the current segment; when switching segments, write the batch to that segment’s delta cache and continue.
 4) After all entries are written, optionally split segments that exceed size thresholds.
-5) Clear the unique buffer, flush the key‑segment map (if changed), and rotate the context log.
+5) Clear the unique buffer and flush the key‑segment map (if changed).
 
 Key classes: `segmentindex/CompactSupport`, `segmentindex/KeySegmentCache`, `segmentindex/SegmentSplitCoordinator`.
 
@@ -112,7 +100,6 @@ Key classes: `segmentindex/SegmentIndexImpl#delete`, `datatype/TypeDescriptor#ge
 
 - Transactional writers use a temp file + atomic rename to ensure either the old state or the new state is visible after a crash.
 - SegmentIndex `close()` and explicit `flush()` drive persistence of buffered writes.
-- Optional context log is not a durability mechanism; it rotates on flush.
 
 ## ⚙️ Configuration Knobs Affecting Writes
 
@@ -142,13 +129,12 @@ Key classes: `chunkstore/ChunkProcessor`, `chunkstore/ChunkFilterMagicNumberWrit
 ## 🔢 Sequence (Put)
 
 1) `SegmentIndex.put(k,v)` → validate inputs; forbid direct tombstone values
-2) Optional: append to context log and keep writer open until rotate
-3) Buffer latest `(k,v)` into unique cache (replaces any prior value for k)
-4) If buffer over threshold → flushCache:
+2) Buffer latest `(k,v)` into unique cache (replaces any prior value for k)
+3) If buffer over threshold → flushCache:
    - Route sorted entries by key to segments
    - For each target segment: write a new delta cache file (transactional)
    - Optionally compact the segment and optionally split if too large
-   - Clear unique cache, flush key‑segment map, rotate log
+   - Clear unique cache, flush key‑segment map
 
 ## 🧩 Where to Look in the Code
 
@@ -156,7 +142,6 @@ Key classes: `chunkstore/ChunkProcessor`, `chunkstore/ChunkFilterMagicNumberWrit
 - Segment write/merge path: `src/main/java/org/hestiastore/index/segment/*`
 - Chunk store and filters: `src/main/java/org/hestiastore/index/chunkstore/*`
 - Delta and sorted file writers: `src/main/java/org/hestiastore/index/sorteddatafile/*`
-- Context log (optional): `src/main/java/org/hestiastore/index/log/*`
 
 For the read path and on‑disk layout, see the related pages:
 

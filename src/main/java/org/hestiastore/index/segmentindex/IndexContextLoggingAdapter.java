@@ -4,9 +4,7 @@ import java.util.stream.Stream;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.EntryIteratorStreamer;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.log.LoggedKey;
 import org.slf4j.MDC;
 
 /**
@@ -141,22 +139,6 @@ public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         setContext();
         try {
             return index.getStream(segmentWindows);
-        } finally {
-            clearContext();
-        }
-    }
-
-    /**
-     * Provides a log streamer backed by the delegate index with the MDC context
-     * configured.
-     *
-     * @return streamer that emits logged keys and values
-     */
-    @Override
-    public EntryIteratorStreamer<LoggedKey<K>, V> getLogStreamer() {
-        setContext();
-        try {
-            return index.getLogStreamer();
         } finally {
             clearContext();
         }
