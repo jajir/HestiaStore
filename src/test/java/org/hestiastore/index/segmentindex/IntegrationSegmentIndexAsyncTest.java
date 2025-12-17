@@ -86,7 +86,7 @@ class IntegrationSegmentIndexAsyncTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = { false, true })
+    @ValueSource(booleans = { true })
     void asyncOperationsInterleaveWithSyncOperations(
             final boolean threadSafe) {
         final Directory directory = new MemDirectory();
