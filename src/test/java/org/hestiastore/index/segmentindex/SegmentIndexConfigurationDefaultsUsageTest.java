@@ -56,6 +56,9 @@ class SegmentIndexConfigurationDefaultsUsageTest {
             assertEquals(defaults.getNumberOfThreads(),
                     actual.getNumberOfThreads(),
                     "Number of threads must come from contract defaults");
+            assertEquals(defaults.getNumberOfIoThreads(),
+                    actual.getNumberOfIoThreads(),
+                    "Number of IO threads must come from contract defaults");
             assertEquals(defaults.getDiskIoBufferSizeInBytes(),
                     actual.getDiskIoBufferSize(),
                     "Disk IO buffer size must come from contract defaults");

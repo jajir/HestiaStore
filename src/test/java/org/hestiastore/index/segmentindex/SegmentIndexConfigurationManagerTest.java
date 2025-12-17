@@ -571,7 +571,7 @@ class SegmentIndexConfigurationManagerTest {
     void test_mergeWithStored_numberOfThreads() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withNumberOfThreads(4)//
+                .withNumberOfCpuThreads(4)//
                 .build();
 
         when(storage.load()).thenReturn(CONFIG);
@@ -581,6 +581,22 @@ class SegmentIndexConfigurationManagerTest {
         assertNotNull(ret);
 
         assertEquals(4, ret.getNumberOfThreads());
+    }
+
+    @Test
+    void test_mergeWithStored_numberOfIoThreads() {
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
+                .withNumberOfIoThreads(3)//
+                .build();
+
+        when(storage.load()).thenReturn(CONFIG);
+        final IndexConfiguration<Long, String> ret = manager
+                .mergeWithStored(config);
+        verify(storage, Mockito.times(1)).save(any());
+        assertNotNull(ret);
+
+        assertEquals(3, ret.getNumberOfIoThreads());
     }
 
     @Test
