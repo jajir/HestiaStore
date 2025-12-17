@@ -58,7 +58,7 @@ Code: `segment/SegmentDeltaCacheWriter`, `segment/SegmentDeltaCacheController`, 
 - Heavy objects (Bloom filter, scarce index, delta cache) are obtained via a provider backed by LRU:
   - `segmentindex/SegmentDataCache` holds `segment/SegmentData` instances with an LRU limit; eviction calls `close()` on the container.
   - Providers: `segment/SegmentDataProvider` implementations
-    - `segment/SegmentDataProviderSimple` — simple local holder (used in wiring/tests)
+    - `segment/SegmentDataProviderLazyLoaded` — lazy local holder
 
 Code: `segmentindex/SegmentIndexImpl#get`, `segment/SegmentImpl#get`, `segment/SegmentSearcher`, `segmentindex/EntryIteratorRefreshedFromCache`, `segmentindex/SegmentDataCache`.
 

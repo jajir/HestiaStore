@@ -8,10 +8,8 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentConf;
-import org.hestiastore.index.segment.SegmentDataFactory;
-import org.hestiastore.index.segment.SegmentDataFactoryImpl;
 import org.hestiastore.index.segment.SegmentDataProvider;
-import org.hestiastore.index.segment.SegmentDataProviderSimple;
+import org.hestiastore.index.segment.SegmentDataProviderLazyLoaded;
 import org.hestiastore.index.segment.SegmentDataSupplier;
 import org.hestiastore.index.segment.SegmentFiles;
 import org.hestiastore.index.segment.SegmentId;
@@ -76,11 +74,8 @@ public class SegmentRegistry<K, V> {
         final SegmentDataSupplier<K, V> segmentDataSupplier = new SegmentDataSupplier<>(
                 segmentFiles, segmentConf, segmentPropertiesManager);
 
-        final SegmentDataFactory<K, V> segmentDataFactory = new SegmentDataFactoryImpl<>(
+        final SegmentDataProvider<K, V> dataProvider = new SegmentDataProviderLazyLoaded<>(
                 segmentDataSupplier);
-
-        final SegmentDataProvider<K, V> dataProvider = new SegmentDataProviderSimple<>(
-                segmentDataFactory);
 
         return Segment.<K, V>builder().withDirectory(directory)
                 .withId(segmentId).withKeyTypeDescriptor(keyTypeDescriptor)
