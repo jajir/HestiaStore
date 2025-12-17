@@ -57,7 +57,7 @@ Pattern that enforces open → close → commit, guaranteeing atomic file replac
 File I/O backend (FS, memory, zip) providing readers/writers and atomic rename. Code: `directory/*`.
 
 ## 🧩 SegmentData and Provider
-Lazy containers and providers for per‑segment heavyweight structures (delta cache, Bloom, sparse index). Often cached via LRU. Code: `segment/SegmentData*.java`, `segmentindex/SegmentDataCache.java`, `segmentindex/SegmentDataProviderFromMainCache.java`.
+ Lazy containers and providers for per‑segment heavyweight structures (delta cache, Bloom, sparse index). Often cached via LRU. Code: `segment/SegmentData*.java`, `segmentindex/SegmentDataCache.java`.
 
 ## 🪟 SegmentWindow
 Offset/limit window for streaming across segments, analogous to SQL OFFSET/LIMIT. Code: `segmentindex/SegmentWindow.java`.
