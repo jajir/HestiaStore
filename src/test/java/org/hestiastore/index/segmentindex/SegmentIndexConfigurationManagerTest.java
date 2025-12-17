@@ -465,6 +465,9 @@ class SegmentIndexConfigurationManagerTest {
                 withDefaults.getDecodingChunkFilters().get(0).getClass());
         assertEquals(ChunkFilterCrc32Validation.class,
                 withDefaults.getDecodingChunkFilters().get(1).getClass());
+        assertEquals(IndexConfigurationContract.NUMBER_OF_THREADS,
+                withDefaults.getNumberOfThreads(),
+                "Number of threads should be defaulted");
     }
 
     @Test
@@ -562,6 +565,22 @@ class SegmentIndexConfigurationManagerTest {
         assertNotNull(ret);
 
         assertEquals(true, ret.isContextLoggingEnabled());
+    }
+
+    @Test
+    void test_mergeWithStored_numberOfThreads() {
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
+                .withNumberOfThreads(4)//
+                .build();
+
+        when(storage.load()).thenReturn(CONFIG);
+        final IndexConfiguration<Long, String> ret = manager
+                .mergeWithStored(config);
+        verify(storage, Mockito.times(1)).save(any());
+        assertNotNull(ret);
+
+        assertEquals(4, ret.getNumberOfThreads());
     }
 
     @Test

@@ -30,6 +30,7 @@ public class IndexConfiguratonStorage<K, V> {
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_CACHE = "maxNumberOfKeysInCache";
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT = "maxNumberOfKeysInSegment";
     private static final String PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE = "maxNumberOfSegmentsInCache";
+    private static final String PROP_NUMBER_OF_THREADS = "numberOfThreads";
     private static final String PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS = "bloomFilterNumberOfHashFunctions";
     private static final String PROP_BLOOM_FILTER_INDEX_SIZE_IN_BYTES = "bloomFilterIndexSizeInBytes";
     private static final String PROP_BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE = "bloomFilterProbabilityOfFalsePositive";
@@ -80,6 +81,9 @@ public class IndexConfiguratonStorage<K, V> {
                                 PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING))//
                 .withMaxNumberOfKeysInSegmentChunk(
                         propsView.getInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK))//
+                .withNumberOfThreads(getOrDefault(propsView,
+                        PROP_NUMBER_OF_THREADS,
+                        IndexConfigurationContract.NUMBER_OF_THREADS))//
 
                 // Segment bloom filter properties
                 .withBloomFilterNumberOfHashFunctions(propsView
@@ -151,6 +155,10 @@ public class IndexConfiguratonStorage<K, V> {
                         .getMaxNumberOfKeysInSegmentCacheDuringFlushing());
         writer.setInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK,
                 indexConfiguration.getMaxNumberOfKeysInSegmentChunk());
+        final int threadCount = indexConfiguration.getNumberOfThreads() == null
+                ? IndexConfigurationContract.NUMBER_OF_THREADS
+                : indexConfiguration.getNumberOfThreads();
+        writer.setInt(PROP_NUMBER_OF_THREADS, threadCount);
 
         // Segment bloom filter properties
         writer.setInt(PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
@@ -221,6 +229,15 @@ public class IndexConfiguratonStorage<K, V> {
                             requiredClassName),
                     ex);
         }
+    }
+
+    private int getOrDefault(final PropertyView propsView, final String key,
+            final int defaultValue) {
+        final int value = propsView.getInt(key);
+        if (value == 0) {
+            return defaultValue;
+        }
+        return value;
     }
 
 }

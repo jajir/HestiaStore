@@ -27,6 +27,7 @@ public interface IndexConfigurationContract {
     double BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE = 0.01;
 
     int DISK_IO_BUFFER_SIZE_IN_BYTES = 1024 * 8;
+    int NUMBER_OF_THREADS = 1;
 
     default int getMaxNumberOfKeysInSegmentCache() {
         return MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
@@ -70,6 +71,10 @@ public interface IndexConfigurationContract {
 
     default boolean isThreadSafe() {
         return false;
+    }
+
+    default int getNumberOfThreads() {
+        return NUMBER_OF_THREADS;
     }
 
     default boolean isContextLoggingEnabled() {

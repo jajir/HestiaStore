@@ -142,6 +142,14 @@ class SegmentIndexConfigurationBuilderTest {
     }
 
     @Test
+    void withNumberOfThreadsSetsValue() {
+        final int value = 4;
+        final IndexConfiguration<Integer, String> config = newBuilder()
+                .withNumberOfThreads(value).build();
+        assertEquals(value, config.getNumberOfThreads());
+    }
+
+    @Test
     void withThreadSafeSetsValue() {
         final IndexConfiguration<Integer, String> config = newBuilder()
                 .withThreadSafe(Boolean.TRUE).build();
