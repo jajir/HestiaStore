@@ -62,7 +62,7 @@ There are few classes that provide lazy loading of segment data a flexibility to
 Object `SegmentData` could contains objects `SegmentDeltaCache`, `BloomFilter` and `ScarceIndex`. All of them are lazy loaded by `SegmentDataSupplier`. For closer class description look at source code.
 
 
-The following image shows that `SegmentDatafactory` can be referenced from `SegmentDataProviderSimple`, which is the simplest implementation that merely holds segment data from the factory.
+The following image shows that `SegmentDatafactory` can be referenced from a provider that holds segment data from the factory.
 
 ![Cache related object relations](../images/segment-cache-class2.png)
 

@@ -516,16 +516,12 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         final SegmentDataSupplier<Integer, String> segmentDataSupplier = new SegmentDataSupplier<>(
                 segmentFiles, segmentConf, segmentPropertiesManager);
 
-        final SegmentDataFactory<Integer, String> segmentDataFactory = new SegmentDataFactoryImpl<>(
+        final SegmentDataProviderLazyLoaded<Integer, String> dataProvider = new SegmentDataProviderLazyLoaded<>(
                 segmentDataSupplier);
-
-        final SegmentDataProviderSimple<Integer, String> dataProvider = new SegmentDataProviderSimple<>(
-                segmentDataFactory);
 
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
                 .withDirectory(directory)//
                 .withId(segmentId)//
-                .withSegmentDataProvider(dataProvider)//
                 .withSegmentConf(segmentConf)//
                 .withSegmentFiles(segmentFiles)//
                 .withSegmentPropertiesManager(segmentPropertiesManager)//

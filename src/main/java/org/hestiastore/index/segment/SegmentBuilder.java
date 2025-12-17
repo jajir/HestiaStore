@@ -351,10 +351,8 @@ public final class SegmentBuilder<K, V> {
         if (segmentDataProvider == null) {
             final SegmentDataSupplier<K, V> segmentDataSupplier = new SegmentDataSupplier<>(
                     segmentFiles, segmentConf, segmentPropertiesManager);
-            final SegmentDataFactory<K, V> segmentDataFactory = new SegmentDataFactoryImpl<>(
+            segmentDataProvider = new SegmentDataProviderLazyLoaded<>(
                     segmentDataSupplier);
-            segmentDataProvider = new SegmentDataProviderSimple<>(
-                    segmentDataFactory);
         }
         final SegmentSearcher<K, V> segmentSearcher = new SegmentSearcher<K, V>(
                 segmentFiles.getValueTypeDescriptor());
