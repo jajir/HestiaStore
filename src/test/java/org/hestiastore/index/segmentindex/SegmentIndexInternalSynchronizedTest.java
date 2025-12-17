@@ -31,6 +31,7 @@ class SegmentIndexInternalSynchronizedTest {
     @Test
     void test_constructor() {
         when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(1000);
+        when(conf.getNumberOfThreads()).thenReturn(1);
         try (IndexInternalSynchronized<Integer, String> synchIndex = new IndexInternalSynchronized<>(
                 directory, TD_INTEGER, TD_STRING, conf, log)) {
             // Intentionally left empty to test constructor

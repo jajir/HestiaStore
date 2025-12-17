@@ -7,6 +7,7 @@ import java.util.List;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.datatype.TypeDescriptor;
+import org.hestiastore.index.segmentindex.IndexConfigurationContract;
 
 public class IndexConfigurationBuilder<K, V> {
 
@@ -22,6 +23,7 @@ public class IndexConfigurationBuilder<K, V> {
     private Double bloomFilterProbabilityOfFalsePositive;
 
     private Integer diskIoBufferSizeInBytes;
+    private Integer numberOfThreads;
 
     private String indexName;
     private Class<K> keyClass;
@@ -154,6 +156,12 @@ public class IndexConfigurationBuilder<K, V> {
         return this;
     }
 
+    public IndexConfigurationBuilder<K, V> withNumberOfThreads(
+            final Integer numberOfThreads) {
+        this.numberOfThreads = numberOfThreads;
+        return this;
+    }
+
     public IndexConfigurationBuilder<K, V> addEncodingFilter(
             final ChunkFilter filter) {
         encodingChunkFilters.add(Vldtn.requireNonNull(filter, "filter"));
@@ -217,6 +225,9 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     public IndexConfiguration<K, V> build() {
+        final Integer effectiveNumberOfThreads = numberOfThreads == null
+                ? IndexConfigurationContract.NUMBER_OF_THREADS
+                : numberOfThreads;
         return new IndexConfiguration<K, V>(keyClass, valueClass,
                 keyTypeDescriptor, valueTypeDescriptor,
                 maxNumberOfKeysInSegmentCache,
@@ -225,8 +236,8 @@ public class IndexConfigurationBuilder<K, V> {
                 maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache, indexName,
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
                 bloomFilterProbabilityOfFalsePositive, diskIoBufferSizeInBytes,
-                isThreadSafe, contextLoggingEnabled, encodingChunkFilters,
-                decodingChunkFilters);
+                isThreadSafe, contextLoggingEnabled, effectiveNumberOfThreads,
+                encodingChunkFilters, decodingChunkFilters);
     }
 
     private ChunkFilter instantiateFilter(

@@ -53,6 +53,9 @@ class SegmentIndexConfigurationDefaultsUsageTest {
             assertEquals(defaults.getMaxNumberOfSegmentsInCache(),
                     actual.getMaxNumberOfSegmentsInCache(),
                     "Segments in cache must come from contract defaults");
+            assertEquals(defaults.getNumberOfThreads(),
+                    actual.getNumberOfThreads(),
+                    "Number of threads must come from contract defaults");
             assertEquals(defaults.getDiskIoBufferSizeInBytes(),
                     actual.getDiskIoBufferSize(),
                     "Disk IO buffer size must come from contract defaults");

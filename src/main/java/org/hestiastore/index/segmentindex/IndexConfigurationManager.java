@@ -58,6 +58,9 @@ public class IndexConfigurationManager<K, V> {
         if (conf.isThreadSafe() == null) {
             builder.withThreadSafe(defaults.isThreadSafe());
         }
+        if (conf.getNumberOfThreads() == null) {
+            builder.withNumberOfThreads(defaults.getNumberOfThreads());
+        }
         if (conf.getMaxNumberOfKeysInSegment() == null) {
             builder.withMaxNumberOfKeysInSegment(
                     defaults.getMaxNumberOfKeysInSegment());
@@ -77,6 +80,9 @@ public class IndexConfigurationManager<K, V> {
         if (conf.getMaxNumberOfSegmentsInCache() == null) {
             builder.withMaxNumberOfSegmentsInCache(
                     defaults.getMaxNumberOfSegmentsInCache());
+        }
+        if (conf.getNumberOfThreads() == null) {
+            builder.withNumberOfThreads(defaults.getNumberOfThreads());
         }
         if (conf.getMaxNumberOfKeysInSegmentChunk() == null) {
             builder.withMaxNumberOfKeysInSegmentChunk(
@@ -162,6 +168,13 @@ public class IndexConfigurationManager<K, V> {
         if (isMaxNumberOfKeysInCacheOverriden(storedConf, indexConf)) {
             builder.withMaxNumberOfKeysInCache(
                     indexConf.getMaxNumberOfKeysInCache());
+            dirty = true;
+        }
+        if (indexConf.getNumberOfThreads() != null
+                && indexConf.getNumberOfThreads() > 0
+                && !indexConf.getNumberOfThreads()
+                        .equals(storedConf.getNumberOfThreads())) {
+            builder.withNumberOfThreads(indexConf.getNumberOfThreads());
             dirty = true;
         }
 
@@ -433,6 +446,11 @@ public class IndexConfigurationManager<K, V> {
             throw new IllegalArgumentException(
                     "Decoding chunk filters must not be empty.");
         }
+        Vldtn.requireNonNull(conf.getNumberOfThreads(), "numberOfThreads");
+        if (conf.getNumberOfThreads() < 1) {
+            throw new IllegalArgumentException(
+                    "Number of threads must be at least 1.");
+        }
         return conf;
     }
 
@@ -460,6 +478,7 @@ public class IndexConfigurationManager<K, V> {
                 .withValueTypeDescriptor(conf.getValueTypeDescriptor())//
                 .withContextLoggingEnabled(conf.isContextLoggingEnabled())//
                 .withThreadSafe(conf.isThreadSafe())//
+                .withNumberOfThreads(conf.getNumberOfThreads())//
                 .withName(conf.getIndexName())//
 
                 // SegmentIndex runtime properties

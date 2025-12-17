@@ -43,6 +43,7 @@ class SegmentIndexConfiguratonStorageTest {
     private static final int MAX_KEYS_CACHE = 10000;
     private static final int MAX_KEYS_SEGMENT = 20000;
     private static final int MAX_SEGMENTS_CACHE = 8;
+    private static final int NUMBER_OF_THREADS = 2;
     private static final String INDX_NAME = "specialIndex01";
     private static final int BLOOM_FILTER_HASH = 3;
     private static final int BLOOM_FILTER_INDEX_BYTES = 2048;
@@ -64,6 +65,7 @@ class SegmentIndexConfiguratonStorageTest {
                 .withMaxNumberOfKeysInCache(10000)//
                 .withMaxNumberOfKeysInSegment(20000)//
                 .withMaxNumberOfSegmentsInCache(8)//
+                .withNumberOfThreads(NUMBER_OF_THREADS)//
                 .withName(INDX_NAME)//
                 .withBloomFilterNumberOfHashFunctions(3)//
                 .withBloomFilterIndexSizeInBytes(2048)//
@@ -89,6 +91,7 @@ class SegmentIndexConfiguratonStorageTest {
         assertEquals(MAX_KEYS_CACHE, ret.getMaxNumberOfKeysInCache());
         assertEquals(MAX_KEYS_SEGMENT, ret.getMaxNumberOfKeysInSegment());
         assertEquals(MAX_SEGMENTS_CACHE, ret.getMaxNumberOfSegmentsInCache());
+        assertEquals(NUMBER_OF_THREADS, ret.getNumberOfThreads());
         assertEquals(INDX_NAME, ret.getIndexName());
         assertEquals(BLOOM_FILTER_HASH,
                 ret.getBloomFilterNumberOfHashFunctions());
