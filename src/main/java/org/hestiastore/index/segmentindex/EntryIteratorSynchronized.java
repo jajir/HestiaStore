@@ -1,6 +1,6 @@
 package org.hestiastore.index.segmentindex;
 
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.Lock;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
@@ -11,10 +11,10 @@ public class EntryIteratorSynchronized<K, V> extends AbstractCloseableResource
         implements EntryIterator<K, V> {
 
     private final EntryIterator<K, V> iterator;
-    private final ReentrantLock lock;
+    private final Lock lock;
 
     EntryIteratorSynchronized(final EntryIterator<K, V> iterator,
-            final ReentrantLock lock) {
+            final Lock lock) {
         this.iterator = Vldtn.requireNonNull(iterator, "iterator");
         this.lock = Vldtn.requireNonNull(lock, "lock");
     }
