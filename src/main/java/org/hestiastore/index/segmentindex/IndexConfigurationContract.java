@@ -28,6 +28,7 @@ public interface IndexConfigurationContract {
 
     int DISK_IO_BUFFER_SIZE_IN_BYTES = 1024 * 8;
     int NUMBER_OF_THREADS = 1;
+    int NUMBER_OF_IO_THREADS = 1;
 
     default int getMaxNumberOfKeysInSegmentCache() {
         return MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
@@ -75,6 +76,10 @@ public interface IndexConfigurationContract {
 
     default int getNumberOfThreads() {
         return NUMBER_OF_THREADS;
+    }
+
+    default int getNumberOfIoThreads() {
+        return NUMBER_OF_IO_THREADS;
     }
 
     default boolean isContextLoggingEnabled() {

@@ -142,11 +142,19 @@ class SegmentIndexConfigurationBuilderTest {
     }
 
     @Test
-    void withNumberOfThreadsSetsValue() {
+    void withNumberOfCpuThreadsSetsValue() {
         final int value = 4;
         final IndexConfiguration<Integer, String> config = newBuilder()
-                .withNumberOfThreads(value).build();
+                .withNumberOfCpuThreads(value).build();
         assertEquals(value, config.getNumberOfThreads());
+    }
+
+    @Test
+    void withNumberOfIoThreadsSetsValue() {
+        final int value = 3;
+        final IndexConfiguration<Integer, String> config = newBuilder()
+                .withNumberOfIoThreads(value).build();
+        assertEquals(value, config.getNumberOfIoThreads());
     }
 
     @Test

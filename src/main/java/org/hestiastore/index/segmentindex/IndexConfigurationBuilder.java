@@ -7,7 +7,6 @@ import java.util.List;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.segmentindex.IndexConfigurationContract;
 
 public class IndexConfigurationBuilder<K, V> {
 
@@ -24,6 +23,7 @@ public class IndexConfigurationBuilder<K, V> {
 
     private Integer diskIoBufferSizeInBytes;
     private Integer numberOfThreads;
+    private Integer numberOfIoThreads;
 
     private String indexName;
     private Class<K> keyClass;
@@ -156,9 +156,15 @@ public class IndexConfigurationBuilder<K, V> {
         return this;
     }
 
-    public IndexConfigurationBuilder<K, V> withNumberOfThreads(
+    public IndexConfigurationBuilder<K, V> withNumberOfCpuThreads(
             final Integer numberOfThreads) {
         this.numberOfThreads = numberOfThreads;
+        return this;
+    }
+
+    public IndexConfigurationBuilder<K, V> withNumberOfIoThreads(
+            final Integer numberOfIoThreads) {
+        this.numberOfIoThreads = numberOfIoThreads;
         return this;
     }
 
@@ -228,6 +234,9 @@ public class IndexConfigurationBuilder<K, V> {
         final Integer effectiveNumberOfThreads = numberOfThreads == null
                 ? IndexConfigurationContract.NUMBER_OF_THREADS
                 : numberOfThreads;
+        final Integer effectiveNumberOfIoThreads = numberOfIoThreads == null
+                ? IndexConfigurationContract.NUMBER_OF_IO_THREADS
+                : numberOfIoThreads;
         return new IndexConfiguration<K, V>(keyClass, valueClass,
                 keyTypeDescriptor, valueTypeDescriptor,
                 maxNumberOfKeysInSegmentCache,
@@ -237,7 +246,8 @@ public class IndexConfigurationBuilder<K, V> {
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
                 bloomFilterProbabilityOfFalsePositive, diskIoBufferSizeInBytes,
                 isThreadSafe, contextLoggingEnabled, effectiveNumberOfThreads,
-                encodingChunkFilters, decodingChunkFilters);
+                effectiveNumberOfIoThreads, encodingChunkFilters,
+                decodingChunkFilters);
     }
 
     private ChunkFilter instantiateFilter(

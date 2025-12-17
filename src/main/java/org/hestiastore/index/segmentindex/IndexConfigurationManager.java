@@ -59,7 +59,10 @@ public class IndexConfigurationManager<K, V> {
             builder.withThreadSafe(defaults.isThreadSafe());
         }
         if (conf.getNumberOfThreads() == null) {
-            builder.withNumberOfThreads(defaults.getNumberOfThreads());
+            builder.withNumberOfCpuThreads(defaults.getNumberOfThreads());
+        }
+        if (conf.getNumberOfIoThreads() == null) {
+            builder.withNumberOfIoThreads(defaults.getNumberOfIoThreads());
         }
         if (conf.getMaxNumberOfKeysInSegment() == null) {
             builder.withMaxNumberOfKeysInSegment(
@@ -81,8 +84,9 @@ public class IndexConfigurationManager<K, V> {
             builder.withMaxNumberOfSegmentsInCache(
                     defaults.getMaxNumberOfSegmentsInCache());
         }
-        if (conf.getNumberOfThreads() == null) {
-            builder.withNumberOfThreads(defaults.getNumberOfThreads());
+        if (conf.getMaxNumberOfKeysInSegmentChunk() == null) {
+            builder.withMaxNumberOfKeysInSegmentChunk(
+                    defaults.getMaxNumberOfKeysInSegmentChunk());
         }
         if (conf.getMaxNumberOfKeysInSegmentChunk() == null) {
             builder.withMaxNumberOfKeysInSegmentChunk(
@@ -174,7 +178,14 @@ public class IndexConfigurationManager<K, V> {
                 && indexConf.getNumberOfThreads() > 0
                 && !indexConf.getNumberOfThreads()
                         .equals(storedConf.getNumberOfThreads())) {
-            builder.withNumberOfThreads(indexConf.getNumberOfThreads());
+            builder.withNumberOfCpuThreads(indexConf.getNumberOfThreads());
+            dirty = true;
+        }
+        if (indexConf.getNumberOfIoThreads() != null
+                && indexConf.getNumberOfIoThreads() > 0
+                && !indexConf.getNumberOfIoThreads()
+                        .equals(storedConf.getNumberOfIoThreads())) {
+            builder.withNumberOfIoThreads(indexConf.getNumberOfIoThreads());
             dirty = true;
         }
 
@@ -451,6 +462,11 @@ public class IndexConfigurationManager<K, V> {
             throw new IllegalArgumentException(
                     "Number of threads must be at least 1.");
         }
+        Vldtn.requireNonNull(conf.getNumberOfIoThreads(), "numberOfIoThreads");
+        if (conf.getNumberOfIoThreads() < 1) {
+            throw new IllegalArgumentException(
+                    "Number of IO threads must be at least 1.");
+        }
         return conf;
     }
 
@@ -478,7 +494,8 @@ public class IndexConfigurationManager<K, V> {
                 .withValueTypeDescriptor(conf.getValueTypeDescriptor())//
                 .withContextLoggingEnabled(conf.isContextLoggingEnabled())//
                 .withThreadSafe(conf.isThreadSafe())//
-                .withNumberOfThreads(conf.getNumberOfThreads())//
+                .withNumberOfCpuThreads(conf.getNumberOfThreads())//
+                .withNumberOfIoThreads(conf.getNumberOfIoThreads())//
                 .withName(conf.getIndexName())//
 
                 // SegmentIndex runtime properties

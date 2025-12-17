@@ -41,6 +41,7 @@ public class IndexConfiguration<K, V> {
     private final Integer maxNumberOfKeysInSegment;
     private final Integer maxNumberOfSegmentsInCache;
     private final Integer numberOfThreads;
+    private final Integer numberOfIoThreads;
 
     private final Integer bloomFilterNumberOfHashFunctions;
     private final Integer bloomFilterIndexSizeInBytes;
@@ -80,7 +81,7 @@ public class IndexConfiguration<K, V> {
             final Double bloomFilterProbabilityOfFalsePositive, //
             final Integer diskIoBufferSize, final Boolean threadSafe,
             final Boolean contextLoggingEnabled,
-            final Integer numberOfThreads,
+            final Integer numberOfThreads, final Integer numberOfIoThreads,
             final List<ChunkFilter> encodingChunkFilters,
             final List<ChunkFilter> decodingChunkFilters) {
         this.keyClass = keyClass;
@@ -95,6 +96,7 @@ public class IndexConfiguration<K, V> {
         this.maxNumberOfKeysInSegment = maxNumberOfKeysInSegment;
         this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
         this.numberOfThreads = numberOfThreads;
+        this.numberOfIoThreads = numberOfIoThreads;
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
         this.bloomFilterProbabilityOfFalsePositive = bloomFilterProbabilityOfFalsePositive;
@@ -182,6 +184,10 @@ public class IndexConfiguration<K, V> {
 
     public Integer getNumberOfThreads() {
         return numberOfThreads;
+    }
+
+    public Integer getNumberOfIoThreads() {
+        return numberOfIoThreads;
     }
 
     public Integer getMaxNumberOfSegmentsInCache() {

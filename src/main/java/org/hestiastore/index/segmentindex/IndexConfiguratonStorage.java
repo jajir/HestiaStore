@@ -31,6 +31,7 @@ public class IndexConfiguratonStorage<K, V> {
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT = "maxNumberOfKeysInSegment";
     private static final String PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE = "maxNumberOfSegmentsInCache";
     private static final String PROP_NUMBER_OF_THREADS = "numberOfThreads";
+    private static final String PROP_NUMBER_OF_IO_THREADS = "numberOfIoThreads";
     private static final String PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS = "bloomFilterNumberOfHashFunctions";
     private static final String PROP_BLOOM_FILTER_INDEX_SIZE_IN_BYTES = "bloomFilterIndexSizeInBytes";
     private static final String PROP_BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE = "bloomFilterProbabilityOfFalsePositive";
@@ -81,9 +82,12 @@ public class IndexConfiguratonStorage<K, V> {
                                 PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING))//
                 .withMaxNumberOfKeysInSegmentChunk(
                         propsView.getInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK))//
-                .withNumberOfThreads(getOrDefault(propsView,
+                .withNumberOfCpuThreads(getOrDefault(propsView,
                         PROP_NUMBER_OF_THREADS,
                         IndexConfigurationContract.NUMBER_OF_THREADS))//
+                .withNumberOfIoThreads(getOrDefault(propsView,
+                        PROP_NUMBER_OF_IO_THREADS,
+                        IndexConfigurationContract.NUMBER_OF_IO_THREADS))//
 
                 // Segment bloom filter properties
                 .withBloomFilterNumberOfHashFunctions(propsView
@@ -159,6 +163,10 @@ public class IndexConfiguratonStorage<K, V> {
                 ? IndexConfigurationContract.NUMBER_OF_THREADS
                 : indexConfiguration.getNumberOfThreads();
         writer.setInt(PROP_NUMBER_OF_THREADS, threadCount);
+        final int ioThreadCount = indexConfiguration.getNumberOfIoThreads() == null
+                ? IndexConfigurationContract.NUMBER_OF_IO_THREADS
+                : indexConfiguration.getNumberOfIoThreads();
+        writer.setInt(PROP_NUMBER_OF_IO_THREADS, ioThreadCount);
 
         // Segment bloom filter properties
         writer.setInt(PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
