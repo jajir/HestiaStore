@@ -18,7 +18,7 @@ public class SegmentDataProviderSimple<K, V>
     private final SegmentDataFactory<K, V> segmentDataFactory;
     private SegmentData<K, V> segmentData;
 
-    SegmentDataProviderSimple(
+    public SegmentDataProviderSimple(
             final SegmentDataFactory<K, V> segmentDataFactory) {
         this.segmentDataFactory = Vldtn.requireNonNull(segmentDataFactory,
                 "segmentDataFactory");

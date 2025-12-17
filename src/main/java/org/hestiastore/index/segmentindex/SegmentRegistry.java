@@ -11,6 +11,7 @@ import org.hestiastore.index.segment.SegmentConf;
 import org.hestiastore.index.segment.SegmentDataFactory;
 import org.hestiastore.index.segment.SegmentDataFactoryImpl;
 import org.hestiastore.index.segment.SegmentDataProvider;
+import org.hestiastore.index.segment.SegmentDataProviderSimple;
 import org.hestiastore.index.segment.SegmentDataSupplier;
 import org.hestiastore.index.segment.SegmentFiles;
 import org.hestiastore.index.segment.SegmentId;
@@ -78,8 +79,8 @@ public class SegmentRegistry<K, V> {
         final SegmentDataFactory<K, V> segmentDataFactory = new SegmentDataFactoryImpl<>(
                 segmentDataSupplier);
 
-        final SegmentDataProvider<K, V> dataProvider = new SegmentDataProviderFromMainCache<>(
-                segmentId, segmentDataCache, segmentDataFactory);
+        final SegmentDataProvider<K, V> dataProvider = new SegmentDataProviderSimple<>(
+                segmentDataFactory);
 
         return Segment.<K, V>builder().withDirectory(directory)
                 .withId(segmentId).withKeyTypeDescriptor(keyTypeDescriptor)
