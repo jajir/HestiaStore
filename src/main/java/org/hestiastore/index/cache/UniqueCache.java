@@ -97,12 +97,14 @@ public class UniqueCache<K, V> {
      * @return sorted list of entries
      */
     public List<Entry<K, V>> getAsSortedList() {
-        final int n = map.size();
-        if (n == 0)
-            return List.of();
-
         @SuppressWarnings("unchecked")
-        Map.Entry<K, V>[] a = map.entrySet().toArray(new Map.Entry[n]);
+        Map.Entry<K, V>[] a = map.entrySet().stream()
+                .filter(e -> e != null && e.getKey() != null)
+                .toArray(Map.Entry[]::new);
+        final int n = a.length;
+        if (n == 0) {
+            return List.of();
+        }
 
         /**
          * Sort array of map entries by key using the provided key comparator.

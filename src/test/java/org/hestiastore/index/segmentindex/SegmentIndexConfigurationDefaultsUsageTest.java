@@ -47,9 +47,6 @@ class SegmentIndexConfigurationDefaultsUsageTest {
             assertEquals(defaults.getMaxNumberOfKeysInCache(),
                     actual.getMaxNumberOfKeysInCache(),
                     "Index cache size must come from contract defaults");
-            assertEquals(defaults.getMaxNumberOfKeysInReadCache(),
-                    actual.getMaxNumberOfKeysInReadCache(),
-                    "Read cache size must come from contract defaults");
             assertEquals(defaults.getMaxNumberOfKeysInSegment(),
                     actual.getMaxNumberOfKeysInSegment(),
                     "Segment key count must come from contract defaults");

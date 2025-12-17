@@ -144,7 +144,11 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * @return completion that finishes when the write completes
      */
     default CompletionStage<Void> putAsync(final K key, final V value) {
-        return CompletableFuture.runAsync(() -> put(key, value));
+        return CompletableFuture.runAsync(() -> {
+            synchronized (this) {
+                put(key, value);
+            }
+        });
     }
 
     /**
@@ -174,7 +178,11 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      *         entry exists
      */
     default CompletionStage<V> getAsync(final K key) {
-        return CompletableFuture.supplyAsync(() -> get(key));
+        return CompletableFuture.supplyAsync(() -> {
+            synchronized (this) {
+                return get(key);
+            }
+        });
     }
 
     /**
@@ -191,7 +199,11 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * @return completion that finishes when the delete completes
      */
     default CompletionStage<Void> deleteAsync(final K key) {
-        return CompletableFuture.runAsync(() -> delete(key));
+        return CompletableFuture.runAsync(() -> {
+            synchronized (this) {
+                delete(key);
+            }
+        });
     }
 
     /**

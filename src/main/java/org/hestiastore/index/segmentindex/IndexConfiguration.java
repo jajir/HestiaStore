@@ -38,12 +38,6 @@ public class IndexConfiguration<K, V> {
      */
     private final String indexName;
     private final Integer maxNumberOfKeysInCache;
-    /**
-     * Maximum number of keys held in the read-side cache used to accelerate
-     * point lookups. When {@code null} or set to {@code 0}, the read cache is
-     * considered disabled.
-     */
-    private final Integer maxNumberOfKeysInReadCache;
     private final Integer maxNumberOfKeysInSegment;
     private final Integer maxNumberOfSegmentsInCache;
 
@@ -77,7 +71,6 @@ public class IndexConfiguration<K, V> {
             final Integer maxNumberOfKeysInSegmentCacheDuringFlushing, //
             final Integer maxNumberOfKeysInSegmentChunk, //
             final Integer maxNumberOfKeysInCache, //
-            final Integer maxNumberOfKeysInReadCache, //
             final Integer maxNumberOfKeysInSegment, //
             final Integer maxNumberOfSegmentsInCache, //
             final String indexName, //
@@ -97,7 +90,6 @@ public class IndexConfiguration<K, V> {
         this.maxNumberOfKeysInSegmentChunk = maxNumberOfKeysInSegmentChunk;
         this.indexName = indexName;
         this.maxNumberOfKeysInCache = maxNumberOfKeysInCache;
-        this.maxNumberOfKeysInReadCache = maxNumberOfKeysInReadCache;
         this.maxNumberOfKeysInSegment = maxNumberOfKeysInSegment;
         this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
@@ -146,16 +138,6 @@ public class IndexConfiguration<K, V> {
          * @return max keys in index cache
          */
         return maxNumberOfKeysInCache;
-    }
-
-    public Integer getMaxNumberOfKeysInReadCache() {
-        /**
-         * Returns the maximum number of keys kept in the read-side cache used
-         * for accelerating point lookups.
-         *
-         * @return max keys in read cache, or {@code null} when not specified
-         */
-        return maxNumberOfKeysInReadCache;
     }
 
     public Integer getMaxNumberOfKeysInSegment() {

@@ -104,6 +104,7 @@ class IntegrationSegmentIndexAsyncTest {
             assertEquals("sync-200",
                     index.getAsync(200).toCompletableFuture().join());
 
+            index.flush();
             assertEquals(2,
                     index.getStream(SegmentWindow.unbounded()).count());
         } finally {
