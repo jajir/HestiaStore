@@ -4,7 +4,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -18,7 +19,9 @@ import org.hestiastore.index.log.LoggedKey;
 
 public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
 
-    private final ReentrantLock lock = new ReentrantLock();
+    private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
+    private final Lock readLock = rwLock.readLock();
+    private final Lock writeLock = rwLock.writeLock();
     private final ExecutorService executor;
 
     public IndexInternalSynchronized(final Directory directory,
@@ -32,14 +35,39 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
     this.executor = Executors.newFixedThreadPool(threads);
 }
 
-    private <T> T executeWithLock(final Callable<T> task) {
+    private <T> T executeWithRead(final Callable<T> task) {
         try {
             return executor.submit(() -> {
-                lock.lock();
+                readLock.lock();
                 try {
                     return task.call();
                 } finally {
-                    lock.unlock();
+                    readLock.unlock();
+                }
+            }).get();
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(
+                    "Operation interrupted while waiting for executor", e);
+        } catch (final ExecutionException e) {
+            final Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException re) {
+                throw re;
+            }
+            throw new IllegalStateException(
+                    "Operation failed in executor: " + cause.getMessage(),
+                    cause);
+        }
+    }
+
+    private <T> T executeWithWrite(final Callable<T> task) {
+        try {
+            return executor.submit(() -> {
+                writeLock.lock();
+                try {
+                    return task.call();
+                } finally {
+                    writeLock.unlock();
                 }
             }).get();
         } catch (final InterruptedException e) {
@@ -59,7 +87,7 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
 
     @Override
     protected void doClose() {
-        executeWithLock(() -> {
+        executeWithWrite(() -> {
             super.doClose();
             return null;
         });
@@ -68,7 +96,7 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
 
     @Override
     public void put(final K key, final V value) {
-        executeWithLock(() -> {
+        executeWithWrite(() -> {
             super.put(key, value);
             return null;
         });
@@ -76,12 +104,12 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
 
     @Override
     public V get(final K key) {
-        return executeWithLock(() -> super.get(key));
+        return executeWithRead(() -> super.get(key));
     }
 
     @Override
     public void delete(final K key) {
-        executeWithLock(() -> {
+        executeWithWrite(() -> {
             super.delete(key);
             return null;
         });
@@ -89,7 +117,7 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
 
     @Override
     public void compact() {
-        executeWithLock(() -> {
+        executeWithWrite(() -> {
             super.compact();
             return null;
         });
@@ -97,31 +125,28 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
 
     @Override
     public Stream<Entry<K, V>> getStream(SegmentWindow segmentWindow) {
-        lock.lock();
-        try {
+        return executeWithRead(() -> {
             indexState.tryPerformOperation();
             final EntryIterator<K, V> iterator = openSegmentIterator(
                     segmentWindow);
             final EntryIterator<K, V> synchronizedIterator = new EntryIteratorSynchronized<>(
-                    iterator, lock);
+                    iterator, readLock);
             final EntryIteratorToSpliterator<K, V> spliterator = new EntryIteratorToSpliterator<K, V>(
                     synchronizedIterator, keyTypeDescriptor);
             return StreamSupport.stream(spliterator, false).onClose(() -> {
                 iterator.close();
             });
-        } finally {
-            lock.unlock();
-        }
+        });
     }
 
     @Override
     public EntryIteratorStreamer<LoggedKey<K>, V> getLogStreamer() {
-        return executeWithLock(() -> super.getLogStreamer());
+        return executeWithRead(() -> super.getLogStreamer());
     }
 
     @Override
     public void flush() {
-        executeWithLock(() -> {
+        executeWithWrite(() -> {
             super.flush();
             return null;
         });
@@ -130,7 +155,7 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
 
     @Override
     public void checkAndRepairConsistency() {
-        executeWithLock(() -> {
+        executeWithWrite(() -> {
             super.checkAndRepairConsistency();
             return null;
         });

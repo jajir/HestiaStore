@@ -14,6 +14,7 @@ import org.hestiastore.index.segment.SegmentDataSupplier;
 import org.hestiastore.index.segment.SegmentFiles;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentPropertiesManager;
+import org.hestiastore.index.segment.SegmentSynchronizationAdapter;
 
 public class SegmentRegistry<K, V> {
 
@@ -78,7 +79,8 @@ public class SegmentRegistry<K, V> {
         final SegmentDataProvider<K, V> dataProvider = new SegmentDataProviderLazyLoaded<>(
                 segmentDataSupplier);
 
-        return Segment.<K, V>builder().withDirectory(directory)
+        final Segment<K, V> segment = Segment.<K, V>builder()
+                .withDirectory(directory)
                 .withId(segmentId).withKeyTypeDescriptor(keyTypeDescriptor)
                 .withSegmentDataProvider(dataProvider)//
                 .withSegmentConf(segmentConf)//
@@ -95,6 +97,7 @@ public class SegmentRegistry<K, V> {
                         conf.getBloomFilterIndexSizeInBytes())//
                 .withDiskIoBufferSize(conf.getDiskIoBufferSize())//
                 .build();
+        return new SegmentSynchronizationAdapter<>(segment);
     }
 
     Directory getDirectory() {

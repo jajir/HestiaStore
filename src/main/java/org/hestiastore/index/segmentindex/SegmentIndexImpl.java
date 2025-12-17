@@ -55,7 +55,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 keyTypeDescriptor);
         final SegmentDataCache<K, V> segmentDataCache = new SegmentDataCache<>(
                 conf);
-        this.segmentRegistry = new SegmentRegistry<>(directory,
+        this.segmentRegistry = new SegmentRegistrySynchronized<>(directory,
                 keyTypeDescriptor, valueTypeDescriptor, conf, segmentDataCache);
         this.segmentSplitCoordinator = new SegmentSplitCoordinator<>(conf,
                 keySegmentCache);
