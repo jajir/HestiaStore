@@ -16,12 +16,6 @@ import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
  */
 public interface IndexConfigurationContract {
     int MAX_NUMBER_OF_KEYS_IN_CACHE = 4321;
-    /**
-     * Default maximum number of keys kept in the read-side cache that stores
-     * results of point lookups. Implementations may override this constant
-     * through {@link #getMaxNumberOfKeysInReadCache()}.
-     */
-    int MAX_NUMBER_OF_KEYS_IN_READ_CACHE = 100_000;
     int MAX_NUMBER_OF_KEYS_IN_SEGMENT = 10_000_000;
     int MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = 10_000;
     int MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING = 20_000;
@@ -48,10 +42,6 @@ public interface IndexConfigurationContract {
 
     default int getMaxNumberOfKeysInCache() {
         return MAX_NUMBER_OF_KEYS_IN_CACHE;
-    }
-
-    default int getMaxNumberOfKeysInReadCache() {
-        return MAX_NUMBER_OF_KEYS_IN_READ_CACHE;
     }
 
     default int getMaxNumberOfKeysInSegment() {

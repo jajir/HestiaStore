@@ -71,7 +71,6 @@ class SegmentIndexImplFlushTest {
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(6)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withMaxNumberOfKeysInCache(maxKeysInCache)//
-                .withMaxNumberOfKeysInReadCache(0)//
                 .withMaxNumberOfKeysInSegment(10)//
                 .withMaxNumberOfSegmentsInCache(3)//
                 .withBloomFilterNumberOfHashFunctions(1)//

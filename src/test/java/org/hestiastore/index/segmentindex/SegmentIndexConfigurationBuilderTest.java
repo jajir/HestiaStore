@@ -99,14 +99,6 @@ class SegmentIndexConfigurationBuilderTest {
     }
 
     @Test
-    void withMaxNumberOfKeysInReadCacheSetsValue() {
-        final int value = 999;
-        final IndexConfiguration<Integer, String> config = newBuilder()
-                .withMaxNumberOfKeysInReadCache(value).build();
-        assertEquals(value, config.getMaxNumberOfKeysInReadCache());
-    }
-
-    @Test
     void withMaxNumberOfKeysInSegmentSetsValue() {
         final int value = 777;
         final IndexConfiguration<Integer, String> config = newBuilder()

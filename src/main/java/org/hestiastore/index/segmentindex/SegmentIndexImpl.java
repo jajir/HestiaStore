@@ -8,8 +8,6 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.EntryIteratorStreamer;
 import org.hestiastore.index.F;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.cache.CacheElement;
-import org.hestiastore.index.cache.CacheLru;
 import org.hestiastore.index.cache.UniqueCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
@@ -28,13 +26,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     protected final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final UniqueCache<K, V> cache;
-    /**
-     * Read-side cache keyed by {@code K}. It stores values fetched from
-     * segments to speed up repeated point lookups. When the configured maximum
-     * size is zero or {@code null}, this field is {@code null} and no read
-     * caching is performed.
-     */
-    private final CacheLru<K, V> readCache;
     private final KeySegmentCache<K> keySegmentCache;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentSplitCoordinator<K, V> segmentSplitCoordinator;
@@ -60,15 +51,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         this.cache = new UniqueCache<K, V>(
                 this.keyTypeDescriptor.getComparator(),
                 conf.getMaxNumberOfKeysInCache());
-        // TODO read cache disabling should not be done here.
-        if (conf.getMaxNumberOfKeysInReadCache() != null
-                && conf.getMaxNumberOfKeysInReadCache() > 0) {
-            this.readCache = new CacheLru<>(
-                    conf.getMaxNumberOfKeysInReadCache(), (k, v) -> {
-                    });
-        } else {
-            this.readCache = null;
-        }
         this.keySegmentCache = new KeySegmentCache<>(directory,
                 keyTypeDescriptor);
         final SegmentDataCache<K, V> segmentDataCache = new SegmentDataCache<>(
@@ -96,7 +78,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         log.post(key, value);
 
         cache.put(Entry.of(key, value));
-        invalidateReadCacheEntry(key);
 
         flushCacheIfNeeded();
     }
@@ -189,26 +170,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             return cachedWrite;
         }
 
-        if (readCache != null) {
-            final CacheElement<V> cachedRead = readCache.getCacheElement(key);
-            if (cachedRead != null) {
-                if (cachedRead.isNull()) {
-                    return null;
-                }
-                return cachedRead.getValue();
-            }
-        }
-
-        final V value = getFromSegment(key);
-        if (readCache != null) {
-            if (value == null) {
-                readCache.putNull(key);
-            } else {
-                readCache.put(key, value);
-            }
-        }
-
-        return value;
+        return getFromSegment(key);
     }
 
     private V getFromSegment(final K key) {
@@ -229,7 +191,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         log.delete(key, valueTypeDescriptor.getTombstone());
 
         cache.put(Entry.of(key, valueTypeDescriptor.getTombstone()));
-        invalidateReadCacheEntry(key);
         flushCacheIfNeeded();
     }
 
@@ -245,13 +206,11 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         final IndexConsistencyChecker<K, V> checker = new IndexConsistencyChecker<>(
                 keySegmentCache, segmentRegistry, keyTypeDescriptor);
         checker.checkAndRepairConsistency();
-        invalidateReadCacheAll();
     }
 
     @Override
     protected void doClose() {
         flushCache();
-        invalidateReadCacheAll();
         log.close();
         indexState.onClose(this);
         segmentRegistry.close();
@@ -275,18 +234,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     public IndexConfiguration<K, V> getConfiguration() {
         return conf;
-    }
-
-    private void invalidateReadCacheEntry(final K key) {
-        if (readCache != null) {
-            readCache.ivalidate(key);
-        }
-    }
-
-    private void invalidateReadCacheAll() {
-        if (readCache != null) {
-            readCache.invalidateAll();
-        }
     }
 
 }

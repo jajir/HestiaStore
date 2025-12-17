@@ -28,7 +28,6 @@ public class IndexConfiguratonStorage<K, V> {
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING = "maxNumberOfKeysInSegmentCacheDuringFlushing";
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK = "maxNumberOfKeysInSegmentChunk";
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_CACHE = "maxNumberOfKeysInCache";
-    private static final String PROP_MAX_NUMBER_OF_KEYS_IN_READ_CACHE = "maxNumberOfKeysInReadCache";
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT = "maxNumberOfKeysInSegment";
     private static final String PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE = "maxNumberOfSegmentsInCache";
     private static final String PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS = "bloomFilterNumberOfHashFunctions";
@@ -65,8 +64,6 @@ public class IndexConfiguratonStorage<K, V> {
                 // SegmentIndex runtime properties
                 .withMaxNumberOfKeysInCache(
                         propsView.getInt(PROP_MAX_NUMBER_OF_KEYS_IN_CACHE))//
-                .withMaxNumberOfKeysInReadCache((int) propsView
-                        .getLong(PROP_MAX_NUMBER_OF_KEYS_IN_READ_CACHE))//
                 .withMaxNumberOfSegmentsInCache(
                         propsView.getInt(PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE))//
                 .withMaxNumberOfKeysInSegment(
@@ -139,10 +136,6 @@ public class IndexConfiguratonStorage<K, V> {
         // SegmentIndex runtime properties
         writer.setLong(PROP_MAX_NUMBER_OF_KEYS_IN_CACHE,
                 indexConfiguration.getMaxNumberOfKeysInCache());
-        final long readCacheLimit = indexConfiguration
-                .getMaxNumberOfKeysInReadCache() == null ? 0L
-                        : indexConfiguration.getMaxNumberOfKeysInReadCache();
-        writer.setLong(PROP_MAX_NUMBER_OF_KEYS_IN_READ_CACHE, readCacheLimit);
         writer.setInt(PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
                 indexConfiguration.getMaxNumberOfSegmentsInCache());
         writer.setInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT,
