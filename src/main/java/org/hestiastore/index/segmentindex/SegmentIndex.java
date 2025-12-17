@@ -1,6 +1,8 @@
 package org.hestiastore.index.segmentindex;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.CloseableResource;
@@ -135,6 +137,17 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     void put(K key, V value);
 
     /**
+     * Asynchronously inserts or updates a single entry using the common pool.
+     *
+     * @param key   key to write
+     * @param value value to associate with the key
+     * @return completion that finishes when the write completes
+     */
+    default CompletionStage<Void> putAsync(final K key, final V value) {
+        return CompletableFuture.runAsync(() -> put(key, value));
+    }
+
+    /**
      * Convenience overload that accepts a pre-built {@link Entry}.
      *
      * @param entry key/value pair to write
@@ -153,11 +166,33 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     V get(K key);
 
     /**
+     * Performs an asynchronous point lookup for the given key using the common
+     * pool.
+     *
+     * @param key key to search for
+     * @return completion that supplies the stored value or {@code null} when no
+     *         entry exists
+     */
+    default CompletionStage<V> getAsync(final K key) {
+        return CompletableFuture.supplyAsync(() -> get(key));
+    }
+
+    /**
      * Deletes (tombstones) the provided key.
      *
      * @param key key to remove from the index
      */
     void delete(K key);
+
+    /**
+     * Asynchronously tombstones the provided key using the common pool.
+     *
+     * @param key key to remove from the index
+     * @return completion that finishes when the delete completes
+     */
+    default CompletionStage<Void> deleteAsync(final K key) {
+        return CompletableFuture.runAsync(() -> delete(key));
+    }
 
     /**
      * Forces a compaction pass over in-memory and on-disk data structures.
