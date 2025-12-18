@@ -1,9 +1,13 @@
 package org.hestiastore.index.segmentindex;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Stream;
@@ -16,13 +20,20 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.log.Log;
 import org.hestiastore.index.log.LoggedKey;
+import org.slf4j.MDC;
 
 public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
+
+    private static final String INDEX_NAME_MDC_KEY = "index.name";
 
     private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
     private final Lock readLock = rwLock.writeLock();
     private final Lock writeLock = rwLock.writeLock();
     private final ExecutorService executor;
+    private final ThreadLocal<Boolean> inExecutorThread = ThreadLocal
+            .withInitial(() -> Boolean.FALSE);
+    private final boolean contextLoggingEnabled;
+    private final String indexName;
 
     public IndexInternalSynchronized(final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor,
@@ -34,16 +45,69 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
                 : threadsConf.intValue();
         this.executor = threads == 1 ? Executors.newSingleThreadExecutor()
                 : Executors.newFixedThreadPool(threads);
+        this.contextLoggingEnabled = Boolean
+                .TRUE.equals(conf.isContextLoggingEnabled());
+        this.indexName = conf.getIndexName() == null ? ""
+                : conf.getIndexName();
+    }
+
+    private void setContext() {
+        if (!contextLoggingEnabled) {
+            return;
+        }
+        MDC.put(INDEX_NAME_MDC_KEY, indexName);
+    }
+
+    private void restoreContext(final String previousValue) {
+        if (!contextLoggingEnabled) {
+            return;
+        }
+        if (previousValue == null) {
+            MDC.remove(INDEX_NAME_MDC_KEY);
+        } else {
+            MDC.put(INDEX_NAME_MDC_KEY, previousValue);
+        }
+    }
+
+    private boolean isRunningOnIndexExecutorThread() {
+        return Boolean.TRUE.equals(inExecutorThread.get());
+    }
+
+    private <T> T executeWithLock(final Lock lock, final Callable<T> task)
+            throws Exception {
+        final String previousIndexName = contextLoggingEnabled
+                ? MDC.get(INDEX_NAME_MDC_KEY)
+                : null;
+        setContext();
+        lock.lock();
+        try {
+            return task.call();
+        } finally {
+            lock.unlock();
+            restoreContext(previousIndexName);
+        }
     }
 
     private <T> T executeWithRead(final Callable<T> task) {
+        if (isRunningOnIndexExecutorThread()) {
+            try {
+                return executeWithLock(readLock, task);
+            } catch (final Exception e) {
+                if (e instanceof RuntimeException re) {
+                    throw re;
+                }
+                throw new IllegalStateException(
+                        "Operation failed: " + e.getMessage(), e);
+            }
+        }
         try {
             return executor.submit(() -> {
-                readLock.lock();
+                final boolean previous = isRunningOnIndexExecutorThread();
+                inExecutorThread.set(Boolean.TRUE);
                 try {
-                    return task.call();
+                    return executeWithLock(readLock, task);
                 } finally {
-                    readLock.unlock();
+                    inExecutorThread.set(previous);
                 }
             }).get();
         } catch (final InterruptedException e) {
@@ -62,13 +126,25 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
     }
 
     private <T> T executeWithWrite(final Callable<T> task) {
+        if (isRunningOnIndexExecutorThread()) {
+            try {
+                return executeWithLock(writeLock, task);
+            } catch (final Exception e) {
+                if (e instanceof RuntimeException re) {
+                    throw re;
+                }
+                throw new IllegalStateException(
+                        "Operation failed: " + e.getMessage(), e);
+            }
+        }
         try {
             return executor.submit(() -> {
-                writeLock.lock();
+                final boolean previous = isRunningOnIndexExecutorThread();
+                inExecutorThread.set(Boolean.TRUE);
                 try {
-                    return task.call();
+                    return executeWithLock(writeLock, task);
                 } finally {
-                    writeLock.unlock();
+                    inExecutorThread.set(previous);
                 }
             }).get();
         } catch (final InterruptedException e) {
@@ -84,6 +160,27 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
                     "Operation failed in executor: " + cause.getMessage(),
                     cause);
         }
+    }
+
+    private <T> CompletionStage<T> submitAsync(final Executor executor,
+            final Lock lock, final Callable<T> task) {
+        final CompletableFuture<T> future = new CompletableFuture<>();
+        try {
+            executor.execute(() -> {
+                final boolean previous = isRunningOnIndexExecutorThread();
+                inExecutorThread.set(Boolean.TRUE);
+                try {
+                    future.complete(executeWithLock(lock, task));
+                } catch (final Throwable t) {
+                    future.completeExceptionally(t);
+                } finally {
+                    inExecutorThread.set(previous);
+                }
+            });
+        } catch (final RejectedExecutionException e) {
+            future.completeExceptionally(e);
+        }
+        return future;
     }
 
     @Override
@@ -111,6 +208,27 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
     @Override
     public void delete(final K key) {
         executeWithWrite(() -> {
+            super.delete(key);
+            return null;
+        });
+    }
+
+    @Override
+    public CompletionStage<Void> putAsync(final K key, final V value) {
+        return submitAsync(executor, writeLock, () -> {
+            super.put(key, value);
+            return null;
+        });
+    }
+
+    @Override
+    public CompletionStage<V> getAsync(final K key) {
+        return submitAsync(executor, readLock, () -> super.get(key));
+    }
+
+    @Override
+    public CompletionStage<Void> deleteAsync(final K key) {
+        return submitAsync(executor, writeLock, () -> {
             super.delete(key);
             return null;
         });

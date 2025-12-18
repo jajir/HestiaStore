@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -118,6 +119,21 @@ class IntegrationSegmentIndexAsyncTest {
         final SegmentIndex<Integer, String> index = newIndex(directory, false);
         try {
             assertNull(index.getAsync(999).toCompletableFuture().join());
+        } finally {
+            index.close();
+        }
+    }
+
+    @Test
+    void asyncCompletionCallbackCanInvokeSyncOperationsInThreadSafeMode() {
+        final Directory directory = new MemDirectory();
+        final SegmentIndex<Integer, String> index = newIndex(directory, true);
+        try {
+            index.putAsync(1, "value-1").thenRun(() -> index.put(2, "value-2"))
+                    .toCompletableFuture().orTimeout(5, TimeUnit.SECONDS)
+                    .join();
+            assertEquals("value-1", index.get(1));
+            assertEquals("value-2", index.get(2));
         } finally {
             index.close();
         }

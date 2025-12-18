@@ -1,6 +1,8 @@
 package org.hestiastore.index.segmentindex;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
@@ -80,6 +82,15 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         cache.put(Entry.of(key, value));
 
         flushCacheIfNeeded();
+    }
+
+    @Override
+    public CompletionStage<Void> putAsync(final K key, final V value) {
+        return CompletableFuture.runAsync(() -> {
+            synchronized (this) {
+                put(key, value);
+            }
+        });
     }
 
     /**
@@ -173,6 +184,15 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         return getFromSegment(key);
     }
 
+    @Override
+    public CompletionStage<V> getAsync(final K key) {
+        return CompletableFuture.supplyAsync(() -> {
+            synchronized (this) {
+                return get(key);
+            }
+        });
+    }
+
     private V getFromSegment(final K key) {
         final SegmentId id = keySegmentCache.findSegmentId(key);
         if (id == null) {
@@ -192,6 +212,15 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
         cache.put(Entry.of(key, valueTypeDescriptor.getTombstone()));
         flushCacheIfNeeded();
+    }
+
+    @Override
+    public CompletionStage<Void> deleteAsync(final K key) {
+        return CompletableFuture.runAsync(() -> {
+            synchronized (this) {
+                delete(key);
+            }
+        });
     }
 
     @Override
