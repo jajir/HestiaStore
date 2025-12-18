@@ -7,14 +7,12 @@ import java.util.concurrent.CompletionStage;
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
-import org.hestiastore.index.EntryIteratorStreamer;
 import org.hestiastore.index.F;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.UniqueCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.log.Log;
-import org.hestiastore.index.log.LoggedKey;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.slf4j.Logger;
@@ -221,11 +219,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 delete(key);
             }
         });
-    }
-
-    @Override
-    public EntryIteratorStreamer<LoggedKey<K>, V> getLogStreamer() {
-        return null;
     }
 
     @Override

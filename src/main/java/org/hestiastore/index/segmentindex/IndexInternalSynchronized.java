@@ -45,10 +45,9 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
                 : threadsConf.intValue();
         this.executor = threads == 1 ? Executors.newSingleThreadExecutor()
                 : Executors.newFixedThreadPool(threads);
-        this.contextLoggingEnabled = Boolean
-                .TRUE.equals(conf.isContextLoggingEnabled());
-        this.indexName = conf.getIndexName() == null ? ""
-                : conf.getIndexName();
+        this.contextLoggingEnabled = Boolean.TRUE
+                .equals(conf.isContextLoggingEnabled());
+        this.indexName = conf.getIndexName() == null ? "" : conf.getIndexName();
     }
 
     private void setContext() {
@@ -256,11 +255,6 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
                 iterator.close();
             });
         });
-    }
-
-    @Override
-    public EntryIteratorStreamer<LoggedKey<K>, V> getLogStreamer() {
-        return executeWithRead(() -> super.getLogStreamer());
     }
 
     @Override

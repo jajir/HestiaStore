@@ -13,11 +13,13 @@ import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 
 /**
- * Accessor and factory for all files that belong to a single segment
- * (cache, index, scarce index, bloom filter, properties).
+ * Accessor and factory for all files that belong to a single segment (cache,
+ * index, scarce index, bloom filter, properties).
  *
- * <p>Provides file names, typed file handles and common configuration used
- * across these files.</p>
+ * <p>
+ * Provides file names, typed file handles and common configuration used across
+ * these files.
+ * </p>
  *
  * @param <K> key type stored in the segment
  * @param <V> value type stored in the segment
@@ -41,11 +43,12 @@ public final class SegmentFiles<K, V> {
     /**
      * Create accessor for segment files.
      *
-     * @param directory directory implementation used for I/O
-     * @param id unique segment identifier
-     * @param keyTypeDescriptor descriptor for key serialization and comparison
-     * @param valueTypeDescriptor descriptor for value serialization
-     * @param diskIoBufferSize buffer size in bytes for on-disk operations
+     * @param directory            directory implementation used for I/O
+     * @param id                   unique segment identifier
+     * @param keyTypeDescriptor    descriptor for key serialization and
+     *                             comparison
+     * @param valueTypeDescriptor  descriptor for value serialization
+     * @param diskIoBufferSize     buffer size in bytes for on-disk operations
      * @param encodingChunkFilters filters applied when writing chunks
      * @param decodingChunkFilters filters applied when reading chunks
      */

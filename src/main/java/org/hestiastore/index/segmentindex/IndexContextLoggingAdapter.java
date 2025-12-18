@@ -185,22 +185,6 @@ public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
     }
 
     /**
-     * Provides a log streamer backed by the delegate index with the MDC context
-     * configured.
-     *
-     * @return streamer that emits logged keys and values
-     */
-    @Override
-    public EntryIteratorStreamer<LoggedKey<K>, V> getLogStreamer() {
-        setContext();
-        try {
-            return index.getLogStreamer();
-        } finally {
-            clearContext();
-        }
-    }
-
-    /**
      * Verifies and repairs index consistency while guaranteeing the index name
      * appears in log statements.
      */

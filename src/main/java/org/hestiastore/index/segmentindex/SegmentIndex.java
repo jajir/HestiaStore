@@ -6,13 +6,11 @@ import java.util.stream.Stream;
 
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.EntryIteratorStreamer;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.log.Log;
-import org.hestiastore.index.log.LoggedKey;
 
 /**
  * High-level contract for the segment-index layer that sits above individual
@@ -94,7 +92,8 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     }
 
     private static <M, N> SegmentIndex<M, N> openIndex(
-            final Directory directory, final IndexConfiguration<M, N> indexConf) {
+            final Directory directory,
+            final IndexConfiguration<M, N> indexConf) {
         Log<M, N> log = null;
         final TypeDescriptor<M> keyTypeDescriptor = DataTypeDescriptorRegistry
                 .makeInstance(indexConf.getKeyTypeDescriptor());
@@ -225,13 +224,6 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     default Stream<Entry<K, V>> getStream() {
         return getStream(SegmentWindow.unbounded());
     }
-
-    /**
-     * Provides a streaming view over the write-ahead log, if enabled.
-     *
-     * @return streamer over logged keys and their values
-     */
-    EntryIteratorStreamer<LoggedKey<K>, V> getLogStreamer();
 
     /**
      * Checks the internal consistency of all index segments and associated data
