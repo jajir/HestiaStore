@@ -20,20 +20,21 @@ import org.hestiastore.index.log.LoggedKey;
 public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
 
     private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
-    private final Lock readLock = rwLock.readLock();
+    private final Lock readLock = rwLock.writeLock();
     private final Lock writeLock = rwLock.writeLock();
     private final ExecutorService executor;
 
     public IndexInternalSynchronized(final Directory directory,
-        final TypeDescriptor<K> keyTypeDescriptor,
-        final TypeDescriptor<V> valueTypeDescriptor,
-        final IndexConfiguration<K, V> conf, final Log<K, V> log) {
-    super(directory, keyTypeDescriptor, valueTypeDescriptor, conf, log);
-    final Integer threadsConf = conf.getNumberOfThreads();
-    final int threads = (threadsConf == null || threadsConf < 1) ? 1
-            : threadsConf.intValue();
-    this.executor = Executors.newFixedThreadPool(threads);
-}
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final IndexConfiguration<K, V> conf, final Log<K, V> log) {
+        super(directory, keyTypeDescriptor, valueTypeDescriptor, conf, log);
+        final Integer threadsConf = conf.getNumberOfThreads();
+        final int threads = (threadsConf == null || threadsConf < 1) ? 1
+                : threadsConf.intValue();
+        this.executor = threads == 1 ? Executors.newSingleThreadExecutor()
+                : Executors.newFixedThreadPool(threads);
+    }
 
     private <T> T executeWithRead(final Callable<T> task) {
         try {
