@@ -48,9 +48,11 @@ public final class SegmentDeltaCacheController<K, V> {
     }
 
     public void clear() {
-        if (segmentCacheDataProvider.isLoaded()) {
-            getDeltaCache().evictAll();
-        }
+        // Clearing the delta cache means the on-disk view has changed (compaction
+        // or segment replacement). Any cached heavy-weight structures such as the
+        // Bloom filter and scarce index must be dropped as well to avoid stale
+        // lookups returning false negatives.
+        segmentCacheDataProvider.invalidate();
         segmentPropertiesManager.getCacheDeltaFileNames()
                 .forEach(segmentCacheDeltaFile -> {
                     segmentFiles.deleteFile(segmentCacheDeltaFile);

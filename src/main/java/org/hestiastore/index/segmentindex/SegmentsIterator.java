@@ -47,16 +47,20 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
             currentIterator.close();
             currentIterator = null;
         }
-        if (position < ids.size()) {
+        nextEntry = null;
+        while (position < ids.size()) {
             final SegmentId segmentId = ids.get(position);
             logger.debug("Starting processing segment '{}' which is {} of {}",
                     segmentId, position, ids.size());
             position++;
             final Segment<K, V> segment = segmentRegistry.getSegment(segmentId);
-            currentIterator = segment.openIterator();
-            if (currentIterator.hasNext()) {
+            final EntryIterator<K, V> iterator = segment.openIterator();
+            if (iterator.hasNext()) {
+                currentIterator = iterator;
                 nextEntry = currentIterator.next();
+                return;
             }
+            iterator.close();
         }
     }
 
