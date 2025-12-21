@@ -1,14 +1,12 @@
 package org.hestiastore.index.segmentindex;
 
-import java.util.stream.Stream;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Stream;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.EntryIteratorStreamer;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.log.LoggedKey;
 import org.slf4j.MDC;
 
 /**
