@@ -95,6 +95,11 @@ class SegmentIndexAsyncCloseRaceIT {
             return delegate.getConvertorToBytes();
         }
 
+        /**
+         * Mainlyit return timbstone value. That it signalizae that it was
+         * entered and waits for test to release it. Wait timeout is 10 seconds
+         * to avoid deadlocks in tests.
+         */
         @Override
         public String getTombstone() {
             final Hook hook = HOOK.get();
@@ -124,7 +129,8 @@ class SegmentIndexAsyncCloseRaceIT {
                 .withName("async-close-race")//
                 .withThreadSafe(false)//
                 .withKeyTypeDescriptor(new TypeDescriptorString())//
-                .withValueTypeDescriptor(new BlockingTombstoneTypeDescriptorString())//
+                .withValueTypeDescriptor(
+                        new BlockingTombstoneTypeDescriptorString())//
                 .withMaxNumberOfKeysInCache(10_000)//
                 .build();
     }
@@ -134,16 +140,18 @@ class SegmentIndexAsyncCloseRaceIT {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<String, String> conf = conf();
 
-        final SegmentIndex<String, String> index = SegmentIndex.create(
-                directory, conf);
+        final SegmentIndex<String, String> index = SegmentIndex
+                .create(directory, conf);
         final BlockingTombstoneTypeDescriptorString.Hook hook = BlockingTombstoneTypeDescriptorString
                 .installHook();
-        final ExecutorService closeExecutor = Executors.newSingleThreadExecutor();
+        final ExecutorService closeExecutor = Executors
+                .newSingleThreadExecutor();
         try {
             final CompletionStage<Void> putStage = index.putAsync("k", "v");
             final CompletableFuture<Void> putFuture = putStage
                     .toCompletableFuture();
 
+            // Make sure that getTombstone() is waiting
             assertTrue(hook.entered.await(5, TimeUnit.SECONDS),
                     "putAsync did not reach tombstone hook in time");
 
@@ -151,7 +159,7 @@ class SegmentIndexAsyncCloseRaceIT {
                     .runAsync(index::close, closeExecutor);
 
             assertThrows(TimeoutException.class,
-                    () -> closeFuture.get(2, TimeUnit.SECONDS),
+                    () -> closeFuture.get(5, TimeUnit.SECONDS),
                     "close() returned while putAsync was still in-flight");
 
             hook.release.countDown();
@@ -174,13 +182,14 @@ class SegmentIndexAsyncCloseRaceIT {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<String, String> conf = conf();
 
-        final SegmentIndex<String, String> index = SegmentIndex.create(
-                directory, conf);
+        final SegmentIndex<String, String> index = SegmentIndex
+                .create(directory, conf);
         index.put("k", "v");
 
         final BlockingTombstoneTypeDescriptorString.Hook hook = BlockingTombstoneTypeDescriptorString
                 .installHook();
-        final ExecutorService closeExecutor = Executors.newSingleThreadExecutor();
+        final ExecutorService closeExecutor = Executors
+                .newSingleThreadExecutor();
         try {
             final CompletableFuture<Void> deleteFuture = index.deleteAsync("k")
                     .toCompletableFuture();
@@ -215,13 +224,14 @@ class SegmentIndexAsyncCloseRaceIT {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<String, String> conf = conf();
 
-        final SegmentIndex<String, String> index = SegmentIndex.create(
-                directory, conf);
+        final SegmentIndex<String, String> index = SegmentIndex
+                .create(directory, conf);
         index.put("k", "v");
 
         final BlockingTombstoneTypeDescriptorString.Hook hook = BlockingTombstoneTypeDescriptorString
                 .installHook();
-        final ExecutorService closeExecutor = Executors.newSingleThreadExecutor();
+        final ExecutorService closeExecutor = Executors
+                .newSingleThreadExecutor();
         try {
             final CompletableFuture<String> getFuture = index.getAsync("k")
                     .toCompletableFuture();
