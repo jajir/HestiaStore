@@ -110,15 +110,9 @@ public interface SegmentIndex<K, V> extends CloseableResource {
         } else {
             log = Log.<M, N>builder().buildEmpty();
         }
-        Vldtn.requireNonNull(indexConf.isThreadSafe(), "isThreadSafe");
-        SegmentIndex<M, N> index;
-        if (Boolean.TRUE.equals(indexConf.isThreadSafe())) {
-            index = new IndexInternalSynchronized<>(directory,
-                    keyTypeDescriptor, valueTypeDescriptor, indexConf, log);
-        } else {
-            index = new IndexInternalDefault<>(directory, keyTypeDescriptor,
-                    valueTypeDescriptor, indexConf, log);
-        }
+        final SegmentIndex<M, N> index = new IndexInternalSynchronized<>(
+                directory, keyTypeDescriptor, valueTypeDescriptor, indexConf,
+                log);
         if (Boolean.TRUE.equals(indexConf.isContextLoggingEnabled())) {
             return new IndexContextLoggingAdapter<>(indexConf, index);
         } else {

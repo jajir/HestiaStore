@@ -55,9 +55,6 @@ public class IndexConfigurationManager<K, V> {
             builder.withContextLoggingEnabled(
                     defaults.isContextLoggingEnabled());
         }
-        if (conf.isThreadSafe() == null) {
-            builder.withThreadSafe(defaults.isThreadSafe());
-        }
         if (conf.getNumberOfThreads() == null) {
             builder.withNumberOfCpuThreads(defaults.getNumberOfThreads());
         }
@@ -194,12 +191,6 @@ public class IndexConfigurationManager<K, V> {
                         .equals(storedConf.isContextLoggingEnabled())) {
             builder.withContextLoggingEnabled(
                     indexConf.isContextLoggingEnabled());
-            dirty = true;
-        }
-
-        if (indexConf.isThreadSafe() != null && !indexConf.isThreadSafe()
-                .equals(storedConf.isThreadSafe())) {
-            builder.withThreadSafe(indexConf.isThreadSafe());
             dirty = true;
         }
 
@@ -396,7 +387,6 @@ public class IndexConfigurationManager<K, V> {
         Vldtn.requireNonNull(conf.getKeyTypeDescriptor(), "keyTypeDescriptor");
         Vldtn.requireNonNull(conf.getValueTypeDescriptor(),
                 "valueTypeDescriptor");
-        Vldtn.requireNonNull(conf.isThreadSafe(), "isThreadSafe");
         Vldtn.requireNonNull(conf.isContextLoggingEnabled(),
                 "isContextLoggingEnabled");
 
@@ -493,7 +483,6 @@ public class IndexConfigurationManager<K, V> {
                 .withKeyTypeDescriptor(conf.getKeyTypeDescriptor())//
                 .withValueTypeDescriptor(conf.getValueTypeDescriptor())//
                 .withContextLoggingEnabled(conf.isContextLoggingEnabled())//
-                .withThreadSafe(conf.isThreadSafe())//
                 .withNumberOfCpuThreads(conf.getNumberOfThreads())//
                 .withNumberOfIoThreads(conf.getNumberOfIoThreads())//
                 .withName(conf.getIndexName())//

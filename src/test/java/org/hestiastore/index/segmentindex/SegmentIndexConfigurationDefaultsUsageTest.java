@@ -73,9 +73,6 @@ class SegmentIndexConfigurationDefaultsUsageTest {
                             defaults.getBloomFilterProbabilityOfFalsePositive()),
                     actual.getBloomFilterProbabilityOfFalsePositive(),
                     "Bloom false-positive probability must come from contract defaults");
-            assertEquals(Boolean.valueOf(defaults.isThreadSafe()),
-                    actual.isThreadSafe(),
-                    "Thread-safety flag must come from contract defaults");
             assertEquals(Boolean.valueOf(defaults.isContextLoggingEnabled()),
                     actual.isContextLoggingEnabled(),
                     "Context logging flag must come from contract defaults");

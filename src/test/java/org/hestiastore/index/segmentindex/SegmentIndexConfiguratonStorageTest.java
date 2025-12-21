@@ -74,7 +74,6 @@ class SegmentIndexConfiguratonStorageTest {
                 .withBloomFilterProbabilityOfFalsePositive(
                         BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE)//
                 .withDiskIoBufferSizeInBytes(4096)//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
                 .build();
         storage.save(config);
@@ -103,7 +102,6 @@ class SegmentIndexConfiguratonStorageTest {
         assertEquals(BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE,
                 ret.getBloomFilterProbabilityOfFalsePositive());
         assertEquals(DISK_IO_BUFFER, ret.getDiskIoBufferSize());
-        assertTrue(ret.isThreadSafe());
         assertTrue(ret.isContextLoggingEnabled());
     }
 
@@ -128,7 +126,6 @@ class SegmentIndexConfiguratonStorageTest {
                 .withBloomFilterProbabilityOfFalsePositive(
                         BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE)//
                 .withDiskIoBufferSizeInBytes(DISK_IO_BUFFER)//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
                 .withEncodingFilterClasses(//
                         List.of(ChunkFilterCrc32Writing.class, //
@@ -181,7 +178,6 @@ class SegmentIndexConfiguratonStorageTest {
                 .withBloomFilterNumberOfHashFunctions(3)//
                 .withBloomFilterIndexSizeInBytes(2048)//
                 .withDiskIoBufferSizeInBytes(4096)//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
                 .build();
         storage.save(config);
@@ -212,7 +208,6 @@ class SegmentIndexConfiguratonStorageTest {
         assertEquals(BloomFilterBuilder.DEFAULT_PROBABILITY_OF_FALSE_POSITIVE,
                 ret.getBloomFilterProbabilityOfFalsePositive());
         assertEquals(DISK_IO_BUFFER, ret.getDiskIoBufferSize());
-        assertTrue(ret.isThreadSafe());
         assertTrue(ret.isContextLoggingEnabled());
     }
 

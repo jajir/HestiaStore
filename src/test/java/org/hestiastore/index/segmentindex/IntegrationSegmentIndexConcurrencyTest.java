@@ -25,7 +25,7 @@ class IntegrationSegmentIndexConcurrencyTest {
     @Test
     void parallelPutsAndGetsOnDifferentKeys() {
         final Directory directory = new MemDirectory();
-        final SegmentIndex<Integer, String> index = newThreadSafeIndex(
+        final SegmentIndex<Integer, String> index = newIndex(
                 directory, 4, 1);
         try {
             final List<CompletableFuture<Void>> writes = new ArrayList<>();
@@ -48,7 +48,7 @@ class IntegrationSegmentIndexConcurrencyTest {
     @Test
     void concurrentReadsWithWriterOnSameKey() throws Exception {
         final Directory directory = new MemDirectory();
-        final SegmentIndex<Integer, String> index = newThreadSafeIndex(
+        final SegmentIndex<Integer, String> index = newIndex(
                 directory, 4, 1);
         try {
             index.put(1, "init");
@@ -87,7 +87,7 @@ class IntegrationSegmentIndexConcurrencyTest {
     @Test
     void interleavedFlushCompactWithReadsAndWrites() throws Exception {
         final Directory directory = new MemDirectory();
-        final SegmentIndex<Integer, String> index = newThreadSafeIndex(
+        final SegmentIndex<Integer, String> index = newIndex(
                 directory, 4, 1);
         try {
             final CountDownLatch start = new CountDownLatch(1);
@@ -133,7 +133,7 @@ class IntegrationSegmentIndexConcurrencyTest {
         }
     }
 
-    private SegmentIndex<Integer, String> newThreadSafeIndex(
+    private SegmentIndex<Integer, String> newIndex(
             final Directory directory, final int cpuThreads,
             final int ioThreads) {
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
@@ -150,7 +150,6 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .withMaxNumberOfSegmentsInCache(5) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(3) //
-                .withThreadSafe(true)//
                 .withNumberOfCpuThreads(cpuThreads)//
                 .withNumberOfIoThreads(ioThreads)//
                 .withName("concurrency_index") //

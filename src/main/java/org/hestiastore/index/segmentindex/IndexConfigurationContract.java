@@ -70,10 +70,6 @@ public interface IndexConfigurationContract {
         return BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE;
     }
 
-    default boolean isThreadSafe() {
-        return false;
-    }
-
     default int getNumberOfThreads() {
         return NUMBER_OF_THREADS;
     }

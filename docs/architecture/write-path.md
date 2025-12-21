@@ -123,7 +123,6 @@ Key classes: `segmentindex/SegmentIndexImpl#delete`, `datatype/TypeDescriptor#ge
 - `bloomFilter*` – Bloom filter size/hash tuning.
 - `diskIoBufferSize` – I/O buffer sizing for on‑disk writers.
 - `encoding/decodingChunkFilters` – write/read pipelines (e.g., Snappy, CRC32, magic number).
-- `threadSafe` – choose synchronized index variant.
 
 See: `segmentindex/IndexConfiguration` and `segmentindex/IndexConfigurationBuilder`.
 

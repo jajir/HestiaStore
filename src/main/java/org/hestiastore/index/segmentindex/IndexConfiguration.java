@@ -8,9 +8,9 @@ import org.hestiastore.index.chunkstore.ChunkFilter;
  * Immutable configuration for the segment-index layer.
  * <p>
  * Encapsulates key/value types, index name, segment sizing and caching limits,
- * Bloom filter parameters, disk I/O buffer size, thread-safety and logging
- * switches, and the chunk encoding/decoding filter pipeline. Instances are
- * created via the fluent {@link IndexConfigurationBuilder}.
+ * Bloom filter parameters, disk I/O buffer size, logging switches, and the
+ * chunk encoding/decoding filter pipeline. Instances are created via the
+ * fluent {@link IndexConfigurationBuilder}.
  *
  * @param <K> key type
  * @param <V> value type
@@ -48,7 +48,6 @@ public class IndexConfiguration<K, V> {
     private final Double bloomFilterProbabilityOfFalsePositive;
 
     private final Integer diskIoBufferSize;
-    private final Boolean threadSafe;
     private final Boolean contextLoggingEnabled;
 
     private final List<ChunkFilter> encodingChunkFilters;
@@ -79,7 +78,7 @@ public class IndexConfiguration<K, V> {
             final Integer bloomFilterNumberOfHashFunctions, //
             final Integer bloomFilterIndexSizeInBytes, //
             final Double bloomFilterProbabilityOfFalsePositive, //
-            final Integer diskIoBufferSize, final Boolean threadSafe,
+            final Integer diskIoBufferSize,
             final Boolean contextLoggingEnabled,
             final Integer numberOfThreads, final Integer numberOfIoThreads,
             final List<ChunkFilter> encodingChunkFilters,
@@ -101,7 +100,6 @@ public class IndexConfiguration<K, V> {
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
         this.bloomFilterProbabilityOfFalsePositive = bloomFilterProbabilityOfFalsePositive;
         this.diskIoBufferSize = diskIoBufferSize;
-        this.threadSafe = threadSafe;
         this.contextLoggingEnabled = contextLoggingEnabled;
         this.encodingChunkFilters = List.copyOf(encodingChunkFilters);
         this.decodingChunkFilters = List.copyOf(decodingChunkFilters);
@@ -217,16 +215,6 @@ public class IndexConfiguration<K, V> {
          * @return disk I/O buffer size in bytes
          */
         return diskIoBufferSize;
-    }
-
-    public Boolean isThreadSafe() {
-        /**
-         * Indicates whether a thread-safe (synchronized) index implementation
-         * should be used.
-         *
-         * @return true if thread-safe variant is enabled; otherwise false
-         */
-        return threadSafe;
     }
 
     public Boolean isContextLoggingEnabled() {

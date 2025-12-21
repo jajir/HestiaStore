@@ -135,7 +135,6 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(3) //
                 .withContextLoggingEnabled(withLog) //
-                .withThreadSafe(false)//
                 .withName("test_index") //
                 .build();
         return SegmentIndex.create(directory, conf);

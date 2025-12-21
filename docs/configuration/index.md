@@ -90,12 +90,6 @@ Sets the maximum number of key-value entries allowed in the in-memory cache befo
 
 Limits the number of segments stored in memory. Useful for controlling memory usage.
 
-### 🔒 Thread safe - `withThreadSafe()`
-
-Whether the index instance is safe for concurrent access by multiple threads. When it's set to `code` true than index will be synchronized between threads.
-
-Default value is 'false'.
-
 ### 🗒️ Context logging enabled - `withContextLoggingEnabled()`
 
 Controls whether the index wraps operations with MDC context propagation so log statements include the index name. When it's set on 'true' following loog message will contain set 'index' property:
@@ -182,7 +176,6 @@ At allows to pass `IndexConfiguration` object and this way change configuration 
 | bloomFilterIndexSizeInBytes                 | Bloom filter - index size in bytes                   | 🟥             | segment bloom filter |
 | bloomFilterProbabilityOfFalsePositive       | Bloom filter - probability of false positives        | 🟥             | segment bloom filter |
 | diskIoBufferSize                            | Size of the disk I/O buffer                          | 🟩             | Disk IO              |
-| threadSafe                                  | If index is thread-safe                              | 🟩             | index                |
 | contextLoggingEnabled                       | If MDC-based context logging is enabled              | 🟩             | index                |
 
 # ➕ Add custom data type

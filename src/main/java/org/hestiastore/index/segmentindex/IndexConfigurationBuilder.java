@@ -31,7 +31,6 @@ public class IndexConfigurationBuilder<K, V> {
     private String keyTypeDescriptor;
     private String valueTypeDescriptor;
     private Boolean contextLoggingEnabled;
-    private Boolean isThreadSafe;
     private final List<ChunkFilter> encodingChunkFilters = new ArrayList<>();
     private final List<ChunkFilter> decodingChunkFilters = new ArrayList<>();
 
@@ -129,12 +128,6 @@ public class IndexConfigurationBuilder<K, V> {
     public IndexConfigurationBuilder<K, V> withBloomFilterProbabilityOfFalsePositive(
             final Double probabilityOfFalsePositive) {
         this.bloomFilterProbabilityOfFalsePositive = probabilityOfFalsePositive;
-        return this;
-    }
-
-    public IndexConfigurationBuilder<K, V> withThreadSafe(
-            final Boolean isThreadSafe) {
-        this.isThreadSafe = isThreadSafe;
         return this;
     }
 
@@ -245,7 +238,7 @@ public class IndexConfigurationBuilder<K, V> {
                 maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache, indexName,
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
                 bloomFilterProbabilityOfFalsePositive, diskIoBufferSizeInBytes,
-                isThreadSafe, contextLoggingEnabled, effectiveNumberOfThreads,
+                contextLoggingEnabled, effectiveNumberOfThreads,
                 effectiveNumberOfIoThreads, encodingChunkFilters,
                 decodingChunkFilters);
     }
