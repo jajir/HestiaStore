@@ -27,10 +27,9 @@ import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.junit.jupiter.api.Test;
 
 /**
- * Integration tests that demonstrate a correctness issue in SegmentIndex async
- * operations: {@link SegmentIndex#close()} does not coordinate with in-flight
- * {@code putAsync/getAsync/deleteAsync} operations for the non-thread-safe
- * implementation.
+ * Integration tests that ensure {@link SegmentIndex#close()} waits for
+ * in-flight {@code putAsync/getAsync/deleteAsync} operations before releasing
+ * resources.
  *
  * <p>
  * Expected behavior (contract these tests assert): once {@code close()} is
@@ -127,7 +126,6 @@ class SegmentIndexAsyncCloseRaceIT {
                 .withKeyClass(String.class)//
                 .withValueClass(String.class)//
                 .withName("async-close-race")//
-                .withThreadSafe(false)//
                 .withKeyTypeDescriptor(new TypeDescriptorString())//
                 .withValueTypeDescriptor(
                         new BlockingTombstoneTypeDescriptorString())//

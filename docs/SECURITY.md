@@ -81,7 +81,7 @@ While HestiaStore is efficient, certain usage patterns may degrade system perfor
 
 - Inserting excessive data without flushing may exhaust memory.
 - Large segment files may incur slow read or compaction times.
-- `withThreadSafe(true)` may incur additional locking overhead under heavy concurrency.
+- Thread-safe operations may incur additional locking overhead under heavy concurrency.
 
 ## 👷 Security Responsibilities of Integrators
 

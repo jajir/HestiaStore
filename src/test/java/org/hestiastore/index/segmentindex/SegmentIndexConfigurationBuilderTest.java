@@ -3,7 +3,6 @@ package org.hestiastore.index.segmentindex;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
@@ -155,13 +154,6 @@ class SegmentIndexConfigurationBuilderTest {
         final IndexConfiguration<Integer, String> config = newBuilder()
                 .withNumberOfIoThreads(value).build();
         assertEquals(value, config.getNumberOfIoThreads());
-    }
-
-    @Test
-    void withThreadSafeSetsValue() {
-        final IndexConfiguration<Integer, String> config = newBuilder()
-                .withThreadSafe(Boolean.TRUE).build();
-        assertTrue(config.isThreadSafe());
     }
 
     @Test

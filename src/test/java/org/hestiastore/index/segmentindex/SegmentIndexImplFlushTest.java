@@ -81,7 +81,6 @@ class SegmentIndexImplFlushTest {
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)//
                 .withDiskIoBufferSizeInBytes(1024)//
                 .withContextLoggingEnabled(false)//
-                .withThreadSafe(false)//
                 .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
                 .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
                 .build();

@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Multi-threaded access safety check for {@link SegmentIndex} using the
- * thread-safe configuration.
+ * synchronized implementation.
  * <p>
  * The tests avoid relying on a globally deterministic ordering across threads
  * (which is not guaranteed) and instead validate deterministic end states:
@@ -37,7 +37,7 @@ class SegmentIndexConcurrentIT {
     void concurrent_put_delete_on_disjoint_keyspaces_produces_consistent_state()
             throws Exception {
         final Directory directory = new MemDirectory();
-        final IndexConfiguration<Integer, Integer> conf = newThreadSafeConfiguration(
+        final IndexConfiguration<Integer, Integer> conf = newConfiguration(
                 "concurrent-index", 4, 15);
 
         final SegmentIndex<Integer, Integer> index = SegmentIndex
@@ -111,7 +111,7 @@ class SegmentIndexConcurrentIT {
     @Test
     void concurrent_mutations_on_same_key_last_write_wins() throws Exception {
         final Directory directory = new MemDirectory();
-        final IndexConfiguration<Integer, Integer> conf = newThreadSafeConfiguration(
+        final IndexConfiguration<Integer, Integer> conf = newConfiguration(
                 "concurrent-index", 4, 15);
 
         final SegmentIndex<Integer, Integer> index = SegmentIndex
@@ -162,7 +162,7 @@ class SegmentIndexConcurrentIT {
     void concurrent_put_delete_with_background_flush_compact_produces_consistent_state()
             throws Exception {
         final Directory directory = new MemDirectory();
-        final IndexConfiguration<Integer, Integer> conf = newThreadSafeConfiguration(
+        final IndexConfiguration<Integer, Integer> conf = newConfiguration(
                 "concurrent-index-maintenance", 4, 8);
 
         final SegmentIndex<Integer, Integer> index = SegmentIndex
@@ -275,7 +275,7 @@ class SegmentIndexConcurrentIT {
     @Test
     void concurrent_reads_do_not_return_corrupted_values() throws Exception {
         final Directory directory = new MemDirectory();
-        final IndexConfiguration<Integer, Integer> conf = newThreadSafeConfiguration(
+        final IndexConfiguration<Integer, Integer> conf = newConfiguration(
                 "concurrent-index-readers", 4, 15);
         final SegmentIndex<Integer, Integer> index = SegmentIndex
                 .create(directory, conf);
@@ -347,7 +347,7 @@ class SegmentIndexConcurrentIT {
     void concurrent_async_put_delete_on_disjoint_keyspaces_produces_consistent_state()
             throws Exception {
         final Directory directory = new MemDirectory();
-        final IndexConfiguration<Integer, Integer> conf = newThreadSafeConfiguration(
+        final IndexConfiguration<Integer, Integer> conf = newConfiguration(
                 "concurrent-index-async", 4, 12);
         final SegmentIndex<Integer, Integer> index = SegmentIndex
                 .create(directory, conf);
@@ -437,7 +437,7 @@ class SegmentIndexConcurrentIT {
         return value / 1_000_000;
     }
 
-    private static IndexConfiguration<Integer, Integer> newThreadSafeConfiguration(
+    private static IndexConfiguration<Integer, Integer> newConfiguration(
             final String name, final int cpuThreads,
             final int maxNumberOfKeysInCache) {
         return IndexConfiguration.<Integer, Integer>builder()//
@@ -446,7 +446,6 @@ class SegmentIndexConcurrentIT {
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())//
                 .withValueTypeDescriptor(new TypeDescriptorInteger())//
                 .withName(name)//
-                .withThreadSafe(true)//
                 .withMaxNumberOfKeysInSegment(20)// small to trigger splits
                 .withMaxNumberOfKeysInSegmentCache(30)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(40)//

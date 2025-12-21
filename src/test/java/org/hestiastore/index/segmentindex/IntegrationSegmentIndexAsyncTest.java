@@ -13,20 +13,16 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 class IntegrationSegmentIndexAsyncTest {
 
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
 
-    @ParameterizedTest
-    @ValueSource(booleans = { false, true })
-    void putAsyncAndGetAsyncRoundTrip(final boolean threadSafe) {
+    @Test
+    void putAsyncAndGetAsyncRoundTrip() {
         final Directory directory = new MemDirectory();
-        final SegmentIndex<Integer, String> index = newIndex(directory,
-                threadSafe);
+        final SegmentIndex<Integer, String> index = newIndex(directory);
         try {
             final List<CompletableFuture<Void>> writes = IntStream.range(0, 20)
                     .mapToObj(i -> index.putAsync(i, "value-" + i)
@@ -50,13 +46,10 @@ class IntegrationSegmentIndexAsyncTest {
         }
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = { false, true })
-    void deleteAsyncRemovesKeysAndPersistsAcrossReopen(
-            final boolean threadSafe) {
+    @Test
+    void deleteAsyncRemovesKeysAndPersistsAcrossReopen() {
         final Directory directory = new MemDirectory();
-        final SegmentIndex<Integer, String> index = newIndex(directory,
-                threadSafe);
+        final SegmentIndex<Integer, String> index = newIndex(directory);
         try {
             IntStream.range(0, 6).forEach(i -> index.put(i, "value-" + i));
 
@@ -86,13 +79,10 @@ class IntegrationSegmentIndexAsyncTest {
         }
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = { true })
-    void asyncOperationsInterleaveWithSyncOperations(
-            final boolean threadSafe) {
+    @Test
+    void asyncOperationsInterleaveWithSyncOperations() {
         final Directory directory = new MemDirectory();
-        final SegmentIndex<Integer, String> index = newIndex(directory,
-                threadSafe);
+        final SegmentIndex<Integer, String> index = newIndex(directory);
         try {
             final CompletableFuture<Void> asyncPut = index
                     .putAsync(100, "async-100").toCompletableFuture();
@@ -116,7 +106,7 @@ class IntegrationSegmentIndexAsyncTest {
     @Test
     void getAsyncReturnsNullForMissingKey() {
         final Directory directory = new MemDirectory();
-        final SegmentIndex<Integer, String> index = newIndex(directory, false);
+        final SegmentIndex<Integer, String> index = newIndex(directory);
         try {
             assertNull(index.getAsync(999).toCompletableFuture().join());
         } finally {
@@ -125,9 +115,9 @@ class IntegrationSegmentIndexAsyncTest {
     }
 
     @Test
-    void asyncCompletionCallbackCanInvokeSyncOperationsInThreadSafeMode() {
+    void asyncCompletionCallbackCanInvokeSyncOperations() {
         final Directory directory = new MemDirectory();
-        final SegmentIndex<Integer, String> index = newIndex(directory, true);
+        final SegmentIndex<Integer, String> index = newIndex(directory);
         try {
             index.putAsync(1, "value-1").thenRun(() -> index.put(2, "value-2"))
                     .toCompletableFuture().orTimeout(5, TimeUnit.SECONDS)
@@ -139,8 +129,7 @@ class IntegrationSegmentIndexAsyncTest {
         }
     }
 
-    private SegmentIndex<Integer, String> newIndex(final Directory directory,
-            final boolean threadSafe) {
+    private SegmentIndex<Integer, String> newIndex(final Directory directory) {
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
                 .withKeyClass(Integer.class)//
@@ -156,7 +145,6 @@ class IntegrationSegmentIndexAsyncTest {
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(3) //
                 .withContextLoggingEnabled(true) //
-                .withThreadSafe(threadSafe)//
                 .withName("async_index") //
                 .build();
         return SegmentIndex.create(directory, conf);

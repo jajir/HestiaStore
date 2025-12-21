@@ -40,7 +40,6 @@ class SegmentIndexConfigurationManagerTest {
             .withValueTypeDescriptor(TD_STRING)//
             .withName("test_index")//
             .withContextLoggingEnabled(false)//
-            .withThreadSafe(false)//
             .withMaxNumberOfKeysInSegmentCache(11)//
             .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22) //
             .withMaxNumberOfKeysInSegmentChunk(33)//
@@ -120,24 +119,6 @@ class SegmentIndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_thread_safe_is_null() {
-        final IndexConfiguration<Long, String> config = IndexConfiguration
-                .<Long, String>builder()//
-                .withKeyClass(Long.class)//
-                .withValueClass(String.class)//
-                .withName("test_index")//
-                .withKeyTypeDescriptor(TD_LONG)//
-                .withValueTypeDescriptor(TD_STRING)//
-                .build();
-
-        final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
-
-        assertEquals("Property 'isThreadSafe' must not be null.",
-                ex.getMessage());
-    }
-
-    @Test
     void test_save_log_enabled_missing() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
@@ -146,7 +127,6 @@ class SegmentIndexConfigurationManagerTest {
                 .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -165,7 +145,6 @@ class SegmentIndexConfigurationManagerTest {
                 .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
                 .build();
 
@@ -185,7 +164,6 @@ class SegmentIndexConfigurationManagerTest {
                 .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInCache(2)//
                 .build();
@@ -206,7 +184,6 @@ class SegmentIndexConfigurationManagerTest {
                 .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInCache(3)//
                 .build();
@@ -227,7 +204,6 @@ class SegmentIndexConfigurationManagerTest {
                 .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(3)//
@@ -249,7 +225,6 @@ class SegmentIndexConfigurationManagerTest {
                 .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(4)//
@@ -270,7 +245,6 @@ class SegmentIndexConfigurationManagerTest {
                 .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(4)//
@@ -292,7 +266,6 @@ class SegmentIndexConfigurationManagerTest {
                 .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(4)//
@@ -314,7 +287,6 @@ class SegmentIndexConfigurationManagerTest {
                 .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(4)//
@@ -337,7 +309,6 @@ class SegmentIndexConfigurationManagerTest {
                 .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(4)//
@@ -362,7 +333,6 @@ class SegmentIndexConfigurationManagerTest {
                 .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInSegmentCache(11)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22) //
@@ -395,7 +365,6 @@ class SegmentIndexConfigurationManagerTest {
                 .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInSegmentCache(11)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22) //
@@ -500,7 +469,6 @@ class SegmentIndexConfigurationManagerTest {
         assertEquals(77, ret.getBloomFilterIndexSizeInBytes());
         assertEquals(88, ret.getBloomFilterNumberOfHashFunctions());
         assertFalse(ret.isContextLoggingEnabled());
-        assertFalse(ret.isThreadSafe());
     }
 
     @Test
@@ -597,22 +565,6 @@ class SegmentIndexConfigurationManagerTest {
         assertNotNull(ret);
 
         assertEquals(3, ret.getNumberOfIoThreads());
-    }
-
-    @Test
-    void test_mergeWithStored_isThreadSafe() {
-        final IndexConfiguration<Long, String> config = IndexConfiguration
-                .<Long, String>builder()//
-                .withThreadSafe(true)//
-                .build();
-
-        when(storage.load()).thenReturn(CONFIG);
-        final IndexConfiguration<Long, String> ret = manager
-                .mergeWithStored(config);
-        verify(storage, Mockito.times(1)).save(any());
-        assertNotNull(ret);
-
-        assertEquals(true, ret.isThreadSafe());
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -834,7 +786,6 @@ class SegmentIndexConfigurationManagerTest {
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withName("base_index")//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInSegmentCache(11)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22)//
