@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.util.Comparator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
@@ -14,11 +13,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.hestiastore.index.datatype.ConvertorFromBytes;
-import org.hestiastore.index.datatype.ConvertorToBytes;
-import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.datatype.TypeReader;
-import org.hestiastore.index.datatype.TypeWriter;
 import org.hestiastore.index.datatype.TypeDescriptorString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
@@ -41,11 +35,11 @@ class SegmentIndexAsyncCloseRaceIT {
 
     /**
      * TypeDescriptor that lets tests deterministically block inside
-     * {@link TypeDescriptor#getTombstone()} while an index operation is holding
-     * internal state.
+     * {@link org.hestiastore.index.datatype.TypeDescriptor#getTombstone()}
+     * while an index operation is holding internal state.
      */
     public static final class BlockingTombstoneTypeDescriptorString
-            implements TypeDescriptor<String> {
+            extends AbstractBlockingTombstoneTypeDescriptorString {
 
         static final class Hook {
             final CountDownLatch entered = new CountDownLatch(1);
@@ -64,34 +58,7 @@ class SegmentIndexAsyncCloseRaceIT {
             HOOK.set(null);
         }
 
-        private final TypeDescriptorString delegate = new TypeDescriptorString();
-
         public BlockingTombstoneTypeDescriptorString() {
-        }
-
-        @Override
-        public Comparator<String> getComparator() {
-            return delegate.getComparator();
-        }
-
-        @Override
-        public TypeReader<String> getTypeReader() {
-            return delegate.getTypeReader();
-        }
-
-        @Override
-        public TypeWriter<String> getTypeWriter() {
-            return delegate.getTypeWriter();
-        }
-
-        @Override
-        public ConvertorFromBytes<String> getConvertorFromBytes() {
-            return delegate.getConvertorFromBytes();
-        }
-
-        @Override
-        public ConvertorToBytes<String> getConvertorToBytes() {
-            return delegate.getConvertorToBytes();
         }
 
         /**
