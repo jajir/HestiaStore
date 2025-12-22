@@ -24,7 +24,8 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
 
     private static final String INDEX_NAME_MDC_KEY = "index.name";
 
-    private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
+    private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock(
+            true);
     private final Lock readLock = rwLock.readLock();
     private final Lock writeLock = rwLock.writeLock();
     private final ExecutorService executor;
