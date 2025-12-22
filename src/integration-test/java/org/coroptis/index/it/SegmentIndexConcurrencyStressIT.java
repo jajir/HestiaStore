@@ -18,6 +18,8 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.RepetitionInfo;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 /**
  * Randomized concurrency stress test for index lifecycle.
@@ -36,27 +38,43 @@ class SegmentIndexConcurrencyStressIT {
      * interleavings while keeping runs deterministic.
      */
     @RepeatedTest(5)
-    void randomizedConcurrentOperationsWithRotation(
-            final RepetitionInfo repetitionInfo) throws Exception {
+    void test_concurrent_load(final RepetitionInfo repetitionInfo)
+            throws Exception {
         runStressScenario(
                 "stress-test-" + repetitionInfo.getCurrentRepetition(),
-                23L + repetitionInfo.getCurrentRepetition());
+                23L + repetitionInfo.getCurrentRepetition(), 4, 400, 30);
+    }
+
+    @ParameterizedTest
+    @CsvSource({ //
+            "5,   400,     30", //
+            "30,  500,   1200", //
+            "9, 3_000,    160" //
+    })
+    void test_concurrent_load_parametrized(final int workerCount,
+            final int opsPerWorker, final long timeoutInSeconds)
+            throws Exception {
+        final int repetitionId = workerCount;
+
+        runStressScenario(//
+                "stress-test-" + repetitionId, //
+                23L + repetitionId, workerCount, opsPerWorker,
+                timeoutInSeconds);
     }
 
     /**
      * Executes a single stress run: multiple worker threads do random
      * operations while a rotator closes and reopens the index a few times.
      */
-    void runStressScenario(final String indexName, final long randomSeed)
-            throws Exception {
+    void runStressScenario(final String indexName, final long randomSeed,
+            final int workerCount, final int opsPerWorker,
+            final long timeoutInSeconds) throws Exception {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, Integer> conf = stressConf(indexName);
         final AtomicReference<SegmentIndex<Integer, Integer>> indexRef = new AtomicReference<>(
                 SegmentIndex.create(directory, conf));
         final ReadWriteLock lifecycleLock = new ReentrantReadWriteLock();
 
-        final int workerCount = 4;
-        final int opsPerWorker = 400;
         final int rotations = 3;
         final ExecutorService workers = Executors
                 .newFixedThreadPool(workerCount);
@@ -122,7 +140,7 @@ class SegmentIndexConcurrencyStressIT {
             }));
 
             for (final Future<?> future : futures) {
-                future.get(30, TimeUnit.SECONDS);
+                future.get(timeoutInSeconds, TimeUnit.SECONDS);
             }
         } finally {
             workers.shutdownNow();
