@@ -13,6 +13,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -135,19 +136,19 @@ class SegmentIndexConcurrencyStressIT {
      * 
      * Test verify that gets really overlaps.
      * 
-     * 1) Test put new key value pait into index, it check if it's not a
-     * tombstone.
+     * 1) Test put new key value pait into index
      * 
-     * 2) Test start two get(k) in parallel, they should overlap even if there
-     * is a tombstone
+     * 2) Test start two get(k) in parallel threads. Execution of both gets
+     * should overlap
+     * 
      * 
      * @throws Exception
      */
     @Test
-    void parallelReadsOverlap() throws Exception {
+    void parallelReadsOverlap_with_two_threads() throws Exception {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<String, String> conf = readLockConf(
-                "read-lock-overlap");
+                "read-lock-overlap", 2);
         final SegmentIndex<String, String> index = SegmentIndex
                 .create(directory, conf);
         index.put("k", "v");
@@ -155,7 +156,6 @@ class SegmentIndexConcurrencyStressIT {
                 .installHook();
         final ExecutorService executor = Executors.newFixedThreadPool(2);
         try {
-
             final Future<String> first = executor.submit(() -> index.get("k"));
             assertTrue(hook.firstEntered.await(5, TimeUnit.SECONDS),
                     "First get() is waiting for tombstone hook");
@@ -164,6 +164,8 @@ class SegmentIndexConcurrencyStressIT {
             assertTrue(hook.secondEntered.await(5, TimeUnit.SECONDS),
                     "Second get() is waiting for tombstone hook");
 
+            assertTrue(hook.overlapDetected.get(),
+                    "Expected overlapping reads with two threads");
             assertFalse(first.isDone(),
                     "First get() returned before being released");
             assertFalse(second.isDone(),
@@ -173,6 +175,53 @@ class SegmentIndexConcurrencyStressIT {
 
             assertEquals("v", first.get(5, TimeUnit.SECONDS));
             assertEquals("v", second.get(5, TimeUnit.SECONDS));
+            assertTrue(first.isDone(),
+                    "First get() is still not done after being released");
+            assertTrue(second.isDone(),
+                    "Second get() is still not done after being released");
+        } finally {
+            hook.release.countDown();
+            BlockingTombstoneTypeDescriptorString.clearHook();
+            executor.shutdownNow();
+            index.close();
+        }
+    }
+
+    @Test
+    void parallelReads_areSerialized_with_one_threads() throws Exception {
+        final Directory directory = new MemDirectory();
+        final IndexConfiguration<String, String> conf = readLockConf(
+                "read-lock-overlap", 1);
+        final SegmentIndex<String, String> index = SegmentIndex
+                .create(directory, conf);
+        index.put("k", "v");
+        final BlockingTombstoneTypeDescriptorString.Hook hook = BlockingTombstoneTypeDescriptorString
+                .installHook();
+        final ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            final Future<String> first = executor.submit(() -> index.get("k"));
+            assertTrue(hook.firstEntered.await(5, TimeUnit.SECONDS),
+                    "First get() is waiting for tombstone hook");
+
+            final Future<String> second = executor.submit(() -> index.get("k"));
+            assertFalse(hook.secondEntered.await(200, TimeUnit.MILLISECONDS),
+                    "Second get() entered before first was released");
+            assertFalse(hook.overlapDetected.get(),
+                    "Detected overlapping reads with one thread");
+
+            assertFalse(first.isDone(),
+                    "First get() returned before being released");
+            assertFalse(second.isDone(),
+                    "Second get() returned before being scheduled");
+            // release both get() operation waitings
+            hook.release.countDown();
+
+            assertTrue(hook.secondEntered.await(5, TimeUnit.SECONDS),
+                    "Second get() did not execute after release");
+            assertEquals("v", first.get(5, TimeUnit.SECONDS));
+            assertEquals("v", second.get(5, TimeUnit.SECONDS));
+            assertFalse(hook.overlapDetected.get(),
+                    "Detected overlapping reads with one thread");
             assertTrue(first.isDone(),
                     "First get() is still not done after being released");
             assertTrue(second.isDone(),
@@ -208,7 +257,7 @@ class SegmentIndexConcurrencyStressIT {
     }
 
     private static IndexConfiguration<String, String> readLockConf(
-            final String name) {
+            final String name, int numberOfCpuThreads) {
         return IndexConfiguration.<String, String>builder()//
                 .withKeyClass(String.class)//
                 .withValueClass(String.class)//
@@ -218,7 +267,7 @@ class SegmentIndexConcurrencyStressIT {
                 .withName(name)//
                 .withContextLoggingEnabled(false)//
                 .withMaxNumberOfKeysInCache(10_000)//
-                .withNumberOfCpuThreads(2)//
+                .withNumberOfCpuThreads(numberOfCpuThreads)//
                 .withNumberOfIoThreads(1)//
                 .build();
     }
@@ -230,7 +279,17 @@ class SegmentIndexConcurrencyStressIT {
             final CountDownLatch firstEntered = new CountDownLatch(1);
             final CountDownLatch secondEntered = new CountDownLatch(1);
             final CountDownLatch release = new CountDownLatch(1);
+
+            /**
+             * Number of calls currently in getTombstone()
+             */
             final AtomicInteger inCall = new AtomicInteger(0);
+
+            final AtomicInteger totalEntered = new AtomicInteger(0);
+            /**
+             * Set to true when overlapping calls are detected
+             */
+            final AtomicBoolean overlapDetected = new AtomicBoolean(false);
         }
 
         private static final AtomicReference<Hook> HOOK = new AtomicReference<>();
@@ -276,10 +335,14 @@ class SegmentIndexConcurrencyStressIT {
         public String getTombstone() {
             final Hook hook = HOOK.get();
             if (hook != null) {
-                final int count = hook.inCall.incrementAndGet();
-                if (count == 1) {
+                final int concurrent = hook.inCall.incrementAndGet();
+                if (concurrent > 1) {
+                    hook.overlapDetected.set(true);
+                }
+                final int total = hook.totalEntered.incrementAndGet();
+                if (total == 1) {
                     hook.firstEntered.countDown();
-                } else if (count == 2) {
+                } else if (total == 2) {
                     hook.secondEntered.countDown();
                 }
                 try {
