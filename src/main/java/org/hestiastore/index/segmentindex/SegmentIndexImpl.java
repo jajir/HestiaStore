@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -122,15 +123,20 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     }
 
     protected void flushCache() {
+        final List<Entry<K, V>> snapshot = cache.snapshotAndClear();
         if (logger.isDebugEnabled()) {
             logger.debug(
                     "Cache compacting of '{}' key value entries in cache started.",
-                    F.fmt(cache.size()));
+                    F.fmt(snapshot.size()));
+        }
+        if (snapshot.size() > 1) {
+            snapshot.sort(Comparator.comparing(Entry::getKey,
+                    keyTypeDescriptor.getComparator()));
         }
         final CompactSupport<K, V> support = new CompactSupport<>(
                 segmentRegistry, keySegmentCache,
                 keyTypeDescriptor.getComparator());
-        cache.getAsSortedList().forEach(support::compact);
+        snapshot.forEach(support::compact);
         support.flush();
         final List<SegmentId> segmentIds = support.getEligibleSegmentIds();
         for (final SegmentId segmentId : segmentIds) {
@@ -139,7 +145,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 segmentSplitCoordinator.optionallySplit(segment);
             }
         }
-        cache.clear();
         keySegmentCache.optionalyFlush();
         if (logger.isDebugEnabled()) {
             logger.debug(

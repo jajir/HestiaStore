@@ -2,8 +2,11 @@ package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.lang.reflect.Field;
 import java.util.List;
 
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.cache.UniqueCache;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -54,6 +57,27 @@ class SegmentIndexImplFlushTest {
         index.close();
     }
 
+    @Test
+    void flushKeepsEntriesAddedAfterSnapshot() throws Exception {
+        final IndexConfiguration<Integer, String> conf = buildConfWithCacheLimit(
+                4);
+        final IndexInternalDefault<Integer, String> index = new IndexInternalDefault<>(
+                new MemDirectory(), tdi, tds, conf);
+        final Entry<Integer, String> lateEntry = Entry.of(99, "late");
+        final UniqueCache<Integer, String> cache = new LateEntryCache(
+                tdi.getComparator(), conf.getMaxNumberOfKeysInCache(),
+                lateEntry);
+        replaceCache(index, cache);
+
+        index.put(1, "one");
+        index.put(2, "two");
+
+        index.flush();
+
+        assertEquals("late", index.get(99));
+        index.close();
+    }
+
     private IndexConfiguration<Integer, String> buildConfWithCacheLimit(
             final int maxKeysInCache) {
         return IndexConfiguration.<Integer, String>builder()//
@@ -91,6 +115,52 @@ class SegmentIndexImplFlushTest {
         @Override
         protected void flushCache() {
             flushCalls++;
+        }
+    }
+
+    private static void replaceCache(final SegmentIndexImpl<?, ?> index,
+            final UniqueCache<?, ?> cache) throws Exception {
+        final Field cacheField = SegmentIndexImpl.class
+                .getDeclaredField("cache");
+        cacheField.setAccessible(true);
+        cacheField.set(index, cache);
+    }
+
+    private static final class LateEntryCache
+            extends UniqueCache<Integer, String> {
+
+        private final Entry<Integer, String> lateEntry;
+        private boolean inserted = false;
+
+        LateEntryCache(final java.util.Comparator<Integer> comparator,
+                final int initialCapacity,
+                final Entry<Integer, String> lateEntry) {
+            super(comparator, initialCapacity);
+            this.lateEntry = lateEntry;
+        }
+
+        @Override
+        public List<Entry<Integer, String>> getAsSortedList() {
+            final List<Entry<Integer, String>> snapshot = super
+                    .getAsSortedList();
+            insertLateEntry();
+            return snapshot;
+        }
+
+        @Override
+        public List<Entry<Integer, String>> snapshotAndClear() {
+            final List<Entry<Integer, String>> snapshot = super
+                    .snapshotAndClear();
+            insertLateEntry();
+            return snapshot;
+        }
+
+        private void insertLateEntry() {
+            if (inserted) {
+                return;
+            }
+            inserted = true;
+            put(lateEntry);
         }
     }
 }
