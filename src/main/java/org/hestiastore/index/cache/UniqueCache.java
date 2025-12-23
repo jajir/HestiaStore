@@ -1,11 +1,12 @@
 package org.hestiastore.index.cache;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
@@ -19,9 +20,13 @@ import org.hestiastore.index.Vldtn;
  */
 public class UniqueCache<K, V> {
 
+    private static final Lock NOOP_LOCK = new NoopLock();
+
     private final Map<K, V> map;
 
     private final Comparator<K> keyComparator;
+    private final Lock readLock;
+    private final Lock writeLock;
 
     /**
      * Create builder for unique cache.
@@ -40,16 +45,32 @@ public class UniqueCache<K, V> {
      * @param keyComparator required comparator for keys
      */
     public UniqueCache(final Comparator<K> keyComparator, int initialCapacity) {
+        this(keyComparator, initialCapacity, NOOP_LOCK, NOOP_LOCK);
+    }
+
+    protected UniqueCache(final Comparator<K> keyComparator, int initialCapacity,
+            final Lock readLock, final Lock writeLock) {
         this.keyComparator = Vldtn.requireNonNull(keyComparator,
                 "keyComparator");
         this.map = new HashMap<>(initialCapacity, 0.75F);
+        this.readLock = Vldtn.requireNonNull(readLock, "readLock");
+        this.writeLock = Vldtn.requireNonNull(writeLock, "writeLock");
+    }
+
+    Comparator<K> getKeyComparator() {
+        return keyComparator;
     }
 
     /**
      * When there is old value than old value is rewritten.
      */
     public void put(final Entry<K, V> entry) {
-        map.put(entry.getKey(), entry.getValue());
+        writeLock.lock();
+        try {
+            map.put(entry.getKey(), entry.getValue());
+        } finally {
+            writeLock.unlock();
+        }
     }
 
     /**
@@ -60,14 +81,24 @@ public class UniqueCache<K, V> {
      */
     public V get(final K key) {
         Vldtn.requireNonNull(key, "key");
-        return map.get(key);
+        readLock.lock();
+        try {
+            return map.get(key);
+        } finally {
+            readLock.unlock();
+        }
     }
 
     /**
      * Clear all data in cache.
      */
     public void clear() {
-        map.clear();
+        writeLock.lock();
+        try {
+            map.clear();
+        } finally {
+            writeLock.unlock();
+        }
     }
 
     /**
@@ -76,7 +107,12 @@ public class UniqueCache<K, V> {
      * @return number of key value entries in cache
      */
     public int size() {
-        return map.size();
+        readLock.lock();
+        try {
+            return map.size();
+        } finally {
+            readLock.unlock();
+        }
     }
 
     /**
@@ -85,7 +121,12 @@ public class UniqueCache<K, V> {
      * @return true when cache is empty
      */
     public boolean isEmpty() {
-        return map.isEmpty();
+        readLock.lock();
+        try {
+            return map.isEmpty();
+        } finally {
+            readLock.unlock();
+        }
     }
 
     /**
@@ -97,26 +138,11 @@ public class UniqueCache<K, V> {
      * @return sorted list of entries
      */
     public List<Entry<K, V>> getAsSortedList() {
-        @SuppressWarnings("unchecked")
-        Map.Entry<K, V>[] a = map.entrySet().stream()
-                .filter(e -> e != null && e.getKey() != null)
-                .toArray(Map.Entry[]::new);
-        final int n = a.length;
-        if (n == 0) {
-            return List.of();
+        final List<Entry<K, V>> out = snapshotEntries();
+        if (out.size() < 2) {
+            return out;
         }
-
-        /**
-         * Sort array of map entries by key using the provided key comparator.
-         * From performance point view it's best option for larger arrays.
-         */
-        Arrays.parallelSort(a, Map.Entry.comparingByKey(keyComparator));
-
-        var out = new ArrayList<Entry<K, V>>(n);
-        for (int i = 0; i < n; i++) {
-            var e = a[i];
-            out.add(new Entry<>(e.getKey(), e.getValue()));
-        }
+        out.sort(Comparator.comparing(Entry::getKey, keyComparator));
         return out;
     }
 
@@ -126,9 +152,74 @@ public class UniqueCache<K, V> {
      * @return list of entries
      */
     public List<Entry<K, V>> getAsList() {
-        return map.entrySet().stream()//
-                .map(entry -> new Entry<K, V>(entry.getKey(), entry.getValue()))
-                .toList();
+        return snapshotEntries();
     }
 
+    /**
+     * Returns a snapshot of entries and clears the cache.
+     *
+     * @return snapshot of entries at the time of clearing
+     */
+    public List<Entry<K, V>> snapshotAndClear() {
+        writeLock.lock();
+        try {
+            final List<Entry<K, V>> snapshot = snapshotEntriesLocked();
+            map.clear();
+            return snapshot;
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    private List<Entry<K, V>> snapshotEntries() {
+        readLock.lock();
+        try {
+            return snapshotEntriesLocked();
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    private List<Entry<K, V>> snapshotEntriesLocked() {
+        if (map.isEmpty()) {
+            return List.of();
+        }
+        final List<Entry<K, V>> out = new ArrayList<>(map.size());
+        for (final Map.Entry<K, V> entry : map.entrySet()) {
+            if (entry == null || entry.getKey() == null) {
+                continue;
+            }
+            out.add(new Entry<>(entry.getKey(), entry.getValue()));
+        }
+        return out;
+    }
+
+    private static final class NoopLock extends ReentrantLock {
+
+        @Override
+        public void lock() {
+            // no-op
+        }
+
+        @Override
+        public void unlock() {
+            // no-op
+        }
+
+        @Override
+        public boolean tryLock() {
+            return true;
+        }
+
+        @Override
+        public void lockInterruptibly() {
+            // no-op
+        }
+
+        @Override
+        public boolean tryLock(final long time,
+                final java.util.concurrent.TimeUnit unit) {
+            return true;
+        }
+    }
 }
