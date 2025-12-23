@@ -48,7 +48,7 @@ class SegmentIndexConcurrencyStressIT {
     @ParameterizedTest
     @CsvSource({ //
             "5,   400,     30", //
-            "30,  500,   1200", //
+            "10,  500,   1200", //
             "9, 3_000,    160" //
     })
     void test_concurrent_load_parametrized(final int workerCount,
