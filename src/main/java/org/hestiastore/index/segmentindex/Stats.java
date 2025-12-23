@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
+import java.util.concurrent.atomic.LongAdder;
+
 /**
  * Holds statistic informations about index utilization.
  * 
@@ -7,36 +9,36 @@ package org.hestiastore.index.segmentindex;
  *
  */
 public class Stats {
-    private long putCx = 0;
-    private long getCx = 0;
-    private long deleteCx = 0;
+    private final LongAdder putCx = new LongAdder();
+    private final LongAdder getCx = new LongAdder();
+    private final LongAdder deleteCx = new LongAdder();
 
     Stats() {
 
     }
 
     void incPutCx() {
-        putCx++;
+        putCx.increment();
     }
 
     void incGetCx() {
-        getCx++;
+        getCx.increment();
     }
 
     void incDeleteCx() {
-        deleteCx++;
+        deleteCx.increment();
     }
 
     public long getPutCx() {
-        return putCx;
+        return putCx.sum();
     }
 
     public long getGetCx() {
-        return getCx;
+        return getCx.sum();
     }
 
     public long getDeleteCx() {
-        return deleteCx;
+        return deleteCx.sum();
     }
 
 }
