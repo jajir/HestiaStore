@@ -10,7 +10,6 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.log.Log;
 
 /**
  * High-level contract for the segment-index layer that sits above individual
@@ -94,25 +93,14 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     private static <M, N> SegmentIndex<M, N> openIndex(
             final Directory directory,
             final IndexConfiguration<M, N> indexConf) {
-        Log<M, N> log = null;
         final TypeDescriptor<M> keyTypeDescriptor = DataTypeDescriptorRegistry
                 .makeInstance(indexConf.getKeyTypeDescriptor());
         final TypeDescriptor<N> valueTypeDescriptor = DataTypeDescriptorRegistry
                 .makeInstance(indexConf.getValueTypeDescriptor());
         Vldtn.requireNonNull(indexConf.isContextLoggingEnabled(),
                 "isContextLoggingEnabled");
-        if (Boolean.TRUE.equals(indexConf.isContextLoggingEnabled())) {
-            log = Log.<M, N>builder()//
-                    .withDirectory(directory)//
-                    .withKeyTypeDescriptor(keyTypeDescriptor)//
-                    .withValueTypeDescriptor(valueTypeDescriptor)//
-                    .build();
-        } else {
-            log = Log.<M, N>builder().buildEmpty();
-        }
         final SegmentIndex<M, N> index = new IndexInternalSynchronized<>(
-                directory, keyTypeDescriptor, valueTypeDescriptor, indexConf,
-                log);
+                directory, keyTypeDescriptor, valueTypeDescriptor, indexConf);
         if (Boolean.TRUE.equals(indexConf.isContextLoggingEnabled())) {
             return new IndexContextLoggingAdapter<>(indexConf, index);
         } else {
@@ -185,7 +173,7 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     void compact();
 
     /**
-     * Flush all data to disk. When WAL is used then it starts new file.
+     * Flush all data to disk.
      */
     void flush();
 

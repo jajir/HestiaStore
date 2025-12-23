@@ -19,7 +19,6 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.log.Log;
 import org.slf4j.MDC;
 
 public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
@@ -42,8 +41,8 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
     public IndexInternalSynchronized(final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
-            final IndexConfiguration<K, V> conf, final Log<K, V> log) {
-        super(directory, keyTypeDescriptor, valueTypeDescriptor, conf, log);
+            final IndexConfiguration<K, V> conf) {
+        super(directory, keyTypeDescriptor, valueTypeDescriptor, conf);
         final Integer threadsConf = conf.getNumberOfThreads();
         final int threads = (threadsConf == null || threadsConf < 1) ? 1
                 : threadsConf.intValue();

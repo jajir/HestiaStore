@@ -8,7 +8,6 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.log.Log;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -25,15 +24,12 @@ class SegmentIndexInternalSynchronizedTest {
     @Mock
     private IndexConfiguration<Integer, String> conf;
 
-    @Mock
-    private Log<Integer, String> log;
-
     @Test
     void test_constructor() {
         when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(1000);
         when(conf.getNumberOfThreads()).thenReturn(1);
         try (IndexInternalSynchronized<Integer, String> synchIndex = new IndexInternalSynchronized<>(
-                directory, TD_INTEGER, TD_STRING, conf, log)) {
+                directory, TD_INTEGER, TD_STRING, conf)) {
             // Intentionally left empty to test constructor
         }
 
