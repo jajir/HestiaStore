@@ -6,7 +6,6 @@ This page documents the files HestiaStore writes into an index directory, their 
 
 Top-level files:
 - `index.map` — Global key→segment map (max key per segment). Sorted key→SegmentId pairs. Updated atomically.
-- `wal-00000.log`, `wal-00001.log`, … — Optional context logs if enabled. Useful for observability; not a recovery WAL.
 
 Per‑segment files for segment `segment-00000`:
 - `segment-00000.index` — Main SST in chunked format (ChunkStoreFile). Holds sorted key/value entries in chunks.
@@ -28,9 +27,8 @@ Notes:
 - Segment metadata: `.properties`
 - Delta/overlay: `.cache` (both seed cache and delta files)
 - Key→segment map: `index.map`
-- Context log: `wal-xxxxx.log`
 
-Code: `segment/SegmentFiles.java`, `segmentindex/KeySegmentCache.java`, `log/LogFileNamesManager.java`.
+Code: `segment/SegmentFiles.java`, `segmentindex/KeySegmentCache.java`.
 
 ## 🧨 Atomic Commit Pattern (`*.tmp` + rename)
 
@@ -48,7 +46,6 @@ Code pointers:
 - Main SST: `chunkentryfile/ChunkEntryFileWriterTx` → `chunkstore/ChunkStoreWriterTx` → `datablockfile/DataBlockWriterTx`
 - Sparse index: `scarceindex/ScarceIndexWriterTx`
 - Bloom filter: `bloomfilter/BloomFilterWriterTx`
-- Unsorted log: `unsorteddatafile/UnsortedDataFileWriterTx`
 
 ## 🔄 Segment Lifecycle
 
@@ -81,7 +78,6 @@ segment-00000.scarce
 segment-00000.bloom-filter
 segment-00000.properties
 segment-00000-delta-000.cache   # present until compaction
-# wal-00000.log                 # only if context logging is enabled
 ```
 
 ## 🔗 Related Glossary

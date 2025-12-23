@@ -47,7 +47,7 @@ This page summarizes how HestiaStore achieves high throughput and predictable la
   - Snappy reduces I/O on compressible values at CPU cost. CRC + magic are lightweight integrity guards and on by default.
 
 - Context logging (`isContextLoggingEnabled`)
-  - Writes an unsorted log entry per operation for observability. Disable if you need minimum overhead.
+  - Adds MDC setup/teardown per operation so logs can include `index.name`.
 
 ## 🧮 Memory Sizing
 
@@ -60,7 +60,7 @@ This page summarizes how HestiaStore achieves high throughput and predictable la
 
 - Put path: hashing and HashMap work; occasional sort on flush (parallel sort over entries) and CRC/magic/Snappy filters on compaction.
 - Get path: a few compares, at most N key compares during the bounded scan, optional Snappy decompression on read.
-- Enabling context logging adds a small write per operation.
+- Enabling context logging adds a small per‑operation MDC overhead.
 
 ## 🧪 Practical Tuning Recipes
 
