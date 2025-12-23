@@ -11,7 +11,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -27,10 +26,9 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
     private static final int MIN_QUEUE_CAPACITY = 64;
     private static final int QUEUE_CAPACITY_MULTIPLIER = 64;
 
-    private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock(
-            true);
-    private final Lock readLock = rwLock.readLock();
-    private final Lock writeLock = rwLock.writeLock();
+    private final IndexLocks locks = new IndexLocks();
+    private final Lock readLock = locks.readLock();
+    private final Lock writeLock = locks.writeLock();
     private final ThreadPoolExecutor executor;
     private final ThreadLocal<Boolean> inExecutorThread = ThreadLocal
             .withInitial(() -> Boolean.FALSE);
