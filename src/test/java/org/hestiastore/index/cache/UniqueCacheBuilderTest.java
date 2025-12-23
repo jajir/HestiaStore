@@ -3,6 +3,7 @@ package org.hestiastore.index.cache;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import java.util.Comparator;
@@ -121,5 +122,23 @@ class UniqueCacheBuilderTest {
                         .withInitialCapacity(-10));
         assertEquals("Property 'initialCapacity' must be greater than 0",
                 e.getMessage());
+    }
+
+    @Test
+    void test_build_with_threadSafe_true_returns_synchronized_cache() {
+        final List<Entry<Integer, String>> data = List.of(
+                Entry.of(1, "a"), Entry.of(2, "b"));
+        final EntryIteratorWithCurrent<Integer, String> iterator = new EntryIteratorList<>(
+                data);
+        when(sdf.openIterator()).thenReturn(iterator);
+
+        final UniqueCache<Integer, String> cache = UniqueCache
+                .<Integer, String>builder()
+                .withKeyComparator(Integer::compareTo)
+                .withDataFile(sdf)
+                .withThreadSafe(true)
+                .build();
+
+        assertTrue(cache instanceof UniqueCacheSynchronizenizedAdapter);
     }
 }

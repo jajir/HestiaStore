@@ -24,6 +24,7 @@ public class UniqueCacheBuilder<K, V> {
      * set to a non-positive value, the default UniqueCache constructor is used.
      */
     private int initialCapacity = 0;
+    private boolean threadSafe = false;
 
     protected UniqueCacheBuilder() {
 
@@ -57,9 +58,23 @@ public class UniqueCacheBuilder<K, V> {
         return this;
     }
 
+    /**
+     * Configure whether the built cache should be thread-safe.
+     *
+     * @param threadSafe true to build a synchronized cache
+     * @return this builder
+     */
+    public UniqueCacheBuilder<K, V> withThreadSafe(final boolean threadSafe) {
+        this.threadSafe = threadSafe;
+        return this;
+    }
+
     public UniqueCache<K, V> build() {
-        final UniqueCache<K, V> out = new UniqueCache<>(keyComparator,
+        UniqueCache<K, V> out = new UniqueCache<>(keyComparator,
                 initialCapacity);
+        if (threadSafe) {
+            out = new UniqueCacheSynchronizenizedAdapter<>(out);
+        }
         try (EntryIterator<K, V> iterator = sdf.openIterator()) {
             Entry<K, V> entry = null;
             while (iterator.hasNext()) {
