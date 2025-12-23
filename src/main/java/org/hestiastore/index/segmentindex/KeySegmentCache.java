@@ -1,11 +1,14 @@
 package org.hestiastore.index.segmentindex;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.AbstractCloseableResource;
@@ -50,6 +53,9 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
     private final SortedDataFile<K, SegmentId> sdf;
     private final Comparator<K> keyComparator;
     private boolean isDirty = false;
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private final Lock readLock = lock.readLock();
+    private final Lock writeLock = lock.writeLock();
 
     KeySegmentCache(final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor) {
@@ -79,58 +85,78 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
      * Verify, that all segment ids are unique.
      */
     public void checkUniqueSegmentIds() {
-        final HashMap<SegmentId, K> tmp = new HashMap<SegmentId, K>();
-        final AtomicBoolean fail = new AtomicBoolean(false);
-        list.forEach((key, segmentId) -> {
-            final K oldKey = tmp.get(segmentId);
-            if (oldKey == null) {
-                tmp.put(segmentId, key);
-            } else {
-                logger.error(String.format(
-                        "Segment id '%s' is used for segment with "
-                                + "key '%s' and segment with key '%s'.",
-                        segmentId, key, oldKey));
-                fail.set(true);
+        readLock.lock();
+        try {
+            final HashMap<SegmentId, K> tmp = new HashMap<SegmentId, K>();
+            final AtomicBoolean fail = new AtomicBoolean(false);
+            list.forEach((key, segmentId) -> {
+                final K oldKey = tmp.get(segmentId);
+                if (oldKey == null) {
+                    tmp.put(segmentId, key);
+                } else {
+                    logger.error(String.format(
+                            "Segment id '%s' is used for segment with "
+                                    + "key '%s' and segment with key '%s'.",
+                            segmentId, key, oldKey));
+                    fail.set(true);
+                }
+            });
+            if (fail.get()) {
+                throw new IllegalStateException(
+                        "Unable to load scarce index, sanity check failed.");
             }
-        });
-        if (fail.get()) {
-            throw new IllegalStateException(
-                    "Unable to load scarce index, sanity check failed.");
+        } finally {
+            readLock.unlock();
         }
     }
 
     public SegmentId findSegmentId(final K key) {
         Vldtn.requireNonNull(key, "key");
-        final Entry<K, SegmentId> entry = localFindSegmentForKey(key);
-        return entry == null ? null : entry.getValue();
+        readLock.lock();
+        try {
+            final Entry<K, SegmentId> entry = localFindSegmentForKey(key);
+            return entry == null ? null : entry.getValue();
+        } finally {
+            readLock.unlock();
+        }
     }
 
     public SegmentId findNewSegmentId() {
-        if (list.isEmpty()) {
-            return SegmentId.of(0);
-        }
-        int maxId = Integer.MIN_VALUE;
-        for (SegmentId sid : list.values()) {
-            if (sid.getId() > maxId) {
-                maxId = sid.getId();
+        readLock.lock();
+        try {
+            if (list.isEmpty()) {
+                return SegmentId.of(0);
             }
+            int maxId = Integer.MIN_VALUE;
+            for (SegmentId sid : list.values()) {
+                if (sid.getId() > maxId) {
+                    maxId = sid.getId();
+                }
+            }
+            return SegmentId.of(maxId + 1);
+        } finally {
+            readLock.unlock();
         }
-        return SegmentId.of(maxId + 1);
     }
 
     public SegmentId insertKeyToSegment(final K key) {
         Vldtn.requireNonNull(key, "key");
-        final Entry<K, SegmentId> entry = localFindSegmentForKey(key);
-        if (entry == null) {
-            /*
-             * Key is bigger that all key so it will at last segment. But key at
-             * last segment is smaller than adding one. Because of that key have
-             * to be upgraded.
-             */
-            isDirty = true;
-            return updateMaxKey(key);
-        } else {
-            return entry.getValue();
+        writeLock.lock();
+        try {
+            final Entry<K, SegmentId> entry = localFindSegmentForKey(key);
+            if (entry == null) {
+                /*
+                 * Key is bigger that all key so it will at last segment. But key at
+                 * last segment is smaller than adding one. Because of that key have
+                 * to be upgraded.
+                 */
+                isDirty = true;
+                return updateMaxKey(key);
+            } else {
+                return entry.getValue();
+            }
+        } finally {
+            writeLock.unlock();
         }
     }
 
@@ -160,17 +186,21 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
 
     public void insertSegment(final K key, final SegmentId segmentId) {
         Vldtn.requireNonNull(key, "key");
-        if (list.containsValue(segmentId)) {
-            throw new IllegalArgumentException(
-                    String.format("Segment id '%s' already exists", segmentId));
+        writeLock.lock();
+        try {
+            if (list.containsValue(segmentId)) {
+                throw new IllegalArgumentException(String.format(
+                        "Segment id '%s' already exists", segmentId));
+            }
+            list.put(key, segmentId);
+            isDirty = true;
+        } finally {
+            writeLock.unlock();
         }
-        list.put(key, segmentId);
-        isDirty = true;
     }
 
     public Stream<Entry<K, SegmentId>> getSegmentsAsStream() {
-        return list.entrySet().stream()
-                .map(entry -> Entry.of(entry.getKey(), entry.getValue()));
+        return snapshotSegments().stream();
     }
 
     public List<SegmentId> getSegmentIds() {
@@ -178,11 +208,16 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
     }
 
     public List<SegmentId> getSegmentIds(SegmentWindow segmentWindow) {
-        return list.entrySet().stream()//
-                .skip(segmentWindow.getIntOffset())//
-                .limit(segmentWindow.getIntLimit())//
-                .map(entry -> entry.getValue())//
-                .toList();
+        readLock.lock();
+        try {
+            return list.entrySet().stream()//
+                    .skip(segmentWindow.getIntOffset())//
+                    .limit(segmentWindow.getIntLimit())//
+                    .map(entry -> entry.getValue())//
+                    .toList();
+        } finally {
+            readLock.unlock();
+        }
     }
 
     /**
@@ -190,16 +225,35 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
      * automatically called when this cache is closed.
      */
     public void optionalyFlush() {
-        if (isDirty) {
-            sdf.openWriterTx().execute(writer -> {
-                list.forEach((k, v) -> writer.write(Entry.of(k, v)));
-            });
+        writeLock.lock();
+        try {
+            if (isDirty) {
+                sdf.openWriterTx().execute(writer -> {
+                    list.forEach((k, v) -> writer.write(Entry.of(k, v)));
+                });
+            }
+            isDirty = false;
+        } finally {
+            writeLock.unlock();
         }
-        isDirty = false;
     }
 
     @Override
     protected void doClose() {
         optionalyFlush();
+    }
+
+    private List<Entry<K, SegmentId>> snapshotSegments() {
+        readLock.lock();
+        try {
+            if (list.isEmpty()) {
+                return List.of();
+            }
+            final List<Entry<K, SegmentId>> out = new ArrayList<>(list.size());
+            list.forEach((key, segmentId) -> out.add(Entry.of(key, segmentId)));
+            return out;
+        } finally {
+            readLock.unlock();
+        }
     }
 }
