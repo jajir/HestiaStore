@@ -29,7 +29,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentSplitCoordinator<K, V> segmentSplitCoordinator;
     private final Stats stats = new Stats();
-    protected IndexState<K, V> indexState;
+    private volatile IndexState<K, V> indexState;
 
     protected SegmentIndexImpl(final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor,
@@ -39,7 +39,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             throw new IllegalArgumentException("Directory was no specified.");
         }
         Vldtn.requireNonNull(directory, "directory");
-        indexState = new IndexStateNew<>(directory);
+        setIndexState(new IndexStateNew<>(directory));
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
                 "keyTypeDescriptor");
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
@@ -56,12 +56,12 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 keyTypeDescriptor, valueTypeDescriptor, conf, segmentDataCache);
         this.segmentSplitCoordinator = new SegmentSplitCoordinator<>(conf,
                 keySegmentCache);
-        indexState.onReady(this);
+        getIndexState().onReady(this);
     }
 
     @Override
     public void put(final K key, final V value) {
-        indexState.tryPerformOperation();
+        getIndexState().tryPerformOperation();
         Vldtn.requireNonNull(key, "key");
         Vldtn.requireNonNull(value, "value");
         stats.incPutCx();
@@ -150,7 +150,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     @Override
     public void compact() {
-        indexState.tryPerformOperation();
+        getIndexState().tryPerformOperation();
         flushCache();
         keySegmentCache.getSegmentIds().forEach(segmentId -> {
             final Segment<K, V> seg = segmentRegistry.getSegment(segmentId);
@@ -160,7 +160,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     @Override
     public V get(final K key) {
-        indexState.tryPerformOperation();
+        getIndexState().tryPerformOperation();
         Vldtn.requireNonNull(key, "key");
         stats.incGetCx();
 
@@ -195,7 +195,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     @Override
     public void delete(final K key) {
-        indexState.tryPerformOperation();
+        getIndexState().tryPerformOperation();
         Vldtn.requireNonNull(key, "key");
         stats.incDeleteCx();
 
@@ -214,7 +214,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     @Override
     public void checkAndRepairConsistency() {
-        indexState.tryPerformOperation();
+        getIndexState().tryPerformOperation();
         keySegmentCache.checkUniqueSegmentIds();
         final IndexConsistencyChecker<K, V> checker = new IndexConsistencyChecker<>(
                 keySegmentCache, segmentRegistry, keyTypeDescriptor);
@@ -224,7 +224,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     protected void doClose() {
         flushCache();
-        indexState.onClose(this);
+        getIndexState().onClose(this);
         segmentRegistry.close();
         if (logger.isDebugEnabled()) {
             logger.debug(String.format(
@@ -234,8 +234,12 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         }
     }
 
-    public void setIndexState(final IndexState<K, V> indexState) {
+    final void setIndexState(final IndexState<K, V> indexState) {
         this.indexState = Vldtn.requireNonNull(indexState, "indexState");
+    }
+
+    protected final IndexState<K, V> getIndexState() {
+        return indexState;
     }
 
     @Override

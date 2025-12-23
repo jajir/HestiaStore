@@ -33,7 +33,7 @@ public class IndexInternalDefault<K, V> extends SegmentIndexImpl<K, V> {
      */
     @Override
     public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindow) {
-        indexState.tryPerformOperation();
+        getIndexState().tryPerformOperation();
         final EntryIterator<K, V> iterator = openSegmentIterator(segmentWindow);
         final EntryIteratorToSpliterator<K, V> spliterator = new EntryIteratorToSpliterator<K, V>(
                 iterator, keyTypeDescriptor);

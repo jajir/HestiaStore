@@ -301,7 +301,7 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
     @Override
     public Stream<Entry<K, V>> getStream(SegmentWindow segmentWindow) {
         return executeWithRead(() -> {
-            indexState.tryPerformOperation();
+            getIndexState().tryPerformOperation();
             final EntryIterator<K, V> iterator = openSegmentIterator(
                     segmentWindow);
             final EntryIterator<K, V> synchronizedIterator = new EntryIteratorSynchronized<>(
