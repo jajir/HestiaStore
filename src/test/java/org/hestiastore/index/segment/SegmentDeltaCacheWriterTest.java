@@ -126,7 +126,7 @@ class SegmentDeltaCacheWriterTest {
     void close_writes_sorted_unique_entries_and_updates_properties() {
         final java.util.List<Entry<Integer, String>> written = new java.util.ArrayList<>();
         stubWriteTransactionToCaptureWrites(written);
-        when(propertiesManager.getAndIncreaseDeltaFileName())
+        when(propertiesManager.getNextDeltaFileName())
                 .thenReturn("delta-name");
 
         final SegmentDeltaCacheWriter<Integer, String> writer = newWriter(10);
@@ -144,6 +144,7 @@ class SegmentDeltaCacheWriterTest {
         assertEquals(Entry.of(5, "E2"), written.get(2));
 
         // properties updated by number of unique keys
+        verify(propertiesManager).incrementDeltaFileNameCounter();
         verify(propertiesManager).increaseNumberOfKeysInDeltaCache(3);
     }
 
@@ -156,6 +157,7 @@ class SegmentDeltaCacheWriterTest {
         assertTrue(writer.getNumberOfKeys() == 0);
         verify(propertiesManager, never()).increaseNumberOfKeysInDeltaCache(
                 anyInt());
+        verify(propertiesManager, never()).incrementDeltaFileNameCounter();
         verify(segmentFiles, never()).getDeltaCacheSortedDataFile(any());
     }
 

@@ -83,15 +83,16 @@ public final class SegmentDeltaCacheWriter<K, V>
         }
 
         // store cache
-        segmentFiles
-                .getDeltaCacheSortedDataFile(
-                        segmentPropertiesManager.getAndIncreaseDeltaFileName())
+        final String deltaFileName = segmentPropertiesManager
+                .getNextDeltaFileName();
+        segmentFiles.getDeltaCacheSortedDataFile(deltaFileName)
                 .openWriterTx().execute(writer -> {
                     for (final Entry<K, V> entry : uniqueCache
                             .getAsSortedList()) {
                         writer.write(entry);
                     }
                 });
+        segmentPropertiesManager.incrementDeltaFileNameCounter();
         // increase number of keys in cache
         final int keysInCache = uniqueCache.size();
         segmentPropertiesManager.increaseNumberOfKeysInDeltaCache(keysInCache);

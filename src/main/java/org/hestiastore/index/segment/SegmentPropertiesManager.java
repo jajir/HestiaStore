@@ -55,13 +55,22 @@ public class SegmentPropertiesManager {
     }
 
     public String getAndIncreaseDeltaFileName() {
+        final String nextName = getNextDeltaFileName();
+        incrementDeltaFileNameCounter();
+        return nextName;
+    }
+
+    public String getNextDeltaFileName() {
         final int counter = propertyStore.snapshot()
                 .getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);
-        final PropertyTransaction tx = propertyStore.beginTransaction();
-        tx.openPropertyWriter()
-                .setInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, counter + 1);
-        tx.close();
         return getDeltaString(counter);
+    }
+
+    public void incrementDeltaFileNameCounter() {
+        final int counter = propertyStore.snapshot()
+                .getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);
+        updateTransaction(writer -> writer.setInt(
+                NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, counter + 1));
     }
 
     private String getDeltaString(final int segmentCacheDeltaFileId) {
