@@ -516,7 +516,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         final SegmentDataSupplier<Integer, String> segmentDataSupplier = new SegmentDataSupplier<>(
                 segmentFiles, segmentConf, segmentPropertiesManager);
 
-        final SegmentResources<Integer, String> dataProvider = new SegmentResources<>(
+        final SegmentResourcesImpl<Integer, String> dataProvider = new SegmentResourcesImpl<>(
                 segmentDataSupplier);
 
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
@@ -525,7 +525,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withSegmentConf(segmentConf)//
                 .withSegmentFiles(segmentFiles)//
                 .withSegmentPropertiesManager(segmentPropertiesManager)//
-                .withSegmentDataProvider(dataProvider)//
+                .withSegmentResources(dataProvider)//
                 .withMaxNumberOfKeysInSegmentCache(13)//
                 .withMaxNumberOfKeysInSegmentChunk(3)//
                 .withKeyTypeDescriptor(tdi)//

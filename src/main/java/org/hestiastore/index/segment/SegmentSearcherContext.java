@@ -9,11 +9,11 @@ import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
  */
 final class SegmentSearcherContext<K, V> {
     private final K key;
-    private final SegmentDataProvider<K, V> segmentDataProvider;
+    private final SegmentResources<K, V> segmentDataProvider;
     private final SegmentIndexSearcher<K, V> segmentIndexSearcher;
 
     private SegmentSearcherContext(final K key,
-            final SegmentDataProvider<K, V> segmentDataProvider,
+            final SegmentResources<K, V> segmentDataProvider,
             final SegmentIndexSearcher<K, V> segmentIndexSearcher) {
         this.key = key;
         this.segmentDataProvider = segmentDataProvider;
@@ -21,7 +21,7 @@ final class SegmentSearcherContext<K, V> {
     }
 
     static <K, V> SegmentSearcherContext<K, V> of(final K key,
-            final SegmentDataProvider<K, V> segmentDataProvider,
+            final SegmentResources<K, V> segmentDataProvider,
             final SegmentIndexSearcher<K, V> segmentIndexSearcher) {
         return new SegmentSearcherContext<>(Vldtn.requireNonNull(key, "key"),
                 Vldtn.requireNonNull(segmentDataProvider,

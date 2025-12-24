@@ -38,7 +38,7 @@ public final class SegmentBuilder<K, V> {
     private VersionController versionController;
     private SegmentConf segmentConf;
     private SegmentFiles<K, V> segmentFiles;
-    private SegmentDataProvider<K, V> segmentDataProvider;
+    private SegmentResources<K, V> segmentResources;
     private int diskIoBufferSize = DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES;
     private SegmentPropertiesManager segmentPropertiesManager = null;
     private final List<ChunkFilter> encodingChunkFilters = new ArrayList<>();
@@ -226,15 +226,15 @@ public final class SegmentBuilder<K, V> {
     }
 
     /**
-     * Provide a {@link SegmentDataProvider}. When not provided it will be
-     * created during {@link #build()}.
+     * Provide a {@link SegmentResources}. When not provided it will be created
+     * during {@link #build()}.
      *
      * @param segmentDataProvider provider instance
      * @return this builder for chaining
      */
-    public SegmentBuilder<K, V> withSegmentDataProvider(
-            final SegmentDataProvider<K, V> segmentDataProvider) {
-        this.segmentDataProvider = segmentDataProvider;
+    public SegmentBuilder<K, V> withSegmentResources(
+            final SegmentResources<K, V> segmentDataProvider) {
+        this.segmentResources = segmentDataProvider;
         return this;
     }
 
@@ -348,17 +348,17 @@ public final class SegmentBuilder<K, V> {
             segmentPropertiesManager = new SegmentPropertiesManager(
                     segmentFiles.getDirectory(), id);
         }
-        if (segmentDataProvider == null) {
+        if (segmentResources == null) {
             final SegmentDataSupplier<K, V> segmentDataSupplier = new SegmentDataSupplier<>(
                     segmentFiles, segmentConf, segmentPropertiesManager);
-            segmentDataProvider = new SegmentResources<>(segmentDataSupplier);
+            segmentResources = new SegmentResourcesImpl<>(segmentDataSupplier);
         }
         final SegmentSearcher<K, V> segmentSearcher = new SegmentSearcher<K, V>(
                 segmentFiles.getValueTypeDescriptor());
-        final SegmentCompactionPolicyWithManager compactionPolicy =
-                SegmentCompactionPolicyWithManager.from(segmentConf, segmentPropertiesManager);
+        final SegmentCompactionPolicyWithManager compactionPolicy = SegmentCompactionPolicyWithManager
+                .from(segmentConf, segmentPropertiesManager);
         final SegmentDeltaCacheController<K, V> deltaCacheController = new SegmentDeltaCacheController<>(
-                segmentFiles, segmentPropertiesManager, segmentDataProvider,
+                segmentFiles, segmentPropertiesManager, segmentResources,
                 segmentConf.getMaxNumberOfKeysInDeltaCache());
         final SegmentSplitterPolicy<K, V> segmentSplitterPolicy = new SegmentSplitterPolicy<>(
                 segmentPropertiesManager, deltaCacheController);
@@ -368,7 +368,7 @@ public final class SegmentBuilder<K, V> {
                 new SegmentFilesRenamer(), deltaCacheController,
                 segmentPropertiesManager, segmentFiles);
         return new SegmentImpl<>(segmentFiles, segmentConf, versionController,
-                segmentPropertiesManager, segmentDataProvider,
+                segmentPropertiesManager, segmentResources,
                 deltaCacheController, segmentSearcher, compactionPolicy,
                 compacter, segmentReplacer, segmentSplitterPolicy);
     }

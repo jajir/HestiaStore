@@ -32,7 +32,7 @@ public class SegmentSearcher<K, V> extends AbstractCloseableResource {
     }
 
     public V get(final K key,
-            final SegmentDataProvider<K, V> segmentDataProvider,
+            final SegmentResources<K, V> segmentDataProvider,
             final SegmentIndexSearcher<K, V> segmentIndexSearcher) {
         final SegmentSearcherContext<K, V> ctx = SegmentSearcherContext.of(key,
                 segmentDataProvider, segmentIndexSearcher);

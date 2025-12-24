@@ -25,7 +25,7 @@ class SegmentSearcherStepDeltaCacheTest {
     @Mock
     private SegmentIndexSearcher<String, Long> indexSearcher;
     @Mock
-    private SegmentDataProvider<String, Long> segmentDataProvider;
+    private SegmentResources<String, Long> segmentDataProvider;
 
     private SegmentSearcherStepDeltaCache<String, Long> step;
 
