@@ -11,6 +11,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -18,22 +19,18 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
-import org.slf4j.MDC;
-
 public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
 
-    private static final String INDEX_NAME_MDC_KEY = "index.name";
     private static final int MIN_QUEUE_CAPACITY = 64;
     private static final int QUEUE_CAPACITY_MULTIPLIER = 64;
 
-    private final IndexLocks locks = new IndexLocks();
-    private final Lock readLock = locks.readLock();
-    private final Lock writeLock = locks.writeLock();
+    private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock(
+            true);
+    private final Lock readLock = rwLock.readLock();
+    private final Lock writeLock = rwLock.writeLock();
     private final ThreadPoolExecutor executor;
     private final ThreadLocal<Boolean> inExecutorThread = ThreadLocal
             .withInitial(() -> Boolean.FALSE);
-    private final boolean contextLoggingEnabled;
-    private final String indexName;
     private final AtomicBoolean closing = new AtomicBoolean(false);
 
     public IndexInternalSynchronized(final Directory directory,
@@ -50,27 +47,6 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
                 TimeUnit.MILLISECONDS,
                 new ArrayBlockingQueue<>(queueCapacity),
                 new ThreadPoolExecutor.CallerRunsPolicy());
-        this.contextLoggingEnabled = Boolean.TRUE
-                .equals(conf.isContextLoggingEnabled());
-        this.indexName = conf.getIndexName() == null ? "" : conf.getIndexName();
-    }
-
-    private void setContext() {
-        if (!contextLoggingEnabled) {
-            return;
-        }
-        MDC.put(INDEX_NAME_MDC_KEY, indexName);
-    }
-
-    private void restoreContext(final String previousValue) {
-        if (!contextLoggingEnabled) {
-            return;
-        }
-        if (previousValue == null) {
-            MDC.remove(INDEX_NAME_MDC_KEY);
-        } else {
-            MDC.put(INDEX_NAME_MDC_KEY, previousValue);
-        }
     }
 
     private boolean isRunningOnIndexExecutorThread() {
@@ -85,16 +61,11 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
 
     private <T> T executeWithLock(final Lock lock, final Callable<T> task)
             throws Exception {
-        final String previousIndexName = contextLoggingEnabled
-                ? MDC.get(INDEX_NAME_MDC_KEY)
-                : null;
-        setContext();
         lock.lock();
         try {
             return task.call();
         } finally {
             lock.unlock();
-            restoreContext(previousIndexName);
         }
     }
 
