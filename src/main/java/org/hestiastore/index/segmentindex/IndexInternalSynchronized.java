@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -10,24 +12,18 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
+
 public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
 
     private static final int MIN_QUEUE_CAPACITY = 64;
     private static final int QUEUE_CAPACITY_MULTIPLIER = 64;
 
-    private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock(
-            true);
-    private final Lock readLock = rwLock.readLock();
-    private final Lock writeLock = rwLock.writeLock();
     private final ThreadPoolExecutor executor;
     private final ThreadLocal<Boolean> inExecutorThread = ThreadLocal
             .withInitial(() -> Boolean.FALSE);
@@ -59,68 +55,17 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
         }
     }
 
-    private <T> T executeWithLock(final Lock lock, final Callable<T> task)
-            throws Exception {
-        lock.lock();
-        try {
-            return task.call();
-        } finally {
-            lock.unlock();
-        }
-    }
-
     private <T> T executeWithRead(final Callable<T> task) {
-        if (isRunningOnIndexExecutorThread()) {
-            try {
-                return executeWithLock(readLock, task);
-            } catch (final Exception e) {
-                if (e instanceof RuntimeException re) {
-                    throw re;
-                }
-                throw new IllegalStateException(
-                        "Operation failed: " + e.getMessage(), e);
-            }
-        }
-        ensureAcceptingTasks();
-        try {
-            return executor.submit(() -> {
-                final boolean previous = isRunningOnIndexExecutorThread();
-                inExecutorThread.set(Boolean.TRUE);
-                try {
-                    return executeWithLock(readLock, task);
-                } finally {
-                    inExecutorThread.set(previous);
-                }
-            }).get();
-        } catch (final RejectedExecutionException e) {
-            throw new IllegalStateException(
-                    "Operation rejected while index is closing.", e);
-        } catch (final InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException(
-                    "Operation interrupted while waiting for executor", e);
-        } catch (final ExecutionException e) {
-            final Throwable cause = e.getCause();
-            if (cause instanceof RuntimeException re) {
-                throw re;
-            }
-            throw new IllegalStateException(
-                    "Operation failed in executor: " + cause.getMessage(),
-                    cause);
-        }
+        return executeOnExecutor(task);
     }
 
     private <T> T executeWithWrite(final Callable<T> task) {
+        return executeOnExecutor(task);
+    }
+
+    private <T> T executeOnExecutor(final Callable<T> task) {
         if (isRunningOnIndexExecutorThread()) {
-            try {
-                return executeWithLock(writeLock, task);
-            } catch (final Exception e) {
-                if (e instanceof RuntimeException re) {
-                    throw re;
-                }
-                throw new IllegalStateException(
-                        "Operation failed: " + e.getMessage(), e);
-            }
+            return callUnchecked(task);
         }
         ensureAcceptingTasks();
         try {
@@ -128,7 +73,7 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
                 final boolean previous = isRunningOnIndexExecutorThread();
                 inExecutorThread.set(Boolean.TRUE);
                 try {
-                    return executeWithLock(writeLock, task);
+                    return task.call();
                 } finally {
                     inExecutorThread.set(previous);
                 }
@@ -148,11 +93,29 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
             throw new IllegalStateException(
                     "Operation failed in executor: " + cause.getMessage(),
                     cause);
+        } catch (final Exception e) {
+            if (e instanceof RuntimeException re) {
+                throw re;
+            }
+            throw new IllegalStateException(
+                    "Operation failed: " + e.getMessage(), e);
+        }
+    }
+
+    private <T> T callUnchecked(final Callable<T> task) {
+        try {
+            return task.call();
+        } catch (final Exception e) {
+            if (e instanceof RuntimeException re) {
+                throw re;
+            }
+            throw new IllegalStateException(
+                    "Operation failed: " + e.getMessage(), e);
         }
     }
 
     private <T> CompletionStage<T> submitAsync(final Executor executor,
-            final Lock lock, final Callable<T> task) {
+            final Callable<T> task) {
         final CompletableFuture<T> future = new CompletableFuture<>();
         if (closing.get() || this.executor.isShutdown()) {
             future.completeExceptionally(
@@ -164,7 +127,7 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
                 final boolean previous = isRunningOnIndexExecutorThread();
                 inExecutorThread.set(Boolean.TRUE);
                 try {
-                    future.complete(executeWithLock(lock, task));
+                    future.complete(task.call());
                 } catch (final Throwable t) {
                     future.completeExceptionally(t);
                 } finally {
@@ -186,18 +149,7 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
         closing.set(true);
         executor.shutdown();
         awaitExecutorTermination();
-        try {
-            executeWithLock(writeLock, () -> {
-                super.doClose();
-                return null;
-            });
-        } catch (final Exception e) {
-            if (e instanceof RuntimeException re) {
-                throw re;
-            }
-            throw new IllegalStateException(
-                    "Failed to close index: " + e.getMessage(), e);
-        }
+        super.doClose();
     }
 
     private void awaitExecutorTermination() {
@@ -240,7 +192,7 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
 
     @Override
     public CompletionStage<Void> putAsync(final K key, final V value) {
-        return submitAsync(executor, writeLock, () -> {
+        return submitAsync(executor, () -> {
             super.put(key, value);
             return null;
         });
@@ -248,12 +200,12 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
 
     @Override
     public CompletionStage<V> getAsync(final K key) {
-        return submitAsync(executor, readLock, () -> super.get(key));
+        return submitAsync(executor, () -> super.get(key));
     }
 
     @Override
     public CompletionStage<Void> deleteAsync(final K key) {
-        return submitAsync(executor, writeLock, () -> {
+        return submitAsync(executor, () -> {
             super.delete(key);
             return null;
         });
@@ -269,18 +221,21 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
 
     @Override
     public Stream<Entry<K, V>> getStream(SegmentWindow segmentWindow) {
-        return executeWithRead(() -> {
+        final List<Entry<K, V>> snapshot = executeWithRead(() -> {
             getIndexState().tryPerformOperation();
             final EntryIterator<K, V> iterator = openSegmentIterator(
                     segmentWindow);
-            final EntryIterator<K, V> synchronizedIterator = new EntryIteratorSynchronized<>(
-                    iterator, readLock);
-            final EntryIteratorToSpliterator<K, V> spliterator = new EntryIteratorToSpliterator<K, V>(
-                    synchronizedIterator, keyTypeDescriptor);
-            return StreamSupport.stream(spliterator, false).onClose(() -> {
+            try {
+                final List<Entry<K, V>> out = new ArrayList<>();
+                while (iterator.hasNext()) {
+                    out.add(iterator.next());
+                }
+                return out;
+            } finally {
                 iterator.close();
-            });
+            }
         });
+        return snapshot.stream();
     }
 
     @Override
