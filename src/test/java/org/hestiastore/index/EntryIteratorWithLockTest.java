@@ -65,8 +65,7 @@ class EntryIteratorWithLockTest {
         });
 
         assertEquals(
-                "Unable to move to next element in iterator"
-                        + " 'segment-00027' because it's locked.",
+                "Iterator for 'segment-00027' was invalidated by a concurrent write.",
                 e.getMessage());
     }
 
