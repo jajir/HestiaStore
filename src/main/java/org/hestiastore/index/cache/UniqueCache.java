@@ -44,7 +44,8 @@ public class UniqueCache<K, V> {
      * 
      * @param keyComparator required comparator for keys
      */
-    public UniqueCache(final Comparator<K> keyComparator, int initialCapacity) {
+    protected UniqueCache(final Comparator<K> keyComparator,
+            int initialCapacity) {
         this(keyComparator, initialCapacity, NOOP_LOCK, NOOP_LOCK);
     }
 

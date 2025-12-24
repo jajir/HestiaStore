@@ -31,7 +31,13 @@ public final class SegmentDeltaCache<K, V> {
         this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
         this.cache = UniqueCache.<K, V>builder()
                 .withKeyComparator(keyTypeDescriptor.getComparator())
-                .withDataFile(segmentFiles.getCacheDataFile()).build();
+                .buildEmpty();
+        try (EntryIterator<K, V> iterator = segmentFiles.getCacheDataFile()
+                .openIterator()) {
+            while (iterator.hasNext()) {
+                cache.put(iterator.next());
+            }
+        }
         segmentPropertiesManager.getCacheDeltaFileNames()
                 .forEach(segmentDeltaFileName -> loadDataFromSegmentDeltaFile(
                         segmentFiles, segmentDeltaFileName));

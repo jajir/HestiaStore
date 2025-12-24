@@ -23,7 +23,10 @@ class UniqueCacheTest {
 
     @BeforeEach
     void setup() {
-        cache = new UniqueCache<>((i1, i2) -> i1 - i2, 100);
+        cache = UniqueCache.<Integer, String>builder()
+                .withKeyComparator((i1, i2) -> i1 - i2)
+                .withInitialCapacity(100)
+                .buildEmpty();
     }
 
     @AfterEach
@@ -96,7 +99,9 @@ class UniqueCacheTest {
     @Test
     void test_constructor_null_comparator_throws() {
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> new UniqueCache<Integer, String>(null, 100));
+                () -> UniqueCache.<Integer, String>builder()
+                        .withKeyComparator(null)
+                        .buildEmpty());
         assertEquals("Property 'keyComparator' must not be null.",
                 e.getMessage());
     }
@@ -146,8 +151,12 @@ class UniqueCacheTest {
 
     @Test
     void test_threadSafe_cache_handles_concurrent_updates() throws Exception {
-        final UniqueCache<Integer, String> threadSafe = new UniqueCacheSynchronizenizedAdapter<>(
-                new UniqueCache<>(Integer::compareTo, 16));
+        final UniqueCache<Integer, String> threadSafe = UniqueCache
+                .<Integer, String>builder()
+                .withKeyComparator(Integer::compareTo)
+                .withInitialCapacity(16)
+                .withThreadSafe(true)
+                .buildEmpty();
         final int threads = 6;
         final int perThread = 200;
         final ExecutorService executor = Executors.newFixedThreadPool(threads);

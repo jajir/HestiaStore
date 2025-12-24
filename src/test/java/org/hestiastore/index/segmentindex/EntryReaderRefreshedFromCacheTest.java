@@ -33,6 +33,9 @@ class EntryReaderRefreshedFromCacheTest {
     @Mock
     private UniqueCache<Integer, String> cache;
 
+    @Mock
+    private UniqueCache<Integer, String> flushingCache;
+
     @Test
     void test_get_from_entryIterator_and_not_in_cache() {
         when(entryIterator.hasNext()).thenReturn(true, false);
@@ -76,6 +79,35 @@ class EntryReaderRefreshedFromCacheTest {
 
             assertTrue(iterator.hasNext());
             assertEquals(Entry.of(2, "eee"), iterator.next());
+        }
+    }
+
+    @Test
+    void test_get_from_entryIterator_and_updated_in_flushing_cache() {
+        when(entryIterator.hasNext()).thenReturn(true);
+        when(entryIterator.next()).thenReturn(ENTRY1);
+        when(cache.get(2)).thenReturn(null);
+        when(flushingCache.get(2)).thenReturn("eee");
+
+        try (final EntryIteratorRefreshedFromCache<Integer, String> iterator = new EntryIteratorRefreshedFromCache<>(
+                entryIterator, cache, flushingCache, STRING_TD)) {
+
+            assertTrue(iterator.hasNext());
+            assertEquals(Entry.of(2, "eee"), iterator.next());
+        }
+    }
+
+    @Test
+    void test_active_cache_wins_over_flushing_cache() {
+        when(entryIterator.hasNext()).thenReturn(true);
+        when(entryIterator.next()).thenReturn(ENTRY1);
+        when(cache.get(2)).thenReturn("active");
+
+        try (final EntryIteratorRefreshedFromCache<Integer, String> iterator = new EntryIteratorRefreshedFromCache<>(
+                entryIterator, cache, flushingCache, STRING_TD)) {
+
+            assertTrue(iterator.hasNext());
+            assertEquals(Entry.of(2, "active"), iterator.next());
         }
     }
 

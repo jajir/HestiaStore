@@ -90,17 +90,13 @@ class UniqueCacheBuilderTest {
     }
 
     @Test
-    void test_build_empty_dataFile_throws() {
-        final EntryIteratorWithCurrent<Integer, String> iterator = new EntryIteratorList<>(
-                List.of());
-        when(sdf.openIterator()).thenReturn(iterator);
+    void test_buildEmpty_with_empty_dataFile_returns_empty_cache() {
+        final UniqueCache<Integer, String> cache = UniqueCache
+                .<Integer, String>builder()
+                .withKeyComparator(Integer::compareTo)
+                .buildEmpty();
 
-        final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> UniqueCache.<Integer, String>builder()
-                        .withKeyComparator(Integer::compareTo)
-                        .withDataFile(sdf)
-                        .build());
-        assertEquals("Property 'sdf' must not be empty.", e.getMessage());
+        assertEquals(0, cache.size());
     }
 
     @Test

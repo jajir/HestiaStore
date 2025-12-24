@@ -14,14 +14,23 @@ public class EntryIteratorRefreshedFromCache<K, V>
 
     private final EntryIterator<K, V> entryIterator;
     private final UniqueCache<K, V> cache;
+    private final UniqueCache<K, V> flushingCache;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private Entry<K, V> currentEntry = null;
 
     EntryIteratorRefreshedFromCache(final EntryIterator<K, V> entryIterator,
             final UniqueCache<K, V> cache,
             final TypeDescriptor<V> valueTypeDescriptor) {
+        this(entryIterator, cache, null, valueTypeDescriptor);
+    }
+
+    EntryIteratorRefreshedFromCache(final EntryIterator<K, V> entryIterator,
+            final UniqueCache<K, V> cache,
+            final UniqueCache<K, V> flushingCache,
+            final TypeDescriptor<V> valueTypeDescriptor) {
         this.entryIterator = Vldtn.requireNonNull(entryIterator, "entryIterator");
         this.cache = Vldtn.requireNonNull(cache, "cache");
+        this.flushingCache = flushingCache;
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
         currentEntry = readNext();
@@ -53,7 +62,7 @@ public class EntryIteratorRefreshedFromCache<K, V>
                 return null;
             }
             final Entry<K, V> entry = entryIterator.next();
-            final V value = cache.get(entry.getKey());
+            final V value = getCachedValue(entry.getKey());
             if (value == null) {
                 return entry;
             }
@@ -61,6 +70,17 @@ public class EntryIteratorRefreshedFromCache<K, V>
                 return Entry.of(entry.getKey(), value);
             }
         }
+    }
+
+    private V getCachedValue(final K key) {
+        final V value = cache.get(key);
+        if (value != null) {
+            return value;
+        }
+        if (flushingCache == null) {
+            return null;
+        }
+        return flushingCache.get(key);
     }
 
 }
