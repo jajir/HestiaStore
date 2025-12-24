@@ -9,11 +9,11 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentConf;
 import org.hestiastore.index.segment.SegmentDataProvider;
-import org.hestiastore.index.segment.SegmentDataProviderLazyLoaded;
 import org.hestiastore.index.segment.SegmentDataSupplier;
 import org.hestiastore.index.segment.SegmentFiles;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentPropertiesManager;
+import org.hestiastore.index.segment.SegmentResources;
 import org.hestiastore.index.segment.SegmentSynchronizationAdapter;
 
 public class SegmentRegistry<K, V> {
@@ -71,7 +71,7 @@ public class SegmentRegistry<K, V> {
         final SegmentDataSupplier<K, V> segmentDataSupplier = new SegmentDataSupplier<>(
                 segmentFiles, segmentConf, segmentPropertiesManager);
 
-        final SegmentDataProvider<K, V> dataProvider = new SegmentDataProviderLazyLoaded<>(
+        final SegmentDataProvider<K, V> dataProvider = new SegmentResources<>(
                 segmentDataSupplier);
 
         final Segment<K, V> segment = Segment.<K, V>builder()
