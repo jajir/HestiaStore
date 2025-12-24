@@ -1,7 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
-import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -31,6 +31,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final SegmentSplitCoordinator<K, V> segmentSplitCoordinator;
     private final Stats stats = new Stats();
     private volatile IndexState<K, V> indexState;
+    private final ReentrantLock flushLock = new ReentrantLock();
 
     protected SegmentIndexImpl(final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor,
@@ -123,33 +124,36 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     }
 
     protected void flushCache() {
-        final List<Entry<K, V>> snapshot = cache.snapshotAndClear();
-        if (logger.isDebugEnabled()) {
-            logger.debug(
-                    "Cache compacting of '{}' key value entries in cache started.",
-                    F.fmt(snapshot.size()));
-        }
-        if (snapshot.size() > 1) {
-            snapshot.sort(Comparator.comparing(Entry::getKey,
-                    keyTypeDescriptor.getComparator()));
-        }
-        final CompactSupport<K, V> support = new CompactSupport<>(
-                segmentRegistry, keySegmentCache,
-                keyTypeDescriptor.getComparator());
-        snapshot.forEach(support::compact);
-        support.flush();
-        final List<SegmentId> segmentIds = support.getEligibleSegmentIds();
-        for (final SegmentId segmentId : segmentIds) {
-            final Segment<K, V> segment = segmentRegistry.getSegment(segmentId);
-            if (segmentSplitCoordinator.shouldBeSplit(segment)) {
-                segmentSplitCoordinator.optionallySplit(segment);
+        flushLock.lock();
+        try {
+            final List<Entry<K, V>> snapshot = cache.getAsSortedList();
+            if (logger.isDebugEnabled()) {
+                logger.debug(
+                        "Cache compacting of '{}' key value entries in cache started.",
+                        F.fmt(snapshot.size()));
             }
-        }
-        keySegmentCache.optionalyFlush();
-        if (logger.isDebugEnabled()) {
-            logger.debug(
-                    "Cache compacting is done. Cache contains '{}' key value entries.",
-                    F.fmt(cache.size()));
+            final CompactSupport<K, V> support = new CompactSupport<>(
+                    segmentRegistry, keySegmentCache,
+                    keyTypeDescriptor.getComparator());
+            snapshot.forEach(support::compact);
+            support.flush();
+            final List<SegmentId> segmentIds = support.getEligibleSegmentIds();
+            for (final SegmentId segmentId : segmentIds) {
+                final Segment<K, V> segment = segmentRegistry
+                        .getSegment(segmentId);
+                if (segmentSplitCoordinator.shouldBeSplit(segment)) {
+                    segmentSplitCoordinator.optionallySplit(segment);
+                }
+            }
+            cache.clear();
+            keySegmentCache.optionalyFlush();
+            if (logger.isDebugEnabled()) {
+                logger.debug(
+                        "Cache compacting is done. Cache contains '{}' key value entries.",
+                        F.fmt(cache.size()));
+            }
+        } finally {
+            flushLock.unlock();
         }
     }
 

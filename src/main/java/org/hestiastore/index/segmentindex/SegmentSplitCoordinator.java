@@ -35,11 +35,14 @@ public class SegmentSplitCoordinator<K, V> {
      * @param segment required simple data file
      * @return
      */
-    public void optionallySplit(final Segment<K, V> segment) {
+    void optionallySplit(final Segment<K, V> segment) {
         Vldtn.requireNonNull(segment, "segment");
-        final SegmentSplitter<K, V> segmentSplitter = segment.getSegmentSplitter();
-        final SegmentSplitterPolicy<K, V> policy = segment.getSegmentSplitterPolicy();
-        final long maxNumberOfKeysInSegment = conf.getMaxNumberOfKeysInSegment();
+        final SegmentSplitter<K, V> segmentSplitter = segment
+                .getSegmentSplitter();
+        final SegmentSplitterPolicy<K, V> policy = segment
+                .getSegmentSplitterPolicy();
+        final long maxNumberOfKeysInSegment = conf
+                .getMaxNumberOfKeysInSegment();
         SegmentSplitterPlan<K, V> plan = SegmentSplitterPlan.fromPolicy(policy);
         if (plan.getEstimatedNumberOfKeys() < maxNumberOfKeysInSegment) {
             return;
