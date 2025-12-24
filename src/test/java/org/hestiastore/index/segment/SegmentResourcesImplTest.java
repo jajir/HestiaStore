@@ -18,7 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class SegmentResourcesTest {
+class SegmentResourcesImplTest {
 
     @Mock
     private SegmentDataSupplier<Integer, String> segmentDataSupplier;
@@ -38,12 +38,12 @@ class SegmentResourcesTest {
     @Test
     void constructorRejectsNullSupplier() {
         assertThrows(IllegalArgumentException.class,
-                () -> new SegmentResources<>(null));
+                () -> new SegmentResourcesImpl<>(null));
     }
 
     @Test
     void isLoadedTogglesOnAccessAndInvalidate() {
-        final SegmentResources<Integer, String> resources = new SegmentResources<>(
+        final SegmentResourcesImpl<Integer, String> resources = new SegmentResourcesImpl<>(
                 segmentDataSupplier);
         when(segmentDataSupplier.getSegmentDeltaCache()).thenReturn(deltaCache);
 
@@ -57,7 +57,7 @@ class SegmentResourcesTest {
 
     @Test
     void invalidateWithoutLoadDoesNotTouchSupplier() {
-        final SegmentResources<Integer, String> resources = new SegmentResources<>(
+        final SegmentResourcesImpl<Integer, String> resources = new SegmentResourcesImpl<>(
                 segmentDataSupplier);
 
         resources.invalidate();
@@ -68,7 +68,7 @@ class SegmentResourcesTest {
 
     @Test
     void loadsResourcesLazilyAndCachesInstances() {
-        final SegmentResources<Integer, String> resources = new SegmentResources<>(
+        final SegmentResourcesImpl<Integer, String> resources = new SegmentResourcesImpl<>(
                 segmentDataSupplier);
         when(segmentDataSupplier.getSegmentDeltaCache()).thenReturn(deltaCache);
         when(segmentDataSupplier.getBloomFilter()).thenReturn(bloomFilter);
@@ -88,7 +88,7 @@ class SegmentResourcesTest {
 
     @Test
     void invalidateClosesAndEvictsLoadedResources() {
-        final SegmentResources<Integer, String> resources = new SegmentResources<>(
+        final SegmentResourcesImpl<Integer, String> resources = new SegmentResourcesImpl<>(
                 segmentDataSupplier);
         when(segmentDataSupplier.getSegmentDeltaCache()).thenReturn(deltaCache);
         when(segmentDataSupplier.getBloomFilter()).thenReturn(bloomFilter);
@@ -105,7 +105,7 @@ class SegmentResourcesTest {
 
     @Test
     void invalidateDoesNotTouchUnloadedResources() {
-        final SegmentResources<Integer, String> resources = new SegmentResources<>(
+        final SegmentResourcesImpl<Integer, String> resources = new SegmentResourcesImpl<>(
                 segmentDataSupplier);
         when(segmentDataSupplier.getBloomFilter()).thenReturn(bloomFilter);
 
@@ -121,7 +121,7 @@ class SegmentResourcesTest {
 
     @Test
     void reloadsResourcesAfterInvalidation() {
-        final SegmentResources<Integer, String> resources = new SegmentResources<>(
+        final SegmentResourcesImpl<Integer, String> resources = new SegmentResourcesImpl<>(
                 segmentDataSupplier);
         when(segmentDataSupplier.getSegmentDeltaCache())
                 .thenReturn(deltaCache, deltaCacheSecond);

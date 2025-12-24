@@ -38,7 +38,7 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     private final SegmentCompacter<K, V> segmentCompacter;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
     private final SegmentSearcher<K, V> segmentSearcher;
-    private final SegmentDataProvider<K, V> segmentDataProvider;
+    private final SegmentResources<K, V> segmentResources;
     private final SegmentSplitter<K, V> segmentSplitter;
     private final SegmentSplitterPolicy<K, V> segmentSplitterPolicy;
     private final SegmentCompactionPolicyWithManager segmentCompactionPolicy;
@@ -55,7 +55,7 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
             final SegmentConf segmentConf,
             final VersionController versionController,
             final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentDataProvider<K, V> segmentDataProvider,
+            final SegmentResources<K, V> segmentResources,
             final SegmentDeltaCacheController<K, V> segmentDeltaCacheController,
             final SegmentSearcher<K, V> segmentSearcher,
             final SegmentCompactionPolicyWithManager segmentCompactionPolicy,
@@ -67,8 +67,8 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
         logger.debug("Initializing segment '{}'", segmentFiles.getId());
         this.versionController = Vldtn.requireNonNull(versionController,
                 "versionController");
-        this.segmentDataProvider = Vldtn.requireNonNull(segmentDataProvider,
-                "segmentDataProvider");
+        this.segmentResources = Vldtn.requireNonNull(segmentResources,
+                "segmentResources");
         this.segmentPropertiesManager = Vldtn.requireNonNull(
                 segmentPropertiesManager, "segmentPropertiesManager");
         this.deltaCacheController = Vldtn.requireNonNull(
@@ -140,7 +140,7 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
 
     WriteTransaction<K, V> openFullWriteTx() {
         return new SegmentFullWriterTx<>(segmentFiles, segmentPropertiesManager,
-                segmentConf.getMaxNumberOfKeysInChunk(), segmentDataProvider,
+                segmentConf.getMaxNumberOfKeysInChunk(), segmentResources,
                 deltaCacheController);
     }
 
@@ -160,7 +160,7 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
 
     @Override
     public V get(final K key) {
-        return segmentSearcher.get(key, segmentDataProvider,
+        return segmentSearcher.get(key, segmentResources,
                 getSegmentIndexSearcher());
     }
 

@@ -38,7 +38,7 @@ public class SegmentFullWriter<K, V> extends AbstractCloseableResource
     private Entry<K, V> lastPair = null;
 
     SegmentFullWriter(final int maxNumberOfKeysInIndexPage,
-            final SegmentDataProvider<K, V> segmentCacheDataProvider,
+            final SegmentResources<K, V> segmentCacheDataProvider,
             final ChunkEntryFileWriter<K, V> chunkPairFileWriter,
             final EntryWriter<K, Integer> scarceWriter) {
         this.maxNumberOfKeysInIndexPage = Vldtn.requireNonNull(

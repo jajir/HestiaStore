@@ -25,7 +25,7 @@ public final class SegmentDeltaCacheWriter<K, V>
 
     private final SegmentPropertiesManager segmentPropertiesManager;
     private final SegmentFiles<K, V> segmentFiles;
-    private final SegmentDataProvider<K, V> segmentCacheDataProvider;
+    private final SegmentResources<K, V> segmentCacheDataProvider;
 
     /**
      * How many keys was added to delta cache.
@@ -52,7 +52,7 @@ public final class SegmentDeltaCacheWriter<K, V>
      */
     public SegmentDeltaCacheWriter(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentDataProvider<K, V> segmentCacheDataProvider,
+            final SegmentResources<K, V> segmentCacheDataProvider,
             final int maxNumberOfKeysInSegmentDeltaCache) {
         this.segmentPropertiesManager = Vldtn.requireNonNull(
                 segmentPropertiesManager, "segmentPropertiesManager");

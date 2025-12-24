@@ -33,7 +33,7 @@ public class SegmentSearcherTest {
     private ScarceSegmentIndex<String> scarceIndex;
 
     @Mock
-    private SegmentDataProvider<String, Long> segmentDataProvider;
+    private SegmentResources<String, Long> segmentDataProvider;
 
     SegmentSearcher<String, Long> segmentSearcher;
 

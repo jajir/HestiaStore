@@ -1,76 +1,37 @@
 package org.hestiastore.index.segment;
 
-import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilter;
 import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 
 /**
- * Lazily loads and caches heavyweight segment resources such as the delta
- * cache, Bloom filter, and scarce index. Call {@link #invalidate()} to drop
- * the cached instances so the next access rebuilds them.
+ * Provide access to main data object that are considerably large in memory.
+ * Implementations use some sort of cache to minimize memory impact.
+ * 
+ * @author honza
  *
- * @param <K> key type
- * @param <V> value type
+ * @param <K>
+ * @param <V>
  */
-public final class SegmentResources<K, V>
-        implements SegmentDataProvider<K, V> {
+public interface SegmentResources<K, V> {
 
-    private final SegmentDataSupplier<K, V> segmentDataSupplier;
-    private SegmentDeltaCache<K, V> deltaCache;
-    private BloomFilter<K> bloomFilter;
-    private ScarceSegmentIndex<K> scarceIndex;
-    private boolean loaded;
+    /**
+     * Provide information if data are loaded into memory.
+     * 
+     * @return
+     */
+    boolean isLoaded();
 
-    public SegmentResources(final SegmentDataSupplier<K, V> segmentDataSupplier) {
-        this.segmentDataSupplier = Vldtn.requireNonNull(segmentDataSupplier,
-                "segmentDataSupplier");
-    }
+    SegmentDeltaCache<K, V> getSegmentDeltaCache();
 
-    @Override
-    public boolean isLoaded() {
-        return loaded;
-    }
+    BloomFilter<K> getBloomFilter();
 
-    @Override
-    public SegmentDeltaCache<K, V> getSegmentDeltaCache() {
-        loaded = true;
-        if (deltaCache == null) {
-            deltaCache = segmentDataSupplier.getSegmentDeltaCache();
-        }
-        return deltaCache;
-    }
+    ScarceSegmentIndex<K> getScarceIndex();
 
-    @Override
-    public BloomFilter<K> getBloomFilter() {
-        loaded = true;
-        if (bloomFilter == null) {
-            bloomFilter = segmentDataSupplier.getBloomFilter();
-        }
-        return bloomFilter;
-    }
-
-    @Override
-    public ScarceSegmentIndex<K> getScarceIndex() {
-        loaded = true;
-        if (scarceIndex == null) {
-            scarceIndex = segmentDataSupplier.getScarceIndex();
-        }
-        return scarceIndex;
-    }
-
-    @Override
-    public void invalidate() {
-        if (bloomFilter != null) {
-            bloomFilter.close();
-            bloomFilter = null;
-        }
-        if (deltaCache != null) {
-            deltaCache.evictAll();
-            deltaCache = null;
-        }
-        if (scarceIndex != null) {
-            scarceIndex = null;
-        }
-        loaded = false;
-    }
+    /**
+     * Invalidate object in memory. Could be used in both scenarios: to free
+     * some memory of to evict obsolete data.
+     *
+     * internally it will close all resources.
+     */
+    void invalidate();
 }

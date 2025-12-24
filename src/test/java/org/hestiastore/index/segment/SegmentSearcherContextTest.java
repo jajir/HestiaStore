@@ -18,7 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class SegmentSearcherContextTest {
 
     @Mock
-    private SegmentDataProvider<String, Long> dataProvider;
+    private SegmentResources<String, Long> dataProvider;
     @Mock
     private SegmentDeltaCache<String, Long> deltaCache;
     @Mock
