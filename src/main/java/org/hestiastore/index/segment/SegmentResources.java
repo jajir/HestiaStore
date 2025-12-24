@@ -1,36 +1,39 @@
 package org.hestiastore.index.segment;
 
-import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilter;
 import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 
 /**
- * Provide cached lazy loaded instances of segment data objects.
- * 
- * @author honza
+ * Lazily loads and caches heavyweight segment resources such as the delta
+ * cache, Bloom filter, and scarce index. Call {@link #invalidate()} to drop
+ * the cached instances so the next access rebuilds them.
  *
- * @param <K>
- * @param <V>
+ * @param <K> key type
+ * @param <V> value type
  */
-public final class SegmentDataLazyLoaded<K, V>
-        extends AbstractCloseableResource implements SegmentData<K, V> {
+public final class SegmentResources<K, V>
+        implements SegmentDataProvider<K, V> {
 
     private final SegmentDataSupplier<K, V> segmentDataSupplier;
-
     private SegmentDeltaCache<K, V> deltaCache;
     private BloomFilter<K> bloomFilter;
     private ScarceSegmentIndex<K> scarceIndex;
+    private boolean loaded;
 
-    public SegmentDataLazyLoaded(
-            final SegmentDataSupplier<K, V> segmentDataSupplier) {
+    public SegmentResources(final SegmentDataSupplier<K, V> segmentDataSupplier) {
         this.segmentDataSupplier = Vldtn.requireNonNull(segmentDataSupplier,
                 "segmentDataSupplier");
     }
 
     @Override
+    public boolean isLoaded() {
+        return loaded;
+    }
+
+    @Override
     public SegmentDeltaCache<K, V> getSegmentDeltaCache() {
-        requireOpen();
+        loaded = true;
         if (deltaCache == null) {
             deltaCache = segmentDataSupplier.getSegmentDeltaCache();
         }
@@ -39,7 +42,7 @@ public final class SegmentDataLazyLoaded<K, V>
 
     @Override
     public BloomFilter<K> getBloomFilter() {
-        requireOpen();
+        loaded = true;
         if (bloomFilter == null) {
             bloomFilter = segmentDataSupplier.getBloomFilter();
         }
@@ -48,7 +51,7 @@ public final class SegmentDataLazyLoaded<K, V>
 
     @Override
     public ScarceSegmentIndex<K> getScarceIndex() {
-        requireOpen();
+        loaded = true;
         if (scarceIndex == null) {
             scarceIndex = segmentDataSupplier.getScarceIndex();
         }
@@ -56,7 +59,7 @@ public final class SegmentDataLazyLoaded<K, V>
     }
 
     @Override
-    protected void doClose() {
+    public void invalidate() {
         if (bloomFilter != null) {
             bloomFilter.close();
             bloomFilter = null;
@@ -68,14 +71,6 @@ public final class SegmentDataLazyLoaded<K, V>
         if (scarceIndex != null) {
             scarceIndex = null;
         }
-
+        loaded = false;
     }
-
-    private void requireOpen() {
-        if (wasClosed()) {
-            throw new IllegalStateException(
-                    "SegmentDataLazyLoaded is already closed");
-        }
-    }
-
 }
