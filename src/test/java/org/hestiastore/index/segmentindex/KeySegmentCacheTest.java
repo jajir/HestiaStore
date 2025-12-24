@@ -35,9 +35,8 @@ class KeySegmentCacheTest {
 
     @Test
     void findNewSegmentIdBridgesGaps() {
-        final KeySegmentCache<Integer> cache = newCacheWithEntries(
-                List.of(Entry.of(5, SegmentId.of(1)),
-                        Entry.of(6, SegmentId.of(3))));
+        final KeySegmentCache<Integer> cache = newCacheWithEntries(List.of(
+                Entry.of(5, SegmentId.of(1)), Entry.of(6, SegmentId.of(3))));
         assertEquals(SegmentId.of(4), cache.findNewSegmentId());
     }
 
@@ -66,6 +65,7 @@ class KeySegmentCacheTest {
 
         assertEquals(List.of(SegmentId.of(0), SegmentId.of(1)),
                 cache.getSegmentIds());
+        adapter.close();
     }
 
     @Test
@@ -89,8 +89,7 @@ class KeySegmentCacheTest {
                         start.await();
                         for (int i = 0; i < perThread; i++) {
                             final int value = base + i;
-                            adapter.insertSegment(value,
-                                    SegmentId.of(value));
+                            adapter.insertSegment(value, SegmentId.of(value));
                         }
                     } catch (final InterruptedException e) {
                         Thread.currentThread().interrupt();
@@ -109,6 +108,7 @@ class KeySegmentCacheTest {
             executor.shutdownNow();
         }
 
+        adapter.close();
         assertEquals(threads * perThread, adapter.getSegmentIds().size());
     }
 
@@ -123,9 +123,10 @@ class KeySegmentCacheTest {
                 .withValueTypeDescriptor(new TypeDescriptorSegmentId())//
                 .build();
         // seed file contents
-        sdf.openWriterTx().execute(writer -> entries.stream()
-                .sorted((e1, e2) -> Integer.compare(e1.getKey(), e2.getKey()))
-                .forEach(writer::write));
+        sdf.openWriterTx()
+                .execute(writer -> entries.stream().sorted(
+                        (e1, e2) -> Integer.compare(e1.getKey(), e2.getKey()))
+                        .forEach(writer::write));
         return new KeySegmentCache<>(dir, new TypeDescriptorInteger());
     }
 }

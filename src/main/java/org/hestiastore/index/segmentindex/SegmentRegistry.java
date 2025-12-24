@@ -24,21 +24,16 @@ public class SegmentRegistry<K, V> {
     private final Directory directory;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
-    private final SegmentDataCache<K, V> segmentDataCache;
-
     SegmentRegistry(final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
-            final IndexConfiguration<K, V> conf,
-            final SegmentDataCache<K, V> segmentDataCache) {
+            final IndexConfiguration<K, V> conf) {
         this.directory = Vldtn.requireNonNull(directory, "directory");
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
                 "keyTypeDescriptor");
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
         this.conf = Vldtn.requireNonNull(conf, "conf");
-        this.segmentDataCache = Vldtn.requireNonNull(segmentDataCache,
-                "segmentDataCache");
     }
 
     public Segment<K, V> getSegment(final SegmentId segmentId) {
@@ -105,7 +100,6 @@ public class SegmentRegistry<K, V> {
     }
 
     public void close() {
-        segmentDataCache.invalidateAll();
     }
 
 }

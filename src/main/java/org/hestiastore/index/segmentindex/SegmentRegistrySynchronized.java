@@ -18,10 +18,8 @@ class SegmentRegistrySynchronized<K, V> extends SegmentRegistry<K, V> {
     SegmentRegistrySynchronized(final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
-            final IndexConfiguration<K, V> conf,
-            final SegmentDataCache<K, V> segmentDataCache) {
-        super(directory, keyTypeDescriptor, valueTypeDescriptor, conf,
-                segmentDataCache);
+            final IndexConfiguration<K, V> conf) {
+        super(directory, keyTypeDescriptor, valueTypeDescriptor, conf);
     }
 
     @Override
@@ -44,4 +42,3 @@ class SegmentRegistrySynchronized<K, V> extends SegmentRegistry<K, V> {
         }
     }
 }
-
