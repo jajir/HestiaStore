@@ -2,7 +2,6 @@ package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,7 +58,7 @@ class SegmentIndexImplFlushTest {
     }
 
     @Test
-    void flushUsesSnapshotThenClearsCache() throws Exception {
+    void flushUsesSnapshotThenClearsCache() {
         final IndexConfiguration<Integer, String> conf = buildConfWithCacheLimit(
                 4);
         final IndexInternalDefault<Integer, String> index = new IndexInternalDefault<>(
@@ -118,16 +117,10 @@ class SegmentIndexImplFlushTest {
         }
     }
 
-    private static void replaceActiveCache(final SegmentIndexImpl<?, ?> index,
-            final UniqueCache<?, ?> cache) throws Exception {
-        final Field activeCacheField = SegmentIndexImpl.class
-                .getDeclaredField("activeCache");
-        activeCacheField.setAccessible(true);
-        activeCacheField.set(index, cache);
-        final Field flushingCacheField = SegmentIndexImpl.class
-                .getDeclaredField("flushingCache");
-        flushingCacheField.setAccessible(true);
-        flushingCacheField.set(index, null);
+    private static void replaceActiveCache(
+            final SegmentIndexImpl<Integer, String> index,
+            final UniqueCache<Integer, String> cache) {
+        index.replaceActiveCacheForTest(cache);
     }
 
     private static final class ObservingCache

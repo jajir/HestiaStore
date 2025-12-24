@@ -1,6 +1,5 @@
 package org.hestiastore.index.segmentindex;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.CompletableFuture;
@@ -12,7 +11,6 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.F;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.UniqueCache;
-import org.hestiastore.index.cache.UniqueCacheBuilder;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.Segment;
@@ -27,10 +25,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final IndexConfiguration<K, V> conf;
     protected final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
-    private final Comparator<K> cacheComparator;
-    private final Integer cacheCapacity;
-    private volatile UniqueCache<K, V> activeCache;
-    private volatile UniqueCache<K, V> flushingCache;
+    private final WriteCache<K, V> writeCache;
     private final KeySegmentCache<K> keySegmentCache;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentSplitCoordinator<K, V> segmentSplitCoordinator;
@@ -52,10 +47,9 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
         this.conf = Vldtn.requireNonNull(conf, "conf");
-        this.cacheComparator = this.keyTypeDescriptor.getComparator();
-        this.cacheCapacity = conf.getMaxNumberOfKeysInCache();
-        this.activeCache = newCache();
-        this.flushingCache = null;
+        this.writeCache = new WriteCache<>(
+                this.keyTypeDescriptor.getComparator(),
+                conf.getMaxNumberOfKeysInCache());
         this.keySegmentCache = new KeySegmentCache<>(directory,
                 keyTypeDescriptor);
         final SegmentDataCache<K, V> segmentDataCache = new SegmentDataCache<>(
@@ -114,7 +108,9 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         final EntryIterator<K, V> segmentIterator = new SegmentsIterator<>(
                 keySegmentCache.getSegmentIds(segmentWindows), segmentRegistry);
         final EntryIterator<K, V> iterratorFreshedFromCache = new EntryIteratorRefreshedFromCache<>(
-                segmentIterator, activeCache, flushingCache, valueTypeDescriptor);
+                segmentIterator, writeCache.getActiveCache(),
+                writeCache.getFlushingCache(),
+                valueTypeDescriptor);
         if (conf.isContextLoggingEnabled()) {
             return new EntryIteratorLoggingContext<>(iterratorFreshedFromCache,
                     conf);
@@ -124,7 +120,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     }
 
     void flushCacheIfNeeded() {
-        if (activeCache.size() > conf.getMaxNumberOfKeysInCache()) {
+        if (writeCache.activeSize() > conf.getMaxNumberOfKeysInCache()) {
             flushCache();
         }
     }
@@ -157,10 +153,10 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             if (logger.isDebugEnabled()) {
                 logger.debug(
                         "Cache compacting is done. Cache contains '{}' key value entries.",
-                        F.fmt(activeCache.size()));
+                        F.fmt(writeCache.activeSize()));
             }
         } finally {
-            flushingCache = null;
+            writeCache.clearFlushing();
             flushLock.unlock();
         }
     }
@@ -269,42 +265,20 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         return conf;
     }
 
-    private UniqueCache<K, V> newCache() {
-        final UniqueCacheBuilder<K, V> cacheBuilder = UniqueCache
-                .<K, V>builder()
-                .withKeyComparator(cacheComparator)
-                .withThreadSafe(true);
-        if (cacheCapacity != null && cacheCapacity > 0) {
-            cacheBuilder.withInitialCapacity(cacheCapacity);
-        }
-        return cacheBuilder.buildEmpty();
-    }
-
     private void putToCache(final Entry<K, V> entry) {
-        final UniqueCache<K, V> cacheRef = activeCache;
-        cacheRef.put(entry);
-        if (cacheRef != activeCache) {
-            activeCache.put(entry);
-        }
+        writeCache.put(entry);
     }
 
     private V getCachedValue(final K key) {
-        final V value = activeCache.get(key);
-        if (value != null) {
-            return value;
-        }
-        final UniqueCache<K, V> flushing = flushingCache;
-        if (flushing == null) {
-            return null;
-        }
-        return flushing.get(key);
+        return writeCache.get(key);
     }
 
     private UniqueCache<K, V> swapCachesForFlush() {
-        final UniqueCache<K, V> toFlush = activeCache;
-        flushingCache = toFlush;
-        activeCache = newCache();
-        return toFlush;
+        return writeCache.swapForFlush();
+    }
+
+    void replaceActiveCacheForTest(final UniqueCache<K, V> cache) {
+        writeCache.replaceActiveCacheForTest(cache);
     }
 
 }
