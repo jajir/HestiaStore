@@ -70,17 +70,30 @@ public class UniqueCacheBuilder<K, V> {
     }
 
     public UniqueCache<K, V> build() {
+        Vldtn.requireNonNull(sdf, "sdf");
         UniqueCache<K, V> out = new UniqueCache<>(keyComparator,
                 initialCapacity);
         if (threadSafe) {
             out = new UniqueCacheSynchronizenizedAdapter<>(out);
         }
         try (EntryIterator<K, V> iterator = sdf.openIterator()) {
-            Entry<K, V> entry = null;
+            if (!iterator.hasNext()) {
+                throw new IllegalArgumentException(
+                        "Property 'sdf' must not be empty.");
+            }
             while (iterator.hasNext()) {
-                entry = iterator.next();
+                final Entry<K, V> entry = iterator.next();
                 out.put(entry);
             }
+        }
+        return out;
+    }
+
+    public UniqueCache<K, V> buildEmpty() {
+        UniqueCache<K, V> out = new UniqueCache<>(keyComparator,
+                initialCapacity);
+        if (threadSafe) {
+            out = new UniqueCacheSynchronizenizedAdapter<>(out);
         }
         return out;
     }

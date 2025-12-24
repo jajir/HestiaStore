@@ -11,6 +11,7 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.F;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.UniqueCache;
+import org.hestiastore.index.cache.UniqueCacheBuilder;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.Segment;
@@ -47,9 +48,15 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
         this.conf = Vldtn.requireNonNull(conf, "conf");
-        this.cache = new UniqueCache<K, V>(
-                this.keyTypeDescriptor.getComparator(),
-                conf.getMaxNumberOfKeysInCache());
+        final UniqueCacheBuilder<K, V> cacheBuilder = UniqueCache
+                .<K, V>builder()
+                .withKeyComparator(this.keyTypeDescriptor.getComparator())
+                .withThreadSafe(true);
+        final Integer cacheCapacity = conf.getMaxNumberOfKeysInCache();
+        if (cacheCapacity != null && cacheCapacity > 0) {
+            cacheBuilder.withInitialCapacity(cacheCapacity);
+        }
+        this.cache = cacheBuilder.buildEmpty();
         this.keySegmentCache = new KeySegmentCache<>(directory,
                 keyTypeDescriptor);
         final SegmentDataCache<K, V> segmentDataCache = new SegmentDataCache<>(
