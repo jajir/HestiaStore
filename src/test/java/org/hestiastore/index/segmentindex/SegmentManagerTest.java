@@ -1,8 +1,8 @@
 package org.hestiastore.index.segmentindex;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -32,14 +32,10 @@ class SegmentManagerTest {
     @Mock
     private IndexConfiguration<Integer, String> conf;
 
-    @Mock
-    private SegmentDataCache<Integer, String> segmentDataCache;
-
     @Test
     void test_getting_same_segmentId() {
         final SegmentRegistry<Integer, String> segmentRegistry = new SegmentRegistry<>(
-                directory, keyTypeDescriptor, valueTypeDescriptor, conf,
-                segmentDataCache);
+                directory, keyTypeDescriptor, valueTypeDescriptor, conf);
         when(conf.getMaxNumberOfKeysInSegmentCache()).thenReturn(2);
         when(conf.getMaxNumberOfKeysInSegmentCacheDuringFlushing())
                 .thenReturn(3);
@@ -68,11 +64,8 @@ class SegmentManagerTest {
     @Test
     void test_close() {
         final SegmentRegistry<Integer, String> segmentRegistry = new SegmentRegistry<>(
-                directory, keyTypeDescriptor, valueTypeDescriptor, conf,
-                segmentDataCache);
-        segmentRegistry.close();
-
-        verify(segmentDataCache).invalidateAll();
+                directory, keyTypeDescriptor, valueTypeDescriptor, conf);
+        assertDoesNotThrow(segmentRegistry::close);
     }
 
 }

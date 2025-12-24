@@ -49,10 +49,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 conf.getMaxNumberOfKeysInCache());
         this.keySegmentCache = new KeySegmentCache<>(directory,
                 keyTypeDescriptor);
-        final SegmentDataCache<K, V> segmentDataCache = new SegmentDataCache<>(
-                conf);
         this.segmentRegistry = new SegmentRegistrySynchronized<>(directory,
-                keyTypeDescriptor, valueTypeDescriptor, conf, segmentDataCache);
+                keyTypeDescriptor, valueTypeDescriptor, conf);
         this.segmentSplitCoordinator = new SegmentSplitCoordinator<>(conf,
                 keySegmentCache);
         getIndexState().onReady(this);
@@ -106,8 +104,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 keySegmentCache.getSegmentIds(segmentWindows), segmentRegistry);
         final EntryIterator<K, V> iterratorFreshedFromCache = new EntryIteratorRefreshedFromCache<>(
                 segmentIterator, writeCache.getActiveCache(),
-                writeCache.getFlushingCache(),
-                valueTypeDescriptor);
+                writeCache.getFlushingCache(), valueTypeDescriptor);
         if (conf.isContextLoggingEnabled()) {
             return new EntryIteratorLoggingContext<>(iterratorFreshedFromCache,
                     conf);
