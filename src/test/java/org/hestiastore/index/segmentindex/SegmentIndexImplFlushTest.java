@@ -66,7 +66,7 @@ class SegmentIndexImplFlushTest {
                 new MemDirectory(), tdi, tds, conf);
         final ObservingCache cache = new ObservingCache(
                 tdi.getComparator(), conf.getMaxNumberOfKeysInCache());
-        replaceCache(index, cache);
+        replaceActiveCache(index, cache);
 
         index.put(1, "one");
         index.put(2, "two");
@@ -118,12 +118,16 @@ class SegmentIndexImplFlushTest {
         }
     }
 
-    private static void replaceCache(final SegmentIndexImpl<?, ?> index,
+    private static void replaceActiveCache(final SegmentIndexImpl<?, ?> index,
             final UniqueCache<?, ?> cache) throws Exception {
-        final Field cacheField = SegmentIndexImpl.class
-                .getDeclaredField("cache");
-        cacheField.setAccessible(true);
-        cacheField.set(index, cache);
+        final Field activeCacheField = SegmentIndexImpl.class
+                .getDeclaredField("activeCache");
+        activeCacheField.setAccessible(true);
+        activeCacheField.set(index, cache);
+        final Field flushingCacheField = SegmentIndexImpl.class
+                .getDeclaredField("flushingCache");
+        flushingCacheField.setAccessible(true);
+        flushingCacheField.set(index, null);
     }
 
     private static final class ObservingCache

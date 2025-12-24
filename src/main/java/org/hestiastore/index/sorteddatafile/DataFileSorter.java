@@ -9,6 +9,7 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.UniqueCache;
+import org.hestiastore.index.cache.UniqueCacheBuilder;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.unsorteddatafile.UnsortedDataFile;
 
@@ -69,8 +70,13 @@ public class DataFileSorter<K, V> {
     }
 
     private int splitToChunks() {
-        final UniqueCache<K, V> cache = new UniqueCache<>(
-                keyTypeDescriptor.getComparator(), maxNumberOfKeysInMemory);
+        final UniqueCacheBuilder<K, V> cacheBuilder = UniqueCache
+                .<K, V>builder()
+                .withKeyComparator(keyTypeDescriptor.getComparator());
+        if (maxNumberOfKeysInMemory > 0) {
+            cacheBuilder.withInitialCapacity(maxNumberOfKeysInMemory);
+        }
+        final UniqueCache<K, V> cache = cacheBuilder.buildEmpty();
         int chunkCount = 0;
         try (EntryIterator<K, V> iterator = unsortedDataFile.openIterator()) {
             while (iterator.hasNext()) {

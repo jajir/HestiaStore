@@ -59,9 +59,11 @@ public final class SegmentDeltaCacheWriter<K, V>
         this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
         Vldtn.requireGreaterThanZero(maxNumberOfKeysInSegmentDeltaCache,
                 "maxNumberOfKeysInSegmentDeltaCache");
-        this.uniqueCache = new UniqueCache<>(
-                segmentFiles.getKeyTypeDescriptor().getComparator(),
-                maxNumberOfKeysInSegmentDeltaCache);
+        this.uniqueCache = UniqueCache.<K, V>builder()
+                .withKeyComparator(
+                        segmentFiles.getKeyTypeDescriptor().getComparator())
+                .withInitialCapacity(maxNumberOfKeysInSegmentDeltaCache)
+                .buildEmpty();
         this.segmentCacheDataProvider = Vldtn.requireNonNull(
                 segmentCacheDataProvider, "segmentCacheDataProvider");
     }
