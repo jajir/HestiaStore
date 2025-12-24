@@ -120,7 +120,7 @@ class SegmentIndexImplFlushTest {
     private static void replaceActiveCache(
             final SegmentIndexImpl<Integer, String> index,
             final UniqueCache<Integer, String> cache) {
-        index.replaceActiveCacheForTest(cache);
+        index.writeCache.replaceActiveCacheForTest(cache);
     }
 
     private static final class ObservingCache

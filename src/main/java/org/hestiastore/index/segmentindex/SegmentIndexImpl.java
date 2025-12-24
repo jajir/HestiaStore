@@ -25,7 +25,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final IndexConfiguration<K, V> conf;
     protected final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
-    private final WriteCache<K, V> writeCache;
+    final WriteCache<K, V> writeCache;
     private final KeySegmentCache<K> keySegmentCache;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentSplitCoordinator<K, V> segmentSplitCoordinator;
@@ -37,9 +37,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf) {
-        if (directory == null) {
-            throw new IllegalArgumentException("Directory was no specified.");
-        }
         Vldtn.requireNonNull(directory, "directory");
         setIndexState(new IndexStateNew<>(directory));
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
@@ -73,7 +70,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     "Can't insert thombstone value '%s' into index", value));
         }
 
-        putToCache(Entry.of(key, value));
+        writeCache.put(Entry.of(key, value));
 
         flushCacheIfNeeded();
     }
@@ -128,7 +125,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     protected void flushCache() {
         flushLock.lock();
         try {
-            final UniqueCache<K, V> toFlush = swapCachesForFlush();
+            final UniqueCache<K, V> toFlush = writeCache.swapForFlush();
             final List<Entry<K, V>> snapshot = toFlush.getAsSortedList();
             if (logger.isDebugEnabled()) {
                 logger.debug(
@@ -177,7 +174,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         Vldtn.requireNonNull(key, "key");
         stats.incGetCx();
 
-        final V cachedWrite = getCachedValue(key);
+        final V cachedWrite = writeCache.get(key);
         if (cachedWrite != null) {
             if (valueTypeDescriptor.isTombstone(cachedWrite)) {
                 return null;
@@ -212,7 +209,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         Vldtn.requireNonNull(key, "key");
         stats.incDeleteCx();
 
-        putToCache(Entry.of(key, valueTypeDescriptor.getTombstone()));
+        writeCache.put(Entry.of(key, valueTypeDescriptor.getTombstone()));
         flushCacheIfNeeded();
     }
 
@@ -263,22 +260,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     public IndexConfiguration<K, V> getConfiguration() {
         return conf;
-    }
-
-    private void putToCache(final Entry<K, V> entry) {
-        writeCache.put(entry);
-    }
-
-    private V getCachedValue(final K key) {
-        return writeCache.get(key);
-    }
-
-    private UniqueCache<K, V> swapCachesForFlush() {
-        return writeCache.swapForFlush();
-    }
-
-    void replaceActiveCacheForTest(final UniqueCache<K, V> cache) {
-        writeCache.replaceActiveCacheForTest(cache);
     }
 
 }
