@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentindex;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.hestiastore.index.Entry;
@@ -58,15 +59,13 @@ class SegmentIndexImplFlushTest {
     }
 
     @Test
-    void flushKeepsEntriesAddedAfterSnapshot() throws Exception {
+    void flushUsesSnapshotThenClearsCache() throws Exception {
         final IndexConfiguration<Integer, String> conf = buildConfWithCacheLimit(
                 4);
         final IndexInternalDefault<Integer, String> index = new IndexInternalDefault<>(
                 new MemDirectory(), tdi, tds, conf);
-        final Entry<Integer, String> lateEntry = Entry.of(99, "late");
-        final UniqueCache<Integer, String> cache = new LateEntryCache(
-                tdi.getComparator(), conf.getMaxNumberOfKeysInCache(),
-                lateEntry);
+        final ObservingCache cache = new ObservingCache(
+                tdi.getComparator(), conf.getMaxNumberOfKeysInCache());
         replaceCache(index, cache);
 
         index.put(1, "one");
@@ -74,7 +73,8 @@ class SegmentIndexImplFlushTest {
 
         index.flush();
 
-        assertEquals("late", index.get(99));
+        assertEquals(List.of("snapshot", "clear"), cache.calls);
+        assertEquals(0, cache.size());
         index.close();
     }
 
@@ -126,41 +126,26 @@ class SegmentIndexImplFlushTest {
         cacheField.set(index, cache);
     }
 
-    private static final class LateEntryCache
+    private static final class ObservingCache
             extends UniqueCache<Integer, String> {
 
-        private final Entry<Integer, String> lateEntry;
-        private boolean inserted = false;
+        private final List<String> calls = new ArrayList<>();
 
-        LateEntryCache(final java.util.Comparator<Integer> comparator,
-                final int initialCapacity,
-                final Entry<Integer, String> lateEntry) {
+        ObservingCache(final java.util.Comparator<Integer> comparator,
+                final int initialCapacity) {
             super(comparator, initialCapacity);
-            this.lateEntry = lateEntry;
         }
 
         @Override
         public List<Entry<Integer, String>> getAsSortedList() {
-            final List<Entry<Integer, String>> snapshot = super
-                    .getAsSortedList();
-            insertLateEntry();
-            return snapshot;
+            calls.add("snapshot");
+            return super.getAsSortedList();
         }
 
         @Override
-        public List<Entry<Integer, String>> snapshotAndClear() {
-            final List<Entry<Integer, String>> snapshot = super
-                    .snapshotAndClear();
-            insertLateEntry();
-            return snapshot;
-        }
-
-        private void insertLateEntry() {
-            if (inserted) {
-                return;
-            }
-            inserted = true;
-            put(lateEntry);
+        public void clear() {
+            calls.add("clear");
+            super.clear();
         }
     }
 }
