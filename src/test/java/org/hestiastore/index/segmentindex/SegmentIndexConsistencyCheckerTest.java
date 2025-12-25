@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentindex;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.stream.Stream;
@@ -94,20 +95,17 @@ class SegmentIndexConsistencyCheckerTest {
     }
 
     @Test
-    void test_oneSegment_segmentMaxKey_is_null() {
+    void test_oneSegment_segmentMaxKey_is_null_removes_segment() {
         when(keySegmentCache.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
         when(segmentRegistry.getSegment(SEGMENT_ID)).thenReturn(segment);
         when(segment.checkAndRepairConsistency()).thenReturn(null);
 
-        final Exception e = assertThrows(IndexException.class,
-                () -> checker.checkAndRepairConsistency());
+        checker.checkAndRepairConsistency();
 
-        assertEquals(
-                "Index is broken. " + "File 'index.map' containing information "
-                        + "about segments is corrupted."
-                        + " Max key of segment 'segment-00013' is null.",
-                e.getMessage());
+        verify(segmentRegistry).removeSegment(SEGMENT_ID);
+        verify(keySegmentCache).removeSegment(SEGMENT_ID);
+        verify(keySegmentCache).optionalyFlush();
     }
 
     @Test
