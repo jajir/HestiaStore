@@ -7,6 +7,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentSynchronizationAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,12 +58,7 @@ public class IndexConsistencyChecker<K, V> {
             }
             final K maxKey = segment.checkAndRepairConsistency();
             if (maxKey == null) {
-                logger.warn(
-                        "Segment '{}' is empty. Removing it from index map.",
-                        segmentId);
-                segmentRegistry.removeSegment(segmentId);
-                keySegmentCache.removeSegment(segmentId);
-                keySegmentCache.optionalyFlush();
+                removeEmptySegment(segmentId, segment);
                 return;
             }
             if (keyComparator.compare(segmentKey, maxKey) < 0) {
@@ -73,6 +69,31 @@ public class IndexConsistencyChecker<K, V> {
             }
             logger.debug("Checking segment '{}' id done.", segmentId);
         });
+    }
+
+    private void removeEmptySegment(final SegmentId segmentId,
+            final Segment<K, V> segment) {
+        if (segment instanceof SegmentSynchronizationAdapter<K, V> adapter) {
+            adapter.executeWithWriteLock(() -> {
+                final K maxKey = adapter.checkAndRepairConsistency();
+                if (maxKey != null) {
+                    return null;
+                }
+                logger.warn(
+                        "Segment '{}' is empty. Removing it from index map.",
+                        segmentId);
+                keySegmentCache.removeSegment(segmentId);
+                keySegmentCache.optionalyFlush();
+                segmentRegistry.removeSegment(segmentId);
+                return null;
+            });
+        } else {
+            logger.warn("Segment '{}' is empty. Removing it from index map.",
+                    segmentId);
+            keySegmentCache.removeSegment(segmentId);
+            keySegmentCache.optionalyFlush();
+            segmentRegistry.removeSegment(segmentId);
+        }
     }
 
 }
