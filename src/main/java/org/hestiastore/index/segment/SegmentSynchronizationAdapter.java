@@ -132,20 +132,11 @@ public class SegmentSynchronizationAdapter<K, V> extends AbstractCloseableResour
     }
 
     @Override
-    public SegmentSplitter<K, V> getSegmentSplitter() {
-        readLock.lock();
-        try {
-            return delegate.getSegmentSplitter();
-        } finally {
-            readLock.unlock();
-        }
-    }
-
-    public SegmentSplitterResult<K, V> splitWithWriteLock(
-            final SegmentId segmentId, final SegmentSplitterPlan<K, V> plan) {
+    public SegmentSplitterResult<K, V> split(final SegmentId segmentId,
+            final SegmentSplitterPlan<K, V> plan) {
         writeLock.lock();
         try {
-            return delegate.getSegmentSplitter().split(segmentId, plan);
+            return delegate.split(segmentId, plan);
         } finally {
             writeLock.unlock();
         }

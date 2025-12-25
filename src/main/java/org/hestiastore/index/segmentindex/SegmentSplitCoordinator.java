@@ -6,7 +6,6 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentSplitterPlan;
 import org.hestiastore.index.segment.SegmentSplitterPolicy;
 import org.hestiastore.index.segment.SegmentSplitterResult;
-import org.hestiastore.index.segment.SegmentSynchronizationAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,8 +69,8 @@ public class SegmentSplitCoordinator<K, V> {
         final SegmentId segmentId = segment.getId();
         logger.debug("Splitting of '{}' started.", segmentId);
         final SegmentId newSegmentId = keySegmentCache.findNewSegmentId();
-        final SegmentSplitterResult<K, V> result = splitSegment(segment,
-                newSegmentId, plan);
+        final SegmentSplitterResult<K, V> result = segment.split(newSegmentId,
+                plan);
         if (result.isSplit()) {
             keySegmentCache.insertSegment(result.getMaxKey(), newSegmentId);
             logger.debug("Splitting of segment '{}' to '{}' is done.",
@@ -85,12 +84,4 @@ public class SegmentSplitCoordinator<K, V> {
         return true;
     }
 
-    private SegmentSplitterResult<K, V> splitSegment(final Segment<K, V> segment,
-            final SegmentId newSegmentId,
-            final SegmentSplitterPlan<K, V> plan) {
-        if (segment instanceof SegmentSynchronizationAdapter<K, V> adapter) {
-            return adapter.splitWithWriteLock(newSegmentId, plan);
-        }
-        return segment.getSegmentSplitter().split(newSegmentId, plan);
-    }
 }
