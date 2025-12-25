@@ -245,8 +245,7 @@ class SegmentImplTest {
     }
 
     @Test
-    void splitter_and_policy_exposed() {
-        assertNotNull(subject.getSegmentSplitter());
+    void policy_exposed() {
         assertSame(splitterPolicy, subject.getSegmentSplitterPolicy());
     }
 

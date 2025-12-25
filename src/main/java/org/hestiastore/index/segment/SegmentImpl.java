@@ -185,20 +185,20 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     }
 
     /**
-     * Returns a helper responsible for executing a split of this segment into
-     * two parts when the number of keys grows beyond a configured threshold.
-     * <p>
-     * The returned {@link SegmentSplitter} performs the splitting algorithm
-     * using a precomputed {@link SegmentSplitterPlan}. Callers are expected to
-     * decide when to split (e.g., via {@link #getSegmentSplitterPolicy()} and
-     * index configuration) and then invoke the splitter with a newly allocated
-     * {@link SegmentId} for the lower half.
+     * Splits this segment into two parts using a precomputed plan. Callers are
+     * expected to decide when to split (e.g., via
+     * {@link #getSegmentSplitterPolicy()} and index configuration) and then
+     * invoke this method with a newly allocated {@link SegmentId} for the
+     * lower half.
      *
-     * @return the splitter bound to this segment
+     * @param segmentId id for the new lower segment
+     * @param plan precomputed split plan
+     * @return result of the split operation
      */
     @Override
-    public SegmentSplitter<K, V> getSegmentSplitter() {
-        return segmentSplitter;
+    public SegmentSplitterResult<K, V> split(final SegmentId segmentId,
+            final SegmentSplitterPlan<K, V> plan) {
+        return segmentSplitter.split(segmentId, plan);
     }
 
     /**
@@ -208,7 +208,7 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
      * <p>
      * Typical usage is to create a {@link SegmentSplitterPlan} from this
      * policy, evaluate whether the split should occur based on index limits,
-     * and only then execute the split via {@link #getSegmentSplitter()}.
+     * and only then execute the split via {@link #split(SegmentId, SegmentSplitterPlan)}.
      *
      * @return the splitter policy associated with this segment
      */

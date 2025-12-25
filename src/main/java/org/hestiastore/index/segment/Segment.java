@@ -30,7 +30,8 @@ import org.hestiastore.index.EntryWriter;
  * {@link #getStats()}, {@link #getNumberOfKeys()} - Writing (delta cache):
  * {@link #openDeltaCacheWriter()} - Maintenance: {@link #optionallyCompact()},
  * {@link #forceCompact()}, {@link #checkAndRepairConsistency()} - Splitting:
- * {@link #getSegmentSplitterPolicy()}, {@link #getSegmentSplitter()},
+ * {@link #getSegmentSplitterPolicy()},
+ * {@link #split(SegmentId, SegmentSplitterPlan)},
  * {@link #createSegmentWithSameConfig(SegmentId)} - Identity and lifecycle:
  * {@link #getId()}, {@link #getVersion()}, {@link #close()}
  *
@@ -144,12 +145,16 @@ public interface Segment<K, V>
     SegmentSplitterPolicy<K, V> getSegmentSplitterPolicy();
 
     /**
-     * Returns a helper responsible for splitting this segment into two parts
-     * (or compacting it, depending on the plan) when limits are exceeded.
+     * Splits this segment into two parts according to the supplied plan. The
+     * caller must provide a fresh segment id for the new lower segment and a
+     * plan computed from {@link #getSegmentSplitterPolicy()}.
      *
-     * @return splitter bound to this segment
+     * @param segmentId required id for the new lower segment
+     * @param plan required split plan
+     * @return split result with the newly created segment
      */
-    SegmentSplitter<K, V> getSegmentSplitter();
+    SegmentSplitterResult<K, V> split(SegmentId segmentId,
+            SegmentSplitterPlan<K, V> plan);
 
     /**
      * Returns this segment's identity.
