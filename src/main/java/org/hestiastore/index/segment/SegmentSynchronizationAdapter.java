@@ -2,6 +2,7 @@ package org.hestiastore.index.segment;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
@@ -137,6 +138,15 @@ public class SegmentSynchronizationAdapter<K, V> extends AbstractCloseableResour
         writeLock.lock();
         try {
             return delegate.split(segmentId, plan);
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    public <T> T executeWithWriteLock(final Supplier<T> task) {
+        writeLock.lock();
+        try {
+            return task.get();
         } finally {
             writeLock.unlock();
         }
