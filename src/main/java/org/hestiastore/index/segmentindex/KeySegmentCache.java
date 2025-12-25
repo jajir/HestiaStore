@@ -199,6 +199,31 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
         }
     }
 
+    public void removeSegment(final SegmentId segmentId) {
+        Vldtn.requireNonNull(segmentId, "segmentId");
+        writeLock.lock();
+        try {
+            if (list.isEmpty()) {
+                return;
+            }
+            boolean removed = false;
+            final java.util.Iterator<Map.Entry<K, SegmentId>> iterator = list
+                    .entrySet().iterator();
+            while (iterator.hasNext()) {
+                final Map.Entry<K, SegmentId> entry = iterator.next();
+                if (segmentId.equals(entry.getValue())) {
+                    iterator.remove();
+                    removed = true;
+                }
+            }
+            if (removed) {
+                isDirty = true;
+            }
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
     public Stream<Entry<K, SegmentId>> getSegmentsAsStream() {
         return snapshotSegments().stream();
     }

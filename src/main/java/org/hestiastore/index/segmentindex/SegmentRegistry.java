@@ -46,6 +46,15 @@ public class SegmentRegistry<K, V> {
         return out;
     }
 
+    public void removeSegment(final SegmentId segmentId) {
+        Vldtn.requireNonNull(segmentId, "segmentId");
+        final Segment<K, V> segment = segments.remove(segmentId);
+        if (segment != null && !segment.wasClosed()) {
+            segment.close();
+        }
+        deleteSegmentFiles(segmentId);
+    }
+
     private Segment<K, V> instantiateSegment(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
 
@@ -93,6 +102,16 @@ public class SegmentRegistry<K, V> {
                 .withDiskIoBufferSize(conf.getDiskIoBufferSize())//
                 .build();
         return new SegmentSynchronizationAdapter<>(segment);
+    }
+
+    private void deleteSegmentFiles(final SegmentId segmentId) {
+        final SegmentFiles<K, V> segmentFiles = new SegmentFiles<>(directory,
+                segmentId, keyTypeDescriptor, valueTypeDescriptor,
+                conf.getDiskIoBufferSize(), conf.getEncodingChunkFilters(),
+                conf.getDecodingChunkFilters());
+        final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
+                directory, segmentId);
+        segmentFiles.deleteAllFiles(segmentPropertiesManager);
     }
 
     Directory getDirectory() {

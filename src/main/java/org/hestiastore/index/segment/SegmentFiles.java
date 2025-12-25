@@ -263,4 +263,23 @@ public final class SegmentFiles<K, V> {
         directory.deleteFile(fileName);
     }
 
+    /**
+     * Removes all files that belong to this segment, including delta cache
+     * files listed in the provided properties manager.
+     *
+     * @param segmentPropertiesManager properties manager for this segment
+     */
+    public void deleteAllFiles(
+            final SegmentPropertiesManager segmentPropertiesManager) {
+        Vldtn.requireNonNull(segmentPropertiesManager,
+                "segmentPropertiesManager");
+        segmentPropertiesManager.getCacheDeltaFileNames()
+                .forEach(this::optionallyDeleteFile);
+        optionallyDeleteFile(getCacheFileName());
+        optionallyDeleteFile(getIndexFileName());
+        optionallyDeleteFile(getScarceFileName());
+        optionallyDeleteFile(getBloomFilterFileName());
+        optionallyDeleteFile(getPropertiesFilename());
+    }
+
 }

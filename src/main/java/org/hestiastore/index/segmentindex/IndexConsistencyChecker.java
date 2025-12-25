@@ -57,9 +57,13 @@ public class IndexConsistencyChecker<K, V> {
             }
             final K maxKey = segment.checkAndRepairConsistency();
             if (maxKey == null) {
-                throw new IndexException(String.format(
-                        ERROR_MSG + "Max key of segment '%s' is null.",
-                        segmentId));
+                logger.warn(
+                        "Segment '{}' is empty. Removing it from index map.",
+                        segmentId);
+                segmentRegistry.removeSegment(segmentId);
+                keySegmentCache.removeSegment(segmentId);
+                keySegmentCache.optionalyFlush();
+                return;
             }
             if (keyComparator.compare(segmentKey, maxKey) < 0) {
                 throw new IndexException(String.format(ERROR_MSG
