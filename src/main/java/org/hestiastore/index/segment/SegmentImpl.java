@@ -106,6 +106,11 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     }
 
     @Override
+    public void invalidateIterators() {
+        versionController.changeVersion();
+    }
+
+    @Override
     public EntryIterator<K, V> openIterator() {
         final EntryIterator<K, V> mergedEntryIterator = new MergeDeltaCacheWithIndexIterator<>(
                 segmentFiles.getIndexFile().openIterator(),

@@ -254,6 +254,14 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         flushCache();
     }
 
+    protected void invalidateSegmentIterators() {
+        keySegmentCache.getSegmentIds().forEach(segmentId -> {
+            final Segment<K, V> segment = segmentRegistry
+                    .getSegment(segmentId);
+            segment.invalidateIterators();
+        });
+    }
+
     @Override
     public IndexConfiguration<K, V> getConfiguration() {
         return conf;

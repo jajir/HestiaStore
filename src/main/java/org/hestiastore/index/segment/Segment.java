@@ -29,8 +29,8 @@ import org.hestiastore.index.EntryWriter;
  * Key responsibilities exposed by this API: - Query: {@link #get(Object)},
  * {@link #getStats()}, {@link #getNumberOfKeys()} - Writing (delta cache):
  * {@link #openDeltaCacheWriter()} - Maintenance: {@link #optionallyCompact()},
- * {@link #forceCompact()}, {@link #checkAndRepairConsistency()} - Splitting:
- * {@link #getSegmentSplitterPolicy()},
+ * {@link #forceCompact()}, {@link #checkAndRepairConsistency()},
+ * {@link #invalidateIterators()} - Splitting: {@link #getSegmentSplitterPolicy()},
  * {@link #split(SegmentId, SegmentSplitterPlan)},
  * {@link #createSegmentWithSameConfig(SegmentId)} - Identity and lifecycle:
  * {@link #getId()}, {@link #getVersion()}, {@link #close()}
@@ -94,6 +94,12 @@ public interface Segment<K, V>
      *                                              otherwise inconsistent
      */
     K checkAndRepairConsistency();
+
+    /**
+     * Invalidates any active iterators by bumping the internal version
+     * counter. Readers using optimistic locks should stop on the next check.
+     */
+    void invalidateIterators();
 
     /**
      * Opens a read iterator over a consistent snapshot of the segment that
