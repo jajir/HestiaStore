@@ -77,6 +77,16 @@ public class SegmentSynchronizationAdapter<K, V> extends AbstractCloseableResour
     }
 
     @Override
+    public void invalidateIterators() {
+        readLock.lock();
+        try {
+            delegate.invalidateIterators();
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    @Override
     public EntryIterator<K, V> openIterator() {
         readLock.lock();
         try {

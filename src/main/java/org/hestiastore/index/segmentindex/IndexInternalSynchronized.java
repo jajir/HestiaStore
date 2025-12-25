@@ -214,6 +214,7 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
     @Override
     public void compact() {
         executeWithWrite(() -> {
+            invalidateSegmentIterators();
             super.compact();
             return null;
         });
@@ -241,6 +242,7 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
     @Override
     public void flush() {
         executeWithWrite(() -> {
+            invalidateSegmentIterators();
             super.flush();
             return null;
         });
@@ -250,6 +252,7 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
     @Override
     public void checkAndRepairConsistency() {
         executeWithWrite(() -> {
+            invalidateSegmentIterators();
             super.checkAndRepairConsistency();
             return null;
         });
