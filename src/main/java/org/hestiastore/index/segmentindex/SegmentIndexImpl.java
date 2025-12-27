@@ -12,7 +12,7 @@ import org.hestiastore.index.F;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.UniqueCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.slf4j.Logger;
@@ -33,12 +33,12 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private volatile IndexState<K, V> indexState;
     private final ReentrantLock flushLock = new ReentrantLock();
 
-    protected SegmentIndexImpl(final Directory directory,
+    protected SegmentIndexImpl(final DirectoryFacade directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf) {
-        Vldtn.requireNonNull(directory, "directory");
-        setIndexState(new IndexStateNew<>(directory));
+        Vldtn.requireNonNull(directoryFacade, "directoryFacade");
+        setIndexState(new IndexStateNew<>(directoryFacade.getDirectory()));
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
                 "keyTypeDescriptor");
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
@@ -47,9 +47,11 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         this.writeCache = new WriteCache<>(
                 this.keyTypeDescriptor.getComparator(),
                 conf.getMaxNumberOfKeysInCache());
-        this.keySegmentCache = new KeySegmentCache<>(directory,
+        this.keySegmentCache = new KeySegmentCache<>(
+                directoryFacade.getDirectory(),
                 keyTypeDescriptor);
-        this.segmentRegistry = new SegmentRegistrySynchronized<>(directory,
+        this.segmentRegistry = new SegmentRegistrySynchronized<>(
+                directoryFacade.getDirectory(),
                 keyTypeDescriptor, valueTypeDescriptor, conf);
         this.segmentSplitCoordinator = new SegmentSplitCoordinator<>(conf,
                 keySegmentCache);

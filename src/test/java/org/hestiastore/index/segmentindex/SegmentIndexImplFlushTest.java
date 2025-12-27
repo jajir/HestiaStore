@@ -11,6 +11,7 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
@@ -62,7 +63,7 @@ class SegmentIndexImplFlushTest {
         final IndexConfiguration<Integer, String> conf = buildConfWithCacheLimit(
                 4);
         final IndexInternalDefault<Integer, String> index = new IndexInternalDefault<>(
-                new MemDirectory(), tdi, tds, conf);
+                DirectoryFacade.of(new MemDirectory()), tdi, tds, conf);
         final ObservingCache cache = new ObservingCache(
                 tdi.getComparator(), conf.getMaxNumberOfKeysInCache());
         replaceActiveCache(index, cache);
@@ -108,7 +109,7 @@ class SegmentIndexImplFlushTest {
 
         TestableIndex(final IndexConfiguration<Integer, String> conf,
                 final Directory directory) {
-            super(directory, tdi, tds, conf);
+            super(DirectoryFacade.of(directory), tdi, tds, conf);
         }
 
         @Override

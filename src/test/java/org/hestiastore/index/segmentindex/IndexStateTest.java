@@ -7,6 +7,7 @@ import java.util.List;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +27,7 @@ class IndexStateTest {
     @Test
     void operationsFailAfterClose() {
         final IndexInternalDefault<Integer, String> index = new IndexInternalDefault<>(
-                new MemDirectory(), tdi, tds, buildConf());
+                DirectoryFacade.of(new MemDirectory()), tdi, tds, buildConf());
         index.put(1, "one");
         index.close();
 

@@ -9,6 +9,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
@@ -21,8 +22,8 @@ class SegmentIndexInternalSynchronizedTest {
 
     @Test
     void test_constructor() {
-        final IndexConfiguration<Integer, String> conf = IndexConfiguration
-                .<Integer, String>builder()//
+            final IndexConfiguration<Integer, String> conf = IndexConfiguration
+                    .<Integer, String>builder()//
                 .withKeyClass(Integer.class)//
                 .withValueClass(String.class)//
                 .withKeyTypeDescriptor(TD_INTEGER)//
@@ -46,7 +47,8 @@ class SegmentIndexInternalSynchronizedTest {
                 .build();
         assertDoesNotThrow(() -> {
             try (IndexInternalSynchronized<Integer, String> synchIndex = new IndexInternalSynchronized<>(
-                    directory, TD_INTEGER, TD_STRING, conf)) {
+                    DirectoryFacade.of(directory), TD_INTEGER, TD_STRING,
+                    conf)) {
                 // constructor exercised
             }
         });
