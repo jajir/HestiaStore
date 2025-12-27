@@ -8,6 +8,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilterBuilder;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.properties.PropertyStore;
 import org.hestiastore.index.properties.PropertyStoreimpl;
 import org.hestiastore.index.properties.PropertyTransaction;
@@ -40,15 +41,20 @@ public class IndexConfiguratonStorage<K, V> {
 
     private static final String CONFIGURATION_FILENAME = "index-configuration.properties";
 
-    private final Directory directory;
+    private final DirectoryFacade directoryFacade;
 
     IndexConfiguratonStorage(final Directory directory) {
-        this.directory = Vldtn.requireNonNull(directory, "directory");
+        this(DirectoryFacade.of(directory));
+    }
+
+    IndexConfiguratonStorage(final DirectoryFacade directoryFacade) {
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
     }
 
     IndexConfiguration<K, V> load() {
-        final PropertyStore props = new PropertyStoreimpl(directory,
-                CONFIGURATION_FILENAME, true);
+        final PropertyStore props = PropertyStoreimpl.fromDirectoryFacade(
+                directoryFacade, CONFIGURATION_FILENAME, true);
         final PropertyView propsView = props.snapshot();
         final Class<K> keyClass = toClass(propsView.getString(PROP_KEY_CLASS));
         final Class<V> valueClass = toClass(
@@ -121,8 +127,8 @@ public class IndexConfiguratonStorage<K, V> {
     }
 
     public void save(IndexConfiguration<K, V> indexConfiguration) {
-        final PropertyStore props = new PropertyStoreimpl(directory,
-                CONFIGURATION_FILENAME, false);
+        final PropertyStore props = PropertyStoreimpl.fromDirectoryFacade(
+                directoryFacade, CONFIGURATION_FILENAME, false);
         final PropertyTransaction tx = props.beginTransaction();
         final PropertyWriter writer = tx.openPropertyWriter();
         writer.setString(PROP_KEY_CLASS,
@@ -187,7 +193,8 @@ public class IndexConfiguratonStorage<K, V> {
     }
 
     boolean exists() {
-        return directory.isFileExists(CONFIGURATION_FILENAME);
+        return directoryFacade.getDirectory().isFileExists(
+                CONFIGURATION_FILENAME);
     }
 
     @SuppressWarnings("unchecked")

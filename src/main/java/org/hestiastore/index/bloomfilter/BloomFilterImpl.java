@@ -3,7 +3,7 @@ package org.hestiastore.index.bloomfilter;
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
-import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.FileReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +18,7 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final Directory directory;
+    private final DirectoryFacade directoryFacade;
 
     private final String bloomFilterFileName;
 
@@ -36,11 +36,13 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
 
     private final int diskIoBufferSize;
 
-    BloomFilterImpl(final Directory directory, final String bloomFilterFileName,
+    BloomFilterImpl(final DirectoryFacade directoryFacade,
+            final String bloomFilterFileName,
             final int numberOfHashFunctions, final int indexSizeInBytes,
             final ConvertorToBytes<K> convertorToBytes,
             final String relatedObjectName, final int diskIoBufferSize) {
-        this.directory = Vldtn.requireNonNull(directory, "diskIoBufferSize");
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
         this.bloomFilterFileName = Vldtn.requireNonNull(bloomFilterFileName,
                 "bloomFilterFileName");
         this.convertorToBytes = Vldtn.requireNonNull(convertorToBytes,
@@ -56,7 +58,7 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
                     "Number of hash function cant be '0'");
         }
         if (isExists() && indexSizeInBytes > 0) {
-            try (FileReader reader = directory
+            try (FileReader reader = directoryFacade.getDirectory()
                     .getFileReader(bloomFilterFileName, diskIoBufferSize)) {
                 final byte[] data = new byte[indexSizeInBytes];
                 final int readed = reader.read(data);
@@ -76,7 +78,7 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
 
     @Override
     public BloomFilterWriterTx<K> openWriteTx() {
-        return new BloomFilterWriterTx<>(directory, bloomFilterFileName,
+        return new BloomFilterWriterTx<>(directoryFacade, bloomFilterFileName,
                 convertorToBytes, numberOfHashFunctions, indexSizeInBytes,
                 diskIoBufferSize, this);
     }
@@ -88,7 +90,7 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
     }
 
     private boolean isExists() {
-        return directory.isFileExists(bloomFilterFileName);
+        return directoryFacade.getDirectory().isFileExists(bloomFilterFileName);
     }
 
     @Override

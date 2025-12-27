@@ -2,6 +2,7 @@ package org.hestiastore.index.datablockfile;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.FileReaderSeekable;
 
 /**
@@ -29,7 +30,7 @@ public class DataBlockFile {
 
     private final DataBlockSize blockSize;
     private final String fileName;
-    private final Directory directory;
+    private final DirectoryFacade directoryFacade;
 
     /**
      * Creates a new data block file.
@@ -38,11 +39,18 @@ public class DataBlockFile {
      * @param fileName  the name of the data block file
      * @param blockSize the size of each data block
      */
-    public DataBlockFile(final Directory directory, final String fileName,
-            final DataBlockSize blockSize) {
-        this.directory = Vldtn.requireNonNull(directory, "directory");
+    public DataBlockFile(final DirectoryFacade directoryFacade,
+            final String fileName, final DataBlockSize blockSize) {
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
         this.fileName = Vldtn.requireNonNull(fileName, "fileName");
         this.blockSize = Vldtn.requireNonNull(blockSize, "blockSize");
+    }
+
+    public static DataBlockFile fromDirectory(final Directory directory,
+            final String fileName, final DataBlockSize blockSize) {
+        return new DataBlockFile(DirectoryFacade.of(directory), fileName,
+                blockSize);
     }
 
     /**
@@ -72,7 +80,7 @@ public class DataBlockFile {
             throw new IllegalArgumentException(String.format(
                     "Block position must be >= '%s'", FIRST_BLOCK.getValue()));
         }
-        if (directory.isFileExists(fileName)) {
+        if (getDirectory().isFileExists(fileName)) {
             final FileReaderSeekable reader = getFileReader(blockPosition,
                     seekableReader);
             final boolean closeOnClose = seekableReader == null;
@@ -87,7 +95,7 @@ public class DataBlockFile {
             final FileReaderSeekable seekableReader) {
         FileReaderSeekable out = seekableReader;
         if (out == null) {
-            out = directory.getFileReaderSeekable(fileName);
+            out = getDirectory().getFileReaderSeekable(fileName);
         }
         out.seek(blockPosition.getValue());
         return out;
@@ -99,7 +107,11 @@ public class DataBlockFile {
      * @return a writer transaction for the data block file
      */
     public DataBlockWriterTx openWriterTx() {
-        return new DataBlockWriterTx(fileName, directory, blockSize);
+        return new DataBlockWriterTx(fileName, directoryFacade, blockSize);
+    }
+
+    private Directory getDirectory() {
+        return directoryFacade.getDirectory();
     }
 
 }

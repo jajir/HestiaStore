@@ -6,6 +6,7 @@ import java.util.Map;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentConf;
 import org.hestiastore.index.segment.SegmentResources;
@@ -21,14 +22,15 @@ public class SegmentRegistry<K, V> {
     private final Map<SegmentId, Segment<K, V>> segments = new HashMap<>();
 
     private final IndexConfiguration<K, V> conf;
-    private final Directory directory;
+    private final DirectoryFacade directoryFacade;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
-    SegmentRegistry(final Directory directory,
+    SegmentRegistry(final DirectoryFacade directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf) {
-        this.directory = Vldtn.requireNonNull(directory, "directory");
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
                 "keyTypeDescriptor");
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
@@ -70,9 +72,10 @@ public class SegmentRegistry<K, V> {
                 conf.getDecodingChunkFilters());
 
         final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
-                directory, segmentId);
+                directoryFacade, segmentId);
 
-        final SegmentFiles<K, V> segmentFiles = new SegmentFiles<>(directory,
+        final SegmentFiles<K, V> segmentFiles = new SegmentFiles<>(
+                directoryFacade,
                 segmentId, keyTypeDescriptor, valueTypeDescriptor,
                 conf.getDiskIoBufferSize(), conf.getEncodingChunkFilters(),
                 conf.getDecodingChunkFilters());
@@ -84,7 +87,7 @@ public class SegmentRegistry<K, V> {
                 segmentDataSupplier);
 
         final Segment<K, V> segment = Segment.<K, V>builder()
-                .withDirectory(directory)
+                .withDirectory(directoryFacade.getDirectory())
                 .withId(segmentId).withKeyTypeDescriptor(keyTypeDescriptor)
                 .withSegmentResources(dataProvider)//
                 .withSegmentConf(segmentConf)//
@@ -105,17 +108,18 @@ public class SegmentRegistry<K, V> {
     }
 
     private void deleteSegmentFiles(final SegmentId segmentId) {
-        final SegmentFiles<K, V> segmentFiles = new SegmentFiles<>(directory,
+        final SegmentFiles<K, V> segmentFiles = new SegmentFiles<>(
+                directoryFacade,
                 segmentId, keyTypeDescriptor, valueTypeDescriptor,
                 conf.getDiskIoBufferSize(), conf.getEncodingChunkFilters(),
                 conf.getDecodingChunkFilters());
         final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
-                directory, segmentId);
+                directoryFacade, segmentId);
         segmentFiles.deleteAllFiles(segmentPropertiesManager);
     }
 
     Directory getDirectory() {
-        return directory;
+        return directoryFacade.getDirectory();
     }
 
     public void close() {

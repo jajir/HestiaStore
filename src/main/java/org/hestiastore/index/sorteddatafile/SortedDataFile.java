@@ -4,11 +4,12 @@ import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.unsorteddatafile.DataFileIterator;
 
 public class SortedDataFile<K, V> {
 
-    private final Directory directory;
+    private final DirectoryFacade directoryFacade;
 
     private final String fileName;
 
@@ -22,17 +23,27 @@ public class SortedDataFile<K, V> {
         return new SortedDataFileBuilder<M, N>();
     }
 
-    public SortedDataFile(final Directory directory, final String fileName,
-            final TypeDescriptor<K> keyTypeDescriptor,
+    public SortedDataFile(final DirectoryFacade directoryFacade,
+            final String fileName, final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final int diskIoBufferSize) {
-        this.directory = Vldtn.requireNonNull(directory, "directory");
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
         this.fileName = Vldtn.requireNonNull(fileName, "fileName");
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
                 "keyTypeDescriptor");
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
         this.diskIoBufferSize = Vldtn.requireIoBufferSize(diskIoBufferSize);
+    }
+
+    public static <K, V> SortedDataFile<K, V> fromDirectory(
+            final Directory directory, final String fileName,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final int diskIoBufferSize) {
+        return new SortedDataFile<>(DirectoryFacade.of(directory), fileName,
+                keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize);
     }
 
     /**
@@ -44,8 +55,17 @@ public class SortedDataFile<K, V> {
      * @return a new instance with the specified file name
      */
     public SortedDataFile<K, V> withFileName(final String newFileName) {
-        return new SortedDataFile<>(directory, newFileName, keyTypeDescriptor,
-                valueTypeDescriptor, diskIoBufferSize);
+        return new SortedDataFile<>(directoryFacade, newFileName,
+                keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize);
+    }
+
+    public static <K, V> SortedDataFile<K, V> fromDirectoryFacade(
+            final DirectoryFacade directoryFacade, final String fileName,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final int diskIoBufferSize) {
+        return new SortedDataFile<>(directoryFacade, fileName,
+                keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize);
     }
 
     /**
@@ -59,8 +79,9 @@ public class SortedDataFile<K, V> {
      */
     public SortedDataFile<K, V> withProperties(final Directory newDirectory,
             final String newFileName, final int newDiskIoBufferSize) {
-        return new SortedDataFile<>(newDirectory, newFileName,
-                keyTypeDescriptor, valueTypeDescriptor, newDiskIoBufferSize);
+        return new SortedDataFile<>(DirectoryFacade.of(newDirectory),
+                newFileName, keyTypeDescriptor, valueTypeDescriptor,
+                newDiskIoBufferSize);
     }
 
     /**
@@ -69,14 +90,14 @@ public class SortedDataFile<K, V> {
      * @return a entry iterator for the sorted data file
      */
     public EntryIteratorWithCurrent<K, V> openIterator() {
-        if (!directory.isFileExists(fileName)) {
+        if (!getDirectory().isFileExists(fileName)) {
             return new EmptyEntryIteratorWithCurrent<>();
         }
         final DiffKeyReader<K> diffKeyReader = new DiffKeyReader<>(
                 keyTypeDescriptor.getConvertorFromBytes());
         return new DataFileIterator<>(diffKeyReader,
                 valueTypeDescriptor.getTypeReader(),
-                directory.getFileReader(fileName, diskIoBufferSize));
+                getDirectory().getFileReader(fileName, diskIoBufferSize));
     }
 
     /**
@@ -86,7 +107,7 @@ public class SortedDataFile<K, V> {
      * @return a writer for the sorted data file
      */
     public SortedDataFileWriterTx<K, V> openWriterTx() {
-        return new SortedDataFileWriterTx<>(fileName, directory,
+        return new SortedDataFileWriterTx<>(fileName, directoryFacade,
                 diskIoBufferSize, keyTypeDescriptor, valueTypeDescriptor);
     }
 
@@ -94,7 +115,11 @@ public class SortedDataFile<K, V> {
      * Deletes the underlying file. Does nothing if the file does not exist.
      */
     public void delete() {
-        directory.deleteFile(fileName);
+        getDirectory().deleteFile(fileName);
+    }
+
+    private Directory getDirectory() {
+        return directoryFacade.getDirectory();
     }
 
 }

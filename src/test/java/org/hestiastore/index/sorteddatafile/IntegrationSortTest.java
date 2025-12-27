@@ -49,7 +49,8 @@ class IntegrationSortTest extends AbstractSegmentTest {
                 .withKeyReader(tds.getTypeReader())//
                 .build();
 
-        sdf = new SortedDataFile<>(dir, SORTED_FILE_NAME, tds, tdi, 1024);
+        sdf = SortedDataFile.fromDirectory(dir, SORTED_FILE_NAME, tds, tdi,
+                1024);
 
         sorter = new DataFileSorter<>(unsorted, sdf,
                 (k, v1, v2) -> v1 > v2 ? v1 : v2, tds, 2);

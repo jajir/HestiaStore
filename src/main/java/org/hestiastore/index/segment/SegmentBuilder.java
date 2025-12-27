@@ -6,6 +6,7 @@ import java.util.List;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 
 /**
@@ -25,7 +26,7 @@ public final class SegmentBuilder<K, V> {
 
     private static final int DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES = 1024 * 4;
 
-    private Directory directory;
+    private DirectoryFacade directoryFacade;
     private SegmentId id;
     private TypeDescriptor<K> keyTypeDescriptor;
     private TypeDescriptor<V> valueTypeDescriptor;
@@ -55,7 +56,21 @@ public final class SegmentBuilder<K, V> {
      * @return this builder for chaining
      */
     public SegmentBuilder<K, V> withDirectory(final Directory directory) {
-        this.directory = Vldtn.requireNonNull(directory, "directory");
+        Vldtn.requireNonNull(directory, "directory");
+        return withDirectory(DirectoryFacade.of(directory));
+    }
+
+    /**
+     * Set the base {@link DirectoryFacade} used to store files for this
+     * segment.
+     *
+     * @param directoryFacade non-null directory facade
+     * @return this builder for chaining
+     */
+    public SegmentBuilder<K, V> withDirectory(
+            final DirectoryFacade directoryFacade) {
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
         return this;
     }
 
@@ -303,7 +318,7 @@ public final class SegmentBuilder<K, V> {
      *                                  invalid
      */
     public SegmentImpl<K, V> build() {
-        if (directory == null) {
+        if (directoryFacade == null) {
             throw new IllegalArgumentException("Directory can't be null");
         }
         if (keyTypeDescriptor == null) {
@@ -339,14 +354,15 @@ public final class SegmentBuilder<K, V> {
                     encodingChunkFilters, decodingChunkFilters);
         }
         if (segmentFiles == null) {
-            segmentFiles = new SegmentFiles<>(directory, id, keyTypeDescriptor,
-                    valueTypeDescriptor, segmentConf.getDiskIoBufferSize(),
+            segmentFiles = new SegmentFiles<>(directoryFacade, id,
+                    keyTypeDescriptor, valueTypeDescriptor,
+                    segmentConf.getDiskIoBufferSize(),
                     segmentConf.getEncodingChunkFilters(),
                     segmentConf.getDecodingChunkFilters());
         }
         if (segmentPropertiesManager == null) {
             segmentPropertiesManager = new SegmentPropertiesManager(
-                    segmentFiles.getDirectory(), id);
+                    segmentFiles.getDirectoryFacade(), id);
         }
         if (segmentResources == null) {
             final SegmentDataSupplier<K, V> segmentDataSupplier = new SegmentDataSupplier<>(

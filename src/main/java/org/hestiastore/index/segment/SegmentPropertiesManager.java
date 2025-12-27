@@ -6,7 +6,7 @@ import java.util.function.Consumer;
 
 import org.hestiastore.index.FileNameUtil;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.properties.PropertyStore;
 import org.hestiastore.index.properties.PropertyStoreimpl;
 import org.hestiastore.index.properties.PropertyTransaction;
@@ -29,11 +29,12 @@ public class SegmentPropertiesManager {
     private final SegmentId id;
     private final PropertyStore propertyStore;
 
-    public SegmentPropertiesManager(final Directory directory,
+    public SegmentPropertiesManager(final DirectoryFacade directoryFacade,
             final SegmentId id) {
-        Vldtn.requireNonNull(directory, "directory");
+        Vldtn.requireNonNull(directoryFacade, "directoryFacade");
         this.id = Vldtn.requireNonNull(id, "segmentId");
-        this.propertyStore = new PropertyStoreimpl(directory,
+        this.propertyStore = new PropertyStoreimpl(
+                directoryFacade.getDirectory(),
                 getPropertiesFilename(), false);
     }
 

@@ -23,7 +23,7 @@ public class SegmentFilesRenamer {
             final SegmentFiles<K, V> to) {
         Vldtn.requireNonNull(from, "from");
         Vldtn.requireNonNull(to, "to");
-        Directory dir = from.getDirectory();
+        Directory dir = from.getDirectoryFacade().getDirectory();
         dir.renameFile(from.getIndexFileName(), to.getIndexFileName());
         dir.renameFile(from.getScarceFileName(), to.getScarceFileName());
         dir.renameFile(from.getBloomFilterFileName(),

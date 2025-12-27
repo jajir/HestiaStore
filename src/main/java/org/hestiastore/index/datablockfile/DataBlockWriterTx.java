@@ -3,6 +3,7 @@ package org.hestiastore.index.datablockfile;
 import org.hestiastore.index.GuardedWriteTransaction;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.FileWriter;
 
 /**
@@ -14,26 +15,33 @@ public class DataBlockWriterTx
 
     private static final String TEMP_FILE_SUFFIX = ".tmp";
     private final String fileName;
-    private final Directory directory;
+    private final DirectoryFacade directoryFacade;
     private final DataBlockSize blockSize;
 
-    public DataBlockWriterTx(final String fileName, final Directory directory,
+    public DataBlockWriterTx(final String fileName,
+            final Directory directory, final DataBlockSize blockSize) {
+        this(fileName, DirectoryFacade.of(directory), blockSize);
+    }
+
+    public DataBlockWriterTx(final String fileName,
+            final DirectoryFacade directoryFacade,
             final DataBlockSize blockSize) {
         this.fileName = Vldtn.requireNonNull(fileName, "fileName");
-        this.directory = Vldtn.requireNonNull(directory, "directory");
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
         this.blockSize = blockSize;
     }
 
     @Override
     protected DataBlockWriter doOpen() {
-        final FileWriter fileWriter = directory
+        final FileWriter fileWriter = directoryFacade.getDirectory()
                 .getFileWriter(getTempFileName());
         return new DataBlockWriterImpl(fileWriter, blockSize);
     }
 
     @Override
     protected void doCommit(final DataBlockWriter resource) {
-        directory.renameFile(getTempFileName(), fileName);
+        directoryFacade.getDirectory().renameFile(getTempFileName(), fileName);
     }
 
     private String getTempFileName() {
