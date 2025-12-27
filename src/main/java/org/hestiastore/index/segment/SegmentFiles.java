@@ -9,6 +9,7 @@ import org.hestiastore.index.chunkstore.ChunkStoreFile;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 
@@ -32,7 +33,7 @@ public final class SegmentFiles<K, V> {
     private static final String BOOM_FILTER_FILE_NAME_EXTENSION = ".bloom-filter";
     private static final String PROPERTIES_FILENAME_EXTENSION = ".properties";
 
-    private final Directory directory;
+    private final DirectoryFacade directoryFacade;
     private final SegmentId id;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
@@ -43,7 +44,7 @@ public final class SegmentFiles<K, V> {
     /**
      * Create accessor for segment files.
      *
-     * @param directory            directory implementation used for I/O
+     * @param directoryFacade      directory facade used for I/O
      * @param id                   unique segment identifier
      * @param keyTypeDescriptor    descriptor for key serialization and
      *                             comparison
@@ -52,13 +53,15 @@ public final class SegmentFiles<K, V> {
      * @param encodingChunkFilters filters applied when writing chunks
      * @param decodingChunkFilters filters applied when reading chunks
      */
-    public SegmentFiles(final Directory directory, final SegmentId id,
+    public SegmentFiles(final DirectoryFacade directoryFacade,
+            final SegmentId id,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final int diskIoBufferSize,
             final List<ChunkFilter> encodingChunkFilters,
             final List<ChunkFilter> decodingChunkFilters) {
-        this.directory = Vldtn.requireNonNull(directory, "directory");
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
         this.id = Vldtn.requireNonNull(id, "segmentId");
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
                 "keyTypeDescriptor");
@@ -122,13 +125,9 @@ public final class SegmentFiles<K, V> {
      * @return sorted data file for this segment's cache
      */
     SortedDataFile<K, V> getCacheDataFile() {
-        return SortedDataFile.<K, V>builder() //
-                .withDirectory(directory) //
-                .withFileName(getCacheFileName())//
-                .withKeyTypeDescriptor(keyTypeDescriptor) //
-                .withValueTypeDescriptor(valueTypeDescriptor) //
-                .withDiskIoBufferSize(diskIoBufferSize)//
-                .build();
+        return SortedDataFile.fromDirectoryFacade(directoryFacade,
+                getCacheFileName(), keyTypeDescriptor, valueTypeDescriptor,
+                diskIoBufferSize);
     }
 
     /**
@@ -138,13 +137,8 @@ public final class SegmentFiles<K, V> {
      * @return sorted data file handle
      */
     SortedDataFile<K, V> getDeltaCacheSortedDataFile(final String fileName) {
-        return SortedDataFile.<K, V>builder() //
-                .withDirectory(directory) //
-                .withFileName(fileName)//
-                .withKeyTypeDescriptor(keyTypeDescriptor) //
-                .withValueTypeDescriptor(valueTypeDescriptor) //
-                .withDiskIoBufferSize(diskIoBufferSize)//
-                .build();
+        return SortedDataFile.fromDirectoryFacade(directoryFacade, fileName,
+                keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize);
     }
 
     /**
@@ -167,7 +161,8 @@ public final class SegmentFiles<K, V> {
      * @return chunk-entry file for the index
      */
     ChunkEntryFile<K, V> getIndexFile() {
-        final ChunkStoreFile chunkStoreFile = new ChunkStoreFile(getDirectory(),
+        final ChunkStoreFile chunkStoreFile = new ChunkStoreFile(
+                directoryFacade,
                 getIndexFileName(),
                 DataBlockSize.ofDataBlockSize(diskIoBufferSize),
                 encodingChunkFilters, decodingChunkFilters);
@@ -182,7 +177,11 @@ public final class SegmentFiles<K, V> {
      * @return directory
      */
     Directory getDirectory() {
-        return directory;
+        return directoryFacade.getDirectory();
+    }
+
+    DirectoryFacade getDirectoryFacade() {
+        return directoryFacade;
     }
 
     /**
@@ -247,10 +246,10 @@ public final class SegmentFiles<K, V> {
      * @throws IllegalStateException if the file could not be deleted
      */
     void deleteFile(final String fileName) {
-        if (!directory.deleteFile(fileName)) {
+        if (!getDirectory().deleteFile(fileName)) {
             throw new IllegalStateException(String.format(
                     "Unable to delete file '%s' in directory '%s'", fileName,
-                    directory));
+                    directoryFacade));
         }
     }
 
@@ -260,7 +259,7 @@ public final class SegmentFiles<K, V> {
      * @param fileName file to delete if present
      */
     void optionallyDeleteFile(final String fileName) {
-        directory.deleteFile(fileName);
+        getDirectory().deleteFile(fileName);
     }
 
     /**

@@ -3,13 +3,14 @@ package org.hestiastore.index.bloomfilter;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 
 public class BloomFilterBuilder<K> {
 
     public static final double DEFAULT_PROBABILITY_OF_FALSE_POSITIVE = 0.01;
     private static final int DEFAULT_DISK_IO_BUFFER_SIZE = 2 * 1024;
 
-    private Directory directory;
+    private DirectoryFacade directoryFacade;
     private String bloomFilterFileName;
     private ConvertorToBytes<K> convertorToBytes;
     private Long numberOfKeys = null;
@@ -24,7 +25,15 @@ public class BloomFilterBuilder<K> {
     }
 
     public BloomFilterBuilder<K> withDirectory(final Directory directory) {
-        this.directory = directory;
+        Vldtn.requireNonNull(directory, "directory");
+        this.directoryFacade = DirectoryFacade.of(directory);
+        return this;
+    }
+
+    public BloomFilterBuilder<K> withDirectoryFacade(
+            final DirectoryFacade directoryFacade) {
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
         return this;
     }
 
@@ -78,7 +87,7 @@ public class BloomFilterBuilder<K> {
     }
 
     public BloomFilter<K> build() {
-        Vldtn.requireNonNull(directory, "directory");
+        Vldtn.requireNonNull(directoryFacade, "directory");
         Vldtn.requireNonNull(bloomFilterFileName, "bloomFilterFileName");
         Vldtn.requireNonNull(convertorToBytes, "convertorToBytes");
         if (numberOfKeys == null && indexSizeInBytes == null) {
@@ -105,7 +114,7 @@ public class BloomFilterBuilder<K> {
                         indexSizeInBytes / (double) numberOfKeys * Math.log(2));
             }
         }
-        return new BloomFilterImpl<>(directory, bloomFilterFileName,
+        return new BloomFilterImpl<>(directoryFacade, bloomFilterFileName,
                 numberOfHashFunctions, indexSizeInBytes, convertorToBytes,
                 relatedObjectName, diskIoBufferSize);
     }

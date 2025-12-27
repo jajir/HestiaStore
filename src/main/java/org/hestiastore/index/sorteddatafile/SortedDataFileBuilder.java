@@ -3,12 +3,13 @@ package org.hestiastore.index.sorteddatafile;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 
 public class SortedDataFileBuilder<K, V> {
 
     private static final int DELAULT_FILE_READING_BUFFER_SIZE = 1024 * 4;
 
-    private Directory directory;
+    private DirectoryFacade directoryFacade;
 
     private String fileName;
 
@@ -20,7 +21,15 @@ public class SortedDataFileBuilder<K, V> {
 
     public SortedDataFileBuilder<K, V> withDirectory(
             final Directory directory) {
-        this.directory = Vldtn.requireNonNull(directory, "directory");
+        Vldtn.requireNonNull(directory, "directory");
+        this.directoryFacade = DirectoryFacade.of(directory);
+        return this;
+    }
+
+    public SortedDataFileBuilder<K, V> withDirectoryFacade(
+            final DirectoryFacade directoryFacade) {
+        Vldtn.requireNonNull(directoryFacade, "directoryFacade");
+        this.directoryFacade = directoryFacade;
         return this;
     }
 
@@ -51,8 +60,11 @@ public class SortedDataFileBuilder<K, V> {
     }
 
     public SortedDataFile<K, V> build() {
-        return new SortedDataFile<>(directory, fileName, keyTypeDescriptor,
-                valueTypeDescriptor, diskIoBufferSize);
+        if (directoryFacade == null) {
+            throw new IllegalStateException("Directory must be provided");
+        }
+        return new SortedDataFile<>(directoryFacade, fileName,
+                keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize);
     }
 
 }

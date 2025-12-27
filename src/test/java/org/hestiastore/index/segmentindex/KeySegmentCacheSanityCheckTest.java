@@ -23,8 +23,9 @@ class KeySegmentCacheSanityCheckTest {
      */
     @Test
     void test_sanityCheck() {
-        final SortedDataFile<String, SegmentId> sdf = new SortedDataFile<>(
-                directory, "index.map", stringTd, integerTd, 1024);
+        final SortedDataFile<String, SegmentId> sdf = SortedDataFile
+                .fromDirectory(directory, "index.map", stringTd, integerTd,
+                        1024);
 
         sdf.openWriterTx().execute(writer -> {
             writer.write(Entry.of("aaa", SegmentId.of(1)));

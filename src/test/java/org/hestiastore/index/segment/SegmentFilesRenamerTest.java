@@ -1,6 +1,7 @@
 package org.hestiastore.index.segment;
 
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -27,7 +28,7 @@ class SegmentFilesRenamerTest {
     void setUp() {
         directory = mock(Directory.class);
         renamer = new SegmentFilesRenamer();
-        when(from.getDirectory()).thenReturn(directory);
+        when(from.getDirectoryFacade()).thenReturn(DirectoryFacade.of(directory));
         when(from.getIndexFileName()).thenReturn("from.index");
         when(to.getIndexFileName()).thenReturn("to.index");
         when(from.getScarceFileName()).thenReturn("from.scarce");

@@ -4,6 +4,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.datatype.TypeWriter;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 
 /**
  * Fluent builder for creating {@link UnsortedDataFile} instances backed by a
@@ -16,7 +17,7 @@ public class UnsortedDataFileBuilder<K, V> {
 
     private static final int DEFAULT_DISK_IO_BUFFER_SIZE = 4 * 1024;
 
-    private Directory directory;
+    private DirectoryFacade directoryFacade;
     private String fileName;
     private TypeWriter<K> keyWriter;
     private TypeWriter<V> valueWriter;
@@ -32,7 +33,15 @@ public class UnsortedDataFileBuilder<K, V> {
      */
     public UnsortedDataFileBuilder<K, V> withDirectory(
             final Directory directory) {
-        this.directory = Vldtn.requireNonNull(directory, "directory");
+        Vldtn.requireNonNull(directory, "directory");
+        this.directoryFacade = DirectoryFacade.of(directory);
+        return this;
+    }
+
+    public UnsortedDataFileBuilder<K, V> withDirectoryFacade(
+            final DirectoryFacade directoryFacade) {
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
         return this;
     }
 
@@ -114,8 +123,12 @@ public class UnsortedDataFileBuilder<K, V> {
      * @return configured data file instance
      */
     public UnsortedDataFile<K, V> build() {
-        return new UnsortedDataFileImpl<>(directory, fileName, keyWriter,
-                valueWriter, keyReader, valueReader, diskIoBufferSize);
+        if (directoryFacade == null) {
+            throw new IllegalStateException("Directory must be provided");
+        }
+        return new UnsortedDataFileImpl<>(directoryFacade.getDirectory(),
+                fileName, keyWriter, valueWriter, keyReader, valueReader,
+                diskIoBufferSize);
     }
 
 }

@@ -24,6 +24,7 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -489,16 +490,18 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
     @Test
     void test_write_to_unloaded_segment() {
         final Directory directory = new MemDirectory();
+        final DirectoryFacade directoryFacade = DirectoryFacade
+                .of(directory);
         final SegmentId segmentId = SegmentId.of(27);
 
         SegmentConf segmentConf = new SegmentConf(13, 17, 3, 2, 0, 0.01, 1024,
                 List.of(), List.of());
 
         final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
-                directory, segmentId);
+                directoryFacade, segmentId);
 
         final SegmentFiles<Integer, String> segmentFiles = new SegmentFiles<>(
-                directory, segmentId, tdi, tds, 1024, //
+                directoryFacade, segmentId, tdi, tds, 1024, //
                 List.of(new ChunkFilterMagicNumberWriting(), //
                         new ChunkFilterCrc32Writing(), //
                         new ChunkFilterDoNothing()//

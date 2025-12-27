@@ -33,6 +33,13 @@ public final class PropertyStoreimpl implements PropertyStore {
         loadIfPresent(force);
     }
 
+    public static PropertyStoreimpl fromDirectoryFacade(
+            final org.hestiastore.index.directory.DirectoryFacade directoryFacade,
+            final String fileName, final boolean force) {
+        return new PropertyStoreimpl(directoryFacade.getDirectory(), fileName,
+                force);
+    }
+
     private void loadIfPresent(final boolean force) {
         if (!directory.isFileExists(fileName)) {
             if (force) {

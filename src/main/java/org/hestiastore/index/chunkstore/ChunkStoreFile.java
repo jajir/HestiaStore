@@ -8,6 +8,7 @@ import org.hestiastore.index.datablockfile.DataBlockByteReaderImpl;
 import org.hestiastore.index.datablockfile.DataBlockFile;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.FileReaderSeekable;
 
 /**
@@ -29,16 +30,25 @@ public class ChunkStoreFile {
      * @param dataBlockSize required size of the data blocks in the chunk store
      *                      file
      */
-    public ChunkStoreFile(final Directory directory, final String fileName,
+    public ChunkStoreFile(final DirectoryFacade directoryFacade,
+            final String fileName,
             final DataBlockSize dataBlockSize,
             final List<ChunkFilter> encodingChunkFilters,
             final List<ChunkFilter> decodingChunkFilters) {
-        this.dataBlockFile = new DataBlockFile(directory, fileName,
+        this.dataBlockFile = new DataBlockFile(directoryFacade, fileName,
                 dataBlockSize);
         this.dataBlockSize = Vldtn.requireNonNull(dataBlockSize,
                 "dataBlockSize");
         this.encodingChunkFilters = List.copyOf(encodingChunkFilters);
         this.decodingChunkFilters = List.copyOf(decodingChunkFilters);
+    }
+
+    public ChunkStoreFile(final Directory directory, final String fileName,
+            final DataBlockSize dataBlockSize,
+            final List<ChunkFilter> encodingChunkFilters,
+            final List<ChunkFilter> decodingChunkFilters) {
+        this(DirectoryFacade.of(directory), fileName, dataBlockSize,
+                encodingChunkFilters, decodingChunkFilters);
     }
 
     /**

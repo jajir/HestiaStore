@@ -4,6 +4,7 @@ import org.hestiastore.index.GuardedWriteTransaction;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 
 /**
  * Write transaction wrapper for bloom filter updates.
@@ -13,7 +14,7 @@ public final class BloomFilterWriterTx<K>
 
     private static final String TEMP_FILE_EXTENSION = ".tmp";
 
-    private final Directory directory;
+    private final DirectoryFacade directoryFacade;
     private final String bloomFilterFileName;
     private final ConvertorToBytes<K> convertorToBytes;
     private final int numberOfHashFunctions;
@@ -26,7 +27,18 @@ public final class BloomFilterWriterTx<K>
             final ConvertorToBytes<K> convertorToBytes,
             final int numberOfHashFunctions, final int indexSizeInBytes,
             final int diskIoBufferSize, final BloomFilter<K> bloomFilter) {
-        this.directory = Vldtn.requireNonNull(directory, "directory");
+        this(DirectoryFacade.of(directory), bloomFilterFileName,
+                convertorToBytes, numberOfHashFunctions, indexSizeInBytes,
+                diskIoBufferSize, bloomFilter);
+    }
+
+    BloomFilterWriterTx(final DirectoryFacade directoryFacade,
+            final String bloomFilterFileName,
+            final ConvertorToBytes<K> convertorToBytes,
+            final int numberOfHashFunctions, final int indexSizeInBytes,
+            final int diskIoBufferSize, final BloomFilter<K> bloomFilter) {
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
         this.bloomFilterFileName = Vldtn.requireNonNull(bloomFilterFileName,
                 "bloomFilterFileName");
         this.convertorToBytes = Vldtn.requireNonNull(convertorToBytes,
@@ -41,13 +53,14 @@ public final class BloomFilterWriterTx<K>
     protected BloomFilterWriter<K> doOpen() {
         final Hash hash = new Hash(new BitArray(indexSizeInBytes),
                 numberOfHashFunctions);
-        return new BloomFilterWriter<>(convertorToBytes, hash, directory,
+        return new BloomFilterWriter<>(convertorToBytes, hash, directoryFacade,
                 getTempFileName(), diskIoBufferSize);
     }
 
     @Override
     protected void doCommit(final BloomFilterWriter<K> writer) {
-        directory.renameFile(getTempFileName(), bloomFilterFileName);
+        directoryFacade.getDirectory().renameFile(getTempFileName(),
+                bloomFilterFileName);
         bloomFilter.setNewHash(writer.getHashSnapshot());
     }
 
