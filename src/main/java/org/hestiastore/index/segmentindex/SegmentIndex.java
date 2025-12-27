@@ -10,6 +10,7 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 
 /**
  * High-level contract for the segment-index layer that sits above individual
@@ -93,6 +94,8 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     private static <M, N> SegmentIndex<M, N> openIndex(
             final Directory directory,
             final IndexConfiguration<M, N> indexConf) {
+        final DirectoryFacade directoryFacade = DirectoryFacade
+                .of(directory);
         final TypeDescriptor<M> keyTypeDescriptor = DataTypeDescriptorRegistry
                 .makeInstance(indexConf.getKeyTypeDescriptor());
         final TypeDescriptor<N> valueTypeDescriptor = DataTypeDescriptorRegistry
@@ -100,7 +103,8 @@ public interface SegmentIndex<K, V> extends CloseableResource {
         Vldtn.requireNonNull(indexConf.isContextLoggingEnabled(),
                 "isContextLoggingEnabled");
         final SegmentIndex<M, N> index = new IndexInternalSynchronized<>(
-                directory, keyTypeDescriptor, valueTypeDescriptor, indexConf);
+                directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
+                indexConf);
         if (Boolean.TRUE.equals(indexConf.isContextLoggingEnabled())) {
             return new IndexContextLoggingAdapter<>(indexConf, index);
         } else {
