@@ -76,9 +76,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     public CompletionStage<Void> putAsync(final K key, final V value) {
         return CompletableFuture.runAsync(() -> {
-            synchronized (this) {
-                put(key, value);
-            }
+            put(key, value);
         });
     }
 
@@ -185,9 +183,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     public CompletionStage<V> getAsync(final K key) {
         return CompletableFuture.supplyAsync(() -> {
-            synchronized (this) {
-                return get(key);
-            }
+            return get(key);
         });
     }
 
@@ -213,9 +209,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     public CompletionStage<Void> deleteAsync(final K key) {
         return CompletableFuture.runAsync(() -> {
-            synchronized (this) {
-                delete(key);
-            }
+            delete(key);
         });
     }
 
