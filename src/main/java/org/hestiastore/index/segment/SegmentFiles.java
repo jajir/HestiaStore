@@ -8,7 +8,6 @@ import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkStoreFile;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
@@ -54,8 +53,7 @@ public final class SegmentFiles<K, V> {
      * @param decodingChunkFilters filters applied when reading chunks
      */
     public SegmentFiles(final DirectoryFacade directoryFacade,
-            final SegmentId id,
-            final TypeDescriptor<K> keyTypeDescriptor,
+            final SegmentId id, final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final int diskIoBufferSize,
             final List<ChunkFilter> encodingChunkFilters,
@@ -162,8 +160,7 @@ public final class SegmentFiles<K, V> {
      */
     ChunkEntryFile<K, V> getIndexFile() {
         final ChunkStoreFile chunkStoreFile = new ChunkStoreFile(
-                directoryFacade,
-                getIndexFileName(),
+                directoryFacade, getIndexFileName(),
                 DataBlockSize.ofDataBlockSize(diskIoBufferSize),
                 encodingChunkFilters, decodingChunkFilters);
         return new ChunkEntryFile<>(chunkStoreFile, keyTypeDescriptor,

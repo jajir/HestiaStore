@@ -1,8 +1,7 @@
 package org.hestiastore.index.segment;
 
-import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.directory.DirectoryFacade;
 
 /**
  * Provides a utility method to rename all files associated with a segment from

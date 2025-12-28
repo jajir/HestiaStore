@@ -5,15 +5,14 @@ import java.util.Map;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentConf;
-import org.hestiastore.index.segment.SegmentResources;
 import org.hestiastore.index.segment.SegmentDataSupplier;
 import org.hestiastore.index.segment.SegmentFiles;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentPropertiesManager;
+import org.hestiastore.index.segment.SegmentResources;
 import org.hestiastore.index.segment.SegmentResourcesImpl;
 import org.hestiastore.index.segment.SegmentSynchronizationAdapter;
 
@@ -25,6 +24,7 @@ public class SegmentRegistry<K, V> {
     private final DirectoryFacade directoryFacade;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
+
     SegmentRegistry(final DirectoryFacade directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
@@ -75,10 +75,9 @@ public class SegmentRegistry<K, V> {
                 directoryFacade, segmentId);
 
         final SegmentFiles<K, V> segmentFiles = new SegmentFiles<>(
-                directoryFacade,
-                segmentId, keyTypeDescriptor, valueTypeDescriptor,
-                conf.getDiskIoBufferSize(), conf.getEncodingChunkFilters(),
-                conf.getDecodingChunkFilters());
+                directoryFacade, segmentId, keyTypeDescriptor,
+                valueTypeDescriptor, conf.getDiskIoBufferSize(),
+                conf.getEncodingChunkFilters(), conf.getDecodingChunkFilters());
 
         final SegmentDataSupplier<K, V> segmentDataSupplier = new SegmentDataSupplier<>(
                 segmentFiles, segmentConf, segmentPropertiesManager);
@@ -87,8 +86,8 @@ public class SegmentRegistry<K, V> {
                 segmentDataSupplier);
 
         final Segment<K, V> segment = Segment.<K, V>builder()
-                .withDirectoryFacade(directoryFacade)
-                .withId(segmentId).withKeyTypeDescriptor(keyTypeDescriptor)
+                .withDirectoryFacade(directoryFacade).withId(segmentId)
+                .withKeyTypeDescriptor(keyTypeDescriptor)
                 .withSegmentResources(dataProvider)//
                 .withSegmentConf(segmentConf)//
                 .withSegmentFiles(segmentFiles)//
@@ -109,10 +108,9 @@ public class SegmentRegistry<K, V> {
 
     private void deleteSegmentFiles(final SegmentId segmentId) {
         final SegmentFiles<K, V> segmentFiles = new SegmentFiles<>(
-                directoryFacade,
-                segmentId, keyTypeDescriptor, valueTypeDescriptor,
-                conf.getDiskIoBufferSize(), conf.getEncodingChunkFilters(),
-                conf.getDecodingChunkFilters());
+                directoryFacade, segmentId, keyTypeDescriptor,
+                valueTypeDescriptor, conf.getDiskIoBufferSize(),
+                conf.getEncodingChunkFilters(), conf.getDecodingChunkFilters());
         final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
                 directoryFacade, segmentId);
         segmentFiles.deleteAllFiles(segmentPropertiesManager);
