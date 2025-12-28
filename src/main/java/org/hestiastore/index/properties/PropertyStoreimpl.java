@@ -10,7 +10,7 @@ import java.util.Properties;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory.Access;
-import org.hestiastore.index.directory.DirectoryFacade;
+import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.directory.FileReader;
 import org.hestiastore.index.directory.FileWriter;
 import org.hestiastore.index.directory.async.AsyncFileReaderBlockingAdapter;
@@ -23,12 +23,12 @@ import org.hestiastore.index.directory.async.AsyncFileWriterBlockingAdapter;
  */
 public final class PropertyStoreimpl implements PropertyStore {
 
-    private final DirectoryFacade directoryFacade;
+    private final AsyncDirectory directoryFacade;
     private final String fileName;
     private final Properties properties = new Properties();
     private final PropertyConverters converters = new PropertyConverters();
 
-    public PropertyStoreimpl(final DirectoryFacade directoryFacade,
+    public PropertyStoreimpl(final AsyncDirectory directoryFacade,
             final String fileName, final boolean force) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
@@ -36,8 +36,8 @@ public final class PropertyStoreimpl implements PropertyStore {
         loadIfPresent(force);
     }
 
-    public static PropertyStoreimpl fromDirectoryFacade(
-            final DirectoryFacade directoryFacade,
+    public static PropertyStoreimpl fromAsyncDirectory(
+            final AsyncDirectory directoryFacade,
             final String fileName, final boolean force) {
         return new PropertyStoreimpl(directoryFacade, fileName, force);
     }

@@ -19,7 +19,6 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -31,9 +30,8 @@ class SegmentSplitApiTest {
     private static final SegmentId NEW_SEGMENT_ID = SegmentId.of(42);
 
     static Stream<Arguments> segmentFactories() {
-        return Stream.of(
-                Arguments.of("SegmentImpl",
-                        (Supplier<Segment<Integer, String>>) SegmentSplitApiTest::newSegment),
+        return Stream.of(Arguments.of("SegmentImpl",
+                (Supplier<Segment<Integer, String>>) SegmentSplitApiTest::newSegment),
                 Arguments.of("SegmentSynchronizationAdapter",
                         (Supplier<Segment<Integer, String>>) () -> new SegmentSynchronizationAdapter<>(
                                 newSegment())));
@@ -90,7 +88,8 @@ class SegmentSplitApiTest {
                     .fromPolicy(segment.getSegmentSplitterPolicy());
             final EntryIterator<Integer, String> iterator = segment
                     .openIterator();
-            final ExecutorService executor = Executors.newSingleThreadExecutor();
+            final ExecutorService executor = Executors
+                    .newSingleThreadExecutor();
             try {
                 final Future<?> future = executor
                         .submit(() -> segment.split(NEW_SEGMENT_ID, plan));
@@ -113,7 +112,9 @@ class SegmentSplitApiTest {
     private static Segment<Integer, String> newSegment() {
         final Directory directory = new MemDirectory();
         return Segment.<Integer, String>builder()//
-                .withDirectoryFacade(DirectoryFacade.of(directory))//
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(directory))//
                 .withId(SegmentId.of(1))//
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())//
                 .withValueTypeDescriptor(new TypeDescriptorShortString())//

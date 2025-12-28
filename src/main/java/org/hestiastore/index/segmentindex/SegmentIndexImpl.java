@@ -12,7 +12,7 @@ import org.hestiastore.index.F;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.UniqueCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.DirectoryFacade;
+import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.slf4j.Logger;
@@ -33,7 +33,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private volatile IndexState<K, V> indexState;
     private final ReentrantLock flushLock = new ReentrantLock();
 
-    protected SegmentIndexImpl(final DirectoryFacade directoryFacade,
+    protected SegmentIndexImpl(final AsyncDirectory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf) {

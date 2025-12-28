@@ -6,7 +6,6 @@ import org.hestiastore.index.bloomfilter.BloomFilter;
 import org.hestiastore.index.bloomfilter.BloomFilterWriter;
 import org.hestiastore.index.bloomfilter.BloomFilterWriterTx;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
-import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -103,7 +102,9 @@ class BlooomFilterProbabilityIT {
         return BloomFilter.<Long>builder()//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(STD.getConvertorToBytes())//
-                .withDirectoryFacade(DirectoryFacade.of(directory))//
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(directory))//
                 .withIndexSizeInBytes(BLOOM_FILTER_SIZE_IN_BYTES)//
                 .withNumberOfHashFunctions(NUMBER_OF_HASH_FUNCTIONS)//
                 .withRelatedObjectName("segment-00323")//

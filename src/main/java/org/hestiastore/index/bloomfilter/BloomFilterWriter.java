@@ -4,7 +4,7 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.directory.Directory.Access;
-import org.hestiastore.index.directory.DirectoryFacade;
+import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.directory.FileWriter;
 import org.hestiastore.index.directory.async.AsyncFileWriterBlockingAdapter;
 
@@ -14,12 +14,12 @@ public class BloomFilterWriter<K> extends AbstractCloseableResource {
 
     private final Hash hash;
 
-    private final DirectoryFacade directoryFacade;
+    private final AsyncDirectory directoryFacade;
     private final String fileName;
     private final int diskIoBufferSize;
 
     BloomFilterWriter(final ConvertorToBytes<K> convertorToBytes,
-            final Hash newHash, final DirectoryFacade directoryFacade,
+            final Hash newHash, final AsyncDirectory directoryFacade,
             final String fileName, final int diskIoBufferSize) {
         this.convertorToBytes = Vldtn.requireNonNull(convertorToBytes,
                 "convertorToBytes");

@@ -3,13 +3,13 @@ package org.hestiastore.index.segment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,10 +33,9 @@ import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 import org.hestiastore.index.scarceindex.ScarceIndexWriterTx;
+import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -109,8 +108,9 @@ class SegmentImplTest {
         when(segmentFiles.getValueTypeDescriptor()).thenReturn(tds);
         when(segmentFiles.getIndexFile()).thenReturn(chunkPairFile);
         when(segmentFiles.getIndexFileName()).thenReturn("segment.index");
-        when(segmentFiles.getDirectoryFacade())
-                .thenReturn(DirectoryFacade.of(directory));
+        when(segmentFiles.getAsyncDirectory()).thenReturn(
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(directory));
         when(directory.isFileExists("segment.index")).thenReturn(true);
         when(directory.getFileReaderSeekable("segment.index"))
                 .thenReturn(seekableReader);
@@ -154,7 +154,9 @@ class SegmentImplTest {
 
         final SegmentImpl<Integer, String> seg = Segment
                 .<Integer, String>builder()//
-                .withDirectoryFacade(DirectoryFacade.of(directory))//
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(directory))//
                 .withId(originalId)//
                 .withKeyTypeDescriptor(tdi)//
                 .withBloomFilterIndexSizeInBytes(0)//
@@ -177,8 +179,8 @@ class SegmentImplTest {
         assertNotNull(cloned);
         assertEquals(cloneId, cloned.getId());
         // Same directory instance
-        assertSame(seg.getSegmentFiles().getDirectoryFacade(),
-                cloned.getSegmentFiles().getDirectoryFacade());
+        assertSame(seg.getSegmentFiles().getAsyncDirectory(),
+                cloned.getSegmentFiles().getAsyncDirectory());
         // Same descriptors by type
         assertEquals(seg.getSegmentFiles().getKeyTypeDescriptor().getClass(),
                 cloned.getSegmentFiles().getKeyTypeDescriptor().getClass());

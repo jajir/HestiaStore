@@ -3,7 +3,7 @@ package org.hestiastore.index.bloomfilter;
 import org.hestiastore.index.GuardedWriteTransaction;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
-import org.hestiastore.index.directory.DirectoryFacade;
+import org.hestiastore.index.directory.async.AsyncDirectory;
 
 /**
  * Write transaction wrapper for bloom filter updates.
@@ -13,7 +13,7 @@ public final class BloomFilterWriterTx<K>
 
     private static final String TEMP_FILE_EXTENSION = ".tmp";
 
-    private final DirectoryFacade directoryFacade;
+    private final AsyncDirectory directoryFacade;
     private final String bloomFilterFileName;
     private final ConvertorToBytes<K> convertorToBytes;
     private final int numberOfHashFunctions;
@@ -21,7 +21,7 @@ public final class BloomFilterWriterTx<K>
     private final int diskIoBufferSize;
     private final BloomFilter<K> bloomFilter;
 
-    BloomFilterWriterTx(final DirectoryFacade directoryFacade,
+    BloomFilterWriterTx(final AsyncDirectory directoryFacade,
             final String bloomFilterFileName,
             final ConvertorToBytes<K> convertorToBytes,
             final int numberOfHashFunctions, final int indexSizeInBytes,

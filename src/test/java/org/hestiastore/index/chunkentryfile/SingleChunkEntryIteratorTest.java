@@ -11,7 +11,6 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.TestData;
 import org.hestiastore.index.chunkstore.Chunk;
 import org.hestiastore.index.chunkstore.ChunkHeader;
-import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 import org.junit.jupiter.api.AfterEach;
@@ -37,7 +36,9 @@ public class SingleChunkEntryIteratorTest {
     Chunk makeChunkFromEntryList(final List<Entry<Integer, String>> entryList) {
         final SortedDataFile<Integer, String> sortedDataFile = SortedDataFile
                 .<Integer, String>builder() //
-                .withDirectoryFacade(DirectoryFacade.of(directory)) //
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(directory)) //
                 .withFileName(FILE_NAME)//
                 .withKeyTypeDescriptor(TestData.TYPE_DESCRIPTOR_INTEGER) //
                 .withValueTypeDescriptor(TestData.TYPE_DESCRIPTOR_STRING) //

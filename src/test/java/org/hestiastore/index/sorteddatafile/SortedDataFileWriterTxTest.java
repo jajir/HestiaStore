@@ -8,15 +8,14 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.FsDirectory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Reproduces a real-life failure where SortedDataFileWriterTx commits by
- * renaming a non-existent temporary file (".tmp") because open() writes
- * into the final file name instead of the temp one.
+ * renaming a non-existent temporary file (".tmp") because open() writes into
+ * the final file name instead of the temp one.
  *
  * Expected: commit should succeed (writer writes to temp and commit renames
  * temp→final). Actual (current code): commit throws IndexException because
@@ -36,7 +35,10 @@ class SortedDataFileWriterTxTest {
         final TypeDescriptorShortString td = new TypeDescriptorShortString();
 
         final SortedDataFileWriterTx<String, String> tx = new SortedDataFileWriterTx<>(
-                fileName, DirectoryFacade.of(dir), bufferSize, td, td);
+                fileName,
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(dir),
+                bufferSize, td, td);
 
         try (final EntryWriter<String, String> w = tx.open()) {
             w.write(Entry.of("K", "V"));

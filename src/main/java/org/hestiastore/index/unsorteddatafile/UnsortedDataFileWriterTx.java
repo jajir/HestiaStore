@@ -7,7 +7,7 @@ import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeWriter;
 import org.hestiastore.index.directory.Directory.Access;
-import org.hestiastore.index.directory.DirectoryFacade;
+import org.hestiastore.index.directory.async.AsyncDirectory;
 
 /**
  * A transaction for writing unsorted key-value entries to a temporary file. Upon
@@ -22,7 +22,7 @@ public class UnsortedDataFileWriterTx<K, V>
 
     private static final String TEMP_FILE_SUFFIX = ".tmp";
     private final String fileName;
-    private final DirectoryFacade directoryFacade;
+    private final AsyncDirectory directoryFacade;
     private final int diskIoBufferSize;
     private final TypeWriter<K> keyWriter;
     private final TypeWriter<V> valueWriter;
@@ -37,7 +37,7 @@ public class UnsortedDataFileWriterTx<K, V>
      * @param valueWriter         required value writer
      */
     public UnsortedDataFileWriterTx(final String fileName,
-            final DirectoryFacade directoryFacade, final int diskIoBufferSize,
+            final AsyncDirectory directoryFacade, final int diskIoBufferSize,
             final TypeWriter<K> keyWriter, final TypeWriter<V> valueWriter) {
         this.fileName = Vldtn.requireNonNull(fileName, "fileName");
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,

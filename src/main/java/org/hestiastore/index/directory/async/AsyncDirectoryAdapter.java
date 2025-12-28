@@ -32,6 +32,10 @@ public final class AsyncDirectoryAdapter extends AbstractCloseableResource
         return new AsyncDirectoryAdapter(delegate, executor, true);
     }
 
+    public static AsyncDirectory wrap(final Directory delegate) {
+        return wrap(delegate, 1);
+    }
+
     public AsyncDirectoryAdapter(final Directory delegate,
             final ExecutorService executor,
             final boolean shutdownExecutorOnClose) {
@@ -143,4 +147,3 @@ public final class AsyncDirectoryAdapter extends AbstractCloseableResource
         }, executor);
     }
 }
-

@@ -19,7 +19,6 @@ import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
@@ -254,7 +253,10 @@ class IntegrationSegmentIndexSimpleTest {
                 .withContextLoggingEnabled(withLog) //
                 .withName("test_index") //
                 .build();
-        return SegmentIndex.create(DirectoryFacade.of(directory), conf);
+        return SegmentIndex.create(
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(directory),
+                conf);
     }
 
     private int numberOfFilesInDirectoryP(final Directory directory) {
@@ -279,7 +281,9 @@ class IntegrationSegmentIndexSimpleTest {
 
     private Segment<Integer, String> makeSegment(final int segmentId) {
         return Segment.<Integer, String>builder()//
-                .withDirectoryFacade(DirectoryFacade.of(directory))//
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(directory))//
                 .withId(SegmentId.of(segmentId))//
                 .withDiskIoBufferSize(DISK_IO_BUFFER_SIZE)//
                 .withKeyTypeDescriptor(tdi)//

@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
@@ -25,7 +24,9 @@ class KeySegmentCacheSanityCheckTest {
     @Test
     void test_sanityCheck() {
         final SortedDataFile<String, SegmentId> sdf = SortedDataFile
-                .fromDirectoryFacade(DirectoryFacade.of(directory),
+                .fromAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(directory),
                         "index.map", stringTd, integerTd, 1024);
 
         sdf.openWriterTx().execute(writer -> {
@@ -38,7 +39,9 @@ class KeySegmentCacheSanityCheckTest {
         });
         assertThrows(IllegalStateException.class, () -> {
             try (KeySegmentCache<String> fif = new KeySegmentCache<>(
-                    DirectoryFacade.of(directory), stringTd)) {
+                    org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                            .wrap(directory),
+                    stringTd)) {
                 // Intentionally left empty to trigger Exception
             }
         }, "Unable to load scarce index, sanity check failed.");

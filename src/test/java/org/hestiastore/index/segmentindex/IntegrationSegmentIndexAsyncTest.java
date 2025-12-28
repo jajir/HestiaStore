@@ -11,7 +11,6 @@ import java.util.stream.IntStream;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
@@ -29,15 +28,14 @@ class IntegrationSegmentIndexAsyncTest {
                     .mapToObj(i -> index.putAsync(i, "value-" + i)
                             .toCompletableFuture())
                     .toList();
-            CompletableFuture
-                    .allOf(writes.toArray(new CompletableFuture[0])).join();
+            CompletableFuture.allOf(writes.toArray(new CompletableFuture[0]))
+                    .join();
 
-            final List<CompletableFuture<String>> reads = IntStream
-                    .range(0, 20)
+            final List<CompletableFuture<String>> reads = IntStream.range(0, 20)
                     .mapToObj(i -> index.getAsync(i).toCompletableFuture())
                     .toList();
-            CompletableFuture
-                    .allOf(reads.toArray(new CompletableFuture[0])).join();
+            CompletableFuture.allOf(reads.toArray(new CompletableFuture[0]))
+                    .join();
 
             IntStream.range(0, 20).forEach(i -> {
                 assertEquals("value-" + i, reads.get(i).join());
@@ -68,8 +66,9 @@ class IntegrationSegmentIndexAsyncTest {
             index.close();
         }
 
-        final SegmentIndex<Integer, String> reopenedIndex = SegmentIndex
-                .open(DirectoryFacade.of(directory));
+        final SegmentIndex<Integer, String> reopenedIndex = SegmentIndex.open(
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(directory));
         try {
             assertNull(reopenedIndex.get(2));
             assertNull(reopenedIndex.get(4));
@@ -97,8 +96,7 @@ class IntegrationSegmentIndexAsyncTest {
                     index.getAsync(200).toCompletableFuture().join());
 
             index.flush();
-            assertEquals(2,
-                    index.getStream(SegmentWindow.unbounded()).count());
+            assertEquals(2, index.getStream(SegmentWindow.unbounded()).count());
         } finally {
             index.close();
         }
@@ -148,6 +146,9 @@ class IntegrationSegmentIndexAsyncTest {
                 .withContextLoggingEnabled(true) //
                 .withName("async_index") //
                 .build();
-        return SegmentIndex.create(DirectoryFacade.of(directory), conf);
+        return SegmentIndex.create(
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(directory),
+                conf);
     }
 }

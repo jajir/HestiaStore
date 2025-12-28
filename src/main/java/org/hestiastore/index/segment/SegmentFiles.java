@@ -8,7 +8,7 @@ import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkStoreFile;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.DirectoryFacade;
+import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 
@@ -32,7 +32,7 @@ public final class SegmentFiles<K, V> {
     private static final String BOOM_FILTER_FILE_NAME_EXTENSION = ".bloom-filter";
     private static final String PROPERTIES_FILENAME_EXTENSION = ".properties";
 
-    private final DirectoryFacade directoryFacade;
+    private final AsyncDirectory directoryFacade;
     private final SegmentId id;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
@@ -52,7 +52,7 @@ public final class SegmentFiles<K, V> {
      * @param encodingChunkFilters filters applied when writing chunks
      * @param decodingChunkFilters filters applied when reading chunks
      */
-    public SegmentFiles(final DirectoryFacade directoryFacade,
+    public SegmentFiles(final AsyncDirectory directoryFacade,
             final SegmentId id, final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final int diskIoBufferSize,
@@ -123,7 +123,7 @@ public final class SegmentFiles<K, V> {
      * @return sorted data file for this segment's cache
      */
     SortedDataFile<K, V> getCacheDataFile() {
-        return SortedDataFile.fromDirectoryFacade(directoryFacade,
+        return SortedDataFile.fromAsyncDirectory(directoryFacade,
                 getCacheFileName(), keyTypeDescriptor, valueTypeDescriptor,
                 diskIoBufferSize);
     }
@@ -135,7 +135,7 @@ public final class SegmentFiles<K, V> {
      * @return sorted data file handle
      */
     SortedDataFile<K, V> getDeltaCacheSortedDataFile(final String fileName) {
-        return SortedDataFile.fromDirectoryFacade(directoryFacade, fileName,
+        return SortedDataFile.fromAsyncDirectory(directoryFacade, fileName,
                 keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize);
     }
 
@@ -146,7 +146,7 @@ public final class SegmentFiles<K, V> {
      */
     ScarceSegmentIndex<K> getScarceIndex() {
         return ScarceSegmentIndex.<K>builder()//
-                .withDirectoryFacade(directoryFacade)//
+                .withAsyncDirectory(directoryFacade)//
                 .withFileName(getScarceFileName())//
                 .withKeyTypeDescriptor(getKeyTypeDescriptor())//
                 .withDiskIoBufferSize(diskIoBufferSize) //
@@ -168,7 +168,7 @@ public final class SegmentFiles<K, V> {
                 DataBlockSize.ofDataBlockSize(diskIoBufferSize));
     }
 
-    DirectoryFacade getDirectoryFacade() {
+    AsyncDirectory getAsyncDirectory() {
         return directoryFacade;
     }
 

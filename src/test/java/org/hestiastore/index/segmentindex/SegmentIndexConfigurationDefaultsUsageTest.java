@@ -8,7 +8,6 @@ import java.util.stream.Collectors;
 
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
@@ -25,12 +24,13 @@ class SegmentIndexConfigurationDefaultsUsageTest {
                 .build();
 
         final IndexConfigurationContract defaults = IndexConfigurationRegistry
-                .get(Integer.class)
-                .orElseThrow(
-                        () -> new IllegalStateException("Missing contract defaults for Integer"));
+                .get(Integer.class).orElseThrow(() -> new IllegalStateException(
+                        "Missing contract defaults for Integer"));
 
-        try (SegmentIndex<Integer, String> index = SegmentIndex
-                .create(DirectoryFacade.of(directory), sparseConfiguration)) {
+        try (SegmentIndex<Integer, String> index = SegmentIndex.create(
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(directory),
+                sparseConfiguration)) {
             final IndexConfiguration<Integer, String> actual = index
                     .getConfiguration();
 
@@ -70,8 +70,8 @@ class SegmentIndexConfigurationDefaultsUsageTest {
                     actual.getBloomFilterIndexSizeInBytes(),
                     "Bloom index size must come from contract defaults");
             assertEquals(
-                    Double.valueOf(
-                            defaults.getBloomFilterProbabilityOfFalsePositive()),
+                    Double.valueOf(defaults
+                            .getBloomFilterProbabilityOfFalsePositive()),
                     actual.getBloomFilterProbabilityOfFalsePositive(),
                     "Bloom false-positive probability must come from contract defaults");
             assertEquals(Boolean.valueOf(defaults.isContextLoggingEnabled()),

@@ -7,7 +7,7 @@ import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory.Access;
-import org.hestiastore.index.directory.DirectoryFacade;
+import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.directory.FileWriter;
 import org.hestiastore.index.directory.async.AsyncFileWriterBlockingAdapter;
 
@@ -17,13 +17,13 @@ public class SortedDataFileWriterTx<K, V>
 
     private static final String TEMP_FILE_SUFFIX = ".tmp";
     private final String fileName;
-    private final DirectoryFacade directoryFacade;
+    private final AsyncDirectory directoryFacade;
     private final int diskIoBufferSize;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
 
     public SortedDataFileWriterTx(final String fileName,
-            final DirectoryFacade directoryFacade, final int diskIoBufferSize,
+            final AsyncDirectory directoryFacade, final int diskIoBufferSize,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor) {
         this.fileName = Vldtn.requireNonNull(fileName, "fileName");

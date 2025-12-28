@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.DirectoryFacade;
+import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 
 /**
@@ -25,7 +25,7 @@ public final class SegmentBuilder<K, V> {
 
     private static final int DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES = 1024 * 4;
 
-    private DirectoryFacade directoryFacade;
+    private AsyncDirectory directoryFacade;
     private SegmentId id;
     private TypeDescriptor<K> keyTypeDescriptor;
     private TypeDescriptor<V> valueTypeDescriptor;
@@ -49,27 +49,27 @@ public final class SegmentBuilder<K, V> {
     }
 
     /**
-     * Set the base {@link DirectoryFacade} used to store files for this
+     * Set the base {@link AsyncDirectory} used to store files for this
      * segment.
      *
      * @param directoryFacade non-null directory facade
      * @return this builder for chaining
      */
     public SegmentBuilder<K, V> withDirectory(
-            final DirectoryFacade directoryFacade) {
+            final AsyncDirectory directoryFacade) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
         return this;
     }
 
     /**
-     * Backwards-compatible alias for {@link #withDirectory(DirectoryFacade)}.
+     * Backwards-compatible alias for {@link #withDirectory(AsyncDirectory)}.
      *
      * @param directoryFacade non-null directory facade
      * @return this builder for chaining
      */
-    public SegmentBuilder<K, V> withDirectoryFacade(
-            final DirectoryFacade directoryFacade) {
+    public SegmentBuilder<K, V> withAsyncDirectory(
+            final AsyncDirectory directoryFacade) {
         return withDirectory(directoryFacade);
     }
 
@@ -361,7 +361,7 @@ public final class SegmentBuilder<K, V> {
         }
         if (segmentPropertiesManager == null) {
             segmentPropertiesManager = new SegmentPropertiesManager(
-                    segmentFiles.getDirectoryFacade(), id);
+                    segmentFiles.getAsyncDirectory(), id);
         }
         if (segmentResources == null) {
             final SegmentDataSupplier<K, V> segmentDataSupplier = new SegmentDataSupplier<>(

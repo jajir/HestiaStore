@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilterBuilder;
 import org.hestiastore.index.chunkstore.ChunkFilter;
-import org.hestiastore.index.directory.DirectoryFacade;
+import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.properties.PropertyStore;
 import org.hestiastore.index.properties.PropertyStoreimpl;
 import org.hestiastore.index.properties.PropertyTransaction;
@@ -40,15 +40,15 @@ public class IndexConfiguratonStorage<K, V> {
 
     private static final String CONFIGURATION_FILENAME = "index-configuration.properties";
 
-    private final DirectoryFacade directoryFacade;
+    private final AsyncDirectory directoryFacade;
 
-    IndexConfiguratonStorage(final DirectoryFacade directoryFacade) {
+    IndexConfiguratonStorage(final AsyncDirectory directoryFacade) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
     }
 
     IndexConfiguration<K, V> load() {
-        final PropertyStore props = PropertyStoreimpl.fromDirectoryFacade(
+        final PropertyStore props = PropertyStoreimpl.fromAsyncDirectory(
                 directoryFacade, CONFIGURATION_FILENAME, true);
         final PropertyView propsView = props.snapshot();
         final Class<K> keyClass = toClass(propsView.getString(PROP_KEY_CLASS));
@@ -122,7 +122,7 @@ public class IndexConfiguratonStorage<K, V> {
     }
 
     public void save(IndexConfiguration<K, V> indexConfiguration) {
-        final PropertyStore props = PropertyStoreimpl.fromDirectoryFacade(
+        final PropertyStore props = PropertyStoreimpl.fromAsyncDirectory(
                 directoryFacade, CONFIGURATION_FILENAME, false);
         final PropertyTransaction tx = props.beginTransaction();
         final PropertyWriter writer = tx.openPropertyWriter();

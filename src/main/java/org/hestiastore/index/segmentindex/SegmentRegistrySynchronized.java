@@ -3,7 +3,7 @@ package org.hestiastore.index.segmentindex;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.DirectoryFacade;
+import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 
@@ -15,7 +15,7 @@ class SegmentRegistrySynchronized<K, V> extends SegmentRegistry<K, V> {
 
     private final ReentrantLock lock = new ReentrantLock();
 
-    SegmentRegistrySynchronized(final DirectoryFacade directoryFacade,
+    SegmentRegistrySynchronized(final AsyncDirectory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf) {

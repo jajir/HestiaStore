@@ -5,7 +5,7 @@ import java.util.Map;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.DirectoryFacade;
+import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentConf;
 import org.hestiastore.index.segment.SegmentDataSupplier;
@@ -21,11 +21,11 @@ public class SegmentRegistry<K, V> {
     private final Map<SegmentId, Segment<K, V>> segments = new HashMap<>();
 
     private final IndexConfiguration<K, V> conf;
-    private final DirectoryFacade directoryFacade;
+    private final AsyncDirectory directoryFacade;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
 
-    SegmentRegistry(final DirectoryFacade directoryFacade,
+    SegmentRegistry(final AsyncDirectory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf) {
@@ -86,7 +86,7 @@ public class SegmentRegistry<K, V> {
                 segmentDataSupplier);
 
         final Segment<K, V> segment = Segment.<K, V>builder()
-                .withDirectoryFacade(directoryFacade).withId(segmentId)
+                .withAsyncDirectory(directoryFacade).withId(segmentId)
                 .withKeyTypeDescriptor(keyTypeDescriptor)
                 .withSegmentResources(dataProvider)//
                 .withSegmentConf(segmentConf)//

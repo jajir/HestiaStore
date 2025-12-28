@@ -14,7 +14,6 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.directory.DirectoryFacade;
 import org.junit.jupiter.api.Test;
 
 class KeySegmentCacheTest {
@@ -118,7 +117,9 @@ class KeySegmentCacheTest {
         final MemDirectory dir = new MemDirectory();
         final var sdf = org.hestiastore.index.sorteddatafile.SortedDataFile
                 .<Integer, SegmentId>builder()//
-                .withDirectoryFacade(DirectoryFacade.of(dir))//
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(dir))//
                 .withFileName("index.map")//
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())//
                 .withValueTypeDescriptor(new TypeDescriptorSegmentId())//
@@ -128,7 +129,9 @@ class KeySegmentCacheTest {
                 .execute(writer -> entries.stream().sorted(
                         (e1, e2) -> Integer.compare(e1.getKey(), e2.getKey()))
                         .forEach(writer::write));
-        return new KeySegmentCache<>(DirectoryFacade.of(dir),
+        return new KeySegmentCache<>(
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(dir),
                 new TypeDescriptorInteger());
     }
 }

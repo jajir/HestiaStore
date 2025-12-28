@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -103,7 +102,10 @@ class SegmentPropertiesManagerTest {
     @BeforeEach
     void beforeEeachTest() {
         directory = new MemDirectory();
-        props = new SegmentPropertiesManager(DirectoryFacade.of(directory), id);
+        props = new SegmentPropertiesManager(
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(directory),
+                id);
     }
 
 }

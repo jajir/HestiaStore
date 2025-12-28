@@ -1,7 +1,7 @@
 package org.hestiastore.index.datablockfile;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.directory.DirectoryFacade;
+import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.directory.FileReaderSeekable;
 import org.hestiastore.index.directory.async.AsyncFileReaderSeekableBlockingAdapter;
 
@@ -30,7 +30,7 @@ public class DataBlockFile {
 
     private final DataBlockSize blockSize;
     private final String fileName;
-    private final DirectoryFacade directoryFacade;
+    private final AsyncDirectory directoryFacade;
 
     /**
      * Creates a new data block file.
@@ -39,7 +39,7 @@ public class DataBlockFile {
      * @param fileName  the name of the data block file
      * @param blockSize the size of each data block
      */
-    public DataBlockFile(final DirectoryFacade directoryFacade,
+    public DataBlockFile(final AsyncDirectory directoryFacade,
             final String fileName, final DataBlockSize blockSize) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");

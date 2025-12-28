@@ -3,13 +3,13 @@ package org.hestiastore.index.sorteddatafile;
 import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.DirectoryFacade;
+import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.directory.async.AsyncFileReaderBlockingAdapter;
 import org.hestiastore.index.unsorteddatafile.DataFileIterator;
 
 public class SortedDataFile<K, V> {
 
-    private final DirectoryFacade directoryFacade;
+    private final AsyncDirectory directoryFacade;
 
     private final String fileName;
 
@@ -23,7 +23,7 @@ public class SortedDataFile<K, V> {
         return new SortedDataFileBuilder<M, N>();
     }
 
-    public SortedDataFile(final DirectoryFacade directoryFacade,
+    public SortedDataFile(final AsyncDirectory directoryFacade,
             final String fileName, final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final int diskIoBufferSize) {
@@ -50,8 +50,8 @@ public class SortedDataFile<K, V> {
                 keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize);
     }
 
-    public static <K, V> SortedDataFile<K, V> fromDirectoryFacade(
-            final DirectoryFacade directoryFacade, final String fileName,
+    public static <K, V> SortedDataFile<K, V> fromAsyncDirectory(
+            final AsyncDirectory directoryFacade, final String fileName,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final int diskIoBufferSize) {
@@ -69,9 +69,9 @@ public class SortedDataFile<K, V> {
      * @return a new instance with the specified properties
      */
     public SortedDataFile<K, V> withProperties(
-            final DirectoryFacade newDirectoryFacade, final String newFileName,
+            final AsyncDirectory newAsyncDirectory, final String newFileName,
             final int newDiskIoBufferSize) {
-        return new SortedDataFile<>(newDirectoryFacade, newFileName,
+        return new SortedDataFile<>(newAsyncDirectory, newFileName,
                 keyTypeDescriptor, valueTypeDescriptor, newDiskIoBufferSize);
     }
 
