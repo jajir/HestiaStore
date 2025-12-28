@@ -74,50 +74,61 @@ public final class DirectoryFacade {
      * Synchronous delegates
      */
 
+    @Deprecated
     public FileReader getFileReader(final String fileName) {
         return directory.getFileReader(fileName);
     }
 
+    @Deprecated
     public FileReader getFileReader(final String fileName,
             final int bufferSize) {
         return directory.getFileReader(fileName, bufferSize);
     }
 
+    @Deprecated
     public FileReaderSeekable getFileReaderSeekable(final String fileName) {
         return directory.getFileReaderSeekable(fileName);
     }
 
+    @Deprecated
     public FileWriter getFileWriter(final String fileName) {
         return directory.getFileWriter(fileName);
     }
 
+    @Deprecated
     public FileWriter getFileWriter(final String fileName,
             final Directory.Access access) {
         return directory.getFileWriter(fileName, access);
     }
 
+    @Deprecated
     public FileWriter getFileWriter(final String fileName,
             final Directory.Access access, final int bufferSize) {
         return directory.getFileWriter(fileName, access, bufferSize);
     }
 
+    @Deprecated
     public boolean isFileExists(final String fileName) {
         return directory.isFileExists(fileName);
     }
 
+    @Deprecated
     public boolean deleteFile(final String fileName) {
         return directory.deleteFile(fileName);
     }
 
+    @Deprecated
     public Stream<String> getFileNames() {
         return directory.getFileNames();
     }
 
+    @Deprecated
     public void renameFile(final String currentFileName,
             final String newFileName) {
         directory.renameFile(currentFileName, newFileName);
     }
 
+    @Deprecated
     public FileLock getLock(final String fileName) {
         return directory.getLock(fileName);
     }
