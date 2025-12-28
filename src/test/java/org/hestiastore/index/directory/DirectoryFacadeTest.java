@@ -2,7 +2,6 @@ package org.hestiastore.index.directory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
@@ -58,10 +57,13 @@ class DirectoryFacadeTest {
     }
 
     @Test
-    void async_methods_reject_when_async_not_configured() {
+    void async_methods_available_by_default() throws Exception {
         final DirectoryFacade facade = DirectoryFacade.of(new MemDirectory());
-        assertThrows(IllegalStateException.class,
-                () -> facade.getFileWriterAsync("c"));
+        final AsyncFileWriter writer = facade.getFileWriterAsync("c")
+                .toCompletableFuture().get(5, TimeUnit.SECONDS);
+        writer.writeAsync("ok".getBytes(StandardCharsets.ISO_8859_1))
+                .toCompletableFuture().get(5, TimeUnit.SECONDS);
+        writer.close();
+        assertTrue(facade.hasAsync());
     }
 }
-
