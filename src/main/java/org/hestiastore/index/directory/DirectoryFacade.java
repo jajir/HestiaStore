@@ -1,21 +1,33 @@
 package org.hestiastore.index.directory;
 
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.directory.async.AsyncFileReader;
 import org.hestiastore.index.directory.async.AsyncFileReaderSeekable;
 import org.hestiastore.index.directory.async.AsyncFileWriter;
 
 /**
- * Facade that exposes both synchronous {@link Directory} access and optional
+ * Facade that exposes both synchronous {@link Directory} access and
  * asynchronous access via an {@link AsyncDirectory}. This allows callers to
  * migrate gradually from blocking to async IO while keeping a single injection
  * point.
  */
 public final class DirectoryFacade {
+
+    private static final int DEFAULT_ASYNC_IO_THREADS = 1;
+    private static final ExecutorService DEFAULT_ASYNC_EXECUTOR = Executors
+            .newFixedThreadPool(DEFAULT_ASYNC_IO_THREADS, r -> {
+                final Thread thread = new Thread(r);
+                thread.setName("hestia-async-io");
+                thread.setDaemon(true);
+                return thread;
+            });
 
     private final Directory directory;
     private final AsyncDirectory asyncDirectory;
@@ -23,14 +35,21 @@ public final class DirectoryFacade {
     private DirectoryFacade(final Directory directory,
             final AsyncDirectory asyncDirectory) {
         this.directory = Vldtn.requireNonNull(directory, "directory");
-        this.asyncDirectory = asyncDirectory;
+        this.asyncDirectory = Vldtn.requireNonNull(asyncDirectory,
+                "asyncDirectory");
     }
 
     /**
-     * Creates a facade for synchronous-only access.
+     * Creates a facade for synchronous access with a default asynchronous
+     * adapter.
      */
     public static DirectoryFacade of(final Directory directory) {
-        return new DirectoryFacade(directory, null);
+        final Directory safeDirectory = Vldtn.requireNonNull(directory,
+                "directory");
+        return new DirectoryFacade(safeDirectory,
+                new AsyncDirectoryAdapter(safeDirectory,
+                        DEFAULT_ASYNC_EXECUTOR,
+                        false));
     }
 
     /**
@@ -48,15 +67,7 @@ public final class DirectoryFacade {
     }
 
     public boolean hasAsync() {
-        return asyncDirectory != null;
-    }
-
-    private AsyncDirectory requireAsync() {
-        if (asyncDirectory == null) {
-            throw new IllegalStateException(
-                    "AsyncDirectory is not configured for this facade.");
-        }
-        return asyncDirectory;
+        return true;
     }
 
     /*
@@ -117,53 +128,53 @@ public final class DirectoryFacade {
 
     public CompletionStage<AsyncFileReader> getFileReaderAsync(
             final String fileName) {
-        return requireAsync().getFileReaderAsync(fileName);
+        return asyncDirectory.getFileReaderAsync(fileName);
     }
 
     public CompletionStage<AsyncFileReader> getFileReaderAsync(
             final String fileName, final int bufferSize) {
-        return requireAsync().getFileReaderAsync(fileName, bufferSize);
+        return asyncDirectory.getFileReaderAsync(fileName, bufferSize);
     }
 
     public CompletionStage<AsyncFileReaderSeekable> getFileReaderSeekableAsync(
             final String fileName) {
-        return requireAsync().getFileReaderSeekableAsync(fileName);
+        return asyncDirectory.getFileReaderSeekableAsync(fileName);
     }
 
     public CompletionStage<AsyncFileWriter> getFileWriterAsync(
             final String fileName) {
-        return requireAsync().getFileWriterAsync(fileName);
+        return asyncDirectory.getFileWriterAsync(fileName);
     }
 
     public CompletionStage<AsyncFileWriter> getFileWriterAsync(
             final String fileName, final Directory.Access access) {
-        return requireAsync().getFileWriterAsync(fileName, access);
+        return asyncDirectory.getFileWriterAsync(fileName, access);
     }
 
     public CompletionStage<AsyncFileWriter> getFileWriterAsync(
             final String fileName, final Directory.Access access,
             final int bufferSize) {
-        return requireAsync().getFileWriterAsync(fileName, access, bufferSize);
+        return asyncDirectory.getFileWriterAsync(fileName, access, bufferSize);
     }
 
     public CompletionStage<Boolean> isFileExistsAsync(final String fileName) {
-        return requireAsync().isFileExistsAsync(fileName);
+        return asyncDirectory.isFileExistsAsync(fileName);
     }
 
     public CompletionStage<Boolean> deleteFileAsync(final String fileName) {
-        return requireAsync().deleteFileAsync(fileName);
+        return asyncDirectory.deleteFileAsync(fileName);
     }
 
     public CompletionStage<Stream<String>> getFileNamesAsync() {
-        return requireAsync().getFileNamesAsync();
+        return asyncDirectory.getFileNamesAsync();
     }
 
     public CompletionStage<Void> renameFileAsync(final String currentFileName,
             final String newFileName) {
-        return requireAsync().renameFileAsync(currentFileName, newFileName);
+        return asyncDirectory.renameFileAsync(currentFileName, newFileName);
     }
 
     public CompletionStage<FileLock> getLockAsync(final String fileName) {
-        return requireAsync().getLockAsync(fileName);
+        return asyncDirectory.getLockAsync(fileName);
     }
 }
