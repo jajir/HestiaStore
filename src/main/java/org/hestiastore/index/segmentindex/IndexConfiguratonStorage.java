@@ -193,8 +193,7 @@ public class IndexConfiguratonStorage<K, V> {
     }
 
     boolean exists() {
-        return directoryFacade.getDirectory().isFileExists(
-                CONFIGURATION_FILENAME);
+        return directoryFacade.isFileExists(CONFIGURATION_FILENAME);
     }
 
     @SuppressWarnings("unchecked")

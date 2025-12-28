@@ -1,6 +1,7 @@
 package org.hestiastore.index.segment;
 
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.Vldtn;
 
 /**
@@ -23,13 +24,13 @@ public class SegmentFilesRenamer {
             final SegmentFiles<K, V> to) {
         Vldtn.requireNonNull(from, "from");
         Vldtn.requireNonNull(to, "to");
-        Directory dir = from.getDirectoryFacade().getDirectory();
-        dir.renameFile(from.getIndexFileName(), to.getIndexFileName());
-        dir.renameFile(from.getScarceFileName(), to.getScarceFileName());
-        dir.renameFile(from.getBloomFilterFileName(),
+        final DirectoryFacade dirFacade = from.getDirectoryFacade();
+        dirFacade.renameFile(from.getIndexFileName(), to.getIndexFileName());
+        dirFacade.renameFile(from.getScarceFileName(), to.getScarceFileName());
+        dirFacade.renameFile(from.getBloomFilterFileName(),
                 to.getBloomFilterFileName());
-        dir.renameFile(from.getPropertiesFilename(),
+        dirFacade.renameFile(from.getPropertiesFilename(),
                 to.getPropertiesFilename());
-        dir.renameFile(from.getCacheFileName(), to.getCacheFileName());
+        dirFacade.renameFile(from.getCacheFileName(), to.getCacheFileName());
     }
 }

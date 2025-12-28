@@ -59,8 +59,7 @@ public final class BloomFilterWriterTx<K>
 
     @Override
     protected void doCommit(final BloomFilterWriter<K> writer) {
-        directoryFacade.getDirectory().renameFile(getTempFileName(),
-                bloomFilterFileName);
+        directoryFacade.renameFile(getTempFileName(), bloomFilterFileName);
         bloomFilter.setNewHash(writer.getHashSnapshot());
     }
 

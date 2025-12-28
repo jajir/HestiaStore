@@ -33,9 +33,8 @@ public class SegmentPropertiesManager {
             final SegmentId id) {
         Vldtn.requireNonNull(directoryFacade, "directoryFacade");
         this.id = Vldtn.requireNonNull(id, "segmentId");
-        this.propertyStore = new PropertyStoreimpl(
-                directoryFacade.getDirectory(),
-                getPropertiesFilename(), false);
+        this.propertyStore = PropertyStoreimpl.fromDirectoryFacade(
+                directoryFacade, getPropertiesFilename(), false);
     }
 
     private String getPropertiesFilename() {

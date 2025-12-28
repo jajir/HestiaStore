@@ -80,7 +80,7 @@ public class DataBlockFile {
             throw new IllegalArgumentException(String.format(
                     "Block position must be >= '%s'", FIRST_BLOCK.getValue()));
         }
-        if (getDirectory().isFileExists(fileName)) {
+        if (directoryFacade.isFileExists(fileName)) {
             final FileReaderSeekable reader = getFileReader(blockPosition,
                     seekableReader);
             final boolean closeOnClose = seekableReader == null;
@@ -95,7 +95,7 @@ public class DataBlockFile {
             final FileReaderSeekable seekableReader) {
         FileReaderSeekable out = seekableReader;
         if (out == null) {
-            out = getDirectory().getFileReaderSeekable(fileName);
+            out = directoryFacade.getFileReaderSeekable(fileName);
         }
         out.seek(blockPosition.getValue());
         return out;
@@ -108,10 +108,6 @@ public class DataBlockFile {
      */
     public DataBlockWriterTx openWriterTx() {
         return new DataBlockWriterTx(fileName, directoryFacade, blockSize);
-    }
-
-    private Directory getDirectory() {
-        return directoryFacade.getDirectory();
     }
 
 }

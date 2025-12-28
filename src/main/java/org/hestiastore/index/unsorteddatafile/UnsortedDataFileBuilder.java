@@ -126,9 +126,8 @@ public class UnsortedDataFileBuilder<K, V> {
         if (directoryFacade == null) {
             throw new IllegalStateException("Directory must be provided");
         }
-        return new UnsortedDataFileImpl<>(directoryFacade.getDirectory(),
-                fileName, keyWriter, valueWriter, keyReader, valueReader,
-                diskIoBufferSize);
+        return new UnsortedDataFileImpl<>(directoryFacade, fileName, keyWriter,
+                valueWriter, keyReader, valueReader, diskIoBufferSize);
     }
 
 }

@@ -38,7 +38,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf) {
         Vldtn.requireNonNull(directoryFacade, "directoryFacade");
-        setIndexState(new IndexStateNew<>(directoryFacade.getDirectory()));
+        setIndexState(new IndexStateNew<>(directoryFacade));
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
                 "keyTypeDescriptor");
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
@@ -47,8 +47,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         this.writeCache = new WriteCache<>(
                 this.keyTypeDescriptor.getComparator(),
                 conf.getMaxNumberOfKeysInCache());
-        this.keySegmentCache = new KeySegmentCache<>(
-                directoryFacade.getDirectory(),
+        this.keySegmentCache = new KeySegmentCache<>(directoryFacade,
                 keyTypeDescriptor);
         this.segmentRegistry = new SegmentRegistrySynchronized<>(
                 directoryFacade, keyTypeDescriptor, valueTypeDescriptor, conf);

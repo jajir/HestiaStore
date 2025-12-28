@@ -6,8 +6,8 @@ import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeWriter;
-import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.Directory.Access;
+import org.hestiastore.index.directory.DirectoryFacade;
 
 /**
  * A transaction for writing unsorted key-value entries to a temporary file. Upon
@@ -22,7 +22,7 @@ public class UnsortedDataFileWriterTx<K, V>
 
     private static final String TEMP_FILE_SUFFIX = ".tmp";
     private final String fileName;
-    private final Directory directory;
+    private final DirectoryFacade directoryFacade;
     private final int diskIoBufferSize;
     private final TypeWriter<K> keyWriter;
     private final TypeWriter<V> valueWriter;
@@ -31,16 +31,17 @@ public class UnsortedDataFileWriterTx<K, V>
      * Constructs a new UnsortedDataFileWriterTx.
      *
      * @param fileName            required target file name
-     * @param directory           required directory to write to
+     * @param directoryFacade     required directory facade to write to
      * @param diskIoBufferSize    the size of the disk I/O buffer
      * @param keyWriter           required key writer
      * @param valueWriter         required value writer
      */
     public UnsortedDataFileWriterTx(final String fileName,
-            final Directory directory, final int diskIoBufferSize,
+            final DirectoryFacade directoryFacade, final int diskIoBufferSize,
             final TypeWriter<K> keyWriter, final TypeWriter<V> valueWriter) {
         this.fileName = Vldtn.requireNonNull(fileName, "fileName");
-        this.directory = Vldtn.requireNonNull(directory, "directory");
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
         this.diskIoBufferSize = diskIoBufferSize;
         this.keyWriter = Vldtn.requireNonNull(keyWriter, "keyWriter");
         this.valueWriter = Vldtn.requireNonNull(valueWriter, "valueWriter");
@@ -49,14 +50,15 @@ public class UnsortedDataFileWriterTx<K, V>
     @Override
     protected EntryWriter<K, V> doOpen() {
         final Access access = Access.OVERWRITE;
-        return new GuardedEntryWriter<>(new UnsortedDataFileWriter<>(directory,
-                getTempFileName(), keyWriter, valueWriter, access,
+        return new GuardedEntryWriter<>(new UnsortedDataFileWriter<>(
+                directoryFacade, getTempFileName(), keyWriter, valueWriter,
+                access,
                 diskIoBufferSize));
     }
 
     @Override
     protected void doCommit(final EntryWriter<K, V> writer) {
-        directory.renameFile(getTempFileName(), fileName);
+        directoryFacade.renameFile(getTempFileName(), fileName);
     }
 
     private String getTempFileName() {

@@ -75,6 +75,17 @@ public final class SegmentBuilder<K, V> {
     }
 
     /**
+     * Backwards-compatible alias for {@link #withDirectory(DirectoryFacade)}.
+     *
+     * @param directoryFacade non-null directory facade
+     * @return this builder for chaining
+     */
+    public SegmentBuilder<K, V> withDirectoryFacade(
+            final DirectoryFacade directoryFacade) {
+        return withDirectory(directoryFacade);
+    }
+
+    /**
      * Provide the {@link SegmentConf} to use. When not provided, it will be
      * created from values configured on this builder.
      *

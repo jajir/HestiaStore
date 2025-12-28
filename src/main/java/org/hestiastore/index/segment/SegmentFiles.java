@@ -148,7 +148,7 @@ public final class SegmentFiles<K, V> {
      */
     ScarceSegmentIndex<K> getScarceIndex() {
         return ScarceSegmentIndex.<K>builder()//
-                .withDirectory(getDirectory())//
+                .withDirectoryFacade(directoryFacade)//
                 .withFileName(getScarceFileName())//
                 .withKeyTypeDescriptor(getKeyTypeDescriptor())//
                 .withDiskIoBufferSize(diskIoBufferSize) //
@@ -169,15 +169,6 @@ public final class SegmentFiles<K, V> {
         return new ChunkEntryFile<>(chunkStoreFile, keyTypeDescriptor,
                 valueTypeDescriptor,
                 DataBlockSize.ofDataBlockSize(diskIoBufferSize));
-    }
-
-    /**
-     * Directory used by this segment.
-     *
-     * @return directory
-     */
-    Directory getDirectory() {
-        return directoryFacade.getDirectory();
     }
 
     DirectoryFacade getDirectoryFacade() {
@@ -246,7 +237,7 @@ public final class SegmentFiles<K, V> {
      * @throws IllegalStateException if the file could not be deleted
      */
     void deleteFile(final String fileName) {
-        if (!getDirectory().deleteFile(fileName)) {
+        if (!directoryFacade.deleteFile(fileName)) {
             throw new IllegalStateException(String.format(
                     "Unable to delete file '%s' in directory '%s'", fileName,
                     directoryFacade));
@@ -259,7 +250,7 @@ public final class SegmentFiles<K, V> {
      * @param fileName file to delete if present
      */
     void optionallyDeleteFile(final String fileName) {
-        getDirectory().deleteFile(fileName);
+        directoryFacade.deleteFile(fileName);
     }
 
     /**
