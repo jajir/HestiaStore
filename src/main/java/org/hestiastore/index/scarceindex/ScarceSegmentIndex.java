@@ -9,7 +9,7 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
-import org.hestiastore.index.directory.DirectoryFacade;
+import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +45,7 @@ public class ScarceSegmentIndex<K> {
 
     private final Comparator<K> keyComparator;
 
-    private final DirectoryFacade directoryFacade;
+    private final AsyncDirectory directoryFacade;
 
     private final String fileName;
 
@@ -58,7 +58,7 @@ public class ScarceSegmentIndex<K> {
         return new ScarceIndexBuilder<M>();
     }
 
-    ScarceSegmentIndex(final DirectoryFacade directoryFacade,
+    ScarceSegmentIndex(final AsyncDirectory directoryFacade,
             final String fileName,
             final TypeDescriptor<K> keyTypeDescriptor,
             final int diskIoBufferSize) {
@@ -70,7 +70,7 @@ public class ScarceSegmentIndex<K> {
                 keyTypeDescriptor.getComparator(),
                 "keyTypeDescriptor.getComparator()");
         this.sortedDataFile = SortedDataFile.<K, Integer>builder() //
-                .withDirectoryFacade(directoryFacade) //
+                .withAsyncDirectory(directoryFacade) //
                 .withFileName(fileName)//
                 .withKeyTypeDescriptor(keyTypeDescriptor) //
                 .withValueTypeDescriptor(typeDescriptorInteger)

@@ -1,7 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.directory.DirectoryFacade;
+import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.directory.FileLock;
 
 public final class IndexStateNew<K, V> implements IndexState<K, V> {
@@ -10,7 +10,7 @@ public final class IndexStateNew<K, V> implements IndexState<K, V> {
 
     private final FileLock fileLock;
 
-    IndexStateNew(final DirectoryFacade directoryFacade) {
+    IndexStateNew(final AsyncDirectory directoryFacade) {
         this.fileLock = Vldtn.requireNonNull(directoryFacade, "directoryFacade")
                 .getLockAsync(LOCK_FILE_NAME).toCompletableFuture().join();
         if (fileLock.isLocked()) {

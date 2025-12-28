@@ -9,7 +9,7 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.DirectoryFacade;
+import org.hestiastore.index.directory.async.AsyncDirectory;
 
 /**
  * High-level contract for the segment-index layer that sits above individual
@@ -33,7 +33,7 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * @return a newly created index instance
      */
     static <M, N> SegmentIndex<M, N> create(
-            final DirectoryFacade directoryFacade,
+            final AsyncDirectory directoryFacade,
             final IndexConfiguration<M, N> indexConf) {
         final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
                 new IndexConfiguratonStorage<>(directoryFacade));
@@ -52,7 +52,7 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * @return index instance backed by the updated configuration
      */
     static <M, N> SegmentIndex<M, N> open(
-            final DirectoryFacade directoryFacade,
+            final AsyncDirectory directoryFacade,
             final IndexConfiguration<M, N> indexConf) {
         final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
                 new IndexConfiguratonStorage<>(directoryFacade));
@@ -68,7 +68,7 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * @return index instance backed by the persisted configuration
      */
     static <M, N> SegmentIndex<M, N> open(
-            final DirectoryFacade directoryFacade) {
+            final AsyncDirectory directoryFacade) {
         final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
                 new IndexConfiguratonStorage<>(directoryFacade));
         return openIndex(directoryFacade, confManager.loadExisting());
@@ -81,7 +81,7 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * @return optional index instance if the configuration was found
      */
     static <M, N> Optional<SegmentIndex<M, N>> tryOpen(
-            final DirectoryFacade directoryFacade) {
+            final AsyncDirectory directoryFacade) {
         final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
                 new IndexConfiguratonStorage<>(directoryFacade));
         final Optional<IndexConfiguration<M, N>> oConf = confManager
@@ -94,7 +94,7 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     }
 
     private static <M, N> SegmentIndex<M, N> openIndex(
-            final DirectoryFacade directoryFacade,
+            final AsyncDirectory directoryFacade,
             final IndexConfiguration<M, N> indexConf) {
         final TypeDescriptor<M> keyTypeDescriptor = DataTypeDescriptorRegistry
                 .makeInstance(indexConf.getKeyTypeDescriptor());

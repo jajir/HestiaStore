@@ -16,7 +16,6 @@ import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
@@ -44,14 +43,16 @@ class IntegrationSegmentWriteConsistencyTest {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
         final Segment<Integer, String> seg1 = makeSegment(directory, id);
-        try (EntryWriter<Integer, String> writer = seg1.openDeltaCacheWriter()) {
+        try (EntryWriter<Integer, String> writer = seg1
+                .openDeltaCacheWriter()) {
             data.forEach(writer::write);
         }
         verifySegmentData(seg1, data);
         seg1.close();
 
         final Segment<Integer, String> seg2 = makeSegment(directory, id);
-        try (EntryWriter<Integer, String> writer = seg2.openDeltaCacheWriter()) {
+        try (EntryWriter<Integer, String> writer = seg2
+                .openDeltaCacheWriter()) {
             updatedData.forEach(writer::write);
         }
         verifySegmentData(seg2, updatedData);
@@ -61,7 +62,9 @@ class IntegrationSegmentWriteConsistencyTest {
 
     private Segment<Integer, String> makeSegment(final Directory directory,
             final SegmentId id) {
-        return Segment.<Integer, String>builder().withDirectoryFacade(DirectoryFacade.of(directory))//
+        return Segment.<Integer, String>builder().withAsyncDirectory(
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(directory))//
                 .withId(id)//
                 .withKeyTypeDescriptor(TDI)//
                 .withValueTypeDescriptor(TDS)//

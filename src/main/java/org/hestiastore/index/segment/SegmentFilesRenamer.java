@@ -1,7 +1,7 @@
 package org.hestiastore.index.segment;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.directory.DirectoryFacade;
+import org.hestiastore.index.directory.async.AsyncDirectory;
 
 /**
  * Provides a utility method to rename all files associated with a segment from
@@ -23,7 +23,7 @@ public class SegmentFilesRenamer {
             final SegmentFiles<K, V> to) {
         Vldtn.requireNonNull(from, "from");
         Vldtn.requireNonNull(to, "to");
-        final DirectoryFacade dirFacade = from.getDirectoryFacade();
+        final AsyncDirectory dirFacade = from.getAsyncDirectory();
         dirFacade.renameFileAsync(from.getIndexFileName(), to.getIndexFileName())
                 .toCompletableFuture().join();
         dirFacade.renameFileAsync(from.getScarceFileName(),

@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,7 +25,9 @@ class BloomFilterBuilderTest {
     @Test
     void test_basic_functionality() {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
-                .withDirectoryFacade(DirectoryFacade.of(directory))//
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(directory))//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(TDS.getConvertorToBytes())//
                 .withNumberOfKeys(10001L)//
@@ -43,7 +44,9 @@ class BloomFilterBuilderTest {
     @Test
     void test_with_indexSizeInBytes_withNumberOfHashFunctions() {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
-                .withDirectoryFacade(DirectoryFacade.of(directory))//
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(directory))//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(TDS.getConvertorToBytes())//
                 .withIndexSizeInBytes(1024)//
@@ -58,7 +61,9 @@ class BloomFilterBuilderTest {
     @Test
     void test_with_indexSizeInBytes_is_zero() {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
-                .withDirectoryFacade(DirectoryFacade.of(directory))//
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(directory))//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(TDS.getConvertorToBytes())//
                 .withIndexSizeInBytes(0)//
@@ -73,7 +78,9 @@ class BloomFilterBuilderTest {
     @Test
     void test_with_indexSizeInBytes_is_zero_numberOfHashFunctions_null() {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
-                .withDirectoryFacade(DirectoryFacade.of(directory))//
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(directory))//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(TDS.getConvertorToBytes())//
                 .withIndexSizeInBytes(0)//
@@ -87,7 +94,9 @@ class BloomFilterBuilderTest {
     @Test
     void test_with_probabilityOfFalsePositive_is_null_() {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
-                .withDirectoryFacade(DirectoryFacade.of(directory))//
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(directory))//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(TDS.getConvertorToBytes())//
                 .withIndexSizeInBytes(1024)//
@@ -103,7 +112,9 @@ class BloomFilterBuilderTest {
     @Test
     void test_without_numberOfHashFunctions() {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
-                .withDirectoryFacade(DirectoryFacade.of(directory))//
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(directory))//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(TDS.getConvertorToBytes())//
                 .withNumberOfKeys(1000001L)//
@@ -119,7 +130,9 @@ class BloomFilterBuilderTest {
     @Test
     void test_without_numberOfHashFunctions_indexSizeInBytes() {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
-                .withDirectoryFacade(DirectoryFacade.of(directory))//
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(directory))//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(TDS.getConvertorToBytes())//
                 .withNumberOfKeys(1000001L)//
@@ -134,7 +147,9 @@ class BloomFilterBuilderTest {
     @Test
     void test_without_indexSizeInBytes() {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
-                .withDirectoryFacade(DirectoryFacade.of(directory))//
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(directory))//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(TDS.getConvertorToBytes())//
                 .withNumberOfKeys(1000001L)//
@@ -150,7 +165,9 @@ class BloomFilterBuilderTest {
     @Test
     void test_missing_numberOfKeys() {
         final BloomFilter<String> filter = BloomFilter.<String>builder()//
-                .withDirectoryFacade(DirectoryFacade.of(directory))//
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(directory))//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(TDS.getConvertorToBytes())//
                 .withProbabilityOfFalsePositive(0.0001)//
@@ -167,7 +184,9 @@ class BloomFilterBuilderTest {
         final BloomFilterBuilder<String> builder = BloomFilter.<String>builder()//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(TDS.getConvertorToBytes())//
-                .withDirectoryFacade(DirectoryFacade.of(directory))//
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(directory))//
                 .withIndexSizeInBytes(0)//
                 .withNumberOfHashFunctions(0)//
         ;
@@ -181,7 +200,9 @@ class BloomFilterBuilderTest {
     @Test
     void test_missing_conventorToBytes() {
         final BloomFilterBuilder<String> builder = BloomFilter.<String>builder()//
-                .withDirectoryFacade(DirectoryFacade.of(directory))//
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(directory))//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withProbabilityOfFalsePositive(0.0001)//
                 .withNumberOfHashFunctions(2)//
@@ -197,7 +218,9 @@ class BloomFilterBuilderTest {
     @Test
     void test_missing_bloomFilterName() {
         final BloomFilterBuilder<String> builder = BloomFilter.<String>builder()//
-                .withDirectoryFacade(DirectoryFacade.of(directory))//
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(directory))//
                 .withProbabilityOfFalsePositive(0.0001)//
                 .withNumberOfHashFunctions(2)//
         ;
@@ -265,7 +288,9 @@ class BloomFilterBuilderTest {
     private BloomFilter<String> makeFilter(
             final Double probabilityOfFalsePositive) {
         return BloomFilter.<String>builder()//
-                .withDirectoryFacade(DirectoryFacade.of(directory))//
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(directory))//
                 .withConvertorToBytes(TDS.getConvertorToBytes())//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withProbabilityOfFalsePositive(probabilityOfFalsePositive)//

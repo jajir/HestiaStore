@@ -5,13 +5,13 @@ import org.hestiastore.index.EntryIteratorStreamer;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.datatype.TypeWriter;
-import org.hestiastore.index.directory.DirectoryFacade;
+import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.directory.FileReader;
 import org.hestiastore.index.directory.async.AsyncFileReaderBlockingAdapter;
 
 final class UnsortedDataFileImpl<K, V> implements UnsortedDataFile<K, V> {
 
-    private final DirectoryFacade directoryFacade;
+    private final AsyncDirectory directoryFacade;
     private final String fileName;
     private final TypeWriter<K> keyWriter;
     private final TypeWriter<V> valueWriter;
@@ -19,7 +19,7 @@ final class UnsortedDataFileImpl<K, V> implements UnsortedDataFile<K, V> {
     private final TypeReader<V> valueReader;
     private final int diskIoBufferSize;
 
-    UnsortedDataFileImpl(final DirectoryFacade directoryFacade,
+    UnsortedDataFileImpl(final AsyncDirectory directoryFacade,
             final String fileName,
             final TypeWriter<K> keyWriter, final TypeWriter<V> valueWriter,
             final TypeReader<K> keyReader, final TypeReader<V> valueReader,

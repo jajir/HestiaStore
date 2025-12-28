@@ -10,7 +10,6 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +34,9 @@ public class SegmentBuilderFromConfTest {
         );
         final SegmentBuilder<Integer, String> builder = Segment
                 .<Integer, String>builder()//
-                .withDirectoryFacade(DirectoryFacade.of(DIRECTORY))//
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(DIRECTORY))//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//

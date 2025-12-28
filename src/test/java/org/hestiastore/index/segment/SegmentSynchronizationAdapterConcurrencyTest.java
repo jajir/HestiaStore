@@ -18,7 +18,6 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +30,8 @@ class SegmentSynchronizationAdapterConcurrencyTest {
         try (SegmentSynchronizationAdapter<Integer, String> segment = newAdapter()) {
             final EntryIterator<Integer, String> iterator = segment
                     .openIterator();
-            final ExecutorService executor = Executors.newSingleThreadExecutor();
+            final ExecutorService executor = Executors
+                    .newSingleThreadExecutor();
             try {
                 final Future<String> future = executor
                         .submit(() -> segment.get(1));
@@ -48,7 +48,8 @@ class SegmentSynchronizationAdapterConcurrencyTest {
         try (SegmentSynchronizationAdapter<Integer, String> segment = newAdapter()) {
             final EntryIterator<Integer, String> iterator = segment
                     .openIterator();
-            final ExecutorService executor = Executors.newSingleThreadExecutor();
+            final ExecutorService executor = Executors
+                    .newSingleThreadExecutor();
             final CountDownLatch started = new CountDownLatch(1);
             final CountDownLatch acquired = new CountDownLatch(1);
             final CountDownLatch closeSignal = new CountDownLatch(1);
@@ -86,7 +87,8 @@ class SegmentSynchronizationAdapterConcurrencyTest {
         try (SegmentSynchronizationAdapter<Integer, String> segment = newAdapter()) {
             final EntryWriter<Integer, String> writer = segment
                     .openDeltaCacheWriter();
-            final ExecutorService executor = Executors.newSingleThreadExecutor();
+            final ExecutorService executor = Executors
+                    .newSingleThreadExecutor();
             final CountDownLatch started = new CountDownLatch(1);
             final CountDownLatch acquired = new CountDownLatch(1);
             final CountDownLatch closeSignal = new CountDownLatch(1);
@@ -126,7 +128,8 @@ class SegmentSynchronizationAdapterConcurrencyTest {
                     .fromPolicy(segment.getSegmentSplitterPolicy());
             final EntryWriter<Integer, String> writer = segment
                     .openDeltaCacheWriter();
-            final ExecutorService executor = Executors.newSingleThreadExecutor();
+            final ExecutorService executor = Executors
+                    .newSingleThreadExecutor();
             final CountDownLatch started = new CountDownLatch(1);
             final CountDownLatch completed = new CountDownLatch(1);
             final java.util.concurrent.atomic.AtomicReference<Throwable> error = new java.util.concurrent.atomic.AtomicReference<>();
@@ -167,7 +170,8 @@ class SegmentSynchronizationAdapterConcurrencyTest {
         try (SegmentSynchronizationAdapter<Integer, String> segment = newAdapter()) {
             final EntryWriter<Integer, String> writer = segment
                     .openDeltaCacheWriter();
-            final ExecutorService executor = Executors.newSingleThreadExecutor();
+            final ExecutorService executor = Executors
+                    .newSingleThreadExecutor();
             final CountDownLatch started = new CountDownLatch(1);
             final CountDownLatch acquired = new CountDownLatch(1);
             final CountDownLatch closeSignal = new CountDownLatch(1);
@@ -202,8 +206,11 @@ class SegmentSynchronizationAdapterConcurrencyTest {
 
     private static SegmentSynchronizationAdapter<Integer, String> newAdapter() {
         final Directory directory = new MemDirectory();
-        final Segment<Integer, String> segment = Segment.<Integer, String>builder()//
-                .withDirectoryFacade(DirectoryFacade.of(directory))//
+        final Segment<Integer, String> segment = Segment
+                .<Integer, String>builder()//
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(directory))//
                 .withId(SegmentId.of(1))//
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())//
                 .withValueTypeDescriptor(new TypeDescriptorShortString())//

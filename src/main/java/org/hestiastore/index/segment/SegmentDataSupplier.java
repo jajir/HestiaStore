@@ -40,7 +40,7 @@ public final class SegmentDataSupplier<K, V> {
                 .withBloomFilterFileName(segmentFiles.getBloomFilterFileName())
                 .withConvertorToBytes(segmentFiles.getKeyTypeDescriptor()
                         .getConvertorToBytes())
-                .withDirectoryFacade(segmentFiles.getDirectoryFacade())
+                .withAsyncDirectory(segmentFiles.getAsyncDirectory())
                 .withIndexSizeInBytes(
                         segmentConf.getBloomFilterIndexSizeInBytes())
                 .withNumberOfHashFunctions(
@@ -54,7 +54,7 @@ public final class SegmentDataSupplier<K, V> {
 
     public ScarceSegmentIndex<K> getScarceIndex() {
         return ScarceSegmentIndex.<K>builder()//
-                .withDirectoryFacade(segmentFiles.getDirectoryFacade())//
+                .withAsyncDirectory(segmentFiles.getAsyncDirectory())//
                 .withFileName(segmentFiles.getScarceFileName())//
                 .withKeyTypeDescriptor(segmentFiles.getKeyTypeDescriptor())//
                 .withDiskIoBufferSize(segmentConf.getDiskIoBufferSize())//

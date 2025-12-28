@@ -6,7 +6,7 @@ import java.util.stream.StreamSupport;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.DirectoryFacade;
+import org.hestiastore.index.directory.async.AsyncDirectory;
 
 /**
  * Default single-threaded implementation of {@link IndexInternal}. It inherits
@@ -19,7 +19,7 @@ import org.hestiastore.index.directory.DirectoryFacade;
  */
 public class IndexInternalDefault<K, V> extends SegmentIndexImpl<K, V> {
 
-    public IndexInternalDefault(final DirectoryFacade directoryFacade,
+    public IndexInternalDefault(final AsyncDirectory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf) {

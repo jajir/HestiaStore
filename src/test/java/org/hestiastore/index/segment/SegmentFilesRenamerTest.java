@@ -1,15 +1,16 @@
 package org.hestiastore.index.segment;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.DirectoryFacade;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import static org.mockito.Mockito.*;
-
-import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(MockitoExtension.class)
 
@@ -28,7 +29,9 @@ class SegmentFilesRenamerTest {
     void setUp() {
         directory = mock(Directory.class);
         renamer = new SegmentFilesRenamer();
-        when(from.getDirectoryFacade()).thenReturn(DirectoryFacade.of(directory));
+        when(from.getAsyncDirectory()).thenReturn(
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(directory));
         when(from.getIndexFileName()).thenReturn("from.index");
         when(to.getIndexFileName()).thenReturn("to.index");
         when(from.getScarceFileName()).thenReturn("from.scarce");

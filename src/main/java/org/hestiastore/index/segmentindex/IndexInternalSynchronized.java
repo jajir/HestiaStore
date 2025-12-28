@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.DirectoryFacade;
+import org.hestiastore.index.directory.async.AsyncDirectory;
 
 public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
 
@@ -29,7 +29,7 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
             .withInitial(() -> Boolean.FALSE);
     private final AtomicBoolean closing = new AtomicBoolean(false);
 
-    public IndexInternalSynchronized(final DirectoryFacade directoryFacade,
+    public IndexInternalSynchronized(final AsyncDirectory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf) {

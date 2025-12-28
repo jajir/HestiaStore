@@ -15,7 +15,6 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
@@ -67,7 +66,9 @@ public class IntegerationNumberOfKeysIT {
 
     private Segment<String, Long> getCommonBuilder() {
         return Segment.<String, Long>builder()//
-                .withDirectoryFacade(DirectoryFacade.of(directory))//
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(directory))//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(TYPE_DESCRIPTOR_STRING)//
                 .withValueTypeDescriptor(TYPE_DESCRIPTOR_LONG)//

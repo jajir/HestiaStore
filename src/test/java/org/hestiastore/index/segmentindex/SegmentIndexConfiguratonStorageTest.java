@@ -18,7 +18,6 @@ import org.hestiastore.index.chunkstore.ChunkFilterSnappyDecompress;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -226,7 +225,8 @@ class SegmentIndexConfiguratonStorageTest {
     void setup() {
         directory = new MemDirectory();
         storage = new IndexConfiguratonStorage<>(
-                DirectoryFacade.of(directory));
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(directory));
     }
 
     @AfterEach

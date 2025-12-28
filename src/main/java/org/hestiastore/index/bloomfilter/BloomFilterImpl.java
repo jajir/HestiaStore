@@ -3,7 +3,7 @@ package org.hestiastore.index.bloomfilter;
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
-import org.hestiastore.index.directory.DirectoryFacade;
+import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.directory.FileReader;
 import org.hestiastore.index.directory.async.AsyncFileReaderBlockingAdapter;
 import org.slf4j.Logger;
@@ -19,7 +19,7 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final DirectoryFacade directoryFacade;
+    private final AsyncDirectory directoryFacade;
 
     private final String bloomFilterFileName;
 
@@ -37,7 +37,7 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
 
     private final int diskIoBufferSize;
 
-    BloomFilterImpl(final DirectoryFacade directoryFacade,
+    BloomFilterImpl(final AsyncDirectory directoryFacade,
             final String bloomFilterFileName,
             final int numberOfHashFunctions, final int indexSizeInBytes,
             final ConvertorToBytes<K> convertorToBytes,

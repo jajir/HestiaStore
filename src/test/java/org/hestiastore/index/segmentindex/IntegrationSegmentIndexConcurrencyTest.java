@@ -14,7 +14,6 @@ import java.util.stream.IntStream;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
@@ -26,8 +25,7 @@ class IntegrationSegmentIndexConcurrencyTest {
     @Test
     void parallelPutsAndGetsOnDifferentKeys() {
         final Directory directory = new MemDirectory();
-        final SegmentIndex<Integer, String> index = newIndex(
-                directory, 4, 1);
+        final SegmentIndex<Integer, String> index = newIndex(directory, 4, 1);
         try {
             final List<CompletableFuture<Void>> writes = new ArrayList<>();
             IntStream.range(0, 50).forEach(i -> writes.add(
@@ -49,8 +47,7 @@ class IntegrationSegmentIndexConcurrencyTest {
     @Test
     void concurrentReadsWithWriterOnSameKey() throws Exception {
         final Directory directory = new MemDirectory();
-        final SegmentIndex<Integer, String> index = newIndex(
-                directory, 4, 1);
+        final SegmentIndex<Integer, String> index = newIndex(directory, 4, 1);
         try {
             index.put(1, "init");
             final CountDownLatch start = new CountDownLatch(1);
@@ -88,8 +85,7 @@ class IntegrationSegmentIndexConcurrencyTest {
     @Test
     void interleavedFlushCompactWithReadsAndWrites() throws Exception {
         final Directory directory = new MemDirectory();
-        final SegmentIndex<Integer, String> index = newIndex(
-                directory, 4, 1);
+        final SegmentIndex<Integer, String> index = newIndex(directory, 4, 1);
         try {
             final CountDownLatch start = new CountDownLatch(1);
             final var executor = Executors.newFixedThreadPool(4);
@@ -134,9 +130,8 @@ class IntegrationSegmentIndexConcurrencyTest {
         }
     }
 
-    private SegmentIndex<Integer, String> newIndex(
-            final Directory directory, final int cpuThreads,
-            final int ioThreads) {
+    private SegmentIndex<Integer, String> newIndex(final Directory directory,
+            final int cpuThreads, final int ioThreads) {
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
                 .withKeyClass(Integer.class)//
@@ -155,6 +150,9 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .withNumberOfIoThreads(ioThreads)//
                 .withName("concurrency_index") //
                 .build();
-        return SegmentIndex.create(DirectoryFacade.of(directory), conf);
+        return SegmentIndex.create(
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(directory),
+                conf);
     }
 }

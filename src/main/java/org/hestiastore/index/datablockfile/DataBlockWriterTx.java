@@ -2,7 +2,7 @@ package org.hestiastore.index.datablockfile;
 
 import org.hestiastore.index.GuardedWriteTransaction;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.directory.DirectoryFacade;
+import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.directory.FileWriter;
 import org.hestiastore.index.directory.async.AsyncFileWriterBlockingAdapter;
 
@@ -15,11 +15,11 @@ public class DataBlockWriterTx
 
     private static final String TEMP_FILE_SUFFIX = ".tmp";
     private final String fileName;
-    private final DirectoryFacade directoryFacade;
+    private final AsyncDirectory directoryFacade;
     private final DataBlockSize blockSize;
 
     public DataBlockWriterTx(final String fileName,
-            final DirectoryFacade directoryFacade,
+            final AsyncDirectory directoryFacade,
             final DataBlockSize blockSize) {
         this.fileName = Vldtn.requireNonNull(fileName, "fileName");
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,

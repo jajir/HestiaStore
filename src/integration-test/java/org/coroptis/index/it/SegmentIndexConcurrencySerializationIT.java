@@ -16,7 +16,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.hestiastore.index.datatype.TypeDescriptorString;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
@@ -73,8 +72,10 @@ class SegmentIndexConcurrencySerializationIT {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<String, String> conf = readLockConf(name,
                 numberOfCpuThreads);
-        final SegmentIndex<String, String> index = SegmentIndex
-                .create(DirectoryFacade.of(directory), conf);
+        final SegmentIndex<String, String> index = SegmentIndex.create(
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(directory),
+                conf);
         index.put(TEST_KEY, TEST_VALUE);
         final BlockingTombstoneTypeDescriptorString.Hook hook = BlockingTombstoneTypeDescriptorString
                 .installHook();

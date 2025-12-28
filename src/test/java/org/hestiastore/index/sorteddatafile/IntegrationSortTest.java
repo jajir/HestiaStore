@@ -8,14 +8,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-import org.hestiastore.index.FileNameUtil;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIteratorWithCurrent;
+import org.hestiastore.index.FileNameUtil;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.AbstractSegmentTest;
 import org.hestiastore.index.unsorteddatafile.UnsortedDataFile;
@@ -42,7 +41,9 @@ class IntegrationSortTest extends AbstractSegmentTest {
     void setUp() {
         dir = new MemDirectory();
         unsorted = UnsortedDataFile.<String, Integer>builder()
-                .withDirectoryFacade(DirectoryFacade.of(dir))//
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(dir))//
                 .withFileName(UNSORTED_FILE_NAME)//
                 .withValueWriter(tdi.getTypeWriter())//
                 .withValueReader(tdi.getTypeReader())//
@@ -50,7 +51,9 @@ class IntegrationSortTest extends AbstractSegmentTest {
                 .withKeyReader(tds.getTypeReader())//
                 .build();
 
-        sdf = SortedDataFile.fromDirectoryFacade(DirectoryFacade.of(dir),
+        sdf = SortedDataFile.fromAsyncDirectory(
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(dir),
                 SORTED_FILE_NAME, tds, tdi, 1024);
 
         sorter = new DataFileSorter<>(unsorted, sdf,

@@ -6,7 +6,7 @@ import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeWriter;
 import org.hestiastore.index.directory.Directory.Access;
-import org.hestiastore.index.directory.DirectoryFacade;
+import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.directory.FileWriter;
 import org.hestiastore.index.directory.async.AsyncFileWriterBlockingAdapter;
 
@@ -31,7 +31,7 @@ public class UnsortedDataFileWriter<K, V> extends AbstractCloseableResource
      * @param access           file access mode
      * @param diskIoBufferSize buffer size in bytes used when writing
      */
-    public UnsortedDataFileWriter(final DirectoryFacade directoryFacade,
+    public UnsortedDataFileWriter(final AsyncDirectory directoryFacade,
             final String fileName, final TypeWriter<K> keyWriter,
             final TypeWriter<V> valueWriter, final Access access,
             final int diskIoBufferSize) {

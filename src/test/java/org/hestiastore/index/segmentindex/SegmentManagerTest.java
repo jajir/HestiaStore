@@ -12,7 +12,6 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.Test;
@@ -36,8 +35,9 @@ class SegmentManagerTest {
     @Test
     void test_getting_same_segmentId() {
         final SegmentRegistry<Integer, String> segmentRegistry = new SegmentRegistry<>(
-                DirectoryFacade.of(directory), keyTypeDescriptor,
-                valueTypeDescriptor, conf);
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(directory),
+                keyTypeDescriptor, valueTypeDescriptor, conf);
         when(conf.getMaxNumberOfKeysInSegmentCache()).thenReturn(2);
         when(conf.getMaxNumberOfKeysInSegmentCacheDuringFlushing())
                 .thenReturn(3);
@@ -66,8 +66,9 @@ class SegmentManagerTest {
     @Test
     void test_close() {
         final SegmentRegistry<Integer, String> segmentRegistry = new SegmentRegistry<>(
-                DirectoryFacade.of(directory), keyTypeDescriptor,
-                valueTypeDescriptor, conf);
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(directory),
+                keyTypeDescriptor, valueTypeDescriptor, conf);
         assertDoesNotThrow(segmentRegistry::close);
     }
 

@@ -11,7 +11,6 @@ import org.hestiastore.index.datatype.NullValue;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -26,11 +25,11 @@ class IntegrationSegmentIndexIteratorTest {
             .getLogger(IntegrationSegmentIndexIteratorTest.class);
 
     private final Directory directory = new MemDirectory();
-    private final List<Entry<Integer, String>> data = List.of(Entry.of(1, "bbb"),
-            Entry.of(2, "ccc"), Entry.of(3, "dde"), Entry.of(4, "ddf"),
-            Entry.of(5, "ddg"), Entry.of(6, "ddh"), Entry.of(7, "ddi"),
-            Entry.of(8, "ddj"), Entry.of(9, "ddk"), Entry.of(10, "ddl"),
-            Entry.of(11, "ddm"));
+    private final List<Entry<Integer, String>> data = List.of(
+            Entry.of(1, "bbb"), Entry.of(2, "ccc"), Entry.of(3, "dde"),
+            Entry.of(4, "ddf"), Entry.of(5, "ddg"), Entry.of(6, "ddh"),
+            Entry.of(7, "ddi"), Entry.of(8, "ddj"), Entry.of(9, "ddk"),
+            Entry.of(10, "ddl"), Entry.of(11, "ddm"));
     private final List<Entry<Integer, NullValue>> data2 = List.of(
             Entry.of(1, NULL), Entry.of(2, NULL), Entry.of(3, NULL),
             Entry.of(4, NULL), Entry.of(5, NULL), Entry.of(6, NULL),
@@ -45,8 +44,10 @@ class IntegrationSegmentIndexIteratorTest {
                 .withValueClass(String.class)//
                 .withName("test_index")//
                 .build();
-        final SegmentIndex<Integer, String> index = SegmentIndex
-                .create(DirectoryFacade.of(directory), conf);
+        final SegmentIndex<Integer, String> index = SegmentIndex.create(
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(directory),
+                conf);
         data.stream().forEach(index::put);
         index.compact();
         assertTrue(true); // Just to ensure no exceptions are thrown
@@ -60,8 +61,10 @@ class IntegrationSegmentIndexIteratorTest {
                 .withValueClass(NullValue.class)//
                 .withName("test_index")//
                 .build();
-        final SegmentIndex<Integer, NullValue> index = SegmentIndex
-                .create(DirectoryFacade.of(directory), conf);
+        final SegmentIndex<Integer, NullValue> index = SegmentIndex.create(
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(directory),
+                conf);
         data2.stream().forEach(index::put);
         index.compact();
         assertTrue(true); // Just to ensure no exceptions are thrown
@@ -75,8 +78,10 @@ class IntegrationSegmentIndexIteratorTest {
                 .withValueClass(String.class)//
                 .withName("test_index")//
                 .build();
-        final SegmentIndex<String, String> index = SegmentIndex
-                .create(DirectoryFacade.of(directory), conf);
+        final SegmentIndex<String, String> index = SegmentIndex.create(
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(directory),
+                conf);
         index.put("a", "a");
         index.put("b", "b");
         index.compact();
@@ -118,7 +123,9 @@ class IntegrationSegmentIndexIteratorTest {
                 .withName("test_index")//
                 .build();
         return SegmentIndex.<Integer, String>create(
-                DirectoryFacade.of(directory), conf);
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(directory),
+                conf);
     }
 
 }
