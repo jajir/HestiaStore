@@ -10,10 +10,11 @@ import java.util.Properties;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory.Access;
-import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.FileReader;
 import org.hestiastore.index.directory.FileWriter;
+import org.hestiastore.index.directory.async.AsyncFileReaderBlockingAdapter;
+import org.hestiastore.index.directory.async.AsyncFileWriterBlockingAdapter;
 
 /**
  * {@link PropertyStore} backed by the {@link Directory} abstraction. It loads
@@ -26,11 +27,6 @@ public final class PropertyStoreimpl implements PropertyStore {
     private final String fileName;
     private final Properties properties = new Properties();
     private final PropertyConverters converters = new PropertyConverters();
-
-    public PropertyStoreimpl(final Directory directory, final String fileName,
-            final boolean force) {
-        this(DirectoryFacade.of(directory), fileName, force);
-    }
 
     public PropertyStoreimpl(final DirectoryFacade directoryFacade,
             final String fileName, final boolean force) {
@@ -47,7 +43,8 @@ public final class PropertyStoreimpl implements PropertyStore {
     }
 
     private void loadIfPresent(final boolean force) {
-        if (!directoryFacade.isFileExists(fileName)) {
+        if (!directoryFacade.isFileExistsAsync(fileName)
+                .toCompletableFuture().join()) {
             if (force) {
                 throw new IndexException("File " + fileName
                         + " does not exist in directory " + directoryFacade);
@@ -63,7 +60,9 @@ public final class PropertyStoreimpl implements PropertyStore {
     }
 
     private byte[] readEntireFile() {
-        try (FileReader reader = directoryFacade.getFileReader(fileName)) {
+        try (FileReader reader = new AsyncFileReaderBlockingAdapter(
+                directoryFacade.getFileReaderAsync(fileName)
+                        .toCompletableFuture().join())) {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
             final byte[] buffer = new byte[256];
             int read = reader.read(buffer);
@@ -95,8 +94,9 @@ public final class PropertyStoreimpl implements PropertyStore {
 
     void writeToDisk(final Properties propsToWrite) {
         final byte[] bytes = convertToBytes(propsToWrite);
-        try (FileWriter writer = directoryFacade.getFileWriter(fileName,
-                Access.OVERWRITE)) {
+        try (FileWriter writer = new AsyncFileWriterBlockingAdapter(
+                directoryFacade.getFileWriterAsync(fileName, Access.OVERWRITE)
+                        .toCompletableFuture().join())) {
             writer.write(bytes);
         }
     }

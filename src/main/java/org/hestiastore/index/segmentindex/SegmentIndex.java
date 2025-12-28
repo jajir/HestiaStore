@@ -9,7 +9,6 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.DirectoryFacade;
 
 /**
@@ -33,14 +32,15 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * @param indexConf requested configuration overrides
      * @return a newly created index instance
      */
-    static <M, N> SegmentIndex<M, N> create(final Directory directory,
+    static <M, N> SegmentIndex<M, N> create(
+            final DirectoryFacade directoryFacade,
             final IndexConfiguration<M, N> indexConf) {
         final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
-                new IndexConfiguratonStorage<>(directory));
+                new IndexConfiguratonStorage<>(directoryFacade));
         final IndexConfiguration<M, N> conf = confManager
                 .applyDefaults(indexConf);
         confManager.save(conf);
-        return openIndex(directory, conf);
+        return openIndex(directoryFacade, conf);
     }
 
     /**
@@ -51,13 +51,14 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * @param indexConf configuration overrides to apply
      * @return index instance backed by the updated configuration
      */
-    static <M, N> SegmentIndex<M, N> open(final Directory directory,
+    static <M, N> SegmentIndex<M, N> open(
+            final DirectoryFacade directoryFacade,
             final IndexConfiguration<M, N> indexConf) {
         final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
-                new IndexConfiguratonStorage<>(directory));
+                new IndexConfiguratonStorage<>(directoryFacade));
         final IndexConfiguration<M, N> mergedConf = confManager
                 .mergeWithStored(indexConf);
-        return openIndex(directory, mergedConf);
+        return openIndex(directoryFacade, mergedConf);
     }
 
     /**
@@ -66,10 +67,11 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * @param directory backing directory with an existing index
      * @return index instance backed by the persisted configuration
      */
-    static <M, N> SegmentIndex<M, N> open(final Directory directory) {
+    static <M, N> SegmentIndex<M, N> open(
+            final DirectoryFacade directoryFacade) {
         final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
-                new IndexConfiguratonStorage<>(directory));
-        return openIndex(directory, confManager.loadExisting());
+                new IndexConfiguratonStorage<>(directoryFacade));
+        return openIndex(directoryFacade, confManager.loadExisting());
     }
 
     /**
@@ -79,23 +81,21 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * @return optional index instance if the configuration was found
      */
     static <M, N> Optional<SegmentIndex<M, N>> tryOpen(
-            final Directory directory) {
+            final DirectoryFacade directoryFacade) {
         final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
-                new IndexConfiguratonStorage<>(directory));
+                new IndexConfiguratonStorage<>(directoryFacade));
         final Optional<IndexConfiguration<M, N>> oConf = confManager
                 .tryToLoad();
         if (oConf.isPresent()) {
-            return Optional.of(openIndex(directory, oConf.get()));
+            return Optional.of(openIndex(directoryFacade, oConf.get()));
         } else {
             return Optional.empty();
         }
     }
 
     private static <M, N> SegmentIndex<M, N> openIndex(
-            final Directory directory,
+            final DirectoryFacade directoryFacade,
             final IndexConfiguration<M, N> indexConf) {
-        final DirectoryFacade directoryFacade = DirectoryFacade
-                .of(directory);
         final TypeDescriptor<M> keyTypeDescriptor = DataTypeDescriptorRegistry
                 .makeInstance(indexConf.getKeyTypeDescriptor());
         final TypeDescriptor<N> valueTypeDescriptor = DataTypeDescriptorRegistry

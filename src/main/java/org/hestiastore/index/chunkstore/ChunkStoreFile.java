@@ -7,7 +7,6 @@ import org.hestiastore.index.datablockfile.DataBlockByteReader;
 import org.hestiastore.index.datablockfile.DataBlockByteReaderImpl;
 import org.hestiastore.index.datablockfile.DataBlockFile;
 import org.hestiastore.index.datablockfile.DataBlockSize;
-import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.FileReaderSeekable;
 
@@ -41,14 +40,6 @@ public class ChunkStoreFile {
                 "dataBlockSize");
         this.encodingChunkFilters = List.copyOf(encodingChunkFilters);
         this.decodingChunkFilters = List.copyOf(decodingChunkFilters);
-    }
-
-    public ChunkStoreFile(final Directory directory, final String fileName,
-            final DataBlockSize dataBlockSize,
-            final List<ChunkFilter> encodingChunkFilters,
-            final List<ChunkFilter> decodingChunkFilters) {
-        this(DirectoryFacade.of(directory), fileName, dataBlockSize,
-                encodingChunkFilters, decodingChunkFilters);
     }
 
     /**

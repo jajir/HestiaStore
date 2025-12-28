@@ -8,6 +8,7 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.FsDirectory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -35,7 +36,7 @@ class SortedDataFileWriterTxTest {
         final TypeDescriptorShortString td = new TypeDescriptorShortString();
 
         final SortedDataFileWriterTx<String, String> tx = new SortedDataFileWriterTx<>(
-                fileName, dir, bufferSize, td, td);
+                fileName, DirectoryFacade.of(dir), bufferSize, td, td);
 
         try (final EntryWriter<String, String> w = tx.open()) {
             w.write(Entry.of("K", "V"));

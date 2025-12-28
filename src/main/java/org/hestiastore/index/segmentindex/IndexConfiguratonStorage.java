@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilterBuilder;
 import org.hestiastore.index.chunkstore.ChunkFilter;
-import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.properties.PropertyStore;
 import org.hestiastore.index.properties.PropertyStoreimpl;
@@ -42,10 +41,6 @@ public class IndexConfiguratonStorage<K, V> {
     private static final String CONFIGURATION_FILENAME = "index-configuration.properties";
 
     private final DirectoryFacade directoryFacade;
-
-    IndexConfiguratonStorage(final Directory directory) {
-        this(DirectoryFacade.of(directory));
-    }
 
     IndexConfiguratonStorage(final DirectoryFacade directoryFacade) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
@@ -193,7 +188,8 @@ public class IndexConfiguratonStorage<K, V> {
     }
 
     boolean exists() {
-        return directoryFacade.isFileExists(CONFIGURATION_FILENAME);
+        return directoryFacade.isFileExistsAsync(CONFIGURATION_FILENAME)
+                .toCompletableFuture().join();
     }
 
     @SuppressWarnings("unchecked")

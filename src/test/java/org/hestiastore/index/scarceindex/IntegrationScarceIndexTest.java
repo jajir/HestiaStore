@@ -9,6 +9,7 @@ import java.util.List;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
@@ -98,7 +99,7 @@ class IntegrationScarceIndexTest {
             final List<Entry<String, Integer>> entries) {
         final MemDirectory directory = new MemDirectory();
         final ScarceSegmentIndex<String> index = ScarceSegmentIndex.<String>builder()
-                .withDirectory(directory).withFileName(FILE_NAME)//
+                .withDirectoryFacade(DirectoryFacade.of(directory)).withFileName(FILE_NAME)//
                 .withKeyTypeDescriptor(stringTd)//
                 .build();
 

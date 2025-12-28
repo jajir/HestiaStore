@@ -3,9 +3,10 @@ package org.hestiastore.index.bloomfilter;
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
-import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.Directory.Access;
 import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.FileWriter;
+import org.hestiastore.index.directory.async.AsyncFileWriterBlockingAdapter;
 
 public class BloomFilterWriter<K> extends AbstractCloseableResource {
 
@@ -29,13 +30,6 @@ public class BloomFilterWriter<K> extends AbstractCloseableResource {
         this.diskIoBufferSize = diskIoBufferSize;
     }
 
-    BloomFilterWriter(final ConvertorToBytes<K> convertorToBytes,
-            final Hash newHash, final Directory directory,
-            final String fileName, final int diskIoBufferSize) {
-        this(convertorToBytes, newHash, DirectoryFacade.of(directory),
-                fileName, diskIoBufferSize);
-    }
-
     Hash getHashSnapshot() {
         return hash;
     }
@@ -47,8 +41,12 @@ public class BloomFilterWriter<K> extends AbstractCloseableResource {
 
     @Override
     protected void doClose() {
-        try (FileWriter writer = directoryFacade.getFileWriter(fileName,
-                Directory.Access.OVERWRITE, diskIoBufferSize)) {
+        try (FileWriter writer = new AsyncFileWriterBlockingAdapter(
+                directoryFacade
+                        .getFileWriterAsync(fileName,
+                                Access.OVERWRITE,
+                                diskIoBufferSize)
+                        .toCompletableFuture().join())) {
             writer.write(hash.getData());
         }
     }

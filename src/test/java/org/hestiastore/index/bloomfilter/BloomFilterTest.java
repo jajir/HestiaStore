@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -70,7 +71,7 @@ class BloomFilterTest {
         final BloomFilterBuilder<String> builder = BloomFilter.<String>builder()//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(STD.getConvertorToBytes())//
-                .withDirectory(directory)//
+                .withDirectoryFacade(DirectoryFacade.of(directory))//
                 .withIndexSizeInBytes(0)//
                 .withNumberOfHashFunctions(0)//
                 .withRelatedObjectName("segment-00323")//
@@ -86,7 +87,7 @@ class BloomFilterTest {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(STD.getConvertorToBytes())//
-                .withDirectory(directory)//
+                .withDirectoryFacade(DirectoryFacade.of(directory))//
                 .withIndexSizeInBytes(0)//
                 .withNumberOfHashFunctions(2)//
                 .withRelatedObjectName("segment-00323")//
@@ -107,7 +108,7 @@ class BloomFilterTest {
         final BloomFilterBuilder<String> builder = BloomFilter.<String>builder()
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(STD.getConvertorToBytes())//
-                .withDirectory(directory)//
+                .withDirectoryFacade(DirectoryFacade.of(directory))//
                 .withIndexSizeInBytes(0)//
                 .withRelatedObjectName("segment-00323")//
                 .withNumberOfHashFunctions(3)//
@@ -130,7 +131,7 @@ class BloomFilterTest {
         return BloomFilter.<String>builder()//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(STD.getConvertorToBytes())//
-                .withDirectory(directory)//
+                .withDirectoryFacade(DirectoryFacade.of(directory))//
                 .withIndexSizeInBytes(100)//
                 .withNumberOfHashFunctions(2)//
                 .withRelatedObjectName("segment-00323")//

@@ -2,7 +2,6 @@ package org.hestiastore.index.scarceindex;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.DirectoryFacade;
 
 public final class ScarceIndexBuilder<K> {
@@ -22,12 +21,6 @@ public final class ScarceIndexBuilder<K> {
             final TypeDescriptor<K> typeDescriptor) {
         this.keyTypeDescriptor = Vldtn.requireNonNull(typeDescriptor,
                 "keyTypeDescriptor");
-        return this;
-    }
-
-    public ScarceIndexBuilder<K> withDirectory(final Directory directory) {
-        Vldtn.requireNonNull(directory, "directory");
-        this.directoryFacade = DirectoryFacade.of(directory);
         return this;
     }
 

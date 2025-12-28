@@ -19,6 +19,7 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -112,7 +113,7 @@ class SegmentSplitApiTest {
     private static Segment<Integer, String> newSegment() {
         final Directory directory = new MemDirectory();
         return Segment.<Integer, String>builder()//
-                .withDirectory(directory)//
+                .withDirectoryFacade(DirectoryFacade.of(directory))//
                 .withId(SegmentId.of(1))//
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())//
                 .withValueTypeDescriptor(new TypeDescriptorShortString())//

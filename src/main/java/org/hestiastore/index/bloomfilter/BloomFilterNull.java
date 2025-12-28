@@ -2,7 +2,7 @@ package org.hestiastore.index.bloomfilter;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.datatype.ConvertorToBytes;
-import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 
 /**
@@ -24,8 +24,9 @@ public final class BloomFilterNull<K> extends AbstractCloseableResource
     public BloomFilterWriterTx<K> openWriteTx() {
         @SuppressWarnings("unchecked")
         final ConvertorToBytes<K> convertor = (ConvertorToBytes<K>) NO_OP_CONVERTOR;
-        final Directory directory = new MemDirectory();
-        return new BloomFilterWriterTx<>(directory, "bloomFilterNull",
+        final DirectoryFacade directoryFacade = DirectoryFacade
+                .of(new MemDirectory());
+        return new BloomFilterWriterTx<>(directoryFacade, "bloomFilterNull",
                 convertor, 1, 1, 1, this);
     }
 

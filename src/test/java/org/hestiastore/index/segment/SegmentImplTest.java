@@ -154,7 +154,7 @@ class SegmentImplTest {
 
         final SegmentImpl<Integer, String> seg = Segment
                 .<Integer, String>builder()//
-                .withDirectory(directory)//
+                .withDirectoryFacade(DirectoryFacade.of(directory))//
                 .withId(originalId)//
                 .withKeyTypeDescriptor(tdi)//
                 .withBloomFilterIndexSizeInBytes(0)//

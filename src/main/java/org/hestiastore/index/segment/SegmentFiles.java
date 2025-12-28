@@ -234,7 +234,8 @@ public final class SegmentFiles<K, V> {
      * @throws IllegalStateException if the file could not be deleted
      */
     void deleteFile(final String fileName) {
-        if (!directoryFacade.deleteFile(fileName)) {
+        if (!directoryFacade.deleteFileAsync(fileName).toCompletableFuture()
+                .join()) {
             throw new IllegalStateException(String.format(
                     "Unable to delete file '%s' in directory '%s'", fileName,
                     directoryFacade));
@@ -247,7 +248,7 @@ public final class SegmentFiles<K, V> {
      * @param fileName file to delete if present
      */
     void optionallyDeleteFile(final String fileName) {
-        directoryFacade.deleteFile(fileName);
+        directoryFacade.deleteFileAsync(fileName).toCompletableFuture().join();
     }
 
     /**

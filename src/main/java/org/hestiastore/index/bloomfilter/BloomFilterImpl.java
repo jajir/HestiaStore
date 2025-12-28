@@ -5,6 +5,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.FileReader;
+import org.hestiastore.index.directory.async.AsyncFileReaderBlockingAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,8 +59,11 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
                     "Number of hash function cant be '0'");
         }
         if (isExists() && indexSizeInBytes > 0) {
-            try (FileReader reader = directoryFacade.getFileReader(
-                    bloomFilterFileName, diskIoBufferSize)) {
+            try (FileReader reader = new AsyncFileReaderBlockingAdapter(
+                    directoryFacade
+                            .getFileReaderAsync(bloomFilterFileName,
+                                    diskIoBufferSize)
+                            .toCompletableFuture().join())) {
                 final byte[] data = new byte[indexSizeInBytes];
                 final int readed = reader.read(data);
                 if (indexSizeInBytes != readed) {
@@ -90,7 +94,8 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
     }
 
     private boolean isExists() {
-        return directoryFacade.isFileExists(bloomFilterFileName);
+        return directoryFacade.isFileExistsAsync(bloomFilterFileName)
+                .toCompletableFuture().join();
     }
 
     @Override

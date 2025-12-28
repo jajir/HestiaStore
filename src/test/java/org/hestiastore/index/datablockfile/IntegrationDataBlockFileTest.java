@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.hestiastore.index.TestData;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,8 +26,8 @@ public class IntegrationDataBlockFileTest {
     @BeforeEach
     void setUp() {
         directory = new MemDirectory();
-        dataBlockFile = DataBlockFile.fromDirectory(directory, FILE_NAME,
-                BLOCK_SIZE);
+        dataBlockFile = new DataBlockFile(DirectoryFacade.of(directory),
+                FILE_NAME, BLOCK_SIZE);
     }
 
     @AfterEach

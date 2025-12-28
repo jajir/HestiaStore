@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.hestiastore.index.datatype.NullValue;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
@@ -29,7 +30,7 @@ public class SegmentIndexSetIT {
 
         // create new index
         SegmentIndex<String, NullValue> index = SegmentIndex
-                .<String, NullValue>create(directory, conf);
+                .<String, NullValue>create(DirectoryFacade.of(directory), conf);
 
         // Do some work with the index
         index.put("Hello", NullValue.NULL);

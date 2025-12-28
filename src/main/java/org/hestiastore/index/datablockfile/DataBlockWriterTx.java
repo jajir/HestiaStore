@@ -2,9 +2,9 @@ package org.hestiastore.index.datablockfile;
 
 import org.hestiastore.index.GuardedWriteTransaction;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.FileWriter;
+import org.hestiastore.index.directory.async.AsyncFileWriterBlockingAdapter;
 
 /**
  * A transaction for writing a data block file. The data is first written to a
@@ -19,11 +19,6 @@ public class DataBlockWriterTx
     private final DataBlockSize blockSize;
 
     public DataBlockWriterTx(final String fileName,
-            final Directory directory, final DataBlockSize blockSize) {
-        this(fileName, DirectoryFacade.of(directory), blockSize);
-    }
-
-    public DataBlockWriterTx(final String fileName,
             final DirectoryFacade directoryFacade,
             final DataBlockSize blockSize) {
         this.fileName = Vldtn.requireNonNull(fileName, "fileName");
@@ -34,14 +29,16 @@ public class DataBlockWriterTx
 
     @Override
     protected DataBlockWriter doOpen() {
-        final FileWriter fileWriter = directoryFacade.getFileWriter(
-                getTempFileName());
+        final FileWriter fileWriter = new AsyncFileWriterBlockingAdapter(
+                directoryFacade.getFileWriterAsync(getTempFileName())
+                        .toCompletableFuture().join());
         return new DataBlockWriterImpl(fileWriter, blockSize);
     }
 
     @Override
     protected void doCommit(final DataBlockWriter resource) {
-        directoryFacade.renameFile(getTempFileName(), fileName);
+        directoryFacade.renameFileAsync(getTempFileName(), fileName)
+                .toCompletableFuture().join();
     }
 
     private String getTempFileName() {

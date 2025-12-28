@@ -13,6 +13,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
@@ -72,7 +73,7 @@ class SegmentIndexConcurrencyStressIT {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, Integer> conf = stressConf(indexName);
         final AtomicReference<SegmentIndex<Integer, Integer>> indexRef = new AtomicReference<>(
-                SegmentIndex.create(directory, conf));
+                SegmentIndex.create(DirectoryFacade.of(directory), conf));
         final ReadWriteLock lifecycleLock = new ReentrantReadWriteLock();
 
         final int rotations = 3;
@@ -131,7 +132,8 @@ class SegmentIndexConcurrencyStressIT {
                                 .get();
                         current.flush();
                         current.close();
-                        indexRef.set(SegmentIndex.open(directory, conf));
+                        indexRef.set(SegmentIndex
+                                .open(DirectoryFacade.of(directory), conf));
                     } finally {
                         lifecycleLock.writeLock().unlock();
                     }

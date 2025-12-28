@@ -209,7 +209,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
-                .withDirectory(directory)//
+                .withDirectoryFacade(DirectoryFacade.of(directory))//
                 .withId(id)//
                 .withKeyTypeDescriptor(tdi)//
                 .withBloomFilterIndexSizeInBytes(0)//
@@ -261,7 +261,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
-                .withDirectory(directory)//
+                .withDirectoryFacade(DirectoryFacade.of(directory))//
                 .withId(id)//
                 .withKeyTypeDescriptor(tdi)//
                 .withBloomFilterIndexSizeInBytes(0)//
@@ -313,7 +313,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
-                .withDirectory(directory)//
+                .withDirectoryFacade(DirectoryFacade.of(directory))//
                 .withId(id)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//
@@ -390,7 +390,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()
-                .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
+                .withDirectoryFacade(DirectoryFacade.of(directory)).withId(id).withKeyTypeDescriptor(tdi)
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withValueTypeDescriptor(tds)//
                 .withEncodingChunkFilters(//
@@ -440,7 +440,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
-                .withDirectory(directory)//
+                .withDirectoryFacade(DirectoryFacade.of(directory))//
                 .withId(id)//
                 .withMaxNumberOfKeysInSegmentCache(13)//
                 .withMaxNumberOfKeysInSegmentChunk(3)//
@@ -519,7 +519,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 segmentDataSupplier);
 
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
-                .withDirectory(directory)//
+                .withDirectoryFacade(DirectoryFacade.of(directory))//
                 .withId(segmentId)//
                 .withSegmentConf(segmentConf)//
                 .withSegmentFiles(segmentFiles)//
@@ -595,7 +595,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
-                .withDirectory(directory)//
+                .withDirectoryFacade(DirectoryFacade.of(directory))//
                 .withId(id)//
                 .withKeyTypeDescriptor(tdi)//
                 .withBloomFilterIndexSizeInBytes(0)//
@@ -658,7 +658,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
-                .withDirectory(directory)//
+                .withDirectoryFacade(DirectoryFacade.of(directory))//
                 .withId(id)//
                 .withKeyTypeDescriptor(tdi)//
                 .withBloomFilterIndexSizeInBytes(0)//
@@ -711,7 +711,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
         return Stream.of(arguments(tdi, tds, dir1,
                 Segment.<Integer, String>builder()//
-                        .withDirectory(dir1)//
+                        .withDirectoryFacade(DirectoryFacade.of(dir1))//
                         .withId(id1)//
                         .withKeyTypeDescriptor(tdi)//
                         .withValueTypeDescriptor(tds)//
@@ -733,7 +733,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 1, // expectedNumberKeysInScarceIndex,
                 10 // expectedNumberOfFile
         ), arguments(tdi, tds, dir2, Segment.<Integer, String>builder()//
-                .withDirectory(dir2)//
+                .withDirectoryFacade(DirectoryFacade.of(dir2))//
                 .withId(id2)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//
@@ -756,7 +756,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 9, // expectedNumberKeysInScarceIndex
                 5// expectedNumberOfFile
         ), arguments(tdi, tds, dir3, Segment.<Integer, String>builder()//
-                .withDirectory(dir3)//
+                .withDirectoryFacade(DirectoryFacade.of(dir3))//
                 .withId(id3)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//

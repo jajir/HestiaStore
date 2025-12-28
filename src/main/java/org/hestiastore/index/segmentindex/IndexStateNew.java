@@ -12,7 +12,7 @@ public final class IndexStateNew<K, V> implements IndexState<K, V> {
 
     IndexStateNew(final DirectoryFacade directoryFacade) {
         this.fileLock = Vldtn.requireNonNull(directoryFacade, "directoryFacade")
-                .getLock(LOCK_FILE_NAME);
+                .getLockAsync(LOCK_FILE_NAME).toCompletableFuture().join();
         if (fileLock.isLocked()) {
             throw new IllegalStateException(
                     "Index directory is already locked.");

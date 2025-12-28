@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 
@@ -47,17 +46,6 @@ public final class SegmentBuilder<K, V> {
 
     SegmentBuilder() {
 
-    }
-
-    /**
-     * Set the base {@link Directory} used to store files for this segment.
-     *
-     * @param directory non-null directory implementation
-     * @return this builder for chaining
-     */
-    public SegmentBuilder<K, V> withDirectory(final Directory directory) {
-        Vldtn.requireNonNull(directory, "directory");
-        return withDirectory(DirectoryFacade.of(directory));
     }
 
     /**

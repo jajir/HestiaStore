@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
@@ -28,8 +29,8 @@ class SegmentIndexConfigurationDefaultsUsageTest {
                 .orElseThrow(
                         () -> new IllegalStateException("Missing contract defaults for Integer"));
 
-        try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
-                sparseConfiguration)) {
+        try (SegmentIndex<Integer, String> index = SegmentIndex
+                .create(DirectoryFacade.of(directory), sparseConfiguration)) {
             final IndexConfiguration<Integer, String> actual = index
                     .getConfiguration();
 

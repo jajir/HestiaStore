@@ -1,9 +1,9 @@
 package org.hestiastore.index.datablockfile;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.FileReaderSeekable;
+import org.hestiastore.index.directory.async.AsyncFileReaderSeekableBlockingAdapter;
 
 /**
  * Data block file is a file that contains data blocks of fixed size. Each data
@@ -47,12 +47,6 @@ public class DataBlockFile {
         this.blockSize = Vldtn.requireNonNull(blockSize, "blockSize");
     }
 
-    public static DataBlockFile fromDirectory(final Directory directory,
-            final String fileName, final DataBlockSize blockSize) {
-        return new DataBlockFile(DirectoryFacade.of(directory), fileName,
-                blockSize);
-    }
-
     /**
      * Opens a reader for the specified block position.
      *
@@ -80,7 +74,8 @@ public class DataBlockFile {
             throw new IllegalArgumentException(String.format(
                     "Block position must be >= '%s'", FIRST_BLOCK.getValue()));
         }
-        if (directoryFacade.isFileExists(fileName)) {
+        if (directoryFacade.isFileExistsAsync(fileName).toCompletableFuture()
+                .join()) {
             final FileReaderSeekable reader = getFileReader(blockPosition,
                     seekableReader);
             final boolean closeOnClose = seekableReader == null;
@@ -95,7 +90,9 @@ public class DataBlockFile {
             final FileReaderSeekable seekableReader) {
         FileReaderSeekable out = seekableReader;
         if (out == null) {
-            out = directoryFacade.getFileReaderSeekable(fileName);
+            out = new AsyncFileReaderSeekableBlockingAdapter(
+                    directoryFacade.getFileReaderSeekableAsync(fileName)
+                            .toCompletableFuture().join());
         }
         out.seek(blockPosition.getValue());
         return out;

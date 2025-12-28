@@ -118,7 +118,7 @@ class KeySegmentCacheTest {
         final MemDirectory dir = new MemDirectory();
         final var sdf = org.hestiastore.index.sorteddatafile.SortedDataFile
                 .<Integer, SegmentId>builder()//
-                .withDirectory(dir)//
+                .withDirectoryFacade(DirectoryFacade.of(dir))//
                 .withFileName("index.map")//
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())//
                 .withValueTypeDescriptor(new TypeDescriptorSegmentId())//

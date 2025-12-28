@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.hestiastore.index.datatype.TypeDescriptorString;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
@@ -106,7 +107,7 @@ class SegmentIndexAsyncCloseRaceIT {
         final IndexConfiguration<String, String> conf = conf();
 
         final SegmentIndex<String, String> index = SegmentIndex
-                .create(directory, conf);
+                .create(DirectoryFacade.of(directory), conf);
         final BlockingTombstoneTypeDescriptorString.Hook hook = BlockingTombstoneTypeDescriptorString
                 .installHook();
         final ExecutorService closeExecutor = Executors
@@ -148,7 +149,7 @@ class SegmentIndexAsyncCloseRaceIT {
         final IndexConfiguration<String, String> conf = conf();
 
         final SegmentIndex<String, String> index = SegmentIndex
-                .create(directory, conf);
+                .create(DirectoryFacade.of(directory), conf);
         index.put("k", "v");
 
         final BlockingTombstoneTypeDescriptorString.Hook hook = BlockingTombstoneTypeDescriptorString
@@ -190,7 +191,7 @@ class SegmentIndexAsyncCloseRaceIT {
         final IndexConfiguration<String, String> conf = conf();
 
         final SegmentIndex<String, String> index = SegmentIndex
-                .create(directory, conf);
+                .create(DirectoryFacade.of(directory), conf);
         index.put("k", "v");
 
         final BlockingTombstoneTypeDescriptorString.Hook hook = BlockingTombstoneTypeDescriptorString
