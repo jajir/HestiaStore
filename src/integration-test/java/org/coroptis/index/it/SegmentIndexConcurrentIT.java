@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
@@ -41,7 +42,7 @@ class SegmentIndexConcurrentIT {
                 "concurrent-index", 4, 15);
 
         final SegmentIndex<Integer, Integer> index = SegmentIndex
-                .create(directory, conf);
+                .create(DirectoryFacade.of(directory), conf);
 
         final int threads = 4;
         final int operationsPerThread = 200;
@@ -100,7 +101,7 @@ class SegmentIndexConcurrentIT {
 
         // Re-open to ensure persisted state matches expectations
         final SegmentIndex<Integer, Integer> reopened = SegmentIndex
-                .open(directory, conf);
+                .open(DirectoryFacade.of(directory), conf);
         final Map<Integer, Integer> reloaded = reopened.getStream()
                 .collect(Collectors.toMap(Entry::getKey, Entry::getValue,
                         (first, second) -> second));
@@ -115,7 +116,7 @@ class SegmentIndexConcurrentIT {
                 "concurrent-index", 4, 15);
 
         final SegmentIndex<Integer, Integer> index = SegmentIndex
-                .create(directory, conf);
+                .create(DirectoryFacade.of(directory), conf);
 
         final int threads = 4;
         final int operationsPerThread = 200;
@@ -153,7 +154,7 @@ class SegmentIndexConcurrentIT {
         index.close();
 
         final SegmentIndex<Integer, Integer> reopened = SegmentIndex
-                .open(directory, conf);
+                .open(DirectoryFacade.of(directory), conf);
         assertEquals(finalValue, reopened.get(key));
         reopened.close();
     }
@@ -166,7 +167,7 @@ class SegmentIndexConcurrentIT {
                 "concurrent-index-maintenance", 4, 8);
 
         final SegmentIndex<Integer, Integer> index = SegmentIndex
-                .create(directory, conf);
+                .create(DirectoryFacade.of(directory), conf);
 
         final int threads = 4;
         final int operationsPerThread = 400;
@@ -264,7 +265,7 @@ class SegmentIndexConcurrentIT {
         index.close();
 
         final SegmentIndex<Integer, Integer> reopened = SegmentIndex
-                .open(directory, conf);
+                .open(DirectoryFacade.of(directory), conf);
         final Map<Integer, Integer> reloaded = reopened.getStream()
                 .collect(Collectors.toMap(Entry::getKey, Entry::getValue,
                         (first, second) -> second));
@@ -278,7 +279,7 @@ class SegmentIndexConcurrentIT {
         final IndexConfiguration<Integer, Integer> conf = newConfiguration(
                 "concurrent-index-readers", 4, 15);
         final SegmentIndex<Integer, Integer> index = SegmentIndex
-                .create(directory, conf);
+                .create(DirectoryFacade.of(directory), conf);
 
         final int keyCount = 120;
         for (int key = 0; key < keyCount; key++) {
@@ -350,7 +351,7 @@ class SegmentIndexConcurrentIT {
         final IndexConfiguration<Integer, Integer> conf = newConfiguration(
                 "concurrent-index-async", 4, 12);
         final SegmentIndex<Integer, Integer> index = SegmentIndex
-                .create(directory, conf);
+                .create(DirectoryFacade.of(directory), conf);
 
         final int threads = 4;
         final int operationsPerThread = 200;
@@ -421,7 +422,7 @@ class SegmentIndexConcurrentIT {
         index.close();
 
         final SegmentIndex<Integer, Integer> reopened = SegmentIndex
-                .open(directory, conf);
+                .open(DirectoryFacade.of(directory), conf);
         final Map<Integer, Integer> reloaded = reopened.getStream()
                 .collect(Collectors.toMap(Entry::getKey, Entry::getValue,
                         (first, second) -> second));

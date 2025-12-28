@@ -9,7 +9,6 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
-import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 import org.slf4j.Logger;
@@ -82,16 +81,10 @@ public class ScarceSegmentIndex<K> {
         loadCache();
     }
 
-    ScarceSegmentIndex(final Directory directory, final String fileName,
-            final TypeDescriptor<K> keyTypeDescriptor,
-            final int diskIoBufferSize) {
-        this(DirectoryFacade.of(directory), fileName, keyTypeDescriptor,
-                diskIoBufferSize);
-    }
-
     private List<Entry<K, Integer>> loadCacheEntries() {
         final List<Entry<K, Integer>> entries = new ArrayList<>();
-        if (directoryFacade.isFileExists(fileName)) {
+        if (directoryFacade.isFileExistsAsync(fileName).toCompletableFuture()
+                .join()) {
             try (EntryIterator<K, Integer> entryIterator = sortedDataFile
                     .openIterator()) {
                 while (entryIterator.hasNext()) {

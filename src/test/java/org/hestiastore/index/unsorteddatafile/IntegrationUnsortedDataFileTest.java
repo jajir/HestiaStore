@@ -11,6 +11,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -28,7 +29,8 @@ class IntegrationUnsortedDataFileTest {
     void test_in_mem_unsorted_index() {
         final Directory dir = new MemDirectory();
         final UnsortedDataFile<Integer, String> unsorted = UnsortedDataFile
-                .<Integer, String>builder().withDirectory(dir)//
+                .<Integer, String>builder()
+                .withDirectoryFacade(DirectoryFacade.of(dir))//
                 .withFileName("duck")//
                 .withKeyWriter(tdi.getTypeWriter())//
                 .withKeyReader(tdi.getTypeReader())//
@@ -65,7 +67,8 @@ class IntegrationUnsortedDataFileTest {
     void test_stream_non_exesting_file() {
         final Directory dir = new MemDirectory();
         final UnsortedDataFile<Integer, String> unsorted = UnsortedDataFile
-                .<Integer, String>builder().withDirectory(dir)//
+                .<Integer, String>builder()
+                .withDirectoryFacade(DirectoryFacade.of(dir))//
                 .withFileName("giraffe")//
                 .withKeyWriter(tdi.getTypeWriter())//
                 .withValueWriter(tds.getTypeWriter())//

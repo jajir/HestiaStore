@@ -16,6 +16,7 @@ import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
@@ -60,7 +61,7 @@ class IntegrationSegmentWriteConsistencyTest {
 
     private Segment<Integer, String> makeSegment(final Directory directory,
             final SegmentId id) {
-        return Segment.<Integer, String>builder().withDirectory(directory)//
+        return Segment.<Integer, String>builder().withDirectoryFacade(DirectoryFacade.of(directory))//
                 .withId(id)//
                 .withKeyTypeDescriptor(TDI)//
                 .withValueTypeDescriptor(TDS)//

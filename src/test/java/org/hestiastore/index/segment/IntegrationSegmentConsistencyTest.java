@@ -16,6 +16,7 @@ import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberValidation;
 import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +40,7 @@ class IntegrationSegmentConsistencyTest extends AbstractSegmentTest {
     void setUp() {
         dir = new MemDirectory();
         seg = Segment.<Integer, Integer>builder()//
-                .withDirectory(dir)//
+                .withDirectoryFacade(DirectoryFacade.of(dir))//
                 .withId(id)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tdi)//

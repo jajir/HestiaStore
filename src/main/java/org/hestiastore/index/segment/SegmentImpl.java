@@ -9,6 +9,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.WriteTransaction.WriterFunction;
 import org.hestiastore.index.directory.FileReaderSeekable;
+import org.hestiastore.index.directory.async.AsyncFileReaderSeekableBlockingAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -265,9 +266,13 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     FileReaderSeekable getSeekableReader() {
         if (seekableReader == null) {
             final String indexFileName = segmentFiles.getIndexFileName();
-            if (segmentFiles.getDirectoryFacade().isFileExists(indexFileName)) {
-                seekableReader = segmentFiles.getDirectoryFacade()
-                        .getFileReaderSeekable(indexFileName);
+            if (segmentFiles.getDirectoryFacade()
+                    .isFileExistsAsync(indexFileName).toCompletableFuture()
+                    .join()) {
+                seekableReader = new AsyncFileReaderSeekableBlockingAdapter(
+                        segmentFiles.getDirectoryFacade()
+                                .getFileReaderSeekableAsync(indexFileName)
+                                .toCompletableFuture().join());
             }
         }
         return seekableReader;

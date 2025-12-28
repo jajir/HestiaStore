@@ -8,6 +8,7 @@ import org.hestiastore.index.datatype.TypeWriter;
 import org.hestiastore.index.directory.Directory.Access;
 import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.FileWriter;
+import org.hestiastore.index.directory.async.AsyncFileWriterBlockingAdapter;
 
 /**
  * Streaming writer that appends unsorted key/value entries to a file using the
@@ -38,8 +39,9 @@ public class UnsortedDataFileWriter<K, V> extends AbstractCloseableResource
         this.valueWriter = Vldtn.requireNonNull(valueWriter, "valueWriter");
         Vldtn.requireNonNull(directoryFacade, "directoryFacade");
         Vldtn.requireNonNull(fileName, "fileName");
-        fileWriter = directoryFacade.getFileWriter(fileName, access,
-                diskIoBufferSize);
+        fileWriter = new AsyncFileWriterBlockingAdapter(
+                directoryFacade.getFileWriterAsync(fileName, access,
+                        diskIoBufferSize).toCompletableFuture().join());
     }
 
     /**

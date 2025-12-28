@@ -3,7 +3,6 @@ package org.hestiastore.index.bloomfilter;
 import org.hestiastore.index.GuardedWriteTransaction;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
-import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.DirectoryFacade;
 
 /**
@@ -21,16 +20,6 @@ public final class BloomFilterWriterTx<K>
     private final int indexSizeInBytes;
     private final int diskIoBufferSize;
     private final BloomFilter<K> bloomFilter;
-
-    BloomFilterWriterTx(final Directory directory,
-            final String bloomFilterFileName,
-            final ConvertorToBytes<K> convertorToBytes,
-            final int numberOfHashFunctions, final int indexSizeInBytes,
-            final int diskIoBufferSize, final BloomFilter<K> bloomFilter) {
-        this(DirectoryFacade.of(directory), bloomFilterFileName,
-                convertorToBytes, numberOfHashFunctions, indexSizeInBytes,
-                diskIoBufferSize, bloomFilter);
-    }
 
     BloomFilterWriterTx(final DirectoryFacade directoryFacade,
             final String bloomFilterFileName,
@@ -59,7 +48,8 @@ public final class BloomFilterWriterTx<K>
 
     @Override
     protected void doCommit(final BloomFilterWriter<K> writer) {
-        directoryFacade.renameFile(getTempFileName(), bloomFilterFileName);
+        directoryFacade.renameFileAsync(getTempFileName(), bloomFilterFileName)
+                .toCompletableFuture().join();
         bloomFilter.setNewHash(writer.getHashSnapshot());
     }
 

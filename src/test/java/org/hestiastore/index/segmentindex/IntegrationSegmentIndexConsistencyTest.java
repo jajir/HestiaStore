@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.Test;
@@ -96,7 +97,7 @@ class IntegrationSegmentIndexConsistencyTest extends AbstractSegmentIndexTest {
                 .withContextLoggingEnabled(false) //
                 .withName("test_index") //
                 .build();
-        return SegmentIndex.<Integer, Integer>create(directory, conf);
+        return SegmentIndex.<Integer, Integer>create(DirectoryFacade.of(directory), conf);
     }
 
     protected List<Entry<Integer, Integer>> makeList(final int no) {

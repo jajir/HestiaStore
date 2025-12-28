@@ -16,21 +16,27 @@ import org.junit.jupiter.api.Test;
 class DirectoryFacadeTest {
 
     @Test
-    void synchronous_delegation_with_mem_directory() throws Exception {
+    void async_delegation_with_mem_directory() throws Exception {
         final MemDirectory memDirectory = new MemDirectory();
         final DirectoryFacade facade = DirectoryFacade.of(memDirectory);
 
-        assertFalse(facade.isFileExists("a"));
-        try (FileWriter writer = facade.getFileWriter("a")) {
-            writer.write("hi".getBytes(StandardCharsets.ISO_8859_1));
-        }
-        assertTrue(facade.isFileExists("a"));
+        assertFalse(facade.isFileExistsAsync("a").toCompletableFuture()
+                .get(5, TimeUnit.SECONDS));
+        final AsyncFileWriter writer = facade.getFileWriterAsync("a")
+                .toCompletableFuture().get(5, TimeUnit.SECONDS);
+        writer.writeAsync("hi".getBytes(StandardCharsets.ISO_8859_1))
+                .toCompletableFuture().get(5, TimeUnit.SECONDS);
+        writer.close();
+        assertTrue(facade.isFileExistsAsync("a").toCompletableFuture()
+                .get(5, TimeUnit.SECONDS));
 
-        try (FileReader reader = facade.getFileReader("a")) {
-            final byte[] buffer = new byte[2];
-            reader.read(buffer);
-            assertEquals("hi", new String(buffer, StandardCharsets.ISO_8859_1));
-        }
+        final AsyncFileReader reader = facade.getFileReaderAsync("a")
+                .toCompletableFuture().get(5, TimeUnit.SECONDS);
+        final byte[] buffer = new byte[2];
+        reader.readAsync(buffer).toCompletableFuture()
+                .get(5, TimeUnit.SECONDS);
+        assertEquals("hi", new String(buffer, StandardCharsets.ISO_8859_1));
+        reader.close();
     }
 
     @Test

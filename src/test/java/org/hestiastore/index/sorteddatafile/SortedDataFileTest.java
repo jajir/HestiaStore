@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -26,17 +27,18 @@ class SortedDataFileTest {
     @Test
     void test_constructor_missing_directory() {
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> SortedDataFile.fromDirectory(null, FILE_NAME, STD, LTD,
-                        IO_BUFFER_SIZE));
+                () -> SortedDataFile.fromDirectoryFacade(null, FILE_NAME, STD,
+                        LTD, IO_BUFFER_SIZE));
 
-        assertEquals("Property 'directory' must not be null.",
+        assertEquals("Property 'directoryFacade' must not be null.",
                 err.getMessage());
     }
 
     @Test
     void test_constructor_missing_fileName() {
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> SortedDataFile.fromDirectory(directory, null, STD, LTD,
+                () -> SortedDataFile.fromDirectoryFacade(
+                        DirectoryFacade.of(directory), null, STD, LTD,
                         IO_BUFFER_SIZE));
 
         assertEquals("Property 'fileName' must not be null.", err.getMessage());
@@ -45,8 +47,9 @@ class SortedDataFileTest {
     @Test
     void test_constructor_missing_keyTypeDescriptor() {
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> SortedDataFile.fromDirectory(directory, FILE_NAME, null,
-                        LTD, IO_BUFFER_SIZE));
+                () -> SortedDataFile.fromDirectoryFacade(
+                        DirectoryFacade.of(directory), FILE_NAME, null, LTD,
+                        IO_BUFFER_SIZE));
 
         assertEquals("Property 'keyTypeDescriptor' must not be null.",
                 err.getMessage());
@@ -55,8 +58,9 @@ class SortedDataFileTest {
     @Test
     void test_constructor_missing_valueTypeDescriptor() {
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> SortedDataFile.fromDirectory(directory, FILE_NAME, STD,
-                        null, IO_BUFFER_SIZE));
+                () -> SortedDataFile.fromDirectoryFacade(
+                        DirectoryFacade.of(directory), FILE_NAME, STD, null,
+                        IO_BUFFER_SIZE));
 
         assertEquals("Property 'valueTypeDescriptor' must not be null.",
                 err.getMessage());
@@ -65,8 +69,9 @@ class SortedDataFileTest {
     @Test
     void test_constructor_zero_IOBuffer() {
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> SortedDataFile.fromDirectory(directory, FILE_NAME, STD,
-                        LTD, 0));
+                () -> SortedDataFile.fromDirectoryFacade(
+                        DirectoryFacade.of(directory), FILE_NAME, STD, LTD,
+                        0));
 
         assertEquals("Property 'ioBufferSize' must be greater than 0",
                 err.getMessage());
@@ -75,7 +80,8 @@ class SortedDataFileTest {
     @Test
     void test_constructor() {
         final SortedDataFile<String, Integer> sortedDataFile = SortedDataFile
-                .fromDirectory(directory, FILE_NAME, STD, LTD, IO_BUFFER_SIZE);
+                .fromDirectoryFacade(DirectoryFacade.of(directory), FILE_NAME,
+                        STD, LTD, IO_BUFFER_SIZE);
 
         assertNotNull(sortedDataFile);
     }

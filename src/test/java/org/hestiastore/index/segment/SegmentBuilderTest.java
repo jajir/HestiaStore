@@ -17,6 +17,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +37,7 @@ class SegmentBuilderTest {
     void test_directory_is_missing() {
         final SegmentBuilder<Integer, String> builder = Segment
                 .<Integer, String>builder()//
-                // .withDirectory(DIRECTORY)//
+                // .withDirectoryFacade(DirectoryFacade.of(DIRECTORY))//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
@@ -53,7 +54,7 @@ class SegmentBuilderTest {
     void test_keyTypeDescriptor_is_missing() {
         final SegmentBuilder<Integer, String> builder = Segment
                 .<Integer, String>builder()//
-                .withDirectory(DIRECTORY)//
+                .withDirectoryFacade(DirectoryFacade.of(DIRECTORY))//
                 .withId(SEGMENT_ID)//
                 // .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
@@ -70,7 +71,7 @@ class SegmentBuilderTest {
     void test_valueTypeDescriptor_is_missing() {
         final SegmentBuilder<Integer, String> builder = Segment
                 .<Integer, String>builder()//
-                .withDirectory(DIRECTORY)//
+                .withDirectoryFacade(DirectoryFacade.of(DIRECTORY))//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 // .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
@@ -87,7 +88,7 @@ class SegmentBuilderTest {
     void test_withMaxNumberOfKeysInSegmentCache_is_1() {
         final SegmentBuilder<Integer, String> builder = Segment
                 .<Integer, String>builder()//
-                .withDirectory(DIRECTORY)//
+                .withDirectoryFacade(DirectoryFacade.of(DIRECTORY))//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
@@ -106,7 +107,7 @@ class SegmentBuilderTest {
     void test_withMaxNumberOfKeysInSegmentCacheDuringFlushing_is_too_low() {
         final SegmentBuilder<Integer, String> builder = Segment
                 .<Integer, String>builder()//
-                .withDirectory(DIRECTORY)//
+                .withDirectoryFacade(DirectoryFacade.of(DIRECTORY))//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
@@ -129,7 +130,7 @@ class SegmentBuilderTest {
 
         final SegmentBuilder<Integer, String> builder = Segment
                 .<Integer, String>builder()//
-                .withDirectory(DIRECTORY)//
+                .withDirectoryFacade(DirectoryFacade.of(DIRECTORY))//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
@@ -152,7 +153,7 @@ class SegmentBuilderTest {
 
         final SegmentBuilder<Integer, String> builder = Segment
                 .<Integer, String>builder()//
-                .withDirectory(DIRECTORY)//
+                .withDirectoryFacade(DirectoryFacade.of(DIRECTORY))//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
@@ -220,7 +221,7 @@ class SegmentBuilderTest {
     void test_build_withProvidedChunkFilters() {
         final SegmentImpl<Integer, String> segment = Segment
                 .<Integer, String>builder()//
-                .withDirectory(DIRECTORY)//
+                .withDirectoryFacade(DirectoryFacade.of(DIRECTORY))//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//

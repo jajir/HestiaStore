@@ -10,6 +10,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +34,8 @@ class IntegrationSortedDataFileTest extends AbstractDataTest {
     @BeforeEach
     void setUp() {
         dir = new MemDirectory();
-        sdf = SortedDataFile.fromDirectory(dir, FILE_NAME, tds, tdi, 1024);
+        sdf = SortedDataFile.fromDirectoryFacade(DirectoryFacade.of(dir),
+                FILE_NAME, tds, tdi, 1024);
     }
 
     @AfterEach

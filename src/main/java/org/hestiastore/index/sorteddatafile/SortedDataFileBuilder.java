@@ -2,7 +2,6 @@ package org.hestiastore.index.sorteddatafile;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.DirectoryFacade;
 
 public class SortedDataFileBuilder<K, V> {
@@ -18,13 +17,6 @@ public class SortedDataFileBuilder<K, V> {
     private TypeDescriptor<K> keyTypeDescriptor;
 
     private TypeDescriptor<V> valueTypeDescriptor;
-
-    public SortedDataFileBuilder<K, V> withDirectory(
-            final Directory directory) {
-        Vldtn.requireNonNull(directory, "directory");
-        this.directoryFacade = DirectoryFacade.of(directory);
-        return this;
-    }
 
     public SortedDataFileBuilder<K, V> withDirectoryFacade(
             final DirectoryFacade directoryFacade) {

@@ -18,6 +18,7 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
@@ -202,7 +203,7 @@ class SegmentSynchronizationAdapterConcurrencyTest {
     private static SegmentSynchronizationAdapter<Integer, String> newAdapter() {
         final Directory directory = new MemDirectory();
         final Segment<Integer, String> segment = Segment.<Integer, String>builder()//
-                .withDirectory(directory)//
+                .withDirectoryFacade(DirectoryFacade.of(directory))//
                 .withId(SegmentId.of(1))//
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())//
                 .withValueTypeDescriptor(new TypeDescriptorShortString())//

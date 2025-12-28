@@ -24,12 +24,15 @@ public class SegmentFilesRenamer {
         Vldtn.requireNonNull(from, "from");
         Vldtn.requireNonNull(to, "to");
         final DirectoryFacade dirFacade = from.getDirectoryFacade();
-        dirFacade.renameFile(from.getIndexFileName(), to.getIndexFileName());
-        dirFacade.renameFile(from.getScarceFileName(), to.getScarceFileName());
-        dirFacade.renameFile(from.getBloomFilterFileName(),
-                to.getBloomFilterFileName());
-        dirFacade.renameFile(from.getPropertiesFilename(),
-                to.getPropertiesFilename());
-        dirFacade.renameFile(from.getCacheFileName(), to.getCacheFileName());
+        dirFacade.renameFileAsync(from.getIndexFileName(), to.getIndexFileName())
+                .toCompletableFuture().join();
+        dirFacade.renameFileAsync(from.getScarceFileName(),
+                to.getScarceFileName()).toCompletableFuture().join();
+        dirFacade.renameFileAsync(from.getBloomFilterFileName(),
+                to.getBloomFilterFileName()).toCompletableFuture().join();
+        dirFacade.renameFileAsync(from.getPropertiesFilename(),
+                to.getPropertiesFilename()).toCompletableFuture().join();
+        dirFacade.renameFileAsync(from.getCacheFileName(),
+                to.getCacheFileName()).toCompletableFuture().join();
     }
 }

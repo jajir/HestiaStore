@@ -58,7 +58,8 @@ public class UnsortedDataFileWriterTx<K, V>
 
     @Override
     protected void doCommit(final EntryWriter<K, V> writer) {
-        directoryFacade.renameFile(getTempFileName(), fileName);
+        directoryFacade.renameFileAsync(getTempFileName(), fileName)
+                .toCompletableFuture().join();
     }
 
     private String getTempFileName() {

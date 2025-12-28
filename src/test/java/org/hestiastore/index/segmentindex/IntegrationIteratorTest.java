@@ -9,6 +9,7 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,7 +45,8 @@ class IntegrationIteratorTest extends AbstractSegmentIndexTest {
                 .withContextLoggingEnabled(false) //
                 .withName("test_index") //
                 .build();
-        index = SegmentIndex.<String, Integer>create(directory, conf);
+        index = SegmentIndex.<String, Integer>create(
+                DirectoryFacade.of(directory), conf);
 
         writeEntries(index, indexFile);
         index.compact();

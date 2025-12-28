@@ -8,6 +8,7 @@ import java.util.List;
 import org.hestiastore.index.TestData;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,8 +30,8 @@ public class IntegrationChunkStoreFileTest {
     @BeforeEach
     void setUp() {
         directory = new MemDirectory();
-        chunkStoreFile = new ChunkStoreFile(directory, FILE_NAME,
-                DATABLOCK_SIZE,
+        chunkStoreFile = new ChunkStoreFile(DirectoryFacade.of(directory),
+                FILE_NAME, DATABLOCK_SIZE,
                 List.of(new ChunkFilterMagicNumberWriting(),
                         new ChunkFilterCrc32Writing(),
                         new ChunkFilterDoNothing()),

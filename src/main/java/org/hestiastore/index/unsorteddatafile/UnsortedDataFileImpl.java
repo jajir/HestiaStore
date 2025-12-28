@@ -7,6 +7,7 @@ import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.datatype.TypeWriter;
 import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.FileReader;
+import org.hestiastore.index.directory.async.AsyncFileReaderBlockingAdapter;
 
 final class UnsortedDataFileImpl<K, V> implements UnsortedDataFile<K, V> {
 
@@ -58,7 +59,8 @@ final class UnsortedDataFileImpl<K, V> implements UnsortedDataFile<K, V> {
      */
     @Override
     public EntryIteratorStreamer<K, V> openStreamer() {
-        if (directoryFacade.isFileExists(fileName)) {
+        if (directoryFacade.isFileExistsAsync(fileName).toCompletableFuture()
+                .join()) {
             return new EntryIteratorStreamer<>(openIterator());
         } else {
             return new EntryIteratorStreamer<>(null);
@@ -66,6 +68,8 @@ final class UnsortedDataFileImpl<K, V> implements UnsortedDataFile<K, V> {
     }
 
     private FileReader getFileReader() {
-        return directoryFacade.getFileReader(fileName, diskIoBufferSize);
+        return new AsyncFileReaderBlockingAdapter(
+                directoryFacade.getFileReaderAsync(fileName, diskIoBufferSize)
+                        .toCompletableFuture().join());
     }
 }

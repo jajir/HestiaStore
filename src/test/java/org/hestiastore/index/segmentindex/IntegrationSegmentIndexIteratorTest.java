@@ -11,6 +11,7 @@ import org.hestiastore.index.datatype.NullValue;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -44,7 +45,8 @@ class IntegrationSegmentIndexIteratorTest {
                 .withValueClass(String.class)//
                 .withName("test_index")//
                 .build();
-        final SegmentIndex<Integer, String> index = SegmentIndex.create(directory, conf);
+        final SegmentIndex<Integer, String> index = SegmentIndex
+                .create(DirectoryFacade.of(directory), conf);
         data.stream().forEach(index::put);
         index.compact();
         assertTrue(true); // Just to ensure no exceptions are thrown
@@ -58,7 +60,8 @@ class IntegrationSegmentIndexIteratorTest {
                 .withValueClass(NullValue.class)//
                 .withName("test_index")//
                 .build();
-        final SegmentIndex<Integer, NullValue> index = SegmentIndex.create(directory, conf);
+        final SegmentIndex<Integer, NullValue> index = SegmentIndex
+                .create(DirectoryFacade.of(directory), conf);
         data2.stream().forEach(index::put);
         index.compact();
         assertTrue(true); // Just to ensure no exceptions are thrown
@@ -72,7 +75,8 @@ class IntegrationSegmentIndexIteratorTest {
                 .withValueClass(String.class)//
                 .withName("test_index")//
                 .build();
-        final SegmentIndex<String, String> index = SegmentIndex.create(directory, conf);
+        final SegmentIndex<String, String> index = SegmentIndex
+                .create(DirectoryFacade.of(directory), conf);
         index.put("a", "a");
         index.put("b", "b");
         index.compact();
@@ -113,7 +117,8 @@ class IntegrationSegmentIndexIteratorTest {
                 .withDiskIoBufferSizeInBytes(1024)//
                 .withName("test_index")//
                 .build();
-        return SegmentIndex.<Integer, String>create(directory, conf);
+        return SegmentIndex.<Integer, String>create(
+                DirectoryFacade.of(directory), conf);
     }
 
 }

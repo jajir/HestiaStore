@@ -6,9 +6,10 @@ import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.Directory.Access;
 import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.FileWriter;
+import org.hestiastore.index.directory.async.AsyncFileWriterBlockingAdapter;
 
 public class SortedDataFileWriterTx<K, V>
         extends GuardedWriteTransaction<EntryWriter<K, V>>
@@ -35,19 +36,14 @@ public class SortedDataFileWriterTx<K, V>
                 "valueTypeDescriptor");
     }
 
-    public SortedDataFileWriterTx(final String fileName,
-            final Directory directory, final int diskIoBufferSize,
-            final TypeDescriptor<K> keyTypeDescriptor,
-            final TypeDescriptor<V> valueTypeDescriptor) {
-        this(fileName, DirectoryFacade.of(directory), diskIoBufferSize,
-                keyTypeDescriptor, valueTypeDescriptor);
-    }
-
     @Override
     protected EntryWriter<K, V> doOpen() {
-        final FileWriter fileWriter = directoryFacade.getFileWriter(
-                getTempFileName(), Directory.Access.OVERWRITE,
-                diskIoBufferSize);
+        final FileWriter fileWriter = new AsyncFileWriterBlockingAdapter(
+                directoryFacade
+                        .getFileWriterAsync(getTempFileName(),
+                                Access.OVERWRITE,
+                                diskIoBufferSize)
+                        .toCompletableFuture().join());
         return new GuardedEntryWriter<>(new SortedDataFileWriter<>(
                 valueTypeDescriptor.getTypeWriter(), fileWriter,
                 keyTypeDescriptor));
@@ -55,7 +51,8 @@ public class SortedDataFileWriterTx<K, V>
 
     @Override
     protected void doCommit(final EntryWriter<K, V> writer) {
-        directoryFacade.renameFile(getTempFileName(), fileName);
+        directoryFacade.renameFileAsync(getTempFileName(), fileName)
+                .toCompletableFuture().join();
     }
 
     private String getTempFileName() {

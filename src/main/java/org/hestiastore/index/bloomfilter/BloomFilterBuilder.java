@@ -2,7 +2,6 @@ package org.hestiastore.index.bloomfilter;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
-import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.DirectoryFacade;
 
 public class BloomFilterBuilder<K> {
@@ -22,12 +21,6 @@ public class BloomFilterBuilder<K> {
 
     BloomFilterBuilder() {
 
-    }
-
-    public BloomFilterBuilder<K> withDirectory(final Directory directory) {
-        Vldtn.requireNonNull(directory, "directory");
-        this.directoryFacade = DirectoryFacade.of(directory);
-        return this;
     }
 
     public BloomFilterBuilder<K> withDirectoryFacade(
@@ -87,7 +80,7 @@ public class BloomFilterBuilder<K> {
     }
 
     public BloomFilter<K> build() {
-        Vldtn.requireNonNull(directoryFacade, "directory");
+        Vldtn.requireNonNull(directoryFacade, "directoryFacade");
         Vldtn.requireNonNull(bloomFilterFileName, "bloomFilterFileName");
         Vldtn.requireNonNull(convertorToBytes, "convertorToBytes");
         if (numberOfKeys == null && indexSizeInBytes == null) {

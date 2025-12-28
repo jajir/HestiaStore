@@ -14,6 +14,7 @@ import java.util.stream.IntStream;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
@@ -154,6 +155,6 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .withNumberOfIoThreads(ioThreads)//
                 .withName("concurrency_index") //
                 .build();
-        return SegmentIndex.create(directory, conf);
+        return SegmentIndex.create(DirectoryFacade.of(directory), conf);
     }
 }

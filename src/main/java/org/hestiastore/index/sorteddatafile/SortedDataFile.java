@@ -3,8 +3,8 @@ package org.hestiastore.index.sorteddatafile;
 import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.DirectoryFacade;
+import org.hestiastore.index.directory.async.AsyncFileReaderBlockingAdapter;
 import org.hestiastore.index.unsorteddatafile.DataFileIterator;
 
 public class SortedDataFile<K, V> {
@@ -35,15 +35,6 @@ public class SortedDataFile<K, V> {
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
         this.diskIoBufferSize = Vldtn.requireIoBufferSize(diskIoBufferSize);
-    }
-
-    public static <K, V> SortedDataFile<K, V> fromDirectory(
-            final Directory directory, final String fileName,
-            final TypeDescriptor<K> keyTypeDescriptor,
-            final TypeDescriptor<V> valueTypeDescriptor,
-            final int diskIoBufferSize) {
-        return new SortedDataFile<>(DirectoryFacade.of(directory), fileName,
-                keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize);
     }
 
     /**
@@ -77,11 +68,11 @@ public class SortedDataFile<K, V> {
      * @param newDiskIoBufferSize the new disk I/O buffer size
      * @return a new instance with the specified properties
      */
-    public SortedDataFile<K, V> withProperties(final Directory newDirectory,
-            final String newFileName, final int newDiskIoBufferSize) {
-        return new SortedDataFile<>(DirectoryFacade.of(newDirectory),
-                newFileName, keyTypeDescriptor, valueTypeDescriptor,
-                newDiskIoBufferSize);
+    public SortedDataFile<K, V> withProperties(
+            final DirectoryFacade newDirectoryFacade, final String newFileName,
+            final int newDiskIoBufferSize) {
+        return new SortedDataFile<>(newDirectoryFacade, newFileName,
+                keyTypeDescriptor, valueTypeDescriptor, newDiskIoBufferSize);
     }
 
     /**
@@ -90,14 +81,19 @@ public class SortedDataFile<K, V> {
      * @return a entry iterator for the sorted data file
      */
     public EntryIteratorWithCurrent<K, V> openIterator() {
-        if (!directoryFacade.isFileExists(fileName)) {
+        if (!directoryFacade.isFileExistsAsync(fileName)
+                .toCompletableFuture().join()) {
             return new EmptyEntryIteratorWithCurrent<>();
         }
         final DiffKeyReader<K> diffKeyReader = new DiffKeyReader<>(
                 keyTypeDescriptor.getConvertorFromBytes());
         return new DataFileIterator<>(diffKeyReader,
                 valueTypeDescriptor.getTypeReader(),
-                directoryFacade.getFileReader(fileName, diskIoBufferSize));
+                new AsyncFileReaderBlockingAdapter(
+                        directoryFacade
+                                .getFileReaderAsync(fileName,
+                                        diskIoBufferSize)
+                                .toCompletableFuture().join()));
     }
 
     /**
@@ -115,7 +111,7 @@ public class SortedDataFile<K, V> {
      * Deletes the underlying file. Does nothing if the file does not exist.
      */
     public void delete() {
-        directoryFacade.deleteFile(fileName);
+        directoryFacade.deleteFileAsync(fileName).toCompletableFuture().join();
     }
 
 }
