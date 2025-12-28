@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.FileLock;
 
