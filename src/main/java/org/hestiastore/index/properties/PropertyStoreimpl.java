@@ -9,8 +9,9 @@ import java.util.Properties;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.Directory.Access;
+import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.FileReader;
 import org.hestiastore.index.directory.FileWriter;
 
@@ -21,30 +22,35 @@ import org.hestiastore.index.directory.FileWriter;
  */
 public final class PropertyStoreimpl implements PropertyStore {
 
-    private final Directory directory;
+    private final DirectoryFacade directoryFacade;
     private final String fileName;
     private final Properties properties = new Properties();
     private final PropertyConverters converters = new PropertyConverters();
 
     public PropertyStoreimpl(final Directory directory, final String fileName,
             final boolean force) {
-        this.directory = Vldtn.requireNonNull(directory, "directory");
+        this(DirectoryFacade.of(directory), fileName, force);
+    }
+
+    public PropertyStoreimpl(final DirectoryFacade directoryFacade,
+            final String fileName, final boolean force) {
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
         this.fileName = Vldtn.requireNonNull(fileName, "fileName");
         loadIfPresent(force);
     }
 
     public static PropertyStoreimpl fromDirectoryFacade(
-            final org.hestiastore.index.directory.DirectoryFacade directoryFacade,
+            final DirectoryFacade directoryFacade,
             final String fileName, final boolean force) {
-        return new PropertyStoreimpl(directoryFacade.getDirectory(), fileName,
-                force);
+        return new PropertyStoreimpl(directoryFacade, fileName, force);
     }
 
     private void loadIfPresent(final boolean force) {
-        if (!directory.isFileExists(fileName)) {
+        if (!directoryFacade.isFileExists(fileName)) {
             if (force) {
                 throw new IndexException("File " + fileName
-                        + " does not exist in directory " + directory);
+                        + " does not exist in directory " + directoryFacade);
             }
             return;
         }
@@ -57,7 +63,7 @@ public final class PropertyStoreimpl implements PropertyStore {
     }
 
     private byte[] readEntireFile() {
-        try (FileReader reader = directory.getFileReader(fileName)) {
+        try (FileReader reader = directoryFacade.getFileReader(fileName)) {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
             final byte[] buffer = new byte[256];
             int read = reader.read(buffer);
@@ -89,7 +95,7 @@ public final class PropertyStoreimpl implements PropertyStore {
 
     void writeToDisk(final Properties propsToWrite) {
         final byte[] bytes = convertToBytes(propsToWrite);
-        try (FileWriter writer = directory.getFileWriter(fileName,
+        try (FileWriter writer = directoryFacade.getFileWriter(fileName,
                 Access.OVERWRITE)) {
             writer.write(bytes);
         }

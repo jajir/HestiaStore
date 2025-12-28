@@ -90,14 +90,14 @@ public class SortedDataFile<K, V> {
      * @return a entry iterator for the sorted data file
      */
     public EntryIteratorWithCurrent<K, V> openIterator() {
-        if (!getDirectory().isFileExists(fileName)) {
+        if (!directoryFacade.isFileExists(fileName)) {
             return new EmptyEntryIteratorWithCurrent<>();
         }
         final DiffKeyReader<K> diffKeyReader = new DiffKeyReader<>(
                 keyTypeDescriptor.getConvertorFromBytes());
         return new DataFileIterator<>(diffKeyReader,
                 valueTypeDescriptor.getTypeReader(),
-                getDirectory().getFileReader(fileName, diskIoBufferSize));
+                directoryFacade.getFileReader(fileName, diskIoBufferSize));
     }
 
     /**
@@ -115,11 +115,7 @@ public class SortedDataFile<K, V> {
      * Deletes the underlying file. Does nothing if the file does not exist.
      */
     public void delete() {
-        getDirectory().deleteFile(fileName);
-    }
-
-    private Directory getDirectory() {
-        return directoryFacade.getDirectory();
+        directoryFacade.deleteFile(fileName);
     }
 
 }

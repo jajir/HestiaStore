@@ -3,13 +3,14 @@ package org.hestiastore.index.scarceindex;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 
 public final class ScarceIndexBuilder<K> {
 
     private static final int DEFAULT_DISK_IO_BUFFER_SIZE = 4 * 1024;
 
     private TypeDescriptor<K> keyTypeDescriptor;
-    private Directory directory;
+    private DirectoryFacade directoryFacade;
     private String fileName;
     private int diskIoBufferSize = DEFAULT_DISK_IO_BUFFER_SIZE;
 
@@ -25,7 +26,15 @@ public final class ScarceIndexBuilder<K> {
     }
 
     public ScarceIndexBuilder<K> withDirectory(final Directory directory) {
-        this.directory = Vldtn.requireNonNull(directory, "directory");
+        Vldtn.requireNonNull(directory, "directory");
+        this.directoryFacade = DirectoryFacade.of(directory);
+        return this;
+    }
+
+    public ScarceIndexBuilder<K> withDirectoryFacade(
+            final DirectoryFacade directoryFacade) {
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
         return this;
     }
 
@@ -41,8 +50,8 @@ public final class ScarceIndexBuilder<K> {
     }
 
     public ScarceSegmentIndex<K> build() {
-        return new ScarceSegmentIndex<K>(directory, fileName, keyTypeDescriptor,
-                diskIoBufferSize);
+        return new ScarceSegmentIndex<K>(directoryFacade, fileName,
+                keyTypeDescriptor, diskIoBufferSize);
     }
 
 }

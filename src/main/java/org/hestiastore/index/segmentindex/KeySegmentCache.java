@@ -16,7 +16,7 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 import org.slf4j.Logger;
@@ -57,15 +57,15 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
     private final Lock readLock = lock.readLock();
     private final Lock writeLock = lock.writeLock();
 
-    KeySegmentCache(final Directory directory,
+    KeySegmentCache(final DirectoryFacade directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor) {
-        Vldtn.requireNonNull(directory, "directory");
+        Vldtn.requireNonNull(directoryFacade, "directoryFacade");
         Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
         this.keyComparator = Vldtn.requireNonNull(
                 keyTypeDescriptor.getComparator(),
                 "keyTypeDescriptor.getComparator()");
         this.sdf = SortedDataFile.<K, SegmentId>builder() //
-                .withDirectory(directory) //
+                .withDirectoryFacade(directoryFacade) //
                 .withFileName(FILE_NAME)//
                 .withKeyTypeDescriptor(keyTypeDescriptor) //
                 .withValueTypeDescriptor(tdSegId) //

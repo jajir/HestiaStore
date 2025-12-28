@@ -183,7 +183,8 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     public SegmentImpl<K, V> createSegmentWithSameConfig(SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         return Segment.<K, V>builder()
-                .withDirectory(segmentFiles.getDirectory()).withId(segmentId)
+                .withDirectoryFacade(segmentFiles.getDirectoryFacade())
+                .withId(segmentId)
                 .withKeyTypeDescriptor(segmentFiles.getKeyTypeDescriptor())
                 .withValueTypeDescriptor(segmentFiles.getValueTypeDescriptor())
                 .withSegmentConf(new SegmentConf(segmentConf)).build();
@@ -264,8 +265,8 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     FileReaderSeekable getSeekableReader() {
         if (seekableReader == null) {
             final String indexFileName = segmentFiles.getIndexFileName();
-            if (segmentFiles.getDirectory().isFileExists(indexFileName)) {
-                seekableReader = segmentFiles.getDirectory()
+            if (segmentFiles.getDirectoryFacade().isFileExists(indexFileName)) {
+                seekableReader = segmentFiles.getDirectoryFacade()
                         .getFileReaderSeekable(indexFileName);
             }
         }

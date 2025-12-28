@@ -13,7 +13,8 @@ class PropertyStoreimplTest {
     void constructor_nullDirectory_throws() {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new PropertyStoreimpl(null, "file.properties", false));
+                () -> new PropertyStoreimpl((Directory) null, "file.properties",
+                        false));
         assertEquals("Property 'directory' must not be null.",
                 ex.getMessage());
     }

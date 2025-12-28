@@ -45,8 +45,7 @@ public class SortedDataFileWriterTx<K, V>
 
     @Override
     protected EntryWriter<K, V> doOpen() {
-        final FileWriter fileWriter = directoryFacade.getDirectory()
-                .getFileWriter(
+        final FileWriter fileWriter = directoryFacade.getFileWriter(
                 getTempFileName(), Directory.Access.OVERWRITE,
                 diskIoBufferSize);
         return new GuardedEntryWriter<>(new SortedDataFileWriter<>(
@@ -56,7 +55,7 @@ public class SortedDataFileWriterTx<K, V>
 
     @Override
     protected void doCommit(final EntryWriter<K, V> writer) {
-        directoryFacade.getDirectory().renameFile(getTempFileName(), fileName);
+        directoryFacade.renameFile(getTempFileName(), fileName);
     }
 
     private String getTempFileName() {

@@ -58,8 +58,8 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
                     "Number of hash function cant be '0'");
         }
         if (isExists() && indexSizeInBytes > 0) {
-            try (FileReader reader = directoryFacade.getDirectory()
-                    .getFileReader(bloomFilterFileName, diskIoBufferSize)) {
+            try (FileReader reader = directoryFacade.getFileReader(
+                    bloomFilterFileName, diskIoBufferSize)) {
                 final byte[] data = new byte[indexSizeInBytes];
                 final int readed = reader.read(data);
                 if (indexSizeInBytes != readed) {
@@ -90,7 +90,7 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
     }
 
     private boolean isExists() {
-        return directoryFacade.getDirectory().isFileExists(bloomFilterFileName);
+        return directoryFacade.isFileExists(bloomFilterFileName);
     }
 
     @Override

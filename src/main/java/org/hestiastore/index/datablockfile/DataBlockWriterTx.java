@@ -34,14 +34,14 @@ public class DataBlockWriterTx
 
     @Override
     protected DataBlockWriter doOpen() {
-        final FileWriter fileWriter = directoryFacade.getDirectory()
-                .getFileWriter(getTempFileName());
+        final FileWriter fileWriter = directoryFacade.getFileWriter(
+                getTempFileName());
         return new DataBlockWriterImpl(fileWriter, blockSize);
     }
 
     @Override
     protected void doCommit(final DataBlockWriter resource) {
-        directoryFacade.getDirectory().renameFile(getTempFileName(), fileName);
+        directoryFacade.renameFile(getTempFileName(), fileName);
     }
 
     private String getTempFileName() {

@@ -33,6 +33,7 @@ import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 import org.hestiastore.index.scarceindex.ScarceIndexWriterTx;
@@ -108,7 +109,8 @@ class SegmentImplTest {
         when(segmentFiles.getValueTypeDescriptor()).thenReturn(tds);
         when(segmentFiles.getIndexFile()).thenReturn(chunkPairFile);
         when(segmentFiles.getIndexFileName()).thenReturn("segment.index");
-        when(segmentFiles.getDirectory()).thenReturn(directory);
+        when(segmentFiles.getDirectoryFacade())
+                .thenReturn(DirectoryFacade.of(directory));
         when(directory.isFileExists("segment.index")).thenReturn(true);
         when(directory.getFileReaderSeekable("segment.index"))
                 .thenReturn(seekableReader);
@@ -175,8 +177,8 @@ class SegmentImplTest {
         assertNotNull(cloned);
         assertEquals(cloneId, cloned.getId());
         // Same directory instance
-        assertSame(seg.getSegmentFiles().getDirectory(),
-                cloned.getSegmentFiles().getDirectory());
+        assertSame(seg.getSegmentFiles().getDirectoryFacade(),
+                cloned.getSegmentFiles().getDirectoryFacade());
         // Same descriptors by type
         assertEquals(seg.getSegmentFiles().getKeyTypeDescriptor().getClass(),
                 cloned.getSegmentFiles().getKeyTypeDescriptor().getClass());

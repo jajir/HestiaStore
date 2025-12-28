@@ -216,8 +216,9 @@ class SegmentIndexConfiguratonStorageTest {
         final Exception e = assertThrows(IndexException.class,
                 () -> storage.load());
 
-        assertEquals("File index-configuration.properties does not "
-                + "exist in directory MemDirectory{}", e.getMessage());
+        assertTrue(e.getMessage().startsWith(
+                "File index-configuration.properties does not exist in directory"),
+                e.getMessage());
     }
 
     @BeforeEach

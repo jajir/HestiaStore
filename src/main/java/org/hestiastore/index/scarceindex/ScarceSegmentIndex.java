@@ -10,6 +10,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.DirectoryFacade;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +46,7 @@ public class ScarceSegmentIndex<K> {
 
     private final Comparator<K> keyComparator;
 
-    private final Directory directory;
+    private final DirectoryFacade directoryFacade;
 
     private final String fileName;
 
@@ -58,17 +59,19 @@ public class ScarceSegmentIndex<K> {
         return new ScarceIndexBuilder<M>();
     }
 
-    ScarceSegmentIndex(final Directory directory, final String fileName,
+    ScarceSegmentIndex(final DirectoryFacade directoryFacade,
+            final String fileName,
             final TypeDescriptor<K> keyTypeDescriptor,
             final int diskIoBufferSize) {
-        this.directory = Vldtn.requireNonNull(directory, "directory");
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
         this.fileName = Vldtn.requireNonNull(fileName, "fileName");
         Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
         this.keyComparator = Vldtn.requireNonNull(
                 keyTypeDescriptor.getComparator(),
                 "keyTypeDescriptor.getComparator()");
         this.sortedDataFile = SortedDataFile.<K, Integer>builder() //
-                .withDirectory(directory) //
+                .withDirectoryFacade(directoryFacade) //
                 .withFileName(fileName)//
                 .withKeyTypeDescriptor(keyTypeDescriptor) //
                 .withValueTypeDescriptor(typeDescriptorInteger)
@@ -79,9 +82,16 @@ public class ScarceSegmentIndex<K> {
         loadCache();
     }
 
+    ScarceSegmentIndex(final Directory directory, final String fileName,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final int diskIoBufferSize) {
+        this(DirectoryFacade.of(directory), fileName, keyTypeDescriptor,
+                diskIoBufferSize);
+    }
+
     private List<Entry<K, Integer>> loadCacheEntries() {
         final List<Entry<K, Integer>> entries = new ArrayList<>();
-        if (directory.isFileExists(fileName)) {
+        if (directoryFacade.isFileExists(fileName)) {
             try (EntryIterator<K, Integer> entryIterator = sortedDataFile
                     .openIterator()) {
                 while (entryIterator.hasNext()) {

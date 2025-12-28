@@ -1,7 +1,7 @@
 package org.hestiastore.index.directory;
 
-import java.util.stream.Stream;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Stream;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.async.AsyncDirectory;
@@ -42,7 +42,8 @@ public final class DirectoryFacade {
                 Vldtn.requireNonNull(asyncDirectory, "asyncDirectory"));
     }
 
-    public Directory getDirectory() {
+    // internal accessor retained for legacy adapters; prefer direct delegates
+    Directory getDirectoryInternal() {
         return directory;
     }
 

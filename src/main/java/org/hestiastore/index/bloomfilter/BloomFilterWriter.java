@@ -47,8 +47,8 @@ public class BloomFilterWriter<K> extends AbstractCloseableResource {
 
     @Override
     protected void doClose() {
-        try (FileWriter writer = directoryFacade.getDirectory().getFileWriter(
-                fileName, Directory.Access.OVERWRITE, diskIoBufferSize)) {
+        try (FileWriter writer = directoryFacade.getFileWriter(fileName,
+                Directory.Access.OVERWRITE, diskIoBufferSize)) {
             writer.write(hash.getData());
         }
     }

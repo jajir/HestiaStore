@@ -87,7 +87,7 @@ public class SegmentRegistry<K, V> {
                 segmentDataSupplier);
 
         final Segment<K, V> segment = Segment.<K, V>builder()
-                .withDirectory(directoryFacade.getDirectory())
+                .withDirectoryFacade(directoryFacade)
                 .withId(segmentId).withKeyTypeDescriptor(keyTypeDescriptor)
                 .withSegmentResources(dataProvider)//
                 .withSegmentConf(segmentConf)//
@@ -116,10 +116,6 @@ public class SegmentRegistry<K, V> {
         final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
                 directoryFacade, segmentId);
         segmentFiles.deleteAllFiles(segmentPropertiesManager);
-    }
-
-    Directory getDirectory() {
-        return directoryFacade.getDirectory();
     }
 
     public void close() {
