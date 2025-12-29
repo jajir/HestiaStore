@@ -9,9 +9,11 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.Entry;
@@ -23,6 +25,7 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
 
     private static final int MIN_QUEUE_CAPACITY = 64;
     private static final int QUEUE_CAPACITY_MULTIPLIER = 64;
+    private static final String CPU_THREAD_NAME_PREFIX = "cpuPool";
 
     private final ThreadPoolExecutor executor;
     private final ThreadLocal<Boolean> inExecutorThread = ThreadLocal
@@ -42,7 +45,17 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
         this.executor = new ThreadPoolExecutor(threads, threads, 0L,
                 TimeUnit.MILLISECONDS,
                 new ArrayBlockingQueue<>(queueCapacity),
+                namedThreadFactory(CPU_THREAD_NAME_PREFIX),
                 new ThreadPoolExecutor.CallerRunsPolicy());
+    }
+
+    private static ThreadFactory namedThreadFactory(final String prefix) {
+        final AtomicInteger counter = new AtomicInteger(1);
+        return runnable -> {
+            final Thread thread = new Thread(runnable);
+            thread.setName(prefix + "-" + counter.getAndIncrement());
+            return thread;
+        };
     }
 
     private boolean isRunningOnIndexExecutorThread() {

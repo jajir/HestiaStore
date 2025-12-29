@@ -127,12 +127,13 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         "Cache compacting of '{}' key value entries in cache started.",
                         F.fmt(snapshot.size()));
             }
-            final CompactSupport<K, V> support = new CompactSupport<>(
+            final CompactSupport<K, V> compactSupport = new CompactSupport<>(
                     segmentRegistry, keySegmentCache,
                     keyTypeDescriptor.getComparator());
-            snapshot.forEach(support::compact);
-            support.flush();
-            final List<SegmentId> segmentIds = support.getEligibleSegmentIds();
+            snapshot.forEach(compactSupport::compact);
+            compactSupport.flush();
+            final List<SegmentId> segmentIds = compactSupport
+                    .getEligibleSegmentIds();
             for (final SegmentId segmentId : segmentIds) {
                 final Segment<K, V> segment = segmentRegistry
                         .getSegment(segmentId);
@@ -250,8 +251,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     protected void invalidateSegmentIterators() {
         keySegmentCache.getSegmentIds().forEach(segmentId -> {
-            final Segment<K, V> segment = segmentRegistry
-                    .getSegment(segmentId);
+            final Segment<K, V> segment = segmentRegistry.getSegment(segmentId);
             segment.invalidateIterators();
         });
     }
