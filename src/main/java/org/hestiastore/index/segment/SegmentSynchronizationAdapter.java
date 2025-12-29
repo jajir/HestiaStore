@@ -1,5 +1,10 @@
 package org.hestiastore.index.segment;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
@@ -21,9 +26,60 @@ public class SegmentSynchronizationAdapter<K, V> extends AbstractCloseableResour
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final Lock readLock = lock.readLock();
     private final Lock writeLock = lock.writeLock();
+    private final AtomicBoolean compactionScheduled = new AtomicBoolean(false);
+    private final AtomicBoolean compactionRerun = new AtomicBoolean(false);
+
+    // Keep compaction off the write path while still honoring the write lock.
+    private static final ExecutorService COMPACTION_EXECUTOR = Executors
+            .newSingleThreadExecutor(namedThreadFactory("segmentCompaction"));
 
     public SegmentSynchronizationAdapter(final Segment<K, V> delegate) {
         this.delegate = delegate;
+        if (delegate instanceof SegmentImpl<K, V> impl) {
+            impl.setCompactionExecutor(this::scheduleCompaction);
+        }
+    }
+
+    private static ThreadFactory namedThreadFactory(final String prefix) {
+        final AtomicInteger counter = new AtomicInteger(1);
+        return runnable -> {
+            final Thread thread = new Thread(runnable);
+            thread.setName(prefix + "-" + counter.getAndIncrement());
+            thread.setDaemon(true);
+            return thread;
+        };
+    }
+
+    private void scheduleCompaction(final SegmentImpl<K, V> segment) {
+        if (segment.wasClosed() || wasClosed()) {
+            return;
+        }
+        if (!compactionScheduled.compareAndSet(false, true)) {
+            compactionRerun.set(true);
+            return;
+        }
+        COMPACTION_EXECUTOR.execute(() -> {
+            try {
+                runCompaction(segment);
+                while (compactionRerun.getAndSet(false)) {
+                    runCompaction(segment);
+                }
+            } finally {
+                compactionScheduled.set(false);
+            }
+        });
+    }
+
+    private void runCompaction(final SegmentImpl<K, V> segment) {
+        if (segment.wasClosed() || wasClosed()) {
+            return;
+        }
+        executeWithWriteLock(() -> {
+            if (!segment.wasClosed()) {
+                segment.forceCompact();
+            }
+            return null;
+        });
     }
 
     @Override

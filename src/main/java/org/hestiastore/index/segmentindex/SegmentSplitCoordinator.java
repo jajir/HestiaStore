@@ -44,8 +44,11 @@ public class SegmentSplitCoordinator<K, V> {
         if (plan.getEstimatedNumberOfKeys() < maxNumberOfKeysInSegment) {
             return;
         }
-        if (policy.shouldBeCompactedBeforeSplitting(maxNumberOfKeysInSegment,
-                plan.getEstimatedNumberOfKeys())) {
+        final boolean compactBeforeSplit = policy
+                .shouldBeCompactedBeforeSplitting(maxNumberOfKeysInSegment,
+                        plan.getEstimatedNumberOfKeys())
+                || policy.hasTombstonesInDeltaCache();
+        if (compactBeforeSplit) {
             segment.forceCompact();
             if (!shouldBeSplit(segment)) {
                 return;
