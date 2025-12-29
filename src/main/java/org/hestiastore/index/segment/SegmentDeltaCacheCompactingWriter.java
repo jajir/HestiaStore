@@ -18,6 +18,8 @@ import org.hestiastore.index.Vldtn;
 public class SegmentDeltaCacheCompactingWriter<K, V>
         extends AbstractCloseableResource implements EntryWriter<K, V> {
 
+    static final int MAX_DELTA_FILES_BEFORE_COMPACTION = 100;
+
     private final SegmentImpl<K, V> segment;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
     private final SegmentCompactionPolicyWithManager compactionPolicy;
@@ -42,7 +44,11 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
         if (deltaCacheWriter != null) {
             deltaCacheWriter.close();
             deltaCacheWriter = null;
-            segment.requestOptionalCompaction();
+            if (shouldForceCompaction()) {
+                segment.requestCompaction();
+            } else {
+                segment.requestOptionalCompaction();
+            }
         }
     }
 
@@ -62,6 +68,11 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
         if (deltaCacheWriter == null) {
             deltaCacheWriter = deltaCacheController.openWriter();
         }
+    }
+
+    private boolean shouldForceCompaction() {
+        return segment.getSegmentPropertiesManager().getDeltaFileCount()
+                > MAX_DELTA_FILES_BEFORE_COMPACTION;
     }
 
 }
