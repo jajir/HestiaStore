@@ -1,10 +1,12 @@
 package org.hestiastore.index.segment;
 
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryWriter;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -24,9 +26,17 @@ class SegmentDeltaCacheCompactingWriterTest {
     private SegmentDeltaCacheController<Integer, String> deltaCacheController;
     @Mock
     private SegmentCompactionPolicyWithManager compactionPolicy;
+    @Mock
+    private SegmentPropertiesManager segmentPropertiesManager;
 
     @Mock
     private SegmentDeltaCacheWriter<Integer, String> deltaCacheWriter;
+
+    @BeforeEach
+    void setup() {
+        when(segment.getSegmentPropertiesManager())
+                .thenReturn(segmentPropertiesManager);
+    }
 
     @Test
     void test_basic_writing() {
@@ -35,6 +45,7 @@ class SegmentDeltaCacheCompactingWriterTest {
         when(compactionPolicy.shouldCompactDuringWriting(1)).thenReturn(false);
         when(compactionPolicy.shouldCompactDuringWriting(2)).thenReturn(false);
         when(compactionPolicy.shouldCompactDuringWriting(3)).thenReturn(false);
+        when(segmentPropertiesManager.getDeltaFileCount()).thenReturn(0);
         try (final EntryWriter<Integer, String> writer = new SegmentDeltaCacheCompactingWriter<>(
                 segment, deltaCacheController, compactionPolicy)) {
             writer.write(ENTRY_1);
@@ -60,6 +71,7 @@ class SegmentDeltaCacheCompactingWriterTest {
         when(compactionPolicy.shouldCompactDuringWriting(1)).thenReturn(false);
         when(compactionPolicy.shouldCompactDuringWriting(2)).thenReturn(true);
         when(compactionPolicy.shouldCompactDuringWriting(3)).thenReturn(false);
+        when(segmentPropertiesManager.getDeltaFileCount()).thenReturn(0);
         try (final EntryWriter<Integer, String> writer = new SegmentDeltaCacheCompactingWriter<>(
                 segment, deltaCacheController, compactionPolicy)) {
             writer.write(ENTRY_1);
@@ -78,6 +90,25 @@ class SegmentDeltaCacheCompactingWriterTest {
 
         verify(segment).requestCompaction();
         verify(segment).requestOptionalCompaction();
+    }
+
+    @Test
+    void test_compact_when_delta_files_exceeded() {
+        when(deltaCacheController.openWriter()).thenReturn(deltaCacheWriter);
+        when(deltaCacheWriter.getNumberOfKeys()).thenReturn(1);
+        when(compactionPolicy.shouldCompactDuringWriting(1)).thenReturn(false);
+        when(segmentPropertiesManager.getDeltaFileCount()).thenReturn(
+                SegmentDeltaCacheCompactingWriter.MAX_DELTA_FILES_BEFORE_COMPACTION
+                        + 1);
+        try (final EntryWriter<Integer, String> writer = new SegmentDeltaCacheCompactingWriter<>(
+                segment, deltaCacheController, compactionPolicy)) {
+            writer.write(ENTRY_1);
+        }
+
+        verify(deltaCacheWriter).write(ENTRY_1);
+        verify(compactionPolicy).shouldCompactDuringWriting(1);
+        verify(segment).requestCompaction();
+        verify(segment, never()).requestOptionalCompaction();
     }
 
 }

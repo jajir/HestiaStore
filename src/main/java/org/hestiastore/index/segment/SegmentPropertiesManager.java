@@ -94,6 +94,11 @@ public class SegmentPropertiesManager {
         return out;
     }
 
+    public int getDeltaFileCount() {
+        return propertyStore.snapshot()
+                .getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);
+    }
+
     public void setNumberOfKeysInCache(final long numberOfKeysInCache) {
         updateTransaction(writer -> writer.setLong(
                 NUMBER_OF_KEYS_IN_DELTA_CACHE, numberOfKeysInCache));
