@@ -150,9 +150,6 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .withNumberOfIoThreads(ioThreads)//
                 .withName("concurrency_index") //
                 .build();
-        return SegmentIndex.create(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                conf);
+        return SegmentIndex.create(directory, conf);
     }
 }

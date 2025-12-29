@@ -40,10 +40,7 @@ class SegmentIndexConcurrentIT {
         final IndexConfiguration<Integer, Integer> conf = newConfiguration(
                 "concurrent-index", 4, 15);
 
-        final SegmentIndex<Integer, Integer> index = SegmentIndex.create(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                conf);
+        final SegmentIndex<Integer, Integer> index = SegmentIndex.create(directory, conf);
 
         final int threads = 4;
         final int operationsPerThread = 200;
@@ -101,10 +98,7 @@ class SegmentIndexConcurrentIT {
         index.close();
 
         // Re-open to ensure persisted state matches expectations
-        final SegmentIndex<Integer, Integer> reopened = SegmentIndex.open(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                conf);
+        final SegmentIndex<Integer, Integer> reopened = SegmentIndex.open(directory, conf);
         final Map<Integer, Integer> reloaded = reopened.getStream()
                 .collect(Collectors.toMap(Entry::getKey, Entry::getValue,
                         (first, second) -> second));
@@ -118,10 +112,7 @@ class SegmentIndexConcurrentIT {
         final IndexConfiguration<Integer, Integer> conf = newConfiguration(
                 "concurrent-index", 4, 15);
 
-        final SegmentIndex<Integer, Integer> index = SegmentIndex.create(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                conf);
+        final SegmentIndex<Integer, Integer> index = SegmentIndex.create(directory, conf);
 
         final int threads = 4;
         final int operationsPerThread = 200;
@@ -158,10 +149,7 @@ class SegmentIndexConcurrentIT {
         assertEquals(finalValue, index.get(key));
         index.close();
 
-        final SegmentIndex<Integer, Integer> reopened = SegmentIndex.open(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                conf);
+        final SegmentIndex<Integer, Integer> reopened = SegmentIndex.open(directory, conf);
         assertEquals(finalValue, reopened.get(key));
         reopened.close();
     }
@@ -173,10 +161,7 @@ class SegmentIndexConcurrentIT {
         final IndexConfiguration<Integer, Integer> conf = newConfiguration(
                 "concurrent-index-maintenance", 4, 8);
 
-        final SegmentIndex<Integer, Integer> index = SegmentIndex.create(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                conf);
+        final SegmentIndex<Integer, Integer> index = SegmentIndex.create(directory, conf);
 
         final int threads = 4;
         final int operationsPerThread = 400;
@@ -273,10 +258,7 @@ class SegmentIndexConcurrentIT {
 
         index.close();
 
-        final SegmentIndex<Integer, Integer> reopened = SegmentIndex.open(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                conf);
+        final SegmentIndex<Integer, Integer> reopened = SegmentIndex.open(directory, conf);
         final Map<Integer, Integer> reloaded = reopened.getStream()
                 .collect(Collectors.toMap(Entry::getKey, Entry::getValue,
                         (first, second) -> second));
@@ -289,10 +271,7 @@ class SegmentIndexConcurrentIT {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, Integer> conf = newConfiguration(
                 "concurrent-index-readers", 4, 15);
-        final SegmentIndex<Integer, Integer> index = SegmentIndex.create(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                conf);
+        final SegmentIndex<Integer, Integer> index = SegmentIndex.create(directory, conf);
 
         final int keyCount = 120;
         for (int key = 0; key < keyCount; key++) {
@@ -363,10 +342,7 @@ class SegmentIndexConcurrentIT {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, Integer> conf = newConfiguration(
                 "concurrent-index-async", 4, 12);
-        final SegmentIndex<Integer, Integer> index = SegmentIndex.create(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                conf);
+        final SegmentIndex<Integer, Integer> index = SegmentIndex.create(directory, conf);
 
         final int threads = 4;
         final int operationsPerThread = 200;
@@ -436,10 +412,7 @@ class SegmentIndexConcurrentIT {
 
         index.close();
 
-        final SegmentIndex<Integer, Integer> reopened = SegmentIndex.open(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                conf);
+        final SegmentIndex<Integer, Integer> reopened = SegmentIndex.open(directory, conf);
         final Map<Integer, Integer> reloaded = reopened.getStream()
                 .collect(Collectors.toMap(Entry::getKey, Entry::getValue,
                         (first, second) -> second));

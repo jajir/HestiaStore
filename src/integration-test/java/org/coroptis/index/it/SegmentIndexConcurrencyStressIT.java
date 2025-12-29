@@ -72,10 +72,7 @@ class SegmentIndexConcurrencyStressIT {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, Integer> conf = stressConf(indexName);
         final AtomicReference<SegmentIndex<Integer, Integer>> indexRef = new AtomicReference<>(
-                SegmentIndex.create(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(directory),
-                        conf));
+                SegmentIndex.create(directory, conf));
         final ReadWriteLock lifecycleLock = new ReentrantReadWriteLock();
 
         final int rotations = 3;
@@ -134,10 +131,7 @@ class SegmentIndexConcurrencyStressIT {
                                 .get();
                         current.flush();
                         current.close();
-                        indexRef.set(SegmentIndex.open(
-                                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                        .wrap(directory),
-                                conf));
+                        indexRef.set(SegmentIndex.open(directory, conf));
                     } finally {
                         lifecycleLock.writeLock().unlock();
                     }

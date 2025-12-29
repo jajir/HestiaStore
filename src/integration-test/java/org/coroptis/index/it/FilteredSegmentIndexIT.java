@@ -59,10 +59,7 @@ class FilteredSegmentIndexIT {
         entries.put("beta", "second value");
         entries.put("gamma", "third value");
 
-        try (SegmentIndex<String, String> index = SegmentIndex.create(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                createConf)) {
+        try (SegmentIndex<String, String> index = SegmentIndex.create(directory, createConf)) {
             entries.forEach(index::put);
             index.flush();
             index.compact();
@@ -70,10 +67,7 @@ class FilteredSegmentIndexIT {
             logPropertiesFile(directory, "Created index properties file");
         }
 
-        try (SegmentIndex<String, String> index = SegmentIndex.open(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                openConf)) {
+        try (SegmentIndex<String, String> index = SegmentIndex.open(directory, openConf)) {
             entries.forEach((key, expectedValue) -> assertEquals(expectedValue,
                     index.get(key)));
             LOGGER.info("Opened index with configuration: {}", openConf);

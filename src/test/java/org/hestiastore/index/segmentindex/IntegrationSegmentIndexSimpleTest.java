@@ -253,10 +253,7 @@ class IntegrationSegmentIndexSimpleTest {
                 .withContextLoggingEnabled(withLog) //
                 .withName("test_index") //
                 .build();
-        return SegmentIndex.create(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                conf);
+        return SegmentIndex.create(directory, conf);
     }
 
     private int numberOfFilesInDirectoryP(final Directory directory) {

@@ -44,10 +44,7 @@ class IntegrationSegmentIndexIteratorTest {
                 .withValueClass(String.class)//
                 .withName("test_index")//
                 .build();
-        final SegmentIndex<Integer, String> index = SegmentIndex.create(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                conf);
+        final SegmentIndex<Integer, String> index = SegmentIndex.create(directory, conf);
         data.stream().forEach(index::put);
         index.compact();
         assertTrue(true); // Just to ensure no exceptions are thrown
@@ -61,10 +58,7 @@ class IntegrationSegmentIndexIteratorTest {
                 .withValueClass(NullValue.class)//
                 .withName("test_index")//
                 .build();
-        final SegmentIndex<Integer, NullValue> index = SegmentIndex.create(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                conf);
+        final SegmentIndex<Integer, NullValue> index = SegmentIndex.create(directory, conf);
         data2.stream().forEach(index::put);
         index.compact();
         assertTrue(true); // Just to ensure no exceptions are thrown
@@ -78,10 +72,7 @@ class IntegrationSegmentIndexIteratorTest {
                 .withValueClass(String.class)//
                 .withName("test_index")//
                 .build();
-        final SegmentIndex<String, String> index = SegmentIndex.create(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                conf);
+        final SegmentIndex<String, String> index = SegmentIndex.create(directory, conf);
         index.put("a", "a");
         index.put("b", "b");
         index.compact();
@@ -122,10 +113,7 @@ class IntegrationSegmentIndexIteratorTest {
                 .withDiskIoBufferSizeInBytes(1024)//
                 .withName("test_index")//
                 .build();
-        return SegmentIndex.<Integer, String>create(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                conf);
+        return SegmentIndex.<Integer, String>create(directory, conf);
     }
 
 }

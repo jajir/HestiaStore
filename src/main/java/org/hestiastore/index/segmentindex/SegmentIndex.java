@@ -9,14 +9,16 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 
 /**
  * High-level contract for the segment-index layer that sits above individual
  * segments. It supports creating/opening instances, point mutations
  * (put/delete), range streaming, log inspection, and consistency checks.
  * Concrete implementations are created through the static factory helpers which
- * take care of configuration handling.
+ * take care of configuration handling and async directory wrapping.
  *
  * @param <K> key type
  * @param <V> value type
@@ -27,69 +29,156 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * Creates a brand new index in the supplied directory. Default values are
      * applied to the provided configuration, then both the configuration and
      * the on-disk structures are persisted.
+     * <p>
+     * The supplied directory is wrapped in an {@link AsyncDirectoryAdapter}
+     * configured with the resolved {@code numberOfIoThreads}. The returned
+     * index owns that wrapper and will close it when the index is closed.
+     * </p>
      *
      * @param directory backing directory for the index
      * @param indexConf requested configuration overrides
      * @return a newly created index instance
      */
     static <M, N> SegmentIndex<M, N> create(
-            final AsyncDirectory directoryFacade,
+            final Directory directory,
             final IndexConfiguration<M, N> indexConf) {
-        final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
-                new IndexConfiguratonStorage<>(directoryFacade));
-        final IndexConfiguration<M, N> conf = confManager
-                .applyDefaults(indexConf);
-        confManager.save(conf);
-        return openIndex(directoryFacade, conf);
+        final int initialIoThreads = resolveIoThreads(
+                indexConf.getNumberOfIoThreads());
+        AsyncDirectory asyncDirectory = AsyncDirectoryAdapter.wrap(directory,
+                initialIoThreads);
+        try {
+            IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
+                    new IndexConfiguratonStorage<>(asyncDirectory));
+            final IndexConfiguration<M, N> conf = confManager
+                    .applyDefaults(indexConf);
+            final int configuredIoThreads = resolveIoThreads(
+                    conf.getNumberOfIoThreads());
+            if (configuredIoThreads != initialIoThreads) {
+                asyncDirectory.close();
+                asyncDirectory = AsyncDirectoryAdapter.wrap(directory,
+                        configuredIoThreads);
+                confManager = new IndexConfigurationManager<>(
+                        new IndexConfiguratonStorage<>(asyncDirectory));
+            }
+            confManager.save(conf);
+            return openIndex(asyncDirectory, conf);
+        } catch (final RuntimeException e) {
+            closeOnFailure(asyncDirectory, e);
+            throw e;
+        }
     }
 
     /**
      * Opens an existing index, merging the provided configuration overrides
      * with the stored configuration on disk.
+     * <p>
+     * The supplied directory is wrapped in an {@link AsyncDirectoryAdapter}
+     * configured with the merged {@code numberOfIoThreads}. The returned index
+     * owns that wrapper and will close it when the index is closed.
+     * </p>
      *
      * @param directory backing directory that already contains the index
      * @param indexConf configuration overrides to apply
      * @return index instance backed by the updated configuration
      */
     static <M, N> SegmentIndex<M, N> open(
-            final AsyncDirectory directoryFacade,
+            final Directory directory,
             final IndexConfiguration<M, N> indexConf) {
-        final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
-                new IndexConfiguratonStorage<>(directoryFacade));
-        final IndexConfiguration<M, N> mergedConf = confManager
-                .mergeWithStored(indexConf);
-        return openIndex(directoryFacade, mergedConf);
+        final int initialIoThreads = resolveIoThreads(
+                indexConf.getNumberOfIoThreads());
+        AsyncDirectory asyncDirectory = AsyncDirectoryAdapter.wrap(directory,
+                initialIoThreads);
+        try {
+            final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
+                    new IndexConfiguratonStorage<>(asyncDirectory));
+            final IndexConfiguration<M, N> mergedConf = confManager
+                    .mergeWithStored(indexConf);
+            final int configuredIoThreads = resolveIoThreads(
+                    mergedConf.getNumberOfIoThreads());
+            if (configuredIoThreads != initialIoThreads) {
+                asyncDirectory.close();
+                asyncDirectory = AsyncDirectoryAdapter.wrap(directory,
+                        configuredIoThreads);
+            }
+            return openIndex(asyncDirectory, mergedConf);
+        } catch (final RuntimeException e) {
+            closeOnFailure(asyncDirectory, e);
+            throw e;
+        }
     }
 
     /**
      * Opens an existing index using the configuration stored on disk.
+     * <p>
+     * The supplied directory is wrapped in an {@link AsyncDirectoryAdapter}
+     * configured with the stored {@code numberOfIoThreads}. The returned index
+     * owns that wrapper and will close it when the index is closed.
+     * </p>
      *
      * @param directory backing directory with an existing index
      * @return index instance backed by the persisted configuration
      */
     static <M, N> SegmentIndex<M, N> open(
-            final AsyncDirectory directoryFacade) {
-        final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
-                new IndexConfiguratonStorage<>(directoryFacade));
-        return openIndex(directoryFacade, confManager.loadExisting());
+            final Directory directory) {
+        AsyncDirectory asyncDirectory = AsyncDirectoryAdapter.wrap(directory,
+                IndexConfigurationContract.NUMBER_OF_IO_THREADS);
+        try {
+            final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
+                    new IndexConfiguratonStorage<>(asyncDirectory));
+            final IndexConfiguration<M, N> conf = confManager.loadExisting();
+            final int configuredIoThreads = resolveIoThreads(
+                    conf.getNumberOfIoThreads());
+            if (configuredIoThreads
+                    != IndexConfigurationContract.NUMBER_OF_IO_THREADS) {
+                asyncDirectory.close();
+                asyncDirectory = AsyncDirectoryAdapter.wrap(directory,
+                        configuredIoThreads);
+            }
+            return openIndex(asyncDirectory, conf);
+        } catch (final RuntimeException e) {
+            closeOnFailure(asyncDirectory, e);
+            throw e;
+        }
     }
 
     /**
      * Attempts to open an index when it may or may not exist.
+     * <p>
+     * The supplied directory is wrapped in an {@link AsyncDirectoryAdapter}
+     * configured with the stored {@code numberOfIoThreads} when a configuration
+     * is present. The returned index owns that wrapper and will close it when
+     * the index is closed.
+     * </p>
      *
      * @param directory backing directory that may contain an index
      * @return optional index instance if the configuration was found
      */
     static <M, N> Optional<SegmentIndex<M, N>> tryOpen(
-            final AsyncDirectory directoryFacade) {
-        final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
-                new IndexConfiguratonStorage<>(directoryFacade));
-        final Optional<IndexConfiguration<M, N>> oConf = confManager
-                .tryToLoad();
-        if (oConf.isPresent()) {
-            return Optional.of(openIndex(directoryFacade, oConf.get()));
-        } else {
-            return Optional.empty();
+            final Directory directory) {
+        AsyncDirectory asyncDirectory = AsyncDirectoryAdapter.wrap(directory,
+                IndexConfigurationContract.NUMBER_OF_IO_THREADS);
+        try {
+            final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
+                    new IndexConfiguratonStorage<>(asyncDirectory));
+            final Optional<IndexConfiguration<M, N>> oConf = confManager
+                    .tryToLoad();
+            if (oConf.isEmpty()) {
+                asyncDirectory.close();
+                return Optional.empty();
+            }
+            final IndexConfiguration<M, N> conf = oConf.get();
+            final int configuredIoThreads = resolveIoThreads(
+                    conf.getNumberOfIoThreads());
+            if (configuredIoThreads
+                    != IndexConfigurationContract.NUMBER_OF_IO_THREADS) {
+                asyncDirectory.close();
+                asyncDirectory = AsyncDirectoryAdapter.wrap(directory,
+                        configuredIoThreads);
+            }
+            return Optional.of(openIndex(asyncDirectory, conf));
+        } catch (final RuntimeException e) {
+            closeOnFailure(asyncDirectory, e);
+            throw e;
         }
     }
 
@@ -102,13 +191,31 @@ public interface SegmentIndex<K, V> extends CloseableResource {
                 .makeInstance(indexConf.getValueTypeDescriptor());
         Vldtn.requireNonNull(indexConf.isContextLoggingEnabled(),
                 "isContextLoggingEnabled");
-        final SegmentIndex<M, N> index = new IndexInternalSynchronized<>(
+        SegmentIndex<M, N> index = new IndexInternalSynchronized<>(
                 directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
                 indexConf);
         if (Boolean.TRUE.equals(indexConf.isContextLoggingEnabled())) {
-            return new IndexContextLoggingAdapter<>(indexConf, index);
-        } else {
-            return index;
+            index = new IndexContextLoggingAdapter<>(indexConf, index);
+        }
+        return new IndexDirectoryClosingAdapter<>(index, directoryFacade);
+    }
+
+    private static int resolveIoThreads(final Integer configuredThreads) {
+        if (configuredThreads == null || configuredThreads.intValue() < 1) {
+            return IndexConfigurationContract.NUMBER_OF_IO_THREADS;
+        }
+        return configuredThreads.intValue();
+    }
+
+    private static void closeOnFailure(final AsyncDirectory asyncDirectory,
+            final RuntimeException failure) {
+        if (asyncDirectory == null) {
+            return;
+        }
+        try {
+            asyncDirectory.close();
+        } catch (final RuntimeException closeError) {
+            failure.addSuppressed(closeError);
         }
     }
 

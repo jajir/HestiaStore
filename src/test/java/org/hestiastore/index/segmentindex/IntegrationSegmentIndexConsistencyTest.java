@@ -96,10 +96,7 @@ class IntegrationSegmentIndexConsistencyTest extends AbstractSegmentIndexTest {
                 .withContextLoggingEnabled(false) //
                 .withName("test_index") //
                 .build();
-        return SegmentIndex.<Integer, Integer>create(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                conf);
+        return SegmentIndex.<Integer, Integer>create(directory, conf);
     }
 
     protected List<Entry<Integer, Integer>> makeList(final int no) {

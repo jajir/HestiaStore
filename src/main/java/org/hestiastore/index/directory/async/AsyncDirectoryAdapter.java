@@ -62,8 +62,8 @@ public final class AsyncDirectoryAdapter extends AbstractCloseableResource
     public CompletionStage<AsyncFileReaderSeekable> getFileReaderSeekableAsync(
             final String fileName) {
         return supply(() -> {
-            final FileReaderSeekable fr = delegate.getFileReaderSeekable(
-                    fileName);
+            final FileReaderSeekable fr = delegate
+                    .getFileReaderSeekable(fileName);
             return new AsyncFileReaderSeekableAdapter(fr, executor);
         });
     }

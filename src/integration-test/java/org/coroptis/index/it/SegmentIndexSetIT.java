@@ -29,10 +29,7 @@ public class SegmentIndexSetIT {
 
         // create new index
         SegmentIndex<String, NullValue> index = SegmentIndex
-                .<String, NullValue>create(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(directory),
-                        conf);
+                .<String, NullValue>create(directory, conf);
 
         // Do some work with the index
         index.put("Hello", NullValue.NULL);
