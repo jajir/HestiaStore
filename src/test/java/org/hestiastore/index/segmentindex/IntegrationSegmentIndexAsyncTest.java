@@ -66,9 +66,8 @@ class IntegrationSegmentIndexAsyncTest {
             index.close();
         }
 
-        final SegmentIndex<Integer, String> reopenedIndex = SegmentIndex.open(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory));
+        final SegmentIndex<Integer, String> reopenedIndex = SegmentIndex
+                .open(directory);
         try {
             assertNull(reopenedIndex.get(2));
             assertNull(reopenedIndex.get(4));
@@ -146,9 +145,6 @@ class IntegrationSegmentIndexAsyncTest {
                 .withContextLoggingEnabled(true) //
                 .withName("async_index") //
                 .build();
-        return SegmentIndex.create(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                conf);
+        return SegmentIndex.create(directory, conf);
     }
 }

@@ -137,10 +137,7 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
                 .withContextLoggingEnabled(withLog) //
                 .withName("test_index") //
                 .build();
-        return SegmentIndex.create(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                conf);
+        return SegmentIndex.create(directory, conf);
     }
 
 }

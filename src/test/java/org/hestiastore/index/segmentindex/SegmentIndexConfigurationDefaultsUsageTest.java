@@ -27,10 +27,7 @@ class SegmentIndexConfigurationDefaultsUsageTest {
                 .get(Integer.class).orElseThrow(() -> new IllegalStateException(
                         "Missing contract defaults for Integer"));
 
-        try (SegmentIndex<Integer, String> index = SegmentIndex.create(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                sparseConfiguration)) {
+        try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory, sparseConfiguration)) {
             final IndexConfiguration<Integer, String> actual = index
                     .getConfiguration();
 

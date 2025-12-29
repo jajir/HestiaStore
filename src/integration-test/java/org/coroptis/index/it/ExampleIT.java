@@ -1,7 +1,6 @@
 package org.coroptis.index.it;
 
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
@@ -25,7 +24,7 @@ public class ExampleIT {
 
         // create new index
         SegmentIndex<String, String> index = SegmentIndex
-                .<String, String>create(org.hestiastore.index.directory.async.AsyncDirectoryAdapter.wrap(directory), conf);
+                .<String, String>create(directory, conf);
 
         // Do some work with the index
         index.put("Hello", "World");
@@ -35,10 +34,10 @@ public class ExampleIT {
 
         index.close();
 
-        reopen(org.hestiastore.index.directory.async.AsyncDirectoryAdapter.wrap(directory));
+        reopen(directory);
     }
 
-    private void reopen(final AsyncDirectory directoryFacade) {
+    private void reopen(final Directory directory) {
         IndexConfiguration<String, String> conf = IndexConfiguration
                 .<String, String>builder()//
                 .withKeyClass(String.class)//
@@ -47,7 +46,7 @@ public class ExampleIT {
                 .build();
 
         SegmentIndex<String, String> index = SegmentIndex
-                .<String, String>open(directoryFacade, conf);
+                .<String, String>open(directory, conf);
 
         index.getStream().forEach(entry -> {
             System.out.println("Entry: " + entry);

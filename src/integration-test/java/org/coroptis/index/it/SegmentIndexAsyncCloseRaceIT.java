@@ -105,10 +105,7 @@ class SegmentIndexAsyncCloseRaceIT {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<String, String> conf = conf();
 
-        final SegmentIndex<String, String> index = SegmentIndex.create(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                conf);
+        final SegmentIndex<String, String> index = SegmentIndex.create(directory, conf);
         final BlockingTombstoneTypeDescriptorString.Hook hook = BlockingTombstoneTypeDescriptorString
                 .installHook();
         final ExecutorService closeExecutor = Executors
@@ -149,10 +146,7 @@ class SegmentIndexAsyncCloseRaceIT {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<String, String> conf = conf();
 
-        final SegmentIndex<String, String> index = SegmentIndex.create(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                conf);
+        final SegmentIndex<String, String> index = SegmentIndex.create(directory, conf);
         index.put("k", "v");
 
         final BlockingTombstoneTypeDescriptorString.Hook hook = BlockingTombstoneTypeDescriptorString
@@ -193,10 +187,7 @@ class SegmentIndexAsyncCloseRaceIT {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<String, String> conf = conf();
 
-        final SegmentIndex<String, String> index = SegmentIndex.create(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                conf);
+        final SegmentIndex<String, String> index = SegmentIndex.create(directory, conf);
         index.put("k", "v");
 
         final BlockingTombstoneTypeDescriptorString.Hook hook = BlockingTombstoneTypeDescriptorString

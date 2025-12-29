@@ -44,10 +44,7 @@ class IntegrationIteratorTest extends AbstractSegmentIndexTest {
                 .withContextLoggingEnabled(false) //
                 .withName("test_index") //
                 .build();
-        index = SegmentIndex.<String, Integer>create(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                conf);
+        index = SegmentIndex.<String, Integer>create(directory, conf);
 
         writeEntries(index, indexFile);
         index.compact();

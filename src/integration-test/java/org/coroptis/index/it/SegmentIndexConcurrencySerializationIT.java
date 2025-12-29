@@ -73,9 +73,7 @@ class SegmentIndexConcurrencySerializationIT {
         final IndexConfiguration<String, String> conf = readLockConf(name,
                 numberOfCpuThreads);
         final SegmentIndex<String, String> index = SegmentIndex.create(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                conf);
+                directory, conf);
         index.put(TEST_KEY, TEST_VALUE);
         final BlockingTombstoneTypeDescriptorString.Hook hook = BlockingTombstoneTypeDescriptorString
                 .installHook();
