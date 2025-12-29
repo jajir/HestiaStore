@@ -67,4 +67,12 @@ public final class SegmentSplitterPolicy<K, V> {
         return stats.getNumberOfKeysInSegment()
                 + deltaCacheController.getDeltaCacheSizeWithoutTombstones();
     }
+
+    /**
+     * @return true when delta cache holds any tombstone entries.
+     */
+    public boolean hasTombstonesInDeltaCache() {
+        return deltaCacheController.getDeltaCacheSizeWithoutTombstones()
+                < deltaCacheController.getDeltaCacheSize();
+    }
 }

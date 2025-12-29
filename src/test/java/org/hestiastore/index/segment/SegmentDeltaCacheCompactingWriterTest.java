@@ -1,6 +1,5 @@
 package org.hestiastore.index.segment;
 
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -18,8 +17,6 @@ class SegmentDeltaCacheCompactingWriterTest {
     private static final Entry<Integer, String> ENTRY_2 = Entry.of(2, "bbb");
     private static final Entry<Integer, String> ENTRY_3 = Entry.of(3, "ccc");
 
-    @Mock
-    private SegmentCompacter<Integer, String> segmentCompacter;
     @Mock
     private SegmentImpl<Integer, String> segment;
 
@@ -39,8 +36,7 @@ class SegmentDeltaCacheCompactingWriterTest {
         when(compactionPolicy.shouldCompactDuringWriting(2)).thenReturn(false);
         when(compactionPolicy.shouldCompactDuringWriting(3)).thenReturn(false);
         try (final EntryWriter<Integer, String> writer = new SegmentDeltaCacheCompactingWriter<>(
-                segment, segmentCompacter, deltaCacheController,
-                compactionPolicy)) {
+                segment, deltaCacheController, compactionPolicy)) {
             writer.write(ENTRY_1);
             writer.write(ENTRY_2);
             writer.write(ENTRY_3);
@@ -54,6 +50,7 @@ class SegmentDeltaCacheCompactingWriterTest {
         verify(compactionPolicy).shouldCompactDuringWriting(1);
         verify(compactionPolicy).shouldCompactDuringWriting(2);
         verify(compactionPolicy).shouldCompactDuringWriting(3);
+        verify(segment).requestOptionalCompaction();
     }
 
     @Test
@@ -64,8 +61,7 @@ class SegmentDeltaCacheCompactingWriterTest {
         when(compactionPolicy.shouldCompactDuringWriting(2)).thenReturn(true);
         when(compactionPolicy.shouldCompactDuringWriting(3)).thenReturn(false);
         try (final EntryWriter<Integer, String> writer = new SegmentDeltaCacheCompactingWriter<>(
-                segment, segmentCompacter, deltaCacheController,
-                compactionPolicy)) {
+                segment, deltaCacheController, compactionPolicy)) {
             writer.write(ENTRY_1);
             writer.write(ENTRY_2);
             writer.write(ENTRY_3);
@@ -80,7 +76,8 @@ class SegmentDeltaCacheCompactingWriterTest {
         verify(compactionPolicy).shouldCompactDuringWriting(2);
         verify(compactionPolicy).shouldCompactDuringWriting(3);
 
-        verify(segmentCompacter, times(1)).forceCompact(segment);
+        verify(segment).requestCompaction();
+        verify(segment).requestOptionalCompaction();
     }
 
 }

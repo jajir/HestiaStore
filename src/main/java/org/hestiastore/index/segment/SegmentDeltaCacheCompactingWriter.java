@@ -19,7 +19,6 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
         extends AbstractCloseableResource implements EntryWriter<K, V> {
 
     private final SegmentImpl<K, V> segment;
-    private final SegmentCompacter<K, V> segmentCompacter;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
     private final SegmentCompactionPolicyWithManager compactionPolicy;
 
@@ -29,12 +28,9 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
     private SegmentDeltaCacheWriter<K, V> deltaCacheWriter;
 
     public SegmentDeltaCacheCompactingWriter(final SegmentImpl<K, V> segment,
-            final SegmentCompacter<K, V> segmentCompacter,
             final SegmentDeltaCacheController<K, V> deltaCacheController,
             final SegmentCompactionPolicyWithManager compactionPolicy) {
         this.segment = Vldtn.requireNonNull(segment, "segment");
-        this.segmentCompacter = Vldtn.requireNonNull(segmentCompacter,
-                "segmentCompacter");
         this.deltaCacheController = Vldtn.requireNonNull(deltaCacheController,
                 "deltaCacheController");
         this.compactionPolicy = Vldtn.requireNonNull(compactionPolicy,
@@ -46,7 +42,7 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
         if (deltaCacheWriter != null) {
             deltaCacheWriter.close();
             deltaCacheWriter = null;
-            segmentCompacter.optionallyCompact(segment);
+            segment.requestOptionalCompaction();
         }
     }
 
@@ -58,7 +54,7 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
                 deltaCacheWriter.getNumberOfKeys())) {
             deltaCacheWriter.close();
             deltaCacheWriter = null;
-            segmentCompacter.forceCompact(segment);
+            segment.requestCompaction();
         }
     }
 

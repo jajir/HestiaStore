@@ -1,5 +1,7 @@
 package org.hestiastore.index.segment;
 
+import java.util.function.Consumer;
+
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.EntryIteratorWithLock;
@@ -45,6 +47,7 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     private final SegmentCompactionPolicyWithManager segmentCompactionPolicy;
     private SegmentIndexSearcher<K, V> segmentIndexSearcher;
     private FileReaderSeekable seekableReader;
+    private Consumer<SegmentImpl<K, V>> compactionExecutor;
 
     // Reduced constructors: keep only the most complex constructor below.
 
@@ -87,6 +90,7 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
                 .requireNonNull(segmentReplacer, "segmentReplacer");
         this.segmentSplitter = new SegmentSplitter<>(this, versionController,
                 injectedReplacer);
+        this.compactionExecutor = segmentCompacter::forceCompact;
     }
 
     @Override
@@ -160,7 +164,7 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     @Override
     public EntryWriter<K, V> openDeltaCacheWriter() {
         versionController.changeVersion();
-        return new SegmentDeltaCacheCompactingWriter<>(this, segmentCompacter,
+        return new SegmentDeltaCacheCompactingWriter<>(this,
                 deltaCacheController, segmentCompactionPolicy);
     }
 
@@ -290,6 +294,24 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
         if (seekableReader != null) {
             seekableReader.close();
             seekableReader = null;
+        }
+    }
+
+    void setCompactionExecutor(
+            final Consumer<SegmentImpl<K, V>> compactionExecutor) {
+        this.compactionExecutor = Vldtn.requireNonNull(compactionExecutor,
+                "compactionExecutor");
+    }
+
+    void requestCompaction() {
+        if (!wasClosed()) {
+            compactionExecutor.accept(this);
+        }
+    }
+
+    void requestOptionalCompaction() {
+        if (!wasClosed() && segmentCompactionPolicy.shouldCompact()) {
+            compactionExecutor.accept(this);
         }
     }
 
