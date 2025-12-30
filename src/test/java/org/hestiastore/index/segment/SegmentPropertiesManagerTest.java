@@ -81,6 +81,16 @@ class SegmentPropertiesManagerTest {
     }
 
     @Test
+    void test_deltaFileNames_support_more_than_three_digits() {
+        for (int i = 0; i < 1000; i++) {
+            props.incrementDeltaFileNameCounter();
+        }
+
+        assertEquals("segment-00027-delta-1000.cache",
+                props.getNextDeltaFileName());
+    }
+
+    @Test
     void test_increase_numberOfKeysInCache() {
         assertEquals(0, props.getNumberOfKeysInDeltaCache());
 

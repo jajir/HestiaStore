@@ -11,6 +11,7 @@ import java.util.List;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.EntryIteratorList;
+import org.hestiastore.index.chunkentryfile.ChunkEntryFile;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
@@ -32,10 +33,10 @@ class SegmentDeltaCacheTest {
     private SortedDataFile<Integer, String> cacheFile;
 
     @Mock
-    private SortedDataFile<Integer, String> deltaFile1;
+    private ChunkEntryFile<Integer, String> deltaFile1;
 
     @Mock
-    private SortedDataFile<Integer, String> deltaFile2;
+    private ChunkEntryFile<Integer, String> deltaFile2;
 
     private SegmentDeltaCache<Integer, String> newCacheWith(
             final List<Entry<Integer, String>> cacheEntries,
@@ -49,8 +50,8 @@ class SegmentDeltaCacheTest {
         when(cacheFile.openIterator()).thenReturn(itCache);
 
         when(propertiesManager.getCacheDeltaFileNames()).thenReturn(List.of("d1", "d2"));
-        when(segmentFiles.getDeltaCacheSortedDataFile("d1")).thenReturn(deltaFile1);
-        when(segmentFiles.getDeltaCacheSortedDataFile("d2")).thenReturn(deltaFile2);
+        when(segmentFiles.getDeltaCacheChunkEntryFile("d1")).thenReturn(deltaFile1);
+        when(segmentFiles.getDeltaCacheChunkEntryFile("d2")).thenReturn(deltaFile2);
         when(deltaFile1.openIterator()).thenReturn(itDelta1);
         when(deltaFile2.openIterator()).thenReturn(itDelta2);
 

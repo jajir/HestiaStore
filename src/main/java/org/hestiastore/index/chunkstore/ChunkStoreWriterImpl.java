@@ -12,7 +12,8 @@ import org.hestiastore.index.Vldtn;
 public class ChunkStoreWriterImpl extends AbstractCloseableResource
         implements ChunkStoreWriter {
 
-    private static final long DEFAULT_LONG = -1L;
+    private static final long DEFAULT_FLAGS = 0L;
+    private static final long DEFAULT_CRC = 0L;
 
     private final CellStoreWriter cellStoreWriter;
     private final ChunkProcessor encodingProcessor;
@@ -40,9 +41,12 @@ public class ChunkStoreWriterImpl extends AbstractCloseableResource
     public CellPosition write(final ChunkPayload chunkPayload,
             final int version) {
         Vldtn.requireNonNull(chunkPayload, "chunkPayload");
-        ChunkData chunkData = ChunkData.of(DEFAULT_LONG, DEFAULT_LONG,
-                DEFAULT_LONG, version, chunkPayload.getBytes());
+        ChunkData chunkData = ChunkData.of(DEFAULT_FLAGS, DEFAULT_CRC,
+                ChunkHeader.MAGIC_NUMBER, version, chunkPayload.getBytes());
         chunkData = encodingProcessor.process(chunkData);
+        if (chunkData.getMagicNumber() != ChunkHeader.MAGIC_NUMBER) {
+            chunkData = chunkData.withMagicNumber(ChunkHeader.MAGIC_NUMBER);
+        }
         final ChunkHeader header = ChunkHeader.of(chunkData.getMagicNumber(),
                 chunkData.getVersion(), chunkData.getPayload().length(),
                 chunkData.getCrc(), chunkData.getFlags());
