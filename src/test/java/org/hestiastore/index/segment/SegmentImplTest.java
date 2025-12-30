@@ -204,6 +204,29 @@ class SegmentImplTest {
     }
 
     @Test
+    void put_writes_to_segment_cache_and_bumps_version() {
+        when(deltaCache.getAsSortedList())
+                .thenReturn(List.of(Entry.of(1, "A")));
+
+        subject.put(2, "B");
+
+        verify(versionController).changeVersion();
+        final SegmentCache<Integer, String> cache = subject.getSegmentCache();
+        assertNotNull(cache);
+        assertEquals("A", cache.get(1));
+        assertEquals("B", cache.get(2));
+        assertEquals(2, cache.size());
+    }
+
+    @Test
+    void put_rejects_nulls() {
+        assertThrows(IllegalArgumentException.class,
+                () -> subject.put(null, "A"));
+        assertThrows(IllegalArgumentException.class,
+                () -> subject.put(1, null));
+    }
+
+    @Test
     void get_uses_searcher_and_provider() {
         when(segmentSearcher.get(eq(123), eq(segmentDataProvider), any()))
                 .thenReturn("val");

@@ -48,6 +48,8 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     private SegmentIndexSearcher<K, V> segmentIndexSearcher;
     private FileReaderSeekable seekableReader;
     private Consumer<SegmentImpl<K, V>> compactionExecutor;
+    private SegmentCache<K, V> segmentCache;
+    private SegmentCacheAsyncAdapter<K, V> segmentCacheAdapter;
 
     // Reduced constructors: keep only the most complex constructor below.
 
@@ -169,6 +171,14 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     }
 
     @Override
+    public void put(final K key, final V value) {
+        Vldtn.requireNonNull(key, "key");
+        Vldtn.requireNonNull(value, "value");
+        versionController.changeVersion();
+        getSegmentCacheAdapter().put(key, value);
+    }
+
+    @Override
     public V get(final K key) {
         return segmentSearcher.get(key, segmentResources,
                 getSegmentIndexSearcher());
@@ -256,6 +266,10 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
         return segmentPropertiesManager;
     }
 
+    SegmentCache<K, V> getSegmentCache() {
+        return segmentCache;
+    }
+
     SegmentIndexSearcher<K, V> getSegmentIndexSearcher() {
         if (segmentIndexSearcher == null) {
             segmentIndexSearcher = new SegmentIndexSearcher<>(
@@ -295,6 +309,19 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
             seekableReader.close();
             seekableReader = null;
         }
+    }
+
+    private SegmentCacheAsyncAdapter<K, V> getSegmentCacheAdapter() {
+        if (segmentCacheAdapter == null) {
+            final SegmentDeltaCache<K, V> deltaCache = segmentResources
+                    .getSegmentDeltaCache();
+            segmentCache = new SegmentCache<>(
+                    segmentFiles.getKeyTypeDescriptor().getComparator(),
+                    segmentFiles.getValueTypeDescriptor(),
+                    deltaCache.getAsSortedList());
+            segmentCacheAdapter = new SegmentCacheAsyncAdapter<>(segmentCache);
+        }
+        return segmentCacheAdapter;
     }
 
     void setCompactionExecutor(

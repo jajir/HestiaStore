@@ -182,6 +182,16 @@ public class SegmentSynchronizationAdapter<K, V> extends AbstractCloseableResour
     }
 
     @Override
+    public void put(final K key, final V value) {
+        writeLock.lock();
+        try {
+            delegate.put(key, value);
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    @Override
     public V get(final K key) {
         readLock.lock();
         try {
