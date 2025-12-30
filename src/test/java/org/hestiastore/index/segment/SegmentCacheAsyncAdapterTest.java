@@ -73,4 +73,21 @@ class SegmentCacheAsyncAdapterTest {
 
         assertEquals(threads * perThread, adapter.size());
     }
+
+    @Test
+    void adapter_exposes_write_cache_snapshot_and_clear() {
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                keyType.getComparator(), valueType);
+        final SegmentCacheAsyncAdapter<Integer, String> adapter = new SegmentCacheAsyncAdapter<>(
+                cache);
+
+        adapter.put(2, "B");
+        adapter.put(1, "A");
+
+        assertEquals(List.of(Entry.of(1, "A"), Entry.of(2, "B")),
+                adapter.getWriteCacheAsSortedList());
+
+        adapter.clearWriteCache();
+        assertEquals(0, adapter.size());
+    }
 }

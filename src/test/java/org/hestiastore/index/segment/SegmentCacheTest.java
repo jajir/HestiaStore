@@ -99,4 +99,19 @@ class SegmentCacheTest {
 
         assertThrows(IllegalArgumentException.class, () -> cache.put(null));
     }
+
+    @Test
+    void getWriteCacheAsSortedList_and_clearWriteCache() {
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                keyType.getComparator(), valueType);
+        cache.put(3, "C");
+        cache.put(1, "A");
+        cache.put(2, "B");
+
+        assertEquals(List.of(Entry.of(1, "A"), Entry.of(2, "B"),
+                Entry.of(3, "C")), cache.getWriteCacheAsSortedList());
+
+        cache.clearWriteCache();
+        assertEquals(0, cache.size());
+    }
 }

@@ -151,6 +151,17 @@ public final class SegmentCache<K, V> {
         return buildMergedCache().getAsSortedList();
     }
 
+    List<Entry<K, V>> getWriteCacheAsSortedList() {
+        if (writeCache.isEmpty()) {
+            return List.of();
+        }
+        return writeCache.getAsSortedList();
+    }
+
+    void clearWriteCache() {
+        writeCache.clear();
+    }
+
     private UniqueCache<K, V> buildMergedCache() {
         final UniqueCache<K, V> merged = UniqueCache.<K, V>builder()
                 .withKeyComparator(keyComparator)

@@ -1,8 +1,10 @@
 package org.hestiastore.index.segment;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 import org.hestiastore.index.AbstractCloseableResource;
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.EntryIteratorWithLock;
 import org.hestiastore.index.EntryWriter;
@@ -176,6 +178,25 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
         Vldtn.requireNonNull(value, "value");
         versionController.changeVersion();
         getSegmentCacheAdapter().put(key, value);
+    }
+
+    @Override
+    public void flush() {
+        if (segmentCacheAdapter == null) {
+            return;
+        }
+        final List<Entry<K, V>> entries = segmentCacheAdapter
+                .getWriteCacheAsSortedList();
+        if (entries.isEmpty()) {
+            return;
+        }
+        try (EntryWriter<K, V> writer = openDeltaCacheWriter()) {
+            entries.forEach(writer::write);
+        }
+        segmentCacheAdapter.clearWriteCache();
+        for (final Entry<K, V> entry : entries) {
+            segmentCacheAdapter.putToDeltaCache(entry);
+        }
     }
 
     @Override

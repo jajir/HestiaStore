@@ -104,4 +104,22 @@ public final class SegmentCacheAsyncAdapter<K, V> {
             readLock.unlock();
         }
     }
+
+    List<Entry<K, V>> getWriteCacheAsSortedList() {
+        readLock.lock();
+        try {
+            return delegate.getWriteCacheAsSortedList();
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    void clearWriteCache() {
+        writeLock.lock();
+        try {
+            delegate.clearWriteCache();
+        } finally {
+            writeLock.unlock();
+        }
+    }
 }

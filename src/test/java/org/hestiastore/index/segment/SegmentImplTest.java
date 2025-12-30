@@ -9,7 +9,10 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -224,6 +227,37 @@ class SegmentImplTest {
                 () -> subject.put(null, "A"));
         assertThrows(IllegalArgumentException.class,
                 () -> subject.put(1, null));
+    }
+
+    @Test
+    void flush_noop_when_cache_not_initialized() {
+        final SegmentImpl<Integer, String> spy = spy(subject);
+
+        spy.flush();
+
+        verify(spy, never()).openDeltaCacheWriter();
+    }
+
+    @Test
+    void flush_writes_entries_and_clears_write_cache() {
+        final SegmentImpl<Integer, String> spy = spy(subject);
+        final EntryWriter<Integer, String> writer = org.mockito.Mockito
+                .mock(EntryWriter.class);
+        doReturn(writer).when(spy).openDeltaCacheWriter();
+
+        spy.put(2, "B");
+        spy.put(1, "A");
+
+        spy.flush();
+
+        verify(writer).write(Entry.of(1, "A"));
+        verify(writer).write(Entry.of(2, "B"));
+        verify(writer).close();
+
+        final SegmentCache<Integer, String> cache = spy.getSegmentCache();
+        assertEquals(List.of(Entry.of(1, "A"), Entry.of(2, "B")),
+                cache.getAsSortedList());
+        assertEquals(0, cache.getWriteCacheAsSortedList().size());
     }
 
     @Test
