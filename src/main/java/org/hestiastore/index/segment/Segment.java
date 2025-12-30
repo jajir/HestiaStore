@@ -28,7 +28,8 @@ import org.hestiastore.index.EntryWriter;
  * <p>
  * Key responsibilities exposed by this API: - Query: {@link #get(Object)},
  * {@link #getStats()}, {@link #getNumberOfKeys()} - Writing (delta cache):
- * {@link #openDeltaCacheWriter()} - Maintenance: {@link #optionallyCompact()},
+ * {@link #openDeltaCacheWriter()}, {@link #put(Object, Object)} - Maintenance:
+ * {@link #optionallyCompact()},
  * {@link #forceCompact()}, {@link #checkAndRepairConsistency()},
  * {@link #invalidateIterators()} - Splitting: {@link #getSegmentSplitterPolicy()},
  * {@link #split(SegmentId, SegmentSplitterPlan)},
@@ -122,6 +123,16 @@ public interface Segment<K, V>
      * @return writer for delta cache updates
      */
     EntryWriter<K, V> openDeltaCacheWriter();
+
+    /**
+     * Writes directly into the in-memory segment cache without persisting to
+     * disk. This is an alternative to {@link #openDeltaCacheWriter()} and is
+     * intended for specialized use cases.
+     *
+     * @param key key to write (non-null)
+     * @param value value to write (non-null)
+     */
+    void put(K key, V value);
 
     /**
      * Performs a point lookup of a key in this segment, considering both the
