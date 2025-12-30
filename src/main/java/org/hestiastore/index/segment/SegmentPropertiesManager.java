@@ -74,8 +74,10 @@ public class SegmentPropertiesManager {
     }
 
     private String getDeltaString(final int segmentCacheDeltaFileId) {
-        return id.getName() + "-delta-"
-                + FileNameUtil.getPaddedId(segmentCacheDeltaFileId, 3)
+        final String rawId = String.valueOf(segmentCacheDeltaFileId);
+        final String paddedId = rawId.length() > 3 ? rawId
+                : FileNameUtil.getPaddedId(segmentCacheDeltaFileId, 3);
+        return id.getName() + "-delta-" + paddedId
                 + SegmentFiles.CACHE_FILE_NAME_EXTENSION;
     }
 

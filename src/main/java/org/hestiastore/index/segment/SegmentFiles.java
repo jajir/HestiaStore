@@ -140,6 +140,22 @@ public final class SegmentFiles<K, V> {
     }
 
     /**
+     * Open a chunk-entry handle for a delta cache data file by name.
+     *
+     * @param fileName target file name
+     * @return chunk-entry file handle
+     */
+    ChunkEntryFile<K, V> getDeltaCacheChunkEntryFile(final String fileName) {
+        final ChunkStoreFile chunkStoreFile = new ChunkStoreFile(
+                directoryFacade, fileName,
+                DataBlockSize.ofDataBlockSize(diskIoBufferSize),
+                encodingChunkFilters, decodingChunkFilters);
+        return new ChunkEntryFile<>(chunkStoreFile, keyTypeDescriptor,
+                valueTypeDescriptor,
+                DataBlockSize.ofDataBlockSize(diskIoBufferSize));
+    }
+
+    /**
      * Open a handle for the scarce index of this segment.
      *
      * @return scarce index instance

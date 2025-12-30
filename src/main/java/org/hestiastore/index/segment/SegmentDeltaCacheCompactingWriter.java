@@ -45,7 +45,7 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
             deltaCacheWriter.close();
             deltaCacheWriter = null;
             if (shouldForceCompaction()) {
-                segment.requestCompaction();
+                segment.forceCompact();
             } else {
                 segment.requestOptionalCompaction();
             }
@@ -60,7 +60,11 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
                 deltaCacheWriter.getNumberOfKeys())) {
             deltaCacheWriter.close();
             deltaCacheWriter = null;
-            segment.requestCompaction();
+            if (shouldForceCompaction()) {
+                segment.forceCompact();
+            } else {
+                segment.requestCompaction();
+            }
         }
     }
 

@@ -374,7 +374,8 @@ public final class SegmentBuilder<K, V> {
                 .from(segmentConf, segmentPropertiesManager);
         final SegmentDeltaCacheController<K, V> deltaCacheController = new SegmentDeltaCacheController<>(
                 segmentFiles, segmentPropertiesManager, segmentResources,
-                segmentConf.getMaxNumberOfKeysInDeltaCache());
+                segmentConf.getMaxNumberOfKeysInDeltaCache(),
+                segmentConf.getMaxNumberOfKeysInChunk());
         final SegmentSplitterPolicy<K, V> segmentSplitterPolicy = new SegmentSplitterPolicy<>(
                 segmentPropertiesManager, deltaCacheController);
         final SegmentCompacter<K, V> compacter = new SegmentCompacter<>(

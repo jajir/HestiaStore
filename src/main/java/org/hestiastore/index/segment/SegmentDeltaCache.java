@@ -6,8 +6,8 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.UniqueCache;
+import org.hestiastore.index.chunkentryfile.ChunkEntryFile;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.sorteddatafile.SortedDataFile;
 
 /**
  * Represents segment cache containing changes in segment.
@@ -46,8 +46,8 @@ public final class SegmentDeltaCache<K, V> {
     private void loadDataFromSegmentDeltaFile(
             final SegmentFiles<K, V> segmentFiles,
             final String segmentDeltaFileName) {
-        final SortedDataFile<K, V> dataFile = segmentFiles
-                .getDeltaCacheSortedDataFile(segmentDeltaFileName);
+        final ChunkEntryFile<K, V> dataFile = segmentFiles
+                .getDeltaCacheChunkEntryFile(segmentDeltaFileName);
         try (EntryIterator<K, V> iterator = dataFile.openIterator()) {
             while (iterator.hasNext()) {
                 cache.put(iterator.next());

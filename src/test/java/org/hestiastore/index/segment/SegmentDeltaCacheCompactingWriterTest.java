@@ -107,7 +107,8 @@ class SegmentDeltaCacheCompactingWriterTest {
 
         verify(deltaCacheWriter).write(ENTRY_1);
         verify(compactionPolicy).shouldCompactDuringWriting(1);
-        verify(segment).requestCompaction();
+        verify(segment).forceCompact();
+        verify(segment, never()).requestCompaction();
         verify(segment, never()).requestOptionalCompaction();
     }
 
