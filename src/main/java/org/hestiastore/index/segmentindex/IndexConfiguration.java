@@ -30,6 +30,7 @@ public class IndexConfiguration<K, V> {
      * Segments configuration
      */
     private final Integer maxNumberOfKeysInSegmentCache;
+    private final Integer maxNumberOfKeysInSegmentWriteCache;
     private final Integer maxNumberOfKeysInSegmentCacheDuringFlushing;
     private final Integer maxNumberOfKeysInSegmentChunk;
 
@@ -69,6 +70,7 @@ public class IndexConfiguration<K, V> {
             final String keyTypeDescriptor, //
             final String valueTypeDescriptor, //
             final Integer maxNumberOfKeysInSegmentCache, //
+            final Integer maxNumberOfKeysInSegmentWriteCache, //
             final Integer maxNumberOfKeysInSegmentCacheDuringFlushing, //
             final Integer maxNumberOfKeysInSegmentChunk, //
             final Integer maxNumberOfKeysInCache, //
@@ -88,6 +90,7 @@ public class IndexConfiguration<K, V> {
         this.keyTypeDescriptor = keyTypeDescriptor;
         this.valueTypeDescriptor = valueTypeDescriptor;
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
+        this.maxNumberOfKeysInSegmentWriteCache = maxNumberOfKeysInSegmentWriteCache;
         this.maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInSegmentCacheDuringFlushing;
         this.maxNumberOfKeysInSegmentChunk = maxNumberOfKeysInSegmentChunk;
         this.indexName = indexName;
@@ -113,6 +116,16 @@ public class IndexConfiguration<K, V> {
          * @return max keys in segment cache
          */
         return maxNumberOfKeysInSegmentCache;
+    }
+
+    public Integer getMaxNumberOfKeysInSegmentWriteCache() {
+        /**
+         * Returns the maximum number of keys held in the segment write cache
+         * before flushing to disk.
+         *
+         * @return max keys in segment write cache
+         */
+        return maxNumberOfKeysInSegmentWriteCache;
     }
 
     public Integer getMaxNumberOfKeysInSegmentChunk() {

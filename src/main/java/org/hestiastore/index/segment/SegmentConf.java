@@ -7,6 +7,7 @@ import org.hestiastore.index.chunkstore.ChunkFilter;
 public class SegmentConf {
 
     private final int maxNumberOfKeysInSegmentDeltaCache;
+    private final int maxNumberOfKeysInSegmentWriteCache;
     private final int maxNumberOfKeysInDeltaCacheDuringWriting;
     private final int maxNumberOfKeysInChunk;
     private final Integer bloomFilterNumberOfHashFunctions;
@@ -17,6 +18,7 @@ public class SegmentConf {
     private final List<ChunkFilter> decodingChunkFilters;
 
     public SegmentConf(final int maxNumeberOfKeysInSegmentDeltaCache,
+            final int maxNumberOfKeysInSegmentWriteCache,
             final int maxNumberOfKeysInSegmentCacheDuringFlushing,
             final int maxNumberOfKeysInChunk,
             final Integer bloomFilterNumberOfHashFunctions,
@@ -26,6 +28,7 @@ public class SegmentConf {
             final List<ChunkFilter> encodingChunkFilters,
             final List<ChunkFilter> decodingChunkFilters) {
         this.maxNumberOfKeysInSegmentDeltaCache = maxNumeberOfKeysInSegmentDeltaCache;
+        this.maxNumberOfKeysInSegmentWriteCache = maxNumberOfKeysInSegmentWriteCache;
         this.maxNumberOfKeysInDeltaCacheDuringWriting = maxNumberOfKeysInSegmentCacheDuringFlushing;
         this.maxNumberOfKeysInChunk = maxNumberOfKeysInChunk;
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
@@ -38,6 +41,7 @@ public class SegmentConf {
 
     public SegmentConf(final SegmentConf segmentConf) {
         this.maxNumberOfKeysInSegmentDeltaCache = segmentConf.maxNumberOfKeysInSegmentDeltaCache;
+        this.maxNumberOfKeysInSegmentWriteCache = segmentConf.maxNumberOfKeysInSegmentWriteCache;
         this.maxNumberOfKeysInDeltaCacheDuringWriting = segmentConf.maxNumberOfKeysInDeltaCacheDuringWriting;
         this.maxNumberOfKeysInChunk = segmentConf.maxNumberOfKeysInChunk;
         this.bloomFilterNumberOfHashFunctions = segmentConf.bloomFilterNumberOfHashFunctions;
@@ -56,6 +60,10 @@ public class SegmentConf {
      */
     int getMaxNumberOfKeysInDeltaCache() {
         return maxNumberOfKeysInSegmentDeltaCache;
+    }
+
+    int getMaxNumberOfKeysInSegmentWriteCache() {
+        return maxNumberOfKeysInSegmentWriteCache;
     }
 
     Integer getMaxNumberOfKeysInChunk() {

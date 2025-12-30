@@ -168,6 +168,7 @@ At allows to pass `IndexConfiguration` object and this way change configuration 
 | valueTypeDescriptor                         | Value class type descriptor                          | 🟥             | index                |
 | maxNumberOfKeysInSegmentIndexPage           | Maximum keys in segment index page                   | 🟥             | segment              |
 | maxNumberOfKeysInSegmentCache               | Maximum number of keys in segment cache              | 🟩             | segment              |
+| maxNumberOfKeysInSegmentWriteCache          | Maximum number of keys in segment write cache        | 🟩             | segment              |
 | maxNumberOfKeysInSegmentCacheDuringFlushing | Maximum keys in cache during flushing                | 🟩             | segment              |
 | maxNumberOfKeysInCache                      | Maximum keys in the index cache                      | 🟩             | index                |
 | maxNumberOfKeysInSegment                    | Maximum keys in a segment                            | 🟥             | segment              |

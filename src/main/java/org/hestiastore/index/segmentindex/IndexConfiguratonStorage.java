@@ -24,6 +24,7 @@ public class IndexConfiguratonStorage<K, V> {
     private static final String PROP_CONTEXT_LOGGING_ENABLED = "contextLoggingEnabled";
 
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = "maxNumberOfKeysInSegmentCache";
+    private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE = "maxNumberOfKeysInSegmentWriteCache";
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING = "maxNumberOfKeysInSegmentCacheDuringFlushing";
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK = "maxNumberOfKeysInSegmentChunk";
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_CACHE = "maxNumberOfKeysInCache";
@@ -54,6 +55,15 @@ public class IndexConfiguratonStorage<K, V> {
         final Class<K> keyClass = toClass(propsView.getString(PROP_KEY_CLASS));
         final Class<V> valueClass = toClass(
                 propsView.getString(PROP_VALUE_CLASS));
+        final long maxNumberOfKeysInSegmentCache = propsView
+                .getLong(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE);
+        final long defaultMaxNumberOfKeysInSegmentWriteCache = maxNumberOfKeysInSegmentCache > 0
+                ? maxNumberOfKeysInSegmentCache / 2
+                : IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE
+                        / 2;
+        final long maxNumberOfKeysInSegmentWriteCache = getOrDefaultLong(
+                propsView, PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE,
+                defaultMaxNumberOfKeysInSegmentWriteCache);
         final IndexConfigurationBuilder<K, V> builder = IndexConfiguration
                 .<K, V>builder()//
                 .withKeyClass(keyClass) //
@@ -74,8 +84,9 @@ public class IndexConfiguratonStorage<K, V> {
 
                 // Segment properties
                 .withMaxNumberOfKeysInSegmentCache(
-                        (int) propsView.getLong(
-                                PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE))//
+                        (int) maxNumberOfKeysInSegmentCache)//
+                .withMaxNumberOfKeysInSegmentWriteCache(
+                        (int) maxNumberOfKeysInSegmentWriteCache)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(
                         (int) propsView.getLong(
                                 PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING))//
@@ -151,6 +162,8 @@ public class IndexConfiguratonStorage<K, V> {
         // Segment properties
         writer.setLong(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE,
                 indexConfiguration.getMaxNumberOfKeysInSegmentCache());
+        writer.setLong(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE,
+                indexConfiguration.getMaxNumberOfKeysInSegmentWriteCache());
         writer.setLong(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING,
                 indexConfiguration
                         .getMaxNumberOfKeysInSegmentCacheDuringFlushing());
@@ -240,6 +253,15 @@ public class IndexConfiguratonStorage<K, V> {
     private int getOrDefault(final PropertyView propsView, final String key,
             final int defaultValue) {
         final int value = propsView.getInt(key);
+        if (value == 0) {
+            return defaultValue;
+        }
+        return value;
+    }
+
+    private long getOrDefaultLong(final PropertyView propsView,
+            final String key, final long defaultValue) {
+        final long value = propsView.getLong(key);
         if (value == 0) {
             return defaultValue;
         }

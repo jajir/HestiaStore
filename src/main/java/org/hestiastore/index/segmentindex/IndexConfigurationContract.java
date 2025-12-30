@@ -34,6 +34,10 @@ public interface IndexConfigurationContract {
         return MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
     }
 
+    default int getMaxNumberOfKeysInSegmentWriteCache() {
+        return getMaxNumberOfKeysInSegmentCache() / 2;
+    }
+
     default int getMaxNumberOfKeysInSegmentCacheDuringFlushing() {
         return getMaxNumberOfKeysInSegmentCache() * 2;
     }

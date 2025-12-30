@@ -53,6 +53,7 @@ class IndexStateTest {
                 .withValueTypeDescriptor(tds)//
                 .withName("index-state-test")//
                 .withMaxNumberOfKeysInSegmentCache(4)//
+                .withMaxNumberOfKeysInSegmentWriteCache(2)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(6)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withMaxNumberOfKeysInCache(10)//

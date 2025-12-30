@@ -69,6 +69,10 @@ public class IndexConfigurationManager<K, V> {
             builder.withMaxNumberOfKeysInSegmentCache(
                     defaults.getMaxNumberOfKeysInSegmentCache());
         }
+        if (conf.getMaxNumberOfKeysInSegmentWriteCache() == null) {
+            builder.withMaxNumberOfKeysInSegmentWriteCache(
+                    defaults.getMaxNumberOfKeysInSegmentWriteCache());
+        }
         if (conf.getMaxNumberOfKeysInSegmentCacheDuringFlushing() == null) {
             builder.withMaxNumberOfKeysInSegmentCacheDuringFlushing(
                     defaults.getMaxNumberOfKeysInSegmentCacheDuringFlushing());
@@ -159,6 +163,13 @@ public class IndexConfigurationManager<K, V> {
             dirty = true;
         }
 
+        if (isMaxNumberOfKeysInSegmentWriteCacheOverriden(storedConf,
+                indexConf)) {
+            builder.withMaxNumberOfKeysInSegmentWriteCache(
+                    indexConf.getMaxNumberOfKeysInSegmentWriteCache());
+            dirty = true;
+        }
+
         if (isMaxNumberOfKeysInSegmentCacheDuringFlushingOverriden(storedConf,
                 indexConf)) {
             builder.withMaxNumberOfKeysInSegmentCacheDuringFlushing(
@@ -223,6 +234,16 @@ public class IndexConfigurationManager<K, V> {
                 && indexConf.getMaxNumberOfKeysInSegmentCache() > 0
                 && !indexConf.getMaxNumberOfKeysInSegmentCache()
                         .equals(storedConf.getMaxNumberOfKeysInSegmentCache());
+    }
+
+    private boolean isMaxNumberOfKeysInSegmentWriteCacheOverriden(
+            final IndexConfiguration<K, V> storedConf,
+            final IndexConfiguration<K, V> indexConf) {
+        return indexConf.getMaxNumberOfKeysInSegmentWriteCache() != null
+                && indexConf.getMaxNumberOfKeysInSegmentWriteCache() > 0
+                && !indexConf.getMaxNumberOfKeysInSegmentWriteCache()
+                        .equals(storedConf
+                                .getMaxNumberOfKeysInSegmentWriteCache());
     }
 
     private boolean isMaxNumberOfKeysInSegmentCacheDuringFlushingOverriden(
@@ -411,6 +432,13 @@ public class IndexConfigurationManager<K, V> {
                     "Max number of segments in cache must be at least 3.");
         }
 
+        Vldtn.requireNonNull(conf.getMaxNumberOfKeysInSegmentWriteCache(),
+                "MaxNumberOfKeysInSegmentWriteCache");
+        if (conf.getMaxNumberOfKeysInSegmentWriteCache() < 1) {
+            throw new IllegalArgumentException(
+                    "Max number of keys in segment write cache must be at least 1.");
+        }
+
         Vldtn.requireNonNull(
                 conf.getMaxNumberOfKeysInSegmentCacheDuringFlushing(),
                 "MaxNumberOfKeysInSegmentCacheDuringFlushing");
@@ -498,6 +526,8 @@ public class IndexConfigurationManager<K, V> {
                 // Segment properties
                 .withMaxNumberOfKeysInSegmentCache(
                         conf.getMaxNumberOfKeysInSegmentCache())//
+                .withMaxNumberOfKeysInSegmentWriteCache(
+                        conf.getMaxNumberOfKeysInSegmentWriteCache())//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(
                         conf.getMaxNumberOfKeysInSegmentCacheDuringFlushing())//
                 .withMaxNumberOfKeysInSegmentChunk(

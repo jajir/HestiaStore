@@ -86,13 +86,13 @@ class SegmentDeltaCacheWriterTest {
                 () -> new SegmentDeltaCacheWriter<>(segmentFiles,
                         propertiesManager, dataProvider, 0, 1));
         assertEquals(
-                "Property 'maxNumberOfKeysInSegmentDeltaCache' must be greater than 0",
+                "Property 'maxNumberOfKeysInSegmentWriteCache' must be greater than 0",
                 e1.getMessage());
         final Exception e2 = assertThrows(IllegalArgumentException.class,
                 () -> new SegmentDeltaCacheWriter<>(segmentFiles,
                         propertiesManager, dataProvider, -1, 1));
         assertEquals(
-                "Property 'maxNumberOfKeysInSegmentDeltaCache' must be greater than 0",
+                "Property 'maxNumberOfKeysInSegmentWriteCache' must be greater than 0",
                 e2.getMessage());
         final Exception e3 = assertThrows(IllegalArgumentException.class,
                 () -> new SegmentDeltaCacheWriter<>(segmentFiles,
@@ -172,7 +172,7 @@ class SegmentDeltaCacheWriterTest {
     void controller_openWriter_constructs_writer_without_error() {
         final int max = 777;
         final SegmentDeltaCacheController<Integer, String> controller = new SegmentDeltaCacheController<>(
-                segmentFiles, propertiesManager, dataProvider, max, 3);
+                segmentFiles, propertiesManager, dataProvider, max, max, 3);
         when(segmentFiles.getKeyTypeDescriptor())
                 .thenReturn(new TypeDescriptorInteger());
         final SegmentDeltaCacheWriter<Integer, String> writer = controller
@@ -184,7 +184,8 @@ class SegmentDeltaCacheWriterTest {
     void controller_openWriter_throws_for_invalid_max() {
         final int invalidMax = 0;
         final SegmentDeltaCacheController<Integer, String> controller = new SegmentDeltaCacheController<>(
-                segmentFiles, propertiesManager, dataProvider, invalidMax, 3);
+                segmentFiles, propertiesManager, dataProvider, 10, invalidMax,
+                3);
         assertThrows(IllegalArgumentException.class, controller::openWriter);
     }
 }
