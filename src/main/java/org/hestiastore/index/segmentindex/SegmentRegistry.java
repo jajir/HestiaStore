@@ -62,6 +62,7 @@ public class SegmentRegistry<K, V> {
 
         SegmentConf segmentConf = new SegmentConf(
                 conf.getMaxNumberOfKeysInSegmentCache().intValue(),
+                conf.getMaxNumberOfKeysInSegmentWriteCache().intValue(),
                 conf.getMaxNumberOfKeysInSegmentCacheDuringFlushing()
                         .intValue(),
                 conf.getMaxNumberOfKeysInSegmentChunk(),
@@ -94,6 +95,9 @@ public class SegmentRegistry<K, V> {
                 .withSegmentPropertiesManager(segmentPropertiesManager)//
                 .withMaxNumberOfKeysInSegmentCache(
                         conf.getMaxNumberOfKeysInSegmentCache().intValue())//
+                .withMaxNumberOfKeysInSegmentWriteCache(
+                        conf.getMaxNumberOfKeysInSegmentWriteCache()
+                                .intValue())//
                 .withMaxNumberOfKeysInSegmentChunk(
                         conf.getMaxNumberOfKeysInSegmentChunk())//
                 .withValueTypeDescriptor(valueTypeDescriptor)//

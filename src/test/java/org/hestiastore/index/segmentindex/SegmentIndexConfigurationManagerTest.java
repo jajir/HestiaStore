@@ -41,6 +41,7 @@ class SegmentIndexConfigurationManagerTest {
             .withName("test_index")//
             .withContextLoggingEnabled(false)//
             .withMaxNumberOfKeysInSegmentCache(11)//
+            .withMaxNumberOfKeysInSegmentWriteCache(5)//
             .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22) //
             .withMaxNumberOfKeysInSegmentChunk(33)//
             .withMaxNumberOfKeysInSegment(44)//
@@ -270,6 +271,7 @@ class SegmentIndexConfigurationManagerTest {
                 .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(4)//
                 .withMaxNumberOfSegmentsInCache(3)//
+                .withMaxNumberOfKeysInSegmentWriteCache(5)//
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -291,6 +293,7 @@ class SegmentIndexConfigurationManagerTest {
                 .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(4)//
                 .withMaxNumberOfSegmentsInCache(3)//
+                .withMaxNumberOfKeysInSegmentWriteCache(5)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(2) //
                 .build();
 
@@ -314,6 +317,7 @@ class SegmentIndexConfigurationManagerTest {
                 .withMaxNumberOfKeysInSegment(4)//
                 .withMaxNumberOfSegmentsInCache(3)//
                 .withMaxNumberOfKeysInSegmentCache(11)//
+                .withMaxNumberOfKeysInSegmentWriteCache(5)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(5) //
                 .build();
 
@@ -335,6 +339,7 @@ class SegmentIndexConfigurationManagerTest {
                 .withValueTypeDescriptor(TD_STRING)//
                 .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInSegmentCache(11)//
+                .withMaxNumberOfKeysInSegmentWriteCache(5)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22) //
                 .withMaxNumberOfKeysInSegmentChunk(33)//
                 .withMaxNumberOfKeysInSegment(44)//
@@ -367,6 +372,7 @@ class SegmentIndexConfigurationManagerTest {
                 .withValueTypeDescriptor(TD_STRING)//
                 .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInSegmentCache(11)//
+                .withMaxNumberOfKeysInSegmentWriteCache(5)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22) //
                 .withMaxNumberOfKeysInSegmentChunk(33)//
                 .withMaxNumberOfKeysInSegment(44)//
@@ -788,6 +794,7 @@ class SegmentIndexConfigurationManagerTest {
                 .withName("base_index")//
                 .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInSegmentCache(11)//
+                .withMaxNumberOfKeysInSegmentWriteCache(5)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22)//
                 .withMaxNumberOfKeysInSegmentChunk(33)//
                 .withMaxNumberOfKeysInSegment(44)//

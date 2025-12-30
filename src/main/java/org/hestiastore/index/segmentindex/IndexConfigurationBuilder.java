@@ -11,6 +11,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 public class IndexConfigurationBuilder<K, V> {
 
     private Integer maxNumberOfKeysInSegmentCache;
+    private Integer maxNumberOfKeysInSegmentWriteCache;
     private Integer maxNumberOfKeysInSegmentCacheDuringFlushing;
     private Integer maxNumberOfKeysInSegmentChunk;
     private Integer maxNumberOfKeysInCache;
@@ -86,6 +87,12 @@ public class IndexConfigurationBuilder<K, V> {
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentCache(
             final Integer maxNumberOfKeysInSegmentCache) {
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
+        return this;
+    }
+
+    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentWriteCache(
+            final Integer maxNumberOfKeysInSegmentWriteCache) {
+        this.maxNumberOfKeysInSegmentWriteCache = maxNumberOfKeysInSegmentWriteCache;
         return this;
     }
 
@@ -233,6 +240,7 @@ public class IndexConfigurationBuilder<K, V> {
         return new IndexConfiguration<K, V>(keyClass, valueClass,
                 keyTypeDescriptor, valueTypeDescriptor,
                 maxNumberOfKeysInSegmentCache,
+                maxNumberOfKeysInSegmentWriteCache,
                 maxNumberOfKeysInSegmentCacheDuringFlushing,
                 maxNumberOfKeysInSegmentChunk, maxNumberOfKeysInCache,
                 maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache, indexName,

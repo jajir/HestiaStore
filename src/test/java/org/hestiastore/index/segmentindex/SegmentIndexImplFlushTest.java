@@ -88,6 +88,7 @@ class SegmentIndexImplFlushTest {
                 .withValueTypeDescriptor(tds)//
                 .withName("test-index")//
                 .withMaxNumberOfKeysInSegmentCache(4)//
+                .withMaxNumberOfKeysInSegmentWriteCache(2)//
                 .withMaxNumberOfKeysInSegmentCacheDuringFlushing(6)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withMaxNumberOfKeysInCache(maxKeysInCache)//

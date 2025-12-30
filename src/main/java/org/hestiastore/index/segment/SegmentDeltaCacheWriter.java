@@ -47,7 +47,7 @@ public final class SegmentDeltaCacheWriter<K, V>
      * @param segmentCacheDataProvider           required data provider to
      *                                           update in-memory cache when
      *                                           loaded
-     * @param maxNumberOfKeysInSegmentDeltaCache expected upper bound of keys
+     * @param maxNumberOfKeysInSegmentWriteCache expected upper bound of keys
      *                                           collected in this delta file;
      *                                           must be greater than 0
      * @param maxNumberOfKeysInChunk            number of entries stored in a
@@ -59,19 +59,19 @@ public final class SegmentDeltaCacheWriter<K, V>
     public SegmentDeltaCacheWriter(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentPropertiesManager,
             final SegmentResources<K, V> segmentCacheDataProvider,
-            final int maxNumberOfKeysInSegmentDeltaCache,
+            final int maxNumberOfKeysInSegmentWriteCache,
             final int maxNumberOfKeysInChunk) {
         this.segmentPropertiesManager = Vldtn.requireNonNull(
                 segmentPropertiesManager, "segmentPropertiesManager");
         this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
-        Vldtn.requireGreaterThanZero(maxNumberOfKeysInSegmentDeltaCache,
-                "maxNumberOfKeysInSegmentDeltaCache");
+        Vldtn.requireGreaterThanZero(maxNumberOfKeysInSegmentWriteCache,
+                "maxNumberOfKeysInSegmentWriteCache");
         Vldtn.requireGreaterThanZero(maxNumberOfKeysInChunk,
                 "maxNumberOfKeysInChunk");
         this.uniqueCache = UniqueCache.<K, V>builder()
                 .withKeyComparator(
                         segmentFiles.getKeyTypeDescriptor().getComparator())
-                .withInitialCapacity(maxNumberOfKeysInSegmentDeltaCache)
+                .withInitialCapacity(maxNumberOfKeysInSegmentWriteCache)
                 .buildEmpty();
         this.segmentCacheDataProvider = Vldtn.requireNonNull(
                 segmentCacheDataProvider, "segmentCacheDataProvider");
