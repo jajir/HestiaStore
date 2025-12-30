@@ -18,9 +18,6 @@ import org.hestiastore.index.Vldtn;
 public class SegmentDeltaCacheCompactingWriter<K, V>
         extends AbstractCloseableResource implements EntryWriter<K, V> {
 
-    static final int MAX_DELTA_FILES_BEFORE_OPTIONAL_COMPACTION = 100;
-    static final int MAX_DELTA_FILES_BEFORE_FORCE_COMPACTION = 1000;
-
     private final SegmentImpl<K, V> segment;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
     private final SegmentCompactionPolicyWithManager compactionPolicy;
@@ -53,11 +50,15 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
     public void write(final Entry<K, V> entry) {
         optionallyOpenDeltaCacheWriter();
         deltaCacheWriter.write(entry);
+        final int deltaFileCount = getDeltaFileCountIncludingInProgress();
+        if (compactionPolicy
+                .shouldForceCompactionForDeltaFiles(deltaFileCount)) {
+            forceCompaction();
+            return;
+        }
         if (compactionPolicy.shouldCompactDuringWriting(
-                deltaCacheWriter.getNumberOfKeys())) {
-            deltaCacheWriter.close();
-            deltaCacheWriter = null;
-            segment.requestCompaction();
+                deltaCacheWriter.getNumberOfKeys(), deltaFileCount)) {
+            forceCompaction();
         }
     }
 
@@ -70,13 +71,22 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
     private void requestCompactionForDeltaFiles() {
         final int deltaFileCount = segment.getSegmentPropertiesManager()
                 .getDeltaFileCount();
-        if (deltaFileCount > MAX_DELTA_FILES_BEFORE_FORCE_COMPACTION) {
+        if (compactionPolicy
+                .shouldForceCompactionForDeltaFiles(deltaFileCount)) {
             segment.requestCompaction();
             return;
         }
-        if (deltaFileCount > MAX_DELTA_FILES_BEFORE_OPTIONAL_COMPACTION) {
-            segment.requestOptionalCompaction();
-        }
+        segment.requestOptionalCompaction();
+    }
+
+    private int getDeltaFileCountIncludingInProgress() {
+        return segment.getSegmentPropertiesManager().getDeltaFileCount() + 1;
+    }
+
+    private void forceCompaction() {
+        deltaCacheWriter.close();
+        deltaCacheWriter = null;
+        segment.requestCompaction();
     }
 
 }
