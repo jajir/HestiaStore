@@ -42,9 +42,14 @@ class SegmentDeltaCacheCompactingWriterTest {
     void test_basic_writing() {
         when(deltaCacheController.openWriter()).thenReturn(deltaCacheWriter);
         when(deltaCacheWriter.getNumberOfKeys()).thenReturn(1, 2, 3);
-        when(compactionPolicy.shouldCompactDuringWriting(1)).thenReturn(false);
-        when(compactionPolicy.shouldCompactDuringWriting(2)).thenReturn(false);
-        when(compactionPolicy.shouldCompactDuringWriting(3)).thenReturn(false);
+        when(compactionPolicy.shouldForceCompactionForDeltaFiles(1))
+                .thenReturn(false);
+        when(compactionPolicy.shouldCompactDuringWriting(1, 1))
+                .thenReturn(false);
+        when(compactionPolicy.shouldCompactDuringWriting(2, 1))
+                .thenReturn(false);
+        when(compactionPolicy.shouldCompactDuringWriting(3, 1))
+                .thenReturn(false);
         when(segmentPropertiesManager.getDeltaFileCount()).thenReturn(0);
         try (final EntryWriter<Integer, String> writer = new SegmentDeltaCacheCompactingWriter<>(
                 segment, deltaCacheController, compactionPolicy)) {
@@ -58,20 +63,25 @@ class SegmentDeltaCacheCompactingWriterTest {
         verify(deltaCacheWriter).write(ENTRY_2);
         verify(deltaCacheWriter).write(ENTRY_3);
 
-        verify(compactionPolicy).shouldCompactDuringWriting(1);
-        verify(compactionPolicy).shouldCompactDuringWriting(2);
-        verify(compactionPolicy).shouldCompactDuringWriting(3);
+        verify(compactionPolicy).shouldCompactDuringWriting(1, 1);
+        verify(compactionPolicy).shouldCompactDuringWriting(2, 1);
+        verify(compactionPolicy).shouldCompactDuringWriting(3, 1);
         verify(segment, never()).requestCompaction();
-        verify(segment, never()).requestOptionalCompaction();
+        verify(segment).requestOptionalCompaction();
     }
 
     @Test
     void test_compact_during_writing() {
         when(deltaCacheController.openWriter()).thenReturn(deltaCacheWriter);
         when(deltaCacheWriter.getNumberOfKeys()).thenReturn(1, 2, 3);
-        when(compactionPolicy.shouldCompactDuringWriting(1)).thenReturn(false);
-        when(compactionPolicy.shouldCompactDuringWriting(2)).thenReturn(true);
-        when(compactionPolicy.shouldCompactDuringWriting(3)).thenReturn(false);
+        when(compactionPolicy.shouldForceCompactionForDeltaFiles(1))
+                .thenReturn(false);
+        when(compactionPolicy.shouldCompactDuringWriting(1, 1))
+                .thenReturn(false);
+        when(compactionPolicy.shouldCompactDuringWriting(2, 1))
+                .thenReturn(true);
+        when(compactionPolicy.shouldCompactDuringWriting(3, 1))
+                .thenReturn(false);
         when(segmentPropertiesManager.getDeltaFileCount()).thenReturn(0);
         try (final EntryWriter<Integer, String> writer = new SegmentDeltaCacheCompactingWriter<>(
                 segment, deltaCacheController, compactionPolicy)) {
@@ -85,29 +95,35 @@ class SegmentDeltaCacheCompactingWriterTest {
         verify(deltaCacheWriter).write(ENTRY_2);
         verify(deltaCacheWriter).write(ENTRY_3);
 
-        verify(compactionPolicy).shouldCompactDuringWriting(1);
-        verify(compactionPolicy).shouldCompactDuringWriting(2);
-        verify(compactionPolicy).shouldCompactDuringWriting(3);
+        verify(compactionPolicy).shouldCompactDuringWriting(1, 1);
+        verify(compactionPolicy).shouldCompactDuringWriting(2, 1);
+        verify(compactionPolicy).shouldCompactDuringWriting(3, 1);
 
         verify(segment).requestCompaction();
-        verify(segment, never()).requestOptionalCompaction();
+        verify(segment).requestOptionalCompaction();
     }
 
     @Test
-    void test_optional_compaction_when_delta_files_exceeded() {
+    void test_optional_compaction_when_force_threshold_not_exceeded() {
         when(deltaCacheController.openWriter()).thenReturn(deltaCacheWriter);
         when(deltaCacheWriter.getNumberOfKeys()).thenReturn(1);
-        when(compactionPolicy.shouldCompactDuringWriting(1)).thenReturn(false);
+        when(compactionPolicy.shouldForceCompactionForDeltaFiles(
+                SegmentCompactionPolicy.MAX_DELTA_FILES_BEFORE_FORCE_COMPACTION))
+                        .thenReturn(false);
+        when(compactionPolicy.shouldCompactDuringWriting(1,
+                SegmentCompactionPolicy.MAX_DELTA_FILES_BEFORE_FORCE_COMPACTION))
+                        .thenReturn(false);
         when(segmentPropertiesManager.getDeltaFileCount()).thenReturn(
-                SegmentDeltaCacheCompactingWriter.MAX_DELTA_FILES_BEFORE_OPTIONAL_COMPACTION
-                        + 1);
+                SegmentCompactionPolicy.MAX_DELTA_FILES_BEFORE_FORCE_COMPACTION
+                        - 1);
         try (final EntryWriter<Integer, String> writer = new SegmentDeltaCacheCompactingWriter<>(
                 segment, deltaCacheController, compactionPolicy)) {
             writer.write(ENTRY_1);
         }
 
         verify(deltaCacheWriter).write(ENTRY_1);
-        verify(compactionPolicy).shouldCompactDuringWriting(1);
+        verify(compactionPolicy).shouldCompactDuringWriting(1,
+                SegmentCompactionPolicy.MAX_DELTA_FILES_BEFORE_FORCE_COMPACTION);
         verify(segment, never()).requestCompaction();
         verify(segment).requestOptionalCompaction();
     }
@@ -115,18 +131,18 @@ class SegmentDeltaCacheCompactingWriterTest {
     @Test
     void test_force_compaction_when_delta_files_exceeded() {
         when(deltaCacheController.openWriter()).thenReturn(deltaCacheWriter);
-        when(deltaCacheWriter.getNumberOfKeys()).thenReturn(1);
-        when(compactionPolicy.shouldCompactDuringWriting(1)).thenReturn(false);
+        when(compactionPolicy.shouldForceCompactionForDeltaFiles(
+                SegmentCompactionPolicy.MAX_DELTA_FILES_BEFORE_FORCE_COMPACTION
+                        + 1))
+                                .thenReturn(true);
         when(segmentPropertiesManager.getDeltaFileCount()).thenReturn(
-                SegmentDeltaCacheCompactingWriter.MAX_DELTA_FILES_BEFORE_FORCE_COMPACTION
-                        + 1);
+                SegmentCompactionPolicy.MAX_DELTA_FILES_BEFORE_FORCE_COMPACTION);
         try (final EntryWriter<Integer, String> writer = new SegmentDeltaCacheCompactingWriter<>(
                 segment, deltaCacheController, compactionPolicy)) {
             writer.write(ENTRY_1);
         }
 
         verify(deltaCacheWriter).write(ENTRY_1);
-        verify(compactionPolicy).shouldCompactDuringWriting(1);
         verify(segment).requestCompaction();
         verify(segment, never()).requestOptionalCompaction();
     }

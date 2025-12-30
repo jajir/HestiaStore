@@ -50,7 +50,7 @@ class SegmentCompacterTest {
 
         SegmentCompactionPolicyWithManager policy = new SegmentCompactionPolicyWithManager(
                 new SegmentCompactionPolicy(segmentConf), segmentPropertiesManager);
-        assertTrue(policy.shouldCompactDuringWriting(25));
+        assertTrue(policy.shouldCompactDuringWriting(25, 0));
     }
 
     @Test
@@ -62,7 +62,7 @@ class SegmentCompacterTest {
 
         SegmentCompactionPolicyWithManager policy = new SegmentCompactionPolicyWithManager(
                 new SegmentCompactionPolicy(segmentConf), segmentPropertiesManager);
-        assertFalse(policy.shouldCompactDuringWriting(10));
+        assertFalse(policy.shouldCompactDuringWriting(10, 0));
     }
 
     // 'shouldBeCompacted' is private now; compaction policy behavior

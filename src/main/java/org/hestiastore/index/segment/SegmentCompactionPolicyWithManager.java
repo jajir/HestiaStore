@@ -46,15 +46,31 @@ public final class SegmentCompactionPolicyWithManager {
      *
      * @param numberOfKeysInLastDeltaFile number of keys pending in last delta
      *                                    file
+     * @param numberOfDeltaFiles          total number of delta cache files
      * @return true if compaction is recommended during writing
      * @throws IllegalArgumentException when {@code numberOfKeysInLastDeltaFile}
-     *                                  is negative
+     *                                  or {@code numberOfDeltaFiles} is
+     *                                  negative
      */
     public boolean shouldCompactDuringWriting(
-            final long numberOfKeysInLastDeltaFile) {
+            final long numberOfKeysInLastDeltaFile,
+            final int numberOfDeltaFiles) {
         final SegmentStats stats = propertiesManager.getSegmentStats();
         return policy.shouldCompactDuringWriting(numberOfKeysInLastDeltaFile,
-                stats);
+                numberOfDeltaFiles, stats);
+    }
+
+    /**
+     * Decides whether compaction should be forced based on delta file count.
+     *
+     * @param numberOfDeltaFiles total number of delta cache files
+     * @return true if the delta file limit is exceeded
+     * @throws IllegalArgumentException when {@code numberOfDeltaFiles} is
+     *                                  negative
+     */
+    public boolean shouldForceCompactionForDeltaFiles(
+            final int numberOfDeltaFiles) {
+        return policy.shouldForceCompactionForDeltaFiles(numberOfDeltaFiles);
     }
 
     /**
