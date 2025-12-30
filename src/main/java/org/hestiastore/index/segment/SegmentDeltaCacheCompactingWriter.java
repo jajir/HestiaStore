@@ -18,7 +18,8 @@ import org.hestiastore.index.Vldtn;
 public class SegmentDeltaCacheCompactingWriter<K, V>
         extends AbstractCloseableResource implements EntryWriter<K, V> {
 
-    static final int MAX_DELTA_FILES_BEFORE_COMPACTION = 100;
+    static final int MAX_DELTA_FILES_BEFORE_OPTIONAL_COMPACTION = 100;
+    static final int MAX_DELTA_FILES_BEFORE_FORCE_COMPACTION = 1000;
 
     private final SegmentImpl<K, V> segment;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
@@ -44,11 +45,7 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
         if (deltaCacheWriter != null) {
             deltaCacheWriter.close();
             deltaCacheWriter = null;
-            if (shouldForceCompaction()) {
-                segment.forceCompact();
-            } else {
-                segment.requestOptionalCompaction();
-            }
+            requestCompactionForDeltaFiles();
         }
     }
 
@@ -60,11 +57,7 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
                 deltaCacheWriter.getNumberOfKeys())) {
             deltaCacheWriter.close();
             deltaCacheWriter = null;
-            if (shouldForceCompaction()) {
-                segment.forceCompact();
-            } else {
-                segment.requestCompaction();
-            }
+            segment.requestCompaction();
         }
     }
 
@@ -74,9 +67,16 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
         }
     }
 
-    private boolean shouldForceCompaction() {
-        return segment.getSegmentPropertiesManager().getDeltaFileCount()
-                > MAX_DELTA_FILES_BEFORE_COMPACTION;
+    private void requestCompactionForDeltaFiles() {
+        final int deltaFileCount = segment.getSegmentPropertiesManager()
+                .getDeltaFileCount();
+        if (deltaFileCount > MAX_DELTA_FILES_BEFORE_FORCE_COMPACTION) {
+            segment.requestCompaction();
+            return;
+        }
+        if (deltaFileCount > MAX_DELTA_FILES_BEFORE_OPTIONAL_COMPACTION) {
+            segment.requestOptionalCompaction();
+        }
     }
 
 }
