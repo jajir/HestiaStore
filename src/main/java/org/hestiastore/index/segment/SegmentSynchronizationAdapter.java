@@ -23,7 +23,8 @@ public class SegmentSynchronizationAdapter<K, V> extends AbstractCloseableResour
         implements Segment<K, V> {
 
     private final Segment<K, V> delegate;
-    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(
+            true);
     private final Lock readLock = lock.readLock();
     private final Lock writeLock = lock.writeLock();
     private final AtomicBoolean compactionScheduled = new AtomicBoolean(false);
@@ -196,6 +197,16 @@ public class SegmentSynchronizationAdapter<K, V> extends AbstractCloseableResour
         writeLock.lock();
         try {
             delegate.flush();
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    @Override
+    public void optionalyFlush() {
+        writeLock.lock();
+        try {
+            delegate.optionalyFlush();
         } finally {
             writeLock.unlock();
         }

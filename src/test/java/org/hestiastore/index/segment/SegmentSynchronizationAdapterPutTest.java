@@ -22,4 +22,14 @@ class SegmentSynchronizationAdapterPutTest {
 
         verify(delegate).put(1, "A");
     }
+
+    @Test
+    void optionalyFlush_delegates_to_underlying_segment() {
+        try (SegmentSynchronizationAdapter<Integer, String> adapter = new SegmentSynchronizationAdapter<>(
+                delegate)) {
+            adapter.optionalyFlush();
+        }
+
+        verify(delegate).optionalyFlush();
+    }
 }

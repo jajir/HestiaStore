@@ -9,8 +9,8 @@ import org.hestiastore.index.chunkstore.ChunkFilter;
  * <p>
  * Encapsulates key/value types, index name, segment sizing and caching limits,
  * Bloom filter parameters, disk I/O buffer size, logging switches, and the
- * chunk encoding/decoding filter pipeline. Instances are created via the
- * fluent {@link IndexConfigurationBuilder}.
+ * chunk encoding/decoding filter pipeline. Instances are created via the fluent
+ * {@link IndexConfigurationBuilder}.
  *
  * @param <K> key type
  * @param <V> value type
@@ -80,8 +80,7 @@ public class IndexConfiguration<K, V> {
             final Integer bloomFilterNumberOfHashFunctions, //
             final Integer bloomFilterIndexSizeInBytes, //
             final Double bloomFilterProbabilityOfFalsePositive, //
-            final Integer diskIoBufferSize,
-            final Boolean contextLoggingEnabled,
+            final Integer diskIoBufferSize, final Boolean contextLoggingEnabled,
             final Integer numberOfThreads, final Integer numberOfIoThreads,
             final List<ChunkFilter> encodingChunkFilters,
             final List<ChunkFilter> decodingChunkFilters) {
@@ -118,6 +117,7 @@ public class IndexConfiguration<K, V> {
         return maxNumberOfKeysInSegmentCache;
     }
 
+    @Deprecated
     public Integer getMaxNumberOfKeysInSegmentWriteCache() {
         /**
          * Returns the maximum number of keys held in the segment write cache

@@ -80,7 +80,8 @@ class IntegrationIteratorTest extends AbstractSegmentIndexTest {
 
         verifyIndexData(index, Arrays.asList(//
                 Entry.of("a", 20), //
-                Entry.of("c", 40) //
+                Entry.of("c", 40), //
+                Entry.of("e", 28) //
         ));
     }
 
@@ -96,11 +97,12 @@ class IntegrationIteratorTest extends AbstractSegmentIndexTest {
                 Entry.of("g", 13) //
         ));
 
-        // verify that added value is not in iterator
+        // verify that added value is in iterator
         verifyIndexData(index, Arrays.asList(//
                 Entry.of("a", 20), //
                 Entry.of("b", 30), //
-                Entry.of("c", 40)//
+                Entry.of("c", 40), //
+                Entry.of("g", 13) //
         ));
     }
 

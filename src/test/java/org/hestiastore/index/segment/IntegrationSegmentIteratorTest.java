@@ -102,4 +102,21 @@ class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
         }
     }
 
+    @Test
+    void test_case_6_compact_includes_write_cache_and_clears_it() {
+        segment.put("g", 13);
+        segment.forceCompact();
+
+        verifySegmentSearch(segment,
+                Arrays.asList(Entry.of("a", 25), Entry.of("c", 40),
+                        Entry.of("e", 28), Entry.of("g", 13)));
+        verifySegmentData(segment,
+                Arrays.asList(Entry.of("a", 25), Entry.of("c", 40),
+                        Entry.of("e", 28), Entry.of("g", 13)));
+
+        final SegmentImpl<String, Integer> impl = (SegmentImpl<String, Integer>) segment;
+        assertTrue(impl.getSegmentCache().getWriteCacheAsSortedList()
+                .isEmpty());
+    }
+
 }

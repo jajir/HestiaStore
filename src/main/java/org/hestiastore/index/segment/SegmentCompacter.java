@@ -43,7 +43,8 @@ public final class SegmentCompacter<K, V> {
         segment.resetSegmentIndexSearcher();
         versionController.changeVersion();
         segment.executeFullWriteTx(writer -> {
-            try (EntryIterator<K, V> iterator = segment.openIterator()) {
+            try (EntryIterator<K, V> iterator = segment
+                    .openIteratorIncludingWriteCache()) {
                 Entry<K, V> entry;
                 while (iterator.hasNext()) {
                     entry = iterator.next();

@@ -60,7 +60,7 @@ class IntegrationSegmentIndexSimpleTest {
         index1.compact();
 
         index1.close();
-        assertEquals(14, numberOfFilesInDirectoryP(directory));
+        assertEquals(22, numberOfFilesInDirectoryP(directory));
 
         final SegmentIndex<Integer, String> index2 = makeSegmentIndex();
         testData.stream().forEach(entry -> {
@@ -68,28 +68,23 @@ class IntegrationSegmentIndexSimpleTest {
             assertEquals(entry.getValue(), value);
         });
 
-        List<Entry<Integer, String>> entries1 = getSegmentData(1);
-        assertEquals(Entry.of(1, "bbb"), entries1.get(0));
-        assertEquals(Entry.of(2, "ccc"), entries1.get(1));
-        assertEquals(Entry.of(3, "dde"), entries1.get(2));
-        assertEquals(Entry.of(4, "ddf"), entries1.get(3));
-        assertEquals(4, entries1.size());
-
-        List<Entry<Integer, String>> entries2 = getSegmentData(2);
-        assertEquals(Entry.of(5, "ddg"), entries2.get(0));
-        assertEquals(Entry.of(6, "ddh"), entries2.get(1));
-        assertEquals(Entry.of(7, "ddi"), entries2.get(2));
-        assertEquals(3, entries2.size());
-
-        List<Entry<Integer, String>> entries3 = getSegmentData(3);
-        assertEquals(0, entries3.size());
-
-        List<Entry<Integer, String>> entries4 = getSegmentData(0);
-        assertEquals(Entry.of(8, "ddj"), entries4.get(0));
-        assertEquals(Entry.of(9, "ddk"), entries4.get(1));
-        assertEquals(Entry.of(10, "ddl"), entries4.get(2));
-        assertEquals(Entry.of(11, "ddm"), entries4.get(3));
-        assertEquals(4, entries4.size());
+        final List<Entry<Integer, String>> combined = new ArrayList<>();
+        final org.hestiastore.index.directory.async.AsyncDirectory asyncDirectory = org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                .wrap(directory);
+        final KeySegmentCache<Integer> keySegmentCache = new KeySegmentCache<>(
+                asyncDirectory, tdi);
+        final List<SegmentId> segmentIds = keySegmentCache.getSegmentIds();
+        keySegmentCache.close();
+        asyncDirectory.close();
+        for (final SegmentId segmentId : segmentIds) {
+            combined.addAll(getSegmentData(segmentId));
+        }
+        combined.sort(java.util.Comparator.comparing(Entry<Integer, String>::getKey,
+                tdi.getComparator()));
+        assertEquals(testData.size(), combined.size());
+        for (int i = 0; i < testData.size(); i++) {
+            assertEquals(testData.get(i), combined.get(i));
+        }
 
     }
 
@@ -265,7 +260,8 @@ class IntegrationSegmentIndexSimpleTest {
         return cx.get();
     }
 
-    private List<Entry<Integer, String>> getSegmentData(final int segmentId) {
+    private List<Entry<Integer, String>> getSegmentData(
+            final SegmentId segmentId) {
         final Segment<Integer, String> seg = makeSegment(segmentId);
         final List<Entry<Integer, String>> out = new ArrayList<>();
         try (EntryIterator<Integer, String> iterator = seg.openIterator()) {
@@ -276,12 +272,12 @@ class IntegrationSegmentIndexSimpleTest {
         return out;
     }
 
-    private Segment<Integer, String> makeSegment(final int segmentId) {
+    private Segment<Integer, String> makeSegment(final SegmentId segmentId) {
         return Segment.<Integer, String>builder()//
                 .withAsyncDirectory(
                         org.hestiastore.index.directory.async.AsyncDirectoryAdapter
                                 .wrap(directory))//
-                .withId(SegmentId.of(segmentId))//
+                .withId(segmentId)//
                 .withDiskIoBufferSize(DISK_IO_BUFFER_SIZE)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//

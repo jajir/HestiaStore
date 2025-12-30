@@ -1,7 +1,5 @@
 package org.hestiastore.index.segmentindex;
 
-import java.util.List;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -10,11 +8,11 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.F;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.cache.UniqueCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentSynchronizationAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,13 +23,11 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final IndexConfiguration<K, V> conf;
     protected final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
-    final WriteCache<K, V> writeCache;
     private final KeySegmentCache<K> keySegmentCache;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentSplitCoordinator<K, V> segmentSplitCoordinator;
     private final Stats stats = new Stats();
     private volatile IndexState<K, V> indexState;
-    private final ReentrantLock flushLock = new ReentrantLock();
 
     protected SegmentIndexImpl(final AsyncDirectory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
@@ -44,9 +40,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
         this.conf = Vldtn.requireNonNull(conf, "conf");
-        this.writeCache = new WriteCache<>(
-                this.keyTypeDescriptor.getComparator(),
-                conf.getMaxNumberOfKeysInCache());
         this.keySegmentCache = new KeySegmentCache<>(directoryFacade,
                 keyTypeDescriptor);
         this.segmentRegistry = new SegmentRegistrySynchronized<>(
@@ -68,9 +61,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     "Can't insert thombstone value '%s' into index", value));
         }
 
-        writeCache.put(Entry.of(key, value));
-
-        flushCacheIfNeeded();
+        writeWithRetry(key, value);
     }
 
     @Override
@@ -100,64 +91,16 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         }
         final EntryIterator<K, V> segmentIterator = new SegmentsIterator<>(
                 keySegmentCache.getSegmentIds(segmentWindows), segmentRegistry);
-        final EntryIterator<K, V> iterratorFreshedFromCache = new EntryIteratorRefreshedFromCache<>(
-                segmentIterator, writeCache.getActiveCache(),
-                writeCache.getFlushingCache(), valueTypeDescriptor);
         if (conf.isContextLoggingEnabled()) {
-            return new EntryIteratorLoggingContext<>(iterratorFreshedFromCache,
-                    conf);
+            return new EntryIteratorLoggingContext<>(segmentIterator, conf);
         } else {
-            return iterratorFreshedFromCache;
-        }
-    }
-
-    void flushCacheIfNeeded() {
-        if (writeCache.activeSize() > conf.getMaxNumberOfKeysInCache()) {
-            flushCache();
-        }
-    }
-
-    protected void flushCache() {
-        flushLock.lock();
-        try {
-            final UniqueCache<K, V> toFlush = writeCache.swapForFlush();
-            final List<Entry<K, V>> snapshot = toFlush.getAsSortedList();
-            if (logger.isDebugEnabled()) {
-                logger.debug(
-                        "Cache compacting of '{}' key value entries in cache started.",
-                        F.fmt(snapshot.size()));
-            }
-            final CompactSupport<K, V> compactSupport = new CompactSupport<>(
-                    segmentRegistry, keySegmentCache,
-                    keyTypeDescriptor.getComparator());
-            snapshot.forEach(compactSupport::compact);
-            compactSupport.flush();
-            final List<SegmentId> segmentIds = compactSupport
-                    .getEligibleSegmentIds();
-            for (final SegmentId segmentId : segmentIds) {
-                final Segment<K, V> segment = segmentRegistry
-                        .getSegment(segmentId);
-                if (segmentSplitCoordinator.shouldBeSplit(segment)) {
-                    segmentSplitCoordinator.optionallySplit(segment);
-                }
-            }
-            toFlush.clear();
-            keySegmentCache.optionalyFlush();
-            if (logger.isDebugEnabled()) {
-                logger.debug(
-                        "Cache compacting is done. Cache contains '{}' key value entries.",
-                        F.fmt(writeCache.activeSize()));
-            }
-        } finally {
-            writeCache.clearFlushing();
-            flushLock.unlock();
+            return segmentIterator;
         }
     }
 
     @Override
     public void compact() {
         getIndexState().tryPerformOperation();
-        flushCache();
         keySegmentCache.getSegmentIds().forEach(segmentId -> {
             final Segment<K, V> seg = segmentRegistry.getSegment(segmentId);
             seg.forceCompact();
@@ -169,14 +112,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         getIndexState().tryPerformOperation();
         Vldtn.requireNonNull(key, "key");
         stats.incGetCx();
-
-        final V cachedWrite = writeCache.get(key);
-        if (cachedWrite != null) {
-            if (valueTypeDescriptor.isTombstone(cachedWrite)) {
-                return null;
-            }
-            return cachedWrite;
-        }
 
         return getFromSegment(key);
     }
@@ -197,14 +132,58 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         return segment.get(key);
     }
 
+    private void writeWithRetry(final K key, final V value) {
+        while (true) {
+            KeySegmentCache.Snapshot<K> snapshot = keySegmentCache.snapshot();
+            SegmentId segmentId = snapshot.findSegmentId(key);
+            if (segmentId == null) {
+                if (!keySegmentCache.tryExtendMaxKey(key, snapshot)) {
+                    continue;
+                }
+                snapshot = keySegmentCache.snapshot();
+                segmentId = snapshot.findSegmentId(key);
+                if (segmentId == null) {
+                    continue;
+                }
+            }
+            final Segment<K, V> segment = segmentRegistry.getSegment(segmentId);
+            final boolean written = writeIntoSegment(segment, key, value,
+                    segmentId, snapshot.version());
+            if (!written) {
+                continue;
+            }
+            segment.optionalyFlush();
+            segmentSplitCoordinator.optionallySplit(segment);
+            return;
+        }
+    }
+
+    private boolean writeIntoSegment(final Segment<K, V> segment, final K key,
+            final V value, final SegmentId segmentId,
+            final long mappingVersion) {
+        if (segment instanceof SegmentSynchronizationAdapter<K, V> adapter) {
+            return Boolean.TRUE.equals(adapter.executeWithWriteLock(() -> {
+                if (!keySegmentCache.isMappingValid(key, segmentId,
+                        mappingVersion)) {
+                    return Boolean.FALSE;
+                }
+                segment.put(key, value);
+                return Boolean.TRUE;
+            }));
+        }
+        if (!keySegmentCache.isMappingValid(key, segmentId, mappingVersion)) {
+            return false;
+        }
+        segment.put(key, value);
+        return true;
+    }
+
     @Override
     public void delete(final K key) {
         getIndexState().tryPerformOperation();
         Vldtn.requireNonNull(key, "key");
         stats.incDeleteCx();
-
-        writeCache.put(Entry.of(key, valueTypeDescriptor.getTombstone()));
-        flushCacheIfNeeded();
+        writeWithRetry(key, valueTypeDescriptor.getTombstone());
     }
 
     @Override
@@ -225,9 +204,10 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     @Override
     protected void doClose() {
-        flushCache();
         getIndexState().onClose(this);
+        flushSegments();
         segmentRegistry.close();
+        keySegmentCache.optionalyFlush();
         if (logger.isDebugEnabled()) {
             logger.debug(String.format(
                     "Index is closing, where was %s gets, %s puts and %s deletes.",
@@ -246,7 +226,15 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     @Override
     public void flush() {
-        flushCache();
+        flushSegments();
+        keySegmentCache.optionalyFlush();
+    }
+
+    private void flushSegments() {
+        keySegmentCache.getSegmentIds().forEach(segmentId -> {
+            final Segment<K, V> segment = segmentRegistry.getSegment(segmentId);
+            segment.flush();
+        });
     }
 
     protected void invalidateSegmentIterators() {

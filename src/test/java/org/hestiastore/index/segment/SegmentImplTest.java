@@ -9,10 +9,8 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -208,8 +206,7 @@ class SegmentImplTest {
 
     @Test
     void put_writes_to_segment_cache_and_bumps_version() {
-        when(deltaCache.getAsSortedList())
-                .thenReturn(List.of(Entry.of(1, "A")));
+        subject.getSegmentCache().putToDeltaCache(Entry.of(1, "A"));
 
         subject.put(2, "B");
 
@@ -230,8 +227,9 @@ class SegmentImplTest {
     }
 
     @Test
-    void flush_noop_when_cache_not_initialized() {
-        final SegmentImpl<Integer, String> spy = spy(subject);
+    void flush_noop_when_write_cache_empty() {
+        final SegmentImpl<Integer, String> spy = org.mockito.Mockito
+                .spy(subject);
 
         spy.flush();
 
@@ -239,31 +237,37 @@ class SegmentImplTest {
     }
 
     @Test
-    void flush_writes_entries_and_clears_write_cache() {
-        final SegmentImpl<Integer, String> spy = spy(subject);
-        final EntryWriter<Integer, String> writer = org.mockito.Mockito
-                .mock(EntryWriter.class);
-        doReturn(writer).when(spy).openDeltaCacheWriter();
+    void optionalyFlush_noop_when_write_cache_empty() {
+        final SegmentImpl<Integer, String> spy = org.mockito.Mockito
+                .spy(subject);
 
-        spy.put(2, "B");
-        spy.put(1, "A");
+        spy.optionalyFlush();
 
-        spy.flush();
-
-        verify(writer).write(Entry.of(1, "A"));
-        verify(writer).write(Entry.of(2, "B"));
-        verify(writer).close();
-
-        final SegmentCache<Integer, String> cache = spy.getSegmentCache();
-        assertEquals(List.of(Entry.of(1, "A"), Entry.of(2, "B")),
-                cache.getAsSortedList());
-        assertEquals(0, cache.getWriteCacheAsSortedList().size());
+        verify(spy, never()).openDeltaCacheWriter();
     }
 
     @Test
-    void get_uses_searcher_and_provider() {
+    void get_uses_segment_cache_when_present() {
+        subject.getSegmentCache().putToDeltaCache(Entry.of(123, "val"));
+
+        assertEquals("val", subject.get(123));
+        verify(segmentSearcher, never()).get(any(), any(), any());
+    }
+
+    @Test
+    void get_returns_null_for_tombstone_without_search() {
+        subject.getSegmentCache()
+                .putToDeltaCache(Entry.of(123, tds.getTombstone()));
+
+        assertNull(subject.get(123));
+        verify(segmentSearcher, never()).get(any(), any(), any());
+    }
+
+    @Test
+    void get_falls_back_to_searcher_on_cache_miss() {
         when(segmentSearcher.get(eq(123), eq(segmentDataProvider), any()))
                 .thenReturn("val");
+
         assertEquals("val", subject.get(123));
         verify(segmentSearcher).get(eq(123), eq(segmentDataProvider), any());
     }

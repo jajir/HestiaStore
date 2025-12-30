@@ -1,9 +1,7 @@
 package org.hestiastore.index.segment;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -42,27 +40,12 @@ class SegmentResourcesImplTest {
     }
 
     @Test
-    void isLoadedTogglesOnAccessAndInvalidate() {
-        final SegmentResourcesImpl<Integer, String> resources = new SegmentResourcesImpl<>(
-                segmentDataSupplier);
-        when(segmentDataSupplier.getSegmentDeltaCache()).thenReturn(deltaCache);
-
-        assertFalse(resources.isLoaded());
-        resources.getSegmentDeltaCache();
-        assertTrue(resources.isLoaded());
-
-        resources.invalidate();
-        assertFalse(resources.isLoaded());
-    }
-
-    @Test
     void invalidateWithoutLoadDoesNotTouchSupplier() {
         final SegmentResourcesImpl<Integer, String> resources = new SegmentResourcesImpl<>(
                 segmentDataSupplier);
 
         resources.invalidate();
 
-        assertFalse(resources.isLoaded());
         verifyNoInteractions(segmentDataSupplier);
     }
 

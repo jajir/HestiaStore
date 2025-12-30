@@ -65,13 +65,19 @@ public class IndexConfigurationManager<K, V> {
             builder.withMaxNumberOfKeysInSegment(
                     defaults.getMaxNumberOfKeysInSegment());
         }
+        final int effectiveMaxNumberOfKeysInSegmentCache = conf
+                .getMaxNumberOfKeysInSegmentCache() == null
+                        ? defaults.getMaxNumberOfKeysInSegmentCache()
+                        : conf.getMaxNumberOfKeysInSegmentCache();
         if (conf.getMaxNumberOfKeysInSegmentCache() == null) {
             builder.withMaxNumberOfKeysInSegmentCache(
-                    defaults.getMaxNumberOfKeysInSegmentCache());
+                    effectiveMaxNumberOfKeysInSegmentCache);
         }
         if (conf.getMaxNumberOfKeysInSegmentWriteCache() == null) {
+            final int effectiveWriteCacheSize = Math.max(1,
+                    effectiveMaxNumberOfKeysInSegmentCache / 2);
             builder.withMaxNumberOfKeysInSegmentWriteCache(
-                    defaults.getMaxNumberOfKeysInSegmentWriteCache());
+                    effectiveWriteCacheSize);
         }
         if (conf.getMaxNumberOfKeysInSegmentCacheDuringFlushing() == null) {
             builder.withMaxNumberOfKeysInSegmentCacheDuringFlushing(
