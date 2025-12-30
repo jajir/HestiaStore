@@ -1,0 +1,76 @@
+package org.hestiastore.index.segment;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.datatype.TypeDescriptorInteger;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
+import org.junit.jupiter.api.Test;
+
+class SegmentCacheAsyncAdapterTest {
+
+    private final TypeDescriptorInteger keyType = new TypeDescriptorInteger();
+    private final TypeDescriptorShortString valueType = new TypeDescriptorShortString();
+
+    @Test
+    void adapter_delegates_to_segment_cache() {
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                keyType.getComparator(), valueType);
+        final SegmentCacheAsyncAdapter<Integer, String> adapter = new SegmentCacheAsyncAdapter<>(
+                cache);
+
+        adapter.putToDeltaCache(1, "A");
+        adapter.put(2, "B");
+
+        assertEquals("A", adapter.get(1));
+        assertEquals(2, adapter.size());
+        assertEquals(2, adapter.sizeWithoutTombstones());
+        assertEquals(List.of(Entry.of(1, "A"), Entry.of(2, "B")),
+                adapter.getAsSortedList());
+    }
+
+    @Test
+    void adapter_supports_concurrent_writes() throws Exception {
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                keyType.getComparator(), valueType);
+        final SegmentCacheAsyncAdapter<Integer, String> adapter = new SegmentCacheAsyncAdapter<>(
+                cache);
+
+        final int threads = 4;
+        final int perThread = 25;
+        final CountDownLatch startLatch = new CountDownLatch(1);
+        final CountDownLatch doneLatch = new CountDownLatch(threads);
+        final ExecutorService executor = Executors.newFixedThreadPool(threads);
+        try {
+            for (int t = 0; t < threads; t++) {
+                final int offset = t * perThread;
+                executor.execute(() -> {
+                    try {
+                        startLatch.await();
+                        for (int i = 0; i < perThread; i++) {
+                            adapter.put(offset + i, "v" + (offset + i));
+                        }
+                    } catch (InterruptedException ex) {
+                        Thread.currentThread().interrupt();
+                    } finally {
+                        doneLatch.countDown();
+                    }
+                });
+            }
+            startLatch.countDown();
+            final boolean completed = doneLatch.await(5, TimeUnit.SECONDS);
+            assertTrue(completed);
+        } finally {
+            executor.shutdownNow();
+        }
+
+        assertEquals(threads * perThread, adapter.size());
+    }
+}
