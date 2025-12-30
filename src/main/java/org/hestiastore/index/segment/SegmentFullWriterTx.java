@@ -15,6 +15,7 @@ public class SegmentFullWriterTx<K, V>
     private final int maxNumberOfKeysInIndexPage;
     private final SegmentResources<K, V> segmentDataProvider;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
+    private final SegmentCache<K, V> segmentCache;
     private final ChunkEntryFileWriterTx<K, V> chunkPairFileWriterTx;
     private final ScarceIndexWriterTx<K> scarceIndexWriterTx;
     private SegmentFullWriter<K, V> segmentFullWriter;
@@ -23,7 +24,8 @@ public class SegmentFullWriterTx<K, V>
             final SegmentPropertiesManager propertiesManager,
             final int maxNumberOfKeysInIndexPage,
             final SegmentResources<K, V> dataProvider,
-            final SegmentDeltaCacheController<K, V> deltaCacheController) {
+            final SegmentDeltaCacheController<K, V> deltaCacheController,
+            final SegmentCache<K, V> segmentCache) {
         this.segmentPropertiesManager = Vldtn.requireNonNull(propertiesManager,
                 "segmentPropertiesManager");
         this.maxNumberOfKeysInIndexPage = maxNumberOfKeysInIndexPage;
@@ -31,6 +33,7 @@ public class SegmentFullWriterTx<K, V>
                 "segmentCacheDataProvider");
         this.deltaCacheController = Vldtn.requireNonNull(deltaCacheController,
                 "deltaCacheController");
+        this.segmentCache = Vldtn.requireNonNull(segmentCache, "segmentCache");
         this.chunkPairFileWriterTx = segmentFiles.getIndexFile().openWriterTx();
         this.scarceIndexWriterTx = segmentFiles.getScarceIndex().openWriterTx();
     }
@@ -49,6 +52,7 @@ public class SegmentFullWriterTx<K, V>
         scarceIndexWriterTx.commit();
         chunkPairFileWriterTx.commit();
         deltaCacheController.clear();
+        segmentCache.evictAll();
 
         segmentPropertiesManager.setNumberOfKeysInCache(0);
         segmentPropertiesManager

@@ -6,6 +6,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentSplitterPlan;
 import org.hestiastore.index.segment.SegmentSplitterPolicy;
 import org.hestiastore.index.segment.SegmentSplitterResult;
+import org.hestiastore.index.segment.SegmentSynchronizationAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,14 +72,29 @@ public class SegmentSplitCoordinator<K, V> {
             final SegmentSplitterPlan<K, V> plan) {
         final SegmentId segmentId = segment.getId();
         logger.debug("Splitting of '{}' started.", segmentId);
+        if (segment instanceof SegmentSynchronizationAdapter<K, V> adapter) {
+            return adapter.executeWithWriteLock(() -> {
+                return doSplit(segment, plan);
+            });
+        }
+        return doSplit(segment, plan);
+    }
+
+    private boolean doSplit(final Segment<K, V> segment,
+            final SegmentSplitterPlan<K, V> plan) {
+        final SegmentId segmentId = segment.getId();
         final SegmentId newSegmentId = keySegmentCache.findNewSegmentId();
         final SegmentSplitterResult<K, V> result = segment.split(newSegmentId,
                 plan);
         if (result.isSplit()) {
             keySegmentCache.insertSegment(result.getMaxKey(), newSegmentId);
+            keySegmentCache.optionalyFlush();
             logger.debug("Splitting of segment '{}' to '{}' is done.",
                     segmentId, newSegmentId);
         } else {
+            keySegmentCache.updateSegmentMaxKey(segmentId,
+                    result.getMaxKey());
+            keySegmentCache.optionalyFlush();
             logger.debug(
                     "Splitting of segment '{}' is done, "
                             + "but at the end it was compacting.",

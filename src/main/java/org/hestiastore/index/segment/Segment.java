@@ -142,6 +142,13 @@ public interface Segment<K, V>
     void flush();
 
     /**
+     * Optionally flushes the in-memory segment write cache into the delta
+     * cache when thresholds are reached. Implementations may be a no-op if no
+     * write cache is present.
+     */
+    void optionalyFlush();
+
+    /**
      * Performs a point lookup of a key in this segment, considering both the
      * delta cache and the on-disk index.
      *

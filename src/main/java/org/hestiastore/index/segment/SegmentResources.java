@@ -14,13 +14,6 @@ import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
  */
 public interface SegmentResources<K, V> {
 
-    /**
-     * Provide information if data are loaded into memory.
-     * 
-     * @return
-     */
-    boolean isLoaded();
-
     SegmentDeltaCache<K, V> getSegmentDeltaCache();
 
     BloomFilter<K> getBloomFilter();

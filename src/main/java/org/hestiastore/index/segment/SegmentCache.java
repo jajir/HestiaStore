@@ -36,9 +36,11 @@ public final class SegmentCache<K, V> {
                 "valueTypeDescriptor");
         this.deltaCache = UniqueCache.<K, V>builder()
                 .withKeyComparator(keyComparator)
+                .withThreadSafe(true)
                 .buildEmpty();
         this.writeCache = UniqueCache.<K, V>builder()
                 .withKeyComparator(keyComparator)
+                .withThreadSafe(true)
                 .buildEmpty();
         if (deltaEntries != null) {
             for (final Entry<K, V> entry : deltaEntries) {

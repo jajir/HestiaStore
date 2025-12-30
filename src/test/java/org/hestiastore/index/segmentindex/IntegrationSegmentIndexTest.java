@@ -81,8 +81,8 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
      * @param iterations @
      */
     @ParameterizedTest
-    @CsvSource(value = { "1:0", "3:0", "5:4", "15:12", "100:100",
-            "102:100" }, delimiter = ':')
+    @CsvSource(value = { "1:1", "3:3", "5:5", "15:15", "100:100",
+            "102:102" }, delimiter = ':')
     void test_adds_and_deletes_operations_no_compacting(final int iterations,
             final int itemsInIndex) {
         final SegmentIndex<Integer, String> index = makeSegmentIndex(false);

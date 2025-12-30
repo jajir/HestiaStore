@@ -105,8 +105,7 @@ class SegmentDeltaCacheWriterTest {
     // below
 
     @Test
-    void write_increments_counter_and_updates_cache_when_loaded() {
-        when(dataProvider.isLoaded()).thenReturn(true);
+    void write_increments_counter_and_updates_cache() {
         when(dataProvider.getSegmentDeltaCache()).thenReturn(segmentDeltaCache);
 
         final SegmentDeltaCacheWriter<Integer, String> writer = newWriter(10);
@@ -118,17 +117,8 @@ class SegmentDeltaCacheWriterTest {
     }
 
     @Test
-    void write_does_not_touch_cache_when_not_loaded() {
-        when(dataProvider.isLoaded()).thenReturn(false);
-
-        final SegmentDeltaCacheWriter<Integer, String> writer = newWriter(10);
-        writer.write(Entry.of(3, "C"));
-        // when not loaded, provider's delta cache is not queried
-        verify(dataProvider, never()).getSegmentDeltaCache();
-    }
-
-    @Test
     void close_writes_sorted_unique_entries_and_updates_properties() {
+        when(dataProvider.getSegmentDeltaCache()).thenReturn(segmentDeltaCache);
         final java.util.List<Entry<Integer, String>> written = new java.util.ArrayList<>();
         stubWriteTransactionToCaptureWrites(written);
         when(propertiesManager.getNextDeltaFileName())

@@ -124,9 +124,7 @@ public final class SegmentDeltaCacheWriter<K, V>
     public void write(Entry<K, V> entry) {
         uniqueCache.put(entry);
         cx++;
-        if (segmentCacheDataProvider.isLoaded()) {
-            segmentCacheDataProvider.getSegmentDeltaCache().put(entry);
-        }
+        segmentCacheDataProvider.getSegmentDeltaCache().put(entry);
     }
 
 }

@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Stream;
@@ -50,11 +52,13 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
     public static final SegmentId FIRST_SEGMENT_ID = SegmentId.of(0);
 
     private TreeMap<K, SegmentId> list;
+    private volatile TreeMap<K, SegmentId> snapshot;
     private final SortedDataFile<K, SegmentId> sdf;
     private final Comparator<K> keyComparator;
     private boolean isDirty = false;
+    private final AtomicInteger nextSegmentId;
+    private final AtomicLong version = new AtomicLong(0);
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    private final Lock readLock = lock.readLock();
     private final Lock writeLock = lock.writeLock();
 
     KeySegmentCache(final AsyncDirectory directoryFacade,
@@ -78,64 +82,90 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
                 list.put(entry.getKey(), entry.getValue());
             }
         }
+        this.snapshot = new TreeMap<>(list);
         checkUniqueSegmentIds();
+        this.nextSegmentId = new AtomicInteger(
+                list.values().stream().mapToInt(SegmentId::getId).max()
+                        .orElse(-1) + 1);
     }
 
     /**
      * Verify, that all segment ids are unique.
      */
     public void checkUniqueSegmentIds() {
-        readLock.lock();
-        try {
-            final HashMap<SegmentId, K> tmp = new HashMap<SegmentId, K>();
-            final AtomicBoolean fail = new AtomicBoolean(false);
-            list.forEach((key, segmentId) -> {
-                final K oldKey = tmp.get(segmentId);
-                if (oldKey == null) {
-                    tmp.put(segmentId, key);
-                } else {
-                    logger.error(String.format(
-                            "Segment id '%s' is used for segment with "
-                                    + "key '%s' and segment with key '%s'.",
-                            segmentId, key, oldKey));
-                    fail.set(true);
-                }
-            });
-            if (fail.get()) {
-                throw new IllegalStateException(
-                        "Unable to load scarce index, sanity check failed.");
+        final TreeMap<K, SegmentId> current = snapshot;
+        final HashMap<SegmentId, K> tmp = new HashMap<SegmentId, K>();
+        final AtomicBoolean fail = new AtomicBoolean(false);
+        current.forEach((key, segmentId) -> {
+            final K oldKey = tmp.get(segmentId);
+            if (oldKey == null) {
+                tmp.put(segmentId, key);
+            } else {
+                logger.error(String.format(
+                        "Segment id '%s' is used for segment with "
+                                + "key '%s' and segment with key '%s'.",
+                        segmentId, key, oldKey));
+                fail.set(true);
             }
-        } finally {
-            readLock.unlock();
+        });
+        if (fail.get()) {
+            throw new IllegalStateException(
+                    "Unable to load scarce index, sanity check failed.");
         }
     }
 
     public SegmentId findSegmentId(final K key) {
         Vldtn.requireNonNull(key, "key");
-        readLock.lock();
-        try {
-            final Entry<K, SegmentId> entry = localFindSegmentForKey(key);
-            return entry == null ? null : entry.getValue();
-        } finally {
-            readLock.unlock();
+        final Entry<K, SegmentId> entry = localFindSegmentForKey(key, snapshot);
+        return entry == null ? null : entry.getValue();
+    }
+
+    Snapshot<K> snapshot() {
+        return new Snapshot<>(snapshot, version.get());
+    }
+
+    boolean isMappingValid(final K key, final SegmentId expectedSegmentId,
+            final long expectedVersion) {
+        Vldtn.requireNonNull(key, "key");
+        Vldtn.requireNonNull(expectedSegmentId, "expectedSegmentId");
+        if (version.get() == expectedVersion) {
+            return true;
         }
+        final SegmentId current = findSegmentId(key);
+        return expectedSegmentId.equals(current);
     }
 
     public SegmentId findNewSegmentId() {
-        readLock.lock();
+        return SegmentId.of(nextSegmentId.getAndIncrement());
+    }
+
+    boolean tryExtendMaxKey(final K key, final Snapshot<K> snapshot) {
+        Vldtn.requireNonNull(key, "key");
+        Vldtn.requireNonNull(snapshot, "snapshot");
+        writeLock.lock();
         try {
+            if (version.get() != snapshot.version()) {
+                return false;
+            }
             if (list.isEmpty()) {
-                return SegmentId.of(0);
+                list.put(key, FIRST_SEGMENT_ID);
+                nextSegmentId.updateAndGet(
+                        current -> Math.max(current,
+                                FIRST_SEGMENT_ID.getId() + 1));
+                refreshSnapshot();
+                isDirty = true;
+                return true;
             }
-            int maxId = Integer.MIN_VALUE;
-            for (SegmentId sid : list.values()) {
-                if (sid.getId() > maxId) {
-                    maxId = sid.getId();
-                }
+            final Map.Entry<K, SegmentId> lastEntry = list.lastEntry();
+            if (keyComparator.compare(key, lastEntry.getKey()) > 0) {
+                list.remove(lastEntry.getKey());
+                list.put(key, lastEntry.getValue());
+                refreshSnapshot();
+                isDirty = true;
             }
-            return SegmentId.of(maxId + 1);
+            return true;
         } finally {
-            readLock.unlock();
+            writeLock.unlock();
         }
     }
 
@@ -143,7 +173,7 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
         Vldtn.requireNonNull(key, "key");
         writeLock.lock();
         try {
-            final Entry<K, SegmentId> entry = localFindSegmentForKey(key);
+            final Entry<K, SegmentId> entry = localFindSegmentForKey(key, list);
             if (entry == null) {
                 /*
                  * Key is bigger that all key so it will at last segment. But key at
@@ -160,9 +190,10 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
         }
     }
 
-    private Entry<K, SegmentId> localFindSegmentForKey(final K key) {
+    private Entry<K, SegmentId> localFindSegmentForKey(final K key,
+            final TreeMap<K, SegmentId> source) {
         Vldtn.requireNonNull(key, "key");
-        final Map.Entry<K, SegmentId> ceilingEntry = list.ceilingEntry(key);
+        final Map.Entry<K, SegmentId> ceilingEntry = source.ceilingEntry(key);
         if (ceilingEntry == null) {
             return null;
         } else {
@@ -173,6 +204,9 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
     private SegmentId updateMaxKey(final K key) {
         if (list.size() == 0) {
             list.put(key, FIRST_SEGMENT_ID);
+            refreshSnapshot();
+            nextSegmentId.updateAndGet(
+                    current -> Math.max(current, FIRST_SEGMENT_ID.getId() + 1));
             return FIRST_SEGMENT_ID;
         } else {
             final Entry<K, SegmentId> max = Entry.of(list.lastEntry().getKey(),
@@ -180,6 +214,7 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
             list.remove(max.getKey());
             final Entry<K, SegmentId> newMax = Entry.of(key, max.getValue());
             list.put(newMax.getKey(), newMax.getValue());
+            refreshSnapshot();
             return newMax.getValue();
         }
     }
@@ -193,6 +228,38 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
                         "Segment id '%s' already exists", segmentId));
             }
             list.put(key, segmentId);
+            refreshSnapshot();
+            isDirty = true;
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    void updateSegmentMaxKey(final SegmentId segmentId, final K newMaxKey) {
+        Vldtn.requireNonNull(segmentId, "segmentId");
+        Vldtn.requireNonNull(newMaxKey, "newMaxKey");
+        writeLock.lock();
+        try {
+            Map.Entry<K, SegmentId> existing = null;
+            for (final Map.Entry<K, SegmentId> entry : list.entrySet()) {
+                if (segmentId.equals(entry.getValue())) {
+                    existing = entry;
+                    break;
+                }
+            }
+            if (existing == null) {
+                throw new IllegalStateException(String.format(
+                        "Segment id '%s' not found in segment map", segmentId));
+            }
+            if (list.containsKey(newMaxKey)
+                    && !segmentId.equals(list.get(newMaxKey))) {
+                throw new IllegalStateException(String.format(
+                        "Segment max key '%s' is already bound to segment '%s'",
+                        newMaxKey, list.get(newMaxKey)));
+            }
+            list.remove(existing.getKey());
+            list.put(newMaxKey, segmentId);
+            refreshSnapshot();
             isDirty = true;
         } finally {
             writeLock.unlock();
@@ -217,6 +284,7 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
                 }
             }
             if (removed) {
+                refreshSnapshot();
                 isDirty = true;
             }
         } finally {
@@ -233,16 +301,11 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
     }
 
     public List<SegmentId> getSegmentIds(SegmentWindow segmentWindow) {
-        readLock.lock();
-        try {
-            return list.entrySet().stream()//
-                    .skip(segmentWindow.getIntOffset())//
-                    .limit(segmentWindow.getIntLimit())//
-                    .map(entry -> entry.getValue())//
-                    .toList();
-        } finally {
-            readLock.unlock();
-        }
+        return snapshot.entrySet().stream()//
+                .skip(segmentWindow.getIntOffset())//
+                .limit(segmentWindow.getIntLimit())//
+                .map(entry -> entry.getValue())//
+                .toList();
     }
 
     /**
@@ -269,16 +332,37 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
     }
 
     private List<Entry<K, SegmentId>> snapshotSegments() {
-        readLock.lock();
-        try {
-            if (list.isEmpty()) {
-                return List.of();
-            }
-            final List<Entry<K, SegmentId>> out = new ArrayList<>(list.size());
-            list.forEach((key, segmentId) -> out.add(Entry.of(key, segmentId)));
-            return out;
-        } finally {
-            readLock.unlock();
+        if (snapshot.isEmpty()) {
+            return List.of();
+        }
+        final List<Entry<K, SegmentId>> out = new ArrayList<>(snapshot.size());
+        snapshot.forEach((key, segmentId) -> out.add(Entry.of(key, segmentId)));
+        return out;
+    }
+
+    private void refreshSnapshot() {
+        snapshot = new TreeMap<>(list);
+        version.incrementAndGet();
+    }
+
+    static final class Snapshot<K> {
+        private final TreeMap<K, SegmentId> map;
+        private final long version;
+
+        private Snapshot(final TreeMap<K, SegmentId> map,
+                final long version) {
+            this.map = map;
+            this.version = version;
+        }
+
+        SegmentId findSegmentId(final K key) {
+            Vldtn.requireNonNull(key, "key");
+            final Map.Entry<K, SegmentId> ceilingEntry = map.ceilingEntry(key);
+            return ceilingEntry == null ? null : ceilingEntry.getValue();
+        }
+
+        long version() {
+            return version;
         }
     }
 }

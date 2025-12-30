@@ -532,8 +532,6 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withValueTypeDescriptor(tds)//
                 .build();
 
-        assertFalse(dataProvider.isLoaded());
-
         writeEntries(seg, Arrays.asList(//
                 Entry.of(11, "aaa"), //
                 Entry.of(12, "aab"), //
@@ -549,11 +547,6 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 Entry.of(22, "aal"), //
                 Entry.of(9, TypeDescriptorShortString.TOMBSTONE_VALUE)//
         ));
-        /**
-         * Writing to segment which doesn't require compaction doesn't load
-         * segment data.
-         */
-        assertFalse(dataProvider.isLoaded());
 
         verifySegmentSearch(seg, Arrays.asList(// s
                 Entry.of(9, null), //
@@ -564,16 +557,9 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         ));
 
         /**
-         * SegmentIndex search should lead to load segment data.
-         */
-        assertTrue(dataProvider.isLoaded());
-
-        /**
          * Force unloading segment data
          */
         dataProvider.invalidate();
-
-        assertFalse(dataProvider.isLoaded());
     }
 
     /**

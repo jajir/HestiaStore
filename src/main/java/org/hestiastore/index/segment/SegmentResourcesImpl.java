@@ -19,7 +19,6 @@ public final class SegmentResourcesImpl<K, V>
     private SegmentDeltaCache<K, V> deltaCache;
     private BloomFilter<K> bloomFilter;
     private ScarceSegmentIndex<K> scarceIndex;
-    private boolean loaded;
 
     public SegmentResourcesImpl(
             final SegmentDataSupplier<K, V> segmentDataSupplier) {
@@ -28,13 +27,7 @@ public final class SegmentResourcesImpl<K, V>
     }
 
     @Override
-    public boolean isLoaded() {
-        return loaded;
-    }
-
-    @Override
     public SegmentDeltaCache<K, V> getSegmentDeltaCache() {
-        loaded = true;
         if (deltaCache == null) {
             deltaCache = segmentDataSupplier.getSegmentDeltaCache();
         }
@@ -43,7 +36,6 @@ public final class SegmentResourcesImpl<K, V>
 
     @Override
     public BloomFilter<K> getBloomFilter() {
-        loaded = true;
         if (bloomFilter == null) {
             bloomFilter = segmentDataSupplier.getBloomFilter();
         }
@@ -52,7 +44,6 @@ public final class SegmentResourcesImpl<K, V>
 
     @Override
     public ScarceSegmentIndex<K> getScarceIndex() {
-        loaded = true;
         if (scarceIndex == null) {
             scarceIndex = segmentDataSupplier.getScarceIndex();
         }
@@ -72,6 +63,5 @@ public final class SegmentResourcesImpl<K, V>
         if (scarceIndex != null) {
             scarceIndex = null;
         }
-        loaded = false;
     }
 }

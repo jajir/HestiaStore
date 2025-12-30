@@ -3,10 +3,14 @@ package org.hestiastore.index.segment;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.datatype.TypeDescriptorInteger;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -40,6 +44,14 @@ class SegmentSynchronizationAdapterCompactionTest {
 
     @Test
     void request_compaction_runs_async_under_adapter() throws Exception {
+        when(segmentFiles.getKeyTypeDescriptor())
+                .thenReturn(new TypeDescriptorInteger());
+        when(segmentFiles.getValueTypeDescriptor())
+                .thenReturn(new TypeDescriptorShortString());
+        final SegmentDeltaCache<Integer, String> deltaCache = org.mockito.Mockito
+                .mock(SegmentDeltaCache.class);
+        when(deltaCache.getAsSortedList()).thenReturn(java.util.List.<Entry<Integer, String>>of());
+        when(segmentResources.getSegmentDeltaCache()).thenReturn(deltaCache);
         final SegmentImpl<Integer, String> segment = new SegmentImpl<>(
                 segmentFiles, segmentConf, versionController,
                 segmentPropertiesManager, segmentResources,
