@@ -54,6 +54,21 @@ public class SegmentSynchronizationAdapter<K, V> extends AbstractCloseableResour
         if (segment.wasClosed() || wasClosed()) {
             return;
         }
+        if (lock.isWriteLockedByCurrentThread()) {
+            if (!compactionScheduled.compareAndSet(false, true)) {
+                compactionRerun.set(true);
+                return;
+            }
+            try {
+                runCompaction(segment);
+                while (compactionRerun.getAndSet(false)) {
+                    runCompaction(segment);
+                }
+            } finally {
+                compactionScheduled.set(false);
+            }
+            return;
+        }
         if (!compactionScheduled.compareAndSet(false, true)) {
             compactionRerun.set(true);
             return;
