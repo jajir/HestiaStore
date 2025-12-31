@@ -34,11 +34,6 @@ class SegmentIndexConfigurationDefaultsUsageTest {
             assertEquals((int) defaults.getMaxNumberOfKeysInSegmentCache(),
                     actual.getMaxNumberOfKeysInSegmentCache(),
                     "Segment cache size must come from contract defaults");
-            assertEquals(
-                    (int) defaults
-                            .getMaxNumberOfKeysInSegmentCacheDuringFlushing(),
-                    actual.getMaxNumberOfKeysInSegmentCacheDuringFlushing(),
-                    "Flushing cache size must come from contract defaults");
             assertEquals(defaults.getMaxNumberOfKeysInSegmentChunk(),
                     actual.getMaxNumberOfKeysInSegmentChunk(),
                     "Segment chunk size must come from contract defaults");

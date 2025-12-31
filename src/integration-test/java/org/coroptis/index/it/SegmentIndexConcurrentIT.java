@@ -439,7 +439,6 @@ class SegmentIndexConcurrentIT {
                 .withName(name)//
                 .withMaxNumberOfKeysInSegment(20)// small to trigger splits
                 .withMaxNumberOfKeysInSegmentCache(30)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(40)//
                 .withMaxNumberOfKeysInSegmentChunk(5)//
                 .withMaxNumberOfKeysInCache(maxNumberOfKeysInCache)//
                 .withBloomFilterIndexSizeInBytes(1024)//

@@ -101,7 +101,7 @@ class SegmentImplTest {
 
     @BeforeEach
     void setUpSubject() {
-        conf = new SegmentConf(100, 50, 200, 3, 0, 0, 0.01, 1024,
+        conf = new SegmentConf(100, 50, 3, 0, 0, 0.01, 1024,
                 List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()));
         when(segmentFiles.getId()).thenReturn(segmentId);

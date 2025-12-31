@@ -240,7 +240,6 @@ class IntegrationSegmentIndexSimpleTest {
                 .withDiskIoBufferSizeInBytes(DISK_IO_BUFFER_SIZE)//
                 .withMaxNumberOfKeysInSegment(5) //
                 .withMaxNumberOfKeysInSegmentCache(3) //
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(4) //
                 .withMaxNumberOfKeysInSegmentChunk(2) //
                 .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(1000) //

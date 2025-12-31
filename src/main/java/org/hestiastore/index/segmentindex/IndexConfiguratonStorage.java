@@ -25,7 +25,6 @@ public class IndexConfiguratonStorage<K, V> {
 
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = "maxNumberOfKeysInSegmentCache";
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE = "maxNumberOfKeysInSegmentWriteCache";
-    private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING = "maxNumberOfKeysInSegmentCacheDuringFlushing";
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK = "maxNumberOfKeysInSegmentChunk";
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_CACHE = "maxNumberOfKeysInCache";
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT = "maxNumberOfKeysInSegment";
@@ -87,9 +86,6 @@ public class IndexConfiguratonStorage<K, V> {
                         (int) maxNumberOfKeysInSegmentCache)//
                 .withMaxNumberOfKeysInSegmentWriteCache(
                         (int) maxNumberOfKeysInSegmentWriteCache)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(
-                        (int) propsView.getLong(
-                                PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING))//
                 .withMaxNumberOfKeysInSegmentChunk(
                         propsView.getInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK))//
                 .withNumberOfCpuThreads(getOrDefault(propsView,
@@ -164,9 +160,6 @@ public class IndexConfiguratonStorage<K, V> {
                 indexConfiguration.getMaxNumberOfKeysInSegmentCache());
         writer.setLong(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE,
                 indexConfiguration.getMaxNumberOfKeysInSegmentWriteCache());
-        writer.setLong(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING,
-                indexConfiguration
-                        .getMaxNumberOfKeysInSegmentCacheDuringFlushing());
         writer.setInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK,
                 indexConfiguration.getMaxNumberOfKeysInSegmentChunk());
         final int threadCount = indexConfiguration.getNumberOfThreads() == null

@@ -140,7 +140,6 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .withValueTypeDescriptor(tds) //
                 .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(3) //
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(4) //
                 .withMaxNumberOfKeysInSegmentChunk(2) //
                 .withMaxNumberOfKeysInCache(10) //
                 .withMaxNumberOfSegmentsInCache(5) //

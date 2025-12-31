@@ -39,7 +39,6 @@ class SegmentIndexConfiguratonStorageTest {
 
     private static final int MAX_KEYS_IN_SEGMENT_CACHE = 5000;
     private static final int MAX_KEYS_IN_SEGMENT_WRITE_CACHE = 2500;
-    private static final int MAX_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING = 5777;
     private static final int MAX_INDEX_PAGE = 256;
     private static final int MAX_KEYS_CACHE = 10000;
     private static final int MAX_KEYS_SEGMENT = 20000;
@@ -63,8 +62,6 @@ class SegmentIndexConfiguratonStorageTest {
                 .withMaxNumberOfKeysInSegmentCache(MAX_KEYS_IN_SEGMENT_CACHE)//
                 .withMaxNumberOfKeysInSegmentWriteCache(
                         MAX_KEYS_IN_SEGMENT_WRITE_CACHE)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(
-                        MAX_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING)//
                 .withMaxNumberOfKeysInSegmentChunk(256)//
                 .withMaxNumberOfKeysInCache(10000)//
                 .withMaxNumberOfKeysInSegment(20000)//
@@ -91,8 +88,6 @@ class SegmentIndexConfiguratonStorageTest {
                 ret.getMaxNumberOfKeysInSegmentCache());
         assertEquals((int) MAX_KEYS_IN_SEGMENT_WRITE_CACHE,
                 ret.getMaxNumberOfKeysInSegmentWriteCache());
-        assertEquals((int) MAX_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING,
-                ret.getMaxNumberOfKeysInSegmentCacheDuringFlushing());
         assertEquals(MAX_INDEX_PAGE, ret.getMaxNumberOfKeysInSegmentChunk());
         assertEquals(MAX_KEYS_CACHE, ret.getMaxNumberOfKeysInCache());
         assertEquals(MAX_KEYS_SEGMENT, ret.getMaxNumberOfKeysInSegment());
@@ -122,8 +117,6 @@ class SegmentIndexConfiguratonStorageTest {
                 .withMaxNumberOfKeysInSegmentCache(MAX_KEYS_IN_SEGMENT_CACHE)//
                 .withMaxNumberOfKeysInSegmentWriteCache(
                         MAX_KEYS_IN_SEGMENT_WRITE_CACHE)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(
-                        MAX_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING)//
                 .withMaxNumberOfKeysInSegmentChunk(MAX_INDEX_PAGE)//
                 .withMaxNumberOfKeysInCache(MAX_KEYS_CACHE)//
                 .withMaxNumberOfKeysInSegment(MAX_KEYS_SEGMENT)//
@@ -177,8 +170,6 @@ class SegmentIndexConfiguratonStorageTest {
                 .withMaxNumberOfKeysInSegmentCache(MAX_KEYS_IN_SEGMENT_CACHE)//
                 .withMaxNumberOfKeysInSegmentWriteCache(
                         MAX_KEYS_IN_SEGMENT_WRITE_CACHE)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(
-                        MAX_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING)//
                 .withMaxNumberOfKeysInSegmentChunk(256)//
                 .withMaxNumberOfKeysInCache(10000)//
                 .withMaxNumberOfKeysInSegment(20000)//
@@ -201,8 +192,6 @@ class SegmentIndexConfiguratonStorageTest {
                 ret.getMaxNumberOfKeysInSegmentCache());
         assertEquals((int) MAX_KEYS_IN_SEGMENT_WRITE_CACHE,
                 ret.getMaxNumberOfKeysInSegmentWriteCache());
-        assertEquals((int) MAX_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING,
-                ret.getMaxNumberOfKeysInSegmentCacheDuringFlushing());
         assertEquals(MAX_INDEX_PAGE, ret.getMaxNumberOfKeysInSegmentChunk());
         assertEquals(MAX_KEYS_CACHE, ret.getMaxNumberOfKeysInCache());
         assertEquals(MAX_KEYS_SEGMENT, ret.getMaxNumberOfKeysInSegment());

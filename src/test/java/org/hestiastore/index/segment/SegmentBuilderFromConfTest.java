@@ -24,7 +24,6 @@ public class SegmentBuilderFromConfTest {
     void test_verify_that_given_segment_conf_is_used() {
         SegmentConf conf = new SegmentConf(1000, // maxNumberOfKeysInSegmentDeltaCache
                 500, // maxNumberOfKeysInSegmentWriteCache
-                2000, // maxNumberOfKeysInDeltaCacheDuringWriting
                 50, // maxNumberOfKeysInIndexPage
                 3, // bloomFilterNumberOfHashFunctions
                 1024, // bloomFilterIndexSizeInBytes

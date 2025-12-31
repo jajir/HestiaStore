@@ -36,7 +36,6 @@ class IntegrationIteratorTest extends AbstractSegmentIndexTest {
                 .withValueTypeDescriptor(tdi) //
                 .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(100) //
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(200)//
                 .withMaxNumberOfKeysInSegmentChunk(1000) //
                 .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(1000) //

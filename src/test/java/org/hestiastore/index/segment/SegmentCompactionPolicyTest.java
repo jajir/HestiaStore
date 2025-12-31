@@ -24,8 +24,8 @@ class SegmentCompactionPolicyTest {
 
     @BeforeEach
     void setUp() {
-        final SegmentConf segmentConf = new SegmentConf(10, 5, 25, 3, null,
-                null, null, 1024, List.of(new ChunkFilterDoNothing()),
+        final SegmentConf segmentConf = new SegmentConf(10, 5, 3, null, null,
+                null, 1024, List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()));
         policy = new SegmentCompactionPolicy(segmentConf);
     }
@@ -46,9 +46,9 @@ class SegmentCompactionPolicyTest {
 
     @Test
     void shouldCompactDuringWriting_returnsTrueWhenThresholdExceeded() {
-        final SegmentStats stats = new SegmentStats(20, 0, 0);
+        final SegmentStats stats = new SegmentStats(9, 0, 0);
 
-        assertTrue(policy.shouldCompactDuringWriting(6, 0, stats));
+        assertTrue(policy.shouldCompactDuringWriting(2, 0, stats));
     }
 
     @Test
@@ -63,9 +63,9 @@ class SegmentCompactionPolicyTest {
 
     @Test
     void shouldCompactDuringWriting_returnsFalseWhenThresholdNotReached() {
-        final SegmentStats stats = new SegmentStats(20, 0, 0);
+        final SegmentStats stats = new SegmentStats(5, 0, 0);
 
-        assertFalse(policy.shouldCompactDuringWriting(5, 0, stats));
+        assertFalse(policy.shouldCompactDuringWriting(4, 0, stats));
     }
 
     @Test
