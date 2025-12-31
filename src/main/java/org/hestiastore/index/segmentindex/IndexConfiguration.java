@@ -117,7 +117,6 @@ public class IndexConfiguration<K, V> {
         return maxNumberOfKeysInSegmentCache;
     }
 
-    @Deprecated
     public Integer getMaxNumberOfKeysInSegmentWriteCache() {
         /**
          * Returns the maximum number of keys held in the segment write cache
@@ -211,6 +210,7 @@ public class IndexConfiguration<K, V> {
         return maxNumberOfSegmentsInCache;
     }
 
+    @Deprecated
     public Integer getMaxNumberOfKeysInSegmentCacheDuringFlushing() {
         /**
          * Returns the maximum number of keys allowed in segment cache during
