@@ -55,6 +55,7 @@ class SegmentIndexImplPutTest {
         index.put(2, "b");
         index.put(3, "c");
         index.put(4, "d");
+        index.put(5, "e");
 
         final KeySegmentCache<Integer> cache = readKeySegmentCache(index);
         assertEquals(2, cache.getSegmentIds().size());

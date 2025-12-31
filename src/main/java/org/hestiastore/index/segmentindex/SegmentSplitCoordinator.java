@@ -35,15 +35,18 @@ public class SegmentSplitCoordinator<K, V> {
      * @param segment required simple data file
      * @return
      */
-    void optionallySplit(final Segment<K, V> segment) {
+    boolean optionallySplit(final Segment<K, V> segment) {
+        return optionallySplit(segment, conf.getMaxNumberOfKeysInSegment());
+    }
+
+    boolean optionallySplit(final Segment<K, V> segment,
+            final long maxNumberOfKeysInSegment) {
         Vldtn.requireNonNull(segment, "segment");
         final SegmentSplitterPolicy<K, V> policy = segment
                 .getSegmentSplitterPolicy();
-        final long maxNumberOfKeysInSegment = conf
-                .getMaxNumberOfKeysInSegment();
         SegmentSplitterPlan<K, V> plan = SegmentSplitterPlan.fromPolicy(policy);
         if (plan.getEstimatedNumberOfKeys() < maxNumberOfKeysInSegment) {
-            return;
+            return false;
         }
         final boolean compactBeforeSplit = policy
                 .shouldBeCompactedBeforeSplitting(maxNumberOfKeysInSegment,
@@ -51,21 +54,20 @@ public class SegmentSplitCoordinator<K, V> {
                 || policy.hasTombstonesInDeltaCache();
         if (compactBeforeSplit) {
             segment.forceCompact();
-            if (!shouldBeSplit(segment)) {
-                return;
-            }
             plan = SegmentSplitterPlan.fromPolicy(policy);
             if (plan.getEstimatedNumberOfKeys() < maxNumberOfKeysInSegment) {
-                return;
+                return true;
             }
-        } else if (!shouldBeSplit(segment)) {
-            return;
+        } else if (!shouldBeSplit(segment, maxNumberOfKeysInSegment)) {
+            return false;
         }
         split(segment, plan);
+        return true;
     }
 
-    boolean shouldBeSplit(final Segment<K, V> segment) {
-        return segment.getNumberOfKeys() >= conf.getMaxNumberOfKeysInSegment();
+    boolean shouldBeSplit(final Segment<K, V> segment,
+            final long maxNumberOfKeysInSegment) {
+        return segment.getNumberOfKeys() >= maxNumberOfKeysInSegment;
     }
 
     private boolean split(final Segment<K, V> segment,

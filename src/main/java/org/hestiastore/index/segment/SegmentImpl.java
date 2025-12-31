@@ -205,12 +205,15 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     }
 
     @Override
-    public void optionalyFlush() {
-        final int maxWriteCacheSize = segmentConf
-                .getMaxNumberOfKeysInSegmentWriteCache();
-        if (segmentCache.getWriteCacheSieze() >= maxWriteCacheSize) {
-            flush();
-        }
+    public int getWriteCacheSize() {
+        return segmentCache.getWriteCacheSize();
+    }
+
+    @Override
+    public long getTotalNumberOfKeysInCache() {
+        return segmentPropertiesManager.getSegmentStats()
+                .getNumberOfKeysInSegment()
+                + segmentCache.getTotalNumberOfKeysInCache();
     }
 
     @Override

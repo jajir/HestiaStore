@@ -160,8 +160,17 @@ public final class SegmentCache<K, V> {
         return writeCache.getAsSortedList();
     }
 
-    int getWriteCacheSieze() {
+    int getWriteCacheSize() {
         return writeCache.size();
+    }
+
+    @Deprecated
+    int getWriteCacheSieze() {
+        return getWriteCacheSize();
+    }
+
+    long getTotalNumberOfKeysInCache() {
+        return (long) deltaCache.size() + writeCache.size();
     }
 
     void clearWriteCache() {
