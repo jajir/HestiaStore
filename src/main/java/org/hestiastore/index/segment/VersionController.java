@@ -1,5 +1,7 @@
 package org.hestiastore.index.segment;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.hestiastore.index.OptimisticLockObjectVersionProvider;
 
 /**
@@ -12,19 +14,25 @@ import org.hestiastore.index.OptimisticLockObjectVersionProvider;
  */
 public class VersionController implements OptimisticLockObjectVersionProvider {
 
-    private int segmentVersion = 0;
+    private final AtomicInteger segmentVersion = new AtomicInteger(0);
 
     public void changeVersion() {
-        segmentVersion++;
-        if (segmentVersion == Integer.MAX_VALUE) {
-            throw new IllegalStateException(
-                    "Segment version reached maximum value");
+        while (true) {
+            final int current = segmentVersion.get();
+            if (current == Integer.MAX_VALUE) {
+                throw new IllegalStateException(
+                        "Segment version reached maximum value");
+            }
+            final int next = current + 1;
+            if (segmentVersion.compareAndSet(current, next)) {
+                return;
+            }
         }
     }
 
     @Override
     public int getVersion() {
-        return segmentVersion;
+        return segmentVersion.get();
     }
 
 }
