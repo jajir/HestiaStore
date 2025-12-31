@@ -5,9 +5,11 @@ This page documents the files HestiaStore writes into an index directory, their 
 ## 📂 Directory Layout (One SegmentIndex per Directory)
 
 Top-level files:
+
 - `index.map` — Global key→segment map (max key per segment). Sorted key→SegmentId pairs. Updated atomically.
 
 Per‑segment files for segment `segment-00000`:
+
 - `segment-00000.index` — Main SST in chunked format (ChunkStoreFile). Holds sorted key/value entries in chunks.
 - `segment-00000.scarce` — Sparse index (key→chunk start position) to accelerate probes into `.index`.
 - `segment-00000.bloom-filter` — Bloom filter backing store for negative lookups.
@@ -16,6 +18,7 @@ Per‑segment files for segment `segment-00000`:
 - `segment-00000-delta-000.cache`, `segment-00000-delta-001.cache`, … — Per‑segment delta cache files created between compactions.
 
 Notes:
+
 - Segment ids are zero‑based and padded: `segment-00000`, `segment-00001`, …
 - Delta file counters are padded to 3 digits.
 
@@ -33,15 +36,18 @@ Code: `segment/SegmentFiles.java`, `segmentindex/KeySegmentCache.java`.
 ## 🧨 Atomic Commit Pattern (`*.tmp` + rename)
 
 All persistent writers follow the same pattern:
+
 1) `openWriter()` returns a writer bound to a temporary file (usually `*.tmp`).
 2) Close the writer to flush OS buffers.
 3) `commit()` atomically renames the temp file to its final name.
 
 Implications:
+
 - A crash never exposes a partially written visible file. At restart, either the old file or the new file is present.
 - Readers treat missing files as empty where applicable (e.g., no delta files ⇒ empty overlay).
 
 Code pointers:
+
 - Delta cache: `sorteddatafile/SortedDataFileWriterTx` (used by `SegmentDeltaCacheWriter`)
 - Main SST: `chunkentryfile/ChunkEntryFileWriterTx` → `chunkstore/ChunkStoreWriterTx` → `datablockfile/DataBlockWriterTx`
 - Sparse index: `scarceindex/ScarceIndexWriterTx`
@@ -57,6 +63,7 @@ Code pointers:
 ## 🧬 Chunked SST Anatomy
 
 The `.index` file is a sequence of fixed‑cell chunks stored in a data‑block file. Each chunk has:
+
 - Header: magic number, version, payload length, CRC32, flags
 - Payload: a batch of sorted entries, optionally transformed by filters
 
@@ -71,7 +78,7 @@ Code: `chunkstore/*`, `chunkentryfile/*`.
 
 ## 📁 Example Directory (minimal)
 
-```
+```text
 index.map
 segment-00000.index
 segment-00000.scarce

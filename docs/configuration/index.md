@@ -159,7 +159,7 @@ SegmentIndex<String, String> index = SegmentIndex.<String, String>open(directory
 
 At allows to pass `IndexConfiguration` object and this way change configuration parameters. Fllowing table shou parameters that can be changed.  
 
-| Name                                        | Meaning                                              | Can be changed | Applies to            |
+| Name                                        | Meaning                                              | Can be changed | Applies to           |
 | ------------------------------------------- | ---------------------------------------------------- | -------------- | -------------------- |
 | indexName                                   | Logical name of the index                            | 🟩             | index                |
 | keyClass                                    | Key class                                            | 🟥             | index                |
@@ -179,6 +179,6 @@ At allows to pass `IndexConfiguration` object and this way change configuration 
 | diskIoBufferSize                            | Size of the disk I/O buffer                          | 🟩             | Disk IO              |
 | contextLoggingEnabled                       | If MDC-based context logging is enabled              | 🟩             | index                |
 
-# ➕ Add custom data type
+## ➕ Add custom data type
 
 HestiaStore have to know how to work with new data type. So first is create implementatio of `com.hestiastore.index.datatype.TypeDescriptor`. Than during index creation set let index know about your implementation by `withKeyTypeDescriptor`. And it's done.
