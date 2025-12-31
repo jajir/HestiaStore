@@ -3,8 +3,6 @@ package org.hestiastore.index.segment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
-
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.junit.jupiter.api.Test;
@@ -30,8 +28,8 @@ class SegmentDeltaCacheControllerTest {
     @Test
     void clear_evicted_segment_cache() {
         final SegmentDeltaCacheController<Integer, Integer> controller = new SegmentDeltaCacheController<>(
-                segmentFiles, segmentPropertiesManager, segmentResources, 10,
-                5, 2);
+                segmentFiles, segmentPropertiesManager, segmentResources, 10, 5,
+                2);
         final SegmentCache<Integer, Integer> segmentCache = new SegmentCache<>(
                 new TypeDescriptorInteger().getComparator(),
                 new TypeDescriptorInteger());
@@ -50,8 +48,8 @@ class SegmentDeltaCacheControllerTest {
         when(deltaCache.size()).thenReturn(10);
         when(deltaCache.sizeWithoutTombstones()).thenReturn(7);
         final SegmentDeltaCacheController<Integer, Integer> controller = new SegmentDeltaCacheController<>(
-                segmentFiles, segmentPropertiesManager, segmentResources, 10,
-                5, 2);
+                segmentFiles, segmentPropertiesManager, segmentResources, 10, 5,
+                2);
 
         assertEquals(10, controller.getDeltaCacheSize());
         assertEquals(7, controller.getDeltaCacheSizeWithoutTombstones());
