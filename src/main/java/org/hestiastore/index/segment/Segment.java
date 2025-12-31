@@ -99,6 +99,10 @@ public interface Segment<K, V>
     /**
      * Invalidates any active iterators by bumping the internal version
      * counter. Readers using optimistic locks should stop on the next check.
+     *
+     * This should run under the segment's exclusive write lock whenever
+     * compaction or splitting is possible. Invalidating while a compaction or
+     * split iterator is active can terminate it early and lose data.
      */
     void invalidateIterators();
 
@@ -208,4 +212,14 @@ public interface Segment<K, V>
      * @return segment id
      */
     SegmentId getId();
+
+    /**
+     * Returns the current optimistic-lock version for this segment.
+     *
+     * Implementations provide thread-safe reads suitable for concurrent access.
+     *
+     * @return current version number
+     */
+    @Override
+    int getVersion();
 }

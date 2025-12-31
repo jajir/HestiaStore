@@ -100,22 +100,12 @@ public class SegmentSynchronizationAdapter<K, V> extends AbstractCloseableResour
 
     @Override
     public SegmentStats getStats() {
-        readLock.lock();
-        try {
-            return delegate.getStats();
-        } finally {
-            readLock.unlock();
-        }
+        return delegate.getStats();
     }
 
     @Override
     public long getNumberOfKeys() {
-        readLock.lock();
-        try {
-            return delegate.getNumberOfKeys();
-        } finally {
-            readLock.unlock();
-        }
+        return delegate.getNumberOfKeys();
     }
 
     @Override
@@ -150,11 +140,11 @@ public class SegmentSynchronizationAdapter<K, V> extends AbstractCloseableResour
 
     @Override
     public void invalidateIterators() {
-        readLock.lock();
+        writeLock.lock();
         try {
             delegate.invalidateIterators();
         } finally {
-            readLock.unlock();
+            writeLock.unlock();
         }
     }
 
@@ -225,23 +215,13 @@ public class SegmentSynchronizationAdapter<K, V> extends AbstractCloseableResour
     @Override
     public Segment<K, V> createSegmentWithSameConfig(
             final SegmentId segmentId) {
-        readLock.lock();
-        try {
-            return new SegmentSynchronizationAdapter<>(
-                    delegate.createSegmentWithSameConfig(segmentId));
-        } finally {
-            readLock.unlock();
-        }
+        return new SegmentSynchronizationAdapter<>(
+                delegate.createSegmentWithSameConfig(segmentId));
     }
 
     @Override
     public SegmentSplitterPolicy<K, V> getSegmentSplitterPolicy() {
-        readLock.lock();
-        try {
-            return delegate.getSegmentSplitterPolicy();
-        } finally {
-            readLock.unlock();
-        }
+        return delegate.getSegmentSplitterPolicy();
     }
 
     @Override
@@ -266,22 +246,12 @@ public class SegmentSynchronizationAdapter<K, V> extends AbstractCloseableResour
 
     @Override
     public SegmentId getId() {
-        readLock.lock();
-        try {
-            return delegate.getId();
-        } finally {
-            readLock.unlock();
-        }
+        return delegate.getId();
     }
 
     @Override
     public int getVersion() {
-        readLock.lock();
-        try {
-            return delegate.getVersion();
-        } finally {
-            readLock.unlock();
-        }
+        return delegate.getVersion();
     }
 
     @Override
