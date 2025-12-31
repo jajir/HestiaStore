@@ -12,6 +12,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -229,6 +231,37 @@ class SegmentBuilderTest {
                 segment.getSegmentConf().getDecodingChunkFilters().size());
         assertEquals(ChunkFilterDoNothing.class, segment.getSegmentConf()
                 .getDecodingChunkFilters().get(0).getClass());
+        segment.close();
+    }
+
+    @Test
+    void test_openWriterTx_writes_segment_and_builds() {
+        final Directory directory = new MemDirectory();
+        final SegmentBuilder<Integer, String> builder = Segment
+                .<Integer, String>builder()//
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(directory))//
+                .withId(SEGMENT_ID)//
+                .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
+                .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
+                .withMaxNumberOfKeysInSegmentCache(10)//
+                .withMaxNumberOfKeysInSegmentWriteCache(5)//
+                .withMaxNumberOfKeysInSegmentChunk(2)//
+                .withBloomFilterIndexSizeInBytes(0)//
+                .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
+                .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()));
+
+        final SegmentFullWriterTx<Integer, String> tx = builder.openWriterTx();
+        try (EntryWriter<Integer, String> writer = tx.open()) {
+            writer.write(Entry.of(1, "a"));
+            writer.write(Entry.of(2, "b"));
+        }
+        tx.commit();
+
+        final SegmentImpl<Integer, String> segment = builder.build();
+        assertEquals("a", segment.get(1));
+        assertEquals("b", segment.get(2));
         segment.close();
     }
 }
