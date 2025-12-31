@@ -204,22 +204,12 @@ public class SegmentSynchronizationAdapter<K, V> extends AbstractCloseableResour
 
     @Override
     public int getWriteCacheSize() {
-        readLock.lock();
-        try {
-            return delegate.getWriteCacheSize();
-        } finally {
-            readLock.unlock();
-        }
+        return delegate.getWriteCacheSize();
     }
 
     @Override
     public long getTotalNumberOfKeysInCache() {
-        readLock.lock();
-        try {
-            return delegate.getTotalNumberOfKeysInCache();
-        } finally {
-            readLock.unlock();
-        }
+        return delegate.getTotalNumberOfKeysInCache();
     }
 
     @Override

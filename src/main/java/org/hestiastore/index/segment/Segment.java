@@ -144,6 +144,9 @@ public interface Segment<K, V>
     /**
      * Returns the current number of entries waiting in the write cache.
      *
+     * This value is backed by lock-free counters and may be a slightly stale
+     * snapshot under concurrent writes, but it never requires segment locking.
+     *
      * @return number of keys buffered for flushing
      */
     int getWriteCacheSize();
@@ -151,6 +154,10 @@ public interface Segment<K, V>
     /**
      * Returns an estimated total number of keys held by this segment,
      * including persisted data and in-memory cached writes.
+     *
+     * The in-memory component is tracked using lock-free counters; persisted
+     * keys are read from segment metadata. The result is intended for
+     * maintenance decisions and avoids segment locking.
      *
      * @return estimated total number of keys for split/compaction decisions
      */

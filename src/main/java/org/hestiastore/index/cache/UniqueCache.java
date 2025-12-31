@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -27,6 +28,7 @@ public class UniqueCache<K, V> {
     private final Comparator<K> keyComparator;
     private final Lock readLock;
     private final Lock writeLock;
+    private final AtomicInteger size = new AtomicInteger();
 
     /**
      * Create builder for unique cache.
@@ -68,7 +70,12 @@ public class UniqueCache<K, V> {
     public void put(final Entry<K, V> entry) {
         writeLock.lock();
         try {
-            map.put(entry.getKey(), entry.getValue());
+            final K key = entry.getKey();
+            final boolean existed = map.containsKey(key);
+            map.put(key, entry.getValue());
+            if (!existed) {
+                size.incrementAndGet();
+            }
         } finally {
             writeLock.unlock();
         }
@@ -97,6 +104,7 @@ public class UniqueCache<K, V> {
         writeLock.lock();
         try {
             map.clear();
+            size.set(0);
         } finally {
             writeLock.unlock();
         }
@@ -108,12 +116,7 @@ public class UniqueCache<K, V> {
      * @return number of key value entries in cache
      */
     public int size() {
-        readLock.lock();
-        try {
-            return map.size();
-        } finally {
-            readLock.unlock();
-        }
+        return size.get();
     }
 
     /**
@@ -122,12 +125,7 @@ public class UniqueCache<K, V> {
      * @return true when cache is empty
      */
     public boolean isEmpty() {
-        readLock.lock();
-        try {
-            return map.isEmpty();
-        } finally {
-            readLock.unlock();
-        }
+        return size.get() == 0;
     }
 
     /**
@@ -166,6 +164,7 @@ public class UniqueCache<K, V> {
         try {
             final List<Entry<K, V>> snapshot = snapshotEntriesLocked();
             map.clear();
+            size.set(0);
             return snapshot;
         } finally {
             writeLock.unlock();
