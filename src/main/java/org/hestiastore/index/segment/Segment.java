@@ -142,11 +142,19 @@ public interface Segment<K, V>
     void flush();
 
     /**
-     * Optionally flushes the in-memory segment write cache into the delta
-     * cache when thresholds are reached. Implementations may be a no-op if no
-     * write cache is present.
+     * Returns the current number of entries waiting in the write cache.
+     *
+     * @return number of keys buffered for flushing
      */
-    void optionalyFlush();
+    int getWriteCacheSize();
+
+    /**
+     * Returns an estimated total number of keys held by this segment,
+     * including persisted data and in-memory cached writes.
+     *
+     * @return estimated total number of keys for split/compaction decisions
+     */
+    long getTotalNumberOfKeysInCache();
 
     /**
      * Performs a point lookup of a key in this segment, considering both the

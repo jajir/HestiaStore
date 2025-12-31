@@ -151,8 +151,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             if (!written) {
                 continue;
             }
-            segment.optionalyFlush();
-            segmentSplitCoordinator.optionallySplit(segment);
+            handlePostWriteMaintenance(segment);
             return;
         }
     }
@@ -175,6 +174,33 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         }
         segment.put(key, value);
         return true;
+    }
+
+    private void handlePostWriteMaintenance(final Segment<K, V> segment) {
+        final Integer maxWriteCacheKeys = conf
+                .getMaxNumberOfKeysInSegmentWriteCache();
+        if (maxWriteCacheKeys == null || maxWriteCacheKeys < 1) {
+            return;
+        }
+        if (segment.getWriteCacheSize() < maxWriteCacheKeys.intValue()) {
+            return;
+        }
+
+        final Integer maxSegmentCacheKeys = conf
+                .getMaxNumberOfKeysInSegmentCache();
+        if (maxSegmentCacheKeys != null && maxSegmentCacheKeys > 0) {
+            final long totalKeys = segment.getTotalNumberOfKeysInCache();
+            if (totalKeys > maxSegmentCacheKeys.longValue()) {
+                segment.flush();
+                final boolean split = segmentSplitCoordinator.optionallySplit(
+                        segment, maxSegmentCacheKeys.longValue());
+                if (!split) {
+                    segment.forceCompact();
+                }
+                return;
+            }
+        }
+        segment.forceCompact();
     }
 
     @Override

@@ -237,16 +237,6 @@ class SegmentImplTest {
     }
 
     @Test
-    void optionalyFlush_noop_when_write_cache_empty() {
-        final SegmentImpl<Integer, String> spy = org.mockito.Mockito
-                .spy(subject);
-
-        spy.optionalyFlush();
-
-        verify(spy, never()).openDeltaCacheWriter();
-    }
-
-    @Test
     void get_uses_segment_cache_when_present() {
         subject.getSegmentCache().putToDeltaCache(Entry.of(123, "val"));
 
