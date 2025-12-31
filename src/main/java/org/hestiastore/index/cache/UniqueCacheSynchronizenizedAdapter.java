@@ -51,22 +51,12 @@ final class UniqueCacheSynchronizenizedAdapter<K, V> extends UniqueCache<K, V> {
 
     @Override
     public int size() {
-        lock.readLock().lock();
-        try {
-            return delegate.size();
-        } finally {
-            lock.readLock().unlock();
-        }
+        return delegate.size();
     }
 
     @Override
     public boolean isEmpty() {
-        lock.readLock().lock();
-        try {
-            return delegate.isEmpty();
-        } finally {
-            lock.readLock().unlock();
-        }
+        return delegate.isEmpty();
     }
 
     @Override
