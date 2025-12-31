@@ -208,8 +208,7 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     public void optionalyFlush() {
         final int maxWriteCacheSize = segmentConf
                 .getMaxNumberOfKeysInSegmentWriteCache();
-        if (segmentCache.getWriteCacheAsSortedList()
-                .size() >= maxWriteCacheSize) {
+        if (segmentCache.getWriteCacheSieze() >= maxWriteCacheSize) {
             flush();
         }
     }
