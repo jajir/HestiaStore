@@ -114,16 +114,6 @@ class SegmentIndexConfigurationBuilderTest {
     }
 
     @Test
-    void withMaxNumberOfKeysInSegmentCacheDuringFlushingSetsValue() {
-        final int value = 987;
-        final IndexConfiguration<Integer, String> config = newBuilder()
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(value)
-                .build();
-        assertEquals(value,
-                config.getMaxNumberOfKeysInSegmentCacheDuringFlushing());
-    }
-
-    @Test
     void withBloomFilterNumberOfHashFunctionsSetsValue() {
         final int value = 12;
         final IndexConfiguration<Integer, String> config = newBuilder()

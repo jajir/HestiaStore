@@ -31,7 +31,6 @@ public class IndexConfiguration<K, V> {
      */
     private final Integer maxNumberOfKeysInSegmentCache;
     private final Integer maxNumberOfKeysInSegmentWriteCache;
-    private final Integer maxNumberOfKeysInSegmentCacheDuringFlushing;
     private final Integer maxNumberOfKeysInSegmentChunk;
 
     /*
@@ -71,7 +70,6 @@ public class IndexConfiguration<K, V> {
             final String valueTypeDescriptor, //
             final Integer maxNumberOfKeysInSegmentCache, //
             final Integer maxNumberOfKeysInSegmentWriteCache, //
-            final Integer maxNumberOfKeysInSegmentCacheDuringFlushing, //
             final Integer maxNumberOfKeysInSegmentChunk, //
             final Integer maxNumberOfKeysInCache, //
             final Integer maxNumberOfKeysInSegment, //
@@ -90,7 +88,6 @@ public class IndexConfiguration<K, V> {
         this.valueTypeDescriptor = valueTypeDescriptor;
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
         this.maxNumberOfKeysInSegmentWriteCache = maxNumberOfKeysInSegmentWriteCache;
-        this.maxNumberOfKeysInSegmentCacheDuringFlushing = maxNumberOfKeysInSegmentCacheDuringFlushing;
         this.maxNumberOfKeysInSegmentChunk = maxNumberOfKeysInSegmentChunk;
         this.indexName = indexName;
         this.maxNumberOfKeysInCache = maxNumberOfKeysInCache;
@@ -208,17 +205,6 @@ public class IndexConfiguration<K, V> {
          * @return max segments in cache
          */
         return maxNumberOfSegmentsInCache;
-    }
-
-    @Deprecated
-    public Integer getMaxNumberOfKeysInSegmentCacheDuringFlushing() {
-        /**
-         * Returns the maximum number of keys allowed in segment cache during
-         * flushing operations.
-         *
-         * @return max keys in segment cache during flushing
-         */
-        return maxNumberOfKeysInSegmentCacheDuringFlushing;
     }
 
     public Integer getDiskIoBufferSize() {

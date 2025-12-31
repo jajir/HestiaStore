@@ -191,16 +191,15 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         if (maxSegmentCacheKeys != null && maxSegmentCacheKeys > 0) {
             final long totalKeys = segment.getTotalNumberOfKeysInCache();
             if (totalKeys > maxSegmentCacheKeys.longValue()) {
-                segment.flush();
                 final boolean split = segmentSplitCoordinator.optionallySplit(
                         segment, maxSegmentCacheKeys.longValue());
                 if (!split) {
-                    segment.forceCompact();
+                    segment.flush();
                 }
                 return;
             }
         }
-        segment.forceCompact();
+        segment.flush();
     }
 
     @Override

@@ -78,7 +78,6 @@ Index‑level:
 Per‑segment (via `SegmentConf`, derived from index configuration):
 - `maxNumberOfKeysInSegmentCache` — target size for a single delta cache
 - `maxNumberOfKeysInSegmentWriteCache` — in-memory write cache size before flush
-- `maxNumberOfKeysInSegmentCacheDuringFlushing` — safety bound while building a delta cache
 - `maxNumberOfKeysInSegmentChunk` — sparse index sampling cadence (affects read scan window)
 
 Bloom filter sizing:

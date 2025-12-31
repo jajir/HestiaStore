@@ -29,9 +29,9 @@ import org.hestiastore.index.EntryWriter;
  * Key responsibilities exposed by this API: - Query: {@link #get(Object)},
  * {@link #getStats()}, {@link #getNumberOfKeys()} - Writing (delta cache):
  * {@link #openDeltaCacheWriter()}, {@link #put(Object, Object)} - Maintenance:
- * {@link #optionallyCompact()}, {@link #flush()},
- * {@link #forceCompact()}, {@link #checkAndRepairConsistency()},
- * {@link #invalidateIterators()} - Splitting: {@link #getSegmentSplitterPolicy()},
+ * {@link #optionallyCompact()}, {@link #flush()}, {@link #forceCompact()},
+ * {@link #checkAndRepairConsistency()}, {@link #invalidateIterators()} -
+ * Splitting: {@link #getSegmentSplitterPolicy()},
  * {@link #split(SegmentId, SegmentSplitterPlan)},
  * {@link #createSegmentWithSameConfig(SegmentId)} - Identity and lifecycle:
  * {@link #getId()}, {@link #getVersion()}, {@link #close()}
@@ -74,6 +74,7 @@ public interface Segment<K, V>
      * Optionally compacts the segment if the compaction policy recommends it.
      * Implementations may be a no-op when compaction is not needed.
      */
+    @Deprecated
     void optionallyCompact();
 
     /**
@@ -81,6 +82,7 @@ public interface Segment<K, V>
      * is typically an expensive, synchronous operation that rewrites on-disk
      * data and updates related metadata.
      */
+    // FIXME rename it to compact
     void forceCompact();
 
     /**
@@ -97,13 +99,15 @@ public interface Segment<K, V>
     K checkAndRepairConsistency();
 
     /**
-     * Invalidates any active iterators by bumping the internal version
-     * counter. Readers using optimistic locks should stop on the next check.
+     * Invalidates any active iterators by bumping the internal version counter.
+     * Readers using optimistic locks should stop on the next check.
      *
      * This should run under the segment's exclusive write lock whenever
      * compaction or splitting is possible. Invalidating while a compaction or
      * split iterator is active can terminate it early and lose data.
      */
+    // FIXME this should not be public
+    @Deprecated
     void invalidateIterators();
 
     /**
@@ -126,6 +130,7 @@ public interface Segment<K, V>
      *
      * @return writer for delta cache updates
      */
+    @Deprecated
     EntryWriter<K, V> openDeltaCacheWriter();
 
     /**
@@ -133,7 +138,7 @@ public interface Segment<K, V>
      * disk. This is an alternative to {@link #openDeltaCacheWriter()} and is
      * intended for specialized use cases.
      *
-     * @param key key to write (non-null)
+     * @param key   key to write (non-null)
      * @param value value to write (non-null)
      */
     void put(K key, V value);
@@ -156,8 +161,8 @@ public interface Segment<K, V>
     int getWriteCacheSize();
 
     /**
-     * Returns an estimated total number of keys held by this segment,
-     * including persisted data and in-memory cached writes.
+     * Returns an estimated total number of keys held by this segment, including
+     * persisted data and in-memory cached writes.
      *
      * The in-memory component is tracked using lock-free counters; persisted
      * keys are read from segment metadata. The result is intended for
@@ -192,6 +197,8 @@ public interface Segment<K, V>
      *
      * @return splitter policy bound to this segment
      */
+    // FIXME splitting should be done completly outside of segment
+    @Deprecated
     SegmentSplitterPolicy<K, V> getSegmentSplitterPolicy();
 
     /**
@@ -200,9 +207,11 @@ public interface Segment<K, V>
      * plan computed from {@link #getSegmentSplitterPolicy()}.
      *
      * @param segmentId required id for the new lower segment
-     * @param plan required split plan
+     * @param plan      required split plan
      * @return split result with the newly created segment
      */
+    // FIXME this should be done completly outside of segment
+    @Deprecated
     SegmentSplitterResult<K, V> split(SegmentId segmentId,
             SegmentSplitterPlan<K, V> plan);
 

@@ -8,7 +8,6 @@ public class SegmentConf {
 
     private final int maxNumberOfKeysInSegmentDeltaCache;
     private final int maxNumberOfKeysInSegmentWriteCache;
-    private final int maxNumberOfKeysInDeltaCacheDuringWriting;
     private final int maxNumberOfKeysInChunk;
     private final Integer bloomFilterNumberOfHashFunctions;
     private final Integer bloomFilterIndexSizeInBytes;
@@ -19,7 +18,6 @@ public class SegmentConf {
 
     public SegmentConf(final int maxNumeberOfKeysInSegmentDeltaCache,
             final int maxNumberOfKeysInSegmentWriteCache,
-            final int maxNumberOfKeysInSegmentCacheDuringFlushing,
             final int maxNumberOfKeysInChunk,
             final Integer bloomFilterNumberOfHashFunctions,
             final Integer bloomFilterIndexSizeInBytes,
@@ -29,7 +27,6 @@ public class SegmentConf {
             final List<ChunkFilter> decodingChunkFilters) {
         this.maxNumberOfKeysInSegmentDeltaCache = maxNumeberOfKeysInSegmentDeltaCache;
         this.maxNumberOfKeysInSegmentWriteCache = maxNumberOfKeysInSegmentWriteCache;
-        this.maxNumberOfKeysInDeltaCacheDuringWriting = maxNumberOfKeysInSegmentCacheDuringFlushing;
         this.maxNumberOfKeysInChunk = maxNumberOfKeysInChunk;
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
@@ -42,7 +39,6 @@ public class SegmentConf {
     public SegmentConf(final SegmentConf segmentConf) {
         this.maxNumberOfKeysInSegmentDeltaCache = segmentConf.maxNumberOfKeysInSegmentDeltaCache;
         this.maxNumberOfKeysInSegmentWriteCache = segmentConf.maxNumberOfKeysInSegmentWriteCache;
-        this.maxNumberOfKeysInDeltaCacheDuringWriting = segmentConf.maxNumberOfKeysInDeltaCacheDuringWriting;
         this.maxNumberOfKeysInChunk = segmentConf.maxNumberOfKeysInChunk;
         this.bloomFilterNumberOfHashFunctions = segmentConf.bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = segmentConf.bloomFilterIndexSizeInBytes;
@@ -80,16 +76,6 @@ public class SegmentConf {
 
     public Double getBloomFilterProbabilityOfFalsePositive() {
         return bloomFilterProbabilityOfFalsePositive;
-    }
-
-    /**
-     * Provide number of keys in delta cache during writing. This value should
-     * be at least 2 * maxNumberOfKeysInDeltaCache
-     * 
-     * @return
-     */
-    int getMaxNumberOfKeysInDeltaCacheDuringWriting() {
-        return maxNumberOfKeysInDeltaCacheDuringWriting;
     }
 
     public Integer getDiskIoBufferSize() {

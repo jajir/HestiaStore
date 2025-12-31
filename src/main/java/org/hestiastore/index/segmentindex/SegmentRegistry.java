@@ -63,8 +63,6 @@ public class SegmentRegistry<K, V> {
         SegmentConf segmentConf = new SegmentConf(
                 conf.getMaxNumberOfKeysInSegmentCache().intValue(),
                 conf.getMaxNumberOfKeysInSegmentWriteCache().intValue(),
-                conf.getMaxNumberOfKeysInSegmentCacheDuringFlushing()
-                        .intValue(),
                 conf.getMaxNumberOfKeysInSegmentChunk(),
                 conf.getBloomFilterNumberOfHashFunctions(),
                 conf.getBloomFilterIndexSizeInBytes(),

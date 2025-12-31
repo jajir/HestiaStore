@@ -40,8 +40,6 @@ class SegmentManagerTest {
                 keyTypeDescriptor, valueTypeDescriptor, conf);
         when(conf.getMaxNumberOfKeysInSegmentCache()).thenReturn(2);
         when(conf.getMaxNumberOfKeysInSegmentWriteCache()).thenReturn(1);
-        when(conf.getMaxNumberOfKeysInSegmentCacheDuringFlushing())
-                .thenReturn(3);
         when(conf.getMaxNumberOfKeysInSegmentChunk()).thenReturn(1);
         when(conf.getDiskIoBufferSize()).thenReturn(1024);
         when(conf.getEncodingChunkFilters())

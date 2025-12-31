@@ -29,7 +29,6 @@ class SegmentIndexInternalSynchronizedTest {
                 .withValueTypeDescriptor(TD_STRING)//
                 .withName("test-index")//
                 .withMaxNumberOfKeysInSegmentCache(4)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(6)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withMaxNumberOfKeysInCache(10)//
                 .withMaxNumberOfKeysInSegment(20)//

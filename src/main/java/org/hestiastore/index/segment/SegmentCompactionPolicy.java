@@ -63,7 +63,7 @@ public final class SegmentCompactionPolicy {
                 "segmentStats");
         return stats.getNumberOfKeysInDeltaCache()
                 + numberOfKeysInLastDeltaFile > segmentConf
-                        .getMaxNumberOfKeysInDeltaCacheDuringWriting();
+                        .getMaxNumberOfKeysInDeltaCache();
     }
 
     boolean shouldForceCompactionForDeltaFiles(final int numberOfDeltaFiles) {

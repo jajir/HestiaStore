@@ -89,7 +89,6 @@ class SegmentIndexImplPutTest {
                 .withMaxNumberOfKeysInSegmentCache(4)//
                 .withMaxNumberOfKeysInSegmentWriteCache(
                         maxNumberOfKeysInSegmentWriteCache)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(6)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withMaxNumberOfKeysInCache(10)//
                 .withMaxNumberOfKeysInSegment(maxKeysInSegment)//

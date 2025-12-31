@@ -169,7 +169,6 @@ class SegmentIndexConcurrencyStressIT {
                 .withContextLoggingEnabled(false)//
                 .withMaxNumberOfKeysInSegment(20)//
                 .withMaxNumberOfKeysInSegmentCache(30)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(40)//
                 .withMaxNumberOfKeysInSegmentChunk(5)//
                 .withMaxNumberOfKeysInCache(60)//
                 .withMaxNumberOfSegmentsInCache(10)//

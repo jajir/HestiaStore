@@ -109,28 +109,6 @@ class SegmentBuilderTest {
     }
 
     @Test
-    void test_withMaxNumberOfKeysInSegmentCacheDuringFlushing_is_too_low() {
-        final SegmentBuilder<Integer, String> builder = Segment
-                .<Integer, String>builder()//
-                .withAsyncDirectory(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(DIRECTORY))//
-                .withId(SEGMENT_ID)//
-                .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
-                .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
-                .withMaxNumberOfKeysInSegmentCache(10)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(10)
-                .withBloomFilterIndexSizeInBytes(0)//
-        ;
-        final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> builder.build());
-
-        assertEquals(
-                "maxNumberOfKeysInSegmentCacheDuringFlushing must be higher than maxNumberOfKeysInSegmentCache",
-                e.getMessage());
-    }
-
-    @Test
     void test_encodingChunkFilters_are_missing() {
         final SegmentConf segmentConf = mock(SegmentConf.class);
         when(segmentConf.getEncodingChunkFilters()).thenReturn(null);

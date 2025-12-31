@@ -13,7 +13,6 @@ IndexConfiguration<Integer, Integer> conf = IndexConfiguration
     .withValueTypeDescriptor(tdi) //
     .withMaxNumberOfKeysInSegment(4) //
     .withMaxNumberOfKeysInSegmentCache(10L) //
-    .withMaxNumberOfKeysInSegmentCacheDuringFlushing(12L)//
     .withMaxNumberOfKeysInSegmentIndexPage(2) //
     .withMaxNumberOfKeysInCache(3) //
     .withBloomFilterIndexSizeInBytes(0) //
@@ -115,10 +114,6 @@ Sets the maximum number of keys allowed in a single segment. Exceeding this spli
 
 Defines how many keys can be cached from a segment during regular operation.
 
-### 🚿 Max number of keys in segment cache during flushing - `withMaxNumberOfKeysInSegmentCacheDuringFlushing()`
-
-Specifies the maximum number of keys that can be temporarily cached from a segment during flushing.
-
 ### 📑 Max number of keys in segment index page - `withMaxNumberOfKeysInSegmentIndexPage()`
 
 Defines the number of keys in the index page for a segment. This impacts lookup efficiency.
@@ -169,7 +164,6 @@ At allows to pass `IndexConfiguration` object and this way change configuration 
 | maxNumberOfKeysInSegmentIndexPage           | Maximum keys in segment index page                   | 🟥             | segment              |
 | maxNumberOfKeysInSegmentCache               | Maximum number of keys in segment cache              | 🟩             | segment              |
 | maxNumberOfKeysInSegmentWriteCache          | Maximum number of keys in segment write cache        | 🟩             | segment              |
-| maxNumberOfKeysInSegmentCacheDuringFlushing | Maximum keys in cache during flushing                | 🟩             | segment              |
 | maxNumberOfKeysInCache                      | Maximum keys in the index cache                      | 🟩             | index                |
 | maxNumberOfKeysInSegment                    | Maximum keys in a segment                            | 🟥             | segment              |
 | maxNumberOfSegmentsInCache                  | Maximum number of segments in cache                  | 🟩             | index                |
