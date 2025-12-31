@@ -306,6 +306,28 @@ public final class SegmentBuilder<K, V> {
     }
 
     /**
+     * Opens a full writer transaction that builds the segment from a sorted
+     * stream of entries. Entries must be unique, sorted by key in ascending
+     * order, and must not contain tombstones. The returned transaction writes
+     * directly to the main index and scarce index files.
+     *
+     * @return transaction for streaming the segment contents
+     */
+    public SegmentFullWriterTx<K, V> openWriterTx() {
+        prepareBaseComponents();
+        final SegmentDeltaCacheController<K, V> deltaCacheController = new SegmentDeltaCacheController<>(
+                segmentFiles, segmentPropertiesManager, segmentResources,
+                segmentConf.getMaxNumberOfKeysInDeltaCache(),
+                segmentConf.getMaxNumberOfKeysInSegmentWriteCache(),
+                segmentConf.getMaxNumberOfKeysInChunk());
+        final SegmentCache<K, V> segmentCache = createSegmentCache();
+        deltaCacheController.setSegmentCache(segmentCache);
+        return new SegmentFullWriterTx<>(segmentFiles, segmentPropertiesManager,
+                segmentConf.getMaxNumberOfKeysInChunk(), segmentResources,
+                deltaCacheController, segmentCache);
+    }
+
+    /**
      * Build and initialize a {@link Segment} instance. Validates required
      * components, creates defaults where not supplied, and wires dependent
      * parts together.
@@ -315,6 +337,30 @@ public final class SegmentBuilder<K, V> {
      *                                  invalid
      */
     public SegmentImpl<K, V> build() {
+        prepareBaseComponents();
+        final SegmentSearcher<K, V> segmentSearcher = new SegmentSearcher<K, V>(
+                segmentFiles.getValueTypeDescriptor());
+        final SegmentCompactionPolicyWithManager compactionPolicy = SegmentCompactionPolicyWithManager
+                .from(segmentConf, segmentPropertiesManager);
+        final SegmentDeltaCacheController<K, V> deltaCacheController = new SegmentDeltaCacheController<>(
+                segmentFiles, segmentPropertiesManager, segmentResources,
+                segmentConf.getMaxNumberOfKeysInDeltaCache(),
+                segmentConf.getMaxNumberOfKeysInSegmentWriteCache(),
+                segmentConf.getMaxNumberOfKeysInChunk());
+        final SegmentSplitterPolicy<K, V> segmentSplitterPolicy = new SegmentSplitterPolicy<>(
+                segmentPropertiesManager, deltaCacheController);
+        final SegmentCompacter<K, V> compacter = new SegmentCompacter<>(
+                versionController, compactionPolicy);
+        final SegmentReplacer<K, V> segmentReplacer = new SegmentReplacer<>(
+                new SegmentFilesRenamer(), deltaCacheController,
+                segmentPropertiesManager, segmentFiles);
+        return new SegmentImpl<>(segmentFiles, segmentConf, versionController,
+                segmentPropertiesManager, segmentResources,
+                deltaCacheController, segmentSearcher, compactionPolicy,
+                compacter, segmentReplacer, segmentSplitterPolicy);
+    }
+
+    private void prepareBaseComponents() {
         if (directoryFacade == null) {
             throw new IllegalArgumentException("Directory can't be null");
         }
@@ -366,26 +412,15 @@ public final class SegmentBuilder<K, V> {
                     segmentFiles, segmentConf, segmentPropertiesManager);
             segmentResources = new SegmentResourcesImpl<>(segmentDataSupplier);
         }
-        final SegmentSearcher<K, V> segmentSearcher = new SegmentSearcher<K, V>(
-                segmentFiles.getValueTypeDescriptor());
-        final SegmentCompactionPolicyWithManager compactionPolicy = SegmentCompactionPolicyWithManager
-                .from(segmentConf, segmentPropertiesManager);
-        final SegmentDeltaCacheController<K, V> deltaCacheController = new SegmentDeltaCacheController<>(
-                segmentFiles, segmentPropertiesManager, segmentResources,
-                segmentConf.getMaxNumberOfKeysInDeltaCache(),
-                segmentConf.getMaxNumberOfKeysInSegmentWriteCache(),
-                segmentConf.getMaxNumberOfKeysInChunk());
-        final SegmentSplitterPolicy<K, V> segmentSplitterPolicy = new SegmentSplitterPolicy<>(
-                segmentPropertiesManager, deltaCacheController);
-        final SegmentCompacter<K, V> compacter = new SegmentCompacter<>(
-                versionController, compactionPolicy);
-        final SegmentReplacer<K, V> segmentReplacer = new SegmentReplacer<>(
-                new SegmentFilesRenamer(), deltaCacheController,
-                segmentPropertiesManager, segmentFiles);
-        return new SegmentImpl<>(segmentFiles, segmentConf, versionController,
-                segmentPropertiesManager, segmentResources,
-                deltaCacheController, segmentSearcher, compactionPolicy,
-                compacter, segmentReplacer, segmentSplitterPolicy);
+    }
+
+    private SegmentCache<K, V> createSegmentCache() {
+        final SegmentDeltaCache<K, V> deltaCache = segmentResources
+                .getSegmentDeltaCache();
+        return new SegmentCache<>(
+                segmentFiles.getKeyTypeDescriptor().getComparator(),
+                segmentFiles.getValueTypeDescriptor(),
+                deltaCache.getAsSortedList());
     }
 
 }
