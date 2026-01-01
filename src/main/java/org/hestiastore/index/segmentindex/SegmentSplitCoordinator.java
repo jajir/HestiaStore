@@ -57,7 +57,7 @@ public class SegmentSplitCoordinator<K, V> {
                 .shouldBeCompactedBeforeSplitting(maxNumberOfKeysInSegment,
                         plan.getEstimatedNumberOfKeys());
         if (compactBeforeSplit) {
-            segment.forceCompact();
+            segment.compact();
             policy = createPolicy(segment);
             plan = SegmentSplitterPlan.fromPolicy(policy);
             if (plan.getEstimatedNumberOfKeys() < maxNumberOfKeysInSegment) {
@@ -75,56 +75,92 @@ public class SegmentSplitCoordinator<K, V> {
 
     boolean shouldBeSplit(final Segment<K, V> segment,
             final long maxNumberOfKeysInSegment) {
-        return segment.getTotalNumberOfKeysInCache() >= maxNumberOfKeysInSegment;
+        return segment.getNumberOfKeysInCache() >= maxNumberOfKeysInSegment;
     }
 
     private boolean split(final Segment<K, V> segment,
             final SegmentSplitterPlan<K, V> plan) {
         final SegmentId segmentId = segment.getId();
         logger.debug("Splitting of '{}' started.", segmentId);
+        final SplitOutcome outcome;
         if (segment instanceof SegmentSynchronizationAdapter<K, V> adapter) {
-            return adapter.executeWithWriteLock(() -> {
+            outcome = adapter.executeWithWriteLock(() -> {
                 return doSplit(segment, plan);
             });
+        } else {
+            outcome = doSplit(segment, plan);
         }
-        return doSplit(segment, plan);
+        if (outcome != null) {
+            if (outcome.evictSegmentId != null) {
+                segmentRegistry.evictSegmentIfSame(outcome.evictSegmentId,
+                        segment);
+            }
+            if (outcome.removeSegmentId != null) {
+                segmentRegistry.removeSegment(outcome.removeSegmentId);
+            }
+            return outcome.splitApplied;
+        }
+        return false;
     }
 
-    private boolean doSplit(final Segment<K, V> segment,
+    private SplitOutcome doSplit(final Segment<K, V> segment,
             final SegmentSplitterPlan<K, V> plan) {
         final SegmentId segmentId = segment.getId();
-        final SegmentId newSegmentId = keySegmentCache.findNewSegmentId();
+        final SegmentId lowerSegmentId = keySegmentCache.findNewSegmentId();
+        final SegmentId upperSegmentId = keySegmentCache.findNewSegmentId();
         final SegmentWriterTxFactory<K, V> writerTxFactory = id -> segmentRegistry
                 .newSegmentBuilder(id).openWriterTx();
         final SegmentSplitter<K, V> splitter = new SegmentSplitter<>(segment,
                 writerTxFactory);
-        final SegmentSplitterResult<K, V> result = splitter.split(newSegmentId,
-                plan);
+        final SegmentSplitterResult<K, V> result = splitter
+                .split(lowerSegmentId, upperSegmentId, plan);
         if (result.isSplit()) {
+            replaceCurrentWithSegment(segmentId, upperSegmentId);
             keySegmentCache.insertSegment(result.getMaxKey(),
                     result.getSegmentId());
             keySegmentCache.optionalyFlush();
-            segmentRegistry.evictSegment(segmentId);
             logger.debug("Splitting of segment '{}' to '{}' is done.",
                     segmentId, result.getSegmentId());
+            final SplitOutcome outcome = new SplitOutcome(true, segmentId,
+                    null);
+            if (!segment.wasClosed()) {
+                segment.close();
+            }
+            return outcome;
         } else {
-            replaceWithLower(segmentId, result.getSegmentId());
-            keySegmentCache.updateSegmentMaxKey(segmentId,
-                    result.getMaxKey());
+            replaceCurrentWithSegment(segmentId, result.getSegmentId());
+            keySegmentCache.updateSegmentMaxKey(segmentId, result.getMaxKey());
             keySegmentCache.optionalyFlush();
-            segmentRegistry.evictSegment(segmentId);
-            segmentRegistry.removeSegment(result.getSegmentId());
             logger.debug(
                     "Splitting of segment '{}' is done, "
                             + "but at the end it was compacting.",
                     segmentId, result.getSegmentId());
+            final SplitOutcome outcome = new SplitOutcome(true, segmentId,
+                    result.getSegmentId());
+            if (!segment.wasClosed()) {
+                segment.close();
+            }
+            return outcome;
         }
-        return true;
+    }
+
+    private static final class SplitOutcome {
+        private final boolean splitApplied;
+        private final SegmentId evictSegmentId;
+        private final SegmentId removeSegmentId;
+
+        private SplitOutcome(final boolean splitApplied,
+                final SegmentId evictSegmentId,
+                final SegmentId removeSegmentId) {
+            this.splitApplied = splitApplied;
+            this.evictSegmentId = evictSegmentId;
+            this.removeSegmentId = removeSegmentId;
+        }
     }
 
     private SegmentSplitterPolicy<K, V> createPolicy(
             final Segment<K, V> segment) {
-        final long estimatedNumberOfKeys = segment.getTotalNumberOfKeysInCache();
+        final long estimatedNumberOfKeys = segment.getNumberOfKeysInCache();
         return new SegmentSplitterPolicy<>(estimatedNumberOfKeys, false);
     }
 
@@ -134,16 +170,19 @@ public class SegmentSplitCoordinator<K, V> {
         }
     }
 
-    private void replaceWithLower(final SegmentId segmentId,
-            final SegmentId lowerSegmentId) {
+    private void replaceCurrentWithSegment(final SegmentId segmentId,
+            final SegmentId replacementSegmentId) {
         final SegmentPropertiesManager currentProperties = segmentRegistry
                 .newSegmentPropertiesManager(segmentId);
         final SegmentFiles<K, V> currentFiles = segmentRegistry
                 .newSegmentFiles(segmentId);
         currentFiles.deleteAllFiles(currentProperties);
 
-        final SegmentFiles<K, V> lowerFiles = segmentRegistry
-                .newSegmentFiles(lowerSegmentId);
-        filesRenamer.renameFiles(lowerFiles, currentFiles);
+        final SegmentFiles<K, V> replacementFiles = segmentRegistry
+                .newSegmentFiles(replacementSegmentId);
+        final SegmentPropertiesManager replacementProperties = segmentRegistry
+                .newSegmentPropertiesManager(replacementSegmentId);
+        filesRenamer.renameFiles(replacementFiles, currentFiles,
+                replacementProperties);
     }
 }

@@ -26,6 +26,7 @@ class SegmentSplitterTest {
 
     private static final SegmentId SEGMENT_ID = SegmentId.of(27);
     private static final SegmentId LOWER_ID = SegmentId.of(28);
+    private static final SegmentId UPPER_ID = SegmentId.of(29);
 
     private static final Entry<String, String> ENTRY1 = Entry.of("key1",
             "value1");
@@ -62,8 +63,8 @@ class SegmentSplitterTest {
                 .fromPolicy(new SegmentSplitterPolicy<>(4L, false));
         final IllegalArgumentException err = assertThrows(
                 IllegalArgumentException.class,
-                () -> splitter.split(null, plan));
-        assertEquals("Property 'segmentId' must not be null.",
+                () -> splitter.split(null, UPPER_ID, plan));
+        assertEquals("Property 'lowerSegmentId' must not be null.",
                 err.getMessage());
     }
 
@@ -71,7 +72,7 @@ class SegmentSplitterTest {
     void split_rejects_null_plan() {
         final IllegalArgumentException err = assertThrows(
                 IllegalArgumentException.class,
-                () -> splitter.split(LOWER_ID, null));
+                () -> splitter.split(LOWER_ID, UPPER_ID, null));
         assertEquals("Property 'plan' must not be null.", err.getMessage());
     }
 
@@ -82,7 +83,7 @@ class SegmentSplitterTest {
                 .fromPolicy(new SegmentSplitterPolicy<>(2L, false));
         final IllegalStateException err = assertThrows(
                 IllegalStateException.class,
-                () -> splitter.split(LOWER_ID, plan));
+                () -> splitter.split(LOWER_ID, UPPER_ID, plan));
         assertEquals("Splitting failed. Number of keys is too low.",
                 err.getMessage());
         verify(segment).invalidateIterators();
@@ -97,12 +98,12 @@ class SegmentSplitterTest {
         when(iterator.hasNext()).thenReturn(true, true, true, true, false);
         when(iterator.next()).thenReturn(ENTRY1, ENTRY2, ENTRY3);
         when(writerTxFactory.openWriterTx(LOWER_ID)).thenReturn(lowerTx);
-        when(writerTxFactory.openWriterTx(SEGMENT_ID)).thenReturn(currentTx);
+        when(writerTxFactory.openWriterTx(UPPER_ID)).thenReturn(currentTx);
         when(lowerTx.open()).thenReturn(lowerWriter);
         when(currentTx.open()).thenReturn(currentWriter);
 
         final SegmentSplitterResult<String, String> result = splitter
-                .split(LOWER_ID, plan);
+                .split(LOWER_ID, UPPER_ID, plan);
 
         assertTrue(result.isSplit());
         assertEquals(LOWER_ID, result.getSegmentId());
@@ -128,7 +129,7 @@ class SegmentSplitterTest {
         when(lowerTx.open()).thenReturn(lowerWriter);
 
         final SegmentSplitterResult<String, String> result = splitter
-                .split(LOWER_ID, plan);
+                .split(LOWER_ID, UPPER_ID, plan);
 
         assertFalse(result.isSplit());
         assertEquals(SegmentSplitterResult.SegmentSplittingStatus.COMPACTED,
@@ -136,7 +137,7 @@ class SegmentSplitterTest {
         verify(lowerWriter).write(ENTRY1);
         verify(lowerWriter).write(ENTRY2);
         verify(lowerTx).commit();
-        verify(writerTxFactory, never()).openWriterTx(SEGMENT_ID);
+        verify(writerTxFactory, never()).openWriterTx(UPPER_ID);
         verify(segment).invalidateIterators();
     }
 }

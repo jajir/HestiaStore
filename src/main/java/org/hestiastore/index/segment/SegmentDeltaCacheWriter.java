@@ -94,7 +94,7 @@ public final class SegmentDeltaCacheWriter<K, V>
 
         // store cache
         final String deltaFileName = segmentPropertiesManager
-                .getNextDeltaFileName();
+                .getAndIncreaseDeltaFileName();
         final ChunkEntryFileWriterTx<K, V> writerTx = segmentFiles
                 .getDeltaCacheChunkEntryFile(deltaFileName).openWriterTx();
         try (ChunkEntryFileWriter<K, V> writer = writerTx.openWriter()) {
@@ -112,7 +112,6 @@ public final class SegmentDeltaCacheWriter<K, V>
             }
         }
         writerTx.commit();
-        segmentPropertiesManager.incrementDeltaFileNameCounter();
         // increase number of keys in cache
         final int keysInCache = uniqueCache.size();
         segmentPropertiesManager.increaseNumberOfKeysInDeltaCache(keysInCache);

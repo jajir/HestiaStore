@@ -121,7 +121,7 @@ class SegmentDeltaCacheWriterTest {
         when(dataProvider.getSegmentDeltaCache()).thenReturn(segmentDeltaCache);
         final java.util.List<Entry<Integer, String>> written = new java.util.ArrayList<>();
         stubWriteTransactionToCaptureWrites(written);
-        when(propertiesManager.getNextDeltaFileName())
+        when(propertiesManager.getAndIncreaseDeltaFileName())
                 .thenReturn("delta-name");
 
         final SegmentDeltaCacheWriter<Integer, String> writer = newWriter(10);
@@ -139,7 +139,7 @@ class SegmentDeltaCacheWriterTest {
         assertEquals(Entry.of(5, "E2"), written.get(2));
 
         // properties updated by number of unique keys
-        verify(propertiesManager).incrementDeltaFileNameCounter();
+        verify(propertiesManager).getAndIncreaseDeltaFileName();
         verify(propertiesManager).increaseNumberOfKeysInDeltaCache(3);
         verify(chunkWriter, times(1)).flush();
         verify(writerTx).commit();
@@ -154,7 +154,7 @@ class SegmentDeltaCacheWriterTest {
         assertTrue(writer.getNumberOfKeys() == 0);
         verify(propertiesManager, never()).increaseNumberOfKeysInDeltaCache(
                 anyInt());
-        verify(propertiesManager, never()).incrementDeltaFileNameCounter();
+        verify(propertiesManager, never()).getAndIncreaseDeltaFileName();
         verify(segmentFiles, never()).getDeltaCacheChunkEntryFile(any());
     }
 

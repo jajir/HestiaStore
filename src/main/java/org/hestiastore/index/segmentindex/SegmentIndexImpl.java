@@ -102,7 +102,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         getIndexState().tryPerformOperation();
         keySegmentCache.getSegmentIds().forEach(segmentId -> {
             final Segment<K, V> seg = segmentRegistry.getSegment(segmentId);
-            seg.forceCompact();
+            seg.compact();
         });
     }
 
@@ -151,7 +151,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             if (!written) {
                 continue;
             }
-            handlePostWriteMaintenance(segment);
+            handlePostWriteMaintenance(segment, key, segmentId,
+                    snapshot.version());
             return;
         }
     }
@@ -161,6 +162,9 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final long mappingVersion) {
         if (segment instanceof SegmentSynchronizationAdapter<K, V> adapter) {
             return Boolean.TRUE.equals(adapter.executeWithWriteLock(() -> {
+                if (segment.wasClosed()) {
+                    return Boolean.FALSE;
+                }
                 if (!keySegmentCache.isMappingValid(key, segmentId,
                         mappingVersion)) {
                     return Boolean.FALSE;
@@ -169,6 +173,9 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 return Boolean.TRUE;
             }));
         }
+        if (segment.wasClosed()) {
+            return false;
+        }
         if (!keySegmentCache.isMappingValid(key, segmentId, mappingVersion)) {
             return false;
         }
@@ -176,20 +183,28 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         return true;
     }
 
-    private void handlePostWriteMaintenance(final Segment<K, V> segment) {
+    private void handlePostWriteMaintenance(final Segment<K, V> segment,
+            final K key, final SegmentId segmentId, final long mappingVersion) {
+        if (segment.wasClosed()) {
+            return;
+        }
+        if (!keySegmentCache.isMappingValid(key, segmentId, mappingVersion)) {
+            return;
+        }
         final Integer maxWriteCacheKeys = conf
                 .getMaxNumberOfKeysInSegmentWriteCache();
         if (maxWriteCacheKeys == null || maxWriteCacheKeys < 1) {
             return;
         }
-        if (segment.getWriteCacheSize() < maxWriteCacheKeys.intValue()) {
+        if (segment.getNumberOfKeysInWriteCache() < maxWriteCacheKeys
+                .intValue()) {
             return;
         }
 
         final Integer maxSegmentCacheKeys = conf
                 .getMaxNumberOfKeysInSegmentCache();
         if (maxSegmentCacheKeys != null && maxSegmentCacheKeys > 0) {
-            final long totalKeys = segment.getTotalNumberOfKeysInCache();
+            final long totalKeys = segment.getNumberOfKeysInCache();
             if (totalKeys > maxSegmentCacheKeys.longValue()) {
                 final boolean split = segmentSplitCoordinator.optionallySplit(
                         segment, maxSegmentCacheKeys.longValue());

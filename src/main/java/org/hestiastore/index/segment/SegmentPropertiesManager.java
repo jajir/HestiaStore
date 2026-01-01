@@ -28,6 +28,7 @@ public class SegmentPropertiesManager {
 
     private final SegmentId id;
     private final PropertyStore propertyStore;
+    private final Object propertyLock = new Object();
 
     public SegmentPropertiesManager(final AsyncDirectory directoryFacade,
             final SegmentId id) {
@@ -50,27 +51,37 @@ public class SegmentPropertiesManager {
     }
 
     public void clearCacheDeltaFileNamesCouter() {
-        updateTransaction(writer -> writer.setInt(
-                NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, 0));
+        synchronized (propertyLock) {
+            updateTransaction(writer -> writer.setInt(
+                    NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, 0));
+        }
     }
 
     public String getAndIncreaseDeltaFileName() {
-        final String nextName = getNextDeltaFileName();
-        incrementDeltaFileNameCounter();
-        return nextName;
+        synchronized (propertyLock) {
+            final int counter = propertyStore.snapshot()
+                    .getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);
+            updateTransaction(writer -> writer.setInt(
+                    NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, counter + 1));
+            return getDeltaString(counter);
+        }
     }
 
     public String getNextDeltaFileName() {
-        final int counter = propertyStore.snapshot()
-                .getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);
-        return getDeltaString(counter);
+        synchronized (propertyLock) {
+            final int counter = propertyStore.snapshot()
+                    .getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);
+            return getDeltaString(counter);
+        }
     }
 
     public void incrementDeltaFileNameCounter() {
-        final int counter = propertyStore.snapshot()
-                .getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);
-        updateTransaction(writer -> writer.setInt(
-                NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, counter + 1));
+        synchronized (propertyLock) {
+            final int counter = propertyStore.snapshot()
+                    .getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);
+            updateTransaction(writer -> writer.setInt(
+                    NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, counter + 1));
+        }
     }
 
     private String getDeltaString(final int segmentCacheDeltaFileId) {
@@ -102,8 +113,10 @@ public class SegmentPropertiesManager {
     }
 
     public void setNumberOfKeysInCache(final long numberOfKeysInCache) {
-        updateTransaction(writer -> writer.setLong(
-                NUMBER_OF_KEYS_IN_DELTA_CACHE, numberOfKeysInCache));
+        synchronized (propertyLock) {
+            updateTransaction(writer -> writer.setLong(
+                    NUMBER_OF_KEYS_IN_DELTA_CACHE, numberOfKeysInCache));
+        }
     }
 
     public void increaseNumberOfKeysInDeltaCache(final int howMuchKeys) {
@@ -112,11 +125,13 @@ public class SegmentPropertiesManager {
                     "Unable to increase numebr of keys in cache about value '%s'",
                     howMuchKeys));
         }
-        final long current = propertyStore.snapshot()
-                .getLong(NUMBER_OF_KEYS_IN_DELTA_CACHE);
-        updateTransaction(
-                writer -> writer.setLong(NUMBER_OF_KEYS_IN_DELTA_CACHE,
-                        current + howMuchKeys));
+        synchronized (propertyLock) {
+            final long current = propertyStore.snapshot()
+                    .getLong(NUMBER_OF_KEYS_IN_DELTA_CACHE);
+            updateTransaction(
+                    writer -> writer.setLong(NUMBER_OF_KEYS_IN_DELTA_CACHE,
+                            current + howMuchKeys));
+        }
     }
 
     public void incrementNumberOfKeysInCache() {
@@ -124,14 +139,18 @@ public class SegmentPropertiesManager {
     }
 
     public void setNumberOfKeysInIndex(final long numberOfKeysInIndex) {
-        updateTransaction(writer -> writer.setLong(
-                NUMBER_OF_KEYS_IN_MAIN_INDEX, numberOfKeysInIndex));
+        synchronized (propertyLock) {
+            updateTransaction(writer -> writer.setLong(
+                    NUMBER_OF_KEYS_IN_MAIN_INDEX, numberOfKeysInIndex));
+        }
     }
 
     public void setNumberOfKeysInScarceIndex(
             final long numberOfKeysInScarceIndex) {
-        updateTransaction(writer -> writer.setLong(
-                NUMBER_OF_KEYS_IN_SCARCE_INDEX, numberOfKeysInScarceIndex));
+        synchronized (propertyLock) {
+            updateTransaction(writer -> writer.setLong(
+                    NUMBER_OF_KEYS_IN_SCARCE_INDEX, numberOfKeysInScarceIndex));
+        }
     }
 
     public long getNumberOfKeysInDeltaCache() {

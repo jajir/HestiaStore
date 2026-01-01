@@ -128,4 +128,8 @@ public class ScarceSegmentIndex<K> {
         return new ScarceIndexWriterTx<>(this, sortedDataFile.openWriterTx());
     }
 
+    public void close() {
+        snapshot = new ScarceIndexSnapshot<>(keyComparator, List.of());
+    }
+
 }

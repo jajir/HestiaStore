@@ -116,14 +116,14 @@ class SegmentCacheTest {
     }
 
     @Test
-    void getWriteCacheSize_tracks_overwrites() {
+    void getNumberOfKeysInWriteCache_tracks_overwrites() {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
                 keyType.getComparator(), valueType);
         cache.put(1, "A");
         cache.put(1, "B");
         cache.put(2, "C");
 
-        assertEquals(2, cache.getWriteCacheSize());
-        assertEquals(2, cache.getTotalNumberOfKeysInCache());
+        assertEquals(2, cache.getNumberOfKeysInWriteCache());
+        assertEquals(2, cache.getNumbberOfKeysInCache());
     }
 }

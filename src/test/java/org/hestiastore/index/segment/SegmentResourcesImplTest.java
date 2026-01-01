@@ -84,6 +84,7 @@ class SegmentResourcesImplTest {
 
         verify(deltaCache, times(1)).evictAll();
         verify(bloomFilter, times(1)).close();
+        verify(scarceIndex, times(1)).close();
     }
 
     @Test
@@ -100,6 +101,7 @@ class SegmentResourcesImplTest {
         verify(segmentDataSupplier, never()).getScarceIndex();
         verify(bloomFilter, times(1)).close();
         verify(deltaCache, never()).evictAll();
+        verify(scarceIndex, never()).close();
     }
 
     @Test

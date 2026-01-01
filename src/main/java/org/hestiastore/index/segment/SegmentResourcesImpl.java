@@ -61,6 +61,7 @@ public final class SegmentResourcesImpl<K, V>
             deltaCache = null;
         }
         if (scarceIndex != null) {
+            scarceIndex.close();
             scarceIndex = null;
         }
     }

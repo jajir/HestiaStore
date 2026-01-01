@@ -155,8 +155,12 @@ public final class SegmentBuilder<K, V> {
      */
     public SegmentBuilder<K, V> withMaxNumberOfKeysInSegmentCache(
             final int maxNumberOfKeysInSegmentCache) {
-        this.maxNumberOfKeysInSegmentCache = Vldtn.requireNonNull(
-                maxNumberOfKeysInSegmentCache, "maxNumberOfKeysInSegmentCache");
+        if (maxNumberOfKeysInSegmentCache <= 1) {
+            throw new IllegalArgumentException(String.format(
+                    "maxNumberOfKeysInSegmentCache is '%s' but must be higher than '1'",
+                    maxNumberOfKeysInSegmentCache));
+        }
+        this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
         return this;
     }
 
@@ -169,7 +173,7 @@ public final class SegmentBuilder<K, V> {
      */
     public SegmentBuilder<K, V> withMaxNumberOfKeysInSegmentWriteCache(
             final int maxNumberOfKeysInSegmentWriteCache) {
-        this.maxNumberOfKeysInSegmentWriteCache = Vldtn.requireNonNull(
+        this.maxNumberOfKeysInSegmentWriteCache = Vldtn.requireGreaterThanZero(
                 maxNumberOfKeysInSegmentWriteCache,
                 "maxNumberOfKeysInSegmentWriteCache");
         return this;
@@ -183,7 +187,7 @@ public final class SegmentBuilder<K, V> {
      */
     public SegmentBuilder<K, V> withMaxNumberOfKeysInSegmentChunk(
             final int maxNumberOfKeysInSegmentChunk) {
-        this.maxNumberOfKeysInSegmentChunk = Vldtn.requireNonNull(
+        this.maxNumberOfKeysInSegmentChunk = Vldtn.requireGreaterThanZero(
                 maxNumberOfKeysInSegmentChunk, "maxNumberOfKeysInSegmentChunk");
         return this;
     }
@@ -258,7 +262,7 @@ public final class SegmentBuilder<K, V> {
      */
     public SegmentBuilder<K, V> withDiskIoBufferSize(
             final int diskIoBufferSize) {
-        this.diskIoBufferSize = diskIoBufferSize;
+        this.diskIoBufferSize = Vldtn.requireIoBufferSize(diskIoBufferSize);
         return this;
     }
 

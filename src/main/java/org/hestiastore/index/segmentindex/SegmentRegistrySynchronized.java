@@ -61,4 +61,15 @@ class SegmentRegistrySynchronized<K, V> extends SegmentRegistry<K, V> {
             lock.unlock();
         }
     }
+
+    @Override
+    boolean evictSegmentIfSame(final SegmentId segmentId,
+            final Segment<K, V> expected) {
+        lock.lock();
+        try {
+            return super.evictSegmentIfSame(segmentId, expected);
+        } finally {
+            lock.unlock();
+        }
+    }
 }

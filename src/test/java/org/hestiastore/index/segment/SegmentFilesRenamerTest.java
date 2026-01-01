@@ -23,6 +23,9 @@ class SegmentFilesRenamerTest {
     @Mock
     private SegmentFiles<String, Long> to;
 
+    @Mock
+    private SegmentPropertiesManager fromProperties;
+
     private SegmentFilesRenamer renamer;
 
     @BeforeEach
@@ -42,11 +45,20 @@ class SegmentFilesRenamerTest {
         when(to.getPropertiesFilename()).thenReturn("to.properties");
         when(from.getCacheFileName()).thenReturn("from.cache");
         when(to.getCacheFileName()).thenReturn("to.cache");
+        when(from.getSegmentIdName()).thenReturn("segment-00001");
+        when(to.getSegmentIdName()).thenReturn("segment-00002");
+        when(fromProperties.getCacheDeltaFileNames()).thenReturn(
+                java.util.List.of("segment-00001-delta-000.cache",
+                        "segment-00001-delta-001.cache"));
     }
 
     @Test
     void testRenameFiles() {
-        renamer.renameFiles(from, to);
+        renamer.renameFiles(from, to, fromProperties);
+        verify(directory).renameFile("segment-00001-delta-000.cache",
+                "segment-00002-delta-000.cache");
+        verify(directory).renameFile("segment-00001-delta-001.cache",
+                "segment-00002-delta-001.cache");
         verify(directory).renameFile("from.index", "to.index");
         verify(directory).renameFile("from.scarce", "to.scarce");
         verify(directory).renameFile("from.bloom-filter", "to.bloom-filter");

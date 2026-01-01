@@ -42,7 +42,7 @@ public class SegmentRegistry<K, V> {
     public Segment<K, V> getSegment(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         Segment<K, V> out = segments.get(segmentId);
-        if (out == null) {
+        if (out == null || out.wasClosed()) {
             out = instantiateSegment(segmentId);
             segments.put(segmentId, out);
         }
@@ -50,20 +50,46 @@ public class SegmentRegistry<K, V> {
     }
 
     public void removeSegment(final SegmentId segmentId) {
-        Vldtn.requireNonNull(segmentId, "segmentId");
-        final Segment<K, V> segment = segments.remove(segmentId);
-        if (segment != null && !segment.wasClosed()) {
-            segment.close();
-        }
+        final Segment<K, V> segment = removeSegmentFromRegistry(segmentId);
+        closeSegmentIfNeeded(segment);
         deleteSegmentFiles(segmentId);
     }
 
     void evictSegment(final SegmentId segmentId) {
+        final Segment<K, V> segment = evictSegmentFromRegistry(segmentId);
+        closeSegmentIfNeeded(segment);
+    }
+
+    /**
+     * Evicts a segment only if the registry still points to the provided
+     * instance.
+     *
+     * @param segmentId segment identifier to evict
+     * @param expected  expected segment instance bound to the id
+     * @return true when the segment was evicted, false otherwise
+     */
+    boolean evictSegmentIfSame(final SegmentId segmentId,
+            final Segment<K, V> expected) {
         Vldtn.requireNonNull(segmentId, "segmentId");
-        final Segment<K, V> segment = segments.remove(segmentId);
-        if (segment != null && !segment.wasClosed()) {
-            segment.close();
+        Vldtn.requireNonNull(expected, "expected");
+        final Segment<K, V> current = segments.get(segmentId);
+        if (current != expected) {
+            return false;
         }
+        segments.remove(segmentId);
+        closeSegmentIfNeeded(current);
+        return true;
+    }
+
+    protected Segment<K, V> removeSegmentFromRegistry(
+            final SegmentId segmentId) {
+        Vldtn.requireNonNull(segmentId, "segmentId");
+        return segments.remove(segmentId);
+    }
+
+    protected Segment<K, V> evictSegmentFromRegistry(
+            final SegmentId segmentId) {
+        return removeSegmentFromRegistry(segmentId);
     }
 
     SegmentBuilder<K, V> newSegmentBuilder(final SegmentId segmentId) {
@@ -127,11 +153,17 @@ public class SegmentRegistry<K, V> {
         return new SegmentSynchronizationAdapter<>(segment);
     }
 
-    private void deleteSegmentFiles(final SegmentId segmentId) {
+    protected void deleteSegmentFiles(final SegmentId segmentId) {
         final SegmentFiles<K, V> segmentFiles = newSegmentFiles(segmentId);
         final SegmentPropertiesManager segmentPropertiesManager = newSegmentPropertiesManager(
                 segmentId);
         segmentFiles.deleteAllFiles(segmentPropertiesManager);
+    }
+
+    private void closeSegmentIfNeeded(final Segment<K, V> segment) {
+        if (segment != null && !segment.wasClosed()) {
+            segment.close();
+        }
     }
 
     public void close() {

@@ -130,13 +130,8 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     }
 
     @Override
-    public void forceCompact() {
+    public void compact() {
         segmentCompacter.forceCompact(this);
-    }
-
-    @Override
-    public void optionallyCompact() {
-        segmentCompacter.optionallyCompact(this);
     }
 
     /**
@@ -164,8 +159,7 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
      * 
      * It's not necesarry to run it in transaction because it's always new file.
      */
-    @Override
-    public EntryWriter<K, V> openDeltaCacheWriter() {
+    private EntryWriter<K, V> openDeltaCacheWriter() {
         versionController.changeVersion();
         final EntryWriter<K, V> writer = new SegmentDeltaCacheCompactingWriter<>(
                 this, deltaCacheController, segmentCompactionPolicy);
@@ -194,15 +188,15 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     }
 
     @Override
-    public int getWriteCacheSize() {
-        return segmentCache.getWriteCacheSize();
+    public int getNumberOfKeysInWriteCache() {
+        return segmentCache.getNumberOfKeysInWriteCache();
     }
 
     @Override
-    public long getTotalNumberOfKeysInCache() {
+    public long getNumberOfKeysInCache() {
         return segmentPropertiesManager.getSegmentStats()
                 .getNumberOfKeysInSegment()
-                + segmentCache.getTotalNumberOfKeysInCache();
+                + segmentCache.getNumbberOfKeysInCache();
     }
 
     @Override
@@ -227,11 +221,6 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     @Override
     public SegmentId getId() {
         return segmentFiles.getId();
-    }
-
-    @Override
-    public int getVersion() {
-        return versionController.getVersion();
     }
 
     public SegmentFiles<K, V> getSegmentFiles() {

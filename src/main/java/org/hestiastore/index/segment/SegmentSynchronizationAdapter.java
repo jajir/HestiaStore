@@ -2,6 +2,7 @@ package org.hestiastore.index.segment;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -12,15 +13,14 @@ import java.util.function.Supplier;
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
-import org.hestiastore.index.EntryWriter;
 
 /**
  * Serializes access to a single {@link Segment} instance using a dedicated
  * {@link ReentrantReadWriteLock}. Read operations can run concurrently, while
  * writers/compaction are exclusive and block readers for their duration.
  */
-public class SegmentSynchronizationAdapter<K, V> extends AbstractCloseableResource
-        implements Segment<K, V> {
+public class SegmentSynchronizationAdapter<K, V>
+        extends AbstractCloseableResource implements Segment<K, V> {
 
     private final Segment<K, V> delegate;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(
@@ -29,13 +29,16 @@ public class SegmentSynchronizationAdapter<K, V> extends AbstractCloseableResour
     private final Lock writeLock = lock.writeLock();
     private final AtomicBoolean compactionScheduled = new AtomicBoolean(false);
     private final AtomicBoolean compactionRerun = new AtomicBoolean(false);
-
     // Keep compaction off the write path while still honoring the write lock.
-    private static final ExecutorService COMPACTION_EXECUTOR = Executors
-            .newSingleThreadExecutor(namedThreadFactory("segmentCompaction"));
+    private final ExecutorService compactionExecutor;
 
     public SegmentSynchronizationAdapter(final Segment<K, V> delegate) {
         this.delegate = delegate;
+        final SegmentId id = delegate == null ? null : delegate.getId();
+        final String prefix = id == null ? "segmentCompaction"
+                : "segmentCompaction-" + id.getName();
+        this.compactionExecutor = Executors
+                .newSingleThreadExecutor(namedThreadFactory(prefix));
         if (delegate instanceof SegmentImpl<K, V> impl) {
             impl.setCompactionExecutor(this::scheduleCompaction);
         }
@@ -52,7 +55,8 @@ public class SegmentSynchronizationAdapter<K, V> extends AbstractCloseableResour
     }
 
     private void scheduleCompaction(final SegmentImpl<K, V> segment) {
-        if (segment.wasClosed() || wasClosed()) {
+        if (segment.wasClosed() || wasClosed()
+                || compactionExecutor.isShutdown()) {
             return;
         }
         if (lock.isWriteLockedByCurrentThread()) {
@@ -74,16 +78,20 @@ public class SegmentSynchronizationAdapter<K, V> extends AbstractCloseableResour
             compactionRerun.set(true);
             return;
         }
-        COMPACTION_EXECUTOR.execute(() -> {
-            try {
-                runCompaction(segment);
-                while (compactionRerun.getAndSet(false)) {
+        try {
+            compactionExecutor.execute(() -> {
+                try {
                     runCompaction(segment);
+                    while (compactionRerun.getAndSet(false)) {
+                        runCompaction(segment);
+                    }
+                } finally {
+                    compactionScheduled.set(false);
                 }
-            } finally {
-                compactionScheduled.set(false);
-            }
-        });
+            });
+        } catch (final RejectedExecutionException e) {
+            compactionScheduled.set(false);
+        }
     }
 
     private void runCompaction(final SegmentImpl<K, V> segment) {
@@ -92,7 +100,7 @@ public class SegmentSynchronizationAdapter<K, V> extends AbstractCloseableResour
         }
         executeWithWriteLock(() -> {
             if (!segment.wasClosed()) {
-                segment.forceCompact();
+                segment.compact();
             }
             return null;
         });
@@ -109,20 +117,10 @@ public class SegmentSynchronizationAdapter<K, V> extends AbstractCloseableResour
     }
 
     @Override
-    public void optionallyCompact() {
+    public void compact() {
         writeLock.lock();
         try {
-            delegate.optionallyCompact();
-        } finally {
-            writeLock.unlock();
-        }
-    }
-
-    @Override
-    public void forceCompact() {
-        writeLock.lock();
-        try {
-            delegate.forceCompact();
+            delegate.compact();
         } finally {
             writeLock.unlock();
         }
@@ -161,18 +159,6 @@ public class SegmentSynchronizationAdapter<K, V> extends AbstractCloseableResour
     }
 
     @Override
-    public EntryWriter<K, V> openDeltaCacheWriter() {
-        writeLock.lock();
-        try {
-            final EntryWriter<K, V> writer = delegate.openDeltaCacheWriter();
-            return new LockedEntryWriter<>(writer, writeLock);
-        } catch (final Throwable t) {
-            writeLock.unlock();
-            throw t;
-        }
-    }
-
-    @Override
     public void put(final K key, final V value) {
         writeLock.lock();
         try {
@@ -193,13 +179,13 @@ public class SegmentSynchronizationAdapter<K, V> extends AbstractCloseableResour
     }
 
     @Override
-    public int getWriteCacheSize() {
-        return delegate.getWriteCacheSize();
+    public int getNumberOfKeysInWriteCache() {
+        return delegate.getNumberOfKeysInWriteCache();
     }
 
     @Override
-    public long getTotalNumberOfKeysInCache() {
-        return delegate.getTotalNumberOfKeysInCache();
+    public long getNumberOfKeysInCache() {
+        return delegate.getNumberOfKeysInCache();
     }
 
     @Override
@@ -227,17 +213,16 @@ public class SegmentSynchronizationAdapter<K, V> extends AbstractCloseableResour
     }
 
     @Override
-    public int getVersion() {
-        return delegate.getVersion();
-    }
-
-    @Override
     protected void doClose() {
-        writeLock.lock();
         try {
-            delegate.close();
+            writeLock.lock();
+            try {
+                delegate.close();
+            } finally {
+                writeLock.unlock();
+            }
         } finally {
-            writeLock.unlock();
+            compactionExecutor.shutdownNow();
         }
     }
 
@@ -273,30 +258,4 @@ public class SegmentSynchronizationAdapter<K, V> extends AbstractCloseableResour
         }
     }
 
-    private static final class LockedEntryWriter<K, V>
-            extends AbstractCloseableResource implements EntryWriter<K, V> {
-
-        private final EntryWriter<K, V> delegate;
-        private final Lock lock;
-
-        LockedEntryWriter(final EntryWriter<K, V> delegate,
-                final Lock lock) {
-            this.delegate = delegate;
-            this.lock = lock;
-        }
-
-        @Override
-        public void write(final Entry<K, V> entry) {
-            delegate.write(entry);
-        }
-
-        @Override
-        protected void doClose() {
-            try {
-                delegate.close();
-            } finally {
-                lock.unlock();
-            }
-        }
-    }
 }

@@ -12,7 +12,6 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
@@ -35,12 +34,6 @@ class CompactSupportTest {
 
     @Mock
     private Segment<Integer, String> segment1;
-
-    @Mock
-    private EntryWriter<Integer, String> segment0Writer;
-
-    @Mock
-    private EntryWriter<Integer, String> segment1Writer;
 
     private CompactSupport<Integer, String> newSupport() {
         return new CompactSupport<>(segmentRegistry, keySegmentCache,
@@ -92,7 +85,6 @@ class CompactSupportTest {
         when(keySegmentCache.insertKeyToSegment(100)).thenReturn(seg1);
 
         when(segmentRegistry.getSegment(seg0)).thenReturn(segment0);
-        when(segment0.openDeltaCacheWriter()).thenReturn(segment0Writer);
 
         cs.compact(Entry.of(1, "A"));
         cs.compact(Entry.of(2, "B"));
@@ -100,10 +92,9 @@ class CompactSupportTest {
         cs.compact(Entry.of(100, "C"));
 
         // two entries written to seg0 and flushed
-        verify(segment0).openDeltaCacheWriter();
-        verify(segment0Writer).write(Entry.of(1, "A"));
-        verify(segment0Writer).write(Entry.of(2, "B"));
-        verify(segment0Writer).close();
+        verify(segment0).put(1, "A");
+        verify(segment0).put(2, "B");
+        verify(segment0).flush();
 
         // because seg0 is FIRST_SEGMENT_ID, cache gets updated with max key (2) and flushed
         verify(keySegmentCache, atLeastOnce()).insertKeyToSegment(eq(2));
@@ -121,7 +112,6 @@ class CompactSupportTest {
         when(keySegmentCache.insertKeyToSegment(10)).thenReturn(seg1);
         when(keySegmentCache.insertKeyToSegment(11)).thenReturn(seg1);
         when(segmentRegistry.getSegment(seg1)).thenReturn(segment1);
-        when(segment1.openDeltaCacheWriter()).thenReturn(segment1Writer);
 
         cs.compact(Entry.of(10, "X"));
         cs.compact(Entry.of(11, "Y"));
@@ -129,10 +119,9 @@ class CompactSupportTest {
         // Flush remaining
         cs.flush();
 
-        verify(segment1).openDeltaCacheWriter();
-        verify(segment1Writer).write(Entry.of(10, "X"));
-        verify(segment1Writer).write(Entry.of(11, "Y"));
-        verify(segment1Writer).close();
+        verify(segment1).put(10, "X");
+        verify(segment1).put(11, "Y");
+        verify(segment1).flush();
 
         assertEquals(List.of(seg1), cs.getEligibleSegmentIds());
     }
