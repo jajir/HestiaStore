@@ -7,7 +7,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segment.SegmentSynchronizationAdapter;
+import org.hestiastore.index.segment.SegmentImplSynchronizationAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,7 +73,7 @@ public class IndexConsistencyChecker<K, V> {
 
     private void removeEmptySegment(final SegmentId segmentId,
             final Segment<K, V> segment) {
-        if (segment instanceof SegmentSynchronizationAdapter<K, V> adapter) {
+        if (segment instanceof SegmentImplSynchronizationAdapter<K, V> adapter) {
             adapter.executeWithWriteLock(() -> {
                 final K maxKey = adapter.checkAndRepairConsistency();
                 if (maxKey != null) {

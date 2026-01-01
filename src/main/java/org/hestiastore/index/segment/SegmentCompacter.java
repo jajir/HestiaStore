@@ -16,8 +16,7 @@ public final class SegmentCompacter<K, V> {
     private final VersionController versionController;
     private final SegmentCompactionPolicyWithManager compactionPolicy;
 
-    public SegmentCompacter(
-            final VersionController versionController,
+    public SegmentCompacter(final VersionController versionController,
             final SegmentCompactionPolicyWithManager compactionPolicy) {
         this.versionController = Vldtn.requireNonNull(versionController,
                 "versionController");
@@ -26,13 +25,11 @@ public final class SegmentCompacter<K, V> {
     }
 
     public void forceCompact(final SegmentImpl<K, V> segment) {
-        final SegmentFiles<K, V> segmentFiles = segment.getSegmentFiles();
-        logger.debug("Start of compacting '{}'", segmentFiles.getId());
+        logger.debug("Start of compacting '{}'", segment.getId());
         segment.resetSegmentIndexSearcher();
         versionController.changeVersion();
         segment.executeFullWriteTx(writer -> {
-            try (EntryIterator<K, V> iterator = segment
-                    .openIteratorIncludingWriteCache()) {
+            try (EntryIterator<K, V> iterator = segment.openIterator()) {
                 Entry<K, V> entry;
                 while (iterator.hasNext()) {
                     entry = iterator.next();
@@ -40,7 +37,7 @@ public final class SegmentCompacter<K, V> {
                 }
             }
         });
-        logger.debug("End of compacting '{}'", segmentFiles.getId());
+        logger.debug("End of compacting '{}'", segment.getId());
     }
 
 }

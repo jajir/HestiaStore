@@ -18,24 +18,17 @@ import org.hestiastore.index.Vldtn;
 public class SegmentDeltaCacheCompactingWriter<K, V>
         extends AbstractCloseableResource implements EntryWriter<K, V> {
 
-    private final SegmentImpl<K, V> segment;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
-    private final SegmentCompactionPolicyWithManager compactionPolicy;
 
     /**
      * holds current delta cache writer.
      */
     private SegmentDeltaCacheWriter<K, V> deltaCacheWriter;
-    private boolean compactionRequestedDuringWrite;
 
-    public SegmentDeltaCacheCompactingWriter(final SegmentImpl<K, V> segment,
-            final SegmentDeltaCacheController<K, V> deltaCacheController,
-            final SegmentCompactionPolicyWithManager compactionPolicy) {
-        this.segment = Vldtn.requireNonNull(segment, "segment");
+    public SegmentDeltaCacheCompactingWriter(
+            final SegmentDeltaCacheController<K, V> deltaCacheController) {
         this.deltaCacheController = Vldtn.requireNonNull(deltaCacheController,
                 "deltaCacheController");
-        this.compactionPolicy = Vldtn.requireNonNull(compactionPolicy,
-                "compactionPolicy");
     }
 
     @Override
@@ -43,7 +36,6 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
         if (deltaCacheWriter != null) {
             deltaCacheWriter.close();
             deltaCacheWriter = null;
-            requestCompactionForDeltaFiles();
         }
     }
 
@@ -51,16 +43,6 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
     public void write(final Entry<K, V> entry) {
         optionallyOpenDeltaCacheWriter();
         deltaCacheWriter.write(entry);
-        final int deltaFileCount = getDeltaFileCountIncludingInProgress();
-        if (compactionPolicy
-                .shouldForceCompactionForDeltaFiles(deltaFileCount)) {
-            forceCompaction();
-            return;
-        }
-        if (compactionPolicy.shouldCompactDuringWriting(
-                deltaCacheWriter.getNumberOfKeys(), deltaFileCount)) {
-            forceCompaction();
-        }
     }
 
     private void optionallyOpenDeltaCacheWriter() {
@@ -68,31 +50,4 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
             deltaCacheWriter = deltaCacheController.openWriter();
         }
     }
-
-    private void requestCompactionForDeltaFiles() {
-        final int deltaFileCount = segment.getSegmentPropertiesManager()
-                .getDeltaFileCount();
-        if (compactionRequestedDuringWrite && deltaFileCount > 0) {
-            segment.requestCompaction();
-            return;
-        }
-        if (compactionPolicy
-                .shouldForceCompactionForDeltaFiles(deltaFileCount)) {
-            segment.requestCompaction();
-            return;
-        }
-        segment.requestOptionalCompaction();
-    }
-
-    private int getDeltaFileCountIncludingInProgress() {
-        return segment.getSegmentPropertiesManager().getDeltaFileCount() + 1;
-    }
-
-    private void forceCompaction() {
-        compactionRequestedDuringWrite = true;
-        deltaCacheWriter.close();
-        deltaCacheWriter = null;
-        segment.requestCompaction();
-    }
-
 }

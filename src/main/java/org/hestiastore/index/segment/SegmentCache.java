@@ -35,12 +35,10 @@ public final class SegmentCache<K, V> {
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
         this.deltaCache = UniqueCache.<K, V>builder()
-                .withKeyComparator(keyComparator)
-                .withThreadSafe(true)
+                .withKeyComparator(keyComparator).withThreadSafe(true)
                 .buildEmpty();
         this.writeCache = UniqueCache.<K, V>builder()
-                .withKeyComparator(keyComparator)
-                .withThreadSafe(true)
+                .withKeyComparator(keyComparator).withThreadSafe(true)
                 .buildEmpty();
         if (deltaEntries != null) {
             for (final Entry<K, V> entry : deltaEntries) {
@@ -54,18 +52,8 @@ public final class SegmentCache<K, V> {
      *
      * @param entry entry to cache
      */
-    public void put(final Entry<K, V> entry) {
+    public void putToWriteCache(final Entry<K, V> entry) {
         writeCache.put(Vldtn.requireNonNull(entry, "entry"));
-    }
-
-    /**
-     * Adds a new entry into the write cache.
-     *
-     * @param key required key
-     * @param value value to store
-     */
-    public void put(final K key, final V value) {
-        put(Entry.of(Vldtn.requireNonNull(key, "key"), value));
     }
 
     /**
@@ -73,18 +61,8 @@ public final class SegmentCache<K, V> {
      *
      * @param entry entry to store
      */
-    public void putToDeltaCache(final Entry<K, V> entry) {
+    private void putToDeltaCache(final Entry<K, V> entry) {
         deltaCache.put(Vldtn.requireNonNull(entry, "entry"));
-    }
-
-    /**
-     * Adds an entry into the delta cache portion.
-     *
-     * @param key required key
-     * @param value value to store
-     */
-    public void putToDeltaCache(final K key, final V value) {
-        putToDeltaCache(Entry.of(Vldtn.requireNonNull(key, "key"), value));
     }
 
     /**
@@ -160,12 +138,19 @@ public final class SegmentCache<K, V> {
         return writeCache.getAsSortedList();
     }
 
+    void mergeWriteCacheToDeltaCache() {
+        if (!writeCache.isEmpty()) {
+            addAll(deltaCache, writeCache.getAsList());
+        }
+        writeCache.clear();
+    }
+
     int getNumberOfKeysInWriteCache() {
         return writeCache.size();
     }
 
-    long getNumbberOfKeysInCache() {
-        return (long) deltaCache.size() + writeCache.size();
+    int getNumbberOfKeysInCache() {
+        return deltaCache.size() + writeCache.size();
     }
 
     void clearWriteCache() {
@@ -174,8 +159,7 @@ public final class SegmentCache<K, V> {
 
     private UniqueCache<K, V> buildMergedCache() {
         final UniqueCache<K, V> merged = UniqueCache.<K, V>builder()
-                .withKeyComparator(keyComparator)
-                .buildEmpty();
+                .withKeyComparator(keyComparator).buildEmpty();
         addAll(merged, deltaCache.getAsList());
         addAll(merged, writeCache.getAsList());
         return merged;

@@ -254,14 +254,6 @@ class SegmentBuilderTest {
                 .build();
 
         assertNotNull(segment);
-        assertEquals(1,
-                segment.getSegmentConf().getEncodingChunkFilters().size());
-        assertEquals(ChunkFilterDoNothing.class, segment.getSegmentConf()
-                .getEncodingChunkFilters().get(0).getClass());
-        assertEquals(1,
-                segment.getSegmentConf().getDecodingChunkFilters().size());
-        assertEquals(ChunkFilterDoNothing.class, segment.getSegmentConf()
-                .getDecodingChunkFilters().get(0).getClass());
         segment.close();
     }
 

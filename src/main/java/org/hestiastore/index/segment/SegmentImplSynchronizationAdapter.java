@@ -1,11 +1,5 @@
 package org.hestiastore.index.segment;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
@@ -19,7 +13,7 @@ import org.hestiastore.index.EntryIterator;
  * {@link ReentrantReadWriteLock}. Read operations can run concurrently, while
  * writers/compaction are exclusive and block readers for their duration.
  */
-public class SegmentSynchronizationAdapter<K, V>
+public class SegmentImplSynchronizationAdapter<K, V>
         extends AbstractCloseableResource implements Segment<K, V> {
 
     private final Segment<K, V> delegate;
@@ -27,83 +21,9 @@ public class SegmentSynchronizationAdapter<K, V>
             true);
     private final Lock readLock = lock.readLock();
     private final Lock writeLock = lock.writeLock();
-    private final AtomicBoolean compactionScheduled = new AtomicBoolean(false);
-    private final AtomicBoolean compactionRerun = new AtomicBoolean(false);
-    // Keep compaction off the write path while still honoring the write lock.
-    private final ExecutorService compactionExecutor;
 
-    public SegmentSynchronizationAdapter(final Segment<K, V> delegate) {
+    public SegmentImplSynchronizationAdapter(final Segment<K, V> delegate) {
         this.delegate = delegate;
-        final SegmentId id = delegate == null ? null : delegate.getId();
-        final String prefix = id == null ? "segmentCompaction"
-                : "segmentCompaction-" + id.getName();
-        this.compactionExecutor = Executors
-                .newSingleThreadExecutor(namedThreadFactory(prefix));
-        if (delegate instanceof SegmentImpl<K, V> impl) {
-            impl.setCompactionExecutor(this::scheduleCompaction);
-        }
-    }
-
-    private static ThreadFactory namedThreadFactory(final String prefix) {
-        final AtomicInteger counter = new AtomicInteger(1);
-        return runnable -> {
-            final Thread thread = new Thread(runnable);
-            thread.setName(prefix + "-" + counter.getAndIncrement());
-            thread.setDaemon(true);
-            return thread;
-        };
-    }
-
-    private void scheduleCompaction(final SegmentImpl<K, V> segment) {
-        if (segment.wasClosed() || wasClosed()
-                || compactionExecutor.isShutdown()) {
-            return;
-        }
-        if (lock.isWriteLockedByCurrentThread()) {
-            if (!compactionScheduled.compareAndSet(false, true)) {
-                compactionRerun.set(true);
-                return;
-            }
-            try {
-                runCompaction(segment);
-                while (compactionRerun.getAndSet(false)) {
-                    runCompaction(segment);
-                }
-            } finally {
-                compactionScheduled.set(false);
-            }
-            return;
-        }
-        if (!compactionScheduled.compareAndSet(false, true)) {
-            compactionRerun.set(true);
-            return;
-        }
-        try {
-            compactionExecutor.execute(() -> {
-                try {
-                    runCompaction(segment);
-                    while (compactionRerun.getAndSet(false)) {
-                        runCompaction(segment);
-                    }
-                } finally {
-                    compactionScheduled.set(false);
-                }
-            });
-        } catch (final RejectedExecutionException e) {
-            compactionScheduled.set(false);
-        }
-    }
-
-    private void runCompaction(final SegmentImpl<K, V> segment) {
-        if (segment.wasClosed() || wasClosed()) {
-            return;
-        }
-        executeWithWriteLock(() -> {
-            if (!segment.wasClosed()) {
-                segment.compact();
-            }
-            return null;
-        });
     }
 
     @Override
@@ -214,15 +134,11 @@ public class SegmentSynchronizationAdapter<K, V>
 
     @Override
     protected void doClose() {
+        writeLock.lock();
         try {
-            writeLock.lock();
-            try {
-                delegate.close();
-            } finally {
-                writeLock.unlock();
-            }
+            delegate.close();
         } finally {
-            compactionExecutor.shutdownNow();
+            writeLock.unlock();
         }
     }
 

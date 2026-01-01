@@ -23,7 +23,7 @@ class SegmentSynchronizationAdapterConcurrencyTest {
 
     @Test
     void read_operations_do_not_block_each_other() throws Exception {
-        try (SegmentSynchronizationAdapter<Integer, String> segment = newAdapter()) {
+        try (SegmentImplSynchronizationAdapter<Integer, String> segment = newAdapter()) {
             final EntryIterator<Integer, String> iterator = segment
                     .openIterator();
             final ExecutorService executor = Executors
@@ -41,7 +41,7 @@ class SegmentSynchronizationAdapterConcurrencyTest {
 
     @Test
     void write_operation_waits_for_reader_to_close() throws Exception {
-        try (SegmentSynchronizationAdapter<Integer, String> segment = newAdapter()) {
+        try (SegmentImplSynchronizationAdapter<Integer, String> segment = newAdapter()) {
             final EntryIterator<Integer, String> iterator = segment
                     .openIterator();
             final ExecutorService executor = Executors
@@ -59,8 +59,7 @@ class SegmentSynchronizationAdapterConcurrencyTest {
                         } catch (final InterruptedException e) {
                             Thread.currentThread().interrupt();
                             throw new IllegalStateException(
-                                    "Interrupted while holding write lock",
-                                    e);
+                                    "Interrupted while holding write lock", e);
                         }
                         return null;
                     });
@@ -87,7 +86,7 @@ class SegmentSynchronizationAdapterConcurrencyTest {
 
     @Test
     void read_operation_waits_for_writer_to_close() throws Exception {
-        try (SegmentSynchronizationAdapter<Integer, String> segment = newAdapter()) {
+        try (SegmentImplSynchronizationAdapter<Integer, String> segment = newAdapter()) {
             final ExecutorService writerExecutor = Executors
                     .newSingleThreadExecutor();
             final ExecutorService readerExecutor = Executors
@@ -106,8 +105,7 @@ class SegmentSynchronizationAdapterConcurrencyTest {
                         } catch (final InterruptedException e) {
                             Thread.currentThread().interrupt();
                             throw new IllegalStateException(
-                                    "Interrupted while holding write lock",
-                                    e);
+                                    "Interrupted while holding write lock", e);
                         }
                         return null;
                     });
@@ -145,7 +143,7 @@ class SegmentSynchronizationAdapterConcurrencyTest {
 
     @Test
     void second_writer_waits_for_first_writer_to_close() throws Exception {
-        try (SegmentSynchronizationAdapter<Integer, String> segment = newAdapter()) {
+        try (SegmentImplSynchronizationAdapter<Integer, String> segment = newAdapter()) {
             final ExecutorService firstExecutor = Executors
                     .newSingleThreadExecutor();
             final ExecutorService secondExecutor = Executors
@@ -164,8 +162,7 @@ class SegmentSynchronizationAdapterConcurrencyTest {
                         } catch (final InterruptedException e) {
                             Thread.currentThread().interrupt();
                             throw new IllegalStateException(
-                                    "Interrupted while holding write lock",
-                                    e);
+                                    "Interrupted while holding write lock", e);
                         }
                         return null;
                     });
@@ -182,8 +179,7 @@ class SegmentSynchronizationAdapterConcurrencyTest {
                         } catch (final InterruptedException e) {
                             Thread.currentThread().interrupt();
                             throw new IllegalStateException(
-                                    "Interrupted while holding write lock",
-                                    e);
+                                    "Interrupted while holding write lock", e);
                         }
                         return null;
                     });
@@ -208,7 +204,7 @@ class SegmentSynchronizationAdapterConcurrencyTest {
         }
     }
 
-    private static SegmentSynchronizationAdapter<Integer, String> newAdapter() {
+    private static SegmentImplSynchronizationAdapter<Integer, String> newAdapter() {
         final Directory directory = new MemDirectory();
         final Segment<Integer, String> segment = Segment
                 .<Integer, String>builder()//
@@ -221,6 +217,6 @@ class SegmentSynchronizationAdapterConcurrencyTest {
                 .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
                 .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
                 .build();
-        return new SegmentSynchronizationAdapter<>(segment);
+        return new SegmentImplSynchronizationAdapter<>(segment);
     }
 }

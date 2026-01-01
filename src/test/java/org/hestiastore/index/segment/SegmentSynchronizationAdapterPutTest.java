@@ -15,7 +15,7 @@ class SegmentSynchronizationAdapterPutTest {
 
     @Test
     void put_delegates_to_underlying_segment() {
-        try (SegmentSynchronizationAdapter<Integer, String> adapter = new SegmentSynchronizationAdapter<>(
+        try (SegmentImplSynchronizationAdapter<Integer, String> adapter = new SegmentImplSynchronizationAdapter<>(
                 delegate)) {
             adapter.put(1, "A");
         }

@@ -24,37 +24,10 @@ public final class SegmentCacheAsyncAdapter<K, V> {
         this.delegate = Vldtn.requireNonNull(delegate, "delegate");
     }
 
-    public void put(final Entry<K, V> entry) {
+    public void putToWriteCache(final Entry<K, V> entry) {
         writeLock.lock();
         try {
-            delegate.put(entry);
-        } finally {
-            writeLock.unlock();
-        }
-    }
-
-    public void put(final K key, final V value) {
-        writeLock.lock();
-        try {
-            delegate.put(key, value);
-        } finally {
-            writeLock.unlock();
-        }
-    }
-
-    public void putToDeltaCache(final Entry<K, V> entry) {
-        writeLock.lock();
-        try {
-            delegate.putToDeltaCache(entry);
-        } finally {
-            writeLock.unlock();
-        }
-    }
-
-    public void putToDeltaCache(final K key, final V value) {
-        writeLock.lock();
-        try {
-            delegate.putToDeltaCache(key, value);
+            delegate.putToWriteCache(entry);
         } finally {
             writeLock.unlock();
         }
@@ -111,6 +84,15 @@ public final class SegmentCacheAsyncAdapter<K, V> {
             return delegate.getWriteCacheAsSortedList();
         } finally {
             readLock.unlock();
+        }
+    }
+
+    void mergeWriteCacheToDeltaCache() {
+        writeLock.lock();
+        try {
+            delegate.mergeWriteCacheToDeltaCache();
+        } finally {
+            writeLock.unlock();
         }
     }
 
