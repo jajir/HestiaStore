@@ -10,8 +10,9 @@ import org.hestiastore.index.EntryIterator;
 
 /**
  * Serializes access to a single {@link Segment} instance using a dedicated
- * {@link ReentrantReadWriteLock}. Read operations can run concurrently, while
- * writers/compaction are exclusive and block readers for their duration.
+ * {@link ReentrantReadWriteLock}. Read operations can run concurrently. Writers
+ * and compaction take the write lock, while iterators acquire the read lock per
+ * {@code hasNext}/{@code next} call to reduce write blocking.
  */
 public class SegmentImplSynchronizationAdapter<K, V>
         extends AbstractCloseableResource implements Segment<K, V> {
@@ -68,14 +69,14 @@ public class SegmentImplSynchronizationAdapter<K, V>
 
     @Override
     public EntryIterator<K, V> openIterator() {
+        EntryIterator<K, V> iterator;
         readLock.lock();
         try {
-            final EntryIterator<K, V> iterator = delegate.openIterator();
-            return new LockedEntryIterator<>(iterator, readLock);
-        } catch (final Throwable t) {
+            iterator = delegate.openIterator();
+        } finally {
             readLock.unlock();
-            throw t;
         }
+        return new LockedEntryIterator<>(iterator, readLock);
     }
 
     @Override
@@ -156,16 +157,27 @@ public class SegmentImplSynchronizationAdapter<K, V>
 
         @Override
         public boolean hasNext() {
-            return delegate.hasNext();
+            lock.lock();
+            try {
+                return delegate.hasNext();
+            } finally {
+                lock.unlock();
+            }
         }
 
         @Override
         public Entry<K, V> next() {
-            return delegate.next();
+            lock.lock();
+            try {
+                return delegate.next();
+            } finally {
+                lock.unlock();
+            }
         }
 
         @Override
         protected void doClose() {
+            lock.lock();
             try {
                 delegate.close();
             } finally {
