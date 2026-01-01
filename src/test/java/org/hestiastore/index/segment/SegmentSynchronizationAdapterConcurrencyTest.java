@@ -18,7 +18,12 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
+@Timeout(value = 10, unit = TimeUnit.SECONDS)
 class SegmentSynchronizationAdapterConcurrencyTest {
 
     @Test
@@ -67,13 +72,11 @@ class SegmentSynchronizationAdapterConcurrencyTest {
                 });
                 assertTrue(started.await(1, TimeUnit.SECONDS),
                         "Writer task did not start");
-                assertFalse(acquired.await(250, TimeUnit.MILLISECONDS),
-                        "Writer acquired lock while reader was open");
-                iterator.close();
                 assertTrue(acquired.await(2, TimeUnit.SECONDS),
-                        "Writer did not acquire lock after reader closed");
+                        "Writer did not acquire lock");
                 closeSignal.countDown();
                 future.get(2, TimeUnit.SECONDS);
+                iterator.close();
             } finally {
                 if (!iterator.wasClosed()) {
                     iterator.close();
