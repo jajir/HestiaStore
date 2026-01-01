@@ -1,6 +1,4 @@
-package org.hestiastore.index.segment;
-
-import org.hestiastore.index.Vldtn;
+package org.hestiastore.index.segmentindex;
 
 /**
  * Encapsulates pre-split evaluations for a segment. It determines whether a
@@ -14,22 +12,23 @@ public final class SegmentSplitterPolicy<K, V> {
 
     private static final float MINIMAL_PERCENTAGE_DIFFERENCE = 0.9F;
 
-    private final SegmentPropertiesManager segmentPropertiesManager;
-    private final SegmentDeltaCacheController<K, V> deltaCacheController;
+    private final long estimatedNumberOfKeys;
+    private final boolean hasTombstones;
 
     /**
      * Creates a policy bound to a specific segment lifecycle.
      *
-     * @param segmentPropertiesManager statistics provider for the segment
-     * @param deltaCacheController     access to delta cache information
+     * @param estimatedNumberOfKeys estimated number of keys in the segment
+     * @param hasTombstones          whether tombstones were detected
      */
     SegmentSplitterPolicy(
-            final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentDeltaCacheController<K, V> deltaCacheController) {
-        this.segmentPropertiesManager = Vldtn.requireNonNull(
-                segmentPropertiesManager, "segmentPropertiesManager");
-        this.deltaCacheController = Vldtn.requireNonNull(deltaCacheController,
-                "deltaCacheController");
+            final long estimatedNumberOfKeys, final boolean hasTombstones) {
+        if (estimatedNumberOfKeys < 0) {
+            throw new IllegalArgumentException(
+                    "Property 'estimatedNumberOfKeys' must be >= 0.");
+        }
+        this.estimatedNumberOfKeys = estimatedNumberOfKeys;
+        this.hasTombstones = hasTombstones;
     }
 
     /**
@@ -63,16 +62,13 @@ public final class SegmentSplitterPolicy<K, V> {
      * @return estimated total number of live keys held by the segment
      */
     long estimateNumberOfKeys() {
-        final SegmentStats stats = segmentPropertiesManager.getSegmentStats();
-        return stats.getNumberOfKeysInSegment()
-                + deltaCacheController.getDeltaCacheSizeWithoutTombstones();
+        return estimatedNumberOfKeys;
     }
 
     /**
      * @return true when delta cache holds any tombstone entries.
      */
     public boolean hasTombstonesInDeltaCache() {
-        return deltaCacheController.getDeltaCacheSizeWithoutTombstones()
-                < deltaCacheController.getDeltaCacheSize();
+        return hasTombstones;
     }
 }

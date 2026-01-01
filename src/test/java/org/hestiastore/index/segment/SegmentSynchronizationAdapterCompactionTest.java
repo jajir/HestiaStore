@@ -37,10 +37,6 @@ class SegmentSynchronizationAdapterCompactionTest {
     private SegmentCompactionPolicyWithManager compactionPolicy;
     @Mock
     private SegmentCompacter<Integer, String> segmentCompacter;
-    @Mock
-    private SegmentReplacer<Integer, String> segmentReplacer;
-    @Mock
-    private SegmentSplitterPolicy<Integer, String> segmentSplitterPolicy;
 
     @Test
     void request_compaction_runs_async_under_adapter() throws Exception {
@@ -56,7 +52,7 @@ class SegmentSynchronizationAdapterCompactionTest {
                 segmentFiles, segmentConf, versionController,
                 segmentPropertiesManager, segmentResources,
                 deltaCacheController, segmentSearcher, compactionPolicy,
-                segmentCompacter, segmentReplacer, segmentSplitterPolicy);
+                segmentCompacter);
         final SegmentImpl<Integer, String> spySegment = spy(segment);
         final CountDownLatch latch = new CountDownLatch(1);
         doAnswer(invocation -> {

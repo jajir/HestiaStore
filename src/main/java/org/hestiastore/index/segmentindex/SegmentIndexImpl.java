@@ -44,7 +44,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         this.segmentRegistry = new SegmentRegistrySynchronized<>(
                 directoryFacade, keyTypeDescriptor, valueTypeDescriptor, conf);
         this.segmentSplitCoordinator = new SegmentSplitCoordinator<>(conf,
-                keySegmentCache);
+                keySegmentCache, segmentRegistry);
         getIndexState().onReady(this);
     }
 

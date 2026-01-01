@@ -1,4 +1,4 @@
-package org.hestiastore.index.segment;
+package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -12,13 +12,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.hestiastore.index.segment.Segment;
 
 @ExtendWith(MockitoExtension.class)
 class SegmentSplitStepOpenIteratorTest {
 
     private SegmentSplitStepOpenIterator<Integer, String> step;
     @Mock
-    private SegmentImpl<Integer, String> segment;
+    private Segment<Integer, String> segment;
     @Mock
     private EntryIterator<Integer, String> it;
 

@@ -1,30 +1,25 @@
-package org.hestiastore.index.segment;
+package org.hestiastore.index.segmentindex;
 
 import org.hestiastore.index.Filter;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.segment.SegmentId;
 
 final class SegmentSplitStepReplaceIfNoRemaining<K, V>
         implements Filter<SegmentSplitContext<K, V>, SegmentSplitState<K, V>> {
-
-    private final SegmentReplacer<K, V> segmentReplacer;
-
-    SegmentSplitStepReplaceIfNoRemaining(
-            final SegmentReplacer<K, V> segmentReplacer) {
-        this.segmentReplacer = segmentReplacer;
-    }
 
     @Override
     public boolean filter(final SegmentSplitContext<K, V> ctx,
             final SegmentSplitState<K, V> state) {
         Vldtn.requireNonNull(ctx, "ctx");
         Vldtn.requireNonNull(state, "state");
+        Vldtn.requireNonNull(ctx.getPlan(), "plan");
         Vldtn.requireNonNull(state.getIterator(), "iterator");
-        Vldtn.requireNonNull(state.getLowerSegment(), "lowerSegment");
+        final SegmentId lowerSegmentId = Vldtn.requireNonNull(
+                state.getLowerSegmentId(), "lowerSegmentId");
         if (state.getIterator().hasNext()) {
             return true; // continue to next step (split upper)
         }
-        segmentReplacer.replaceWithLower(state.getLowerSegment());
-        state.setResult(new SegmentSplitterResult<>(state.getLowerSegment(),
+        state.setResult(new SegmentSplitterResult<>(lowerSegmentId,
                 ctx.getPlan().getMinKey(), ctx.getPlan().getMaxKey(),
                 SegmentSplitterResult.SegmentSplittingStatus.COMPACTED));
         return false;

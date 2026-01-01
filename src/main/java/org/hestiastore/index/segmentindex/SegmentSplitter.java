@@ -1,7 +1,11 @@
-package org.hestiastore.index.segment;
+package org.hestiastore.index.segmentindex;
+
+import java.util.List;
 
 import org.hestiastore.index.F;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segment.SegmentId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,18 +26,14 @@ import org.slf4j.LoggerFactory;
 public class SegmentSplitter<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final SegmentImpl<K, V> segment;
-    private final VersionController versionController;
-    private final SegmentReplacer<K, V> segmentReplacer;
+    private final Segment<K, V> segment;
+    private final SegmentWriterTxFactory<K, V> writerTxFactory;
 
-    public SegmentSplitter(final SegmentImpl<K, V> segment,
-            final VersionController versionController,
-            final SegmentReplacer<K, V> segmentReplacer) {
+    public SegmentSplitter(final Segment<K, V> segment,
+            final SegmentWriterTxFactory<K, V> writerTxFactory) {
         this.segment = Vldtn.requireNonNull(segment, "segment");
-        this.versionController = Vldtn.requireNonNull(versionController,
-                "versionController");
-        this.segmentReplacer = Vldtn.requireNonNull(segmentReplacer,
-                "segmentReplacer");
+        this.writerTxFactory = Vldtn.requireNonNull(writerTxFactory,
+                "writerTxFactory");
     }
 
     /**
@@ -52,26 +52,24 @@ public class SegmentSplitter<K, V> {
         Vldtn.requireNonNull(segmentId, "segmentId");
         Vldtn.requireNonNull(plan, "plan");
         logger.debug("Splitting of '{}' started", segment.getId());
-        segment.resetSegmentIndexSearcher();
-        versionController.changeVersion();
+        segment.invalidateIterators();
 
         final SegmentSplitContext<K, V> ctx = new SegmentSplitContext<>(segment,
-                versionController, plan, segmentId);
+                plan, segmentId, writerTxFactory);
         final SegmentSplitPipeline<K, V> pipeline = new SegmentSplitPipeline<>(
-                java.util.List.of(new SegmentSplitStepValidateFeasibility<>(),
+                List.of(new SegmentSplitStepValidateFeasibility<>(),
                         new SegmentSplitStepOpenIterator<>(),
                         new SegmentSplitStepCreateLowerSegment<>(),
                         new SegmentSplitStepFillLowerUntilTarget<>(),
                         new SegmentSplitStepEnsureLowerNotEmpty<>(),
-                        new SegmentSplitStepReplaceIfNoRemaining<>(
-                                segmentReplacer),
+                        new SegmentSplitStepReplaceIfNoRemaining<>(),
                         new SegmentSplitStepWriteRemainingToCurrent<>()));
         final SegmentSplitterResult<K, V> result = pipeline.run(ctx);
 
         if (logger.isDebugEnabled()) {
             logger.debug(
                     "Splitting of '{}' finished, '{}' was created. Estimated number of keys was '{}'",
-                    segment.getId(), result.getSegment().getId(),
+                    segment.getId(), result.getSegmentId(),
                     F.fmt(plan.getEstimatedNumberOfKeys()));
         }
         return result;

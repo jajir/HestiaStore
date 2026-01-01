@@ -1,4 +1,4 @@
-package org.hestiastore.index.segment;
+package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -19,18 +19,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segment.SegmentId;
 
 @ExtendWith(MockitoExtension.class)
 class SegmentSplitStepWriteRemainingToCurrentTest {
 
     @Mock
-    private SegmentDeltaCacheController<Integer, String> dc;
-    @Mock
-    private SegmentPropertiesManager spm;
-    @Mock
-    private SegmentImpl<Integer, String> segment;
-    @Mock
-    private SegmentImpl<Integer, String> lowerSegment;
+    private Segment<Integer, String> segment;
     @Mock
     private WriteTransaction<Integer, String> tx;
     @Mock
@@ -50,11 +46,8 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
 
     private SegmentSplitterPlan<Integer, String> planWithEstimate(
             long estimate) {
-        when(spm.getSegmentStats())
-                .thenReturn(new SegmentStats(0, estimate, 0));
-        when(dc.getDeltaCacheSizeWithoutTombstones()).thenReturn(0);
         final SegmentSplitterPolicy<Integer, String> policy = new SegmentSplitterPolicy<>(
-                spm, dc);
+                estimate, false);
         return SegmentSplitterPlan.fromPolicy(policy);
     }
 
@@ -76,13 +69,11 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
 
     @Test
     void test_missing_segment() {
-        when(spm.getSegmentStats()).thenReturn(new SegmentStats(0, 5, 0));
-        when(dc.getDeltaCacheSizeWithoutTombstones()).thenReturn(0);
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.filter(new SegmentSplitContext<>(null, null,
+                () -> step.filter(new SegmentSplitContext<>(null,
                         SegmentSplitterPlan.fromPolicy(
-                                new SegmentSplitterPolicy<>(spm, dc)),
-                        null), new SegmentSplitState<>()));
+                                new SegmentSplitterPolicy<>(5, false)),
+                        SegmentId.of(1), id -> tx), new SegmentSplitState<>()));
         assertEquals("Property 'segment' must not be null.", err.getMessage());
     }
 
@@ -97,51 +88,49 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
 
     @Test
     void test_missing_iterator() {
-        when(spm.getSegmentStats()).thenReturn(new SegmentStats(0, 5, 0));
-        when(dc.getDeltaCacheSizeWithoutTombstones()).thenReturn(0);
         final SegmentSplitterPlan<Integer, String> plan = SegmentSplitterPlan
-                .fromPolicy(new SegmentSplitterPolicy<>(spm, dc));
+                .fromPolicy(new SegmentSplitterPolicy<>(5, false));
         plan.recordLower(Entry.of(0, "z"));
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.filter(
-                        new SegmentSplitContext<>(segment, null, plan, null),
+                        new SegmentSplitContext<>(segment, plan,
+                                SegmentId.of(1), id -> tx),
                         new SegmentSplitState<>()));
         assertEquals("Property 'iterator' must not be null.", err.getMessage());
     }
 
     @Test
-    void test_missing_lowerSegment() {
-        when(spm.getSegmentStats()).thenReturn(new SegmentStats(0, 5, 0));
-        when(dc.getDeltaCacheSizeWithoutTombstones()).thenReturn(0);
+    void test_missing_lower_segment_id() {
         final SegmentSplitterPlan<Integer, String> plan = SegmentSplitterPlan
-                .fromPolicy(new SegmentSplitterPolicy<>(spm, dc));
+                .fromPolicy(new SegmentSplitterPolicy<>(5, false));
         plan.recordLower(Entry.of(0, "z"));
         final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
         state.setIterator(new EntryIteratorList<Integer, String>(
                 java.util.List.of(Entry.of(1, "a"))));
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.filter(
-                        new SegmentSplitContext<>(segment, null, plan, null),
+                        new SegmentSplitContext<>(segment, plan, null,
+                                id -> tx),
                         state));
-        assertEquals("Property 'lowerSegment' must not be null.",
+        assertEquals("Property 'lowerSegmentId' must not be null.",
                 err.getMessage());
     }
 
     @Test
     void writes_remaining_and_commits_and_returns_split() {
-        when(segment.openFullWriteTx()).thenReturn(tx);
         when(tx.open()).thenReturn(writer);
+        when(segment.getId()).thenReturn(SegmentId.of(99));
 
         final var it = new EntryIteratorList<Integer, String>(
                 List.of(Entry.of(1, "a"), Entry.of(2, "b")));
 
         final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
         state.setIterator(it);
-        state.setLowerSegment(lowerSegment);
+        state.setLowerSegmentId(SegmentId.of(2));
         final SegmentSplitterPlan<Integer, String> plan = planWithEstimate(10);
         plan.recordLower(Entry.of(0, "z"));
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
-                segment, null, plan, null);
+                segment, plan, SegmentId.of(2), id -> tx);
         step.filter(ctx, state);
         verify(writer, times(2)).write(any());
         verify(tx).commit();

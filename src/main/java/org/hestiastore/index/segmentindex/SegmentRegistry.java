@@ -7,6 +7,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segment.SegmentBuilder;
 import org.hestiastore.index.segment.SegmentConf;
 import org.hestiastore.index.segment.SegmentDataSupplier;
 import org.hestiastore.index.segment.SegmentFiles;
@@ -57,36 +58,29 @@ public class SegmentRegistry<K, V> {
         deleteSegmentFiles(segmentId);
     }
 
-    private Segment<K, V> instantiateSegment(final SegmentId segmentId) {
+    void evictSegment(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
+        final Segment<K, V> segment = segments.remove(segmentId);
+        if (segment != null && !segment.wasClosed()) {
+            segment.close();
+        }
+    }
 
-        SegmentConf segmentConf = new SegmentConf(
-                conf.getMaxNumberOfKeysInSegmentCache().intValue(),
-                conf.getMaxNumberOfKeysInSegmentWriteCache().intValue(),
-                conf.getMaxNumberOfKeysInSegmentChunk(),
-                conf.getBloomFilterNumberOfHashFunctions(),
-                conf.getBloomFilterIndexSizeInBytes(),
-                conf.getBloomFilterProbabilityOfFalsePositive(),
-                conf.getDiskIoBufferSize(), conf.getEncodingChunkFilters(),
-                conf.getDecodingChunkFilters());
-
-        final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
-                directoryFacade, segmentId);
-
-        final SegmentFiles<K, V> segmentFiles = new SegmentFiles<>(
-                directoryFacade, segmentId, keyTypeDescriptor,
-                valueTypeDescriptor, conf.getDiskIoBufferSize(),
-                conf.getEncodingChunkFilters(), conf.getDecodingChunkFilters());
-
+    SegmentBuilder<K, V> newSegmentBuilder(final SegmentId segmentId) {
+        Vldtn.requireNonNull(segmentId, "segmentId");
+        final SegmentConf segmentConf = buildSegmentConf();
+        final SegmentPropertiesManager segmentPropertiesManager = newSegmentPropertiesManager(
+                segmentId);
+        final SegmentFiles<K, V> segmentFiles = newSegmentFiles(segmentId);
         final SegmentDataSupplier<K, V> segmentDataSupplier = new SegmentDataSupplier<>(
                 segmentFiles, segmentConf, segmentPropertiesManager);
-
         final SegmentResources<K, V> dataProvider = new SegmentResourcesImpl<>(
                 segmentDataSupplier);
 
-        final Segment<K, V> segment = Segment.<K, V>builder()
-                .withAsyncDirectory(directoryFacade).withId(segmentId)
-                .withKeyTypeDescriptor(keyTypeDescriptor)
+        return Segment.<K, V>builder()//
+                .withAsyncDirectory(directoryFacade)//
+                .withId(segmentId)//
+                .withKeyTypeDescriptor(keyTypeDescriptor)//
                 .withSegmentResources(dataProvider)//
                 .withSegmentConf(segmentConf)//
                 .withSegmentFiles(segmentFiles)//
@@ -103,18 +97,40 @@ public class SegmentRegistry<K, V> {
                         conf.getBloomFilterNumberOfHashFunctions())//
                 .withBloomFilterIndexSizeInBytes(
                         conf.getBloomFilterIndexSizeInBytes())//
-                .withDiskIoBufferSize(conf.getDiskIoBufferSize())//
-                .build();
+                .withDiskIoBufferSize(conf.getDiskIoBufferSize());
+    }
+
+    SegmentFiles<K, V> newSegmentFiles(final SegmentId segmentId) {
+        return new SegmentFiles<>(directoryFacade, segmentId, keyTypeDescriptor,
+                valueTypeDescriptor, conf.getDiskIoBufferSize(),
+                conf.getEncodingChunkFilters(), conf.getDecodingChunkFilters());
+    }
+
+    SegmentPropertiesManager newSegmentPropertiesManager(
+            final SegmentId segmentId) {
+        return new SegmentPropertiesManager(directoryFacade, segmentId);
+    }
+
+    private SegmentConf buildSegmentConf() {
+        return new SegmentConf(conf.getMaxNumberOfKeysInSegmentCache().intValue(),
+                conf.getMaxNumberOfKeysInSegmentWriteCache().intValue(),
+                conf.getMaxNumberOfKeysInSegmentChunk(),
+                conf.getBloomFilterNumberOfHashFunctions(),
+                conf.getBloomFilterIndexSizeInBytes(),
+                conf.getBloomFilterProbabilityOfFalsePositive(),
+                conf.getDiskIoBufferSize(), conf.getEncodingChunkFilters(),
+                conf.getDecodingChunkFilters());
+    }
+
+    private Segment<K, V> instantiateSegment(final SegmentId segmentId) {
+        final Segment<K, V> segment = newSegmentBuilder(segmentId).build();
         return new SegmentSynchronizationAdapter<>(segment);
     }
 
     private void deleteSegmentFiles(final SegmentId segmentId) {
-        final SegmentFiles<K, V> segmentFiles = new SegmentFiles<>(
-                directoryFacade, segmentId, keyTypeDescriptor,
-                valueTypeDescriptor, conf.getDiskIoBufferSize(),
-                conf.getEncodingChunkFilters(), conf.getDecodingChunkFilters());
-        final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
-                directoryFacade, segmentId);
+        final SegmentFiles<K, V> segmentFiles = newSegmentFiles(segmentId);
+        final SegmentPropertiesManager segmentPropertiesManager = newSegmentPropertiesManager(
+                segmentId);
         segmentFiles.deleteAllFiles(segmentPropertiesManager);
     }
 

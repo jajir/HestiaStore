@@ -347,17 +347,12 @@ public final class SegmentBuilder<K, V> {
                 segmentConf.getMaxNumberOfKeysInDeltaCache(),
                 segmentConf.getMaxNumberOfKeysInSegmentWriteCache(),
                 segmentConf.getMaxNumberOfKeysInChunk());
-        final SegmentSplitterPolicy<K, V> segmentSplitterPolicy = new SegmentSplitterPolicy<>(
-                segmentPropertiesManager, deltaCacheController);
         final SegmentCompacter<K, V> compacter = new SegmentCompacter<>(
                 versionController, compactionPolicy);
-        final SegmentReplacer<K, V> segmentReplacer = new SegmentReplacer<>(
-                new SegmentFilesRenamer(), deltaCacheController,
-                segmentPropertiesManager, segmentFiles);
         return new SegmentImpl<>(segmentFiles, segmentConf, versionController,
                 segmentPropertiesManager, segmentResources,
                 deltaCacheController, segmentSearcher, compactionPolicy,
-                compacter, segmentReplacer, segmentSplitterPolicy);
+                compacter);
     }
 
     private void prepareBaseComponents() {

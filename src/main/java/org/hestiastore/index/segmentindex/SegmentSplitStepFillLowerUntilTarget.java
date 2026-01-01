@@ -1,4 +1,4 @@
-package org.hestiastore.index.segment;
+package org.hestiastore.index.segmentindex;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryWriter;
@@ -15,10 +15,11 @@ final class SegmentSplitStepFillLowerUntilTarget<K, V>
         Vldtn.requireNonNull(ctx, "ctx");
         Vldtn.requireNonNull(state, "state");
         Vldtn.requireNonNull(ctx.getPlan(), "plan");
-        Vldtn.requireNonNull(state.getLowerSegment(), "lowerSegment");
+        Vldtn.requireNonNull(ctx.getWriterTxFactory(), "writerTxFactory");
+        Vldtn.requireNonNull(state.getLowerSegmentId(), "lowerSegmentId");
         Vldtn.requireNonNull(state.getIterator(), "iterator");
-        final WriteTransaction<K, V> lowerSegmentWriteTx = state
-                .getLowerSegment().openFullWriteTx();
+        final WriteTransaction<K, V> lowerSegmentWriteTx = ctx
+                .getWriterTxFactory().openWriterTx(state.getLowerSegmentId());
         try (EntryWriter<K, V> writer = lowerSegmentWriteTx.open()) {
             while (ctx.getPlan().getLowerCount() < ctx.getPlan().getHalf()
                     && state.getIterator().hasNext()) {

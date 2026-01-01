@@ -26,15 +26,10 @@ import org.hestiastore.index.bloomfilter.BloomFilterWriterTx;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFile;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFileWriter;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFileWriterTx;
-import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
-import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
-import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberValidation;
-import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.scarceindex.ScarceIndexWriterTx;
 import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,8 +56,6 @@ class SegmentImplTest {
     private SegmentSearcher<Integer, String> segmentSearcher;
     @Mock
     private SegmentCompactionPolicyWithManager compactionPolicy;
-    @Mock
-    private SegmentSplitterPolicy<Integer, String> splitterPolicy;
     @Mock
     private SegmentId segmentId;
     @Mock
@@ -136,64 +129,10 @@ class SegmentImplTest {
                 segmentPropertiesManager);
         final SegmentCompacter<Integer, String> compacter = new SegmentCompacter<>(
                 versionController, compactionPolicy);
-        final SegmentReplacer<Integer, String> replacer = new SegmentReplacer<>(
-                new SegmentFilesRenamer(), deltaCacheController,
-                segmentPropertiesManager, segmentFiles);
         subject = new SegmentImpl<>(segmentFiles, conf, versionController,
                 segmentPropertiesManager, segmentDataProvider,
                 deltaCacheController, segmentSearcher, compactionPolicy,
-                compacter, replacer, splitterPolicy);
-    }
-
-    @Test
-    void createSegment_clones_configuration_and_descriptors() {
-        final Directory directory = new MemDirectory();
-        final SegmentId originalId = SegmentId.of(10);
-        final SegmentId cloneId = SegmentId.of(11);
-        final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
-        final TypeDescriptorShortString tds = new TypeDescriptorShortString();
-
-        final SegmentImpl<Integer, String> seg = Segment
-                .<Integer, String>builder()//
-                .withAsyncDirectory(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(directory))//
-                .withId(originalId)//
-                .withKeyTypeDescriptor(tdi)//
-                .withBloomFilterIndexSizeInBytes(0)//
-                .withValueTypeDescriptor(tds)//
-                .withEncodingChunkFilters(
-                        List.of(new ChunkFilterMagicNumberWriting(), //
-                                new ChunkFilterCrc32Writing(), //
-                                new ChunkFilterDoNothing()//
-                        ))//
-                .withDecodingChunkFilters(
-                        List.of(new ChunkFilterMagicNumberValidation(), //
-                                new ChunkFilterCrc32Validation(), //
-                                new ChunkFilterDoNothing()//
-                        ))//
-                .build();
-
-        final SegmentImpl<Integer, String> cloned = seg
-                .createSegmentWithSameConfig(cloneId);
-
-        assertNotNull(cloned);
-        assertEquals(cloneId, cloned.getId());
-        // Same directory instance
-        assertSame(seg.getSegmentFiles().getAsyncDirectory(),
-                cloned.getSegmentFiles().getAsyncDirectory());
-        // Same descriptors by type
-        assertEquals(seg.getSegmentFiles().getKeyTypeDescriptor().getClass(),
-                cloned.getSegmentFiles().getKeyTypeDescriptor().getClass());
-        assertEquals(seg.getSegmentFiles().getValueTypeDescriptor().getClass(),
-                cloned.getSegmentFiles().getValueTypeDescriptor().getClass());
-        // A few key conf properties match (copy constructor used)
-        assertEquals(seg.getSegmentConf().getDiskIoBufferSize(),
-                cloned.getSegmentConf().getDiskIoBufferSize());
-        assertEquals(seg.getSegmentConf().getEncodingChunkFilters().size(),
-                cloned.getSegmentConf().getEncodingChunkFilters().size());
-        assertEquals(seg.getSegmentConf().getDecodingChunkFilters().size(),
-                cloned.getSegmentConf().getDecodingChunkFilters().size());
+                compacter);
     }
 
     @Test
@@ -297,11 +236,6 @@ class SegmentImplTest {
             assertNotNull(it);
             assertFalse(it.hasNext());
         }
-    }
-
-    @Test
-    void policy_exposed() {
-        assertSame(splitterPolicy, subject.getSegmentSplitterPolicy());
     }
 
     @Test

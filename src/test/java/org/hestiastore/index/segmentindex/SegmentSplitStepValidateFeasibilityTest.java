@@ -1,24 +1,17 @@
-package org.hestiastore.index.segment;
+package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class SegmentSplitStepValidateFeasibilityTest {
-
-    @Mock
-    private SegmentDeltaCacheController<Integer, String> dc;
-    @Mock
-    private SegmentPropertiesManager spm;
 
     private SegmentSplitStepValidateFeasibility<Integer, String> step;
 
@@ -34,12 +27,8 @@ class SegmentSplitStepValidateFeasibilityTest {
 
     private SegmentSplitterPlan<Integer, String> planWithEstimate(
             long estimate) {
-        when(spm.getSegmentStats())
-                .thenReturn(new SegmentStats(0, estimate, 0));
-        when(dc.getDeltaCacheSizeWithoutTombstones())
-                .thenReturn(0);
         final SegmentSplitterPolicy<Integer, String> policy = new SegmentSplitterPolicy<>(
-                spm, dc);
+                estimate, false);
         return SegmentSplitterPlan.fromPolicy(policy);
     }
 
@@ -67,12 +56,12 @@ class SegmentSplitStepValidateFeasibilityTest {
     @Test
     void throws_when_not_feasible_and_passes_when_feasible() {
         final SegmentSplitContext<Integer, String> ctxNot = new SegmentSplitContext<>(
-                null, null, planWithEstimate(2), null);
+                null, planWithEstimate(2), null, null);
         assertThrows(IllegalStateException.class,
                 () -> step.filter(ctxNot, new SegmentSplitState<>()));
 
         final SegmentSplitContext<Integer, String> ctxOk = new SegmentSplitContext<>(
-                null, null, planWithEstimate(10), null);
+                null, planWithEstimate(10), null, null);
         assertDoesNotThrow(
                 () -> step.filter(ctxOk, new SegmentSplitState<>()));
     }

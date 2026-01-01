@@ -1,4 +1,4 @@
-package org.hestiastore.index.segment;
+package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -20,14 +20,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.hestiastore.index.segment.SegmentId;
 
 @ExtendWith(MockitoExtension.class)
 class SegmentSplitStepFillLowerUntilTargetTest {
-
-    @Mock
-    private SegmentDeltaCacheController<Integer, String> dc;
-    @Mock
-    private SegmentPropertiesManager spm;
 
     private SegmentSplitStepFillLowerUntilTarget<Integer, String> step;
 
@@ -42,10 +38,8 @@ class SegmentSplitStepFillLowerUntilTargetTest {
     }
 
     private SegmentSplitterPlan<Integer, String> feasiblePlan() {
-        when(spm.getSegmentStats()).thenReturn(new SegmentStats(0, 6, 0));
-        when(dc.getDeltaCacheSizeWithoutTombstones()).thenReturn(0);
         final SegmentSplitterPolicy<Integer, String> policy = new SegmentSplitterPolicy<>(
-                spm, dc);
+                6, false);
         return SegmentSplitterPlan.fromPolicy(policy);
     }
 
@@ -75,12 +69,12 @@ class SegmentSplitStepFillLowerUntilTargetTest {
     }
 
     @Test
-    void test_missing_lowerSegment() {
+    void test_missing_writerTxFactory() {
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
-                null, null, feasiblePlan(), null);
+                null, feasiblePlan(), SegmentId.of(1), null);
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.filter(ctx, new SegmentSplitState<>()));
-        assertEquals("Property 'lowerSegment' must not be null.",
+        assertEquals("Property 'writerTxFactory' must not be null.",
                 err.getMessage());
     }
 
@@ -88,12 +82,9 @@ class SegmentSplitStepFillLowerUntilTargetTest {
     void test_missing_iterator() {
         final SegmentSplitStepFillLowerUntilTarget<Integer, String> step = new SegmentSplitStepFillLowerUntilTarget<>();
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
-                null, null, feasiblePlan(), null);
+                null, feasiblePlan(), SegmentId.of(1), id -> null);
         final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
-        @SuppressWarnings("unchecked")
-        final SegmentImpl<Integer, String> lower = org.mockito.Mockito
-                .mock(SegmentImpl.class);
-        state.setLowerSegment(lower);
+        state.setLowerSegmentId(SegmentId.of(1));
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.filter(ctx, state));
         assertEquals("Property 'iterator' must not be null.", err.getMessage());
@@ -102,15 +93,11 @@ class SegmentSplitStepFillLowerUntilTargetTest {
     @Test
     void writes_entries_until_half_and_commits() {
         @SuppressWarnings("unchecked")
-        final SegmentImpl<Integer, String> lower = org.mockito.Mockito
-                .mock(SegmentImpl.class);
-        @SuppressWarnings("unchecked")
         final WriteTransaction<Integer, String> tx = org.mockito.Mockito
                 .mock(WriteTransaction.class);
         @SuppressWarnings("unchecked")
         final EntryWriter<Integer, String> writer = org.mockito.Mockito
                 .mock(EntryWriter.class);
-        when(lower.openFullWriteTx()).thenReturn(tx);
         when(tx.open()).thenReturn(writer);
 
         final List<Entry<Integer, String>> data = List.of(Entry.of(1, "a"),
@@ -118,10 +105,10 @@ class SegmentSplitStepFillLowerUntilTargetTest {
         final EntryIterator<Integer, String> it = new EntryIteratorList<>(data);
 
         final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
-        state.setLowerSegment(lower);
+        state.setLowerSegmentId(SegmentId.of(1));
         state.setIterator(it);
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
-                null, null, feasiblePlan(), null);
+                null, feasiblePlan(), SegmentId.of(1), id -> tx);
         step.filter(ctx, state);
         // half of 6 is 3; expect 3 writes
         verify(writer, times(3)).write(any());

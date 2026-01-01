@@ -1,8 +1,6 @@
 package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -30,8 +28,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class IntegrationSegmentTest extends AbstractSegmentTest {
-
-    private static final SegmentId SEGMENT_37_ID = SegmentId.of(37);
 
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
@@ -150,57 +146,6 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 Entry.of(5, "d")//
         ));
 
-    }
-
-    @ParameterizedTest
-    @MethodSource("segmentProvider")
-    void test_split(final TypeDescriptorInteger tdi,
-            final TypeDescriptorShortString tds, final Directory directory,
-            final Segment<Integer, String> seg,
-            final int expectedNumberKeysInScarceIndex,
-            final int expectedNumberOfFiles) {
-
-        writeEntries(seg, Arrays.asList(Entry.of(2, "e"), Entry.of(3, "e"),
-                Entry.of(4, "e")));
-        writeEntries(seg, Arrays.asList(Entry.of(2, "a"), Entry.of(3, "b"),
-                Entry.of(4, "c"), Entry.of(5, "d")));
-
-        final SegmentId segId = SegmentId.of(3);
-        final SegmentSplitterPolicy<Integer, String> policy = seg
-                .getSegmentSplitterPolicy();
-        final SegmentSplitterPlan<Integer, String> plan = SegmentSplitterPlan
-                .fromPolicy(policy);
-        final SegmentSplitterResult<Integer, String> result = seg.split(segId,
-                plan);
-        final Segment<Integer, String> smaller = result.getSegment();
-        assertEquals(2, result.getMinKey());
-        assertEquals(3, result.getMaxKey());
-
-        verifySegmentData(seg, Arrays.asList(//
-                Entry.of(4, "c"), //
-                Entry.of(5, "d") //
-        ));
-
-        verifySegmentData(smaller, Arrays.asList(//
-                Entry.of(2, "a"), //
-                Entry.of(3, "b") //
-        ));
-
-        verifySegmentSearch(seg, Arrays.asList(//
-                Entry.of(2, null), //
-                Entry.of(3, null), //
-                Entry.of(4, "c"), //
-                Entry.of(5, "d") //
-        ));
-
-        verifySegmentSearch(smaller, Arrays.asList(//
-                Entry.of(2, "a"), //
-                Entry.of(3, "b"), //
-                Entry.of(4, null), //
-                Entry.of(5, null) //
-        ));
-
-        assertEquals(8, numberOfFilesInDirectoryP(directory));
     }
 
     @Test
@@ -441,60 +386,6 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 Entry.of(5, null), //
                 Entry.of(6, null)//
         ));
-    }
-
-    @Test
-    void test_split_just_tombstones() {
-        final Directory directory = new MemDirectory();
-        final SegmentId id = SegmentId.of(27);
-        final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
-                .withAsyncDirectory(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(directory))//
-                .withId(id)//
-                .withMaxNumberOfKeysInSegmentCache(13)//
-                .withMaxNumberOfKeysInSegmentChunk(3)//
-                .withKeyTypeDescriptor(tdi)//
-                .withBloomFilterIndexSizeInBytes(0)//
-                .withValueTypeDescriptor(tds)//
-                .withEncodingChunkFilters(//
-                        List.of(new ChunkFilterMagicNumberWriting(), //
-                                new ChunkFilterCrc32Writing(), //
-                                new ChunkFilterDoNothing()//
-                        ))//
-                .withDecodingChunkFilters(//
-                        List.of(new ChunkFilterMagicNumberValidation(), //
-                                new ChunkFilterCrc32Validation(), //
-                                new ChunkFilterDoNothing()//
-                        ))//
-                .build();
-
-        writeEntries(seg, Arrays.asList(//
-                Entry.of(25, "d"), //
-                Entry.of(15, "d"), //
-                Entry.of(1, TypeDescriptorShortString.TOMBSTONE_VALUE), //
-                Entry.of(2, TypeDescriptorShortString.TOMBSTONE_VALUE), //
-                Entry.of(3, TypeDescriptorShortString.TOMBSTONE_VALUE), //
-                Entry.of(4, TypeDescriptorShortString.TOMBSTONE_VALUE), //
-                Entry.of(5, TypeDescriptorShortString.TOMBSTONE_VALUE), //
-                Entry.of(6, TypeDescriptorShortString.TOMBSTONE_VALUE), //
-                Entry.of(7, TypeDescriptorShortString.TOMBSTONE_VALUE), //
-                Entry.of(8, TypeDescriptorShortString.TOMBSTONE_VALUE), //
-                Entry.of(9, TypeDescriptorShortString.TOMBSTONE_VALUE)//
-        ));
-        final SegmentSplitterPolicy<Integer, String> segSplitPolicy = seg
-                .getSegmentSplitterPolicy();
-        assertTrue(segSplitPolicy.shouldBeCompactedBeforeSplitting(10));
-
-        /**
-         * Verify that split is not possible
-         */
-        final SegmentSplitterPlan<Integer, String> plan2 = SegmentSplitterPlan
-                .fromPolicy(segSplitPolicy);
-        final Exception err = assertThrows(IllegalStateException.class,
-                () -> seg.split(SEGMENT_37_ID, plan2));
-        assertEquals("Splitting failed. Number of keys is too low.",
-                err.getMessage());
     }
 
     @Test
