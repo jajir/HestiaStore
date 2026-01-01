@@ -19,9 +19,9 @@ public abstract class AbstractSegmentTest extends AbstractDataTest {
     /**
      * Simplify filling segment with data.
      * 
-     * @param <M>   key type
-     * @param <N>   value type
-     * @param seg   required segment
+     * @param <M>     key type
+     * @param <N>     value type
+     * @param seg     required segment
      * @param entries required list of entries
      */
     protected <M, N> void writeEntries(final Segment<M, N> seg,
@@ -36,9 +36,9 @@ public abstract class AbstractSegmentTest extends AbstractDataTest {
      * Open segment search and verify that found value for given key is equals
      * to expected value
      * 
-     * @param <M>   key type
-     * @param <N>   value type
-     * @param seg   required segment
+     * @param <M>     key type
+     * @param <N>     value type
+     * @param seg     required segment
      * @param entries required list of entries of key and expected value
      */
     protected <M, N> void verifySegmentSearch(final Segment<M, N> seg,
@@ -55,9 +55,9 @@ public abstract class AbstractSegmentTest extends AbstractDataTest {
      * Open segment search and verify that found value for given key is equals
      * to expecetd value
      * 
-     * @param <M>   key type
-     * @param <N>   value type
-     * @param seg   required segment
+     * @param <M>     key type
+     * @param <N>     value type
+     * @param seg     required segment
      * @param entries required list of expected data in segment
      */
     public static <M, N> void verifySegmentData(final Segment<M, N> seg,
@@ -83,13 +83,6 @@ public abstract class AbstractSegmentTest extends AbstractDataTest {
                 .filter(fileName -> fileName.endsWith(".cache")).count();
         assertEquals(0, cacheFileCount,
                 "Expected zero .cache files in directory");
-    }
-
-    protected void verifyNumberOfFiles(final Directory directory,
-            final int expecetdNumberOfFiles) {
-        long sileCount = directory.getFileNames().count();
-        assertEquals(expecetdNumberOfFiles, sileCount,
-                "Invalid numbe of files in directory");
     }
 
 }

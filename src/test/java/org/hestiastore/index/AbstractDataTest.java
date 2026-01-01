@@ -7,7 +7,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.Segment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Abstract class for data tests
@@ -16,6 +19,9 @@ import org.hestiastore.index.segment.Segment;
  * 
  */
 public abstract class AbstractDataTest {
+
+    private final static Logger LOGGER = LoggerFactory
+            .getLogger(AbstractDataTest.class);
 
     /**
      * Convert entry iterator data to list
@@ -36,7 +42,7 @@ public abstract class AbstractDataTest {
      * Compare two key value entries.
      * 
      * @param expectedPair expected entry
-     * @param entry         verified entry
+     * @param entry        verified entry
      */
     protected void verifyEquals(final Entry<String, Integer> expectedPair,
             final Entry<String, Integer> entry) {
@@ -67,12 +73,13 @@ public abstract class AbstractDataTest {
     /**
      * Verify that data from iterator are same as expecetd values
      * 
-     * @param <M>          key type
-     * @param <N>          value type
-     * @param entries        required list of expected data in segment
+     * @param <M>           key type
+     * @param <N>           value type
+     * @param entries       required list of expected data in segment
      * @param entryIterator required entry iterator
      */
-    public static <M, N> void verifyIteratorData(final List<Entry<M, N>> entries,
+    public static <M, N> void verifyIteratorData(
+            final List<Entry<M, N>> entries,
             final EntryIterator<M, N> entryIterator) {
         final List<Entry<M, N>> data = toList(entryIterator);
         assertEquals(entries.size(), data.size(),
@@ -97,6 +104,24 @@ public abstract class AbstractDataTest {
             iterator.forEachRemaining(out::add);
             return out;
         }
+    }
+
+    /**
+     * Verifies expected count of files in directory and logs the file list when
+     * the count does not match.
+     *
+     * @param directory             required directory to inspect
+     * @param expecetdNumberOfFiles expected number of files in directory
+     */
+    public static void verifyNumberOfFiles(final Directory directory,
+            final int expecetdNumberOfFiles) {
+        final List<String> fileNames = directory.getFileNames().toList();
+        final int fileCount = fileNames.size();
+        if (fileCount != expecetdNumberOfFiles) {
+            LOGGER.error("Unexpected files in directory: {}", fileNames);
+        }
+        assertEquals(expecetdNumberOfFiles, fileCount,
+                "Invalid numbe of files in directory");
     }
 
 }
