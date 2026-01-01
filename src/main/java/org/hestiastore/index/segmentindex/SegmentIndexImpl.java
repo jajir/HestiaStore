@@ -11,7 +11,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segment.SegmentSynchronizationAdapter;
+import org.hestiastore.index.segment.SegmentImplSynchronizationAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -160,7 +160,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private boolean writeIntoSegment(final Segment<K, V> segment, final K key,
             final V value, final SegmentId segmentId,
             final long mappingVersion) {
-        if (segment instanceof SegmentSynchronizationAdapter<K, V> adapter) {
+        if (segment instanceof SegmentImplSynchronizationAdapter<K, V> adapter) {
             return Boolean.TRUE.equals(adapter.executeWithWriteLock(() -> {
                 if (segment.wasClosed()) {
                     return Boolean.FALSE;

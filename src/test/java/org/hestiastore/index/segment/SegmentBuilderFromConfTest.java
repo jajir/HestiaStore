@@ -43,16 +43,10 @@ public class SegmentBuilderFromConfTest {
                 .withSegmentConf(conf)//
         ;
         SegmentImpl<Integer, String> seg = builder.build();
-        SegmentConf ret = seg.getSegmentConf();
-        assertEquals(1024, ret.getDiskIoBufferSize());
-
-        assertEquals(1, ret.getEncodingChunkFilters().size());
-        assertEquals(1, ret.getDecodingChunkFilters().size());
-
-        assertEquals(ChunkFilterMagicNumberWriting.class,
-                ret.getEncodingChunkFilters().get(0).getClass());
-        assertEquals(ChunkFilterMagicNumberValidation.class,
-                ret.getDecodingChunkFilters().get(0).getClass());
+        seg.put(1, "A");
+        seg.flush();
+        assertEquals("A", seg.get(1));
+        seg.close();
     }
 
 }

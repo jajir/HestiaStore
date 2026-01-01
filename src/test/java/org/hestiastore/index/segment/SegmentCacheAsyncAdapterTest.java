@@ -22,12 +22,12 @@ class SegmentCacheAsyncAdapterTest {
     @Test
     void adapter_delegates_to_segment_cache() {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
-                keyType.getComparator(), valueType);
+                keyType.getComparator(), valueType,
+                List.of(Entry.of(1, "A")));
         final SegmentCacheAsyncAdapter<Integer, String> adapter = new SegmentCacheAsyncAdapter<>(
                 cache);
 
-        adapter.putToDeltaCache(1, "A");
-        adapter.put(2, "B");
+        adapter.putToWriteCache(Entry.of(2, "B"));
 
         assertEquals("A", adapter.get(1));
         assertEquals(2, adapter.size());
@@ -55,7 +55,8 @@ class SegmentCacheAsyncAdapterTest {
                     try {
                         startLatch.await();
                         for (int i = 0; i < perThread; i++) {
-                            adapter.put(offset + i, "v" + (offset + i));
+                            adapter.putToWriteCache(
+                                    Entry.of(offset + i, "v" + (offset + i)));
                         }
                     } catch (InterruptedException ex) {
                         Thread.currentThread().interrupt();
@@ -81,13 +82,30 @@ class SegmentCacheAsyncAdapterTest {
         final SegmentCacheAsyncAdapter<Integer, String> adapter = new SegmentCacheAsyncAdapter<>(
                 cache);
 
-        adapter.put(2, "B");
-        adapter.put(1, "A");
+        adapter.putToWriteCache(Entry.of(2, "B"));
+        adapter.putToWriteCache(Entry.of(1, "A"));
 
         assertEquals(List.of(Entry.of(1, "A"), Entry.of(2, "B")),
                 adapter.getWriteCacheAsSortedList());
 
         adapter.clearWriteCache();
         assertEquals(0, adapter.size());
+    }
+
+    @Test
+    void adapter_merges_write_cache_into_delta_cache() {
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                keyType.getComparator(), valueType);
+        final SegmentCacheAsyncAdapter<Integer, String> adapter = new SegmentCacheAsyncAdapter<>(
+                cache);
+
+        adapter.putToWriteCache(Entry.of(1, "A"));
+        adapter.putToWriteCache(Entry.of(2, "B"));
+
+        adapter.mergeWriteCacheToDeltaCache();
+
+        assertEquals(List.of(Entry.of(1, "A"), Entry.of(2, "B")),
+                adapter.getAsSortedList());
+        assertTrue(adapter.getWriteCacheAsSortedList().isEmpty());
     }
 }

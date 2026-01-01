@@ -7,7 +7,7 @@ import org.hestiastore.index.segment.SegmentFilesRenamer;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentPropertiesManager;
-import org.hestiastore.index.segment.SegmentSynchronizationAdapter;
+import org.hestiastore.index.segment.SegmentImplSynchronizationAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,7 +83,7 @@ public class SegmentSplitCoordinator<K, V> {
         final SegmentId segmentId = segment.getId();
         logger.debug("Splitting of '{}' started.", segmentId);
         final SplitOutcome outcome;
-        if (segment instanceof SegmentSynchronizationAdapter<K, V> adapter) {
+        if (segment instanceof SegmentImplSynchronizationAdapter<K, V> adapter) {
             outcome = adapter.executeWithWriteLock(() -> {
                 return doSplit(segment, plan);
             });

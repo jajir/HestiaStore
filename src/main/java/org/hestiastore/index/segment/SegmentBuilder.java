@@ -355,8 +355,7 @@ public final class SegmentBuilder<K, V> {
                 versionController, compactionPolicy);
         return new SegmentImpl<>(segmentFiles, segmentConf, versionController,
                 segmentPropertiesManager, segmentResources,
-                deltaCacheController, segmentSearcher, compactionPolicy,
-                compacter);
+                deltaCacheController, segmentSearcher, compacter);
     }
 
     private void prepareBaseComponents() {

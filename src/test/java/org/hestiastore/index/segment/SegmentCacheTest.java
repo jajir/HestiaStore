@@ -23,7 +23,7 @@ class SegmentCacheTest {
                 keyType.getComparator(), valueType,
                 List.of(Entry.of(1, "old")));
 
-        cache.put(1, "new");
+        cache.putToWriteCache(Entry.of(1, "new"));
 
         assertEquals("new", cache.get(1));
         assertEquals(1, cache.size());
@@ -43,11 +43,10 @@ class SegmentCacheTest {
     @Test
     void size_counts_union_of_both_caches() {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
-                keyType.getComparator(), valueType);
-        cache.putToDeltaCache(1, "A");
-        cache.putToDeltaCache(2, "B");
-        cache.put(2, "B2");
-        cache.put(3, "C");
+                keyType.getComparator(), valueType,
+                List.of(Entry.of(1, "A"), Entry.of(2, "B")));
+        cache.putToWriteCache(Entry.of(2, "B2"));
+        cache.putToWriteCache(Entry.of(3, "C"));
 
         assertEquals(3, cache.size());
     }
@@ -55,11 +54,12 @@ class SegmentCacheTest {
     @Test
     void sizeWithoutTombstones_ignores_tombstones_in_merged_view() {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
-                keyType.getComparator(), valueType);
-        cache.putToDeltaCache(1, "A");
-        cache.putToDeltaCache(2, TypeDescriptorShortString.TOMBSTONE_VALUE);
-        cache.put(2, "B");
-        cache.put(3, TypeDescriptorShortString.TOMBSTONE_VALUE);
+                keyType.getComparator(), valueType,
+                List.of(Entry.of(1, "A"), Entry.of(2,
+                        TypeDescriptorShortString.TOMBSTONE_VALUE)));
+        cache.putToWriteCache(Entry.of(2, "B"));
+        cache.putToWriteCache(
+                Entry.of(3, TypeDescriptorShortString.TOMBSTONE_VALUE));
 
         assertEquals(3, cache.size());
         assertEquals(2, cache.sizeWithoutTombstones());
@@ -68,22 +68,21 @@ class SegmentCacheTest {
     @Test
     void getAsSortedList_returns_sorted_and_overridden_entries() {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
-                keyType.getComparator(), valueType);
-        cache.putToDeltaCache(5, "E");
-        cache.putToDeltaCache(1, "A");
-        cache.put(3, "C");
-        cache.put(1, "A2");
+                keyType.getComparator(), valueType,
+                List.of(Entry.of(5, "E"), Entry.of(1, "A")));
+        cache.putToWriteCache(Entry.of(3, "C"));
+        cache.putToWriteCache(Entry.of(1, "A2"));
 
-        assertEquals(List.of(Entry.of(1, "A2"), Entry.of(3, "C"),
-                Entry.of(5, "E")), cache.getAsSortedList());
+        assertEquals(
+                List.of(Entry.of(1, "A2"), Entry.of(3, "C"), Entry.of(5, "E")),
+                cache.getAsSortedList());
     }
 
     @Test
     void evictAll_clears_both_caches() {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
-                keyType.getComparator(), valueType);
-        cache.putToDeltaCache(1, "A");
-        cache.put(2, "B");
+                keyType.getComparator(), valueType, List.of(Entry.of(1, "A")));
+        cache.putToWriteCache(Entry.of(2, "B"));
 
         cache.evictAll();
 
@@ -97,31 +96,61 @@ class SegmentCacheTest {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
                 keyType.getComparator(), valueType);
 
-        assertThrows(IllegalArgumentException.class, () -> cache.put(null));
+        assertThrows(IllegalArgumentException.class,
+                () -> cache.putToWriteCache(null));
     }
 
     @Test
     void getWriteCacheAsSortedList_and_clearWriteCache() {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
                 keyType.getComparator(), valueType);
-        cache.put(3, "C");
-        cache.put(1, "A");
-        cache.put(2, "B");
+        cache.putToWriteCache(Entry.of(3, "C"));
+        cache.putToWriteCache(Entry.of(1, "A"));
+        cache.putToWriteCache(Entry.of(2, "B"));
 
-        assertEquals(List.of(Entry.of(1, "A"), Entry.of(2, "B"),
-                Entry.of(3, "C")), cache.getWriteCacheAsSortedList());
+        assertEquals(
+                List.of(Entry.of(1, "A"), Entry.of(2, "B"), Entry.of(3, "C")),
+                cache.getWriteCacheAsSortedList());
 
         cache.clearWriteCache();
         assertEquals(0, cache.size());
     }
 
     @Test
+    void mergeWriteCacheToDeltaCache_moves_entries_and_clears_write_cache() {
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                keyType.getComparator(), valueType,
+                List.of(Entry.of(1, "old")));
+        cache.putToWriteCache(Entry.of(1, "new"));
+        cache.putToWriteCache(Entry.of(2, "B"));
+
+        cache.mergeWriteCacheToDeltaCache();
+
+        assertEquals("new", cache.get(1));
+        assertEquals("B", cache.get(2));
+        assertTrue(cache.getWriteCacheAsSortedList().isEmpty());
+        assertEquals(2, cache.size());
+    }
+
+    @Test
+    void mergeWriteCacheToDeltaCache_accepts_empty_snapshot() {
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                keyType.getComparator(), valueType, List.of(Entry.of(1, "A")));
+
+        cache.mergeWriteCacheToDeltaCache();
+
+        assertEquals("A", cache.get(1));
+        assertEquals(1, cache.size());
+        assertTrue(cache.getWriteCacheAsSortedList().isEmpty());
+    }
+
+    @Test
     void getNumberOfKeysInWriteCache_tracks_overwrites() {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
                 keyType.getComparator(), valueType);
-        cache.put(1, "A");
-        cache.put(1, "B");
-        cache.put(2, "C");
+        cache.putToWriteCache(Entry.of(1, "A"));
+        cache.putToWriteCache(Entry.of(1, "B"));
+        cache.putToWriteCache(Entry.of(2, "C"));
 
         assertEquals(2, cache.getNumberOfKeysInWriteCache());
         assertEquals(2, cache.getNumbberOfKeysInCache());

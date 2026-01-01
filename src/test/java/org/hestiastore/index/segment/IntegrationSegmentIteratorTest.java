@@ -114,9 +114,7 @@ class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
                 Arrays.asList(Entry.of("a", 25), Entry.of("c", 40),
                         Entry.of("e", 28), Entry.of("g", 13)));
 
-        final SegmentImpl<String, Integer> impl = (SegmentImpl<String, Integer>) segment;
-        assertTrue(impl.getSegmentCache().getWriteCacheAsSortedList()
-                .isEmpty());
+        assertEquals(0, segment.getNumberOfKeysInWriteCache());
     }
 
 }

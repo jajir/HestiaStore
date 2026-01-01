@@ -53,6 +53,8 @@ class SegmentImplTest {
     @Mock
     private SegmentDeltaCacheController<Integer, String> deltaCacheController;
     @Mock
+    private SegmentDeltaCacheWriter<Integer, String> deltaCacheWriter;
+    @Mock
     private SegmentSearcher<Integer, String> segmentSearcher;
     @Mock
     private SegmentCompactionPolicyWithManager compactionPolicy;
@@ -116,6 +118,7 @@ class SegmentImplTest {
         when(scarceWriterTx.open()).thenReturn(scarceEntryWriter);
         doNothing().when(scarceIndex).loadCache();
         when(deltaCacheController.getDeltaCache()).thenReturn(deltaCache);
+        when(deltaCacheController.openWriter()).thenReturn(deltaCacheWriter);
         when(deltaCache.getAsSortedList()).thenReturn(List.of());
         when(indexIterator.hasNext()).thenReturn(false);
         when(segmentDataProvider.getSegmentDeltaCache()).thenReturn(deltaCache);
@@ -131,8 +134,7 @@ class SegmentImplTest {
                 versionController, compactionPolicy);
         subject = new SegmentImpl<>(segmentFiles, conf, versionController,
                 segmentPropertiesManager, segmentDataProvider,
-                deltaCacheController, segmentSearcher, compactionPolicy,
-                compacter);
+                deltaCacheController, segmentSearcher, compacter);
     }
 
     @Test
@@ -145,16 +147,13 @@ class SegmentImplTest {
 
     @Test
     void put_writes_to_segment_cache_and_bumps_version() {
-        subject.getSegmentCache().putToDeltaCache(Entry.of(1, "A"));
-
+        subject.put(1, "A");
         subject.put(2, "B");
 
-        verify(versionController).changeVersion();
-        final SegmentCache<Integer, String> cache = subject.getSegmentCache();
-        assertNotNull(cache);
-        assertEquals("A", cache.get(1));
-        assertEquals("B", cache.get(2));
-        assertEquals(2, cache.size());
+        verify(versionController, org.mockito.Mockito.times(2)).changeVersion();
+        assertEquals("A", subject.get(1));
+        assertEquals("B", subject.get(2));
+        assertEquals(2, subject.getNumberOfKeysInWriteCache());
     }
 
     @Test
@@ -174,16 +173,14 @@ class SegmentImplTest {
 
     @Test
     void get_uses_segment_cache_when_present() {
-        subject.getSegmentCache().putToDeltaCache(Entry.of(123, "val"));
-
+        subject.put(123, "val");
         assertEquals("val", subject.get(123));
         verify(segmentSearcher, never()).get(any(), any(), any());
     }
 
     @Test
     void get_returns_null_for_tombstone_without_search() {
-        subject.getSegmentCache()
-                .putToDeltaCache(Entry.of(123, tds.getTombstone()));
+        subject.put(123, tds.getTombstone());
 
         assertNull(subject.get(123));
         verify(segmentSearcher, never()).get(any(), any(), any());
@@ -219,8 +216,8 @@ class SegmentImplTest {
 
     @Test
     void flush_changes_version_when_entries_present() {
-        subject.getSegmentCache().put(Entry.of(1, "A"));
-
+        subject.put(1, "A");
+        org.mockito.Mockito.reset(versionController);
         subject.flush();
 
         verify(versionController).changeVersion();

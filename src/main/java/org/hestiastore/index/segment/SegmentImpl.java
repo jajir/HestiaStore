@@ -1,7 +1,6 @@
 package org.hestiastore.index.segment;
 
 import java.util.List;
-import java.util.function.Consumer;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
@@ -44,11 +43,9 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
     private final SegmentSearcher<K, V> segmentSearcher;
     private final SegmentResources<K, V> segmentResources;
-    private final SegmentCompactionPolicyWithManager segmentCompactionPolicy;
     private final SegmentCache<K, V> segmentCache;
     private SegmentIndexSearcher<K, V> segmentIndexSearcher;
     private FileReaderSeekable seekableReader;
-    private Consumer<SegmentImpl<K, V>> compactionExecutor;
 
     // Reduced constructors: keep only the most complex constructor below.
 
@@ -63,7 +60,6 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
             final SegmentResources<K, V> segmentResources,
             final SegmentDeltaCacheController<K, V> segmentDeltaCacheController,
             final SegmentSearcher<K, V> segmentSearcher,
-            final SegmentCompactionPolicyWithManager segmentCompactionPolicy,
             final SegmentCompacter<K, V> segmentCompacter) {
         this.segmentConf = Vldtn.requireNonNull(segmentConf, "segmentConf");
         this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
@@ -85,11 +81,8 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
                 segmentPropertiesManager, "segmentPropertiesManager");
         this.segmentCompacter = Vldtn.requireNonNull(segmentCompacter,
                 "segmentCompacter");
-        this.segmentCompactionPolicy = Vldtn.requireNonNull(
-                segmentCompactionPolicy, "segmentCompactionPolicy");
         this.segmentSearcher = Vldtn.requireNonNull(segmentSearcher,
                 "segmentSearcher");
-        this.compactionExecutor = segmentCompacter::forceCompact;
     }
 
     @Override
@@ -125,10 +118,6 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
                 new OptimisticLock(versionController), getId().toString());
     }
 
-    EntryIterator<K, V> openIteratorIncludingWriteCache() {
-        return openIterator();
-    }
-
     @Override
     public void compact() {
         segmentCompacter.forceCompact(this);
@@ -161,17 +150,16 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
      */
     private EntryWriter<K, V> openDeltaCacheWriter() {
         versionController.changeVersion();
-        final EntryWriter<K, V> writer = new SegmentDeltaCacheCompactingWriter<>(
-                this, deltaCacheController, segmentCompactionPolicy);
-        return new SegmentCacheWriterAdapter<>(writer, segmentCache);
+        return new SegmentDeltaCacheCompactingWriter<>(deltaCacheController);
     }
 
     @Override
     public void put(final K key, final V value) {
         Vldtn.requireNonNull(key, "key");
         Vldtn.requireNonNull(value, "value");
+        // TODO make sure that'scorrect behavior to kill all iterators on put
         versionController.changeVersion();
-        segmentCache.put(key, value);
+        segmentCache.putToWriteCache(Entry.of(key, value));
     }
 
     @Override
@@ -184,6 +172,7 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
         try (EntryWriter<K, V> writer = openDeltaCacheWriter()) {
             entries.forEach(writer::write);
         }
+        segmentCache.mergeWriteCacheToDeltaCache();
         segmentCache.clearWriteCache();
     }
 
@@ -221,22 +210,6 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     @Override
     public SegmentId getId() {
         return segmentFiles.getId();
-    }
-
-    public SegmentFiles<K, V> getSegmentFiles() {
-        return segmentFiles;
-    }
-
-    public SegmentConf getSegmentConf() {
-        return segmentConf;
-    }
-
-    public SegmentPropertiesManager getSegmentPropertiesManager() {
-        return segmentPropertiesManager;
-    }
-
-    SegmentCache<K, V> getSegmentCache() {
-        return segmentCache;
     }
 
     SegmentIndexSearcher<K, V> getSegmentIndexSearcher() {
@@ -277,49 +250,6 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
         if (seekableReader != null) {
             seekableReader.close();
             seekableReader = null;
-        }
-    }
-
-    void setCompactionExecutor(
-            final Consumer<SegmentImpl<K, V>> compactionExecutor) {
-        this.compactionExecutor = Vldtn.requireNonNull(compactionExecutor,
-                "compactionExecutor");
-    }
-
-    void requestCompaction() {
-        if (!wasClosed()) {
-            compactionExecutor.accept(this);
-        }
-    }
-
-    void requestOptionalCompaction() {
-        if (!wasClosed() && segmentCompactionPolicy.shouldCompact()) {
-            compactionExecutor.accept(this);
-        }
-    }
-
-    private static final class SegmentCacheWriterAdapter<K, V>
-            extends AbstractCloseableResource implements EntryWriter<K, V> {
-
-        private final EntryWriter<K, V> delegate;
-        private final SegmentCache<K, V> segmentCache;
-
-        private SegmentCacheWriterAdapter(final EntryWriter<K, V> delegate,
-                final SegmentCache<K, V> segmentCache) {
-            this.delegate = Vldtn.requireNonNull(delegate, "delegate");
-            this.segmentCache = Vldtn.requireNonNull(segmentCache,
-                    "segmentCache");
-        }
-
-        @Override
-        public void write(final Entry<K, V> entry) {
-            delegate.write(entry);
-            segmentCache.putToDeltaCache(entry);
-        }
-
-        @Override
-        protected void doClose() {
-            delegate.close();
         }
     }
 

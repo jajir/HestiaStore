@@ -33,8 +33,8 @@ class SegmentDeltaCacheControllerTest {
         final SegmentCache<Integer, Integer> segmentCache = new SegmentCache<>(
                 new TypeDescriptorInteger().getComparator(),
                 new TypeDescriptorInteger());
-        segmentCache.put(Entry.of(1, 11));
-        segmentCache.put(Entry.of(2, 22));
+        segmentCache.putToWriteCache(Entry.of(1, 11));
+        segmentCache.putToWriteCache(Entry.of(2, 22));
         controller.setSegmentCache(segmentCache);
 
         controller.clear();
@@ -56,10 +56,11 @@ class SegmentDeltaCacheControllerTest {
 
         final TypeDescriptorInteger typeDescriptor = new TypeDescriptorInteger();
         final SegmentCache<Integer, Integer> segmentCache = new SegmentCache<>(
-                typeDescriptor.getComparator(), typeDescriptor);
-        segmentCache.putToDeltaCache(Entry.of(1, 11));
-        segmentCache.put(Entry.of(2, typeDescriptor.getTombstone()));
-        segmentCache.put(Entry.of(3, 33));
+                typeDescriptor.getComparator(), typeDescriptor,
+                java.util.List.of(Entry.of(1, 11)));
+        segmentCache
+                .putToWriteCache(Entry.of(2, typeDescriptor.getTombstone()));
+        segmentCache.putToWriteCache(Entry.of(3, 33));
         controller.setSegmentCache(segmentCache);
 
         assertEquals(3, controller.getDeltaCacheSize());
