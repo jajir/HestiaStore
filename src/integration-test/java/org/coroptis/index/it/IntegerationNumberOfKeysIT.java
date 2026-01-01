@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.List;
 import java.util.Random;
 
-import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -39,7 +38,7 @@ public class IntegerationNumberOfKeysIT {
     void test_after_force_compact() {
         final Segment<String, Long> segment = getCommonBuilder();
         writeData(segment);
-        segment.forceCompact();
+        segment.compact();
 
         assertEquals(NUMBER_OF_TESTING_ENTRIES, segment.getNumberOfKeys());
         segment.close();
@@ -49,7 +48,7 @@ public class IntegerationNumberOfKeysIT {
     void test_after_closing() {
         Segment<String, Long> segment = getCommonBuilder();
         writeData(segment);
-        segment.forceCompact();
+        segment.compact();
         segment.close();
         segment = getCommonBuilder();
 
@@ -89,12 +88,10 @@ public class IntegerationNumberOfKeysIT {
     }
 
     private void writeData(final Segment<String, Long> segment) {
-        try (EntryWriter<String, Long> entryWriter = segment
-                .openDeltaCacheWriter()) {
-            for (int i = 0; i < NUMBER_OF_TESTING_ENTRIES; i++) {
-                entryWriter.write(wrap(i), RANDOM.nextLong());
-            }
+        for (int i = 0; i < NUMBER_OF_TESTING_ENTRIES; i++) {
+            segment.put(wrap(i), RANDOM.nextLong());
         }
+        segment.flush();
     }
 
     /*

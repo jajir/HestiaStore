@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.hestiastore.index.F;
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
@@ -79,9 +78,9 @@ public class CompactSupport<K, V> {
         }
         final Segment<K, V> segment = segmentRegistry
                 .getSegment(currentSegmentId);
-        try (EntryWriter<K, V> writer = segment.openDeltaCacheWriter()) {
-            toSameSegment.forEach(writer::write);
-        }
+        toSameSegment.forEach(entry -> segment.put(entry.getKey(),
+                entry.getValue()));
+        segment.flush();
         if (KeySegmentCache.FIRST_SEGMENT_ID.equals(currentSegmentId)) {
             // Segment containing highest key.
             if (currentBatchMaxKey != null) {

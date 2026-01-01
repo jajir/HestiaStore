@@ -41,7 +41,7 @@ class SegmentSplitStepReplaceIfNoRemainingTest {
     void test_missing_state() {
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.filter(
-                        new SegmentSplitContext<>(null, null, null, null),
+                        new SegmentSplitContext<>(null, null, null, null, null),
                         null));
         assertEquals("Property 'state' must not be null.", err.getMessage());
     }
@@ -51,7 +51,7 @@ class SegmentSplitStepReplaceIfNoRemainingTest {
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
                 null, SegmentSplitterPlan.fromPolicy(
                         new SegmentSplitterPolicy<>(5, false)),
-                SegmentId.of(1), null);
+                SegmentId.of(1), null, null);
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.filter(ctx, new SegmentSplitState<>()));
         assertEquals("Property 'iterator' must not be null.", err.getMessage());
@@ -62,7 +62,7 @@ class SegmentSplitStepReplaceIfNoRemainingTest {
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
                 null, SegmentSplitterPlan.fromPolicy(
                         new SegmentSplitterPolicy<>(5, false)),
-                null, null);
+                null, null, null);
         final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
         state.setIterator(
                 new EntryIteratorList<Integer, String>(java.util.List.of()));
@@ -83,7 +83,7 @@ class SegmentSplitStepReplaceIfNoRemainingTest {
         state1.setIterator(new EntryIteratorList<Integer, String>(
                 List.of(Entry.of(1, "a"))));
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
-                null, plan, SegmentId.of(10), null);
+                null, plan, SegmentId.of(10), null, null);
         assertEquals(true, step.filter(ctx, state1));
         assertNull(state1.getResult());
 

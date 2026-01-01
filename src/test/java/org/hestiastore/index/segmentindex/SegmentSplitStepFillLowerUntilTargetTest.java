@@ -54,7 +54,7 @@ class SegmentSplitStepFillLowerUntilTargetTest {
     void test_missing_state() {
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.filter(
-                        new SegmentSplitContext<>(null, null, null, null),
+                        new SegmentSplitContext<>(null, null, null, null, null),
                         null));
         assertEquals("Property 'state' must not be null.", err.getMessage());
     }
@@ -63,7 +63,7 @@ class SegmentSplitStepFillLowerUntilTargetTest {
     void test_missing_plan() {
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.filter(
-                        new SegmentSplitContext<>(null, null, null, null),
+                        new SegmentSplitContext<>(null, null, null, null, null),
                         new SegmentSplitState<>()));
         assertEquals("Property 'plan' must not be null.", err.getMessage());
     }
@@ -71,7 +71,7 @@ class SegmentSplitStepFillLowerUntilTargetTest {
     @Test
     void test_missing_writerTxFactory() {
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
-                null, feasiblePlan(), SegmentId.of(1), null);
+                null, feasiblePlan(), SegmentId.of(1), null, null);
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.filter(ctx, new SegmentSplitState<>()));
         assertEquals("Property 'writerTxFactory' must not be null.",
@@ -82,7 +82,7 @@ class SegmentSplitStepFillLowerUntilTargetTest {
     void test_missing_iterator() {
         final SegmentSplitStepFillLowerUntilTarget<Integer, String> step = new SegmentSplitStepFillLowerUntilTarget<>();
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
-                null, feasiblePlan(), SegmentId.of(1), id -> null);
+                null, feasiblePlan(), SegmentId.of(1), null, id -> null);
         final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
         state.setLowerSegmentId(SegmentId.of(1));
         final Exception err = assertThrows(IllegalArgumentException.class,
@@ -108,7 +108,7 @@ class SegmentSplitStepFillLowerUntilTargetTest {
         state.setLowerSegmentId(SegmentId.of(1));
         state.setIterator(it);
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
-                null, feasiblePlan(), SegmentId.of(1), id -> tx);
+                null, feasiblePlan(), SegmentId.of(1), null, id -> tx);
         step.filter(ctx, state);
         // half of 6 is 3; expect 3 writes
         verify(writer, times(3)).write(any());

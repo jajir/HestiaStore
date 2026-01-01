@@ -25,18 +25,6 @@ public final class SegmentCompacter<K, V> {
                 "compactionPolicy");
     }
 
-    /**
-     * Optionally compact segment. Method check if segment should be compacted
-     * and if should be than it compact it.
-     * 
-     * @return return <code>true</code> when segment was compacted.
-     */
-    public void optionallyCompact(final SegmentImpl<K, V> segment) {
-        if (compactionPolicy.shouldCompact()) {
-            forceCompact(segment);
-        }
-    }
-
     public void forceCompact(final SegmentImpl<K, V> segment) {
         final SegmentFiles<K, V> segmentFiles = segment.getSegmentFiles();
         logger.debug("Start of compacting '{}'", segmentFiles.getId());

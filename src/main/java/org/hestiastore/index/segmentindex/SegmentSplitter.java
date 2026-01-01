@@ -40,22 +40,25 @@ public class SegmentSplitter<K, V> {
      * Executes a single split operation according to the supplied plan.
      * <p>
      * Pre-conditions: - {@code plan.isSplitFeasible()} is true (otherwise an
-     * exception is thrown) - The caller provides a fresh {@code segmentId} for
-     * the lower segment
+     * exception is thrown) - The caller provides fresh ids for the lower
+     * segment and a temporary upper segment (the temporary upper is later
+     * replaced over the current segment).
      *
-     * Post-conditions: - Returns SPLIT when remaining entries were written back
-     * to the current segment; otherwise COMPACTED when the current segment is
-     * replaced by the lower segment.
+     * Post-conditions: - Returns SPLIT when remaining entries were written to
+     * the temporary upper segment; otherwise COMPACTED when the current segment
+     * is replaced by the lower segment.
      */
-    public SegmentSplitterResult<K, V> split(final SegmentId segmentId,
+    public SegmentSplitterResult<K, V> split(final SegmentId lowerSegmentId,
+            final SegmentId upperSegmentId,
             final SegmentSplitterPlan<K, V> plan) {
-        Vldtn.requireNonNull(segmentId, "segmentId");
+        Vldtn.requireNonNull(lowerSegmentId, "lowerSegmentId");
+        Vldtn.requireNonNull(upperSegmentId, "upperSegmentId");
         Vldtn.requireNonNull(plan, "plan");
         logger.debug("Splitting of '{}' started", segment.getId());
         segment.invalidateIterators();
 
         final SegmentSplitContext<K, V> ctx = new SegmentSplitContext<>(segment,
-                plan, segmentId, writerTxFactory);
+                plan, lowerSegmentId, upperSegmentId, writerTxFactory);
         final SegmentSplitPipeline<K, V> pipeline = new SegmentSplitPipeline<>(
                 List.of(new SegmentSplitStepValidateFeasibility<>(),
                         new SegmentSplitStepOpenIterator<>(),

@@ -42,26 +42,26 @@ class SegmentSplitStepValidateFeasibilityTest {
     @Test
     void test_missing_state() {
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.filter(new SegmentSplitContext<>(null, null, null, null), null));
+                () -> step.filter(new SegmentSplitContext<>(null, null, null, null, null), null));
         assertEquals("Property 'state' must not be null.", err.getMessage());
     }
 
     @Test
     void test_missing_plan() {
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.filter(new SegmentSplitContext<>(null, null, null, null), new SegmentSplitState<>()));
+                () -> step.filter(new SegmentSplitContext<>(null, null, null, null, null), new SegmentSplitState<>()));
         assertEquals("Property 'plan' must not be null.", err.getMessage());
     }
 
     @Test
     void throws_when_not_feasible_and_passes_when_feasible() {
         final SegmentSplitContext<Integer, String> ctxNot = new SegmentSplitContext<>(
-                null, planWithEstimate(2), null, null);
+                null, planWithEstimate(2), null, null, null);
         assertThrows(IllegalStateException.class,
                 () -> step.filter(ctxNot, new SegmentSplitState<>()));
 
         final SegmentSplitContext<Integer, String> ctxOk = new SegmentSplitContext<>(
-                null, planWithEstimate(10), null, null);
+                null, planWithEstimate(10), null, null, null);
         assertDoesNotThrow(
                 () -> step.filter(ctxOk, new SegmentSplitState<>()));
     }

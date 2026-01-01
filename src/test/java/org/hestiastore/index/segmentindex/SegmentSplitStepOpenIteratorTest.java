@@ -44,7 +44,7 @@ class SegmentSplitStepOpenIteratorTest {
     void test_missing_state() {
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.filter(
-                        new SegmentSplitContext<>(null, null, null, null),
+                        new SegmentSplitContext<>(null, null, null, null, null),
                         null));
         assertEquals("Property 'state' must not be null.", err.getMessage());
     }
@@ -53,7 +53,7 @@ class SegmentSplitStepOpenIteratorTest {
     void test_missing_segment() {
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.filter(
-                        new SegmentSplitContext<>(null, null, null, null),
+                        new SegmentSplitContext<>(null, null, null, null, null),
                         new SegmentSplitState<>()));
         assertEquals("Property 'segment' must not be null.", err.getMessage());
     }
@@ -62,7 +62,7 @@ class SegmentSplitStepOpenIteratorTest {
     void calls_openIterator_on_segment() {
         when(segment.openIterator()).thenReturn(it);
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
-                segment, null, null, null);
+                segment, null, null, null, null);
         step.filter(ctx, new SegmentSplitState<>());
         verify(segment).openIterator();
     }

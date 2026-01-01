@@ -7,7 +7,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hestiastore.index.AbstractDataTest;
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.directory.Directory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,11 +26,10 @@ public abstract class AbstractSegmentTest extends AbstractDataTest {
      */
     protected <M, N> void writeEntries(final Segment<M, N> seg,
             final List<Entry<M, N>> entries) {
-        try (EntryWriter<M, N> writer = seg.openDeltaCacheWriter()) {
-            for (final Entry<M, N> entry : entries) {
-                writer.write(entry);
-            }
+        for (final Entry<M, N> entry : entries) {
+            seg.put(entry.getKey(), entry.getValue());
         }
+        seg.flush();
     }
 
     /**

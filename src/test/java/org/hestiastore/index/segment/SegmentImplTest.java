@@ -167,12 +167,9 @@ class SegmentImplTest {
 
     @Test
     void flush_noop_when_write_cache_empty() {
-        final SegmentImpl<Integer, String> spy = org.mockito.Mockito
-                .spy(subject);
+        subject.flush();
 
-        spy.flush();
-
-        verify(spy, never()).openDeltaCacheWriter();
+        verify(versionController, never()).changeVersion();
     }
 
     @Test
@@ -221,11 +218,11 @@ class SegmentImplTest {
     }
 
     @Test
-    void openDeltaCacheWriter_changes_version_and_returns_writer() {
-        try (EntryWriter<Integer, String> writer = subject
-                .openDeltaCacheWriter()) {
-            assertNotNull(writer);
-        }
+    void flush_changes_version_when_entries_present() {
+        subject.getSegmentCache().put(Entry.of(1, "A"));
+
+        subject.flush();
+
         verify(versionController).changeVersion();
     }
 
@@ -239,17 +236,16 @@ class SegmentImplTest {
     }
 
     @Test
-    void identity_and_version() {
+    void identity() {
         when(versionController.getVersion()).thenReturn(42);
         assertSame(segmentId, subject.getId());
-        assertEquals(42, subject.getVersion());
     }
 
     @Test
-    void forceCompact_invokes_compacter_and_commits() {
+    void compact_invokes_compacter_and_commits() {
         when(segmentPropertiesManager.getCacheDeltaFileNames())
                 .thenReturn(List.of());
-        subject.forceCompact();
+        subject.compact();
         verify(chunkEntryWriterTx).commit();
         verify(scarceWriterTx).commit();
     }

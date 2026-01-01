@@ -62,7 +62,7 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
     void test_missing_state() {
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.filter(
-                        new SegmentSplitContext<>(null, null, null, null),
+                        new SegmentSplitContext<>(null, null, null, null, null),
                         null));
         assertEquals("Property 'state' must not be null.", err.getMessage());
     }
@@ -73,7 +73,8 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
                 () -> step.filter(new SegmentSplitContext<>(null,
                         SegmentSplitterPlan.fromPolicy(
                                 new SegmentSplitterPolicy<>(5, false)),
-                        SegmentId.of(1), id -> tx), new SegmentSplitState<>()));
+                        SegmentId.of(1), SegmentId.of(2), id -> tx),
+                        new SegmentSplitState<>()));
         assertEquals("Property 'segment' must not be null.", err.getMessage());
     }
 
@@ -81,7 +82,8 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
     void test_missing_plan() {
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.filter(
-                        new SegmentSplitContext<>(segment, null, null, null),
+                        new SegmentSplitContext<>(segment, null, null, null,
+                                null),
                         new SegmentSplitState<>()));
         assertEquals("Property 'plan' must not be null.", err.getMessage());
     }
@@ -94,7 +96,7 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.filter(
                         new SegmentSplitContext<>(segment, plan,
-                                SegmentId.of(1), id -> tx),
+                                SegmentId.of(1), SegmentId.of(2), id -> tx),
                         new SegmentSplitState<>()));
         assertEquals("Property 'iterator' must not be null.", err.getMessage());
     }
@@ -110,6 +112,7 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.filter(
                         new SegmentSplitContext<>(segment, plan, null,
+                                SegmentId.of(2),
                                 id -> tx),
                         state));
         assertEquals("Property 'lowerSegmentId' must not be null.",
@@ -119,8 +122,6 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
     @Test
     void writes_remaining_and_commits_and_returns_split() {
         when(tx.open()).thenReturn(writer);
-        when(segment.getId()).thenReturn(SegmentId.of(99));
-
         final var it = new EntryIteratorList<Integer, String>(
                 List.of(Entry.of(1, "a"), Entry.of(2, "b")));
 
@@ -130,7 +131,7 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
         final SegmentSplitterPlan<Integer, String> plan = planWithEstimate(10);
         plan.recordLower(Entry.of(0, "z"));
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
-                segment, plan, SegmentId.of(2), id -> tx);
+                segment, plan, SegmentId.of(2), SegmentId.of(99), id -> tx);
         step.filter(ctx, state);
         verify(writer, times(2)).write(any());
         verify(tx).commit();

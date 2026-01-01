@@ -44,7 +44,7 @@ class SegmentSplitStepEnsureLowerNotEmptyTest {
     void test_missing_plan() {
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.filter(
-                        new SegmentSplitContext<>(null, null, null, null),
+                        new SegmentSplitContext<>(null, null, null, null, null),
                         new SegmentSplitState<>()));
         assertEquals("Property 'plan' must not be null.", err.getMessage());
     }
@@ -52,14 +52,14 @@ class SegmentSplitStepEnsureLowerNotEmptyTest {
     @Test
     void throws_when_lower_empty_and_passes_when_not() {
         final SegmentSplitContext<Integer, String> ctxEmpty = new SegmentSplitContext<>(
-                null, planWithEstimate(10), null, null);
+                null, planWithEstimate(10), null, null, null);
         assertThrows(IllegalStateException.class,
                 () -> step.filter(ctxEmpty, new SegmentSplitState<>()));
 
         final SegmentSplitterPlan<Integer, String> plan = planWithEstimate(10);
         plan.recordLower(Entry.of(1, "a"));
         final SegmentSplitContext<Integer, String> ctxNonEmpty = new SegmentSplitContext<>(
-                null, plan, null, null);
+                null, plan, null, null, null);
         assertDoesNotThrow(
                 () -> step.filter(ctxNonEmpty, new SegmentSplitState<>()));
     }

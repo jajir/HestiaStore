@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -43,18 +42,15 @@ class IntegrationSegmentWriteConsistencyTest {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
         final Segment<Integer, String> seg1 = makeSegment(directory, id);
-        try (EntryWriter<Integer, String> writer = seg1
-                .openDeltaCacheWriter()) {
-            data.forEach(writer::write);
-        }
+        data.forEach(entry -> seg1.put(entry.getKey(), entry.getValue()));
+        seg1.flush();
         verifySegmentData(seg1, data);
         seg1.close();
 
         final Segment<Integer, String> seg2 = makeSegment(directory, id);
-        try (EntryWriter<Integer, String> writer = seg2
-                .openDeltaCacheWriter()) {
-            updatedData.forEach(writer::write);
-        }
+        updatedData.forEach(entry -> seg2.put(entry.getKey(),
+                entry.getValue()));
+        seg2.flush();
         verifySegmentData(seg2, updatedData);
         seg2.close();
         assertEquals(4, directory.getFileNames().count());

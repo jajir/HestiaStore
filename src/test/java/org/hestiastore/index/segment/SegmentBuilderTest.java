@@ -92,22 +92,53 @@ class SegmentBuilderTest {
     @Test
     void test_withMaxNumberOfKeysInSegmentCache_is_1() {
         final SegmentBuilder<Integer, String> builder = Segment
-                .<Integer, String>builder()//
-                .withAsyncDirectory(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(DIRECTORY))//
-                .withId(SEGMENT_ID)//
-                .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
-                .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
-                .withMaxNumberOfKeysInSegmentCache(1)//
-                .withBloomFilterIndexSizeInBytes(0)//
-        ;
+                .<Integer, String>builder();
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> builder.build());
+                () -> builder.withMaxNumberOfKeysInSegmentCache(1));
 
         assertEquals(
                 "maxNumberOfKeysInSegmentCache is '1' but must be higher than '1'",
                 e.getMessage());
+    }
+
+    @Test
+    void test_withMaxNumberOfKeysInSegmentWriteCache_is_invalid() {
+        final SegmentBuilder<Integer, String> builder = Segment
+                .<Integer, String>builder();
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> builder.withMaxNumberOfKeysInSegmentWriteCache(0));
+
+        assertEquals(
+                "Property 'maxNumberOfKeysInSegmentWriteCache' must be greater than 0",
+                e.getMessage());
+    }
+
+    @Test
+    void test_withMaxNumberOfKeysInSegmentChunk_is_invalid() {
+        final SegmentBuilder<Integer, String> builder = Segment
+                .<Integer, String>builder();
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> builder.withMaxNumberOfKeysInSegmentChunk(-1));
+
+        assertEquals(
+                "Property 'maxNumberOfKeysInSegmentChunk' must be greater than 0",
+                e.getMessage());
+    }
+
+    @Test
+    void test_withDiskIoBufferSize_is_invalid() {
+        final SegmentBuilder<Integer, String> builder = Segment
+                .<Integer, String>builder();
+        final Exception e1 = assertThrows(IllegalArgumentException.class,
+                () -> builder.withDiskIoBufferSize(0));
+        assertEquals("Property 'ioBufferSize' must be greater than 0",
+                e1.getMessage());
+
+        final Exception e2 = assertThrows(IllegalArgumentException.class,
+                () -> builder.withDiskIoBufferSize(1000));
+        assertEquals(
+                "Propety 'ioBufferSize' must be divisible by 1024 (e.g., 1024, 2048, 4096). Got: '1000'",
+                e2.getMessage());
     }
 
     @Test

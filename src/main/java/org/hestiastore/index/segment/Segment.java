@@ -1,9 +1,7 @@
 package org.hestiastore.index.segment;
 
 import org.hestiastore.index.CloseableResource;
-import org.hestiastore.index.OptimisticLockObjectVersionProvider;
 import org.hestiastore.index.EntryIterator;
-import org.hestiastore.index.EntryWriter;
 
 /**
  * Public contract for a single on-disk index segment.
@@ -12,14 +10,13 @@ import org.hestiastore.index.EntryWriter;
  * iteration, accepts writes via a delta cache, and can be compacted or split
  * when it grows beyond configured limits. Implementations are responsible for
  * coordinating on-disk files, caches and statistics while keeping readers safe
- * through optimistic versioning.
+ * during maintenance operations.
  *
  * <strong>Thread-safety:</strong> Implementations are not thread-safe. If a
  * segment instance is accessed from multiple threads, callers must provide
  * external synchronization or higher-level concurrency control. The
- * {@link #getVersion()} and the use of optimistic locks guard readers against
- * in-place mutations, but do not make the segment API itself safe for
- * concurrent mutation.
+ * Readers are protected by iterator invalidation on structural changes, but
+ * the segment API itself is not safe for concurrent mutation.
  * 
  * Please note that any write operation could leads to segment compacting. So
  * write time could vary from fast operation (just write into cache) to long
@@ -27,18 +24,16 @@ import org.hestiastore.index.EntryWriter;
  *
  * <p>
  * Key responsibilities exposed by this API: - Query: {@link #get(Object)},
- * {@link #getStats()}, {@link #getNumberOfKeys()} - Writing (delta cache):
- * {@link #openDeltaCacheWriter()}, {@link #put(Object, Object)} - Maintenance:
- * {@link #optionallyCompact()}, {@link #flush()}, {@link #forceCompact()},
- * {@link #checkAndRepairConsistency()}, {@link #invalidateIterators()} -
- * Identity and lifecycle: {@link #getId()}, {@link #getVersion()},
+ * {@link #getStats()}, {@link #getNumberOfKeys()} - Writing:
+ * {@link #put(Object, Object)} - Maintenance: {@link #flush()},
+ * {@link #compact()}, {@link #checkAndRepairConsistency()},
+ * {@link #invalidateIterators()} - Identity and lifecycle: {@link #getId()},
  * {@link #close()}
  *
  * @param <K> key type
  * @param <V> value type
  */
-public interface Segment<K, V>
-        extends CloseableResource, OptimisticLockObjectVersionProvider {
+public interface Segment<K, V> extends CloseableResource {
 
     /**
      * Creates a new {@link SegmentBuilder} for constructing a segment with a
@@ -61,27 +56,10 @@ public interface Segment<K, V>
     SegmentStats getStats();
 
     /**
-     * Returns the total number of keys in this segment (delta cache + on-disk
-     * index). Tombstones are accounted for according to implementation rules.
-     *
-     * @return total number of keys visible to readers
+     * Compacts this segment, rewriting on-disk data and updating metadata. This
+     * is typically an expensive, synchronous operation.
      */
-    long getNumberOfKeys();
-
-    /**
-     * Optionally compacts the segment if the compaction policy recommends it.
-     * Implementations may be a no-op when compaction is not needed.
-     */
-    @Deprecated
-    void optionallyCompact();
-
-    /**
-     * Forces compaction of this segment regardless of the current policy. This
-     * is typically an expensive, synchronous operation that rewrites on-disk
-     * data and updates related metadata.
-     */
-    // FIXME rename it to compact
-    void forceCompact();
+    void compact();
 
     /**
      * Validates that the logical contents of this segment are consistent.
@@ -104,8 +82,6 @@ public interface Segment<K, V>
      * compaction or splitting is possible. Invalidating while a compaction or
      * split iterator is active can terminate it early and lose data.
      */
-    // FIXME this should not be public
-    @Deprecated
     void invalidateIterators();
 
     /**
@@ -121,20 +97,8 @@ public interface Segment<K, V>
     EntryIterator<K, V> openIterator();
 
     /**
-     * Opens a writer that appends updates into the delta cache of this segment.
-     * Implementations may trigger compaction based on policy as data are
-     * written or when the writer is closed. The caller must close the writer to
-     * persist updates.
-     *
-     * @return writer for delta cache updates
-     */
-    @Deprecated
-    EntryWriter<K, V> openDeltaCacheWriter();
-
-    /**
      * Writes directly into the in-memory segment cache without persisting to
-     * disk. This is an alternative to {@link #openDeltaCacheWriter()} and is
-     * intended for specialized use cases.
+     * disk. This is intended for specialized use cases.
      *
      * @param key   key to write (non-null)
      * @param value value to write (non-null)
@@ -142,9 +106,8 @@ public interface Segment<K, V>
     void put(K key, V value);
 
     /**
-     * Flushes the in-memory segment write cache into the delta cache.
-     * Implementations should persist updates in the same way as
-     * {@link #openDeltaCacheWriter()} and clear the write cache afterward.
+     * Flushes the in-memory segment write cache into the delta cache and clears
+     * the write cache afterward.
      */
     void flush();
 
@@ -156,7 +119,7 @@ public interface Segment<K, V>
      *
      * @return number of keys buffered for flushing
      */
-    int getWriteCacheSize();
+    int getNumberOfKeysInWriteCache();
 
     /**
      * Returns an estimated total number of keys held by this segment, including
@@ -168,7 +131,15 @@ public interface Segment<K, V>
      *
      * @return estimated total number of keys for split/compaction decisions
      */
-    long getTotalNumberOfKeysInCache();
+    long getNumberOfKeysInCache();
+
+    /**
+     * Returns the total number of keys in this segment (delta cache + on-disk
+     * index). Tombstones are accounted for according to implementation rules.
+     *
+     * @return total number of keys visible to readers
+     */
+    long getNumberOfKeys();
 
     /**
      * Performs a point lookup of a key in this segment, considering both the
@@ -186,13 +157,4 @@ public interface Segment<K, V>
      */
     SegmentId getId();
 
-    /**
-     * Returns the current optimistic-lock version for this segment.
-     *
-     * Implementations provide thread-safe reads suitable for concurrent access.
-     *
-     * @return current version number
-     */
-    @Override
-    int getVersion();
 }

@@ -12,7 +12,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.hestiastore.index.EntryIterator;
-import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -53,11 +52,18 @@ class SegmentSynchronizationAdapterConcurrencyTest {
             try {
                 final Future<?> future = executor.submit(() -> {
                     started.countDown();
-                    try (EntryWriter<Integer, String> writer = segment
-                            .openDeltaCacheWriter()) {
+                    segment.executeWithWriteLock(() -> {
                         acquired.countDown();
-                        closeSignal.await();
-                    }
+                        try {
+                            closeSignal.await();
+                        } catch (final InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw new IllegalStateException(
+                                    "Interrupted while holding write lock",
+                                    e);
+                        }
+                        return null;
+                    });
                     return null;
                 });
                 assertTrue(started.await(1, TimeUnit.SECONDS),
@@ -82,38 +88,57 @@ class SegmentSynchronizationAdapterConcurrencyTest {
     @Test
     void read_operation_waits_for_writer_to_close() throws Exception {
         try (SegmentSynchronizationAdapter<Integer, String> segment = newAdapter()) {
-            final EntryWriter<Integer, String> writer = segment
-                    .openDeltaCacheWriter();
-            final ExecutorService executor = Executors
+            final ExecutorService writerExecutor = Executors
                     .newSingleThreadExecutor();
-            final CountDownLatch started = new CountDownLatch(1);
-            final CountDownLatch acquired = new CountDownLatch(1);
-            final CountDownLatch closeSignal = new CountDownLatch(1);
+            final ExecutorService readerExecutor = Executors
+                    .newSingleThreadExecutor();
+            final CountDownLatch writerAcquired = new CountDownLatch(1);
+            final CountDownLatch writerRelease = new CountDownLatch(1);
+            final CountDownLatch readerStarted = new CountDownLatch(1);
+            final CountDownLatch readerAcquired = new CountDownLatch(1);
+            final CountDownLatch readerRelease = new CountDownLatch(1);
             try {
-                final Future<?> future = executor.submit(() -> {
-                    started.countDown();
+                final Future<?> writerFuture = writerExecutor.submit(() -> {
+                    segment.executeWithWriteLock(() -> {
+                        writerAcquired.countDown();
+                        try {
+                            writerRelease.await();
+                        } catch (final InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw new IllegalStateException(
+                                    "Interrupted while holding write lock",
+                                    e);
+                        }
+                        return null;
+                    });
+                    return null;
+                });
+                assertTrue(writerAcquired.await(1, TimeUnit.SECONDS),
+                        "Writer did not acquire lock");
+                final Future<?> readerFuture = readerExecutor.submit(() -> {
+                    readerStarted.countDown();
                     try (EntryIterator<Integer, String> iterator = segment
                             .openIterator()) {
-                        acquired.countDown();
-                        closeSignal.await();
+                        readerAcquired.countDown();
+                        readerRelease.await();
                     }
                     return null;
                 });
-                assertTrue(started.await(1, TimeUnit.SECONDS),
+                assertTrue(readerStarted.await(1, TimeUnit.SECONDS),
                         "Reader task did not start");
-                assertFalse(acquired.await(250, TimeUnit.MILLISECONDS),
+                assertFalse(readerAcquired.await(250, TimeUnit.MILLISECONDS),
                         "Reader acquired lock while writer was open");
-                writer.close();
-                assertTrue(acquired.await(2, TimeUnit.SECONDS),
+                writerRelease.countDown();
+                assertTrue(readerAcquired.await(2, TimeUnit.SECONDS),
                         "Reader did not acquire lock after writer closed");
-                closeSignal.countDown();
-                future.get(2, TimeUnit.SECONDS);
+                readerRelease.countDown();
+                writerFuture.get(2, TimeUnit.SECONDS);
+                readerFuture.get(2, TimeUnit.SECONDS);
             } finally {
-                if (!writer.wasClosed()) {
-                    writer.close();
-                }
-                closeSignal.countDown();
-                executor.shutdownNow();
+                writerRelease.countDown();
+                readerRelease.countDown();
+                writerExecutor.shutdownNow();
+                readerExecutor.shutdownNow();
             }
         }
     }
@@ -121,38 +146,64 @@ class SegmentSynchronizationAdapterConcurrencyTest {
     @Test
     void second_writer_waits_for_first_writer_to_close() throws Exception {
         try (SegmentSynchronizationAdapter<Integer, String> segment = newAdapter()) {
-            final EntryWriter<Integer, String> writer = segment
-                    .openDeltaCacheWriter();
-            final ExecutorService executor = Executors
+            final ExecutorService firstExecutor = Executors
                     .newSingleThreadExecutor();
-            final CountDownLatch started = new CountDownLatch(1);
-            final CountDownLatch acquired = new CountDownLatch(1);
-            final CountDownLatch closeSignal = new CountDownLatch(1);
+            final ExecutorService secondExecutor = Executors
+                    .newSingleThreadExecutor();
+            final CountDownLatch firstAcquired = new CountDownLatch(1);
+            final CountDownLatch firstRelease = new CountDownLatch(1);
+            final CountDownLatch secondStarted = new CountDownLatch(1);
+            final CountDownLatch secondAcquired = new CountDownLatch(1);
+            final CountDownLatch secondRelease = new CountDownLatch(1);
             try {
-                final Future<?> future = executor.submit(() -> {
-                    started.countDown();
-                    try (EntryWriter<Integer, String> second = segment
-                            .openDeltaCacheWriter()) {
-                        acquired.countDown();
-                        closeSignal.await();
-                    }
+                final Future<?> firstFuture = firstExecutor.submit(() -> {
+                    segment.executeWithWriteLock(() -> {
+                        firstAcquired.countDown();
+                        try {
+                            firstRelease.await();
+                        } catch (final InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw new IllegalStateException(
+                                    "Interrupted while holding write lock",
+                                    e);
+                        }
+                        return null;
+                    });
                     return null;
                 });
-                assertTrue(started.await(1, TimeUnit.SECONDS),
+                assertTrue(firstAcquired.await(1, TimeUnit.SECONDS),
+                        "First writer did not acquire lock");
+                final Future<?> secondFuture = secondExecutor.submit(() -> {
+                    secondStarted.countDown();
+                    segment.executeWithWriteLock(() -> {
+                        secondAcquired.countDown();
+                        try {
+                            secondRelease.await();
+                        } catch (final InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw new IllegalStateException(
+                                    "Interrupted while holding write lock",
+                                    e);
+                        }
+                        return null;
+                    });
+                    return null;
+                });
+                assertTrue(secondStarted.await(1, TimeUnit.SECONDS),
                         "Second writer task did not start");
-                assertFalse(acquired.await(250, TimeUnit.MILLISECONDS),
+                assertFalse(secondAcquired.await(250, TimeUnit.MILLISECONDS),
                         "Second writer acquired lock while first writer was open");
-                writer.close();
-                assertTrue(acquired.await(2, TimeUnit.SECONDS),
+                firstRelease.countDown();
+                assertTrue(secondAcquired.await(2, TimeUnit.SECONDS),
                         "Second writer did not acquire lock after close");
-                closeSignal.countDown();
-                future.get(2, TimeUnit.SECONDS);
+                secondRelease.countDown();
+                firstFuture.get(2, TimeUnit.SECONDS);
+                secondFuture.get(2, TimeUnit.SECONDS);
             } finally {
-                if (!writer.wasClosed()) {
-                    writer.close();
-                }
-                closeSignal.countDown();
-                executor.shutdownNow();
+                firstRelease.countDown();
+                secondRelease.countDown();
+                firstExecutor.shutdownNow();
+                secondExecutor.shutdownNow();
             }
         }
     }

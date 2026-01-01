@@ -41,7 +41,7 @@ class SegmentSplitStepCreateLowerSegmentTest {
     void test_missing_state() {
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.filter(
-                        new SegmentSplitContext<>(null, null, null, null),
+                        new SegmentSplitContext<>(null, null, null, null, null),
                         null));
         assertEquals("Property 'state' must not be null.", err.getMessage());
     }
@@ -50,7 +50,7 @@ class SegmentSplitStepCreateLowerSegmentTest {
     void test_missing_segment() {
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.filter(new SegmentSplitContext<>(null, null,
-                        SegmentId.of(1), id -> null),
+                        SegmentId.of(1), SegmentId.of(2), id -> null),
                         new SegmentSplitState<>()));
         assertEquals("Property 'segment' must not be null.", err.getMessage());
     }
@@ -60,6 +60,7 @@ class SegmentSplitStepCreateLowerSegmentTest {
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.filter(
                         new SegmentSplitContext<>(segment, null, null,
+                                SegmentId.of(2),
                                 id -> null),
                         new SegmentSplitState<>()));
         assertEquals("Property 'lowerSegmentId' must not be null.",
@@ -70,7 +71,7 @@ class SegmentSplitStepCreateLowerSegmentTest {
     void test_missing_writerTxFactory() {
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.filter(new SegmentSplitContext<>(segment, null,
-                        SegmentId.of(1), null),
+                        SegmentId.of(1), SegmentId.of(2), null),
                         new SegmentSplitState<>()));
         assertEquals("Property 'writerTxFactory' must not be null.",
                 err.getMessage());
@@ -81,7 +82,7 @@ class SegmentSplitStepCreateLowerSegmentTest {
         final SegmentId id = SegmentId.of(1);
 
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
-                segment, null, id, ignored -> null);
+                segment, null, id, SegmentId.of(2), ignored -> null);
         final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
         step.filter(ctx, state);
         assertNotNull(state.getLowerSegmentId());

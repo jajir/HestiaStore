@@ -73,7 +73,7 @@ class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
                 .build();
 
         writeEntries(segment, indexFile);
-        segment.forceCompact();
+        segment.compact();
         writeEntries(segment, deltaCache);
         /*
          * Now Content of main sst index file and delta cache should be as
@@ -96,7 +96,7 @@ class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
 
             // write <c, 10>
             writeEntries(segment, Arrays.asList(Entry.of("c", 10)));
-            segment.forceCompact();
+            segment.compact();
 
             assertFalse(iterator.hasNext());
         }
@@ -105,7 +105,7 @@ class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
     @Test
     void test_case_6_compact_includes_write_cache_and_clears_it() {
         segment.put("g", 13);
-        segment.forceCompact();
+        segment.compact();
 
         verifySegmentSearch(segment,
                 Arrays.asList(Entry.of("a", 25), Entry.of("c", 40),

@@ -128,11 +128,7 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
             final long expectedVersion) {
         Vldtn.requireNonNull(key, "key");
         Vldtn.requireNonNull(expectedSegmentId, "expectedSegmentId");
-        if (version.get() == expectedVersion) {
-            return true;
-        }
-        final SegmentId current = findSegmentId(key);
-        return expectedSegmentId.equals(current);
+        return version.get() == expectedVersion;
     }
 
     public SegmentId findNewSegmentId() {
@@ -248,8 +244,16 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
                 }
             }
             if (existing == null) {
-                throw new IllegalStateException(String.format(
-                        "Segment id '%s' not found in segment map", segmentId));
+                if (list.containsKey(newMaxKey)
+                        && !segmentId.equals(list.get(newMaxKey))) {
+                    throw new IllegalStateException(String.format(
+                            "Segment max key '%s' is already bound to segment '%s'",
+                            newMaxKey, list.get(newMaxKey)));
+                }
+                list.put(newMaxKey, segmentId);
+                refreshSnapshot();
+                isDirty = true;
+                return;
             }
             if (list.containsKey(newMaxKey)
                     && !segmentId.equals(list.get(newMaxKey))) {

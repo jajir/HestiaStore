@@ -6,6 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -107,6 +114,69 @@ class SegmentPropertiesManagerTest {
                 () -> props.increaseNumberOfKeysInDeltaCache(-2));
 
         assertEquals(8, props.getNumberOfKeysInDeltaCache());
+    }
+
+    @Test
+    void deltaFileNames_are_unique_under_concurrency() throws Exception {
+        final int threads = 8;
+        final int perThread = 50;
+        final ExecutorService executor = Executors.newFixedThreadPool(threads);
+        final CountDownLatch start = new CountDownLatch(1);
+        final CountDownLatch done = new CountDownLatch(threads);
+        final Set<String> names = ConcurrentHashMap.newKeySet();
+
+        for (int i = 0; i < threads; i++) {
+            executor.execute(() -> {
+                try {
+                    start.await();
+                    for (int j = 0; j < perThread; j++) {
+                        names.add(props.getAndIncreaseDeltaFileName());
+                    }
+                } catch (final InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    done.countDown();
+                }
+            });
+        }
+
+        start.countDown();
+        assertTrue(done.await(5, TimeUnit.SECONDS));
+        executor.shutdownNow();
+
+        assertEquals(threads * perThread, names.size());
+        assertEquals(threads * perThread, props.getDeltaFileCount());
+    }
+
+    @Test
+    void increaseNumberOfKeysInDeltaCache_is_atomic_under_concurrency()
+            throws Exception {
+        final int threads = 6;
+        final int perThread = 100;
+        final ExecutorService executor = Executors.newFixedThreadPool(threads);
+        final CountDownLatch start = new CountDownLatch(1);
+        final CountDownLatch done = new CountDownLatch(threads);
+
+        for (int i = 0; i < threads; i++) {
+            executor.execute(() -> {
+                try {
+                    start.await();
+                    for (int j = 0; j < perThread; j++) {
+                        props.increaseNumberOfKeysInDeltaCache(1);
+                    }
+                } catch (final InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    done.countDown();
+                }
+            });
+        }
+
+        start.countDown();
+        assertTrue(done.await(5, TimeUnit.SECONDS));
+        executor.shutdownNow();
+
+        assertEquals(threads * perThread, props.getNumberOfKeysInDeltaCache());
     }
 
     @BeforeEach

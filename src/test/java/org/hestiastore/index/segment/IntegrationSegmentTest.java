@@ -11,7 +11,6 @@ import java.util.stream.Stream;
 
 import org.hestiastore.index.AbstractDataTest;
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -49,7 +48,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
             final int expectedNumberKeysInScarceIndex,
             int expectedNumberOfFiles) {
 
-        seg.forceCompact();
+        seg.compact();
         verifyCacheFiles(directory);
 
         verifySegmentData(seg, Arrays.asList());
@@ -65,7 +64,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         ));
 
         /*
-         * Number of file's is constantly 0, because of forceCompact method
+         * Number of file's is constantly 0, because of compact method
          * doesn't run, because there are no canges in delta files.
          */
         assertEquals(4, numberOfFilesInDirectory(directory));
@@ -98,7 +97,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                     + numberOfFilesInDirectoryP(directory));
         }
 
-        seg.forceCompact();
+        seg.compact();
         assertEquals(9, seg.getStats().getNumberOfKeys());
         assertEquals(expectedNumberKeysInScarceIndex,
                 seg.getStats().getNumberOfKeysInScarceIndex());
@@ -125,7 +124,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         assertEquals(expectedNumberOfFiles,
                 numberOfFilesInDirectoryP(directory));
 
-        seg.forceCompact();
+        seg.compact();
 
         assertEquals(4, numberOfFilesInDirectoryP(directory));
         verifyTestDataSet(seg);
@@ -480,7 +479,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
      * @
      */
     @Test
-    void test_write_unordered_tombstone_with_forceCompact() {
+    void test_write_unordered_tombstone_with_compact() {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
         final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
@@ -513,7 +512,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 Entry.of(5, "ddd"), //
                 Entry.of(5, TypeDescriptorShortString.TOMBSTONE_VALUE)//
         ));
-        seg.forceCompact();
+        seg.compact();
 
         assertEquals(3, seg.getStats().getNumberOfKeys());
         assertEquals(0, seg.getStats().getNumberOfKeysInDeltaCache());
@@ -572,14 +571,13 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .build();
 
         final List<Entry<Integer, String>> entries = new ArrayList<>();
-        try (EntryWriter<Integer, String> writer = seg.openDeltaCacheWriter()) {
-            for (int i = 0; i < 1000; i++) {
-                final Entry<Integer, String> p = Entry.of(i, "Ahoj");
-                writer.write(p);
-                entries.add(p);
-            }
+        for (int i = 0; i < 1000; i++) {
+            final Entry<Integer, String> p = Entry.of(i, "Ahoj");
+            seg.put(p.getKey(), p.getValue());
+            entries.add(p);
         }
-        seg.forceCompact();
+        seg.flush();
+        seg.compact();
 
         AbstractDataTest.verifyIteratorData(entries, seg.openIterator());
         for (int i = 0; i < 1000; i++) {
