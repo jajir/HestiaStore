@@ -1,9 +1,9 @@
-package org.hestiastore.index.segment;
+package org.hestiastore.index.segmentindex;
 
 import org.hestiastore.index.Filter;
 import org.hestiastore.index.Vldtn;
 
-final class SegmentSplitStepCreateLowerSegment<K, V>
+final class SegmentSplitStepOpenIterator<K, V>
         implements Filter<SegmentSplitContext<K, V>, SegmentSplitState<K, V>> {
 
     @Override
@@ -12,9 +12,7 @@ final class SegmentSplitStepCreateLowerSegment<K, V>
         Vldtn.requireNonNull(ctx, "ctx");
         Vldtn.requireNonNull(state, "state");
         Vldtn.requireNonNull(ctx.getSegment(), "segment");
-        Vldtn.requireNonNull(ctx.getLowerSegmentId(), "lowerSegmentId");
-        state.setLowerSegment(ctx.getSegment()
-                .createSegmentWithSameConfig(ctx.getLowerSegmentId()));
+        state.setIterator(ctx.getSegment().openIterator());
         return true;
     }
 }

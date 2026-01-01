@@ -1,6 +1,5 @@
 package org.hestiastore.index.segment;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -22,8 +21,6 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
 class SegmentSynchronizationAdapterConcurrencyTest {
-
-    private static final SegmentId NEW_SEGMENT_ID = SegmentId.of(2);
 
     @Test
     void read_operations_do_not_block_each_other() throws Exception {
@@ -116,50 +113,6 @@ class SegmentSynchronizationAdapterConcurrencyTest {
                     writer.close();
                 }
                 closeSignal.countDown();
-                executor.shutdownNow();
-            }
-        }
-    }
-
-    @Test
-    void split_waits_for_writer_to_close() throws Exception {
-        try (SegmentSynchronizationAdapter<Integer, String> segment = newAdapter()) {
-            final SegmentSplitterPlan<Integer, String> plan = SegmentSplitterPlan
-                    .fromPolicy(segment.getSegmentSplitterPolicy());
-            final EntryWriter<Integer, String> writer = segment
-                    .openDeltaCacheWriter();
-            final ExecutorService executor = Executors
-                    .newSingleThreadExecutor();
-            final CountDownLatch started = new CountDownLatch(1);
-            final CountDownLatch completed = new CountDownLatch(1);
-            final java.util.concurrent.atomic.AtomicReference<Throwable> error = new java.util.concurrent.atomic.AtomicReference<>();
-            try {
-                executor.submit(() -> {
-                    started.countDown();
-                    try {
-                        segment.split(NEW_SEGMENT_ID, plan);
-                    } catch (final Throwable t) {
-                        error.set(t);
-                    } finally {
-                        completed.countDown();
-                    }
-                    return null;
-                });
-                assertTrue(started.await(1, TimeUnit.SECONDS),
-                        "Split task did not start");
-                assertFalse(completed.await(250, TimeUnit.MILLISECONDS),
-                        "Split completed while writer was open");
-                writer.close();
-                assertTrue(completed.await(2, TimeUnit.SECONDS),
-                        "Split did not finish after writer closed");
-                final Throwable thrown = error.get();
-                assertTrue(thrown instanceof IllegalStateException);
-                assertEquals("Splitting failed. Number of keys is too low.",
-                        thrown.getMessage());
-            } finally {
-                if (!writer.wasClosed()) {
-                    writer.close();
-                }
                 executor.shutdownNow();
             }
         }

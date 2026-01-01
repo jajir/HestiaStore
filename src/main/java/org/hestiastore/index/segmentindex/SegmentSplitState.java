@@ -1,21 +1,22 @@
-package org.hestiastore.index.segment;
+package org.hestiastore.index.segmentindex;
 
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.segment.SegmentId;
 
 /**
  * Mutable state carried across split steps.
  */
 final class SegmentSplitState<K, V> {
-    private SegmentImpl<K, V> lowerSegment;
+    private SegmentId lowerSegmentId;
     private EntryIterator<K, V> iterator;
     private SegmentSplitterResult<K, V> result;
 
-    SegmentImpl<K, V> getLowerSegment() {
-        return lowerSegment;
+    SegmentId getLowerSegmentId() {
+        return lowerSegmentId;
     }
 
-    void setLowerSegment(final SegmentImpl<K, V> lowerSegment) {
-        this.lowerSegment = lowerSegment;
+    void setLowerSegmentId(final SegmentId lowerSegmentId) {
+        this.lowerSegmentId = lowerSegmentId;
     }
 
     EntryIterator<K, V> getIterator() {

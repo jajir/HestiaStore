@@ -26,6 +26,7 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
      * holds current delta cache writer.
      */
     private SegmentDeltaCacheWriter<K, V> deltaCacheWriter;
+    private boolean compactionRequestedDuringWrite;
 
     public SegmentDeltaCacheCompactingWriter(final SegmentImpl<K, V> segment,
             final SegmentDeltaCacheController<K, V> deltaCacheController,
@@ -71,6 +72,10 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
     private void requestCompactionForDeltaFiles() {
         final int deltaFileCount = segment.getSegmentPropertiesManager()
                 .getDeltaFileCount();
+        if (compactionRequestedDuringWrite && deltaFileCount > 0) {
+            segment.requestCompaction();
+            return;
+        }
         if (compactionPolicy
                 .shouldForceCompactionForDeltaFiles(deltaFileCount)) {
             segment.requestCompaction();
@@ -84,6 +89,7 @@ public class SegmentDeltaCacheCompactingWriter<K, V>
     }
 
     private void forceCompaction() {
+        compactionRequestedDuringWrite = true;
         deltaCacheWriter.close();
         deltaCacheWriter = null;
         segment.requestCompaction();

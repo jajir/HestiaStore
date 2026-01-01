@@ -1,4 +1,4 @@
-package org.hestiastore.index.segment;
+package org.hestiastore.index.segmentindex;
 
 import java.util.List;
 

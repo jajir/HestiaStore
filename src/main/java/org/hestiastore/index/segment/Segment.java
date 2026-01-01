@@ -31,10 +31,8 @@ import org.hestiastore.index.EntryWriter;
  * {@link #openDeltaCacheWriter()}, {@link #put(Object, Object)} - Maintenance:
  * {@link #optionallyCompact()}, {@link #flush()}, {@link #forceCompact()},
  * {@link #checkAndRepairConsistency()}, {@link #invalidateIterators()} -
- * Splitting: {@link #getSegmentSplitterPolicy()},
- * {@link #split(SegmentId, SegmentSplitterPlan)},
- * {@link #createSegmentWithSameConfig(SegmentId)} - Identity and lifecycle:
- * {@link #getId()}, {@link #getVersion()}, {@link #close()}
+ * Identity and lifecycle: {@link #getId()}, {@link #getVersion()},
+ * {@link #close()}
  *
  * @param <K> key type
  * @param <V> value type
@@ -180,40 +178,6 @@ public interface Segment<K, V>
      * @return associated value or {@code null} if not present
      */
     V get(K key);
-
-    /**
-     * Creates a new empty segment sharing the same configuration and type
-     * descriptors as this segment, bound to the provided identifier. No data
-     * are copied.
-     *
-     * @param segmentId identifier for the new sibling segment
-     * @return a new segment with identical configuration
-     */
-    Segment<K, V> createSegmentWithSameConfig(SegmentId segmentId);
-
-    /**
-     * Returns the policy object that estimates the effective size of this
-     * segment and advises whether a split should be performed.
-     *
-     * @return splitter policy bound to this segment
-     */
-    // FIXME splitting should be done completly outside of segment
-    @Deprecated
-    SegmentSplitterPolicy<K, V> getSegmentSplitterPolicy();
-
-    /**
-     * Splits this segment into two parts according to the supplied plan. The
-     * caller must provide a fresh segment id for the new lower segment and a
-     * plan computed from {@link #getSegmentSplitterPolicy()}.
-     *
-     * @param segmentId required id for the new lower segment
-     * @param plan      required split plan
-     * @return split result with the newly created segment
-     */
-    // FIXME this should be done completly outside of segment
-    @Deprecated
-    SegmentSplitterResult<K, V> split(SegmentId segmentId,
-            SegmentSplitterPlan<K, V> plan);
 
     /**
      * Returns this segment's identity.

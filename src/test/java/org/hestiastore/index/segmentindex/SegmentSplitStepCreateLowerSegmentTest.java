@@ -1,10 +1,8 @@
-package org.hestiastore.index.segment;
+package org.hestiastore.index.segmentindex;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,15 +10,15 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segment.SegmentId;
 
 @ExtendWith(MockitoExtension.class)
 class SegmentSplitStepCreateLowerSegmentTest {
 
     private SegmentSplitStepCreateLowerSegment<Integer, String> step;
     @Mock
-    private SegmentImpl<Integer, String> segment;
-    @Mock
-    private SegmentImpl<Integer, String> created;
+    private Segment<Integer, String> segment;
 
     @BeforeEach
     void setup() {
@@ -51,8 +49,9 @@ class SegmentSplitStepCreateLowerSegmentTest {
     @Test
     void test_missing_segment() {
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.filter(new SegmentSplitContext<>(null, null, null,
-                        SegmentId.of(1)), new SegmentSplitState<>()));
+                () -> step.filter(new SegmentSplitContext<>(null, null,
+                        SegmentId.of(1), id -> null),
+                        new SegmentSplitState<>()));
         assertEquals("Property 'segment' must not be null.", err.getMessage());
     }
 
@@ -60,22 +59,32 @@ class SegmentSplitStepCreateLowerSegmentTest {
     void test_missing_lowerSegmentId() {
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.filter(
-                        new SegmentSplitContext<>(segment, null, null, null),
+                        new SegmentSplitContext<>(segment, null, null,
+                                id -> null),
                         new SegmentSplitState<>()));
         assertEquals("Property 'lowerSegmentId' must not be null.",
                 err.getMessage());
     }
 
     @Test
-    void calls_createSegmentWithSameConfig() {
+    void test_missing_writerTxFactory() {
+        final Exception err = assertThrows(IllegalArgumentException.class,
+                () -> step.filter(new SegmentSplitContext<>(segment, null,
+                        SegmentId.of(1), null),
+                        new SegmentSplitState<>()));
+        assertEquals("Property 'writerTxFactory' must not be null.",
+                err.getMessage());
+    }
+
+    @Test
+    void stores_lower_segment_id() {
         final SegmentId id = SegmentId.of(1);
-        when(segment.createSegmentWithSameConfig(id)).thenReturn(created);
 
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
-                segment, null, null, id);
+                segment, null, id, ignored -> null);
         final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
         step.filter(ctx, state);
-        verify(segment).createSegmentWithSameConfig(id);
-        assertNotNull(state.getLowerSegment());
+        assertNotNull(state.getLowerSegmentId());
+        assertEquals(id, state.getLowerSegmentId());
     }
 }

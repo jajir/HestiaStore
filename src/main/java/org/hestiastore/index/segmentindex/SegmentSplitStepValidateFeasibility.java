@@ -1,9 +1,9 @@
-package org.hestiastore.index.segment;
+package org.hestiastore.index.segmentindex;
 
 import org.hestiastore.index.Filter;
 import org.hestiastore.index.Vldtn;
 
-final class SegmentSplitStepEnsureLowerNotEmpty<K, V>
+final class SegmentSplitStepValidateFeasibility<K, V>
         implements Filter<SegmentSplitContext<K, V>, SegmentSplitState<K, V>> {
 
     @Override
@@ -12,9 +12,9 @@ final class SegmentSplitStepEnsureLowerNotEmpty<K, V>
         Vldtn.requireNonNull(ctx, "ctx");
         Vldtn.requireNonNull(state, "state");
         Vldtn.requireNonNull(ctx.getPlan(), "plan");
-        if (ctx.getPlan().isLowerSegmentEmpty()) {
+        if (!ctx.getPlan().isSplitFeasible()) {
             throw new IllegalStateException(
-                    "Splitting failed. Lower segment doesn't contains any data");
+                    "Splitting failed. Number of keys is too low.");
         }
         return true;
     }

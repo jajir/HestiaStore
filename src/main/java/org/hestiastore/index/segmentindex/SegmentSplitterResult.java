@@ -1,7 +1,8 @@
 
-package org.hestiastore.index.segment;
+package org.hestiastore.index.segmentindex;
 
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.segment.SegmentId;
 
 /**
  * Provides result of segment splitting.
@@ -22,15 +23,15 @@ public class SegmentSplitterResult<K, V> {
         SPLIT
     }
 
-    private final Segment<K, V> segment;
+    private final SegmentId segmentId;
     private final K maxKey;
     private final K minKey;
     private final SegmentSplittingStatus status;
 
-    public SegmentSplitterResult(final Segment<K, V> segment, final K minKey,
+    public SegmentSplitterResult(final SegmentId segmentId, final K minKey,
             final K maxKey,
             final SegmentSplittingStatus segmentSplittingStatus) {
-        this.segment = Vldtn.requireNonNull(segment, "segment");
+        this.segmentId = Vldtn.requireNonNull(segmentId, "segmentId");
         this.minKey = Vldtn.requireNonNull(minKey, "minKey");
         this.maxKey = Vldtn.requireNonNull(maxKey, "maxKey");
         this.status = Vldtn.requireNonNull(segmentSplittingStatus,
@@ -47,12 +48,13 @@ public class SegmentSplitterResult<K, V> {
     }
 
     /**
-     * Returns the segment resulting from the split or compaction.
+     * Returns the identifier of the lower segment created during the split or
+     * compaction.
      *
-     * @return the resulting {@link Segment}
+     * @return segment id of the lower segment
      */
-    public Segment<K, V> getSegment() {
-        return segment;
+    public SegmentId getSegmentId() {
+        return segmentId;
     }
 
     /**

@@ -1,25 +1,18 @@
-package org.hestiastore.index.segment;
+package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.Entry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class SegmentSplitStepEnsureLowerNotEmptyTest {
-
-    @Mock
-    private SegmentDeltaCacheController<Integer, String> dc;
-    @Mock
-    private SegmentPropertiesManager spm;
 
     private SegmentSplitStepEnsureLowerNotEmpty<Integer, String> step;
 
@@ -35,11 +28,8 @@ class SegmentSplitStepEnsureLowerNotEmptyTest {
 
     private SegmentSplitterPlan<Integer, String> planWithEstimate(
             long estimate) {
-        when(spm.getSegmentStats())
-                .thenReturn(new SegmentStats(0, estimate, 0));
-        when(dc.getDeltaCacheSizeWithoutTombstones()).thenReturn(0);
         final SegmentSplitterPolicy<Integer, String> policy = new SegmentSplitterPolicy<>(
-                spm, dc);
+                estimate, false);
         return SegmentSplitterPlan.fromPolicy(policy);
     }
 
@@ -62,14 +52,14 @@ class SegmentSplitStepEnsureLowerNotEmptyTest {
     @Test
     void throws_when_lower_empty_and_passes_when_not() {
         final SegmentSplitContext<Integer, String> ctxEmpty = new SegmentSplitContext<>(
-                null, null, planWithEstimate(10), null);
+                null, planWithEstimate(10), null, null);
         assertThrows(IllegalStateException.class,
                 () -> step.filter(ctxEmpty, new SegmentSplitState<>()));
 
         final SegmentSplitterPlan<Integer, String> plan = planWithEstimate(10);
         plan.recordLower(Entry.of(1, "a"));
         final SegmentSplitContext<Integer, String> ctxNonEmpty = new SegmentSplitContext<>(
-                null, null, plan, null);
+                null, plan, null, null);
         assertDoesNotThrow(
                 () -> step.filter(ctxNonEmpty, new SegmentSplitState<>()));
     }

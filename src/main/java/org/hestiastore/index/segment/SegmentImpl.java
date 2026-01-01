@@ -23,9 +23,9 @@ import org.slf4j.LoggerFactory;
  * Segment coordinates read and write operations for a bounded subset of the
  * index data. It encapsulates the underlying files, provides search and
  * iteration, accepts writes through a delta cache (with o̦ptional automatic
- * compaction), and exposes utilities for statistics, consistency checking, and
- * splitting oversized segments. Versioning is tracked via an optimistic lock to
- * guard concurrent readers while updates occur.
+ * compaction), and exposes utilities for statistics and consistency checking.
+ * Versioning is tracked via an optimistic lock to guard concurrent readers
+ * while updates occur.
  *
  * @author honza
  *
@@ -44,8 +44,6 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
     private final SegmentSearcher<K, V> segmentSearcher;
     private final SegmentResources<K, V> segmentResources;
-    private final SegmentSplitter<K, V> segmentSplitter;
-    private final SegmentSplitterPolicy<K, V> segmentSplitterPolicy;
     private final SegmentCompactionPolicyWithManager segmentCompactionPolicy;
     private final SegmentCache<K, V> segmentCache;
     private SegmentIndexSearcher<K, V> segmentIndexSearcher;
@@ -66,9 +64,7 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
             final SegmentDeltaCacheController<K, V> segmentDeltaCacheController,
             final SegmentSearcher<K, V> segmentSearcher,
             final SegmentCompactionPolicyWithManager segmentCompactionPolicy,
-            final SegmentCompacter<K, V> segmentCompacter,
-            final SegmentReplacer<K, V> segmentReplacer,
-            final SegmentSplitterPolicy<K, V> segmentSplitterPolicy) {
+            final SegmentCompacter<K, V> segmentCompacter) {
         this.segmentConf = Vldtn.requireNonNull(segmentConf, "segmentConf");
         this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
         logger.debug("Initializing segment '{}'", segmentFiles.getId());
@@ -93,13 +89,6 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
                 segmentCompactionPolicy, "segmentCompactionPolicy");
         this.segmentSearcher = Vldtn.requireNonNull(segmentSearcher,
                 "segmentSearcher");
-        final SegmentSplitterPolicy<K, V> validatedSplitterPolicy = Vldtn
-                .requireNonNull(segmentSplitterPolicy, "segmentSplitterPolicy");
-        this.segmentSplitterPolicy = validatedSplitterPolicy;
-        final SegmentReplacer<K, V> injectedReplacer = Vldtn
-                .requireNonNull(segmentReplacer, "segmentReplacer");
-        this.segmentSplitter = new SegmentSplitter<>(this, versionController,
-                injectedReplacer);
         this.compactionExecutor = segmentCompacter::forceCompact;
     }
 
@@ -227,60 +216,6 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
         }
         return segmentSearcher.get(key, segmentResources,
                 getSegmentIndexSearcher());
-    }
-
-    /**
-     * Creates a new, empty segment using the same configuration and type
-     * descriptors as this segment, bound to the provided id.
-     * <p>
-     * Only configuration/state is copied (directory, key/value descriptors, and
-     * a copied {@link SegmentConf}). No data is cloned.
-     *
-     * @param segmentId required id for the new sibling segment
-     * @return a new segment sharing the same configuration
-     */
-    @Override
-    public SegmentImpl<K, V> createSegmentWithSameConfig(SegmentId segmentId) {
-        Vldtn.requireNonNull(segmentId, "segmentId");
-        return Segment.<K, V>builder()
-                .withAsyncDirectory(segmentFiles.getAsyncDirectory())
-                .withId(segmentId)
-                .withKeyTypeDescriptor(segmentFiles.getKeyTypeDescriptor())
-                .withValueTypeDescriptor(segmentFiles.getValueTypeDescriptor())
-                .withSegmentConf(new SegmentConf(segmentConf)).build();
-    }
-
-    /**
-     * Splits this segment into two parts using a precomputed plan. Callers are
-     * expected to decide when to split (e.g., via
-     * {@link #getSegmentSplitterPolicy()} and index configuration) and then
-     * invoke this method with a newly allocated {@link SegmentId} for the
-     * lower half.
-     *
-     * @param segmentId id for the new lower segment
-     * @param plan precomputed split plan
-     * @return result of the split operation
-     */
-    @Override
-    public SegmentSplitterResult<K, V> split(final SegmentId segmentId,
-            final SegmentSplitterPlan<K, V> plan) {
-        return segmentSplitter.split(segmentId, plan);
-    }
-
-    /**
-     * Returns the policy object that estimates the effective number of keys in
-     * this segment (on-disk + delta cache) and advises whether a compaction
-     * should take place before attempting to split.
-     * <p>
-     * Typical usage is to create a {@link SegmentSplitterPlan} from this
-     * policy, evaluate whether the split should occur based on index limits,
-     * and only then execute the split via {@link #split(SegmentId, SegmentSplitterPlan)}.
-     *
-     * @return the splitter policy associated with this segment
-     */
-    @Override
-    public SegmentSplitterPolicy<K, V> getSegmentSplitterPolicy() {
-        return segmentSplitterPolicy;
     }
 
     @Override

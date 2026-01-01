@@ -1,39 +1,34 @@
-package org.hestiastore.index.segment;
+package org.hestiastore.index.segmentindex;
+
+import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segment.SegmentId;
 
 /**
  * Inputs required to execute a split pipeline once.
  * Now mutable with getters/setters to ease validation and future extensions.
  */
 final class SegmentSplitContext<K, V> {
-    private SegmentImpl<K, V> segment;
-    private VersionController versionController;
+    private Segment<K, V> segment;
     private SegmentSplitterPlan<K, V> plan;
     private SegmentId lowerSegmentId;
+    private SegmentWriterTxFactory<K, V> writerTxFactory;
 
-    SegmentSplitContext(final SegmentImpl<K, V> segment,
-            final VersionController versionController,
+    SegmentSplitContext(final Segment<K, V> segment,
             final SegmentSplitterPlan<K, V> plan,
-            final SegmentId lowerSegmentId) {
+            final SegmentId lowerSegmentId,
+            final SegmentWriterTxFactory<K, V> writerTxFactory) {
         this.segment = segment;
-        this.versionController = versionController;
         this.plan = plan;
         this.lowerSegmentId = lowerSegmentId;
+        this.writerTxFactory = writerTxFactory;
     }
 
-    SegmentImpl<K, V> getSegment() {
+    Segment<K, V> getSegment() {
         return segment;
     }
 
-    void setSegment(final SegmentImpl<K, V> segment) {
+    void setSegment(final Segment<K, V> segment) {
         this.segment = segment;
-    }
-
-    VersionController getVersionController() {
-        return versionController;
-    }
-
-    void setVersionController(final VersionController versionController) {
-        this.versionController = versionController;
     }
 
     SegmentSplitterPlan<K, V> getPlan() {
@@ -50,5 +45,14 @@ final class SegmentSplitContext<K, V> {
 
     void setLowerSegmentId(final SegmentId lowerSegmentId) {
         this.lowerSegmentId = lowerSegmentId;
+    }
+
+    SegmentWriterTxFactory<K, V> getWriterTxFactory() {
+        return writerTxFactory;
+    }
+
+    void setWriterTxFactory(
+            final SegmentWriterTxFactory<K, V> writerTxFactory) {
+        this.writerTxFactory = writerTxFactory;
     }
 }

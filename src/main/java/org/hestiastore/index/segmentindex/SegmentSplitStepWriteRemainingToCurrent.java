@@ -1,10 +1,11 @@
-package org.hestiastore.index.segment;
+package org.hestiastore.index.segmentindex;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.Filter;
 import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.segment.SegmentId;
 
 final class SegmentSplitStepWriteRemainingToCurrent<K, V>
         implements Filter<SegmentSplitContext<K, V>, SegmentSplitState<K, V>> {
@@ -16,10 +17,13 @@ final class SegmentSplitStepWriteRemainingToCurrent<K, V>
         Vldtn.requireNonNull(state, "state");
         Vldtn.requireNonNull(ctx.getSegment(), "segment");
         Vldtn.requireNonNull(ctx.getPlan(), "plan");
+        Vldtn.requireNonNull(ctx.getWriterTxFactory(), "writerTxFactory");
         Vldtn.requireNonNull(state.getIterator(), "iterator");
-        Vldtn.requireNonNull(state.getLowerSegment(), "lowerSegment");
-        final WriteTransaction<K, V> segmentWriteTx = ctx.getSegment()
-                .openFullWriteTx();
+        final SegmentId lowerSegmentId = Vldtn.requireNonNull(
+                state.getLowerSegmentId(), "lowerSegmentId");
+        final SegmentId segmentId = ctx.getSegment().getId();
+        final WriteTransaction<K, V> segmentWriteTx = ctx.getWriterTxFactory()
+                .openWriterTx(segmentId);
         try (EntryWriter<K, V> writer = segmentWriteTx.open()) {
             while (state.getIterator().hasNext()) {
                 final Entry<K, V> entry = state.getIterator().next();
@@ -28,7 +32,7 @@ final class SegmentSplitStepWriteRemainingToCurrent<K, V>
             }
         }
         segmentWriteTx.commit();
-        state.setResult(new SegmentSplitterResult<>(state.getLowerSegment(),
+        state.setResult(new SegmentSplitterResult<>(lowerSegmentId,
                 ctx.getPlan().getMinKey(), ctx.getPlan().getMaxKey(),
                 SegmentSplitterResult.SegmentSplittingStatus.SPLIT));
         return false;
