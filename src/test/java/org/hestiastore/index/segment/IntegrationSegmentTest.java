@@ -64,8 +64,8 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         ));
 
         /*
-         * Number of file's is constantly 0, because of compact method
-         * doesn't run, because there are no canges in delta files.
+         * Number of file's is constantly 0, because of compact method doesn't
+         * run, because there are no canges in delta files.
          */
         assertEquals(4, numberOfFilesInDirectory(directory));
 
@@ -91,10 +91,10 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         /**
          * It's always 4 or 5 because only one or zero delta files could exists.
          */
-        if (numberOfFilesInDirectoryP(directory) != 4
-                && numberOfFilesInDirectoryP(directory) != 5) {
+        if (numberOfFilesInDirectory(directory) != 3
+                && numberOfFilesInDirectory(directory) != 4) {
             fail("Invalid number of files "
-                    + numberOfFilesInDirectoryP(directory));
+                    + numberOfFilesInDirectory(directory));
         }
 
         seg.compact();
@@ -121,12 +121,11 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
 
         verifyTestDataSet(seg);
 
-        assertEquals(expectedNumberOfFiles,
-                numberOfFilesInDirectoryP(directory));
+        verifyNumberOfFiles(directory, expectedNumberOfFiles);
 
         seg.compact();
 
-        assertEquals(4, numberOfFilesInDirectoryP(directory));
+        verifyNumberOfFiles(directory, 4);
         verifyTestDataSet(seg);
         assertEquals(9, seg.getStats().getNumberOfKeys());
         assertEquals(expectedNumberKeysInScarceIndex,
@@ -394,7 +393,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .wrap(directory);
         final SegmentId segmentId = SegmentId.of(27);
 
-        SegmentConf segmentConf = new SegmentConf(13, 6, 3, 2, 0, 0.01, 1024,
+        SegmentConf segmentConf = new SegmentConf(6, 3, 2, 0, 0.01, 1024,
                 List.of(), List.of());
 
         final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
@@ -427,7 +426,6 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withSegmentFiles(segmentFiles)//
                 .withSegmentPropertiesManager(segmentPropertiesManager)//
                 .withSegmentResources(dataProvider)//
-                .withMaxNumberOfKeysInSegmentCache(13)//
                 .withMaxNumberOfKeysInSegmentChunk(3)//
                 .withKeyTypeDescriptor(tdi)//
                 .withBloomFilterIndexSizeInBytes(0)//
@@ -555,7 +553,6 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withKeyTypeDescriptor(tdi)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withMaxNumberOfKeysInSegmentChunk(3)//
-                .withMaxNumberOfKeysInSegmentCache(5)//
                 .withDiskIoBufferSize(3 * 1024)//
                 .withValueTypeDescriptor(tds)//
                 .withEncodingChunkFilters(//
@@ -608,7 +605,6 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withId(id1)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//
-                .withMaxNumberOfKeysInSegmentCache(10) //
                 .withMaxNumberOfKeysInSegmentChunk(10)//
                 .withBloomFilterIndexSizeInBytes(0)// .withBloomFilterProbabilityOfFalsePositive(0.01D)//
                 .withDiskIoBufferSize(1 * 1024) //
@@ -632,7 +628,6 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withId(id2)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//
-                .withMaxNumberOfKeysInSegmentCache(3)//
                 .withMaxNumberOfKeysInSegmentChunk(1)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)//
@@ -649,7 +644,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                         ))//
                 .build(), //
                 9, // expectedNumberKeysInScarceIndex
-                5// expectedNumberOfFile
+                10// expectedNumberOfFile
         ), arguments(tdi, tds, dir3, Segment.<Integer, String>builder()//
                 .withAsyncDirectory(
                         org.hestiastore.index.directory.async.AsyncDirectoryAdapter
@@ -657,7 +652,6 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withId(id3)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//
-                .withMaxNumberOfKeysInSegmentCache(5)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)//
@@ -674,7 +668,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                         ))//
                 .build(), //
                 5, // expectedNumberKeysInScarceIndex
-                7 // expectedNumberOfFile
+                10 // expectedNumberOfFile
         ));
     }
 

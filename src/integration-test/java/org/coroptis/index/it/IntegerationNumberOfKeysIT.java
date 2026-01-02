@@ -73,7 +73,6 @@ public class IntegerationNumberOfKeysIT {
                 .withValueTypeDescriptor(TYPE_DESCRIPTOR_LONG)//
                 .withMaxNumberOfKeysInSegmentChunk(100)//
                 .withBloomFilterIndexSizeInBytes(0)// disable bloom filter
-                .withMaxNumberOfKeysInSegmentCache(1000)//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterMagicNumberWriting(), //
                                 new ChunkFilterCrc32Writing(), //

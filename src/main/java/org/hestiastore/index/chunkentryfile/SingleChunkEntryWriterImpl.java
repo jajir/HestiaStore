@@ -45,7 +45,6 @@ public class SingleChunkEntryWriterImpl<K, V>
             throw new IllegalStateException("Chunk writer already closed");
         }
         // Write diff-encoded key header (2 bytes + diff bytes)
-        // TODO following line eats up to 4% of CPU time in write benchmark
         final byte[] diffKey = diffKeyWriter.write(entry.getKey());
         fileWriter.write(diffKey);
         // Write value payload via type writer

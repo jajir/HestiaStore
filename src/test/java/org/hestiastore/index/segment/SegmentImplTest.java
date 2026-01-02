@@ -29,7 +29,6 @@ import org.hestiastore.index.chunkentryfile.ChunkEntryFileWriterTx;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
-import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.scarceindex.ScarceIndexWriterTx;
 import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,8 +55,6 @@ class SegmentImplTest {
     private SegmentDeltaCacheWriter<Integer, String> deltaCacheWriter;
     @Mock
     private SegmentSearcher<Integer, String> segmentSearcher;
-    @Mock
-    private SegmentCompactionPolicyWithManager compactionPolicy;
     @Mock
     private SegmentId segmentId;
     @Mock
@@ -96,7 +93,7 @@ class SegmentImplTest {
 
     @BeforeEach
     void setUpSubject() {
-        conf = new SegmentConf(100, 50, 3, 0, 0, 0.01, 1024,
+        conf = new SegmentConf(50, 3, 0, 0, 0.01, 1024,
                 List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()));
         when(segmentFiles.getId()).thenReturn(segmentId);
@@ -128,10 +125,8 @@ class SegmentImplTest {
         doNothing().when(segmentDataProvider).invalidate();
         when(segmentDataProvider.getScarceIndex()).thenReturn(scarceIndex);
 
-        compactionPolicy = SegmentCompactionPolicyWithManager.from(conf,
-                segmentPropertiesManager);
         final SegmentCompacter<Integer, String> compacter = new SegmentCompacter<>(
-                versionController, compactionPolicy);
+                versionController);
         subject = new SegmentImpl<>(segmentFiles, conf, versionController,
                 segmentPropertiesManager, segmentDataProvider,
                 deltaCacheController, segmentSearcher, compacter);

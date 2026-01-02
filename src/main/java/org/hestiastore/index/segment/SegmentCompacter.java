@@ -14,14 +14,10 @@ public final class SegmentCompacter<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final VersionController versionController;
-    private final SegmentCompactionPolicyWithManager compactionPolicy;
 
-    public SegmentCompacter(final VersionController versionController,
-            final SegmentCompactionPolicyWithManager compactionPolicy) {
+    public SegmentCompacter(final VersionController versionController) {
         this.versionController = Vldtn.requireNonNull(versionController,
                 "versionController");
-        this.compactionPolicy = Vldtn.requireNonNull(compactionPolicy,
-                "compactionPolicy");
     }
 
     public void forceCompact(final SegmentImpl<K, V> segment) {

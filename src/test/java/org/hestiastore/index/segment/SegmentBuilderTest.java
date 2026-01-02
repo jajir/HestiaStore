@@ -42,7 +42,6 @@ class SegmentBuilderTest {
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
-                .withMaxNumberOfKeysInSegmentCache(10)//
                 .withBloomFilterIndexSizeInBytes(0)//
         ;
         final Exception e = assertThrows(IllegalArgumentException.class,
@@ -61,7 +60,6 @@ class SegmentBuilderTest {
                 .withId(SEGMENT_ID)//
                 // .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
-                .withMaxNumberOfKeysInSegmentCache(10)//
                 .withBloomFilterIndexSizeInBytes(0)//
         ;
         final Exception e = assertThrows(IllegalArgumentException.class,
@@ -80,25 +78,12 @@ class SegmentBuilderTest {
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 // .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
-                .withMaxNumberOfKeysInSegmentCache(10)//
                 .withBloomFilterIndexSizeInBytes(0)//
         ;
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> builder.build());
 
         assertEquals("ValueTypeDescriptor can't be null", e.getMessage());
-    }
-
-    @Test
-    void test_withMaxNumberOfKeysInSegmentCache_is_1() {
-        final SegmentBuilder<Integer, String> builder = Segment
-                .<Integer, String>builder();
-        final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> builder.withMaxNumberOfKeysInSegmentCache(1));
-
-        assertEquals(
-                "maxNumberOfKeysInSegmentCache is '1' but must be higher than '1'",
-                e.getMessage());
     }
 
     @Test
@@ -268,7 +253,6 @@ class SegmentBuilderTest {
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
-                .withMaxNumberOfKeysInSegmentCache(10)//
                 .withMaxNumberOfKeysInSegmentWriteCache(5)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withBloomFilterIndexSizeInBytes(0)//

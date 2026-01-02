@@ -167,8 +167,8 @@ class SegmentIndexConcurrencyStressIT {
                 .withValueTypeDescriptor(new TypeDescriptorInteger())//
                 .withName(name)//
                 .withContextLoggingEnabled(false)//
-                .withMaxNumberOfKeysInSegment(20)//
                 .withMaxNumberOfKeysInSegmentCache(30)//
+                .withMaxNumberOfKeysInSegment(20)//
                 .withMaxNumberOfKeysInSegmentChunk(5)//
                 .withMaxNumberOfKeysInCache(60)//
                 .withMaxNumberOfSegmentsInCache(10)//

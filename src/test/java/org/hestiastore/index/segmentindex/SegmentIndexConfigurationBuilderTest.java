@@ -77,7 +77,8 @@ class SegmentIndexConfigurationBuilderTest {
     void withMaxNumberOfKeysInSegmentCacheSetsValue() {
         final int value = 123;
         final IndexConfiguration<Integer, String> config = newBuilder()
-                .withMaxNumberOfKeysInSegmentCache(value).build();
+                .withMaxNumberOfKeysInSegmentCache(value)
+                .build();
         assertEquals(value, config.getMaxNumberOfKeysInSegmentCache());
     }
 

@@ -3,18 +3,12 @@ package org.hestiastore.index.segment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hestiastore.index.AbstractDataTest;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.directory.Directory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public abstract class AbstractSegmentTest extends AbstractDataTest {
-
-    private final Logger logger = LoggerFactory
-            .getLogger(AbstractSegmentTest.class);
 
     /**
      * Simplify filling segment with data.
@@ -67,15 +61,6 @@ public abstract class AbstractSegmentTest extends AbstractDataTest {
 
     protected int numberOfFilesInDirectory(final Directory directory) {
         return (int) directory.getFileNames().count();
-    }
-
-    protected int numberOfFilesInDirectoryP(final Directory directory) {
-        final AtomicInteger cx = new AtomicInteger(0);
-        directory.getFileNames().forEach(fileName -> {
-            logger.debug("Found file name {}", fileName);
-            cx.incrementAndGet();
-        });
-        return cx.get();
     }
 
     protected void verifyCacheFiles(final Directory directory) {

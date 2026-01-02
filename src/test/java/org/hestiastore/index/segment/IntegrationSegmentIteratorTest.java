@@ -58,7 +58,6 @@ class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
                 .withId(id)//
                 .withKeyTypeDescriptor(tds)//
                 .withValueTypeDescriptor(tdi)//
-                .withMaxNumberOfKeysInSegmentCache(10)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterMagicNumberWriting(), //

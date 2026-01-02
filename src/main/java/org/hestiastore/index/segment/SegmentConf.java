@@ -6,7 +6,6 @@ import org.hestiastore.index.chunkstore.ChunkFilter;
 
 public class SegmentConf {
 
-    private final int maxNumberOfKeysInSegmentDeltaCache;
     private final int maxNumberOfKeysInSegmentWriteCache;
     private final int maxNumberOfKeysInChunk;
     private final Integer bloomFilterNumberOfHashFunctions;
@@ -16,8 +15,7 @@ public class SegmentConf {
     private final List<ChunkFilter> encodingChunkFilters;
     private final List<ChunkFilter> decodingChunkFilters;
 
-    public SegmentConf(final int maxNumeberOfKeysInSegmentDeltaCache,
-            final int maxNumberOfKeysInSegmentWriteCache,
+    public SegmentConf(final int maxNumberOfKeysInSegmentWriteCache,
             final int maxNumberOfKeysInChunk,
             final Integer bloomFilterNumberOfHashFunctions,
             final Integer bloomFilterIndexSizeInBytes,
@@ -25,7 +23,6 @@ public class SegmentConf {
             final Integer diskIoBufferSize,
             final List<ChunkFilter> encodingChunkFilters,
             final List<ChunkFilter> decodingChunkFilters) {
-        this.maxNumberOfKeysInSegmentDeltaCache = maxNumeberOfKeysInSegmentDeltaCache;
         this.maxNumberOfKeysInSegmentWriteCache = maxNumberOfKeysInSegmentWriteCache;
         this.maxNumberOfKeysInChunk = maxNumberOfKeysInChunk;
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
@@ -37,7 +34,6 @@ public class SegmentConf {
     }
 
     public SegmentConf(final SegmentConf segmentConf) {
-        this.maxNumberOfKeysInSegmentDeltaCache = segmentConf.maxNumberOfKeysInSegmentDeltaCache;
         this.maxNumberOfKeysInSegmentWriteCache = segmentConf.maxNumberOfKeysInSegmentWriteCache;
         this.maxNumberOfKeysInChunk = segmentConf.maxNumberOfKeysInChunk;
         this.bloomFilterNumberOfHashFunctions = segmentConf.bloomFilterNumberOfHashFunctions;
@@ -46,16 +42,6 @@ public class SegmentConf {
         this.diskIoBufferSize = segmentConf.diskIoBufferSize;
         this.encodingChunkFilters = List.copyOf(segmentConf.encodingChunkFilters);
         this.decodingChunkFilters = List.copyOf(segmentConf.decodingChunkFilters);
-    }
-
-    /**
-     * Provide number of keys in delta cache. Real number of keys in delta cache
-     * is smaller or equal to this number.
-     * 
-     * @return return number of keys in delta cache
-     */
-    int getMaxNumberOfKeysInDeltaCache() {
-        return maxNumberOfKeysInSegmentDeltaCache;
     }
 
     int getMaxNumberOfKeysInSegmentWriteCache() {

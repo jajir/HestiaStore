@@ -45,7 +45,6 @@ class IntegrationSegmentConsistencyTest extends AbstractSegmentTest {
                 .withId(id)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tdi)//
-                .withMaxNumberOfKeysInSegmentCache(10000)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterMagicNumberWriting(), //

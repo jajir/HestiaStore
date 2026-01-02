@@ -238,8 +238,8 @@ class IntegrationSegmentIndexSimpleTest {
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tds) //
                 .withDiskIoBufferSizeInBytes(DISK_IO_BUFFER_SIZE)//
-                .withMaxNumberOfKeysInSegment(5) //
                 .withMaxNumberOfKeysInSegmentCache(3) //
+                .withMaxNumberOfKeysInSegment(5) //
                 .withMaxNumberOfKeysInSegmentChunk(2) //
                 .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(1000) //
@@ -283,7 +283,6 @@ class IntegrationSegmentIndexSimpleTest {
                 .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
-                .withMaxNumberOfKeysInSegmentCache(2)//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterMagicNumberWriting(), //
                                 new ChunkFilterCrc32Writing(), //

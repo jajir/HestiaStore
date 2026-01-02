@@ -28,8 +28,7 @@ class SegmentDeltaCacheControllerTest {
     @Test
     void clear_evicted_segment_cache() {
         final SegmentDeltaCacheController<Integer, Integer> controller = new SegmentDeltaCacheController<>(
-                segmentFiles, segmentPropertiesManager, segmentResources, 10, 5,
-                2);
+                segmentFiles, segmentPropertiesManager, segmentResources, 5, 2);
         final SegmentCache<Integer, Integer> segmentCache = new SegmentCache<>(
                 new TypeDescriptorInteger().getComparator(),
                 new TypeDescriptorInteger());
@@ -48,8 +47,7 @@ class SegmentDeltaCacheControllerTest {
         when(deltaCache.size()).thenReturn(10);
         when(deltaCache.sizeWithoutTombstones()).thenReturn(7);
         final SegmentDeltaCacheController<Integer, Integer> controller = new SegmentDeltaCacheController<>(
-                segmentFiles, segmentPropertiesManager, segmentResources, 10, 5,
-                2);
+                segmentFiles, segmentPropertiesManager, segmentResources, 5, 2);
 
         assertEquals(10, controller.getDeltaCacheSize());
         assertEquals(7, controller.getDeltaCacheSizeWithoutTombstones());
