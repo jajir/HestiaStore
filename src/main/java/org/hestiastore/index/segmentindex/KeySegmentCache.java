@@ -131,6 +131,14 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
         return version.get() == expectedVersion;
     }
 
+    boolean isKeyMappedToSegment(final K key,
+            final SegmentId expectedSegmentId) {
+        Vldtn.requireNonNull(key, "key");
+        Vldtn.requireNonNull(expectedSegmentId, "expectedSegmentId");
+        final SegmentId current = findSegmentId(key);
+        return expectedSegmentId.equals(current);
+    }
+
     public SegmentId findNewSegmentId() {
         return SegmentId.of(nextSegmentId.getAndIncrement());
     }
