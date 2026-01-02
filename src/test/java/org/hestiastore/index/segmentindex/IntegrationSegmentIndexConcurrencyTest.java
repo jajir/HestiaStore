@@ -23,7 +23,7 @@ class IntegrationSegmentIndexConcurrencyTest {
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
 
     @Test
-    void parallelPutsAndGetsOnDifferentKeys() {
+    void parallel_puts_and_gets_on_different_keys() {
         final Directory directory = new MemDirectory();
         final SegmentIndex<Integer, String> index = newIndex(directory, 4, 1);
         try {
