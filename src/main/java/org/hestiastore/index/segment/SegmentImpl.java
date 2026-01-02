@@ -109,11 +109,21 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
 
     @Override
     public EntryIterator<K, V> openIterator() {
+        return openIterator(SegmentIteratorIsolation.FAIL_FAST);
+    }
+
+    @Override
+    public EntryIterator<K, V> openIterator(
+            final SegmentIteratorIsolation isolation) {
+        Vldtn.requireNonNull(isolation, "isolation");
         final EntryIterator<K, V> mergedEntryIterator = new MergeDeltaCacheWithIndexIterator<>(
                 segmentFiles.getIndexFile().openIterator(),
                 segmentFiles.getKeyTypeDescriptor(),
                 segmentFiles.getValueTypeDescriptor(),
                 segmentCache.getAsSortedList());
+        if (isolation == SegmentIteratorIsolation.FULL_ISOLATION) {
+            return mergedEntryIterator;
+        }
         return new EntryIteratorWithLock<>(mergedEntryIterator,
                 new OptimisticLock(versionController), getId().toString());
     }

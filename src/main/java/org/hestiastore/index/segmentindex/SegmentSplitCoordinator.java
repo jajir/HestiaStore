@@ -1,11 +1,12 @@
 package org.hestiastore.index.segmentindex;
 
-import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentFiles;
 import org.hestiastore.index.segment.SegmentFilesRenamer;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentPropertiesManager;
 import org.hestiastore.index.segment.SegmentImplSynchronizationAdapter;
 import org.slf4j.Logger;
@@ -165,7 +166,8 @@ public class SegmentSplitCoordinator<K, V> {
     }
 
     private boolean hasLiveEntries(final Segment<K, V> segment) {
-        try (EntryIterator<K, V> iterator = segment.openIterator()) {
+        try (EntryIterator<K, V> iterator = segment.openIterator(
+                SegmentIteratorIsolation.FULL_ISOLATION)) {
             return iterator.hasNext();
         }
     }

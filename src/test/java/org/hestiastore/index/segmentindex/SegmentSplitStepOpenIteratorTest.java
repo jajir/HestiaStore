@@ -13,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 
 @ExtendWith(MockitoExtension.class)
 class SegmentSplitStepOpenIteratorTest {
@@ -60,10 +61,11 @@ class SegmentSplitStepOpenIteratorTest {
 
     @Test
     void calls_openIterator_on_segment() {
-        when(segment.openIterator()).thenReturn(it);
+        when(segment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
+                .thenReturn(it);
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
                 segment, null, null, null, null);
         step.filter(ctx, new SegmentSplitState<>());
-        verify(segment).openIterator();
+        verify(segment).openIterator(SegmentIteratorIsolation.FULL_ISOLATION);
     }
 }

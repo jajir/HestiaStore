@@ -7,12 +7,14 @@ import java.util.function.Supplier;
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.Vldtn;
 
 /**
  * Serializes access to a single {@link Segment} instance using a dedicated
  * {@link ReentrantReadWriteLock}. Read operations can run concurrently. Writers
- * and compaction take the write lock, while iterators acquire the read lock per
- * {@code hasNext}/{@code next} call to reduce write blocking.
+ * and compaction take the write lock. Iterators default to acquiring the read
+ * lock per {@code hasNext}/{@code next} call, while full-isolation iterators
+ * hold the write lock for their entire lifetime.
  */
 public class SegmentImplSynchronizationAdapter<K, V>
         extends AbstractCloseableResource implements Segment<K, V> {
@@ -69,14 +71,35 @@ public class SegmentImplSynchronizationAdapter<K, V>
 
     @Override
     public EntryIterator<K, V> openIterator() {
-        EntryIterator<K, V> iterator;
-        readLock.lock();
-        try {
-            iterator = delegate.openIterator();
-        } finally {
-            readLock.unlock();
+        return openIterator(SegmentIteratorIsolation.FAIL_FAST);
+    }
+
+    @Override
+    public EntryIterator<K, V> openIterator(
+            final SegmentIteratorIsolation isolation) {
+        Vldtn.requireNonNull(isolation, "isolation");
+        if (isolation == SegmentIteratorIsolation.FULL_ISOLATION) {
+            writeLock.lock();
+            try {
+                return new UnlockingEntryIterator<>(
+                        delegate.openIterator(isolation), writeLock);
+            } catch (final RuntimeException e) {
+                writeLock.unlock();
+                throw e;
+            }
+        } else if (isolation == SegmentIteratorIsolation.FAIL_FAST) {
+            readLock.lock();
+            EntryIterator<K, V> iterator;
+            try {
+                iterator = delegate.openIterator(isolation);
+            } finally {
+                readLock.unlock();
+            }
+            return new LockedEntryIterator<>(iterator, readLock);
+        } else {
+            throw new IllegalArgumentException(
+                    "Unknown isolation level: " + isolation);
         }
-        return new LockedEntryIterator<>(iterator, readLock);
     }
 
     @Override
@@ -178,6 +201,38 @@ public class SegmentImplSynchronizationAdapter<K, V>
         @Override
         protected void doClose() {
             lock.lock();
+            try {
+                delegate.close();
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
+
+    private static final class UnlockingEntryIterator<K, V>
+            extends AbstractCloseableResource implements EntryIterator<K, V> {
+
+        private final EntryIterator<K, V> delegate;
+        private final Lock lock;
+
+        UnlockingEntryIterator(final EntryIterator<K, V> delegate,
+                final Lock lock) {
+            this.delegate = delegate;
+            this.lock = lock;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return delegate.hasNext();
+        }
+
+        @Override
+        public Entry<K, V> next() {
+            return delegate.next();
+        }
+
+        @Override
+        protected void doClose() {
             try {
                 delegate.close();
             } finally {
