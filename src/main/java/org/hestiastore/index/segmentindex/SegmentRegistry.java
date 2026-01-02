@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -47,6 +48,21 @@ public class SegmentRegistry<K, V> {
             segments.put(segmentId, out);
         }
         return out;
+    }
+
+    boolean isSegmentInstance(final SegmentId segmentId,
+            final Segment<K, V> expected) {
+        Vldtn.requireNonNull(segmentId, "segmentId");
+        Vldtn.requireNonNull(expected, "expected");
+        return segments.get(segmentId) == expected;
+    }
+
+    void executeWithRegistryLock(final Runnable action) {
+        Vldtn.requireNonNull(action, "action").run();
+    }
+
+    <T> T executeWithRegistryLock(final Supplier<T> action) {
+        return Vldtn.requireNonNull(action, "action").get();
     }
 
     public void removeSegment(final SegmentId segmentId) {

@@ -185,15 +185,35 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     private void handlePostWriteMaintenance(final Segment<K, V> segment,
             final K key, final SegmentId segmentId, final long mappingVersion) {
-        if (segment.wasClosed()) {
-            return;
-        }
-        if (!keySegmentCache.isMappingValid(key, segmentId, mappingVersion)) {
-            return;
-        }
         final Integer maxWriteCacheKeys = conf
                 .getMaxNumberOfKeysInSegmentWriteCache();
         if (maxWriteCacheKeys == null || maxWriteCacheKeys < 1) {
+            return;
+        }
+        if (segment instanceof SegmentImplSynchronizationAdapter<K, V> adapter) {
+            adapter.executeWithWriteLock(() -> {
+                runPostWriteMaintenance(segment, key, segmentId,
+                        mappingVersion, maxWriteCacheKeys);
+                return null;
+            });
+            return;
+        }
+        runPostWriteMaintenance(segment, key, segmentId, mappingVersion,
+                maxWriteCacheKeys);
+    }
+
+    private void runPostWriteMaintenance(final Segment<K, V> segment,
+            final K key, final SegmentId segmentId, final long mappingVersion,
+            final Integer maxWriteCacheKeys) {
+        if (segment.wasClosed()) {
+            return;
+        }
+        if (!segmentRegistry.isSegmentInstance(segmentId, segment)) {
+            return;
+        }
+        if (!keySegmentCache.isKeyMappedToSegment(key, segmentId)
+                || !keySegmentCache.isMappingValid(key, segmentId,
+                        mappingVersion)) {
             return;
         }
         if (segment.getNumberOfKeysInWriteCache() < maxWriteCacheKeys

@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.async.AsyncDirectory;
@@ -27,6 +28,37 @@ class SegmentRegistrySynchronized<K, V> extends SegmentRegistry<K, V> {
         lock.lock();
         try {
             return super.getSegment(segmentId);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    boolean isSegmentInstance(final SegmentId segmentId,
+            final Segment<K, V> expected) {
+        lock.lock();
+        try {
+            return super.isSegmentInstance(segmentId, expected);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    void executeWithRegistryLock(final Runnable action) {
+        lock.lock();
+        try {
+            action.run();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    <T> T executeWithRegistryLock(final Supplier<T> action) {
+        lock.lock();
+        try {
+            return action.get();
         } finally {
             lock.unlock();
         }

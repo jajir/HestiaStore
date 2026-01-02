@@ -174,17 +174,19 @@ public class SegmentSplitCoordinator<K, V> {
 
     private void replaceCurrentWithSegment(final SegmentId segmentId,
             final SegmentId replacementSegmentId) {
-        final SegmentPropertiesManager currentProperties = segmentRegistry
-                .newSegmentPropertiesManager(segmentId);
-        final SegmentFiles<K, V> currentFiles = segmentRegistry
-                .newSegmentFiles(segmentId);
-        currentFiles.deleteAllFiles(currentProperties);
+        segmentRegistry.executeWithRegistryLock(() -> {
+            final SegmentPropertiesManager currentProperties = segmentRegistry
+                    .newSegmentPropertiesManager(segmentId);
+            final SegmentFiles<K, V> currentFiles = segmentRegistry
+                    .newSegmentFiles(segmentId);
+            currentFiles.deleteAllFiles(currentProperties);
 
-        final SegmentFiles<K, V> replacementFiles = segmentRegistry
-                .newSegmentFiles(replacementSegmentId);
-        final SegmentPropertiesManager replacementProperties = segmentRegistry
-                .newSegmentPropertiesManager(replacementSegmentId);
-        filesRenamer.renameFiles(replacementFiles, currentFiles,
-                replacementProperties);
+            final SegmentFiles<K, V> replacementFiles = segmentRegistry
+                    .newSegmentFiles(replacementSegmentId);
+            final SegmentPropertiesManager replacementProperties = segmentRegistry
+                    .newSegmentPropertiesManager(replacementSegmentId);
+            filesRenamer.renameFiles(replacementFiles, currentFiles,
+                    replacementProperties);
+        });
     }
 }
