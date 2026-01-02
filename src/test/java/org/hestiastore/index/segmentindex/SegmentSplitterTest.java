@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -96,7 +95,10 @@ class SegmentSplitterTest {
                 .fromPolicy(new SegmentSplitterPolicy<>(4L, false));
         when(segment.openIterator()).thenReturn(iterator);
         when(iterator.hasNext()).thenReturn(true, true, true, true, false);
-        when(iterator.next()).thenReturn(ENTRY1, ENTRY2, ENTRY3);
+        when(iterator.next())
+            .thenReturn(ENTRY1)
+            .thenReturn(ENTRY2)
+            .thenReturn(ENTRY3);
         when(writerTxFactory.openWriterTx(LOWER_ID)).thenReturn(lowerTx);
         when(writerTxFactory.openWriterTx(UPPER_ID)).thenReturn(currentTx);
         when(lowerTx.open()).thenReturn(lowerWriter);
@@ -124,7 +126,7 @@ class SegmentSplitterTest {
                 .fromPolicy(new SegmentSplitterPolicy<>(4L, false));
         when(segment.openIterator()).thenReturn(iterator);
         when(iterator.hasNext()).thenReturn(true, true, false, false);
-        when(iterator.next()).thenReturn(ENTRY1, ENTRY2);
+        when(iterator.next()).thenReturn(ENTRY1).thenReturn(ENTRY2);
         when(writerTxFactory.openWriterTx(LOWER_ID)).thenReturn(lowerTx);
         when(lowerTx.open()).thenReturn(lowerWriter);
 

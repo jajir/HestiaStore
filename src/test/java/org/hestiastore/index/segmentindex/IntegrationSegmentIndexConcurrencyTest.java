@@ -138,8 +138,8 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .withValueClass(String.class)//
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tds) //
-                .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(3) //
+                .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentChunk(2) //
                 .withMaxNumberOfKeysInCache(10) //
                 .withMaxNumberOfSegmentsInCache(5) //

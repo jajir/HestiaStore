@@ -267,7 +267,6 @@ class SegmentIndexConfigurationManagerTest {
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInSegmentCache(11)//
                 .withMaxNumberOfKeysInSegmentWriteCache(5)//
                 .withMaxNumberOfKeysInSegmentChunk(33)//
                 .withMaxNumberOfKeysInSegment(44)//
@@ -299,7 +298,6 @@ class SegmentIndexConfigurationManagerTest {
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInSegmentCache(11)//
                 .withMaxNumberOfKeysInSegmentWriteCache(5)//
                 .withMaxNumberOfKeysInSegmentChunk(33)//
                 .withMaxNumberOfKeysInSegment(44)//
@@ -423,7 +421,6 @@ class SegmentIndexConfigurationManagerTest {
     void test_mergeWithStored_maxNumberOfKeysInSegmentCache() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withMaxNumberOfKeysInSegmentCache(8)//
                 .build();
 
         when(storage.load()).thenReturn(CONFIG);
@@ -719,7 +716,6 @@ class SegmentIndexConfigurationManagerTest {
                 .withValueTypeDescriptor(TD_STRING)//
                 .withName("base_index")//
                 .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInSegmentCache(11)//
                 .withMaxNumberOfKeysInSegmentWriteCache(5)//
                 .withMaxNumberOfKeysInSegmentChunk(33)//
                 .withMaxNumberOfKeysInSegment(44)//

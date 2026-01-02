@@ -111,8 +111,6 @@ public class SegmentRegistry<K, V> {
                 .withSegmentConf(segmentConf)//
                 .withSegmentFiles(segmentFiles)//
                 .withSegmentPropertiesManager(segmentPropertiesManager)//
-                .withMaxNumberOfKeysInSegmentCache(
-                        conf.getMaxNumberOfKeysInSegmentCache().intValue())//
                 .withMaxNumberOfKeysInSegmentWriteCache(
                         conf.getMaxNumberOfKeysInSegmentWriteCache().intValue())//
                 .withMaxNumberOfKeysInSegmentChunk(
@@ -138,7 +136,6 @@ public class SegmentRegistry<K, V> {
 
     private SegmentConf buildSegmentConf() {
         return new SegmentConf(
-                conf.getMaxNumberOfKeysInSegmentCache().intValue(),
                 conf.getMaxNumberOfKeysInSegmentWriteCache().intValue(),
                 conf.getMaxNumberOfKeysInSegmentChunk(),
                 conf.getBloomFilterNumberOfHashFunctions(),

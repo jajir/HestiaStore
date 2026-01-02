@@ -16,10 +16,8 @@ import org.hestiastore.index.chunkstore.ChunkFilter;
  */
 public final class SegmentBuilder<K, V> {
 
-    private static final int DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = 1000
-            * 1000 * 10;
-    private static final int DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE
-            / 2;
+    private static final int DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE = 1000
+            * 1000 * 5;
     private static final int DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK = 1000;
 
     private static final int DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES = 1024 * 4;
@@ -28,7 +26,6 @@ public final class SegmentBuilder<K, V> {
     private SegmentId id;
     private TypeDescriptor<K> keyTypeDescriptor;
     private TypeDescriptor<V> valueTypeDescriptor;
-    private int maxNumberOfKeysInSegmentCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
     private int maxNumberOfKeysInSegmentWriteCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE;
     private int maxNumberOfKeysInSegmentChunk = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK;
     private Integer bloomFilterNumberOfHashFunctions;
@@ -48,8 +45,7 @@ public final class SegmentBuilder<K, V> {
     }
 
     /**
-     * Set the base {@link AsyncDirectory} used to store files for this
-     * segment.
+     * Set the base {@link AsyncDirectory} used to store files for this segment.
      *
      * @param directoryFacade non-null directory facade
      * @return this builder for chaining
@@ -143,24 +139,6 @@ public final class SegmentBuilder<K, V> {
      */
     public SegmentBuilder<K, V> withId(final SegmentId id) {
         this.id = Vldtn.requireNonNull(id, "id");
-        return this;
-    }
-
-    /**
-     * Set maximum number of keys cached in memory for this segment under normal
-     * conditions.
-     *
-     * @param maxNumberOfKeysInSegmentCache value greater than 1
-     * @return this builder for chaining
-     */
-    public SegmentBuilder<K, V> withMaxNumberOfKeysInSegmentCache(
-            final int maxNumberOfKeysInSegmentCache) {
-        if (maxNumberOfKeysInSegmentCache <= 1) {
-            throw new IllegalArgumentException(String.format(
-                    "maxNumberOfKeysInSegmentCache is '%s' but must be higher than '1'",
-                    maxNumberOfKeysInSegmentCache));
-        }
-        this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
         return this;
     }
 
@@ -321,7 +299,6 @@ public final class SegmentBuilder<K, V> {
         prepareBaseComponents();
         final SegmentDeltaCacheController<K, V> deltaCacheController = new SegmentDeltaCacheController<>(
                 segmentFiles, segmentPropertiesManager, segmentResources,
-                segmentConf.getMaxNumberOfKeysInDeltaCache(),
                 segmentConf.getMaxNumberOfKeysInSegmentWriteCache(),
                 segmentConf.getMaxNumberOfKeysInChunk());
         final SegmentCache<K, V> segmentCache = createSegmentCache();
@@ -344,15 +321,12 @@ public final class SegmentBuilder<K, V> {
         prepareBaseComponents();
         final SegmentSearcher<K, V> segmentSearcher = new SegmentSearcher<K, V>(
                 segmentFiles.getValueTypeDescriptor());
-        final SegmentCompactionPolicyWithManager compactionPolicy = SegmentCompactionPolicyWithManager
-                .from(segmentConf, segmentPropertiesManager);
         final SegmentDeltaCacheController<K, V> deltaCacheController = new SegmentDeltaCacheController<>(
                 segmentFiles, segmentPropertiesManager, segmentResources,
-                segmentConf.getMaxNumberOfKeysInDeltaCache(),
                 segmentConf.getMaxNumberOfKeysInSegmentWriteCache(),
                 segmentConf.getMaxNumberOfKeysInChunk());
         final SegmentCompacter<K, V> compacter = new SegmentCompacter<>(
-                versionController, compactionPolicy);
+                versionController);
         return new SegmentImpl<>(segmentFiles, segmentConf, versionController,
                 segmentPropertiesManager, segmentResources,
                 deltaCacheController, segmentSearcher, compacter);
@@ -370,11 +344,6 @@ public final class SegmentBuilder<K, V> {
             throw new IllegalArgumentException(
                     "ValueTypeDescriptor can't be null");
         }
-        if (maxNumberOfKeysInSegmentCache <= 1) {
-            throw new IllegalArgumentException(String.format(
-                    "maxNumberOfKeysInSegmentCache is '%s' but must be higher than '1'",
-                    maxNumberOfKeysInSegmentCache));
-        }
         if (maxNumberOfKeysInSegmentWriteCache <= 0) {
             throw new IllegalArgumentException(String.format(
                     "maxNumberOfKeysInSegmentWriteCache is '%s' but must be higher than '0'",
@@ -386,7 +355,7 @@ public final class SegmentBuilder<K, V> {
         if (segmentConf == null) {
             Vldtn.requireNotEmpty(encodingChunkFilters, "encodingChunkFilters");
             Vldtn.requireNotEmpty(decodingChunkFilters, "decodingChunkFilters");
-            segmentConf = new SegmentConf((int) maxNumberOfKeysInSegmentCache,
+            segmentConf = new SegmentConf(
                     (int) maxNumberOfKeysInSegmentWriteCache,
                     maxNumberOfKeysInSegmentChunk,
                     bloomFilterNumberOfHashFunctions,

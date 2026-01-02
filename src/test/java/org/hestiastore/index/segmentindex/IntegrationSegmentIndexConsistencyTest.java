@@ -86,8 +86,8 @@ class IntegrationSegmentIndexConsistencyTest extends AbstractSegmentIndexTest {
                 .withValueClass(Integer.class)//
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tdi) //
-                .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(10) //
+                .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentChunk(2) //
                 .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(0) //

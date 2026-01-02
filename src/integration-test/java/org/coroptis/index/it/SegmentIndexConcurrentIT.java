@@ -437,8 +437,8 @@ class SegmentIndexConcurrentIT {
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())//
                 .withValueTypeDescriptor(new TypeDescriptorInteger())//
                 .withName(name)//
-                .withMaxNumberOfKeysInSegment(20)// small to trigger splits
                 .withMaxNumberOfKeysInSegmentCache(30)//
+                .withMaxNumberOfKeysInSegment(20)// small to trigger splits
                 .withMaxNumberOfKeysInSegmentChunk(5)//
                 .withMaxNumberOfKeysInCache(maxNumberOfKeysInCache)//
                 .withBloomFilterIndexSizeInBytes(1024)//

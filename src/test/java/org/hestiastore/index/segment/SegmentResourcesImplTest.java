@@ -108,8 +108,9 @@ class SegmentResourcesImplTest {
     void reloadsResourcesAfterInvalidation() {
         final SegmentResourcesImpl<Integer, String> resources = new SegmentResourcesImpl<>(
                 segmentDataSupplier);
-        when(segmentDataSupplier.getSegmentDeltaCache()).thenReturn(deltaCache,
-                deltaCacheSecond);
+        when(segmentDataSupplier.getSegmentDeltaCache())
+                .thenReturn(deltaCache)
+                .thenReturn(deltaCacheSecond);
 
         assertSame(deltaCache, resources.getSegmentDeltaCache());
         resources.invalidate();

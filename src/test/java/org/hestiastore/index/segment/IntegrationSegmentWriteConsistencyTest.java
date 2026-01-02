@@ -106,7 +106,6 @@ class IntegrationSegmentWriteConsistencyTest {
                 .withKeyTypeDescriptor(TDI)//
                 .withValueTypeDescriptor(TDS)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
-                .withMaxNumberOfKeysInSegmentCache(3)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterMagicNumberWriting(), //

@@ -39,7 +39,6 @@ class SegmentDeltaCacheWriterTest {
     @Mock
     private ChunkEntryFileWriter<Integer, String> chunkWriter;
 
-    @SuppressWarnings("unchecked")
     private void stubWriteTransactionToCaptureWrites(
             final java.util.List<Entry<Integer, String>> sink) {
         when(deltaFile.openWriterTx()).thenReturn(writerTx);
@@ -152,8 +151,8 @@ class SegmentDeltaCacheWriterTest {
         writer.close();
 
         assertTrue(writer.getNumberOfKeys() == 0);
-        verify(propertiesManager, never()).increaseNumberOfKeysInDeltaCache(
-                anyInt());
+        verify(propertiesManager, never())
+                .increaseNumberOfKeysInDeltaCache(anyInt());
         verify(propertiesManager, never()).getAndIncreaseDeltaFileName();
         verify(segmentFiles, never()).getDeltaCacheChunkEntryFile(any());
     }
@@ -162,7 +161,7 @@ class SegmentDeltaCacheWriterTest {
     void controller_openWriter_constructs_writer_without_error() {
         final int max = 777;
         final SegmentDeltaCacheController<Integer, String> controller = new SegmentDeltaCacheController<>(
-                segmentFiles, propertiesManager, dataProvider, max, max, 3);
+                segmentFiles, propertiesManager, dataProvider, max, 3);
         when(segmentFiles.getKeyTypeDescriptor())
                 .thenReturn(new TypeDescriptorInteger());
         final SegmentDeltaCacheWriter<Integer, String> writer = controller
@@ -174,8 +173,7 @@ class SegmentDeltaCacheWriterTest {
     void controller_openWriter_throws_for_invalid_max() {
         final int invalidMax = 0;
         final SegmentDeltaCacheController<Integer, String> controller = new SegmentDeltaCacheController<>(
-                segmentFiles, propertiesManager, dataProvider, 10, invalidMax,
-                3);
+                segmentFiles, propertiesManager, dataProvider, invalidMax, 3);
         assertThrows(IllegalArgumentException.class, controller::openWriter);
     }
 }
