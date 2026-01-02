@@ -421,6 +421,7 @@ class SegmentIndexConfigurationManagerTest {
     void test_mergeWithStored_maxNumberOfKeysInSegmentCache() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
+                .withMaxNumberOfKeysInSegmentCache(8)//
                 .build();
 
         when(storage.load()).thenReturn(CONFIG);

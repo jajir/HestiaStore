@@ -38,10 +38,12 @@ class SegmentManagerTest {
                 org.hestiastore.index.directory.async.AsyncDirectoryAdapter
                         .wrap(directory),
                 keyTypeDescriptor, valueTypeDescriptor, conf);
-        when(conf.getMaxNumberOfKeysInSegmentCache()).thenReturn(2);
         when(conf.getMaxNumberOfKeysInSegmentWriteCache()).thenReturn(1);
         when(conf.getMaxNumberOfKeysInSegmentChunk()).thenReturn(1);
         when(conf.getDiskIoBufferSize()).thenReturn(1024);
+        when(conf.getBloomFilterNumberOfHashFunctions()).thenReturn(1);
+        when(conf.getBloomFilterIndexSizeInBytes()).thenReturn(0);
+        when(conf.getBloomFilterProbabilityOfFalsePositive()).thenReturn(0.01);
         when(conf.getEncodingChunkFilters())
                 .thenReturn(List.of(new ChunkFilterDoNothing()));
         when(conf.getDecodingChunkFilters())
