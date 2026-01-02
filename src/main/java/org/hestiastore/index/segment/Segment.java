@@ -94,7 +94,25 @@ public interface Segment<K, V> extends CloseableResource {
      * 
      * @return iterator over key/value entries in key order
      */
-    EntryIterator<K, V> openIterator();
+    default EntryIterator<K, V> openIterator() {
+        return openIterator(SegmentIteratorIsolation.FAIL_FAST);
+    }
+
+    /**
+     * Opens a read iterator with the requested isolation level.
+     *
+     * {@link SegmentIteratorIsolation#FAIL_FAST} is the default behavior:
+     * concurrent writes invalidate the iterator and it stops early.
+     *
+     * {@link SegmentIteratorIsolation#FULL_ISOLATION} blocks all segment writes
+     * and other iterators for the lifetime of the iterator, so callers can
+     * safely stream the entire segment without interruptions. The iterator
+     * must be closed to release the exclusive lock.
+     *
+     * @param isolation iterator isolation level (non-null)
+     * @return iterator over key/value entries in key order
+     */
+    EntryIterator<K, V> openIterator(SegmentIteratorIsolation isolation);
 
     /**
      * Writes directly into the in-memory segment cache without persisting to
