@@ -43,6 +43,9 @@ public class SegmentImplSynchronizationAdapter<K, V>
     public void compact() {
         writeLock.lock();
         try {
+            if (delegate.wasClosed()) {
+                return;
+            }
             delegate.compact();
         } finally {
             writeLock.unlock();
@@ -116,6 +119,9 @@ public class SegmentImplSynchronizationAdapter<K, V>
     public void flush() {
         writeLock.lock();
         try {
+            if (delegate.wasClosed()) {
+                return;
+            }
             delegate.flush();
         } finally {
             writeLock.unlock();
