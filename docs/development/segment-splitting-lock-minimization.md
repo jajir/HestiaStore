@@ -8,6 +8,10 @@ collecting entries, sorting, building new segment files, and writing them to
 disk must happen outside the lock. This minimizes blocking for writers and
 reduces tail latency during high write load.
 
+Scope note: this document targets process (3) *split* only. Flush and compaction
+already can be implemented with short locks or background work; the split path
+is the current long‑lock bottleneck.
+
 The recommended strategy is "freeze + redirect + replay":
 
 1) Freeze the current write cache under a short write lock, record a version,
@@ -18,6 +22,51 @@ The recommended strategy is "freeze + redirect + replay":
 
 This is the pattern used by LSM based systems where memtables are rotated and
 flushed in the background.
+
+## Proposed Segment API Surface
+
+Keep the public `Segment` API minimal. Splitting should not be part of the
+public segment contract. Instead, introduce an internal split support contract
+inside the `segment` package that `SegmentImpl` implements and the split
+coordinator uses.
+
+Split is initiated from the segment-index layer (not from the segment):
+
+- `SegmentIndexImpl` decides *when* a split is needed based on write cache
+  thresholds and total key counts.
+- `SegmentSplitCoordinator` orchestrates the split pipeline and calls the
+  internal `SegmentSplitSupport` methods on the target segment.
+- `SegmentImpl` provides the split snapshot and applies the final swap, but
+  never decides *when* to split.
+
+Suggested internal API (package-private):
+
+- `SegmentSplitSnapshot<K,V> freezeForSplit()`
+  - Captures a version and the frozen write cache snapshot.
+  - Swaps to a fresh write cache for ongoing writes.
+- `List<Entry<K,V>> getPostSplitWrites()`
+  - Returns the current write cache entries that arrived after the freeze.
+- `boolean applySplit(SegmentSplitSnapshot<K,V> snapshot, SegmentSplitResult<K,V> result)`
+  - Verifies the split version and swaps in the new segment files.
+  - Returns `false` if the version changed and the split must be retried.
+
+Split versioning should reuse the same monotonic counter used by
+`OptimisticLock`/`VersionController` so both iterators and splits observe the
+same mutation boundaries.
+
+## Major Code Changes Required
+
+- Add `SegmentSplitSnapshot` and `SegmentSplitResult` types in the `segment`
+  package.
+- Add a package-private `SegmentSplitSupport` interface in `segment` and have
+  `SegmentImpl` implement it.
+- Add `SegmentCache.freezeWriteCache()` to atomically swap the write cache and
+  return a snapshot for splitting.
+- Update `SegmentSplitCoordinator` to use `freezeForSplit()` and
+  `applySplit(...)` rather than calling split logic on the public `Segment`
+  interface.
+- Ensure split version increments whenever a mutation can change split input
+  (writes, compaction, file swaps).
 
 ## Required Steps (High Level)
 
@@ -108,6 +157,7 @@ Phase 2: Split Pipeline Refactor
 - Update `SegmentSplitCoordinator` to freeze, release lock, and run split
   outside the lock.
 - Build new segments using `SegmentBuilder.openWriterTx()`.
+ - Use internal `SegmentSplitSupport` instead of public `Segment` methods.
 
 Phase 3: Replay and Swap
 
@@ -127,6 +177,8 @@ Phase 5: Documentation
 
 ## Implementation Checklist
 
+- [ ] Add `SegmentSplitSnapshot` and `SegmentSplitResult` types in `segment`.
+- [ ] Add internal `SegmentSplitSupport` interface and implement in `SegmentImpl`.
 - [ ] Add split version counter per segment and expose it for split coordination.
 - [ ] Add `SegmentCache.freezeWriteCache()` and ensure writers redirect to a new cache.
 - [ ] Update `SegmentSplitCoordinator` to freeze under lock and run the split outside the lock.
