@@ -14,7 +14,12 @@ semantics.
 provide equivalent external synchronization. This document assumes that the
 caller provides that synchronization when invoking Segment APIs.
 
-## Lock model
+This document has two parts: AS-IS (current behavior) and Target state (lock
+minimization for throughput).
+
+## AS-IS (current behavior)
+
+### Lock model
 
 Per-segment `ReentrantReadWriteLock` (via `SegmentImplSynchronizationAdapter`):
 
@@ -25,7 +30,7 @@ Per-segment `ReentrantReadWriteLock` (via `SegmentImplSynchronizationAdapter`):
 Optimistic iterator invalidation is driven by `VersionController` and used by
 `openIterator(FAIL_FAST)`.
 
-## A) Flush
+### A) Flush
 
 What it does today (SegmentImpl):
 
@@ -39,7 +44,7 @@ When a new write arrives while `flush()` is running:
 
 - The new write blocks on the write lock.
 
-## B) Compact
+### B) Compact
 
 What it does today (SegmentCompacter):
 
@@ -51,7 +56,7 @@ When a new write arrives while `compact()` is running:
 
 - The new write blocks on the write lock.
 
-## C) Split (SegmentIndex)
+### C) Split (SegmentIndex)
 
 What it does today (SegmentSplitCoordinator + SegmentSplitter):
 
@@ -82,7 +87,7 @@ When `get()` or iterators run during split:
 - FULL_ISOLATION iterators hold the write lock, so split waits until they
   close.
 
-## Backpressure / overload
+### Backpressure / overload
 
 The segment itself does not enforce a hard size cap. `UniqueCache` is
 unbounded, so if writes outpace maintenance, memory can grow.
@@ -102,7 +107,7 @@ If write load still exceeds flush/compact throughput, pick one:
 - Lower thresholds to flush/split earlier.
 - Add explicit write-cache caps or throttling around `Segment.put()`.
 
-## Parallel calls (flush vs compact vs split)
+### Parallel calls (flush vs compact vs split)
 
 Same segment:
 
@@ -118,7 +123,7 @@ Different segments:
 - Split takes a registry lock only during file rename; it does not block
   other segments otherwise.
 
-## Reads, get(), and iterators
+### Reads, get(), and iterators
 
 - Multiple `get()` calls can run concurrently.
 - `openIterator(FAIL_FAST)` can run concurrently with `get()` and other
@@ -127,7 +132,7 @@ Different segments:
 - `openIterator(FULL_ISOLATION)` holds the write lock until closed, blocking
   writes, flush, compact, and split on that segment.
 
-## Corner cases to call out
+### Corner cases to call out
 
 - Fail-fast iterators must be expected to end early after any mutation.
 - FULL_ISOLATION iterators must always be closed; otherwise writers can stall.
@@ -144,7 +149,7 @@ Different segments:
 - Version overflow throws in `VersionController`; long-running services should
   monitor for it.
 
-## Lock summary (how many locks are needed)
+### Lock summary (how many locks are needed)
 
 - One per-segment read/write lock for API calls
   (`SegmentImplSynchronizationAdapter`).
@@ -153,3 +158,83 @@ Different segments:
 - Segment registry exposes `executeWithRegistryLock()` for split file
   replacement, but the current `SegmentRegistry` does not implement a real
   registry lock.
+
+## Target state (lock-minimized, high throughput)
+
+### Goals
+
+- Keep write locks only for short, deterministic swaps and version bumps.
+- Run IO-heavy work (sorting, building files) outside segment locks.
+- Allow writes and most reads to continue during flush/compact/split.
+- Bound memory growth under sustained write load.
+
+### Target lock model
+
+- Short write lock for cache rotation, version capture, and file/reference
+  swap.
+- Background maintenance uses frozen snapshots; no long-held
+  `FULL_ISOLATION` locks for heavy work.
+- A per-segment maintenance state (or mutex) serializes flush/compact/split
+  without blocking normal writes.
+
+### A) Flush (target)
+
+- Under write lock: swap (freeze) the write cache and capture a version.
+- Release lock: sort and write the frozen snapshot to the delta cache file.
+- Under write lock: merge metadata and drop the frozen snapshot handle.
+- Writes continue into the new write cache throughout the flush.
+
+### B) Compact (target)
+
+- Under write lock: freeze the merged in-memory view (delta + write cache),
+  capture a version, and redirect writes to a fresh cache.
+- Release lock: rebuild new on-disk files from the snapshot plus current index.
+- Optionally replay post-freeze writes before swap (or keep them in the active
+  write cache) to avoid data loss.
+- Under write lock: validate version and swap files; clear obsolete delta files
+  and reset searchers.
+
+### C) Split (target)
+
+- Use the freeze + redirect + replay pattern (see
+  `docs/development/segment-splitting-lock-minimization.md`).
+- Under write lock: freeze the write cache, record a split version, and
+  redirect writes to a fresh cache.
+- Release lock: run the split pipeline against the frozen snapshot.
+- Replay post-freeze writes into the new lower/upper segments.
+- Under write lock: verify version and swap references; on conflict, retry.
+
+### Backpressure / overload (target)
+
+- Bound the number/size of frozen snapshots per segment.
+- If backlog exceeds limits, apply throttling or spill to disk.
+- Run maintenance on a background executor and prioritize older snapshots.
+
+### Parallel calls (target)
+
+- One maintenance task per segment at a time; other requests coalesce or wait.
+- Flush requests during split should attach to replay or run after split.
+- Maintenance can still run in parallel across different segments.
+
+### Reads, get(), and iterators (target)
+
+- `get()` should read from current caches and files without blocking on long
+  maintenance tasks.
+- Fail-fast iterators continue to invalidate on version changes.
+- Prefer snapshot-based iterators for long scans instead of holding write
+  locks for `FULL_ISOLATION`.
+
+### Corner cases (target)
+
+- Version mismatch at swap time should trigger retry or fallback.
+- Large post-freeze write backlog should trigger backpressure or replay caps.
+- Segment replacement must be atomic in the registry to avoid stale reads.
+- Iterators opened before a swap should either complete on their snapshot or
+  fail fast.
+
+### Lock summary (target)
+
+- Per-segment write lock for short cache/file swaps.
+- Per-segment maintenance state to serialize flush/compact/split work.
+- Optimistic version counter for iterator invalidation.
+- Registry lock for file replacement if added in the future.
