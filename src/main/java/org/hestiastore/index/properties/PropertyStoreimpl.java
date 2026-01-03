@@ -17,9 +17,9 @@ import org.hestiastore.index.directory.async.AsyncFileReaderBlockingAdapter;
 import org.hestiastore.index.directory.async.AsyncFileWriterBlockingAdapter;
 
 /**
- * {@link PropertyStore} backed by the {@link Directory} abstraction. It loads
- * all properties into memory and persists changes atomically through explicit
- * transactions.
+ * {@link PropertyStore} backed by the {@link AsyncDirectory} abstraction. It
+ * loads all properties into memory and persists changes atomically through
+ * explicit transactions.
  */
 public final class PropertyStoreimpl implements PropertyStore {
 

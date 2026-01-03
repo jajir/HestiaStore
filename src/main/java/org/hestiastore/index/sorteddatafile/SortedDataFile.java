@@ -7,6 +7,19 @@ import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.directory.async.AsyncFileReaderBlockingAdapter;
 import org.hestiastore.index.unsorteddatafile.DataFileIterator;
 
+/**
+ * Accessor for a sorted on-disk data file storing {@code K -> V} entries.
+ *
+ * <p>
+ * Readers iterate entries in key order, while writers are provided through
+ * {@link SortedDataFileWriterTx}. The file lives in an {@link AsyncDirectory}
+ * and uses the supplied type descriptors for encoding and decoding keys and
+ * values.
+ * </p>
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 public class SortedDataFile<K, V> {
 
     private final AsyncDirectory directoryFacade;
@@ -81,19 +94,17 @@ public class SortedDataFile<K, V> {
      * @return a entry iterator for the sorted data file
      */
     public EntryIteratorWithCurrent<K, V> openIterator() {
-        if (!directoryFacade.isFileExistsAsync(fileName)
-                .toCompletableFuture().join()) {
+        if (!directoryFacade.isFileExistsAsync(fileName).toCompletableFuture()
+                .join()) {
             return new EmptyEntryIteratorWithCurrent<>();
         }
         final DiffKeyReader<K> diffKeyReader = new DiffKeyReader<>(
                 keyTypeDescriptor.getConvertorFromBytes());
         return new DataFileIterator<>(diffKeyReader,
                 valueTypeDescriptor.getTypeReader(),
-                new AsyncFileReaderBlockingAdapter(
-                        directoryFacade
-                                .getFileReaderAsync(fileName,
-                                        diskIoBufferSize)
-                                .toCompletableFuture().join()));
+                new AsyncFileReaderBlockingAdapter(directoryFacade
+                        .getFileReaderAsync(fileName, diskIoBufferSize)
+                        .toCompletableFuture().join()));
     }
 
     /**
