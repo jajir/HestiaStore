@@ -2,6 +2,7 @@ package org.hestiastore.index.segment;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.IndexException;
 
 /**
  * Provides a utility method to rename all files associated with a segment from
@@ -27,9 +28,13 @@ public class SegmentFilesRenamer {
         Vldtn.requireNonNull(to, "to");
         Vldtn.requireNonNull(fromProperties, "fromProperties");
         final AsyncDirectory dirFacade = from.getAsyncDirectory();
+        final String fromSegmentIdName = from.getSegmentIdName();
+        final String toSegmentIdName = to.getSegmentIdName();
+        final String fromPrefix = fromSegmentIdName + "-delta-";
+        final String toPrefix = toSegmentIdName + "-delta-";
         fromProperties.getCacheDeltaFileNames().forEach(fileName -> {
-            final String targetFileName = renameDeltaFileName(from, to,
-                    fileName);
+            final String targetFileName = renameDeltaFileName(fromPrefix,
+                    toPrefix, fileName, fromSegmentIdName);
             dirFacade.renameFileAsync(fileName, targetFileName)
                     .toCompletableFuture().join();
         });
@@ -46,17 +51,22 @@ public class SegmentFilesRenamer {
                 .renameFileAsync(from.getPropertiesFilename(),
                         to.getPropertiesFilename())
                 .toCompletableFuture().join();
-        dirFacade
-                .renameFileAsync(from.getCacheFileName(), to.getCacheFileName())
-                .toCompletableFuture().join();
+        if (dirFacade.isFileExistsAsync(from.getCacheFileName())
+                .toCompletableFuture().join()) {
+            dirFacade.renameFileAsync(from.getCacheFileName(),
+                    to.getCacheFileName()).toCompletableFuture().join();
+        } else {
+            // The cache file may be absent for empty or never-flushed segments.
+        }
     }
 
-    private <K, V> String renameDeltaFileName(final SegmentFiles<K, V> from,
-            final SegmentFiles<K, V> to, final String fileName) {
-        final String fromPrefix = from.getSegmentIdName() + "-delta-";
-        final String toPrefix = to.getSegmentIdName() + "-delta-";
+    private String renameDeltaFileName(final String fromPrefix,
+            final String toPrefix, final String fileName,
+            final String fromSegmentIdName) {
         if (!fileName.startsWith(fromPrefix)) {
-            return fileName;
+            throw new IndexException("Delta cache file '" + fileName
+                    + "' does not belong to segment '" + fromSegmentIdName
+                    + "'. Expected prefix '" + fromPrefix + "'.");
         }
         return toPrefix + fileName.substring(fromPrefix.length());
     }

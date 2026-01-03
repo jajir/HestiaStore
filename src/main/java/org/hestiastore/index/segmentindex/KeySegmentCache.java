@@ -25,7 +25,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Class holds and maintain map<key, segmentId>. Key is max in in given segment.
+ * Class holds and maintain {@code map<key, segmentId>}. Key is max in in given
+ * segment.
  * 
  * Provide information about keys and particular segment files. Each key
  * represents one segment. All keys segment are equal or smaller to given key.
