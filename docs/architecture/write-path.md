@@ -112,7 +112,8 @@ Key classes: `segmentindex/SegmentIndexImpl#delete`, `datatype/TypeDescriptor#ge
 ## ⚙️ Configuration Knobs Affecting Writes
 
 - `maxNumberOfKeysInCache` – triggers flush of the index‑level buffer.
-- `maxNumberOfKeysInSegmentWriteCache` / `maxNumberOfKeysInSegmentCache` / `…DuringFlushing` – bounds delta cache growth and write buffer size.
+- `maxNumberOfKeysInSegmentWriteCache` – bounds in‑segment write cache size before flushing to delta files.
+- `maxNumberOfKeysInSegmentCache` – bounds total in‑segment cache size before compaction/split decisions.
 - `maxNumberOfKeysInSegmentChunk` – controls sparse index sampling cadence.
 - `maxNumberOfKeysInSegment` – split threshold per segment.
 - `bloomFilter*` – Bloom filter size/hash tuning.

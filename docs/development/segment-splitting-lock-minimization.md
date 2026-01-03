@@ -125,6 +125,20 @@ Phase 5: Documentation
 
 - Update write path and segment docs if the design changes are accepted.
 
+## Implementation Checklist
+
+- [ ] Add split version counter per segment and expose it for split coordination.
+- [ ] Add `SegmentCache.freezeWriteCache()` and ensure writers redirect to a new cache.
+- [ ] Update `SegmentSplitCoordinator` to freeze under lock and run the split outside the lock.
+- [ ] Build new segments via `SegmentBuilder.openWriterTx()` using the frozen snapshot.
+- [ ] Replay post-freeze writes into the split result before swap.
+- [ ] Add conflict detection and retry on version mismatch.
+- [ ] Short lock swap for file/reference replacement and registry updates.
+- [ ] Metrics/logging for split duration, lock hold time, and retries.
+- [ ] Unit tests for freeze/redirect, replay routing, and version conflicts.
+- [ ] Concurrency tests for split while writes continue.
+- [ ] Integration tests for close/reopen durability after split.
+
 ## Complexity and Testing Effort
 
 - Implementation complexity: medium to high.
