@@ -11,7 +11,8 @@ semantics.
 
 `SegmentImpl` is not thread-safe. Production code should use
 `SegmentImplSynchronizationAdapter` (the default in `SegmentRegistry`) or
-provide equivalent external synchronization.
+provide equivalent external synchronization. This document assumes that the
+caller provides that synchronization when invoking Segment APIs.
 
 ## Lock model
 
@@ -36,8 +37,7 @@ What it does today (SegmentImpl):
 
 When a new write arrives while `flush()` is running:
 
-- With the synchronization adapter, the new write blocks on the write lock.
-- Without the adapter, behavior is undefined; callers must serialize access.
+- The new write blocks on the write lock.
 
 ## B) Compact
 
@@ -49,8 +49,7 @@ What it does today (SegmentCompacter):
 
 When a new write arrives while `compact()` is running:
 
-- With the synchronization adapter, the new write blocks on the write lock.
-- Without the adapter, behavior is undefined; callers must serialize access.
+- The new write blocks on the write lock.
 
 ## C) Split (SegmentIndex)
 
@@ -74,9 +73,7 @@ What it does today (SegmentSplitCoordinator + SegmentSplitter):
 
 When a new write arrives while split is running:
 
-- With the synchronization adapter, the new write blocks on the write lock for
-  the full split duration.
-- Without the adapter, behavior is undefined; callers must serialize access.
+- The new write blocks on the write lock for the full split duration.
 
 When `get()` or iterators run during split:
 
