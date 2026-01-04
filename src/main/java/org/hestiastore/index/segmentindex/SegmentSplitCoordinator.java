@@ -10,6 +10,7 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentPropertiesManager;
 import org.hestiastore.index.segment.SegmentImplSynchronizationAdapter;
 import org.hestiastore.index.segmentasync.SegmentAsync;
+import org.hestiastore.index.segmentasync.SegmentAsyncAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,6 +113,10 @@ public class SegmentSplitCoordinator<K, V> {
     }
 
     private void compactSegment(final Segment<K, V> segment) {
+        if (segment instanceof SegmentAsyncAdapter<K, V> adapter) {
+            adapter.compactBlocking();
+            return;
+        }
         if (segment instanceof SegmentAsync<K, V> async) {
             async.compactAsync().toCompletableFuture().join();
             return;

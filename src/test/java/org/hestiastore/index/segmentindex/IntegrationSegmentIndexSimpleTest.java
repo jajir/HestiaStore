@@ -60,7 +60,16 @@ class IntegrationSegmentIndexSimpleTest {
         index1.compact();
 
         index1.close();
-        assertEquals(22, numberOfFilesInDirectoryP(directory));
+
+        final org.hestiastore.index.directory.async.AsyncDirectory asyncDirectory = org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                .wrap(directory);
+        final KeySegmentCache<Integer> keySegmentCache = new KeySegmentCache<>(
+                asyncDirectory, tdi);
+        final List<SegmentId> segmentIds = keySegmentCache.getSegmentIds();
+        assertEquals(expectedFileCount(segmentIds.size()),
+                numberOfFilesInDirectoryP(directory));
+        keySegmentCache.close();
+        asyncDirectory.close();
 
         final SegmentIndex<Integer, String> index2 = makeSegmentIndex();
         testData.stream().forEach(entry -> {
@@ -69,13 +78,6 @@ class IntegrationSegmentIndexSimpleTest {
         });
 
         final List<Entry<Integer, String>> combined = new ArrayList<>();
-        final org.hestiastore.index.directory.async.AsyncDirectory asyncDirectory = org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                .wrap(directory);
-        final KeySegmentCache<Integer> keySegmentCache = new KeySegmentCache<>(
-                asyncDirectory, tdi);
-        final List<SegmentId> segmentIds = keySegmentCache.getSegmentIds();
-        keySegmentCache.close();
-        asyncDirectory.close();
         for (final SegmentId segmentId : segmentIds) {
             combined.addAll(getSegmentData(segmentId));
         }
@@ -257,6 +259,11 @@ class IntegrationSegmentIndexSimpleTest {
             cx.incrementAndGet();
         });
         return cx.get();
+    }
+
+    private int expectedFileCount(final int segmentCount) {
+        // index/scarce/bloom/properties per segment + index map + config
+        return segmentCount * 4 + 2;
     }
 
     private List<Entry<Integer, String>> getSegmentData(

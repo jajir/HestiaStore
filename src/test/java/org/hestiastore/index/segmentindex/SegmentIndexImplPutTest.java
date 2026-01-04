@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -58,7 +59,7 @@ class SegmentIndexImplPutTest {
         index.put(5, "e");
 
         final KeySegmentCache<Integer> cache = readKeySegmentCache(index);
-        assertEquals(2, cache.getSegmentIds().size());
+        awaitSegmentCount(cache, 2);
         assertEquals(SegmentId.of(1), cache.findSegmentId(1));
         index.close();
     }
@@ -101,6 +102,24 @@ class SegmentIndexImplPutTest {
                 .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
                 .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
                 .build();
+    }
+
+    private static void awaitSegmentCount(final KeySegmentCache<Integer> cache,
+            final int expectedCount) {
+        final long deadline = System.nanoTime()
+                + TimeUnit.SECONDS.toNanos(2);
+        while (System.nanoTime() < deadline) {
+            if (cache.getSegmentIds().size() == expectedCount) {
+                return;
+            }
+            try {
+                Thread.sleep(10);
+            } catch (final InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+        assertEquals(expectedCount, cache.getSegmentIds().size());
     }
 
     @SuppressWarnings("unchecked")

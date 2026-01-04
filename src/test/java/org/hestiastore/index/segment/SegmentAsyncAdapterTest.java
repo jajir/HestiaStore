@@ -1,6 +1,7 @@
 package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
@@ -18,6 +19,7 @@ import org.hestiastore.index.segmentasync.SegmentAsync;
 import org.hestiastore.index.segmentasync.SegmentAsyncAdapter;
 import org.hestiastore.index.segmentasync.SegmentMaintenancePolicy;
 import org.hestiastore.index.segmentasync.SegmentMaintenancePolicyThreshold;
+import org.hestiastore.index.segmentasync.SegmentMaintenanceTask;
 import org.junit.jupiter.api.Test;
 
 class SegmentAsyncAdapterTest {
@@ -91,6 +93,39 @@ class SegmentAsyncAdapterTest {
 
             flushOne.toCompletableFuture().get(1, TimeUnit.SECONDS);
             flushTwo.toCompletableFuture().get(1, TimeUnit.SECONDS);
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    void splitTasksAreSerializedWithFlush() throws Exception {
+        final ExecutorService executor = Executors.newFixedThreadPool(1);
+        try {
+            final CountDownLatch flushStarted = new CountDownLatch(1);
+            final CountDownLatch allowFlushFinish = new CountDownLatch(1);
+            final CountDownLatch splitStarted = new CountDownLatch(1);
+
+            final TestSegment segment = new TestSegment(SegmentId.of(4), () -> {
+                flushStarted.countDown();
+                await(allowFlushFinish);
+            }, () -> {
+            });
+
+            final SegmentAsyncAdapter<Integer, Integer> async = new SegmentAsyncAdapter<>(
+                    segment, executor, SegmentMaintenancePolicy.none());
+            final CompletionStage<Void> flushFuture = async.flushAsync();
+            assertTrue(flushStarted.await(1, TimeUnit.SECONDS));
+
+            final CompletionStage<Void> splitFuture = async
+                    .submitMaintenanceTask(SegmentMaintenanceTask.SPLIT,
+                            splitStarted::countDown);
+            assertFalse(splitStarted.await(200, TimeUnit.MILLISECONDS));
+            allowFlushFinish.countDown();
+
+            flushFuture.toCompletableFuture().get(1, TimeUnit.SECONDS);
+            splitFuture.toCompletableFuture().get(1, TimeUnit.SECONDS);
+            assertTrue(splitStarted.await(1, TimeUnit.SECONDS));
         } finally {
             executor.shutdownNow();
         }
