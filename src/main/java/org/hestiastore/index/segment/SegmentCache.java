@@ -2,6 +2,8 @@ package org.hestiastore.index.segment;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
@@ -22,21 +24,36 @@ public final class SegmentCache<K, V> {
     private UniqueCache<K, V> frozenWriteCache;
     private final Comparator<K> keyComparator;
     private final TypeDescriptor<V> valueTypeDescriptor;
-
-    public SegmentCache(final Comparator<K> keyComparator,
-            final TypeDescriptor<V> valueTypeDescriptor) {
-        this(keyComparator, valueTypeDescriptor, null);
-    }
+    private final int maxNumberOfKeysInSegmentWriteCache;
+    private final int maxNumberOfKeysInSegmentWriteCacheDuringFlush;
+    private static final int MAX_INITIAL_CAPACITY = 1_000_000;
+    private final ReentrantLock capacityLock = new ReentrantLock();
+    private final Condition capacityAvailable = capacityLock.newCondition();
 
     public SegmentCache(final Comparator<K> keyComparator,
             final TypeDescriptor<V> valueTypeDescriptor,
-            final List<Entry<K, V>> deltaEntries) {
+            final List<Entry<K, V>> deltaEntries,
+            final int maxNumberOfKeysInSegmentWriteCache,
+            final int maxNumberOfKeysInSegmentWriteCacheDuringFlush,
+            final int maxNumberOfKeysInSegmentCache) {
         this.keyComparator = Vldtn.requireNonNull(keyComparator,
                 "keyComparator");
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
+        this.maxNumberOfKeysInSegmentWriteCache = Vldtn.requireGreaterThanZero(
+                maxNumberOfKeysInSegmentWriteCache,
+                "maxNumberOfKeysInSegmentWriteCache");
+        this.maxNumberOfKeysInSegmentWriteCacheDuringFlush = Vldtn
+                .requireGreaterThanZero(
+                        maxNumberOfKeysInSegmentWriteCacheDuringFlush,
+                        "maxNumberOfKeysInSegmentWriteCacheDuringFlush");
+        final int deltaCapacityHint = Math.min(
+                Vldtn.requireGreaterThanZero(maxNumberOfKeysInSegmentCache,
+                        "maxNumberOfKeysInSegmentCache"),
+                MAX_INITIAL_CAPACITY);
         this.deltaCache = UniqueCache.<K, V>builder()
-                .withKeyComparator(keyComparator).withThreadSafe(true)
+                .withKeyComparator(keyComparator)
+                .withInitialCapacity(deltaCapacityHint).withThreadSafe(true)
                 .buildEmpty();
         this.writeCache = buildWriteCache();
         if (deltaEntries != null) {
@@ -46,13 +63,31 @@ public final class SegmentCache<K, V> {
         }
     }
 
+    void awaitWriteCapacity() {
+        awaitCapacity();
+    }
+
     /**
      * Adds a new entry into the write cache.
      *
      * @param entry entry to cache
      */
     public void putToWriteCache(final Entry<K, V> entry) {
+        awaitCapacity();
         writeCache.put(Vldtn.requireNonNull(entry, "entry"));
+    }
+
+    boolean tryPutToWriteCacheWithoutWaiting(final Entry<K, V> entry) {
+        capacityLock.lock();
+        try {
+            if (currentBufferedKeys() >= maxNumberOfKeysInSegmentWriteCache) {
+                return false;
+            }
+            writeCache.put(Vldtn.requireNonNull(entry, "entry"));
+            return true;
+        } finally {
+            capacityLock.unlock();
+        }
     }
 
     /**
@@ -132,6 +167,7 @@ public final class SegmentCache<K, V> {
             frozenWriteCache.clear();
             frozenWriteCache = null;
         }
+        signalCapacityAvailable();
     }
 
     /**
@@ -173,11 +209,13 @@ public final class SegmentCache<K, V> {
     void mergeFrozenWriteCacheToDeltaCache() {
         if (frozenWriteCache == null || frozenWriteCache.isEmpty()) {
             frozenWriteCache = null;
+            signalCapacityAvailable();
             return;
         }
         addAll(deltaCache, frozenWriteCache.getAsList());
         frozenWriteCache.clear();
         frozenWriteCache = null;
+        signalCapacityAvailable();
     }
 
     void mergeWriteCacheToDeltaCache() {
@@ -185,6 +223,7 @@ public final class SegmentCache<K, V> {
             addAll(deltaCache, writeCache.getAsList());
         }
         writeCache.clear();
+        signalCapacityAvailable();
     }
 
     int getNumberOfKeysInWriteCache() {
@@ -199,6 +238,40 @@ public final class SegmentCache<K, V> {
 
     void clearWriteCache() {
         writeCache.clear();
+        signalCapacityAvailable();
+    }
+
+    private int currentBufferedKeys() {
+        final int frozen = frozenWriteCache == null ? 0
+                : frozenWriteCache.size();
+        return writeCache.size() + frozen;
+    }
+
+    private void awaitCapacity() {
+        if (maxNumberOfKeysInSegmentWriteCache <= 0) {
+            return;
+        }
+        capacityLock.lock();
+        try {
+            while (currentBufferedKeys() >= maxNumberOfKeysInSegmentWriteCache) {
+                capacityAvailable.await();
+            }
+        } catch (final InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(
+                    "Interrupted while waiting for write cache capacity", ex);
+        } finally {
+            capacityLock.unlock();
+        }
+    }
+
+    private void signalCapacityAvailable() {
+        capacityLock.lock();
+        try {
+            capacityAvailable.signalAll();
+        } finally {
+            capacityLock.unlock();
+        }
     }
 
     private UniqueCache<K, V> buildMergedCache() {
@@ -213,8 +286,14 @@ public final class SegmentCache<K, V> {
     }
 
     private UniqueCache<K, V> buildWriteCache() {
-        return UniqueCache.<K, V>builder().withKeyComparator(keyComparator)
-                .withThreadSafe(true).buildEmpty();
+        final int capacityHint = Math.min(
+                Math.max(1, maxNumberOfKeysInSegmentWriteCacheDuringFlush),
+                MAX_INITIAL_CAPACITY);
+        return UniqueCache.<K, V>builder()//
+                .withKeyComparator(keyComparator)//
+                .withInitialCapacity(capacityHint)//
+                .withThreadSafe(true)//
+                .buildEmpty();
     }
 
     private void addAll(final UniqueCache<K, V> target,

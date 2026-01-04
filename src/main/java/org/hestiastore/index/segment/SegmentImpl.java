@@ -75,7 +75,10 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
         this.segmentCache = new SegmentCache<>(
                 segmentFiles.getKeyTypeDescriptor().getComparator(),
                 segmentFiles.getValueTypeDescriptor(),
-                deltaCache.getAsSortedList());
+                deltaCache.getAsSortedList(),
+                segmentConf.getMaxNumberOfKeysInSegmentWriteCache(),
+                segmentConf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush(),
+                segmentConf.getMaxNumberOfKeysInSegmentCache());
         this.deltaCacheController.setSegmentCache(segmentCache);
         this.segmentPropertiesManager = Vldtn.requireNonNull(
                 segmentPropertiesManager, "segmentPropertiesManager");
@@ -169,6 +172,21 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
         // TODO make sure that'scorrect behavior to kill all iterators on put
         versionController.changeVersion();
         segmentCache.putToWriteCache(Entry.of(key, value));
+    }
+
+    boolean tryPutWithoutWaiting(final K key, final V value) {
+        Vldtn.requireNonNull(key, "key");
+        Vldtn.requireNonNull(value, "value");
+        if (segmentCache.tryPutToWriteCacheWithoutWaiting(
+                Entry.of(key, value))) {
+            versionController.changeVersion();
+            return true;
+        }
+        return false;
+    }
+
+    void awaitWriteCapacity() {
+        segmentCache.awaitWriteCapacity();
     }
 
     @Override

@@ -17,6 +17,8 @@
 - Package namespace is `org.hestiastore.index...`; keep new modules under this root.
 - Prefer clear, descriptive class names (e.g., `*Adapter`, `*Cache`, `*Descriptor`) and follow existing suffixes for test doubles (`*Test`, `*IT`).
 - Add Javadoc for public types and non-trivial logic; keep methods small and side-effect aware.
+- Do not use fully qualified class names in code.
+- Always use simple class names with explicit `import` statements (e.g. `import package.ConcreteClass`).
 
 ## Testing Guidelines
 - Write JUnit 5 tests with Mockito for mocks; place fast, deterministic cases in `src/test/java`.
@@ -24,6 +26,8 @@
 - Integration scenarios that touch filesystem or concurrency should go to `src/integration-test/java` with `*IT` suffix.
 - Use in-memory `MemDirectory` for unit tests to avoid disk coupling; clean up temp files when touching the filesystem.
 - New code must satisfy the JaCoCo gate (80% instruction coverage and no missed classes) and keep tests isolated/parallel-safe.
+- junit test all corner cases
+- for each changed production class make sure there is same class name `*Test` in corresponding package.
 
 ## Commit & Pull Request Guidelines
 - Follow the existing log style: short, imperative titles that describe the change (e.g., “Improve segment cache eviction logic”); stay under ~72 characters.

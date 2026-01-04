@@ -31,6 +31,7 @@ public class IndexConfiguration<K, V> {
      */
     private final Integer maxNumberOfKeysInSegmentCache;
     private final Integer maxNumberOfKeysInSegmentWriteCache;
+    private final Integer maxNumberOfKeysInSegmentWriteCacheDuringFlush;
     private final Integer maxNumberOfKeysInSegmentChunk;
 
     /*
@@ -70,6 +71,7 @@ public class IndexConfiguration<K, V> {
             final String valueTypeDescriptor, //
             final Integer maxNumberOfKeysInSegmentCache, //
             final Integer maxNumberOfKeysInSegmentWriteCache, //
+            final Integer maxNumberOfKeysInSegmentWriteCacheDuringFlush, //
             final Integer maxNumberOfKeysInSegmentChunk, //
             final Integer maxNumberOfKeysInCache, //
             final Integer maxNumberOfKeysInSegment, //
@@ -88,6 +90,7 @@ public class IndexConfiguration<K, V> {
         this.valueTypeDescriptor = valueTypeDescriptor;
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
         this.maxNumberOfKeysInSegmentWriteCache = maxNumberOfKeysInSegmentWriteCache;
+        this.maxNumberOfKeysInSegmentWriteCacheDuringFlush = maxNumberOfKeysInSegmentWriteCacheDuringFlush;
         this.maxNumberOfKeysInSegmentChunk = maxNumberOfKeysInSegmentChunk;
         this.indexName = indexName;
         this.maxNumberOfKeysInCache = maxNumberOfKeysInCache;
@@ -122,6 +125,16 @@ public class IndexConfiguration<K, V> {
          * @return max keys in segment write cache
          */
         return maxNumberOfKeysInSegmentWriteCache;
+    }
+
+    public Integer getMaxNumberOfKeysInSegmentWriteCacheDuringFlush() {
+        /**
+         * Returns the maximum number of keys allowed while maintenance is in
+         * flight before back-pressure is applied to writers.
+         *
+         * @return max buffered keys during maintenance
+         */
+        return maxNumberOfKeysInSegmentWriteCacheDuringFlush;
     }
 
     public Integer getMaxNumberOfKeysInSegmentChunk() {

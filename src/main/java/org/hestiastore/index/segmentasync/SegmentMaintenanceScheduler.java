@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentasync;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
@@ -28,16 +29,20 @@ final class SegmentMaintenanceScheduler<K, V> {
     CompletionStage<Void> submit(final SegmentMaintenanceTask taskType,
             final Runnable task) {
         final CompletableFuture<Void> future = new CompletableFuture<>();
-        maintenanceExecutor.execute(() -> {
-            maintenanceState.runExclusive(taskType, () -> {
-                try {
-                    Vldtn.requireNonNull(task, "task").run();
-                    future.complete(null);
-                } catch (final Throwable t) {
-                    future.completeExceptionally(t);
-                }
+        try {
+            maintenanceExecutor.execute(() -> {
+                maintenanceState.runExclusive(taskType, () -> {
+                    try {
+                        Vldtn.requireNonNull(task, "task").run();
+                        future.complete(null);
+                    } catch (final Throwable t) {
+                        future.completeExceptionally(t);
+                    }
+                });
             });
-        });
+        } catch (final RejectedExecutionException ex) {
+            future.completeExceptionally(ex);
+        }
         return future;
     }
 

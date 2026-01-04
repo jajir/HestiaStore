@@ -162,17 +162,13 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final V value, final SegmentId segmentId,
             final long mappingVersion) {
         if (segment instanceof SegmentImplSynchronizationAdapter<K, V> adapter) {
-            return Boolean.TRUE.equals(adapter.executeWithWriteLock(() -> {
+            return adapter.putIfValid(() -> {
                 if (segment.wasClosed()) {
-                    return Boolean.FALSE;
+                    return false;
                 }
-                if (!keySegmentCache.isMappingValid(key, segmentId,
-                        mappingVersion)) {
-                    return Boolean.FALSE;
-                }
-                segment.put(key, value);
-                return Boolean.TRUE;
-            }));
+                return keySegmentCache.isMappingValid(key, segmentId,
+                        mappingVersion);
+            }, key, value);
         }
         if (segment.wasClosed()) {
             return false;

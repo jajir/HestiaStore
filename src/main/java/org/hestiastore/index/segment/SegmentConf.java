@@ -7,6 +7,8 @@ import org.hestiastore.index.chunkstore.ChunkFilter;
 public class SegmentConf {
 
     private final int maxNumberOfKeysInSegmentWriteCache;
+    private final int maxNumberOfKeysInSegmentWriteCacheDuringFlush;
+    private final int maxNumberOfKeysInSegmentCache;
     private final int maxNumberOfKeysInChunk;
     private final Integer bloomFilterNumberOfHashFunctions;
     private final Integer bloomFilterIndexSizeInBytes;
@@ -16,6 +18,8 @@ public class SegmentConf {
     private final List<ChunkFilter> decodingChunkFilters;
 
     public SegmentConf(final int maxNumberOfKeysInSegmentWriteCache,
+            final int maxNumberOfKeysInSegmentWriteCacheDuringFlush,
+            final int maxNumberOfKeysInSegmentCache,
             final int maxNumberOfKeysInChunk,
             final Integer bloomFilterNumberOfHashFunctions,
             final Integer bloomFilterIndexSizeInBytes,
@@ -24,6 +28,8 @@ public class SegmentConf {
             final List<ChunkFilter> encodingChunkFilters,
             final List<ChunkFilter> decodingChunkFilters) {
         this.maxNumberOfKeysInSegmentWriteCache = maxNumberOfKeysInSegmentWriteCache;
+        this.maxNumberOfKeysInSegmentWriteCacheDuringFlush = maxNumberOfKeysInSegmentWriteCacheDuringFlush;
+        this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
         this.maxNumberOfKeysInChunk = maxNumberOfKeysInChunk;
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
@@ -35,6 +41,8 @@ public class SegmentConf {
 
     public SegmentConf(final SegmentConf segmentConf) {
         this.maxNumberOfKeysInSegmentWriteCache = segmentConf.maxNumberOfKeysInSegmentWriteCache;
+        this.maxNumberOfKeysInSegmentWriteCacheDuringFlush = segmentConf.maxNumberOfKeysInSegmentWriteCacheDuringFlush;
+        this.maxNumberOfKeysInSegmentCache = segmentConf.maxNumberOfKeysInSegmentCache;
         this.maxNumberOfKeysInChunk = segmentConf.maxNumberOfKeysInChunk;
         this.bloomFilterNumberOfHashFunctions = segmentConf.bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = segmentConf.bloomFilterIndexSizeInBytes;
@@ -46,6 +54,14 @@ public class SegmentConf {
 
     int getMaxNumberOfKeysInSegmentWriteCache() {
         return maxNumberOfKeysInSegmentWriteCache;
+    }
+
+    int getMaxNumberOfKeysInSegmentWriteCacheDuringFlush() {
+        return maxNumberOfKeysInSegmentWriteCacheDuringFlush;
+    }
+
+    int getMaxNumberOfKeysInSegmentCache() {
+        return maxNumberOfKeysInSegmentCache;
     }
 
     Integer getMaxNumberOfKeysInChunk() {

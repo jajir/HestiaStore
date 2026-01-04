@@ -12,6 +12,7 @@ public class IndexConfigurationBuilder<K, V> {
 
     private Integer maxNumberOfKeysInSegmentCache;
     private Integer maxNumberOfKeysInSegmentWriteCache;
+    private Integer maxNumberOfKeysInSegmentWriteCacheDuringFlush;
     private Integer maxNumberOfKeysInSegmentChunk;
     private Integer maxNumberOfKeysInCache;
     private Integer maxNumberOfKeysInSegment;
@@ -98,6 +99,12 @@ public class IndexConfigurationBuilder<K, V> {
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentChunk(
             final Integer maxNumberOfKeysInSegmentChunk) {
         this.maxNumberOfKeysInSegmentChunk = maxNumberOfKeysInSegmentChunk;
+        return this;
+    }
+
+    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentWriteCacheDuringFlush(
+            final Integer maxNumberOfKeysInSegmentWriteCacheDuringFlush) {
+        this.maxNumberOfKeysInSegmentWriteCacheDuringFlush = maxNumberOfKeysInSegmentWriteCacheDuringFlush;
         return this;
     }
 
@@ -230,10 +237,32 @@ public class IndexConfigurationBuilder<K, V> {
         final Integer effectiveNumberOfIoThreads = numberOfIoThreads == null
                 ? IndexConfigurationContract.NUMBER_OF_IO_THREADS
                 : numberOfIoThreads;
+        final Integer effectiveWriteCacheDuringFlush;
+        if (maxNumberOfKeysInSegmentWriteCacheDuringFlush == null
+                && maxNumberOfKeysInSegmentWriteCache != null) {
+            effectiveWriteCacheDuringFlush = Math.max(
+                    (int) Math.ceil(maxNumberOfKeysInSegmentWriteCache * 1.4),
+                    maxNumberOfKeysInSegmentWriteCache + 1);
+        } else if (maxNumberOfKeysInSegmentWriteCacheDuringFlush == null) {
+            effectiveWriteCacheDuringFlush = null;
+        } else if (maxNumberOfKeysInSegmentWriteCache == null) {
+            effectiveWriteCacheDuringFlush = Vldtn.requireGreaterThanZero(
+                    maxNumberOfKeysInSegmentWriteCacheDuringFlush,
+                    "maxNumberOfKeysInSegmentWriteCacheDuringFlush");
+        } else {
+            if (maxNumberOfKeysInSegmentWriteCacheDuringFlush <= maxNumberOfKeysInSegmentWriteCache) {
+                throw new IllegalArgumentException(String.format(
+                        "Property '%s' must be greater than '%s'",
+                        "maxNumberOfKeysInSegmentWriteCacheDuringFlush",
+                        "maxNumberOfKeysInSegmentWriteCache"));
+            }
+            effectiveWriteCacheDuringFlush = maxNumberOfKeysInSegmentWriteCacheDuringFlush;
+        }
         return new IndexConfiguration<K, V>(keyClass, valueClass,
                 keyTypeDescriptor, valueTypeDescriptor,
                 maxNumberOfKeysInSegmentCache,
                 maxNumberOfKeysInSegmentWriteCache,
+                effectiveWriteCacheDuringFlush,
                 maxNumberOfKeysInSegmentChunk, maxNumberOfKeysInCache,
                 maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache, indexName,
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,

@@ -18,12 +18,16 @@ class SegmentCacheAsyncAdapterTest {
 
     private final TypeDescriptorInteger keyType = new TypeDescriptorInteger();
     private final TypeDescriptorShortString valueType = new TypeDescriptorShortString();
+    private static final int DEFAULT_MAX_BUFFERED = 1000;
+    private static final int DEFAULT_MAX_DURING_FLUSH = 1000;
+    private static final int DEFAULT_MAX_SEGMENT_CACHE = 1024;
 
     @Test
     void adapter_delegates_to_segment_cache() {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
                 keyType.getComparator(), valueType,
-                List.of(Entry.of(1, "A")));
+                List.of(Entry.of(1, "A")), DEFAULT_MAX_BUFFERED,
+                DEFAULT_MAX_DURING_FLUSH, DEFAULT_MAX_SEGMENT_CACHE);
         final SegmentCacheAsyncAdapter<Integer, String> adapter = new SegmentCacheAsyncAdapter<>(
                 cache);
 
@@ -39,7 +43,9 @@ class SegmentCacheAsyncAdapterTest {
     @Test
     void adapter_supports_concurrent_writes() throws Exception {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
-                keyType.getComparator(), valueType);
+                keyType.getComparator(), valueType, List.of(),
+                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_FLUSH,
+                DEFAULT_MAX_SEGMENT_CACHE);
         final SegmentCacheAsyncAdapter<Integer, String> adapter = new SegmentCacheAsyncAdapter<>(
                 cache);
 
@@ -78,7 +84,9 @@ class SegmentCacheAsyncAdapterTest {
     @Test
     void adapter_exposes_write_cache_snapshot_and_clear() {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
-                keyType.getComparator(), valueType);
+                keyType.getComparator(), valueType, List.of(),
+                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_FLUSH,
+                DEFAULT_MAX_SEGMENT_CACHE);
         final SegmentCacheAsyncAdapter<Integer, String> adapter = new SegmentCacheAsyncAdapter<>(
                 cache);
 
@@ -95,7 +103,9 @@ class SegmentCacheAsyncAdapterTest {
     @Test
     void adapter_merges_write_cache_into_delta_cache() {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
-                keyType.getComparator(), valueType);
+                keyType.getComparator(), valueType, List.of(),
+                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_FLUSH,
+                DEFAULT_MAX_SEGMENT_CACHE);
         final SegmentCacheAsyncAdapter<Integer, String> adapter = new SegmentCacheAsyncAdapter<>(
                 cache);
 
