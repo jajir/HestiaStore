@@ -19,6 +19,8 @@ import org.hestiastore.index.segment.SegmentResourcesImpl;
 import org.hestiastore.index.segmentasync.SegmentAsync;
 import org.hestiastore.index.segmentasync.SegmentAsyncAdapter;
 import org.hestiastore.index.segmentasync.SegmentAsyncExecutor;
+import org.hestiastore.index.segmentasync.SegmentMaintenancePolicy;
+import org.hestiastore.index.segmentasync.SegmentMaintenancePolicyThreshold;
 
 public class SegmentRegistry<K, V> {
 
@@ -29,6 +31,7 @@ public class SegmentRegistry<K, V> {
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final SegmentAsyncExecutor segmentAsyncExecutor;
+    private final SegmentMaintenancePolicy<K, V> maintenancePolicy;
 
     SegmentRegistry(final AsyncDirectory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
@@ -46,6 +49,8 @@ public class SegmentRegistry<K, V> {
                 : threadsConf.intValue();
         this.segmentAsyncExecutor = new SegmentAsyncExecutor(threads,
                 "segment-async");
+        this.maintenancePolicy = new SegmentMaintenancePolicyThreshold<>(
+                conf.getMaxNumberOfKeysInSegmentWriteCache());
     }
 
     public SegmentAsync<K, V> getSegment(final SegmentId segmentId) {
@@ -172,7 +177,7 @@ public class SegmentRegistry<K, V> {
     private SegmentAsync<K, V> instantiateSegment(final SegmentId segmentId) {
         final Segment<K, V> segment = newSegmentBuilder(segmentId).build();
         return new SegmentAsyncAdapter<>(segment,
-                segmentAsyncExecutor.getExecutor());
+                segmentAsyncExecutor.getExecutor(), maintenancePolicy);
     }
 
     protected void deleteSegmentFiles(final SegmentId segmentId) {
