@@ -25,7 +25,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final KeySegmentCache<K> keySegmentCache;
     private final SegmentRegistry<K, V> segmentRegistry;
-    private final SegmentSplitCoordinator<K, V> segmentSplitCoordinator;
+    private final SegmentMaintenanceCoordinator<K, V> maintenanceCoordinator;
     private final Stats stats = new Stats();
     private volatile IndexState<K, V> indexState;
 
@@ -44,7 +44,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 keyTypeDescriptor);
         this.segmentRegistry = new SegmentRegistrySynchronized<>(
                 directoryFacade, keyTypeDescriptor, valueTypeDescriptor, conf);
-        this.segmentSplitCoordinator = new SegmentSplitCoordinator<>(conf,
+        this.maintenanceCoordinator = new SegmentMaintenanceCoordinator<>(conf,
                 keySegmentCache, segmentRegistry);
         getIndexState().onReady(this);
     }
@@ -152,7 +152,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             if (!written) {
                 continue;
             }
-            handlePostWriteMaintenance(segment, key, segmentId,
+            maintenanceCoordinator.handlePostWrite(segment, key, segmentId,
                     snapshot.version());
             return;
         }
@@ -182,47 +182,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         }
         segment.put(key, value);
         return true;
-    }
-
-    private void handlePostWriteMaintenance(final Segment<K, V> segment,
-            final K key, final SegmentId segmentId, final long mappingVersion) {
-        final Integer maxWriteCacheKeys = conf
-                .getMaxNumberOfKeysInSegmentWriteCache();
-        if (maxWriteCacheKeys == null || maxWriteCacheKeys < 1) {
-            return;
-        }
-        runPostWriteMaintenance(segment, key, segmentId, mappingVersion,
-                maxWriteCacheKeys);
-    }
-
-    private void runPostWriteMaintenance(final Segment<K, V> segment,
-            final K key, final SegmentId segmentId, final long mappingVersion,
-            final Integer maxWriteCacheKeys) {
-        if (segment.wasClosed()) {
-            return;
-        }
-        if (!segmentRegistry.isSegmentInstance(segmentId, segment)) {
-            return;
-        }
-        if (!keySegmentCache.isKeyMappedToSegment(key, segmentId)
-                || !keySegmentCache.isMappingValid(key, segmentId,
-                        mappingVersion)) {
-            return;
-        }
-        if (segment.getNumberOfKeysInWriteCache() < maxWriteCacheKeys
-                .intValue()) {
-            return;
-        }
-
-        final Integer maxSegmentCacheKeys = conf
-                .getMaxNumberOfKeysInSegmentCache();
-        if (maxSegmentCacheKeys != null && maxSegmentCacheKeys > 0) {
-            final long totalKeys = segment.getNumberOfKeysInCache();
-            if (totalKeys > maxSegmentCacheKeys.longValue()) {
-                segmentSplitCoordinator.optionallySplit(segment,
-                        maxSegmentCacheKeys.longValue());
-            }
-        }
     }
 
     @Override
