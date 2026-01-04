@@ -12,6 +12,7 @@ import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentImplSynchronizationAdapter;
+import org.hestiastore.index.segmentasync.SegmentAsync;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,7 +103,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         getIndexState().tryPerformOperation();
         keySegmentCache.getSegmentIds().forEach(segmentId -> {
             final Segment<K, V> seg = segmentRegistry.getSegment(segmentId);
-            seg.compact();
+            compactSegment(seg);
         });
     }
 
@@ -188,14 +189,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         final Integer maxWriteCacheKeys = conf
                 .getMaxNumberOfKeysInSegmentWriteCache();
         if (maxWriteCacheKeys == null || maxWriteCacheKeys < 1) {
-            return;
-        }
-        if (segment instanceof SegmentImplSynchronizationAdapter<K, V> adapter) {
-            adapter.executeWithWriteLock(() -> {
-                runPostWriteMaintenance(segment, key, segmentId,
-                        mappingVersion, maxWriteCacheKeys);
-                return null;
-            });
             return;
         }
         runPostWriteMaintenance(segment, key, segmentId, mappingVersion,
@@ -287,8 +280,24 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private void flushSegments() {
         keySegmentCache.getSegmentIds().forEach(segmentId -> {
             final Segment<K, V> segment = segmentRegistry.getSegment(segmentId);
-            segment.flush();
+            flushSegment(segment);
         });
+    }
+
+    private void compactSegment(final Segment<K, V> segment) {
+        if (segment instanceof SegmentAsync<K, V> async) {
+            async.compactAsync().toCompletableFuture().join();
+            return;
+        }
+        segment.compact();
+    }
+
+    private void flushSegment(final Segment<K, V> segment) {
+        if (segment instanceof SegmentAsync<K, V> async) {
+            async.flushAsync().toCompletableFuture().join();
+            return;
+        }
+        segment.flush();
     }
 
     protected void invalidateSegmentIterators() {

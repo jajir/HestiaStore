@@ -16,6 +16,7 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segmentasync.SegmentAsync;
 import org.hestiastore.index.segmentasync.SegmentAsyncAdapter;
+import org.hestiastore.index.segmentasync.SegmentMaintenancePolicy;
 import org.hestiastore.index.segmentasync.SegmentMaintenancePolicyThreshold;
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +44,7 @@ class SegmentAsyncAdapterTest {
             });
 
             final SegmentAsync<Integer, Integer> async = new SegmentAsyncAdapter<>(
-                    segment, executor);
+                    segment, executor, SegmentMaintenancePolicy.none());
             final CompletionStage<Void> flushFuture = async.flushAsync();
             assertTrue(flushStarted.await(1, TimeUnit.SECONDS));
             final CompletionStage<Void> compactFuture = async.compactAsync();
@@ -78,9 +79,9 @@ class SegmentAsyncAdapterTest {
                     });
 
             final SegmentAsync<Integer, Integer> asyncOne = new SegmentAsyncAdapter<>(
-                    segmentOne, executor);
+                    segmentOne, executor, SegmentMaintenancePolicy.none());
             final SegmentAsync<Integer, Integer> asyncTwo = new SegmentAsyncAdapter<>(
-                    segmentTwo, executor);
+                    segmentTwo, executor, SegmentMaintenancePolicy.none());
 
             final CompletionStage<Void> flushOne = asyncOne.flushAsync();
             final CompletionStage<Void> flushTwo = asyncTwo.flushAsync();

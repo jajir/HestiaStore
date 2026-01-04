@@ -1,6 +1,8 @@
 package org.hestiastore.index.segment;
 
+import java.util.List;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
@@ -24,6 +26,7 @@ public class SegmentImplSynchronizationAdapter<K, V>
             true);
     private final Lock readLock = lock.readLock();
     private final Lock writeLock = lock.writeLock();
+    private final ReentrantLock maintenanceLock = new ReentrantLock(true);
 
     public SegmentImplSynchronizationAdapter(final Segment<K, V> delegate) {
         this.delegate = delegate;
@@ -41,6 +44,7 @@ public class SegmentImplSynchronizationAdapter<K, V>
 
     @Override
     public void compact() {
+        maintenanceLock.lock();
         writeLock.lock();
         try {
             if (delegate.wasClosed()) {
@@ -49,16 +53,19 @@ public class SegmentImplSynchronizationAdapter<K, V>
             delegate.compact();
         } finally {
             writeLock.unlock();
+            maintenanceLock.unlock();
         }
     }
 
     @Override
     public K checkAndRepairConsistency() {
+        maintenanceLock.lock();
         writeLock.lock();
         try {
             return delegate.checkAndRepairConsistency();
         } finally {
             writeLock.unlock();
+            maintenanceLock.unlock();
         }
     }
 
@@ -117,14 +124,42 @@ public class SegmentImplSynchronizationAdapter<K, V>
 
     @Override
     public void flush() {
-        writeLock.lock();
+        maintenanceLock.lock();
         try {
             if (delegate.wasClosed()) {
                 return;
             }
-            delegate.flush();
+            if (delegate instanceof SegmentImpl<K, V> impl) {
+                final List<Entry<K, V>> entries;
+                writeLock.lock();
+                try {
+                    if (delegate.wasClosed()) {
+                        return;
+                    }
+                    entries = impl.freezeWriteCacheForFlush();
+                } finally {
+                    writeLock.unlock();
+                }
+                if (entries.isEmpty()) {
+                    return;
+                }
+                impl.flushFrozenWriteCacheToDeltaFile(entries);
+                writeLock.lock();
+                try {
+                    impl.applyFrozenWriteCacheAfterFlush();
+                } finally {
+                    writeLock.unlock();
+                }
+                return;
+            }
+            writeLock.lock();
+            try {
+                delegate.flush();
+            } finally {
+                writeLock.unlock();
+            }
         } finally {
-            writeLock.unlock();
+            maintenanceLock.unlock();
         }
     }
 
@@ -157,6 +192,17 @@ public class SegmentImplSynchronizationAdapter<K, V>
         }
     }
 
+    public <T> T executeWithMaintenanceWriteLock(final Supplier<T> task) {
+        maintenanceLock.lock();
+        writeLock.lock();
+        try {
+            return task.get();
+        } finally {
+            writeLock.unlock();
+            maintenanceLock.unlock();
+        }
+    }
+
     @Override
     public SegmentId getId() {
         return delegate.getId();
@@ -164,11 +210,13 @@ public class SegmentImplSynchronizationAdapter<K, V>
 
     @Override
     protected void doClose() {
+        maintenanceLock.lock();
         writeLock.lock();
         try {
             delegate.close();
         } finally {
             writeLock.unlock();
+            maintenanceLock.unlock();
         }
     }
 

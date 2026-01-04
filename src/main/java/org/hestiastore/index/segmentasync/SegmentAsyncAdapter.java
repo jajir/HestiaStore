@@ -34,6 +34,16 @@ public final class SegmentAsyncAdapter<K, V>
     }
 
     @Override
+    public void flush() {
+        flushAsync();
+    }
+
+    @Override
+    public void compact() {
+        compactAsync();
+    }
+
+    @Override
     public CompletionStage<Void> flushAsync() {
         return submit(super::flush);
     }
