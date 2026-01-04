@@ -12,8 +12,8 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
-import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentasync.SegmentAsync;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,7 +35,7 @@ class SegmentIndexConsistencyCheckerTest {
     private SegmentRegistry<Integer, String> segmentRegistry;
 
     @Mock
-    private Segment<Integer, String> segment;
+    private SegmentAsync<Integer, String> segment;
 
     private Entry<Integer, SegmentId> segmentPair;
 
