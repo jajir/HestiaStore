@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -126,6 +127,53 @@ class SegmentAsyncAdapterTest {
             flushFuture.toCompletableFuture().get(1, TimeUnit.SECONDS);
             splitFuture.toCompletableFuture().get(1, TimeUnit.SECONDS);
             assertTrue(splitStarted.await(1, TimeUnit.SECONDS));
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    void writeCacheIsFlushedAfterSplitWithQueuedWrites() throws Exception {
+        final ExecutorService executor = Executors.newFixedThreadPool(1);
+        try {
+            final CountDownLatch splitStarted = new CountDownLatch(1);
+            final CountDownLatch allowSplitFinish = new CountDownLatch(1);
+            final CountDownLatch flushFinished = new CountDownLatch(1);
+            final AtomicInteger writeCache = new AtomicInteger();
+
+            final TestSegment segment = new TestSegment(SegmentId.of(5), () -> {
+                writeCache.set(0);
+                flushFinished.countDown();
+            }, () -> {
+            }, () -> writeCache.incrementAndGet(), writeCache::get);
+
+            final SegmentAsyncAdapter<Integer, Integer> async = new SegmentAsyncAdapter<>(
+                    segment, executor,
+                    new SegmentMaintenancePolicyThreshold<>(2));
+
+            final CompletableFuture<Void> splitFuture = async
+                    .submitMaintenanceTask(SegmentMaintenanceTask.SPLIT, () -> {
+                        splitStarted.countDown();
+                        await(allowSplitFinish);
+                    }).toCompletableFuture();
+
+            assertTrue(splitStarted.await(1, TimeUnit.SECONDS));
+
+            final CompletableFuture<Void> putsFuture = CompletableFuture
+                    .runAsync(() -> {
+                        for (int i = 0; i < 4; i++) {
+                            async.put(i, i);
+                        }
+                    });
+            putsFuture.get(200, TimeUnit.MILLISECONDS);
+
+            assertTrue(writeCache.get() >= 4);
+
+            allowSplitFinish.countDown();
+            splitFuture.get(1, TimeUnit.SECONDS);
+
+            assertTrue(flushFinished.await(1, TimeUnit.SECONDS));
+            assertEquals(0, writeCache.get());
         } finally {
             executor.shutdownNow();
         }

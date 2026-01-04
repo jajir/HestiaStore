@@ -73,11 +73,21 @@ public class IndexConfigurationManager<K, V> {
             builder.withMaxNumberOfKeysInSegmentCache(
                     effectiveMaxNumberOfKeysInSegmentCache);
         }
+        final int effectiveWriteCacheSize;
         if (conf.getMaxNumberOfKeysInSegmentWriteCache() == null) {
-            final int effectiveWriteCacheSize = Math.max(1,
+            effectiveWriteCacheSize = Math.max(1,
                     effectiveMaxNumberOfKeysInSegmentCache / 2);
             builder.withMaxNumberOfKeysInSegmentWriteCache(
                     effectiveWriteCacheSize);
+        } else {
+            effectiveWriteCacheSize = conf.getMaxNumberOfKeysInSegmentWriteCache();
+        }
+        if (conf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush() == null) {
+            final int effectiveFlushBackpressure = Math.max(
+                    (int) Math.ceil(effectiveWriteCacheSize * 1.4),
+                    effectiveWriteCacheSize + 1);
+            builder.withMaxNumberOfKeysInSegmentWriteCacheDuringFlush(
+                    effectiveFlushBackpressure);
         }
         if (conf.getMaxNumberOfKeysInCache() == null) {
             builder.withMaxNumberOfKeysInCache(
@@ -171,6 +181,12 @@ public class IndexConfigurationManager<K, V> {
                     indexConf.getMaxNumberOfKeysInSegmentWriteCache());
             dirty = true;
         }
+        if (isMaxNumberOfKeysInSegmentWriteCacheDuringFlushOverriden(
+                storedConf, indexConf)) {
+            builder.withMaxNumberOfKeysInSegmentWriteCacheDuringFlush(
+                    indexConf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush());
+            dirty = true;
+        }
 
         if (isMaxNumberOfKeysInCacheOverriden(storedConf, indexConf)) {
             builder.withMaxNumberOfKeysInCache(
@@ -239,6 +255,16 @@ public class IndexConfigurationManager<K, V> {
                 && !indexConf.getMaxNumberOfKeysInSegmentWriteCache()
                         .equals(storedConf
                                 .getMaxNumberOfKeysInSegmentWriteCache());
+    }
+
+    private boolean isMaxNumberOfKeysInSegmentWriteCacheDuringFlushOverriden(
+            final IndexConfiguration<K, V> storedConf,
+            final IndexConfiguration<K, V> indexConf) {
+        return indexConf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush() != null
+                && indexConf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush() > 0
+                && !indexConf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush()
+                        .equals(storedConf
+                                .getMaxNumberOfKeysInSegmentWriteCacheDuringFlush());
     }
 
     private boolean isMaxNumberOfKeysInCacheOverriden(
@@ -421,6 +447,18 @@ public class IndexConfigurationManager<K, V> {
             throw new IllegalArgumentException(
                     "Max number of keys in segment write cache must be at least 1.");
         }
+        final int effectiveMaxDuringFlush = conf
+                .getMaxNumberOfKeysInSegmentWriteCacheDuringFlush() == null
+                        ? Math.max(
+                                conf.getMaxNumberOfKeysInSegmentWriteCache()
+                                        * 2,
+                                conf.getMaxNumberOfKeysInSegmentWriteCache()
+                                        + 1)
+                        : conf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush();
+        if (effectiveMaxDuringFlush <= conf.getMaxNumberOfKeysInSegmentWriteCache()) {
+            throw new IllegalArgumentException(
+                    "Max number of keys in segment write cache during maintenance must be greater than the flush threshold.");
+        }
 
         Vldtn.requireNonNull(conf.getDiskIoBufferSize(), "DiskIoBufferSize");
         if (conf.getDiskIoBufferSize() <= 0) {
@@ -498,6 +536,8 @@ public class IndexConfigurationManager<K, V> {
                         conf.getMaxNumberOfKeysInSegmentCache())//
                 .withMaxNumberOfKeysInSegmentWriteCache(
                         conf.getMaxNumberOfKeysInSegmentWriteCache())//
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringFlush(
+                        conf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush())//
                 .withMaxNumberOfKeysInSegmentChunk(
                         conf.getMaxNumberOfKeysInSegmentChunk())//
 

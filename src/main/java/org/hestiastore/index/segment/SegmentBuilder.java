@@ -27,6 +27,8 @@ public final class SegmentBuilder<K, V> {
     private TypeDescriptor<K> keyTypeDescriptor;
     private TypeDescriptor<V> valueTypeDescriptor;
     private int maxNumberOfKeysInSegmentWriteCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE;
+    private int maxNumberOfKeysInSegmentCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE;
+    private Integer maxNumberOfKeysInSegmentWriteCacheDuringFlush;
     private int maxNumberOfKeysInSegmentChunk = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK;
     private Integer bloomFilterNumberOfHashFunctions;
     private Integer bloomFilterIndexSizeInBytes;
@@ -154,6 +156,23 @@ public final class SegmentBuilder<K, V> {
         this.maxNumberOfKeysInSegmentWriteCache = Vldtn.requireGreaterThanZero(
                 maxNumberOfKeysInSegmentWriteCache,
                 "maxNumberOfKeysInSegmentWriteCache");
+        return this;
+    }
+
+    public SegmentBuilder<K, V> withMaxNumberOfKeysInSegmentCache(
+            final int maxNumberOfKeysInSegmentCache) {
+        this.maxNumberOfKeysInSegmentCache = Vldtn.requireGreaterThanZero(
+                maxNumberOfKeysInSegmentCache,
+                "maxNumberOfKeysInSegmentCache");
+        return this;
+    }
+
+    public SegmentBuilder<K, V> withMaxNumberOfKeysInSegmentWriteCacheDuringFlush(
+            final int maxNumberOfKeysInSegmentWriteCacheDuringFlush) {
+        this.maxNumberOfKeysInSegmentWriteCacheDuringFlush = Vldtn
+                .requireGreaterThanZero(
+                        maxNumberOfKeysInSegmentWriteCacheDuringFlush,
+                        "maxNumberOfKeysInSegmentWriteCacheDuringFlush");
         return this;
     }
 
@@ -349,6 +368,19 @@ public final class SegmentBuilder<K, V> {
                     "maxNumberOfKeysInSegmentWriteCache is '%s' but must be higher than '0'",
                     maxNumberOfKeysInSegmentWriteCache));
         }
+        final int effectiveMaxKeysDuringFlush;
+        if (maxNumberOfKeysInSegmentWriteCacheDuringFlush == null) {
+            effectiveMaxKeysDuringFlush = Math
+                    .max(maxNumberOfKeysInSegmentWriteCache * 2,
+                            maxNumberOfKeysInSegmentWriteCache + 1);
+        } else if (maxNumberOfKeysInSegmentWriteCacheDuringFlush <= maxNumberOfKeysInSegmentWriteCache) {
+            throw new IllegalArgumentException(String.format(
+                    "maxNumberOfKeysInSegmentWriteCacheDuringFlush must be greater than maxNumberOfKeysInSegmentWriteCache (got %s <= %s)",
+                    maxNumberOfKeysInSegmentWriteCacheDuringFlush,
+                    maxNumberOfKeysInSegmentWriteCache));
+        } else {
+            effectiveMaxKeysDuringFlush = maxNumberOfKeysInSegmentWriteCacheDuringFlush;
+        }
         if (versionController == null) {
             versionController = new VersionController();
         }
@@ -357,6 +389,8 @@ public final class SegmentBuilder<K, V> {
             Vldtn.requireNotEmpty(decodingChunkFilters, "decodingChunkFilters");
             segmentConf = new SegmentConf(
                     (int) maxNumberOfKeysInSegmentWriteCache,
+                    effectiveMaxKeysDuringFlush,
+                    maxNumberOfKeysInSegmentCache,
                     maxNumberOfKeysInSegmentChunk,
                     bloomFilterNumberOfHashFunctions,
                     bloomFilterIndexSizeInBytes,
@@ -387,7 +421,10 @@ public final class SegmentBuilder<K, V> {
         return new SegmentCache<>(
                 segmentFiles.getKeyTypeDescriptor().getComparator(),
                 segmentFiles.getValueTypeDescriptor(),
-                deltaCache.getAsSortedList());
+                deltaCache.getAsSortedList(),
+                segmentConf.getMaxNumberOfKeysInSegmentWriteCache(),
+                segmentConf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush(),
+                segmentConf.getMaxNumberOfKeysInSegmentCache());
     }
 
 }

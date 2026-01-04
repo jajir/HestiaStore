@@ -114,6 +114,23 @@ public class SegmentImplSynchronizationAdapter<K, V>
 
     @Override
     public void put(final K key, final V value) {
+        if (delegate instanceof SegmentImpl<K, V> impl) {
+            while (true) {
+                writeLock.lock();
+                try {
+                    if (impl.tryPutWithoutWaiting(key, value)) {
+                        return;
+                    }
+                    flush();
+                    if (impl.tryPutWithoutWaiting(key, value)) {
+                        return;
+                    }
+                } finally {
+                    writeLock.unlock();
+                }
+                impl.awaitWriteCapacity();
+            }
+        }
         writeLock.lock();
         try {
             delegate.put(key, value);
@@ -189,6 +206,34 @@ public class SegmentImplSynchronizationAdapter<K, V>
             return task.get();
         } finally {
             writeLock.unlock();
+        }
+    }
+
+    public boolean putIfValid(final Supplier<Boolean> validation,
+            final K key, final V value) {
+        Vldtn.requireNonNull(validation, "validation");
+        while (true) {
+            writeLock.lock();
+            try {
+                if (!validation.get()) {
+                    return false;
+                }
+                if (delegate instanceof SegmentImpl<K, V> impl) {
+                    if (impl.tryPutWithoutWaiting(key, value)) {
+                        return true;
+                    }
+                    flush();
+                    if (impl.tryPutWithoutWaiting(key, value)) {
+                        return true;
+                    }
+                    return false;
+                } else {
+                    delegate.put(key, value);
+                    return true;
+                }
+            } finally {
+                writeLock.unlock();
+            }
         }
     }
 

@@ -130,6 +130,15 @@ class SegmentBuilderTest {
     void test_encodingChunkFilters_are_missing() {
         final SegmentConf segmentConf = mock(SegmentConf.class);
         when(segmentConf.getEncodingChunkFilters()).thenReturn(null);
+        when(segmentConf.getDecodingChunkFilters()).thenReturn(List.of());
+        when(segmentConf.getMaxNumberOfKeysInSegmentWriteCache()).thenReturn(5);
+        when(segmentConf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush())
+                .thenReturn(10);
+        when(segmentConf.getMaxNumberOfKeysInSegmentCache()).thenReturn(100);
+        when(segmentConf.getMaxNumberOfKeysInChunk()).thenReturn(1);
+        when(segmentConf.getBloomFilterNumberOfHashFunctions()).thenReturn(0);
+        when(segmentConf.getBloomFilterIndexSizeInBytes()).thenReturn(0);
+        when(segmentConf.getDiskIoBufferSize()).thenReturn(1024);
 
         final SegmentBuilder<Integer, String> builder = Segment
                 .<Integer, String>builder()//
@@ -155,6 +164,14 @@ class SegmentBuilderTest {
         when(segmentConf.getEncodingChunkFilters())
                 .thenReturn(List.of(new ChunkFilterDoNothing()));
         when(segmentConf.getDecodingChunkFilters()).thenReturn(List.of());
+        when(segmentConf.getMaxNumberOfKeysInSegmentWriteCache()).thenReturn(5);
+        when(segmentConf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush())
+                .thenReturn(10);
+        when(segmentConf.getMaxNumberOfKeysInSegmentCache()).thenReturn(100);
+        when(segmentConf.getMaxNumberOfKeysInChunk()).thenReturn(1);
+        when(segmentConf.getBloomFilterNumberOfHashFunctions()).thenReturn(0);
+        when(segmentConf.getBloomFilterIndexSizeInBytes()).thenReturn(0);
+        when(segmentConf.getDiskIoBufferSize()).thenReturn(1024);
 
         final SegmentBuilder<Integer, String> builder = Segment
                 .<Integer, String>builder()//

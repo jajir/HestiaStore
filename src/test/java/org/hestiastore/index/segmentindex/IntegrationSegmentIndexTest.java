@@ -126,7 +126,8 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
                 .withValueClass(String.class)//
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tds) //
-                .withMaxNumberOfKeysInSegmentCache(3) //
+                .withMaxNumberOfKeysInSegmentCache(16) //
+                .withMaxNumberOfKeysInSegmentWriteCache(8) //
                 .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentChunk(2) //
                 .withMaxNumberOfKeysInCache(3) //

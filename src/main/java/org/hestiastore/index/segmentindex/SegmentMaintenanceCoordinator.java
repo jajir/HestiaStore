@@ -44,10 +44,6 @@ final class SegmentMaintenanceCoordinator<K, V> {
                         mappingVersion)) {
             return;
         }
-        if (segment.getNumberOfKeysInWriteCache() < maxWriteCacheKeys
-                .intValue()) {
-            return;
-        }
 
         final Integer maxSegmentCacheKeys = conf
                 .getMaxNumberOfKeysInSegmentCache();

@@ -39,6 +39,9 @@ class SegmentManagerTest {
                         .wrap(directory),
                 keyTypeDescriptor, valueTypeDescriptor, conf);
         when(conf.getMaxNumberOfKeysInSegmentWriteCache()).thenReturn(1);
+        when(conf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush())
+                .thenReturn(2);
+        when(conf.getMaxNumberOfKeysInSegmentCache()).thenReturn(4);
         when(conf.getMaxNumberOfKeysInSegmentChunk()).thenReturn(1);
         when(conf.getDiskIoBufferSize()).thenReturn(1024);
         when(conf.getBloomFilterNumberOfHashFunctions()).thenReturn(1);

@@ -393,8 +393,8 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .wrap(directory);
         final SegmentId segmentId = SegmentId.of(27);
 
-        SegmentConf segmentConf = new SegmentConf(6, 3, 2, 0, 0.01, 1024,
-                List.of(), List.of());
+        SegmentConf segmentConf = new SegmentConf(64, 128, 256, 3, 2, 0, 0.01,
+                1024, List.of(), List.of());
 
         final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
                 asyncDirectory, segmentId);
@@ -597,6 +597,8 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         final SegmentId id3 = SegmentId.of(17);
         final TypeDescriptorShortString tds = new TypeDescriptorShortString();
         final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
+        final int smallCacheSize = 1024;
+        final int smallWriteCache = 256;
         return Stream.of(arguments(tdi, tds, dir1, Segment
                 .<Integer, String>builder()//
                 .withAsyncDirectory(
@@ -605,6 +607,8 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withId(id1)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//
+                .withMaxNumberOfKeysInSegmentCache(smallCacheSize)//
+                .withMaxNumberOfKeysInSegmentWriteCache(smallWriteCache)//
                 .withMaxNumberOfKeysInSegmentChunk(10)//
                 .withBloomFilterIndexSizeInBytes(0)// .withBloomFilterProbabilityOfFalsePositive(0.01D)//
                 .withDiskIoBufferSize(1 * 1024) //
@@ -628,6 +632,8 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withId(id2)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//
+                .withMaxNumberOfKeysInSegmentCache(smallCacheSize)//
+                .withMaxNumberOfKeysInSegmentWriteCache(smallWriteCache)//
                 .withMaxNumberOfKeysInSegmentChunk(1)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)//
@@ -652,6 +658,8 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withId(id3)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//
+                .withMaxNumberOfKeysInSegmentCache(smallCacheSize)//
+                .withMaxNumberOfKeysInSegmentWriteCache(smallWriteCache)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)//

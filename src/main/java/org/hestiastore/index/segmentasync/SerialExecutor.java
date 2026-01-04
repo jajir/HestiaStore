@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentasync;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 
 /**
  * Serializes tasks on top of a shared executor.
@@ -33,7 +34,12 @@ final class SerialExecutor implements Executor {
 
     private synchronized void scheduleNext() {
         if ((active = tasks.poll()) != null) {
-            executor.execute(active);
+            try {
+                executor.execute(active);
+            } catch (final RejectedExecutionException ex) {
+                active = null;
+                tasks.clear();
+            }
         }
     }
 }
