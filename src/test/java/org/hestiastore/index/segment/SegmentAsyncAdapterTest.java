@@ -10,11 +10,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntSupplier;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segmentasync.SegmentAsync;
 import org.hestiastore.index.segmentasync.SegmentAsyncAdapter;
+import org.hestiastore.index.segmentasync.SegmentMaintenancePolicyThreshold;
 import org.junit.jupiter.api.Test;
 
 class SegmentAsyncAdapterTest {
@@ -93,6 +95,33 @@ class SegmentAsyncAdapterTest {
         }
     }
 
+    @Test
+    void autoFlushTriggersOnWriteCacheThreshold() throws Exception {
+        final ExecutorService executor = Executors.newFixedThreadPool(1);
+        try {
+            final AtomicInteger writeCache = new AtomicInteger();
+            final CountDownLatch flushCalled = new CountDownLatch(1);
+
+            final TestSegment segment = new TestSegment(SegmentId.of(3), () -> {
+                flushCalled.countDown();
+            }, () -> {
+            }, writeCache::incrementAndGet, writeCache::get);
+
+            final SegmentAsync<Integer, Integer> async = new SegmentAsyncAdapter<>(
+                    segment, executor,
+                    new SegmentMaintenancePolicyThreshold<>(2));
+
+            async.put(1, 1);
+            assertEquals(1, writeCache.get());
+            assertEquals(1, flushCalled.getCount());
+
+            async.put(2, 2);
+            assertTrue(flushCalled.await(1, TimeUnit.SECONDS));
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
     private static void await(final CountDownLatch latch) {
         try {
             latch.await(2, TimeUnit.SECONDS);
@@ -108,12 +137,22 @@ class SegmentAsyncAdapterTest {
         private final SegmentId id;
         private final Runnable onFlush;
         private final Runnable onCompact;
+        private final Runnable onPut;
+        private final IntSupplier writeCacheSize;
 
         private TestSegment(final SegmentId id, final Runnable onFlush,
                 final Runnable onCompact) {
+            this(id, onFlush, onCompact, null, () -> 0);
+        }
+
+        private TestSegment(final SegmentId id, final Runnable onFlush,
+                final Runnable onCompact, final Runnable onPut,
+                final IntSupplier writeCacheSize) {
             this.id = id;
             this.onFlush = onFlush;
             this.onCompact = onCompact;
+            this.onPut = onPut;
+            this.writeCacheSize = writeCacheSize;
         }
 
         @Override
@@ -143,6 +182,9 @@ class SegmentAsyncAdapterTest {
 
         @Override
         public void put(final Integer key, final Integer value) {
+            if (onPut != null) {
+                onPut.run();
+            }
         }
 
         @Override
@@ -152,7 +194,7 @@ class SegmentAsyncAdapterTest {
 
         @Override
         public int getNumberOfKeysInWriteCache() {
-            return 0;
+            return writeCacheSize.getAsInt();
         }
 
         @Override
