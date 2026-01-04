@@ -18,7 +18,8 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 public final class SegmentCache<K, V> {
 
     private final UniqueCache<K, V> deltaCache;
-    private final UniqueCache<K, V> writeCache;
+    private UniqueCache<K, V> writeCache;
+    private UniqueCache<K, V> frozenWriteCache;
     private final Comparator<K> keyComparator;
     private final TypeDescriptor<V> valueTypeDescriptor;
 
@@ -37,9 +38,7 @@ public final class SegmentCache<K, V> {
         this.deltaCache = UniqueCache.<K, V>builder()
                 .withKeyComparator(keyComparator).withThreadSafe(true)
                 .buildEmpty();
-        this.writeCache = UniqueCache.<K, V>builder()
-                .withKeyComparator(keyComparator).withThreadSafe(true)
-                .buildEmpty();
+        this.writeCache = buildWriteCache();
         if (deltaEntries != null) {
             for (final Entry<K, V> entry : deltaEntries) {
                 putToDeltaCache(entry);
@@ -78,6 +77,12 @@ public final class SegmentCache<K, V> {
         if (fromWrite != null) {
             return fromWrite;
         }
+        if (frozenWriteCache != null) {
+            final V fromFrozen = frozenWriteCache.get(key);
+            if (fromFrozen != null) {
+                return fromFrozen;
+            }
+        }
         return deltaCache.get(key);
     }
 
@@ -87,11 +92,17 @@ public final class SegmentCache<K, V> {
      * @return size of merged view
      */
     public int size() {
-        if (writeCache.isEmpty()) {
+        if (writeCache.isEmpty()
+                && (frozenWriteCache == null || frozenWriteCache.isEmpty())) {
             return deltaCache.size();
         }
-        if (deltaCache.isEmpty()) {
+        if (deltaCache.isEmpty()
+                && (frozenWriteCache == null || frozenWriteCache.isEmpty())) {
             return writeCache.size();
+        }
+        if (deltaCache.isEmpty() && writeCache.isEmpty()
+                && frozenWriteCache != null) {
+            return frozenWriteCache.size();
         }
         return buildMergedCache().size();
     }
@@ -117,6 +128,10 @@ public final class SegmentCache<K, V> {
     public void evictAll() {
         deltaCache.clear();
         writeCache.clear();
+        if (frozenWriteCache != null) {
+            frozenWriteCache.clear();
+            frozenWriteCache = null;
+        }
     }
 
     /**
@@ -125,7 +140,8 @@ public final class SegmentCache<K, V> {
      * @return sorted list of entries
      */
     public List<Entry<K, V>> getAsSortedList() {
-        if (writeCache.isEmpty() && deltaCache.isEmpty()) {
+        if (writeCache.isEmpty() && deltaCache.isEmpty()
+                && (frozenWriteCache == null || frozenWriteCache.isEmpty())) {
             return List.of();
         }
         return buildMergedCache().getAsSortedList();
@@ -136,6 +152,32 @@ public final class SegmentCache<K, V> {
             return List.of();
         }
         return writeCache.getAsSortedList();
+    }
+
+    List<Entry<K, V>> freezeWriteCache() {
+        if (frozenWriteCache != null && !frozenWriteCache.isEmpty()) {
+            return frozenWriteCache.getAsSortedList();
+        }
+        if (writeCache.isEmpty()) {
+            return List.of();
+        }
+        frozenWriteCache = writeCache;
+        writeCache = buildWriteCache();
+        return frozenWriteCache.getAsSortedList();
+    }
+
+    boolean hasFrozenWriteCache() {
+        return frozenWriteCache != null && !frozenWriteCache.isEmpty();
+    }
+
+    void mergeFrozenWriteCacheToDeltaCache() {
+        if (frozenWriteCache == null || frozenWriteCache.isEmpty()) {
+            frozenWriteCache = null;
+            return;
+        }
+        addAll(deltaCache, frozenWriteCache.getAsList());
+        frozenWriteCache.clear();
+        frozenWriteCache = null;
     }
 
     void mergeWriteCacheToDeltaCache() {
@@ -150,7 +192,9 @@ public final class SegmentCache<K, V> {
     }
 
     int getNumbberOfKeysInCache() {
-        return deltaCache.size() + writeCache.size();
+        final int frozen = frozenWriteCache == null ? 0
+                : frozenWriteCache.size();
+        return deltaCache.size() + writeCache.size() + frozen;
     }
 
     void clearWriteCache() {
@@ -161,8 +205,16 @@ public final class SegmentCache<K, V> {
         final UniqueCache<K, V> merged = UniqueCache.<K, V>builder()
                 .withKeyComparator(keyComparator).buildEmpty();
         addAll(merged, deltaCache.getAsList());
+        if (frozenWriteCache != null && !frozenWriteCache.isEmpty()) {
+            addAll(merged, frozenWriteCache.getAsList());
+        }
         addAll(merged, writeCache.getAsList());
         return merged;
+    }
+
+    private UniqueCache<K, V> buildWriteCache() {
+        return UniqueCache.<K, V>builder().withKeyComparator(keyComparator)
+                .withThreadSafe(true).buildEmpty();
     }
 
     private void addAll(final UniqueCache<K, V> target,

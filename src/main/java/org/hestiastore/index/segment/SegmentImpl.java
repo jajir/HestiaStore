@@ -159,7 +159,6 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
      * It's not necesarry to run it in transaction because it's always new file.
      */
     private EntryWriter<K, V> openDeltaCacheWriter() {
-        versionController.changeVersion();
         return new SegmentDeltaCacheCompactingWriter<>(deltaCacheController);
     }
 
@@ -174,16 +173,17 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
 
     @Override
     public void flush() {
-        final List<Entry<K, V>> entries = segmentCache
-                .getWriteCacheAsSortedList();
+        final List<Entry<K, V>> entries = freezeWriteCacheForFlush();
         if (entries.isEmpty()) {
             return;
         }
-        try (EntryWriter<K, V> writer = openDeltaCacheWriter()) {
-            entries.forEach(writer::write);
+        try {
+            flushFrozenWriteCacheToDeltaFile(entries);
+            applyFrozenWriteCacheAfterFlush();
+        } catch (final RuntimeException e) {
+            // Keep frozen cache for retry; caller sees the failure.
+            throw e;
         }
-        segmentCache.mergeWriteCacheToDeltaCache();
-        segmentCache.clearWriteCache();
     }
 
     @Override
@@ -261,6 +261,28 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
             seekableReader.close();
             seekableReader = null;
         }
+    }
+
+    List<Entry<K, V>> freezeWriteCacheForFlush() {
+        final boolean hadFrozen = segmentCache.hasFrozenWriteCache();
+        final List<Entry<K, V>> entries = segmentCache.freezeWriteCache();
+        if (!entries.isEmpty() && !hadFrozen) {
+            versionController.changeVersion();
+        }
+        return entries;
+    }
+
+    void flushFrozenWriteCacheToDeltaFile(final List<Entry<K, V>> entries) {
+        if (entries == null || entries.isEmpty()) {
+            return;
+        }
+        try (EntryWriter<K, V> writer = openDeltaCacheWriter()) {
+            entries.forEach(writer::write);
+        }
+    }
+
+    void applyFrozenWriteCacheAfterFlush() {
+        segmentCache.mergeFrozenWriteCacheToDeltaCache();
     }
 
 }

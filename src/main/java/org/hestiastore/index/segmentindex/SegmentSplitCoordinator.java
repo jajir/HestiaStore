@@ -9,6 +9,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentPropertiesManager;
 import org.hestiastore.index.segment.SegmentImplSynchronizationAdapter;
+import org.hestiastore.index.segmentasync.SegmentAsync;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +59,7 @@ public class SegmentSplitCoordinator<K, V> {
                 .shouldBeCompactedBeforeSplitting(maxNumberOfKeysInSegment,
                         plan.getEstimatedNumberOfKeys());
         if (compactBeforeSplit) {
-            segment.compact();
+            compactSegment(segment);
             policy = createPolicy(segment);
             plan = SegmentSplitterPlan.fromPolicy(policy);
             if (plan.getEstimatedNumberOfKeys() < maxNumberOfKeysInSegment) {
@@ -68,6 +69,9 @@ public class SegmentSplitCoordinator<K, V> {
             return false;
         }
         if (!hasLiveEntries(segment)) {
+            return false;
+        }
+        if (!plan.isSplitFeasible()) {
             return false;
         }
         split(segment, plan);
@@ -85,7 +89,10 @@ public class SegmentSplitCoordinator<K, V> {
         logger.debug("Splitting of '{}' started.", segmentId);
         final SplitOutcome outcome;
         if (segment instanceof SegmentImplSynchronizationAdapter<K, V> adapter) {
-            outcome = adapter.executeWithWriteLock(() -> {
+            outcome = adapter.executeWithMaintenanceWriteLock(() -> {
+                if (!segmentRegistry.isSegmentInstance(segmentId, segment)) {
+                    return null;
+                }
                 return doSplit(segment, plan);
             });
         } else {
@@ -102,6 +109,14 @@ public class SegmentSplitCoordinator<K, V> {
             return outcome.splitApplied;
         }
         return false;
+    }
+
+    private void compactSegment(final Segment<K, V> segment) {
+        if (segment instanceof SegmentAsync<K, V> async) {
+            async.compactAsync().toCompletableFuture().join();
+            return;
+        }
+        segment.compact();
     }
 
     private SplitOutcome doSplit(final Segment<K, V> segment,

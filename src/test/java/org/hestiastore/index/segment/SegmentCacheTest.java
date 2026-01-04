@@ -1,6 +1,7 @@
 package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -154,5 +155,146 @@ class SegmentCacheTest {
 
         assertEquals(2, cache.getNumberOfKeysInWriteCache());
         assertEquals(2, cache.getNumbberOfKeysInCache());
+    }
+
+    @Test
+    void freezeWriteCache_on_empty_write_cache_keeps_frozen_empty() {
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                keyType.getComparator(), valueType);
+
+        assertEquals(List.of(), cache.freezeWriteCache());
+        cache.mergeFrozenWriteCacheToDeltaCache();
+
+        assertFalse(cache.hasFrozenWriteCache());
+        assertTrue(cache.getAsSortedList().isEmpty());
+        assertEquals(0, cache.size());
+    }
+
+    @Test
+    void freezeWriteCache_moves_entries_and_exposes_frozen_view() {
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                keyType.getComparator(), valueType);
+        cache.putToWriteCache(Entry.of(2, "B"));
+        cache.putToWriteCache(Entry.of(1, "A"));
+
+        assertEquals(
+                List.of(Entry.of(1, "A"), Entry.of(2, "B")),
+                cache.freezeWriteCache());
+
+        assertTrue(cache.getWriteCacheAsSortedList().isEmpty());
+        assertTrue(cache.hasFrozenWriteCache());
+        assertEquals("A", cache.get(1));
+        assertEquals(
+                List.of(Entry.of(1, "A"), Entry.of(2, "B")),
+                cache.getAsSortedList());
+        assertEquals(2, cache.size());
+        assertEquals(2, cache.getNumbberOfKeysInCache());
+    }
+
+    @Test
+    void freezeWriteCache_when_already_frozen_does_not_replace_or_consume_new_writes() {
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                keyType.getComparator(), valueType);
+        cache.putToWriteCache(Entry.of(1, "A"));
+        cache.putToWriteCache(Entry.of(2, "B"));
+
+        assertEquals(
+                List.of(Entry.of(1, "A"), Entry.of(2, "B")),
+                cache.freezeWriteCache());
+
+        cache.putToWriteCache(Entry.of(3, "C"));
+
+        assertEquals(
+                List.of(Entry.of(1, "A"), Entry.of(2, "B")),
+                cache.freezeWriteCache());
+        assertEquals(List.of(Entry.of(3, "C")),
+                cache.getWriteCacheAsSortedList());
+        assertEquals(
+                List.of(Entry.of(1, "A"), Entry.of(2, "B"),
+                        Entry.of(3, "C")),
+                cache.getAsSortedList());
+    }
+
+    @Test
+    void get_prefers_write_then_frozen_then_delta() {
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                keyType.getComparator(), valueType,
+                List.of(Entry.of(1, "delta")));
+        cache.putToWriteCache(Entry.of(1, "frozen"));
+        cache.freezeWriteCache();
+        cache.putToWriteCache(Entry.of(1, "write"));
+
+        assertEquals("write", cache.get(1));
+        assertEquals(List.of(Entry.of(1, "write")), cache.getAsSortedList());
+    }
+
+    @Test
+    void mergeFrozenWriteCacheToDeltaCache_moves_entries_and_clears_frozen() {
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                keyType.getComparator(), valueType,
+                List.of(Entry.of(1, "A")));
+        cache.putToWriteCache(Entry.of(2, "B"));
+        cache.freezeWriteCache();
+        cache.putToWriteCache(Entry.of(3, "C"));
+
+        cache.mergeFrozenWriteCacheToDeltaCache();
+
+        assertFalse(cache.hasFrozenWriteCache());
+        assertEquals("B", cache.get(2));
+        assertEquals("C", cache.get(3));
+        assertEquals(List.of(Entry.of(3, "C")),
+                cache.getWriteCacheAsSortedList());
+        assertEquals(3, cache.size());
+    }
+
+    @Test
+    void getAsSortedList_includes_frozen_and_write_entries_with_overrides() {
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                keyType.getComparator(), valueType,
+                List.of(Entry.of(1, "A"), Entry.of(2, "B")));
+        cache.putToWriteCache(Entry.of(2, "B2"));
+        cache.putToWriteCache(Entry.of(3, "C"));
+        cache.freezeWriteCache();
+        cache.putToWriteCache(Entry.of(3, "C2"));
+        cache.putToWriteCache(Entry.of(4, "D"));
+
+        assertEquals(4, cache.size());
+        assertEquals(
+                List.of(Entry.of(1, "A"), Entry.of(2, "B2"),
+                        Entry.of(3, "C2"), Entry.of(4, "D")),
+                cache.getAsSortedList());
+    }
+
+    @Test
+    void sizeWithoutTombstones_ignores_tombstones_in_frozen_and_write() {
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                keyType.getComparator(), valueType,
+                List.of(Entry.of(1, "A")));
+        cache.putToWriteCache(
+                Entry.of(2, TypeDescriptorShortString.TOMBSTONE_VALUE));
+        cache.freezeWriteCache();
+        cache.putToWriteCache(Entry.of(3, "B"));
+        cache.putToWriteCache(
+                Entry.of(4, TypeDescriptorShortString.TOMBSTONE_VALUE));
+
+        assertEquals(4, cache.size());
+        assertEquals(2, cache.sizeWithoutTombstones());
+    }
+
+    @Test
+    void evictAll_clears_frozen_cache() {
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                keyType.getComparator(), valueType,
+                List.of(Entry.of(1, "A")));
+        cache.putToWriteCache(Entry.of(2, "B"));
+        cache.freezeWriteCache();
+        cache.putToWriteCache(Entry.of(3, "C"));
+
+        cache.evictAll();
+
+        assertEquals(0, cache.size());
+        assertFalse(cache.hasFrozenWriteCache());
+        assertTrue(cache.getWriteCacheAsSortedList().isEmpty());
+        assertNull(cache.get(1));
     }
 }

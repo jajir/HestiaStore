@@ -31,6 +31,7 @@ public final class SegmentDeltaCache<K, V> {
         this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
         this.cache = UniqueCache.<K, V>builder()
                 .withKeyComparator(keyTypeDescriptor.getComparator())
+                .withThreadSafe(true)
                 .buildEmpty();
         try (EntryIterator<K, V> iterator = segmentFiles.getCacheDataFile()
                 .openIterator()) {
