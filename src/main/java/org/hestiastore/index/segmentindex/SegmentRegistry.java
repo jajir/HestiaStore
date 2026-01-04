@@ -16,16 +16,19 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentPropertiesManager;
 import org.hestiastore.index.segment.SegmentResources;
 import org.hestiastore.index.segment.SegmentResourcesImpl;
-import org.hestiastore.index.segment.SegmentImplSynchronizationAdapter;
+import org.hestiastore.index.segmentasync.SegmentAsync;
+import org.hestiastore.index.segmentasync.SegmentAsyncAdapter;
+import org.hestiastore.index.segmentasync.SegmentAsyncExecutor;
 
 public class SegmentRegistry<K, V> {
 
-    private final Map<SegmentId, Segment<K, V>> segments = new HashMap<>();
+    private final Map<SegmentId, SegmentAsync<K, V>> segments = new HashMap<>();
 
     private final IndexConfiguration<K, V> conf;
     private final AsyncDirectory directoryFacade;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
+    private final SegmentAsyncExecutor segmentAsyncExecutor;
 
     SegmentRegistry(final AsyncDirectory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
@@ -38,11 +41,16 @@ public class SegmentRegistry<K, V> {
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
         this.conf = Vldtn.requireNonNull(conf, "conf");
+        final Integer threadsConf = conf.getNumberOfThreads();
+        final int threads = (threadsConf == null || threadsConf < 1) ? 1
+                : threadsConf.intValue();
+        this.segmentAsyncExecutor = new SegmentAsyncExecutor(threads,
+                "segment-async");
     }
 
-    public Segment<K, V> getSegment(final SegmentId segmentId) {
+    public SegmentAsync<K, V> getSegment(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
-        Segment<K, V> out = segments.get(segmentId);
+        SegmentAsync<K, V> out = segments.get(segmentId);
         if (out == null || out.wasClosed()) {
             out = instantiateSegment(segmentId);
             segments.put(segmentId, out);
@@ -66,13 +74,13 @@ public class SegmentRegistry<K, V> {
     }
 
     public void removeSegment(final SegmentId segmentId) {
-        final Segment<K, V> segment = removeSegmentFromRegistry(segmentId);
+        final SegmentAsync<K, V> segment = removeSegmentFromRegistry(segmentId);
         closeSegmentIfNeeded(segment);
         deleteSegmentFiles(segmentId);
     }
 
     void evictSegment(final SegmentId segmentId) {
-        final Segment<K, V> segment = evictSegmentFromRegistry(segmentId);
+        final SegmentAsync<K, V> segment = evictSegmentFromRegistry(segmentId);
         closeSegmentIfNeeded(segment);
     }
 
@@ -88,7 +96,7 @@ public class SegmentRegistry<K, V> {
             final Segment<K, V> expected) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         Vldtn.requireNonNull(expected, "expected");
-        final Segment<K, V> current = segments.get(segmentId);
+        final SegmentAsync<K, V> current = segments.get(segmentId);
         if (current != expected) {
             return false;
         }
@@ -97,13 +105,13 @@ public class SegmentRegistry<K, V> {
         return true;
     }
 
-    protected Segment<K, V> removeSegmentFromRegistry(
+    protected SegmentAsync<K, V> removeSegmentFromRegistry(
             final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         return segments.remove(segmentId);
     }
 
-    protected Segment<K, V> evictSegmentFromRegistry(
+    protected SegmentAsync<K, V> evictSegmentFromRegistry(
             final SegmentId segmentId) {
         return removeSegmentFromRegistry(segmentId);
     }
@@ -161,9 +169,10 @@ public class SegmentRegistry<K, V> {
                 conf.getDecodingChunkFilters());
     }
 
-    private Segment<K, V> instantiateSegment(final SegmentId segmentId) {
+    private SegmentAsync<K, V> instantiateSegment(final SegmentId segmentId) {
         final Segment<K, V> segment = newSegmentBuilder(segmentId).build();
-        return new SegmentImplSynchronizationAdapter<>(segment);
+        return new SegmentAsyncAdapter<>(segment,
+                segmentAsyncExecutor.getExecutor());
     }
 
     protected void deleteSegmentFiles(final SegmentId segmentId) {
@@ -180,6 +189,9 @@ public class SegmentRegistry<K, V> {
     }
 
     public void close() {
+        if (!segmentAsyncExecutor.wasClosed()) {
+            segmentAsyncExecutor.close();
+        }
     }
 
 }

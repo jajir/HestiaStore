@@ -14,8 +14,8 @@ import java.util.ArrayList;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
-import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentasync.SegmentAsync;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -31,10 +31,10 @@ class SegmentsIteratorTest {
     private SegmentRegistry<String, String> segmentRegistry;
 
     @Mock
-    private Segment<String, String> segment17;
+    private SegmentAsync<String, String> segment17;
 
     @Mock
-    private Segment<String, String> segment23;
+    private SegmentAsync<String, String> segment23;
 
     @Mock
     private EntryIterator<String, String> entryIterator17;
