@@ -1,10 +1,12 @@
 # Concurrency & Lifecycle Spec
 
-General principles:
+## General principles:
 - Single-writer per segment
 - Immutable published data
 - Background maintenance only (only dedicated background thread performs IO operations)
-- When it's not possible to perform some opration it's imediately returned, call can be retry.
+- When it's not possible to perform some opration merhod immediatelly return segment state, call can be retry.
+- locks short as possible
+- no io reads or erite is done under the lock
 
 Locks:
 - Locks are realized with Segment state machine, some state effectively lock segment
@@ -23,11 +25,11 @@ All operation are thread safe
 
 MVCC (Multi-Version Concurrency Control)
 - currently not used,
-- could be used in future in ziterator, which are now interrupter in case of version increasing
+- could be used in future in iterator, which are now interrupter in case of version increasing
 - kontroluji konzistenci, je lepsi data nevracet, než vracet neaktuální
 
 Maintenance thread
-- provadi všechny IO operace
+- provadi všechny IO read/write operace
 - serializuje operace
 
 Supported segment operations:
