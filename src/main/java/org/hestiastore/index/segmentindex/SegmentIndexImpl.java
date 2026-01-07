@@ -181,14 +181,16 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             @SuppressWarnings("unchecked")
             final SegmentWriteLockSupport<K, V> lockingSupport =
                     (SegmentWriteLockSupport<K, V>) segment;
-            return lockingSupport.putIfValid(() -> {
-                if (segment.wasClosed()) {
-                    return false;
-                }
-                return keySegmentCache.isMappingValid(key, segmentId,
-                        mappingVersion);
-            }, key, value);
+            return lockingSupport.executeWithWriteLock(
+                    () -> attemptPut(segment, key, value, segmentId,
+                            mappingVersion));
         }
+        return attemptPut(segment, key, value, segmentId, mappingVersion);
+    }
+
+    private boolean attemptPut(final Segment<K, V> segment, final K key,
+            final V value, final SegmentId segmentId,
+            final long mappingVersion) {
         if (segment.wasClosed()) {
             return false;
         }

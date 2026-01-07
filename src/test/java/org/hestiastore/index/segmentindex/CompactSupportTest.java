@@ -15,6 +15,7 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -85,6 +86,8 @@ class CompactSupportTest {
         when(keySegmentCache.insertKeyToSegment(100)).thenReturn(seg1);
 
         when(segmentRegistry.getSegment(seg0)).thenReturn(segment0);
+        when(segment0.put(any(), any())).thenReturn(SegmentResult.ok());
+        when(segment0.flush()).thenReturn(SegmentResult.ok());
 
         cs.compact(Entry.of(1, "A"));
         cs.compact(Entry.of(2, "B"));
@@ -112,6 +115,8 @@ class CompactSupportTest {
         when(keySegmentCache.insertKeyToSegment(10)).thenReturn(seg1);
         when(keySegmentCache.insertKeyToSegment(11)).thenReturn(seg1);
         when(segmentRegistry.getSegment(seg1)).thenReturn(segment1);
+        when(segment1.put(any(), any())).thenReturn(SegmentResult.ok());
+        when(segment1.flush()).thenReturn(SegmentResult.ok());
 
         cs.compact(Entry.of(10, "X"));
         cs.compact(Entry.of(11, "Y"));

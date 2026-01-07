@@ -1,11 +1,9 @@
 package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -19,22 +17,6 @@ import org.hestiastore.index.EntryIterator;
 import org.junit.jupiter.api.Test;
 
 class SegmentImplSynchronizationAdapterTest {
-
-    @Test
-    void putIfValid_respectsValidationResult() {
-        @SuppressWarnings("unchecked")
-        final Segment<Integer, String> delegate = (Segment<Integer, String>) mock(
-                Segment.class);
-        when(delegate.put(1, "one")).thenReturn(SegmentResult.ok());
-        final SegmentImplSynchronizationAdapter<Integer, String> adapter = new SegmentImplSynchronizationAdapter<>(
-                delegate);
-
-        assertFalse(adapter.putIfValid(() -> false, 1, "one"));
-        verify(delegate, times(0)).put(1, "one");
-
-        assertTrue(adapter.putIfValid(() -> true, 1, "one"));
-        verify(delegate, times(1)).put(1, "one");
-    }
 
     @Test
     void fullIsolationIterator_blocksWritesUntilClosed() throws Exception {

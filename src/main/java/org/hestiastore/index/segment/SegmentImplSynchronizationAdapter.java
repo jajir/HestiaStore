@@ -188,21 +188,6 @@ public class SegmentImplSynchronizationAdapter<K, V>
     }
 
     @Override
-    public boolean putIfValid(final Supplier<Boolean> validation,
-            final K key, final V value) {
-        Vldtn.requireNonNull(validation, "validation");
-        writeLock.lock();
-        try {
-            if (!validation.get()) {
-                return false;
-            }
-            return delegate.put(key, value).isOk();
-        } finally {
-            writeLock.unlock();
-        }
-    }
-
-    @Override
     public <T> T executeWithMaintenanceWriteLock(final Supplier<T> task) {
         maintenanceLock.lock();
         writeLock.lock();
