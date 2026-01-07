@@ -243,7 +243,7 @@ class SegmentBuilderTest {
 
     @Test
     void test_build_withProvidedChunkFilters() {
-        final SegmentImpl<Integer, String> segment = Segment
+        final Segment<Integer, String> segment = Segment
                 .<Integer, String>builder()//
                 .withAsyncDirectory(
                         org.hestiastore.index.directory.async.AsyncDirectoryAdapter
@@ -283,7 +283,7 @@ class SegmentBuilderTest {
         }
         tx.commit();
 
-        final SegmentImpl<Integer, String> segment = builder.build();
+        final Segment<Integer, String> segment = builder.build();
         assertEquals("a", segment.get(1));
         assertEquals("b", segment.get(2));
         segment.close();

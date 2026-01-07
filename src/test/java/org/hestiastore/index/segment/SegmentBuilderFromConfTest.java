@@ -43,7 +43,7 @@ public class SegmentBuilderFromConfTest {
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
                 .withSegmentConf(conf)//
         ;
-        SegmentImpl<Integer, String> seg = builder.build();
+        Segment<Integer, String> seg = builder.build();
         seg.put(1, "A");
         seg.flush();
         assertEquals("A", seg.get(1));
