@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentasync.SegmentAsyncAdapter;
+import org.hestiastore.index.segmentasync.SegmentMaintenanceQueue;
 import org.hestiastore.index.segmentasync.SegmentMaintenanceTask;
 
 /**
@@ -35,7 +35,7 @@ final class SegmentAsyncSplitCoordinator<K, V> {
     CompletionStage<Boolean> optionallySplitAsync(final Segment<K, V> segment,
             final long maxNumberOfKeysInSegment) {
         Vldtn.requireNonNull(segment, "segment");
-        if (!(segment instanceof SegmentAsyncAdapter<K, V> adapter)) {
+        if (!(segment instanceof SegmentMaintenanceQueue queue)) {
             return CompletableFuture.completedFuture(splitCoordinator
                     .optionallySplit(segment, maxNumberOfKeysInSegment));
         }
@@ -45,21 +45,20 @@ final class SegmentAsyncSplitCoordinator<K, V> {
                     if (existing != null && existing.segment == segment) {
                         return existing;
                     }
-                    return scheduleSplit(adapter, segment,
+                    return scheduleSplit(queue, segment,
                             maxNumberOfKeysInSegment, segmentId);
                 });
         return inFlight.future;
     }
 
     private SplitInFlight<K, V> scheduleSplit(
-            final SegmentAsyncAdapter<K, V> adapter,
-            final Segment<K, V> segment, final long maxNumberOfKeysInSegment,
-            final SegmentId segmentId) {
+            final SegmentMaintenanceQueue queue, final Segment<K, V> segment,
+            final long maxNumberOfKeysInSegment, final SegmentId segmentId) {
         final CompletableFuture<Boolean> future = new CompletableFuture<>();
         final SplitInFlight<K, V> inFlight = new SplitInFlight<>(segment,
                 future);
         try {
-            adapter.submitMaintenanceTask(SegmentMaintenanceTask.SPLIT, () -> {
+            queue.submitMaintenanceTask(SegmentMaintenanceTask.SPLIT, () -> {
                 try {
                     final boolean split = splitCoordinator.optionallySplit(
                             segment, maxNumberOfKeysInSegment);

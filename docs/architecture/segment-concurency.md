@@ -125,7 +125,7 @@ It increments when a new immutable view is published (after `flush()` or `compac
 ## Components
 - **Segment**: user-facing API (`put`, `get`, `openIterator`, `flush`, `compact`).
 - **SegmentCore**: writes to the write cache, owns indexes, bloom filter, delta cache, segment version, and segment state.
-- **MaintenanceController**: executor that schedules `flush()` and `compact()` work for `SegmentWriter`.
+ - **MaintenanceController**: executor that schedules `flush()` and `compact()` work for `SegmentWriter` (provided by the higher-level app or defaulted internally).
 - **SegmentWriter**: performs serialized `flush()`/`compact()` using snapshots and updates `SegmentCore` state.
 
 ## Future: MVCC

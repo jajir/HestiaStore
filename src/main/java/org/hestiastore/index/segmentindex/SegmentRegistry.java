@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
@@ -16,7 +17,6 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentPropertiesManager;
 import org.hestiastore.index.segment.SegmentResources;
 import org.hestiastore.index.segment.SegmentResourcesImpl;
-import org.hestiastore.index.segmentasync.SegmentAsync;
 import org.hestiastore.index.segmentasync.SegmentAsyncAdapter;
 import org.hestiastore.index.segmentasync.SegmentAsyncExecutor;
 import org.hestiastore.index.segmentasync.SegmentMaintenancePolicy;
@@ -24,13 +24,15 @@ import org.hestiastore.index.segmentasync.SegmentMaintenancePolicyThreshold;
 
 public class SegmentRegistry<K, V> {
 
-    private final Map<SegmentId, SegmentAsync<K, V>> segments = new HashMap<>();
+    private final Map<SegmentId, Segment<K, V>> segments = new HashMap<>();
 
     private final IndexConfiguration<K, V> conf;
     private final AsyncDirectory directoryFacade;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final SegmentAsyncExecutor segmentAsyncExecutor;
+    private final ExecutorService maintenanceExecutor;
+    private final boolean ownsExecutor;
     private final SegmentMaintenancePolicy<K, V> maintenancePolicy;
 
     SegmentRegistry(final AsyncDirectory directoryFacade,
@@ -47,15 +49,26 @@ public class SegmentRegistry<K, V> {
         final Integer threadsConf = conf.getNumberOfThreads();
         final int threads = (threadsConf == null || threadsConf < 1) ? 1
                 : threadsConf.intValue();
-        this.segmentAsyncExecutor = new SegmentAsyncExecutor(threads,
-                "segment-async");
+        final ExecutorService providedExecutor = conf
+                .getMaintenanceExecutor();
+        if (providedExecutor == null) {
+            this.segmentAsyncExecutor = new SegmentAsyncExecutor(threads,
+                    "segment-async");
+            this.maintenanceExecutor = segmentAsyncExecutor.getExecutor();
+            this.ownsExecutor = true;
+        } else {
+            this.segmentAsyncExecutor = null;
+            this.maintenanceExecutor = providedExecutor;
+            this.ownsExecutor = false;
+        }
         this.maintenancePolicy = new SegmentMaintenancePolicyThreshold<>(
-                conf.getMaxNumberOfKeysInSegmentWriteCache());
+                conf.getMaxNumberOfKeysInSegmentWriteCache(),
+                conf.getMaxNumberOfKeysInSegmentCache());
     }
 
-    public SegmentAsync<K, V> getSegment(final SegmentId segmentId) {
+    public Segment<K, V> getSegment(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
-        SegmentAsync<K, V> out = segments.get(segmentId);
+        Segment<K, V> out = segments.get(segmentId);
         if (out == null || out.wasClosed()) {
             out = instantiateSegment(segmentId);
             segments.put(segmentId, out);
@@ -79,13 +92,13 @@ public class SegmentRegistry<K, V> {
     }
 
     public void removeSegment(final SegmentId segmentId) {
-        final SegmentAsync<K, V> segment = removeSegmentFromRegistry(segmentId);
+        final Segment<K, V> segment = removeSegmentFromRegistry(segmentId);
         closeSegmentIfNeeded(segment);
         deleteSegmentFiles(segmentId);
     }
 
     void evictSegment(final SegmentId segmentId) {
-        final SegmentAsync<K, V> segment = evictSegmentFromRegistry(segmentId);
+        final Segment<K, V> segment = evictSegmentFromRegistry(segmentId);
         closeSegmentIfNeeded(segment);
     }
 
@@ -101,7 +114,7 @@ public class SegmentRegistry<K, V> {
             final Segment<K, V> expected) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         Vldtn.requireNonNull(expected, "expected");
-        final SegmentAsync<K, V> current = segments.get(segmentId);
+        final Segment<K, V> current = segments.get(segmentId);
         if (current != expected) {
             return false;
         }
@@ -110,13 +123,13 @@ public class SegmentRegistry<K, V> {
         return true;
     }
 
-    protected SegmentAsync<K, V> removeSegmentFromRegistry(
+    protected Segment<K, V> removeSegmentFromRegistry(
             final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         return segments.remove(segmentId);
     }
 
-    protected SegmentAsync<K, V> evictSegmentFromRegistry(
+    protected Segment<K, V> evictSegmentFromRegistry(
             final SegmentId segmentId) {
         return removeSegmentFromRegistry(segmentId);
     }
@@ -182,10 +195,10 @@ public class SegmentRegistry<K, V> {
                 conf.getDecodingChunkFilters());
     }
 
-    private SegmentAsync<K, V> instantiateSegment(final SegmentId segmentId) {
+    private Segment<K, V> instantiateSegment(final SegmentId segmentId) {
         final Segment<K, V> segment = newSegmentBuilder(segmentId).build();
-        return new SegmentAsyncAdapter<>(segment,
-                segmentAsyncExecutor.getExecutor(), maintenancePolicy);
+        return new SegmentAsyncAdapter<>(segment, maintenanceExecutor,
+                maintenancePolicy);
     }
 
     protected void deleteSegmentFiles(final SegmentId segmentId) {
@@ -202,7 +215,8 @@ public class SegmentRegistry<K, V> {
     }
 
     public void close() {
-        if (!segmentAsyncExecutor.wasClosed()) {
+        if (ownsExecutor && segmentAsyncExecutor != null
+                && !segmentAsyncExecutor.wasClosed()) {
             segmentAsyncExecutor.close();
         }
     }

@@ -11,11 +11,10 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segment.SegmentImplSynchronizationAdapter;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
-import org.hestiastore.index.segmentasync.SegmentAsync;
+import org.hestiastore.index.segment.SegmentWriteLockSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -178,8 +177,11 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private boolean writeIntoSegment(final Segment<K, V> segment, final K key,
             final V value, final SegmentId segmentId,
             final long mappingVersion) {
-        if (segment instanceof SegmentImplSynchronizationAdapter<K, V> adapter) {
-            return adapter.putIfValid(() -> {
+        if (segment instanceof SegmentWriteLockSupport<?, ?>) {
+            @SuppressWarnings("unchecked")
+            final SegmentWriteLockSupport<K, V> lockingSupport =
+                    (SegmentWriteLockSupport<K, V>) segment;
+            return lockingSupport.putIfValid(() -> {
                 if (segment.wasClosed()) {
                     return false;
                 }
@@ -267,12 +269,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     private void compactSegment(final Segment<K, V> segment) {
         while (true) {
-            final SegmentResult<Void> result;
-            if (segment instanceof SegmentAsync<K, V> async) {
-                result = async.compactAsync().toCompletableFuture().join();
-            } else {
-                result = segment.compact();
-            }
+            final SegmentResult<Void> result = segment.compact();
             if (result.getStatus() == SegmentResultStatus.OK
                     || result.getStatus() == SegmentResultStatus.CLOSED) {
                 return;
@@ -288,12 +285,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     private void flushSegment(final Segment<K, V> segment) {
         while (true) {
-            final SegmentResult<Void> result;
-            if (segment instanceof SegmentAsync<K, V> async) {
-                result = async.flushAsync().toCompletableFuture().join();
-            } else {
-                result = segment.flush();
-            }
+            final SegmentResult<Void> result = segment.flush();
             if (result.getStatus() == SegmentResultStatus.OK
                     || result.getStatus() == SegmentResultStatus.CLOSED) {
                 return;

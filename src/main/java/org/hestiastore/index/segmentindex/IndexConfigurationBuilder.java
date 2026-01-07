@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentindex;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilter;
@@ -25,6 +26,7 @@ public class IndexConfigurationBuilder<K, V> {
     private Integer diskIoBufferSizeInBytes;
     private Integer numberOfThreads;
     private Integer numberOfIoThreads;
+    private ExecutorService maintenanceExecutor;
 
     private String indexName;
     private Class<K> keyClass;
@@ -168,6 +170,12 @@ public class IndexConfigurationBuilder<K, V> {
         return this;
     }
 
+    public IndexConfigurationBuilder<K, V> withMaintenanceExecutor(
+            final ExecutorService maintenanceExecutor) {
+        this.maintenanceExecutor = maintenanceExecutor;
+        return this;
+    }
+
     public IndexConfigurationBuilder<K, V> addEncodingFilter(
             final ChunkFilter filter) {
         encodingChunkFilters.add(Vldtn.requireNonNull(filter, "filter"));
@@ -268,8 +276,8 @@ public class IndexConfigurationBuilder<K, V> {
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
                 bloomFilterProbabilityOfFalsePositive, diskIoBufferSizeInBytes,
                 contextLoggingEnabled, effectiveNumberOfThreads,
-                effectiveNumberOfIoThreads, encodingChunkFilters,
-                decodingChunkFilters);
+                effectiveNumberOfIoThreads, maintenanceExecutor,
+                encodingChunkFilters, decodingChunkFilters);
     }
 
     private ChunkFilter instantiateFilter(

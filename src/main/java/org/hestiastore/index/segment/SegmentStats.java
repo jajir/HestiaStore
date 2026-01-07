@@ -8,13 +8,13 @@ package org.hestiastore.index.segment;
  * @author honza
  *
  */
-class SegmentStats {
+public class SegmentStats {
 
     private final long numberOfKeysInDeltaCache;
     private final long numberOfKeysInIndex;
     private final long numberOfKeysInScarceIndex;
 
-    SegmentStats(final long numberOfKeysInDeltaCache,
+    public SegmentStats(final long numberOfKeysInDeltaCache,
             final long numberOfKeysInSegment,
             final long numberOfKeysInScarceIndex) {
         this.numberOfKeysInDeltaCache = numberOfKeysInDeltaCache;

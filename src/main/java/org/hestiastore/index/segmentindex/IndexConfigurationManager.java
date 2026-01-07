@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentindex;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilter;
@@ -155,6 +156,12 @@ public class IndexConfigurationManager<K, V> {
 
         final IndexConfigurationBuilder<K, V> builder = makeBuilder(storedConf);
         boolean dirty = false;
+
+        final ExecutorService maintenanceExecutor = indexConf
+                .getMaintenanceExecutor();
+        if (maintenanceExecutor != null) {
+            builder.withMaintenanceExecutor(maintenanceExecutor);
+        }
 
         validateThatFixPropertiesAreNotOverriden(storedConf, indexConf);
 
@@ -521,6 +528,7 @@ public class IndexConfigurationManager<K, V> {
                 .withContextLoggingEnabled(conf.isContextLoggingEnabled())//
                 .withNumberOfCpuThreads(conf.getNumberOfThreads())//
                 .withNumberOfIoThreads(conf.getNumberOfIoThreads())//
+                .withMaintenanceExecutor(conf.getMaintenanceExecutor())//
                 .withName(conf.getIndexName())//
 
                 // SegmentIndex runtime properties

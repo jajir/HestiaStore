@@ -13,8 +13,8 @@ import java.util.List;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
+import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentasync.SegmentAsync;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -30,10 +30,10 @@ class CompactSupportTest {
     private KeySegmentCache<Integer> keySegmentCache;
 
     @Mock
-    private SegmentAsync<Integer, String> segment0;
+    private Segment<Integer, String> segment0;
 
     @Mock
-    private SegmentAsync<Integer, String> segment1;
+    private Segment<Integer, String> segment1;
 
     private CompactSupport<Integer, String> newSupport() {
         return new CompactSupport<>(segmentRegistry, keySegmentCache,

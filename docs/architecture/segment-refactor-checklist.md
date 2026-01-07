@@ -5,13 +5,20 @@
 3) [x] Create `Segment` public interface (API parity with current segment).
 4) [x] Extract current single-threaded logic into `SegmentCore`.
 5) [x] Add `SegmentImpl` that delegates to `SegmentCore` (no concurrency logic yet).
-6) [ ] Switch call sites to depend on `Segment` interface (use adapter if needed).
+6) [x] Switch call sites to depend on `Segment` interface (use adapter only at edges).
 7) [x] Implement `SegmentStateMachine` with serialized transitions.
-8) [ ] Gate `SegmentImpl` operations via the state machine (return `BUSY`/`CLOSED`/`ERROR`).
-9) [ ] Implement `MaintenanceController` to run `flush()`/`compact()` in background.
-10) [ ] Add automatic triggers: write cache full → `flush()`, delta cache full → `compact()`.
-11) [ ] Enforce `EXCLUSIVE_ACCESS` lifecycle and iterator invalidation on version change.
-12) [ ] Tests: transitions + BUSY reasons; version bump timing + iterators; EXCLUSIVE_ACCESS; auto triggers.
-13) [ ] Remove legacy direct entry points/adapters.
+8) [x] Gate `SegmentImpl` operations via the state machine (return `BUSY`/`CLOSED`/`ERROR`).
+9) [x] Implement `MaintenanceController` to run `flush()`/`compact()` in background.
+    - [x] Higher-level application must provide an `ExecutorService` for maintenance submissions.
+10) [x] Add automatic triggers: write cache full → `flush()`, delta cache full → `compact()`.
+11) [x] Enforce `EXCLUSIVE_ACCESS` lifecycle and iterator invalidation on version change.
+12) [ ] Tests:
+    - [x] State transitions basics.
+    - [x] BUSY reasons.
+    - [x] Version bump timing + iterators.
+    - [x] EXCLUSIVE_ACCESS lifecycle.
+    - [x] Auto triggers (write cache + delta cache thresholds).
+13) [x] Remove legacy direct entry points/adapters.
 14) [ ] Run `mvn verify` and fix regressions.
-15) [ ] Update docs/diagrams as needed.
+    - [ ] `mvn verify` timed out locally; rerun with longer timeout.
+15) [x] Update docs/diagrams as needed.

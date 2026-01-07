@@ -7,7 +7,6 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.Segment;
-import org.hestiastore.index.segmentasync.SegmentAsync;
 
 /**
  * SegmentRegistry wrapper that serializes access to the underlying registry.
@@ -25,7 +24,7 @@ class SegmentRegistrySynchronized<K, V> extends SegmentRegistry<K, V> {
     }
 
     @Override
-    public SegmentAsync<K, V> getSegment(final SegmentId segmentId) {
+    public Segment<K, V> getSegment(final SegmentId segmentId) {
         lock.lock();
         try {
             return super.getSegment(segmentId);

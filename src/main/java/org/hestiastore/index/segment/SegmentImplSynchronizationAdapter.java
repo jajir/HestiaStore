@@ -18,7 +18,8 @@ import org.hestiastore.index.Vldtn;
  * hold the write lock for their entire lifetime.
  */
 public class SegmentImplSynchronizationAdapter<K, V>
-        extends AbstractCloseableResource implements Segment<K, V> {
+        extends AbstractCloseableResource
+        implements Segment<K, V>, SegmentWriteLockSupport<K, V> {
 
     private final Segment<K, V> delegate;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(
@@ -176,6 +177,7 @@ public class SegmentImplSynchronizationAdapter<K, V>
         }
     }
 
+    @Override
     public <T> T executeWithWriteLock(final Supplier<T> task) {
         writeLock.lock();
         try {
@@ -185,6 +187,7 @@ public class SegmentImplSynchronizationAdapter<K, V>
         }
     }
 
+    @Override
     public boolean putIfValid(final Supplier<Boolean> validation,
             final K key, final V value) {
         Vldtn.requireNonNull(validation, "validation");
@@ -199,6 +202,7 @@ public class SegmentImplSynchronizationAdapter<K, V>
         }
     }
 
+    @Override
     public <T> T executeWithMaintenanceWriteLock(final Supplier<T> task) {
         maintenanceLock.lock();
         writeLock.lock();

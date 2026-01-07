@@ -22,9 +22,9 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
+import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segmentasync.SegmentAsync;
 import org.junit.jupiter.api.Test;
 
 class SegmentIndexAsyncMaintenanceTest {
@@ -43,11 +43,11 @@ class SegmentIndexAsyncMaintenanceTest {
                     .findSegmentId(1);
             final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
                     index);
-            final SegmentAsync<Integer, String> originalSegment = registry
+            final Segment<Integer, String> originalSegment = registry
                     .getSegment(segmentId);
             final CountDownLatch started = new CountDownLatch(1);
             final AtomicReference<CompletableFuture<SegmentResult<Void>>> futureRef = new AtomicReference<>();
-            final SegmentAsync<Integer, String> blockingSegment = mockBlockingSegment(
+            final Segment<Integer, String> blockingSegment = mockBlockingSegment(
                     segmentId, started, futureRef, true);
             replaceSegment(registry, segmentId, blockingSegment);
 
@@ -75,11 +75,11 @@ class SegmentIndexAsyncMaintenanceTest {
                     .findSegmentId(1);
             final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
                     index);
-            final SegmentAsync<Integer, String> originalSegment = registry
+            final Segment<Integer, String> originalSegment = registry
                     .getSegment(segmentId);
             final CountDownLatch started = new CountDownLatch(1);
             final AtomicReference<CompletableFuture<SegmentResult<Void>>> futureRef = new AtomicReference<>();
-            final SegmentAsync<Integer, String> blockingSegment = mockBlockingSegment(
+            final Segment<Integer, String> blockingSegment = mockBlockingSegment(
                     segmentId, started, futureRef, false);
             replaceSegment(registry, segmentId, blockingSegment);
 
@@ -127,42 +127,39 @@ class SegmentIndexAsyncMaintenanceTest {
                 .build();
     }
 
-    private SegmentAsync<Integer, String> mockBlockingSegment(
+    private Segment<Integer, String> mockBlockingSegment(
             final SegmentId segmentId, final CountDownLatch started,
             final AtomicReference<CompletableFuture<SegmentResult<Void>>> futureRef,
             final boolean forFlush) {
         @SuppressWarnings("unchecked")
-        final SegmentAsync<Integer, String> segment = (SegmentAsync<Integer, String>) mock(
-                SegmentAsync.class);
+        final Segment<Integer, String> segment = (Segment<Integer, String>) mock(
+                Segment.class);
         when(segment.wasClosed()).thenReturn(false);
         when(segment.getId()).thenReturn(segmentId);
         if (forFlush) {
-            when(segment.flushAsync()).thenAnswer(invocation -> {
+            when(segment.flush()).thenAnswer(invocation -> {
                 final CompletableFuture<SegmentResult<Void>> future = new CompletableFuture<>();
                 futureRef.set(future);
                 started.countDown();
-                return future;
+                return future.join();
             });
-            when(segment.compactAsync())
-                    .thenReturn(
-                            CompletableFuture.completedFuture(SegmentResult.ok()));
+            when(segment.compact()).thenReturn(SegmentResult.ok());
         } else {
-            when(segment.compactAsync()).thenAnswer(invocation -> {
+            when(segment.compact()).thenAnswer(invocation -> {
                 final CompletableFuture<SegmentResult<Void>> future = new CompletableFuture<>();
                 futureRef.set(future);
                 started.countDown();
-                return future;
+                return future.join();
             });
-            when(segment.flushAsync())
-                    .thenReturn(
-                            CompletableFuture.completedFuture(SegmentResult.ok()));
+            when(segment.flush()).thenReturn(SegmentResult.ok());
         }
         return segment;
     }
 
-    private static <K, V> void replaceSegment(final SegmentRegistry<K, V> registry,
-            final SegmentId segmentId, final SegmentAsync<K, V> segment) {
-        final Map<SegmentId, SegmentAsync<K, V>> segments = readSegmentsMap(
+    private static <K, V> void replaceSegment(
+            final SegmentRegistry<K, V> registry, final SegmentId segmentId,
+            final Segment<K, V> segment) {
+        final Map<SegmentId, Segment<K, V>> segments = readSegmentsMap(
                 registry);
         registry.executeWithRegistryLock(
                 () -> segments.put(segmentId, segment));
@@ -197,13 +194,13 @@ class SegmentIndexAsyncMaintenanceTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static <K, V> Map<SegmentId, SegmentAsync<K, V>> readSegmentsMap(
+    private static <K, V> Map<SegmentId, Segment<K, V>> readSegmentsMap(
             final SegmentRegistry<K, V> registry) {
         try {
             final Field field = SegmentRegistry.class
                     .getDeclaredField("segments");
             field.setAccessible(true);
-            return (Map<SegmentId, SegmentAsync<K, V>>) field.get(registry);
+            return (Map<SegmentId, Segment<K, V>>) field.get(registry);
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
                     "Unable to read segments map for test", ex);
