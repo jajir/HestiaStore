@@ -29,13 +29,4 @@ public interface SegmentWriteLockSupport<K, V> {
      */
     <T> T executeWithMaintenanceWriteLock(Supplier<T> task);
 
-    /**
-     * Validates a condition under the write lock and writes when valid.
-     *
-     * @param validation validation to execute under lock
-     * @param key        key to store
-     * @param value      value to store
-     * @return true when the entry was written
-     */
-    boolean putIfValid(Supplier<Boolean> validation, K key, V value);
 }

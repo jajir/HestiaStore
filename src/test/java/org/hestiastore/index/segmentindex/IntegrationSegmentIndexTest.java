@@ -13,6 +13,9 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.Test;
+import java.util.concurrent.TimeUnit;
+
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -20,6 +23,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 /**
  * Basic index integrations tests.
  */
+@Timeout(value = 30, unit = TimeUnit.SECONDS,
+        threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
 class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
     final Directory directory = new MemDirectory();
     final SegmentId id = SegmentId.of(27);
