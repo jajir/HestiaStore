@@ -9,6 +9,8 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segment.SegmentResultStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,13 +56,26 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
                     segmentId, position, ids.size());
             position++;
             final Segment<K, V> segment = segmentRegistry.getSegment(segmentId);
-            final EntryIterator<K, V> iterator = segment.openIterator();
-            if (iterator.hasNext()) {
-                currentIterator = iterator;
-                nextEntry = currentIterator.next();
-                return;
+            while (true) {
+                final SegmentResult<EntryIterator<K, V>> result = segment
+                        .openIterator();
+                if (result.getStatus() == SegmentResultStatus.OK) {
+                    final EntryIterator<K, V> iterator = result.getValue();
+                    if (iterator.hasNext()) {
+                        currentIterator = iterator;
+                        nextEntry = currentIterator.next();
+                        return;
+                    }
+                    iterator.close();
+                    break;
+                }
+                if (result.getStatus() == SegmentResultStatus.BUSY) {
+                    continue;
+                }
+                throw new org.hestiastore.index.IndexException(String.format(
+                        "Segment '%s' failed to open iterator: %s",
+                        segment.getId(), result.getStatus()));
             }
-            iterator.close();
         }
     }
 

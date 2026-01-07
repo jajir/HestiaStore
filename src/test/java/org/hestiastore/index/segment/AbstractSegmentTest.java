@@ -21,9 +21,10 @@ public abstract class AbstractSegmentTest extends AbstractDataTest {
     protected <M, N> void writeEntries(final Segment<M, N> seg,
             final List<Entry<M, N>> entries) {
         for (final Entry<M, N> entry : entries) {
-            seg.put(entry.getKey(), entry.getValue());
+            assertEquals(SegmentResultStatus.OK,
+                    seg.put(entry.getKey(), entry.getValue()).getStatus());
         }
-        seg.flush();
+        assertEquals(SegmentResultStatus.OK, seg.flush().getStatus());
     }
 
     /**
@@ -40,7 +41,9 @@ public abstract class AbstractSegmentTest extends AbstractDataTest {
         entries.forEach(entry -> {
             final M key = entry.getKey();
             final N expectedValue = entry.getValue();
-            assertEquals(expectedValue, seg.get(key),
+            final SegmentResult<N> result = seg.get(key);
+            assertEquals(SegmentResultStatus.OK, result.getStatus());
+            assertEquals(expectedValue, result.getValue(),
                     String.format("Unable to find value for key '%s'.", key));
         });
     }

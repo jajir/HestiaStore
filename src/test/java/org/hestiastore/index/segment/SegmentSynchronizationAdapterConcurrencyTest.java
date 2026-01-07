@@ -1,5 +1,6 @@
 package org.hestiastore.index.segment;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -29,16 +30,23 @@ class SegmentSynchronizationAdapterConcurrencyTest {
     @Test
     void read_operations_do_not_block_each_other() throws Exception {
         try (SegmentImplSynchronizationAdapter<Integer, String> segment = newAdapter()) {
-            final EntryIterator<Integer, String> iterator = segment
+            final SegmentResult<EntryIterator<Integer, String>> result = segment
                     .openIterator();
+            assertEquals(SegmentResultStatus.OK, result.getStatus());
+            final EntryIterator<Integer, String> iterator = result.getValue();
             final ExecutorService executor = Executors
                     .newSingleThreadExecutor();
             try {
-                final Future<String> future = executor
+                final Future<SegmentResult<String>> future = executor
                         .submit(() -> segment.get(1));
-                assertNull(future.get(1, TimeUnit.SECONDS));
+                final SegmentResult<String> getResult = future.get(1,
+                        TimeUnit.SECONDS);
+                assertEquals(SegmentResultStatus.OK, getResult.getStatus());
+                assertNull(getResult.getValue());
             } finally {
-                iterator.close();
+                if (iterator != null) {
+                    iterator.close();
+                }
                 executor.shutdownNow();
             }
         }
@@ -47,8 +55,10 @@ class SegmentSynchronizationAdapterConcurrencyTest {
     @Test
     void write_operation_waits_for_reader_to_close() throws Exception {
         try (SegmentImplSynchronizationAdapter<Integer, String> segment = newAdapter()) {
-            final EntryIterator<Integer, String> iterator = segment
+            final SegmentResult<EntryIterator<Integer, String>> result = segment
                     .openIterator();
+            assertEquals(SegmentResultStatus.OK, result.getStatus());
+            final EntryIterator<Integer, String> iterator = result.getValue();
             final ExecutorService executor = Executors
                     .newSingleThreadExecutor();
             final CountDownLatch started = new CountDownLatch(1);
@@ -76,9 +86,11 @@ class SegmentSynchronizationAdapterConcurrencyTest {
                         "Writer did not acquire lock");
                 closeSignal.countDown();
                 future.get(2, TimeUnit.SECONDS);
-                iterator.close();
+                if (iterator != null) {
+                    iterator.close();
+                }
             } finally {
-                if (!iterator.wasClosed()) {
+                if (iterator != null && !iterator.wasClosed()) {
                     iterator.close();
                 }
                 closeSignal.countDown();
@@ -118,8 +130,11 @@ class SegmentSynchronizationAdapterConcurrencyTest {
                         "Writer did not acquire lock");
                 final Future<?> readerFuture = readerExecutor.submit(() -> {
                     readerStarted.countDown();
-                    try (EntryIterator<Integer, String> iterator = segment
-                            .openIterator()) {
+                    final SegmentResult<EntryIterator<Integer, String>> result = segment
+                            .openIterator();
+                    assertEquals(SegmentResultStatus.OK, result.getStatus());
+                    try (EntryIterator<Integer, String> iterator = result
+                            .getValue()) {
                         readerAcquired.countDown();
                         readerRelease.await();
                     }

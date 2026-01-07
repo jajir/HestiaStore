@@ -9,6 +9,8 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segment.SegmentResultStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,9 +80,34 @@ public class CompactSupport<K, V> {
         }
         final Segment<K, V> segment = segmentRegistry
                 .getSegment(currentSegmentId);
-        toSameSegment.forEach(entry -> segment.put(entry.getKey(),
-                entry.getValue()));
-        segment.flush();
+        toSameSegment.forEach(entry -> {
+            while (true) {
+                final SegmentResult<Void> result = segment.put(entry.getKey(),
+                        entry.getValue());
+                if (result.getStatus() == SegmentResultStatus.OK) {
+                    break;
+                }
+                if (result.getStatus() == SegmentResultStatus.BUSY) {
+                    continue;
+                }
+                throw new org.hestiastore.index.IndexException(String.format(
+                        "Segment '%s' failed during put: %s", segment.getId(),
+                        result.getStatus()));
+            }
+        });
+        while (true) {
+            final SegmentResult<Void> result = segment.flush();
+            if (result.getStatus() == SegmentResultStatus.OK
+                    || result.getStatus() == SegmentResultStatus.CLOSED) {
+                break;
+            }
+            if (result.getStatus() == SegmentResultStatus.BUSY) {
+                continue;
+            }
+            throw new org.hestiastore.index.IndexException(String.format(
+                    "Segment '%s' failed during flush: %s", segment.getId(),
+                    result.getStatus()));
+        }
         if (KeySegmentCache.FIRST_SEGMENT_ID.equals(currentSegmentId)) {
             // Segment containing highest key.
             if (currentBatchMaxKey != null) {

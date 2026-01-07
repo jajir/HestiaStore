@@ -23,6 +23,7 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segmentasync.SegmentAsync;
 import org.junit.jupiter.api.Test;
 
@@ -45,7 +46,7 @@ class SegmentIndexAsyncMaintenanceTest {
             final SegmentAsync<Integer, String> originalSegment = registry
                     .getSegment(segmentId);
             final CountDownLatch started = new CountDownLatch(1);
-            final AtomicReference<CompletableFuture<Void>> futureRef = new AtomicReference<>();
+            final AtomicReference<CompletableFuture<SegmentResult<Void>>> futureRef = new AtomicReference<>();
             final SegmentAsync<Integer, String> blockingSegment = mockBlockingSegment(
                     segmentId, started, futureRef, true);
             replaceSegment(registry, segmentId, blockingSegment);
@@ -54,7 +55,7 @@ class SegmentIndexAsyncMaintenanceTest {
             assertTrue(started.await(1, TimeUnit.SECONDS));
             assertFalse(flushTask.isDone());
             assertNotNull(futureRef.get());
-            futureRef.get().complete(null);
+            futureRef.get().complete(SegmentResult.ok());
             flushTask.get(1, TimeUnit.SECONDS);
             replaceSegment(registry, segmentId, originalSegment);
         } finally {
@@ -77,7 +78,7 @@ class SegmentIndexAsyncMaintenanceTest {
             final SegmentAsync<Integer, String> originalSegment = registry
                     .getSegment(segmentId);
             final CountDownLatch started = new CountDownLatch(1);
-            final AtomicReference<CompletableFuture<Void>> futureRef = new AtomicReference<>();
+            final AtomicReference<CompletableFuture<SegmentResult<Void>>> futureRef = new AtomicReference<>();
             final SegmentAsync<Integer, String> blockingSegment = mockBlockingSegment(
                     segmentId, started, futureRef, false);
             replaceSegment(registry, segmentId, blockingSegment);
@@ -86,7 +87,7 @@ class SegmentIndexAsyncMaintenanceTest {
             assertTrue(started.await(1, TimeUnit.SECONDS));
             assertFalse(compactTask.isDone());
             assertNotNull(futureRef.get());
-            futureRef.get().complete(null);
+            futureRef.get().complete(SegmentResult.ok());
             compactTask.get(1, TimeUnit.SECONDS);
             replaceSegment(registry, segmentId, originalSegment);
         } finally {
@@ -128,7 +129,7 @@ class SegmentIndexAsyncMaintenanceTest {
 
     private SegmentAsync<Integer, String> mockBlockingSegment(
             final SegmentId segmentId, final CountDownLatch started,
-            final AtomicReference<CompletableFuture<Void>> futureRef,
+            final AtomicReference<CompletableFuture<SegmentResult<Void>>> futureRef,
             final boolean forFlush) {
         @SuppressWarnings("unchecked")
         final SegmentAsync<Integer, String> segment = (SegmentAsync<Integer, String>) mock(
@@ -137,22 +138,24 @@ class SegmentIndexAsyncMaintenanceTest {
         when(segment.getId()).thenReturn(segmentId);
         if (forFlush) {
             when(segment.flushAsync()).thenAnswer(invocation -> {
-                final CompletableFuture<Void> future = new CompletableFuture<>();
+                final CompletableFuture<SegmentResult<Void>> future = new CompletableFuture<>();
                 futureRef.set(future);
                 started.countDown();
                 return future;
             });
             when(segment.compactAsync())
-                    .thenReturn(CompletableFuture.completedFuture(null));
+                    .thenReturn(
+                            CompletableFuture.completedFuture(SegmentResult.ok()));
         } else {
             when(segment.compactAsync()).thenAnswer(invocation -> {
-                final CompletableFuture<Void> future = new CompletableFuture<>();
+                final CompletableFuture<SegmentResult<Void>> future = new CompletableFuture<>();
                 futureRef.set(future);
                 started.countDown();
                 return future;
             });
             when(segment.flushAsync())
-                    .thenReturn(CompletableFuture.completedFuture(null));
+                    .thenReturn(
+                            CompletableFuture.completedFuture(SegmentResult.ok()));
         }
         return segment;
     }

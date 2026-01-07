@@ -9,6 +9,8 @@ import java.util.stream.Stream;
 
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segment.SegmentResultStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,6 +94,25 @@ public abstract class AbstractDataTest {
     }
 
     /**
+     * Verify that data from iterator are same as expected values, using a
+     * SegmentResult wrapper.
+     *
+     * @param <M>      key type
+     * @param <N>      value type
+     * @param entries  required list of expected data in segment
+     * @param result   required segment result with iterator
+     */
+    public static <M, N> void verifyIteratorData(
+            final List<Entry<M, N>> entries,
+            final SegmentResult<EntryIterator<M, N>> result) {
+        assertNotNull(result);
+        assertEquals(SegmentResultStatus.OK, result.getStatus(),
+                "Expected iterator result OK");
+        assertNotNull(result.getValue());
+        verifyIteratorData(entries, result.getValue());
+    }
+
+    /**
      * Convert segment data to list.
      * 
      * @param segment required segment
@@ -99,7 +120,12 @@ public abstract class AbstractDataTest {
      */
     public static List<Entry<Integer, String>> segmentToList(
             final Segment<Integer, String> segment) {
-        try (EntryIterator<Integer, String> iterator = segment.openIterator()) {
+        final SegmentResult<EntryIterator<Integer, String>> result = segment
+                .openIterator();
+        assertEquals(SegmentResultStatus.OK, result.getStatus(),
+                "Expected iterator result OK");
+        assertNotNull(result.getValue());
+        try (EntryIterator<Integer, String> iterator = result.getValue()) {
             final List<Entry<Integer, String>> out = new ArrayList<>();
             iterator.forEachRemaining(out::add);
             return out;

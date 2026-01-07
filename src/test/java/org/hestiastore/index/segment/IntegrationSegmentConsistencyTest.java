@@ -79,7 +79,10 @@ class IntegrationSegmentConsistencyTest extends AbstractSegmentTest {
     @Test
     void test_iterator_should_close_after_data_update() {
         writeEntries(seg, makeList(0));
-        final EntryIterator<Integer, Integer> iterator = seg.openIterator();
+        final SegmentResult<EntryIterator<Integer, Integer>> result = seg
+                .openIterator();
+        assertEquals(SegmentResultStatus.OK, result.getStatus());
+        final EntryIterator<Integer, Integer> iterator = result.getValue();
         assertTrue(iterator.hasNext());
         assertEquals(Entry.of(0, 0), iterator.next());
 

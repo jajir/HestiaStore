@@ -1,6 +1,5 @@
 package org.hestiastore.index.segment;
 
-import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -43,14 +42,14 @@ public class SegmentImplSynchronizationAdapter<K, V>
     }
 
     @Override
-    public void compact() {
+    public SegmentResult<Void> compact() {
         maintenanceLock.lock();
         writeLock.lock();
         try {
             if (delegate.wasClosed()) {
-                return;
+                return SegmentResult.closed();
             }
-            delegate.compact();
+            return delegate.compact();
         } finally {
             writeLock.unlock();
             maintenanceLock.unlock();
@@ -80,32 +79,41 @@ public class SegmentImplSynchronizationAdapter<K, V>
     }
 
     @Override
-    public EntryIterator<K, V> openIterator() {
+    public SegmentResult<EntryIterator<K, V>> openIterator() {
         return openIterator(SegmentIteratorIsolation.FAIL_FAST);
     }
 
     @Override
-    public EntryIterator<K, V> openIterator(
+    public SegmentResult<EntryIterator<K, V>> openIterator(
             final SegmentIteratorIsolation isolation) {
         Vldtn.requireNonNull(isolation, "isolation");
         if (isolation == SegmentIteratorIsolation.FULL_ISOLATION) {
             writeLock.lock();
             try {
-                return new UnlockingEntryIterator<>(
-                        delegate.openIterator(isolation), writeLock);
+                final SegmentResult<EntryIterator<K, V>> result = delegate
+                        .openIterator(isolation);
+                if (!result.isOk()) {
+                    return result;
+                }
+                return SegmentResult.ok(new UnlockingEntryIterator<>(
+                        result.getValue(), writeLock));
             } catch (final RuntimeException e) {
                 writeLock.unlock();
                 throw e;
             }
         } else if (isolation == SegmentIteratorIsolation.FAIL_FAST) {
             readLock.lock();
-            EntryIterator<K, V> iterator;
+            SegmentResult<EntryIterator<K, V>> result;
             try {
-                iterator = delegate.openIterator(isolation);
+                result = delegate.openIterator(isolation);
             } finally {
                 readLock.unlock();
             }
-            return new LockedEntryIterator<>(iterator, readLock);
+            if (!result.isOk()) {
+                return result;
+            }
+            return SegmentResult.ok(
+                    new LockedEntryIterator<>(result.getValue(), readLock));
         } else {
             throw new IllegalArgumentException(
                     "Unknown isolation level: " + isolation);
@@ -113,65 +121,33 @@ public class SegmentImplSynchronizationAdapter<K, V>
     }
 
     @Override
-    public void put(final K key, final V value) {
-        if (delegate instanceof SegmentImpl<K, V> impl) {
-            while (true) {
-                writeLock.lock();
-                try {
-                    if (impl.tryPutWithoutWaiting(key, value)) {
-                        return;
-                    }
-                    flush();
-                    if (impl.tryPutWithoutWaiting(key, value)) {
-                        return;
-                    }
-                } finally {
-                    writeLock.unlock();
-                }
-                impl.awaitWriteCapacity();
+    public SegmentResult<Void> put(final K key, final V value) {
+        if (delegate instanceof SegmentImpl<K, V>) {
+            writeLock.lock();
+            try {
+                return delegate.put(key, value);
+            } finally {
+                writeLock.unlock();
             }
         }
         writeLock.lock();
         try {
-            delegate.put(key, value);
+            return delegate.put(key, value);
         } finally {
             writeLock.unlock();
         }
     }
 
     @Override
-    public void flush() {
+    public SegmentResult<Void> flush() {
         maintenanceLock.lock();
         try {
             if (delegate.wasClosed()) {
-                return;
-            }
-            if (delegate instanceof SegmentImpl<K, V> impl) {
-                final List<Entry<K, V>> entries;
-                writeLock.lock();
-                try {
-                    if (delegate.wasClosed()) {
-                        return;
-                    }
-                    entries = impl.freezeWriteCacheForFlush();
-                } finally {
-                    writeLock.unlock();
-                }
-                if (entries.isEmpty()) {
-                    return;
-                }
-                impl.flushFrozenWriteCacheToDeltaFile(entries);
-                writeLock.lock();
-                try {
-                    impl.applyFrozenWriteCacheAfterFlush();
-                } finally {
-                    writeLock.unlock();
-                }
-                return;
+                return SegmentResult.closed();
             }
             writeLock.lock();
             try {
-                delegate.flush();
+                return delegate.flush();
             } finally {
                 writeLock.unlock();
             }
@@ -191,7 +167,7 @@ public class SegmentImplSynchronizationAdapter<K, V>
     }
 
     @Override
-    public V get(final K key) {
+    public SegmentResult<V> get(final K key) {
         readLock.lock();
         try {
             return delegate.get(key);
@@ -212,28 +188,14 @@ public class SegmentImplSynchronizationAdapter<K, V>
     public boolean putIfValid(final Supplier<Boolean> validation,
             final K key, final V value) {
         Vldtn.requireNonNull(validation, "validation");
-        while (true) {
-            writeLock.lock();
-            try {
-                if (!validation.get()) {
-                    return false;
-                }
-                if (delegate instanceof SegmentImpl<K, V> impl) {
-                    if (impl.tryPutWithoutWaiting(key, value)) {
-                        return true;
-                    }
-                    flush();
-                    if (impl.tryPutWithoutWaiting(key, value)) {
-                        return true;
-                    }
-                    return false;
-                } else {
-                    delegate.put(key, value);
-                    return true;
-                }
-            } finally {
-                writeLock.unlock();
+        writeLock.lock();
+        try {
+            if (!validation.get()) {
+                return false;
             }
+            return delegate.put(key, value).isOk();
+        } finally {
+            writeLock.unlock();
         }
     }
 

@@ -44,9 +44,11 @@ public class SegmentBuilderFromConfTest {
                 .withSegmentConf(conf)//
         ;
         Segment<Integer, String> seg = builder.build();
-        seg.put(1, "A");
-        seg.flush();
-        assertEquals("A", seg.get(1));
+        assertEquals(SegmentResultStatus.OK, seg.put(1, "A").getStatus());
+        assertEquals(SegmentResultStatus.OK, seg.flush().getStatus());
+        final SegmentResult<String> result = seg.get(1);
+        assertEquals(SegmentResultStatus.OK, result.getStatus());
+        assertEquals("A", result.getValue());
         seg.close();
     }
 

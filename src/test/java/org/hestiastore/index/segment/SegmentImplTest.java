@@ -142,12 +142,18 @@ class SegmentImplTest {
 
     @Test
     void put_writes_to_segment_cache_and_bumps_version() {
-        subject.put(1, "A");
-        subject.put(2, "B");
+        assertEquals(SegmentResultStatus.OK,
+                subject.put(1, "A").getStatus());
+        assertEquals(SegmentResultStatus.OK,
+                subject.put(2, "B").getStatus());
 
         verify(versionController, org.mockito.Mockito.times(2)).changeVersion();
-        assertEquals("A", subject.get(1));
-        assertEquals("B", subject.get(2));
+        final SegmentResult<String> first = subject.get(1);
+        final SegmentResult<String> second = subject.get(2);
+        assertEquals(SegmentResultStatus.OK, first.getStatus());
+        assertEquals(SegmentResultStatus.OK, second.getStatus());
+        assertEquals("A", first.getValue());
+        assertEquals("B", second.getValue());
         assertEquals(2, subject.getNumberOfKeysInWriteCache());
     }
 
@@ -161,23 +167,28 @@ class SegmentImplTest {
 
     @Test
     void flush_noop_when_write_cache_empty() {
-        subject.flush();
+        assertEquals(SegmentResultStatus.OK, subject.flush().getStatus());
 
         verify(versionController, never()).changeVersion();
     }
 
     @Test
     void get_uses_segment_cache_when_present() {
-        subject.put(123, "val");
-        assertEquals("val", subject.get(123));
+        assertEquals(SegmentResultStatus.OK,
+                subject.put(123, "val").getStatus());
+        final SegmentResult<String> result = subject.get(123);
+        assertEquals(SegmentResultStatus.OK, result.getStatus());
+        assertEquals("val", result.getValue());
         verify(segmentSearcher, never()).get(any(), any(), any());
     }
 
     @Test
     void get_returns_null_for_tombstone_without_search() {
-        subject.put(123, tds.getTombstone());
-
-        assertNull(subject.get(123));
+        assertEquals(SegmentResultStatus.OK,
+                subject.put(123, tds.getTombstone()).getStatus());
+        final SegmentResult<String> result = subject.get(123);
+        assertEquals(SegmentResultStatus.OK, result.getStatus());
+        assertNull(result.getValue());
         verify(segmentSearcher, never()).get(any(), any(), any());
     }
 
@@ -186,7 +197,9 @@ class SegmentImplTest {
         when(segmentSearcher.get(eq(123), eq(segmentDataProvider), any()))
                 .thenReturn("val");
 
-        assertEquals("val", subject.get(123));
+        final SegmentResult<String> result = subject.get(123);
+        assertEquals(SegmentResultStatus.OK, result.getStatus());
+        assertEquals("val", result.getValue());
         verify(segmentSearcher).get(eq(123), eq(segmentDataProvider), any());
     }
 
@@ -211,9 +224,10 @@ class SegmentImplTest {
 
     @Test
     void flush_changes_version_when_entries_present() {
-        subject.put(1, "A");
+        assertEquals(SegmentResultStatus.OK,
+                subject.put(1, "A").getStatus());
         org.mockito.Mockito.reset(versionController);
-        subject.flush();
+        assertEquals(SegmentResultStatus.OK, subject.flush().getStatus());
 
         verify(versionController).changeVersion();
     }
@@ -221,7 +235,11 @@ class SegmentImplTest {
     @Test
     void openIterator_returns_non_null_and_closes() {
         when(indexIterator.hasNext()).thenReturn(false);
-        try (EntryIterator<Integer, String> it = subject.openIterator()) {
+        final SegmentResult<EntryIterator<Integer, String>> result = subject
+                .openIterator();
+        assertEquals(SegmentResultStatus.OK, result.getStatus());
+        assertNotNull(result.getValue());
+        try (EntryIterator<Integer, String> it = result.getValue()) {
             assertNotNull(it);
             assertFalse(it.hasNext());
         }
@@ -237,7 +255,7 @@ class SegmentImplTest {
     void compact_invokes_compacter_and_commits() {
         when(segmentPropertiesManager.getCacheDeltaFileNames())
                 .thenReturn(List.of());
-        subject.compact();
+        assertEquals(SegmentResultStatus.OK, subject.compact().getStatus());
         verify(chunkEntryWriterTx).commit();
         verify(scarceWriterTx).commit();
     }

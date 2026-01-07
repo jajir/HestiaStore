@@ -15,6 +15,7 @@ import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
+import org.hestiastore.index.segment.SegmentResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -95,7 +96,7 @@ class SegmentSplitterTest {
         final SegmentSplitterPlan<String, String> plan = SegmentSplitterPlan
                 .fromPolicy(new SegmentSplitterPolicy<>(4L, false));
         when(segment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
-                .thenReturn(iterator);
+                .thenReturn(SegmentResult.ok(iterator));
         when(iterator.hasNext()).thenReturn(true, true, true, true, false);
         when(iterator.next())
             .thenReturn(ENTRY1)
@@ -127,7 +128,7 @@ class SegmentSplitterTest {
         final SegmentSplitterPlan<String, String> plan = SegmentSplitterPlan
                 .fromPolicy(new SegmentSplitterPolicy<>(4L, false));
         when(segment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
-                .thenReturn(iterator);
+                .thenReturn(SegmentResult.ok(iterator));
         when(iterator.hasNext()).thenReturn(true, true, false, false);
         when(iterator.next()).thenReturn(ENTRY1).thenReturn(ENTRY2);
         when(writerTxFactory.openWriterTx(LOWER_ID)).thenReturn(lowerTx);

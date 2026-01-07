@@ -59,7 +59,7 @@ public interface Segment<K, V> extends CloseableResource {
      * Compacts this segment, rewriting on-disk data and updating metadata. This
      * is typically an expensive, synchronous operation.
      */
-    void compact();
+    SegmentResult<Void> compact();
 
     /**
      * Validates that the logical contents of this segment are consistent.
@@ -92,9 +92,9 @@ public interface Segment<K, V> extends CloseableResource {
      * Delta cache in already loaded into memory. Delta cache statys in memory
      * until while segment in unloaded.
      * 
-     * @return iterator over key/value entries in key order
+     * @return result with iterator over key/value entries in key order
      */
-    default EntryIterator<K, V> openIterator() {
+    default SegmentResult<EntryIterator<K, V>> openIterator() {
         return openIterator(SegmentIteratorIsolation.FAIL_FAST);
     }
 
@@ -110,9 +110,10 @@ public interface Segment<K, V> extends CloseableResource {
      * must be closed to release the exclusive lock.
      *
      * @param isolation iterator isolation level (non-null)
-     * @return iterator over key/value entries in key order
+     * @return result with iterator over key/value entries in key order
      */
-    EntryIterator<K, V> openIterator(SegmentIteratorIsolation isolation);
+    SegmentResult<EntryIterator<K, V>> openIterator(
+            SegmentIteratorIsolation isolation);
 
     /**
      * Writes directly into the in-memory segment cache without persisting to
@@ -121,13 +122,13 @@ public interface Segment<K, V> extends CloseableResource {
      * @param key   key to write (non-null)
      * @param value value to write (non-null)
      */
-    void put(K key, V value);
+    SegmentResult<Void> put(K key, V value);
 
     /**
      * Flushes the in-memory segment write cache into the delta cache and clears
      * the write cache afterward.
      */
-    void flush();
+    SegmentResult<Void> flush();
 
     /**
      * Returns the current number of entries waiting in the write cache.
@@ -166,7 +167,7 @@ public interface Segment<K, V> extends CloseableResource {
      * @param key key to look up (non-null)
      * @return associated value or {@code null} if not present
      */
-    V get(K key);
+    SegmentResult<V> get(K key);
 
     /**
      * Returns this segment's identity.

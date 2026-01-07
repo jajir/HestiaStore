@@ -48,13 +48,19 @@ class SegmentAsyncAdapterTest {
 
             final SegmentAsync<Integer, Integer> async = new SegmentAsyncAdapter<>(
                     segment, executor, SegmentMaintenancePolicy.none());
-            final CompletionStage<Void> flushFuture = async.flushAsync();
+            final CompletionStage<SegmentResult<Void>> flushFuture = async
+                    .flushAsync();
             assertTrue(flushStarted.await(1, TimeUnit.SECONDS));
-            final CompletionStage<Void> compactFuture = async.compactAsync();
+            final CompletionStage<SegmentResult<Void>> compactFuture = async
+                    .compactAsync();
             allowFlushFinish.countDown();
 
-            flushFuture.toCompletableFuture().get(1, TimeUnit.SECONDS);
-            compactFuture.toCompletableFuture().get(1, TimeUnit.SECONDS);
+            assertEquals(SegmentResultStatus.OK,
+                    flushFuture.toCompletableFuture().get(1, TimeUnit.SECONDS)
+                            .getStatus());
+            assertEquals(SegmentResultStatus.OK,
+                    compactFuture.toCompletableFuture()
+                            .get(1, TimeUnit.SECONDS).getStatus());
             assertEquals(1, maxActive.get());
         } finally {
             executor.shutdownNow();
@@ -86,14 +92,20 @@ class SegmentAsyncAdapterTest {
             final SegmentAsync<Integer, Integer> asyncTwo = new SegmentAsyncAdapter<>(
                     segmentTwo, executor, SegmentMaintenancePolicy.none());
 
-            final CompletionStage<Void> flushOne = asyncOne.flushAsync();
-            final CompletionStage<Void> flushTwo = asyncTwo.flushAsync();
+            final CompletionStage<SegmentResult<Void>> flushOne = asyncOne
+                    .flushAsync();
+            final CompletionStage<SegmentResult<Void>> flushTwo = asyncTwo
+                    .flushAsync();
 
             assertTrue(started.await(1, TimeUnit.SECONDS));
             allowFinish.countDown();
 
-            flushOne.toCompletableFuture().get(1, TimeUnit.SECONDS);
-            flushTwo.toCompletableFuture().get(1, TimeUnit.SECONDS);
+            assertEquals(SegmentResultStatus.OK,
+                    flushOne.toCompletableFuture().get(1, TimeUnit.SECONDS)
+                            .getStatus());
+            assertEquals(SegmentResultStatus.OK,
+                    flushTwo.toCompletableFuture().get(1, TimeUnit.SECONDS)
+                            .getStatus());
         } finally {
             executor.shutdownNow();
         }
@@ -115,17 +127,22 @@ class SegmentAsyncAdapterTest {
 
             final SegmentAsyncAdapter<Integer, Integer> async = new SegmentAsyncAdapter<>(
                     segment, executor, SegmentMaintenancePolicy.none());
-            final CompletionStage<Void> flushFuture = async.flushAsync();
+            final CompletionStage<SegmentResult<Void>> flushFuture = async
+                    .flushAsync();
             assertTrue(flushStarted.await(1, TimeUnit.SECONDS));
 
-            final CompletionStage<Void> splitFuture = async
+            final CompletionStage<SegmentResult<Void>> splitFuture = async
                     .submitMaintenanceTask(SegmentMaintenanceTask.SPLIT,
                             splitStarted::countDown);
             assertFalse(splitStarted.await(200, TimeUnit.MILLISECONDS));
             allowFlushFinish.countDown();
 
-            flushFuture.toCompletableFuture().get(1, TimeUnit.SECONDS);
-            splitFuture.toCompletableFuture().get(1, TimeUnit.SECONDS);
+            assertEquals(SegmentResultStatus.OK,
+                    flushFuture.toCompletableFuture().get(1, TimeUnit.SECONDS)
+                            .getStatus());
+            assertEquals(SegmentResultStatus.OK,
+                    splitFuture.toCompletableFuture().get(1, TimeUnit.SECONDS)
+                            .getStatus());
             assertTrue(splitStarted.await(1, TimeUnit.SECONDS));
         } finally {
             executor.shutdownNow();
@@ -151,7 +168,7 @@ class SegmentAsyncAdapterTest {
                     segment, executor,
                     new SegmentMaintenancePolicyThreshold<>(2));
 
-            final CompletableFuture<Void> splitFuture = async
+            final CompletableFuture<SegmentResult<Void>> splitFuture = async
                     .submitMaintenanceTask(SegmentMaintenanceTask.SPLIT, () -> {
                         splitStarted.countDown();
                         await(allowSplitFinish);
@@ -170,7 +187,8 @@ class SegmentAsyncAdapterTest {
             assertTrue(writeCache.get() >= 4);
 
             allowSplitFinish.countDown();
-            splitFuture.get(1, TimeUnit.SECONDS);
+            assertEquals(SegmentResultStatus.OK,
+                    splitFuture.get(1, TimeUnit.SECONDS).getStatus());
 
             assertTrue(flushFinished.await(1, TimeUnit.SECONDS));
             assertEquals(0, writeCache.get());
@@ -245,8 +263,9 @@ class SegmentAsyncAdapterTest {
         }
 
         @Override
-        public void compact() {
+        public SegmentResult<Void> compact() {
             onCompact.run();
+            return SegmentResult.ok();
         }
 
         @Override
@@ -259,21 +278,24 @@ class SegmentAsyncAdapterTest {
         }
 
         @Override
-        public EntryIterator<Integer, Integer> openIterator(
+        public SegmentResult<EntryIterator<Integer, Integer>> openIterator(
                 final SegmentIteratorIsolation isolation) {
-            return EntryIterator.make(Collections.emptyIterator());
+            return SegmentResult
+                    .ok(EntryIterator.make(Collections.emptyIterator()));
         }
 
         @Override
-        public void put(final Integer key, final Integer value) {
+        public SegmentResult<Void> put(final Integer key, final Integer value) {
             if (onPut != null) {
                 onPut.run();
             }
+            return SegmentResult.ok();
         }
 
         @Override
-        public void flush() {
+        public SegmentResult<Void> flush() {
             onFlush.run();
+            return SegmentResult.ok();
         }
 
         @Override
@@ -292,8 +314,8 @@ class SegmentAsyncAdapterTest {
         }
 
         @Override
-        public Integer get(final Integer key) {
-            return null;
+        public SegmentResult<Integer> get(final Integer key) {
+            return SegmentResult.ok(null);
         }
 
         @Override
