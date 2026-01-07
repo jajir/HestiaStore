@@ -4,6 +4,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
@@ -26,15 +27,16 @@ final class SegmentMaintenanceScheduler<K, V> {
                 "maintenancePolicy");
     }
 
-    CompletionStage<Void> submit(final SegmentMaintenanceTask taskType,
-            final Runnable task) {
-        final CompletableFuture<Void> future = new CompletableFuture<>();
+    <T> CompletionStage<T> submit(final SegmentMaintenanceTask taskType,
+            final Supplier<T> task) {
+        final CompletableFuture<T> future = new CompletableFuture<>();
         try {
             maintenanceExecutor.execute(() -> {
                 maintenanceState.runExclusive(taskType, () -> {
                     try {
-                        Vldtn.requireNonNull(task, "task").run();
-                        future.complete(null);
+                        final T result = Vldtn.requireNonNull(task, "task")
+                                .get();
+                        future.complete(result);
                     } catch (final Throwable t) {
                         future.completeExceptionally(t);
                     }
@@ -51,10 +53,16 @@ final class SegmentMaintenanceScheduler<K, V> {
         final SegmentMaintenanceDecision decision = maintenancePolicy
                 .evaluateAfterWrite(Vldtn.requireNonNull(segment, "segment"));
         if (decision.shouldFlush()) {
-            submit(SegmentMaintenanceTask.FLUSH, flushTask);
+            submit(SegmentMaintenanceTask.FLUSH, () -> {
+                flushTask.run();
+                return null;
+            });
         }
         if (decision.shouldCompact()) {
-            submit(SegmentMaintenanceTask.COMPACT, compactTask);
+            submit(SegmentMaintenanceTask.COMPACT, () -> {
+                compactTask.run();
+                return null;
+            });
         }
     }
 }

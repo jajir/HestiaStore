@@ -12,10 +12,10 @@ import org.slf4j.LoggerFactory;
 public class SegmentConsistencyChecker<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final SegmentImpl<K, V> segment;
+    private final Segment<K, V> segment;
     private final Comparator<K> keyComparator;
 
-    SegmentConsistencyChecker(final SegmentImpl<K, V> segment,
+    SegmentConsistencyChecker(final Segment<K, V> segment,
             final Comparator<K> keyComparator) {
         this.segment = Vldtn.requireNonNull(segment, "segment");
         this.keyComparator = Vldtn.requireNonNull(keyComparator,
@@ -32,7 +32,14 @@ public class SegmentConsistencyChecker<K, V> {
     public K checkAndRepairConsistency() {
         logger.debug("Checking segment '{}'", segment.getId());
         K previousKey = null;
-        try (EntryIterator<K, V> iterator = segment.openIterator()) {
+        final SegmentResult<EntryIterator<K, V>> iteratorResult = segment
+                .openIterator();
+        if (!iteratorResult.isOk()) {
+            throw new IndexException(String.format(
+                    "Segment '%s' is not ready for consistency check: %s",
+                    segment.getId(), iteratorResult.getStatus()));
+        }
+        try (EntryIterator<K, V> iterator = iteratorResult.getValue()) {
             while (iterator.hasNext()) {
                 final Entry<K, V> entry = iterator.next();
                 if (previousKey == null) {

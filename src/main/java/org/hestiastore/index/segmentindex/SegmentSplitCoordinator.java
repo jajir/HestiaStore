@@ -9,6 +9,8 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentPropertiesManager;
 import org.hestiastore.index.segment.SegmentImplSynchronizationAdapter;
+import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segmentasync.SegmentAsync;
 import org.hestiastore.index.segmentasync.SegmentAsyncAdapter;
 import org.slf4j.Logger;
@@ -113,15 +115,26 @@ public class SegmentSplitCoordinator<K, V> {
     }
 
     private void compactSegment(final Segment<K, V> segment) {
-        if (segment instanceof SegmentAsyncAdapter<K, V> adapter) {
-            adapter.compactBlocking();
-            return;
+        while (true) {
+            final SegmentResult<Void> result;
+            if (segment instanceof SegmentAsyncAdapter<K, V> adapter) {
+                result = adapter.compactBlocking();
+            } else if (segment instanceof SegmentAsync<K, V> async) {
+                result = async.compactAsync().toCompletableFuture().join();
+            } else {
+                result = segment.compact();
+            }
+            if (result.getStatus() == SegmentResultStatus.OK
+                    || result.getStatus() == SegmentResultStatus.CLOSED) {
+                return;
+            }
+            if (result.getStatus() == SegmentResultStatus.BUSY) {
+                continue;
+            }
+            throw new org.hestiastore.index.IndexException(String.format(
+                    "Segment '%s' failed during compact: %s", segment.getId(),
+                    result.getStatus()));
         }
-        if (segment instanceof SegmentAsync<K, V> async) {
-            async.compactAsync().toCompletableFuture().join();
-            return;
-        }
-        segment.compact();
     }
 
     private SplitOutcome doSplit(final Segment<K, V> segment,
@@ -186,9 +199,20 @@ public class SegmentSplitCoordinator<K, V> {
     }
 
     private boolean hasLiveEntries(final Segment<K, V> segment) {
-        try (EntryIterator<K, V> iterator = segment.openIterator(
-                SegmentIteratorIsolation.FULL_ISOLATION)) {
-            return iterator.hasNext();
+        while (true) {
+            final SegmentResult<EntryIterator<K, V>> result = segment
+                    .openIterator(SegmentIteratorIsolation.FULL_ISOLATION);
+            if (result.getStatus() == SegmentResultStatus.OK) {
+                try (EntryIterator<K, V> iterator = result.getValue()) {
+                    return iterator.hasNext();
+                }
+            }
+            if (result.getStatus() == SegmentResultStatus.BUSY) {
+                continue;
+            }
+            throw new org.hestiastore.index.IndexException(String.format(
+                    "Segment '%s' failed to open iterator: %s",
+                    segment.getId(), result.getStatus()));
         }
     }
 

@@ -22,6 +22,8 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segment.SegmentResultStatus;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -270,7 +272,10 @@ class IntegrationSegmentIndexSimpleTest {
             final SegmentId segmentId) {
         final Segment<Integer, String> seg = makeSegment(segmentId);
         final List<Entry<Integer, String>> out = new ArrayList<>();
-        try (EntryIterator<Integer, String> iterator = seg.openIterator()) {
+        final SegmentResult<EntryIterator<Integer, String>> result = seg
+                .openIterator();
+        assertEquals(SegmentResultStatus.OK, result.getStatus());
+        try (EntryIterator<Integer, String> iterator = result.getValue()) {
             while (iterator.hasNext()) {
                 out.add(iterator.next());
             }

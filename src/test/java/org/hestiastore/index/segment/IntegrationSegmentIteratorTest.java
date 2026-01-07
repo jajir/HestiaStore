@@ -72,7 +72,7 @@ class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
                 .build();
 
         writeEntries(segment, indexFile);
-        segment.compact();
+        assertEquals(SegmentResultStatus.OK, segment.compact().getStatus());
         writeEntries(segment, deltaCache);
         /*
          * Now Content of main sst index file and delta cache should be as
@@ -88,14 +88,18 @@ class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
 
     @Test
     void test_case_5_compact_after_addding_entry() {
-        try (final EntryIterator<String, Integer> iterator = segment
-                .openIterator()) {
+        final SegmentResult<EntryIterator<String, Integer>> result = segment
+                .openIterator();
+        assertEquals(SegmentResultStatus.OK, result.getStatus());
+        try (final EntryIterator<String, Integer> iterator = result
+                .getValue()) {
             assertTrue(iterator.hasNext());
             assertEquals(Entry.of("a", 25), iterator.next());
 
             // write <c, 10>
             writeEntries(segment, Arrays.asList(Entry.of("c", 10)));
-            segment.compact();
+            assertEquals(SegmentResultStatus.OK,
+                    segment.compact().getStatus());
 
             assertFalse(iterator.hasNext());
         }
@@ -103,8 +107,9 @@ class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
 
     @Test
     void test_case_6_compact_includes_write_cache_and_clears_it() {
-        segment.put("g", 13);
-        segment.compact();
+        assertEquals(SegmentResultStatus.OK,
+                segment.put("g", 13).getStatus());
+        assertEquals(SegmentResultStatus.OK, segment.compact().getStatus());
 
         verifySegmentSearch(segment,
                 Arrays.asList(Entry.of("a", 25), Entry.of("c", 40),

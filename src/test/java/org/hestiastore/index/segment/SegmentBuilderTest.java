@@ -284,8 +284,12 @@ class SegmentBuilderTest {
         tx.commit();
 
         final Segment<Integer, String> segment = builder.build();
-        assertEquals("a", segment.get(1));
-        assertEquals("b", segment.get(2));
+        final SegmentResult<String> first = segment.get(1);
+        final SegmentResult<String> second = segment.get(2);
+        assertEquals(SegmentResultStatus.OK, first.getStatus());
+        assertEquals(SegmentResultStatus.OK, second.getStatus());
+        assertEquals("a", first.getValue());
+        assertEquals("b", second.getValue());
         segment.close();
     }
 }

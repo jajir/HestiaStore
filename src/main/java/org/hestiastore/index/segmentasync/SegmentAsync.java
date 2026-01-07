@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentasync;
 import java.util.concurrent.CompletionStage;
 
 import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segment.SegmentResult;
 
 /**
  * Async-capable segment wrapper. Keeps the synchronous Segment contract while
@@ -18,12 +19,12 @@ public interface SegmentAsync<K, V> extends Segment<K, V> {
      *
      * @return completion stage for the scheduled flush
      */
-    CompletionStage<Void> flushAsync();
+    CompletionStage<SegmentResult<Void>> flushAsync();
 
     /**
      * Schedule a compaction in the background.
      *
      * @return completion stage for the scheduled compaction
      */
-    CompletionStage<Void> compactAsync();
+    CompletionStage<SegmentResult<Void>> compactAsync();
 }

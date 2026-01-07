@@ -12,6 +12,9 @@ import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentImplSynchronizationAdapter;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
+import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segmentasync.SegmentAsync;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,7 +83,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     EntryIterator<K, V> openSegmentIterator(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         final Segment<K, V> seg = segmentRegistry.getSegment(segmentId);
-        return seg.openIterator();
+        return openIteratorWithRetry(seg, SegmentIteratorIsolation.FAIL_FAST);
     }
 
     @Override
@@ -129,7 +132,21 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             return null;
         }
         final Segment<K, V> segment = segmentRegistry.getSegment(id);
-        return segment.get(key);
+        while (true) {
+            final SegmentResult<V> result = segment.get(key);
+            if (result.getStatus() == SegmentResultStatus.OK) {
+                return result.getValue();
+            }
+            if (result.getStatus() == SegmentResultStatus.BUSY) {
+                continue;
+            }
+            if (result.getStatus() == SegmentResultStatus.CLOSED) {
+                return null;
+            }
+            throw new org.hestiastore.index.IndexException(String.format(
+                    "Segment '%s' failed during get: %s", segment.getId(),
+                    result.getStatus()));
+        }
     }
 
     private void writeWithRetry(final K key, final V value) {
@@ -176,8 +193,17 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         if (!keySegmentCache.isMappingValid(key, segmentId, mappingVersion)) {
             return false;
         }
-        segment.put(key, value);
-        return true;
+        final SegmentResult<Void> result = segment.put(key, value);
+        if (result.getStatus() == SegmentResultStatus.OK) {
+            return true;
+        }
+        if (result.getStatus() == SegmentResultStatus.BUSY
+                || result.getStatus() == SegmentResultStatus.CLOSED) {
+            return false;
+        }
+        throw new org.hestiastore.index.IndexException(String.format(
+                "Segment '%s' failed during put: %s", segment.getId(),
+                result.getStatus()));
     }
 
     @Override
@@ -240,19 +266,63 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     }
 
     private void compactSegment(final Segment<K, V> segment) {
-        if (segment instanceof SegmentAsync<K, V> async) {
-            async.compactAsync().toCompletableFuture().join();
-            return;
+        while (true) {
+            final SegmentResult<Void> result;
+            if (segment instanceof SegmentAsync<K, V> async) {
+                result = async.compactAsync().toCompletableFuture().join();
+            } else {
+                result = segment.compact();
+            }
+            if (result.getStatus() == SegmentResultStatus.OK
+                    || result.getStatus() == SegmentResultStatus.CLOSED) {
+                return;
+            }
+            if (result.getStatus() == SegmentResultStatus.BUSY) {
+                continue;
+            }
+            throw new org.hestiastore.index.IndexException(String.format(
+                    "Segment '%s' failed during compact: %s", segment.getId(),
+                    result.getStatus()));
         }
-        segment.compact();
     }
 
     private void flushSegment(final Segment<K, V> segment) {
-        if (segment instanceof SegmentAsync<K, V> async) {
-            async.flushAsync().toCompletableFuture().join();
-            return;
+        while (true) {
+            final SegmentResult<Void> result;
+            if (segment instanceof SegmentAsync<K, V> async) {
+                result = async.flushAsync().toCompletableFuture().join();
+            } else {
+                result = segment.flush();
+            }
+            if (result.getStatus() == SegmentResultStatus.OK
+                    || result.getStatus() == SegmentResultStatus.CLOSED) {
+                return;
+            }
+            if (result.getStatus() == SegmentResultStatus.BUSY) {
+                continue;
+            }
+            throw new org.hestiastore.index.IndexException(String.format(
+                    "Segment '%s' failed during flush: %s", segment.getId(),
+                    result.getStatus()));
         }
-        segment.flush();
+    }
+
+    private EntryIterator<K, V> openIteratorWithRetry(
+            final Segment<K, V> segment,
+            final SegmentIteratorIsolation isolation) {
+        while (true) {
+            final SegmentResult<EntryIterator<K, V>> result = segment
+                    .openIterator(isolation);
+            if (result.getStatus() == SegmentResultStatus.OK) {
+                return result.getValue();
+            }
+            if (result.getStatus() == SegmentResultStatus.BUSY) {
+                continue;
+            }
+            throw new org.hestiastore.index.IndexException(String.format(
+                    "Segment '%s' failed to open iterator: %s",
+                    segment.getId(), result.getStatus()));
+        }
     }
 
     protected void invalidateSegmentIterators() {

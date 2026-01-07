@@ -8,6 +8,12 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.WriteTransaction.WriterFunction;
 
+/**
+ * Encapsulates maintenance operations like flush and full rewrite transactions.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 final class SegmentMaintenancePath<K, V> {
 
     private final SegmentFiles<K, V> segmentFiles;
@@ -34,16 +40,31 @@ final class SegmentMaintenancePath<K, V> {
         this.segmentCache = Vldtn.requireNonNull(segmentCache, "segmentCache");
     }
 
+    /**
+     * Executes a full write transaction over the segment files.
+     *
+     * @param writeFunction writer logic to execute
+     */
     void executeFullWriteTx(final WriterFunction<K, V> writeFunction) {
         openFullWriteTx().execute(writeFunction);
     }
 
+    /**
+     * Opens a new full write transaction.
+     *
+     * @return writable transaction
+     */
     WriteTransaction<K, V> openFullWriteTx() {
         return new SegmentFullWriterTx<>(segmentFiles, segmentPropertiesManager,
                 segmentConf.getMaxNumberOfKeysInChunk(), segmentResources,
                 deltaCacheController, segmentCache);
     }
 
+    /**
+     * Flushes a frozen write-cache snapshot into the delta cache file.
+     *
+     * @param entries frozen write-cache entries
+     */
     void flushFrozenWriteCacheToDeltaFile(final List<Entry<K, V>> entries) {
         if (entries == null || entries.isEmpty()) {
             return;

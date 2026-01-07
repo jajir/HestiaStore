@@ -22,6 +22,7 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
 
     private final SegmentCore<K, V> core;
     private final SegmentCompacter<K, V> segmentCompacter;
+    private final SegmentStateMachine stateMachine = new SegmentStateMachine();
 
     public SegmentImpl(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
@@ -61,19 +62,55 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     }
 
     @Override
-    public EntryIterator<K, V> openIterator() {
-        return core.openIterator();
+    public SegmentResult<EntryIterator<K, V>> openIterator() {
+        return openIterator(SegmentIteratorIsolation.FAIL_FAST);
     }
 
     @Override
-    public EntryIterator<K, V> openIterator(
+    public SegmentResult<EntryIterator<K, V>> openIterator(
             final SegmentIteratorIsolation isolation) {
-        return core.openIterator(isolation);
+        Vldtn.requireNonNull(isolation, "isolation");
+        if (isolation == SegmentIteratorIsolation.FULL_ISOLATION) {
+            if (!stateMachine.tryEnterFreeze()) {
+                return resultForState(stateMachine.getState());
+            }
+            core.invalidateIterators();
+            final EntryIterator<K, V> iterator = core.openIterator(isolation);
+            return SegmentResult.ok(
+                    new ExclusiveAccessIterator<>(iterator, stateMachine));
+        }
+        final SegmentState state = stateMachine.getState();
+        if (state != SegmentState.READY
+                && state != SegmentState.MAINTENANCE_RUNNING) {
+            return resultForState(state);
+        }
+        return SegmentResult.ok(core.openIterator(isolation));
     }
 
     @Override
-    public void compact() {
-        segmentCompacter.forceCompact(this);
+    public SegmentResult<Void> compact() {
+        if (!stateMachine.tryEnterFreeze()) {
+            return resultForState(stateMachine.getState());
+        }
+        try {
+            if (!stateMachine.enterMaintenanceRunning()) {
+                stateMachine.fail();
+                return SegmentResult.error();
+            }
+            segmentCompacter.forceCompact(core);
+            if (!stateMachine.finishMaintenanceToFreeze()) {
+                stateMachine.fail();
+                return SegmentResult.error();
+            }
+            if (!stateMachine.finishFreezeToReady()) {
+                stateMachine.fail();
+                return SegmentResult.error();
+            }
+            return SegmentResult.ok();
+        } catch (final RuntimeException e) {
+            stateMachine.fail();
+            return SegmentResult.error();
+        }
     }
 
     void executeFullWriteTx(final WriterFunction<K, V> writeFunction) {
@@ -85,8 +122,16 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     }
 
     @Override
-    public void put(final K key, final V value) {
-        core.put(key, value);
+    public SegmentResult<Void> put(final K key, final V value) {
+        final SegmentState state = stateMachine.getState();
+        if (state != SegmentState.READY
+                && state != SegmentState.MAINTENANCE_RUNNING) {
+            return resultForState(state);
+        }
+        if (!core.tryPutWithoutWaiting(key, value)) {
+            return SegmentResult.busy();
+        }
+        return SegmentResult.ok();
     }
 
     boolean tryPutWithoutWaiting(final K key, final V value) {
@@ -98,8 +143,29 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     }
 
     @Override
-    public void flush() {
-        core.flush();
+    public SegmentResult<Void> flush() {
+        if (!stateMachine.tryEnterFreeze()) {
+            return resultForState(stateMachine.getState());
+        }
+        try {
+            if (!stateMachine.enterMaintenanceRunning()) {
+                stateMachine.fail();
+                return SegmentResult.error();
+            }
+            core.flush();
+            if (!stateMachine.finishMaintenanceToFreeze()) {
+                stateMachine.fail();
+                return SegmentResult.error();
+            }
+            if (!stateMachine.finishFreezeToReady()) {
+                stateMachine.fail();
+                return SegmentResult.error();
+            }
+            return SegmentResult.ok();
+        } catch (final RuntimeException e) {
+            stateMachine.fail();
+            return SegmentResult.error();
+        }
     }
 
     @Override
@@ -113,8 +179,13 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     }
 
     @Override
-    public V get(final K key) {
-        return core.get(key);
+    public SegmentResult<V> get(final K key) {
+        final SegmentState state = stateMachine.getState();
+        if (state == SegmentState.READY
+                || state == SegmentState.MAINTENANCE_RUNNING) {
+            return SegmentResult.ok(core.get(key));
+        }
+        return resultForState(state);
     }
 
     @Override
@@ -152,6 +223,50 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
 
     @Override
     protected void doClose() {
+        stateMachine.forceClosed();
         core.close();
+    }
+
+    private static <T> SegmentResult<T> resultForState(
+            final SegmentState state) {
+        if (state == SegmentState.CLOSED) {
+            return SegmentResult.closed();
+        }
+        if (state == SegmentState.ERROR) {
+            return SegmentResult.error();
+        }
+        return SegmentResult.busy();
+    }
+
+    private static final class ExclusiveAccessIterator<K, V>
+            extends AbstractCloseableResource implements EntryIterator<K, V> {
+
+        private final EntryIterator<K, V> delegate;
+        private final SegmentStateMachine stateMachine;
+
+        ExclusiveAccessIterator(final EntryIterator<K, V> delegate,
+                final SegmentStateMachine stateMachine) {
+            this.delegate = delegate;
+            this.stateMachine = stateMachine;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return delegate.hasNext();
+        }
+
+        @Override
+        public Entry<K, V> next() {
+            return delegate.next();
+        }
+
+        @Override
+        protected void doClose() {
+            try {
+                delegate.close();
+            } finally {
+                stateMachine.finishFreezeToReady();
+            }
+        }
     }
 }

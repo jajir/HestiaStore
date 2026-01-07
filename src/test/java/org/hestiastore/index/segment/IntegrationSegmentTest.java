@@ -48,7 +48,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
             final int expectedNumberKeysInScarceIndex,
             int expectedNumberOfFiles) {
 
-        seg.compact();
+        assertEquals(SegmentResultStatus.OK, seg.compact().getStatus());
         verifyCacheFiles(directory);
 
         verifySegmentData(seg, Arrays.asList());
@@ -97,7 +97,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                     + numberOfFilesInDirectory(directory));
         }
 
-        seg.compact();
+        assertEquals(SegmentResultStatus.OK, seg.compact().getStatus());
         assertEquals(9, seg.getStats().getNumberOfKeys());
         assertEquals(expectedNumberKeysInScarceIndex,
                 seg.getStats().getNumberOfKeysInScarceIndex());
@@ -123,7 +123,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
 
         verifyNumberOfFiles(directory, expectedNumberOfFiles);
 
-        seg.compact();
+        assertEquals(SegmentResultStatus.OK, seg.compact().getStatus());
 
         verifyNumberOfFiles(directory, 4);
         verifyTestDataSet(seg);
@@ -510,7 +510,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 Entry.of(5, "ddd"), //
                 Entry.of(5, TypeDescriptorShortString.TOMBSTONE_VALUE)//
         ));
-        seg.compact();
+        assertEquals(SegmentResultStatus.OK, seg.compact().getStatus());
 
         assertEquals(3, seg.getStats().getNumberOfKeys());
         assertEquals(0, seg.getStats().getNumberOfKeysInDeltaCache());
@@ -570,15 +570,20 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         final List<Entry<Integer, String>> entries = new ArrayList<>();
         for (int i = 0; i < 1000; i++) {
             final Entry<Integer, String> p = Entry.of(i, "Ahoj");
-            seg.put(p.getKey(), p.getValue());
+            assertEquals(SegmentResultStatus.OK,
+                    seg.put(p.getKey(), p.getValue()).getStatus());
             entries.add(p);
         }
-        seg.flush();
-        seg.compact();
+        assertEquals(SegmentResultStatus.OK, seg.flush().getStatus());
+        assertEquals(SegmentResultStatus.OK, seg.compact().getStatus());
 
         AbstractDataTest.verifyIteratorData(entries, seg.openIterator());
         for (int i = 0; i < 1000; i++) {
-            assertEquals("Ahoj", seg.get(i), "Invalid value for key " + i);
+            final SegmentResult<String> result = seg.get(i);
+            assertEquals(SegmentResultStatus.OK, result.getStatus(),
+                    "Invalid result status for key " + i);
+            assertEquals("Ahoj", result.getValue(),
+                    "Invalid value for key " + i);
         }
     }
 

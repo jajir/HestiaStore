@@ -7,6 +7,12 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileReaderSeekable;
 import org.hestiastore.index.directory.async.AsyncFileReaderSeekableBlockingAdapter;
 
+/**
+ * Encapsulates segment read operations and read-time state.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 final class SegmentReadPath<K, V> {
 
     private final SegmentFiles<K, V> segmentFiles;
@@ -35,6 +41,12 @@ final class SegmentReadPath<K, V> {
                 "versionController");
     }
 
+    /**
+     * Opens an iterator over the merged index + delta cache view.
+     *
+     * @param isolation iterator isolation mode
+     * @return iterator over current entries
+     */
     EntryIterator<K, V> openIterator(final SegmentIteratorIsolation isolation) {
         Vldtn.requireNonNull(isolation, "isolation");
         final EntryIterator<K, V> mergedEntryIterator = new MergeDeltaCacheWithIndexIterator<>(
@@ -50,6 +62,12 @@ final class SegmentReadPath<K, V> {
                 segmentFiles.getId().toString());
     }
 
+    /**
+     * Retrieves a value using cache first and then falling back to disk search.
+     *
+     * @param key key to look up
+     * @return found value or null if not present or tombstoned
+     */
     V get(final K key) {
         final V cached = segmentCache.get(key);
         if (cached != null) {
@@ -62,6 +80,11 @@ final class SegmentReadPath<K, V> {
                 getSegmentIndexSearcher());
     }
 
+    /**
+     * Returns (and caches) the index searcher for point lookups.
+     *
+     * @return cached index searcher
+     */
     SegmentIndexSearcher<K, V> getSegmentIndexSearcher() {
         if (segmentIndexSearcher == null) {
             segmentIndexSearcher = new SegmentIndexSearcher<>(
@@ -73,6 +96,11 @@ final class SegmentReadPath<K, V> {
         return segmentIndexSearcher;
     }
 
+    /**
+     * Returns a cached seekable reader for the index file when available.
+     *
+     * @return cached reader or null when no index file exists
+     */
     FileReaderSeekable getSeekableReader() {
         if (seekableReader == null) {
             final String indexFileName = segmentFiles.getIndexFileName();
@@ -88,6 +116,9 @@ final class SegmentReadPath<K, V> {
         return seekableReader;
     }
 
+    /**
+     * Closes and clears the cached index searcher and seekable reader.
+     */
     void resetSegmentIndexSearcher() {
         if (segmentIndexSearcher != null) {
             segmentIndexSearcher.close();
@@ -96,6 +127,9 @@ final class SegmentReadPath<K, V> {
         resetSeekableReader();
     }
 
+    /**
+     * Closes and clears the cached seekable reader.
+     */
     void resetSeekableReader() {
         if (seekableReader != null) {
             seekableReader.close();
@@ -103,6 +137,9 @@ final class SegmentReadPath<K, V> {
         }
     }
 
+    /**
+     * Releases any cached read resources.
+     */
     void close() {
         resetSegmentIndexSearcher();
     }

@@ -20,7 +20,7 @@ public final class SegmentCompacter<K, V> {
                 "versionController");
     }
 
-    public void forceCompact(final SegmentImpl<K, V> segment) {
+    public void forceCompact(final SegmentCore<K, V> segment) {
         logger.debug("Start of compacting '{}'", segment.getId());
         segment.resetSegmentIndexSearcher();
         versionController.changeVersion();

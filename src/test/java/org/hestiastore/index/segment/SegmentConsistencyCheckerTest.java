@@ -27,7 +27,7 @@ class SegmentConsistencyCheckerTest {
     private static final Entry<Integer, String> ENTRY3 = Entry.of(3, "c");
 
     @Mock
-    private SegmentImpl<Integer, String> segment;
+    private Segment<Integer, String> segment;
 
     @Mock
     private EntryIterator<Integer, String> iterator;
@@ -36,7 +36,7 @@ class SegmentConsistencyCheckerTest {
 
     @Test
     void test_noData() {
-        when(segment.openIterator()).thenReturn(iterator);
+        when(segment.openIterator()).thenReturn(SegmentResult.ok(iterator));
         when(segment.getId()).thenReturn(SEGMENT_ID);
         when(iterator.hasNext()).thenReturn(false);
 
@@ -46,7 +46,7 @@ class SegmentConsistencyCheckerTest {
 
     @Test
     void test_3_records() {
-        when(segment.openIterator()).thenReturn(iterator);
+        when(segment.openIterator()).thenReturn(SegmentResult.ok(iterator));
         when(segment.getId()).thenReturn(SEGMENT_ID);
         when(iterator.hasNext()).thenReturn(true, true, true, false);
         when(iterator.next()).thenReturn(ENTRY1).thenReturn(ENTRY2)
@@ -58,7 +58,7 @@ class SegmentConsistencyCheckerTest {
 
     @Test
     void test_same_records() {
-        when(segment.openIterator()).thenReturn(iterator);
+        when(segment.openIterator()).thenReturn(SegmentResult.ok(iterator));
         when(segment.getId()).thenReturn(SEGMENT_ID);
         when(iterator.hasNext()).thenReturn(true, true, true, false);
         when(iterator.next()).thenReturn(ENTRY1).thenReturn(ENTRY3)
@@ -75,7 +75,7 @@ class SegmentConsistencyCheckerTest {
 
     @Test
     void test_invalid_order() {
-        when(segment.openIterator()).thenReturn(iterator);
+        when(segment.openIterator()).thenReturn(SegmentResult.ok(iterator));
         when(segment.getId()).thenReturn(SEGMENT_ID);
         when(iterator.hasNext()).thenReturn(true, true, true, false);
         when(iterator.next()).thenReturn(ENTRY1).thenReturn(ENTRY3)
