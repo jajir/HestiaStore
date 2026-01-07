@@ -8,11 +8,10 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentPropertiesManager;
-import org.hestiastore.index.segment.SegmentImplSynchronizationAdapter;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
-import org.hestiastore.index.segmentasync.SegmentAsync;
-import org.hestiastore.index.segmentasync.SegmentAsyncAdapter;
+import org.hestiastore.index.segment.SegmentWriteLockSupport;
+import org.hestiastore.index.segmentasync.SegmentMaintenanceBlocking;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,8 +90,11 @@ public class SegmentSplitCoordinator<K, V> {
         final SegmentId segmentId = segment.getId();
         logger.debug("Splitting of '{}' started.", segmentId);
         final SplitOutcome outcome;
-        if (segment instanceof SegmentImplSynchronizationAdapter<K, V> adapter) {
-            outcome = adapter.executeWithMaintenanceWriteLock(() -> {
+        if (segment instanceof SegmentWriteLockSupport<?, ?>) {
+            @SuppressWarnings("unchecked")
+            final SegmentWriteLockSupport<K, V> lockingSupport =
+                    (SegmentWriteLockSupport<K, V>) segment;
+            outcome = lockingSupport.executeWithMaintenanceWriteLock(() -> {
                 if (!segmentRegistry.isSegmentInstance(segmentId, segment)) {
                     return null;
                 }
@@ -117,10 +119,8 @@ public class SegmentSplitCoordinator<K, V> {
     private void compactSegment(final Segment<K, V> segment) {
         while (true) {
             final SegmentResult<Void> result;
-            if (segment instanceof SegmentAsyncAdapter<K, V> adapter) {
-                result = adapter.compactBlocking();
-            } else if (segment instanceof SegmentAsync<K, V> async) {
-                result = async.compactAsync().toCompletableFuture().join();
+            if (segment instanceof SegmentMaintenanceBlocking blocking) {
+                result = blocking.compactBlocking();
             } else {
                 result = segment.compact();
             }

@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 import org.hestiastore.index.chunkstore.ChunkFilter;
 
@@ -43,6 +44,7 @@ public class IndexConfiguration<K, V> {
     private final Integer maxNumberOfSegmentsInCache;
     private final Integer numberOfThreads;
     private final Integer numberOfIoThreads;
+    private final ExecutorService maintenanceExecutor;
 
     private final Integer bloomFilterNumberOfHashFunctions;
     private final Integer bloomFilterIndexSizeInBytes;
@@ -82,6 +84,7 @@ public class IndexConfiguration<K, V> {
             final Double bloomFilterProbabilityOfFalsePositive, //
             final Integer diskIoBufferSize, final Boolean contextLoggingEnabled,
             final Integer numberOfThreads, final Integer numberOfIoThreads,
+            final ExecutorService maintenanceExecutor,
             final List<ChunkFilter> encodingChunkFilters,
             final List<ChunkFilter> decodingChunkFilters) {
         this.keyClass = keyClass;
@@ -98,6 +101,7 @@ public class IndexConfiguration<K, V> {
         this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
         this.numberOfThreads = numberOfThreads;
         this.numberOfIoThreads = numberOfIoThreads;
+        this.maintenanceExecutor = maintenanceExecutor;
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
         this.bloomFilterProbabilityOfFalsePositive = bloomFilterProbabilityOfFalsePositive;
@@ -208,6 +212,16 @@ public class IndexConfiguration<K, V> {
 
     public Integer getNumberOfIoThreads() {
         return numberOfIoThreads;
+    }
+
+    public ExecutorService getMaintenanceExecutor() {
+        /**
+         * Returns the executor service used for segment maintenance tasks.
+         * This value is runtime-only and is not persisted to disk.
+         *
+         * @return maintenance executor or null to use defaults
+         */
+        return maintenanceExecutor;
     }
 
     public Integer getMaxNumberOfSegmentsInCache() {

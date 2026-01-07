@@ -13,7 +13,8 @@ import org.hestiastore.index.segment.SegmentResultStatus;
  */
 public final class SegmentAsyncAdapter<K, V>
         extends SegmentImplSynchronizationAdapter<K, V>
-        implements SegmentAsync<K, V> {
+        implements SegmentAsync<K, V>, SegmentMaintenanceQueue,
+        SegmentMaintenanceBlocking {
 
     private final SegmentMaintenanceScheduler<K, V> maintenanceScheduler;
 
@@ -57,6 +58,7 @@ public final class SegmentAsyncAdapter<K, V>
                 super::compact);
     }
 
+    @Override
     public CompletionStage<SegmentResult<Void>> submitMaintenanceTask(
             final SegmentMaintenanceTask taskType,
             final Runnable task) {
@@ -66,10 +68,12 @@ public final class SegmentAsyncAdapter<K, V>
         });
     }
 
+    @Override
     public SegmentResult<Void> flushBlocking() {
         return super.flush();
     }
 
+    @Override
     public SegmentResult<Void> compactBlocking() {
         return super.compact();
     }
