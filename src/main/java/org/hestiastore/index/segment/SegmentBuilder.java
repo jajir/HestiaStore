@@ -336,7 +336,7 @@ public final class SegmentBuilder<K, V> {
      * @throws IllegalArgumentException if required fields are missing or
      *                                  invalid
      */
-    public SegmentImpl<K, V> build() {
+    public Segment<K, V> build() {
         prepareBaseComponents();
         final SegmentSearcher<K, V> segmentSearcher = new SegmentSearcher<K, V>(
                 segmentFiles.getValueTypeDescriptor());
