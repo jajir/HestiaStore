@@ -1,3 +1,7 @@
+# General rules
+- be honest
+- when it make sense structure respone as numbered list of points
+
 # Repository Guidelines
 
 ## Project Structure & Module Organization
