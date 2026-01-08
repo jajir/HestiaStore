@@ -16,11 +16,11 @@ import java.util.function.IntSupplier;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.EntryIterator;
-import org.hestiastore.index.segmentasync.SegmentAsync;
-import org.hestiastore.index.segmentasync.SegmentAsyncAdapter;
-import org.hestiastore.index.segmentasync.SegmentMaintenancePolicy;
-import org.hestiastore.index.segmentasync.SegmentMaintenancePolicyThreshold;
-import org.hestiastore.index.segmentasync.SegmentMaintenanceTask;
+import org.hestiastore.index.segmentbridge.SegmentAsync;
+import org.hestiastore.index.segmentbridge.SegmentAsyncAdapter;
+import org.hestiastore.index.segmentbridge.SegmentMaintenancePolicy;
+import org.hestiastore.index.segmentbridge.SegmentMaintenancePolicyThreshold;
+import org.hestiastore.index.segmentbridge.SegmentMaintenanceTask;
 import org.junit.jupiter.api.Test;
 
 class SegmentAsyncAdapterTest {
@@ -321,6 +321,11 @@ class SegmentAsyncAdapterTest {
         @Override
         public SegmentId getId() {
             return id;
+        }
+
+        @Override
+        public SegmentState getState() {
+            return SegmentState.READY;
         }
 
         @Override

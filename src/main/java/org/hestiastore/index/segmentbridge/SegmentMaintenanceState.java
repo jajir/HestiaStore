@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentasync;
+package org.hestiastore.index.segmentbridge;
 
 import org.hestiastore.index.Vldtn;
 

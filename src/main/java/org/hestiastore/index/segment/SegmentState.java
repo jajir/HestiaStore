@@ -3,7 +3,7 @@ package org.hestiastore.index.segment;
 /**
  * Internal lifecycle states for a segment instance.
  */
-enum SegmentState {
+public enum SegmentState {
     /** Accepts reads and writes. */
     READY,
     /** Exclusive access for maintenance or full isolation iterators. */

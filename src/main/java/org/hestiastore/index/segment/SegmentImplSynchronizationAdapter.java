@@ -123,14 +123,6 @@ public class SegmentImplSynchronizationAdapter<K, V>
 
     @Override
     public SegmentResult<Void> put(final K key, final V value) {
-        if (delegate instanceof SegmentImpl<K, V>) {
-            writeLock.lock();
-            try {
-                return delegate.put(key, value);
-            } finally {
-                writeLock.unlock();
-            }
-        }
         writeLock.lock();
         try {
             return delegate.put(key, value);
@@ -202,6 +194,11 @@ public class SegmentImplSynchronizationAdapter<K, V>
     @Override
     public SegmentId getId() {
         return delegate.getId();
+    }
+
+    @Override
+    public SegmentState getState() {
+        return delegate.getState();
     }
 
     @Override

@@ -6,7 +6,7 @@
 - SegmentImpl owns SegmentStateMachine and an executor provided by higher level
   code; it performs state checks and delegates to SegmentCore.
 - Threading, scheduling, futures, and retry logic live in segmentindex, not in
-  segment or segmentasync.
+  segment or segmentbridge.
 
 ## Assumptions to confirm
 - SegmentImpl is the only concrete Segment implementation used by segmentindex.
@@ -15,19 +15,19 @@
 
 ## Phase 1: Decide ownership and contracts
 - [ ] Document the final responsibilities of SegmentCore vs SegmentImpl.
-- [ ] Decide whether SegmentImplSynchronizationAdapter stays or moves to
+- [x] Decide whether SegmentImplSynchronizationAdapter stays or moves to
       segmentindex.
-- [ ] Define the minimal API SegmentImpl needs from segmentindex to schedule
+- [x] Define the minimal API SegmentImpl needs from segmentindex to schedule
       maintenance (executor and callback contract).
-- [ ] Choose a temporary glue package name for segment↔segmentindex adapters
+- [x] Choose a temporary glue package name for segment↔segmentindex adapters
       (e.g., `org.hestiastore.index.segmentbridge`) to make later removal easy.
 - [ ] Update docs/architecture/segment-concurency.md with the implementation
       mapping once agreed.
 
 ## Phase 2: SegmentImpl API shape
-- [ ] Add executor dependency to SegmentImpl and SegmentBuilder (constructor or
+- [x] Add executor dependency to SegmentImpl and SegmentBuilder (constructor or
       setter path).
-- [ ] Split SegmentImpl maintenance into two layers:
+- [x] Split SegmentImpl maintenance into two layers:
       - public flush/compact: check state, set state, submit task
       - internal runFlush/runCompact: execute core.flush/core.compact and finish
         state transitions
@@ -36,14 +36,14 @@
 - [ ] Ensure openIterator checks state and uses state machine rules only.
 
 ## Phase 3: Move async/scheduling to segmentindex
-- [ ] Move or replace segmentasync classes (SegmentAsyncAdapter, scheduler,
+- [ ] Move or replace segmentbridge classes (SegmentAsyncAdapter, scheduler,
       policies) into segmentindex.
 - [ ] Remove futures and maintenance scheduling logic from segment package.
-- [ ] Place any transitional boilerplate in the `segmentbridge` package so it
+- [x] Place any transitional boilerplate in the `segmentbridge` package so it
       is easy to find and delete once the migration is complete.
-- [ ] Update SegmentRegistry to build SegmentImpl with executor and to use the
+- [x] Update SegmentRegistry to build SegmentImpl with executor and to use the
       new maintenance scheduling flow.
-- [ ] Update any callers that reference segmentasync package directly.
+- [ ] Update any callers that reference segmentbridge package directly.
 
 ## Phase 4: Behavior and state transitions
 - [ ] Verify state transitions for flush/compact are linearized and end in READY
@@ -61,6 +61,6 @@
 - [ ] Run mvn test and mvn verify -Ddependency-check.skip=true as validation.
 
 ## Phase 6: Cleanup
-- [ ] Remove obsolete classes in segmentasync after migration.
+- [ ] Remove obsolete classes in segmentbridge after migration.
 - [ ] Remove or deprecate any old APIs that are no longer used.
-- [ ] Re-scan docs for outdated references to segmentasync.
+- [ ] Re-scan docs for outdated references to segmentbridge.

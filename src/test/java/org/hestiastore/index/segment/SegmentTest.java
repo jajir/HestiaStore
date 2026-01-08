@@ -91,6 +91,11 @@ class SegmentTest {
             return SegmentId.of(1);
         }
 
+        @Override
+        public SegmentState getState() {
+            return SegmentState.READY;
+        }
+
         SegmentIteratorIsolation getLastIsolation() {
             return lastIsolation;
         }

@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentasync;
+package org.hestiastore.index.segmentbridge;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;

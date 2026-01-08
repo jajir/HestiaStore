@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentasync;
+package org.hestiastore.index.segmentbridge;
 
 /**
  * Describes which maintenance operations should be scheduled.

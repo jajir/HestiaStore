@@ -6,10 +6,9 @@ import static org.mockito.Mockito.mock;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.hestiastore.index.segmentasync.SegmentAsyncAdapter;
-import org.hestiastore.index.segmentasync.SegmentMaintenanceBlocking;
-import org.hestiastore.index.segmentasync.SegmentMaintenancePolicy;
-import org.hestiastore.index.segmentasync.SegmentMaintenanceQueue;
+import org.hestiastore.index.segmentbridge.SegmentAsyncAdapter;
+import org.hestiastore.index.segmentbridge.SegmentMaintenancePolicy;
+import org.hestiastore.index.segmentbridge.SegmentMaintenanceQueue;
 import org.junit.jupiter.api.Test;
 
 class SegmentAdapterCapabilitiesTest {
@@ -32,7 +31,6 @@ class SegmentAdapterCapabilitiesTest {
                     segment, executor, SegmentMaintenancePolicy.none());
 
             assertTrue(adapter instanceof SegmentMaintenanceQueue);
-            assertTrue(adapter instanceof SegmentMaintenanceBlocking);
         } finally {
             executor.shutdownNow();
         }

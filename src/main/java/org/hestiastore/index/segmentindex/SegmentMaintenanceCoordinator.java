@@ -3,6 +3,9 @@ package org.hestiastore.index.segmentindex;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentbridge.SegmentMaintenanceDecision;
+import org.hestiastore.index.segmentbridge.SegmentMaintenancePolicy;
+import org.hestiastore.index.segmentbridge.SegmentMaintenancePolicyThreshold;
 
 /**
  * Centralizes post-write maintenance decisions for a segment.
@@ -13,6 +16,7 @@ final class SegmentMaintenanceCoordinator<K, V> {
     private final KeySegmentCache<K> keySegmentCache;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentAsyncSplitCoordinator<K, V> splitCoordinator;
+    private final SegmentMaintenancePolicy<K, V> maintenancePolicy;
 
     SegmentMaintenanceCoordinator(final IndexConfiguration<K, V> conf,
             final KeySegmentCache<K> keySegmentCache,
@@ -24,6 +28,9 @@ final class SegmentMaintenanceCoordinator<K, V> {
                 "segmentRegistry");
         this.splitCoordinator = new SegmentAsyncSplitCoordinator<>(conf,
                 keySegmentCache, segmentRegistry);
+        this.maintenancePolicy = new SegmentMaintenancePolicyThreshold<>(
+                conf.getMaxNumberOfKeysInSegmentWriteCache(),
+                conf.getMaxNumberOfKeysInSegmentCache());
     }
 
     void handlePostWrite(final Segment<K, V> segment, final K key,
@@ -44,6 +51,7 @@ final class SegmentMaintenanceCoordinator<K, V> {
                         mappingVersion)) {
             return;
         }
+        scheduleMaintenanceIfNeeded(segment);
 
         final Integer maxSegmentCacheKeys = conf
                 .getMaxNumberOfKeysInSegmentCache();
@@ -55,6 +63,17 @@ final class SegmentMaintenanceCoordinator<K, V> {
                         .toCompletableFuture()
                         .join();
             }
+        }
+    }
+
+    private void scheduleMaintenanceIfNeeded(final Segment<K, V> segment) {
+        final SegmentMaintenanceDecision decision = maintenancePolicy
+                .evaluateAfterWrite(segment);
+        if (decision.shouldFlush()) {
+            segment.flush();
+        }
+        if (decision.shouldCompact()) {
+            segment.compact();
         }
     }
 }

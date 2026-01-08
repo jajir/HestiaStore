@@ -14,13 +14,11 @@ import org.hestiastore.index.segment.SegmentConf;
 import org.hestiastore.index.segment.SegmentDataSupplier;
 import org.hestiastore.index.segment.SegmentFiles;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentImplSynchronizationAdapter;
 import org.hestiastore.index.segment.SegmentPropertiesManager;
 import org.hestiastore.index.segment.SegmentResources;
 import org.hestiastore.index.segment.SegmentResourcesImpl;
-import org.hestiastore.index.segmentasync.SegmentAsyncAdapter;
-import org.hestiastore.index.segmentasync.SegmentAsyncExecutor;
-import org.hestiastore.index.segmentasync.SegmentMaintenancePolicy;
-import org.hestiastore.index.segmentasync.SegmentMaintenancePolicyThreshold;
+import org.hestiastore.index.segmentbridge.SegmentAsyncExecutor;
 
 public class SegmentRegistry<K, V> {
 
@@ -33,7 +31,6 @@ public class SegmentRegistry<K, V> {
     private final SegmentAsyncExecutor segmentAsyncExecutor;
     private final ExecutorService maintenanceExecutor;
     private final boolean ownsExecutor;
-    private final SegmentMaintenancePolicy<K, V> maintenancePolicy;
 
     SegmentRegistry(final AsyncDirectory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
@@ -61,9 +58,6 @@ public class SegmentRegistry<K, V> {
             this.maintenanceExecutor = providedExecutor;
             this.ownsExecutor = false;
         }
-        this.maintenancePolicy = new SegmentMaintenancePolicyThreshold<>(
-                conf.getMaxNumberOfKeysInSegmentWriteCache(),
-                conf.getMaxNumberOfKeysInSegmentCache());
     }
 
     public Segment<K, V> getSegment(final SegmentId segmentId) {
@@ -151,6 +145,7 @@ public class SegmentRegistry<K, V> {
                 .withKeyTypeDescriptor(keyTypeDescriptor)//
                 .withSegmentResources(dataProvider)//
                 .withSegmentConf(segmentConf)//
+                .withMaintenanceExecutor(maintenanceExecutor)//
                 .withSegmentFiles(segmentFiles)//
                 .withSegmentPropertiesManager(segmentPropertiesManager)//
                 .withMaxNumberOfKeysInSegmentWriteCache(
@@ -197,8 +192,7 @@ public class SegmentRegistry<K, V> {
 
     private Segment<K, V> instantiateSegment(final SegmentId segmentId) {
         final Segment<K, V> segment = newSegmentBuilder(segmentId).build();
-        return new SegmentAsyncAdapter<>(segment, maintenanceExecutor,
-                maintenancePolicy);
+        return new SegmentImplSynchronizationAdapter<>(segment);
     }
 
     protected void deleteSegmentFiles(final SegmentId segmentId) {

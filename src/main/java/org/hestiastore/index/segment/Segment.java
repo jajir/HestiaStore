@@ -176,4 +176,11 @@ public interface Segment<K, V> extends CloseableResource {
      */
     SegmentId getId();
 
+    /**
+     * Returns the current lifecycle state of this segment.
+     *
+     * @return current segment state
+     */
+    SegmentState getState();
+
 }
