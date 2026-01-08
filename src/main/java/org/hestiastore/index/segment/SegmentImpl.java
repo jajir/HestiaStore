@@ -92,25 +92,25 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
         if (!stateMachine.tryEnterFreeze()) {
             return resultForState(stateMachine.getState());
         }
+        if (!stateMachine.enterMaintenanceRunning()) {
+            stateMachine.fail();
+            return SegmentResult.error();
+        }
         try {
-            if (!stateMachine.enterMaintenanceRunning()) {
-                stateMachine.fail();
-                return SegmentResult.error();
-            }
             segmentCompacter.forceCompact(core);
-            if (!stateMachine.finishMaintenanceToFreeze()) {
-                stateMachine.fail();
-                return SegmentResult.error();
-            }
-            if (!stateMachine.finishFreezeToReady()) {
-                stateMachine.fail();
-                return SegmentResult.error();
-            }
-            return SegmentResult.ok();
         } catch (final RuntimeException e) {
             stateMachine.fail();
             return SegmentResult.error();
         }
+        if (!stateMachine.finishMaintenanceToFreeze()) {
+            stateMachine.fail();
+            return SegmentResult.error();
+        }
+        if (!stateMachine.finishFreezeToReady()) {
+            stateMachine.fail();
+            return SegmentResult.error();
+        }
+        return SegmentResult.ok();
     }
 
     void executeFullWriteTx(final WriterFunction<K, V> writeFunction) {
@@ -147,25 +147,25 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
         if (!stateMachine.tryEnterFreeze()) {
             return resultForState(stateMachine.getState());
         }
+        if (!stateMachine.enterMaintenanceRunning()) {
+            stateMachine.fail();
+            return SegmentResult.error();
+        }
         try {
-            if (!stateMachine.enterMaintenanceRunning()) {
-                stateMachine.fail();
-                return SegmentResult.error();
-            }
             core.flush();
-            if (!stateMachine.finishMaintenanceToFreeze()) {
-                stateMachine.fail();
-                return SegmentResult.error();
-            }
-            if (!stateMachine.finishFreezeToReady()) {
-                stateMachine.fail();
-                return SegmentResult.error();
-            }
-            return SegmentResult.ok();
         } catch (final RuntimeException e) {
             stateMachine.fail();
             return SegmentResult.error();
         }
+        if (!stateMachine.finishMaintenanceToFreeze()) {
+            stateMachine.fail();
+            return SegmentResult.error();
+        }
+        if (!stateMachine.finishFreezeToReady()) {
+            stateMachine.fail();
+            return SegmentResult.error();
+        }
+        return SegmentResult.ok();
     }
 
     @Override
