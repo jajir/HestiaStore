@@ -9,12 +9,9 @@
 - `src/main/java/org/hestiastore/index/segment/SegmentWritePath.java`: write path (write cache, version bumps, flush snapshot).
 - `src/main/java/org/hestiastore/index/segment/SegmentMaintenancePath.java`: maintenance IO helpers (flush writer, full write tx).
 - `src/main/java/org/hestiastore/index/segment/SegmentImplSynchronizationAdapter.java`: thread-safe wrapper with locks + maintenance lock.
-- `src/main/java/org/hestiastore/index/segmentbridge/SegmentAsyncAdapter.java`: async maintenance wrapper over synchronization adapter (implements queue + blocking maintenance).
-- `src/main/java/org/hestiastore/index/segmentbridge/SegmentAsync.java`: optional async segment interface (flush/compact futures).
 
 ## Optional Capability Interfaces
 - `src/main/java/org/hestiastore/index/segment/SegmentWriteLockSupport.java`: optional write/maintenance lock callbacks.
-- `src/main/java/org/hestiastore/index/segmentbridge/SegmentMaintenanceQueue.java`: submit maintenance tasks to shared executor.
 
 ## Builders / Factories
 - `src/main/java/org/hestiastore/index/segment/SegmentBuilder.java`: builds `SegmentImpl`.
@@ -23,8 +20,9 @@
 ## Index / Split Call Sites
 - `src/main/java/org/hestiastore/index/segmentindex/SegmentIndexImpl.java`: uses `Segment` interface and `SegmentResult` retries.
 - `src/main/java/org/hestiastore/index/segmentindex/SegmentSplitCoordinator.java`: uses `SegmentWriteLockSupport` when available.
-- `src/main/java/org/hestiastore/index/segmentindex/SegmentAsyncSplitCoordinator.java`: uses `SegmentMaintenanceQueue` for split scheduling.
+- `src/main/java/org/hestiastore/index/segmentindex/SegmentAsyncSplitCoordinator.java`: schedules splits on the maintenance executor.
 - `src/main/java/org/hestiastore/index/segmentindex/IndexConsistencyChecker.java`: uses `Segment` interface.
 
 ## Concurrency / Maintenance
-- `src/main/java/org/hestiastore/index/segmentbridge/*`: maintenance scheduler, policies, async executor.
+- `src/main/java/org/hestiastore/index/segmentindex/SegmentAsyncExecutor.java`: shared maintenance executor.
+- `src/main/java/org/hestiastore/index/segmentindex/SegmentMaintenancePolicy*.java`: maintenance policies and decisions.

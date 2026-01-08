@@ -3,9 +3,6 @@ package org.hestiastore.index.segmentindex;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentbridge.SegmentMaintenanceDecision;
-import org.hestiastore.index.segmentbridge.SegmentMaintenancePolicy;
-import org.hestiastore.index.segmentbridge.SegmentMaintenancePolicyThreshold;
 
 /**
  * Centralizes post-write maintenance decisions for a segment.
@@ -27,7 +24,8 @@ final class SegmentMaintenanceCoordinator<K, V> {
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
         this.splitCoordinator = new SegmentAsyncSplitCoordinator<>(conf,
-                keySegmentCache, segmentRegistry);
+                keySegmentCache, segmentRegistry,
+                segmentRegistry.getMaintenanceExecutor());
         this.maintenancePolicy = new SegmentMaintenancePolicyThreshold<>(
                 conf.getMaxNumberOfKeysInSegmentWriteCache(),
                 conf.getMaxNumberOfKeysInSegmentCache());

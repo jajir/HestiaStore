@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.concurrent.Executor;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
@@ -242,6 +243,36 @@ class SegmentImplTest {
     }
 
     @Test
+    void openIterator_returns_error_when_iterator_fails() {
+        when(chunkPairFile.openIterator())
+                .thenThrow(new RuntimeException("boom"));
+        final SegmentResult<EntryIterator<Integer, String>> result = subject
+                .openIterator();
+
+        assertEquals(SegmentResultStatus.ERROR, result.getStatus());
+        assertEquals(SegmentState.ERROR, subject.getState());
+    }
+
+    @Test
+    void maintenance_keeps_closed_state_after_completion() {
+        final CapturingExecutor executor = new CapturingExecutor();
+        final SegmentCompacter<Integer, String> compacter = new SegmentCompacter<>(
+                versionController);
+        final SegmentImpl<Integer, String> segment = new SegmentImpl<>(
+                segmentFiles, conf, versionController, segmentPropertiesManager,
+                segmentDataProvider, deltaCacheController, segmentSearcher,
+                compacter, executor);
+
+        assertEquals(SegmentResultStatus.OK, segment.flush().getStatus());
+        assertNotNull(executor.task);
+
+        segment.close();
+        executor.task.run();
+
+        assertEquals(SegmentState.CLOSED, segment.getState());
+    }
+
+    @Test
     void checkAndRepairConsistency_empty_returns_null() {
         when(indexIterator.hasNext()).thenReturn(false);
         assertNull(subject.checkAndRepairConsistency());
@@ -254,5 +285,15 @@ class SegmentImplTest {
                 .thenReturn(Entry.of(3, "b")).thenReturn(Entry.of(2, "c"));
         assertThrows(org.hestiastore.index.IndexException.class,
                 () -> subject.checkAndRepairConsistency());
+    }
+
+    private static final class CapturingExecutor implements Executor {
+
+        private Runnable task;
+
+        @Override
+        public void execute(final Runnable command) {
+            this.task = command;
+        }
     }
 }

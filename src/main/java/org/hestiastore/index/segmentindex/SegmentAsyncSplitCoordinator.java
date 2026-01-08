@@ -4,12 +4,11 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentbridge.SegmentMaintenanceQueue;
-import org.hestiastore.index.segmentbridge.SegmentMaintenanceTask;
 
 /**
  * Schedules segment splits on the async maintenance queue.
@@ -17,25 +16,29 @@ import org.hestiastore.index.segmentbridge.SegmentMaintenanceTask;
 final class SegmentAsyncSplitCoordinator<K, V> {
 
     private final SegmentSplitCoordinator<K, V> splitCoordinator;
+    private final Executor maintenanceExecutor;
     private final Map<SegmentId, SplitInFlight<K, V>> inFlightSplits = new ConcurrentHashMap<>();
 
     SegmentAsyncSplitCoordinator(final IndexConfiguration<K, V> conf,
             final KeySegmentCache<K> keySegmentCache,
-            final SegmentRegistry<K, V> segmentRegistry) {
+            final SegmentRegistry<K, V> segmentRegistry,
+            final Executor maintenanceExecutor) {
         this(new SegmentSplitCoordinator<>(conf, keySegmentCache,
-                segmentRegistry));
+                segmentRegistry), maintenanceExecutor);
     }
 
     SegmentAsyncSplitCoordinator(
-            final SegmentSplitCoordinator<K, V> splitCoordinator) {
+            final SegmentSplitCoordinator<K, V> splitCoordinator,
+            final Executor maintenanceExecutor) {
         this.splitCoordinator = Vldtn.requireNonNull(splitCoordinator,
                 "splitCoordinator");
+        this.maintenanceExecutor = maintenanceExecutor;
     }
 
     CompletionStage<Boolean> optionallySplitAsync(final Segment<K, V> segment,
             final long maxNumberOfKeysInSegment) {
         Vldtn.requireNonNull(segment, "segment");
-        if (!(segment instanceof SegmentMaintenanceQueue queue)) {
+        if (maintenanceExecutor == null) {
             return CompletableFuture.completedFuture(splitCoordinator
                     .optionallySplit(segment, maxNumberOfKeysInSegment));
         }
@@ -45,20 +48,20 @@ final class SegmentAsyncSplitCoordinator<K, V> {
                     if (existing != null && existing.segment == segment) {
                         return existing;
                     }
-                    return scheduleSplit(queue, segment,
-                            maxNumberOfKeysInSegment, segmentId);
+                    return scheduleSplit(segment, maxNumberOfKeysInSegment,
+                            segmentId);
                 });
         return inFlight.future;
     }
 
     private SplitInFlight<K, V> scheduleSplit(
-            final SegmentMaintenanceQueue queue, final Segment<K, V> segment,
-            final long maxNumberOfKeysInSegment, final SegmentId segmentId) {
+            final Segment<K, V> segment, final long maxNumberOfKeysInSegment,
+            final SegmentId segmentId) {
         final CompletableFuture<Boolean> future = new CompletableFuture<>();
         final SplitInFlight<K, V> inFlight = new SplitInFlight<>(segment,
                 future);
         try {
-            queue.submitMaintenanceTask(SegmentMaintenanceTask.SPLIT, () -> {
+            maintenanceExecutor.execute(() -> {
                 try {
                     final boolean split = splitCoordinator.optionallySplit(
                             segment, maxNumberOfKeysInSegment);

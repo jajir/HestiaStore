@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentbridge;
+package org.hestiastore.index.segmentindex;
 
 import org.hestiastore.index.segment.Segment;
 
