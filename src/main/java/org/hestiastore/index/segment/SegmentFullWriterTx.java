@@ -51,8 +51,7 @@ public class SegmentFullWriterTx<K, V>
     protected void doCommit(final EntryWriter<K, V> writer) {
         scarceIndexWriterTx.commit();
         chunkPairFileWriterTx.commit();
-        deltaCacheController.clear();
-        segmentCache.evictAll();
+        deltaCacheController.clearPreservingWriteCache();
 
         segmentPropertiesManager.setNumberOfKeysInCache(0);
         segmentPropertiesManager

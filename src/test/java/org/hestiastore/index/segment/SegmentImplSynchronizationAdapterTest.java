@@ -53,4 +53,32 @@ class SegmentImplSynchronizationAdapterTest {
             executor.shutdownNow();
         }
     }
+
+    @Test
+    void fullIsolationBusyDoesNotHoldLock() throws Exception {
+        @SuppressWarnings("unchecked")
+        final Segment<Integer, String> delegate = (Segment<Integer, String>) mock(
+                Segment.class);
+        when(delegate.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
+                .thenReturn(SegmentResult.busy());
+        when(delegate.put(1, "one")).thenReturn(SegmentResult.ok());
+
+        final SegmentImplSynchronizationAdapter<Integer, String> adapter = new SegmentImplSynchronizationAdapter<>(
+                delegate);
+        assertEquals(SegmentResultStatus.BUSY, adapter
+                .openIterator(SegmentIteratorIsolation.FULL_ISOLATION)
+                .getStatus());
+
+        final ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            final Future<SegmentResult<Void>> future = executor
+                    .submit(() -> adapter.put(1, "one"));
+            final SegmentResult<Void> putResult = future.get(1,
+                    TimeUnit.SECONDS);
+            assertEquals(SegmentResultStatus.OK, putResult.getStatus());
+            verify(delegate).put(1, "one");
+        } finally {
+            executor.shutdownNow();
+        }
+    }
 }

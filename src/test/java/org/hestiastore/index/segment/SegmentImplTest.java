@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -243,6 +244,71 @@ class SegmentImplTest {
     }
 
     @Test
+    void flush_transitions_through_maintenance_and_ready() {
+        final CapturingExecutor executor = new CapturingExecutor();
+        try (SegmentImpl<Integer, String> segment = newSegment(executor,
+                versionController)) {
+            assertEquals(SegmentResultStatus.OK, segment.flush().getStatus());
+            assertEquals(SegmentState.MAINTENANCE_RUNNING, segment.getState());
+            assertNotNull(executor.task);
+
+            executor.task.run();
+
+            assertEquals(SegmentState.READY, segment.getState());
+        }
+    }
+
+    @Test
+    void compact_transitions_through_maintenance_and_ready() {
+        when(segmentPropertiesManager.getCacheDeltaFileNames())
+                .thenReturn(List.of());
+        final CapturingExecutor executor = new CapturingExecutor();
+        try (SegmentImpl<Integer, String> segment = newSegment(executor,
+                versionController)) {
+            assertEquals(SegmentResultStatus.OK, segment.compact().getStatus());
+            assertEquals(SegmentState.MAINTENANCE_RUNNING, segment.getState());
+            assertNotNull(executor.task);
+
+            executor.task.run();
+
+            assertEquals(SegmentState.READY, segment.getState());
+        }
+    }
+
+    @Test
+    void flush_failure_sets_error_state() {
+        final CapturingExecutor executor = new CapturingExecutor();
+        try (SegmentImpl<Integer, String> segment = newSegment(executor,
+                versionController)) {
+            assertEquals(SegmentResultStatus.OK,
+                    segment.put(1, "A").getStatus());
+            when(deltaCacheController.openWriter())
+                    .thenThrow(new RuntimeException("flush failed"));
+
+            assertEquals(SegmentResultStatus.OK, segment.flush().getStatus());
+            assertNotNull(executor.task);
+            executor.task.run();
+
+            assertEquals(SegmentState.ERROR, segment.getState());
+        }
+    }
+
+    @Test
+    void compact_failure_sets_error_state() {
+        final CapturingExecutor executor = new CapturingExecutor();
+        doThrow(new RuntimeException("compact failed")).when(versionController)
+                .changeVersion();
+        try (SegmentImpl<Integer, String> segment = newSegment(executor,
+                versionController)) {
+            assertEquals(SegmentResultStatus.OK, segment.compact().getStatus());
+            assertNotNull(executor.task);
+            executor.task.run();
+
+            assertEquals(SegmentState.ERROR, segment.getState());
+        }
+    }
+
+    @Test
     void openIterator_returns_error_when_iterator_fails() {
         when(chunkPairFile.openIterator())
                 .thenThrow(new RuntimeException("boom"));
@@ -295,5 +361,14 @@ class SegmentImplTest {
         public void execute(final Runnable command) {
             this.task = command;
         }
+    }
+
+    private SegmentImpl<Integer, String> newSegment(final Executor executor,
+            final VersionController controller) {
+        final SegmentCompacter<Integer, String> compacter = new SegmentCompacter<>(
+                controller);
+        return new SegmentImpl<>(segmentFiles, conf, controller,
+                segmentPropertiesManager, segmentDataProvider,
+                deltaCacheController, segmentSearcher, compacter, executor);
     }
 }

@@ -43,6 +43,7 @@ class IntegrationSegmentIndexConsistencyTest extends AbstractSegmentIndexTest {
         for (int i = 0; i < 100; i++) {
             writeEntries(index, makeList(i));
             index.flush();
+            awaitMaintenanceIdle(index);
             verifyIndexData(index, makeList(i));
         }
     }
@@ -74,6 +75,7 @@ class IntegrationSegmentIndexConsistencyTest extends AbstractSegmentIndexTest {
         final SegmentIndex<Integer, Integer> index = makeIndex();
         writeEntries(index, makeList(888));
         index.flush();
+        awaitMaintenanceIdle(index);
         for (int i = 0; i < NUMBER_OF_TEST_ENTRIES; i++) {
             assertNull(index.get(i * 2 + 1));
         }

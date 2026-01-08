@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -13,7 +14,6 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.Test;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -49,6 +49,7 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
 
         verifyIndexSearch(index, testData);
         index.compact();
+        awaitMaintenanceIdle(index);
 
         verifyIndexData(index, testData);
         verifyIndexSearch(index, testData);
@@ -64,6 +65,7 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
             index.delete(i);
         }
         index.compact();
+        awaitMaintenanceIdle(index);
         verifyIndexData(index, new ArrayList<>());
     }
 
@@ -114,6 +116,7 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
             assertEquals("kachna", index.get(i));
         }
         index.compact();
+        awaitMaintenanceIdle(index);
         assertEquals(iterations,
                 index.getStream(SegmentWindow.unbounded()).count());
         for (int i = 0; i < iterations; i++) {
@@ -121,6 +124,7 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
             assertNull(index.get(i));
         }
         index.compact();
+        awaitMaintenanceIdle(index);
         verifyIndexData(index, List.of());
     }
 

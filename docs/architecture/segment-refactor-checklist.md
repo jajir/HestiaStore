@@ -14,14 +14,14 @@
 - Maintenance work (flush/compact) is always executed on the provided executor.
 
 ## Phase 1: Decide ownership and contracts
-- [ ] Document the final responsibilities of SegmentCore vs SegmentImpl.
+- [x] Document the final responsibilities of SegmentCore vs SegmentImpl.
 - [x] Decide whether SegmentImplSynchronizationAdapter stays or moves to
       segmentindex.
 - [x] Define the minimal API SegmentImpl needs from segmentindex to schedule
       maintenance (executor and callback contract).
 - [x] Choose a temporary glue package name for segment↔segmentindex adapters
       and remove it once migration completes.
-- [ ] Update docs/architecture/segment-concurency.md with the implementation
+- [x] Update docs/architecture/segment-concurency.md with the implementation
       mapping once agreed.
 
 ## Phase 2: SegmentImpl API shape
@@ -31,36 +31,41 @@
       - public flush/compact: check state, set state, submit task
       - internal runFlush/runCompact: execute core.flush/core.compact and finish
         state transitions
-- [ ] Ensure simple getters (stats/cache sizes/id) only delegate to SegmentCore.
-- [ ] Ensure get/put check state and then delegate to SegmentCore.
-- [ ] Ensure openIterator checks state and uses state machine rules only.
+- [x] Ensure simple getters (stats/cache sizes/id) only delegate to SegmentCore.
+- [x] Ensure get/put check state and then delegate to SegmentCore.
+- [x] Ensure openIterator checks state and uses state machine rules only.
 
 ## Phase 3: Move async/scheduling to segmentindex
-- [x] Move or replace segmentbridge classes (SegmentAsyncAdapter, scheduler,
-      policies) into segmentindex.
-- [ ] Remove futures and maintenance scheduling logic from segment package.
+- [x] Move or replace legacy bridge classes (async adapter, scheduler, policies)
+      into segmentindex.
+- [x] Remove futures and maintenance scheduling logic from segment package.
 - [x] Place transitional boilerplate in a removable package and delete it
       after the migration.
 - [x] Update SegmentRegistry to build SegmentImpl with executor and to use the
       new maintenance scheduling flow.
-- [x] Update any callers that referenced segmentbridge package directly.
+- [x] Update any callers that referenced the legacy bridge package directly.
 
 ## Phase 4: Behavior and state transitions
-- [ ] Verify state transitions for flush/compact are linearized and end in READY
+- [x] Verify state transitions for flush/compact are linearized and end in READY
       or ERROR.
-- [ ] Ensure only one maintenance task is active per segment (serialized in
+- [x] Ensure only one maintenance task is active per segment (serialized in
       segmentindex).
-- [ ] Ensure failure paths always set ERROR and do not leave the segment in
+- [x] Ensure failure paths always set ERROR and do not leave the segment in
       FREEZE or MAINTENANCE_RUNNING.
 
+Notes:
+- Closing during maintenance leaves the segment in CLOSED, not READY/ERROR.
+  Confirmed: CLOSED is an allowed terminal state.
+
 ## Phase 5: Tests
-- [ ] Add unit tests for SegmentImpl state transitions (flush/compact success,
+- [x] Add unit tests for SegmentImpl state transitions (flush/compact success,
       failure).
-- [ ] Add tests for segmentindex maintenance scheduling and retry/backpressure.
-- [ ] Update existing tests that used SegmentAsyncAdapter.
+- [x] Add tests for segmentindex maintenance scheduling and retry/backpressure.
+- [x] Update existing tests that used SegmentAsyncAdapter.
 - [ ] Run mvn test and mvn verify -Ddependency-check.skip=true as validation.
+Note: IntegrationSegmentIndexConsistencyTest and IntegrationSegmentIndexIteratorTest pass in isolation; full mvn test still times out at 180s.
 
 ## Phase 6: Cleanup
-- [x] Remove obsolete classes in segmentbridge after migration.
-- [ ] Remove or deprecate any old APIs that are no longer used.
-- [x] Re-scan docs for outdated references to segmentbridge.
+- [x] Remove obsolete legacy bridge classes after migration.
+- [x] Remove or deprecate any old APIs that are no longer used.
+- [x] Re-scan docs for outdated references to the legacy bridge package.

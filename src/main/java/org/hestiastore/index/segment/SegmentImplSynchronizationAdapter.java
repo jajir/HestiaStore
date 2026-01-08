@@ -94,6 +94,7 @@ public class SegmentImplSynchronizationAdapter<K, V>
                 final SegmentResult<EntryIterator<K, V>> result = delegate
                         .openIterator(isolation);
                 if (!result.isOk()) {
+                    writeLock.unlock();
                     return result;
                 }
                 return SegmentResult.ok(new UnlockingEntryIterator<>(
