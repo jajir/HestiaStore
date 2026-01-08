@@ -3,24 +3,18 @@ package org.hestiastore.index.segmentindex;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.withSettings;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segmentbridge.SegmentMaintenanceQueue;
-import org.hestiastore.index.segmentbridge.SegmentMaintenanceTask;
 import org.junit.jupiter.api.Test;
 
 class SegmentAsyncSplitCoordinatorTest {
@@ -36,7 +30,7 @@ class SegmentAsyncSplitCoordinatorTest {
         when(splitCoordinator.optionallySplit(segment, 10L)).thenReturn(true);
 
         final SegmentAsyncSplitCoordinator<Integer, String> coordinator = new SegmentAsyncSplitCoordinator<>(
-                splitCoordinator);
+                splitCoordinator, null);
         final CompletionStage<Boolean> result = coordinator
                 .optionallySplitAsync(segment, 10L);
 
@@ -49,25 +43,22 @@ class SegmentAsyncSplitCoordinatorTest {
             throws Exception {
         @SuppressWarnings("unchecked")
         final Segment<Integer, String> segment = (Segment<Integer, String>) mock(
-                Segment.class, withSettings()
-                        .extraInterfaces(SegmentMaintenanceQueue.class));
+                Segment.class);
         when(segment.getId()).thenReturn(SegmentId.of(1));
-        final SegmentMaintenanceQueue queue = (SegmentMaintenanceQueue) segment;
 
         final AtomicReference<Runnable> scheduled = new AtomicReference<>();
-        when(queue.submitMaintenanceTask(eq(SegmentMaintenanceTask.SPLIT),
-                any())).thenAnswer(invocation -> {
-                    scheduled.set(invocation.getArgument(1));
-                    return CompletableFuture
-                            .completedFuture(SegmentResult.ok());
-                });
+        final AtomicInteger submissions = new AtomicInteger();
+        final java.util.concurrent.Executor executor = command -> {
+            submissions.incrementAndGet();
+            scheduled.set(command);
+        };
         @SuppressWarnings("unchecked")
         final SegmentSplitCoordinator<Integer, String> splitCoordinator = mock(
                 SegmentSplitCoordinator.class);
         when(splitCoordinator.optionallySplit(segment, 10L)).thenReturn(true);
 
         final SegmentAsyncSplitCoordinator<Integer, String> coordinator = new SegmentAsyncSplitCoordinator<>(
-                splitCoordinator);
+                splitCoordinator, executor);
 
         final CompletionStage<Boolean> first = coordinator
                 .optionallySplitAsync(segment, 10L);
@@ -75,8 +66,7 @@ class SegmentAsyncSplitCoordinatorTest {
                 .optionallySplitAsync(segment, 10L);
 
         assertSame(first, second);
-        verify(queue, times(1)).submitMaintenanceTask(
-                eq(SegmentMaintenanceTask.SPLIT), any());
+        assertTrue(submissions.get() == 1);
 
         assertNotNull(scheduled.get());
         scheduled.get().run();

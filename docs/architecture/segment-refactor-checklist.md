@@ -6,7 +6,7 @@
 - SegmentImpl owns SegmentStateMachine and an executor provided by higher level
   code; it performs state checks and delegates to SegmentCore.
 - Threading, scheduling, futures, and retry logic live in segmentindex, not in
-  segment or segmentbridge.
+  segment.
 
 ## Assumptions to confirm
 - SegmentImpl is the only concrete Segment implementation used by segmentindex.
@@ -20,7 +20,7 @@
 - [x] Define the minimal API SegmentImpl needs from segmentindex to schedule
       maintenance (executor and callback contract).
 - [x] Choose a temporary glue package name for segment↔segmentindex adapters
-      (e.g., `org.hestiastore.index.segmentbridge`) to make later removal easy.
+      and remove it once migration completes.
 - [ ] Update docs/architecture/segment-concurency.md with the implementation
       mapping once agreed.
 
@@ -36,14 +36,14 @@
 - [ ] Ensure openIterator checks state and uses state machine rules only.
 
 ## Phase 3: Move async/scheduling to segmentindex
-- [ ] Move or replace segmentbridge classes (SegmentAsyncAdapter, scheduler,
+- [x] Move or replace segmentbridge classes (SegmentAsyncAdapter, scheduler,
       policies) into segmentindex.
 - [ ] Remove futures and maintenance scheduling logic from segment package.
-- [x] Place any transitional boilerplate in the `segmentbridge` package so it
-      is easy to find and delete once the migration is complete.
+- [x] Place transitional boilerplate in a removable package and delete it
+      after the migration.
 - [x] Update SegmentRegistry to build SegmentImpl with executor and to use the
       new maintenance scheduling flow.
-- [ ] Update any callers that reference segmentbridge package directly.
+- [x] Update any callers that referenced segmentbridge package directly.
 
 ## Phase 4: Behavior and state transitions
 - [ ] Verify state transitions for flush/compact are linearized and end in READY
@@ -61,6 +61,6 @@
 - [ ] Run mvn test and mvn verify -Ddependency-check.skip=true as validation.
 
 ## Phase 6: Cleanup
-- [ ] Remove obsolete classes in segmentbridge after migration.
+- [x] Remove obsolete classes in segmentbridge after migration.
 - [ ] Remove or deprecate any old APIs that are no longer used.
-- [ ] Re-scan docs for outdated references to segmentbridge.
+- [x] Re-scan docs for outdated references to segmentbridge.

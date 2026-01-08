@@ -18,7 +18,6 @@ import org.hestiastore.index.segment.SegmentImplSynchronizationAdapter;
 import org.hestiastore.index.segment.SegmentPropertiesManager;
 import org.hestiastore.index.segment.SegmentResources;
 import org.hestiastore.index.segment.SegmentResourcesImpl;
-import org.hestiastore.index.segmentbridge.SegmentAsyncExecutor;
 
 public class SegmentRegistry<K, V> {
 
@@ -58,6 +57,10 @@ public class SegmentRegistry<K, V> {
             this.maintenanceExecutor = providedExecutor;
             this.ownsExecutor = false;
         }
+    }
+
+    ExecutorService getMaintenanceExecutor() {
+        return maintenanceExecutor;
     }
 
     public Segment<K, V> getSegment(final SegmentId segmentId) {

@@ -77,17 +77,28 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
             if (!stateMachine.tryEnterFreeze()) {
                 return resultForState(stateMachine.getState());
             }
-            core.invalidateIterators();
-            final EntryIterator<K, V> iterator = core.openIterator(isolation);
-            return SegmentResult
-                    .ok(new ExclusiveAccessIterator<>(iterator, stateMachine));
+            try {
+                core.invalidateIterators();
+                final EntryIterator<K, V> iterator = core
+                        .openIterator(isolation);
+                return SegmentResult.ok(
+                        new ExclusiveAccessIterator<>(iterator, stateMachine));
+            } catch (final RuntimeException e) {
+                failUnlessClosed();
+                return SegmentResult.error();
+            }
         }
         final SegmentState state = stateMachine.getState();
         if (state != SegmentState.READY
                 && state != SegmentState.MAINTENANCE_RUNNING) {
             return resultForState(state);
         }
-        return SegmentResult.ok(core.openIterator(isolation));
+        try {
+            return SegmentResult.ok(core.openIterator(isolation));
+        } catch (final RuntimeException e) {
+            failUnlessClosed();
+            return SegmentResult.error();
+        }
     }
 
     @Override
@@ -165,13 +176,13 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
             return resultForState(stateMachine.getState());
         }
         if (!stateMachine.enterMaintenanceRunning()) {
-            stateMachine.fail();
+            failUnlessClosed();
             return SegmentResult.error();
         }
         try {
             maintenanceExecutor.execute(() -> runMaintenance(work));
         } catch (final RuntimeException e) {
-            stateMachine.fail();
+            failUnlessClosed();
             return SegmentResult.error();
         }
         return SegmentResult.ok();
@@ -181,14 +192,23 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
         try {
             work.run();
         } catch (final RuntimeException e) {
-            stateMachine.fail();
+            failUnlessClosed();
+            return;
+        }
+        if (stateMachine.getState() == SegmentState.CLOSED) {
             return;
         }
         if (!stateMachine.finishMaintenanceToFreeze()) {
-            stateMachine.fail();
+            failUnlessClosed();
             return;
         }
         if (!stateMachine.finishFreezeToReady()) {
+            failUnlessClosed();
+        }
+    }
+
+    private void failUnlessClosed() {
+        if (stateMachine.getState() != SegmentState.CLOSED) {
             stateMachine.fail();
         }
     }
