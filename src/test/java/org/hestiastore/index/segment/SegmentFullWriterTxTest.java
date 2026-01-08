@@ -81,8 +81,7 @@ class SegmentFullWriterTxTest {
 
         verify(scarceWriterTx).commit();
         verify(chunkWriterTx).commit();
-        verify(deltaCacheController).clear();
-        verify(segmentCache).evictAll();
+        verify(deltaCacheController).clearPreservingWriteCache();
         verify(properties).setNumberOfKeysInCache(0);
         verify(properties).setNumberOfKeysInIndex(0);
         verify(properties).setNumberOfKeysInScarceIndex(0);

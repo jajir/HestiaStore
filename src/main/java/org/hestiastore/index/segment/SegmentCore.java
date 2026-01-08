@@ -105,10 +105,6 @@ final class SegmentCore<K, V> {
         return writePath.tryPutWithoutWaiting(key, value);
     }
 
-    void awaitWriteCapacity() {
-        writePath.awaitWriteCapacity();
-    }
-
     void flush() {
         final List<Entry<K, V>> entries = freezeWriteCacheForFlush();
         if (entries.isEmpty()) {

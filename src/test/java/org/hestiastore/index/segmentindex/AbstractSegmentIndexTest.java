@@ -2,12 +2,19 @@ package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hestiastore.index.AbstractDataTest;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentState;
+import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,6 +89,85 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
             cx.incrementAndGet();
         });
         return cx.get();
+    }
+
+    protected void awaitMaintenanceIdle(final SegmentIndex<?, ?> index) {
+        final long deadline = System.nanoTime()
+                + TimeUnit.SECONDS.toNanos(5);
+        while (System.nanoTime() < deadline) {
+            final SegmentRegistry<?, ?> registry = readSegmentRegistry(index);
+            final Map<SegmentId, Segment<?, ?>> segments = readSegmentsMap(
+                    registry);
+            boolean idle = true;
+            for (final Segment<?, ?> segment : segments.values()) {
+                final SegmentState state = segment.getState();
+                if (state == SegmentState.ERROR) {
+                    Assertions.fail(
+                            "Segment entered ERROR during maintenance");
+                }
+                if (state == SegmentState.MAINTENANCE_RUNNING
+                        || state == SegmentState.FREEZE) {
+                    idle = false;
+                    break;
+                }
+            }
+            if (idle) {
+                return;
+            }
+            try {
+                Thread.sleep(10);
+            } catch (final InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+        Assertions.fail("Timed out waiting for maintenance to finish");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static SegmentRegistry<?, ?> readSegmentRegistry(
+            final SegmentIndex<?, ?> index) {
+        try {
+            final SegmentIndexImpl<?, ?> impl = unwrapSegmentIndex(index);
+            final Field field = SegmentIndexImpl.class
+                    .getDeclaredField("segmentRegistry");
+            field.setAccessible(true);
+            return (SegmentRegistry<?, ?>) field.get(impl);
+        } catch (final ReflectiveOperationException ex) {
+            throw new IllegalStateException(
+                    "Unable to read segmentRegistry for test", ex);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<SegmentId, Segment<?, ?>> readSegmentsMap(
+            final SegmentRegistry<?, ?> registry) {
+        try {
+            final Field field = SegmentRegistry.class
+                    .getDeclaredField("segments");
+            field.setAccessible(true);
+            return (Map<SegmentId, Segment<?, ?>>) field.get(registry);
+        } catch (final ReflectiveOperationException ex) {
+            throw new IllegalStateException(
+                    "Unable to read segments map for test", ex);
+        }
+    }
+
+    private static SegmentIndexImpl<?, ?> unwrapSegmentIndex(
+            final SegmentIndex<?, ?> index) {
+        Object current = index;
+        while (!(current instanceof SegmentIndexImpl<?, ?>)) {
+            try {
+                final Field field = current.getClass()
+                        .getDeclaredField("index");
+                field.setAccessible(true);
+                current = field.get(current);
+            } catch (final ReflectiveOperationException ex) {
+                throw new IllegalStateException(
+                        "Unable to unwrap index for test", ex);
+            }
+        }
+        return (SegmentIndexImpl<?, ?>) current;
     }
 
 }

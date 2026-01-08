@@ -23,9 +23,11 @@ public final class SegmentCompacter<K, V> {
     public void forceCompact(final SegmentCore<K, V> segment) {
         logger.debug("Start of compacting '{}'", segment.getId());
         segment.resetSegmentIndexSearcher();
+        segment.freezeWriteCacheForFlush();
         versionController.changeVersion();
         segment.executeFullWriteTx(writer -> {
-            try (EntryIterator<K, V> iterator = segment.openIterator()) {
+            try (EntryIterator<K, V> iterator = segment
+                    .openIterator(SegmentIteratorIsolation.FULL_ISOLATION)) {
                 Entry<K, V> entry;
                 while (iterator.hasNext()) {
                     entry = iterator.next();

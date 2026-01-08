@@ -14,7 +14,8 @@
 - `flush()` and `compact()` are commit points.
 
 ## Thread Safety
-- Segment version is stored in an `AtomicLong`.
+- Segment version is stored in `VersionController` (currently an
+  `AtomicInteger`).
 - The write cache map uses a thread-safe implementation.
 
 ## Response Codes
@@ -121,12 +122,45 @@ It increments when a new immutable view is published (after `flush()` or `compac
 
 ## Failure & Cancellation
 - On `flush()` or `compact()` failure, the maintenance thread stops and the segment moves to `ERROR`.
+- If `close()` is called during maintenance, the segment transitions to `CLOSED`
+  and stays closed even if maintenance completes.
 
 ## Components
-- **Segment**: user-facing API (`put`, `get`, `openIterator`, `flush`, `compact`).
-- **SegmentCore**: writes to the write cache, owns indexes, bloom filter, delta cache, segment version, and segment state.
- - **MaintenanceController**: executor that schedules `flush()` and `compact()` work for `SegmentWriter` (provided by the higher-level app or defaulted internally).
-- **SegmentWriter**: performs serialized `flush()`/`compact()` using snapshots and updates `SegmentCore` state.
+- **Segment**: user-facing API (`put`, `get`, `openIterator`, `flush`,
+  `compact`) implemented by `SegmentImpl`.
+- **SegmentImpl**: owns `SegmentStateMachine`, checks state, and delegates
+  to `SegmentCore`. Schedules maintenance work on the provided executor.
+- **SegmentCore**: single-threaded core with caches, on-disk access, and
+  version tracking.
+- **SegmentStateMachine**: atomic lifecycle transitions (`READY` →
+  `FREEZE` → `MAINTENANCE_RUNNING` → `READY`).
+- **SegmentCompacter**: performs full rewrite compaction using
+  `SegmentCore`.
+- **SegmentImplSynchronizationAdapter**: optional lock-based wrapper used by
+  higher layers for thread-safe access.
+- **SegmentMaintenanceCoordinator** (segmentindex): decides when to call
+  `flush()`/`compact()` after writes.
+- **SegmentAsyncExecutor** + executor (segmentindex): maintenance executor
+  provided to `SegmentImpl` via `SegmentRegistry`.
+- **SegmentAsyncSplitCoordinator / SegmentSplitCoordinator** (segmentindex):
+  schedule and perform segment splits.
+
+## Responsibilities
+- **SegmentImpl**: gates operations with the state machine, schedules
+  maintenance on the executor, and reports status via `SegmentResult`.
+- **SegmentCore**: executes single-threaded read/write/maintenance steps,
+  manages caches and version updates, and performs no threading or state
+  transitions.
+
+## Implementation Mapping
+- `EXCLUSIVE_ACCESS` in this document maps to
+  `SegmentIteratorIsolation.FULL_ISOLATION` in code.
+- `INTERRUPT_FAST` / `STOP_FAST` map to
+  `SegmentIteratorIsolation.FAIL_FAST` (only FAIL_FAST is implemented today).
+- State transitions are enforced by `SegmentStateMachine` and executed in
+  `SegmentImpl.startMaintenance(...)` and `SegmentImpl.runMaintenance(...)`.
+- Maintenance scheduling lives in `SegmentMaintenanceCoordinator` and uses the
+  executor from `SegmentRegistry` (`SegmentAsyncExecutor`).
 
 ## Future: MVCC
 Currently unused. MVCC could support iterators that remain consistent across version changes, balancing deadlocks, performance, and memory.

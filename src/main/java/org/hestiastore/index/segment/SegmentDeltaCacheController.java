@@ -80,4 +80,17 @@ public final class SegmentDeltaCacheController<K, V> {
         segmentPropertiesManager.clearCacheDeltaFileNamesCouter();
     }
 
+    void clearPreservingWriteCache() {
+        segmentCacheDataProvider.invalidate();
+        if (segmentCache != null) {
+            segmentCache.clearDeltaCachePreservingWriteCache();
+        }
+        segmentPropertiesManager.getCacheDeltaFileNames()
+                .forEach(segmentCacheDeltaFile -> {
+                    segmentFiles.optionallyDeleteFile(segmentCacheDeltaFile);
+                });
+        segmentFiles.optionallyDeleteFile(segmentFiles.getCacheFileName());
+        segmentPropertiesManager.clearCacheDeltaFileNamesCouter();
+    }
+
 }

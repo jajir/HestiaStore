@@ -55,10 +55,6 @@ final class SegmentWritePath<K, V> {
         return false;
     }
 
-    void awaitWriteCapacity() {
-        segmentCache.awaitWriteCapacity();
-    }
-
     /**
      * Returns the current number of buffered write-cache keys.
      *

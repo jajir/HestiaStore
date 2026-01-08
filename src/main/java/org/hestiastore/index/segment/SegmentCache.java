@@ -63,10 +63,6 @@ public final class SegmentCache<K, V> {
         }
     }
 
-    void awaitWriteCapacity() {
-        awaitCapacity();
-    }
-
     /**
      * Adds a new entry into the write cache.
      *
@@ -163,6 +159,15 @@ public final class SegmentCache<K, V> {
     public void evictAll() {
         deltaCache.clear();
         writeCache.clear();
+        if (frozenWriteCache != null) {
+            frozenWriteCache.clear();
+            frozenWriteCache = null;
+        }
+        signalCapacityAvailable();
+    }
+
+    void clearDeltaCachePreservingWriteCache() {
+        deltaCache.clear();
         if (frozenWriteCache != null) {
             frozenWriteCache.clear();
             frozenWriteCache = null;
