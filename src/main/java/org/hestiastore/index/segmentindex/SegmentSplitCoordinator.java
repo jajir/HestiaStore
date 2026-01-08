@@ -11,7 +11,6 @@ import org.hestiastore.index.segment.SegmentPropertiesManager;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segment.SegmentWriteLockSupport;
-import org.hestiastore.index.segmentasync.SegmentMaintenanceBlocking;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -118,12 +117,7 @@ public class SegmentSplitCoordinator<K, V> {
 
     private void compactSegment(final Segment<K, V> segment) {
         while (true) {
-            final SegmentResult<Void> result;
-            if (segment instanceof SegmentMaintenanceBlocking blocking) {
-                result = blocking.compactBlocking();
-            } else {
-                result = segment.compact();
-            }
+            final SegmentResult<Void> result = segment.compact();
             if (result.getStatus() == SegmentResultStatus.OK
                     || result.getStatus() == SegmentResultStatus.CLOSED) {
                 return;

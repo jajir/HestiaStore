@@ -8,8 +8,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentasync.SegmentMaintenanceQueue;
-import org.hestiastore.index.segmentasync.SegmentMaintenanceTask;
+import org.hestiastore.index.segmentbridge.SegmentMaintenanceQueue;
+import org.hestiastore.index.segmentbridge.SegmentMaintenanceTask;
 
 /**
  * Schedules segment splits on the async maintenance queue.

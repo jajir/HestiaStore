@@ -3,7 +3,6 @@ package org.hestiastore.index.segment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -129,7 +128,8 @@ class SegmentImplTest {
                 versionController);
         subject = new SegmentImpl<>(segmentFiles, conf, versionController,
                 segmentPropertiesManager, segmentDataProvider,
-                deltaCacheController, segmentSearcher, compacter);
+                deltaCacheController, segmentSearcher, compacter,
+                Runnable::run);
     }
 
     @Test
@@ -201,25 +201,6 @@ class SegmentImplTest {
         assertEquals(SegmentResultStatus.OK, result.getStatus());
         assertEquals("val", result.getValue());
         verify(segmentSearcher).get(eq(123), eq(segmentDataProvider), any());
-    }
-
-    @Test
-    void segmentIndexSearcher_is_lazy_and_cached() {
-        final SegmentIndexSearcher<Integer, String> first = subject
-                .getSegmentIndexSearcher();
-        final SegmentIndexSearcher<Integer, String> second = subject
-                .getSegmentIndexSearcher();
-        assertSame(first, second);
-    }
-
-    @Test
-    void resetSegmentIndexSearcher_recreates_instance() {
-        final SegmentIndexSearcher<Integer, String> first = subject
-                .getSegmentIndexSearcher();
-        subject.resetSegmentIndexSearcher();
-        final SegmentIndexSearcher<Integer, String> second = subject
-                .getSegmentIndexSearcher();
-        assertNotSame(first, second);
     }
 
     @Test

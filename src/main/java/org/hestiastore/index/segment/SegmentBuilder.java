@@ -2,6 +2,7 @@ package org.hestiastore.index.segment;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -41,6 +42,7 @@ public final class SegmentBuilder<K, V> {
     private SegmentPropertiesManager segmentPropertiesManager = null;
     private final List<ChunkFilter> encodingChunkFilters = new ArrayList<>();
     private final List<ChunkFilter> decodingChunkFilters = new ArrayList<>();
+    private Executor maintenanceExecutor;
 
     SegmentBuilder() {
 
@@ -252,6 +254,18 @@ public final class SegmentBuilder<K, V> {
     }
 
     /**
+     * Provide an executor used for maintenance operations (flush/compact).
+     *
+     * @param maintenanceExecutor executor for maintenance tasks
+     * @return this builder for chaining
+     */
+    public SegmentBuilder<K, V> withMaintenanceExecutor(
+            final Executor maintenanceExecutor) {
+        this.maintenanceExecutor = maintenanceExecutor;
+        return this;
+    }
+
+    /**
      * Set disk I/O buffer size used for index/data file operations.
      *
      * @param diskIoBufferSize buffer size in bytes
@@ -348,7 +362,8 @@ public final class SegmentBuilder<K, V> {
                 versionController);
         return new SegmentImpl<>(segmentFiles, segmentConf, versionController,
                 segmentPropertiesManager, segmentResources,
-                deltaCacheController, segmentSearcher, compacter);
+                deltaCacheController, segmentSearcher, compacter,
+                maintenanceExecutor);
     }
 
     private void prepareBaseComponents() {

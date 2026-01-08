@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentasync;
+package org.hestiastore.index.segmentbridge;
 
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
@@ -13,8 +13,7 @@ import org.hestiastore.index.segment.SegmentResultStatus;
  */
 public final class SegmentAsyncAdapter<K, V>
         extends SegmentImplSynchronizationAdapter<K, V>
-        implements SegmentAsync<K, V>, SegmentMaintenanceQueue,
-        SegmentMaintenanceBlocking {
+        implements SegmentAsync<K, V>, SegmentMaintenanceQueue {
 
     private final SegmentMaintenanceScheduler<K, V> maintenanceScheduler;
 
@@ -66,16 +65,6 @@ public final class SegmentAsyncAdapter<K, V>
             task.run();
             return SegmentResult.ok();
         });
-    }
-
-    @Override
-    public SegmentResult<Void> flushBlocking() {
-        return super.flush();
-    }
-
-    @Override
-    public SegmentResult<Void> compactBlocking() {
-        return super.compact();
     }
 
     private void scheduleMaintenanceIfNeeded() {

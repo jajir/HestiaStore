@@ -1,14 +1,11 @@
 package org.hestiastore.index.segment;
 
-import java.util.List;
+import java.util.concurrent.Executor;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.WriteTransaction;
-import org.hestiastore.index.WriteTransaction.WriterFunction;
-import org.hestiastore.index.directory.FileReaderSeekable;
 
 /**
  * Public segment implementation that delegates single-threaded work to
@@ -20,9 +17,12 @@ import org.hestiastore.index.directory.FileReaderSeekable;
 public class SegmentImpl<K, V> extends AbstractCloseableResource
         implements Segment<K, V> {
 
+    private static final Executor DIRECT_EXECUTOR = new DirectExecutor();
+
     private final SegmentCore<K, V> core;
     private final SegmentCompacter<K, V> segmentCompacter;
     private final SegmentStateMachine stateMachine = new SegmentStateMachine();
+    private final Executor maintenanceExecutor;
 
     public SegmentImpl(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
@@ -31,9 +31,12 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
             final SegmentResources<K, V> segmentResources,
             final SegmentDeltaCacheController<K, V> segmentDeltaCacheController,
             final SegmentSearcher<K, V> segmentSearcher,
-            final SegmentCompacter<K, V> segmentCompacter) {
+            final SegmentCompacter<K, V> segmentCompacter,
+            final Executor maintenanceExecutor) {
         this.segmentCompacter = Vldtn.requireNonNull(segmentCompacter,
                 "segmentCompacter");
+        this.maintenanceExecutor = maintenanceExecutor == null ? DIRECT_EXECUTOR
+                : maintenanceExecutor;
         this.core = new SegmentCore<>(segmentFiles, segmentConf,
                 versionController, segmentPropertiesManager, segmentResources,
                 segmentDeltaCacheController, segmentSearcher);
@@ -76,8 +79,8 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
             }
             core.invalidateIterators();
             final EntryIterator<K, V> iterator = core.openIterator(isolation);
-            return SegmentResult.ok(
-                    new ExclusiveAccessIterator<>(iterator, stateMachine));
+            return SegmentResult
+                    .ok(new ExclusiveAccessIterator<>(iterator, stateMachine));
         }
         final SegmentState state = stateMachine.getState();
         if (state != SegmentState.READY
@@ -89,36 +92,7 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
 
     @Override
     public SegmentResult<Void> compact() {
-        if (!stateMachine.tryEnterFreeze()) {
-            return resultForState(stateMachine.getState());
-        }
-        if (!stateMachine.enterMaintenanceRunning()) {
-            stateMachine.fail();
-            return SegmentResult.error();
-        }
-        try {
-            segmentCompacter.forceCompact(core);
-        } catch (final RuntimeException e) {
-            stateMachine.fail();
-            return SegmentResult.error();
-        }
-        if (!stateMachine.finishMaintenanceToFreeze()) {
-            stateMachine.fail();
-            return SegmentResult.error();
-        }
-        if (!stateMachine.finishFreezeToReady()) {
-            stateMachine.fail();
-            return SegmentResult.error();
-        }
-        return SegmentResult.ok();
-    }
-
-    void executeFullWriteTx(final WriterFunction<K, V> writeFunction) {
-        core.executeFullWriteTx(writeFunction);
-    }
-
-    WriteTransaction<K, V> openFullWriteTx() {
-        return core.openFullWriteTx();
+        return startMaintenance(() -> segmentCompacter.forceCompact(core));
     }
 
     @Override
@@ -134,38 +108,9 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
         return SegmentResult.ok();
     }
 
-    boolean tryPutWithoutWaiting(final K key, final V value) {
-        return core.tryPutWithoutWaiting(key, value);
-    }
-
-    void awaitWriteCapacity() {
-        core.awaitWriteCapacity();
-    }
-
     @Override
     public SegmentResult<Void> flush() {
-        if (!stateMachine.tryEnterFreeze()) {
-            return resultForState(stateMachine.getState());
-        }
-        if (!stateMachine.enterMaintenanceRunning()) {
-            stateMachine.fail();
-            return SegmentResult.error();
-        }
-        try {
-            core.flush();
-        } catch (final RuntimeException e) {
-            stateMachine.fail();
-            return SegmentResult.error();
-        }
-        if (!stateMachine.finishMaintenanceToFreeze()) {
-            stateMachine.fail();
-            return SegmentResult.error();
-        }
-        if (!stateMachine.finishFreezeToReady()) {
-            stateMachine.fail();
-            return SegmentResult.error();
-        }
-        return SegmentResult.ok();
+        return startMaintenance(core::flush);
     }
 
     @Override
@@ -193,32 +138,9 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
         return core.getId();
     }
 
-    SegmentIndexSearcher<K, V> getSegmentIndexSearcher() {
-        return core.getSegmentIndexSearcher();
-    }
-
-    FileReaderSeekable getSeekableReader() {
-        return core.getSeekableReader();
-    }
-
-    void resetSegmentIndexSearcher() {
-        core.resetSegmentIndexSearcher();
-    }
-
-    void resetSeekableReader() {
-        core.resetSeekableReader();
-    }
-
-    List<Entry<K, V>> freezeWriteCacheForFlush() {
-        return core.freezeWriteCacheForFlush();
-    }
-
-    void flushFrozenWriteCacheToDeltaFile(final List<Entry<K, V>> entries) {
-        core.flushFrozenWriteCacheToDeltaFile(entries);
-    }
-
-    void applyFrozenWriteCacheAfterFlush() {
-        core.applyFrozenWriteCacheAfterFlush();
+    @Override
+    public SegmentState getState() {
+        return stateMachine.getState();
     }
 
     @Override
@@ -236,6 +158,47 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
             return SegmentResult.error();
         }
         return SegmentResult.busy();
+    }
+
+    private SegmentResult<Void> startMaintenance(final Runnable work) {
+        if (!stateMachine.tryEnterFreeze()) {
+            return resultForState(stateMachine.getState());
+        }
+        if (!stateMachine.enterMaintenanceRunning()) {
+            stateMachine.fail();
+            return SegmentResult.error();
+        }
+        try {
+            maintenanceExecutor.execute(() -> runMaintenance(work));
+        } catch (final RuntimeException e) {
+            stateMachine.fail();
+            return SegmentResult.error();
+        }
+        return SegmentResult.ok();
+    }
+
+    private void runMaintenance(final Runnable work) {
+        try {
+            work.run();
+        } catch (final RuntimeException e) {
+            stateMachine.fail();
+            return;
+        }
+        if (!stateMachine.finishMaintenanceToFreeze()) {
+            stateMachine.fail();
+            return;
+        }
+        if (!stateMachine.finishFreezeToReady()) {
+            stateMachine.fail();
+        }
+    }
+
+    private static final class DirectExecutor implements Executor {
+
+        @Override
+        public void execute(final Runnable command) {
+            command.run();
+        }
     }
 
     private static final class ExclusiveAccessIterator<K, V>

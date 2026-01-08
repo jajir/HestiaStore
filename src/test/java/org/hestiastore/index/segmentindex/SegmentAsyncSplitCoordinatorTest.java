@@ -19,8 +19,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segmentasync.SegmentMaintenanceQueue;
-import org.hestiastore.index.segmentasync.SegmentMaintenanceTask;
+import org.hestiastore.index.segmentbridge.SegmentMaintenanceQueue;
+import org.hestiastore.index.segmentbridge.SegmentMaintenanceTask;
 import org.junit.jupiter.api.Test;
 
 class SegmentAsyncSplitCoordinatorTest {
