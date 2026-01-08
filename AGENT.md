@@ -1,6 +1,6 @@
 # General rules
 - be honest
-- when it make sense structure respone as numbered list of points
+- when it make sense structure response as numbered list of points
 
 # Repository Guidelines
 
