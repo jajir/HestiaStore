@@ -6,14 +6,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
+import org.hestiastore.index.segment.SegmentResult;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -100,6 +104,10 @@ class SegmentIndexConsistencyCheckerTest {
                 .thenReturn(Stream.of(segmentPair));
         when(segmentRegistry.getSegment(SEGMENT_ID)).thenReturn(segment);
         when(segment.checkAndRepairConsistency()).thenReturn(null);
+        when(segment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
+                .thenReturn(SegmentResult.ok(
+                        EntryIterator.make(List.<Entry<Integer, String>>of()
+                                .iterator())));
 
         checker.checkAndRepairConsistency();
 

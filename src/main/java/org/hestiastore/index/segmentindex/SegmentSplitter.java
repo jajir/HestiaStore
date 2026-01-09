@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex;
 
 import java.util.List;
 
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.F;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
@@ -51,6 +52,18 @@ public class SegmentSplitter<K, V> {
     public SegmentSplitterResult<K, V> split(final SegmentId lowerSegmentId,
             final SegmentId upperSegmentId,
             final SegmentSplitterPlan<K, V> plan) {
+        final SplitExecution<K, V> execution = splitWithIterator(lowerSegmentId,
+                upperSegmentId, plan);
+        try {
+            return execution.getResult();
+        } finally {
+            execution.close();
+        }
+    }
+
+    SplitExecution<K, V> splitWithIterator(final SegmentId lowerSegmentId,
+            final SegmentId upperSegmentId,
+            final SegmentSplitterPlan<K, V> plan) {
         Vldtn.requireNonNull(lowerSegmentId, "lowerSegmentId");
         Vldtn.requireNonNull(upperSegmentId, "upperSegmentId");
         Vldtn.requireNonNull(plan, "plan");
@@ -67,7 +80,8 @@ public class SegmentSplitter<K, V> {
                         new SegmentSplitStepEnsureLowerNotEmpty<>(),
                         new SegmentSplitStepReplaceIfNoRemaining<>(),
                         new SegmentSplitStepWriteRemainingToCurrent<>()));
-        final SegmentSplitterResult<K, V> result = pipeline.run(ctx);
+        final SegmentSplitState<K, V> state = pipeline.runKeepingIterator(ctx);
+        final SegmentSplitterResult<K, V> result = state.getResult();
 
         if (logger.isDebugEnabled()) {
             logger.debug(
@@ -75,7 +89,28 @@ public class SegmentSplitter<K, V> {
                     segment.getId(), result.getSegmentId(),
                     F.fmt(plan.getEstimatedNumberOfKeys()));
         }
-        return result;
+        return new SplitExecution<>(result, state.getIterator());
+    }
+
+    static final class SplitExecution<K, V> {
+        private final SegmentSplitterResult<K, V> result;
+        private final EntryIterator<K, V> iterator;
+
+        private SplitExecution(final SegmentSplitterResult<K, V> result,
+                final EntryIterator<K, V> iterator) {
+            this.result = Vldtn.requireNonNull(result, "result");
+            this.iterator = iterator;
+        }
+
+        SegmentSplitterResult<K, V> getResult() {
+            return result;
+        }
+
+        void close() {
+            if (iterator != null) {
+                iterator.close();
+            }
+        }
     }
 
 }

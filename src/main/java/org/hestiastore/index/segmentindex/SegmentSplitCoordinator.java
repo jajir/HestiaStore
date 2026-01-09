@@ -90,18 +90,31 @@ public class SegmentSplitCoordinator<K, V> {
         if (!segmentRegistry.isSegmentInstance(segmentId, segment)) {
             return false;
         }
-        final SplitOutcome outcome = doSplit(segment, plan);
-        if (outcome != null) {
-            if (outcome.evictSegmentId != null) {
-                segmentRegistry.evictSegmentIfSame(outcome.evictSegmentId,
-                        segment);
+        final SegmentId lowerSegmentId = keySegmentCache.findNewSegmentId();
+        final SegmentId upperSegmentId = keySegmentCache.findNewSegmentId();
+        final SegmentWriterTxFactory<K, V> writerTxFactory = id -> segmentRegistry
+                .newSegmentBuilder(id).openWriterTx();
+        final SegmentSplitter<K, V> splitter = new SegmentSplitter<>(segment,
+                writerTxFactory);
+        final SegmentSplitter.SplitExecution<K, V> execution = splitter
+                .splitWithIterator(lowerSegmentId, upperSegmentId, plan);
+        try {
+            final SplitOutcome outcome = doSplit(segment, segmentId,
+                    upperSegmentId, execution.getResult());
+            if (outcome != null) {
+                if (outcome.evictSegmentId != null) {
+                    segmentRegistry.evictSegmentIfSame(outcome.evictSegmentId,
+                            segment);
+                }
+                if (outcome.removeSegmentId != null) {
+                    segmentRegistry.removeSegment(outcome.removeSegmentId);
+                }
+                return outcome.splitApplied;
             }
-            if (outcome.removeSegmentId != null) {
-                segmentRegistry.removeSegment(outcome.removeSegmentId);
-            }
-            return outcome.splitApplied;
+            return false;
+        } finally {
+            execution.close();
         }
-        return false;
     }
 
     private void compactSegment(final Segment<K, V> segment) {
@@ -122,16 +135,8 @@ public class SegmentSplitCoordinator<K, V> {
     }
 
     private SplitOutcome doSplit(final Segment<K, V> segment,
-            final SegmentSplitterPlan<K, V> plan) {
-        final SegmentId segmentId = segment.getId();
-        final SegmentId lowerSegmentId = keySegmentCache.findNewSegmentId();
-        final SegmentId upperSegmentId = keySegmentCache.findNewSegmentId();
-        final SegmentWriterTxFactory<K, V> writerTxFactory = id -> segmentRegistry
-                .newSegmentBuilder(id).openWriterTx();
-        final SegmentSplitter<K, V> splitter = new SegmentSplitter<>(segment,
-                writerTxFactory);
-        final SegmentSplitterResult<K, V> result = splitter
-                .split(lowerSegmentId, upperSegmentId, plan);
+            final SegmentId segmentId, final SegmentId upperSegmentId,
+            final SegmentSplitterResult<K, V> result) {
         if (result.isSplit()) {
             replaceCurrentWithSegment(segmentId, upperSegmentId);
             keySegmentCache.insertSegment(result.getMaxKey(),

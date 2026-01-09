@@ -68,11 +68,11 @@
 - [x] Multiple concurrent `flush/compact`: one OK, others BUSY.
 
 ### Stress Tests (optional, recommended)
-- [ ] Mixed workload loop (put/get/flush/compact) with time limit and
+- [x] Mixed workload loop (put/get/flush/compact) with time limit and
       no deadlocks or data loss.
 
 ## Acceptance
-- [ ] All new tests pass reliably.
+- [x] All new tests pass reliably.
 - [x] Tests proving that gets and puts can run concurrently.
 - [x] No external locks required for thread safety.
 - [x] Contract and docs explicitly state thread-safe behavior.
