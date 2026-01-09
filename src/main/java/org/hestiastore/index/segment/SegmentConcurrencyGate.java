@@ -45,7 +45,10 @@ final class SegmentConcurrencyGate {
     }
 
     boolean finishMaintenanceToFreeze() {
-        return stateMachine.finishMaintenanceToFreeze();
+        if (!stateMachine.finishMaintenanceToFreeze()) {
+            return false;
+        }
+        return awaitNoInFlight();
     }
 
     boolean finishFreezeToReady() {

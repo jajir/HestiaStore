@@ -72,7 +72,7 @@
 - These triggers transition the segment out of `READY` (into `FREEZE`/`MAINTENANCE_RUNNING`) before refusing new writes.
 
 ### Memory Visibility
-- The published view is swapped via an atomic reference update; after the swap, new reads see the new view and its metadata.
+- The published view is swapped under `FREEZE` (exclusive); new reads see only the old or the new view, never a partial publish.
 - Version increments provide an ordering point for optimistic iterators.
 
 ### Freshness vs Consistency

@@ -13,7 +13,7 @@ semantics.
 deprecated lock-based wrapper that can be used for conservative serialization.
 This document calls out the lock-based path explicitly where it applies.
 For the lock-free `SegmentImpl` behavior and state machine rules, rely on
-`docs/architecture/segment-concurency.md`.
+`docs/architecture/segment-concurrency.md`.
 
 This document has two parts: AS-IS (current behavior) and Target state (lock
 minimization for throughput).

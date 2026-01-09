@@ -2,8 +2,7 @@ package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -13,8 +12,8 @@ import java.util.List;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.EntryWriter;
-import org.hestiastore.index.WriteTransaction.WriterFunction;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -29,11 +28,19 @@ class SegmentCompacterTest {
     @Mock
     private VersionController versionController;
 
+    @Mock
+    private SegmentFullWriterTx<Integer, String> writerTx;
+
     private SegmentCompacter<Integer, String> sc;
 
     @BeforeEach
     void setUp() {
         sc = new SegmentCompacter<>(versionController);
+    }
+
+    @AfterEach
+    void tearDown() {
+        sc = null;
     }
 
     @Test
@@ -64,42 +71,46 @@ class SegmentCompacterTest {
                 .of(Entry.of(1, "a"), Entry.of(2, "b"));
         final EntryIterator<Integer, String> iterator = EntryIterator
                 .make(snapshot.iterator());
+        final RecordingWriter<Integer, String> writer = new RecordingWriter<>();
         when(segment.openIteratorFromSnapshot(snapshot)).thenReturn(iterator);
-
-        final List<Entry<Integer, String>> written = new ArrayList<>();
-        doAnswer(invocation -> {
-            final WriterFunction<Integer, String> writerFunction = invocation
-                    .getArgument(0);
-            writerFunction.apply(new EntryWriter<>() {
-                private boolean closed;
-
-                @Override
-                public void write(final Entry<Integer, String> entry) {
-                    written.add(entry);
-                }
-
-                @Override
-                public boolean wasClosed() {
-                    return closed;
-                }
-
-                @Override
-                public void close() {
-                    if (closed) {
-                        throw new IllegalStateException(
-                                "EntryWriter already closed");
-                    }
-                    closed = true;
-                }
-            });
-            return null;
-        }).when(segment).executeFullWriteTx(any());
+        when(segment.openFullWriteTx()).thenReturn(writerTx);
+        when(writerTx.open()).thenReturn(writer);
 
         sc.compact(segment, snapshot);
 
-        assertEquals(snapshot, written);
+        assertEquals(snapshot, writer.getWritten());
+        assertTrue(writer.wasClosed());
         verify(segment).openIteratorFromSnapshot(snapshot);
+        verify(writerTx).commit();
         verify(versionController).changeVersion();
+    }
+
+    private static final class RecordingWriter<K, V> implements EntryWriter<K, V> {
+
+        private final List<Entry<K, V>> written = new ArrayList<>();
+        private boolean closed;
+
+        @Override
+        public void write(final Entry<K, V> entry) {
+            written.add(entry);
+        }
+
+        @Override
+        public boolean wasClosed() {
+            return closed;
+        }
+
+        @Override
+        public void close() {
+            if (closed) {
+                throw new IllegalStateException("EntryWriter already closed");
+            }
+            closed = true;
+        }
+
+        private List<Entry<K, V>> getWritten() {
+            return written;
+        }
     }
 
 }
