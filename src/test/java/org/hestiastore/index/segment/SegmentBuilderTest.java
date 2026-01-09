@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.Field;
 import java.util.List;
 
 import org.hestiastore.index.Entry;
@@ -20,6 +21,7 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -245,9 +247,7 @@ class SegmentBuilderTest {
     void test_build_withProvidedChunkFilters() {
         final Segment<Integer, String> segment = Segment
                 .<Integer, String>builder()//
-                .withAsyncDirectory(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(DIRECTORY))//
+                .withAsyncDirectory(AsyncDirectoryAdapter.wrap(DIRECTORY))//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
@@ -290,6 +290,31 @@ class SegmentBuilderTest {
         assertEquals(SegmentResultStatus.OK, second.getStatus());
         assertEquals("a", first.getValue());
         assertEquals("b", second.getValue());
+        segment.close();
+    }
+
+    @Test
+    void test_build_sets_direct_maintenance_executor_when_missing()
+            throws Exception {
+        final Segment<Integer, String> segment = Segment
+                .<Integer, String>builder()//
+                .withAsyncDirectory(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(DIRECTORY))//
+                .withId(SEGMENT_ID)//
+                .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
+                .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
+                .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
+                .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
+                .build();
+
+        final SegmentImpl<Integer, String> impl = (SegmentImpl<Integer, String>) segment;
+        final Field field = SegmentImpl.class
+                .getDeclaredField("maintenanceExecutor");
+        field.setAccessible(true);
+        final Object executor = field.get(impl);
+
+        assertEquals(DirectExecutor.class, executor.getClass());
         segment.close();
     }
 }

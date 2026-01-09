@@ -143,6 +143,21 @@ class SegmentImplTest {
     }
 
     @Test
+    void constructor_requires_maintenance_executor() {
+        final SegmentCompacter<Integer, String> compacter = new SegmentCompacter<>(
+                versionController);
+
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> new SegmentImpl<>(segmentFiles, conf, versionController,
+                        segmentPropertiesManager, segmentDataProvider,
+                        deltaCacheController, segmentSearcher, compacter,
+                        null));
+
+        assertEquals("Property 'maintenanceExecutor' must not be null.",
+                e.getMessage());
+    }
+
+    @Test
     void put_writes_to_segment_cache_and_bumps_version() {
         assertEquals(SegmentResultStatus.OK,
                 subject.put(1, "A").getStatus());

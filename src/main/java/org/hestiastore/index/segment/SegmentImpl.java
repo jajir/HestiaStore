@@ -17,14 +17,12 @@ import org.hestiastore.index.Vldtn;
 public class SegmentImpl<K, V> extends AbstractCloseableResource
         implements Segment<K, V> {
 
-    private static final Executor DIRECT_EXECUTOR = new DirectExecutor();
-
     private final SegmentCore<K, V> core;
     private final SegmentCompacter<K, V> segmentCompacter;
     private final SegmentStateMachine stateMachine = new SegmentStateMachine();
     private final Executor maintenanceExecutor;
 
-    public SegmentImpl(final SegmentFiles<K, V> segmentFiles,
+    SegmentImpl(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
             final VersionController versionController,
             final SegmentPropertiesManager segmentPropertiesManager,
@@ -35,8 +33,8 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
             final Executor maintenanceExecutor) {
         this.segmentCompacter = Vldtn.requireNonNull(segmentCompacter,
                 "segmentCompacter");
-        this.maintenanceExecutor = maintenanceExecutor == null ? DIRECT_EXECUTOR
-                : maintenanceExecutor;
+        this.maintenanceExecutor = Vldtn.requireNonNull(maintenanceExecutor,
+                "maintenanceExecutor");
         this.core = new SegmentCore<>(segmentFiles, segmentConf,
                 versionController, segmentPropertiesManager, segmentResources,
                 segmentDeltaCacheController, segmentSearcher);
@@ -210,14 +208,6 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     private void failUnlessClosed() {
         if (stateMachine.getState() != SegmentState.CLOSED) {
             stateMachine.fail();
-        }
-    }
-
-    private static final class DirectExecutor implements Executor {
-
-        @Override
-        public void execute(final Runnable command) {
-            command.run();
         }
     }
 
