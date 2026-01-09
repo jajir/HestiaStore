@@ -31,7 +31,9 @@ import org.hestiastore.index.bloomfilter.BloomFilterWriterTx;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFile;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFileWriter;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFileWriterTx;
+import org.hestiastore.index.chunkstore.CellPosition;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
+import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
@@ -120,6 +122,8 @@ class SegmentImplTest {
                 .thenReturn(seekableReader);
         when(chunkPairFile.openWriterTx()).thenReturn(chunkEntryWriterTx);
         when(chunkEntryWriterTx.openWriter()).thenReturn(chunkEntryWriter);
+        when(chunkEntryWriter.flush()).thenReturn(
+                CellPosition.of(DataBlockSize.ofDataBlockSize(1024), 0));
         when(chunkPairFile.openIterator()).thenReturn(indexIterator);
         when(segmentFiles.getScarceIndex()).thenReturn(scarceIndex);
         when(scarceIndex.openWriterTx()).thenReturn(scarceWriterTx);

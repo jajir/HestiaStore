@@ -33,10 +33,10 @@ class IntegrationSegmentIndexConcurrencyTest {
             CompletableFuture.allOf(writes.toArray(new CompletableFuture[0]))
                     .join();
 
-            index.flush();
+            index.flushAndWait();
 
-            IntStream.range(0, 50).forEach(i -> assertEquals("v-" + i,
-                    index.getAsync(i).toCompletableFuture().join()));
+            IntStream.range(0, 50).forEach(
+                    i -> assertEquals("v-" + i, index.get(i)));
             assertEquals(50,
                     index.getStream(SegmentWindow.unbounded()).count());
         } finally {

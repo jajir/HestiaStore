@@ -22,18 +22,31 @@ final class SegmentSplitPipeline<K, V>
     }
 
     SegmentSplitterResult<K, V> run(final SegmentSplitContext<K, V> ctx) {
-        final SegmentSplitState<K, V> state = new SegmentSplitState<>();
+        final SegmentSplitState<K, V> state = runKeepingIterator(ctx);
         try {
-            filter(ctx, state);
-            if (state.getResult() != null) {
-                return state.getResult();
-            }
-            throw new IllegalStateException(
-                    "Split pipeline produced no result");
+            return state.getResult();
         } finally {
             if (state.getIterator() != null) {
                 state.getIterator().close();
             }
+        }
+    }
+
+    SegmentSplitState<K, V> runKeepingIterator(
+            final SegmentSplitContext<K, V> ctx) {
+        final SegmentSplitState<K, V> state = new SegmentSplitState<>();
+        try {
+            filter(ctx, state);
+            if (state.getResult() != null) {
+                return state;
+            }
+            throw new IllegalStateException(
+                    "Split pipeline produced no result");
+        } catch (final RuntimeException e) {
+            if (state.getIterator() != null) {
+                state.getIterator().close();
+            }
+            throw e;
         }
     }
 }
