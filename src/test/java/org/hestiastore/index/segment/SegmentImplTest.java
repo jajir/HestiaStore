@@ -12,6 +12,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.EntryIteratorWithCurrent;
@@ -32,16 +34,22 @@ import org.hestiastore.index.chunkentryfile.ChunkEntryFileWriterTx;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
+import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.FileReaderSeekable;
+import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.scarceindex.ScarceIndexWriterTx;
 import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 @ExtendWith(MockitoExtension.class)
-@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class SegmentImplTest {
 
     @Mock
@@ -67,9 +75,9 @@ class SegmentImplTest {
     @Mock
     private BloomFilter<Integer> bloomFilter;
     @Mock
-    private org.hestiastore.index.directory.Directory directory;
+    private Directory directory;
     @Mock
-    private org.hestiastore.index.directory.FileReaderSeekable seekableReader;
+    private FileReaderSeekable seekableReader;
     @Mock
     private BloomFilterWriter<Integer> bloomFilterWriter;
     @Mock
@@ -106,8 +114,7 @@ class SegmentImplTest {
         when(segmentFiles.getIndexFile()).thenReturn(chunkPairFile);
         when(segmentFiles.getIndexFileName()).thenReturn("segment.index");
         when(segmentFiles.getAsyncDirectory()).thenReturn(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory));
+                AsyncDirectoryAdapter.wrap(directory));
         when(directory.isFileExists("segment.index")).thenReturn(true);
         when(directory.getFileReaderSeekable("segment.index"))
                 .thenReturn(seekableReader);
@@ -133,6 +140,13 @@ class SegmentImplTest {
                 versionController);
         core = createCore(versionController);
         subject = new SegmentImpl<>(core, compacter, Runnable::run);
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (subject != null) {
+            subject.close();
+        }
     }
 
     @Test
@@ -222,7 +236,7 @@ class SegmentImplTest {
     void flush_changes_version_when_entries_present() {
         assertEquals(SegmentResultStatus.OK,
                 subject.put(1, "A").getStatus());
-        org.mockito.Mockito.reset(versionController);
+        reset(versionController);
         assertEquals(SegmentResultStatus.OK, subject.flush().getStatus());
 
         verify(versionController).changeVersion();
@@ -492,7 +506,7 @@ class SegmentImplTest {
         when(indexIterator.hasNext()).thenReturn(true, true, true, false);
         when(indexIterator.next()).thenReturn(Entry.of(1, "a"))
                 .thenReturn(Entry.of(3, "b")).thenReturn(Entry.of(2, "c"));
-        assertThrows(org.hestiastore.index.IndexException.class,
+        assertThrows(IndexException.class,
                 () -> subject.checkAndRepairConsistency());
     }
 

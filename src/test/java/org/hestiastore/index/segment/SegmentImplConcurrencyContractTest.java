@@ -2,10 +2,13 @@ package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -95,12 +98,71 @@ class SegmentImplConcurrencyContractTest {
     }
 
     @Test
+    void flush_allows_put_and_get_during_maintenance() {
+        final CapturingExecutor executor = new CapturingExecutor();
+        try (Segment<Integer, String> segment = newSegment(4, executor)) {
+            assertEquals(SegmentResultStatus.OK,
+                    segment.put(1, "a").getStatus());
+
+            final SegmentResult<CompletionStage<Void>> result = segment.flush();
+            assertEquals(SegmentResultStatus.OK, result.getStatus());
+            assertEquals(SegmentState.MAINTENANCE_RUNNING, segment.getState());
+            assertNotNull(result.getValue());
+            assertTrue(executor.hasTask());
+            assertFalse(result.getValue().toCompletableFuture().isDone());
+
+            assertEquals(SegmentResultStatus.OK,
+                    segment.put(2, "b").getStatus());
+            final SegmentResult<String> read = segment.get(2);
+            assertEquals(SegmentResultStatus.OK, read.getStatus());
+            assertEquals("b", read.getValue());
+
+            executor.runTask();
+
+            assertEquals(SegmentState.READY, segment.getState());
+            assertTrue(result.getValue().toCompletableFuture().isDone());
+            assertEquals("a", segment.get(1).getValue());
+            assertEquals("b", segment.get(2).getValue());
+        }
+    }
+
+    @Test
     void put_returns_busy_when_write_cache_full() {
         try (Segment<Integer, String> segment = newSegment(1)) {
             assertEquals(SegmentResultStatus.OK,
                     segment.put(1, "a").getStatus());
             assertEquals(SegmentResultStatus.BUSY,
                     segment.put(2, "b").getStatus());
+        }
+    }
+
+    @Test
+    void compact_allows_put_and_get_during_maintenance() {
+        final CapturingExecutor executor = new CapturingExecutor();
+        try (Segment<Integer, String> segment = newSegment(4, executor)) {
+            assertEquals(SegmentResultStatus.OK,
+                    segment.put(1, "a").getStatus());
+
+            final SegmentResult<CompletionStage<Void>> result = segment
+                    .compact();
+            assertEquals(SegmentResultStatus.OK, result.getStatus());
+            assertEquals(SegmentState.MAINTENANCE_RUNNING, segment.getState());
+            assertNotNull(result.getValue());
+            assertTrue(executor.hasTask());
+            assertFalse(result.getValue().toCompletableFuture().isDone());
+
+            assertEquals(SegmentResultStatus.OK,
+                    segment.put(2, "b").getStatus());
+            final SegmentResult<String> read = segment.get(2);
+            assertEquals(SegmentResultStatus.OK, read.getStatus());
+            assertEquals("b", read.getValue());
+
+            executor.runTask();
+
+            assertEquals(SegmentState.READY, segment.getState());
+            assertTrue(result.getValue().toCompletableFuture().isDone());
+            assertEquals("a", segment.get(1).getValue());
+            assertEquals("b", segment.get(2).getValue());
         }
     }
 
@@ -163,17 +225,47 @@ class SegmentImplConcurrencyContractTest {
     }
 
     private Segment<Integer, String> newSegment(final int writeCacheSize) {
-        return Segment.<Integer, String>builder()//
-                .withAsyncDirectory(AsyncDirectoryAdapter.wrap(new MemDirectory()))//
-                .withId(SegmentId.of(1))//
-                .withKeyTypeDescriptor(new TypeDescriptorInteger())//
-                .withValueTypeDescriptor(new TypeDescriptorShortString())//
-                .withMaxNumberOfKeysInSegmentWriteCache(writeCacheSize)//
-                .withMaxNumberOfKeysInSegmentCache(8)//
-                .withMaxNumberOfKeysInSegmentChunk(2)//
-                .withBloomFilterIndexSizeInBytes(0)//
-                .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
-                .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
-                .build();
+        return newSegment(writeCacheSize, null);
+    }
+
+    private Segment<Integer, String> newSegment(final int writeCacheSize,
+            final Executor maintenanceExecutor) {
+        final SegmentBuilder<Integer, String> builder = Segment
+                .<Integer, String>builder()
+                .withAsyncDirectory(
+                        AsyncDirectoryAdapter.wrap(new MemDirectory()))
+                .withId(SegmentId.of(1))
+                .withKeyTypeDescriptor(new TypeDescriptorInteger())
+                .withValueTypeDescriptor(new TypeDescriptorShortString())
+                .withMaxNumberOfKeysInSegmentWriteCache(writeCacheSize)
+                .withMaxNumberOfKeysInSegmentCache(8)
+                .withMaxNumberOfKeysInSegmentChunk(2)
+                .withBloomFilterIndexSizeInBytes(0)
+                .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))
+                .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()));
+        if (maintenanceExecutor != null) {
+            builder.withMaintenanceExecutor(maintenanceExecutor);
+        }
+        return builder.build();
+    }
+
+    private static final class CapturingExecutor implements Executor {
+
+        private Runnable task;
+
+        @Override
+        public void execute(final Runnable command) {
+            this.task = command;
+        }
+
+        boolean hasTask() {
+            return task != null;
+        }
+
+        void runTask() {
+            if (task != null) {
+                task.run();
+            }
+        }
     }
 }
