@@ -6,7 +6,7 @@
       `MAINTENANCE_RUNNING`).
 - [x] Maintenance is exclusive only for admission/snapshot; IO runs in
       background.
-- [ ] No external locks or adapter required for safety.
+- [x] No external locks or adapter required for safety.
 
 ## Contract and Documentation
 - [x] Update `Segment.java` Javadoc with the thread-safe contract.
@@ -16,11 +16,11 @@
 ## Concurrency Gate (Core Mechanism)
 - [x] Introduce `SegmentConcurrencyGate` (package-private).
 - [x] Add in-flight counters for reads and writes.
-- [ ] Implement admission checks:
+- [x] Implement admission checks:
       - [x] `tryEnterRead/Write` checks state → increments counter →
             re-checks state (rollback on BUSY).
       - [x] `exitRead/Write` decrements counters.
-- [ ] Implement maintenance admission:
+- [x] Implement maintenance admission:
       - [x] CAS `READY -> FREEZE` (freeze admission).
       - [x] Refuse new ops (BUSY).
       - [x] Wait for in-flight counters to reach zero.
@@ -49,9 +49,9 @@
 - [x] Iterator close returns segment to `READY`.
 
 ## Legacy Adapter
-- [ ] Deprecate or remove `SegmentImplSynchronizationAdapter` once
+- [x] Deprecate or remove `SegmentImplSynchronizationAdapter` once
       `SegmentImpl` is fully thread-safe.
-- [ ] If retained, document it as optional conservative serialization.
+- [x] If retained, document it as optional conservative serialization.
 
 ## Tests (must be bulletproof)
 ### Unit Tests

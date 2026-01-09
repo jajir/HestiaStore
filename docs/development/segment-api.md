@@ -10,7 +10,7 @@ Split behavior is documented here because it affects locking and iterator
 semantics.
 
 `Segment` is thread-safe by contract. `SegmentImplSynchronizationAdapter` is a
-legacy lock-based wrapper that can be used for conservative serialization.
+deprecated lock-based wrapper that can be used for conservative serialization.
 This document calls out the lock-based path explicitly where it applies.
 For the lock-free `SegmentImpl` behavior and state machine rules, rely on
 `docs/architecture/segment-concurency.md`.
