@@ -2,11 +2,15 @@
 
 ## Overview
 
-The current implementation enforces a **global read/write lock** at the index
-level. Read operations can overlap, while any write operation
-(`put/delete/flush/compact/close`) is exclusive and blocks other reads and
-writes. Segments are also wrapped with per-segment locking, but the index-level
-lock is the dominant guard today.
+The index still supports a legacy **global read/write lock** path (used by
+`IndexInternalSynchronized`). Read operations can overlap, while any write
+operation (`put/delete/flush/compact/close`) is exclusive and blocks other reads
+and writes. This is a conservative mode for callers that want serialization.
+
+Segment-level concurrency no longer requires external locks. `SegmentImpl`
+enforces its own lock-free admission gate (see
+`docs/architecture/segment-concurency.md`), while
+`SegmentImplSynchronizationAdapter` remains optional for strict serialization.
 
 ## Concurrency Invariants (Target Design)
 

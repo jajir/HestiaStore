@@ -2,7 +2,7 @@
 
 ## Decisions (confirm before implementation)
 - [x] Segment contract states thread-safe by definition.
-- [ ] `get`/`put` can run concurrently in `READY` (and limited in
+- [x] `get`/`put` can run concurrently in `READY` (and limited in
       `MAINTENANCE_RUNNING`).
 - [x] Maintenance is exclusive only for admission/snapshot; IO runs in
       background.
@@ -11,7 +11,7 @@
 ## Contract and Documentation
 - [x] Update `Segment.java` Javadoc with the thread-safe contract.
 - [x] Update `segment-concurency.md` with the lock-free safety model.
-- [ ] Update any legacy docs that still assume lock-based safety.
+- [x] Update any legacy docs that still assume lock-based safety.
 
 ## Concurrency Gate (Core Mechanism)
 - [x] Introduce `SegmentConcurrencyGate` (package-private).
@@ -31,9 +31,9 @@
 ## SegmentImpl Wiring
 - [x] Route `get/put/openIterator` through the gate.
 - [x] Route `flush/compact` through freeze+drain before scheduling IO.
-- [ ] Ensure `SegmentResult<CompletionStage<Void>>` semantics:
-      - [ ] `OK` returns non-null stage (accepted).
-      - [ ] `BUSY/CLOSED/ERROR` return null stage (not started).
+- [x] Ensure `SegmentResult<CompletionStage<Void>>` semantics:
+      - [x] `OK` returns non-null stage (accepted).
+      - [x] `BUSY/CLOSED/ERROR` return null stage (not started).
 - [x] Ensure `openIterator(FULL_ISOLATION)` uses the same freeze+drain flow.
 
 ## SegmentCore Concurrency Safety
@@ -41,7 +41,7 @@
 - [x] Write cache size/counts are atomic.
 - [ ] Published view swap is atomic (immutable snapshot + atomic reference).
 - [ ] Version increment provides visibility for iterators.
-- [ ] Remove any shared mutable state without atomic protection.
+- [x] Remove any shared mutable state without atomic protection.
 
 ## Iterator Behavior
 - [ ] `FAIL_FAST` checks version on each `hasNext/next`.
@@ -62,7 +62,7 @@
 - [x] `FAIL_FAST` stops/throws on version change.
 
 ### Concurrency Tests (JUnit)
-- [ ] Parallel `get` + `put` on same keys, no exceptions, final values correct.
+- [x] Parallel `get` + `put` on same keys, no exceptions, final values correct.
 - [ ] Flush with concurrent writes: pre-freeze writes are flushed; post-freeze
       writes stay in cache and are visible to `get`.
 - [ ] Compact with concurrent reads: readers see consistent data.

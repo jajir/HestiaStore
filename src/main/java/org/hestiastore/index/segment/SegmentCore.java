@@ -8,7 +8,6 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.WriteTransaction.WriterFunction;
-import org.hestiastore.index.directory.FileReaderSeekable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -144,16 +143,8 @@ final class SegmentCore<K, V> {
         return readPath.getSegmentIndexSearcher();
     }
 
-    FileReaderSeekable getSeekableReader() {
-        return readPath.getSeekableReader();
-    }
-
     void resetSegmentIndexSearcher() {
         readPath.resetSegmentIndexSearcher();
-    }
-
-    void resetSeekableReader() {
-        readPath.resetSeekableReader();
     }
 
     List<Entry<K, V>> freezeWriteCacheForFlush() {
