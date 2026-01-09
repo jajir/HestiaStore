@@ -17,12 +17,12 @@ final class ExclusiveAccessIterator<K, V> extends AbstractCloseableResource
         implements EntryIterator<K, V> {
 
     private final EntryIterator<K, V> delegate;
-    private final SegmentStateMachine stateMachine;
+    private final SegmentConcurrencyGate gate;
 
     ExclusiveAccessIterator(final EntryIterator<K, V> delegate,
-            final SegmentStateMachine stateMachine) {
+            final SegmentConcurrencyGate gate) {
         this.delegate = Vldtn.requireNonNull(delegate, "delegate");
-        this.stateMachine = Vldtn.requireNonNull(stateMachine, "stateMachine");
+        this.gate = Vldtn.requireNonNull(gate, "gate");
     }
 
     @Override
@@ -40,7 +40,7 @@ final class ExclusiveAccessIterator<K, V> extends AbstractCloseableResource
         try {
             delegate.close();
         } finally {
-            stateMachine.finishFreezeToReady();
+            gate.finishFreezeToReady();
         }
     }
 }

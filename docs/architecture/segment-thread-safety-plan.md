@@ -1,52 +1,52 @@
 # Segment Thread-Safety Refactor Checklist (Lock-Free)
 
 ## Decisions (confirm before implementation)
-- [ ] Segment contract states thread-safe by definition.
+- [x] Segment contract states thread-safe by definition.
 - [ ] `get`/`put` can run concurrently in `READY` (and limited in
       `MAINTENANCE_RUNNING`).
-- [ ] Maintenance is exclusive only for admission/snapshot; IO runs in
+- [x] Maintenance is exclusive only for admission/snapshot; IO runs in
       background.
 - [ ] No external locks or adapter required for safety.
 
 ## Contract and Documentation
-- [ ] Update `Segment.java` Javadoc with the thread-safe contract.
-- [ ] Update `segment-concurency.md` with the lock-free safety model.
+- [x] Update `Segment.java` Javadoc with the thread-safe contract.
+- [x] Update `segment-concurency.md` with the lock-free safety model.
 - [ ] Update any legacy docs that still assume lock-based safety.
 
 ## Concurrency Gate (Core Mechanism)
-- [ ] Introduce `SegmentConcurrencyGate` (package-private).
-- [ ] Add in-flight counters for reads and writes.
+- [x] Introduce `SegmentConcurrencyGate` (package-private).
+- [x] Add in-flight counters for reads and writes.
 - [ ] Implement admission checks:
-      - [ ] `tryEnterRead/Write` checks state → increments counter →
+      - [x] `tryEnterRead/Write` checks state → increments counter →
             re-checks state (rollback on BUSY).
-      - [ ] `exitRead/Write` decrements counters.
+      - [x] `exitRead/Write` decrements counters.
 - [ ] Implement maintenance admission:
-      - [ ] CAS `READY -> FREEZE_REQUESTED`.
-      - [ ] Refuse new ops (BUSY).
-      - [ ] Wait for in-flight counters to reach zero.
-      - [ ] Snapshot/freeze write cache and queue background IO.
-      - [ ] Release exclusivity; run IO in `MAINTENANCE_RUNNING`.
+      - [x] CAS `READY -> FREEZE` (freeze admission).
+      - [x] Refuse new ops (BUSY).
+      - [x] Wait for in-flight counters to reach zero.
+      - [x] Snapshot/freeze write cache and queue background IO.
+      - [x] Release exclusivity; run IO in `MAINTENANCE_RUNNING`.
       - [ ] On completion: publish new view, bump version, `READY`.
 
 ## SegmentImpl Wiring
-- [ ] Route `get/put/openIterator` through the gate.
-- [ ] Route `flush/compact` through freeze+drain before scheduling IO.
+- [x] Route `get/put/openIterator` through the gate.
+- [x] Route `flush/compact` through freeze+drain before scheduling IO.
 - [ ] Ensure `SegmentResult<CompletionStage<Void>>` semantics:
       - [ ] `OK` returns non-null stage (accepted).
       - [ ] `BUSY/CLOSED/ERROR` return null stage (not started).
-- [ ] Ensure `openIterator(FULL_ISOLATION)` uses the same freeze+drain flow.
+- [x] Ensure `openIterator(FULL_ISOLATION)` uses the same freeze+drain flow.
 
 ## SegmentCore Concurrency Safety
-- [ ] Write cache uses a thread-safe map.
-- [ ] Write cache size/counts are atomic.
+- [x] Write cache uses a thread-safe map.
+- [x] Write cache size/counts are atomic.
 - [ ] Published view swap is atomic (immutable snapshot + atomic reference).
 - [ ] Version increment provides visibility for iterators.
 - [ ] Remove any shared mutable state without atomic protection.
 
 ## Iterator Behavior
 - [ ] `FAIL_FAST` checks version on each `hasNext/next`.
-- [ ] `FULL_ISOLATION` blocks new ops until iterator is closed.
-- [ ] Iterator close returns segment to `READY`.
+- [x] `FULL_ISOLATION` blocks new ops until iterator is closed.
+- [x] Iterator close returns segment to `READY`.
 
 ## Legacy Adapter
 - [ ] Deprecate or remove `SegmentImplSynchronizationAdapter` once
@@ -55,11 +55,11 @@
 
 ## Tests (must be bulletproof)
 ### Unit Tests
-- [ ] Gate admission allows `get/put` in `READY`, refuses in `FREEZE`.
-- [ ] Maintenance admission drains in-flight counters before IO starts.
-- [ ] `flush/compact` stages complete on success, fail exceptionally on error.
-- [ ] `FULL_ISOLATION` blocks new ops until close.
-- [ ] `FAIL_FAST` stops/throws on version change.
+- [x] Gate admission allows `get/put` in `READY`, refuses in `FREEZE`.
+- [x] Maintenance admission drains in-flight counters before IO starts.
+- [x] `flush/compact` stages complete on success, fail exceptionally on error.
+- [x] `FULL_ISOLATION` blocks new ops until close.
+- [x] `FAIL_FAST` stops/throws on version change.
 
 ### Concurrency Tests (JUnit)
 - [ ] Parallel `get` + `put` on same keys, no exceptions, final values correct.
@@ -75,4 +75,4 @@
 ## Acceptance
 - [ ] All new tests pass reliably.
 - [ ] No external locks required for thread safety.
-- [ ] Contract and docs explicitly state thread-safe behavior.
+- [x] Contract and docs explicitly state thread-safe behavior.

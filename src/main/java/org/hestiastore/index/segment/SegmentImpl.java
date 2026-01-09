@@ -1,8 +1,10 @@
 package org.hestiastore.index.segment;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
@@ -21,7 +23,7 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
 
     private final SegmentCore<K, V> core;
     private final SegmentCompacter<K, V> segmentCompacter;
-    private final SegmentStateMachine stateMachine = new SegmentStateMachine();
+    private final SegmentConcurrencyGate gate = new SegmentConcurrencyGate();
     private final Executor maintenanceExecutor;
 
     SegmentImpl(final SegmentCore<K, V> core,
@@ -66,54 +68,66 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
             final SegmentIteratorIsolation isolation) {
         Vldtn.requireNonNull(isolation, "isolation");
         if (isolation == SegmentIteratorIsolation.FULL_ISOLATION) {
-            if (!stateMachine.tryEnterFreeze()) {
-                return resultForState(stateMachine.getState());
+            if (!gate.tryEnterFreezeAndDrain()) {
+                return resultForState(gate.getState());
             }
             try {
                 core.invalidateIterators();
                 final EntryIterator<K, V> iterator = core
                         .openIterator(isolation);
                 return SegmentResult.ok(
-                        new ExclusiveAccessIterator<>(iterator, stateMachine));
+                        new ExclusiveAccessIterator<>(iterator, gate));
             } catch (final RuntimeException e) {
                 failUnlessClosed();
                 return SegmentResult.error();
             }
         }
-        final SegmentState state = stateMachine.getState();
-        if (state != SegmentState.READY
-                && state != SegmentState.MAINTENANCE_RUNNING) {
-            return resultForState(state);
+        if (!gate.tryEnterRead()) {
+            return resultForState(gate.getState());
         }
         try {
             return SegmentResult.ok(core.openIterator(isolation));
         } catch (final RuntimeException e) {
             failUnlessClosed();
             return SegmentResult.error();
+        } finally {
+            gate.exitRead();
         }
     }
 
     @Override
     public SegmentResult<CompletionStage<Void>> compact() {
-        return startMaintenance(() -> segmentCompacter.forceCompact(core));
+        return startMaintenance(() -> {
+            final List<Entry<K, V>> snapshotEntries = segmentCompacter
+                    .prepareCompaction(core);
+            return () -> segmentCompacter.compact(core, snapshotEntries);
+        });
     }
 
     @Override
     public SegmentResult<Void> put(final K key, final V value) {
-        final SegmentState state = stateMachine.getState();
-        if (state != SegmentState.READY
-                && state != SegmentState.MAINTENANCE_RUNNING) {
-            return resultForState(state);
+        if (!gate.tryEnterWrite()) {
+            return resultForState(gate.getState());
         }
-        if (!core.tryPutWithoutWaiting(key, value)) {
-            return SegmentResult.busy();
+        try {
+            if (!core.tryPutWithoutWaiting(key, value)) {
+                return SegmentResult.busy();
+            }
+            return SegmentResult.ok();
+        } finally {
+            gate.exitWrite();
         }
-        return SegmentResult.ok();
     }
 
     @Override
     public SegmentResult<CompletionStage<Void>> flush() {
-        return startMaintenance(core::flush);
+        return startMaintenance(() -> {
+            final List<Entry<K, V>> entries = core.freezeWriteCacheForFlush();
+            return () -> {
+                core.flushFrozenWriteCacheToDeltaFile(entries);
+                core.applyFrozenWriteCacheAfterFlush();
+            };
+        });
     }
 
     @Override
@@ -128,12 +142,14 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
 
     @Override
     public SegmentResult<V> get(final K key) {
-        final SegmentState state = stateMachine.getState();
-        if (state == SegmentState.READY
-                || state == SegmentState.MAINTENANCE_RUNNING) {
-            return SegmentResult.ok(core.get(key));
+        if (!gate.tryEnterRead()) {
+            return resultForState(gate.getState());
         }
-        return resultForState(state);
+        try {
+            return SegmentResult.ok(core.get(key));
+        } finally {
+            gate.exitRead();
+        }
     }
 
     @Override
@@ -143,12 +159,12 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
 
     @Override
     public SegmentState getState() {
-        return stateMachine.getState();
+        return gate.getState();
     }
 
     @Override
     protected void doClose() {
-        stateMachine.forceClosed();
+        gate.forceClosed();
         core.close();
     }
 
@@ -164,11 +180,19 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     }
 
     private SegmentResult<CompletionStage<Void>> startMaintenance(
-            final Runnable work) {
-        if (!stateMachine.tryEnterFreeze()) {
-            return resultForState(stateMachine.getState());
+            final Supplier<Runnable> workSupplier) {
+        Vldtn.requireNonNull(workSupplier, "workSupplier");
+        if (!gate.tryEnterFreezeAndDrain()) {
+            return resultForState(gate.getState());
         }
-        if (!stateMachine.enterMaintenanceRunning()) {
+        final Runnable work;
+        try {
+            work = Vldtn.requireNonNull(workSupplier.get(), "work");
+        } catch (final RuntimeException e) {
+            failUnlessClosed();
+            return SegmentResult.error();
+        }
+        if (!gate.enterMaintenanceRunning()) {
             failUnlessClosed();
             return SegmentResult.error();
         }
@@ -192,17 +216,17 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
             completion.completeExceptionally(e);
             return;
         }
-        if (stateMachine.getState() == SegmentState.CLOSED) {
+        if (gate.getState() == SegmentState.CLOSED) {
             completion.complete(null);
             return;
         }
-        if (!stateMachine.finishMaintenanceToFreeze()) {
+        if (!gate.finishMaintenanceToFreeze()) {
             failUnlessClosed();
             completion.completeExceptionally(new IllegalStateException(
                     "Segment maintenance failed to transition to FREEZE."));
             return;
         }
-        if (!stateMachine.finishFreezeToReady()) {
+        if (!gate.finishFreezeToReady()) {
             failUnlessClosed();
             completion.completeExceptionally(new IllegalStateException(
                     "Segment maintenance failed to transition to READY."));
@@ -212,8 +236,8 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     }
 
     private void failUnlessClosed() {
-        if (stateMachine.getState() != SegmentState.CLOSED) {
-            stateMachine.fail();
+        if (gate.getState() != SegmentState.CLOSED) {
+            gate.fail();
         }
     }
 

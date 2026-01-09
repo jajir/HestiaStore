@@ -30,43 +30,23 @@ final class SegmentCore<K, V> {
     private final SegmentMaintenancePath<K, V> maintenancePath;
 
     SegmentCore(final SegmentFiles<K, V> segmentFiles,
-            final SegmentConf segmentConf,
             final VersionController versionController,
             final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentResources<K, V> segmentResources,
-            final SegmentDeltaCacheController<K, V> segmentDeltaCacheController,
-            final SegmentSearcher<K, V> segmentSearcher) {
+            final SegmentCache<K, V> segmentCache,
+            final SegmentReadPath<K, V> readPath,
+            final SegmentWritePath<K, V> writePath,
+            final SegmentMaintenancePath<K, V> maintenancePath) {
         this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
         logger.debug("Initializing segment '{}'", segmentFiles.getId());
         this.versionController = Vldtn.requireNonNull(versionController,
                 "versionController");
-        final SegmentConf conf = Vldtn.requireNonNull(segmentConf,
-                "segmentConf");
-        final SegmentResources<K, V> resources = Vldtn.requireNonNull(
-                segmentResources, "segmentResources");
-        final SegmentDeltaCacheController<K, V> deltaController = Vldtn
-                .requireNonNull(segmentDeltaCacheController,
-                        "segmentDeltaCacheController");
-        final SegmentDeltaCache<K, V> deltaCache = segmentResources
-                .getSegmentDeltaCache();
-        this.segmentCache = new SegmentCache<>(
-                segmentFiles.getKeyTypeDescriptor().getComparator(),
-                segmentFiles.getValueTypeDescriptor(),
-                deltaCache.getAsSortedList(),
-                conf.getMaxNumberOfKeysInSegmentWriteCache(),
-                conf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush(),
-                conf.getMaxNumberOfKeysInSegmentCache());
-        deltaController.setSegmentCache(segmentCache);
         this.segmentPropertiesManager = Vldtn.requireNonNull(
                 segmentPropertiesManager, "segmentPropertiesManager");
-        this.readPath = new SegmentReadPath<>(segmentFiles, conf, resources,
-                Vldtn.requireNonNull(segmentSearcher, "segmentSearcher"),
-                segmentCache, versionController);
-        this.writePath = new SegmentWritePath<>(segmentCache,
-                versionController);
-        this.maintenancePath = new SegmentMaintenancePath<>(segmentFiles, conf,
-                segmentPropertiesManager, resources, deltaController,
-                segmentCache);
+        this.segmentCache = Vldtn.requireNonNull(segmentCache, "segmentCache");
+        this.readPath = Vldtn.requireNonNull(readPath, "readPath");
+        this.writePath = Vldtn.requireNonNull(writePath, "writePath");
+        this.maintenancePath = Vldtn.requireNonNull(maintenancePath,
+                "maintenancePath");
     }
 
     SegmentStats getStats() {
@@ -87,6 +67,21 @@ final class SegmentCore<K, V> {
 
     EntryIterator<K, V> openIterator(final SegmentIteratorIsolation isolation) {
         return readPath.openIterator(isolation);
+    }
+
+    /**
+     * Opens an iterator over the index and a provided snapshot list.
+     *
+     * @param snapshotEntries sorted snapshot entries
+     * @return iterator over the merged snapshot view
+     */
+    EntryIterator<K, V> openIteratorFromSnapshot(
+            final List<Entry<K, V>> snapshotEntries) {
+        Vldtn.requireNonNull(snapshotEntries, "snapshotEntries");
+        return new MergeDeltaCacheWithIndexIterator<>(
+                segmentFiles.getIndexFile().openIterator(),
+                segmentFiles.getKeyTypeDescriptor(),
+                segmentFiles.getValueTypeDescriptor(), snapshotEntries);
     }
 
     WriteTransaction<K, V> openFullWriteTx() {
@@ -110,17 +105,21 @@ final class SegmentCore<K, V> {
         if (entries.isEmpty()) {
             return;
         }
-        try {
-            flushFrozenWriteCacheToDeltaFile(entries);
-            applyFrozenWriteCacheAfterFlush();
-        } catch (final RuntimeException e) {
-            // Keep frozen cache for retry; caller sees the failure.
-            throw e;
-        }
+        flushFrozenWriteCacheToDeltaFile(entries);
+        applyFrozenWriteCacheAfterFlush();
     }
 
     int getNumberOfKeysInWriteCache() {
         return writePath.getNumberOfKeysInWriteCache();
+    }
+
+    /**
+     * Captures a sorted snapshot of the current cache contents.
+     *
+     * @return sorted cache snapshot
+     */
+    List<Entry<K, V>> snapshotCacheEntries() {
+        return segmentCache.getAsSortedList();
     }
 
     long getNumberOfKeysInCache() {

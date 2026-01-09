@@ -1,71 +1,151 @@
 package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 
-import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
+import org.hestiastore.index.AbstractCloseableResource;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.EntryIteratorWithCurrent;
+import org.hestiastore.index.chunkentryfile.ChunkEntryFile;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
-import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class SegmentCoreTest {
 
-    @Test
-    void invalidateIteratorsBumpsVersion() {
-        final VersionController versionController = new VersionController();
-        final SegmentCore<Integer, String> core = createCore(versionController);
-        try {
-            final int before = versionController.getVersion();
-            core.invalidateIterators();
-            assertEquals(before + 1, versionController.getVersion());
-        } finally {
+    @Mock
+    private SegmentFiles<Integer, String> segmentFiles;
+    @Mock
+    private VersionController versionController;
+    @Mock
+    private SegmentPropertiesManager segmentPropertiesManager;
+    @Mock
+    private SegmentCache<Integer, String> segmentCache;
+    @Mock
+    private SegmentReadPath<Integer, String> readPath;
+    @Mock
+    private SegmentWritePath<Integer, String> writePath;
+    @Mock
+    private SegmentMaintenancePath<Integer, String> maintenancePath;
+    @Mock
+    private ChunkEntryFile<Integer, String> indexFile;
+
+    private final TypeDescriptorInteger keyDescriptor = new TypeDescriptorInteger();
+    private final TypeDescriptorShortString valueDescriptor = new TypeDescriptorShortString();
+
+    private SegmentCore<Integer, String> core;
+    private boolean coreClosed;
+
+    @BeforeEach
+    void setUp() {
+        core = new SegmentCore<>(segmentFiles, versionController,
+                segmentPropertiesManager, segmentCache, readPath, writePath,
+                maintenancePath);
+        coreClosed = false;
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (core != null && !coreClosed) {
             core.close();
+            coreClosed = true;
         }
     }
 
     @Test
-    void tryPutWithoutWaitingUpdatesWriteCacheCount() {
-        final VersionController versionController = new VersionController();
-        final SegmentCore<Integer, String> core = createCore(versionController);
-        try {
-            assertEquals(0, core.getNumberOfKeysInWriteCache());
-            assertTrue(core.tryPutWithoutWaiting(1, "one"));
-            assertEquals(1, core.getNumberOfKeysInWriteCache());
-        } finally {
-            core.close();
+    void invalidateIteratorsBumpsVersion() throws Exception {
+        core.invalidateIterators();
+        verify(versionController).changeVersion();
+    }
+
+    @Test
+    void tryPutWithoutWaitingUpdatesWriteCacheCount() throws Exception {
+        when(writePath.getNumberOfKeysInWriteCache()).thenReturn(0, 1);
+        when(writePath.tryPutWithoutWaiting(1, "one")).thenReturn(true);
+
+        assertEquals(0, core.getNumberOfKeysInWriteCache());
+        assertTrue(core.tryPutWithoutWaiting(1, "one"));
+        assertEquals(1, core.getNumberOfKeysInWriteCache());
+    }
+
+    @Test
+    void snapshotCacheEntries_returns_sorted_entries() throws Exception {
+        final List<Entry<Integer, String>> snapshot = List.of(Entry.of(1, "a"),
+                Entry.of(2, "b"));
+        when(segmentCache.getAsSortedList()).thenReturn(snapshot);
+
+        final List<Entry<Integer, String>> result = core.snapshotCacheEntries();
+
+        assertEquals(List.of(Entry.of(1, "a"), Entry.of(2, "b")), result);
+    }
+
+    @Test
+    void openIteratorFromSnapshot_reads_snapshot_entries() throws Exception {
+        final List<Entry<Integer, String>> snapshot = List.of(Entry.of(2, "b"));
+        when(segmentFiles.getIndexFile()).thenReturn(indexFile);
+        when(segmentFiles.getKeyTypeDescriptor()).thenReturn(keyDescriptor);
+        when(segmentFiles.getValueTypeDescriptor()).thenReturn(valueDescriptor);
+        when(indexFile.openIterator())
+                .thenReturn(new SimpleEntryIteratorWithCurrent<>(List
+                        .of(Entry.of(1, "a"), Entry.of(3, "c")).iterator()));
+
+        try (EntryIterator<Integer, String> iterator = core
+                .openIteratorFromSnapshot(snapshot)) {
+            assertTrue(iterator.hasNext());
+            assertEquals(Entry.of(1, "a"), iterator.next());
+            assertTrue(iterator.hasNext());
+            assertEquals(Entry.of(2, "b"), iterator.next());
+            assertTrue(iterator.hasNext());
+            assertEquals(Entry.of(3, "c"), iterator.next());
+            assertFalse(iterator.hasNext());
         }
     }
 
-    private SegmentCore<Integer, String> createCore(
-            final VersionController versionController) {
-        final SegmentId segmentId = SegmentId.of(1);
-        final var asyncDirectory = AsyncDirectoryAdapter
-                .wrap(new MemDirectory());
-        final SegmentFiles<Integer, String> files = new SegmentFiles<>(
-                asyncDirectory, segmentId, new TypeDescriptorInteger(),
-                new TypeDescriptorShortString(), 1024,
-                List.of(new ChunkFilterDoNothing()),
-                List.of(new ChunkFilterDoNothing()));
-        final SegmentConf conf = new SegmentConf(5, 6, 10, 2, 1, 1024, 0.01D,
-                1024, List.of(new ChunkFilterDoNothing()),
-                List.of(new ChunkFilterDoNothing()));
-        final SegmentPropertiesManager properties = new SegmentPropertiesManager(
-                asyncDirectory, segmentId);
-        final SegmentDataSupplier<Integer, String> dataSupplier = new SegmentDataSupplier<>(
-                files, conf, properties);
-        final SegmentResources<Integer, String> resources = new SegmentResourcesImpl<>(
-                dataSupplier);
-        final SegmentDeltaCacheController<Integer, String> deltaController = new SegmentDeltaCacheController<>(
-                files, properties, resources,
-                conf.getMaxNumberOfKeysInSegmentWriteCache(),
-                conf.getMaxNumberOfKeysInChunk());
-        final SegmentSearcher<Integer, String> searcher = new SegmentSearcher<>(
-                files.getValueTypeDescriptor());
-        return new SegmentCore<>(files, conf, versionController, properties,
-                resources, deltaController, searcher);
+    private static final class SimpleEntryIteratorWithCurrent<K, V>
+            extends AbstractCloseableResource
+            implements EntryIteratorWithCurrent<K, V> {
+
+        private final Iterator<Entry<K, V>> iterator;
+        private Entry<K, V> current;
+
+        private SimpleEntryIteratorWithCurrent(
+                final Iterator<Entry<K, V>> iterator) {
+            this.iterator = iterator;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return iterator.hasNext();
+        }
+
+        @Override
+        public Entry<K, V> next() {
+            current = iterator.next();
+            return current;
+        }
+
+        @Override
+        public Optional<Entry<K, V>> getCurrent() {
+            return Optional.ofNullable(current);
+        }
+
+        @Override
+        protected void doClose() {
+            // no-op
+        }
     }
 }
