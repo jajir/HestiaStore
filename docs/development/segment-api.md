@@ -9,15 +9,14 @@ orchestrated by the segment-index layer (`SegmentSplitCoordinator` +
 Split behavior is documented here because it affects locking and iterator
 semantics.
 
-`SegmentImpl` is not thread-safe. Production code should use
-`SegmentImplSynchronizationAdapter` (the default in `SegmentRegistry`) or
-provide equivalent external synchronization. This document assumes that the
-caller provides that synchronization when invoking Segment APIs.
+`Segment` is thread-safe by contract. `SegmentImplSynchronizationAdapter` is a
+legacy lock-based wrapper that can be used for conservative serialization.
+This document calls out the lock-based path explicitly where it applies.
 
 This document has two parts: AS-IS (current behavior) and Target state (lock
 minimization for throughput).
 
-## AS-IS (current behavior)
+## AS-IS (legacy lock-based adapter)
 
 ### Lock model
 
