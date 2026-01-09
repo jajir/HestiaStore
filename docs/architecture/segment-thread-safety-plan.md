@@ -26,7 +26,7 @@
       - [x] Wait for in-flight counters to reach zero.
       - [x] Snapshot/freeze write cache and queue background IO.
       - [x] Release exclusivity; run IO in `MAINTENANCE_RUNNING`.
-      - [ ] On completion: publish new view, bump version, `READY`.
+      - [x] On completion: publish new view, bump version, `READY`.
 
 ## SegmentImpl Wiring
 - [x] Route `get/put/openIterator` through the gate.
@@ -40,11 +40,11 @@
 - [x] Write cache uses a thread-safe map.
 - [x] Write cache size/counts are atomic.
 - [ ] Published view swap is atomic (immutable snapshot + atomic reference).
-- [ ] Version increment provides visibility for iterators.
+- [x] Version increment provides visibility for iterators.
 - [x] Remove any shared mutable state without atomic protection.
 
 ## Iterator Behavior
-- [ ] `FAIL_FAST` checks version on each `hasNext/next`.
+- [x] `FAIL_FAST` checks version on each `hasNext/next`.
 - [x] `FULL_ISOLATION` blocks new ops until iterator is closed.
 - [x] Iterator close returns segment to `READY`.
 
@@ -63,10 +63,10 @@
 
 ### Concurrency Tests (JUnit)
 - [x] Parallel `get` + `put` on same keys, no exceptions, final values correct.
-- [ ] Flush with concurrent writes: pre-freeze writes are flushed; post-freeze
+- [x] Flush with concurrent writes: pre-freeze writes are flushed; post-freeze
       writes stay in cache and are visible to `get`.
-- [ ] Compact with concurrent reads: readers see consistent data.
-- [ ] Multiple concurrent `flush/compact`: one OK, others BUSY.
+- [x] Compact with concurrent reads: readers see consistent data.
+- [x] Multiple concurrent `flush/compact`: one OK, others BUSY.
 
 ### Stress Tests (optional, recommended)
 - [ ] Mixed workload loop (put/get/flush/compact) with time limit and
