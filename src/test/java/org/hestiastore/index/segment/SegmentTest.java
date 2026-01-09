@@ -3,6 +3,8 @@ package org.hestiastore.index.segment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
@@ -32,8 +34,8 @@ class SegmentTest {
         }
 
         @Override
-        public SegmentResult<Void> compact() {
-            return SegmentResult.ok();
+        public SegmentResult<CompletionStage<Void>> compact() {
+            return SegmentResult.ok(CompletableFuture.completedFuture(null));
         }
 
         @Override
@@ -62,8 +64,8 @@ class SegmentTest {
         }
 
         @Override
-        public SegmentResult<Void> flush() {
-            return SegmentResult.ok();
+        public SegmentResult<CompletionStage<Void>> flush() {
+            return SegmentResult.ok(CompletableFuture.completedFuture(null));
         }
 
         @Override

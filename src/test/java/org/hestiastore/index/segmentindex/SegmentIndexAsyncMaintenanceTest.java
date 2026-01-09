@@ -46,16 +46,16 @@ class SegmentIndexAsyncMaintenanceTest {
             final Segment<Integer, String> originalSegment = registry
                     .getSegment(segmentId);
             final CountDownLatch started = new CountDownLatch(1);
-            final AtomicReference<CompletableFuture<SegmentResult<Void>>> futureRef = new AtomicReference<>();
+            final AtomicReference<CompletableFuture<Void>> futureRef = new AtomicReference<>();
             final Segment<Integer, String> blockingSegment = mockBlockingSegment(
                     segmentId, started, futureRef, true);
             replaceSegment(registry, segmentId, blockingSegment);
 
-            final Future<?> flushTask = executor.submit(index::flush);
+            final Future<?> flushTask = executor.submit(index::flushAndWait);
             assertTrue(started.await(1, TimeUnit.SECONDS));
             assertFalse(flushTask.isDone());
             assertNotNull(futureRef.get());
-            futureRef.get().complete(SegmentResult.ok());
+            futureRef.get().complete(null);
             flushTask.get(1, TimeUnit.SECONDS);
             replaceSegment(registry, segmentId, originalSegment);
         } finally {
@@ -78,16 +78,16 @@ class SegmentIndexAsyncMaintenanceTest {
             final Segment<Integer, String> originalSegment = registry
                     .getSegment(segmentId);
             final CountDownLatch started = new CountDownLatch(1);
-            final AtomicReference<CompletableFuture<SegmentResult<Void>>> futureRef = new AtomicReference<>();
+            final AtomicReference<CompletableFuture<Void>> futureRef = new AtomicReference<>();
             final Segment<Integer, String> blockingSegment = mockBlockingSegment(
                     segmentId, started, futureRef, false);
             replaceSegment(registry, segmentId, blockingSegment);
 
-            final Future<?> compactTask = executor.submit(index::compact);
+            final Future<?> compactTask = executor.submit(index::compactAndWait);
             assertTrue(started.await(1, TimeUnit.SECONDS));
             assertFalse(compactTask.isDone());
             assertNotNull(futureRef.get());
-            futureRef.get().complete(SegmentResult.ok());
+            futureRef.get().complete(null);
             compactTask.get(1, TimeUnit.SECONDS);
             replaceSegment(registry, segmentId, originalSegment);
         } finally {
@@ -129,7 +129,7 @@ class SegmentIndexAsyncMaintenanceTest {
 
     private Segment<Integer, String> mockBlockingSegment(
             final SegmentId segmentId, final CountDownLatch started,
-            final AtomicReference<CompletableFuture<SegmentResult<Void>>> futureRef,
+            final AtomicReference<CompletableFuture<Void>> futureRef,
             final boolean forFlush) {
         @SuppressWarnings("unchecked")
         final Segment<Integer, String> segment = (Segment<Integer, String>) mock(
@@ -138,20 +138,22 @@ class SegmentIndexAsyncMaintenanceTest {
         when(segment.getId()).thenReturn(segmentId);
         if (forFlush) {
             when(segment.flush()).thenAnswer(invocation -> {
-                final CompletableFuture<SegmentResult<Void>> future = new CompletableFuture<>();
+                final CompletableFuture<Void> future = new CompletableFuture<>();
                 futureRef.set(future);
                 started.countDown();
-                return future.join();
+                return SegmentResult.ok(future);
             });
-            when(segment.compact()).thenReturn(SegmentResult.ok());
+            when(segment.compact()).thenReturn(SegmentResult.ok(
+                    CompletableFuture.completedFuture(null)));
         } else {
             when(segment.compact()).thenAnswer(invocation -> {
-                final CompletableFuture<SegmentResult<Void>> future = new CompletableFuture<>();
+                final CompletableFuture<Void> future = new CompletableFuture<>();
                 futureRef.set(future);
                 started.countDown();
-                return future.join();
+                return SegmentResult.ok(future);
             });
-            when(segment.flush()).thenReturn(SegmentResult.ok());
+            when(segment.flush()).thenReturn(SegmentResult.ok(
+                    CompletableFuture.completedFuture(null)));
         }
         return segment;
     }

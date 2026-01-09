@@ -24,7 +24,7 @@ Per‑segment overlay of recent updates, materialized as sorted `.cache` files a
 In‑memory map that keeps only the latest value per key. Used at the index‑level write buffer and inside the delta overlay. Code: `cache/UniqueCache*.java`.
 
 ## 🚿 Flush
-Drains the index‑level write buffer, routes entries to per‑segment delta caches, and updates `index.map`. Code: `segmentindex/SegmentIndexImpl#flush()`, `segmentindex/CompactSupport.java`.
+Drains the index‑level write buffer, routes entries to per‑segment delta caches, and updates `index.map`. `flush()` schedules the work; `flushAndWait()` waits for completion. Code: `segmentindex/SegmentIndexImpl#flush()`, `segmentindex/CompactSupport.java`.
 
 ## 🧹 Compaction
 Segment rewrite that merges main SST with delta caches into fresh `.index`, `.scarce`, and `.bloom-filter` files, then clears delta caches. Code: `segment/SegmentCompacter.java`, `segment/SegmentFullWriter*.java`.

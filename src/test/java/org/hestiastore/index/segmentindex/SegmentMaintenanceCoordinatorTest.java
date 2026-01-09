@@ -1,11 +1,14 @@
 package org.hestiastore.index.segmentindex;
 
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
@@ -82,7 +85,7 @@ class SegmentMaintenanceCoordinatorTest {
         when(segment.getStats()).thenReturn(stats);
         when(stats.getNumberOfKeysInDeltaCache()).thenReturn(0L);
         when(segment.getNumberOfKeysInCache()).thenReturn(0L);
-        when(segment.flush()).thenReturn(SegmentResult.ok());
+        when(segment.flush()).thenReturn(okMaintenance());
 
         final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
                 conf, keySegmentCache, segmentRegistry);
@@ -104,7 +107,7 @@ class SegmentMaintenanceCoordinatorTest {
         when(segment.getStats()).thenReturn(stats);
         when(stats.getNumberOfKeysInDeltaCache()).thenReturn(1L);
         when(segment.getNumberOfKeysInCache()).thenReturn(0L);
-        when(segment.compact()).thenReturn(SegmentResult.ok());
+        when(segment.compact()).thenReturn(okMaintenance());
 
         final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
                 conf, keySegmentCache, segmentRegistry);
@@ -126,8 +129,8 @@ class SegmentMaintenanceCoordinatorTest {
         when(segment.getStats()).thenReturn(stats);
         when(stats.getNumberOfKeysInDeltaCache()).thenReturn(1L);
         when(segment.getNumberOfKeysInCache()).thenReturn(0L);
-        when(segment.flush()).thenReturn(SegmentResult.ok());
-        when(segment.compact()).thenReturn(SegmentResult.ok());
+        when(segment.flush()).thenReturn(okMaintenance());
+        when(segment.compact()).thenReturn(okMaintenance());
 
         final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
                 conf, keySegmentCache, segmentRegistry);
@@ -146,5 +149,9 @@ class SegmentMaintenanceCoordinatorTest {
                 .thenReturn(true);
         when(keySegmentCache.isMappingValid("key", segmentId, 7L))
                 .thenReturn(true);
+    }
+
+    private SegmentResult<CompletionStage<Void>> okMaintenance() {
+        return SegmentResult.ok(CompletableFuture.completedFuture(null));
     }
 }

@@ -11,7 +11,7 @@
 - Single writer per segment; readers never change published data.
 - No disk IO in caller threads; the maintenance thread performs disk IO.
 - Keep locks short; the state machine is the admission control.
-- `flush()` and `compact()` are commit points.
+- `flush()` and `compact()` are commit points and are started asynchronously.
 
 ## Thread Safety
 - Segment version is stored in `VersionController` (currently an
@@ -23,6 +23,17 @@
 - `BUSY`: temporary refusal; retry makes sense.
 - `CLOSED`: segment permanently unavailable.
 - `ERROR`: unrecoverable.
+
+## Maintenance Completion Handle
+- `flush()` and `compact()` return `SegmentResult<CompletionStage<Void>>`.
+- `OK` means the operation was accepted and scheduled. The completion stage
+  finishes when maintenance completes.
+- `BUSY`/`CLOSED`/`ERROR` mean the operation was not started; the stage is
+  `null`.
+- A failure during maintenance completes the stage exceptionally and moves the
+  segment to `ERROR`.
+- Do not block on the completion stage while running on the segment maintenance
+  executor thread; this can deadlock the maintenance queue.
 
 ## Contracts
 ### Atomic Publish Invariant

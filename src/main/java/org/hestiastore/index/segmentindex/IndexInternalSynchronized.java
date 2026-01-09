@@ -234,6 +234,15 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
     }
 
     @Override
+    public void compactAndWait() {
+        executeWithWrite(() -> {
+            invalidateSegmentIterators();
+            super.compactAndWait();
+            return null;
+        });
+    }
+
+    @Override
     public Stream<Entry<K, V>> getStream(SegmentWindow segmentWindow) {
         final List<Entry<K, V>> snapshot = executeWithRead(() -> {
             getIndexState().tryPerformOperation();
@@ -260,6 +269,15 @@ public class IndexInternalSynchronized<K, V> extends SegmentIndexImpl<K, V> {
             return null;
         });
 
+    }
+
+    @Override
+    public void flushAndWait() {
+        executeWithWrite(() -> {
+            invalidateSegmentIterators();
+            super.flushAndWait();
+            return null;
+        });
     }
 
     @Override

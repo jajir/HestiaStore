@@ -151,6 +151,16 @@ public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         }
     }
 
+    @Override
+    public void compactAndWait() {
+        setContext();
+        try {
+            index.compactAndWait();
+        } finally {
+            clearContext();
+        }
+    }
+
     /**
      * Flushes any pending index changes while keeping the {@code index.name} in
      * the MDC.
@@ -160,6 +170,16 @@ public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         setContext();
         try {
             index.flush();
+        } finally {
+            clearContext();
+        }
+    }
+
+    @Override
+    public void flushAndWait() {
+        setContext();
+        try {
+            index.flushAndWait();
         } finally {
             clearContext();
         }

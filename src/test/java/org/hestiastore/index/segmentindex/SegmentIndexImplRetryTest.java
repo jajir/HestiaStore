@@ -10,6 +10,8 @@ import static org.mockito.Mockito.when;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -51,8 +53,8 @@ class SegmentIndexImplRetryTest {
             });
             when(segment.getId()).thenReturn(segmentId);
             when(segment.wasClosed()).thenReturn(false);
-            when(segment.flush()).thenReturn(SegmentResult.ok());
-            when(segment.compact()).thenReturn(SegmentResult.ok());
+            when(segment.flush()).thenReturn(okMaintenance());
+            when(segment.compact()).thenReturn(okMaintenance());
 
             replaceSegment(registry, segmentId, segment);
 
@@ -93,8 +95,8 @@ class SegmentIndexImplRetryTest {
             when(segment.getNumberOfKeysInCache()).thenReturn(0L);
             when(segment.getId()).thenReturn(segmentId);
             when(segment.wasClosed()).thenReturn(false);
-            when(segment.flush()).thenReturn(SegmentResult.ok());
-            when(segment.compact()).thenReturn(SegmentResult.ok());
+            when(segment.flush()).thenReturn(okMaintenance());
+            when(segment.compact()).thenReturn(okMaintenance());
 
             replaceSegment(registry, segmentId, segment);
 
@@ -112,6 +114,10 @@ class SegmentIndexImplRetryTest {
         return new IndexInternalDefault<>(
                 AsyncDirectoryAdapter.wrap(new MemDirectory()), tdi, tds,
                 buildConf());
+    }
+
+    private SegmentResult<CompletionStage<Void>> okMaintenance() {
+        return SegmentResult.ok(CompletableFuture.completedFuture(null));
     }
 
     private IndexConfiguration<Integer, String> buildConf() {
