@@ -1,12 +1,11 @@
 package org.hestiastore.index.segment;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.EntryIteratorWithLock;
 import org.hestiastore.index.OptimisticLock;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.directory.FileReaderSeekable;
-import org.hestiastore.index.directory.async.AsyncFileReaderSeekableBlockingAdapter;
-
 /**
  * Encapsulates segment read operations and read-time state.
  *
@@ -21,8 +20,7 @@ final class SegmentReadPath<K, V> {
     private final SegmentSearcher<K, V> segmentSearcher;
     private final SegmentCache<K, V> segmentCache;
     private final VersionController versionController;
-    private SegmentIndexSearcher<K, V> segmentIndexSearcher;
-    private FileReaderSeekable seekableReader;
+    private final AtomicReference<SegmentIndexSearcher<K, V>> segmentIndexSearcher = new AtomicReference<>();
 
     SegmentReadPath(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
@@ -86,54 +84,28 @@ final class SegmentReadPath<K, V> {
      * @return cached index searcher
      */
     SegmentIndexSearcher<K, V> getSegmentIndexSearcher() {
-        if (segmentIndexSearcher == null) {
-            segmentIndexSearcher = new SegmentIndexSearcher<>(
-                    segmentFiles.getIndexFile(),
-                    segmentConf.getMaxNumberOfKeysInChunk(),
-                    segmentFiles.getKeyTypeDescriptor().getComparator(),
-                    getSeekableReader());
+        SegmentIndexSearcher<K, V> current = segmentIndexSearcher.get();
+        if (current != null) {
+            return current;
         }
-        return segmentIndexSearcher;
-    }
-
-    /**
-     * Returns a cached seekable reader for the index file when available.
-     *
-     * @return cached reader or null when no index file exists
-     */
-    FileReaderSeekable getSeekableReader() {
-        if (seekableReader == null) {
-            final String indexFileName = segmentFiles.getIndexFileName();
-            if (segmentFiles.getAsyncDirectory()
-                    .isFileExistsAsync(indexFileName).toCompletableFuture()
-                    .join()) {
-                seekableReader = new AsyncFileReaderSeekableBlockingAdapter(
-                        segmentFiles.getAsyncDirectory()
-                                .getFileReaderSeekableAsync(indexFileName)
-                                .toCompletableFuture().join());
-            }
+        final SegmentIndexSearcher<K, V> created = new SegmentIndexSearcher<>(
+                segmentFiles.getIndexFile(),
+                segmentConf.getMaxNumberOfKeysInChunk(),
+                segmentFiles.getKeyTypeDescriptor().getComparator(), null);
+        if (segmentIndexSearcher.compareAndSet(null, created)) {
+            return created;
         }
-        return seekableReader;
+        return segmentIndexSearcher.get();
     }
 
     /**
      * Closes and clears the cached index searcher and seekable reader.
      */
     void resetSegmentIndexSearcher() {
-        if (segmentIndexSearcher != null) {
-            segmentIndexSearcher.close();
-            segmentIndexSearcher = null;
-        }
-        resetSeekableReader();
-    }
-
-    /**
-     * Closes and clears the cached seekable reader.
-     */
-    void resetSeekableReader() {
-        if (seekableReader != null) {
-            seekableReader.close();
-            seekableReader = null;
+        final SegmentIndexSearcher<K, V> current = segmentIndexSearcher
+                .getAndSet(null);
+        if (current != null) {
+            current.close();
         }
     }
 

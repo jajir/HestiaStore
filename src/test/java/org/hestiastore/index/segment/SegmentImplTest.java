@@ -276,6 +276,34 @@ class SegmentImplTest {
     }
 
     @Test
+    void flush_returns_busy_with_null_stage_when_maintenance_running() {
+        final CapturingExecutor executor = new CapturingExecutor();
+        try (SegmentImpl<Integer, String> segment = newSegment(executor,
+                versionController)) {
+            final SegmentResult<CompletionStage<Void>> first = segment.flush();
+            final SegmentResult<CompletionStage<Void>> second = segment.flush();
+
+            assertEquals(SegmentResultStatus.OK, first.getStatus());
+            assertNotNull(first.getValue());
+            assertEquals(SegmentResultStatus.BUSY, second.getStatus());
+            assertNull(second.getValue());
+        }
+    }
+
+    @Test
+    void flush_returns_closed_with_null_stage_when_closed() {
+        final CapturingExecutor executor = new CapturingExecutor();
+        final SegmentImpl<Integer, String> segment = newSegment(executor,
+                versionController);
+        segment.close();
+
+        final SegmentResult<CompletionStage<Void>> result = segment.flush();
+
+        assertEquals(SegmentResultStatus.CLOSED, result.getStatus());
+        assertNull(result.getValue());
+    }
+
+    @Test
     void compact_transitions_through_maintenance_and_ready() {
         when(segmentPropertiesManager.getCacheDeltaFileNames())
                 .thenReturn(List.of());
@@ -294,6 +322,24 @@ class SegmentImplTest {
 
             assertEquals(SegmentState.READY, segment.getState());
             assertTrue(result.getValue().toCompletableFuture().isDone());
+        }
+    }
+
+    @Test
+    void compact_returns_busy_with_null_stage_when_maintenance_running() {
+        when(segmentPropertiesManager.getCacheDeltaFileNames())
+                .thenReturn(List.of());
+        final CapturingExecutor executor = new CapturingExecutor();
+        try (SegmentImpl<Integer, String> segment = newSegment(executor,
+                versionController)) {
+            final SegmentResult<CompletionStage<Void>> first = segment.compact();
+            final SegmentResult<CompletionStage<Void>> second = segment
+                    .compact();
+
+            assertEquals(SegmentResultStatus.OK, first.getStatus());
+            assertNotNull(first.getValue());
+            assertEquals(SegmentResultStatus.BUSY, second.getStatus());
+            assertNull(second.getValue());
         }
     }
 
