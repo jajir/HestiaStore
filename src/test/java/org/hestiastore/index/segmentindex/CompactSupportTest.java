@@ -10,6 +10,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -87,7 +89,7 @@ class CompactSupportTest {
 
         when(segmentRegistry.getSegment(seg0)).thenReturn(segment0);
         when(segment0.put(any(), any())).thenReturn(SegmentResult.ok());
-        when(segment0.flush()).thenReturn(SegmentResult.ok());
+        when(segment0.flush()).thenReturn(okMaintenance());
 
         cs.compact(Entry.of(1, "A"));
         cs.compact(Entry.of(2, "B"));
@@ -116,7 +118,7 @@ class CompactSupportTest {
         when(keySegmentCache.insertKeyToSegment(11)).thenReturn(seg1);
         when(segmentRegistry.getSegment(seg1)).thenReturn(segment1);
         when(segment1.put(any(), any())).thenReturn(SegmentResult.ok());
-        when(segment1.flush()).thenReturn(SegmentResult.ok());
+        when(segment1.flush()).thenReturn(okMaintenance());
 
         cs.compact(Entry.of(10, "X"));
         cs.compact(Entry.of(11, "Y"));
@@ -138,5 +140,9 @@ class CompactSupportTest {
         // no interactions
         verify(segmentRegistry, never()).getSegment(any());
         assertEquals(List.of(), cs.getEligibleSegmentIds());
+    }
+
+    private SegmentResult<CompletionStage<Void>> okMaintenance() {
+        return SegmentResult.ok(CompletableFuture.completedFuture(null));
     }
 }

@@ -61,8 +61,18 @@ final class IndexDirectoryClosingAdapter<K, V>
     }
 
     @Override
+    public void compactAndWait() {
+        index.compactAndWait();
+    }
+
+    @Override
     public void flush() {
         index.flush();
+    }
+
+    @Override
+    public void flushAndWait() {
+        index.flushAndWait();
     }
 
     @Override

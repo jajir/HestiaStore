@@ -5,12 +5,12 @@ This page explains HestiaStore’s crash safety model and commit semantics. Ther
 ## 📜 Scope and Guarantees
 
 - No automatic recovery: the system does not replay a WAL or roll back partial groups of operations after a crash.
-- Durability boundary: calling `flush()` or closing the index persists all writes that happened before the call. Writes that are only in memory (index‑level buffer) and not flushed are not durable.
+- Durability boundary: calling `flushAndWait()` (or closing the index) persists all writes that happened before the call. `flush()` only schedules maintenance; wait for completion if you need a durability guarantee.
 - Atomic file replacement: data files are written to `*.tmp` and made visible via `rename` only after the writer is closed and the transaction is committed. A crash cannot produce partially written visible files.
 
 ## 💾 Where Writes Become Durable
 
-- Index‑level buffer → disk: `SegmentIndex.flush()` drains the in‑memory unique buffer into segment delta cache files. On close, the index also flushes.
+- Index‑level buffer → disk: `SegmentIndex.flush()` schedules draining of the in‑memory unique buffer into segment delta cache files. `flushAndWait()` (and close) wait for completion.
 - Segment merge/compaction: when a segment compacts, the new main SST, sparse index, and Bloom filter are built via transactional writers; on commit they atomically replace the old ones.
 - Key→segment map (`index.map`): persisted via a transactional sorted data writer during flush or when updated.
 
@@ -81,9 +81,9 @@ Examples in code:
 
 ## 🧭 Practical Guidance
 
-- Call `flush()` on periodic boundaries and always before shutdown to persist in‑memory writes.
+- Call `flushAndWait()` on periodic boundaries and always before shutdown to persist in‑memory writes.
 - After a crash, reopen the index and run `checkAndRepairConsistency()`; optionally trigger a `compact()` to collapse delta caches.
-- Remember there is no WAL: durability is guaranteed at the `flush()`/close boundaries and via atomic file replacement for all data files.
+- Remember there is no WAL: durability is guaranteed at the `flushAndWait()`/close boundaries and via atomic file replacement for all data files.
 
 ## 🔗 Related Glossary
 

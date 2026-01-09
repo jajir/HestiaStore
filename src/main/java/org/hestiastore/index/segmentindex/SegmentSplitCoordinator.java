@@ -117,17 +117,18 @@ public class SegmentSplitCoordinator<K, V> {
 
     private void compactSegment(final Segment<K, V> segment) {
         while (true) {
-            final SegmentResult<Void> result = segment.compact();
-            if (result.getStatus() == SegmentResultStatus.OK
-                    || result.getStatus() == SegmentResultStatus.CLOSED) {
+            final SegmentResult<?> result = segment.compact();
+            final SegmentResultStatus status = result.getStatus();
+            if (status == SegmentResultStatus.OK
+                    || status == SegmentResultStatus.CLOSED) {
                 return;
             }
-            if (result.getStatus() == SegmentResultStatus.BUSY) {
+            if (status == SegmentResultStatus.BUSY) {
                 continue;
             }
             throw new org.hestiastore.index.IndexException(String.format(
                     "Segment '%s' failed during compact: %s", segment.getId(),
-                    result.getStatus()));
+                    status));
         }
     }
 

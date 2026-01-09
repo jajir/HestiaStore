@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -15,6 +16,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 
 import org.hestiastore.index.Entry;
@@ -91,6 +93,7 @@ class SegmentImplTest {
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
     private SegmentImpl<Integer, String> subject;
+    private SegmentCore<Integer, String> core;
 
     @BeforeEach
     void setUpSubject() {
@@ -128,10 +131,10 @@ class SegmentImplTest {
 
         final SegmentCompacter<Integer, String> compacter = new SegmentCompacter<>(
                 versionController);
-        subject = new SegmentImpl<>(segmentFiles, conf, versionController,
+        core = new SegmentCore<>(segmentFiles, conf, versionController,
                 segmentPropertiesManager, segmentDataProvider,
-                deltaCacheController, segmentSearcher, compacter,
-                Runnable::run);
+                deltaCacheController, segmentSearcher);
+        subject = new SegmentImpl<>(core, compacter, Runnable::run);
     }
 
     @Test
@@ -148,10 +151,7 @@ class SegmentImplTest {
                 versionController);
 
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> new SegmentImpl<>(segmentFiles, conf, versionController,
-                        segmentPropertiesManager, segmentDataProvider,
-                        deltaCacheController, segmentSearcher, compacter,
-                        null));
+                () -> new SegmentImpl<>(core, compacter, null));
 
         assertEquals("Property 'maintenanceExecutor' must not be null.",
                 e.getMessage());
@@ -263,13 +263,17 @@ class SegmentImplTest {
         final CapturingExecutor executor = new CapturingExecutor();
         try (SegmentImpl<Integer, String> segment = newSegment(executor,
                 versionController)) {
-            assertEquals(SegmentResultStatus.OK, segment.flush().getStatus());
+            final SegmentResult<CompletionStage<Void>> result = segment.flush();
+            assertEquals(SegmentResultStatus.OK, result.getStatus());
             assertEquals(SegmentState.MAINTENANCE_RUNNING, segment.getState());
             assertNotNull(executor.task);
+            assertNotNull(result.getValue());
+            assertFalse(result.getValue().toCompletableFuture().isDone());
 
             executor.task.run();
 
             assertEquals(SegmentState.READY, segment.getState());
+            assertTrue(result.getValue().toCompletableFuture().isDone());
         }
     }
 
@@ -280,13 +284,18 @@ class SegmentImplTest {
         final CapturingExecutor executor = new CapturingExecutor();
         try (SegmentImpl<Integer, String> segment = newSegment(executor,
                 versionController)) {
-            assertEquals(SegmentResultStatus.OK, segment.compact().getStatus());
+            final SegmentResult<CompletionStage<Void>> result = segment
+                    .compact();
+            assertEquals(SegmentResultStatus.OK, result.getStatus());
             assertEquals(SegmentState.MAINTENANCE_RUNNING, segment.getState());
             assertNotNull(executor.task);
+            assertNotNull(result.getValue());
+            assertFalse(result.getValue().toCompletableFuture().isDone());
 
             executor.task.run();
 
             assertEquals(SegmentState.READY, segment.getState());
+            assertTrue(result.getValue().toCompletableFuture().isDone());
         }
     }
 
@@ -300,11 +309,14 @@ class SegmentImplTest {
             when(deltaCacheController.openWriter())
                     .thenThrow(new RuntimeException("flush failed"));
 
-            assertEquals(SegmentResultStatus.OK, segment.flush().getStatus());
+            final SegmentResult<CompletionStage<Void>> result = segment.flush();
+            assertEquals(SegmentResultStatus.OK, result.getStatus());
             assertNotNull(executor.task);
             executor.task.run();
 
             assertEquals(SegmentState.ERROR, segment.getState());
+            assertTrue(result.getValue().toCompletableFuture()
+                    .isCompletedExceptionally());
         }
     }
 
@@ -315,11 +327,15 @@ class SegmentImplTest {
                 .changeVersion();
         try (SegmentImpl<Integer, String> segment = newSegment(executor,
                 versionController)) {
-            assertEquals(SegmentResultStatus.OK, segment.compact().getStatus());
+            final SegmentResult<CompletionStage<Void>> result = segment
+                    .compact();
+            assertEquals(SegmentResultStatus.OK, result.getStatus());
             assertNotNull(executor.task);
             executor.task.run();
 
             assertEquals(SegmentState.ERROR, segment.getState());
+            assertTrue(result.getValue().toCompletableFuture()
+                    .isCompletedExceptionally());
         }
     }
 
@@ -340,17 +356,17 @@ class SegmentImplTest {
         final SegmentCompacter<Integer, String> compacter = new SegmentCompacter<>(
                 versionController);
         final SegmentImpl<Integer, String> segment = new SegmentImpl<>(
-                segmentFiles, conf, versionController, segmentPropertiesManager,
-                segmentDataProvider, deltaCacheController, segmentSearcher,
-                compacter, executor);
+                core, compacter, executor);
 
-        assertEquals(SegmentResultStatus.OK, segment.flush().getStatus());
+        final SegmentResult<CompletionStage<Void>> result = segment.flush();
+        assertEquals(SegmentResultStatus.OK, result.getStatus());
         assertNotNull(executor.task);
 
         segment.close();
         executor.task.run();
 
         assertEquals(SegmentState.CLOSED, segment.getState());
+        assertTrue(result.getValue().toCompletableFuture().isDone());
     }
 
     @Test
@@ -382,8 +398,9 @@ class SegmentImplTest {
             final VersionController controller) {
         final SegmentCompacter<Integer, String> compacter = new SegmentCompacter<>(
                 controller);
-        return new SegmentImpl<>(segmentFiles, conf, controller,
-                segmentPropertiesManager, segmentDataProvider,
-                deltaCacheController, segmentSearcher, compacter, executor);
+        final SegmentCore<Integer, String> localCore = new SegmentCore<>(
+                segmentFiles, conf, controller, segmentPropertiesManager,
+                segmentDataProvider, deltaCacheController, segmentSearcher);
+        return new SegmentImpl<>(localCore, compacter, executor);
     }
 }

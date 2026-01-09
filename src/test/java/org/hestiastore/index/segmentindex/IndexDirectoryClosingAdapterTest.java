@@ -76,6 +76,16 @@ class IndexDirectoryClosingAdapterTest {
         }
 
         @Override
+        public void compactAndWait() {
+            // no-op
+        }
+
+        @Override
+        public void flushAndWait() {
+            // no-op
+        }
+
+        @Override
         public Stream<Entry<String, String>> getStream(
                 final SegmentWindow segmentWindows) {
             return Stream.empty();

@@ -360,10 +360,10 @@ public final class SegmentBuilder<K, V> {
                 segmentConf.getMaxNumberOfKeysInChunk());
         final SegmentCompacter<K, V> compacter = new SegmentCompacter<>(
                 versionController);
-        return new SegmentImpl<>(segmentFiles, segmentConf, versionController,
-                segmentPropertiesManager, segmentResources,
-                deltaCacheController, segmentSearcher, compacter,
-                maintenanceExecutor);
+        final SegmentCore<K, V> core = new SegmentCore<>(segmentFiles,
+                segmentConf, versionController, segmentPropertiesManager,
+                segmentResources, deltaCacheController, segmentSearcher);
+        return new SegmentImpl<>(core, compacter, maintenanceExecutor);
     }
 
     private void prepareBaseComponents() {

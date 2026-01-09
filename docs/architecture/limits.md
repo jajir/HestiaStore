@@ -4,7 +4,7 @@ This page lists the most important constraints and design trade‑offs so you ca
 
 ## 💾 Durability and Recovery
 
-- No WAL recovery: There is no write‑ahead log to replay after a crash. Durability boundaries are explicit `flush()` and `close()`. Writes still in the index write buffer (in‑memory `UniqueCache`) are not durable until flushed. See Recovery.
+- No WAL recovery: There is no write‑ahead log to replay after a crash. Durability boundaries are explicit `flushAndWait()` and `close()`. Writes still in the index write buffer (in‑memory `UniqueCache`) are not durable until flushed. See Recovery.
 - Per‑file atomicity only: Writers use temp files + atomic rename; groups of files (e.g., SST + scarce index + bloom) commit in a safe order but not as a single atomic unit. Readers remain consistent because old files stay in place until each rename. See SegmentFullWriterTx, BloomFilterWriterTx.
 - Filesystem requirement: Crash safety relies on same‑directory atomic `rename`. Use local filesystems; be cautious with network filesystems that may not guarantee strict atomicity.
 - Stale lock files: A crash can leave `.lock` behind, preventing open until removed. See `directory/FsFileLock.java` and IndexState*. Remove the file only when certain no process still uses the directory.
@@ -57,7 +57,7 @@ Attempts to change these raise an error in `IndexConfigurationManager.validateTh
 
 ## 🛠️ Mitigations and Best Practices
 
-- Plan periodic `flush()` and `compact()` windows; after crashes run consistency check and optionally compact.
+- Plan periodic `flushAndWait()` and `compact()` windows; after crashes run consistency check and optionally compact.
 - Size Bloom filters for your negative‑lookup rate; monitor `BloomFilterStats`.
 - Tune `maxNumberOfKeysInSegmentChunk` to balance read scan length vs. sparse index size.
 - Use multiple segments to stay under per‑segment limits and to improve compaction parallelism (future).

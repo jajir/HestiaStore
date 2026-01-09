@@ -1,5 +1,7 @@
 package org.hestiastore.index.segment;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 
 import org.hestiastore.index.AbstractCloseableResource;
@@ -22,22 +24,14 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     private final SegmentStateMachine stateMachine = new SegmentStateMachine();
     private final Executor maintenanceExecutor;
 
-    SegmentImpl(final SegmentFiles<K, V> segmentFiles,
-            final SegmentConf segmentConf,
-            final VersionController versionController,
-            final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentResources<K, V> segmentResources,
-            final SegmentDeltaCacheController<K, V> segmentDeltaCacheController,
-            final SegmentSearcher<K, V> segmentSearcher,
+    SegmentImpl(final SegmentCore<K, V> core,
             final SegmentCompacter<K, V> segmentCompacter,
             final Executor maintenanceExecutor) {
+        this.core = Vldtn.requireNonNull(core, "core");
         this.segmentCompacter = Vldtn.requireNonNull(segmentCompacter,
                 "segmentCompacter");
         this.maintenanceExecutor = Vldtn.requireNonNull(maintenanceExecutor,
                 "maintenanceExecutor");
-        this.core = new SegmentCore<>(segmentFiles, segmentConf,
-                versionController, segmentPropertiesManager, segmentResources,
-                segmentDeltaCacheController, segmentSearcher);
     }
 
     @Override
@@ -100,7 +94,7 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     }
 
     @Override
-    public SegmentResult<Void> compact() {
+    public SegmentResult<CompletionStage<Void>> compact() {
         return startMaintenance(() -> segmentCompacter.forceCompact(core));
     }
 
@@ -118,7 +112,7 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     }
 
     @Override
-    public SegmentResult<Void> flush() {
+    public SegmentResult<CompletionStage<Void>> flush() {
         return startMaintenance(core::flush);
     }
 
@@ -169,7 +163,8 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
         return SegmentResult.busy();
     }
 
-    private SegmentResult<Void> startMaintenance(final Runnable work) {
+    private SegmentResult<CompletionStage<Void>> startMaintenance(
+            final Runnable work) {
         if (!stateMachine.tryEnterFreeze()) {
             return resultForState(stateMachine.getState());
         }
@@ -177,32 +172,43 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
             failUnlessClosed();
             return SegmentResult.error();
         }
+        final CompletableFuture<Void> completion = new CompletableFuture<>();
         try {
-            maintenanceExecutor.execute(() -> runMaintenance(work));
+            maintenanceExecutor.execute(
+                    () -> runMaintenance(work, completion));
         } catch (final RuntimeException e) {
             failUnlessClosed();
             return SegmentResult.error();
         }
-        return SegmentResult.ok();
+        return SegmentResult.ok(completion);
     }
 
-    private void runMaintenance(final Runnable work) {
+    private void runMaintenance(final Runnable work,
+            final CompletableFuture<Void> completion) {
         try {
             work.run();
         } catch (final RuntimeException e) {
             failUnlessClosed();
+            completion.completeExceptionally(e);
             return;
         }
         if (stateMachine.getState() == SegmentState.CLOSED) {
+            completion.complete(null);
             return;
         }
         if (!stateMachine.finishMaintenanceToFreeze()) {
             failUnlessClosed();
+            completion.completeExceptionally(new IllegalStateException(
+                    "Segment maintenance failed to transition to FREEZE."));
             return;
         }
         if (!stateMachine.finishFreezeToReady()) {
             failUnlessClosed();
+            completion.completeExceptionally(new IllegalStateException(
+                    "Segment maintenance failed to transition to READY."));
+            return;
         }
+        completion.complete(null);
     }
 
     private void failUnlessClosed() {
@@ -211,35 +217,4 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
         }
     }
 
-    private static final class ExclusiveAccessIterator<K, V>
-            extends AbstractCloseableResource implements EntryIterator<K, V> {
-
-        private final EntryIterator<K, V> delegate;
-        private final SegmentStateMachine stateMachine;
-
-        ExclusiveAccessIterator(final EntryIterator<K, V> delegate,
-                final SegmentStateMachine stateMachine) {
-            this.delegate = delegate;
-            this.stateMachine = stateMachine;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return delegate.hasNext();
-        }
-
-        @Override
-        public Entry<K, V> next() {
-            return delegate.next();
-        }
-
-        @Override
-        protected void doClose() {
-            try {
-                delegate.close();
-            } finally {
-                stateMachine.finishFreezeToReady();
-            }
-        }
-    }
 }

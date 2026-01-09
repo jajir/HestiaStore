@@ -279,14 +279,30 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     CompletionStage<Void> deleteAsync(K key);
 
     /**
-     * Forces a compaction pass over in-memory and on-disk data structures.
+     * Starts a compaction pass over in-memory and on-disk data structures.
+     * The call returns after compaction is accepted by each segment.
      */
     void compact();
 
     /**
-     * Flush all data to disk.
+     * Starts flushing in-memory data to disk. The call returns after flush is
+     * accepted by each segment.
      */
     void flush();
+
+    /**
+     * Starts a compaction pass and waits until all segment maintenance
+     * operations complete. Do not call from a segment maintenance executor
+     * thread.
+     */
+    void compactAndWait();
+
+    /**
+     * Starts flushing in-memory data to disk and waits until all segment
+     * maintenance operations complete. Do not call from a segment maintenance
+     * executor thread.
+     */
+    void flushAndWait();
 
     /**
      * Went through all records. In fact read all index data. Doesn't use

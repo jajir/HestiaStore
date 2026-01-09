@@ -1,5 +1,6 @@
 package org.hestiastore.index.segment;
 
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -43,7 +44,7 @@ public class SegmentImplSynchronizationAdapter<K, V>
     }
 
     @Override
-    public SegmentResult<Void> compact() {
+    public SegmentResult<CompletionStage<Void>> compact() {
         maintenanceLock.lock();
         writeLock.lock();
         try {
@@ -133,7 +134,7 @@ public class SegmentImplSynchronizationAdapter<K, V>
     }
 
     @Override
-    public SegmentResult<Void> flush() {
+    public SegmentResult<CompletionStage<Void>> flush() {
         maintenanceLock.lock();
         try {
             if (delegate.wasClosed()) {

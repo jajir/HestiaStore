@@ -1,5 +1,7 @@
 package org.hestiastore.index.segment;
 
+import java.util.concurrent.CompletionStage;
+
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.EntryIterator;
 
@@ -56,10 +58,18 @@ public interface Segment<K, V> extends CloseableResource {
     SegmentStats getStats();
 
     /**
-     * Compacts this segment, rewriting on-disk data and updating metadata. This
-     * is typically an expensive, synchronous operation.
+     * Starts a compaction pass that rewrites on-disk data and updates
+     * metadata. The returned completion stage (when status is OK) completes
+     * when the maintenance finishes.
+     *
+     * When the segment is BUSY/CLOSED/ERROR, the operation is not started and
+     * the result carries a {@code null} completion stage.
+     *
+     * Callers must not block on the returned completion stage while running on
+     * the segment maintenance executor thread, otherwise they can deadlock the
+     * maintenance queue.
      */
-    SegmentResult<Void> compact();
+    SegmentResult<CompletionStage<Void>> compact();
 
     /**
      * Validates that the logical contents of this segment are consistent.
@@ -125,10 +135,18 @@ public interface Segment<K, V> extends CloseableResource {
     SegmentResult<Void> put(K key, V value);
 
     /**
-     * Flushes the in-memory segment write cache into the delta cache and clears
-     * the write cache afterward.
+     * Starts a flush of the in-memory write cache into the delta cache. The
+     * returned completion stage (when status is OK) completes when the flush
+     * finishes.
+     *
+     * When the segment is BUSY/CLOSED/ERROR, the operation is not started and
+     * the result carries a {@code null} completion stage.
+     *
+     * Callers must not block on the returned completion stage while running on
+     * the segment maintenance executor thread, otherwise they can deadlock the
+     * maintenance queue.
      */
-    SegmentResult<Void> flush();
+    SegmentResult<CompletionStage<Void>> flush();
 
     /**
      * Returns the current number of entries waiting in the write cache.

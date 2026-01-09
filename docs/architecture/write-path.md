@@ -106,7 +106,7 @@ Key classes: `segmentindex/SegmentIndexImpl#delete`, `datatype/TypeDescriptor#ge
 ## 💾 Durability and Atomicity
 
 - Transactional writers use a temp file + atomic rename to ensure either the old state or the new state is visible after a crash.
-- SegmentIndex `close()` and explicit `flush()` drive persistence of buffered writes.
+- SegmentIndex `close()` and explicit `flushAndWait()` drive persistence of buffered writes.
 - Context logging is not a durability mechanism.
 
 ## ⚙️ Configuration Knobs Affecting Writes

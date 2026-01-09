@@ -96,17 +96,18 @@ public class CompactSupport<K, V> {
             }
         });
         while (true) {
-            final SegmentResult<Void> result = segment.flush();
-            if (result.getStatus() == SegmentResultStatus.OK
-                    || result.getStatus() == SegmentResultStatus.CLOSED) {
+            final SegmentResult<?> result = segment.flush();
+            final SegmentResultStatus status = result.getStatus();
+            if (status == SegmentResultStatus.OK
+                    || status == SegmentResultStatus.CLOSED) {
                 break;
             }
-            if (result.getStatus() == SegmentResultStatus.BUSY) {
+            if (status == SegmentResultStatus.BUSY) {
                 continue;
             }
             throw new org.hestiastore.index.IndexException(String.format(
                     "Segment '%s' failed during flush: %s", segment.getId(),
-                    result.getStatus()));
+                    status));
         }
         if (KeySegmentCache.FIRST_SEGMENT_ID.equals(currentSegmentId)) {
             // Segment containing highest key.

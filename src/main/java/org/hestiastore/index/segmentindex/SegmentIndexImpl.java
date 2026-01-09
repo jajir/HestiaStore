@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CompletionException;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.EntryIterator;
@@ -105,7 +106,16 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         getIndexState().tryPerformOperation();
         keySegmentCache.getSegmentIds().forEach(segmentId -> {
             final Segment<K, V> seg = segmentRegistry.getSegment(segmentId);
-            compactSegment(seg);
+            compactSegment(seg, false);
+        });
+    }
+
+    @Override
+    public void compactAndWait() {
+        getIndexState().tryPerformOperation();
+        keySegmentCache.getSegmentIds().forEach(segmentId -> {
+            final Segment<K, V> seg = segmentRegistry.getSegment(segmentId);
+            compactSegment(seg, true);
         });
     }
 
@@ -237,7 +247,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     protected void doClose() {
         getIndexState().onClose(this);
-        flushSegments();
+        flushSegments(true);
         segmentRegistry.close();
         keySegmentCache.optionalyFlush();
         if (logger.isDebugEnabled()) {
@@ -258,46 +268,83 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     @Override
     public void flush() {
-        flushSegments();
+        flushSegments(false);
         keySegmentCache.optionalyFlush();
     }
 
-    private void flushSegments() {
+    @Override
+    public void flushAndWait() {
+        flushSegments(true);
+        keySegmentCache.optionalyFlush();
+    }
+
+    private void flushSegments(final boolean waitForCompletion) {
         keySegmentCache.getSegmentIds().forEach(segmentId -> {
             final Segment<K, V> segment = segmentRegistry.getSegment(segmentId);
-            flushSegment(segment);
+            flushSegment(segment, waitForCompletion);
         });
     }
 
-    private void compactSegment(final Segment<K, V> segment) {
+    private void compactSegment(final Segment<K, V> segment,
+            final boolean waitForCompletion) {
         while (true) {
-            final SegmentResult<Void> result = segment.compact();
-            if (result.getStatus() == SegmentResultStatus.OK
-                    || result.getStatus() == SegmentResultStatus.CLOSED) {
+            final SegmentResult<CompletionStage<Void>> result = segment
+                    .compact();
+            final SegmentResultStatus status = result.getStatus();
+            if (status == SegmentResultStatus.OK) {
+                if (waitForCompletion) {
+                    awaitMaintenanceCompletion(segment, "compact",
+                            result.getValue());
+                }
                 return;
             }
-            if (result.getStatus() == SegmentResultStatus.BUSY) {
+            if (status == SegmentResultStatus.CLOSED) {
+                return;
+            }
+            if (status == SegmentResultStatus.BUSY) {
                 continue;
             }
             throw new org.hestiastore.index.IndexException(String.format(
                     "Segment '%s' failed during compact: %s", segment.getId(),
-                    result.getStatus()));
+                    status));
         }
     }
 
-    private void flushSegment(final Segment<K, V> segment) {
+    private void flushSegment(final Segment<K, V> segment,
+            final boolean waitForCompletion) {
         while (true) {
-            final SegmentResult<Void> result = segment.flush();
-            if (result.getStatus() == SegmentResultStatus.OK
-                    || result.getStatus() == SegmentResultStatus.CLOSED) {
+            final SegmentResult<CompletionStage<Void>> result = segment.flush();
+            final SegmentResultStatus status = result.getStatus();
+            if (status == SegmentResultStatus.OK) {
+                if (waitForCompletion) {
+                    awaitMaintenanceCompletion(segment, "flush",
+                            result.getValue());
+                }
                 return;
             }
-            if (result.getStatus() == SegmentResultStatus.BUSY) {
+            if (status == SegmentResultStatus.CLOSED) {
+                return;
+            }
+            if (status == SegmentResultStatus.BUSY) {
                 continue;
             }
             throw new org.hestiastore.index.IndexException(String.format(
                     "Segment '%s' failed during flush: %s", segment.getId(),
-                    result.getStatus()));
+                    status));
+        }
+    }
+
+    private void awaitMaintenanceCompletion(final Segment<K, V> segment,
+            final String operation, final CompletionStage<Void> completion) {
+        if (completion == null) {
+            return;
+        }
+        try {
+            completion.toCompletableFuture().join();
+        } catch (final CompletionException e) {
+            throw new org.hestiastore.index.IndexException(String.format(
+                    "Segment '%s' failed during %s.", segment.getId(),
+                    operation), e.getCause());
         }
     }
 
