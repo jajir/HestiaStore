@@ -14,7 +14,6 @@ import org.hestiastore.index.segment.SegmentConf;
 import org.hestiastore.index.segment.SegmentDataSupplier;
 import org.hestiastore.index.segment.SegmentFiles;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segment.SegmentImplSynchronizationAdapter;
 import org.hestiastore.index.segment.SegmentPropertiesManager;
 import org.hestiastore.index.segment.SegmentResources;
 import org.hestiastore.index.segment.SegmentResourcesImpl;
@@ -194,8 +193,7 @@ public class SegmentRegistry<K, V> {
     }
 
     private Segment<K, V> instantiateSegment(final SegmentId segmentId) {
-        final Segment<K, V> segment = newSegmentBuilder(segmentId).build();
-        return new SegmentImplSynchronizationAdapter<>(segment);
+        return newSegmentBuilder(segmentId).build();
     }
 
     protected void deleteSegmentFiles(final SegmentId segmentId) {

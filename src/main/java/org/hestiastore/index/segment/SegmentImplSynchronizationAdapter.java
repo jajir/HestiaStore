@@ -12,12 +12,16 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 
 /**
- * Serializes access to a single {@link Segment} instance using a dedicated
- * {@link ReentrantReadWriteLock}. Read operations can run concurrently. Writers
- * and compaction take the write lock. Iterators default to acquiring the read
- * lock per {@code hasNext}/{@code next} call, while full-isolation iterators
- * hold the write lock for their entire lifetime.
+ * Legacy adapter that serializes access to a {@link Segment} instance using a
+ * dedicated {@link ReentrantReadWriteLock}. Read operations can run
+ * concurrently. Writers and compaction take the write lock. Iterators default
+ * to acquiring the read lock per {@code hasNext}/{@code next} call, while
+ * full-isolation iterators hold the write lock for their entire lifetime.
+ *
+ * Prefer using {@link SegmentImpl} directly, which provides lock-free
+ * thread-safety by contract.
  */
+@Deprecated
 public class SegmentImplSynchronizationAdapter<K, V>
         extends AbstractCloseableResource
         implements Segment<K, V>, SegmentWriteLockSupport<K, V> {
