@@ -37,26 +37,26 @@ class SegmentWritePathTest {
     }
 
     @Test
-    void put_increments_version_and_writes_to_cache() {
+    void put_writes_to_cache_without_version_bump() {
         subject.put(1, "a");
 
-        verify(versionController).changeVersion();
         verify(segmentCache).putToWriteCache(entryCaptor.capture());
         assertEquals(Entry.of(1, "a"), entryCaptor.getValue());
+        verify(versionController, never()).changeVersion();
     }
 
     @Test
-    void tryPutWithoutWaiting_increments_version_on_success() {
+    void tryPutWithoutWaiting_does_not_bump_version_on_success() {
         when(segmentCache.tryPutToWriteCacheWithoutWaiting(any()))
                 .thenReturn(true);
 
         assertTrue(subject.tryPutWithoutWaiting(1, "a"));
 
-        verify(versionController).changeVersion();
+        verify(versionController, never()).changeVersion();
     }
 
     @Test
-    void tryPutWithoutWaiting_does_not_increment_on_reject() {
+    void tryPutWithoutWaiting_does_not_bump_version_on_reject() {
         when(segmentCache.tryPutToWriteCacheWithoutWaiting(any()))
                 .thenReturn(false);
 
@@ -66,35 +66,12 @@ class SegmentWritePathTest {
     }
 
     @Test
-    void freezeWriteCacheForFlush_increments_on_first_freeze() {
+    void freezeWriteCacheForFlush_returns_snapshot_without_version_change() {
         final List<Entry<Integer, String>> entries = List
                 .of(Entry.of(1, "a"));
-        when(segmentCache.hasFrozenWriteCache()).thenReturn(false);
         when(segmentCache.freezeWriteCache()).thenReturn(entries);
 
         assertEquals(entries, subject.freezeWriteCacheForFlush());
-
-        verify(versionController).changeVersion();
-    }
-
-    @Test
-    void freezeWriteCacheForFlush_does_not_increment_when_already_frozen() {
-        final List<Entry<Integer, String>> entries = List
-                .of(Entry.of(1, "a"));
-        when(segmentCache.hasFrozenWriteCache()).thenReturn(true);
-        when(segmentCache.freezeWriteCache()).thenReturn(entries);
-
-        assertEquals(entries, subject.freezeWriteCacheForFlush());
-
-        verify(versionController, never()).changeVersion();
-    }
-
-    @Test
-    void freezeWriteCacheForFlush_does_not_increment_on_empty_snapshot() {
-        when(segmentCache.hasFrozenWriteCache()).thenReturn(false);
-        when(segmentCache.freezeWriteCache()).thenReturn(List.of());
-
-        assertEquals(List.of(), subject.freezeWriteCacheForFlush());
 
         verify(versionController, never()).changeVersion();
     }
@@ -104,5 +81,23 @@ class SegmentWritePathTest {
         subject.applyFrozenWriteCacheAfterFlush();
 
         verify(segmentCache).mergeFrozenWriteCacheToDeltaCache();
+    }
+
+    @Test
+    void applyFrozenWriteCacheAfterFlush_increments_version_when_frozen() {
+        when(segmentCache.hasFrozenWriteCache()).thenReturn(true);
+
+        subject.applyFrozenWriteCacheAfterFlush();
+
+        verify(versionController).changeVersion();
+    }
+
+    @Test
+    void applyFrozenWriteCacheAfterFlush_skips_version_when_no_frozen() {
+        when(segmentCache.hasFrozenWriteCache()).thenReturn(false);
+
+        subject.applyFrozenWriteCacheAfterFlush();
+
+        verify(versionController, never()).changeVersion();
     }
 }

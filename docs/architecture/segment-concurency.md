@@ -77,7 +77,9 @@
 
 ### Freshness vs Consistency
 - `get` reads from the write cache and published view (freshest data).
-- Iterators read only the published view (consistent snapshot) and are invalidated on version change.
+- Iterators read a snapshot of the merged view (published + write cache) taken
+  at open time; later `put()` calls are not visible. Iterators are invalidated
+  only by version changes (publish or `EXCLUSIVE_ACCESS`).
 
 ### Serialized State Transitions
 - State transitions are serialized; only one transition is in flight at a time.
@@ -109,12 +111,16 @@ If an operation is not allowed in the current state, return `BUSY` in `FREEZE` o
 
 ## Segment Version
 The segment version is a monotonic epoch counter.
-It increments when a new immutable view is published (after `flush()` or `compact()` swaps in new files) and when `EXCLUSIVE_ACCESS` is acquired.
+It increments when a new immutable view is published (after `flush()` or
+`compact()` swaps in new files) and when `EXCLUSIVE_ACCESS` is acquired.
 
 ## Iterator Modes
-- `INTERRUPT_FAST` (default): optimistic read; throws on any version change. Does not include write cache data.
-- `STOP_FAST`: optimistic read; stops on any version change. Does not include write cache data.
-- `EXCLUSIVE_ACCESS`: stop-the-world maintenance; blocks other operations and must be short. Include write cache data.
+- `INTERRUPT_FAST` (default): optimistic read; throws on version change. Reads
+  a snapshot of the merged view captured at open time.
+- `STOP_FAST`: optimistic read; stops on version change. Reads a snapshot of the
+  merged view captured at open time.
+- `EXCLUSIVE_ACCESS`: stop-the-world maintenance; blocks other operations and
+  must be short. Reads a merged snapshot captured while the segment is frozen.
 
 ## Flush/Compact Lifecycle
 1. Caller sets `FREEZE` and snapshots the write cache.
@@ -131,8 +137,8 @@ It increments when a new immutable view is published (after `flush()` or `compac
 | `get` | `READY`, `MAINTENANCE_RUNNING` | No | None | Yes | Yes | No read lock required. |
 | `flush` | `READY` | Yes (after publish) | Invalidates optimistic iterators | N/A | N/A | Serialized; concurrent request returns `BUSY`. May be triggered by full write cache. |
 | `compact` | `READY` | Yes (after publish) | Invalidates optimistic iterators | N/A | N/A | Serialized; concurrent request returns `BUSY`. May be triggered by full delta cache. |
-| `openIterator(INTERRUPT_FAST)` | `READY` | No | Throws on version change | No | Yes | Default mode. |
-| `openIterator(STOP_FAST)` | `READY` | No | Stops on version change | No | Yes | Does not include write cache data. |
+| `openIterator(INTERRUPT_FAST)` | `READY` | No | Throws on version change | Yes (snapshot) | Yes | Default mode. |
+| `openIterator(STOP_FAST)` | `READY` | No | Stops on version change | Yes (snapshot) | Yes | Snapshot captured at open time. |
 | `openIterator(EXCLUSIVE_ACCESS)` | `READY` | Yes (on lock acquisition) | Invalidates existing iterators; blocks others | Yes | Yes | Maintenance only; must be short. |
 | `close` | `READY` | No | N/A | N/A | N/A | Transitions to `CLOSED`. |
 

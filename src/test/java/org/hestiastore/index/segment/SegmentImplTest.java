@@ -156,13 +156,12 @@ class SegmentImplTest {
     }
 
     @Test
-    void put_writes_to_segment_cache_and_bumps_version() {
+    void put_writes_to_segment_cache() {
         assertEquals(SegmentResultStatus.OK,
                 subject.put(1, "A").getStatus());
         assertEquals(SegmentResultStatus.OK,
                 subject.put(2, "B").getStatus());
 
-        verify(versionController, org.mockito.Mockito.times(2)).changeVersion();
         final SegmentResult<String> first = subject.get(1);
         final SegmentResult<String> second = subject.get(2);
         assertEquals(SegmentResultStatus.OK, first.getStatus());
@@ -170,6 +169,7 @@ class SegmentImplTest {
         assertEquals("A", first.getValue());
         assertEquals("B", second.getValue());
         assertEquals(2, subject.getNumberOfKeysInWriteCache());
+        verify(versionController, never()).changeVersion();
     }
 
     @Test
@@ -276,6 +276,30 @@ class SegmentImplTest {
     }
 
     @Test
+    void flush_allows_writes_during_maintenance_and_preserves_snapshot() {
+        final CapturingExecutor executor = new CapturingExecutor();
+        try (SegmentImpl<Integer, String> segment = newSegment(executor,
+                versionController)) {
+            assertEquals(SegmentResultStatus.OK,
+                    segment.put(1, "A").getStatus());
+
+            final SegmentResult<CompletionStage<Void>> result = segment.flush();
+            assertEquals(SegmentResultStatus.OK, result.getStatus());
+            assertEquals(SegmentState.MAINTENANCE_RUNNING, segment.getState());
+            assertEquals(SegmentResultStatus.OK,
+                    segment.put(2, "B").getStatus());
+
+            assertNotNull(executor.task);
+            executor.task.run();
+
+            assertEquals(SegmentState.READY, segment.getState());
+            assertEquals(1, segment.getNumberOfKeysInWriteCache());
+            assertEquals("A", segment.get(1).getValue());
+            assertEquals("B", segment.get(2).getValue());
+        }
+    }
+
+    @Test
     void flush_returns_busy_with_null_stage_when_maintenance_running() {
         final CapturingExecutor executor = new CapturingExecutor();
         try (SegmentImpl<Integer, String> segment = newSegment(executor,
@@ -301,6 +325,50 @@ class SegmentImplTest {
 
         assertEquals(SegmentResultStatus.CLOSED, result.getStatus());
         assertNull(result.getValue());
+    }
+
+    @Test
+    void compact_allows_reads_during_maintenance() {
+        when(segmentPropertiesManager.getCacheDeltaFileNames())
+                .thenReturn(List.of());
+        final CapturingExecutor executor = new CapturingExecutor();
+        try (SegmentImpl<Integer, String> segment = newSegment(executor,
+                versionController)) {
+            assertEquals(SegmentResultStatus.OK,
+                    segment.put(1, "A").getStatus());
+
+            final SegmentResult<CompletionStage<Void>> result = segment
+                    .compact();
+            assertEquals(SegmentResultStatus.OK, result.getStatus());
+            assertEquals(SegmentState.MAINTENANCE_RUNNING, segment.getState());
+
+            final SegmentResult<String> read = segment.get(1);
+            assertEquals(SegmentResultStatus.OK, read.getStatus());
+            assertEquals("A", read.getValue());
+
+            executor.task.run();
+
+            assertEquals(SegmentState.READY, segment.getState());
+        }
+    }
+
+    @Test
+    void compact_returns_busy_when_flush_running() {
+        when(segmentPropertiesManager.getCacheDeltaFileNames())
+                .thenReturn(List.of());
+        final CapturingExecutor executor = new CapturingExecutor();
+        try (SegmentImpl<Integer, String> segment = newSegment(executor,
+                versionController)) {
+            final SegmentResult<CompletionStage<Void>> flushResult = segment
+                    .flush();
+            assertEquals(SegmentResultStatus.OK, flushResult.getStatus());
+
+            final SegmentResult<CompletionStage<Void>> compactResult = segment
+                    .compact();
+
+            assertEquals(SegmentResultStatus.BUSY, compactResult.getStatus());
+            assertNull(compactResult.getValue());
+        }
     }
 
     @Test

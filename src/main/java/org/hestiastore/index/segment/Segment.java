@@ -111,7 +111,8 @@ public interface Segment<K, V> extends CloseableResource {
      * Opens a read iterator with the requested isolation level.
      *
      * {@link SegmentIteratorIsolation#FAIL_FAST} is the default behavior:
-     * concurrent writes invalidate the iterator and it stops early.
+     * version changes (publish/exclusive access/invalidate) invalidate the
+     * iterator and it stops early.
      *
      * {@link SegmentIteratorIsolation#FULL_ISOLATION} blocks all segment writes
      * and other iterators for the lifetime of the iterator, so callers can

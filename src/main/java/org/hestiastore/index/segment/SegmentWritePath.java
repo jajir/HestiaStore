@@ -32,8 +32,6 @@ final class SegmentWritePath<K, V> {
     void put(final K key, final V value) {
         Vldtn.requireNonNull(key, "key");
         Vldtn.requireNonNull(value, "value");
-        // TODO make sure that'scorrect behavior to kill all iterators on put
-        versionController.changeVersion();
         segmentCache.putToWriteCache(Entry.of(key, value));
     }
 
@@ -49,7 +47,6 @@ final class SegmentWritePath<K, V> {
         Vldtn.requireNonNull(value, "value");
         if (segmentCache.tryPutToWriteCacheWithoutWaiting(
                 Entry.of(key, value))) {
-            versionController.changeVersion();
             return true;
         }
         return false;
@@ -70,18 +67,17 @@ final class SegmentWritePath<K, V> {
      * @return snapshot entries in sorted order
      */
     List<Entry<K, V>> freezeWriteCacheForFlush() {
-        final boolean hadFrozen = segmentCache.hasFrozenWriteCache();
-        final List<Entry<K, V>> entries = segmentCache.freezeWriteCache();
-        if (!entries.isEmpty() && !hadFrozen) {
-            versionController.changeVersion();
-        }
-        return entries;
+        return segmentCache.freezeWriteCache();
     }
 
     /**
      * Merges the frozen write cache into the delta cache after flush.
      */
     void applyFrozenWriteCacheAfterFlush() {
+        final boolean hadFrozen = segmentCache.hasFrozenWriteCache();
         segmentCache.mergeFrozenWriteCacheToDeltaCache();
+        if (hadFrozen) {
+            versionController.changeVersion();
+        }
     }
 }
