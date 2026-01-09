@@ -16,7 +16,6 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segment.SegmentWriteLockSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -86,8 +85,6 @@ class SegmentRegistryTest {
         final Segment<Integer, String> second = registry.getSegment(segmentId);
 
         assertSame(first, second);
-        assertFalse(first instanceof SegmentWriteLockSupport);
-
         first.close();
         final Segment<Integer, String> third = registry.getSegment(segmentId);
 

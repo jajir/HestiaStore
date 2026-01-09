@@ -9,8 +9,7 @@ and writes. This is a conservative mode for callers that want serialization.
 
 Segment-level concurrency no longer requires external locks. `SegmentImpl`
 enforces its own lock-free admission gate (see
-`docs/architecture/segment-concurrency.md`), while
-`SegmentImplSynchronizationAdapter` remains optional for strict serialization.
+`docs/architecture/segment-concurrency.md`).
 
 ## Concurrency Invariants (Target Design)
 
