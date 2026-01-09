@@ -1,8 +1,7 @@
 package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -13,91 +12,78 @@ import org.hestiastore.index.bloomfilter.BloomFilterWriter;
 import org.hestiastore.index.bloomfilter.BloomFilterWriterTx;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFileWriter;
 import org.hestiastore.index.chunkstore.CellPosition;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class SegmentFullWriterTest {
 
-    @Test
-    void write_flushesEveryNthEntry() {
-        final SegmentResources<Integer, String> resources = mock(
-                SegmentResources.class);
-        @SuppressWarnings("unchecked")
-        final BloomFilter<Integer> bloomFilter = (BloomFilter<Integer>) mock(
-                BloomFilter.class);
-        @SuppressWarnings("unchecked")
-        final BloomFilterWriterTx<Integer> bloomTx = (BloomFilterWriterTx<Integer>) mock(
-                BloomFilterWriterTx.class);
-        @SuppressWarnings("unchecked")
-        final BloomFilterWriter<Integer> bloomWriter = (BloomFilterWriter<Integer>) mock(
-                BloomFilterWriter.class);
-        @SuppressWarnings("unchecked")
-        final ChunkEntryFileWriter<Integer, String> indexWriter = (ChunkEntryFileWriter<Integer, String>) mock(
-                ChunkEntryFileWriter.class);
-        @SuppressWarnings("unchecked")
-        final EntryWriter<Integer, Integer> scarceWriter = (EntryWriter<Integer, Integer>) mock(
-                EntryWriter.class);
-        final CellPosition position = mock(CellPosition.class);
+    @Mock
+    private SegmentResources<Integer, String> resources;
+    @Mock
+    private BloomFilter<Integer> bloomFilter;
+    @Mock
+    private BloomFilterWriterTx<Integer> bloomTx;
+    @Mock
+    private BloomFilterWriter<Integer> bloomWriter;
+    @Mock
+    private ChunkEntryFileWriter<Integer, String> indexWriter;
+    @Mock
+    private EntryWriter<Integer, Integer> scarceWriter;
+    @Mock
+    private CellPosition position;
 
+    private SegmentFullWriter<Integer, String> subject;
+
+    @BeforeEach
+    void setUp() {
         when(resources.getBloomFilter()).thenReturn(bloomFilter);
         when(bloomFilter.openWriteTx()).thenReturn(bloomTx);
         when(bloomTx.open()).thenReturn(bloomWriter);
         when(indexWriter.flush()).thenReturn(position);
         when(position.getValue()).thenReturn(42);
+        subject = new SegmentFullWriter<>(2, resources, indexWriter,
+                scarceWriter);
+    }
 
-        final SegmentFullWriter<Integer, String> writer = new SegmentFullWriter<>(
-                2, resources, indexWriter, scarceWriter);
-        try {
-            writer.write(Entry.of(1, "one"));
-            writer.write(Entry.of(2, "two"));
-
-            verify(indexWriter).flush();
-            final ArgumentCaptor<Entry<Integer, Integer>> captor = ArgumentCaptor
-                    .forClass(Entry.class);
-            verify(scarceWriter).write(captor.capture());
-            assertEquals(2, captor.getValue().getKey());
-            assertEquals(42, captor.getValue().getValue());
-        } finally {
-            writer.close();
+    @AfterEach
+    void tearDown() {
+        if (subject != null && !subject.wasClosed()) {
+            subject.close();
         }
     }
 
     @Test
-    void close_flushesRemainingDataAndCommitsBloomFilter() {
-        final SegmentResources<Integer, String> resources = mock(
-                SegmentResources.class);
-        @SuppressWarnings("unchecked")
-        final BloomFilter<Integer> bloomFilter = (BloomFilter<Integer>) mock(
-                BloomFilter.class);
-        @SuppressWarnings("unchecked")
-        final BloomFilterWriterTx<Integer> bloomTx = (BloomFilterWriterTx<Integer>) mock(
-                BloomFilterWriterTx.class);
-        @SuppressWarnings("unchecked")
-        final BloomFilterWriter<Integer> bloomWriter = (BloomFilterWriter<Integer>) mock(
-                BloomFilterWriter.class);
-        @SuppressWarnings("unchecked")
-        final ChunkEntryFileWriter<Integer, String> indexWriter = (ChunkEntryFileWriter<Integer, String>) mock(
-                ChunkEntryFileWriter.class);
-        @SuppressWarnings("unchecked")
-        final EntryWriter<Integer, Integer> scarceWriter = (EntryWriter<Integer, Integer>) mock(
-                EntryWriter.class);
-        final CellPosition position = mock(CellPosition.class);
+    void write_flushesEveryNthEntry() {
+        subject.write(Entry.of(1, "one"));
+        subject.write(Entry.of(2, "two"));
 
-        when(resources.getBloomFilter()).thenReturn(bloomFilter);
-        when(bloomFilter.openWriteTx()).thenReturn(bloomTx);
-        when(bloomTx.open()).thenReturn(bloomWriter);
-        when(indexWriter.flush()).thenReturn(position);
-        when(position.getValue()).thenReturn(7);
+        verify(indexWriter).flush();
+        final ArgumentCaptor<Entry<Integer, Integer>> captor = ArgumentCaptor
+                .forClass(Entry.class);
+        verify(scarceWriter).write(captor.capture());
+        assertEquals(2, captor.getValue().getKey());
+        assertEquals(42, captor.getValue().getValue());
+    }
 
-        final SegmentFullWriter<Integer, String> writer = new SegmentFullWriter<>(
-                10, resources, indexWriter, scarceWriter);
-        writer.write(Entry.of(1, "one"));
-        writer.close();
+    @Test
+    void close_flushesRemainingDataAndDelaysBloomFilterCommit() {
+        subject.write(Entry.of(1, "one"));
+        subject.close();
 
         verify(indexWriter).flush();
         verify(scarceWriter).close();
         verify(indexWriter).close();
         verify(bloomWriter).close();
+        verify(bloomTx, never()).commit();
+
+        subject.commitBloomFilter();
+
         verify(bloomTx).commit();
     }
 }

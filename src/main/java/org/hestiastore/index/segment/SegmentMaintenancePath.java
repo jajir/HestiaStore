@@ -5,7 +5,6 @@ import java.util.List;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.WriteTransaction.WriterFunction;
 
 /**
@@ -54,7 +53,7 @@ final class SegmentMaintenancePath<K, V> {
      *
      * @return writable transaction
      */
-    WriteTransaction<K, V> openFullWriteTx() {
+    SegmentFullWriterTx<K, V> openFullWriteTx() {
         return new SegmentFullWriterTx<>(segmentFiles, segmentPropertiesManager,
                 segmentConf.getMaxNumberOfKeysInChunk(), segmentResources,
                 deltaCacheController, segmentCache);

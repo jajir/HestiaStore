@@ -59,4 +59,33 @@ class SegmentConcurrencyGateTest {
         gate.exitWrite();
         assertEquals(0, gate.getInFlightWrites());
     }
+
+    @Test
+    void finishMaintenanceToFreeze_waits_for_in_flight_reads() throws Exception {
+        final SegmentConcurrencyGate gate = new SegmentConcurrencyGate();
+        assertTrue(gate.tryEnterFreezeAndDrain());
+        assertTrue(gate.enterMaintenanceRunning());
+        assertTrue(gate.tryEnterRead());
+        assertEquals(1, gate.getInFlightReads());
+
+        final CountDownLatch started = new CountDownLatch(1);
+        final CompletableFuture<Boolean> result = new CompletableFuture<>();
+        final Thread waiter = new Thread(() -> {
+            started.countDown();
+            result.complete(gate.finishMaintenanceToFreeze());
+        });
+        waiter.start();
+
+        assertTrue(started.await(1, TimeUnit.SECONDS));
+        Thread.sleep(10);
+        assertFalse(result.isDone());
+
+        gate.exitRead();
+        assertEquals(0, gate.getInFlightReads());
+
+        assertTrue(result.get(1, TimeUnit.SECONDS));
+        assertEquals(SegmentState.FREEZE, gate.getState());
+        assertTrue(gate.finishFreezeToReady());
+        waiter.join(1_000);
+    }
 }

@@ -10,7 +10,7 @@
 
 ## Contract and Documentation
 - [x] Update `Segment.java` Javadoc with the thread-safe contract.
-- [x] Update `segment-concurency.md` with the lock-free safety model.
+- [x] Update `segment-concurrency.md` with the lock-free safety model.
 - [x] Update any legacy docs that still assume lock-based safety.
 
 ## Concurrency Gate (Core Mechanism)
@@ -39,7 +39,7 @@
 ## SegmentCore Concurrency Safety
 - [x] Write cache uses a thread-safe map.
 - [x] Write cache size/counts are atomic.
-- [ ] Published view swap is atomic (immutable snapshot + atomic reference).
+- [x] Published view swap is atomic (publish under `FREEZE` after IO).
 - [x] Version increment provides visibility for iterators.
 - [x] Remove any shared mutable state without atomic protection.
 

@@ -1,6 +1,5 @@
 package org.hestiastore.index.segment;
 
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -13,54 +12,49 @@ import org.hestiastore.index.chunkentryfile.ChunkEntryFileWriter;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFileWriterTx;
 import org.hestiastore.index.scarceindex.ScarceIndexWriterTx;
 import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class SegmentFullWriterTxTest {
 
-    @Test
-    void commitClearsCachesAndUpdatesStats() {
-        @SuppressWarnings("unchecked")
-        final SegmentFiles<Integer, String> segmentFiles = (SegmentFiles<Integer, String>) mock(
-                SegmentFiles.class);
-        @SuppressWarnings("unchecked")
-        final ChunkEntryFile<Integer, String> indexFile = (ChunkEntryFile<Integer, String>) mock(
-                ChunkEntryFile.class);
-        @SuppressWarnings("unchecked")
-        final ScarceSegmentIndex<Integer> scarceIndex = (ScarceSegmentIndex<Integer>) mock(
-                ScarceSegmentIndex.class);
-        @SuppressWarnings("unchecked")
-        final ChunkEntryFileWriterTx<Integer, String> chunkWriterTx = (ChunkEntryFileWriterTx<Integer, String>) mock(
-                ChunkEntryFileWriterTx.class);
-        @SuppressWarnings("unchecked")
-        final ScarceIndexWriterTx<Integer> scarceWriterTx = (ScarceIndexWriterTx<Integer>) mock(
-                ScarceIndexWriterTx.class);
-        @SuppressWarnings("unchecked")
-        final ChunkEntryFileWriter<Integer, String> indexWriter = (ChunkEntryFileWriter<Integer, String>) mock(
-                ChunkEntryFileWriter.class);
-        @SuppressWarnings("unchecked")
-        final EntryWriter<Integer, Integer> scarceWriter = (EntryWriter<Integer, Integer>) mock(
-                EntryWriter.class);
-        @SuppressWarnings("unchecked")
-        final SegmentResources<Integer, String> resources = (SegmentResources<Integer, String>) mock(
-                SegmentResources.class);
-        @SuppressWarnings("unchecked")
-        final BloomFilter<Integer> bloomFilter = (BloomFilter<Integer>) mock(
-                BloomFilter.class);
-        @SuppressWarnings("unchecked")
-        final BloomFilterWriterTx<Integer> bloomTx = (BloomFilterWriterTx<Integer>) mock(
-                BloomFilterWriterTx.class);
-        @SuppressWarnings("unchecked")
-        final BloomFilterWriter<Integer> bloomWriter = (BloomFilterWriter<Integer>) mock(
-                BloomFilterWriter.class);
-        @SuppressWarnings("unchecked")
-        final SegmentDeltaCacheController<Integer, String> deltaCacheController = (SegmentDeltaCacheController<Integer, String>) mock(
-                SegmentDeltaCacheController.class);
-        @SuppressWarnings("unchecked")
-        final SegmentCache<Integer, String> segmentCache = (SegmentCache<Integer, String>) mock(
-                SegmentCache.class);
-        final SegmentPropertiesManager properties = mock(
-                SegmentPropertiesManager.class);
+    @Mock
+    private SegmentFiles<Integer, String> segmentFiles;
+    @Mock
+    private ChunkEntryFile<Integer, String> indexFile;
+    @Mock
+    private ScarceSegmentIndex<Integer> scarceIndex;
+    @Mock
+    private ChunkEntryFileWriterTx<Integer, String> chunkWriterTx;
+    @Mock
+    private ScarceIndexWriterTx<Integer> scarceWriterTx;
+    @Mock
+    private ChunkEntryFileWriter<Integer, String> indexWriter;
+    @Mock
+    private EntryWriter<Integer, Integer> scarceWriter;
+    @Mock
+    private SegmentResources<Integer, String> resources;
+    @Mock
+    private BloomFilter<Integer> bloomFilter;
+    @Mock
+    private BloomFilterWriterTx<Integer> bloomTx;
+    @Mock
+    private BloomFilterWriter<Integer> bloomWriter;
+    @Mock
+    private SegmentDeltaCacheController<Integer, String> deltaCacheController;
+    @Mock
+    private SegmentCache<Integer, String> segmentCache;
+    @Mock
+    private SegmentPropertiesManager properties;
 
+    private SegmentFullWriterTx<Integer, String> subject;
+
+    @BeforeEach
+    void setUp() {
         when(segmentFiles.getIndexFile()).thenReturn(indexFile);
         when(segmentFiles.getScarceIndex()).thenReturn(scarceIndex);
         when(indexFile.openWriterTx()).thenReturn(chunkWriterTx);
@@ -70,17 +64,25 @@ class SegmentFullWriterTxTest {
         when(resources.getBloomFilter()).thenReturn(bloomFilter);
         when(bloomFilter.openWriteTx()).thenReturn(bloomTx);
         when(bloomTx.open()).thenReturn(bloomWriter);
+        subject = new SegmentFullWriterTx<>(segmentFiles, properties, 2,
+                resources, deltaCacheController, segmentCache);
+    }
 
-        final SegmentFullWriterTx<Integer, String> tx = new SegmentFullWriterTx<>(
-                segmentFiles, properties, 2, resources, deltaCacheController,
-                segmentCache);
+    @AfterEach
+    void tearDown() {
+        subject = null;
+    }
 
-        final EntryWriter<Integer, String> writer = tx.open();
-        writer.close();
-        tx.commit();
+    @Test
+    void commitClearsCachesAndUpdatesStats() {
+        try (EntryWriter<Integer, String> writer = subject.open()) {
+            // no-op
+        }
+        subject.commit();
 
         verify(scarceWriterTx).commit();
         verify(chunkWriterTx).commit();
+        verify(bloomTx).commit();
         verify(deltaCacheController).clearPreservingWriteCache();
         verify(properties).setNumberOfKeysInCache(0);
         verify(properties).setNumberOfKeysInIndex(0);
@@ -88,6 +90,5 @@ class SegmentFullWriterTxTest {
         verify(scarceWriter).close();
         verify(indexWriter).close();
         verify(bloomWriter).close();
-        verify(bloomTx).commit();
     }
 }

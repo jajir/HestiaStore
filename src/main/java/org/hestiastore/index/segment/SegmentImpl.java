@@ -100,7 +100,11 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
         return startMaintenance(() -> {
             final List<Entry<K, V>> snapshotEntries = segmentCompacter
                     .prepareCompaction(core);
-            return () -> segmentCompacter.compact(core, snapshotEntries);
+            final SegmentFullWriterTx<K, V> writerTx = core.openFullWriteTx();
+            return new MaintenanceWork(
+                    () -> segmentCompacter.writeCompaction(core,
+                            snapshotEntries, writerTx),
+                    () -> segmentCompacter.publishCompaction(core, writerTx));
         });
     }
 
@@ -123,10 +127,9 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
     public SegmentResult<CompletionStage<Void>> flush() {
         return startMaintenance(() -> {
             final List<Entry<K, V>> entries = core.freezeWriteCacheForFlush();
-            return () -> {
-                core.flushFrozenWriteCacheToDeltaFile(entries);
-                core.applyFrozenWriteCacheAfterFlush();
-            };
+            return new MaintenanceWork(
+                    () -> core.flushFrozenWriteCacheToDeltaFile(entries),
+                    core::applyFrozenWriteCacheAfterFlush);
         });
     }
 
@@ -179,13 +182,33 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
         return SegmentResult.busy();
     }
 
+    private static final class MaintenanceWork {
+
+        private final Runnable ioWork;
+        private final Runnable publishWork;
+
+        private MaintenanceWork(final Runnable ioWork,
+                final Runnable publishWork) {
+            this.ioWork = Vldtn.requireNonNull(ioWork, "ioWork");
+            this.publishWork = Vldtn.requireNonNull(publishWork, "publishWork");
+        }
+
+        private Runnable ioWork() {
+            return ioWork;
+        }
+
+        private Runnable publishWork() {
+            return publishWork;
+        }
+    }
+
     private SegmentResult<CompletionStage<Void>> startMaintenance(
-            final Supplier<Runnable> workSupplier) {
+            final Supplier<MaintenanceWork> workSupplier) {
         Vldtn.requireNonNull(workSupplier, "workSupplier");
         if (!gate.tryEnterFreezeAndDrain()) {
             return resultForState(gate.getState());
         }
-        final Runnable work;
+        final MaintenanceWork work;
         try {
             work = Vldtn.requireNonNull(workSupplier.get(), "work");
         } catch (final RuntimeException e) {
@@ -207,10 +230,10 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
         return SegmentResult.ok(completion);
     }
 
-    private void runMaintenance(final Runnable work,
+    private void runMaintenance(final MaintenanceWork work,
             final CompletableFuture<Void> completion) {
         try {
-            work.run();
+            work.ioWork().run();
         } catch (final RuntimeException e) {
             failUnlessClosed();
             completion.completeExceptionally(e);
@@ -224,6 +247,13 @@ public class SegmentImpl<K, V> extends AbstractCloseableResource
             failUnlessClosed();
             completion.completeExceptionally(new IllegalStateException(
                     "Segment maintenance failed to transition to FREEZE."));
+            return;
+        }
+        try {
+            work.publishWork().run();
+        } catch (final RuntimeException e) {
+            failUnlessClosed();
+            completion.completeExceptionally(e);
             return;
         }
         if (!gate.finishFreezeToReady()) {

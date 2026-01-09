@@ -48,7 +48,6 @@ public class SegmentFullWriter<K, V> extends AbstractCloseableResource
                 "indexWriter");
         Vldtn.requireNonNull(segmentCacheDataProvider,
                 "segmentCacheDataProvider");
-        segmentCacheDataProvider.invalidate();
         bloomFilterWriterTx = segmentCacheDataProvider.getBloomFilter()
                 .openWriteTx();
         bloomFilterWriter = Vldtn.requireNonNull(bloomFilterWriterTx.open(),
@@ -90,6 +89,9 @@ public class SegmentFullWriter<K, V> extends AbstractCloseableResource
         scarceWriter.close();
         indexWriter.close();
         bloomFilterWriter.close();
+    }
+
+    void commitBloomFilter() {
         bloomFilterWriterTx.commit();
     }
 

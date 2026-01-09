@@ -6,7 +6,6 @@ import java.util.List;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.WriteTransaction.WriterFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,7 +82,7 @@ final class SegmentCore<K, V> {
                 segmentFiles.getValueTypeDescriptor(), snapshotEntries);
     }
 
-    WriteTransaction<K, V> openFullWriteTx() {
+    SegmentFullWriterTx<K, V> openFullWriteTx() {
         return maintenancePath.openFullWriteTx();
     }
 
