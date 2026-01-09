@@ -5,9 +5,12 @@ import java.util.Comparator;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segment.SegmentWriteLockSupport;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
+import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segment.SegmentResultStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,29 +76,32 @@ public class IndexConsistencyChecker<K, V> {
 
     private void removeEmptySegment(final SegmentId segmentId,
             final Segment<K, V> segment) {
-        if (segment instanceof SegmentWriteLockSupport<?, ?>) {
-            @SuppressWarnings("unchecked")
-            final SegmentWriteLockSupport<K, V> lockingSupport =
-                    (SegmentWriteLockSupport<K, V>) segment;
-            lockingSupport.executeWithWriteLock(() -> {
-                final K maxKey = segment.checkAndRepairConsistency();
-                if (maxKey != null) {
-                    return null;
+        if (!confirmEmptyUnderIsolation(segment)) {
+            return;
+        }
+        logger.warn("Segment '{}' is empty. Removing it from index map.",
+                segmentId);
+        keySegmentCache.removeSegment(segmentId);
+        keySegmentCache.optionalyFlush();
+        segmentRegistry.removeSegment(segmentId);
+    }
+
+    private boolean confirmEmptyUnderIsolation(final Segment<K, V> segment) {
+        while (true) {
+            final SegmentResult<EntryIterator<K, V>> result = segment
+                    .openIterator(SegmentIteratorIsolation.FULL_ISOLATION);
+            if (result.getStatus() == SegmentResultStatus.OK) {
+                try (EntryIterator<K, V> iterator = result.getValue()) {
+                    return !iterator.hasNext();
                 }
-                logger.warn(
-                        "Segment '{}' is empty. Removing it from index map.",
-                        segmentId);
-                keySegmentCache.removeSegment(segmentId);
-                keySegmentCache.optionalyFlush();
-                segmentRegistry.removeSegment(segmentId);
-                return null;
-            });
-        } else {
-            logger.warn("Segment '{}' is empty. Removing it from index map.",
-                    segmentId);
-            keySegmentCache.removeSegment(segmentId);
-            keySegmentCache.optionalyFlush();
-            segmentRegistry.removeSegment(segmentId);
+            }
+            if (result.getStatus() == SegmentResultStatus.BUSY) {
+                Thread.onSpinWait();
+                continue;
+            }
+            throw new IndexException(String.format(
+                    "Segment '%s' failed to open iterator: %s", segment.getId(),
+                    result.getStatus()));
         }
     }
 

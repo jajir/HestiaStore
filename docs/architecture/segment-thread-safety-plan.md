@@ -49,9 +49,8 @@
 - [x] Iterator close returns segment to `READY`.
 
 ## Legacy Adapter
-- [x] Deprecate or remove `SegmentImplSynchronizationAdapter` once
-      `SegmentImpl` is fully thread-safe.
-- [x] If retained, document it as optional conservative serialization.
+- [x] Remove `SegmentImplSynchronizationAdapter` and
+      `SegmentWriteLockSupport`.
 
 ## Tests (must be bulletproof)
 ### Unit Tests
@@ -74,5 +73,6 @@
 
 ## Acceptance
 - [ ] All new tests pass reliably.
-- [ ] No external locks required for thread safety.
+- [x] Tests proving that gets and puts can run concurrently.
+- [x] No external locks required for thread safety.
 - [x] Contract and docs explicitly state thread-safe behavior.

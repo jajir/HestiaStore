@@ -158,8 +158,6 @@ It increments when a new immutable view is published (after `flush()` or
   `FREEZE` → `MAINTENANCE_RUNNING` → `READY`).
 - **SegmentCompacter**: performs full rewrite compaction using
   `SegmentCore`.
-- **SegmentImplSynchronizationAdapter**: deprecated lock-based wrapper for
-  conservative serialization; not required for thread safety.
 - **SegmentMaintenanceCoordinator** (segmentindex): decides when to call
   `flush()`/`compact()` after writes.
 - **SegmentAsyncExecutor** + executor (segmentindex): maintenance executor

@@ -10,7 +10,6 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentPropertiesManager;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
-import org.hestiastore.index.segment.SegmentWriteLockSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,20 +87,10 @@ public class SegmentSplitCoordinator<K, V> {
             final SegmentSplitterPlan<K, V> plan) {
         final SegmentId segmentId = segment.getId();
         logger.debug("Splitting of '{}' started.", segmentId);
-        final SplitOutcome outcome;
-        if (segment instanceof SegmentWriteLockSupport<?, ?>) {
-            @SuppressWarnings("unchecked")
-            final SegmentWriteLockSupport<K, V> lockingSupport =
-                    (SegmentWriteLockSupport<K, V>) segment;
-            outcome = lockingSupport.executeWithMaintenanceWriteLock(() -> {
-                if (!segmentRegistry.isSegmentInstance(segmentId, segment)) {
-                    return null;
-                }
-                return doSplit(segment, plan);
-            });
-        } else {
-            outcome = doSplit(segment, plan);
+        if (!segmentRegistry.isSegmentInstance(segmentId, segment)) {
+            return false;
         }
+        final SplitOutcome outcome = doSplit(segment, plan);
         if (outcome != null) {
             if (outcome.evictSegmentId != null) {
                 segmentRegistry.evictSegmentIfSame(outcome.evictSegmentId,

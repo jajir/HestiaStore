@@ -15,7 +15,6 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
-import org.hestiastore.index.segment.SegmentWriteLockSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -187,14 +186,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private boolean writeIntoSegment(final Segment<K, V> segment, final K key,
             final V value, final SegmentId segmentId,
             final long mappingVersion) {
-        if (segment instanceof SegmentWriteLockSupport<?, ?>) {
-            @SuppressWarnings("unchecked")
-            final SegmentWriteLockSupport<K, V> lockingSupport =
-                    (SegmentWriteLockSupport<K, V>) segment;
-            return lockingSupport.executeWithWriteLock(
-                    () -> attemptPut(segment, key, value, segmentId,
-                            mappingVersion));
-        }
         return attemptPut(segment, key, value, segmentId, mappingVersion);
     }
 
