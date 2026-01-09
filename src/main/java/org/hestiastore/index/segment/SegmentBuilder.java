@@ -428,6 +428,9 @@ public final class SegmentBuilder<K, V> {
                     segmentFiles, segmentConf, segmentPropertiesManager);
             segmentResources = new SegmentResourcesImpl<>(segmentDataSupplier);
         }
+        if (maintenanceExecutor == null) {
+            maintenanceExecutor = new DirectExecutor();
+        }
     }
 
     private SegmentCache<K, V> createSegmentCache() {
