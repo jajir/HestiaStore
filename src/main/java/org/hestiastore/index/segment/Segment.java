@@ -14,11 +14,10 @@ import org.hestiastore.index.EntryIterator;
  * coordinating on-disk files, caches and statistics while keeping readers safe
  * during maintenance operations.
  *
- * <strong>Thread-safety:</strong> Implementations are not thread-safe. If a
- * segment instance is accessed from multiple threads, callers must provide
- * external synchronization or higher-level concurrency control. The
- * Readers are protected by iterator invalidation on structural changes, but
- * the segment API itself is not safe for concurrent mutation.
+ * <strong>Thread-safety:</strong> Implementations are thread-safe and may be
+ * accessed concurrently. {@code get} and {@code put} can run in parallel,
+ * while maintenance uses a short exclusive admission phase followed by
+ * background IO.
  * 
  * Please note that any write operation could leads to segment compacting. So
  * write time could vary from fast operation (just write into cache) to long

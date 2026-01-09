@@ -8,15 +8,20 @@
 - `FREEZE`: short exclusive phase for snapshot or swap of a published view.
 
 ## Core Rules
-- Single writer per segment; readers never change published data.
+- Concurrent reads/writes are supported; published data is immutable to readers.
 - No disk IO in caller threads; the maintenance thread performs disk IO.
 - Keep locks short; the state machine is the admission control.
 - `flush()` and `compact()` are commit points and are started asynchronously.
 
 ## Thread Safety
+- `Segment` is thread-safe by contract; callers may access it concurrently.
 - Segment version is stored in `VersionController` (currently an
   `AtomicInteger`).
 - The write cache map uses a thread-safe implementation.
+- Thread safety is achieved without external locks by:
+  - in-flight counters for `get`/`put` operations (drained during maintenance),
+  - atomic state transitions that freeze admissions before maintenance,
+  - atomic publish of immutable views + version bump for iterator safety.
 
 ## Response Codes
 - `OK`: processed successfully.
@@ -147,8 +152,8 @@ It increments when a new immutable view is published (after `flush()` or `compac
   `FREEZE` → `MAINTENANCE_RUNNING` → `READY`).
 - **SegmentCompacter**: performs full rewrite compaction using
   `SegmentCore`.
-- **SegmentImplSynchronizationAdapter**: optional lock-based wrapper used by
-  higher layers for thread-safe access.
+- **SegmentImplSynchronizationAdapter**: optional lock-based wrapper for
+  conservative serialization; not required for thread safety.
 - **SegmentMaintenanceCoordinator** (segmentindex): decides when to call
   `flush()`/`compact()` after writes.
 - **SegmentAsyncExecutor** + executor (segmentindex): maintenance executor
