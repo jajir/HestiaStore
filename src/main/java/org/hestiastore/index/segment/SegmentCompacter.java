@@ -1,5 +1,7 @@
 package org.hestiastore.index.segment;
 
+import java.util.List;
+
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
@@ -20,22 +22,45 @@ public final class SegmentCompacter<K, V> {
                 "versionController");
     }
 
-    public void forceCompact(final SegmentCore<K, V> segment) {
+    /**
+     * Captures a stable snapshot for compaction while the segment is frozen.
+     *
+     * @param segment segment core
+     * @return sorted snapshot entries
+     */
+    public List<Entry<K, V>> prepareCompaction(final SegmentCore<K, V> segment) {
+        Vldtn.requireNonNull(segment, "segment");
         logger.debug("Start of compacting '{}'", segment.getId());
         segment.resetSegmentIndexSearcher();
         segment.freezeWriteCacheForFlush();
-        versionController.changeVersion();
+        return segment.snapshotCacheEntries();
+    }
+
+    /**
+     * Performs compaction using a previously captured snapshot.
+     *
+     * @param segment segment core
+     * @param snapshotEntries snapshot entries captured in FREEZE
+     */
+    public void compact(final SegmentCore<K, V> segment,
+            final List<Entry<K, V>> snapshotEntries) {
+        Vldtn.requireNonNull(segment, "segment");
+        Vldtn.requireNonNull(snapshotEntries, "snapshotEntries");
         segment.executeFullWriteTx(writer -> {
             try (EntryIterator<K, V> iterator = segment
-                    .openIterator(SegmentIteratorIsolation.FULL_ISOLATION)) {
-                Entry<K, V> entry;
+                    .openIteratorFromSnapshot(snapshotEntries)) {
                 while (iterator.hasNext()) {
-                    entry = iterator.next();
-                    writer.write(entry);
+                    writer.write(iterator.next());
                 }
             }
         });
+        versionController.changeVersion();
         logger.debug("End of compacting '{}'", segment.getId());
+    }
+
+    public void forceCompact(final SegmentCore<K, V> segment) {
+        final List<Entry<K, V>> snapshotEntries = prepareCompaction(segment);
+        compact(segment, snapshotEntries);
     }
 
 }

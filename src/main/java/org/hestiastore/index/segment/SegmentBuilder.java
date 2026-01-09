@@ -358,11 +358,21 @@ public final class SegmentBuilder<K, V> {
                 segmentFiles, segmentPropertiesManager, segmentResources,
                 segmentConf.getMaxNumberOfKeysInSegmentWriteCache(),
                 segmentConf.getMaxNumberOfKeysInChunk());
+        final SegmentCache<K, V> segmentCache = createSegmentCache();
+        deltaCacheController.setSegmentCache(segmentCache);
+        final SegmentReadPath<K, V> readPath = new SegmentReadPath<>(segmentFiles,
+                segmentConf, segmentResources, segmentSearcher, segmentCache,
+                versionController);
+        final SegmentWritePath<K, V> writePath = new SegmentWritePath<>(
+                segmentCache, versionController);
+        final SegmentMaintenancePath<K, V> maintenancePath = new SegmentMaintenancePath<>(
+                segmentFiles, segmentConf, segmentPropertiesManager,
+                segmentResources, deltaCacheController, segmentCache);
         final SegmentCompacter<K, V> compacter = new SegmentCompacter<>(
                 versionController);
         final SegmentCore<K, V> core = new SegmentCore<>(segmentFiles,
-                segmentConf, versionController, segmentPropertiesManager,
-                segmentResources, deltaCacheController, segmentSearcher);
+                versionController, segmentPropertiesManager, segmentCache,
+                readPath, writePath, maintenancePath);
         return new SegmentImpl<>(core, compacter, maintenanceExecutor);
     }
 

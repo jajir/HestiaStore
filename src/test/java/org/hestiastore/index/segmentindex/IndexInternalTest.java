@@ -68,7 +68,15 @@ class IndexInternalTest {
         }
 
         @Override
+        public void compactAndWait() {
+        }
+
+        @Override
         public void flush() {
+        }
+
+        @Override
+        public void flushAndWait() {
         }
 
         @Override

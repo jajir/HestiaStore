@@ -23,6 +23,8 @@
 - Add Javadoc for public types and non-trivial logic; keep methods small and side-effect aware.
 - Do not use fully qualified class names in code.
 - Always use simple class names with explicit `import` statements (e.g. `import package.ConcreteClass`).
+- Try to avoid creating class instances in constructors.
+- Try to centralize class instantiation in builder classes.
 
 ## Testing Guidelines
 - Write JUnit 5 tests with Mockito for mocks; place fast, deterministic cases in `src/test/java`.
@@ -32,6 +34,10 @@
 - New code must satisfy the JaCoCo gate (80% instruction coverage and no missed classes) and keep tests isolated/parallel-safe.
 - junit test all corner cases
 - for each changed production class make sure there is same class name `*Test` in corresponding package.
+- If junit test class use mocks annotate class annotate class with @ExtendWith(MockitoExtension.class.
+- For each mocked parameter create private class field.
+- When tested class have to be instantiated than do it in `setUp()` and `teadDown()` methods.
+- instead of try{}finally{} use try-with-resources statement. 
 
 ## Commit & Pull Request Guidelines
 - Follow the existing log style: short, imperative titles that describe the change (e.g., “Improve segment cache eviction logic”); stay under ~72 characters.

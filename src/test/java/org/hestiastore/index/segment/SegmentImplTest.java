@@ -131,9 +131,7 @@ class SegmentImplTest {
 
         final SegmentCompacter<Integer, String> compacter = new SegmentCompacter<>(
                 versionController);
-        core = new SegmentCore<>(segmentFiles, conf, versionController,
-                segmentPropertiesManager, segmentDataProvider,
-                deltaCacheController, segmentSearcher);
+        core = createCore(versionController);
         subject = new SegmentImpl<>(core, compacter, Runnable::run);
     }
 
@@ -398,9 +396,28 @@ class SegmentImplTest {
             final VersionController controller) {
         final SegmentCompacter<Integer, String> compacter = new SegmentCompacter<>(
                 controller);
-        final SegmentCore<Integer, String> localCore = new SegmentCore<>(
-                segmentFiles, conf, controller, segmentPropertiesManager,
-                segmentDataProvider, deltaCacheController, segmentSearcher);
+        final SegmentCore<Integer, String> localCore = createCore(controller);
         return new SegmentImpl<>(localCore, compacter, executor);
+    }
+
+    private SegmentCore<Integer, String> createCore(
+            final VersionController controller) {
+        final SegmentCache<Integer, String> segmentCache = new SegmentCache<>(
+                tdi.getComparator(), tds, deltaCache.getAsSortedList(),
+                conf.getMaxNumberOfKeysInSegmentWriteCache(),
+                conf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush(),
+                conf.getMaxNumberOfKeysInSegmentCache());
+        deltaCacheController.setSegmentCache(segmentCache);
+        final SegmentReadPath<Integer, String> readPath = new SegmentReadPath<>(
+                segmentFiles, conf, segmentDataProvider, segmentSearcher,
+                segmentCache, controller);
+        final SegmentWritePath<Integer, String> writePath = new SegmentWritePath<>(
+                segmentCache, controller);
+        final SegmentMaintenancePath<Integer, String> maintenancePath = new SegmentMaintenancePath<>(
+                segmentFiles, conf, segmentPropertiesManager, segmentDataProvider,
+                deltaCacheController, segmentCache);
+        return new SegmentCore<>(segmentFiles, controller,
+                segmentPropertiesManager, segmentCache, readPath, writePath,
+                maintenancePath);
     }
 }
