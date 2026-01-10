@@ -36,6 +36,7 @@ nav:
             - Data Block Format: architecture/datablock.md
             - Chain of Filters: architecture/chain-of-filters.md
             - Segment Concurrency: architecture/segment-concurrency.md
+            - Segment Index Concurrency: architecture/segment-index-concurrency.md
         - Data Flow:
             - Write Path: architecture/write-path.md
             - Read Path: architecture/read-path.md
