@@ -1,6 +1,7 @@
 # General rules
 - be honest
 - when it make sense structure response as numbered list of points
+- refactoring backlog lives in `docs/refactor-backlog.md`
 
 # Repository Guidelines
 
