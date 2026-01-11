@@ -11,8 +11,8 @@ This page lists the most important constraints and design trade‑offs so you ca
 
 ## 🔒 Concurrency
 
-- Default build is not thread‑safe: `SegmentIndexImpl` favors throughput with no internal locking. Use one writer thread (and coordinate readers), or enable the synchronized variant.
-- Thread‑safe mode uses a coarse `ReentrantLock`: `IndexInternalSynchronized` serializes all ops; long scans contend with writes. Iterators in this mode take/release the same lock per step.
+- SegmentIndex is thread‑safe and not globally serialized; heavy concurrent writes can increase contention in shared caches and per-segment state machines.
+- No serialized adapter is provided; enforce strict ordering externally if needed.
 - Optimistic iteration: Segment iterators may stop early if a write bumps the version during a scan (by design). Re‑open the iterator to continue. See `EntryIteratorWithLock`.
 
 ## 📏 Size and Addressing Limits

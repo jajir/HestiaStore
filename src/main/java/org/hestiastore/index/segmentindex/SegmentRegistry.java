@@ -28,7 +28,6 @@ public class SegmentRegistry<K, V> {
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final SegmentAsyncExecutor segmentAsyncExecutor;
     private final ExecutorService maintenanceExecutor;
-    private final boolean ownsExecutor;
 
     SegmentRegistry(final AsyncDirectory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
@@ -41,21 +40,15 @@ public class SegmentRegistry<K, V> {
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
         this.conf = Vldtn.requireNonNull(conf, "conf");
-        final Integer threadsConf = conf.getNumberOfThreads();
-        final int threads = (threadsConf == null || threadsConf < 1) ? 1
-                : threadsConf.intValue();
-        final ExecutorService providedExecutor = conf
-                .getMaintenanceExecutor();
-        if (providedExecutor == null) {
-            this.segmentAsyncExecutor = new SegmentAsyncExecutor(threads,
-                    "segment-async");
-            this.maintenanceExecutor = segmentAsyncExecutor.getExecutor();
-            this.ownsExecutor = true;
-        } else {
-            this.segmentAsyncExecutor = null;
-            this.maintenanceExecutor = providedExecutor;
-            this.ownsExecutor = false;
-        }
+        final Integer maintenanceThreadsConf = conf
+                .getNumberOfSegmentIndexMaintenanceThreads();
+        final int threads = (maintenanceThreadsConf == null
+                || maintenanceThreadsConf < 1)
+                        ? IndexConfigurationContract.DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS
+                        : maintenanceThreadsConf.intValue();
+        this.segmentAsyncExecutor = new SegmentAsyncExecutor(threads,
+                "segment-async");
+        this.maintenanceExecutor = segmentAsyncExecutor.getExecutor();
     }
 
     ExecutorService getMaintenanceExecutor() {
@@ -210,8 +203,7 @@ public class SegmentRegistry<K, V> {
     }
 
     public void close() {
-        if (ownsExecutor && segmentAsyncExecutor != null
-                && !segmentAsyncExecutor.wasClosed()) {
+        if (!segmentAsyncExecutor.wasClosed()) {
             segmentAsyncExecutor.close();
         }
     }

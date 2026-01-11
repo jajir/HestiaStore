@@ -28,6 +28,10 @@ public interface IndexConfigurationContract {
     int DISK_IO_BUFFER_SIZE_IN_BYTES = 1024 * 8;
     int NUMBER_OF_THREADS = 1;
     int NUMBER_OF_IO_THREADS = 1;
+    int DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS = 10;
+    int DEFAULT_INDEX_BUSY_BACKOFF_MILLIS = 5;
+    int DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS = 30_000;
+    boolean DEFAULT_SEGMENT_MAINTENANCE_AUTO_ENABLED = true;
 
     default int getMaxNumberOfKeysInSegmentCache() {
         return MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
@@ -81,6 +85,22 @@ public interface IndexConfigurationContract {
 
     default int getNumberOfIoThreads() {
         return NUMBER_OF_IO_THREADS;
+    }
+
+    default int getNumberOfSegmentIndexMaintenanceThreads() {
+        return DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS;
+    }
+
+    default int getIndexBusyBackoffMillis() {
+        return DEFAULT_INDEX_BUSY_BACKOFF_MILLIS;
+    }
+
+    default int getIndexBusyTimeoutMillis() {
+        return DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS;
+    }
+
+    default boolean isSegmentMaintenanceAutoEnabled() {
+        return DEFAULT_SEGMENT_MAINTENANCE_AUTO_ENABLED;
     }
 
     default boolean isContextLoggingEnabled() {

@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentFiles;
 import org.hestiastore.index.segment.SegmentFilesRenamer;
@@ -26,6 +27,7 @@ public class SegmentSplitCoordinator<K, V> {
     private final KeySegmentCache<K> keySegmentCache;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentFilesRenamer filesRenamer = new SegmentFilesRenamer();
+    private final IndexRetryPolicy retryPolicy;
 
     SegmentSplitCoordinator(final IndexConfiguration<K, V> conf,
             final KeySegmentCache<K> keySegmentCache,
@@ -35,6 +37,9 @@ public class SegmentSplitCoordinator<K, V> {
                 "keySegmentCache");
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
+        this.retryPolicy = new IndexRetryPolicy(
+                conf.getIndexBusyBackoffMillis(),
+                conf.getIndexBusyTimeoutMillis());
     }
 
     /**
@@ -118,6 +123,7 @@ public class SegmentSplitCoordinator<K, V> {
     }
 
     private void compactSegment(final Segment<K, V> segment) {
+        final long startNanos = retryPolicy.startNanos();
         while (true) {
             final SegmentResult<?> result = segment.compact();
             final SegmentResultStatus status = result.getStatus();
@@ -126,9 +132,11 @@ public class SegmentSplitCoordinator<K, V> {
                 return;
             }
             if (status == SegmentResultStatus.BUSY) {
+                retryPolicy.backoffOrThrow(startNanos, "compact",
+                        segment.getId());
                 continue;
             }
-            throw new org.hestiastore.index.IndexException(String.format(
+            throw new IndexException(String.format(
                     "Segment '%s' failed during compact: %s", segment.getId(),
                     status));
         }
@@ -188,6 +196,7 @@ public class SegmentSplitCoordinator<K, V> {
     }
 
     private boolean hasLiveEntries(final Segment<K, V> segment) {
+        final long startNanos = retryPolicy.startNanos();
         while (true) {
             final SegmentResult<EntryIterator<K, V>> result = segment
                     .openIterator(SegmentIteratorIsolation.FULL_ISOLATION);
@@ -197,9 +206,11 @@ public class SegmentSplitCoordinator<K, V> {
                 }
             }
             if (result.getStatus() == SegmentResultStatus.BUSY) {
+                retryPolicy.backoffOrThrow(startNanos, "openIterator",
+                        segment.getId());
                 continue;
             }
-            throw new org.hestiastore.index.IndexException(String.format(
+            throw new IndexException(String.format(
                     "Segment '%s' failed to open iterator: %s",
                     segment.getId(), result.getStatus()));
         }

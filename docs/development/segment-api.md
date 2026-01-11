@@ -104,8 +104,8 @@ Current index-level handling (SegmentIndexImpl):
 
 If write load still exceeds flush/compact throughput, pick one:
 
-- Apply backpressure at the index level (for example, the bounded queue in
-  `IndexInternalSynchronized`).
+- Apply backpressure at the index level (for example, wrap SegmentIndex with a
+  bounded executor/queue).
 - Lower thresholds to flush/split earlier.
 - Add explicit write-cache caps or throttling around `Segment.put()`.
 

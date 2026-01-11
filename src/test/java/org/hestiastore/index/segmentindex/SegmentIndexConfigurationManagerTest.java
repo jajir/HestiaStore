@@ -3,15 +3,12 @@ package org.hestiastore.index.segmentindex;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
@@ -402,25 +399,6 @@ class SegmentIndexConfigurationManagerTest {
         assertEquals(77, ret.getBloomFilterIndexSizeInBytes());
         assertEquals(88, ret.getBloomFilterNumberOfHashFunctions());
         assertFalse(ret.isContextLoggingEnabled());
-    }
-
-    @Test
-    void test_mergeWithStored_maintenanceExecutor_is_runtime_only() {
-        final ExecutorService executor = Executors.newSingleThreadExecutor();
-        try {
-            final IndexConfiguration<Long, String> config = IndexConfiguration
-                    .<Long, String>builder()//
-                    .withMaintenanceExecutor(executor)//
-                    .build();
-
-            when(storage.load()).thenReturn(CONFIG);
-            final IndexConfiguration<Long, String> ret = manager
-                    .mergeWithStored(config);
-            verify(storage, Mockito.times(0)).save(any());
-            assertSame(executor, ret.getMaintenanceExecutor());
-        } finally {
-            executor.shutdownNow();
-        }
     }
 
     @Test

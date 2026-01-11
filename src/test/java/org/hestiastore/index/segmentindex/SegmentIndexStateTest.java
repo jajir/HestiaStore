@@ -1,7 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 
@@ -14,16 +14,17 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class SegmentIndexImplTest {
+class SegmentIndexStateTest {
 
-    private IndexInternalConcurrent<Integer, String> index;
+    private SegmentIndex<Integer, String> index;
+    private IndexInternalConcurrent<Integer, String> errorIndex;
 
     @BeforeEach
     void setUp() {
-        index = new IndexInternalConcurrent<>(
+        index = SegmentIndex.create(new MemDirectory(), buildConf());
+        errorIndex = new IndexInternalConcurrent<>(
                 AsyncDirectoryAdapter.wrap(new MemDirectory()),
-                new TypeDescriptorInteger(),
-                new TypeDescriptorShortString(),
+                new TypeDescriptorInteger(), new TypeDescriptorShortString(),
                 buildConf());
     }
 
@@ -32,16 +33,23 @@ class SegmentIndexImplTest {
         if (index != null && !index.wasClosed()) {
             index.close();
         }
+        if (errorIndex != null && !errorIndex.wasClosed()) {
+            errorIndex.close();
+        }
     }
 
     @Test
-    void putGetAndDeleteRoundTrip() {
-        index.put(1, "one");
+    void readyAndClosedStatesAreExposed() {
+        assertEquals(SegmentIndexState.READY, index.getState());
+        index.close();
+        assertEquals(SegmentIndexState.CLOSED, index.getState());
+    }
 
-        assertEquals("one", index.get(1));
-
-        index.delete(1);
-        assertNull(index.get(1));
+    @Test
+    void errorStateRejectsOperations() {
+        errorIndex.failWithError(new IllegalStateException("boom"));
+        assertEquals(SegmentIndexState.ERROR, errorIndex.getState());
+        assertThrows(IllegalStateException.class, () -> errorIndex.get(1));
     }
 
     private IndexConfiguration<Integer, String> buildConf() {
@@ -50,7 +58,7 @@ class SegmentIndexImplTest {
                 .withValueClass(String.class)
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())
                 .withValueTypeDescriptor(new TypeDescriptorShortString())
-                .withName("segment-index-impl-test")
+                .withName("segment-index-state-test")
                 .withContextLoggingEnabled(false)
                 .withMaxNumberOfKeysInSegmentCache(10)
                 .withMaxNumberOfKeysInSegmentWriteCache(5)

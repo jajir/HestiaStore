@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
@@ -34,6 +35,8 @@ class IndexConfigurationContractTest {
     void providesDefaultChunkFilters() {
         final IndexConfigurationContract contract = new IndexConfigurationContract() {
         };
+
+        assertTrue(contract.isSegmentMaintenanceAutoEnabled());
 
         final List<?> encoding = contract.getEncodingChunkFilters();
         assertEquals(2, encoding.size());

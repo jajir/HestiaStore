@@ -1,11 +1,8 @@
 package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -17,27 +14,18 @@ import org.junit.jupiter.api.Test;
 class IndexConfigurationManagerTest {
 
     @Test
-    void mergeWithStored_preservesMaintenanceExecutorWithoutSaving() {
-        final ExecutorService executor = Executors.newSingleThreadExecutor();
-        try {
-            final IndexConfiguration<Integer, String> stored = buildStored();
-            final TestStorage<Integer, String> storage = new TestStorage<>(
-                    stored);
-            final IndexConfigurationManager<Integer, String> manager = new IndexConfigurationManager<>(
-                    storage);
-            final IndexConfiguration<Integer, String> runtime = IndexConfiguration
-                    .<Integer, String>builder()
-                    .withMaintenanceExecutor(executor)
-                    .build();
+    void mergeWithStored_noOverridesDoesNotSave() {
+        final IndexConfiguration<Integer, String> stored = buildStored();
+        final TestStorage<Integer, String> storage = new TestStorage<>(stored);
+        final IndexConfigurationManager<Integer, String> manager = new IndexConfigurationManager<>(
+                storage);
+        final IndexConfiguration<Integer, String> runtime = IndexConfiguration
+                .<Integer, String>builder()
+                .build();
 
-            final IndexConfiguration<Integer, String> merged = manager
-                    .mergeWithStored(runtime);
+        manager.mergeWithStored(runtime);
 
-            assertSame(executor, merged.getMaintenanceExecutor());
-            assertNull(storage.getSaved());
-        } finally {
-            executor.shutdownNow();
-        }
+        assertNull(storage.getSaved());
     }
 
     private IndexConfiguration<Integer, String> buildStored() {

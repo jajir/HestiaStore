@@ -3,11 +3,11 @@ package org.hestiastore.index.segmentindex;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.chunkstore.ChunkFilter;
@@ -39,16 +39,66 @@ class SegmentRegistryTest {
     @Mock
     private IndexConfiguration<Integer, String> conf;
 
-    @Mock
-    private ExecutorService maintenanceExecutor;
-
     private SegmentRegistry<Integer, String> registry;
 
     @BeforeEach
     void setUp() {
-        Mockito.when(conf.getNumberOfThreads()).thenReturn(1);
-        Mockito.when(conf.getMaintenanceExecutor())
-                .thenReturn(maintenanceExecutor);
+        registry = new SegmentRegistry<>(directoryFacade, KEY_DESCRIPTOR,
+                VALUE_DESCRIPTOR, conf);
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (registry != null) {
+            registry.close();
+        }
+    }
+
+    @Test
+    void getSegment_reusesInstanceUntilClosed() {
+        stubSegmentConfig();
+        final SegmentId segmentId = SegmentId.of(1);
+
+        final Segment<Integer, String> first = registry.getSegment(segmentId);
+        final Segment<Integer, String> second = registry.getSegment(segmentId);
+
+        assertSame(first, second);
+        first.close();
+        final Segment<Integer, String> third = registry.getSegment(segmentId);
+
+        assertNotSame(first, third);
+    }
+
+    @Test
+    void evictSegmentIfSame_removesOnlyMatchingInstance() {
+        stubSegmentConfig();
+        final SegmentId segmentId = SegmentId.of(1);
+        final SegmentId otherId = SegmentId.of(2);
+
+        final Segment<Integer, String> segment = registry.getSegment(segmentId);
+        final Segment<Integer, String> otherSegment = registry
+                .getSegment(otherId);
+
+        assertFalse(registry.evictSegmentIfSame(segmentId, otherSegment));
+        assertSame(segment, registry.getSegment(segmentId));
+
+        assertTrue(registry.evictSegmentIfSame(segmentId, segment));
+        assertNotSame(segment, registry.getSegment(segmentId));
+    }
+
+    @Test
+    void createsMaintenanceExecutorFromConfiguration() {
+        Mockito.when(conf.getNumberOfSegmentIndexMaintenanceThreads())
+                .thenReturn(2);
+        registry.close();
+
+        registry = new SegmentRegistry<>(directoryFacade, KEY_DESCRIPTOR,
+                VALUE_DESCRIPTOR, conf);
+
+        assertNotNull(registry.getMaintenanceExecutor());
+    }
+
+    private void stubSegmentConfig() {
         Mockito.when(conf.getMaxNumberOfKeysInSegmentWriteCache())
                 .thenReturn(5);
         Mockito.when(conf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush())
@@ -65,46 +115,5 @@ class SegmentRegistryTest {
         Mockito.when(
                 directoryFacade.isFileExistsAsync(ArgumentMatchers.anyString()))
                 .thenReturn(CompletableFuture.completedFuture(false));
-
-        registry = new SegmentRegistry<>(directoryFacade, KEY_DESCRIPTOR,
-                VALUE_DESCRIPTOR, conf);
     }
-
-    @AfterEach
-    void tearDown() {
-        if (registry != null) {
-            registry.close();
-        }
-    }
-
-    @Test
-    void getSegment_reusesInstanceUntilClosed() {
-        final SegmentId segmentId = SegmentId.of(1);
-
-        final Segment<Integer, String> first = registry.getSegment(segmentId);
-        final Segment<Integer, String> second = registry.getSegment(segmentId);
-
-        assertSame(first, second);
-        first.close();
-        final Segment<Integer, String> third = registry.getSegment(segmentId);
-
-        assertNotSame(first, third);
-    }
-
-    @Test
-    void evictSegmentIfSame_removesOnlyMatchingInstance() {
-        final SegmentId segmentId = SegmentId.of(1);
-        final SegmentId otherId = SegmentId.of(2);
-
-        final Segment<Integer, String> segment = registry.getSegment(segmentId);
-        final Segment<Integer, String> otherSegment = registry
-                .getSegment(otherId);
-
-        assertFalse(registry.evictSegmentIfSame(segmentId, otherSegment));
-        assertSame(segment, registry.getSegment(segmentId));
-
-        assertTrue(registry.evictSegmentIfSame(segmentId, segment));
-        assertNotSame(segment, registry.getSegment(segmentId));
-    }
-
 }

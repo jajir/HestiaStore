@@ -91,6 +91,11 @@ final class IndexDirectoryClosingAdapter<K, V>
     }
 
     @Override
+    public SegmentIndexState getState() {
+        return index.getState();
+    }
+
+    @Override
     protected void doClose() {
         RuntimeException failure = null;
         try {

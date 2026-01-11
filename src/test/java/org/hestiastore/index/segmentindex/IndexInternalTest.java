@@ -89,6 +89,11 @@ class IndexInternalTest {
         }
 
         @Override
+        public SegmentIndexState getState() {
+            return SegmentIndexState.READY;
+        }
+
+        @Override
         public boolean wasClosed() {
             return false;
         }

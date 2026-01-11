@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Multi-threaded access safety check for {@link SegmentIndex} using the
- * synchronized implementation.
+ * default concurrent implementation.
  * <p>
  * The tests avoid relying on a globally deterministic ordering across threads
  * (which is not guaranteed) and instead validate deterministic end states:
@@ -82,7 +82,7 @@ class SegmentIndexConcurrentIT {
                 "Writer threads did not finish in time");
         executor.shutdownNow();
 
-        index.flush();
+        index.flushAndWait();
 
         final Map<Integer, Integer> expected = new java.util.HashMap<>();
         for (final Map<Integer, Integer> local : expectedByThread) {
@@ -145,7 +145,7 @@ class SegmentIndexConcurrentIT {
 
         final int finalValue = 42_4242;
         index.put(key, finalValue);
-        index.flush();
+        index.flushAndWait();
         assertEquals(finalValue, index.get(key));
         index.close();
 
@@ -232,7 +232,7 @@ class SegmentIndexConcurrentIT {
         }
 
         index.checkAndRepairConsistency();
-        index.flush();
+        index.flushAndWait();
 
         final Map<Integer, Integer> expected = new java.util.HashMap<>();
         for (final Map<Integer, Integer> local : expectedByThread) {
@@ -249,7 +249,7 @@ class SegmentIndexConcurrentIT {
 
         // Ensure any values that are still buffered in the write cache are
         // persisted before validating the full stream view.
-        index.flush();
+        index.flushAndWait();
 
         final Map<Integer, Integer> actual = index.getStream()
                 .collect(Collectors.toMap(Entry::getKey, Entry::getValue,
@@ -330,7 +330,7 @@ class SegmentIndexConcurrentIT {
         writers.shutdownNow();
         readers.shutdownNow();
 
-        index.flush();
+        index.flushAndWait();
         index.getStream().forEach(entry -> assertEquals(entry.getKey(),
                 decodeKey(entry.getValue())));
         index.close();
@@ -386,7 +386,7 @@ class SegmentIndexConcurrentIT {
                 "Worker threads did not finish in time");
         executor.shutdownNow();
 
-        index.flush();
+        index.flushAndWait();
 
         final Map<Integer, Integer> expected = new java.util.HashMap<>();
         for (final Map<Integer, Integer> local : expectedByThread) {
@@ -403,7 +403,7 @@ class SegmentIndexConcurrentIT {
         // Make sure buffered entries are flushed before collecting the stream
         // (getStream does not emit brand-new keys that exist only in the write
         // cache).
-        index.flush();
+        index.flushAndWait();
 
         final Map<Integer, Integer> actual = index.getStream()
                 .collect(Collectors.toMap(Entry::getKey, Entry::getValue,

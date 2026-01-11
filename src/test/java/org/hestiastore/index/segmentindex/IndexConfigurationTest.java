@@ -1,13 +1,11 @@
 package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -42,17 +40,11 @@ class IndexConfigurationTest {
     }
 
     @Test
-    void maintenanceExecutorIsExposed() {
-        final ExecutorService executor = Executors.newSingleThreadExecutor();
-        try {
-            final IndexConfiguration<Integer, String> config = IndexConfiguration
-                    .<Integer, String>builder()
-                    .withMaintenanceExecutor(executor)
-                    .build();
+    void segmentMaintenanceAutoEnabledDefaultsToTrue() {
+        final IndexConfiguration<Integer, String> config = IndexConfiguration
+                .<Integer, String>builder()
+                .build();
 
-            assertSame(executor, config.getMaintenanceExecutor());
-        } finally {
-            executor.shutdownNow();
-        }
+        assertTrue(config.isSegmentMaintenanceAutoEnabled());
     }
 }

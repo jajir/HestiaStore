@@ -32,16 +32,13 @@ final class SegmentAsyncSplitCoordinator<K, V> {
             final Executor maintenanceExecutor) {
         this.splitCoordinator = Vldtn.requireNonNull(splitCoordinator,
                 "splitCoordinator");
-        this.maintenanceExecutor = maintenanceExecutor;
+        this.maintenanceExecutor = Vldtn.requireNonNull(maintenanceExecutor,
+                "maintenanceExecutor");
     }
 
     CompletionStage<Boolean> optionallySplitAsync(final Segment<K, V> segment,
             final long maxNumberOfKeysInSegment) {
         Vldtn.requireNonNull(segment, "segment");
-        if (maintenanceExecutor == null) {
-            return CompletableFuture.completedFuture(splitCoordinator
-                    .optionallySplit(segment, maxNumberOfKeysInSegment));
-        }
         final SegmentId segmentId = segment.getId();
         final SplitInFlight<K, V> inFlight = inFlightSplits.compute(segmentId,
                 (id, existing) -> {

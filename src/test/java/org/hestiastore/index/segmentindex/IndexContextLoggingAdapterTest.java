@@ -3,29 +3,45 @@ package org.hestiastore.index.segmentindex;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.MDC;
 
+@ExtendWith(MockitoExtension.class)
 class IndexContextLoggingAdapterTest {
+
+    @Mock
+    private IndexConfiguration<String, String> conf;
+
+    @Mock
+    private SegmentIndex<String, String> delegate;
+
+    private IndexContextLoggingAdapter<String, String> adapter;
+
+    @BeforeEach
+    void setUp() {
+        when(conf.getIndexName()).thenReturn("idx");
+        adapter = new IndexContextLoggingAdapter<>(conf, delegate);
+    }
 
     @AfterEach
     void tearDown() {
+        if (adapter != null && !adapter.wasClosed()) {
+            adapter.close();
+        }
         MDC.clear();
     }
 
     @Test
     void setsAndClearsMdcForDelegatedOperations() {
-        final IndexConfiguration<String, String> conf = mock(
-                IndexConfiguration.class);
-        when(conf.getIndexName()).thenReturn("idx");
-
-        final SegmentIndex<String, String> delegate = mock(SegmentIndex.class);
         final AtomicReference<String> mdcAtPut = new AtomicReference<>();
         final AtomicReference<String> mdcAtGet = new AtomicReference<>();
         final AtomicReference<String> mdcAtClose = new AtomicReference<>();
@@ -44,9 +60,6 @@ class IndexContextLoggingAdapterTest {
             mdcAtClose.set(MDC.get("index.name"));
             return null;
         }).when(delegate).close();
-
-        final IndexContextLoggingAdapter<String, String> adapter = new IndexContextLoggingAdapter<>(
-                conf, delegate);
 
         adapter.put("key", "value");
         assertEquals("idx", mdcAtPut.get());
