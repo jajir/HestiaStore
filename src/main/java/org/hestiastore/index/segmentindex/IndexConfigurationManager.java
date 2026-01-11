@@ -65,6 +65,10 @@ public class IndexConfigurationManager<K, V> {
             builder.withNumberOfSegmentIndexMaintenanceThreads(
                     defaults.getNumberOfSegmentIndexMaintenanceThreads());
         }
+        if (conf.getNumberOfIndexMaintenanceThreads() == null) {
+            builder.withNumberOfIndexMaintenanceThreads(
+                    defaults.getNumberOfIndexMaintenanceThreads());
+        }
         if (conf.getIndexBusyBackoffMillis() == null) {
             builder.withIndexBusyBackoffMillis(
                     defaults.getIndexBusyBackoffMillis());
@@ -230,6 +234,15 @@ public class IndexConfigurationManager<K, V> {
                                 .getNumberOfSegmentIndexMaintenanceThreads())) {
             builder.withNumberOfSegmentIndexMaintenanceThreads(
                     indexConf.getNumberOfSegmentIndexMaintenanceThreads());
+            dirty = true;
+        }
+        if (indexConf.getNumberOfIndexMaintenanceThreads() != null
+                && indexConf.getNumberOfIndexMaintenanceThreads() > 0
+                && !indexConf.getNumberOfIndexMaintenanceThreads()
+                        .equals(storedConf
+                                .getNumberOfIndexMaintenanceThreads())) {
+            builder.withNumberOfIndexMaintenanceThreads(
+                    indexConf.getNumberOfIndexMaintenanceThreads());
             dirty = true;
         }
         if (indexConf.getIndexBusyBackoffMillis() != null
@@ -548,6 +561,12 @@ public class IndexConfigurationManager<K, V> {
             throw new IllegalArgumentException(
                     "Segment index maintenance threads must be at least 1.");
         }
+        Vldtn.requireNonNull(conf.getNumberOfIndexMaintenanceThreads(),
+                "indexMaintenanceThreads");
+        if (conf.getNumberOfIndexMaintenanceThreads() < 1) {
+            throw new IllegalArgumentException(
+                    "Index maintenance threads must be at least 1.");
+        }
         Vldtn.requireNonNull(conf.getIndexBusyBackoffMillis(),
                 "indexBusyBackoffMillis");
         if (conf.getIndexBusyBackoffMillis() < 1) {
@@ -592,6 +611,8 @@ public class IndexConfigurationManager<K, V> {
                 .withNumberOfIoThreads(conf.getNumberOfIoThreads())//
                 .withNumberOfSegmentIndexMaintenanceThreads(
                         conf.getNumberOfSegmentIndexMaintenanceThreads())//
+                .withNumberOfIndexMaintenanceThreads(
+                        conf.getNumberOfIndexMaintenanceThreads())//
                 .withIndexBusyBackoffMillis(conf.getIndexBusyBackoffMillis())//
                 .withIndexBusyTimeoutMillis(conf.getIndexBusyTimeoutMillis())//
                 .withSegmentMaintenanceAutoEnabled(

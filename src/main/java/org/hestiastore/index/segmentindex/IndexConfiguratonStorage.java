@@ -33,6 +33,7 @@ public class IndexConfiguratonStorage<K, V> {
     private static final String PROP_NUMBER_OF_THREADS = "numberOfThreads";
     private static final String PROP_NUMBER_OF_IO_THREADS = "numberOfIoThreads";
     private static final String PROP_SEGMENT_INDEX_MAINTENANCE_THREADS = "segmentIndexMaintenanceThreads";
+    private static final String PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS = "numberOfIndexMaintenanceThreads";
     private static final String PROP_INDEX_BUSY_BACKOFF_MILLIS = "indexBusyBackoffMillis";
     private static final String PROP_INDEX_BUSY_TIMEOUT_MILLIS = "indexBusyTimeoutMillis";
     private static final String PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED = "segmentMaintenanceAutoEnabled";
@@ -111,6 +112,10 @@ public class IndexConfiguratonStorage<K, V> {
                         getOrDefault(propsView,
                                 PROP_SEGMENT_INDEX_MAINTENANCE_THREADS,
                                 IndexConfigurationContract.DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS))//
+                .withNumberOfIndexMaintenanceThreads(
+                        getOrDefault(propsView,
+                                PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS,
+                                IndexConfigurationContract.DEFAULT_INDEX_MAINTENANCE_THREADS))//
                 .withIndexBusyBackoffMillis(
                         getOrDefault(propsView,
                                 PROP_INDEX_BUSY_BACKOFF_MILLIS,
@@ -210,6 +215,12 @@ public class IndexConfiguratonStorage<K, V> {
                                 .getNumberOfSegmentIndexMaintenanceThreads();
         writer.setInt(PROP_SEGMENT_INDEX_MAINTENANCE_THREADS,
                 maintenanceThreads);
+        final int indexMaintenanceThreads = indexConfiguration
+                .getNumberOfIndexMaintenanceThreads() == null
+                        ? IndexConfigurationContract.DEFAULT_INDEX_MAINTENANCE_THREADS
+                        : indexConfiguration.getNumberOfIndexMaintenanceThreads();
+        writer.setInt(PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS,
+                indexMaintenanceThreads);
         final int busyBackoffMillis = indexConfiguration
                 .getIndexBusyBackoffMillis() == null
                         ? IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS

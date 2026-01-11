@@ -41,8 +41,7 @@ class SegmentMaintenanceCoordinatorTest {
 
     @BeforeEach
     void setUp() {
-        when(segmentRegistry.getMaintenanceExecutor())
-                .thenReturn(maintenanceExecutor);
+        when(segmentRegistry.getSplitExecutor()).thenReturn(maintenanceExecutor);
         when(conf.getIndexBusyBackoffMillis()).thenReturn(1);
         when(conf.getIndexBusyTimeoutMillis()).thenReturn(1000);
     }
@@ -57,7 +56,7 @@ class SegmentMaintenanceCoordinatorTest {
         coordinator.handlePostWrite(segment, "key", SegmentId.of(1), 1L);
 
         verifyNoInteractions(segment, keySegmentCache);
-        verify(segmentRegistry).getMaintenanceExecutor();
+        verify(segmentRegistry).getSplitExecutor();
         verifyNoMoreInteractions(segmentRegistry);
     }
 

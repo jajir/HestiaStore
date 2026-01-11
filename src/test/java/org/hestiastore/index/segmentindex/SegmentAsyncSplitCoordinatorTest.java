@@ -9,7 +9,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -38,7 +37,7 @@ class SegmentAsyncSplitCoordinatorTest {
                 () -> new SegmentAsyncSplitCoordinator<>(splitCoordinator,
                         null));
 
-        assertEquals("Property 'maintenanceExecutor' must not be null.",
+        assertEquals("Property 'splitExecutor' must not be null.",
                 ex.getMessage());
     }
 
@@ -58,9 +57,9 @@ class SegmentAsyncSplitCoordinatorTest {
         final SegmentAsyncSplitCoordinator<Integer, String> coordinator = new SegmentAsyncSplitCoordinator<>(
                 splitCoordinator, executor);
 
-        final CompletionStage<Boolean> first = coordinator
+        final SegmentAsyncSplitCoordinator.SplitHandle first = coordinator
                 .optionallySplitAsync(segment, 10L);
-        final CompletionStage<Boolean> second = coordinator
+        final SegmentAsyncSplitCoordinator.SplitHandle second = coordinator
                 .optionallySplitAsync(segment, 10L);
 
         assertSame(first, second);
@@ -69,7 +68,8 @@ class SegmentAsyncSplitCoordinatorTest {
         assertNotNull(scheduled.get());
         scheduled.get().run();
 
-        assertTrue(first.toCompletableFuture().get(1, TimeUnit.SECONDS));
+        assertTrue(first.completion().toCompletableFuture()
+                .get(1, TimeUnit.SECONDS));
         verify(splitCoordinator, times(1)).optionallySplit(segment, 10L);
     }
 }

@@ -30,6 +30,7 @@ public class IndexInternalConcurrent<K, V> extends SegmentIndexImpl<K, V> {
     @Override
     public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindow) {
         getIndexState().tryPerformOperation();
+        awaitSplitsIdle();
         final EntryIterator<K, V> iterator = openSegmentIterator(
                 segmentWindow);
         try {

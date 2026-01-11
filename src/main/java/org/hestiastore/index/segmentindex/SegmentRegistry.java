@@ -27,7 +27,9 @@ public class SegmentRegistry<K, V> {
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final SegmentAsyncExecutor segmentAsyncExecutor;
+    private final SplitAsyncExecutor splitAsyncExecutor;
     private final ExecutorService maintenanceExecutor;
+    private final ExecutorService splitExecutor;
 
     SegmentRegistry(final AsyncDirectory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
@@ -49,10 +51,23 @@ public class SegmentRegistry<K, V> {
         this.segmentAsyncExecutor = new SegmentAsyncExecutor(threads,
                 "segment-async");
         this.maintenanceExecutor = segmentAsyncExecutor.getExecutor();
+        final Integer splitThreadsConf = conf
+                .getNumberOfIndexMaintenanceThreads();
+        final int splitThreads = (splitThreadsConf == null
+                || splitThreadsConf < 1)
+                        ? IndexConfigurationContract.DEFAULT_INDEX_MAINTENANCE_THREADS
+                        : splitThreadsConf.intValue();
+        this.splitAsyncExecutor = new SplitAsyncExecutor(splitThreads,
+                "segment-split");
+        this.splitExecutor = splitAsyncExecutor.getExecutor();
     }
 
     ExecutorService getMaintenanceExecutor() {
         return maintenanceExecutor;
+    }
+
+    ExecutorService getSplitExecutor() {
+        return splitExecutor;
     }
 
     public Segment<K, V> getSegment(final SegmentId segmentId) {
@@ -205,6 +220,9 @@ public class SegmentRegistry<K, V> {
     public void close() {
         if (!segmentAsyncExecutor.wasClosed()) {
             segmentAsyncExecutor.close();
+        }
+        if (!splitAsyncExecutor.wasClosed()) {
+            splitAsyncExecutor.close();
         }
     }
 

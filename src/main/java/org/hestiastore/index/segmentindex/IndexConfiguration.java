@@ -44,6 +44,7 @@ public class IndexConfiguration<K, V> {
     private final Integer numberOfThreads;
     private final Integer numberOfIoThreads;
     private final Integer numberOfSegmentIndexMaintenanceThreads;
+    private final Integer numberOfIndexMaintenanceThreads;
     private final Integer indexBusyBackoffMillis;
     private final Integer indexBusyTimeoutMillis;
     private final Boolean segmentMaintenanceAutoEnabled;
@@ -87,6 +88,7 @@ public class IndexConfiguration<K, V> {
             final Integer diskIoBufferSize, final Boolean contextLoggingEnabled,
             final Integer numberOfThreads, final Integer numberOfIoThreads,
             final Integer numberOfSegmentIndexMaintenanceThreads,
+            final Integer numberOfIndexMaintenanceThreads,
             final Integer indexBusyBackoffMillis,
             final Integer indexBusyTimeoutMillis,
             final Boolean segmentMaintenanceAutoEnabled,
@@ -107,6 +109,7 @@ public class IndexConfiguration<K, V> {
         this.numberOfThreads = numberOfThreads;
         this.numberOfIoThreads = numberOfIoThreads;
         this.numberOfSegmentIndexMaintenanceThreads = numberOfSegmentIndexMaintenanceThreads;
+        this.numberOfIndexMaintenanceThreads = numberOfIndexMaintenanceThreads;
         this.indexBusyBackoffMillis = indexBusyBackoffMillis;
         this.indexBusyTimeoutMillis = indexBusyTimeoutMillis;
         this.segmentMaintenanceAutoEnabled = segmentMaintenanceAutoEnabled;
@@ -229,6 +232,15 @@ public class IndexConfiguration<K, V> {
      */
     public Integer getNumberOfSegmentIndexMaintenanceThreads() {
         return numberOfSegmentIndexMaintenanceThreads;
+    }
+
+    /**
+     * Returns the number of threads used for split maintenance.
+     *
+     * @return split maintenance thread count
+     */
+    public Integer getNumberOfIndexMaintenanceThreads() {
+        return numberOfIndexMaintenanceThreads;
     }
 
     /**

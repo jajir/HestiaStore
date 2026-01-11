@@ -29,6 +29,7 @@ public interface IndexConfigurationContract {
     int NUMBER_OF_THREADS = 1;
     int NUMBER_OF_IO_THREADS = 1;
     int DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS = 10;
+    int DEFAULT_INDEX_MAINTENANCE_THREADS = 10;
     int DEFAULT_INDEX_BUSY_BACKOFF_MILLIS = 5;
     int DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS = 30_000;
     boolean DEFAULT_SEGMENT_MAINTENANCE_AUTO_ENABLED = true;
@@ -89,6 +90,10 @@ public interface IndexConfigurationContract {
 
     default int getNumberOfSegmentIndexMaintenanceThreads() {
         return DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS;
+    }
+
+    default int getNumberOfIndexMaintenanceThreads() {
+        return DEFAULT_INDEX_MAINTENANCE_THREADS;
     }
 
     default int getIndexBusyBackoffMillis() {
