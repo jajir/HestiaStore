@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentindex;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.AbstractCloseableResource;
@@ -28,6 +29,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final KeySegmentCache<K> keySegmentCache;
     private final SegmentRegistry<K, V> segmentRegistry;
+    private final SegmentMaintenanceCoordinator<K, V> maintenanceCoordinator;
     private final SegmentIndexCore<K, V> core;
     private final IndexRetryPolicy retryPolicy;
     private final Stats stats = new Stats();
@@ -56,7 +58,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             this.segmentRegistry = new SegmentRegistrySynchronized<>(
                     directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
                     conf);
-            final SegmentMaintenanceCoordinator<K, V> maintenanceCoordinator = new SegmentMaintenanceCoordinator<>(
+            this.maintenanceCoordinator = new SegmentMaintenanceCoordinator<>(
                     conf, keySegmentCache, segmentRegistry);
             this.core = new SegmentIndexCore<>(keySegmentCache, segmentRegistry,
                     maintenanceCoordinator);
@@ -83,8 +85,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     "Can't insert thombstone value '%s' into index", value));
         }
 
-        final IndexResult<Void> result = retryWhileBusy(
-                () -> core.put(key, value), "put", null, true);
+        final IndexResult<Void> result = retryWhileBusyWithSplitWait(
+                () -> core.put(key, value), "put", key, true);
         if (result.getStatus() == IndexResultStatus.OK) {
             return;
         }
@@ -167,9 +169,9 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         getIndexState().tryPerformOperation();
         Vldtn.requireNonNull(key, "key");
         stats.incDeleteCx();
-        final IndexResult<Void> result = retryWhileBusy(
+        final IndexResult<Void> result = retryWhileBusyWithSplitWait(
                 () -> core.put(key, valueTypeDescriptor.getTombstone()),
-                "delete", null, true);
+                "delete", key, true);
         if (result.getStatus() == IndexResultStatus.OK) {
             return;
         }
@@ -411,6 +413,23 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         }
     }
 
+    private <T> IndexResult<T> retryWhileBusyWithSplitWait(
+            final Supplier<IndexResult<T>> operation, final String opName,
+            final K key, final boolean retryClosed) {
+        final long startNanos = retryPolicy.startNanos();
+        while (true) {
+            final IndexResult<T> result = operation.get();
+            final IndexResultStatus status = result.getStatus();
+            if (status == IndexResultStatus.BUSY
+                    || (retryClosed && status == IndexResultStatus.CLOSED)) {
+                awaitSplitCompletionForKey(key, startNanos);
+                retryPolicy.backoffOrThrow(startNanos, opName, null);
+                continue;
+            }
+            return result;
+        }
+    }
+
     private IndexException newIndexException(final String operation,
             final SegmentId segmentId, final IndexResultStatus status) {
         final String target = segmentId == null ? "" : String
@@ -425,6 +444,40 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final Segment<K, V> segment = segmentRegistry.getSegment(segmentId);
             segment.invalidateIterators();
         });
+    }
+
+    protected void awaitSplitsIdle() {
+        maintenanceCoordinator
+                .awaitSplitsIdle(conf.getIndexBusyTimeoutMillis());
+    }
+
+    private void awaitSplitCompletionForKey(final K key,
+            final long startNanos) {
+        if (key == null) {
+            return;
+        }
+        final long remainingMillis = remainingBusyTimeoutMillis(startNanos);
+        if (remainingMillis <= 0) {
+            return;
+        }
+        final SegmentId segmentId = keySegmentCache.findSegmentId(key);
+        if (segmentId == null) {
+            maintenanceCoordinator.awaitSplitsIdle(remainingMillis);
+            return;
+        }
+        maintenanceCoordinator.awaitSplitCompletionIfInFlight(segmentId,
+                remainingMillis);
+    }
+
+    private long remainingBusyTimeoutMillis(final long startNanos) {
+        final long timeoutMillis = conf.getIndexBusyTimeoutMillis();
+        final long elapsedNanos = System.nanoTime() - startNanos;
+        final long remainingNanos = TimeUnit.MILLISECONDS
+                .toNanos(timeoutMillis) - elapsedNanos;
+        if (remainingNanos <= 0) {
+            return 0;
+        }
+        return TimeUnit.NANOSECONDS.toMillis(remainingNanos);
     }
 
     @Override

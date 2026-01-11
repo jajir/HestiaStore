@@ -25,7 +25,7 @@ final class SegmentMaintenanceCoordinator<K, V> {
                 "segmentRegistry");
         this.splitCoordinator = new SegmentAsyncSplitCoordinator<>(conf,
                 keySegmentCache, segmentRegistry,
-                segmentRegistry.getMaintenanceExecutor());
+                segmentRegistry.getSplitExecutor());
         this.maintenancePolicy = new SegmentMaintenancePolicyThreshold<>(
                 conf.getMaxNumberOfKeysInSegmentWriteCache(),
                 conf.getMaxNumberOfKeysInSegmentCache());
@@ -56,10 +56,10 @@ final class SegmentMaintenanceCoordinator<K, V> {
         if (maxSegmentCacheKeys != null && maxSegmentCacheKeys > 0) {
             final long totalKeys = segment.getNumberOfKeysInCache();
             if (totalKeys > maxSegmentCacheKeys.longValue()) {
-                splitCoordinator.optionallySplitAsync(segment,
-                        maxSegmentCacheKeys.longValue())
-                        .toCompletableFuture()
-                        .join();
+                final SegmentAsyncSplitCoordinator.SplitHandle handle = splitCoordinator
+                        .optionallySplitAsync(segment,
+                                maxSegmentCacheKeys.longValue());
+                handle.awaitStarted(conf.getIndexBusyTimeoutMillis());
             }
         }
     }
@@ -76,5 +76,14 @@ final class SegmentMaintenanceCoordinator<K, V> {
         if (decision.shouldCompact()) {
             segment.compact();
         }
+    }
+
+    void awaitSplitCompletionIfInFlight(final SegmentId segmentId,
+            final long timeoutMillis) {
+        splitCoordinator.awaitCompletionIfInFlight(segmentId, timeoutMillis);
+    }
+
+    void awaitSplitsIdle(final long timeoutMillis) {
+        splitCoordinator.awaitAllCompletions(timeoutMillis);
     }
 }

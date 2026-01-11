@@ -26,6 +26,7 @@ public class IndexConfigurationBuilder<K, V> {
     private Integer numberOfThreads;
     private Integer numberOfIoThreads;
     private Integer numberOfSegmentIndexMaintenanceThreads;
+    private Integer numberOfIndexMaintenanceThreads;
     private Integer indexBusyBackoffMillis;
     private Integer indexBusyTimeoutMillis;
     private Boolean segmentMaintenanceAutoEnabled;
@@ -178,6 +179,12 @@ public class IndexConfigurationBuilder<K, V> {
         return this;
     }
 
+    public IndexConfigurationBuilder<K, V> withNumberOfIndexMaintenanceThreads(
+            final Integer numberOfIndexMaintenanceThreads) {
+        this.numberOfIndexMaintenanceThreads = numberOfIndexMaintenanceThreads;
+        return this;
+    }
+
     public IndexConfigurationBuilder<K, V> withIndexBusyBackoffMillis(
             final Integer indexBusyBackoffMillis) {
         this.indexBusyBackoffMillis = indexBusyBackoffMillis;
@@ -268,6 +275,9 @@ public class IndexConfigurationBuilder<K, V> {
         final Integer effectiveSegmentIndexMaintenanceThreads = numberOfSegmentIndexMaintenanceThreads == null
                 ? IndexConfigurationContract.DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS
                 : numberOfSegmentIndexMaintenanceThreads;
+        final Integer effectiveIndexMaintenanceThreads = numberOfIndexMaintenanceThreads == null
+                ? IndexConfigurationContract.DEFAULT_INDEX_MAINTENANCE_THREADS
+                : numberOfIndexMaintenanceThreads;
         final Integer effectiveIndexBusyBackoffMillis = indexBusyBackoffMillis == null
                 ? IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS
                 : indexBusyBackoffMillis;
@@ -310,6 +320,7 @@ public class IndexConfigurationBuilder<K, V> {
                 contextLoggingEnabled, effectiveNumberOfThreads,
                 effectiveNumberOfIoThreads,
                 effectiveSegmentIndexMaintenanceThreads,
+                effectiveIndexMaintenanceThreads,
                 effectiveIndexBusyBackoffMillis,
                 effectiveIndexBusyTimeoutMillis,
                 effectiveSegmentMaintenanceAutoEnabled,
