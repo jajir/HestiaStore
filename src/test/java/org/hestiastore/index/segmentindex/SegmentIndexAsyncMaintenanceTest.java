@@ -3,7 +3,6 @@ package org.hestiastore.index.segmentindex;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
@@ -25,16 +24,38 @@ import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentResult;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class SegmentIndexAsyncMaintenanceTest {
 
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
 
+    private IndexInternalConcurrent<Integer, String> index;
+
+    @Mock
+    private Segment<Integer, String> blockingSegment;
+
+    @BeforeEach
+    void setUp() {
+        index = newIndex();
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (index != null && !index.wasClosed()) {
+            index.close();
+        }
+    }
+
     @Test
     void flush_waits_for_async_segment_flush() throws Exception {
-        final IndexInternalSynchronized<Integer, String> index = newIndex();
         final ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
             index.put(1, "one");
@@ -66,7 +87,6 @@ class SegmentIndexAsyncMaintenanceTest {
 
     @Test
     void compact_waits_for_async_segment_compact() throws Exception {
-        final IndexInternalSynchronized<Integer, String> index = newIndex();
         final ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
             index.put(1, "one");
@@ -96,8 +116,8 @@ class SegmentIndexAsyncMaintenanceTest {
         }
     }
 
-    private IndexInternalSynchronized<Integer, String> newIndex() {
-        return new IndexInternalSynchronized<>(
+    private IndexInternalConcurrent<Integer, String> newIndex() {
+        return new IndexInternalConcurrent<>(
                 AsyncDirectoryAdapter.wrap(new MemDirectory()),
                 tdi, tds, buildConf());
     }
@@ -131,31 +151,22 @@ class SegmentIndexAsyncMaintenanceTest {
             final SegmentId segmentId, final CountDownLatch started,
             final AtomicReference<CompletableFuture<Void>> futureRef,
             final boolean forFlush) {
-        @SuppressWarnings("unchecked")
-        final Segment<Integer, String> segment = (Segment<Integer, String>) mock(
-                Segment.class);
-        when(segment.wasClosed()).thenReturn(false);
-        when(segment.getId()).thenReturn(segmentId);
         if (forFlush) {
-            when(segment.flush()).thenAnswer(invocation -> {
+            when(blockingSegment.flush()).thenAnswer(invocation -> {
                 final CompletableFuture<Void> future = new CompletableFuture<>();
                 futureRef.set(future);
                 started.countDown();
                 return SegmentResult.ok(future);
             });
-            when(segment.compact()).thenReturn(SegmentResult.ok(
-                    CompletableFuture.completedFuture(null)));
         } else {
-            when(segment.compact()).thenAnswer(invocation -> {
+            when(blockingSegment.compact()).thenAnswer(invocation -> {
                 final CompletableFuture<Void> future = new CompletableFuture<>();
                 futureRef.set(future);
                 started.countDown();
                 return SegmentResult.ok(future);
             });
-            when(segment.flush()).thenReturn(SegmentResult.ok(
-                    CompletableFuture.completedFuture(null)));
         }
-        return segment;
+        return blockingSegment;
     }
 
     private static <K, V> void replaceSegment(

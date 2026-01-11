@@ -14,7 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class IndexStateNewTest {
+class IndexStateOpeningTest {
 
     @Mock
     private AsyncDirectory directory;
@@ -28,7 +28,7 @@ class IndexStateNewTest {
                 .thenReturn(CompletableFuture.completedFuture(fileLock));
         when(fileLock.isLocked()).thenReturn(false);
 
-        new IndexStateNew<>(directory);
+        new IndexStateOpening<>(directory);
 
         verify(fileLock).lock();
     }
@@ -40,6 +40,6 @@ class IndexStateNewTest {
         when(fileLock.isLocked()).thenReturn(true);
 
         assertThrows(IllegalStateException.class,
-                () -> new IndexStateNew<>(directory));
+                () -> new IndexStateOpening<>(directory));
     }
 }

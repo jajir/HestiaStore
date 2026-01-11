@@ -191,12 +191,13 @@ public interface SegmentIndex<K, V> extends CloseableResource {
                 .makeInstance(indexConf.getValueTypeDescriptor());
         Vldtn.requireNonNull(indexConf.isContextLoggingEnabled(),
                 "isContextLoggingEnabled");
-        SegmentIndex<M, N> index = new IndexInternalSynchronized<>(
+        SegmentIndex<M, N> index = new IndexInternalConcurrent<>(
                 directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
                 indexConf);
         if (Boolean.TRUE.equals(indexConf.isContextLoggingEnabled())) {
             index = new IndexContextLoggingAdapter<>(indexConf, index);
         }
+        index = new IndexAsyncAdapter<>(index);
         return new IndexDirectoryClosingAdapter<>(index, directoryFacade);
     }
 
@@ -374,4 +375,11 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * @return effective configuration
      */
     IndexConfiguration<K, V> getConfiguration();
+
+    /**
+     * Returns the current lifecycle state of this index instance.
+     *
+     * @return index state
+     */
+    SegmentIndexState getState();
 }

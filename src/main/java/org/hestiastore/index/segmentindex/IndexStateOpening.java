@@ -4,13 +4,13 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.directory.FileLock;
 
-public final class IndexStateNew<K, V> implements IndexState<K, V> {
+public final class IndexStateOpening<K, V> implements IndexState<K, V> {
 
     private static final String LOCK_FILE_NAME = ".lock";
 
     private final FileLock fileLock;
 
-    IndexStateNew(final AsyncDirectory directoryFacade) {
+    IndexStateOpening(final AsyncDirectory directoryFacade) {
         this.fileLock = Vldtn.requireNonNull(directoryFacade, "directoryFacade")
                 .getLockAsync(LOCK_FILE_NAME).toCompletableFuture().join();
         if (fileLock.isLocked()) {
@@ -33,6 +33,10 @@ public final class IndexStateNew<K, V> implements IndexState<K, V> {
     @Override
     public void tryPerformOperation() {
         throw new IllegalStateException(
-                "Can't perform operation on uninitialized index.");
+                "Can't perform operation while index is opening.");
+    }
+
+    FileLock getFileLock() {
+        return fileLock;
     }
 }

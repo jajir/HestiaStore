@@ -16,11 +16,15 @@ Writes become durable when flushed to segment files. Closing the index performs 
 ## 🚪 Entry Points
 
 - `SegmentIndex.put(K,V)` and `SegmentIndex.delete(K)` validate input, update counters, and delegate to the internal implementation.
-- Two internal variants exist:
-  - Default: `IndexInternalDefault` (non‑synchronized)
-  - Synchronized: `IndexInternalSynchronized` (for thread‑safe access)
+- Internal implementation: `IndexInternalConcurrent` (caller-thread execution,
+  thread-safe without global serialization).
+- Async operations are provided by `IndexAsyncAdapter`; logging context by
+  `IndexContextLoggingAdapter`.
 
-Key classes: `segmentindex/SegmentIndex.java`, `segmentindex/IndexInternalDefault.java`.
+Key classes: `segmentindex/SegmentIndex.java`,
+`segmentindex/IndexInternalConcurrent.java`,
+`segmentindex/IndexAsyncAdapter.java`,
+`segmentindex/IndexContextLoggingAdapter.java`.
 
 ## 🗒️ Optional Logging Context
 

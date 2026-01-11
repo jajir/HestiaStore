@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex;
 
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 
 import org.hestiastore.index.chunkstore.ChunkFilter;
 
@@ -44,7 +43,10 @@ public class IndexConfiguration<K, V> {
     private final Integer maxNumberOfSegmentsInCache;
     private final Integer numberOfThreads;
     private final Integer numberOfIoThreads;
-    private final ExecutorService maintenanceExecutor;
+    private final Integer numberOfSegmentIndexMaintenanceThreads;
+    private final Integer indexBusyBackoffMillis;
+    private final Integer indexBusyTimeoutMillis;
+    private final Boolean segmentMaintenanceAutoEnabled;
 
     private final Integer bloomFilterNumberOfHashFunctions;
     private final Integer bloomFilterIndexSizeInBytes;
@@ -84,7 +86,10 @@ public class IndexConfiguration<K, V> {
             final Double bloomFilterProbabilityOfFalsePositive, //
             final Integer diskIoBufferSize, final Boolean contextLoggingEnabled,
             final Integer numberOfThreads, final Integer numberOfIoThreads,
-            final ExecutorService maintenanceExecutor,
+            final Integer numberOfSegmentIndexMaintenanceThreads,
+            final Integer indexBusyBackoffMillis,
+            final Integer indexBusyTimeoutMillis,
+            final Boolean segmentMaintenanceAutoEnabled,
             final List<ChunkFilter> encodingChunkFilters,
             final List<ChunkFilter> decodingChunkFilters) {
         this.keyClass = keyClass;
@@ -101,7 +106,10 @@ public class IndexConfiguration<K, V> {
         this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
         this.numberOfThreads = numberOfThreads;
         this.numberOfIoThreads = numberOfIoThreads;
-        this.maintenanceExecutor = maintenanceExecutor;
+        this.numberOfSegmentIndexMaintenanceThreads = numberOfSegmentIndexMaintenanceThreads;
+        this.indexBusyBackoffMillis = indexBusyBackoffMillis;
+        this.indexBusyTimeoutMillis = indexBusyTimeoutMillis;
+        this.segmentMaintenanceAutoEnabled = segmentMaintenanceAutoEnabled;
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
         this.bloomFilterProbabilityOfFalsePositive = bloomFilterProbabilityOfFalsePositive;
@@ -214,14 +222,40 @@ public class IndexConfiguration<K, V> {
         return numberOfIoThreads;
     }
 
-    public ExecutorService getMaintenanceExecutor() {
-        /**
-         * Returns the executor service used for segment maintenance tasks.
-         * This value is runtime-only and is not persisted to disk.
-         *
-         * @return maintenance executor or null to use defaults
-         */
-        return maintenanceExecutor;
+    /**
+     * Returns the number of threads used for segment index maintenance.
+     *
+     * @return maintenance thread count
+     */
+    public Integer getNumberOfSegmentIndexMaintenanceThreads() {
+        return numberOfSegmentIndexMaintenanceThreads;
+    }
+
+    /**
+     * Returns the busy backoff delay in milliseconds for index retries.
+     *
+     * @return busy backoff in milliseconds
+     */
+    public Integer getIndexBusyBackoffMillis() {
+        return indexBusyBackoffMillis;
+    }
+
+    /**
+     * Returns the busy retry timeout in milliseconds for index operations.
+     *
+     * @return busy retry timeout in milliseconds
+     */
+    public Integer getIndexBusyTimeoutMillis() {
+        return indexBusyTimeoutMillis;
+    }
+
+    /**
+     * Returns whether auto flush/compact is scheduled after writes.
+     *
+     * @return true if auto maintenance is enabled; otherwise false
+     */
+    public Boolean isSegmentMaintenanceAutoEnabled() {
+        return segmentMaintenanceAutoEnabled;
     }
 
     public Integer getMaxNumberOfSegmentsInCache() {

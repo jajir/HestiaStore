@@ -4,11 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
-class IndexStateCloseTest {
+class IndexStateClosedTest {
 
     @Test
     void rejectsAllOperations() {
-        final IndexStateClose<Integer, String> state = new IndexStateClose<>();
+        final IndexStateClosed<Integer, String> state = new IndexStateClosed<>();
 
         assertThrows(IllegalStateException.class,
                 () -> state.onReady(null));

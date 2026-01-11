@@ -5,8 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.hestiastore.index.chunkstore.ChunkData;
 import org.hestiastore.index.chunkstore.ChunkFilter;
@@ -73,18 +71,6 @@ class SegmentIndexConfigurationBuilderTest {
         final IndexConfiguration<Integer, String> config = newBuilder()
                 .withName(name).build();
         assertEquals(name, config.getIndexName());
-    }
-
-    @Test
-    void withMaintenanceExecutorSetsValue() {
-        final ExecutorService executor = Executors.newSingleThreadExecutor();
-        try {
-            final IndexConfiguration<Integer, String> config = newBuilder()
-                    .withMaintenanceExecutor(executor).build();
-            assertSame(executor, config.getMaintenanceExecutor());
-        } finally {
-            executor.shutdownNow();
-        }
     }
 
     @Test
@@ -274,7 +260,7 @@ class SegmentIndexConfigurationBuilderTest {
 
     private static class NoOpFilter implements ChunkFilter {
         @Override
-        public org.hestiastore.index.chunkstore.ChunkData apply(final ChunkData input) {
+        public ChunkData apply(final ChunkData input) {
             return input;
         }
     }

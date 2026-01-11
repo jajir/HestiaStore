@@ -18,6 +18,7 @@ import org.hestiastore.index.datatype.TypeDescriptorString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.IndexConfigurationContract;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +28,6 @@ class SegmentIndexConcurrencySerializationIT {
     private static final String TEST_VALUE = "v";
     private static final int HOOK_WAIT_SECONDS = 5;
     private static final int RESULT_WAIT_SECONDS = 5;
-    private static final long SERIALIZED_GUARD_MS = 200;
 
     private enum ReadMode {
         SYNC, ASYNC
@@ -47,40 +47,26 @@ class SegmentIndexConcurrencySerializationIT {
      */
     @Test
     void parallelReadsOverlap_with_two_threads() throws Exception {
-        runReadOverlapTest(ReadMode.SYNC, 2, true, "read-lock-overlap");
-    }
-
-    @Test
-    void parallelReads_areSerialized_with_one_threads() throws Exception {
-        runReadOverlapTest(ReadMode.SYNC, 1, false, "read-lock-serialized");
+        runReadOverlapTest(ReadMode.SYNC, "read-lock-overlap");
     }
 
     @Test
     void parallelAsyncReadsOverlap_with_two_threads() throws Exception {
-        runReadOverlapTest(ReadMode.ASYNC, 2, true, "read-lock-async-overlap");
+        runReadOverlapTest(ReadMode.ASYNC, "read-lock-async-overlap");
     }
 
-    @Test
-    void parallelAsyncReads_areSerialized_with_one_thread() throws Exception {
-        runReadOverlapTest(ReadMode.ASYNC, 1, false,
-                "read-lock-async-serialized");
-    }
-
-    private void runReadOverlapTest(final ReadMode mode,
-            final int numberOfCpuThreads, final boolean expectOverlap,
-            final String name) throws Exception {
+    private void runReadOverlapTest(final ReadMode mode, final String name)
+            throws Exception {
         final Directory directory = new MemDirectory();
-        final IndexConfiguration<String, String> conf = readLockConf(name,
-                numberOfCpuThreads);
-        final SegmentIndex<String, String> index = SegmentIndex.create(
-                directory, conf);
-        index.put(TEST_KEY, TEST_VALUE);
-        final BlockingTombstoneTypeDescriptorString.Hook hook = BlockingTombstoneTypeDescriptorString
-                .installHook();
+        final IndexConfiguration<String, String> conf = readLockConf(name);
+        BlockingTombstoneTypeDescriptorString.Hook hook = null;
         final ExecutorService executor = mode == ReadMode.SYNC
                 ? Executors.newFixedThreadPool(2)
                 : null;
-        try {
+        try (SegmentIndex<String, String> index = SegmentIndex
+                .create(directory, conf)) {
+            index.put(TEST_KEY, TEST_VALUE);
+            hook = BlockingTombstoneTypeDescriptorString.installHook();
             final CompletableFuture<String> first = startRead(mode, index,
                     executor);
             assertTrue(
@@ -90,21 +76,12 @@ class SegmentIndexConcurrencySerializationIT {
 
             final CompletableFuture<String> second = startRead(mode, index,
                     executor);
-            if (expectOverlap) {
-                assertTrue(
-                        hook.secondEntered.await(HOOK_WAIT_SECONDS,
-                                TimeUnit.SECONDS),
-                        "Second get() is waiting for tombstone hook");
-                assertTrue(hook.overlapDetected.get(),
-                        "Expected overlapping reads");
-            } else {
-                assertFalse(
-                        hook.secondEntered.await(SERIALIZED_GUARD_MS,
-                                TimeUnit.MILLISECONDS),
-                        "Second get() entered before first was released");
-                assertFalse(hook.overlapDetected.get(),
-                        "Detected overlapping reads");
-            }
+            assertTrue(
+                    hook.secondEntered.await(HOOK_WAIT_SECONDS,
+                            TimeUnit.SECONDS),
+                    "Second get() is waiting for tombstone hook");
+            assertTrue(hook.overlapDetected.get(),
+                    "Expected overlapping reads");
 
             assertFalse(first.isDone(),
                     "First get() returned before being released");
@@ -112,15 +89,6 @@ class SegmentIndexConcurrencySerializationIT {
                     "Second get() returned before being released");
 
             hook.release.countDown();
-
-            if (!expectOverlap) {
-                assertTrue(
-                        hook.secondEntered.await(HOOK_WAIT_SECONDS,
-                                TimeUnit.SECONDS),
-                        "Second get() did not execute after release");
-                assertFalse(hook.overlapDetected.get(),
-                        "Detected overlapping reads");
-            }
 
             assertEquals(TEST_VALUE,
                     first.get(RESULT_WAIT_SECONDS, TimeUnit.SECONDS));
@@ -131,12 +99,13 @@ class SegmentIndexConcurrencySerializationIT {
             assertTrue(second.isDone(),
                     "Second get() is still not done after being released");
         } finally {
-            hook.release.countDown();
+            if (hook != null) {
+                hook.release.countDown();
+            }
             BlockingTombstoneTypeDescriptorString.clearHook();
             if (executor != null) {
                 executor.shutdownNow();
             }
-            index.close();
         }
     }
 
@@ -151,7 +120,9 @@ class SegmentIndexConcurrencySerializationIT {
     }
 
     private static IndexConfiguration<String, String> readLockConf(
-            final String name, int numberOfCpuThreads) {
+            final String name) {
+        final IndexConfigurationContract defaults = new IndexConfigurationContract() {
+        };
         return IndexConfiguration.<String, String>builder()//
                 .withKeyClass(String.class)//
                 .withValueClass(String.class)//
@@ -161,8 +132,37 @@ class SegmentIndexConcurrencySerializationIT {
                 .withName(name)//
                 .withContextLoggingEnabled(false)//
                 .withMaxNumberOfKeysInCache(10_000)//
-                .withNumberOfCpuThreads(numberOfCpuThreads)//
-                .withNumberOfIoThreads(1)//
+                .withMaxNumberOfKeysInSegment(
+                        defaults.getMaxNumberOfKeysInSegment())//
+                .withMaxNumberOfSegmentsInCache(
+                        defaults.getMaxNumberOfSegmentsInCache())//
+                .withMaxNumberOfKeysInSegmentCache(
+                        defaults.getMaxNumberOfKeysInSegmentCache())//
+                .withMaxNumberOfKeysInSegmentWriteCache(
+                        defaults.getMaxNumberOfKeysInSegmentWriteCache())//
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringFlush(
+                        defaults.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush())//
+                .withMaxNumberOfKeysInSegmentChunk(
+                        defaults.getMaxNumberOfKeysInSegmentChunk())//
+                .withBloomFilterNumberOfHashFunctions(
+                        defaults.getBloomFilterNumberOfHashFunctions())//
+                .withBloomFilterIndexSizeInBytes(
+                        defaults.getBloomFilterIndexSizeInBytes())//
+                .withBloomFilterProbabilityOfFalsePositive(
+                        defaults.getBloomFilterProbabilityOfFalsePositive())//
+                .withDiskIoBufferSizeInBytes(
+                        defaults.getDiskIoBufferSizeInBytes())//
+                .withNumberOfIoThreads(defaults.getNumberOfIoThreads())//
+                .withNumberOfSegmentIndexMaintenanceThreads(
+                        defaults.getNumberOfSegmentIndexMaintenanceThreads())//
+                .withIndexBusyBackoffMillis(
+                        defaults.getIndexBusyBackoffMillis())//
+                .withIndexBusyTimeoutMillis(
+                        defaults.getIndexBusyTimeoutMillis())//
+                .withSegmentMaintenanceAutoEnabled(
+                        defaults.isSegmentMaintenanceAutoEnabled())//
+                .withEncodingFilters(defaults.getEncodingChunkFilters())//
+                .withDecodingFilters(defaults.getDecodingChunkFilters())//
                 .build();
     }
 

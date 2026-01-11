@@ -1,6 +1,6 @@
 package org.hestiastore.index.segmentindex;
 
-public class IndexStateClose<K, V> implements IndexState<K, V> {
+public class IndexStateClosed<K, V> implements IndexState<K, V> {
 
     @Override
     public void onReady(SegmentIndexImpl<K, V> index) {

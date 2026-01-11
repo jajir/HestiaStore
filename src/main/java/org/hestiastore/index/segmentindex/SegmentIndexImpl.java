@@ -3,18 +3,19 @@ package org.hestiastore.index.segmentindex;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CompletionException;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.F;
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
+import org.hestiastore.index.directory.FileLock;
 import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segment.SegmentResultStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,28 +28,47 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final KeySegmentCache<K> keySegmentCache;
     private final SegmentRegistry<K, V> segmentRegistry;
-    private final SegmentMaintenanceCoordinator<K, V> maintenanceCoordinator;
+    private final SegmentIndexCore<K, V> core;
+    private final IndexRetryPolicy retryPolicy;
     private final Stats stats = new Stats();
+    private final Object asyncMonitor = new Object();
+    private int asyncInFlight = 0;
+    private final ThreadLocal<Boolean> inAsyncOperation = ThreadLocal
+            .withInitial(() -> Boolean.FALSE);
     private volatile IndexState<K, V> indexState;
+    private volatile SegmentIndexState segmentIndexState = SegmentIndexState.OPENING;
 
     protected SegmentIndexImpl(final AsyncDirectory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf) {
         Vldtn.requireNonNull(directoryFacade, "directoryFacade");
-        setIndexState(new IndexStateNew<>(directoryFacade));
-        this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
-                "keyTypeDescriptor");
-        this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
-                "valueTypeDescriptor");
-        this.conf = Vldtn.requireNonNull(conf, "conf");
-        this.keySegmentCache = new KeySegmentCache<>(directoryFacade,
-                keyTypeDescriptor);
-        this.segmentRegistry = new SegmentRegistrySynchronized<>(
-                directoryFacade, keyTypeDescriptor, valueTypeDescriptor, conf);
-        this.maintenanceCoordinator = new SegmentMaintenanceCoordinator<>(conf,
-                keySegmentCache, segmentRegistry);
-        getIndexState().onReady(this);
+        setIndexState(new IndexStateOpening<>(directoryFacade));
+        setSegmentIndexState(SegmentIndexState.OPENING);
+        try {
+            this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
+                    "keyTypeDescriptor");
+            this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
+                    "valueTypeDescriptor");
+            this.conf = Vldtn.requireNonNull(conf, "conf");
+            this.keySegmentCache = new KeySegmentCache<>(directoryFacade,
+                    keyTypeDescriptor);
+            this.segmentRegistry = new SegmentRegistrySynchronized<>(
+                    directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
+                    conf);
+            final SegmentMaintenanceCoordinator<K, V> maintenanceCoordinator = new SegmentMaintenanceCoordinator<>(
+                    conf, keySegmentCache, segmentRegistry);
+            this.core = new SegmentIndexCore<>(keySegmentCache, segmentRegistry,
+                    maintenanceCoordinator);
+            this.retryPolicy = new IndexRetryPolicy(
+                    conf.getIndexBusyBackoffMillis(),
+                    conf.getIndexBusyTimeoutMillis());
+            getIndexState().onReady(this);
+            setSegmentIndexState(SegmentIndexState.READY);
+        } catch (final RuntimeException e) {
+            failWithError(e);
+            throw e;
+        }
     }
 
     @Override
@@ -63,13 +83,19 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     "Can't insert thombstone value '%s' into index", value));
         }
 
-        writeWithRetry(key, value);
+        final IndexResult<Void> result = retryWhileBusy(
+                () -> core.put(key, value), "put", null, true);
+        if (result.getStatus() == IndexResultStatus.OK) {
+            return;
+        }
+        throw newIndexException("put", null, result.getStatus());
     }
 
     @Override
     public CompletionStage<Void> putAsync(final K key, final V value) {
-        return CompletableFuture.runAsync(() -> {
+        return runAsyncTracked(() -> {
             put(key, value);
+            return null;
         });
     }
 
@@ -81,8 +107,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
      */
     EntryIterator<K, V> openSegmentIterator(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
-        final Segment<K, V> seg = segmentRegistry.getSegment(segmentId);
-        return openIteratorWithRetry(seg, SegmentIteratorIsolation.FAIL_FAST);
+        return openIteratorWithRetry(segmentId,
+                SegmentIteratorIsolation.FAIL_FAST);
     }
 
     @Override
@@ -103,19 +129,15 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     public void compact() {
         getIndexState().tryPerformOperation();
-        keySegmentCache.getSegmentIds().forEach(segmentId -> {
-            final Segment<K, V> seg = segmentRegistry.getSegment(segmentId);
-            compactSegment(seg, false);
-        });
+        keySegmentCache.getSegmentIds()
+                .forEach(segmentId -> compactSegment(segmentId, false));
     }
 
     @Override
     public void compactAndWait() {
         getIndexState().tryPerformOperation();
-        keySegmentCache.getSegmentIds().forEach(segmentId -> {
-            final Segment<K, V> seg = segmentRegistry.getSegment(segmentId);
-            compactSegment(seg, true);
-        });
+        keySegmentCache.getSegmentIds()
+                .forEach(segmentId -> compactSegment(segmentId, true));
     }
 
     @Override
@@ -124,91 +146,20 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         Vldtn.requireNonNull(key, "key");
         stats.incGetCx();
 
-        return getFromSegment(key);
+        final IndexResult<V> result = retryWhileBusy(() -> core.get(key),
+                "get", null, false);
+        if (result.getStatus() == IndexResultStatus.OK) {
+            return result.getValue();
+        }
+        if (result.getStatus() == IndexResultStatus.CLOSED) {
+            return null;
+        }
+        throw newIndexException("get", null, result.getStatus());
     }
 
     @Override
     public CompletionStage<V> getAsync(final K key) {
-        return CompletableFuture.supplyAsync(() -> {
-            return get(key);
-        });
-    }
-
-    private V getFromSegment(final K key) {
-        final SegmentId id = keySegmentCache.findSegmentId(key);
-        if (id == null) {
-            return null;
-        }
-        final Segment<K, V> segment = segmentRegistry.getSegment(id);
-        while (true) {
-            final SegmentResult<V> result = segment.get(key);
-            if (result.getStatus() == SegmentResultStatus.OK) {
-                return result.getValue();
-            }
-            if (result.getStatus() == SegmentResultStatus.BUSY) {
-                continue;
-            }
-            if (result.getStatus() == SegmentResultStatus.CLOSED) {
-                return null;
-            }
-            throw new org.hestiastore.index.IndexException(String.format(
-                    "Segment '%s' failed during get: %s", segment.getId(),
-                    result.getStatus()));
-        }
-    }
-
-    private void writeWithRetry(final K key, final V value) {
-        while (true) {
-            KeySegmentCache.Snapshot<K> snapshot = keySegmentCache.snapshot();
-            SegmentId segmentId = snapshot.findSegmentId(key);
-            if (segmentId == null) {
-                if (!keySegmentCache.tryExtendMaxKey(key, snapshot)) {
-                    continue;
-                }
-                snapshot = keySegmentCache.snapshot();
-                segmentId = snapshot.findSegmentId(key);
-                if (segmentId == null) {
-                    continue;
-                }
-            }
-            final Segment<K, V> segment = segmentRegistry.getSegment(segmentId);
-            final boolean written = writeIntoSegment(segment, key, value,
-                    segmentId, snapshot.version());
-            if (!written) {
-                continue;
-            }
-            maintenanceCoordinator.handlePostWrite(segment, key, segmentId,
-                    snapshot.version());
-            return;
-        }
-    }
-
-    private boolean writeIntoSegment(final Segment<K, V> segment, final K key,
-            final V value, final SegmentId segmentId,
-            final long mappingVersion) {
-        return attemptPut(segment, key, value, segmentId, mappingVersion);
-    }
-
-    private boolean attemptPut(final Segment<K, V> segment, final K key,
-            final V value, final SegmentId segmentId,
-            final long mappingVersion) {
-        if (segment.wasClosed()) {
-            return false;
-        }
-        if (!keySegmentCache.isMappingValid(key, segmentId, mappingVersion)) {
-            return false;
-        }
-        final SegmentResult<Void> result = segment.put(key, value);
-        if (result.getStatus() == SegmentResultStatus.OK) {
-            return true;
-        }
-        if (result.getStatus() == SegmentResultStatus.BUSY
-                || result.getStatus() == SegmentResultStatus.CLOSED) {
-            return false;
-        }
-        throw new org.hestiastore.index.IndexException(String.format(
-                "Segment '%s' failed during put: %s", segment.getId(),
-                result.getStatus()));
+        return runAsyncTracked(() -> get(key));
     }
 
     @Override
@@ -216,13 +167,20 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         getIndexState().tryPerformOperation();
         Vldtn.requireNonNull(key, "key");
         stats.incDeleteCx();
-        writeWithRetry(key, valueTypeDescriptor.getTombstone());
+        final IndexResult<Void> result = retryWhileBusy(
+                () -> core.put(key, valueTypeDescriptor.getTombstone()),
+                "delete", null, true);
+        if (result.getStatus() == IndexResultStatus.OK) {
+            return;
+        }
+        throw newIndexException("delete", null, result.getStatus());
     }
 
     @Override
     public CompletionStage<Void> deleteAsync(final K key) {
-        return CompletableFuture.runAsync(() -> {
+        return runAsyncTracked(() -> {
             delete(key);
+            return null;
         });
     }
 
@@ -238,6 +196,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     protected void doClose() {
         getIndexState().onClose(this);
+        setSegmentIndexState(SegmentIndexState.CLOSED);
+        awaitAsyncOperations();
         flushSegments(true);
         segmentRegistry.close();
         keySegmentCache.optionalyFlush();
@@ -249,12 +209,86 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         }
     }
 
+    private <T> CompletionStage<T> runAsyncTracked(final Supplier<T> task) {
+        incrementAsync();
+        try {
+            return CompletableFuture.supplyAsync(() -> {
+                final boolean previous = Boolean.TRUE
+                        .equals(inAsyncOperation.get());
+                inAsyncOperation.set(Boolean.TRUE);
+                try {
+                    return task.get();
+                } finally {
+                    inAsyncOperation.set(previous);
+                    decrementAsync();
+                }
+            });
+        } catch (final RuntimeException e) {
+            decrementAsync();
+            throw e;
+        }
+    }
+
+    private void incrementAsync() {
+        synchronized (asyncMonitor) {
+            asyncInFlight++;
+        }
+    }
+
+    private void decrementAsync() {
+        synchronized (asyncMonitor) {
+            asyncInFlight--;
+            asyncMonitor.notifyAll();
+        }
+    }
+
+    private void awaitAsyncOperations() {
+        if (Boolean.TRUE.equals(inAsyncOperation.get())) {
+            throw new IllegalStateException(
+                    "close() must not be called from an async index operation.");
+        }
+        boolean interrupted = false;
+        synchronized (asyncMonitor) {
+            while (asyncInFlight > 0) {
+                try {
+                    asyncMonitor.wait();
+                } catch (final InterruptedException e) {
+                    interrupted = true;
+                }
+            }
+        }
+        if (interrupted) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
     final void setIndexState(final IndexState<K, V> indexState) {
         this.indexState = Vldtn.requireNonNull(indexState, "indexState");
     }
 
     protected final IndexState<K, V> getIndexState() {
         return indexState;
+    }
+
+    @Override
+    public SegmentIndexState getState() {
+        return segmentIndexState;
+    }
+
+    final void setSegmentIndexState(final SegmentIndexState state) {
+        this.segmentIndexState = Vldtn.requireNonNull(state, "state");
+    }
+
+    final void failWithError(final Throwable failure) {
+        setSegmentIndexState(SegmentIndexState.ERROR);
+        FileLock fileLock = null;
+        final IndexState<K, V> currentState = indexState;
+        if (currentState instanceof IndexStateReady<?, ?> readyState) {
+            fileLock = readyState.getFileLock();
+        } else if (currentState instanceof IndexStateOpening<?, ?> openingState) {
+            fileLock = openingState.getFileLock();
+        }
+        setIndexState(new IndexStateError<>(failure, fileLock));
     }
 
     @Override
@@ -270,91 +304,120 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     }
 
     private void flushSegments(final boolean waitForCompletion) {
-        keySegmentCache.getSegmentIds().forEach(segmentId -> {
-            final Segment<K, V> segment = segmentRegistry.getSegment(segmentId);
-            flushSegment(segment, waitForCompletion);
-        });
+        keySegmentCache.getSegmentIds()
+                .forEach(segmentId -> flushSegment(segmentId,
+                        waitForCompletion));
     }
 
-    private void compactSegment(final Segment<K, V> segment,
+    private void compactSegment(final SegmentId segmentId,
             final boolean waitForCompletion) {
+        final long startNanos = retryPolicy.startNanos();
         while (true) {
-            final SegmentResult<CompletionStage<Void>> result = segment
-                    .compact();
-            final SegmentResultStatus status = result.getStatus();
-            if (status == SegmentResultStatus.OK) {
+            final IndexResult<CompletionStage<Void>> result = core
+                    .compact(segmentId);
+            final IndexResultStatus status = result.getStatus();
+            if (status == IndexResultStatus.OK) {
                 if (waitForCompletion) {
-                    awaitMaintenanceCompletion(segment, "compact",
+                    awaitMaintenanceCompletion(segmentId, "compact",
                             result.getValue());
                 }
                 return;
             }
-            if (status == SegmentResultStatus.CLOSED) {
+            if (status == IndexResultStatus.CLOSED) {
                 return;
             }
-            if (status == SegmentResultStatus.BUSY) {
+            if (status == IndexResultStatus.BUSY) {
+                retryPolicy.backoffOrThrow(startNanos, "compact",
+                        segmentId);
                 continue;
             }
-            throw new org.hestiastore.index.IndexException(String.format(
-                    "Segment '%s' failed during compact: %s", segment.getId(),
-                    status));
+            throw newIndexException("compact", segmentId, status);
         }
     }
 
-    private void flushSegment(final Segment<K, V> segment,
+    private void flushSegment(final SegmentId segmentId,
             final boolean waitForCompletion) {
+        final long startNanos = retryPolicy.startNanos();
         while (true) {
-            final SegmentResult<CompletionStage<Void>> result = segment.flush();
-            final SegmentResultStatus status = result.getStatus();
-            if (status == SegmentResultStatus.OK) {
+            final IndexResult<CompletionStage<Void>> result = core
+                    .flush(segmentId);
+            final IndexResultStatus status = result.getStatus();
+            if (status == IndexResultStatus.OK) {
                 if (waitForCompletion) {
-                    awaitMaintenanceCompletion(segment, "flush",
+                    awaitMaintenanceCompletion(segmentId, "flush",
                             result.getValue());
                 }
                 return;
             }
-            if (status == SegmentResultStatus.CLOSED) {
+            if (status == IndexResultStatus.CLOSED) {
                 return;
             }
-            if (status == SegmentResultStatus.BUSY) {
+            if (status == IndexResultStatus.BUSY) {
+                retryPolicy.backoffOrThrow(startNanos, "flush", segmentId);
                 continue;
             }
-            throw new org.hestiastore.index.IndexException(String.format(
-                    "Segment '%s' failed during flush: %s", segment.getId(),
-                    status));
+            throw newIndexException("flush", segmentId, status);
         }
     }
 
-    private void awaitMaintenanceCompletion(final Segment<K, V> segment,
-            final String operation, final CompletionStage<Void> completion) {
+    private void awaitMaintenanceCompletion(final SegmentId segmentId,
+            final String operation,
+            final CompletionStage<Void> completion) {
         if (completion == null) {
             return;
         }
         try {
             completion.toCompletableFuture().join();
         } catch (final CompletionException e) {
-            throw new org.hestiastore.index.IndexException(String.format(
-                    "Segment '%s' failed during %s.", segment.getId(),
-                    operation), e.getCause());
+            throw new IndexException(String.format(
+                    "Segment '%s' failed during %s.", segmentId, operation),
+                    e.getCause());
         }
     }
 
     private EntryIterator<K, V> openIteratorWithRetry(
-            final Segment<K, V> segment,
+            final SegmentId segmentId,
             final SegmentIteratorIsolation isolation) {
+        final long startNanos = retryPolicy.startNanos();
         while (true) {
-            final SegmentResult<EntryIterator<K, V>> result = segment
-                    .openIterator(isolation);
-            if (result.getStatus() == SegmentResultStatus.OK) {
+            final IndexResult<EntryIterator<K, V>> result = core
+                    .openIterator(segmentId, isolation);
+            if (result.getStatus() == IndexResultStatus.OK) {
                 return result.getValue();
             }
-            if (result.getStatus() == SegmentResultStatus.BUSY) {
+            if (result.getStatus() == IndexResultStatus.BUSY) {
+                retryPolicy.backoffOrThrow(startNanos, "openIterator",
+                        segmentId);
                 continue;
             }
-            throw new org.hestiastore.index.IndexException(String.format(
-                    "Segment '%s' failed to open iterator: %s",
-                    segment.getId(), result.getStatus()));
+            throw newIndexException("openIterator", segmentId,
+                    result.getStatus());
         }
+    }
+
+    private <T> IndexResult<T> retryWhileBusy(
+            final Supplier<IndexResult<T>> operation, final String opName,
+            final SegmentId segmentId, final boolean retryClosed) {
+        final long startNanos = retryPolicy.startNanos();
+        while (true) {
+            final IndexResult<T> result = operation.get();
+            final IndexResultStatus status = result.getStatus();
+            if (status == IndexResultStatus.BUSY
+                    || (retryClosed && status == IndexResultStatus.CLOSED)) {
+                retryPolicy.backoffOrThrow(startNanos, opName, segmentId);
+                continue;
+            }
+            return result;
+        }
+    }
+
+    private IndexException newIndexException(final String operation,
+            final SegmentId segmentId, final IndexResultStatus status) {
+        final String target = segmentId == null ? "" : String
+                .format(" on segment '%s'", segmentId);
+        return new IndexException(
+                String.format("Index operation '%s' failed%s: %s", operation,
+                        target, status));
     }
 
     protected void invalidateSegmentIterators() {

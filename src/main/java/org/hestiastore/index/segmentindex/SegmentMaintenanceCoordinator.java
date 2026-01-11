@@ -65,6 +65,9 @@ final class SegmentMaintenanceCoordinator<K, V> {
     }
 
     private void scheduleMaintenanceIfNeeded(final Segment<K, V> segment) {
+        if (!Boolean.TRUE.equals(conf.isSegmentMaintenanceAutoEnabled())) {
+            return;
+        }
         final SegmentMaintenanceDecision decision = maintenancePolicy
                 .evaluateAfterWrite(segment);
         if (decision.shouldFlush()) {

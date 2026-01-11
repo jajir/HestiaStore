@@ -3,7 +3,6 @@ package org.hestiastore.index.segmentindex;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilter;
@@ -26,7 +25,10 @@ public class IndexConfigurationBuilder<K, V> {
     private Integer diskIoBufferSizeInBytes;
     private Integer numberOfThreads;
     private Integer numberOfIoThreads;
-    private ExecutorService maintenanceExecutor;
+    private Integer numberOfSegmentIndexMaintenanceThreads;
+    private Integer indexBusyBackoffMillis;
+    private Integer indexBusyTimeoutMillis;
+    private Boolean segmentMaintenanceAutoEnabled;
 
     private String indexName;
     private Class<K> keyClass;
@@ -170,9 +172,27 @@ public class IndexConfigurationBuilder<K, V> {
         return this;
     }
 
-    public IndexConfigurationBuilder<K, V> withMaintenanceExecutor(
-            final ExecutorService maintenanceExecutor) {
-        this.maintenanceExecutor = maintenanceExecutor;
+    public IndexConfigurationBuilder<K, V> withNumberOfSegmentIndexMaintenanceThreads(
+            final Integer numberOfSegmentIndexMaintenanceThreads) {
+        this.numberOfSegmentIndexMaintenanceThreads = numberOfSegmentIndexMaintenanceThreads;
+        return this;
+    }
+
+    public IndexConfigurationBuilder<K, V> withIndexBusyBackoffMillis(
+            final Integer indexBusyBackoffMillis) {
+        this.indexBusyBackoffMillis = indexBusyBackoffMillis;
+        return this;
+    }
+
+    public IndexConfigurationBuilder<K, V> withIndexBusyTimeoutMillis(
+            final Integer indexBusyTimeoutMillis) {
+        this.indexBusyTimeoutMillis = indexBusyTimeoutMillis;
+        return this;
+    }
+
+    public IndexConfigurationBuilder<K, V> withSegmentMaintenanceAutoEnabled(
+            final Boolean segmentMaintenanceAutoEnabled) {
+        this.segmentMaintenanceAutoEnabled = segmentMaintenanceAutoEnabled;
         return this;
     }
 
@@ -245,6 +265,18 @@ public class IndexConfigurationBuilder<K, V> {
         final Integer effectiveNumberOfIoThreads = numberOfIoThreads == null
                 ? IndexConfigurationContract.NUMBER_OF_IO_THREADS
                 : numberOfIoThreads;
+        final Integer effectiveSegmentIndexMaintenanceThreads = numberOfSegmentIndexMaintenanceThreads == null
+                ? IndexConfigurationContract.DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS
+                : numberOfSegmentIndexMaintenanceThreads;
+        final Integer effectiveIndexBusyBackoffMillis = indexBusyBackoffMillis == null
+                ? IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS
+                : indexBusyBackoffMillis;
+        final Integer effectiveIndexBusyTimeoutMillis = indexBusyTimeoutMillis == null
+                ? IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS
+                : indexBusyTimeoutMillis;
+        final Boolean effectiveSegmentMaintenanceAutoEnabled = segmentMaintenanceAutoEnabled == null
+                ? IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_AUTO_ENABLED
+                : segmentMaintenanceAutoEnabled;
         final Integer effectiveWriteCacheDuringFlush;
         if (maxNumberOfKeysInSegmentWriteCacheDuringFlush == null
                 && maxNumberOfKeysInSegmentWriteCache != null) {
@@ -276,7 +308,11 @@ public class IndexConfigurationBuilder<K, V> {
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
                 bloomFilterProbabilityOfFalsePositive, diskIoBufferSizeInBytes,
                 contextLoggingEnabled, effectiveNumberOfThreads,
-                effectiveNumberOfIoThreads, maintenanceExecutor,
+                effectiveNumberOfIoThreads,
+                effectiveSegmentIndexMaintenanceThreads,
+                effectiveIndexBusyBackoffMillis,
+                effectiveIndexBusyTimeoutMillis,
+                effectiveSegmentMaintenanceAutoEnabled,
                 encodingChunkFilters, decodingChunkFilters);
     }
 

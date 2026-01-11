@@ -1,8 +1,9 @@
 package org.hestiastore.index.segmentindex;
 
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -14,17 +15,30 @@ import org.hestiastore.index.Vldtn;
  */
 public final class SegmentAsyncExecutor extends AbstractCloseableResource {
 
+    private static final int MIN_QUEUE_CAPACITY = 64;
+    private static final int QUEUE_CAPACITY_MULTIPLIER = 64;
+
     private final ExecutorService executor;
+    private final int queueCapacity;
 
     public SegmentAsyncExecutor(final int threads,
             final String threadNamePrefix) {
         Vldtn.requireGreaterThanZero(threads, "threads");
-        this.executor = Executors.newFixedThreadPool(threads,
-                namedThreadFactory(threadNamePrefix));
+        this.queueCapacity = Math.max(MIN_QUEUE_CAPACITY,
+                threads * QUEUE_CAPACITY_MULTIPLIER);
+        this.executor = new ThreadPoolExecutor(threads, threads, 0L,
+                TimeUnit.MILLISECONDS,
+                new ArrayBlockingQueue<>(queueCapacity),
+                namedThreadFactory(threadNamePrefix),
+                new ThreadPoolExecutor.CallerRunsPolicy());
     }
 
     public ExecutorService getExecutor() {
         return executor;
+    }
+
+    int getQueueCapacity() {
+        return queueCapacity;
     }
 
     @Override

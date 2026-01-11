@@ -3,7 +3,6 @@ package org.hestiastore.index.segmentindex;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilter;
@@ -61,6 +60,22 @@ public class IndexConfigurationManager<K, V> {
         }
         if (conf.getNumberOfIoThreads() == null) {
             builder.withNumberOfIoThreads(defaults.getNumberOfIoThreads());
+        }
+        if (conf.getNumberOfSegmentIndexMaintenanceThreads() == null) {
+            builder.withNumberOfSegmentIndexMaintenanceThreads(
+                    defaults.getNumberOfSegmentIndexMaintenanceThreads());
+        }
+        if (conf.getIndexBusyBackoffMillis() == null) {
+            builder.withIndexBusyBackoffMillis(
+                    defaults.getIndexBusyBackoffMillis());
+        }
+        if (conf.getIndexBusyTimeoutMillis() == null) {
+            builder.withIndexBusyTimeoutMillis(
+                    defaults.getIndexBusyTimeoutMillis());
+        }
+        if (conf.isSegmentMaintenanceAutoEnabled() == null) {
+            builder.withSegmentMaintenanceAutoEnabled(
+                    defaults.isSegmentMaintenanceAutoEnabled());
         }
         if (conf.getMaxNumberOfKeysInSegment() == null) {
             builder.withMaxNumberOfKeysInSegment(
@@ -157,12 +172,6 @@ public class IndexConfigurationManager<K, V> {
         final IndexConfigurationBuilder<K, V> builder = makeBuilder(storedConf);
         boolean dirty = false;
 
-        final ExecutorService maintenanceExecutor = indexConf
-                .getMaintenanceExecutor();
-        if (maintenanceExecutor != null) {
-            builder.withMaintenanceExecutor(maintenanceExecutor);
-        }
-
         validateThatFixPropertiesAreNotOverriden(storedConf, indexConf);
 
         if (isIndexNameOverriden(storedConf, indexConf)) {
@@ -212,6 +221,39 @@ public class IndexConfigurationManager<K, V> {
                 && !indexConf.getNumberOfIoThreads()
                         .equals(storedConf.getNumberOfIoThreads())) {
             builder.withNumberOfIoThreads(indexConf.getNumberOfIoThreads());
+            dirty = true;
+        }
+        if (indexConf.getNumberOfSegmentIndexMaintenanceThreads() != null
+                && indexConf.getNumberOfSegmentIndexMaintenanceThreads() > 0
+                && !indexConf.getNumberOfSegmentIndexMaintenanceThreads()
+                        .equals(storedConf
+                                .getNumberOfSegmentIndexMaintenanceThreads())) {
+            builder.withNumberOfSegmentIndexMaintenanceThreads(
+                    indexConf.getNumberOfSegmentIndexMaintenanceThreads());
+            dirty = true;
+        }
+        if (indexConf.getIndexBusyBackoffMillis() != null
+                && indexConf.getIndexBusyBackoffMillis() > 0
+                && !indexConf.getIndexBusyBackoffMillis()
+                        .equals(storedConf.getIndexBusyBackoffMillis())) {
+            builder.withIndexBusyBackoffMillis(
+                    indexConf.getIndexBusyBackoffMillis());
+            dirty = true;
+        }
+        if (indexConf.getIndexBusyTimeoutMillis() != null
+                && indexConf.getIndexBusyTimeoutMillis() > 0
+                && !indexConf.getIndexBusyTimeoutMillis()
+                        .equals(storedConf.getIndexBusyTimeoutMillis())) {
+            builder.withIndexBusyTimeoutMillis(
+                    indexConf.getIndexBusyTimeoutMillis());
+            dirty = true;
+        }
+        if (indexConf.isSegmentMaintenanceAutoEnabled() != null
+                && !indexConf.isSegmentMaintenanceAutoEnabled()
+                        .equals(storedConf
+                                .isSegmentMaintenanceAutoEnabled())) {
+            builder.withSegmentMaintenanceAutoEnabled(
+                    indexConf.isSegmentMaintenanceAutoEnabled());
             dirty = true;
         }
 
@@ -500,6 +542,26 @@ public class IndexConfigurationManager<K, V> {
             throw new IllegalArgumentException(
                     "Number of IO threads must be at least 1.");
         }
+        Vldtn.requireNonNull(conf.getNumberOfSegmentIndexMaintenanceThreads(),
+                "segmentIndexMaintenanceThreads");
+        if (conf.getNumberOfSegmentIndexMaintenanceThreads() < 1) {
+            throw new IllegalArgumentException(
+                    "Segment index maintenance threads must be at least 1.");
+        }
+        Vldtn.requireNonNull(conf.getIndexBusyBackoffMillis(),
+                "indexBusyBackoffMillis");
+        if (conf.getIndexBusyBackoffMillis() < 1) {
+            throw new IllegalArgumentException(
+                    "Index busy backoff must be at least 1 ms.");
+        }
+        Vldtn.requireNonNull(conf.getIndexBusyTimeoutMillis(),
+                "indexBusyTimeoutMillis");
+        if (conf.getIndexBusyTimeoutMillis() < 1) {
+            throw new IllegalArgumentException(
+                    "Index busy timeout must be at least 1 ms.");
+        }
+        Vldtn.requireNonNull(conf.isSegmentMaintenanceAutoEnabled(),
+                "segmentMaintenanceAutoEnabled");
         return conf;
     }
 
@@ -528,7 +590,12 @@ public class IndexConfigurationManager<K, V> {
                 .withContextLoggingEnabled(conf.isContextLoggingEnabled())//
                 .withNumberOfCpuThreads(conf.getNumberOfThreads())//
                 .withNumberOfIoThreads(conf.getNumberOfIoThreads())//
-                .withMaintenanceExecutor(conf.getMaintenanceExecutor())//
+                .withNumberOfSegmentIndexMaintenanceThreads(
+                        conf.getNumberOfSegmentIndexMaintenanceThreads())//
+                .withIndexBusyBackoffMillis(conf.getIndexBusyBackoffMillis())//
+                .withIndexBusyTimeoutMillis(conf.getIndexBusyTimeoutMillis())//
+                .withSegmentMaintenanceAutoEnabled(
+                        conf.isSegmentMaintenanceAutoEnabled())//
                 .withName(conf.getIndexName())//
 
                 // SegmentIndex runtime properties

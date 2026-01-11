@@ -2,19 +2,18 @@
 
 ## Overview
 
-The index still supports a legacy **global read/write lock** path (used by
-`IndexInternalSynchronized`). Read operations can overlap, while any write
-operation (`put/delete/flush/compact/close`) is exclusive and blocks other reads
-and writes. This is a conservative mode for callers that want serialization.
+SegmentIndex is thread-safe and does not use a global read/write lock. Sync
+operations execute on the caller thread; concurrency is controlled by
+per-segment state machines and minimal shared-structure locks (mapping,
+registry).
 
-Segment-level concurrency no longer requires external locks. `SegmentImpl`
+Segment-level concurrency does not require external locks. `SegmentImpl`
 enforces its own lock-free admission gate (see
 `docs/architecture/segment-concurrency.md`).
 
 ## Concurrency Invariants (Target Design)
 
-These invariants must hold regardless of how locks are implemented during the
-per-segment concurrency refactor:
+These invariants must hold for the current per-segment concurrency design:
 
 - **Mapping integrity:** the key→segment map must always point to an existing
   segment; updates are atomic and visible to readers.
@@ -31,8 +30,7 @@ per-segment concurrency refactor:
 
 ## Shared State That Must Be Protected
 
-These structures are shared across threads and require synchronization when
-moving away from the global lock:
+These structures are shared across threads and require synchronization:
 
 - `UniqueCache` (index write buffer)
 - `KeySegmentCache` (key→segment map)
@@ -41,35 +39,22 @@ moving away from the global lock:
 - `IndexState` (open/close state) and `Stats` (counters)
 - Any `TypeDescriptor` implementation with mutable internal state
 
-## Target Locking Plan
-
-Planned locking strategy for per-segment concurrency:
-
-- **Mapping/lifecycle RW lock:** read lock for `get/put/delete` to safely read
-  shared structures; write lock for `flush/compact/close` and for segment splits.
-- **Per-segment lock:** held only while operating on a specific segment (delta
-  writes, compaction, reads).
-
-This allows parallel operations across different segments while keeping shared
-state consistent.
-
 ## Ordering
 
-- With multiple threads, **operation order is not guaranteed**; the global
-  lock favors fairness to reduce write starvation, but it does not impose a
-  strict ordering.
-- If strict ordering is required, configure the index with a single CPU thread
-  (`withNumberOfCpuThreads(1)`), which serializes all operations.
-- Across segments, operations can complete in any order when more than one
-  thread is configured.
+- With multiple threads, **operation order is not guaranteed**.
+- If strict ordering is required, apply external synchronization at the caller
+  level.
+- Across segments, operations can complete in any order.
 
 ## Threads
 
-- A fixed-size executor runs index operations. The CPU thread count is configurable (default 1).
-- `withNumberOfIoThreads(...)` exists as a separate knob for future work (splitting blocking disk I/O from CPU-bound work).
+- Sync operations run on caller threads.
+- Async operations run on background threads via `IndexAsyncAdapter`.
+- Segment maintenance runs on the segment-index maintenance executor.
 
 ## Implications
 
-- Write/write and read/write conflicts are serialized globally.
-- Read-heavy workloads benefit the most from parallelism.
+- Write/write and read/write conflicts are handled by per-segment state
+  machines and shared-structure locks, not a global lock.
+- Read-heavy workloads benefit from parallelism.
 - Callers should not rely on global ordering across keys.

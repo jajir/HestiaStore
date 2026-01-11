@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import java.util.List;
@@ -14,12 +13,18 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class IndexStateReadyTest {
+
+    @Mock
+    private FileLock fileLock;
 
     @Test
     void onCloseTransitionsToClosedState() {
-        final FileLock fileLock = mock(FileLock.class);
         final IndexStateReady<Integer, String> state = new IndexStateReady<>(
                 fileLock);
 
@@ -28,13 +33,12 @@ class IndexStateReadyTest {
                 new TypeDescriptorShortString(), buildConf());
         state.onClose(index);
 
-        assertTrue(index.getIndexState() instanceof IndexStateClose);
+        assertTrue(index.getIndexState() instanceof IndexStateClosed);
         verify(fileLock).unlock();
     }
 
     @Test
     void tryPerformOperationDoesNothing() {
-        final FileLock fileLock = mock(FileLock.class);
         final IndexStateReady<Integer, String> state = new IndexStateReady<>(
                 fileLock);
 

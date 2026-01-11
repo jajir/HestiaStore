@@ -1,6 +1,5 @@
 package org.hestiastore.index.segmentindex;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
 
@@ -104,38 +103,32 @@ public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
 
     @Override
     public CompletionStage<Void> putAsync(final K key, final V value) {
-        if (index instanceof IndexInternalSynchronized<?, ?>) {
+        setContext();
+        try {
             return index.putAsync(key, value);
+        } finally {
+            clearContext();
         }
-        return CompletableFuture.runAsync(() -> {
-            synchronized (this) {
-                put(key, value);
-            }
-        });
     }
 
     @Override
     public CompletionStage<V> getAsync(final K key) {
-        if (index instanceof IndexInternalSynchronized<?, ?>) {
+        setContext();
+        try {
             return index.getAsync(key);
+        } finally {
+            clearContext();
         }
-        return CompletableFuture.supplyAsync(() -> {
-            synchronized (this) {
-                return get(key);
-            }
-        });
     }
 
     @Override
     public CompletionStage<Void> deleteAsync(final K key) {
-        if (index instanceof IndexInternalSynchronized<?, ?>) {
+        setContext();
+        try {
             return index.deleteAsync(key);
+        } finally {
+            clearContext();
         }
-        return CompletableFuture.runAsync(() -> {
-            synchronized (this) {
-                delete(key);
-            }
-        });
     }
 
     /**
@@ -232,6 +225,16 @@ public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         }
     }
 
+    @Override
+    public SegmentIndexState getState() {
+        setContext();
+        try {
+            return index.getState();
+        } finally {
+            clearContext();
+        }
+    }
+
     /**
      * Closes the wrapped index while maintaining the {@code index.name} MDC
      * context.
@@ -245,5 +248,4 @@ public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
             clearContext();
         }
     }
-
 }

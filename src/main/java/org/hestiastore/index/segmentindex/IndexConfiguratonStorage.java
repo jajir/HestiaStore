@@ -32,6 +32,10 @@ public class IndexConfiguratonStorage<K, V> {
     private static final String PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE = "maxNumberOfSegmentsInCache";
     private static final String PROP_NUMBER_OF_THREADS = "numberOfThreads";
     private static final String PROP_NUMBER_OF_IO_THREADS = "numberOfIoThreads";
+    private static final String PROP_SEGMENT_INDEX_MAINTENANCE_THREADS = "segmentIndexMaintenanceThreads";
+    private static final String PROP_INDEX_BUSY_BACKOFF_MILLIS = "indexBusyBackoffMillis";
+    private static final String PROP_INDEX_BUSY_TIMEOUT_MILLIS = "indexBusyTimeoutMillis";
+    private static final String PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED = "segmentMaintenanceAutoEnabled";
     private static final String PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS = "bloomFilterNumberOfHashFunctions";
     private static final String PROP_BLOOM_FILTER_INDEX_SIZE_IN_BYTES = "bloomFilterIndexSizeInBytes";
     private static final String PROP_BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE = "bloomFilterProbabilityOfFalsePositive";
@@ -103,6 +107,22 @@ public class IndexConfiguratonStorage<K, V> {
                 .withNumberOfIoThreads(getOrDefault(propsView,
                         PROP_NUMBER_OF_IO_THREADS,
                         IndexConfigurationContract.NUMBER_OF_IO_THREADS))//
+                .withNumberOfSegmentIndexMaintenanceThreads(
+                        getOrDefault(propsView,
+                                PROP_SEGMENT_INDEX_MAINTENANCE_THREADS,
+                                IndexConfigurationContract.DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS))//
+                .withIndexBusyBackoffMillis(
+                        getOrDefault(propsView,
+                                PROP_INDEX_BUSY_BACKOFF_MILLIS,
+                                IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS))//
+                .withIndexBusyTimeoutMillis(
+                        getOrDefault(propsView,
+                                PROP_INDEX_BUSY_TIMEOUT_MILLIS,
+                                IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS))//
+                .withSegmentMaintenanceAutoEnabled(
+                        getOrDefaultBoolean(propsView,
+                                PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED,
+                                IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_AUTO_ENABLED))//
 
                 // Segment bloom filter properties
                 .withBloomFilterNumberOfHashFunctions(propsView
@@ -183,6 +203,27 @@ public class IndexConfiguratonStorage<K, V> {
                 ? IndexConfigurationContract.NUMBER_OF_IO_THREADS
                 : indexConfiguration.getNumberOfIoThreads();
         writer.setInt(PROP_NUMBER_OF_IO_THREADS, ioThreadCount);
+        final int maintenanceThreads = indexConfiguration
+                .getNumberOfSegmentIndexMaintenanceThreads() == null
+                        ? IndexConfigurationContract.DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS
+                        : indexConfiguration
+                                .getNumberOfSegmentIndexMaintenanceThreads();
+        writer.setInt(PROP_SEGMENT_INDEX_MAINTENANCE_THREADS,
+                maintenanceThreads);
+        final int busyBackoffMillis = indexConfiguration
+                .getIndexBusyBackoffMillis() == null
+                        ? IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS
+                        : indexConfiguration.getIndexBusyBackoffMillis();
+        writer.setInt(PROP_INDEX_BUSY_BACKOFF_MILLIS, busyBackoffMillis);
+        final int busyTimeoutMillis = indexConfiguration
+                .getIndexBusyTimeoutMillis() == null
+                        ? IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS
+                        : indexConfiguration.getIndexBusyTimeoutMillis();
+        writer.setInt(PROP_INDEX_BUSY_TIMEOUT_MILLIS, busyTimeoutMillis);
+        writer.setBoolean(PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED,
+                Boolean.TRUE
+                        .equals(indexConfiguration
+                                .isSegmentMaintenanceAutoEnabled()));
 
         // Segment bloom filter properties
         writer.setInt(PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
@@ -272,6 +313,15 @@ public class IndexConfiguratonStorage<K, V> {
             return defaultValue;
         }
         return value;
+    }
+
+    private boolean getOrDefaultBoolean(final PropertyView propsView,
+            final String key, final boolean defaultValue) {
+        final String value = propsView.getString(key);
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+        return Boolean.parseBoolean(value);
     }
 
 }

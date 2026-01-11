@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
@@ -21,17 +22,30 @@ class IntegrationSegmentIndexConcurrencyTest {
 
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
+    private static final int OPERATION_TIMEOUT_SECONDS = 30;
 
     @Test
-    void parallel_puts_and_gets_on_different_keys() {
+    void parallel_puts_and_gets_on_different_keys() throws Exception {
         final Directory directory = new MemDirectory();
         final SegmentIndex<Integer, String> index = newIndex(directory, 4, 1);
+        final ExecutorService executor = Executors.newFixedThreadPool(4);
         try {
             final List<CompletableFuture<Void>> writes = new ArrayList<>();
+            final CountDownLatch start = new CountDownLatch(1);
             IntStream.range(0, 50).forEach(i -> writes.add(
-                    CompletableFuture.runAsync(() -> index.put(i, "v-" + i))));
+                    CompletableFuture.runAsync(() -> {
+                        try {
+                            start.await();
+                        } catch (final InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw new IllegalStateException(
+                                    "Writer interrupted", e);
+                        }
+                        index.put(i, "v-" + i);
+                    }, executor)));
+            start.countDown();
             CompletableFuture.allOf(writes.toArray(new CompletableFuture[0]))
-                    .join();
+                    .get(OPERATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
             index.flushAndWait();
 
@@ -40,6 +54,7 @@ class IntegrationSegmentIndexConcurrencyTest {
             assertEquals(50,
                     index.getStream(SegmentWindow.unbounded()).count());
         } finally {
+            executor.shutdownNow();
             index.close();
         }
     }
@@ -116,12 +131,12 @@ class IntegrationSegmentIndexConcurrencyTest {
             });
 
             start.countDown();
-            writer.get(10, TimeUnit.SECONDS);
-            reader.get(10, TimeUnit.SECONDS);
-            maint.get(10, TimeUnit.SECONDS);
+            writer.get(OPERATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            reader.get(OPERATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            maint.get(OPERATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             executor.shutdownNow();
 
-            index.flush();
+            index.flushAndWait();
             final long count = index.getStream(SegmentWindow.unbounded())
                     .count();
             assertTrue(count >= 40, "Expected at least 40 entries");

@@ -19,12 +19,16 @@ public class IndexStateReady<K, V> implements IndexState<K, V> {
 
     @Override
     public void onClose(SegmentIndexImpl<K, V> index) {
-        index.setIndexState(new IndexStateClose<>());
+        index.setIndexState(new IndexStateClosed<>());
         fileLock.unlock();
     }
 
     @Override
     public void tryPerformOperation() {
         // Do nothing operations are allowed.
+    }
+
+    FileLock getFileLock() {
+        return fileLock;
     }
 }

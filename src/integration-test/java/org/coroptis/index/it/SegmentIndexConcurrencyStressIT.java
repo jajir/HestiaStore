@@ -149,6 +149,8 @@ class SegmentIndexConcurrencyStressIT {
             try {
                 final SegmentIndex<Integer, Integer> current = indexRef.get();
                 if (!current.wasClosed()) {
+                    current.flushAndWait();
+                    current.compactAndWait();
                     current.checkAndRepairConsistency();
                     current.close();
                 }

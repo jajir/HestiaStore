@@ -75,6 +75,7 @@ class SegmentIndexConfiguratonStorageTest {
                         BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE)//
                 .withDiskIoBufferSizeInBytes(4096)//
                 .withContextLoggingEnabled(true)//
+                .withSegmentMaintenanceAutoEnabled(true)//
                 .build();
         storage.save(config);
         logConfigurationFile();
@@ -103,6 +104,7 @@ class SegmentIndexConfiguratonStorageTest {
                 ret.getBloomFilterProbabilityOfFalsePositive());
         assertEquals(DISK_IO_BUFFER, ret.getDiskIoBufferSize());
         assertTrue(ret.isContextLoggingEnabled());
+        assertTrue(ret.isSegmentMaintenanceAutoEnabled());
     }
 
     @Test

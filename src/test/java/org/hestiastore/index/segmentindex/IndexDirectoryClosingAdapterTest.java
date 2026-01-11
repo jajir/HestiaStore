@@ -106,6 +106,12 @@ class IndexDirectoryClosingAdapterTest {
         }
 
         @Override
+        public SegmentIndexState getState() {
+            return wasClosed() ? SegmentIndexState.CLOSED
+                    : SegmentIndexState.READY;
+        }
+
+        @Override
         protected void doClose() {
             // no-op
         }
