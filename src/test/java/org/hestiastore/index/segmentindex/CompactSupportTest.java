@@ -39,7 +39,9 @@ class CompactSupportTest {
     private Segment<Integer, String> segment1;
 
     private CompactSupport<Integer, String> newSupport() {
-        return new CompactSupport<>(segmentRegistry, keyToSegmentMap,
+        final KeyToSegmentMapSynchronizedAdapter<Integer> synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
+                keyToSegmentMap);
+        return new CompactSupport<>(segmentRegistry, synchronizedKeyToSegmentMap,
                 new TypeDescriptorInteger().getComparator());
     }
 

@@ -58,7 +58,8 @@ class SegmentIndexImplPutTest {
         index.put(4, "d");
         index.put(5, "e");
 
-        final KeyToSegmentMap<Integer> cache = readKeyToSegmentMap(index);
+        final KeyToSegmentMapSynchronizedAdapter<Integer> cache = readKeyToSegmentMap(
+                index);
         awaitSegmentCount(cache, 2);
         assertEquals(SegmentId.of(1), cache.findSegmentId(1));
         index.close();
@@ -104,7 +105,8 @@ class SegmentIndexImplPutTest {
                 .build();
     }
 
-    private static void awaitSegmentCount(final KeyToSegmentMap<Integer> cache,
+    private static void awaitSegmentCount(
+            final KeyToSegmentMapSynchronizedAdapter<Integer> cache,
             final int expectedCount) {
         final long deadline = System.nanoTime()
                 + TimeUnit.SECONDS.toNanos(2);
@@ -123,13 +125,13 @@ class SegmentIndexImplPutTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static <K, V> KeyToSegmentMap<K> readKeyToSegmentMap(
+    private static <K, V> KeyToSegmentMapSynchronizedAdapter<K> readKeyToSegmentMap(
             final SegmentIndexImpl<K, V> index) {
         try {
             final Field field = SegmentIndexImpl.class
                     .getDeclaredField("keyToSegmentMap");
             field.setAccessible(true);
-            return (KeyToSegmentMap<K>) field.get(index);
+            return (KeyToSegmentMapSynchronizedAdapter<K>) field.get(index);
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
                     "Unable to read keyToSegmentMap for test", ex);

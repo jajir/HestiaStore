@@ -19,7 +19,7 @@ public class CompactSupport<K, V> {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final List<Entry<K, V>> toSameSegment = new ArrayList<>();
-    private final KeyToSegmentMap<K> keyToSegmentMap;
+    private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final Comparator<K> keyComparator;
     private SegmentId currentSegmentId = null;
@@ -31,7 +31,7 @@ public class CompactSupport<K, V> {
     private final List<SegmentId> eligibleSegments = new ArrayList<>();
 
     CompactSupport(final SegmentRegistry<K, V> segmentRegistry,
-            final KeyToSegmentMap<K> keyToSegmentMap,
+            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
             final Comparator<K> keyComparator) {
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");

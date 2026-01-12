@@ -28,10 +28,10 @@ public class IndexConsistencyChecker<K, V> {
             + "File 'index.map' containing information about segments is corrupted. ";
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final SegmentRegistry<K, V> segmentRegistry;
-    private final KeyToSegmentMap<K> keyToSegmentMap;
+    private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
     private final Comparator<K> keyComparator;
 
-    IndexConsistencyChecker(final KeyToSegmentMap<K> keyToSegmentMap,
+    IndexConsistencyChecker(final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final TypeDescriptor<K> keyTypeDescriptor) {
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,

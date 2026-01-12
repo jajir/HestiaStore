@@ -30,6 +30,8 @@ class SegmentMaintenanceCoordinatorTest {
     @Mock
     private KeyToSegmentMap<String> keyToSegmentMap;
 
+    private KeyToSegmentMapSynchronizedAdapter<String> synchronizedKeyToSegmentMap;
+
     @Mock
     private SegmentRegistry<String, String> segmentRegistry;
 
@@ -44,6 +46,8 @@ class SegmentMaintenanceCoordinatorTest {
         when(segmentRegistry.getSplitExecutor()).thenReturn(maintenanceExecutor);
         when(conf.getIndexBusyBackoffMillis()).thenReturn(1);
         when(conf.getIndexBusyTimeoutMillis()).thenReturn(1000);
+        synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
+                keyToSegmentMap);
     }
 
     @Test
@@ -51,7 +55,7 @@ class SegmentMaintenanceCoordinatorTest {
         when(conf.getMaxNumberOfKeysInSegmentWriteCache()).thenReturn(null);
 
         final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
-                conf, keyToSegmentMap, segmentRegistry);
+                conf, synchronizedKeyToSegmentMap, segmentRegistry);
 
         coordinator.handlePostWrite(segment, "key", SegmentId.of(1), 1L);
 
@@ -75,7 +79,7 @@ class SegmentMaintenanceCoordinatorTest {
         when(segment.getNumberOfKeysInCache()).thenReturn(10L);
 
         final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
-                conf, keyToSegmentMap, segmentRegistry);
+                conf, synchronizedKeyToSegmentMap, segmentRegistry);
 
         coordinator.handlePostWrite(segment, "key", segmentId, 7L);
 
@@ -97,7 +101,7 @@ class SegmentMaintenanceCoordinatorTest {
         when(segment.flush()).thenReturn(okMaintenance());
 
         final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
-                conf, keyToSegmentMap, segmentRegistry);
+                conf, synchronizedKeyToSegmentMap, segmentRegistry);
 
         coordinator.handlePostWrite(segment, "key", segmentId, 7L);
 
@@ -120,7 +124,7 @@ class SegmentMaintenanceCoordinatorTest {
         when(segment.compact()).thenReturn(okMaintenance());
 
         final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
-                conf, keyToSegmentMap, segmentRegistry);
+                conf, synchronizedKeyToSegmentMap, segmentRegistry);
 
         coordinator.handlePostWrite(segment, "key", segmentId, 7L);
 
@@ -144,7 +148,7 @@ class SegmentMaintenanceCoordinatorTest {
         when(segment.compact()).thenReturn(okMaintenance());
 
         final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
-                conf, keyToSegmentMap, segmentRegistry);
+                conf, synchronizedKeyToSegmentMap, segmentRegistry);
 
         coordinator.handlePostWrite(segment, "key", segmentId, 7L);
 
@@ -162,7 +166,7 @@ class SegmentMaintenanceCoordinatorTest {
         when(segment.getNumberOfKeysInCache()).thenReturn(0L);
 
         final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
-                conf, keyToSegmentMap, segmentRegistry);
+                conf, synchronizedKeyToSegmentMap, segmentRegistry);
 
         coordinator.handlePostWrite(segment, "key", segmentId, 7L);
 

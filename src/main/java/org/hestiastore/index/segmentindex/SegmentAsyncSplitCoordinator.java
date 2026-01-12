@@ -24,7 +24,7 @@ final class SegmentAsyncSplitCoordinator<K, V> {
     private final Map<SegmentId, SplitInFlight<K, V>> inFlightSplits = new ConcurrentHashMap<>();
 
     SegmentAsyncSplitCoordinator(final IndexConfiguration<K, V> conf,
-            final KeyToSegmentMap<K> keyToSegmentMap,
+            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final Executor splitExecutor) {
         this(new SegmentSplitCoordinator<>(conf, keyToSegmentMap,

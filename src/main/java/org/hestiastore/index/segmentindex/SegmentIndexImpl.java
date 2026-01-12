@@ -27,7 +27,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final IndexConfiguration<K, V> conf;
     protected final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
-    private final KeyToSegmentMap<K> keyToSegmentMap;
+    private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentMaintenanceCoordinator<K, V> maintenanceCoordinator;
     private final SegmentIndexCore<K, V> core;
@@ -53,8 +53,10 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                     "valueTypeDescriptor");
             this.conf = Vldtn.requireNonNull(conf, "conf");
-            this.keyToSegmentMap = new KeyToSegmentMap<>(directoryFacade,
-                    keyTypeDescriptor);
+            final KeyToSegmentMap<K> keyToSegmentMapDelegate = new KeyToSegmentMap<>(
+                    directoryFacade, keyTypeDescriptor);
+            this.keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
+                    keyToSegmentMapDelegate);
             this.segmentRegistry = new SegmentRegistrySynchronized<>(
                     directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
                     conf);

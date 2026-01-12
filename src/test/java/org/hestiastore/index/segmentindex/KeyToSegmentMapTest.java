@@ -108,8 +108,8 @@ class KeyToSegmentMapTest {
             executor.shutdownNow();
         }
 
-        adapter.close();
         assertEquals(threads * perThread, adapter.getSegmentIds().size());
+        adapter.close();
     }
 
     private KeyToSegmentMap<Integer> newCacheWithEntries(

@@ -22,6 +22,8 @@ class SegmentSplitCoordinatorTest {
     @Mock
     private KeyToSegmentMap<Integer> keyToSegmentMap;
 
+    private KeyToSegmentMapSynchronizedAdapter<Integer> synchronizedKeyToSegmentMap;
+
     @Mock
     private SegmentRegistry<Integer, String> segmentRegistry;
 
@@ -29,14 +31,17 @@ class SegmentSplitCoordinatorTest {
 
     @BeforeEach
     void setUp() {
+        synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
+                keyToSegmentMap);
         coordinator = new SegmentSplitCoordinator<>(
                 IndexConfiguration.<Integer, String>builder().build(),
-                keyToSegmentMap, segmentRegistry);
+                synchronizedKeyToSegmentMap, segmentRegistry);
     }
 
     @AfterEach
     void tearDown() {
         coordinator = null;
+        synchronizedKeyToSegmentMap = null;
     }
 
     @Test

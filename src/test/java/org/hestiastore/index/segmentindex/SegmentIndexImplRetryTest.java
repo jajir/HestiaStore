@@ -36,7 +36,8 @@ class SegmentIndexImplRetryTest {
         try {
             index.put(1, "one");
 
-            final KeyToSegmentMap<Integer> cache = readKeyToSegmentMap(index);
+            final KeyToSegmentMapSynchronizedAdapter<Integer> cache = readKeyToSegmentMap(
+                    index);
             final SegmentId segmentId = cache.findSegmentId(1);
             final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
                     index);
@@ -73,7 +74,8 @@ class SegmentIndexImplRetryTest {
         try {
             index.put(1, "one");
 
-            final KeyToSegmentMap<Integer> cache = readKeyToSegmentMap(index);
+            final KeyToSegmentMapSynchronizedAdapter<Integer> cache = readKeyToSegmentMap(
+                    index);
             final SegmentId segmentId = cache.findSegmentId(1);
             final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
                     index);
@@ -169,13 +171,13 @@ class SegmentIndexImplRetryTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static <K, V> KeyToSegmentMap<K> readKeyToSegmentMap(
+    private static <K, V> KeyToSegmentMapSynchronizedAdapter<K> readKeyToSegmentMap(
             final SegmentIndexImpl<K, V> index) {
         try {
             final Field field = SegmentIndexImpl.class
                     .getDeclaredField("keyToSegmentMap");
             field.setAccessible(true);
-            return (KeyToSegmentMap<K>) field.get(index);
+            return (KeyToSegmentMapSynchronizedAdapter<K>) field.get(index);
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
                     "Unable to read keyToSegmentMap for test", ex);

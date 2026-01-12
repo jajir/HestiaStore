@@ -10,13 +10,13 @@ import org.hestiastore.index.segment.SegmentId;
 final class SegmentMaintenanceCoordinator<K, V> {
 
     private final IndexConfiguration<K, V> conf;
-    private final KeyToSegmentMap<K> keyToSegmentMap;
+    private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentAsyncSplitCoordinator<K, V> splitCoordinator;
     private final SegmentMaintenancePolicy<K, V> maintenancePolicy;
 
     SegmentMaintenanceCoordinator(final IndexConfiguration<K, V> conf,
-            final KeyToSegmentMap<K> keyToSegmentMap,
+            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry) {
         this.conf = Vldtn.requireNonNull(conf, "conf");
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,

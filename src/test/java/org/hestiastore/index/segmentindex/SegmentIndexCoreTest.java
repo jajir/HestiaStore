@@ -40,6 +40,7 @@ class SegmentIndexCoreTest {
 
     private AsyncDirectory asyncDirectory;
     private KeyToSegmentMap<String> keyToSegmentMap;
+    private KeyToSegmentMapSynchronizedAdapter<String> synchronizedKeyToSegmentMap;
     private SegmentIndexCore<String, String> core;
 
     @BeforeEach
@@ -47,20 +48,24 @@ class SegmentIndexCoreTest {
         asyncDirectory = AsyncDirectoryAdapter.wrap(new MemDirectory());
         keyToSegmentMap = new KeyToSegmentMap<>(asyncDirectory,
                 new TypeDescriptorShortString());
-        core = new SegmentIndexCore<>(keyToSegmentMap, segmentRegistry,
-                maintenanceCoordinator);
+        synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
+                keyToSegmentMap);
+        core = new SegmentIndexCore<>(synchronizedKeyToSegmentMap,
+                segmentRegistry, maintenanceCoordinator);
     }
 
     @AfterEach
     void tearDown() {
-        if (keyToSegmentMap != null && !keyToSegmentMap.wasClosed()) {
-            keyToSegmentMap.close();
+        if (synchronizedKeyToSegmentMap != null
+                && !synchronizedKeyToSegmentMap.wasClosed()) {
+            synchronizedKeyToSegmentMap.close();
         }
         if (asyncDirectory != null && !asyncDirectory.wasClosed()) {
             asyncDirectory.close();
         }
         core = null;
         keyToSegmentMap = null;
+        synchronizedKeyToSegmentMap = null;
         asyncDirectory = null;
     }
 
@@ -87,7 +92,7 @@ class SegmentIndexCoreTest {
     @Test
     void put_schedulesMaintenanceOnSuccess() {
         final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
-        final KeyToSegmentMap.Snapshot<String> snapshot = keyToSegmentMap
+        final KeyToSegmentMap.Snapshot<String> snapshot = synchronizedKeyToSegmentMap
                 .snapshot();
         when(segmentRegistry.getSegment(segmentId)).thenReturn(segment);
         when(segment.put("key", "value")).thenReturn(SegmentResult.ok());

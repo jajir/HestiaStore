@@ -193,13 +193,13 @@ class SegmentIndexAsyncMaintenanceTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static <K, V> KeyToSegmentMap<K> readKeyToSegmentMap(
+    private static <K, V> KeyToSegmentMapSynchronizedAdapter<K> readKeyToSegmentMap(
             final SegmentIndexImpl<K, V> index) {
         try {
             final Field field = SegmentIndexImpl.class
                     .getDeclaredField("keyToSegmentMap");
             field.setAccessible(true);
-            return (KeyToSegmentMap<K>) field.get(index);
+            return (KeyToSegmentMapSynchronizedAdapter<K>) field.get(index);
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
                     "Unable to read keyToSegmentMap for test", ex);
