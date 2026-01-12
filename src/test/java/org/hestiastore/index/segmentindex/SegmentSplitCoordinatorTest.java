@@ -20,7 +20,7 @@ class SegmentSplitCoordinatorTest {
     private Segment<Integer, String> segment;
 
     @Mock
-    private KeySegmentCache<Integer> keySegmentCache;
+    private KeyToSegmentMap<Integer> keyToSegmentMap;
 
     @Mock
     private SegmentRegistry<Integer, String> segmentRegistry;
@@ -31,7 +31,7 @@ class SegmentSplitCoordinatorTest {
     void setUp() {
         coordinator = new SegmentSplitCoordinator<>(
                 IndexConfiguration.<Integer, String>builder().build(),
-                keySegmentCache, segmentRegistry);
+                keyToSegmentMap, segmentRegistry);
     }
 
     @AfterEach

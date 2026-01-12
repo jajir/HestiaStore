@@ -10,21 +10,21 @@ import org.hestiastore.index.segment.SegmentId;
 final class SegmentMaintenanceCoordinator<K, V> {
 
     private final IndexConfiguration<K, V> conf;
-    private final KeySegmentCache<K> keySegmentCache;
+    private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentAsyncSplitCoordinator<K, V> splitCoordinator;
     private final SegmentMaintenancePolicy<K, V> maintenancePolicy;
 
     SegmentMaintenanceCoordinator(final IndexConfiguration<K, V> conf,
-            final KeySegmentCache<K> keySegmentCache,
+            final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry) {
         this.conf = Vldtn.requireNonNull(conf, "conf");
-        this.keySegmentCache = Vldtn.requireNonNull(keySegmentCache,
-                "keySegmentCache");
+        this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
+                "keyToSegmentMap");
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
         this.splitCoordinator = new SegmentAsyncSplitCoordinator<>(conf,
-                keySegmentCache, segmentRegistry,
+                keyToSegmentMap, segmentRegistry,
                 segmentRegistry.getSplitExecutor());
         this.maintenancePolicy = new SegmentMaintenancePolicyThreshold<>(
                 conf.getMaxNumberOfKeysInSegmentWriteCache(),
@@ -44,8 +44,8 @@ final class SegmentMaintenanceCoordinator<K, V> {
         if (!segmentRegistry.isSegmentInstance(segmentId, segment)) {
             return;
         }
-        if (!keySegmentCache.isKeyMappedToSegment(key, segmentId)
-                || !keySegmentCache.isMappingValid(key, segmentId,
+        if (!keyToSegmentMap.isKeyMappedToSegment(key, segmentId)
+                || !keyToSegmentMap.isMappingValid(key, segmentId,
                         mappingVersion)) {
             return;
         }

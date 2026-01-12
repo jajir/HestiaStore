@@ -16,15 +16,15 @@ import org.hestiastore.index.segment.SegmentResultStatus;
  */
 final class SegmentIndexCore<K, V> {
 
-    private final KeySegmentCache<K> keySegmentCache;
+    private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentMaintenanceCoordinator<K, V> maintenanceCoordinator;
 
-    SegmentIndexCore(final KeySegmentCache<K> keySegmentCache,
+    SegmentIndexCore(final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final SegmentMaintenanceCoordinator<K, V> maintenanceCoordinator) {
-        this.keySegmentCache = Vldtn.requireNonNull(keySegmentCache,
-                "keySegmentCache");
+        this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
+                "keyToSegmentMap");
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
         this.maintenanceCoordinator = Vldtn.requireNonNull(
@@ -32,7 +32,7 @@ final class SegmentIndexCore<K, V> {
     }
 
     IndexResult<V> get(final K key) {
-        final SegmentId segmentId = keySegmentCache.findSegmentId(key);
+        final SegmentId segmentId = keyToSegmentMap.findSegmentId(key);
         if (segmentId == null) {
             return IndexResult.ok(null);
         }
@@ -51,13 +51,13 @@ final class SegmentIndexCore<K, V> {
     }
 
     IndexResult<Void> put(final K key, final V value) {
-        KeySegmentCache.Snapshot<K> snapshot = keySegmentCache.snapshot();
+        KeyToSegmentMap.Snapshot<K> snapshot = keyToSegmentMap.snapshot();
         SegmentId segmentId = snapshot.findSegmentId(key);
         if (segmentId == null) {
-            if (!keySegmentCache.tryExtendMaxKey(key, snapshot)) {
+            if (!keyToSegmentMap.tryExtendMaxKey(key, snapshot)) {
                 return IndexResult.busy();
             }
-            snapshot = keySegmentCache.snapshot();
+            snapshot = keyToSegmentMap.snapshot();
             segmentId = snapshot.findSegmentId(key);
             if (segmentId == null) {
                 return IndexResult.busy();
@@ -67,7 +67,7 @@ final class SegmentIndexCore<K, V> {
         if (segment.wasClosed()) {
             return IndexResult.busy();
         }
-        if (!keySegmentCache.isMappingValid(key, segmentId,
+        if (!keyToSegmentMap.isMappingValid(key, segmentId,
                 snapshot.version())) {
             return IndexResult.busy();
         }

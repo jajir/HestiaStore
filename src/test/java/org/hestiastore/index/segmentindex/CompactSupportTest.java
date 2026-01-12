@@ -30,7 +30,7 @@ class CompactSupportTest {
     private SegmentRegistry<Integer, String> segmentRegistry;
 
     @Mock
-    private KeySegmentCache<Integer> keySegmentCache;
+    private KeyToSegmentMap<Integer> keyToSegmentMap;
 
     @Mock
     private Segment<Integer, String> segment0;
@@ -39,7 +39,7 @@ class CompactSupportTest {
     private Segment<Integer, String> segment1;
 
     private CompactSupport<Integer, String> newSupport() {
-        return new CompactSupport<>(segmentRegistry, keySegmentCache,
+        return new CompactSupport<>(segmentRegistry, keyToSegmentMap,
                 new TypeDescriptorInteger().getComparator());
     }
 
@@ -54,8 +54,8 @@ class CompactSupportTest {
     @Test
     void first_entry_defers_flush() {
         final CompactSupport<Integer, String> cs = newSupport();
-        when(keySegmentCache.insertKeyToSegment(1))
-                .thenReturn(KeySegmentCache.FIRST_SEGMENT_ID);
+        when(keyToSegmentMap.insertKeyToSegment(1))
+                .thenReturn(KeyToSegmentMap.FIRST_SEGMENT_ID);
 
         cs.compact(Entry.of(1, "A"));
 
@@ -66,9 +66,9 @@ class CompactSupportTest {
     @Test
     void same_segment_multiple_entries_no_flush_until_change() {
         final CompactSupport<Integer, String> cs = newSupport();
-        final SegmentId seg0 = KeySegmentCache.FIRST_SEGMENT_ID;
-        when(keySegmentCache.insertKeyToSegment(1)).thenReturn(seg0);
-        when(keySegmentCache.insertKeyToSegment(2)).thenReturn(seg0);
+        final SegmentId seg0 = KeyToSegmentMap.FIRST_SEGMENT_ID;
+        when(keyToSegmentMap.insertKeyToSegment(1)).thenReturn(seg0);
+        when(keyToSegmentMap.insertKeyToSegment(2)).thenReturn(seg0);
 
         cs.compact(Entry.of(1, "A"));
         cs.compact(Entry.of(2, "B"));
@@ -80,12 +80,12 @@ class CompactSupportTest {
     @Test
     void segment_change_triggers_flush_and_records_first_segment() {
         final CompactSupport<Integer, String> cs = newSupport();
-        final SegmentId seg0 = KeySegmentCache.FIRST_SEGMENT_ID;
+        final SegmentId seg0 = KeyToSegmentMap.FIRST_SEGMENT_ID;
         final SegmentId seg1 = SegmentId.of(1);
 
-        when(keySegmentCache.insertKeyToSegment(1)).thenReturn(seg0);
-        when(keySegmentCache.insertKeyToSegment(2)).thenReturn(seg0);
-        when(keySegmentCache.insertKeyToSegment(100)).thenReturn(seg1);
+        when(keyToSegmentMap.insertKeyToSegment(1)).thenReturn(seg0);
+        when(keyToSegmentMap.insertKeyToSegment(2)).thenReturn(seg0);
+        when(keyToSegmentMap.insertKeyToSegment(100)).thenReturn(seg1);
 
         when(segmentRegistry.getSegment(seg0)).thenReturn(segment0);
         when(segment0.put(any(), any())).thenReturn(SegmentResult.ok());
@@ -102,8 +102,8 @@ class CompactSupportTest {
         verify(segment0).flush();
 
         // because seg0 is FIRST_SEGMENT_ID, cache gets updated with max key (2) and flushed
-        verify(keySegmentCache, atLeastOnce()).insertKeyToSegment(eq(2));
-        verify(keySegmentCache).optionalyFlush();
+        verify(keyToSegmentMap, atLeastOnce()).insertKeyToSegment(eq(2));
+        verify(keyToSegmentMap).optionalyFlush();
 
         // eligible now contains seg0 only
         assertEquals(List.of(seg0), cs.getEligibleSegmentIds());
@@ -114,8 +114,8 @@ class CompactSupportTest {
         final CompactSupport<Integer, String> cs = newSupport();
         final SegmentId seg1 = SegmentId.of(1);
 
-        when(keySegmentCache.insertKeyToSegment(10)).thenReturn(seg1);
-        when(keySegmentCache.insertKeyToSegment(11)).thenReturn(seg1);
+        when(keyToSegmentMap.insertKeyToSegment(10)).thenReturn(seg1);
+        when(keyToSegmentMap.insertKeyToSegment(11)).thenReturn(seg1);
         when(segmentRegistry.getSegment(seg1)).thenReturn(segment1);
         when(segment1.put(any(), any())).thenReturn(SegmentResult.ok());
         when(segment1.flush()).thenReturn(okMaintenance());

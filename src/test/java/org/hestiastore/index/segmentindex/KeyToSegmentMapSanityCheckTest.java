@@ -10,7 +10,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 import org.junit.jupiter.api.Test;
 
-class KeySegmentCacheSanityCheckTest {
+class KeyToSegmentMapSanityCheckTest {
 
     private final TypeDescriptorShortString stringTd = new TypeDescriptorShortString();
     private final TypeDescriptorSegmentId integerTd = new TypeDescriptorSegmentId();
@@ -38,7 +38,7 @@ class KeySegmentCacheSanityCheckTest {
             writer.write(Entry.of("fff", SegmentId.of(3)));
         });
         assertThrows(IllegalStateException.class, () -> {
-            try (KeySegmentCache<String> fif = new KeySegmentCache<>(
+            try (KeyToSegmentMap<String> fif = new KeyToSegmentMap<>(
                     org.hestiastore.index.directory.async.AsyncDirectoryAdapter
                             .wrap(directory),
                     stringTd)) {

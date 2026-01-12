@@ -33,7 +33,7 @@ class SegmentIndexConsistencyCheckerTest {
     private static final Integer SEGMENT_MAX_KEY = 73;
 
     @Mock
-    private KeySegmentCache<Integer> keySegmentCache;
+    private KeyToSegmentMap<Integer> keyToSegmentMap;
 
     @Mock
     private SegmentRegistry<Integer, String> segmentRegistry;
@@ -47,7 +47,7 @@ class SegmentIndexConsistencyCheckerTest {
 
     @Test
     void test_noSegments() {
-        when(keySegmentCache.getSegmentsAsStream()).thenReturn(Stream.empty());
+        when(keyToSegmentMap.getSegmentsAsStream()).thenReturn(Stream.empty());
 
         checker.checkAndRepairConsistency();
 
@@ -56,7 +56,7 @@ class SegmentIndexConsistencyCheckerTest {
 
     @Test
     void test_missingSegment() {
-        when(keySegmentCache.getSegmentsAsStream())
+        when(keyToSegmentMap.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
         when(segmentRegistry.getSegment(SEGMENT_ID)).thenReturn(null);
 
@@ -72,7 +72,7 @@ class SegmentIndexConsistencyCheckerTest {
 
     @Test
     void test_oneSegment_segmentKey_is_null() {
-        when(keySegmentCache.getSegmentsAsStream())
+        when(keyToSegmentMap.getSegmentsAsStream())
                 .thenReturn(Stream.of(Entry.of(null, SEGMENT_ID)));
 
         final Exception e = assertThrows(IndexException.class,
@@ -86,7 +86,7 @@ class SegmentIndexConsistencyCheckerTest {
 
     @Test
     void test_oneSegment_segmentId_is_null() {
-        when(keySegmentCache.getSegmentsAsStream())
+        when(keyToSegmentMap.getSegmentsAsStream())
                 .thenReturn(Stream.of(Entry.of(SEGMENT_MAX_KEY, null)));
 
         final Exception e = assertThrows(IndexException.class,
@@ -100,7 +100,7 @@ class SegmentIndexConsistencyCheckerTest {
 
     @Test
     void test_oneSegment_segmentMaxKey_is_null_removes_segment() {
-        when(keySegmentCache.getSegmentsAsStream())
+        when(keyToSegmentMap.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
         when(segmentRegistry.getSegment(SEGMENT_ID)).thenReturn(segment);
         when(segment.checkAndRepairConsistency()).thenReturn(null);
@@ -112,13 +112,13 @@ class SegmentIndexConsistencyCheckerTest {
         checker.checkAndRepairConsistency();
 
         verify(segmentRegistry).removeSegment(SEGMENT_ID);
-        verify(keySegmentCache).removeSegment(SEGMENT_ID);
-        verify(keySegmentCache).optionalyFlush();
+        verify(keyToSegmentMap).removeSegment(SEGMENT_ID);
+        verify(keyToSegmentMap).optionalyFlush();
     }
 
     @Test
     void test_oneSegment_segmentMaxKeyIsHigher() {
-        when(keySegmentCache.getSegmentsAsStream())
+        when(keyToSegmentMap.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
         when(segmentRegistry.getSegment(SEGMENT_ID)).thenReturn(segment);
         when(segment.checkAndRepairConsistency())
@@ -135,7 +135,7 @@ class SegmentIndexConsistencyCheckerTest {
 
     @Test
     void test_oneSegment() {
-        when(keySegmentCache.getSegmentsAsStream())
+        when(keyToSegmentMap.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
         when(segmentRegistry.getSegment(SEGMENT_ID)).thenReturn(segment);
         when(segment.checkAndRepairConsistency()).thenReturn(SEGMENT_MAX_KEY);
@@ -149,7 +149,7 @@ class SegmentIndexConsistencyCheckerTest {
 
     @BeforeEach
     void setUp() {
-        checker = new IndexConsistencyChecker<>(keySegmentCache,
+        checker = new IndexConsistencyChecker<>(keyToSegmentMap,
                 segmentRegistry, TYPE_DESCRIPTOR_INTEGER);
         segmentPair = Entry.of(SEGMENT_MAX_KEY, SEGMENT_ID);
     }

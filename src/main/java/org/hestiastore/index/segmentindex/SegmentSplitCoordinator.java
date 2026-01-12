@@ -24,17 +24,17 @@ public class SegmentSplitCoordinator<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final IndexConfiguration<K, V> conf;
-    private final KeySegmentCache<K> keySegmentCache;
+    private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentFilesRenamer filesRenamer = new SegmentFilesRenamer();
     private final IndexRetryPolicy retryPolicy;
 
     SegmentSplitCoordinator(final IndexConfiguration<K, V> conf,
-            final KeySegmentCache<K> keySegmentCache,
+            final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry) {
         this.conf = Vldtn.requireNonNull(conf, "conf");
-        this.keySegmentCache = Vldtn.requireNonNull(keySegmentCache,
-                "keySegmentCache");
+        this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
+                "keyToSegmentMap");
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
         this.retryPolicy = new IndexRetryPolicy(
@@ -95,8 +95,8 @@ public class SegmentSplitCoordinator<K, V> {
         if (!segmentRegistry.isSegmentInstance(segmentId, segment)) {
             return false;
         }
-        final SegmentId lowerSegmentId = keySegmentCache.findNewSegmentId();
-        final SegmentId upperSegmentId = keySegmentCache.findNewSegmentId();
+        final SegmentId lowerSegmentId = keyToSegmentMap.findNewSegmentId();
+        final SegmentId upperSegmentId = keyToSegmentMap.findNewSegmentId();
         final SegmentWriterTxFactory<K, V> writerTxFactory = id -> segmentRegistry
                 .newSegmentBuilder(id).openWriterTx();
         final SegmentSplitter<K, V> splitter = new SegmentSplitter<>(segment,
@@ -147,9 +147,9 @@ public class SegmentSplitCoordinator<K, V> {
             final SegmentSplitterResult<K, V> result) {
         if (result.isSplit()) {
             replaceCurrentWithSegment(segmentId, upperSegmentId);
-            keySegmentCache.insertSegment(result.getMaxKey(),
+            keyToSegmentMap.insertSegment(result.getMaxKey(),
                     result.getSegmentId());
-            keySegmentCache.optionalyFlush();
+            keyToSegmentMap.optionalyFlush();
             logger.debug("Splitting of segment '{}' to '{}' is done.",
                     segmentId, result.getSegmentId());
             final SplitOutcome outcome = new SplitOutcome(true, segmentId,
@@ -160,8 +160,8 @@ public class SegmentSplitCoordinator<K, V> {
             return outcome;
         } else {
             replaceCurrentWithSegment(segmentId, result.getSegmentId());
-            keySegmentCache.updateSegmentMaxKey(segmentId, result.getMaxKey());
-            keySegmentCache.optionalyFlush();
+            keyToSegmentMap.updateSegmentMaxKey(segmentId, result.getMaxKey());
+            keyToSegmentMap.optionalyFlush();
             logger.debug(
                     "Splitting of segment '{}' is done, "
                             + "but at the end it was compacting.",

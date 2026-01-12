@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
  *
  * @param <K>
  */
-public final class KeySegmentCache<K> extends AbstractCloseableResource {
+public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private static final TypeDescriptorSegmentId tdSegId = new TypeDescriptorSegmentId();
@@ -62,7 +62,7 @@ public final class KeySegmentCache<K> extends AbstractCloseableResource {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final Lock writeLock = lock.writeLock();
 
-    KeySegmentCache(final AsyncDirectory directoryFacade,
+    KeyToSegmentMap(final AsyncDirectory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor) {
         Vldtn.requireNonNull(directoryFacade, "directoryFacade");
         Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");

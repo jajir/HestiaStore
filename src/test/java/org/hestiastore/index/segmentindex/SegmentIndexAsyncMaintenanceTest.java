@@ -60,7 +60,7 @@ class SegmentIndexAsyncMaintenanceTest {
         try {
             index.put(1, "one");
 
-            final SegmentId segmentId = readKeySegmentCache(index)
+            final SegmentId segmentId = readKeyToSegmentMap(index)
                     .findSegmentId(1);
             final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
                     index);
@@ -91,7 +91,7 @@ class SegmentIndexAsyncMaintenanceTest {
         try {
             index.put(1, "one");
 
-            final SegmentId segmentId = readKeySegmentCache(index)
+            final SegmentId segmentId = readKeyToSegmentMap(index)
                     .findSegmentId(1);
             final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
                     index);
@@ -193,16 +193,16 @@ class SegmentIndexAsyncMaintenanceTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static <K, V> KeySegmentCache<K> readKeySegmentCache(
+    private static <K, V> KeyToSegmentMap<K> readKeyToSegmentMap(
             final SegmentIndexImpl<K, V> index) {
         try {
             final Field field = SegmentIndexImpl.class
-                    .getDeclaredField("keySegmentCache");
+                    .getDeclaredField("keyToSegmentMap");
             field.setAccessible(true);
-            return (KeySegmentCache<K>) field.get(index);
+            return (KeyToSegmentMap<K>) field.get(index);
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
-                    "Unable to read keySegmentCache for test", ex);
+                    "Unable to read keyToSegmentMap for test", ex);
         }
     }
 

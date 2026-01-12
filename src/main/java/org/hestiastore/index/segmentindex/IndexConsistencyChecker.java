@@ -28,22 +28,22 @@ public class IndexConsistencyChecker<K, V> {
             + "File 'index.map' containing information about segments is corrupted. ";
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final SegmentRegistry<K, V> segmentRegistry;
-    private final KeySegmentCache<K> keySegmentCache;
+    private final KeyToSegmentMap<K> keyToSegmentMap;
     private final Comparator<K> keyComparator;
 
-    IndexConsistencyChecker(final KeySegmentCache<K> keySegmentCache,
+    IndexConsistencyChecker(final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final TypeDescriptor<K> keyTypeDescriptor) {
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
-        this.keySegmentCache = Vldtn.requireNonNull(keySegmentCache,
-                "keySegmentCache");
+        this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
+                "keyToSegmentMap");
         Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
         this.keyComparator = keyTypeDescriptor.getComparator();
     }
 
     public void checkAndRepairConsistency() {
-        keySegmentCache.getSegmentsAsStream().forEach(segmentPair -> {
+        keyToSegmentMap.getSegmentsAsStream().forEach(segmentPair -> {
             final K segmentKey = segmentPair.getKey();
             if (segmentKey == null) {
                 throw new IndexException(ERROR_MSG + "Segment key is null.");
@@ -81,8 +81,8 @@ public class IndexConsistencyChecker<K, V> {
         }
         logger.warn("Segment '{}' is empty. Removing it from index map.",
                 segmentId);
-        keySegmentCache.removeSegment(segmentId);
-        keySegmentCache.optionalyFlush();
+        keyToSegmentMap.removeSegment(segmentId);
+        keyToSegmentMap.optionalyFlush();
         segmentRegistry.removeSegment(segmentId);
     }
 

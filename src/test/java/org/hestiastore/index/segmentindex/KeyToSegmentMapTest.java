@@ -16,18 +16,18 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.Test;
 
-class KeySegmentCacheTest {
+class KeyToSegmentMapTest {
 
     @Test
     void findNewSegmentIdUsesMaxPlusOne() {
-        final KeySegmentCache<Integer> cache = newCacheWithEntries(List.of(
+        final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of(
                 Entry.of(10, SegmentId.of(0)), Entry.of(20, SegmentId.of(2))));
         assertEquals(SegmentId.of(3), cache.findNewSegmentId());
     }
 
     @Test
     void findNewSegmentIdUsesHighestIdNotKeyOrder() {
-        final KeySegmentCache<Integer> cache = newCacheWithEntries(List.of(
+        final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of(
                 Entry.of(10, SegmentId.of(5)), Entry.of(20, SegmentId.of(1))));
         // highest id is 5 even though its key is lower
         assertEquals(SegmentId.of(6), cache.findNewSegmentId());
@@ -35,20 +35,20 @@ class KeySegmentCacheTest {
 
     @Test
     void findNewSegmentIdBridgesGaps() {
-        final KeySegmentCache<Integer> cache = newCacheWithEntries(List.of(
+        final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of(
                 Entry.of(5, SegmentId.of(1)), Entry.of(6, SegmentId.of(3))));
         assertEquals(SegmentId.of(4), cache.findNewSegmentId());
     }
 
     @Test
     void findNewSegmentIdStartsAtZeroWhenEmpty() {
-        final KeySegmentCache<Integer> cache = newCacheWithEntries(List.of());
+        final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of());
         assertEquals(SegmentId.of(0), cache.findNewSegmentId());
     }
 
     @Test
     void insertSegmentRejectsDuplicateId() {
-        final KeySegmentCache<Integer> cache = newCacheWithEntries(List.of());
+        final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of());
         cache.insertSegment(5, SegmentId.of(0));
         assertThrows(IllegalArgumentException.class,
                 () -> cache.insertSegment(6, SegmentId.of(0)));
@@ -56,8 +56,8 @@ class KeySegmentCacheTest {
 
     @Test
     void synchronizedAdapterDelegatesToCache() {
-        final KeySegmentCache<Integer> cache = newCacheWithEntries(List.of());
-        final KeySegmentCacheSynchronizedAdapter<Integer> adapter = new KeySegmentCacheSynchronizedAdapter<>(
+        final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of());
+        final KeyToSegmentMapSynchronizedAdapter<Integer> adapter = new KeyToSegmentMapSynchronizedAdapter<>(
                 cache);
 
         adapter.insertSegment(1, SegmentId.of(0));
@@ -70,8 +70,8 @@ class KeySegmentCacheTest {
 
     @Test
     void synchronizedAdapterHandlesConcurrentInsertions() throws Exception {
-        final KeySegmentCache<Integer> cache = newCacheWithEntries(List.of());
-        final KeySegmentCacheSynchronizedAdapter<Integer> adapter = new KeySegmentCacheSynchronizedAdapter<>(
+        final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of());
+        final KeyToSegmentMapSynchronizedAdapter<Integer> adapter = new KeyToSegmentMapSynchronizedAdapter<>(
                 cache);
         final int threads = 4;
         final int perThread = 50;
@@ -112,7 +112,7 @@ class KeySegmentCacheTest {
         assertEquals(threads * perThread, adapter.getSegmentIds().size());
     }
 
-    private KeySegmentCache<Integer> newCacheWithEntries(
+    private KeyToSegmentMap<Integer> newCacheWithEntries(
             final List<Entry<Integer, SegmentId>> entries) {
         final MemDirectory dir = new MemDirectory();
         final var sdf = org.hestiastore.index.sorteddatafile.SortedDataFile
@@ -129,7 +129,7 @@ class KeySegmentCacheTest {
                 .execute(writer -> entries.stream().sorted(
                         (e1, e2) -> Integer.compare(e1.getKey(), e2.getKey()))
                         .forEach(writer::write));
-        return new KeySegmentCache<>(
+        return new KeyToSegmentMap<>(
                 org.hestiastore.index.directory.async.AsyncDirectoryAdapter
                         .wrap(dir),
                 new TypeDescriptorInteger());
