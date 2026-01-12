@@ -65,7 +65,7 @@ class SegmentIndexAsyncMaintenanceTest {
             final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
                     index);
             final Segment<Integer, String> originalSegment = registry
-                    .getSegment(segmentId);
+                    .getSegment(segmentId).getValue();
             final CountDownLatch started = new CountDownLatch(1);
             final AtomicReference<CompletableFuture<Void>> futureRef = new AtomicReference<>();
             final Segment<Integer, String> blockingSegment = mockBlockingSegment(
@@ -96,7 +96,7 @@ class SegmentIndexAsyncMaintenanceTest {
             final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
                     index);
             final Segment<Integer, String> originalSegment = registry
-                    .getSegment(segmentId);
+                    .getSegment(segmentId).getValue();
             final CountDownLatch started = new CountDownLatch(1);
             final AtomicReference<CompletableFuture<Void>> futureRef = new AtomicReference<>();
             final Segment<Integer, String> blockingSegment = mockBlockingSegment(

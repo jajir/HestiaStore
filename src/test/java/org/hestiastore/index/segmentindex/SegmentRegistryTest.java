@@ -16,6 +16,8 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segment.SegmentResultStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,6 +45,9 @@ class SegmentRegistryTest {
 
     @BeforeEach
     void setUp() {
+        Mockito.when(conf.getNumberOfSegmentIndexMaintenanceThreads())
+                .thenReturn(1);
+        Mockito.when(conf.getNumberOfIndexMaintenanceThreads()).thenReturn(1);
         registry = new SegmentRegistry<>(directoryFacade, KEY_DESCRIPTOR,
                 VALUE_DESCRIPTOR, conf);
     }
@@ -59,12 +64,19 @@ class SegmentRegistryTest {
         stubSegmentConfig();
         final SegmentId segmentId = SegmentId.of(1);
 
-        final Segment<Integer, String> first = registry.getSegment(segmentId);
-        final Segment<Integer, String> second = registry.getSegment(segmentId);
+        final SegmentResult<Segment<Integer, String>> firstResult = registry
+                .getSegment(segmentId);
+        final SegmentResult<Segment<Integer, String>> secondResult = registry
+                .getSegment(segmentId);
+        assertSame(SegmentResultStatus.OK, firstResult.getStatus());
+        assertSame(SegmentResultStatus.OK, secondResult.getStatus());
+        final Segment<Integer, String> first = firstResult.getValue();
+        final Segment<Integer, String> second = secondResult.getValue();
 
         assertSame(first, second);
         first.close();
-        final Segment<Integer, String> third = registry.getSegment(segmentId);
+        final Segment<Integer, String> third = registry.getSegment(segmentId)
+                .getValue();
 
         assertNotSame(first, third);
     }
@@ -75,15 +87,16 @@ class SegmentRegistryTest {
         final SegmentId segmentId = SegmentId.of(1);
         final SegmentId otherId = SegmentId.of(2);
 
-        final Segment<Integer, String> segment = registry.getSegment(segmentId);
+        final Segment<Integer, String> segment = registry.getSegment(segmentId)
+                .getValue();
         final Segment<Integer, String> otherSegment = registry
-                .getSegment(otherId);
+                .getSegment(otherId).getValue();
 
         assertFalse(registry.evictSegmentIfSame(segmentId, otherSegment));
-        assertSame(segment, registry.getSegment(segmentId));
+        assertSame(segment, registry.getSegment(segmentId).getValue());
 
         assertTrue(registry.evictSegmentIfSame(segmentId, segment));
-        assertNotSame(segment, registry.getSegment(segmentId));
+        assertNotSame(segment, registry.getSegment(segmentId).getValue());
     }
 
     @Test
@@ -96,6 +109,24 @@ class SegmentRegistryTest {
                 VALUE_DESCRIPTOR, conf);
 
         assertNotNull(registry.getMaintenanceExecutor());
+    }
+
+    @Test
+    void getSegment_returnsBusyWhileSplitInFlight() {
+        stubSegmentConfig();
+        final SegmentId segmentId = SegmentId.of(1);
+
+        registry.markSplitInFlight(segmentId);
+
+        final SegmentResult<Segment<Integer, String>> busy = registry
+                .getSegment(segmentId);
+        assertSame(SegmentResultStatus.BUSY, busy.getStatus());
+
+        registry.clearSplitInFlight(segmentId);
+        final SegmentResult<Segment<Integer, String>> ok = registry
+                .getSegment(segmentId);
+        assertSame(SegmentResultStatus.OK, ok.getStatus());
+        assertNotNull(ok.getValue());
     }
 
     private void stubSegmentConfig() {

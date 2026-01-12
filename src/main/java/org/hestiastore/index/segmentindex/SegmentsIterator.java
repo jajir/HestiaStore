@@ -55,7 +55,21 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
             logger.debug("Starting processing segment '{}' which is {} of {}",
                     segmentId, position, ids.size());
             position++;
-            final Segment<K, V> segment = segmentRegistry.getSegment(segmentId);
+            final Segment<K, V> segment;
+            while (true) {
+                final SegmentResult<Segment<K, V>> segmentResult = segmentRegistry
+                        .getSegment(segmentId);
+                if (segmentResult.getStatus() == SegmentResultStatus.BUSY) {
+                    continue;
+                }
+                if (segmentResult.getStatus() != SegmentResultStatus.OK) {
+                    throw new org.hestiastore.index.IndexException(String.format(
+                            "Segment '%s' failed to load: %s", segmentId,
+                            segmentResult.getStatus()));
+                }
+                segment = segmentResult.getValue();
+                break;
+            }
             while (true) {
                 final SegmentResult<EntryIterator<K, V>> result = segment
                         .openIterator();

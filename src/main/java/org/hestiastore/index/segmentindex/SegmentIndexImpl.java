@@ -17,6 +17,8 @@ import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
+import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segment.SegmentResultStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -443,8 +445,23 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     protected void invalidateSegmentIterators() {
         keyToSegmentMap.getSegmentIds().forEach(segmentId -> {
-            final Segment<K, V> segment = segmentRegistry.getSegment(segmentId);
-            segment.invalidateIterators();
+            final long startNanos = retryPolicy.startNanos();
+            while (true) {
+                final SegmentResult<Segment<K, V>> segmentResult = segmentRegistry
+                        .getSegment(segmentId);
+                if (segmentResult.getStatus() == SegmentResultStatus.OK) {
+                    segmentResult.getValue().invalidateIterators();
+                    return;
+                }
+                if (segmentResult.getStatus() == SegmentResultStatus.BUSY) {
+                    retryPolicy.backoffOrThrow(startNanos,
+                            "invalidateIterators", segmentId);
+                    continue;
+                }
+                throw new IndexException(String.format(
+                        "Segment '%s' failed to load: %s", segmentId,
+                        segmentResult.getStatus()));
+            }
         });
     }
 

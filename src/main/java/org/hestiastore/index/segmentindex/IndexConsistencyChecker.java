@@ -53,11 +53,21 @@ public class IndexConsistencyChecker<K, V> {
                 throw new IndexException(ERROR_MSG + "Segment id is null.");
             }
             logger.debug("checking segment '{}'.", segmentId);
-            final Segment<K, V> segment = segmentRegistry.getSegment(segmentId);
-            if (segment == null) {
-                throw new IndexException(String.format(
-                        ERROR_MSG + "Segment '%s' is not found in index.",
-                        segmentId));
+            final Segment<K, V> segment;
+            while (true) {
+                final SegmentResult<Segment<K, V>> segmentResult = segmentRegistry
+                        .getSegment(segmentId);
+                if (segmentResult.getStatus() == SegmentResultStatus.BUSY) {
+                    Thread.onSpinWait();
+                    continue;
+                }
+                if (segmentResult.getStatus() != SegmentResultStatus.OK) {
+                    throw new IndexException(String.format(
+                            ERROR_MSG + "Segment '%s' is not found in index.",
+                            segmentId));
+                }
+                segment = segmentResult.getValue();
+                break;
             }
             final K maxKey = segment.checkAndRepairConsistency();
             if (maxKey == null) {

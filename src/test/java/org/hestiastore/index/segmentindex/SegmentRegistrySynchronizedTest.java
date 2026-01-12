@@ -24,13 +24,16 @@ class SegmentRegistrySynchronizedTest {
                 buildConf());
         final SegmentId segmentId = SegmentId.of(1);
 
-        final Segment<Integer, String> first = registry.getSegment(segmentId);
-        final Segment<Integer, String> second = registry.getSegment(segmentId);
+        final Segment<Integer, String> first = registry.getSegment(segmentId)
+                .getValue();
+        final Segment<Integer, String> second = registry.getSegment(segmentId)
+                .getValue();
 
         assertSame(first, second);
 
         registry.removeSegment(segmentId);
-        final Segment<Integer, String> third = registry.getSegment(segmentId);
+        final Segment<Integer, String> third = registry.getSegment(segmentId)
+                .getValue();
 
         assertNotSame(first, third);
     }

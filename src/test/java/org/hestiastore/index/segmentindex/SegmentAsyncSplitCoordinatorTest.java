@@ -29,12 +29,15 @@ class SegmentAsyncSplitCoordinatorTest {
 
     @Mock
     private SegmentSplitCoordinator<Integer, String> splitCoordinator;
+    @Mock
+    private SegmentRegistry<Integer, String> segmentRegistry;
 
     @Test
     void constructor_rejectsMissingExecutor() {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> new SegmentAsyncSplitCoordinator<>(splitCoordinator,
+                        segmentRegistry,
                         null));
 
         assertEquals("Property 'splitExecutor' must not be null.",
@@ -55,7 +58,7 @@ class SegmentAsyncSplitCoordinatorTest {
         when(splitCoordinator.optionallySplit(segment, 10L)).thenReturn(true);
 
         final SegmentAsyncSplitCoordinator<Integer, String> coordinator = new SegmentAsyncSplitCoordinator<>(
-                splitCoordinator, executor);
+                splitCoordinator, segmentRegistry, executor);
 
         final SegmentAsyncSplitCoordinator.SplitHandle first = coordinator
                 .optionallySplitAsync(segment, 10L);
@@ -71,5 +74,7 @@ class SegmentAsyncSplitCoordinatorTest {
         assertTrue(first.completion().toCompletableFuture()
                 .get(1, TimeUnit.SECONDS));
         verify(splitCoordinator, times(1)).optionallySplit(segment, 10L);
+        verify(segmentRegistry, times(1)).markSplitInFlight(SegmentId.of(1));
+        verify(segmentRegistry, times(1)).clearSplitInFlight(SegmentId.of(1));
     }
 }

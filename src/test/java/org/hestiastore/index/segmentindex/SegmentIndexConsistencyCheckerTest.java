@@ -60,7 +60,8 @@ class SegmentIndexConsistencyCheckerTest {
     void test_missingSegment() {
         when(keyToSegmentMap.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
-        when(segmentRegistry.getSegment(SEGMENT_ID)).thenReturn(null);
+        when(segmentRegistry.getSegment(SEGMENT_ID))
+                .thenReturn(SegmentResult.error());
 
         final Exception e = assertThrows(IndexException.class,
                 () -> checker.checkAndRepairConsistency());
@@ -104,7 +105,8 @@ class SegmentIndexConsistencyCheckerTest {
     void test_oneSegment_segmentMaxKey_is_null_removes_segment() {
         when(keyToSegmentMap.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
-        when(segmentRegistry.getSegment(SEGMENT_ID)).thenReturn(segment);
+        when(segmentRegistry.getSegment(SEGMENT_ID))
+                .thenReturn(SegmentResult.ok(segment));
         when(segment.checkAndRepairConsistency()).thenReturn(null);
         when(segment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
                 .thenReturn(SegmentResult.ok(
@@ -122,7 +124,8 @@ class SegmentIndexConsistencyCheckerTest {
     void test_oneSegment_segmentMaxKeyIsHigher() {
         when(keyToSegmentMap.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
-        when(segmentRegistry.getSegment(SEGMENT_ID)).thenReturn(segment);
+        when(segmentRegistry.getSegment(SEGMENT_ID))
+                .thenReturn(SegmentResult.ok(segment));
         when(segment.checkAndRepairConsistency())
                 .thenReturn(SEGMENT_MAX_KEY + 1);
 
@@ -139,7 +142,8 @@ class SegmentIndexConsistencyCheckerTest {
     void test_oneSegment() {
         when(keyToSegmentMap.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
-        when(segmentRegistry.getSegment(SEGMENT_ID)).thenReturn(segment);
+        when(segmentRegistry.getSegment(SEGMENT_ID))
+                .thenReturn(SegmentResult.ok(segment));
         when(segment.checkAndRepairConsistency()).thenReturn(SEGMENT_MAX_KEY);
 
         checker.checkAndRepairConsistency();
