@@ -481,7 +481,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         }
         final SegmentId segmentId = keyToSegmentMap.findSegmentId(key);
         if (segmentId == null) {
-            maintenanceCoordinator.awaitSplitsIdle(remainingMillis);
             return;
         }
         maintenanceCoordinator.awaitSplitCompletionIfInFlight(segmentId,

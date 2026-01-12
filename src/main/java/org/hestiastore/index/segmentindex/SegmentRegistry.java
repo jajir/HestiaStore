@@ -57,12 +57,12 @@ public class SegmentRegistry<K, V> {
                 .getNumberOfSegmentIndexMaintenanceThreads();
         final int threads = maintenanceThreadsConf.intValue();
         this.maintenanceExecutor = buildMaintenanceExecutor(threads,
-                "segment-async");
+                "segment-maintenance");
         final Integer splitThreadsConf = conf
                 .getNumberOfIndexMaintenanceThreads();
         final int splitThreads = splitThreadsConf.intValue();
         this.splitAsyncExecutor = new SplitAsyncExecutor(splitThreads,
-                "segment-split");
+                "index-maintenance");
         this.splitExecutor = splitAsyncExecutor.getExecutor();
     }
 
@@ -247,8 +247,7 @@ public class SegmentRegistry<K, V> {
         final int queueCapacity = Math.max(MIN_QUEUE_CAPACITY,
                 threads * QUEUE_CAPACITY_MULTIPLIER);
         return new ThreadPoolExecutor(threads, threads, 0L,
-                TimeUnit.MILLISECONDS,
-                new ArrayBlockingQueue<>(queueCapacity),
+                TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(queueCapacity),
                 namedThreadFactory(threadNamePrefix),
                 new ThreadPoolExecutor.CallerRunsPolicy());
     }
