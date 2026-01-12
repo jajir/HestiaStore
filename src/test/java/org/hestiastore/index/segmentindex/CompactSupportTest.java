@@ -89,7 +89,8 @@ class CompactSupportTest {
         when(keyToSegmentMap.insertKeyToSegment(2)).thenReturn(seg0);
         when(keyToSegmentMap.insertKeyToSegment(100)).thenReturn(seg1);
 
-        when(segmentRegistry.getSegment(seg0)).thenReturn(segment0);
+        when(segmentRegistry.getSegment(seg0))
+                .thenReturn(SegmentResult.ok(segment0));
         when(segment0.put(any(), any())).thenReturn(SegmentResult.ok());
         when(segment0.flush()).thenReturn(okMaintenance());
 
@@ -118,7 +119,8 @@ class CompactSupportTest {
 
         when(keyToSegmentMap.insertKeyToSegment(10)).thenReturn(seg1);
         when(keyToSegmentMap.insertKeyToSegment(11)).thenReturn(seg1);
-        when(segmentRegistry.getSegment(seg1)).thenReturn(segment1);
+        when(segmentRegistry.getSegment(seg1))
+                .thenReturn(SegmentResult.ok(segment1));
         when(segment1.put(any(), any())).thenReturn(SegmentResult.ok());
         when(segment1.flush()).thenReturn(okMaintenance());
 

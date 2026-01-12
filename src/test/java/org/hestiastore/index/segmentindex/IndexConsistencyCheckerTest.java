@@ -58,7 +58,8 @@ class IndexConsistencyCheckerTest {
         when(keyToSegmentMap.getSegmentsAsStream())
                 .thenReturn(Stream.of(
                         Entry.of(10, SegmentId.of(1))));
-        when(segmentRegistry.getSegment(SegmentId.of(1))).thenReturn(segment);
+        when(segmentRegistry.getSegment(SegmentId.of(1)))
+                .thenReturn(SegmentResult.ok(segment));
 
         checker.checkAndRepairConsistency();
 

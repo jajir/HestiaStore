@@ -1,7 +1,9 @@
 package org.hestiastore.index.segmentindex;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
@@ -15,12 +17,14 @@ import org.hestiastore.index.segment.SegmentDataSupplier;
 import org.hestiastore.index.segment.SegmentFiles;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentPropertiesManager;
+import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResources;
 import org.hestiastore.index.segment.SegmentResourcesImpl;
 
 public class SegmentRegistry<K, V> {
 
     private final Map<SegmentId, Segment<K, V>> segments = new HashMap<>();
+    private final Set<SegmentId> splitsInFlight = new HashSet<>();
 
     private final IndexConfiguration<K, V> conf;
     private final AsyncDirectory directoryFacade;
@@ -64,14 +68,27 @@ public class SegmentRegistry<K, V> {
         return splitExecutor;
     }
 
-    public Segment<K, V> getSegment(final SegmentId segmentId) {
+    public SegmentResult<Segment<K, V>> getSegment(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
+        if (splitsInFlight.contains(segmentId)) {
+            return SegmentResult.busy();
+        }
         Segment<K, V> out = segments.get(segmentId);
         if (out == null || out.wasClosed()) {
             out = instantiateSegment(segmentId);
             segments.put(segmentId, out);
         }
-        return out;
+        return SegmentResult.ok(out);
+    }
+
+    void markSplitInFlight(final SegmentId segmentId) {
+        Vldtn.requireNonNull(segmentId, "segmentId");
+        splitsInFlight.add(segmentId);
+    }
+
+    void clearSplitInFlight(final SegmentId segmentId) {
+        Vldtn.requireNonNull(segmentId, "segmentId");
+        splitsInFlight.remove(segmentId);
     }
 
     boolean isSegmentInstance(final SegmentId segmentId,

@@ -20,6 +20,7 @@ import org.hestiastore.index.segment.SegmentId;
 final class SegmentAsyncSplitCoordinator<K, V> {
 
     private final SegmentSplitCoordinator<K, V> splitCoordinator;
+    private final SegmentRegistry<K, V> segmentRegistry;
     private final Executor splitExecutor;
     private final Map<SegmentId, SplitInFlight<K, V>> inFlightSplits = new ConcurrentHashMap<>();
 
@@ -28,14 +29,17 @@ final class SegmentAsyncSplitCoordinator<K, V> {
             final SegmentRegistry<K, V> segmentRegistry,
             final Executor splitExecutor) {
         this(new SegmentSplitCoordinator<>(conf, keyToSegmentMap,
-                segmentRegistry), splitExecutor);
+                segmentRegistry), segmentRegistry, splitExecutor);
     }
 
     SegmentAsyncSplitCoordinator(
             final SegmentSplitCoordinator<K, V> splitCoordinator,
+            final SegmentRegistry<K, V> segmentRegistry,
             final Executor splitExecutor) {
         this.splitCoordinator = Vldtn.requireNonNull(splitCoordinator,
                 "splitCoordinator");
+        this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
+                "segmentRegistry");
         this.splitExecutor = Vldtn.requireNonNull(splitExecutor,
                 "splitExecutor");
     }
@@ -100,6 +104,7 @@ final class SegmentAsyncSplitCoordinator<K, V> {
                 handle);
         try {
             splitExecutor.execute(() -> {
+                segmentRegistry.markSplitInFlight(segmentId);
                 handle.markStarted();
                 try {
                     final boolean split = splitCoordinator.optionallySplit(
@@ -108,6 +113,7 @@ final class SegmentAsyncSplitCoordinator<K, V> {
                 } catch (final Throwable t) {
                     handle.completeExceptionally(t);
                 } finally {
+                    segmentRegistry.clearSplitInFlight(segmentId);
                     inFlightSplits.remove(segmentId, inFlight);
                 }
             });

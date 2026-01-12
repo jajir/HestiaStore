@@ -42,7 +42,7 @@ class SegmentIndexImplRetryTest {
             final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
                     index);
             final Segment<Integer, String> original = registry
-                    .getSegment(segmentId);
+                    .getSegment(segmentId).getValue();
 
             final Segment<Integer, String> segment = mock(Segment.class);
             final AtomicInteger attempts = new AtomicInteger();
@@ -80,7 +80,7 @@ class SegmentIndexImplRetryTest {
             final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
                     index);
             final Segment<Integer, String> original = registry
-                    .getSegment(segmentId);
+                    .getSegment(segmentId).getValue();
 
             final Segment<Integer, String> segment = mock(Segment.class);
             final AtomicInteger attempts = new AtomicInteger();

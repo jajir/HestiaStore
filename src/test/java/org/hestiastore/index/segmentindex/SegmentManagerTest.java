@@ -34,6 +34,8 @@ class SegmentManagerTest {
 
     @Test
     void test_getting_same_segmentId() {
+        when(conf.getNumberOfSegmentIndexMaintenanceThreads()).thenReturn(1);
+        when(conf.getNumberOfIndexMaintenanceThreads()).thenReturn(1);
         final SegmentRegistry<Integer, String> segmentRegistry = new SegmentRegistry<>(
                 org.hestiastore.index.directory.async.AsyncDirectoryAdapter
                         .wrap(directory),
@@ -53,11 +55,11 @@ class SegmentManagerTest {
                 .thenReturn(List.of(new ChunkFilterDoNothing()));
 
         final Segment<Integer, String> s1 = segmentRegistry
-                .getSegment(SegmentId.of(1));
+                .getSegment(SegmentId.of(1)).getValue();
         assertNotNull(s1);
 
         final Segment<Integer, String> s2 = segmentRegistry
-                .getSegment(SegmentId.of(1));
+                .getSegment(SegmentId.of(1)).getValue();
         assertNotNull(s1);
 
         /*
@@ -69,6 +71,8 @@ class SegmentManagerTest {
 
     @Test
     void test_close() {
+        when(conf.getNumberOfSegmentIndexMaintenanceThreads()).thenReturn(1);
+        when(conf.getNumberOfIndexMaintenanceThreads()).thenReturn(1);
         final SegmentRegistry<Integer, String> segmentRegistry = new SegmentRegistry<>(
                 org.hestiastore.index.directory.async.AsyncDirectoryAdapter
                         .wrap(directory),

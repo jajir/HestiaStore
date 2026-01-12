@@ -78,8 +78,21 @@ public class CompactSupport<K, V> {
             logger.debug("Flushing '{}' key value entries into segment '{}'.",
                     F.fmt(toSameSegment.size()), currentSegmentId);
         }
-        final Segment<K, V> segment = segmentRegistry
-                .getSegment(currentSegmentId);
+        final Segment<K, V> segment;
+        while (true) {
+            final SegmentResult<Segment<K, V>> segmentResult = segmentRegistry
+                    .getSegment(currentSegmentId);
+            if (segmentResult.getStatus() == SegmentResultStatus.BUSY) {
+                continue;
+            }
+            if (segmentResult.getStatus() != SegmentResultStatus.OK) {
+                throw new org.hestiastore.index.IndexException(String.format(
+                        "Segment '%s' failed to load: %s", currentSegmentId,
+                        segmentResult.getStatus()));
+            }
+            segment = segmentResult.getValue();
+            break;
+        }
         toSameSegment.forEach(entry -> {
             while (true) {
                 final SegmentResult<Void> result = segment.put(entry.getKey(),

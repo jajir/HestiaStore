@@ -25,7 +25,7 @@ class SegmentRegistryMaintenanceExecutorTest {
                 conf);
         final ExecutorService executor = registry.getMaintenanceExecutor();
         final Segment<Integer, String> segment = registry
-                .getSegment(SegmentId.of(1));
+                .getSegment(SegmentId.of(1)).getValue();
         segment.flush();
 
         assertFalse(executor.isShutdown());
