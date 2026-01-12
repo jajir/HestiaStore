@@ -11,7 +11,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 
 /**
- * Thread-safe adapter that delegates to a {@link KeySegmentCache} instance.
+ * Thread-safe adapter for {@link KeySegmentCache} backed by a read/write lock.
  */
 final class KeySegmentCacheSynchronizedAdapter<K>
         extends AbstractCloseableResource {
@@ -43,12 +43,52 @@ final class KeySegmentCacheSynchronizedAdapter<K>
         }
     }
 
-    public SegmentId findNewSegmentId() {
+    KeySegmentCache.Snapshot<K> snapshot() {
         readLock.lock();
+        try {
+            return delegate.snapshot();
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    boolean isMappingValid(final K key, final SegmentId expectedSegmentId,
+            final long expectedVersion) {
+        readLock.lock();
+        try {
+            return delegate.isMappingValid(key, expectedSegmentId,
+                    expectedVersion);
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    boolean isKeyMappedToSegment(final K key,
+            final SegmentId expectedSegmentId) {
+        readLock.lock();
+        try {
+            return delegate.isKeyMappedToSegment(key, expectedSegmentId);
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    public SegmentId findNewSegmentId() {
+        writeLock.lock();
         try {
             return delegate.findNewSegmentId();
         } finally {
-            readLock.unlock();
+            writeLock.unlock();
+        }
+    }
+
+    boolean tryExtendMaxKey(final K key,
+            final KeySegmentCache.Snapshot<K> snapshot) {
+        writeLock.lock();
+        try {
+            return delegate.tryExtendMaxKey(key, snapshot);
+        } finally {
+            writeLock.unlock();
         }
     }
 
@@ -70,15 +110,31 @@ final class KeySegmentCacheSynchronizedAdapter<K>
         }
     }
 
+    void updateSegmentMaxKey(final SegmentId segmentId, final K newMaxKey) {
+        writeLock.lock();
+        try {
+            delegate.updateSegmentMaxKey(segmentId, newMaxKey);
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    public void removeSegment(final SegmentId segmentId) {
+        writeLock.lock();
+        try {
+            delegate.removeSegment(segmentId);
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
     public Stream<Entry<K, SegmentId>> getSegmentsAsStream() {
-        final List<Entry<K, SegmentId>> snapshot;
         readLock.lock();
         try {
-            snapshot = delegate.getSegmentsAsStream().toList();
+            return delegate.getSegmentsAsStream();
         } finally {
             readLock.unlock();
         }
-        return snapshot.stream();
     }
 
     public List<SegmentId> getSegmentIds() {
