@@ -9,8 +9,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.AbstractCloseableResource;
@@ -35,6 +33,9 @@ import org.slf4j.LoggerFactory;
  * higher key value when it's necessary.
  *
  * Note that this is similar to scarce index, but still different.
+ *
+ * This class is not thread-safe. Use {@link KeyToSegmentMapSynchronizedAdapter}
+ * when accessing from multiple threads.
  * 
  * @author honza
  *
@@ -59,8 +60,6 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
     private boolean isDirty = false;
     private final AtomicInteger nextSegmentId;
     private final AtomicLong version = new AtomicLong(0);
-    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    private final Lock writeLock = lock.writeLock();
 
     KeyToSegmentMap(final AsyncDirectory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor) {
@@ -150,52 +149,41 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
     boolean tryExtendMaxKey(final K key, final Snapshot<K> snapshot) {
         Vldtn.requireNonNull(key, "key");
         Vldtn.requireNonNull(snapshot, "snapshot");
-        writeLock.lock();
-        try {
-            if (version.get() != snapshot.version()) {
-                return false;
-            }
-            if (list.isEmpty()) {
-                list.put(key, FIRST_SEGMENT_ID);
-                nextSegmentId.updateAndGet(
-                        current -> Math.max(current,
-                                FIRST_SEGMENT_ID.getId() + 1));
-                refreshSnapshot();
-                isDirty = true;
-                return true;
-            }
-            final Map.Entry<K, SegmentId> lastEntry = list.lastEntry();
-            if (keyComparator.compare(key, lastEntry.getKey()) > 0) {
-                list.remove(lastEntry.getKey());
-                list.put(key, lastEntry.getValue());
-                refreshSnapshot();
-                isDirty = true;
-            }
-            return true;
-        } finally {
-            writeLock.unlock();
+        if (version.get() != snapshot.version()) {
+            return false;
         }
+        if (list.isEmpty()) {
+            list.put(key, FIRST_SEGMENT_ID);
+            nextSegmentId.updateAndGet(current -> Math.max(current,
+                    FIRST_SEGMENT_ID.getId() + 1));
+            refreshSnapshot();
+            isDirty = true;
+            return true;
+        }
+        final Map.Entry<K, SegmentId> lastEntry = list.lastEntry();
+        if (keyComparator.compare(key, lastEntry.getKey()) > 0) {
+            list.remove(lastEntry.getKey());
+            list.put(key, lastEntry.getValue());
+            refreshSnapshot();
+            isDirty = true;
+        }
+        return true;
     }
 
     public SegmentId insertKeyToSegment(final K key) {
         ensureOpen();
         Vldtn.requireNonNull(key, "key");
-        writeLock.lock();
-        try {
-            final Entry<K, SegmentId> entry = localFindSegmentForKey(key, list);
-            if (entry == null) {
-                /*
-                 * Key is bigger that all key so it will at last segment. But key at
-                 * last segment is smaller than adding one. Because of that key have
-                 * to be upgraded.
-                 */
-                isDirty = true;
-                return updateMaxKey(key);
-            } else {
-                return entry.getValue();
-            }
-        } finally {
-            writeLock.unlock();
+        final Entry<K, SegmentId> entry = localFindSegmentForKey(key, list);
+        if (entry == null) {
+            /*
+             * Key is bigger that all key so it will at last segment. But key at
+             * last segment is smaller than adding one. Because of that key have
+             * to be upgraded.
+             */
+            isDirty = true;
+            return updateMaxKey(key);
+        } else {
+            return entry.getValue();
         }
     }
 
@@ -231,83 +219,68 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
     public void insertSegment(final K key, final SegmentId segmentId) {
         ensureOpen();
         Vldtn.requireNonNull(key, "key");
-        writeLock.lock();
-        try {
-            if (list.containsValue(segmentId)) {
-                throw new IllegalArgumentException(String.format(
-                        "Segment id '%s' already exists", segmentId));
-            }
-            list.put(key, segmentId);
-            refreshSnapshot();
-            isDirty = true;
-        } finally {
-            writeLock.unlock();
+        if (list.containsValue(segmentId)) {
+            throw new IllegalArgumentException(String.format(
+                    "Segment id '%s' already exists", segmentId));
         }
+        list.put(key, segmentId);
+        refreshSnapshot();
+        isDirty = true;
     }
 
     void updateSegmentMaxKey(final SegmentId segmentId, final K newMaxKey) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         Vldtn.requireNonNull(newMaxKey, "newMaxKey");
-        writeLock.lock();
-        try {
-            Map.Entry<K, SegmentId> existing = null;
-            for (final Map.Entry<K, SegmentId> entry : list.entrySet()) {
-                if (segmentId.equals(entry.getValue())) {
-                    existing = entry;
-                    break;
-                }
+        Map.Entry<K, SegmentId> existing = null;
+        for (final Map.Entry<K, SegmentId> entry : list.entrySet()) {
+            if (segmentId.equals(entry.getValue())) {
+                existing = entry;
+                break;
             }
-            if (existing == null) {
-                if (list.containsKey(newMaxKey)
-                        && !segmentId.equals(list.get(newMaxKey))) {
-                    throw new IllegalStateException(String.format(
-                            "Segment max key '%s' is already bound to segment '%s'",
-                            newMaxKey, list.get(newMaxKey)));
-                }
-                list.put(newMaxKey, segmentId);
-                refreshSnapshot();
-                isDirty = true;
-                return;
-            }
+        }
+        if (existing == null) {
             if (list.containsKey(newMaxKey)
                     && !segmentId.equals(list.get(newMaxKey))) {
                 throw new IllegalStateException(String.format(
                         "Segment max key '%s' is already bound to segment '%s'",
                         newMaxKey, list.get(newMaxKey)));
             }
-            list.remove(existing.getKey());
             list.put(newMaxKey, segmentId);
             refreshSnapshot();
             isDirty = true;
-        } finally {
-            writeLock.unlock();
+            return;
         }
+        if (list.containsKey(newMaxKey)
+                && !segmentId.equals(list.get(newMaxKey))) {
+            throw new IllegalStateException(String.format(
+                    "Segment max key '%s' is already bound to segment '%s'",
+                    newMaxKey, list.get(newMaxKey)));
+        }
+        list.remove(existing.getKey());
+        list.put(newMaxKey, segmentId);
+        refreshSnapshot();
+        isDirty = true;
     }
 
     public void removeSegment(final SegmentId segmentId) {
         ensureOpen();
         Vldtn.requireNonNull(segmentId, "segmentId");
-        writeLock.lock();
-        try {
-            if (list.isEmpty()) {
-                return;
+        if (list.isEmpty()) {
+            return;
+        }
+        boolean removed = false;
+        final java.util.Iterator<Map.Entry<K, SegmentId>> iterator = list
+                .entrySet().iterator();
+        while (iterator.hasNext()) {
+            final Map.Entry<K, SegmentId> entry = iterator.next();
+            if (segmentId.equals(entry.getValue())) {
+                iterator.remove();
+                removed = true;
             }
-            boolean removed = false;
-            final java.util.Iterator<Map.Entry<K, SegmentId>> iterator = list
-                    .entrySet().iterator();
-            while (iterator.hasNext()) {
-                final Map.Entry<K, SegmentId> entry = iterator.next();
-                if (segmentId.equals(entry.getValue())) {
-                    iterator.remove();
-                    removed = true;
-                }
-            }
-            if (removed) {
-                refreshSnapshot();
-                isDirty = true;
-            }
-        } finally {
-            writeLock.unlock();
+        }
+        if (removed) {
+            refreshSnapshot();
+            isDirty = true;
         }
     }
 
@@ -340,17 +313,12 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
     }
 
     private void flushIfDirty() {
-        writeLock.lock();
-        try {
-            if (isDirty) {
-                sdf.openWriterTx().execute(writer -> {
-                    list.forEach((k, v) -> writer.write(Entry.of(k, v)));
-                });
-            }
-            isDirty = false;
-        } finally {
-            writeLock.unlock();
+        if (isDirty) {
+            sdf.openWriterTx().execute(writer -> {
+                list.forEach((k, v) -> writer.write(Entry.of(k, v)));
+            });
         }
+        isDirty = false;
     }
 
     @Override

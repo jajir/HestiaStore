@@ -31,17 +31,22 @@ class IndexConsistencyCheckerTest {
     @Mock
     private EntryIterator<Integer, String> iterator;
 
+    private KeyToSegmentMapSynchronizedAdapter<Integer> synchronizedKeyToSegmentMap;
+
     private IndexConsistencyChecker<Integer, String> checker;
 
     @BeforeEach
     void setUp() {
-        checker = new IndexConsistencyChecker<>(keyToSegmentMap, segmentRegistry,
-                new TypeDescriptorInteger());
+        synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
+                keyToSegmentMap);
+        checker = new IndexConsistencyChecker<>(synchronizedKeyToSegmentMap,
+                segmentRegistry, new TypeDescriptorInteger());
     }
 
     @AfterEach
     void tearDown() {
         checker = null;
+        synchronizedKeyToSegmentMap = null;
     }
 
     @Test

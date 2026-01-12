@@ -35,6 +35,8 @@ class SegmentIndexConsistencyCheckerTest {
     @Mock
     private KeyToSegmentMap<Integer> keyToSegmentMap;
 
+    private KeyToSegmentMapSynchronizedAdapter<Integer> synchronizedKeyToSegmentMap;
+
     @Mock
     private SegmentRegistry<Integer, String> segmentRegistry;
 
@@ -149,7 +151,9 @@ class SegmentIndexConsistencyCheckerTest {
 
     @BeforeEach
     void setUp() {
-        checker = new IndexConsistencyChecker<>(keyToSegmentMap,
+        synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
+                keyToSegmentMap);
+        checker = new IndexConsistencyChecker<>(synchronizedKeyToSegmentMap,
                 segmentRegistry, TYPE_DESCRIPTOR_INTEGER);
         segmentPair = Entry.of(SEGMENT_MAX_KEY, SEGMENT_ID);
     }
@@ -158,5 +162,6 @@ class SegmentIndexConsistencyCheckerTest {
     void tearDown() {
         checker = null;
         segmentPair = null;
+        synchronizedKeyToSegmentMap = null;
     }
 }
