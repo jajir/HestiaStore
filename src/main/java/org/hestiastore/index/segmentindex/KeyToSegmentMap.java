@@ -94,6 +94,7 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
      * Verify, that all segment ids are unique.
      */
     public void checkUniqueSegmentIds() {
+        ensureOpen();
         final TreeMap<K, SegmentId> current = snapshot;
         final HashMap<SegmentId, K> tmp = new HashMap<SegmentId, K>();
         final AtomicBoolean fail = new AtomicBoolean(false);
@@ -116,6 +117,7 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
     }
 
     public SegmentId findSegmentId(final K key) {
+        ensureOpen();
         Vldtn.requireNonNull(key, "key");
         final Entry<K, SegmentId> entry = localFindSegmentForKey(key, snapshot);
         return entry == null ? null : entry.getValue();
@@ -141,6 +143,7 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
     }
 
     public SegmentId findNewSegmentId() {
+        ensureOpen();
         return SegmentId.of(nextSegmentId.getAndIncrement());
     }
 
@@ -175,6 +178,7 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
     }
 
     public SegmentId insertKeyToSegment(final K key) {
+        ensureOpen();
         Vldtn.requireNonNull(key, "key");
         writeLock.lock();
         try {
@@ -225,6 +229,7 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
     }
 
     public void insertSegment(final K key, final SegmentId segmentId) {
+        ensureOpen();
         Vldtn.requireNonNull(key, "key");
         writeLock.lock();
         try {
@@ -280,6 +285,7 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
     }
 
     public void removeSegment(final SegmentId segmentId) {
+        ensureOpen();
         Vldtn.requireNonNull(segmentId, "segmentId");
         writeLock.lock();
         try {
@@ -306,14 +312,17 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
     }
 
     public Stream<Entry<K, SegmentId>> getSegmentsAsStream() {
+        ensureOpen();
         return snapshotSegments().stream();
     }
 
     public List<SegmentId> getSegmentIds() {
+        ensureOpen();
         return getSegmentIds(SegmentWindow.unbounded());
     }
 
     public List<SegmentId> getSegmentIds(SegmentWindow segmentWindow) {
+        ensureOpen();
         return snapshot.entrySet().stream()//
                 .skip(segmentWindow.getIntOffset())//
                 .limit(segmentWindow.getIntLimit())//
@@ -326,6 +335,11 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
      * automatically called when this cache is closed.
      */
     public void optionalyFlush() {
+        ensureOpen();
+        flushIfDirty();
+    }
+
+    private void flushIfDirty() {
         writeLock.lock();
         try {
             if (isDirty) {
@@ -341,7 +355,7 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
 
     @Override
     protected void doClose() {
-        optionalyFlush();
+        flushIfDirty();
     }
 
     private List<Entry<K, SegmentId>> snapshotSegments() {
@@ -356,6 +370,13 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
     private void refreshSnapshot() {
         snapshot = new TreeMap<>(list);
         version.incrementAndGet();
+    }
+
+    private void ensureOpen() {
+        if (wasClosed()) {
+            throw new IllegalStateException(
+                    getClass().getSimpleName() + " already closed");
+        }
     }
 
     static final class Snapshot<K> {
