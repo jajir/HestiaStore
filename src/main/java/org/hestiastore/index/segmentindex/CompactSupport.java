@@ -19,7 +19,7 @@ public class CompactSupport<K, V> {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final List<Entry<K, V>> toSameSegment = new ArrayList<>();
-    private final KeySegmentCache<K> keySegmentCache;
+    private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final Comparator<K> keyComparator;
     private SegmentId currentSegmentId = null;
@@ -31,12 +31,12 @@ public class CompactSupport<K, V> {
     private final List<SegmentId> eligibleSegments = new ArrayList<>();
 
     CompactSupport(final SegmentRegistry<K, V> segmentRegistry,
-            final KeySegmentCache<K> keySegmentCache,
+            final KeyToSegmentMap<K> keyToSegmentMap,
             final Comparator<K> keyComparator) {
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
-        this.keySegmentCache = Vldtn.requireNonNull(keySegmentCache,
-                "keySegmentCache");
+        this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
+                "keyToSegmentMap");
         this.keyComparator = Vldtn.requireNonNull(keyComparator,
                 "keyComparator");
     }
@@ -44,7 +44,7 @@ public class CompactSupport<K, V> {
     public void compact(final Entry<K, V> entry) {
         Vldtn.requireNonNull(entry, "entry");
         final K segmentKey = entry.getKey();
-        final SegmentId segmentId = keySegmentCache
+        final SegmentId segmentId = keyToSegmentMap
                 .insertKeyToSegment(segmentKey);
         if (currentSegmentId == null) {
             currentSegmentId = segmentId;
@@ -109,12 +109,12 @@ public class CompactSupport<K, V> {
                     "Segment '%s' failed during flush: %s", segment.getId(),
                     status));
         }
-        if (KeySegmentCache.FIRST_SEGMENT_ID.equals(currentSegmentId)) {
+        if (KeyToSegmentMap.FIRST_SEGMENT_ID.equals(currentSegmentId)) {
             // Segment containing highest key.
             if (currentBatchMaxKey != null) {
                 // Update segment cache with highest key.
-                keySegmentCache.insertKeyToSegment(currentBatchMaxKey);
-                keySegmentCache.optionalyFlush();
+                keyToSegmentMap.insertKeyToSegment(currentBatchMaxKey);
+                keyToSegmentMap.optionalyFlush();
             }
         }
 

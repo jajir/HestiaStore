@@ -65,12 +65,12 @@ class IntegrationSegmentIndexSimpleTest {
 
         final org.hestiastore.index.directory.async.AsyncDirectory asyncDirectory = org.hestiastore.index.directory.async.AsyncDirectoryAdapter
                 .wrap(directory);
-        final KeySegmentCache<Integer> keySegmentCache = new KeySegmentCache<>(
+        final KeyToSegmentMap<Integer> keyToSegmentMap = new KeyToSegmentMap<>(
                 asyncDirectory, tdi);
-        final List<SegmentId> segmentIds = keySegmentCache.getSegmentIds();
+        final List<SegmentId> segmentIds = keyToSegmentMap.getSegmentIds();
         assertEquals(expectedFileCount(segmentIds.size()),
                 numberOfFilesInDirectoryP(directory));
-        keySegmentCache.close();
+        keyToSegmentMap.close();
         asyncDirectory.close();
 
         final SegmentIndex<Integer, String> index2 = makeSegmentIndex();

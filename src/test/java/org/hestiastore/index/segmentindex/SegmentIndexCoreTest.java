@@ -39,28 +39,28 @@ class SegmentIndexCoreTest {
     private Segment<String, String> segment;
 
     private AsyncDirectory asyncDirectory;
-    private KeySegmentCache<String> keySegmentCache;
+    private KeyToSegmentMap<String> keyToSegmentMap;
     private SegmentIndexCore<String, String> core;
 
     @BeforeEach
     void setUp() {
         asyncDirectory = AsyncDirectoryAdapter.wrap(new MemDirectory());
-        keySegmentCache = new KeySegmentCache<>(asyncDirectory,
+        keyToSegmentMap = new KeyToSegmentMap<>(asyncDirectory,
                 new TypeDescriptorShortString());
-        core = new SegmentIndexCore<>(keySegmentCache, segmentRegistry,
+        core = new SegmentIndexCore<>(keyToSegmentMap, segmentRegistry,
                 maintenanceCoordinator);
     }
 
     @AfterEach
     void tearDown() {
-        if (keySegmentCache != null && !keySegmentCache.wasClosed()) {
-            keySegmentCache.close();
+        if (keyToSegmentMap != null && !keyToSegmentMap.wasClosed()) {
+            keyToSegmentMap.close();
         }
         if (asyncDirectory != null && !asyncDirectory.wasClosed()) {
             asyncDirectory.close();
         }
         core = null;
-        keySegmentCache = null;
+        keyToSegmentMap = null;
         asyncDirectory = null;
     }
 
@@ -75,7 +75,7 @@ class SegmentIndexCoreTest {
 
     @Test
     void get_returnsBusyWhenSegmentIsBusy() {
-        final SegmentId segmentId = keySegmentCache.insertKeyToSegment("key");
+        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
         when(segmentRegistry.getSegment(segmentId)).thenReturn(segment);
         when(segment.get("key")).thenReturn(SegmentResult.busy());
 
@@ -86,8 +86,8 @@ class SegmentIndexCoreTest {
 
     @Test
     void put_schedulesMaintenanceOnSuccess() {
-        final SegmentId segmentId = keySegmentCache.insertKeyToSegment("key");
-        final KeySegmentCache.Snapshot<String> snapshot = keySegmentCache
+        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
+        final KeyToSegmentMap.Snapshot<String> snapshot = keyToSegmentMap
                 .snapshot();
         when(segmentRegistry.getSegment(segmentId)).thenReturn(segment);
         when(segment.put("key", "value")).thenReturn(SegmentResult.ok());
@@ -101,7 +101,7 @@ class SegmentIndexCoreTest {
 
     @Test
     void put_returnsBusyWhenSegmentIsBusy() {
-        final SegmentId segmentId = keySegmentCache.insertKeyToSegment("key");
+        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
         when(segmentRegistry.getSegment(segmentId)).thenReturn(segment);
         when(segment.put("key", "value")).thenReturn(SegmentResult.busy());
 
@@ -113,7 +113,7 @@ class SegmentIndexCoreTest {
 
     @Test
     void openIterator_returnsValueWhenOk() {
-        final SegmentId segmentId = keySegmentCache.insertKeyToSegment("key");
+        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
         final EntryIterator<String, String> iterator = EntryIterator
                 .make(List.<Entry<String, String>>of().iterator());
         when(segmentRegistry.getSegment(segmentId)).thenReturn(segment);

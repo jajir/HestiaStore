@@ -27,7 +27,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final IndexConfiguration<K, V> conf;
     protected final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
-    private final KeySegmentCache<K> keySegmentCache;
+    private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentMaintenanceCoordinator<K, V> maintenanceCoordinator;
     private final SegmentIndexCore<K, V> core;
@@ -53,14 +53,14 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                     "valueTypeDescriptor");
             this.conf = Vldtn.requireNonNull(conf, "conf");
-            this.keySegmentCache = new KeySegmentCache<>(directoryFacade,
+            this.keyToSegmentMap = new KeyToSegmentMap<>(directoryFacade,
                     keyTypeDescriptor);
             this.segmentRegistry = new SegmentRegistrySynchronized<>(
                     directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
                     conf);
             this.maintenanceCoordinator = new SegmentMaintenanceCoordinator<>(
-                    conf, keySegmentCache, segmentRegistry);
-            this.core = new SegmentIndexCore<>(keySegmentCache, segmentRegistry,
+                    conf, keyToSegmentMap, segmentRegistry);
+            this.core = new SegmentIndexCore<>(keyToSegmentMap, segmentRegistry,
                     maintenanceCoordinator);
             this.retryPolicy = new IndexRetryPolicy(
                     conf.getIndexBusyBackoffMillis(),
@@ -120,7 +120,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             segmentWindows = SegmentWindow.unbounded();
         }
         final EntryIterator<K, V> segmentIterator = new SegmentsIterator<>(
-                keySegmentCache.getSegmentIds(segmentWindows), segmentRegistry);
+                keyToSegmentMap.getSegmentIds(segmentWindows), segmentRegistry);
         if (conf.isContextLoggingEnabled()) {
             return new EntryIteratorLoggingContext<>(segmentIterator, conf);
         } else {
@@ -131,14 +131,14 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     public void compact() {
         getIndexState().tryPerformOperation();
-        keySegmentCache.getSegmentIds()
+        keyToSegmentMap.getSegmentIds()
                 .forEach(segmentId -> compactSegment(segmentId, false));
     }
 
     @Override
     public void compactAndWait() {
         getIndexState().tryPerformOperation();
-        keySegmentCache.getSegmentIds()
+        keyToSegmentMap.getSegmentIds()
                 .forEach(segmentId -> compactSegment(segmentId, true));
     }
 
@@ -189,9 +189,9 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     public void checkAndRepairConsistency() {
         getIndexState().tryPerformOperation();
-        keySegmentCache.checkUniqueSegmentIds();
+        keyToSegmentMap.checkUniqueSegmentIds();
         final IndexConsistencyChecker<K, V> checker = new IndexConsistencyChecker<>(
-                keySegmentCache, segmentRegistry, keyTypeDescriptor);
+                keyToSegmentMap, segmentRegistry, keyTypeDescriptor);
         checker.checkAndRepairConsistency();
     }
 
@@ -202,7 +202,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         awaitAsyncOperations();
         flushSegments(true);
         segmentRegistry.close();
-        keySegmentCache.optionalyFlush();
+        keyToSegmentMap.optionalyFlush();
         if (logger.isDebugEnabled()) {
             logger.debug(String.format(
                     "Index is closing, where was %s gets, %s puts and %s deletes.",
@@ -296,17 +296,17 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     public void flush() {
         flushSegments(false);
-        keySegmentCache.optionalyFlush();
+        keyToSegmentMap.optionalyFlush();
     }
 
     @Override
     public void flushAndWait() {
         flushSegments(true);
-        keySegmentCache.optionalyFlush();
+        keyToSegmentMap.optionalyFlush();
     }
 
     private void flushSegments(final boolean waitForCompletion) {
-        keySegmentCache.getSegmentIds()
+        keyToSegmentMap.getSegmentIds()
                 .forEach(segmentId -> flushSegment(segmentId,
                         waitForCompletion));
     }
@@ -440,7 +440,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     }
 
     protected void invalidateSegmentIterators() {
-        keySegmentCache.getSegmentIds().forEach(segmentId -> {
+        keyToSegmentMap.getSegmentIds().forEach(segmentId -> {
             final Segment<K, V> segment = segmentRegistry.getSegment(segmentId);
             segment.invalidateIterators();
         });
@@ -460,7 +460,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         if (remainingMillis <= 0) {
             return;
         }
-        final SegmentId segmentId = keySegmentCache.findSegmentId(key);
+        final SegmentId segmentId = keyToSegmentMap.findSegmentId(key);
         if (segmentId == null) {
             maintenanceCoordinator.awaitSplitsIdle(remainingMillis);
             return;

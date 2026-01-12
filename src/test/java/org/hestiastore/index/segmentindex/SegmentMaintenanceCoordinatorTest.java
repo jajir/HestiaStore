@@ -28,7 +28,7 @@ class SegmentMaintenanceCoordinatorTest {
     private IndexConfiguration<String, String> conf;
 
     @Mock
-    private KeySegmentCache<String> keySegmentCache;
+    private KeyToSegmentMap<String> keyToSegmentMap;
 
     @Mock
     private SegmentRegistry<String, String> segmentRegistry;
@@ -51,11 +51,11 @@ class SegmentMaintenanceCoordinatorTest {
         when(conf.getMaxNumberOfKeysInSegmentWriteCache()).thenReturn(null);
 
         final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
-                conf, keySegmentCache, segmentRegistry);
+                conf, keyToSegmentMap, segmentRegistry);
 
         coordinator.handlePostWrite(segment, "key", SegmentId.of(1), 1L);
 
-        verifyNoInteractions(segment, keySegmentCache);
+        verifyNoInteractions(segment, keyToSegmentMap);
         verify(segmentRegistry).getSplitExecutor();
         verifyNoMoreInteractions(segmentRegistry);
     }
@@ -67,15 +67,15 @@ class SegmentMaintenanceCoordinatorTest {
         when(segment.wasClosed()).thenReturn(false);
         when(segmentRegistry.isSegmentInstance(segmentId, segment))
                 .thenReturn(true);
-        when(keySegmentCache.isKeyMappedToSegment("key", segmentId))
+        when(keyToSegmentMap.isKeyMappedToSegment("key", segmentId))
                 .thenReturn(true);
-        when(keySegmentCache.isMappingValid("key", segmentId, 7L))
+        when(keyToSegmentMap.isMappingValid("key", segmentId, 7L))
                 .thenReturn(true);
         when(conf.getMaxNumberOfKeysInSegmentCache()).thenReturn(10);
         when(segment.getNumberOfKeysInCache()).thenReturn(10L);
 
         final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
-                conf, keySegmentCache, segmentRegistry);
+                conf, keyToSegmentMap, segmentRegistry);
 
         coordinator.handlePostWrite(segment, "key", segmentId, 7L);
 
@@ -97,7 +97,7 @@ class SegmentMaintenanceCoordinatorTest {
         when(segment.flush()).thenReturn(okMaintenance());
 
         final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
-                conf, keySegmentCache, segmentRegistry);
+                conf, keyToSegmentMap, segmentRegistry);
 
         coordinator.handlePostWrite(segment, "key", segmentId, 7L);
 
@@ -120,7 +120,7 @@ class SegmentMaintenanceCoordinatorTest {
         when(segment.compact()).thenReturn(okMaintenance());
 
         final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
-                conf, keySegmentCache, segmentRegistry);
+                conf, keyToSegmentMap, segmentRegistry);
 
         coordinator.handlePostWrite(segment, "key", segmentId, 7L);
 
@@ -144,7 +144,7 @@ class SegmentMaintenanceCoordinatorTest {
         when(segment.compact()).thenReturn(okMaintenance());
 
         final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
-                conf, keySegmentCache, segmentRegistry);
+                conf, keyToSegmentMap, segmentRegistry);
 
         coordinator.handlePostWrite(segment, "key", segmentId, 7L);
 
@@ -162,7 +162,7 @@ class SegmentMaintenanceCoordinatorTest {
         when(segment.getNumberOfKeysInCache()).thenReturn(0L);
 
         final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
-                conf, keySegmentCache, segmentRegistry);
+                conf, keyToSegmentMap, segmentRegistry);
 
         coordinator.handlePostWrite(segment, "key", segmentId, 7L);
 
@@ -174,9 +174,9 @@ class SegmentMaintenanceCoordinatorTest {
         when(segment.wasClosed()).thenReturn(false);
         when(segmentRegistry.isSegmentInstance(segmentId, segment))
                 .thenReturn(true);
-        when(keySegmentCache.isKeyMappedToSegment("key", segmentId))
+        when(keyToSegmentMap.isKeyMappedToSegment("key", segmentId))
                 .thenReturn(true);
-        when(keySegmentCache.isMappingValid("key", segmentId, 7L))
+        when(keyToSegmentMap.isMappingValid("key", segmentId, 7L))
                 .thenReturn(true);
     }
 

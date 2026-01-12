@@ -27,7 +27,7 @@ class IndexConsistencyCheckerTest {
     @Mock
     private SegmentRegistry<Integer, String> segmentRegistry;
     @Mock
-    private KeySegmentCache<Integer> keySegmentCache;
+    private KeyToSegmentMap<Integer> keyToSegmentMap;
     @Mock
     private EntryIterator<Integer, String> iterator;
 
@@ -35,7 +35,7 @@ class IndexConsistencyCheckerTest {
 
     @BeforeEach
     void setUp() {
-        checker = new IndexConsistencyChecker<>(keySegmentCache, segmentRegistry,
+        checker = new IndexConsistencyChecker<>(keyToSegmentMap, segmentRegistry,
                 new TypeDescriptorInteger());
     }
 
@@ -50,15 +50,15 @@ class IndexConsistencyCheckerTest {
         when(segment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
                 .thenReturn(SegmentResult.ok(iterator));
         when(iterator.hasNext()).thenReturn(false);
-        when(keySegmentCache.getSegmentsAsStream())
+        when(keyToSegmentMap.getSegmentsAsStream())
                 .thenReturn(Stream.of(
                         Entry.of(10, SegmentId.of(1))));
         when(segmentRegistry.getSegment(SegmentId.of(1))).thenReturn(segment);
 
         checker.checkAndRepairConsistency();
 
-        verify(keySegmentCache).removeSegment(SegmentId.of(1));
-        verify(keySegmentCache).optionalyFlush();
+        verify(keyToSegmentMap).removeSegment(SegmentId.of(1));
+        verify(keyToSegmentMap).optionalyFlush();
         verify(segmentRegistry).removeSegment(SegmentId.of(1));
     }
 }

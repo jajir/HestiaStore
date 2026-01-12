@@ -11,17 +11,17 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 
 /**
- * Thread-safe adapter for {@link KeySegmentCache} backed by a read/write lock.
+ * Thread-safe adapter for {@link KeyToSegmentMap} backed by a read/write lock.
  */
-final class KeySegmentCacheSynchronizedAdapter<K>
+final class KeyToSegmentMapSynchronizedAdapter<K>
         extends AbstractCloseableResource {
 
-    private final KeySegmentCache<K> delegate;
+    private final KeyToSegmentMap<K> delegate;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final Lock readLock = lock.readLock();
     private final Lock writeLock = lock.writeLock();
 
-    KeySegmentCacheSynchronizedAdapter(final KeySegmentCache<K> delegate) {
+    KeyToSegmentMapSynchronizedAdapter(final KeyToSegmentMap<K> delegate) {
         this.delegate = Vldtn.requireNonNull(delegate, "delegate");
     }
 
@@ -43,7 +43,7 @@ final class KeySegmentCacheSynchronizedAdapter<K>
         }
     }
 
-    KeySegmentCache.Snapshot<K> snapshot() {
+    KeyToSegmentMap.Snapshot<K> snapshot() {
         readLock.lock();
         try {
             return delegate.snapshot();
@@ -83,7 +83,7 @@ final class KeySegmentCacheSynchronizedAdapter<K>
     }
 
     boolean tryExtendMaxKey(final K key,
-            final KeySegmentCache.Snapshot<K> snapshot) {
+            final KeyToSegmentMap.Snapshot<K> snapshot) {
         writeLock.lock();
         try {
             return delegate.tryExtendMaxKey(key, snapshot);
