@@ -44,19 +44,13 @@ public class SegmentRegistry<K, V> {
         this.conf = Vldtn.requireNonNull(conf, "conf");
         final Integer maintenanceThreadsConf = conf
                 .getNumberOfSegmentIndexMaintenanceThreads();
-        final int threads = (maintenanceThreadsConf == null
-                || maintenanceThreadsConf < 1)
-                        ? IndexConfigurationContract.DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS
-                        : maintenanceThreadsConf.intValue();
+        final int threads = maintenanceThreadsConf.intValue();
         this.segmentAsyncExecutor = new SegmentAsyncExecutor(threads,
                 "segment-async");
         this.maintenanceExecutor = segmentAsyncExecutor.getExecutor();
         final Integer splitThreadsConf = conf
                 .getNumberOfIndexMaintenanceThreads();
-        final int splitThreads = (splitThreadsConf == null
-                || splitThreadsConf < 1)
-                        ? IndexConfigurationContract.DEFAULT_INDEX_MAINTENANCE_THREADS
-                        : splitThreadsConf.intValue();
+        final int splitThreads = splitThreadsConf.intValue();
         this.splitAsyncExecutor = new SplitAsyncExecutor(splitThreads,
                 "segment-split");
         this.splitExecutor = splitAsyncExecutor.getExecutor();
