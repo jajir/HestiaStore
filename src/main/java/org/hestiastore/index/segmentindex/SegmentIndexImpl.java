@@ -59,9 +59,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     directoryFacade, keyTypeDescriptor);
             this.keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                     keyToSegmentMapDelegate);
-            this.segmentRegistry = new SegmentRegistrySynchronized<>(
-                    directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
-                    conf);
+            this.segmentRegistry = new SegmentRegistry<>(directoryFacade,
+                    keyTypeDescriptor, valueTypeDescriptor, conf);
             this.maintenanceCoordinator = new SegmentMaintenanceCoordinator<>(
                     conf, keyToSegmentMap, segmentRegistry);
             this.core = new SegmentIndexCore<>(keyToSegmentMap, segmentRegistry,
