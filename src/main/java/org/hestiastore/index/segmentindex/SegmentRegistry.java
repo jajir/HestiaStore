@@ -1,15 +1,9 @@
 package org.hestiastore.index.segmentindex;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
@@ -28,19 +22,17 @@ import org.hestiastore.index.segment.SegmentResourcesImpl;
 
 public class SegmentRegistry<K, V> {
 
-    private final Map<SegmentId, Segment<K, V>> segments = new HashMap<>();
-    private final Set<SegmentId> splitsInFlight = new HashSet<>();
+    private final Map<SegmentId, Segment<K, V>> segments = new ConcurrentHashMap<>();
+    private final Set<SegmentId> splitsInFlight = ConcurrentHashMap.newKeySet();
 
     private final IndexConfiguration<K, V> conf;
     private final AsyncDirectory directoryFacade;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
+    private final SegmentAsyncExecutor segmentAsyncExecutor;
     private final SplitAsyncExecutor splitAsyncExecutor;
     private final ExecutorService maintenanceExecutor;
     private final ExecutorService splitExecutor;
-
-    private static final int MIN_QUEUE_CAPACITY = 64;
-    private static final int QUEUE_CAPACITY_MULTIPLIER = 64;
 
     SegmentRegistry(final AsyncDirectory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
@@ -56,8 +48,9 @@ public class SegmentRegistry<K, V> {
         final Integer maintenanceThreadsConf = conf
                 .getNumberOfSegmentIndexMaintenanceThreads();
         final int threads = maintenanceThreadsConf.intValue();
-        this.maintenanceExecutor = buildMaintenanceExecutor(threads,
+        this.segmentAsyncExecutor = new SegmentAsyncExecutor(threads,
                 "segment-maintenance");
+        this.maintenanceExecutor = segmentAsyncExecutor.getExecutor();
         final Integer splitThreadsConf = conf
                 .getNumberOfIndexMaintenanceThreads();
         final int splitThreads = splitThreadsConf.intValue();
@@ -79,11 +72,13 @@ public class SegmentRegistry<K, V> {
         if (splitsInFlight.contains(segmentId)) {
             return SegmentResult.busy();
         }
-        Segment<K, V> out = segments.get(segmentId);
-        if (out == null || out.wasClosed()) {
-            out = instantiateSegment(segmentId);
-            segments.put(segmentId, out);
-        }
+        final Segment<K, V> out = segments.compute(segmentId,
+                (id, existing) -> {
+                    if (existing == null || existing.wasClosed()) {
+                        return instantiateSegment(id);
+                    }
+                    return existing;
+                });
         return SegmentResult.ok(out);
     }
 
@@ -135,12 +130,10 @@ public class SegmentRegistry<K, V> {
             final Segment<K, V> expected) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         Vldtn.requireNonNull(expected, "expected");
-        final Segment<K, V> current = segments.get(segmentId);
-        if (current != expected) {
+        if (!segments.remove(segmentId, expected)) {
             return false;
         }
-        segments.remove(segmentId);
-        closeSegmentIfNeeded(current);
+        closeSegmentIfNeeded(expected);
         return true;
     }
 
@@ -235,55 +228,11 @@ public class SegmentRegistry<K, V> {
     }
 
     public void close() {
-        shutdownExecutor(maintenanceExecutor);
+        if (!segmentAsyncExecutor.wasClosed()) {
+            segmentAsyncExecutor.close();
+        }
         if (!splitAsyncExecutor.wasClosed()) {
             splitAsyncExecutor.close();
-        }
-    }
-
-    private static ExecutorService buildMaintenanceExecutor(final int threads,
-            final String threadNamePrefix) {
-        Vldtn.requireGreaterThanZero(threads, "threads");
-        final int queueCapacity = Math.max(MIN_QUEUE_CAPACITY,
-                threads * QUEUE_CAPACITY_MULTIPLIER);
-        return new ThreadPoolExecutor(threads, threads, 0L,
-                TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(queueCapacity),
-                namedThreadFactory(threadNamePrefix),
-                new ThreadPoolExecutor.CallerRunsPolicy());
-    }
-
-    private static ThreadFactory namedThreadFactory(final String prefix) {
-        Vldtn.requireNonNull(prefix, "prefix");
-        if (prefix.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Property 'prefix' must not be empty.");
-        }
-        final AtomicInteger counter = new AtomicInteger(1);
-        return runnable -> {
-            final Thread thread = new Thread(runnable);
-            thread.setName(prefix + "-" + counter.getAndIncrement());
-            return thread;
-        };
-    }
-
-    private static void shutdownExecutor(final ExecutorService executor) {
-        if (executor == null || executor.isShutdown()) {
-            return;
-        }
-        executor.shutdown();
-        boolean interrupted = false;
-        try {
-            while (!executor.isTerminated()) {
-                try {
-                    executor.awaitTermination(1, TimeUnit.SECONDS);
-                } catch (final InterruptedException e) {
-                    interrupted = true;
-                }
-            }
-        } finally {
-            if (interrupted) {
-                Thread.currentThread().interrupt();
-            }
         }
     }
 
