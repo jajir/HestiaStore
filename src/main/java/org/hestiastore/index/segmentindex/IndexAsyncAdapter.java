@@ -11,7 +11,7 @@ import org.hestiastore.index.Vldtn;
 
 /**
  * Adapter that provides async operations by running synchronous calls on a
- * background thread and waiting for all in-flight async operations on close.
+ * background thread.
  *
  * @param <K> type of keys stored in the index
  * @param <V> type of values stored in the index
@@ -20,8 +20,6 @@ public class IndexAsyncAdapter<K, V> extends AbstractCloseableResource
         implements SegmentIndex<K, V> {
 
     private final SegmentIndex<K, V> index;
-    private final Object asyncMonitor = new Object();
-    private int asyncInFlight = 0;
     private final ThreadLocal<Boolean> inAsyncOperation = ThreadLocal
             .withInitial(() -> Boolean.FALSE);
 
@@ -107,60 +105,23 @@ public class IndexAsyncAdapter<K, V> extends AbstractCloseableResource
 
     @Override
     protected void doClose() {
-        awaitAsyncOperations();
-        index.close();
-    }
-
-    private <T> CompletionStage<T> runAsyncTracked(final Supplier<T> task) {
-        incrementAsync();
-        try {
-            return CompletableFuture.supplyAsync(() -> {
-                final boolean previous = Boolean.TRUE
-                        .equals(inAsyncOperation.get());
-                inAsyncOperation.set(Boolean.TRUE);
-                try {
-                    return task.get();
-                } finally {
-                    inAsyncOperation.set(previous);
-                    decrementAsync();
-                }
-            });
-        } catch (final RuntimeException e) {
-            decrementAsync();
-            throw e;
-        }
-    }
-
-    private void incrementAsync() {
-        synchronized (asyncMonitor) {
-            asyncInFlight++;
-        }
-    }
-
-    private void decrementAsync() {
-        synchronized (asyncMonitor) {
-            asyncInFlight--;
-            asyncMonitor.notifyAll();
-        }
-    }
-
-    private void awaitAsyncOperations() {
         if (Boolean.TRUE.equals(inAsyncOperation.get())) {
             throw new IllegalStateException(
                     "close() must not be called from an async index operation.");
         }
-        boolean interrupted = false;
-        synchronized (asyncMonitor) {
-            while (asyncInFlight > 0) {
-                try {
-                    asyncMonitor.wait();
-                } catch (final InterruptedException e) {
-                    interrupted = true;
-                }
+        index.close();
+    }
+
+    private <T> CompletionStage<T> runAsyncTracked(final Supplier<T> task) {
+        return CompletableFuture.supplyAsync(() -> {
+            final boolean previous = Boolean.TRUE
+                    .equals(inAsyncOperation.get());
+            inAsyncOperation.set(Boolean.TRUE);
+            try {
+                return task.get();
+            } finally {
+                inAsyncOperation.set(previous);
             }
-        }
-        if (interrupted) {
-            Thread.currentThread().interrupt();
-        }
+        });
     }
 }
