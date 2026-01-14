@@ -36,9 +36,9 @@ Optimistic iterator invalidation is driven by `VersionController` and used by
 
 What it does today (SegmentImpl):
 
-- Snapshot write cache via `SegmentCache.getWriteCacheAsSortedList()`.
+- Snapshot write cache via `SegmentCache.freezeWriteCache()`.
 - Write entries to a delta cache file (`SegmentDeltaCacheWriter`).
-- Merge write cache into delta cache and clear write cache.
+- Merge frozen write cache into delta cache and clear the frozen snapshot.
 - Bump version (via `openDeltaCacheWriter()`), invalidating fail-fast iterators.
 - No-op when the write cache is empty.
 

@@ -119,55 +119,6 @@ class SegmentCacheTest {
     }
 
     @Test
-    void getWriteCacheAsSortedList_and_clearWriteCache() {
-        final SegmentCache<Integer, String> cache = new SegmentCache<>(
-                keyType.getComparator(), valueType, List.of(),
-                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_FLUSH,
-                DEFAULT_MAX_SEGMENT_CACHE);
-        cache.putToWriteCache(Entry.of(3, "C"));
-        cache.putToWriteCache(Entry.of(1, "A"));
-        cache.putToWriteCache(Entry.of(2, "B"));
-
-        assertEquals(
-                List.of(Entry.of(1, "A"), Entry.of(2, "B"), Entry.of(3, "C")),
-                cache.getWriteCacheAsSortedList());
-
-        cache.clearWriteCache();
-        assertEquals(0, cache.size());
-    }
-
-    @Test
-    void mergeWriteCacheToDeltaCache_moves_entries_and_clears_write_cache() {
-        final SegmentCache<Integer, String> cache = new SegmentCache<>(
-                keyType.getComparator(), valueType,
-                List.of(Entry.of(1, "old")), DEFAULT_MAX_BUFFERED,
-                DEFAULT_MAX_DURING_FLUSH, DEFAULT_MAX_SEGMENT_CACHE);
-        cache.putToWriteCache(Entry.of(1, "new"));
-        cache.putToWriteCache(Entry.of(2, "B"));
-
-        cache.mergeWriteCacheToDeltaCache();
-
-        assertEquals("new", cache.get(1));
-        assertEquals("B", cache.get(2));
-        assertTrue(cache.getWriteCacheAsSortedList().isEmpty());
-        assertEquals(2, cache.size());
-    }
-
-    @Test
-    void mergeWriteCacheToDeltaCache_accepts_empty_snapshot() {
-        final SegmentCache<Integer, String> cache = new SegmentCache<>(
-                keyType.getComparator(), valueType, List.of(Entry.of(1, "A")),
-                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_FLUSH,
-                DEFAULT_MAX_SEGMENT_CACHE);
-
-        cache.mergeWriteCacheToDeltaCache();
-
-        assertEquals("A", cache.get(1));
-        assertEquals(1, cache.size());
-        assertTrue(cache.getWriteCacheAsSortedList().isEmpty());
-    }
-
-    @Test
     void getNumberOfKeysInWriteCache_tracks_overwrites() {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
                 keyType.getComparator(), valueType, List.of(),
@@ -209,7 +160,7 @@ class SegmentCacheTest {
                 List.of(Entry.of(1, "A"), Entry.of(2, "B")),
                 cache.freezeWriteCache());
 
-        assertTrue(cache.getWriteCacheAsSortedList().isEmpty());
+        assertEquals(0, cache.getNumberOfKeysInWriteCache());
         assertTrue(cache.hasFrozenWriteCache());
         assertEquals("A", cache.get(1));
         assertEquals(
@@ -237,8 +188,7 @@ class SegmentCacheTest {
         assertEquals(
                 List.of(Entry.of(1, "A"), Entry.of(2, "B")),
                 cache.freezeWriteCache());
-        assertEquals(List.of(Entry.of(3, "C")),
-                cache.getWriteCacheAsSortedList());
+        assertEquals(1, cache.getNumberOfKeysInWriteCache());
         assertEquals(
                 List.of(Entry.of(1, "A"), Entry.of(2, "B"),
                         Entry.of(3, "C")),
@@ -274,8 +224,7 @@ class SegmentCacheTest {
         assertFalse(cache.hasFrozenWriteCache());
         assertEquals("B", cache.get(2));
         assertEquals("C", cache.get(3));
-        assertEquals(List.of(Entry.of(3, "C")),
-                cache.getWriteCacheAsSortedList());
+        assertEquals(1, cache.getNumberOfKeysInWriteCache());
         assertEquals(3, cache.size());
     }
 
@@ -328,7 +277,8 @@ class SegmentCacheTest {
 
         assertFalse(blockedPut.isDone());
 
-        cache.mergeWriteCacheToDeltaCache();
+        cache.freezeWriteCache();
+        cache.mergeFrozenWriteCacheToDeltaCache();
 
         blockedPut.get(1, TimeUnit.SECONDS);
         assertEquals(3, cache.size());
@@ -347,7 +297,8 @@ class SegmentCacheTest {
                 .runAsync(() -> cache.putToWriteCache(Entry.of(3, "C")));
         assertFalse(blockedPut.isDone());
 
-        cache.mergeWriteCacheToDeltaCache();
+        cache.freezeWriteCache();
+        cache.mergeFrozenWriteCacheToDeltaCache();
         blockedPut.get(1, TimeUnit.SECONDS);
     }
 
@@ -378,7 +329,7 @@ class SegmentCacheTest {
 
         assertEquals(0, cache.size());
         assertFalse(cache.hasFrozenWriteCache());
-        assertTrue(cache.getWriteCacheAsSortedList().isEmpty());
+        assertEquals(0, cache.getNumberOfKeysInWriteCache());
         assertNull(cache.get(1));
     }
 }
