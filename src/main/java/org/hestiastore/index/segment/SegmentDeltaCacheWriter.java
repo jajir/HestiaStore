@@ -17,7 +17,7 @@ import org.hestiastore.index.chunkentryfile.ChunkEntryFileWriterTx;
  * @param <K>
  * @param <V>
  */
-public final class SegmentDeltaCacheWriter<K, V>
+final class SegmentDeltaCacheWriter<K, V>
         extends AbstractCloseableResource implements EntryWriter<K, V> {
 
     /**

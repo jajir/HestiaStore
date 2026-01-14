@@ -11,7 +11,7 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 
-public class MergeDeltaCacheWithIndexIterator<K, V>
+class MergeDeltaCacheWithIndexIterator<K, V>
         extends AbstractCloseableResource implements EntryIterator<K, V> {
 
     private final EntryIterator<K, V> mainIterator;

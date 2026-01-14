@@ -18,7 +18,7 @@ import org.hestiastore.index.Vldtn;
  * @param <K> key type stored in this segment
  * @param <V> value type stored in this segment
  */
-public class SegmentImpl<K, V> extends AbstractCloseableResource
+class SegmentImpl<K, V> extends AbstractCloseableResource
         implements Segment<K, V> {
 
     private final SegmentCore<K, V> core;

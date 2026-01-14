@@ -17,7 +17,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
  * @param <K> key type
  * @param <V> value type
  */
-public final class SegmentCache<K, V> {
+final class SegmentCache<K, V> {
 
     private final UniqueCache<K, V> deltaCache;
     private UniqueCache<K, V> writeCache;

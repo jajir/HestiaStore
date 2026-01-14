@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
  * Class is responsible for compacting segment. It also verify if segment should
  * be compacted.
  */
-public final class SegmentCompacter<K, V> {
+final class SegmentCompacter<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final VersionController versionController;

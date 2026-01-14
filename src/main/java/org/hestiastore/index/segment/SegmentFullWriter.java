@@ -24,7 +24,7 @@ import org.hestiastore.index.chunkstore.CellPosition;
  * @param <K> key type
  * @param <V> value type
  */
-public class SegmentFullWriter<K, V> extends AbstractCloseableResource
+class SegmentFullWriter<K, V> extends AbstractCloseableResource
         implements EntryWriter<K, V> {
 
     private final int maxNumberOfKeysInIndexPage;

@@ -9,7 +9,7 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 
-public class SegmentDeltaCacheEntryIterator<K, V> extends AbstractCloseableResource
+class SegmentDeltaCacheEntryIterator<K, V> extends AbstractCloseableResource
         implements EntryIterator<K, V> {
 
     private final SegmentDeltaCacheController<K, V> deltaCacheController;

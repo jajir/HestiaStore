@@ -13,7 +13,7 @@ import org.hestiastore.index.Vldtn;
  * @param <K> key type
  * @param <V> value type
  */
-public final class SegmentCacheAsyncAdapter<K, V> {
+final class SegmentCacheAsyncAdapter<K, V> {
 
     private final SegmentCache<K, V> delegate;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();

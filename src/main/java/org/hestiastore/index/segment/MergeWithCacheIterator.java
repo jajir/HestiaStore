@@ -22,7 +22,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
  * @param <K>
  * @param <V>
  */
-public class MergeWithCacheIterator<K, V> extends AbstractCloseableResource
+class MergeWithCacheIterator<K, V> extends AbstractCloseableResource
         implements EntryIterator<K, V> {
 
     /**
