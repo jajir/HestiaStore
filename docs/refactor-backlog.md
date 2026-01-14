@@ -2,29 +2,48 @@
 
 ## Active (segmentindex refactor plan - class level)
 
-### Split executor isolation + config
+### Segmentindex design issues (review backlog)
 
-[ ] Add new configuration property `numberOfIndexMaintenanceThreads` with
-    default `10` in `IndexConfigurationContract`, thread it through
-    `IndexConfiguration`, `IndexConfigurationBuilder`, and
-    `IndexConfigurationManager` (keep existing
-    `numberOfSegmentIndexMaintenanceThreads` for non-split maintenance).
-[ ] Extend `IndexConfiguratonStorage` to persist the new property (read/write)
-    and keep backward compatibility with configs that do not define it.
-[ ] Introduce a dedicated split executor (separate thread group) in
-    `SegmentRegistry` or a new `SegmentSplitExecutor` wrapper; size it from
-    `numberOfIndexMaintenanceThreads` and manage lifecycle on close.
-[ ] Update `SegmentAsyncSplitCoordinator` to use the new split executor and
-    add a "start latch" so callers can wait until the split task actually
-    begins execution (not just queued).
-[ ] Change `SegmentMaintenanceCoordinator.handlePostWrite` to block only
-    until the split task starts, then return to the caller; remove `.join()`
-    on split completion. Use `indexBusyTimeoutMillis` to cap waiting.
-[ ] Add tests for:
-    - split task starts without blocking `put` until completion
-    - timeout path when the split executor is saturated
-    - concurrency with flush/compact (regression for timeout)
-[ ] Update configuration docs to describe the new property and defaults.
+[ ] Make segment replacement atomic (Risk: HIGH)
+    - Define crash-safe swap protocol (temp names, fsync, rename order).
+    - Implement rename-then-delete flow and keep old files until swap commits.
+    - Add recovery logic for partial swaps and tests with crash/failure hooks.
+[ ] Tie `index.map` updates to segment file swaps (Risk: HIGH)
+    - Introduce a marker/txn file with PREPARED/COMMITTED states.
+    - Write map changes to temp + fsync, then atomically swap on COMMIT.
+    - Reconcile marker on startup to roll forward/backward; add tests.
+[ ] Implement a real registry lock (Risk: MEDIUM)
+    - Add an explicit lock around registry mutations + file ops.
+    - Replace/rename `executeWithRegistryLock` to actually serialize callers.
+    - Add tests for split/compact interleaving and segment visibility.
+[ ] Replace common-pool async with dedicated executor + backpressure (Risk: MEDIUM)
+    - Add/configure a dedicated executor for async API calls.
+    - Track in-flight tasks and wait on close; add queue/backpressure limits.
+    - Add tests for saturation, cancellation, and close ordering.
+[ ] Ensure `IndexAsyncAdapter.close()` waits for in-flight async ops (Risk: MEDIUM)
+    - Reintroduce in-flight tracking with a wait/timeout policy.
+    - Prevent close from async thread or document/guard with exceptions.
+    - Add tests for close during concurrent async puts/gets.
+[ ] Replace busy-spin loops with retry+backoff+timeout (Risk: MEDIUM)
+    - Use `IndexRetryPolicy` in `SegmentsIterator` and split iterator open.
+    - Add interrupt handling and timeout paths with clear error messaging.
+    - Add tests for BUSY loops and timeout behavior.
+[ ] Stop returning `null` on CLOSED in `SegmentIndexImpl.get` (Risk: MEDIUM)
+    - Decide API surface (exception vs status/Optional).
+    - Update callers and docs to distinguish "missing" vs "closed".
+    - Add tests for CLOSED/ERROR paths.
+[ ] Provide index-level FULL_ISOLATION streaming (Risk: MEDIUM)
+    - Add overload or option to request FULL_ISOLATION on index iterators.
+    - Implement iterator that holds exclusivity across segments safely.
+    - Add tests for long-running scans during maintenance.
+[ ] Stream without full materialization in `IndexInternalConcurrent.getStream` (Risk: MEDIUM)
+    - Replace list snapshot with streaming spliterator tied to iterator close.
+    - Ensure iterator invalidation semantics are preserved.
+    - Add tests for large datasets and early close.
+[ ] Propagate MDC context to async ops and stream consumption (Risk: LOW)
+    - Capture MDC context on submit and reapply in async tasks.
+    - Wrap stream/iterator consumption with MDC scope; clear on close.
+    - Add tests asserting `index.name` appears in async logs.
 
 ## Ready
 
