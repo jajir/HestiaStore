@@ -9,7 +9,7 @@ import org.hestiastore.index.Vldtn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SegmentConsistencyChecker<K, V> {
+class SegmentConsistencyChecker<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final Segment<K, V> segment;

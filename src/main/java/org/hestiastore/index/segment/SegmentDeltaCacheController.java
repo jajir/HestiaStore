@@ -10,7 +10,7 @@ import org.hestiastore.index.Vldtn;
  * @param <K>
  * @param <V>
  */
-public final class SegmentDeltaCacheController<K, V> {
+final class SegmentDeltaCacheController<K, V> {
 
     private final SegmentFiles<K, V> segmentFiles;
     private final SegmentPropertiesManager segmentPropertiesManager;

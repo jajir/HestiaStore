@@ -15,7 +15,7 @@ import org.hestiastore.index.Vldtn;
  * @param <K>
  * @param <V>
  */
-public class SegmentDeltaCacheCompactingWriter<K, V>
+class SegmentDeltaCacheCompactingWriter<K, V>
         extends AbstractCloseableResource implements EntryWriter<K, V> {
 
     private final SegmentDeltaCacheController<K, V> deltaCacheController;

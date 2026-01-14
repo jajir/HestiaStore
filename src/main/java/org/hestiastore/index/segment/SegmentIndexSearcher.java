@@ -22,7 +22,7 @@ import org.hestiastore.index.directory.FileReaderSeekable;
  * @param <K> key type
  * @param <V> value type
  */
-public class SegmentIndexSearcher<K, V> extends AbstractCloseableResource {
+class SegmentIndexSearcher<K, V> extends AbstractCloseableResource {
 
     private final ChunkEntryFile<K, V> chunkPairFile;
     private final int maxNumberOfKeysInIndexPage;

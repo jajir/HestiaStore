@@ -59,10 +59,6 @@ final class SegmentCore<K, V> {
         versionController.changeVersion();
     }
 
-    EntryIterator<K, V> openIterator() {
-        return openIterator(SegmentIteratorIsolation.FAIL_FAST);
-    }
-
     EntryIterator<K, V> openIterator(final SegmentIteratorIsolation isolation) {
         return readPath.openIterator(isolation);
     }
@@ -136,10 +132,6 @@ final class SegmentCore<K, V> {
 
     Comparator<K> getKeyComparator() {
         return segmentFiles.getKeyTypeDescriptor().getComparator();
-    }
-
-    SegmentIndexSearcher<K, V> getSegmentIndexSearcher() {
-        return readPath.getSegmentIndexSearcher();
     }
 
     void resetSegmentIndexSearcher() {

@@ -18,7 +18,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
  * @param <K>
  * @param <V>
  */
-public class SegmentSearcher<K, V> extends AbstractCloseableResource {
+class SegmentSearcher<K, V> extends AbstractCloseableResource {
 
     private final List<Filter<SegmentSearcherContext<K, V>, SegmentSearcherResult<V>>> steps;
 
