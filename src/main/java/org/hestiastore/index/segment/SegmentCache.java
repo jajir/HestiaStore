@@ -188,13 +188,6 @@ final class SegmentCache<K, V> {
         return buildMergedCache().getAsSortedList();
     }
 
-    List<Entry<K, V>> getWriteCacheAsSortedList() {
-        if (writeCache.isEmpty()) {
-            return List.of();
-        }
-        return writeCache.getAsSortedList();
-    }
-
     List<Entry<K, V>> freezeWriteCache() {
         if (frozenWriteCache != null && !frozenWriteCache.isEmpty()) {
             return frozenWriteCache.getAsSortedList();
@@ -223,14 +216,6 @@ final class SegmentCache<K, V> {
         signalCapacityAvailable();
     }
 
-    void mergeWriteCacheToDeltaCache() {
-        if (!writeCache.isEmpty()) {
-            addAll(deltaCache, writeCache.getAsList());
-        }
-        writeCache.clear();
-        signalCapacityAvailable();
-    }
-
     int getNumberOfKeysInWriteCache() {
         return writeCache.size();
     }
@@ -239,11 +224,6 @@ final class SegmentCache<K, V> {
         final int frozen = frozenWriteCache == null ? 0
                 : frozenWriteCache.size();
         return deltaCache.size() + writeCache.size() + frozen;
-    }
-
-    void clearWriteCache() {
-        writeCache.clear();
-        signalCapacityAvailable();
     }
 
     private int currentBufferedKeys() {
