@@ -47,8 +47,6 @@ class SegmentFullWriterTxTest {
     @Mock
     private SegmentDeltaCacheController<Integer, String> deltaCacheController;
     @Mock
-    private SegmentCache<Integer, String> segmentCache;
-    @Mock
     private SegmentPropertiesManager properties;
 
     private SegmentFullWriterTx<Integer, String> subject;
@@ -65,7 +63,7 @@ class SegmentFullWriterTxTest {
         when(bloomFilter.openWriteTx()).thenReturn(bloomTx);
         when(bloomTx.open()).thenReturn(bloomWriter);
         subject = new SegmentFullWriterTx<>(segmentFiles, properties, 2,
-                resources, deltaCacheController, segmentCache);
+                resources, deltaCacheController);
     }
 
     @AfterEach
