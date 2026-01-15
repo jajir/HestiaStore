@@ -353,7 +353,7 @@ public final class SegmentBuilder<K, V> {
         deltaCacheController.setSegmentCache(segmentCache);
         return new SegmentFullWriterTx<>(segmentFiles, segmentPropertiesManager,
                 segmentConf.getMaxNumberOfKeysInChunk(), segmentResources,
-                deltaCacheController, segmentCache);
+                deltaCacheController);
     }
 
     /**
