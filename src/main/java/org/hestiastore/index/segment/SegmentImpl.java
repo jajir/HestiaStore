@@ -1,10 +1,8 @@
 package org.hestiastore.index.segment;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
-import java.util.function.Supplier;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
@@ -24,7 +22,7 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
     private final SegmentCore<K, V> core;
     private final SegmentCompacter<K, V> segmentCompacter;
     private final SegmentConcurrencyGate gate = new SegmentConcurrencyGate();
-    private final Executor maintenanceExecutor;
+    private final SegmentMaintenanceService maintenanceService;
 
     /**
      * Creates a segment implementation with the given core and executor.
@@ -39,8 +37,8 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
         this.core = Vldtn.requireNonNull(core, "core");
         this.segmentCompacter = Vldtn.requireNonNull(segmentCompacter,
                 "segmentCompacter");
-        this.maintenanceExecutor = Vldtn.requireNonNull(maintenanceExecutor,
-                "maintenanceExecutor");
+        this.maintenanceService = new SegmentMaintenanceService(gate,
+                maintenanceExecutor);
     }
 
     /**
@@ -125,11 +123,11 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
      */
     @Override
     public SegmentResult<CompletionStage<Void>> compact() {
-        return startMaintenance(() -> {
+        return maintenanceService.startMaintenance(() -> {
             final List<Entry<K, V>> snapshotEntries = segmentCompacter
                     .prepareCompaction(core);
             final SegmentFullWriterTx<K, V> writerTx = core.openFullWriteTx();
-            return new MaintenanceWork(
+            return new SegmentMaintenanceWork(
                     () -> segmentCompacter.writeCompaction(core,
                             snapshotEntries, writerTx),
                     () -> segmentCompacter.publishCompaction(core, writerTx));
@@ -159,9 +157,9 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
      */
     @Override
     public SegmentResult<CompletionStage<Void>> flush() {
-        return startMaintenance(() -> {
+        return maintenanceService.startMaintenance(() -> {
             final List<Entry<K, V>> entries = core.freezeWriteCacheForFlush();
-            return new MaintenanceWork(
+            return new SegmentMaintenanceWork(
                     () -> core.flushFrozenWriteCacheToDeltaFile(entries),
                     core::applyFrozenWriteCacheAfterFlush);
         });
@@ -239,81 +237,6 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
             return SegmentResult.error();
         }
         return SegmentResult.busy();
-    }
-
-    /**
-     * Starts a maintenance operation by freezing the segment and running work.
-     *
-     * @param workSupplier supplier of maintenance tasks
-     * @return result with completion stage
-     */
-    private SegmentResult<CompletionStage<Void>> startMaintenance(
-            final Supplier<MaintenanceWork> workSupplier) {
-        Vldtn.requireNonNull(workSupplier, "workSupplier");
-        if (!gate.tryEnterFreezeAndDrain()) {
-            return resultForState(gate.getState());
-        }
-        final MaintenanceWork work;
-        try {
-            work = Vldtn.requireNonNull(workSupplier.get(), "work");
-        } catch (final RuntimeException e) {
-            failUnlessClosed();
-            return SegmentResult.error();
-        }
-        if (!gate.enterMaintenanceRunning()) {
-            failUnlessClosed();
-            return SegmentResult.error();
-        }
-        final CompletableFuture<Void> completion = new CompletableFuture<>();
-        try {
-            maintenanceExecutor.execute(
-                    () -> runMaintenance(work, completion));
-        } catch (final RuntimeException e) {
-            failUnlessClosed();
-            return SegmentResult.error();
-        }
-        return SegmentResult.ok(completion);
-    }
-
-    /**
-     * Executes maintenance work and transitions the gate through states.
-     *
-     * @param work maintenance work bundle
-     * @param completion completion stage to resolve
-     */
-    private void runMaintenance(final MaintenanceWork work,
-            final CompletableFuture<Void> completion) {
-        try {
-            work.ioWork().run();
-        } catch (final RuntimeException e) {
-            failUnlessClosed();
-            completion.completeExceptionally(e);
-            return;
-        }
-        if (gate.getState() == SegmentState.CLOSED) {
-            completion.complete(null);
-            return;
-        }
-        if (!gate.finishMaintenanceToFreeze()) {
-            failUnlessClosed();
-            completion.completeExceptionally(new IllegalStateException(
-                    "Segment maintenance failed to transition to FREEZE."));
-            return;
-        }
-        try {
-            work.publishWork().run();
-        } catch (final RuntimeException e) {
-            failUnlessClosed();
-            completion.completeExceptionally(e);
-            return;
-        }
-        if (!gate.finishFreezeToReady()) {
-            failUnlessClosed();
-            completion.completeExceptionally(new IllegalStateException(
-                    "Segment maintenance failed to transition to READY."));
-            return;
-        }
-        completion.complete(null);
     }
 
     /**

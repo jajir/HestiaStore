@@ -10,7 +10,7 @@ import org.hestiastore.index.Vldtn;
  * FREEZE and should be short, applying metadata/resource updates before
  * returning to READY.
  */
-final class MaintenanceWork {
+final class SegmentMaintenanceWork {
 
     private final Runnable ioWork;
     private final Runnable publishWork;
@@ -21,7 +21,8 @@ final class MaintenanceWork {
      * @param ioWork IO phase runnable
      * @param publishWork publish phase runnable
      */
-    MaintenanceWork(final Runnable ioWork, final Runnable publishWork) {
+    SegmentMaintenanceWork(final Runnable ioWork,
+            final Runnable publishWork) {
         this.ioWork = Vldtn.requireNonNull(ioWork, "ioWork");
         this.publishWork = Vldtn.requireNonNull(publishWork, "publishWork");
     }
