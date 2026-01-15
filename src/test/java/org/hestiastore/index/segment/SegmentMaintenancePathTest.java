@@ -27,8 +27,6 @@ class SegmentMaintenancePathTest {
     @Mock
     private SegmentDeltaCacheController<Integer, String> deltaCacheController;
     @Mock
-    private SegmentCache<Integer, String> segmentCache;
-    @Mock
     private SegmentDeltaCacheWriter<Integer, String> deltaCacheWriter;
 
     private SegmentMaintenancePath<Integer, String> subject;
@@ -39,8 +37,7 @@ class SegmentMaintenancePathTest {
                 List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()));
         subject = new SegmentMaintenancePath<>(segmentFiles, conf,
-                segmentPropertiesManager, segmentResources, deltaCacheController,
-                segmentCache);
+                segmentPropertiesManager, segmentResources, deltaCacheController);
     }
 
     @Test

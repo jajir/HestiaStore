@@ -547,7 +547,7 @@ class SegmentImplTest {
                 segmentCache, controller);
         final SegmentMaintenancePath<Integer, String> maintenancePath = new SegmentMaintenancePath<>(
                 segmentFiles, conf, segmentPropertiesManager, segmentDataProvider,
-                deltaCacheController, segmentCache);
+                deltaCacheController);
         return new SegmentCore<>(segmentFiles, controller,
                 segmentPropertiesManager, segmentCache, readPath, writePath,
                 maintenancePath);
