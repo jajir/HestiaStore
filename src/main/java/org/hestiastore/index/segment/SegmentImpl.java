@@ -241,42 +241,6 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
         return SegmentResult.busy();
     }
 
-    private static final class MaintenanceWork {
-
-        private final Runnable ioWork;
-        private final Runnable publishWork;
-
-        /**
-         * Creates a maintenance work bundle.
-         *
-         * @param ioWork IO phase runnable
-         * @param publishWork publish phase runnable
-         */
-        private MaintenanceWork(final Runnable ioWork,
-                final Runnable publishWork) {
-            this.ioWork = Vldtn.requireNonNull(ioWork, "ioWork");
-            this.publishWork = Vldtn.requireNonNull(publishWork, "publishWork");
-        }
-
-        /**
-         * Returns the IO phase task.
-         *
-         * @return IO phase runnable
-         */
-        private Runnable ioWork() {
-            return ioWork;
-        }
-
-        /**
-         * Returns the publish phase task.
-         *
-         * @return publish phase runnable
-         */
-        private Runnable publishWork() {
-            return publishWork;
-        }
-    }
-
     /**
      * Starts a maintenance operation by freezing the segment and running work.
      *
