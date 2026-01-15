@@ -184,6 +184,11 @@ public final class SegmentFiles<K, V> {
                 DataBlockSize.ofDataBlockSize(diskIoBufferSize));
     }
 
+    /**
+     * Returns the async directory backing this segment.
+     *
+     * @return async directory facade
+     */
     AsyncDirectory getAsyncDirectory() {
         return directoryFacade;
     }

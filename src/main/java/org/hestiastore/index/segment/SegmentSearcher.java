@@ -22,6 +22,11 @@ class SegmentSearcher<K, V> extends AbstractCloseableResource {
 
     private final List<Filter<SegmentSearcherContext<K, V>, SegmentSearcherResult<V>>> steps;
 
+    /**
+     * Creates a searcher pipeline for segment lookups.
+     *
+     * @param valueTypeDescriptor value descriptor for tombstone handling
+     */
     public SegmentSearcher(final TypeDescriptor<V> valueTypeDescriptor) {
         this.steps = List.of(//
                 new SegmentSearcherStepDeltaCache<>(Vldtn.requireNonNull(
@@ -31,6 +36,14 @@ class SegmentSearcher<K, V> extends AbstractCloseableResource {
         );
     }
 
+    /**
+     * Resolves a key by executing the lookup pipeline.
+     *
+     * @param key lookup key
+     * @param segmentDataProvider segment resource provider
+     * @param segmentIndexSearcher index searcher for point lookups
+     * @return resolved value or null
+     */
     public V get(final K key,
             final SegmentResources<K, V> segmentDataProvider,
             final SegmentIndexSearcher<K, V> segmentIndexSearcher) {
@@ -43,6 +56,9 @@ class SegmentSearcher<K, V> extends AbstractCloseableResource {
         return result.getValue();
     }
 
+    /**
+     * Releases resources held by the searcher. This implementation is a no-op.
+     */
     @Override
     protected void doClose() {
         // intentionally no-op

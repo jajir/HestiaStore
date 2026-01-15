@@ -25,6 +25,13 @@ public final class SegmentDeltaCache<K, V> {
 
     private final UniqueCache<K, V> cache;
 
+    /**
+     * Loads delta cache entries from the segment cache files.
+     *
+     * @param keyTypeDescriptor descriptor for key ordering
+     * @param segmentFiles segment file access wrapper
+     * @param segmentPropertiesManager properties manager for delta file names
+     */
     public SegmentDeltaCache(final TypeDescriptor<K> keyTypeDescriptor,
             final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentPropertiesManager) {
@@ -44,6 +51,12 @@ public final class SegmentDeltaCache<K, V> {
                         segmentFiles, segmentDeltaFileName));
     }
 
+    /**
+     * Loads entries from a single delta cache file into memory.
+     *
+     * @param segmentFiles segment file access wrapper
+     * @param segmentDeltaFileName delta file name to load
+     */
     private void loadDataFromSegmentDeltaFile(
             final SegmentFiles<K, V> segmentFiles,
             final String segmentDeltaFileName) {
@@ -56,15 +69,30 @@ public final class SegmentDeltaCache<K, V> {
         }
     }
 
+    /**
+     * Adds or replaces an entry in the delta cache.
+     *
+     * @param entry entry to store
+     */
     public void put(final Entry<K, V> entry) {
         Vldtn.requireNonNull(entry, "entry");
         cache.put(entry);
     }
 
+    /**
+     * Returns the total number of cached entries.
+     *
+     * @return number of entries in cache
+     */
     public int size() {
         return cache.size();
     }
 
+    /**
+     * Returns the number of cached entries excluding tombstones.
+     *
+     * @return number of non-tombstone entries
+     */
     public int sizeWithoutTombstones() {
         final TypeDescriptor<V> valueTypeDescriptor = segmentFiles
                 .getValueTypeDescriptor();
@@ -77,14 +105,28 @@ public final class SegmentDeltaCache<K, V> {
         return count;
     }
 
+    /**
+     * Clears all cached entries.
+     */
     public void evictAll() {
         cache.clear();
     }
 
+    /**
+     * Returns the cached value for the given key.
+     *
+     * @param key key to look up
+     * @return cached value or null if absent
+     */
     public V get(final K key) {
         return cache.get(key);
     }
 
+    /**
+     * Returns cached entries as a sorted list.
+     *
+     * @return sorted cache entries
+     */
     public List<Entry<K, V>> getAsSortedList() {
         return cache.getAsSortedList();
     }

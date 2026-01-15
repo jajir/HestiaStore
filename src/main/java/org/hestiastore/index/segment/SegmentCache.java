@@ -30,6 +30,17 @@ final class SegmentCache<K, V> {
     private final ReentrantLock capacityLock = new ReentrantLock();
     private final Condition capacityAvailable = capacityLock.newCondition();
 
+    /**
+     * Creates a segment cache with initial delta entries and sizing limits.
+     *
+     * @param keyComparator comparator for ordering keys
+     * @param valueTypeDescriptor descriptor for values (tombstone handling)
+     * @param deltaEntries initial delta-cache entries, may be null
+     * @param maxNumberOfKeysInSegmentWriteCache max write-cache size
+     * @param maxNumberOfKeysInSegmentWriteCacheDuringFlush write-cache size
+     *        allowed during flush
+     * @param maxNumberOfKeysInSegmentCache max delta-cache size hint
+     */
     public SegmentCache(final Comparator<K> keyComparator,
             final TypeDescriptor<V> valueTypeDescriptor,
             final List<Entry<K, V>> deltaEntries,
@@ -73,6 +84,12 @@ final class SegmentCache<K, V> {
         writeCache.put(Vldtn.requireNonNull(entry, "entry"));
     }
 
+    /**
+     * Attempts to add an entry to the write cache without blocking.
+     *
+     * @param entry entry to cache
+     * @return true when the entry was accepted
+     */
     boolean tryPutToWriteCacheWithoutWaiting(final Entry<K, V> entry) {
         capacityLock.lock();
         try {
@@ -166,6 +183,9 @@ final class SegmentCache<K, V> {
         signalCapacityAvailable();
     }
 
+    /**
+     * Clears the delta cache while preserving the current write cache.
+     */
     void clearDeltaCachePreservingWriteCache() {
         deltaCache.clear();
         if (frozenWriteCache != null) {
@@ -188,6 +208,11 @@ final class SegmentCache<K, V> {
         return buildMergedCache().getAsSortedList();
     }
 
+    /**
+     * Freezes the current write cache into a snapshot for flushing.
+     *
+     * @return sorted snapshot entries, possibly empty
+     */
     List<Entry<K, V>> freezeWriteCache() {
         if (frozenWriteCache != null && !frozenWriteCache.isEmpty()) {
             return frozenWriteCache.getAsSortedList();
@@ -200,10 +225,19 @@ final class SegmentCache<K, V> {
         return frozenWriteCache.getAsSortedList();
     }
 
+    /**
+     * Returns whether a frozen write cache snapshot is available.
+     *
+     * @return true when a frozen snapshot exists and is not empty
+     */
     boolean hasFrozenWriteCache() {
         return frozenWriteCache != null && !frozenWriteCache.isEmpty();
     }
 
+    /**
+     * Merges the frozen write cache into the delta cache and clears the
+     * snapshot.
+     */
     void mergeFrozenWriteCacheToDeltaCache() {
         if (frozenWriteCache == null || frozenWriteCache.isEmpty()) {
             frozenWriteCache = null;
@@ -216,22 +250,40 @@ final class SegmentCache<K, V> {
         signalCapacityAvailable();
     }
 
+    /**
+     * Returns the number of unique keys in the write cache only.
+     *
+     * @return number of keys buffered for flush
+     */
     int getNumberOfKeysInWriteCache() {
         return writeCache.size();
     }
 
+    /**
+     * Returns the total number of keys across delta, write, and frozen caches.
+     *
+     * @return total number of cached keys
+     */
     int getNumbberOfKeysInCache() {
         final int frozen = frozenWriteCache == null ? 0
                 : frozenWriteCache.size();
         return deltaCache.size() + writeCache.size() + frozen;
     }
 
+    /**
+     * Returns the number of currently buffered write keys, including frozen.
+     *
+     * @return total buffered write keys
+     */
     private int currentBufferedKeys() {
         final int frozen = frozenWriteCache == null ? 0
                 : frozenWriteCache.size();
         return writeCache.size() + frozen;
     }
 
+    /**
+     * Blocks until there is capacity for another write-cache entry.
+     */
     private void awaitCapacity() {
         if (maxNumberOfKeysInSegmentWriteCache <= 0) {
             return;
@@ -250,6 +302,9 @@ final class SegmentCache<K, V> {
         }
     }
 
+    /**
+     * Signals waiting writers that capacity may be available.
+     */
     private void signalCapacityAvailable() {
         capacityLock.lock();
         try {
@@ -259,6 +314,11 @@ final class SegmentCache<K, V> {
         }
     }
 
+    /**
+     * Builds a merged cache view (delta + frozen + write).
+     *
+     * @return merged cache instance
+     */
     private UniqueCache<K, V> buildMergedCache() {
         final UniqueCache<K, V> merged = UniqueCache.<K, V>builder()
                 .withKeyComparator(keyComparator).buildEmpty();
@@ -270,6 +330,11 @@ final class SegmentCache<K, V> {
         return merged;
     }
 
+    /**
+     * Builds a new write cache with the configured capacity hint.
+     *
+     * @return empty write cache
+     */
     private UniqueCache<K, V> buildWriteCache() {
         final int capacityHint = Math.min(
                 Math.max(1, maxNumberOfKeysInSegmentWriteCacheDuringFlush),
@@ -281,6 +346,12 @@ final class SegmentCache<K, V> {
                 .buildEmpty();
     }
 
+    /**
+     * Adds all non-null entries into the target cache.
+     *
+     * @param target cache to populate
+     * @param entries entries to add (may be null)
+     */
     private void addAll(final UniqueCache<K, V> target,
             final List<Entry<K, V>> entries) {
         Vldtn.requireNonNull(target, "target");

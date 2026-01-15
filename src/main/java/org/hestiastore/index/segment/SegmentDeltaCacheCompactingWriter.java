@@ -25,12 +25,20 @@ class SegmentDeltaCacheCompactingWriter<K, V>
      */
     private SegmentDeltaCacheWriter<K, V> deltaCacheWriter;
 
+    /**
+     * Creates a writer that lazily opens a delta cache writer.
+     *
+     * @param deltaCacheController controller for delta cache operations
+     */
     public SegmentDeltaCacheCompactingWriter(
             final SegmentDeltaCacheController<K, V> deltaCacheController) {
         this.deltaCacheController = Vldtn.requireNonNull(deltaCacheController,
                 "deltaCacheController");
     }
 
+    /**
+     * Closes the underlying delta cache writer if opened.
+     */
     @Override
     protected void doClose() {
         if (deltaCacheWriter != null) {
@@ -39,12 +47,20 @@ class SegmentDeltaCacheCompactingWriter<K, V>
         }
     }
 
+    /**
+     * Writes an entry to the delta cache, opening a writer if needed.
+     *
+     * @param entry entry to write
+     */
     @Override
     public void write(final Entry<K, V> entry) {
         optionallyOpenDeltaCacheWriter();
         deltaCacheWriter.write(entry);
     }
 
+    /**
+     * Lazily opens the delta cache writer on first write.
+     */
     private void optionallyOpenDeltaCacheWriter() {
         if (deltaCacheWriter == null) {
             deltaCacheWriter = deltaCacheController.openWriter();

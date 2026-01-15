@@ -78,6 +78,11 @@ final class SegmentDeltaCacheWriter<K, V>
         this.maxNumberOfKeysInChunk = maxNumberOfKeysInChunk;
     }
 
+    /**
+     * Returns the number of keys written into this delta cache writer.
+     *
+     * @return number of keys written
+     */
     public int getNumberOfKeys() {
         return cx;
     }
@@ -119,6 +124,11 @@ final class SegmentDeltaCacheWriter<K, V>
         uniqueCache.clear();
     }
 
+    /**
+     * Adds an entry to the buffered delta cache and the in-memory cache view.
+     *
+     * @param entry entry to write
+     */
     @Override
     public void write(Entry<K, V> entry) {
         uniqueCache.put(entry);

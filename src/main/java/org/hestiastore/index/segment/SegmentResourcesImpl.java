@@ -22,12 +22,22 @@ public final class SegmentResourcesImpl<K, V>
     private final AtomicReference<BloomFilter<K>> bloomFilter = new AtomicReference<>();
     private final AtomicReference<ScarceSegmentIndex<K>> scarceIndex = new AtomicReference<>();
 
+    /**
+     * Creates a cached resource wrapper backed by the given supplier.
+     *
+     * @param segmentDataSupplier supplier for resource instances
+     */
     public SegmentResourcesImpl(
             final SegmentDataSupplier<K, V> segmentDataSupplier) {
         this.segmentDataSupplier = Vldtn.requireNonNull(segmentDataSupplier,
                 "segmentDataSupplier");
     }
 
+    /**
+     * Returns the cached delta cache, loading it on first access.
+     *
+     * @return delta cache instance
+     */
     @Override
     public SegmentDeltaCache<K, V> getSegmentDeltaCache() {
         while (true) {
@@ -48,6 +58,11 @@ public final class SegmentResourcesImpl<K, V>
         }
     }
 
+    /**
+     * Returns the cached Bloom filter, loading it on first access.
+     *
+     * @return Bloom filter instance
+     */
     @Override
     public BloomFilter<K> getBloomFilter() {
         while (true) {
@@ -69,6 +84,11 @@ public final class SegmentResourcesImpl<K, V>
         }
     }
 
+    /**
+     * Returns the cached scarce index, loading it on first access.
+     *
+     * @return scarce index instance
+     */
     @Override
     public ScarceSegmentIndex<K> getScarceIndex() {
         while (true) {
@@ -90,6 +110,9 @@ public final class SegmentResourcesImpl<K, V>
         }
     }
 
+    /**
+     * Clears cached resources and closes any open handles.
+     */
     @Override
     public void invalidate() {
         final BloomFilter<K> cachedBloom = bloomFilter.getAndSet(null);

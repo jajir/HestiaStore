@@ -73,6 +73,11 @@ final class SegmentMaintenancePath<K, V> {
         }
     }
 
+    /**
+     * Opens a writer that appends to the delta cache.
+     *
+     * @return delta cache writer
+     */
     private EntryWriter<K, V> openDeltaCacheWriter() {
         return new SegmentDeltaCacheCompactingWriter<>(deltaCacheController);
     }

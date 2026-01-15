@@ -25,10 +25,21 @@ public final class SegmentId {
         this.id = id;
     }
 
+    /**
+     * Creates a new segment id instance.
+     *
+     * @param id numeric segment id
+     * @return segment id wrapper
+     */
     public static SegmentId of(final int id) {
         return new SegmentId(id);
     }
 
+    /**
+     * Returns the raw numeric id.
+     *
+     * @return numeric id
+     */
     public int getId() {
         return id;
     }
@@ -42,16 +53,32 @@ public final class SegmentId {
         return "segment-" + FileNameUtil.getPaddedId(id, 5);
     }
 
+    /**
+     * Returns the segment name.
+     *
+     * @return segment name
+     */
     @Override
     public String toString() {
         return getName();
     }
 
+    /**
+     * Returns hash code based on numeric id.
+     *
+     * @return hash code
+     */
     @Override
     public int hashCode() {
         return id;
     }
 
+    /**
+     * Compares two segment ids.
+     *
+     * @param obj object to compare
+     * @return true when ids match
+     */
     @Override
     public boolean equals(Object obj) {
         if (this == obj)

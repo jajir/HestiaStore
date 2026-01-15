@@ -9,9 +9,19 @@ import org.hestiastore.index.Vldtn;
 final class SegmentSearcherStepIndexFile<K, V>
         implements Filter<SegmentSearcherContext<K, V>, SegmentSearcherResult<V>> {
 
+    /**
+     * Creates the index-file lookup step.
+     */
     SegmentSearcherStepIndexFile() {
     }
 
+    /**
+     * Looks up the key using scarce index position and index file scan.
+     *
+     * @param ctx search context
+     * @param result result holder
+     * @return always false to stop the pipeline after this step
+     */
     @Override
     public boolean filter(final SegmentSearcherContext<K, V> ctx,
             final SegmentSearcherResult<V> result) {

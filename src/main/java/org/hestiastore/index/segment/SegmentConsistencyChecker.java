@@ -9,12 +9,24 @@ import org.hestiastore.index.Vldtn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Validates ordering consistency of segment entries.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 class SegmentConsistencyChecker<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final Segment<K, V> segment;
     private final Comparator<K> keyComparator;
 
+    /**
+     * Creates a checker for the given segment and key comparator.
+     *
+     * @param segment segment to validate
+     * @param keyComparator comparator for key ordering
+     */
     SegmentConsistencyChecker(final Segment<K, V> segment,
             final Comparator<K> keyComparator) {
         this.segment = Vldtn.requireNonNull(segment, "segment");

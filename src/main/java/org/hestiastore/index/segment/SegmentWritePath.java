@@ -16,6 +16,12 @@ final class SegmentWritePath<K, V> {
     private final SegmentCache<K, V> segmentCache;
     private final VersionController versionController;
 
+    /**
+     * Creates the write path for a segment.
+     *
+     * @param segmentCache write cache to mutate
+     * @param versionController version controller for invalidating iterators
+     */
     SegmentWritePath(final SegmentCache<K, V> segmentCache,
             final VersionController versionController) {
         this.segmentCache = Vldtn.requireNonNull(segmentCache, "segmentCache");

@@ -14,9 +14,7 @@ import org.hestiastore.index.properties.PropertyView;
 import org.hestiastore.index.properties.PropertyWriter;
 
 /**
- * 
- * @author honza
- *
+ * Manages segment metadata stored in the properties file.
  */
 public class SegmentPropertiesManager {
 
@@ -30,6 +28,12 @@ public class SegmentPropertiesManager {
     private final PropertyStore propertyStore;
     private final Object propertyLock = new Object();
 
+    /**
+     * Creates a manager for the given segment properties file.
+     *
+     * @param directoryFacade async directory for property storage
+     * @param id segment identifier
+     */
     public SegmentPropertiesManager(final AsyncDirectory directoryFacade,
             final SegmentId id) {
         Vldtn.requireNonNull(directoryFacade, "directoryFacade");
@@ -38,10 +42,20 @@ public class SegmentPropertiesManager {
                 directoryFacade, getPropertiesFilename(), false);
     }
 
+    /**
+     * Returns the properties file name for this segment.
+     *
+     * @return properties file name
+     */
     private String getPropertiesFilename() {
         return id.getName() + PROPERTIES_FILENAME_EXTENSION;
     }
 
+    /**
+     * Returns a snapshot of segment key statistics from persisted properties.
+     *
+     * @return segment statistics snapshot
+     */
     public SegmentStats getSegmentStats() {
         final PropertyView view = propertyStore.snapshot();
         return new SegmentStats(
@@ -50,6 +64,9 @@ public class SegmentPropertiesManager {
                 view.getLong(NUMBER_OF_KEYS_IN_SCARCE_INDEX));
     }
 
+    /**
+     * Resets the delta file name counter to zero.
+     */
     public void clearCacheDeltaFileNamesCouter() {
         synchronized (propertyLock) {
             updateTransaction(writer -> writer.setInt(
@@ -57,6 +74,11 @@ public class SegmentPropertiesManager {
         }
     }
 
+    /**
+     * Returns the next delta file name and increments the counter.
+     *
+     * @return new delta file name
+     */
     public String getAndIncreaseDeltaFileName() {
         synchronized (propertyLock) {
             final int counter = propertyStore.snapshot()
@@ -67,6 +89,11 @@ public class SegmentPropertiesManager {
         }
     }
 
+    /**
+     * Returns the next delta file name without incrementing the counter.
+     *
+     * @return next delta file name
+     */
     public String getNextDeltaFileName() {
         synchronized (propertyLock) {
             final int counter = propertyStore.snapshot()
@@ -75,6 +102,9 @@ public class SegmentPropertiesManager {
         }
     }
 
+    /**
+     * Increments the delta file name counter.
+     */
     public void incrementDeltaFileNameCounter() {
         synchronized (propertyLock) {
             final int counter = propertyStore.snapshot()
@@ -84,6 +114,12 @@ public class SegmentPropertiesManager {
         }
     }
 
+    /**
+     * Builds a delta cache file name for the given numeric id.
+     *
+     * @param segmentCacheDeltaFileId delta file numeric id
+     * @return delta file name
+     */
     private String getDeltaString(final int segmentCacheDeltaFileId) {
         final String rawId = String.valueOf(segmentCacheDeltaFileId);
         final String paddedId = rawId.length() > 3 ? rawId
@@ -107,11 +143,21 @@ public class SegmentPropertiesManager {
         return out;
     }
 
+    /**
+     * Returns the number of delta files recorded in properties.
+     *
+     * @return delta file count
+     */
     public int getDeltaFileCount() {
         return propertyStore.snapshot()
                 .getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);
     }
 
+    /**
+     * Sets the number of keys stored in the delta cache.
+     *
+     * @param numberOfKeysInCache number of keys in cache
+     */
     public void setNumberOfKeysInCache(final long numberOfKeysInCache) {
         synchronized (propertyLock) {
             updateTransaction(writer -> writer.setLong(
@@ -119,6 +165,11 @@ public class SegmentPropertiesManager {
         }
     }
 
+    /**
+     * Increases the number of keys in the delta cache by the given amount.
+     *
+     * @param howMuchKeys number of keys to add
+     */
     public void increaseNumberOfKeysInDeltaCache(final int howMuchKeys) {
         if (howMuchKeys < 0) {
             throw new IllegalArgumentException(String.format(
@@ -134,10 +185,18 @@ public class SegmentPropertiesManager {
         }
     }
 
+    /**
+     * Increments the number of keys in the delta cache by one.
+     */
     public void incrementNumberOfKeysInCache() {
         increaseNumberOfKeysInDeltaCache(1);
     }
 
+    /**
+     * Sets the number of keys stored in the main index.
+     *
+     * @param numberOfKeysInIndex number of keys in the index
+     */
     public void setNumberOfKeysInIndex(final long numberOfKeysInIndex) {
         synchronized (propertyLock) {
             updateTransaction(writer -> writer.setLong(
@@ -145,6 +204,11 @@ public class SegmentPropertiesManager {
         }
     }
 
+    /**
+     * Sets the number of keys stored in the scarce index.
+     *
+     * @param numberOfKeysInScarceIndex number of scarce index keys
+     */
     public void setNumberOfKeysInScarceIndex(
             final long numberOfKeysInScarceIndex) {
         synchronized (propertyLock) {
@@ -153,10 +217,20 @@ public class SegmentPropertiesManager {
         }
     }
 
+    /**
+     * Returns the number of keys stored in the delta cache.
+     *
+     * @return delta cache key count
+     */
     public long getNumberOfKeysInDeltaCache() {
         return getSegmentStats().getNumberOfKeysInDeltaCache();
     }
 
+    /**
+     * Runs a property update transaction under the segment lock.
+     *
+     * @param updater callback that mutates the property writer
+     */
     private void updateTransaction(final Consumer<PropertyWriter> updater) {
         final PropertyTransaction tx = propertyStore.beginTransaction();
         final PropertyWriter writer = tx.openPropertyWriter();

@@ -13,26 +13,52 @@ final class SegmentConcurrencyGate {
     private final AtomicInteger inFlightReads = new AtomicInteger();
     private final AtomicInteger inFlightWrites = new AtomicInteger();
 
+    /**
+     * Returns the current segment state.
+     *
+     * @return current state
+     */
     SegmentState getState() {
         return stateMachine.getState();
     }
 
+    /**
+     * Attempts to enter a read operation.
+     *
+     * @return true when read admission succeeded
+     */
     boolean tryEnterRead() {
         return tryEnterOperation(inFlightReads);
     }
 
+    /**
+     * Attempts to enter a write operation.
+     *
+     * @return true when write admission succeeded
+     */
     boolean tryEnterWrite() {
         return tryEnterOperation(inFlightWrites);
     }
 
+    /**
+     * Marks completion of a read operation.
+     */
     void exitRead() {
         inFlightReads.decrementAndGet();
     }
 
+    /**
+     * Marks completion of a write operation.
+     */
     void exitWrite() {
         inFlightWrites.decrementAndGet();
     }
 
+    /**
+     * Transitions to FREEZE and waits for in-flight operations to drain.
+     *
+     * @return true when freeze and drain succeeded
+     */
     boolean tryEnterFreezeAndDrain() {
         if (!stateMachine.tryEnterFreeze()) {
             return false;
@@ -40,10 +66,20 @@ final class SegmentConcurrencyGate {
         return awaitNoInFlight();
     }
 
+    /**
+     * Transitions from FREEZE to MAINTENANCE_RUNNING.
+     *
+     * @return true when transition succeeded
+     */
     boolean enterMaintenanceRunning() {
         return stateMachine.enterMaintenanceRunning();
     }
 
+    /**
+     * Transitions from MAINTENANCE_RUNNING to FREEZE and drains operations.
+     *
+     * @return true when transition succeeded
+     */
     boolean finishMaintenanceToFreeze() {
         if (!stateMachine.finishMaintenanceToFreeze()) {
             return false;
@@ -51,26 +87,53 @@ final class SegmentConcurrencyGate {
         return awaitNoInFlight();
     }
 
+    /**
+     * Transitions from FREEZE to READY.
+     *
+     * @return true when transition succeeded
+     */
     boolean finishFreezeToReady() {
         return stateMachine.finishFreezeToReady();
     }
 
+    /**
+     * Forces the segment into CLOSED state.
+     */
     void forceClosed() {
         stateMachine.forceClosed();
     }
 
+    /**
+     * Marks the segment as failed.
+     */
     void fail() {
         stateMachine.fail();
     }
 
+    /**
+     * Returns the number of in-flight read operations.
+     *
+     * @return in-flight reads
+     */
     int getInFlightReads() {
         return inFlightReads.get();
     }
 
+    /**
+     * Returns the number of in-flight write operations.
+     *
+     * @return in-flight writes
+     */
     int getInFlightWrites() {
         return inFlightWrites.get();
     }
 
+    /**
+     * Attempts to enter a read or write operation.
+     *
+     * @param counter in-flight counter to increment
+     * @return true when admission succeeded
+     */
     private boolean tryEnterOperation(final AtomicInteger counter) {
         SegmentState state = stateMachine.getState();
         if (!isOperationAllowed(state)) {
@@ -85,6 +148,11 @@ final class SegmentConcurrencyGate {
         return false;
     }
 
+    /**
+     * Waits until there are no in-flight operations while in FREEZE.
+     *
+     * @return true when drained successfully
+     */
     private boolean awaitNoInFlight() {
         int spins = 0;
         while (hasInFlight()) {
@@ -101,10 +169,21 @@ final class SegmentConcurrencyGate {
         return stateMachine.getState() == SegmentState.FREEZE;
     }
 
+    /**
+     * Returns true when there are reads or writes in flight.
+     *
+     * @return true when operations are in flight
+     */
     private boolean hasInFlight() {
         return inFlightReads.get() > 0 || inFlightWrites.get() > 0;
     }
 
+    /**
+     * Returns whether operations are allowed in the given state.
+     *
+     * @param state segment state
+     * @return true when operations may proceed
+     */
     private static boolean isOperationAllowed(final SegmentState state) {
         return state == SegmentState.READY
                 || state == SegmentState.MAINTENANCE_RUNNING;

@@ -11,12 +11,24 @@ final class SegmentSearcherStepDeltaCache<K, V> implements
 
     private final org.hestiastore.index.datatype.TypeDescriptor<V> valueTypeDescriptor;
 
+    /**
+     * Creates the delta cache lookup step.
+     *
+     * @param valueTypeDescriptor value descriptor for tombstone checks
+     */
     SegmentSearcherStepDeltaCache(
             final org.hestiastore.index.datatype.TypeDescriptor<V> valueTypeDescriptor) {
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
     }
 
+    /**
+     * Checks the delta cache and stops the pipeline if a value is resolved.
+     *
+     * @param ctx search context
+     * @param result result holder
+     * @return true to continue pipeline, false to stop
+     */
     @Override
     public boolean filter(final SegmentSearcherContext<K, V> ctx,
             final SegmentSearcherResult<V> result) {

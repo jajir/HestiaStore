@@ -60,6 +60,15 @@ public class SegmentFilesRenamer {
         }
     }
 
+    /**
+     * Rewrites a delta file name from the source prefix to the target prefix.
+     *
+     * @param fromPrefix expected source prefix
+     * @param toPrefix target prefix to apply
+     * @param fileName current delta file name
+     * @param fromSegmentIdName source segment identifier for validation
+     * @return renamed delta file name
+     */
     private String renameDeltaFileName(final String fromPrefix,
             final String toPrefix, final String fileName,
             final String fromSegmentIdName) {

@@ -21,6 +21,13 @@ public final class SegmentDataSupplier<K, V> {
     private final SegmentConf segmentConf;
     private final SegmentPropertiesManager segmentPropertiesManager;
 
+    /**
+     * Creates a supplier for segment-related data structures.
+     *
+     * @param segmentFiles segment file access wrapper
+     * @param segmentConf segment configuration
+     * @param segmentPropertiesManager properties manager for segment metadata
+     */
     public SegmentDataSupplier(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
             final SegmentPropertiesManager segmentPropertiesManager) {
@@ -30,11 +37,21 @@ public final class SegmentDataSupplier<K, V> {
                 .requireNonNull(segmentPropertiesManager);
     }
 
+    /**
+     * Creates a new delta cache instance backed by the segment files.
+     *
+     * @return delta cache instance
+     */
     public SegmentDeltaCache<K, V> getSegmentDeltaCache() {
         return new SegmentDeltaCache<>(segmentFiles.getKeyTypeDescriptor(),
                 segmentFiles, segmentPropertiesManager);
     }
 
+    /**
+     * Creates a new Bloom filter instance for the segment.
+     *
+     * @return Bloom filter instance
+     */
     public BloomFilter<K> getBloomFilter() {
         return BloomFilter.<K>builder()
                 .withBloomFilterFileName(segmentFiles.getBloomFilterFileName())
@@ -52,6 +69,11 @@ public final class SegmentDataSupplier<K, V> {
                 .build();
     }
 
+    /**
+     * Creates a new scarce index instance for the segment.
+     *
+     * @return scarce index instance
+     */
     public ScarceSegmentIndex<K> getScarceIndex() {
         return ScarceSegmentIndex.<K>builder()//
                 .withAsyncDirectory(segmentFiles.getAsyncDirectory())//

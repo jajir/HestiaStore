@@ -14,17 +14,29 @@ import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
  */
 public interface SegmentResources<K, V> {
 
+    /**
+     * Returns the delta cache for this segment.
+     *
+     * @return delta cache instance
+     */
     SegmentDeltaCache<K, V> getSegmentDeltaCache();
 
+    /**
+     * Returns the Bloom filter for this segment.
+     *
+     * @return Bloom filter instance
+     */
     BloomFilter<K> getBloomFilter();
 
+    /**
+     * Returns the scarce index for this segment.
+     *
+     * @return scarce segment index
+     */
     ScarceSegmentIndex<K> getScarceIndex();
 
     /**
-     * Invalidate object in memory. Could be used in both scenarios: to free
-     * some memory of to evict obsolete data.
-     *
-     * internally it will close all resources.
+     * Invalidates cached resources, closing any open handles.
      */
     void invalidate();
 }
