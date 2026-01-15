@@ -382,7 +382,7 @@ public final class SegmentBuilder<K, V> {
                 segmentCache, versionController);
         final SegmentMaintenancePath<K, V> maintenancePath = new SegmentMaintenancePath<>(
                 segmentFiles, segmentConf, segmentPropertiesManager,
-                segmentResources, deltaCacheController, segmentCache);
+                segmentResources, deltaCacheController);
         final SegmentCompacter<K, V> compacter = new SegmentCompacter<>(
                 versionController);
         final SegmentCore<K, V> core = new SegmentCore<>(segmentFiles,

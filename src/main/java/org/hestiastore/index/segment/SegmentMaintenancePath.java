@@ -20,14 +20,12 @@ final class SegmentMaintenancePath<K, V> {
     private final SegmentPropertiesManager segmentPropertiesManager;
     private final SegmentResources<K, V> segmentResources;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
-    private final SegmentCache<K, V> segmentCache;
 
     SegmentMaintenancePath(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
             final SegmentPropertiesManager segmentPropertiesManager,
             final SegmentResources<K, V> segmentResources,
-            final SegmentDeltaCacheController<K, V> deltaCacheController,
-            final SegmentCache<K, V> segmentCache) {
+            final SegmentDeltaCacheController<K, V> deltaCacheController) {
         this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
         this.segmentConf = Vldtn.requireNonNull(segmentConf, "segmentConf");
         this.segmentPropertiesManager = Vldtn.requireNonNull(
@@ -36,7 +34,6 @@ final class SegmentMaintenancePath<K, V> {
                 "segmentResources");
         this.deltaCacheController = Vldtn.requireNonNull(deltaCacheController,
                 "deltaCacheController");
-        this.segmentCache = Vldtn.requireNonNull(segmentCache, "segmentCache");
     }
 
     /**
