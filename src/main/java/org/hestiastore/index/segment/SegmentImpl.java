@@ -26,6 +26,13 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
     private final SegmentConcurrencyGate gate = new SegmentConcurrencyGate();
     private final Executor maintenanceExecutor;
 
+    /**
+     * Creates a segment implementation with the given core and executor.
+     *
+     * @param core segment core implementation
+     * @param segmentCompacter compaction helper
+     * @param maintenanceExecutor executor for maintenance tasks
+     */
     SegmentImpl(final SegmentCore<K, V> core,
             final SegmentCompacter<K, V> segmentCompacter,
             final Executor maintenanceExecutor) {
@@ -36,16 +43,25 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
                 "maintenanceExecutor");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public SegmentStats getStats() {
         return core.getStats();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public long getNumberOfKeys() {
         return core.getNumberOfKeys();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public K checkAndRepairConsistency() {
         final SegmentConsistencyChecker<K, V> consistencyChecker = new SegmentConsistencyChecker<>(
@@ -53,16 +69,25 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
         return consistencyChecker.checkAndRepairConsistency();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void invalidateIterators() {
         core.invalidateIterators();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public SegmentResult<EntryIterator<K, V>> openIterator() {
         return openIterator(SegmentIteratorIsolation.FAIL_FAST);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public SegmentResult<EntryIterator<K, V>> openIterator(
             final SegmentIteratorIsolation isolation) {
@@ -95,6 +120,9 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public SegmentResult<CompletionStage<Void>> compact() {
         return startMaintenance(() -> {
@@ -108,6 +136,9 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public SegmentResult<Void> put(final K key, final V value) {
         if (!gate.tryEnterWrite()) {
@@ -123,6 +154,9 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public SegmentResult<CompletionStage<Void>> flush() {
         return startMaintenance(() -> {
@@ -133,16 +167,25 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getNumberOfKeysInWriteCache() {
         return core.getNumberOfKeysInWriteCache();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public long getNumberOfKeysInCache() {
         return core.getNumberOfKeysInCache();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public SegmentResult<V> get(final K key) {
         if (!gate.tryEnterRead()) {
@@ -155,22 +198,38 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public SegmentId getId() {
         return core.getId();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public SegmentState getState() {
         return gate.getState();
     }
 
+    /**
+     * Closes the segment and marks it CLOSED.
+     */
     @Override
     protected void doClose() {
         gate.forceClosed();
         core.close();
     }
 
+    /**
+     * Maps the current state to a SegmentResult with no value.
+     *
+     * @param state segment state
+     * @param <T> result value type
+     * @return mapped result
+     */
     private static <T> SegmentResult<T> resultForState(
             final SegmentState state) {
         if (state == SegmentState.CLOSED) {
@@ -187,21 +246,43 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
         private final Runnable ioWork;
         private final Runnable publishWork;
 
+        /**
+         * Creates a maintenance work bundle.
+         *
+         * @param ioWork IO phase runnable
+         * @param publishWork publish phase runnable
+         */
         private MaintenanceWork(final Runnable ioWork,
                 final Runnable publishWork) {
             this.ioWork = Vldtn.requireNonNull(ioWork, "ioWork");
             this.publishWork = Vldtn.requireNonNull(publishWork, "publishWork");
         }
 
+        /**
+         * Returns the IO phase task.
+         *
+         * @return IO phase runnable
+         */
         private Runnable ioWork() {
             return ioWork;
         }
 
+        /**
+         * Returns the publish phase task.
+         *
+         * @return publish phase runnable
+         */
         private Runnable publishWork() {
             return publishWork;
         }
     }
 
+    /**
+     * Starts a maintenance operation by freezing the segment and running work.
+     *
+     * @param workSupplier supplier of maintenance tasks
+     * @return result with completion stage
+     */
     private SegmentResult<CompletionStage<Void>> startMaintenance(
             final Supplier<MaintenanceWork> workSupplier) {
         Vldtn.requireNonNull(workSupplier, "workSupplier");
@@ -230,6 +311,12 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
         return SegmentResult.ok(completion);
     }
 
+    /**
+     * Executes maintenance work and transitions the gate through states.
+     *
+     * @param work maintenance work bundle
+     * @param completion completion stage to resolve
+     */
     private void runMaintenance(final MaintenanceWork work,
             final CompletableFuture<Void> completion) {
         try {
@@ -265,6 +352,9 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
         completion.complete(null);
     }
 
+    /**
+     * Marks the segment ERROR unless it is already CLOSED.
+     */
     private void failUnlessClosed() {
         if (gate.getState() != SegmentState.CLOSED) {
             gate.fail();

@@ -19,22 +19,41 @@ final class ExclusiveAccessIterator<K, V> extends AbstractCloseableResource
     private final EntryIterator<K, V> delegate;
     private final SegmentConcurrencyGate gate;
 
+    /**
+     * Creates an iterator that holds the segment in freeze state until closed.
+     *
+     * @param delegate underlying iterator to read from
+     * @param gate concurrency gate to release on close
+     */
     ExclusiveAccessIterator(final EntryIterator<K, V> delegate,
             final SegmentConcurrencyGate gate) {
         this.delegate = Vldtn.requireNonNull(delegate, "delegate");
         this.gate = Vldtn.requireNonNull(gate, "gate");
     }
 
+    /**
+     * Returns whether the underlying iterator has another entry.
+     *
+     * @return true when another entry is available
+     */
     @Override
     public boolean hasNext() {
         return delegate.hasNext();
     }
 
+    /**
+     * Returns the next entry from the underlying iterator.
+     *
+     * @return next entry
+     */
     @Override
     public Entry<K, V> next() {
         return delegate.next();
     }
 
+    /**
+     * Closes the delegate and releases the exclusive freeze state.
+     */
     @Override
     protected void doClose() {
         try {

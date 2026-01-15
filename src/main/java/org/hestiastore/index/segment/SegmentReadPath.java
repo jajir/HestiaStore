@@ -22,6 +22,16 @@ final class SegmentReadPath<K, V> {
     private final VersionController versionController;
     private final AtomicReference<SegmentIndexSearcher<K, V>> segmentIndexSearcher = new AtomicReference<>();
 
+    /**
+     * Creates the read path components for a segment.
+     *
+     * @param segmentFiles segment file access wrapper
+     * @param segmentConf segment configuration
+     * @param segmentResources segment resource provider
+     * @param segmentSearcher segment search pipeline
+     * @param segmentCache in-memory cache
+     * @param versionController version tracker for optimistic reads
+     */
     SegmentReadPath(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
             final SegmentResources<K, V> segmentResources,

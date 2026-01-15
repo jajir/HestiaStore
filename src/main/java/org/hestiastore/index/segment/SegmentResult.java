@@ -10,6 +10,12 @@ public final class SegmentResult<T> {
     private final SegmentResultStatus status;
     private final T value;
 
+    /**
+     * Creates a result with the given status and value.
+     *
+     * @param status result status
+     * @param value optional value
+     */
     private SegmentResult(final SegmentResultStatus status, final T value) {
         this.status = status;
         this.value = value;

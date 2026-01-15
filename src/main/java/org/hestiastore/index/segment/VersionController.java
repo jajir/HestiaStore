@@ -16,6 +16,11 @@ public class VersionController implements OptimisticLockObjectVersionProvider {
 
     private final AtomicInteger segmentVersion = new AtomicInteger(0);
 
+    /**
+     * Advances the segment version, invalidating optimistic readers.
+     *
+     * @throws IllegalStateException when the version reaches max value
+     */
     public void changeVersion() {
         while (true) {
             final int current = segmentVersion.get();
@@ -30,6 +35,11 @@ public class VersionController implements OptimisticLockObjectVersionProvider {
         }
     }
 
+    /**
+     * Returns the current segment version for optimistic locking.
+     *
+     * @return current version value
+     */
     @Override
     public int getVersion() {
         return segmentVersion.get();

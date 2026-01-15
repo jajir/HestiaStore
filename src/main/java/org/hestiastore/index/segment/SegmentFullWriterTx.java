@@ -7,6 +7,12 @@ import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFileWriterTx;
 import org.hestiastore.index.scarceindex.ScarceIndexWriterTx;
 
+/**
+ * Transaction that rebuilds the full segment index and metadata.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 public class SegmentFullWriterTx<K, V>
         extends GuardedWriteTransaction<EntryWriter<K, V>>
         implements WriteTransaction<K, V> {
@@ -20,6 +26,16 @@ public class SegmentFullWriterTx<K, V>
     private final ScarceIndexWriterTx<K> scarceIndexWriterTx;
     private SegmentFullWriter<K, V> segmentFullWriter;
 
+    /**
+     * Creates a full writer transaction for the given segment files.
+     *
+     * @param segmentFiles segment file access wrapper
+     * @param propertiesManager properties manager for stats updates
+     * @param maxNumberOfKeysInIndexPage keys per index page
+     * @param dataProvider segment resources provider
+     * @param deltaCacheController delta cache controller
+     * @param segmentCache segment cache instance
+     */
     SegmentFullWriterTx(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager propertiesManager,
             final int maxNumberOfKeysInIndexPage,
@@ -38,6 +54,11 @@ public class SegmentFullWriterTx<K, V>
         this.scarceIndexWriterTx = segmentFiles.getScarceIndex().openWriterTx();
     }
 
+    /**
+     * Opens the writer used to stream entries into the rebuilt segment.
+     *
+     * @return entry writer for the transaction
+     */
     @Override
     protected EntryWriter<K, V> doOpen() {
         final EntryWriter<K, Integer> scarceWriter = scarceIndexWriterTx.open();
@@ -47,6 +68,11 @@ public class SegmentFullWriterTx<K, V>
         return segmentFullWriter;
     }
 
+    /**
+     * Commits the rebuilt segment files and updates metadata.
+     *
+     * @param writer entry writer used during the transaction
+     */
     @Override
     protected void doCommit(final EntryWriter<K, V> writer) {
         scarceIndexWriterTx.commit();

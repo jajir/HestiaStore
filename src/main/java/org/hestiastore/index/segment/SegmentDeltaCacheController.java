@@ -19,6 +19,15 @@ final class SegmentDeltaCacheController<K, V> {
     private final int maxNumberOfKeysInChunk;
     private SegmentCache<K, V> segmentCache;
 
+    /**
+     * Creates a controller for delta cache operations.
+     *
+     * @param segmentFiles segment file access wrapper
+     * @param segmentPropertiesManager properties manager for segment metadata
+     * @param segmentCacheDataProvider data provider for cached resources
+     * @param maxNumberOfKeysInSegmentWriteCache write-cache size limit
+     * @param maxNumberOfKeysInChunk maximum keys per chunk
+     */
     public SegmentDeltaCacheController(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentPropertiesManager,
             final SegmentResources<K, V> segmentCacheDataProvider,
@@ -33,10 +42,20 @@ final class SegmentDeltaCacheController<K, V> {
         this.maxNumberOfKeysInChunk = maxNumberOfKeysInChunk;
     }
 
+    /**
+     * Returns a new delta cache instance from the data provider.
+     *
+     * @return delta cache instance
+     */
     public SegmentDeltaCache<K, V> getDeltaCache() {
         return segmentCacheDataProvider.getSegmentDeltaCache();
     }
 
+    /**
+     * Returns the number of delta cache entries excluding tombstones.
+     *
+     * @return number of non-tombstone entries
+     */
     public int getDeltaCacheSizeWithoutTombstones() {
         if (segmentCache != null) {
             return segmentCache.sizeWithoutTombstones();
@@ -44,6 +63,11 @@ final class SegmentDeltaCacheController<K, V> {
         return getDeltaCache().sizeWithoutTombstones();
     }
 
+    /**
+     * Returns the total number of delta cache entries.
+     *
+     * @return number of cached entries
+     */
     public int getDeltaCacheSize() {
         if (segmentCache != null) {
             return segmentCache.size();
@@ -51,16 +75,29 @@ final class SegmentDeltaCacheController<K, V> {
         return getDeltaCache().size();
     }
 
+    /**
+     * Opens a writer for delta cache files.
+     *
+     * @return delta cache writer
+     */
     public SegmentDeltaCacheWriter<K, V> openWriter() {
         return new SegmentDeltaCacheWriter<>(segmentFiles,
                 segmentPropertiesManager, segmentCacheDataProvider,
                 maxNumberOfKeysInSegmentWriteCache, maxNumberOfKeysInChunk);
     }
 
+    /**
+     * Sets the in-memory segment cache used for fast stats and clearing.
+     *
+     * @param segmentCache segment cache instance
+     */
     void setSegmentCache(final SegmentCache<K, V> segmentCache) {
         this.segmentCache = Vldtn.requireNonNull(segmentCache, "segmentCache");
     }
 
+    /**
+     * Clears delta cache files and invalidates cached resources.
+     */
     public void clear() {
         // Clearing the delta cache means the on-disk view has changed
         // (compaction
@@ -80,6 +117,9 @@ final class SegmentDeltaCacheController<K, V> {
         segmentPropertiesManager.clearCacheDeltaFileNamesCouter();
     }
 
+    /**
+     * Clears delta cache files while preserving the in-memory write cache.
+     */
     void clearPreservingWriteCache() {
         segmentCacheDataProvider.invalidate();
         if (segmentCache != null) {

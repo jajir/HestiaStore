@@ -44,6 +44,9 @@ public final class SegmentBuilder<K, V> {
     private final List<ChunkFilter> decodingChunkFilters = new ArrayList<>();
     private Executor maintenanceExecutor;
 
+    /**
+     * Creates a new builder with default settings.
+     */
     SegmentBuilder() {
 
     }
@@ -161,6 +164,12 @@ public final class SegmentBuilder<K, V> {
         return this;
     }
 
+    /**
+     * Sets the maximum number of keys cached across the segment.
+     *
+     * @param maxNumberOfKeysInSegmentCache value greater than 0
+     * @return this builder for chaining
+     */
     public SegmentBuilder<K, V> withMaxNumberOfKeysInSegmentCache(
             final int maxNumberOfKeysInSegmentCache) {
         this.maxNumberOfKeysInSegmentCache = Vldtn.requireGreaterThanZero(
@@ -169,6 +178,12 @@ public final class SegmentBuilder<K, V> {
         return this;
     }
 
+    /**
+     * Sets the allowed number of write-cache keys during a flush.
+     *
+     * @param maxNumberOfKeysInSegmentWriteCacheDuringFlush value greater than 0
+     * @return this builder for chaining
+     */
     public SegmentBuilder<K, V> withMaxNumberOfKeysInSegmentWriteCacheDuringFlush(
             final int maxNumberOfKeysInSegmentWriteCacheDuringFlush) {
         this.maxNumberOfKeysInSegmentWriteCacheDuringFlush = Vldtn
@@ -376,6 +391,9 @@ public final class SegmentBuilder<K, V> {
         return new SegmentImpl<>(core, compacter, maintenanceExecutor);
     }
 
+    /**
+     * Validates required fields and constructs default dependencies.
+     */
     private void prepareBaseComponents() {
         if (directoryFacade == null) {
             throw new IllegalArgumentException("Directory can't be null");
@@ -443,6 +461,11 @@ public final class SegmentBuilder<K, V> {
         }
     }
 
+    /**
+     * Builds the in-memory segment cache using the current configuration.
+     *
+     * @return initialized segment cache
+     */
     private SegmentCache<K, V> createSegmentCache() {
         final SegmentDeltaCache<K, V> deltaCache = segmentResources
                 .getSegmentDeltaCache();

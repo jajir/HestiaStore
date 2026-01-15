@@ -18,6 +18,11 @@ final class SegmentCompacter<K, V> {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final VersionController versionController;
 
+    /**
+     * Creates a compacter that updates the segment version on publish.
+     *
+     * @param versionController version controller for iterator invalidation
+     */
     public SegmentCompacter(final VersionController versionController) {
         this.versionController = Vldtn.requireNonNull(versionController,
                 "versionController");
@@ -67,6 +72,12 @@ final class SegmentCompacter<K, V> {
         }
     }
 
+    /**
+     * Commits compaction results, updates version, and logs completion.
+     *
+     * @param segment segment core
+     * @param writerTx full writer transaction to commit
+     */
     void publishCompaction(final SegmentCore<K, V> segment,
             final SegmentFullWriterTx<K, V> writerTx) {
         Vldtn.requireNonNull(segment, "segment");
@@ -76,6 +87,11 @@ final class SegmentCompacter<K, V> {
         logger.debug("End of compacting '{}'", segment.getId());
     }
 
+    /**
+     * Runs compaction end-to-end using a fresh snapshot.
+     *
+     * @param segment segment core
+     */
     public void forceCompact(final SegmentCore<K, V> segment) {
         final List<Entry<K, V>> snapshotEntries = prepareCompaction(segment);
         compact(segment, snapshotEntries);
