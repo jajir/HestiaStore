@@ -379,8 +379,7 @@ public final class SegmentBuilder<K, V> {
      */
     public Segment<K, V> build() {
         prepareBaseComponents();
-        final SegmentSearcher<K, V> segmentSearcher = new SegmentSearcher<K, V>(
-                segmentFiles.getValueTypeDescriptor());
+        final SegmentSearcher<K, V> segmentSearcher = new SegmentSearcher<>();
         final SegmentDeltaCacheController<K, V> deltaCacheController = new SegmentDeltaCacheController<>(
                 segmentFiles, segmentPropertiesManager, segmentResources,
                 segmentConf.getMaxNumberOfKeysInSegmentWriteCache(),
@@ -470,7 +469,7 @@ public final class SegmentBuilder<K, V> {
         }
         if (segmentResources == null) {
             final SegmentDataSupplier<K, V> segmentDataSupplier = new SegmentDataSupplier<>(
-                    segmentFiles, segmentConf, segmentPropertiesManager);
+                    segmentFiles, segmentConf);
             segmentResources = new SegmentResourcesImpl<>(segmentDataSupplier);
         }
         if (maintenanceExecutor == null) {
@@ -484,15 +483,16 @@ public final class SegmentBuilder<K, V> {
      * @return initialized segment cache
      */
     private SegmentCache<K, V> createSegmentCache() {
-        final SegmentDeltaCache<K, V> deltaCache = segmentResources
-                .getSegmentDeltaCache();
-        return new SegmentCache<>(
+        final SegmentCache<K, V> segmentCache = new SegmentCache<>(
                 segmentFiles.getKeyTypeDescriptor().getComparator(),
                 segmentFiles.getValueTypeDescriptor(),
-                deltaCache.getAsSortedList(),
+                null,
                 segmentConf.getMaxNumberOfKeysInSegmentWriteCache(),
                 segmentConf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush(),
                 segmentConf.getMaxNumberOfKeysInSegmentCache());
+        new SegmentDeltaCacheLoader<>(segmentFiles, segmentPropertiesManager)
+                .loadInto(segmentCache);
+        return segmentCache;
     }
 
 }

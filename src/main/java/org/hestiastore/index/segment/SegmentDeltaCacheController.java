@@ -43,24 +43,13 @@ final class SegmentDeltaCacheController<K, V> {
     }
 
     /**
-     * Returns a new delta cache instance from the data provider.
-     *
-     * @return delta cache instance
-     */
-    public SegmentDeltaCache<K, V> getDeltaCache() {
-        return segmentCacheDataProvider.getSegmentDeltaCache();
-    }
-
-    /**
      * Returns the number of delta cache entries excluding tombstones.
      *
      * @return number of non-tombstone entries
      */
     public int getDeltaCacheSizeWithoutTombstones() {
-        if (segmentCache != null) {
-            return segmentCache.sizeWithoutTombstones();
-        }
-        return getDeltaCache().sizeWithoutTombstones();
+        return Vldtn.requireNonNull(segmentCache, "segmentCache")
+                .sizeWithoutTombstones();
     }
 
     /**
@@ -69,10 +58,7 @@ final class SegmentDeltaCacheController<K, V> {
      * @return number of cached entries
      */
     public int getDeltaCacheSize() {
-        if (segmentCache != null) {
-            return segmentCache.size();
-        }
-        return getDeltaCache().size();
+        return Vldtn.requireNonNull(segmentCache, "segmentCache").size();
     }
 
     /**
@@ -82,7 +68,7 @@ final class SegmentDeltaCacheController<K, V> {
      */
     public SegmentDeltaCacheWriter<K, V> openWriter() {
         return new SegmentDeltaCacheWriter<>(segmentFiles,
-                segmentPropertiesManager, segmentCacheDataProvider,
+                segmentPropertiesManager,
                 maxNumberOfKeysInSegmentWriteCache, maxNumberOfKeysInChunk);
     }
 

@@ -15,13 +15,6 @@ import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 public interface SegmentResources<K, V> {
 
     /**
-     * Returns the delta cache for this segment.
-     *
-     * @return delta cache instance
-     */
-    SegmentDeltaCache<K, V> getSegmentDeltaCache();
-
-    /**
      * Returns the Bloom filter for this segment.
      *
      * @return Bloom filter instance

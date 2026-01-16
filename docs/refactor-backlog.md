@@ -2,8 +2,35 @@
 
 ## Active
 
+
 ## Planned (segmentindex refactor plan - class level)
 
+[ ] Remove duplicate in-memory delta caches (Risk: HIGH)
+    - Problem: `SegmentCache` keeps a delta cache while `SegmentDeltaCache`
+      keeps its own, effectively doubling memory.
+    - Fix: unify into a single delta cache implementation; ensure write path
+      and read path reference the same structure.
+[ ] Stop materializing merged cache lists on read (Risk: MEDIUM)
+    - Problem: `SegmentReadPath.openIterator` calls `getAsSortedList`, building
+      full merged lists for each iterator.
+    - Fix: provide streaming merge iterator over delta/write caches without
+      full list materialization.
+[ ] Stream compaction without full cache snapshot (Risk: MEDIUM)
+    - Problem: compaction snapshots the full cache list in memory.
+    - Fix: stream from iterators or chunk snapshot to bounded buffers.
+[ ] Stream split without full cache snapshot (Risk: MEDIUM)
+    - Problem: split uses FULL_ISOLATION iterator backed by full list snapshot.
+    - Fix: use streaming iterator or chunked splitting to cap memory.
+[ ] Avoid full materialization in `IndexInternalConcurrent.getStream` (Risk: MEDIUM)
+    - Problem: method loads all entries into a list before returning a stream.
+    - Fix: return a streaming spliterator tied to iterator close.
+[ ] Allow cache shrink after peaks (Risk: LOW)
+    - Problem: `UniqueCache.clear()` keeps underlying `HashMap` capacity.
+    - Fix: rebuild map on clear when size exceeds a threshold; add tests.
+[ ] Add hard backpressure when maintenance is off or slow (Risk: MEDIUM)
+    - Problem: if auto maintenance is disabled or too slow, delta caches grow
+      indefinitely.
+    - Fix: enforce hard caps (block or reject writes) and surface metrics.
 
 ### Segmentindex design issues (review backlog)
 
@@ -47,6 +74,10 @@
     - Capture MDC context on submit and reapply in async tasks.
     - Wrap stream/iterator consumption with MDC scope; clear on close.
     - Add tests asserting `index.name` appears in async logs.
+[ ] Avoid eager full load of delta files (Risk: HIGH)
+    - Problem: `SegmentDeltaCache` loads all delta files into memory on open.
+    - Fix: lazy/streamed delta access or bounded cache; add LRU eviction or
+      on-disk lookup path; add stress tests.
 
 ### Segment memory growth (JMH load test)
 
@@ -88,6 +119,10 @@
     - Problem: if auto maintenance is disabled or too slow, delta caches grow
       indefinitely.
     - Fix: enforce hard caps (block or reject writes) and surface metrics.
+[ ] Add eviction for heavy segment resources (Risk: MEDIUM)
+    - Problem: `SegmentResourcesImpl` caches delta/bloom/scarce forever.
+    - Fix: tie resource lifetime to segment eviction or add per-resource LRU;
+      ensure invalidate/close releases memory.
 
 ## Ready
 

@@ -160,6 +160,7 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .withMaxNumberOfSegmentsInCache(5) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(3) //
+                .withSegmentMaintenanceAutoEnabled(true) //
                 .withNumberOfCpuThreads(cpuThreads)//
                 .withNumberOfIoThreads(ioThreads)//
                 .withName("concurrency_index") //

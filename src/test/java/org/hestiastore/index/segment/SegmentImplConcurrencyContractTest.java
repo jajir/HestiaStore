@@ -241,6 +241,7 @@ class SegmentImplConcurrencyContractTest {
                 .withMaxNumberOfKeysInSegmentCache(8)
                 .withMaxNumberOfKeysInSegmentChunk(2)
                 .withBloomFilterIndexSizeInBytes(0)
+                .withSegmentMaintenanceAutoEnabled(false)
                 .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))
                 .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()));
         if (maintenanceExecutor != null) {

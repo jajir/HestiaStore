@@ -22,12 +22,6 @@ class SegmentResourcesImplTest {
     private SegmentDataSupplier<Integer, String> segmentDataSupplier;
 
     @Mock
-    private SegmentDeltaCache<Integer, String> deltaCache;
-
-    @Mock
-    private SegmentDeltaCache<Integer, String> deltaCacheSecond;
-
-    @Mock
     private BloomFilter<Integer> bloomFilter;
 
     @Mock
@@ -53,18 +47,14 @@ class SegmentResourcesImplTest {
     void loadsResourcesLazilyAndCachesInstances() {
         final SegmentResourcesImpl<Integer, String> resources = new SegmentResourcesImpl<>(
                 segmentDataSupplier);
-        when(segmentDataSupplier.getSegmentDeltaCache()).thenReturn(deltaCache);
         when(segmentDataSupplier.getBloomFilter()).thenReturn(bloomFilter);
         when(segmentDataSupplier.getScarceIndex()).thenReturn(scarceIndex);
 
-        assertSame(deltaCache, resources.getSegmentDeltaCache());
-        assertSame(deltaCache, resources.getSegmentDeltaCache());
         assertSame(bloomFilter, resources.getBloomFilter());
         assertSame(bloomFilter, resources.getBloomFilter());
         assertSame(scarceIndex, resources.getScarceIndex());
         assertSame(scarceIndex, resources.getScarceIndex());
 
-        verify(segmentDataSupplier, times(1)).getSegmentDeltaCache();
         verify(segmentDataSupplier, times(1)).getBloomFilter();
         verify(segmentDataSupplier, times(1)).getScarceIndex();
     }
@@ -73,16 +63,13 @@ class SegmentResourcesImplTest {
     void invalidateClosesAndEvictsLoadedResources() {
         final SegmentResourcesImpl<Integer, String> resources = new SegmentResourcesImpl<>(
                 segmentDataSupplier);
-        when(segmentDataSupplier.getSegmentDeltaCache()).thenReturn(deltaCache);
         when(segmentDataSupplier.getBloomFilter()).thenReturn(bloomFilter);
         when(segmentDataSupplier.getScarceIndex()).thenReturn(scarceIndex);
 
-        resources.getSegmentDeltaCache();
         resources.getBloomFilter();
         resources.getScarceIndex();
         resources.invalidate();
 
-        verify(deltaCache, times(1)).evictAll();
         verify(bloomFilter, times(1)).close();
         verify(scarceIndex, times(1)).close();
     }
@@ -97,25 +84,24 @@ class SegmentResourcesImplTest {
         resources.invalidate();
 
         verify(segmentDataSupplier, times(1)).getBloomFilter();
-        verify(segmentDataSupplier, never()).getSegmentDeltaCache();
         verify(segmentDataSupplier, never()).getScarceIndex();
         verify(bloomFilter, times(1)).close();
-        verify(deltaCache, never()).evictAll();
         verify(scarceIndex, never()).close();
     }
 
     @Test
-    void reloadsResourcesAfterInvalidation() {
+    void reloadsBloomFilterAfterInvalidation() {
         final SegmentResourcesImpl<Integer, String> resources = new SegmentResourcesImpl<>(
                 segmentDataSupplier);
-        when(segmentDataSupplier.getSegmentDeltaCache())
-                .thenReturn(deltaCache)
-                .thenReturn(deltaCacheSecond);
+        final BloomFilter<Integer> bloomFilterSecond = org.mockito.Mockito
+                .mock(BloomFilter.class);
+        when(segmentDataSupplier.getBloomFilter()).thenReturn(bloomFilter,
+                bloomFilterSecond);
 
-        assertSame(deltaCache, resources.getSegmentDeltaCache());
+        assertSame(bloomFilter, resources.getBloomFilter());
         resources.invalidate();
-        assertSame(deltaCacheSecond, resources.getSegmentDeltaCache());
+        assertSame(bloomFilterSecond, resources.getBloomFilter());
 
-        verify(segmentDataSupplier, times(2)).getSegmentDeltaCache();
+        verify(segmentDataSupplier, times(2)).getBloomFilter();
     }
 }

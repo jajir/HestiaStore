@@ -25,8 +25,6 @@ class SegmentMaintenancePolicyThresholdTest {
 
         @BeforeEach
         void setUp() {
-            when(segment.getNumberOfKeysInWriteCache()).thenReturn(0);
-            when(segment.getNumberOfKeysInSegmentCache()).thenReturn(0L);
             policy = new SegmentMaintenancePolicyThreshold<>(10, 5);
         }
 
@@ -44,7 +42,6 @@ class SegmentMaintenancePolicyThresholdTest {
 
         @Test
         void compact_only_when_segment_cache_threshold_reached() {
-            when(segment.getNumberOfKeysInWriteCache()).thenReturn(5);
             when(segment.getNumberOfKeysInSegmentCache()).thenReturn(10L);
 
             final SegmentMaintenanceDecision decision = policy
@@ -56,7 +53,6 @@ class SegmentMaintenancePolicyThresholdTest {
 
         @Test
         void compact_takes_priority_when_both_thresholds_reached() {
-            when(segment.getNumberOfKeysInWriteCache()).thenReturn(5);
             when(segment.getNumberOfKeysInSegmentCache()).thenReturn(12L);
 
             final SegmentMaintenanceDecision decision = policy
@@ -86,16 +82,11 @@ class SegmentMaintenancePolicyThresholdTest {
 
         @BeforeEach
         void setUp() {
-            when(segment.getNumberOfKeysInWriteCache()).thenReturn(0);
-            when(segment.getNumberOfKeysInSegmentCache()).thenReturn(0L);
             policy = new SegmentMaintenancePolicyThreshold<>(0, 0);
         }
 
         @Test
         void none_when_thresholds_disabled_even_if_counts_high() {
-            when(segment.getNumberOfKeysInWriteCache()).thenReturn(50);
-            when(segment.getNumberOfKeysInSegmentCache()).thenReturn(50L);
-
             final SegmentMaintenanceDecision decision = policy
                     .evaluateAfterWrite(segment);
 
@@ -111,15 +102,12 @@ class SegmentMaintenancePolicyThresholdTest {
 
         @BeforeEach
         void setUp() {
-            when(segment.getNumberOfKeysInWriteCache()).thenReturn(0);
-            when(segment.getNumberOfKeysInSegmentCache()).thenReturn(0L);
             policy = new SegmentMaintenancePolicyThreshold<>(0, 5);
         }
 
         @Test
         void flush_when_write_cache_reached_and_segment_cache_disabled() {
             when(segment.getNumberOfKeysInWriteCache()).thenReturn(5);
-            when(segment.getNumberOfKeysInSegmentCache()).thenReturn(100L);
 
             final SegmentMaintenanceDecision decision = policy
                     .evaluateAfterWrite(segment);
@@ -136,14 +124,11 @@ class SegmentMaintenancePolicyThresholdTest {
 
         @BeforeEach
         void setUp() {
-            when(segment.getNumberOfKeysInWriteCache()).thenReturn(0);
-            when(segment.getNumberOfKeysInSegmentCache()).thenReturn(0L);
             policy = new SegmentMaintenancePolicyThreshold<>(10, 0);
         }
 
         @Test
         void none_when_write_cache_disabled_and_segment_cache_below() {
-            when(segment.getNumberOfKeysInWriteCache()).thenReturn(50);
             when(segment.getNumberOfKeysInSegmentCache()).thenReturn(9L);
 
             final SegmentMaintenanceDecision decision = policy
@@ -155,7 +140,6 @@ class SegmentMaintenancePolicyThresholdTest {
 
         @Test
         void compact_when_segment_cache_reached_and_write_cache_disabled() {
-            when(segment.getNumberOfKeysInWriteCache()).thenReturn(50);
             when(segment.getNumberOfKeysInSegmentCache()).thenReturn(10L);
 
             final SegmentMaintenanceDecision decision = policy

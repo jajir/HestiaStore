@@ -155,7 +155,7 @@ public class SegmentRegistry<K, V> {
                 segmentId);
         final SegmentFiles<K, V> segmentFiles = newSegmentFiles(segmentId);
         final SegmentDataSupplier<K, V> segmentDataSupplier = new SegmentDataSupplier<>(
-                segmentFiles, segmentConf, segmentPropertiesManager);
+                segmentFiles, segmentConf);
         final SegmentResources<K, V> dataProvider = new SegmentResourcesImpl<>(
                 segmentDataSupplier);
 

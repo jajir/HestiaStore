@@ -4,12 +4,9 @@ import java.util.List;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Filter;
-import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.datatype.TypeDescriptor;
 
 /**
- * Object use in memory cache and bloom filter. Only one instance for one
- * segment should be in memory at the time.
+ * Uses Bloom filter and index lookups for cache-miss reads.
  * 
  * This object can be cached in memory.
  * 
@@ -24,16 +21,10 @@ class SegmentSearcher<K, V> extends AbstractCloseableResource {
 
     /**
      * Creates a searcher pipeline for segment lookups.
-     *
-     * @param valueTypeDescriptor value descriptor for tombstone handling
      */
-    public SegmentSearcher(final TypeDescriptor<V> valueTypeDescriptor) {
-        this.steps = List.of(//
-                new SegmentSearcherStepDeltaCache<>(Vldtn.requireNonNull(
-                        valueTypeDescriptor, "valueTypeDescriptor")), //
-                new SegmentSearcherStepBloomFilter<>(), //
-                new SegmentSearcherStepIndexFile<>()//
-        );
+    public SegmentSearcher() {
+        this.steps = List.of(new SegmentSearcherStepBloomFilter<>(),
+                new SegmentSearcherStepIndexFile<>());
     }
 
     /**

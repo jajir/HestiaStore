@@ -412,7 +412,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         );
 
         final SegmentDataSupplier<Integer, String> segmentDataSupplier = new SegmentDataSupplier<>(
-                segmentFiles, segmentConf, segmentPropertiesManager);
+                segmentFiles, segmentConf);
 
         final SegmentResourcesImpl<Integer, String> dataProvider = new SegmentResourcesImpl<>(
                 segmentDataSupplier);

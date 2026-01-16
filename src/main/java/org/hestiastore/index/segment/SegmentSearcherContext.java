@@ -57,16 +57,6 @@ final class SegmentSearcherContext<K, V> {
     }
 
     /**
-     * Returns the delta cache for the segment.
-     *
-     * @return delta cache
-     */
-    SegmentDeltaCache<K, V> getDeltaCache() {
-        return Vldtn.requireNonNull(segmentDataProvider.getSegmentDeltaCache(),
-                "segmentDeltaCache");
-    }
-
-    /**
      * Returns the Bloom filter for the segment.
      *
      * @return Bloom filter
