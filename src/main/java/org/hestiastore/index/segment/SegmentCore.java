@@ -189,6 +189,15 @@ final class SegmentCore<K, V> {
     }
 
     /**
+     * Returns the number of keys currently held in the in-memory segment cache.
+     *
+     * @return number of cached keys in memory
+     */
+    int getNumberOfKeysInSegmentCache() {
+        return segmentCache.getNumbberOfKeysInCache();
+    }
+
+    /**
      * Returns the value for the given key, considering cache and disk.
      *
      * @param key key to look up

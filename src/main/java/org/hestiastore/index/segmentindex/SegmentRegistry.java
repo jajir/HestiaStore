@@ -166,6 +166,8 @@ public class SegmentRegistry<K, V> {
                 .withSegmentResources(dataProvider)//
                 .withSegmentConf(segmentConf)//
                 .withMaintenanceExecutor(maintenanceExecutor)//
+                .withSegmentMaintenanceAutoEnabled(Boolean.TRUE
+                        .equals(conf.isSegmentMaintenanceAutoEnabled()))//
                 .withSegmentFiles(segmentFiles)//
                 .withSegmentPropertiesManager(segmentPropertiesManager)//
                 .withMaxNumberOfKeysInSegmentWriteCache(

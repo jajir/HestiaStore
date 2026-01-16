@@ -10,13 +10,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 
@@ -143,7 +146,11 @@ class SegmentImplTest {
         final SegmentCompacter<Integer, String> compacter = new SegmentCompacter<>(
                 versionController);
         core = createCore(versionController);
-        subject = new SegmentImpl<>(core, compacter, Runnable::run);
+        final SegmentMaintenancePolicyThreshold<Integer, String> maintenancePolicy = new SegmentMaintenancePolicyThreshold<>(
+                conf.getMaxNumberOfKeysInSegmentCache(),
+                conf.getMaxNumberOfKeysInSegmentWriteCache());
+        subject = new SegmentImpl<>(core, compacter, Runnable::run,
+                maintenancePolicy);
     }
 
     @AfterEach
@@ -165,9 +172,13 @@ class SegmentImplTest {
     void constructor_requires_maintenance_executor() {
         final SegmentCompacter<Integer, String> compacter = new SegmentCompacter<>(
                 versionController);
+        final SegmentMaintenancePolicyThreshold<Integer, String> maintenancePolicy = new SegmentMaintenancePolicyThreshold<>(
+                conf.getMaxNumberOfKeysInSegmentCache(),
+                conf.getMaxNumberOfKeysInSegmentWriteCache());
 
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> new SegmentImpl<>(core, compacter, null));
+                () -> new SegmentImpl<>(core, compacter, null,
+                        maintenancePolicy));
 
         assertEquals("Property 'maintenanceExecutor' must not be null.",
                 e.getMessage());
@@ -203,6 +214,36 @@ class SegmentImplTest {
         assertEquals(SegmentResultStatus.OK, subject.flush().getStatus());
 
         verify(versionController, never()).changeVersion();
+    }
+
+    @Test
+    void put_triggers_flush_when_policy_requests() {
+        try (SegmentImpl<Integer, String> segment = spy(
+                newSegmentWithPolicy(SegmentMaintenanceDecision.flushOnly()))) {
+            doReturn(SegmentResult.ok(CompletableFuture.completedFuture(null)))
+                    .when(segment).flush();
+
+            final SegmentResult<Void> result = segment.put(1, "A");
+
+            assertEquals(SegmentResultStatus.OK, result.getStatus());
+            verify(segment).flush();
+            verify(segment, never()).compact();
+        }
+    }
+
+    @Test
+    void put_triggers_compact_when_policy_requests() {
+        try (SegmentImpl<Integer, String> segment = spy(
+                newSegmentWithPolicy(SegmentMaintenanceDecision.compactOnly()))) {
+            doReturn(SegmentResult.ok(CompletableFuture.completedFuture(null)))
+                    .when(segment).compact();
+
+            final SegmentResult<Void> result = segment.put(1, "A");
+
+            assertEquals(SegmentResultStatus.OK, result.getStatus());
+            verify(segment).compact();
+            verify(segment, never()).flush();
+        }
     }
 
     @Test
@@ -485,8 +526,11 @@ class SegmentImplTest {
         final CapturingExecutor executor = new CapturingExecutor();
         final SegmentCompacter<Integer, String> compacter = new SegmentCompacter<>(
                 versionController);
+        final SegmentMaintenancePolicyThreshold<Integer, String> maintenancePolicy = new SegmentMaintenancePolicyThreshold<>(
+                conf.getMaxNumberOfKeysInSegmentCache(),
+                conf.getMaxNumberOfKeysInSegmentWriteCache());
         final SegmentImpl<Integer, String> segment = new SegmentImpl<>(
-                core, compacter, executor);
+                core, compacter, executor, maintenancePolicy);
 
         final SegmentResult<CompletionStage<Void>> result = segment.flush();
         assertEquals(SegmentResultStatus.OK, result.getStatus());
@@ -529,7 +573,11 @@ class SegmentImplTest {
         final SegmentCompacter<Integer, String> compacter = new SegmentCompacter<>(
                 controller);
         final SegmentCore<Integer, String> localCore = createCore(controller);
-        return new SegmentImpl<>(localCore, compacter, executor);
+        final SegmentMaintenancePolicyThreshold<Integer, String> maintenancePolicy = new SegmentMaintenancePolicyThreshold<>(
+                conf.getMaxNumberOfKeysInSegmentCache(),
+                conf.getMaxNumberOfKeysInSegmentWriteCache());
+        return new SegmentImpl<>(localCore, compacter, executor,
+                maintenancePolicy);
     }
 
     private SegmentCore<Integer, String> createCore(
@@ -551,5 +599,13 @@ class SegmentImplTest {
         return new SegmentCore<>(segmentFiles, controller,
                 segmentPropertiesManager, segmentCache, readPath, writePath,
                 maintenancePath);
+    }
+
+    private SegmentImpl<Integer, String> newSegmentWithPolicy(
+            final SegmentMaintenanceDecision decision) {
+        final SegmentMaintenancePolicy<Integer, String> policy = segment -> decision;
+        final SegmentCompacter<Integer, String> compacter = new SegmentCompacter<>(
+                versionController);
+        return new SegmentImpl<>(core, compacter, Runnable::run, policy);
     }
 }

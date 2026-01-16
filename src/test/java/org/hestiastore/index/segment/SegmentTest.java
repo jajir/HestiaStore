@@ -52,14 +52,12 @@ class SegmentTest {
         public SegmentResult<EntryIterator<Integer, String>> openIterator(
                 final SegmentIteratorIsolation isolation) {
             this.lastIsolation = isolation;
-            return SegmentResult.ok(
-                    EntryIterator.make(List.<Entry<Integer, String>>of()
-                            .iterator()));
+            return SegmentResult.ok(EntryIterator
+                    .make(List.<Entry<Integer, String>>of().iterator()));
         }
 
         @Override
-        public SegmentResult<Void> put(final Integer key,
-                final String value) {
+        public SegmentResult<Void> put(final Integer key, final String value) {
             return SegmentResult.ok();
         }
 
@@ -75,6 +73,11 @@ class SegmentTest {
 
         @Override
         public long getNumberOfKeysInCache() {
+            return 0L;
+        }
+
+        @Override
+        public long getNumberOfKeysInSegmentCache() {
             return 0L;
         }
 

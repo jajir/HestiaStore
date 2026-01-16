@@ -1,10 +1,9 @@
-package org.hestiastore.index.segmentindex;
+package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import static org.mockito.Mockito.mock;
 
-import org.hestiastore.index.segment.Segment;
 import org.junit.jupiter.api.Test;
 
 class SegmentMaintenancePolicyTest {

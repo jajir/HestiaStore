@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex;
+package org.hestiastore.index.segment;
 
 /**
  * Describes which maintenance operations should be scheduled.
@@ -27,10 +27,6 @@ public final class SegmentMaintenanceDecision {
 
     public static SegmentMaintenanceDecision compactOnly() {
         return new SegmentMaintenanceDecision(false, true);
-    }
-
-    public static SegmentMaintenanceDecision flushAndCompact() {
-        return new SegmentMaintenanceDecision(true, true);
     }
 
     public boolean shouldFlush() {

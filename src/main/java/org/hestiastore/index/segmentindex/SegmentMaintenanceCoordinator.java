@@ -5,7 +5,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 
 /**
- * Centralizes post-write maintenance decisions for a segment.
+ * Coordinates post-write maintenance triggers and split decisions.
  */
 final class SegmentMaintenanceCoordinator<K, V> {
 
@@ -13,7 +13,6 @@ final class SegmentMaintenanceCoordinator<K, V> {
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentAsyncSplitCoordinator<K, V> splitCoordinator;
-    private final SegmentMaintenancePolicy<K, V> maintenancePolicy;
 
     SegmentMaintenanceCoordinator(final IndexConfiguration<K, V> conf,
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
@@ -26,9 +25,6 @@ final class SegmentMaintenanceCoordinator<K, V> {
         this.splitCoordinator = new SegmentAsyncSplitCoordinator<>(conf,
                 keyToSegmentMap, segmentRegistry,
                 segmentRegistry.getSplitExecutor());
-        this.maintenancePolicy = new SegmentMaintenancePolicyThreshold<>(
-                conf.getMaxNumberOfKeysInSegmentWriteCache(),
-                conf.getMaxNumberOfKeysInSegmentCache());
     }
 
     void handlePostWrite(final Segment<K, V> segment, final K key,
@@ -49,8 +45,6 @@ final class SegmentMaintenanceCoordinator<K, V> {
                         mappingVersion)) {
             return;
         }
-        scheduleMaintenanceIfNeeded(segment);
-
         final Integer maxSegmentCacheKeys = conf
                 .getMaxNumberOfKeysInSegmentCache();
         if (maxSegmentCacheKeys != null && maxSegmentCacheKeys > 0) {
@@ -61,20 +55,6 @@ final class SegmentMaintenanceCoordinator<K, V> {
                                 maxSegmentCacheKeys.longValue());
                 handle.awaitStarted(conf.getIndexBusyTimeoutMillis());
             }
-        }
-    }
-
-    private void scheduleMaintenanceIfNeeded(final Segment<K, V> segment) {
-        if (!Boolean.TRUE.equals(conf.isSegmentMaintenanceAutoEnabled())) {
-            return;
-        }
-        final SegmentMaintenanceDecision decision = maintenancePolicy
-                .evaluateAfterWrite(segment);
-        if (decision.shouldFlush()) {
-            segment.flush();
-        }
-        if (decision.shouldCompact()) {
-            segment.compact();
         }
     }
 

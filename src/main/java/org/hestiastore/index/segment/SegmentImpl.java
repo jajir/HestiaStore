@@ -23,6 +23,8 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
     private final SegmentCompacter<K, V> segmentCompacter;
     private final SegmentConcurrencyGate gate = new SegmentConcurrencyGate();
     private final SegmentMaintenanceService maintenanceService;
+    private final SegmentMaintenancePolicy<K, V> maintenancePolicy;
+    private final Executor maintenanceExecutor;
 
     /**
      * Creates a segment implementation with the given core and executor.
@@ -30,15 +32,21 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
      * @param core segment core implementation
      * @param segmentCompacter compaction helper
      * @param maintenanceExecutor executor for maintenance tasks
+     * @param maintenancePolicy maintenance decision policy
      */
     SegmentImpl(final SegmentCore<K, V> core,
             final SegmentCompacter<K, V> segmentCompacter,
-            final Executor maintenanceExecutor) {
+            final Executor maintenanceExecutor,
+            final SegmentMaintenancePolicy<K, V> maintenancePolicy) {
         this.core = Vldtn.requireNonNull(core, "core");
         this.segmentCompacter = Vldtn.requireNonNull(segmentCompacter,
                 "segmentCompacter");
+        this.maintenanceExecutor = Vldtn.requireNonNull(maintenanceExecutor,
+                "maintenanceExecutor");
+        this.maintenancePolicy = Vldtn.requireNonNull(maintenancePolicy,
+                "maintenancePolicy");
         this.maintenanceService = new SegmentMaintenanceService(gate,
-                maintenanceExecutor);
+                this.maintenanceExecutor);
     }
 
     /**
@@ -142,14 +150,23 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
         if (!gate.tryEnterWrite()) {
             return resultForState(gate.getState());
         }
+        final SegmentResult<Void> result;
+        final boolean shouldScheduleMaintenance;
         try {
             if (!core.tryPutWithoutWaiting(key, value)) {
-                return SegmentResult.busy();
+                result = SegmentResult.busy();
+                shouldScheduleMaintenance = false;
+            } else {
+                result = SegmentResult.ok();
+                shouldScheduleMaintenance = true;
             }
-            return SegmentResult.ok();
         } finally {
             gate.exitWrite();
         }
+        if (shouldScheduleMaintenance) {
+            scheduleMaintenanceIfNeeded();
+        }
+        return result;
     }
 
     /**
@@ -163,6 +180,18 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
                     () -> core.flushFrozenWriteCacheToDeltaFile(entries),
                     core::applyFrozenWriteCacheAfterFlush);
         });
+    }
+
+    private void scheduleMaintenanceIfNeeded() {
+        final SegmentMaintenanceDecision decision = maintenancePolicy
+                .evaluateAfterWrite(this);
+        if (decision.shouldCompact()) {
+            compact();
+            return;
+        }
+        if (decision.shouldFlush()) {
+            flush();
+        }
     }
 
     /**
@@ -179,6 +208,14 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
     @Override
     public long getNumberOfKeysInCache() {
         return core.getNumberOfKeysInCache();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long getNumberOfKeysInSegmentCache() {
+        return core.getNumberOfKeysInSegmentCache();
     }
 
     /**
