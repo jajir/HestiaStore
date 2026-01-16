@@ -76,8 +76,6 @@ class SegmentImplTest {
     @Mock
     private SegmentStats stats;
     @Mock
-    private SegmentDeltaCache<Integer, String> deltaCache;
-    @Mock
     private BloomFilter<Integer> bloomFilter;
     @Mock
     private Directory directory;
@@ -132,11 +130,8 @@ class SegmentImplTest {
         when(scarceIndex.openWriterTx()).thenReturn(scarceWriterTx);
         when(scarceWriterTx.open()).thenReturn(scarceEntryWriter);
         doNothing().when(scarceIndex).loadCache();
-        when(deltaCacheController.getDeltaCache()).thenReturn(deltaCache);
         when(deltaCacheController.openWriter()).thenReturn(deltaCacheWriter);
-        when(deltaCache.getAsSortedList()).thenReturn(List.of());
         when(indexIterator.hasNext()).thenReturn(false);
-        when(segmentDataProvider.getSegmentDeltaCache()).thenReturn(deltaCache);
         when(segmentDataProvider.getBloomFilter()).thenReturn(bloomFilter);
         when(bloomFilter.openWriteTx()).thenReturn(bloomFilterWriterTx);
         when(bloomFilterWriterTx.open()).thenReturn(bloomFilterWriter);
@@ -583,7 +578,7 @@ class SegmentImplTest {
     private SegmentCore<Integer, String> createCore(
             final VersionController controller) {
         final SegmentCache<Integer, String> segmentCache = new SegmentCache<>(
-                tdi.getComparator(), tds, deltaCache.getAsSortedList(),
+                tdi.getComparator(), tds, List.of(),
                 conf.getMaxNumberOfKeysInSegmentWriteCache(),
                 conf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush(),
                 conf.getMaxNumberOfKeysInSegmentCache());

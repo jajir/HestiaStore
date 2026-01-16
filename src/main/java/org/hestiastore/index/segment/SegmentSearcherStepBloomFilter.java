@@ -4,7 +4,7 @@ import org.hestiastore.index.Filter;
 import org.hestiastore.index.Vldtn;
 
 /**
- * Second step: consult bloom filter and short-circuit if key is definitely
+ * First step: consult bloom filter and short-circuit if key is definitely
  * absent.
  */
 final class SegmentSearcherStepBloomFilter<K, V>

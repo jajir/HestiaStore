@@ -26,19 +26,8 @@ class SegmentDataSupplierTest {
         final SegmentConf conf = new SegmentConf(5, 6, 10, 2, 1, 1024, 0.01D,
                 1024, List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()));
-        final SegmentPropertiesManager properties = new SegmentPropertiesManager(
-                files.getAsyncDirectory(), files.getId());
         final SegmentDataSupplier<Integer, String> supplier = new SegmentDataSupplier<>(
-                files, conf, properties);
-
-        final SegmentDeltaCache<Integer, String> deltaCache1 = supplier
-                .getSegmentDeltaCache();
-        final SegmentDeltaCache<Integer, String> deltaCache2 = supplier
-                .getSegmentDeltaCache();
-
-        assertNotNull(deltaCache1);
-        assertNotNull(deltaCache2);
-        assertNotSame(deltaCache1, deltaCache2);
+                files, conf);
 
         final BloomFilter<Integer> bloom1 = supplier.getBloomFilter();
         final BloomFilter<Integer> bloom2 = supplier.getBloomFilter();

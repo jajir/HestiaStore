@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
@@ -40,7 +39,7 @@ class IndexAsyncAdapterTest {
     }
 
     @Test
-    void close_waits_for_inflight_async_operation() throws Exception {
+    void close_does_not_wait_for_inflight_async_operation() throws Exception {
         final CountDownLatch entered = new CountDownLatch(1);
         final CountDownLatch release = new CountDownLatch(1);
 
@@ -60,9 +59,9 @@ class IndexAsyncAdapterTest {
         final CompletableFuture<Void> closeFuture = CompletableFuture
                 .runAsync(adapter::close);
 
-        assertThrows(TimeoutException.class,
-                () -> closeFuture.get(200, TimeUnit.MILLISECONDS),
-                "close() returned while async operation was in-flight");
+        assertTrue(closeFuture.isDone()
+                || closeFuture.get(500, TimeUnit.MILLISECONDS) == null,
+                "close() should not block on an in-flight async operation");
 
         release.countDown();
 

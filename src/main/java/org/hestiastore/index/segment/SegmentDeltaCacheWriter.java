@@ -27,7 +27,6 @@ final class SegmentDeltaCacheWriter<K, V>
 
     private final SegmentPropertiesManager segmentPropertiesManager;
     private final SegmentFiles<K, V> segmentFiles;
-    private final SegmentResources<K, V> segmentCacheDataProvider;
     private final int maxNumberOfKeysInChunk;
 
     /**
@@ -44,9 +43,6 @@ final class SegmentDeltaCacheWriter<K, V>
      * @param segmentFiles                       required segment files accessor
      * @param segmentPropertiesManager           required properties manager for
      *                                           stats and file names
-     * @param segmentCacheDataProvider           required data provider to
-     *                                           update in-memory cache when
-     *                                           loaded
      * @param maxNumberOfKeysInSegmentWriteCache expected upper bound of keys
      *                                           collected in this delta file;
      *                                           must be greater than 0
@@ -58,7 +54,6 @@ final class SegmentDeltaCacheWriter<K, V>
      */
     public SegmentDeltaCacheWriter(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentResources<K, V> segmentCacheDataProvider,
             final int maxNumberOfKeysInSegmentWriteCache,
             final int maxNumberOfKeysInChunk) {
         this.segmentPropertiesManager = Vldtn.requireNonNull(
@@ -73,8 +68,6 @@ final class SegmentDeltaCacheWriter<K, V>
                         segmentFiles.getKeyTypeDescriptor().getComparator())
                 .withInitialCapacity(maxNumberOfKeysInSegmentWriteCache)
                 .buildEmpty();
-        this.segmentCacheDataProvider = Vldtn.requireNonNull(
-                segmentCacheDataProvider, "segmentCacheDataProvider");
         this.maxNumberOfKeysInChunk = maxNumberOfKeysInChunk;
     }
 
@@ -133,7 +126,6 @@ final class SegmentDeltaCacheWriter<K, V>
     public void write(Entry<K, V> entry) {
         uniqueCache.put(entry);
         cx++;
-        segmentCacheDataProvider.getSegmentDeltaCache().put(entry);
     }
 
 }

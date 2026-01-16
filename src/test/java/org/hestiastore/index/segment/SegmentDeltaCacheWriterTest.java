@@ -33,8 +33,6 @@ class SegmentDeltaCacheWriterTest {
     @Mock
     private ChunkEntryFile<Integer, String> deltaFile;
     @Mock
-    private SegmentDeltaCache<Integer, String> segmentDeltaCache;
-    @Mock
     private ChunkEntryFileWriterTx<Integer, String> writerTx;
     @Mock
     private ChunkEntryFileWriter<Integer, String> chunkWriter;
@@ -61,7 +59,7 @@ class SegmentDeltaCacheWriterTest {
         when(segmentFiles.getKeyTypeDescriptor())
                 .thenReturn(new TypeDescriptorInteger());
         return new SegmentDeltaCacheWriter<>(segmentFiles, propertiesManager,
-                dataProvider, max, maxChunk);
+                max, maxChunk);
     }
 
     @Test
@@ -69,33 +67,25 @@ class SegmentDeltaCacheWriterTest {
         // nulls
         assertThrows(IllegalArgumentException.class,
                 () -> new SegmentDeltaCacheWriter<>(null, propertiesManager,
-                        dataProvider, 1, 1));
+                        1, 1));
         assertThrows(IllegalArgumentException.class,
-                () -> new SegmentDeltaCacheWriter<>(segmentFiles, null,
-                        dataProvider, 1, 1));
-        // stub key TD for next call where dataProvider is null
-        when(segmentFiles.getKeyTypeDescriptor())
-                .thenReturn(new TypeDescriptorInteger());
-        assertThrows(IllegalArgumentException.class,
-                () -> new SegmentDeltaCacheWriter<>(segmentFiles,
-                        propertiesManager, null, 1, 1));
-
+                () -> new SegmentDeltaCacheWriter<>(segmentFiles, null, 1, 1));
         // invalid max
         final Exception e1 = assertThrows(IllegalArgumentException.class,
                 () -> new SegmentDeltaCacheWriter<>(segmentFiles,
-                        propertiesManager, dataProvider, 0, 1));
+                        propertiesManager, 0, 1));
         assertEquals(
                 "Property 'maxNumberOfKeysInSegmentWriteCache' must be greater than 0",
                 e1.getMessage());
         final Exception e2 = assertThrows(IllegalArgumentException.class,
                 () -> new SegmentDeltaCacheWriter<>(segmentFiles,
-                        propertiesManager, dataProvider, -1, 1));
+                        propertiesManager, -1, 1));
         assertEquals(
                 "Property 'maxNumberOfKeysInSegmentWriteCache' must be greater than 0",
                 e2.getMessage());
         final Exception e3 = assertThrows(IllegalArgumentException.class,
                 () -> new SegmentDeltaCacheWriter<>(segmentFiles,
-                        propertiesManager, dataProvider, 1, 0));
+                        propertiesManager, 1, 0));
         assertEquals("Property 'maxNumberOfKeysInChunk' must be greater than 0",
                 e3.getMessage());
     }
@@ -104,20 +94,15 @@ class SegmentDeltaCacheWriterTest {
     // below
 
     @Test
-    void write_increments_counter_and_updates_cache() {
-        when(dataProvider.getSegmentDeltaCache()).thenReturn(segmentDeltaCache);
-
+    void write_increments_counter() {
         final SegmentDeltaCacheWriter<Integer, String> writer = newWriter(10);
         writer.write(Entry.of(2, "B"));
         writer.write(Entry.of(1, "A"));
         assertEquals(2, writer.getNumberOfKeys());
-        verify(segmentDeltaCache).put(Entry.of(2, "B"));
-        verify(segmentDeltaCache).put(Entry.of(1, "A"));
     }
 
     @Test
     void close_writes_sorted_unique_entries_and_updates_properties() {
-        when(dataProvider.getSegmentDeltaCache()).thenReturn(segmentDeltaCache);
         final java.util.List<Entry<Integer, String>> written = new java.util.ArrayList<>();
         stubWriteTransactionToCaptureWrites(written);
         when(propertiesManager.getAndIncreaseDeltaFileName())

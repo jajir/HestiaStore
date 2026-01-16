@@ -6,9 +6,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.hestiastore.index.TestData;
 import org.hestiastore.index.bloomfilter.BloomFilter;
-import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,9 +22,6 @@ public class SegmentSearcherTest {
     private SegmentIndexSearcher<String, Long> segmentIndexSearcher;
 
     @Mock
-    private SegmentDeltaCache<String, Long> segmentDeltaCache;
-
-    @Mock
     private BloomFilter<String> bloomFilter;
 
     @Mock
@@ -39,34 +34,12 @@ public class SegmentSearcherTest {
 
     @BeforeEach
     void setUp() {
-        segmentSearcher = new SegmentSearcher<>(TestData.TYPE_DESCRIPTOR_LONG);
+        segmentSearcher = new SegmentSearcher<>();
     }
 
     @Test
-    void test_get_tombStone() {
-        when(segmentDeltaCache.get("key"))
-                .thenReturn(TypeDescriptorLong.TOMBSTONE_VALUE);
-        when(segmentDataProvider.getSegmentDeltaCache())
-                .thenReturn(segmentDeltaCache);
-        assertNull(segmentSearcher.get("key", segmentDataProvider,
-                segmentIndexSearcher));
-    }
-
-    @Test
-    void test_get_inCache() {
-        when(segmentDeltaCache.get("key")).thenReturn(867L);
-        when(segmentDataProvider.getSegmentDeltaCache())
-                .thenReturn(segmentDeltaCache);
-        assertEquals(867L, segmentSearcher.get("key", segmentDataProvider,
-                segmentIndexSearcher));
-    }
-
-    @Test
-    void test_get_notInCache_notInBloomFilter() {
-        when(segmentDeltaCache.get("key")).thenReturn(null);
+    void test_get_notInBloomFilter() {
         when(bloomFilter.isNotStored("key")).thenReturn(true);
-        when(segmentDataProvider.getSegmentDeltaCache())
-                .thenReturn(segmentDeltaCache);
         when(segmentDataProvider.getBloomFilter()).thenReturn(bloomFilter);
 
         assertNull(segmentSearcher.get("key", segmentDataProvider,
@@ -74,12 +47,9 @@ public class SegmentSearcherTest {
     }
 
     @Test
-    void test_get_notInCache_inBloomFilter_notInScarceIndex() {
-        when(segmentDeltaCache.get("key")).thenReturn(null);
+    void test_get_inBloomFilter_notInScarceIndex() {
         when(bloomFilter.isNotStored("key")).thenReturn(false);
         when(scarceIndex.get("key")).thenReturn(null);
-        when(segmentDataProvider.getSegmentDeltaCache())
-                .thenReturn(segmentDeltaCache);
         when(segmentDataProvider.getBloomFilter()).thenReturn(bloomFilter);
         when(segmentDataProvider.getScarceIndex()).thenReturn(scarceIndex);
 
@@ -88,13 +58,10 @@ public class SegmentSearcherTest {
     }
 
     @Test
-    void test_get_notInCache_inBloomFilter_inScarceIndex_notInSegmentSearcher() {
-        when(segmentDeltaCache.get("key")).thenReturn(null);
+    void test_get_inBloomFilter_inScarceIndex_notInIndex() {
         when(bloomFilter.isNotStored("key")).thenReturn(false);
         when(scarceIndex.get("key")).thenReturn(123);
         when(segmentIndexSearcher.search("key", 123)).thenReturn(null);
-        when(segmentDataProvider.getSegmentDeltaCache())
-                .thenReturn(segmentDeltaCache);
         when(segmentDataProvider.getBloomFilter()).thenReturn(bloomFilter);
         when(segmentDataProvider.getScarceIndex()).thenReturn(scarceIndex);
 
@@ -104,13 +71,10 @@ public class SegmentSearcherTest {
     }
 
     @Test
-    void test_get_notInCache_inBloomFilter_inScarceIndex_inSegmentSearcher() {
-        when(segmentDeltaCache.get("key")).thenReturn(null);
+    void test_get_inBloomFilter_inScarceIndex_inIndex() {
         when(bloomFilter.isNotStored("key")).thenReturn(false);
         when(scarceIndex.get("key")).thenReturn(123);
         when(segmentIndexSearcher.search("key", 123)).thenReturn(8633L);
-        when(segmentDataProvider.getSegmentDeltaCache())
-                .thenReturn(segmentDeltaCache);
         when(segmentDataProvider.getBloomFilter()).thenReturn(bloomFilter);
         when(segmentDataProvider.getScarceIndex()).thenReturn(scarceIndex);
 

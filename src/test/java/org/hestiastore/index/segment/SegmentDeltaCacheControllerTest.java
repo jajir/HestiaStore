@@ -1,7 +1,6 @@
 package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -22,9 +21,6 @@ class SegmentDeltaCacheControllerTest {
     @Mock
     private SegmentResources<Integer, Integer> segmentResources;
 
-    @Mock
-    private SegmentDeltaCache<Integer, Integer> deltaCache;
-
     @Test
     void clear_evicted_segment_cache() {
         final SegmentDeltaCacheController<Integer, Integer> controller = new SegmentDeltaCacheController<>(
@@ -43,16 +39,9 @@ class SegmentDeltaCacheControllerTest {
     }
 
     @Test
-    void sizesPreferSegmentCacheWhenAvailable() {
-        when(segmentResources.getSegmentDeltaCache()).thenReturn(deltaCache);
-        when(deltaCache.size()).thenReturn(10);
-        when(deltaCache.sizeWithoutTombstones()).thenReturn(7);
+    void sizesComeFromSegmentCache() {
         final SegmentDeltaCacheController<Integer, Integer> controller = new SegmentDeltaCacheController<>(
                 segmentFiles, segmentPropertiesManager, segmentResources, 5, 2);
-
-        assertEquals(10, controller.getDeltaCacheSize());
-        assertEquals(7, controller.getDeltaCacheSizeWithoutTombstones());
-
         final TypeDescriptorInteger typeDescriptor = new TypeDescriptorInteger();
         final SegmentCache<Integer, Integer> segmentCache = new SegmentCache<>(
                 typeDescriptor.getComparator(), typeDescriptor,

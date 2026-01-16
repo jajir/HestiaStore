@@ -108,7 +108,7 @@ final class SegmentCache<K, V> {
      *
      * @param entry entry to store
      */
-    private void putToDeltaCache(final Entry<K, V> entry) {
+    void putToDeltaCache(final Entry<K, V> entry) {
         deltaCache.put(Vldtn.requireNonNull(entry, "entry"));
     }
 
