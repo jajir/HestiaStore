@@ -1,6 +1,4 @@
-package org.hestiastore.index.segmentindex;
-
-import org.hestiastore.index.segment.Segment;
+package org.hestiastore.index.segment;
 
 /**
  * Decides when to schedule segment maintenance after writes.

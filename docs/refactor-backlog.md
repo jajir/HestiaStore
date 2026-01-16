@@ -1,6 +1,9 @@
 # Refactor backlog
 
-## Active (segmentindex refactor plan - class level)
+## Active
+
+## Planned (segmentindex refactor plan - class level)
+
 
 ### Segmentindex design issues (review backlog)
 
@@ -47,11 +50,6 @@
 
 ### Segment memory growth (JMH load test)
 
-[ ] Bound delta cache growth in `SegmentCache` (Risk: HIGH)
-    - Problem: delta cache uses `maxNumberOfKeysInSegmentCache` only as initial
-      capacity; it grows without a hard cap.
-    - Fix: enforce a hard limit; on overflow trigger compaction or spill delta
-      to disk and evict in-memory entries; add metrics + tests.
 [ ] Remove duplicate in-memory delta caches (Risk: HIGH)
     - Problem: `SegmentCache` keeps a delta cache while `SegmentDeltaCache`
       keeps its own, effectively doubling memory.

@@ -43,6 +43,7 @@ public final class SegmentBuilder<K, V> {
     private final List<ChunkFilter> encodingChunkFilters = new ArrayList<>();
     private final List<ChunkFilter> decodingChunkFilters = new ArrayList<>();
     private Executor maintenanceExecutor;
+    private boolean segmentMaintenanceAutoEnabled = true;
 
     /**
      * Creates a new builder with default settings.
@@ -173,8 +174,7 @@ public final class SegmentBuilder<K, V> {
     public SegmentBuilder<K, V> withMaxNumberOfKeysInSegmentCache(
             final int maxNumberOfKeysInSegmentCache) {
         this.maxNumberOfKeysInSegmentCache = Vldtn.requireGreaterThanZero(
-                maxNumberOfKeysInSegmentCache,
-                "maxNumberOfKeysInSegmentCache");
+                maxNumberOfKeysInSegmentCache, "maxNumberOfKeysInSegmentCache");
         return this;
     }
 
@@ -336,6 +336,18 @@ public final class SegmentBuilder<K, V> {
     }
 
     /**
+     * Enables or disables automatic maintenance scheduling after writes.
+     *
+     * @param enabled true to enable auto maintenance
+     * @return this builder for chaining
+     */
+    public SegmentBuilder<K, V> withSegmentMaintenanceAutoEnabled(
+            final boolean enabled) {
+        this.segmentMaintenanceAutoEnabled = enabled;
+        return this;
+    }
+
+    /**
      * Opens a full writer transaction that builds the segment from a sorted
      * stream of entries. Entries must be unique, sorted by key in ascending
      * order, and must not contain tombstones. The returned transaction writes
@@ -375,9 +387,9 @@ public final class SegmentBuilder<K, V> {
                 segmentConf.getMaxNumberOfKeysInChunk());
         final SegmentCache<K, V> segmentCache = createSegmentCache();
         deltaCacheController.setSegmentCache(segmentCache);
-        final SegmentReadPath<K, V> readPath = new SegmentReadPath<>(segmentFiles,
-                segmentConf, segmentResources, segmentSearcher, segmentCache,
-                versionController);
+        final SegmentReadPath<K, V> readPath = new SegmentReadPath<>(
+                segmentFiles, segmentConf, segmentResources, segmentSearcher,
+                segmentCache, versionController);
         final SegmentWritePath<K, V> writePath = new SegmentWritePath<>(
                 segmentCache, versionController);
         final SegmentMaintenancePath<K, V> maintenancePath = new SegmentMaintenancePath<>(
@@ -388,7 +400,13 @@ public final class SegmentBuilder<K, V> {
         final SegmentCore<K, V> core = new SegmentCore<>(segmentFiles,
                 versionController, segmentPropertiesManager, segmentCache,
                 readPath, writePath, maintenancePath);
-        return new SegmentImpl<>(core, compacter, maintenanceExecutor);
+        final SegmentMaintenancePolicy<K, V> maintenancePolicy = segmentMaintenanceAutoEnabled
+                ? new SegmentMaintenancePolicyThreshold<>(
+                        segmentConf.getMaxNumberOfKeysInSegmentCache(),
+                        segmentConf.getMaxNumberOfKeysInSegmentWriteCache())
+                : SegmentMaintenancePolicy.none();
+        return new SegmentImpl<>(core, compacter, maintenanceExecutor,
+                maintenancePolicy);
     }
 
     /**
@@ -413,9 +431,9 @@ public final class SegmentBuilder<K, V> {
         }
         final int effectiveMaxKeysDuringFlush;
         if (maxNumberOfKeysInSegmentWriteCacheDuringFlush == null) {
-            effectiveMaxKeysDuringFlush = Math
-                    .max(maxNumberOfKeysInSegmentWriteCache * 2,
-                            maxNumberOfKeysInSegmentWriteCache + 1);
+            effectiveMaxKeysDuringFlush = Math.max(
+                    maxNumberOfKeysInSegmentWriteCache * 2,
+                    maxNumberOfKeysInSegmentWriteCache + 1);
         } else if (maxNumberOfKeysInSegmentWriteCacheDuringFlush <= maxNumberOfKeysInSegmentWriteCache) {
             throw new IllegalArgumentException(String.format(
                     "maxNumberOfKeysInSegmentWriteCacheDuringFlush must be greater than maxNumberOfKeysInSegmentWriteCache (got %s <= %s)",
@@ -432,8 +450,7 @@ public final class SegmentBuilder<K, V> {
             Vldtn.requireNotEmpty(decodingChunkFilters, "decodingChunkFilters");
             segmentConf = new SegmentConf(
                     (int) maxNumberOfKeysInSegmentWriteCache,
-                    effectiveMaxKeysDuringFlush,
-                    maxNumberOfKeysInSegmentCache,
+                    effectiveMaxKeysDuringFlush, maxNumberOfKeysInSegmentCache,
                     maxNumberOfKeysInSegmentChunk,
                     bloomFilterNumberOfHashFunctions,
                     bloomFilterIndexSizeInBytes,

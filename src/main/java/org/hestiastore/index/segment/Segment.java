@@ -171,6 +171,14 @@ public interface Segment<K, V> extends CloseableResource {
     long getNumberOfKeysInCache();
 
     /**
+     * Returns the number of keys currently held in the in-memory segment cache
+     * (delta cache + write cache + frozen write cache).
+     *
+     * @return number of cached keys in memory
+     */
+    long getNumberOfKeysInSegmentCache();
+
+    /**
      * Returns the total number of keys in this segment (delta cache + on-disk
      * index). Tombstones are accounted for according to implementation rules.
      *

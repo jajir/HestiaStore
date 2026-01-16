@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex;
+package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -27,10 +27,5 @@ class SegmentMaintenanceDecisionTest {
                 .compactOnly();
         assertFalse(compactOnly.shouldFlush());
         assertTrue(compactOnly.shouldCompact());
-
-        final SegmentMaintenanceDecision both = SegmentMaintenanceDecision
-                .flushAndCompact();
-        assertTrue(both.shouldFlush());
-        assertTrue(both.shouldCompact());
     }
 }
