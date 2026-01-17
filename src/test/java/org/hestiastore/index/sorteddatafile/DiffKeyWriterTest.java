@@ -115,6 +115,13 @@ class DiffKeyWriterTest {
         verifyDiffKey(1, 2, "cc", ret);
     }
 
+    @Test
+    void test_close_returns_zero() {
+        final DiffKeyWriter<Integer> diffWriter = makeDiffKeyWriter();
+
+        assertEquals(0, diffWriter.close());
+    }
+
     private void verifyDiffKey(final int expectedSharedByteLength,
             final int expectedBytesLength, final String expectedString,
             final byte[] bytes) {

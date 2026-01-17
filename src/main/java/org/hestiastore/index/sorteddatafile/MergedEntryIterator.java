@@ -11,6 +11,17 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
 
+/**
+ * Merges multiple sorted iterators into a single sorted iterator.
+ *
+ * <p>
+ * When duplicate keys are encountered across iterators, values are combined
+ * using the provided {@link Merger}.
+ * </p>
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 public final class MergedEntryIterator<K, V>
         extends AbstractCloseableResource implements EntryIteratorWithCurrent<K, V> {
 
@@ -20,6 +31,13 @@ public final class MergedEntryIterator<K, V>
     private Entry<K, V> current;
     private Entry<K, V> next;
 
+    /**
+     * Creates a merged iterator over the provided iterators.
+     *
+     * @param iterators sorted iterators with current entry support
+     * @param keyComparator comparator used to order keys
+     * @param merger value merger for duplicate keys
+     */
     MergedEntryIterator(final List<EntryIteratorWithCurrent<K, V>> iterators,
             final Comparator<K> keyComparator, final Merger<K, V> merger) {
         Vldtn.requireNonNull(iterators, "iterators");
@@ -38,6 +56,11 @@ public final class MergedEntryIterator<K, V>
         next = moveToNextEntry();
     }
 
+    /**
+     * Moves to the next merged entry based on current iterator positions.
+     *
+     * @return next merged entry or null if exhausted
+     */
     private Entry<K, V> moveToNextEntry() {
         final Optional<EntryIteratorWithCurrent<K, V>> oLowestIter = findIteratorWithLowestKey();
         if (!oLowestIter.isPresent()) {
@@ -53,6 +76,11 @@ public final class MergedEntryIterator<K, V>
         }
     }
 
+    /**
+     * Finds the iterator whose current entry has the lowest key.
+     *
+     * @return iterator with the lowest key, or empty when none are available
+     */
     public Optional<EntryIteratorWithCurrent<K, V>> findIteratorWithLowestKey() {
         final Comparator<EntryIteratorWithCurrent<K, V>> comparator = new EntryIteratorWithCurrentComparator<>(
                 keyComparator);
@@ -76,6 +104,13 @@ public final class MergedEntryIterator<K, V>
         return Optional.ofNullable(lowest);
     }
 
+    /**
+     * Advances all iterators that currently point to the given key and merges
+     * their values.
+     *
+     * @param key required key to merge
+     * @return merged entry for the key
+     */
     private Entry<K, V> moveNextIteratorsWithKey(final K key) {
         Vldtn.requireNonNull(key, "key");
         final List<EntryIteratorWithCurrent<K, V>> toRemove = new ArrayList<>();
@@ -99,6 +134,12 @@ public final class MergedEntryIterator<K, V>
         return new Entry<K, V>(key, out);
     }
 
+    /**
+     * Advances the given iterator or removes it when exhausted.
+     *
+     * @param iterator iterator to advance
+     * @param toRemove list collecting exhausted iterators
+     */
     private void moveIteratorToNextEntry(
             final EntryIteratorWithCurrent<K, V> iterator,
             final List<EntryIteratorWithCurrent<K, V>> toRemove) {
@@ -110,11 +151,21 @@ public final class MergedEntryIterator<K, V>
         }
     }
 
+    /**
+     * Returns true if another merged entry is available.
+     *
+     * @return true when another entry can be read
+     */
     @Override
     public boolean hasNext() {
         return next != null;
     }
 
+    /**
+     * Returns the next merged entry.
+     *
+     * @return next entry in sorted order
+     */
     @Override
     public Entry<K, V> next() {
         if (next == null) {
@@ -126,6 +177,9 @@ public final class MergedEntryIterator<K, V>
         }
     }
 
+    /**
+     * Closes all remaining iterators and clears internal state.
+     */
     @Override
     protected void doClose() {
         for (final EntryIteratorWithCurrent<K, V> iterator : iterators) {
@@ -138,6 +192,11 @@ public final class MergedEntryIterator<K, V>
         next = null;
     }
 
+    /**
+     * Returns the most recently produced entry, if any.
+     *
+     * @return current entry, or empty when none has been produced
+     */
     @Override
     public Optional<Entry<K, V>> getCurrent() {
         return Optional.ofNullable(current);

@@ -45,7 +45,6 @@ public class DiffKeyReader<K> implements TypeReader<K> {
         previousKeyBytes = null;
     }
 
-    @Override
     /**
      * Read and decode the next key from the given {@link FileReader}.
      * <p>
@@ -66,6 +65,7 @@ public class DiffKeyReader<K> implements TypeReader<K> {
      * @throws IndexException when the encoded stream is inconsistent or I/O
      *                        does not return the expected number of bytes
      */
+    @Override
     public K read(final FileReader fileReader) {
         if (2 != fileReader.read(header)) {
             return null;
@@ -99,6 +99,12 @@ public class DiffKeyReader<K> implements TypeReader<K> {
         return keyConvertor.fromBytes(keyBytes);
     }
 
+    /**
+     * Reads the requested number of bytes or throws when the stream ends.
+     *
+     * @param fileReader source reader
+     * @param bytes destination buffer
+     */
     private void read(final FileReader fileReader, final byte[] bytes) {
         int read = fileReader.read(bytes);
         if (read != bytes.length) {
@@ -108,6 +114,13 @@ public class DiffKeyReader<K> implements TypeReader<K> {
         }
     }
 
+    /**
+     * Copies the first {@code howMany} bytes into a new array.
+     *
+     * @param bytes source bytes
+     * @param howMany number of bytes to copy
+     * @return copied bytes
+     */
     private byte[] getBytes(final byte[] bytes, final int howMany) {
         final byte[] out = new byte[howMany];
         System.arraycopy(bytes, 0, out, 0, howMany);

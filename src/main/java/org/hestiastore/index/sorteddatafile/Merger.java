@@ -5,17 +5,20 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
 
 /**
- * Allows to merge two key value entries into one.
- * 
- * It's useful for sorting data.
- * 
- * @author jan
+ * Combines two values with the same key into a single value.
  *
  * @param <K> key type
  * @param <V> value type
  */
 public interface Merger<K, V> {
 
+    /**
+     * Merges two entries that share the same key into a single entry.
+     *
+     * @param entry1 first entry
+     * @param entry2 second entry
+     * @return merged entry
+     */
     default Entry<K, V> merge(final Entry<K, V> entry1,
             final Entry<K, V> entry2) {
         Vldtn.requireNonNull(entry1, "entry1");
@@ -36,8 +39,8 @@ public interface Merger<K, V> {
 
     /**
      * Merge two values associated with one key.
-     * 
-     * @param key    required key
+     *
+     * @param key required key
      * @param value1 required value of first entry
      * @param value2 required value of second entry
      * @return merged value
