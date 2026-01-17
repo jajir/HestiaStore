@@ -41,7 +41,7 @@ class SegmentManagerTest {
                         .wrap(directory),
                 keyTypeDescriptor, valueTypeDescriptor, conf);
         when(conf.getMaxNumberOfKeysInSegmentWriteCache()).thenReturn(1);
-        when(conf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush())
+        when(conf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance())
                 .thenReturn(2);
         when(conf.getMaxNumberOfKeysInSegmentCache()).thenReturn(4);
         when(conf.getMaxNumberOfKeysInSegmentChunk()).thenReturn(1);

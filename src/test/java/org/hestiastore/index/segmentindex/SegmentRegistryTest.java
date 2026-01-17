@@ -132,7 +132,7 @@ class SegmentRegistryTest {
     private void stubSegmentConfig() {
         Mockito.when(conf.getMaxNumberOfKeysInSegmentWriteCache())
                 .thenReturn(5);
-        Mockito.when(conf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush())
+        Mockito.when(conf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance())
                 .thenReturn(6);
         Mockito.when(conf.getMaxNumberOfKeysInSegmentCache()).thenReturn(10);
         Mockito.when(conf.getMaxNumberOfKeysInSegmentChunk()).thenReturn(2);

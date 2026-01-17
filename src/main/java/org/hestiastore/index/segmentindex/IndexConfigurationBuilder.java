@@ -12,7 +12,7 @@ public class IndexConfigurationBuilder<K, V> {
 
     private Integer maxNumberOfKeysInSegmentCache;
     private Integer maxNumberOfKeysInSegmentWriteCache;
-    private Integer maxNumberOfKeysInSegmentWriteCacheDuringFlush;
+    private Integer maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
     private Integer maxNumberOfKeysInSegmentChunk;
     private Integer maxNumberOfKeysInCache;
     private Integer maxNumberOfKeysInSegment;
@@ -107,9 +107,9 @@ public class IndexConfigurationBuilder<K, V> {
         return this;
     }
 
-    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentWriteCacheDuringFlush(
-            final Integer maxNumberOfKeysInSegmentWriteCacheDuringFlush) {
-        this.maxNumberOfKeysInSegmentWriteCacheDuringFlush = maxNumberOfKeysInSegmentWriteCacheDuringFlush;
+    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
+            final Integer maxNumberOfKeysInSegmentWriteCacheDuringMaintenance) {
+        this.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
         return this;
     }
 
@@ -287,32 +287,32 @@ public class IndexConfigurationBuilder<K, V> {
         final Boolean effectiveSegmentMaintenanceAutoEnabled = segmentMaintenanceAutoEnabled == null
                 ? IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_AUTO_ENABLED
                 : segmentMaintenanceAutoEnabled;
-        final Integer effectiveWriteCacheDuringFlush;
-        if (maxNumberOfKeysInSegmentWriteCacheDuringFlush == null
+        final Integer effectiveWriteCacheDuringMaintenance;
+        if (maxNumberOfKeysInSegmentWriteCacheDuringMaintenance == null
                 && maxNumberOfKeysInSegmentWriteCache != null) {
-            effectiveWriteCacheDuringFlush = Math.max(
+            effectiveWriteCacheDuringMaintenance = Math.max(
                     (int) Math.ceil(maxNumberOfKeysInSegmentWriteCache * 1.4),
                     maxNumberOfKeysInSegmentWriteCache + 1);
-        } else if (maxNumberOfKeysInSegmentWriteCacheDuringFlush == null) {
-            effectiveWriteCacheDuringFlush = null;
+        } else if (maxNumberOfKeysInSegmentWriteCacheDuringMaintenance == null) {
+            effectiveWriteCacheDuringMaintenance = null;
         } else if (maxNumberOfKeysInSegmentWriteCache == null) {
-            effectiveWriteCacheDuringFlush = Vldtn.requireGreaterThanZero(
-                    maxNumberOfKeysInSegmentWriteCacheDuringFlush,
-                    "maxNumberOfKeysInSegmentWriteCacheDuringFlush");
+            effectiveWriteCacheDuringMaintenance = Vldtn.requireGreaterThanZero(
+                    maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+                    "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance");
         } else {
-            if (maxNumberOfKeysInSegmentWriteCacheDuringFlush <= maxNumberOfKeysInSegmentWriteCache) {
+            if (maxNumberOfKeysInSegmentWriteCacheDuringMaintenance <= maxNumberOfKeysInSegmentWriteCache) {
                 throw new IllegalArgumentException(String.format(
                         "Property '%s' must be greater than '%s'",
-                        "maxNumberOfKeysInSegmentWriteCacheDuringFlush",
+                        "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance",
                         "maxNumberOfKeysInSegmentWriteCache"));
             }
-            effectiveWriteCacheDuringFlush = maxNumberOfKeysInSegmentWriteCacheDuringFlush;
+            effectiveWriteCacheDuringMaintenance = maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
         }
         return new IndexConfiguration<K, V>(keyClass, valueClass,
                 keyTypeDescriptor, valueTypeDescriptor,
                 maxNumberOfKeysInSegmentCache,
                 maxNumberOfKeysInSegmentWriteCache,
-                effectiveWriteCacheDuringFlush,
+                effectiveWriteCacheDuringMaintenance,
                 maxNumberOfKeysInSegmentChunk, maxNumberOfKeysInCache,
                 maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache, indexName,
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,

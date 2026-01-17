@@ -25,7 +25,7 @@ public class IndexConfiguratonStorage<K, V> {
 
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = "maxNumberOfKeysInSegmentCache";
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE = "maxNumberOfKeysInSegmentWriteCache";
-    private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_FLUSH = "maxNumberOfKeysInSegmentWriteCacheDuringFlush";
+    private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE = "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance";
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK = "maxNumberOfKeysInSegmentChunk";
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_CACHE = "maxNumberOfKeysInCache";
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT = "maxNumberOfKeysInSegment";
@@ -69,12 +69,13 @@ public class IndexConfiguratonStorage<K, V> {
         final long maxNumberOfKeysInSegmentWriteCache = getOrDefaultLong(
                 propsView, PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE,
                 defaultMaxNumberOfKeysInSegmentWriteCache);
-        final long defaultWriteCacheDuringFlush = Math.max(
+        final long defaultWriteCacheDuringMaintenance = Math.max(
                 maxNumberOfKeysInSegmentWriteCache * 2,
                 maxNumberOfKeysInSegmentWriteCache + 1);
-        final long maxNumberOfKeysInSegmentWriteCacheDuringFlush = getOrDefaultLong(
-                propsView, PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_FLUSH,
-                defaultWriteCacheDuringFlush);
+        final long maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = getOrDefaultLong(
+                propsView,
+                PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE,
+                defaultWriteCacheDuringMaintenance);
         final IndexConfigurationBuilder<K, V> builder = IndexConfiguration
                 .<K, V>builder()//
                 .withKeyClass(keyClass) //
@@ -98,8 +99,8 @@ public class IndexConfiguratonStorage<K, V> {
                         (int) maxNumberOfKeysInSegmentCache)//
                 .withMaxNumberOfKeysInSegmentWriteCache(
                         (int) maxNumberOfKeysInSegmentWriteCache)//
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringFlush(
-                        (int) maxNumberOfKeysInSegmentWriteCacheDuringFlush)//
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
+                        (int) maxNumberOfKeysInSegmentWriteCacheDuringMaintenance)//
                 .withMaxNumberOfKeysInSegmentChunk(
                         propsView.getInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK))//
                 .withNumberOfCpuThreads(getOrDefault(propsView,
@@ -195,9 +196,9 @@ public class IndexConfiguratonStorage<K, V> {
         writer.setLong(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE,
                 indexConfiguration.getMaxNumberOfKeysInSegmentWriteCache());
         writer.setLong(
-                PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_FLUSH,
+                PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE,
                 indexConfiguration
-                        .getMaxNumberOfKeysInSegmentWriteCacheDuringFlush());
+                        .getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance());
         writer.setInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK,
                 indexConfiguration.getMaxNumberOfKeysInSegmentChunk());
         final int threadCount = indexConfiguration.getNumberOfThreads() == null

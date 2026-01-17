@@ -134,7 +134,7 @@ class SegmentBuilderTest {
         when(segmentConf.getEncodingChunkFilters()).thenReturn(null);
         when(segmentConf.getDecodingChunkFilters()).thenReturn(List.of());
         when(segmentConf.getMaxNumberOfKeysInSegmentWriteCache()).thenReturn(5);
-        when(segmentConf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush())
+        when(segmentConf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance())
                 .thenReturn(10);
         when(segmentConf.getMaxNumberOfKeysInSegmentCache()).thenReturn(100);
         when(segmentConf.getMaxNumberOfKeysInChunk()).thenReturn(1);
@@ -167,7 +167,7 @@ class SegmentBuilderTest {
                 .thenReturn(List.of(new ChunkFilterDoNothing()));
         when(segmentConf.getDecodingChunkFilters()).thenReturn(List.of());
         when(segmentConf.getMaxNumberOfKeysInSegmentWriteCache()).thenReturn(5);
-        when(segmentConf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush())
+        when(segmentConf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance())
                 .thenReturn(10);
         when(segmentConf.getMaxNumberOfKeysInSegmentCache()).thenReturn(100);
         when(segmentConf.getMaxNumberOfKeysInChunk()).thenReturn(1);

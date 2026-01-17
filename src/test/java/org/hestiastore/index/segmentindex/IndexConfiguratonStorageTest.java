@@ -39,7 +39,7 @@ class IndexConfiguratonStorageTest {
                 .withName("index-config-storage-test")//
                 .withMaxNumberOfKeysInSegmentCache(4)//
                 .withMaxNumberOfKeysInSegmentWriteCache(2)//
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringFlush(3)//
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(3)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withMaxNumberOfKeysInCache(10)//
                 .withMaxNumberOfKeysInSegment(10)//

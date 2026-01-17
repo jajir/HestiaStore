@@ -20,8 +20,8 @@ class SegmentConfTest {
 
         assertEquals(original.getMaxNumberOfKeysInSegmentWriteCache(),
                 copy.getMaxNumberOfKeysInSegmentWriteCache());
-        assertEquals(original.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush(),
-                copy.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush());
+        assertEquals(original.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(),
+                copy.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance());
         assertEquals(original.getMaxNumberOfKeysInSegmentCache(),
                 copy.getMaxNumberOfKeysInSegmentCache());
         assertEquals(original.getMaxNumberOfKeysInChunk(),

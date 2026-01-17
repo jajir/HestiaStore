@@ -580,7 +580,7 @@ class SegmentImplTest {
         final SegmentCache<Integer, String> segmentCache = new SegmentCache<>(
                 tdi.getComparator(), tds, List.of(),
                 conf.getMaxNumberOfKeysInSegmentWriteCache(),
-                conf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush(),
+                conf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(),
                 conf.getMaxNumberOfKeysInSegmentCache());
         deltaCacheController.setSegmentCache(segmentCache);
         final SegmentReadPath<Integer, String> readPath = new SegmentReadPath<>(

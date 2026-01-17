@@ -98,7 +98,7 @@ class SegmentIndexImplConcurrencyTest {
                 .withContextLoggingEnabled(false)//
                 .withMaxNumberOfKeysInSegmentCache(100)//
                 .withMaxNumberOfKeysInSegmentWriteCache(50)//
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringFlush(60)//
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(60)//
                 .withMaxNumberOfKeysInSegmentChunk(10)//
                 .withMaxNumberOfKeysInCache(100)//
                 .withMaxNumberOfKeysInSegment(1000)//

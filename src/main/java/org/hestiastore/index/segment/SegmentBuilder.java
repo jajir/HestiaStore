@@ -29,7 +29,7 @@ public final class SegmentBuilder<K, V> {
     private TypeDescriptor<V> valueTypeDescriptor;
     private int maxNumberOfKeysInSegmentWriteCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE;
     private int maxNumberOfKeysInSegmentCache = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE;
-    private Integer maxNumberOfKeysInSegmentWriteCacheDuringFlush;
+    private Integer maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
     private int maxNumberOfKeysInSegmentChunk = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK;
     private Integer bloomFilterNumberOfHashFunctions;
     private Integer bloomFilterIndexSizeInBytes;
@@ -179,17 +179,17 @@ public final class SegmentBuilder<K, V> {
     }
 
     /**
-     * Sets the allowed number of write-cache keys during a flush.
+     * Sets the allowed number of write-cache keys during maintenance.
      *
-     * @param maxNumberOfKeysInSegmentWriteCacheDuringFlush value greater than 0
+     * @param maxNumberOfKeysInSegmentWriteCacheDuringMaintenance value greater than 0
      * @return this builder for chaining
      */
-    public SegmentBuilder<K, V> withMaxNumberOfKeysInSegmentWriteCacheDuringFlush(
-            final int maxNumberOfKeysInSegmentWriteCacheDuringFlush) {
-        this.maxNumberOfKeysInSegmentWriteCacheDuringFlush = Vldtn
+    public SegmentBuilder<K, V> withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
+            final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance) {
+        this.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = Vldtn
                 .requireGreaterThanZero(
-                        maxNumberOfKeysInSegmentWriteCacheDuringFlush,
-                        "maxNumberOfKeysInSegmentWriteCacheDuringFlush");
+                        maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+                        "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance");
         return this;
     }
 
@@ -428,18 +428,18 @@ public final class SegmentBuilder<K, V> {
                     "maxNumberOfKeysInSegmentWriteCache is '%s' but must be higher than '0'",
                     maxNumberOfKeysInSegmentWriteCache));
         }
-        final int effectiveMaxKeysDuringFlush;
-        if (maxNumberOfKeysInSegmentWriteCacheDuringFlush == null) {
-            effectiveMaxKeysDuringFlush = Math.max(
+        final int effectiveMaxKeysDuringMaintenance;
+        if (maxNumberOfKeysInSegmentWriteCacheDuringMaintenance == null) {
+            effectiveMaxKeysDuringMaintenance = Math.max(
                     maxNumberOfKeysInSegmentWriteCache * 2,
                     maxNumberOfKeysInSegmentWriteCache + 1);
-        } else if (maxNumberOfKeysInSegmentWriteCacheDuringFlush <= maxNumberOfKeysInSegmentWriteCache) {
+        } else if (maxNumberOfKeysInSegmentWriteCacheDuringMaintenance <= maxNumberOfKeysInSegmentWriteCache) {
             throw new IllegalArgumentException(String.format(
-                    "maxNumberOfKeysInSegmentWriteCacheDuringFlush must be greater than maxNumberOfKeysInSegmentWriteCache (got %s <= %s)",
-                    maxNumberOfKeysInSegmentWriteCacheDuringFlush,
+                    "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance must be greater than maxNumberOfKeysInSegmentWriteCache (got %s <= %s)",
+                    maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
                     maxNumberOfKeysInSegmentWriteCache));
         } else {
-            effectiveMaxKeysDuringFlush = maxNumberOfKeysInSegmentWriteCacheDuringFlush;
+            effectiveMaxKeysDuringMaintenance = maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
         }
         if (versionController == null) {
             versionController = new VersionController();
@@ -449,7 +449,7 @@ public final class SegmentBuilder<K, V> {
             Vldtn.requireNotEmpty(decodingChunkFilters, "decodingChunkFilters");
             segmentConf = new SegmentConf(
                     (int) maxNumberOfKeysInSegmentWriteCache,
-                    effectiveMaxKeysDuringFlush, maxNumberOfKeysInSegmentCache,
+                    effectiveMaxKeysDuringMaintenance, maxNumberOfKeysInSegmentCache,
                     maxNumberOfKeysInSegmentChunk,
                     bloomFilterNumberOfHashFunctions,
                     bloomFilterIndexSizeInBytes,
@@ -488,7 +488,7 @@ public final class SegmentBuilder<K, V> {
                 segmentFiles.getValueTypeDescriptor(),
                 null,
                 segmentConf.getMaxNumberOfKeysInSegmentWriteCache(),
-                segmentConf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush(),
+                segmentConf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(),
                 segmentConf.getMaxNumberOfKeysInSegmentCache());
         new SegmentDeltaCacheLoader<>(segmentFiles, segmentPropertiesManager)
                 .loadInto(segmentCache);

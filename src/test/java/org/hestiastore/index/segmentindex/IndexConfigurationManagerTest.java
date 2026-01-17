@@ -38,7 +38,7 @@ class IndexConfigurationManagerTest {
                 .withContextLoggingEnabled(false)
                 .withMaxNumberOfKeysInSegmentCache(10)
                 .withMaxNumberOfKeysInSegmentWriteCache(5)
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringFlush(6)
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(6)
                 .withMaxNumberOfKeysInSegmentChunk(2)
                 .withMaxNumberOfKeysInCache(10)
                 .withMaxNumberOfKeysInSegment(100)

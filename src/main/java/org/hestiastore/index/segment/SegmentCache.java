@@ -25,7 +25,7 @@ final class SegmentCache<K, V> {
     private final Comparator<K> keyComparator;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final int maxNumberOfKeysInSegmentWriteCache;
-    private final int maxNumberOfKeysInSegmentWriteCacheDuringFlush;
+    private final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
     private static final int MAX_INITIAL_CAPACITY = 1_000_000;
     private final ReentrantLock capacityLock = new ReentrantLock();
     private final Condition capacityAvailable = capacityLock.newCondition();
@@ -37,15 +37,15 @@ final class SegmentCache<K, V> {
      * @param valueTypeDescriptor descriptor for values (tombstone handling)
      * @param deltaEntries initial delta-cache entries, may be null
      * @param maxNumberOfKeysInSegmentWriteCache max write-cache size
-     * @param maxNumberOfKeysInSegmentWriteCacheDuringFlush write-cache size
-     *        allowed during flush
+     * @param maxNumberOfKeysInSegmentWriteCacheDuringMaintenance write-cache size
+     *        allowed during maintenance
      * @param maxNumberOfKeysInSegmentCache max delta-cache size hint
      */
     public SegmentCache(final Comparator<K> keyComparator,
             final TypeDescriptor<V> valueTypeDescriptor,
             final List<Entry<K, V>> deltaEntries,
             final int maxNumberOfKeysInSegmentWriteCache,
-            final int maxNumberOfKeysInSegmentWriteCacheDuringFlush,
+            final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
             final int maxNumberOfKeysInSegmentCache) {
         this.keyComparator = Vldtn.requireNonNull(keyComparator,
                 "keyComparator");
@@ -54,10 +54,10 @@ final class SegmentCache<K, V> {
         this.maxNumberOfKeysInSegmentWriteCache = Vldtn.requireGreaterThanZero(
                 maxNumberOfKeysInSegmentWriteCache,
                 "maxNumberOfKeysInSegmentWriteCache");
-        this.maxNumberOfKeysInSegmentWriteCacheDuringFlush = Vldtn
+        this.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = Vldtn
                 .requireGreaterThanZero(
-                        maxNumberOfKeysInSegmentWriteCacheDuringFlush,
-                        "maxNumberOfKeysInSegmentWriteCacheDuringFlush");
+                        maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+                        "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance");
         final int deltaCapacityHint = Math.min(
                 Vldtn.requireGreaterThanZero(maxNumberOfKeysInSegmentCache,
                         "maxNumberOfKeysInSegmentCache"),
@@ -93,7 +93,7 @@ final class SegmentCache<K, V> {
     boolean tryPutToWriteCacheWithoutWaiting(final Entry<K, V> entry) {
         capacityLock.lock();
         try {
-            if (currentBufferedKeys() >= maxNumberOfKeysInSegmentWriteCache) {
+            if (currentBufferedKeys() >= effectiveWriteCacheLimit()) {
                 return false;
             }
             writeCache.put(Vldtn.requireNonNull(entry, "entry"));
@@ -290,7 +290,7 @@ final class SegmentCache<K, V> {
         }
         capacityLock.lock();
         try {
-            while (currentBufferedKeys() >= maxNumberOfKeysInSegmentWriteCache) {
+            while (currentBufferedKeys() >= effectiveWriteCacheLimit()) {
                 capacityAvailable.await();
             }
         } catch (final InterruptedException ex) {
@@ -312,6 +312,18 @@ final class SegmentCache<K, V> {
         } finally {
             capacityLock.unlock();
         }
+    }
+
+    /**
+     * Returns the active write-cache limit for the current state.
+     *
+     * @return max buffered keys allowed right now
+     */
+    private int effectiveWriteCacheLimit() {
+        if (frozenWriteCache != null) {
+            return maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+        }
+        return maxNumberOfKeysInSegmentWriteCache;
     }
 
     /**
@@ -337,7 +349,7 @@ final class SegmentCache<K, V> {
      */
     private UniqueCache<K, V> buildWriteCache() {
         final int capacityHint = Math.min(
-                Math.max(1, maxNumberOfKeysInSegmentWriteCacheDuringFlush),
+                Math.max(1, maxNumberOfKeysInSegmentWriteCacheDuringMaintenance),
                 MAX_INITIAL_CAPACITY);
         return UniqueCache.<K, V>builder()//
                 .withKeyComparator(keyComparator)//

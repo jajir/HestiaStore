@@ -174,8 +174,8 @@ public class SegmentRegistry<K, V> {
                         conf.getMaxNumberOfKeysInSegmentWriteCache().intValue())//
                 .withMaxNumberOfKeysInSegmentCache(
                         conf.getMaxNumberOfKeysInSegmentCache())//
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringFlush(
-                        conf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush()
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
+                        conf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance()
                                 .intValue())//
                 .withMaxNumberOfKeysInSegmentChunk(
                         conf.getMaxNumberOfKeysInSegmentChunk())//
@@ -201,7 +201,7 @@ public class SegmentRegistry<K, V> {
     private SegmentConf buildSegmentConf() {
         return new SegmentConf(
                 conf.getMaxNumberOfKeysInSegmentWriteCache().intValue(),
-                conf.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush()
+                conf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance()
                         .intValue(),
                 conf.getMaxNumberOfKeysInSegmentCache(),
                 conf.getMaxNumberOfKeysInSegmentChunk(),
