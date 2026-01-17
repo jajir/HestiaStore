@@ -49,22 +49,30 @@ Any segment write operation will break segment iterator. It's easier way to secu
 
 ## 🗄️ Caching of segment data
 
-In segment following object are cached:
+Segment caching has two parts: in-memory caches for write/delta data and
+lazy-loaded disk-backed resources.
 
-* SegmentDeltaCache - contains changed key value entry from segment
-* BloomFilter - bloom filter data
-* ScarceIndex - scarce index data
+In-memory caches:
+* `SegmentCache` keeps three views: write cache (new writes), frozen write
+  cache (snapshot during flush), and delta cache (in-memory view of on-disk
+  delta files).
+* On segment creation, `SegmentBuilder#createSegmentCache` calls
+  `SegmentDeltaCacheLoader.loadInto`, which reads all delta files and populates
+  the delta cache. This is the only eager load.
+* During flush, `freezeWriteCache` moves the current write cache into the
+  frozen cache, writes it to a delta file, then merges it into the delta cache
+  (`mergeFrozenWriteCacheToDeltaCache`).
+* Reads consult write → frozen → delta. Iteration merges the index iterator
+  with `SegmentCache.getAsSortedList()`.
 
-There are few classes that provide lazy loading of segment data a flexibility to cache segment data. Segment data are managed by following classes: 
-
-![Sequence of call when cached data are required](../images/segment-cache-class1.png)
-
-Object `SegmentData` could contains objects `SegmentDeltaCache`, `BloomFilter` and `ScarceIndex`. All of them are lazy loaded by `SegmentDataSupplier`. For closer class description look at source code.
-
-
-The following image shows that `SegmentDatafactory` can be referenced from a provider that holds segment data from the factory.
-
-![Cache related object relations](../images/segment-cache-class2.png)
+Lazy-loaded resources:
+* `SegmentResourcesImpl` lazily loads and caches the Bloom filter and scarce
+  index via `SegmentDataSupplier`. They are created on first access and held in
+  `AtomicReference`s.
+* `SegmentDeltaCacheController.clear(...)` invalidates these resources when
+  delta files are cleared (compaction or replacement) to avoid stale lookups.
+* `SegmentReadPath` also caches `SegmentIndexSearcher` for point lookups and
+  resets it on maintenance.
 
 ## ✍️ Writing to segment
 

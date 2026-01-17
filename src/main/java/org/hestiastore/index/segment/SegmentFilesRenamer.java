@@ -51,13 +51,6 @@ public class SegmentFilesRenamer {
                 .renameFileAsync(from.getPropertiesFilename(),
                         to.getPropertiesFilename())
                 .toCompletableFuture().join();
-        if (dirFacade.isFileExistsAsync(from.getCacheFileName())
-                .toCompletableFuture().join()) {
-            dirFacade.renameFileAsync(from.getCacheFileName(),
-                    to.getCacheFileName()).toCompletableFuture().join();
-        } else {
-            // The cache file may be absent for empty or never-flushed segments.
-        }
     }
 
     /**

@@ -99,7 +99,6 @@ final class SegmentDeltaCacheController<K, V> {
                 .forEach(segmentCacheDeltaFile -> {
                     segmentFiles.optionallyDeleteFile(segmentCacheDeltaFile);
                 });
-        segmentFiles.optionallyDeleteFile(segmentFiles.getCacheFileName());
         segmentPropertiesManager.clearCacheDeltaFileNamesCouter();
     }
 
@@ -115,7 +114,6 @@ final class SegmentDeltaCacheController<K, V> {
                 .forEach(segmentCacheDeltaFile -> {
                     segmentFiles.optionallyDeleteFile(segmentCacheDeltaFile);
                 });
-        segmentFiles.optionallyDeleteFile(segmentFiles.getCacheFileName());
         segmentPropertiesManager.clearCacheDeltaFileNamesCouter();
     }
 

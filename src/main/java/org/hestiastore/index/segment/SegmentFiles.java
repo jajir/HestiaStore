@@ -13,8 +13,8 @@ import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 
 /**
- * Accessor and factory for all files that belong to a single segment (cache,
- * index, scarce index, bloom filter, properties).
+ * Accessor and factory for all files that belong to a single segment (delta
+ * cache files, index, scarce index, bloom filter, properties).
  *
  * <p>
  * Provides file names, typed file handles and common configuration used across
@@ -73,15 +73,6 @@ public final class SegmentFiles<K, V> {
     }
 
     /**
-     * File name for the main cache data file of this segment.
-     *
-     * @return cache file name
-     */
-    String getCacheFileName() {
-        return id.getName() + CACHE_FILE_NAME_EXTENSION;
-    }
-
-    /**
      * File name for the scarce index file.
      *
      * @return scarce index file name
@@ -115,17 +106,6 @@ public final class SegmentFiles<K, V> {
      */
     String getPropertiesFilename() {
         return id.getName() + PROPERTIES_FILENAME_EXTENSION;
-    }
-
-    /**
-     * Open a typed handle for the main cache data file.
-     *
-     * @return sorted data file for this segment's cache
-     */
-    SortedDataFile<K, V> getCacheDataFile() {
-        return SortedDataFile.fromAsyncDirectory(directoryFacade,
-                getCacheFileName(), keyTypeDescriptor, valueTypeDescriptor,
-                diskIoBufferSize);
     }
 
     /**
@@ -284,7 +264,6 @@ public final class SegmentFiles<K, V> {
                 "segmentPropertiesManager");
         segmentPropertiesManager.getCacheDeltaFileNames()
                 .forEach(this::optionallyDeleteFile);
-        optionallyDeleteFile(getCacheFileName());
         optionallyDeleteFile(getIndexFileName());
         optionallyDeleteFile(getScarceFileName());
         optionallyDeleteFile(getBloomFilterFileName());

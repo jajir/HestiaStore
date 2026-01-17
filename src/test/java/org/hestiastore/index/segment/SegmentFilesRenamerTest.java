@@ -40,8 +40,6 @@ class SegmentFilesRenamerTest {
             + ".properties";
     private static final String TARGET_PROPERTIES = TARGET_SEGMENT_ID
             + ".properties";
-    private static final String SOURCE_CACHE = SOURCE_SEGMENT_ID + ".cache";
-    private static final String TARGET_CACHE = TARGET_SEGMENT_ID + ".cache";
 
     @Mock
     private AsyncDirectory asyncDirectory;
@@ -68,25 +66,6 @@ class SegmentFilesRenamerTest {
     }
 
     @Test
-    void renameFiles_fails_when_cache_file_is_missing_on_source_segment() {
-        stubBaseFileNamesWithoutCacheTarget();
-        stubDefaultRenameSuccess();
-        stubCacheExists(false);
-        when(propertiesManager.getCacheDeltaFileNames()).thenReturn(List.of());
-
-        renamer.renameFiles(sourceFiles, targetFiles, propertiesManager);
-
-        verify(asyncDirectory).renameFileAsync(SOURCE_INDEX, TARGET_INDEX);
-        verify(asyncDirectory).renameFileAsync(SOURCE_SCARCE, TARGET_SCARCE);
-        verify(asyncDirectory).renameFileAsync(SOURCE_BLOOM, TARGET_BLOOM);
-        verify(asyncDirectory).renameFileAsync(SOURCE_PROPERTIES,
-                TARGET_PROPERTIES);
-        verify(asyncDirectory, never()).renameFileAsync(SOURCE_CACHE,
-                TARGET_CACHE);
-        verifyNoMoreInteractions(asyncDirectory);
-    }
-
-    @Test
     void renameFiles_rejects_missing_arguments() {
         final IllegalArgumentException missingFrom = assertThrows(
                 IllegalArgumentException.class, () -> renamer.renameFiles(null,
@@ -110,7 +89,6 @@ class SegmentFilesRenamerTest {
     void renameFiles_renames_base_files_without_delta_files() {
         stubBaseFileNames();
         stubDefaultRenameSuccess();
-        stubCacheExists(true);
         when(propertiesManager.getCacheDeltaFileNames()).thenReturn(List.of());
 
         renamer.renameFiles(sourceFiles, targetFiles, propertiesManager);
@@ -120,7 +98,6 @@ class SegmentFilesRenamerTest {
         verify(asyncDirectory).renameFileAsync(SOURCE_BLOOM, TARGET_BLOOM);
         verify(asyncDirectory).renameFileAsync(SOURCE_PROPERTIES,
                 TARGET_PROPERTIES);
-        verify(asyncDirectory).renameFileAsync(SOURCE_CACHE, TARGET_CACHE);
         verifyNoMoreInteractions(asyncDirectory);
     }
 
@@ -128,7 +105,6 @@ class SegmentFilesRenamerTest {
     void renameFiles_renames_delta_files_with_matching_prefix() {
         stubBaseFileNames();
         stubDefaultRenameSuccess();
-        stubCacheExists(true);
         when(propertiesManager.getCacheDeltaFileNames())
                 .thenReturn(List.of("segment-00038-delta-001.cache",
                         "segment-00038-delta-042.cache"));
@@ -144,7 +120,6 @@ class SegmentFilesRenamerTest {
         verify(asyncDirectory).renameFileAsync(SOURCE_BLOOM, TARGET_BLOOM);
         verify(asyncDirectory).renameFileAsync(SOURCE_PROPERTIES,
                 TARGET_PROPERTIES);
-        verify(asyncDirectory).renameFileAsync(SOURCE_CACHE, TARGET_CACHE);
         verifyNoMoreInteractions(asyncDirectory);
     }
 
@@ -191,8 +166,6 @@ class SegmentFilesRenamerTest {
                 TARGET_BLOOM);
         verify(asyncDirectory, never()).renameFileAsync(SOURCE_PROPERTIES,
                 TARGET_PROPERTIES);
-        verify(asyncDirectory, never()).renameFileAsync(SOURCE_CACHE,
-                TARGET_CACHE);
         verifyNoMoreInteractions(asyncDirectory);
     }
 
@@ -207,22 +180,6 @@ class SegmentFilesRenamerTest {
         when(targetFiles.getBloomFilterFileName()).thenReturn(TARGET_BLOOM);
         when(sourceFiles.getPropertiesFilename()).thenReturn(SOURCE_PROPERTIES);
         when(targetFiles.getPropertiesFilename()).thenReturn(TARGET_PROPERTIES);
-        when(sourceFiles.getCacheFileName()).thenReturn(SOURCE_CACHE);
-        when(targetFiles.getCacheFileName()).thenReturn(TARGET_CACHE);
-    }
-
-    private void stubBaseFileNamesWithoutCacheTarget() {
-        stubDirectory();
-        stubSegmentIds();
-        when(sourceFiles.getIndexFileName()).thenReturn(SOURCE_INDEX);
-        when(targetFiles.getIndexFileName()).thenReturn(TARGET_INDEX);
-        when(sourceFiles.getScarceFileName()).thenReturn(SOURCE_SCARCE);
-        when(targetFiles.getScarceFileName()).thenReturn(TARGET_SCARCE);
-        when(sourceFiles.getBloomFilterFileName()).thenReturn(SOURCE_BLOOM);
-        when(targetFiles.getBloomFilterFileName()).thenReturn(TARGET_BLOOM);
-        when(sourceFiles.getPropertiesFilename()).thenReturn(SOURCE_PROPERTIES);
-        when(targetFiles.getPropertiesFilename()).thenReturn(TARGET_PROPERTIES);
-        when(sourceFiles.getCacheFileName()).thenReturn(SOURCE_CACHE);
     }
 
     private void stubDirectory() {
@@ -232,11 +189,6 @@ class SegmentFilesRenamerTest {
     private void stubSegmentIds() {
         when(sourceFiles.getSegmentIdName()).thenReturn(SOURCE_SEGMENT_ID);
         when(targetFiles.getSegmentIdName()).thenReturn(TARGET_SEGMENT_ID);
-    }
-
-    private void stubCacheExists(final boolean exists) {
-        when(asyncDirectory.isFileExistsAsync(eq(SOURCE_CACHE))).thenReturn(
-                CompletableFuture.completedFuture(exists));
     }
 
     private void stubDefaultRenameSuccess() {

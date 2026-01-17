@@ -9,18 +9,17 @@
 
 #### High
 
+[ ] UniqueCache should not use read/write reentrant lock. It's proeprty of concurrent hash map.
 [ ] Avoid eager full load of delta files (Risk: HIGH)
     - Problem: delta files are loaded into memory on open.
     - Fix: lazy/streamed delta access or bounded cache; add LRU eviction or
       on-disk lookup path; add stress tests.
-[x] Remove duplicate in-memory delta caches (Risk: HIGH)
-    - Problem: `SegmentCache` keeps a delta cache while `SegmentDeltaCache`
-      keeps its own, effectively doubling memory.
-    - Fix: unify into a single delta cache implementation; ensure write path
-      and read path reference the same structure.
+[ ] Add hard backpressure when maintenance is off or slow (Risk: MEDIUM)
+    - Problem: if auto maintenance is disabled or too slow, delta caches grow
+      indefinitely.
+    - Fix: enforce hard caps (block or reject writes) and surface metrics.
 
 #### Medium
-
 [ ] Stop materializing merged cache lists on read (Risk: MEDIUM)
     - Problem: `SegmentReadPath.openIterator` calls `getAsSortedList`, building
       full merged lists for each iterator.
@@ -43,10 +42,6 @@
     - Problem: segments are cached unbounded; memory grows as segments grow.
     - Fix: implement LRU or size-bounded cache; evict + close segments and
       invalidate resources on eviction.
-[ ] Add hard backpressure when maintenance is off or slow (Risk: MEDIUM)
-    - Problem: if auto maintenance is disabled or too slow, delta caches grow
-      indefinitely.
-    - Fix: enforce hard caps (block or reject writes) and surface metrics.
 
 #### Low
 
