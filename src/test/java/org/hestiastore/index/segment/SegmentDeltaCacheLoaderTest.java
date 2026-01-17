@@ -11,7 +11,6 @@ import org.hestiastore.index.EntryIteratorList;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFile;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
-import org.hestiastore.index.sorteddatafile.SortedDataFile;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -27,27 +26,18 @@ class SegmentDeltaCacheLoaderTest {
     private SegmentPropertiesManager propertiesManager;
 
     @Mock
-    private SortedDataFile<Integer, String> cacheFile;
-
-    @Mock
     private ChunkEntryFile<Integer, String> deltaFile1;
 
     @Mock
     private ChunkEntryFile<Integer, String> deltaFile2;
 
     private SegmentCache<Integer, String> newCacheWith(
-            final List<Entry<Integer, String>> cacheEntries,
             final List<Entry<Integer, String>> delta1,
             final List<Entry<Integer, String>> delta2) {
-        final EntryIteratorWithCurrent<Integer, String> itCache = new EntryIteratorList<>(
-                cacheEntries);
         final EntryIteratorWithCurrent<Integer, String> itDelta1 = new EntryIteratorList<>(
                 delta1);
         final EntryIteratorWithCurrent<Integer, String> itDelta2 = new EntryIteratorList<>(
                 delta2);
-
-        when(segmentFiles.getCacheDataFile()).thenReturn(cacheFile);
-        when(cacheFile.openIterator()).thenReturn(itCache);
 
         when(propertiesManager.getCacheDeltaFileNames())
                 .thenReturn(List.of("d1", "d2"));
@@ -69,18 +59,31 @@ class SegmentDeltaCacheLoaderTest {
     @Test
     void loadInto_merges_cache_and_deltas_with_last_value_wins() {
         final SegmentCache<Integer, String> cache = newCacheWith(
-                List.of(Entry.of(1, "A"), Entry.of(2, "B")),
-                List.of(Entry.of(2, "B2"), Entry.of(3, "C")),
-                List.of(Entry.of(1, "A2")));
+                List.of(Entry.of(1, "A"), Entry.of(2, "B"),
+                        Entry.of(3, "C")),
+                List.of(Entry.of(2, "B2"), Entry.of(4, "D")));
 
-        assertEquals(3, cache.size());
-        assertEquals("A2", cache.get(1));
+        assertEquals(4, cache.size());
+        assertEquals("A", cache.get(1));
         assertEquals("B2", cache.get(2));
         assertEquals("C", cache.get(3));
+        assertEquals("D", cache.get(4));
 
         final List<Entry<Integer, String>> sorted = cache.getAsSortedList();
-        assertEquals(
-                List.of(Entry.of(1, "A2"), Entry.of(2, "B2"), Entry.of(3, "C")),
-                sorted);
+        assertEquals(List.of(Entry.of(1, "A"), Entry.of(2, "B2"),
+                Entry.of(3, "C"), Entry.of(4, "D")), sorted);
+    }
+
+    @Test
+    void loadInto_with_no_delta_files_keeps_cache_empty() {
+        when(propertiesManager.getCacheDeltaFileNames()).thenReturn(List.of());
+
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                new TypeDescriptorInteger().getComparator(),
+                new TypeDescriptorShortString(), null, 100, 200, 1024);
+        new SegmentDeltaCacheLoader<>(segmentFiles, propertiesManager)
+                .loadInto(cache);
+
+        assertEquals(0, cache.size());
     }
 }

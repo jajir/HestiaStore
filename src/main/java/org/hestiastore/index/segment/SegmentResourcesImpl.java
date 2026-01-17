@@ -1,7 +1,5 @@
 package org.hestiastore.index.segment;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilter;
 import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
@@ -18,8 +16,8 @@ public final class SegmentResourcesImpl<K, V>
         implements SegmentResources<K, V> {
 
     private final SegmentDataSupplier<K, V> segmentDataSupplier;
-    private final AtomicReference<BloomFilter<K>> bloomFilter = new AtomicReference<>();
-    private final AtomicReference<ScarceSegmentIndex<K>> scarceIndex = new AtomicReference<>();
+    private volatile BloomFilter<K> bloomFilter;
+    private volatile ScarceSegmentIndex<K> scarceIndex;
 
     /**
      * Creates a cached resource wrapper backed by the given supplier.
@@ -39,22 +37,17 @@ public final class SegmentResourcesImpl<K, V>
      */
     @Override
     public BloomFilter<K> getBloomFilter() {
-        while (true) {
-            final BloomFilter<K> current = bloomFilter.get();
-            if (current != null) {
-                return current;
+        BloomFilter<K> current = bloomFilter;
+        if (current != null) {
+            return current;
+        }
+        synchronized (this) {
+            if (bloomFilter == null) {
+                bloomFilter = Vldtn.requireNonNull(
+                        segmentDataSupplier.getBloomFilter(),
+                        "segmentDataSupplier.getBloomFilter()");
             }
-            final BloomFilter<K> loaded = Vldtn.requireNonNull(
-                    segmentDataSupplier.getBloomFilter(),
-                    "segmentDataSupplier.getBloomFilter()");
-            if (bloomFilter.compareAndSet(null, loaded)) {
-                return loaded;
-            }
-            loaded.close();
-            final BloomFilter<K> after = bloomFilter.get();
-            if (after != null) {
-                return after;
-            }
+            return bloomFilter;
         }
     }
 
@@ -65,22 +58,17 @@ public final class SegmentResourcesImpl<K, V>
      */
     @Override
     public ScarceSegmentIndex<K> getScarceIndex() {
-        while (true) {
-            final ScarceSegmentIndex<K> current = scarceIndex.get();
-            if (current != null) {
-                return current;
+        ScarceSegmentIndex<K> current = scarceIndex;
+        if (current != null) {
+            return current;
+        }
+        synchronized (this) {
+            if (scarceIndex == null) {
+                scarceIndex = Vldtn.requireNonNull(
+                        segmentDataSupplier.getScarceIndex(),
+                        "segmentDataSupplier.getScarceIndex()");
             }
-            final ScarceSegmentIndex<K> loaded = Vldtn.requireNonNull(
-                    segmentDataSupplier.getScarceIndex(),
-                    "segmentDataSupplier.getScarceIndex()");
-            if (scarceIndex.compareAndSet(null, loaded)) {
-                return loaded;
-            }
-            loaded.close();
-            final ScarceSegmentIndex<K> after = scarceIndex.get();
-            if (after != null) {
-                return after;
-            }
+            return scarceIndex;
         }
     }
 
@@ -89,13 +77,15 @@ public final class SegmentResourcesImpl<K, V>
      */
     @Override
     public void invalidate() {
-        final BloomFilter<K> cachedBloom = bloomFilter.getAndSet(null);
-        if (cachedBloom != null) {
-            cachedBloom.close();
-        }
-        final ScarceSegmentIndex<K> cachedScarce = scarceIndex.getAndSet(null);
-        if (cachedScarce != null) {
-            cachedScarce.close();
+        synchronized (this) {
+            if (bloomFilter != null) {
+                bloomFilter.close();
+                bloomFilter = null;
+            }
+            if (scarceIndex != null) {
+                scarceIndex.close();
+                scarceIndex = null;
+            }
         }
     }
 }

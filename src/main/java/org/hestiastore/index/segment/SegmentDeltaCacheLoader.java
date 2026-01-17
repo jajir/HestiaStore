@@ -3,7 +3,6 @@ package org.hestiastore.index.segment;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFile;
-import org.hestiastore.index.sorteddatafile.SortedDataFile;
 
 /**
  * Loads on-disk delta cache entries into the in-memory segment cache.
@@ -30,24 +29,14 @@ final class SegmentDeltaCacheLoader<K, V> {
     }
 
     /**
-     * Loads cache and delta files into the provided segment cache.
+     * Loads delta cache files into the provided segment cache.
      *
      * @param segmentCache target in-memory cache
      */
     void loadInto(final SegmentCache<K, V> segmentCache) {
         Vldtn.requireNonNull(segmentCache, "segmentCache");
-        loadFromCacheDataFile(segmentCache);
         segmentPropertiesManager.getCacheDeltaFileNames()
                 .forEach(fileName -> loadFromDeltaFile(segmentCache, fileName));
-    }
-
-    private void loadFromCacheDataFile(final SegmentCache<K, V> segmentCache) {
-        final SortedDataFile<K, V> cacheFile = segmentFiles.getCacheDataFile();
-        try (EntryIterator<K, V> iterator = cacheFile.openIterator()) {
-            while (iterator.hasNext()) {
-                segmentCache.putToDeltaCache(iterator.next());
-            }
-        }
     }
 
     private void loadFromDeltaFile(final SegmentCache<K, V> segmentCache,

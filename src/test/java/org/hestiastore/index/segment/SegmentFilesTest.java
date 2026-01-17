@@ -23,7 +23,6 @@ class SegmentFilesTest {
                 List.of(new ChunkFilterDoNothing()));
 
         final String base = files.getSegmentIdName();
-        assertEquals(base + ".cache", files.getCacheFileName());
         assertEquals(base + ".index", files.getIndexFileName());
         assertEquals(base + ".scarce", files.getScarceFileName());
         assertEquals(base + ".bloom-filter", files.getBloomFilterFileName());
