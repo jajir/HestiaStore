@@ -42,7 +42,7 @@ public interface IndexConfigurationContract {
         return getMaxNumberOfKeysInSegmentCache() / 2;
     }
 
-    default int getMaxNumberOfKeysInSegmentWriteCacheDuringFlush() {
+    default int getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance() {
         return Math.max(getMaxNumberOfKeysInSegmentWriteCache() + 1,
                 (int) Math.ceil(getMaxNumberOfKeysInSegmentWriteCache()
                         * 1.4));

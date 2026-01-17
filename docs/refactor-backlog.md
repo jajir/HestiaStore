@@ -2,7 +2,8 @@
 
 ## Active
 
-[ ] everiwhere rename maxNumberOfKeysInSegmentWriteCacheDuringFlush to maxNumberOfKeysInSegmentWriteCacheDuringMaintenance including all configurations setter getter all all posssible usages.
+[x] everiwhere rename maxNumberOfKeysInSegmentWriteCacheDuringFlush to maxNumberOfKeysInSegmentWriteCacheDuringMaintenance including all configurations setter getter all all posssible usages.
+[x] Wnen write cache reach size as maxNumberOfKeysInSegmentWriteCacheDuringMaintenance than response to put with BUSY.
 
 ## Planned
 
@@ -11,10 +12,6 @@
 #### High
 
 [ ] UniqueCache should not use read/write reentrant lock. It's proeprty of concurrent hash map.
-[ ] Avoid eager full load of delta files (Risk: HIGH)
-    - Problem: delta files are loaded into memory on open.
-    - Fix: lazy/streamed delta access or bounded cache; add LRU eviction or
-      on-disk lookup path; add stress tests.
 
 #### Medium
 [ ] Stop materializing merged cache lists on read (Risk: MEDIUM)

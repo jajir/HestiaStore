@@ -10,7 +10,7 @@ import org.hestiastore.index.chunkstore.ChunkFilter;
 public class SegmentConf {
 
     private final int maxNumberOfKeysInSegmentWriteCache;
-    private final int maxNumberOfKeysInSegmentWriteCacheDuringFlush;
+    private final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
     private final int maxNumberOfKeysInSegmentCache;
     private final int maxNumberOfKeysInChunk;
     private final Integer bloomFilterNumberOfHashFunctions;
@@ -24,8 +24,8 @@ public class SegmentConf {
      * Creates a configuration with explicit values for all fields.
      *
      * @param maxNumberOfKeysInSegmentWriteCache max write-cache size
-     * @param maxNumberOfKeysInSegmentWriteCacheDuringFlush write-cache size
-     *        allowed during flush
+     * @param maxNumberOfKeysInSegmentWriteCacheDuringMaintenance write-cache size
+     *        allowed during maintenance
      * @param maxNumberOfKeysInSegmentCache max segment cache size
      * @param maxNumberOfKeysInChunk max number of keys in a chunk
      * @param bloomFilterNumberOfHashFunctions Bloom filter hash count
@@ -37,7 +37,7 @@ public class SegmentConf {
      * @param decodingChunkFilters chunk filters applied during decoding
      */
     public SegmentConf(final int maxNumberOfKeysInSegmentWriteCache,
-            final int maxNumberOfKeysInSegmentWriteCacheDuringFlush,
+            final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
             final int maxNumberOfKeysInSegmentCache,
             final int maxNumberOfKeysInChunk,
             final Integer bloomFilterNumberOfHashFunctions,
@@ -47,7 +47,7 @@ public class SegmentConf {
             final List<ChunkFilter> encodingChunkFilters,
             final List<ChunkFilter> decodingChunkFilters) {
         this.maxNumberOfKeysInSegmentWriteCache = maxNumberOfKeysInSegmentWriteCache;
-        this.maxNumberOfKeysInSegmentWriteCacheDuringFlush = maxNumberOfKeysInSegmentWriteCacheDuringFlush;
+        this.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
         this.maxNumberOfKeysInChunk = maxNumberOfKeysInChunk;
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
@@ -65,7 +65,7 @@ public class SegmentConf {
      */
     public SegmentConf(final SegmentConf segmentConf) {
         this.maxNumberOfKeysInSegmentWriteCache = segmentConf.maxNumberOfKeysInSegmentWriteCache;
-        this.maxNumberOfKeysInSegmentWriteCacheDuringFlush = segmentConf.maxNumberOfKeysInSegmentWriteCacheDuringFlush;
+        this.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = segmentConf.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
         this.maxNumberOfKeysInSegmentCache = segmentConf.maxNumberOfKeysInSegmentCache;
         this.maxNumberOfKeysInChunk = segmentConf.maxNumberOfKeysInChunk;
         this.bloomFilterNumberOfHashFunctions = segmentConf.bloomFilterNumberOfHashFunctions;
@@ -86,12 +86,12 @@ public class SegmentConf {
     }
 
     /**
-     * Returns the maximum write-cache size allowed during flush.
+     * Returns the maximum write-cache size allowed during maintenance.
      *
-     * @return max number of keys in write cache during flush
+     * @return max number of keys in write cache during maintenance
      */
-    int getMaxNumberOfKeysInSegmentWriteCacheDuringFlush() {
-        return maxNumberOfKeysInSegmentWriteCacheDuringFlush;
+    int getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance() {
+        return maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
     }
 
     /**

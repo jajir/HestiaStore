@@ -20,7 +20,7 @@ class SegmentCacheTest {
     private final TypeDescriptorInteger keyType = new TypeDescriptorInteger();
     private final TypeDescriptorShortString valueType = new TypeDescriptorShortString();
     private static final int DEFAULT_MAX_BUFFERED = 1000;
-    private static final int DEFAULT_MAX_DURING_FLUSH = 1000;
+    private static final int DEFAULT_MAX_DURING_MAINTENANCE = 1000;
     private static final int DEFAULT_MAX_SEGMENT_CACHE = 1024;
 
     @Test
@@ -28,7 +28,7 @@ class SegmentCacheTest {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
                 keyType.getComparator(), valueType,
                 List.of(Entry.of(1, "old")), DEFAULT_MAX_BUFFERED,
-                DEFAULT_MAX_DURING_FLUSH, DEFAULT_MAX_SEGMENT_CACHE);
+                DEFAULT_MAX_DURING_MAINTENANCE, DEFAULT_MAX_SEGMENT_CACHE);
 
         cache.putToWriteCache(Entry.of(1, "new"));
 
@@ -42,7 +42,7 @@ class SegmentCacheTest {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
                 keyType.getComparator(), valueType,
                 List.of(Entry.of(7, "delta")), DEFAULT_MAX_BUFFERED,
-                DEFAULT_MAX_DURING_FLUSH, DEFAULT_MAX_SEGMENT_CACHE);
+                DEFAULT_MAX_DURING_MAINTENANCE, DEFAULT_MAX_SEGMENT_CACHE);
 
         assertEquals("delta", cache.get(7));
         assertEquals(1, cache.size());
@@ -53,7 +53,7 @@ class SegmentCacheTest {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
                 keyType.getComparator(), valueType,
                 List.of(Entry.of(1, "A"), Entry.of(2, "B")),
-                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_FLUSH,
+                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_MAINTENANCE,
                 DEFAULT_MAX_SEGMENT_CACHE);
         cache.putToWriteCache(Entry.of(2, "B2"));
         cache.putToWriteCache(Entry.of(3, "C"));
@@ -67,7 +67,7 @@ class SegmentCacheTest {
                 keyType.getComparator(), valueType,
                 List.of(Entry.of(1, "A"), Entry.of(2,
                         TypeDescriptorShortString.TOMBSTONE_VALUE)),
-                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_FLUSH,
+                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_MAINTENANCE,
                 DEFAULT_MAX_SEGMENT_CACHE);
         cache.putToWriteCache(Entry.of(2, "B"));
         cache.putToWriteCache(
@@ -82,7 +82,7 @@ class SegmentCacheTest {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
                 keyType.getComparator(), valueType,
                 List.of(Entry.of(5, "E"), Entry.of(1, "A")),
-                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_FLUSH,
+                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_MAINTENANCE,
                 DEFAULT_MAX_SEGMENT_CACHE);
         cache.putToWriteCache(Entry.of(3, "C"));
         cache.putToWriteCache(Entry.of(1, "A2"));
@@ -96,7 +96,7 @@ class SegmentCacheTest {
     void evictAll_clears_both_caches() {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
                 keyType.getComparator(), valueType, List.of(Entry.of(1, "A")),
-                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_FLUSH,
+                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_MAINTENANCE,
                 DEFAULT_MAX_SEGMENT_CACHE);
         cache.putToWriteCache(Entry.of(2, "B"));
 
@@ -111,7 +111,7 @@ class SegmentCacheTest {
     void put_rejects_null_entry() {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
                 keyType.getComparator(), valueType, List.of(),
-                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_FLUSH,
+                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_MAINTENANCE,
                 DEFAULT_MAX_SEGMENT_CACHE);
 
         assertThrows(IllegalArgumentException.class,
@@ -122,7 +122,7 @@ class SegmentCacheTest {
     void getNumberOfKeysInWriteCache_tracks_overwrites() {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
                 keyType.getComparator(), valueType, List.of(),
-                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_FLUSH,
+                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_MAINTENANCE,
                 DEFAULT_MAX_SEGMENT_CACHE);
         cache.putToWriteCache(Entry.of(1, "A"));
         cache.putToWriteCache(Entry.of(1, "B"));
@@ -136,7 +136,7 @@ class SegmentCacheTest {
     void freezeWriteCache_on_empty_write_cache_keeps_frozen_empty() {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
                 keyType.getComparator(), valueType, List.of(),
-                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_FLUSH,
+                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_MAINTENANCE,
                 DEFAULT_MAX_SEGMENT_CACHE);
 
         assertEquals(List.of(), cache.freezeWriteCache());
@@ -151,7 +151,7 @@ class SegmentCacheTest {
     void freezeWriteCache_moves_entries_and_exposes_frozen_view() {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
                 keyType.getComparator(), valueType, List.of(),
-                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_FLUSH,
+                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_MAINTENANCE,
                 DEFAULT_MAX_SEGMENT_CACHE);
         cache.putToWriteCache(Entry.of(2, "B"));
         cache.putToWriteCache(Entry.of(1, "A"));
@@ -174,7 +174,7 @@ class SegmentCacheTest {
     void freezeWriteCache_when_already_frozen_does_not_replace_or_consume_new_writes() {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
                 keyType.getComparator(), valueType, List.of(),
-                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_FLUSH,
+                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_MAINTENANCE,
                 DEFAULT_MAX_SEGMENT_CACHE);
         cache.putToWriteCache(Entry.of(1, "A"));
         cache.putToWriteCache(Entry.of(2, "B"));
@@ -200,7 +200,7 @@ class SegmentCacheTest {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
                 keyType.getComparator(), valueType,
                 List.of(Entry.of(1, "delta")), DEFAULT_MAX_BUFFERED,
-                DEFAULT_MAX_DURING_FLUSH, DEFAULT_MAX_SEGMENT_CACHE);
+                DEFAULT_MAX_DURING_MAINTENANCE, DEFAULT_MAX_SEGMENT_CACHE);
         cache.putToWriteCache(Entry.of(1, "frozen"));
         cache.freezeWriteCache();
         cache.putToWriteCache(Entry.of(1, "write"));
@@ -214,7 +214,7 @@ class SegmentCacheTest {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
                 keyType.getComparator(), valueType,
                 List.of(Entry.of(1, "A")), DEFAULT_MAX_BUFFERED,
-                DEFAULT_MAX_DURING_FLUSH, DEFAULT_MAX_SEGMENT_CACHE);
+                DEFAULT_MAX_DURING_MAINTENANCE, DEFAULT_MAX_SEGMENT_CACHE);
         cache.putToWriteCache(Entry.of(2, "B"));
         cache.freezeWriteCache();
         cache.putToWriteCache(Entry.of(3, "C"));
@@ -233,7 +233,7 @@ class SegmentCacheTest {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
                 keyType.getComparator(), valueType,
                 List.of(Entry.of(1, "A"), Entry.of(2, "B")),
-                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_FLUSH,
+                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_MAINTENANCE,
                 DEFAULT_MAX_SEGMENT_CACHE);
         cache.putToWriteCache(Entry.of(2, "B2"));
         cache.putToWriteCache(Entry.of(3, "C"));
@@ -253,7 +253,7 @@ class SegmentCacheTest {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
                 keyType.getComparator(), valueType,
                 List.of(Entry.of(1, "A")), DEFAULT_MAX_BUFFERED,
-                DEFAULT_MAX_DURING_FLUSH, DEFAULT_MAX_SEGMENT_CACHE);
+                DEFAULT_MAX_DURING_MAINTENANCE, DEFAULT_MAX_SEGMENT_CACHE);
         cache.putToWriteCache(
                 Entry.of(2, TypeDescriptorShortString.TOMBSTONE_VALUE));
         cache.freezeWriteCache();
@@ -303,6 +303,20 @@ class SegmentCacheTest {
     }
 
     @Test
+    void tryPut_rejects_when_maintenance_limit_is_reached() {
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                keyType.getComparator(), valueType, List.of(), 3, 4, 1024);
+        cache.putToWriteCache(Entry.of(1, "A"));
+        cache.putToWriteCache(Entry.of(2, "B"));
+        cache.putToWriteCache(Entry.of(3, "C"));
+
+        cache.freezeWriteCache();
+
+        assertTrue(cache.tryPutToWriteCacheWithoutWaiting(Entry.of(4, "D")));
+        assertFalse(cache.tryPutToWriteCacheWithoutWaiting(Entry.of(5, "E")));
+    }
+
+    @Test
     void constructor_rejects_non_positive_limits() {
         assertThrows(IllegalArgumentException.class,
                 () -> new SegmentCache<>(keyType.getComparator(), valueType,
@@ -320,7 +334,7 @@ class SegmentCacheTest {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
                 keyType.getComparator(), valueType,
                 List.of(Entry.of(1, "A")), DEFAULT_MAX_BUFFERED,
-                DEFAULT_MAX_DURING_FLUSH, DEFAULT_MAX_SEGMENT_CACHE);
+                DEFAULT_MAX_DURING_MAINTENANCE, DEFAULT_MAX_SEGMENT_CACHE);
         cache.putToWriteCache(Entry.of(2, "B"));
         cache.freezeWriteCache();
         cache.putToWriteCache(Entry.of(3, "C"));

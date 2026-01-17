@@ -25,10 +25,10 @@ class IndexConfigurationContractTest {
         final int writeCache = contract.getMaxNumberOfKeysInSegmentWriteCache();
         assertEquals(4, writeCache);
 
-        final int expectedDuringFlush = Math.max(writeCache + 1,
+        final int expectedDuringMaintenance = Math.max(writeCache + 1,
                 (int) Math.ceil(writeCache * 1.4));
-        assertEquals(expectedDuringFlush,
-                contract.getMaxNumberOfKeysInSegmentWriteCacheDuringFlush());
+        assertEquals(expectedDuringMaintenance,
+                contract.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance());
     }
 
     @Test
