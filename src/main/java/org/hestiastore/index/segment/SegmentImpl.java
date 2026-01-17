@@ -139,7 +139,7 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
                     () -> segmentCompacter.writeCompaction(core,
                             snapshotEntries, writerTx),
                     () -> segmentCompacter.publishCompaction(core, writerTx));
-        });
+        }, this::scheduleMaintenanceIfNeeded);
     }
 
     /**
@@ -179,7 +179,7 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
             return new SegmentMaintenanceWork(
                     () -> core.flushFrozenWriteCacheToDeltaFile(entries),
                     core::applyFrozenWriteCacheAfterFlush);
-        });
+        }, this::scheduleMaintenanceIfNeeded);
     }
 
     private void scheduleMaintenanceIfNeeded() {
