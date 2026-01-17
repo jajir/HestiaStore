@@ -2,6 +2,7 @@
 
 ## Active
 
+[ ] everiwhere rename maxNumberOfKeysInSegmentWriteCacheDuringFlush to maxNumberOfKeysInSegmentWriteCacheDuringMaintenance including all configurations setter getter all all posssible usages.
 
 ## Planned
 
@@ -14,10 +15,6 @@
     - Problem: delta files are loaded into memory on open.
     - Fix: lazy/streamed delta access or bounded cache; add LRU eviction or
       on-disk lookup path; add stress tests.
-[ ] Add hard backpressure when maintenance is off or slow (Risk: MEDIUM)
-    - Problem: if auto maintenance is disabled or too slow, delta caches grow
-      indefinitely.
-    - Fix: enforce hard caps (block or reject writes) and surface metrics.
 
 #### Medium
 [ ] Stop materializing merged cache lists on read (Risk: MEDIUM)

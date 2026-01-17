@@ -30,6 +30,20 @@ final class SegmentMaintenanceService {
      */
     SegmentResult<CompletionStage<Void>> startMaintenance(
             final Supplier<SegmentMaintenanceWork> workSupplier) {
+        return startMaintenance(workSupplier, null);
+    }
+
+    /**
+     * Starts a maintenance operation and runs a callback after returning to
+     * READY.
+     *
+     * @param workSupplier supplier of maintenance tasks
+     * @param onReady optional callback to run after maintenance completes
+     * @return result with completion stage
+     */
+    SegmentResult<CompletionStage<Void>> startMaintenance(
+            final Supplier<SegmentMaintenanceWork> workSupplier,
+            final Runnable onReady) {
         Vldtn.requireNonNull(workSupplier, "workSupplier");
         if (!gate.tryEnterFreezeAndDrain()) {
             return resultForState(gate.getState());
@@ -48,7 +62,7 @@ final class SegmentMaintenanceService {
         final CompletableFuture<Void> completion = new CompletableFuture<>();
         try {
             maintenanceExecutor.execute(
-                    () -> runMaintenance(work, completion));
+                    () -> runMaintenance(work, completion, onReady));
         } catch (final RuntimeException e) {
             failUnlessClosed();
             return SegmentResult.error();
@@ -63,7 +77,7 @@ final class SegmentMaintenanceService {
      * @param completion completion stage to resolve
      */
     private void runMaintenance(final SegmentMaintenanceWork work,
-            final CompletableFuture<Void> completion) {
+            final CompletableFuture<Void> completion, final Runnable onReady) {
         try {
             work.ioWork().run();
         } catch (final RuntimeException e) {
@@ -93,6 +107,14 @@ final class SegmentMaintenanceService {
             completion.completeExceptionally(new IllegalStateException(
                     "Segment maintenance failed to transition to READY."));
             return;
+        }
+        if (onReady != null) {
+            try {
+                onReady.run();
+            } catch (final RuntimeException e) {
+                completion.completeExceptionally(e);
+                return;
+            }
         }
         completion.complete(null);
     }
