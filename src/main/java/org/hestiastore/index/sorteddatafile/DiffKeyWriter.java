@@ -8,6 +8,11 @@ import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Writes keys using differential prefix compression.
+ *
+ * @param <K> key type
+ */
 public class DiffKeyWriter<K> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -20,6 +25,12 @@ public class DiffKeyWriter<K> {
 
     private K previousKey;
 
+    /**
+     * Creates a diff-key writer with the provided converter and comparator.
+     *
+     * @param convertorToBytes converter from keys to bytes
+     * @param keyComparator comparator used to enforce sorted keys
+     */
     public DiffKeyWriter(final ConvertorToBytes<K> convertorToBytes,
             final Comparator<K> keyComparator) {
         this.convertorToBytes = Vldtn.requireNonNull(convertorToBytes,
@@ -34,6 +45,12 @@ public class DiffKeyWriter<K> {
                 this.keyComparator.getClass().getSimpleName());
     }
 
+    /**
+     * Encodes the given key as a diff-key payload.
+     *
+     * @param key required key
+     * @return encoded diff-key bytes
+     */
     public byte[] write(final K key) {
         Vldtn.requireNonNull(key, "key");
         if (previousKey != null) {
@@ -73,6 +90,11 @@ public class DiffKeyWriter<K> {
         return out;
     }
 
+    /**
+     * Closes the writer. This implementation has no resources to release.
+     *
+     * @return always 0
+     */
     public long close() {
         return 0;
     }

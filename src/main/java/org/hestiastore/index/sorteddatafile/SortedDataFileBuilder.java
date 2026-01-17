@@ -4,6 +4,12 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.async.AsyncDirectory;
 
+/**
+ * Builder for {@link SortedDataFile} instances.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 public class SortedDataFileBuilder<K, V> {
 
     private static final int DELAULT_FILE_READING_BUFFER_SIZE = 1024 * 4;
@@ -18,6 +24,12 @@ public class SortedDataFileBuilder<K, V> {
 
     private TypeDescriptor<V> valueTypeDescriptor;
 
+    /**
+     * Sets the async directory used to access the file.
+     *
+     * @param directoryFacade required async directory
+     * @return this builder
+     */
     public SortedDataFileBuilder<K, V> withAsyncDirectory(
             final AsyncDirectory directoryFacade) {
         Vldtn.requireNonNull(directoryFacade, "directoryFacade");
@@ -25,11 +37,23 @@ public class SortedDataFileBuilder<K, V> {
         return this;
     }
 
+    /**
+     * Sets the target file name.
+     *
+     * @param fileName required file name
+     * @return this builder
+     */
     public SortedDataFileBuilder<K, V> withFileName(final String fileName) {
         this.fileName = Vldtn.requireNonNull(fileName, "fileName");
         return this;
     }
 
+    /**
+     * Sets the I/O buffer size used for reads and writes.
+     *
+     * @param diskIoBufferSize required buffer size
+     * @return this builder
+     */
     public SortedDataFileBuilder<K, V> withDiskIoBufferSize(
             final int diskIoBufferSize) {
         this.diskIoBufferSize = Vldtn.requireNonNull(diskIoBufferSize,
@@ -37,6 +61,12 @@ public class SortedDataFileBuilder<K, V> {
         return this;
     }
 
+    /**
+     * Sets the key type descriptor.
+     *
+     * @param keyTypeDescriptor required key descriptor
+     * @return this builder
+     */
     public SortedDataFileBuilder<K, V> withKeyTypeDescriptor(
             final TypeDescriptor<K> keyTypeDescriptor) {
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
@@ -44,6 +74,12 @@ public class SortedDataFileBuilder<K, V> {
         return this;
     }
 
+    /**
+     * Sets the value type descriptor.
+     *
+     * @param valueTypeDescriptor required value descriptor
+     * @return this builder
+     */
     public SortedDataFileBuilder<K, V> withValueTypeDescriptor(
             final TypeDescriptor<V> valueTypeDescriptor) {
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
@@ -51,6 +87,11 @@ public class SortedDataFileBuilder<K, V> {
         return this;
     }
 
+    /**
+     * Builds a {@link SortedDataFile} using the configured properties.
+     *
+     * @return sorted data file accessor
+     */
     public SortedDataFile<K, V> build() {
         if (directoryFacade == null) {
             throw new IllegalStateException("Directory must be provided");

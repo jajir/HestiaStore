@@ -32,10 +32,26 @@ public class SortedDataFile<K, V> {
 
     private final TypeDescriptor<V> valueTypeDescriptor;
 
+    /**
+     * Creates a builder for a sorted data file.
+     *
+     * @param <M> key type
+     * @param <N> value type
+     * @return builder for a sorted data file
+     */
     public static <M, N> SortedDataFileBuilder<M, N> builder() {
         return new SortedDataFileBuilder<M, N>();
     }
 
+    /**
+     * Creates a sorted data file accessor with fixed storage properties.
+     *
+     * @param directoryFacade required async directory
+     * @param fileName required file name
+     * @param keyTypeDescriptor key type descriptor
+     * @param valueTypeDescriptor value type descriptor
+     * @param diskIoBufferSize buffer size used for I/O
+     */
     public SortedDataFile(final AsyncDirectory directoryFacade,
             final String fileName, final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
@@ -63,6 +79,18 @@ public class SortedDataFile<K, V> {
                 keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize);
     }
 
+    /**
+     * Creates a new accessor bound to the given async directory.
+     *
+     * @param directoryFacade required async directory
+     * @param fileName required file name
+     * @param keyTypeDescriptor key type descriptor
+     * @param valueTypeDescriptor value type descriptor
+     * @param diskIoBufferSize buffer size used for I/O
+     * @param <K> key type
+     * @param <V> value type
+     * @return sorted data file accessor
+     */
     public static <K, V> SortedDataFile<K, V> fromAsyncDirectory(
             final AsyncDirectory directoryFacade, final String fileName,
             final TypeDescriptor<K> keyTypeDescriptor,
