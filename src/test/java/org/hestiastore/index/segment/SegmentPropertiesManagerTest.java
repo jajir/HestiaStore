@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -177,6 +179,32 @@ class SegmentPropertiesManagerTest {
         executor.shutdownNow();
 
         assertEquals(threads * perThread, props.getNumberOfKeysInDeltaCache());
+    }
+
+    @Test
+    void state_and_version_round_trip() {
+        assertEquals(SegmentPropertiesManager.SegmentDataState.ACTIVE,
+                props.getState());
+        props.setState(SegmentPropertiesManager.SegmentDataState.PREPARED);
+        assertEquals(SegmentPropertiesManager.SegmentDataState.PREPARED,
+                props.getState());
+
+        assertEquals(0L, props.getVersion());
+        props.setVersion(3L);
+        assertEquals(3L, props.getVersion());
+    }
+
+    @Test
+    void switchDirectory_resets_to_new_store() {
+        props.setVersion(5L);
+        final AsyncDirectory newDirectory = AsyncDirectoryAdapter
+                .wrap(new MemDirectory());
+
+        props.switchDirectory(newDirectory);
+
+        assertEquals(0L, props.getVersion());
+        assertEquals(SegmentPropertiesManager.SegmentDataState.ACTIVE,
+                props.getState());
     }
 
     @BeforeEach

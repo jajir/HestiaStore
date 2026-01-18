@@ -48,6 +48,10 @@ class IndexPropertiesSchemaTest {
                 IndexPropertiesSchema.SegmentKeys.NUMBER_OF_KEYS_IN_SCARCE_INDEX));
         assertEquals(0, view.getInt(
                 IndexPropertiesSchema.SegmentKeys.NUMBER_OF_SEGMENT_CACHE_DELTA_FILES));
+        assertEquals("ACTIVE", view.getString(
+                IndexPropertiesSchema.SegmentKeys.SEGMENT_STATE));
+        assertEquals(0L, view.getLong(
+                IndexPropertiesSchema.SegmentKeys.SEGMENT_VERSION));
         final String requiredKeys = view
                 .getString(IndexPropertiesSchema.REQUIRED_KEYS_KEY);
         assertNotNull(requiredKeys);

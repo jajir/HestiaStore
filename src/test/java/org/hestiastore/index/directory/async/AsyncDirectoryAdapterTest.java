@@ -123,6 +123,19 @@ class AsyncDirectoryAdapterTest {
         asyncDirectory.close();
     }
 
+    @Test
+    void rmdir_removes_empty_directory() throws Exception {
+        final AsyncDirectory asyncDirectory = AsyncDirectoryAdapter
+                .wrap(new MemDirectory(), 1);
+        asyncDirectory.openSubDirectory("child").toCompletableFuture().get(5,
+                TimeUnit.SECONDS);
+
+        assertTrue(asyncDirectory.rmdir("child").toCompletableFuture()
+                .get(5, TimeUnit.SECONDS));
+
+        asyncDirectory.close();
+    }
+
     /**
      * Minimal {@link FileWriter} that records the thread name executing write
      * operations.

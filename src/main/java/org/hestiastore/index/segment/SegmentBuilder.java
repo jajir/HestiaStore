@@ -9,6 +9,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.directory.FileLock;
 import org.hestiastore.index.chunkstore.ChunkFilter;
+import org.hestiastore.index.segment.SegmentPropertiesManager.SegmentDataState;
 
 /**
  * Builder for {@link Segment}.
@@ -484,20 +485,32 @@ public final class SegmentBuilder<K, V> {
                     "segmentId");
             final SegmentDirectoryLayout layout = new SegmentDirectoryLayout(
                     resolvedId);
-            final AsyncDirectory segmentDirectory = segmentRootDirectoryEnabled
-                    ? directoryFacade
-                            .openSubDirectory(resolvedId.getName())
-                            .toCompletableFuture().join()
-                    : directoryFacade;
-            segmentFiles = new SegmentFiles<>(segmentDirectory, layout,
-                    keyTypeDescriptor, valueTypeDescriptor,
-                    segmentConf.getDiskIoBufferSize(),
-                    segmentConf.getEncodingChunkFilters(),
-                    segmentConf.getDecodingChunkFilters());
+            if (segmentRootDirectoryEnabled) {
+                final SegmentDirectoryResolution resolution = resolveDirectoryLayout(
+                        directoryFacade, layout, resolvedId);
+                segmentFiles = new SegmentFiles<>(resolution.rootDirectory,
+                        resolution.activeDirectory,
+                        layout,
+                        resolution.activeDirectoryName,
+                        keyTypeDescriptor, valueTypeDescriptor,
+                        segmentConf.getDiskIoBufferSize(),
+                        segmentConf.getEncodingChunkFilters(),
+                        segmentConf.getDecodingChunkFilters());
+            } else {
+                segmentFiles = new SegmentFiles<>(directoryFacade, resolvedId,
+                        keyTypeDescriptor, valueTypeDescriptor,
+                        segmentConf.getDiskIoBufferSize(),
+                        segmentConf.getEncodingChunkFilters(),
+                        segmentConf.getDecodingChunkFilters());
+            }
         }
         if (segmentPropertiesManager == null) {
             segmentPropertiesManager = new SegmentPropertiesManager(
                     segmentFiles.getAsyncDirectory(), id);
+            if (segmentFiles.isSegmentRootDirectoryEnabled()) {
+                initializeDirectoryMetadata(segmentPropertiesManager,
+                        segmentFiles.getActiveDirectoryName());
+            }
         }
         if (segmentResources == null) {
             final SegmentDataSupplier<K, V> segmentDataSupplier = new SegmentDataSupplier<>(
@@ -525,6 +538,117 @@ public final class SegmentBuilder<K, V> {
         new SegmentDeltaCacheLoader<>(segmentFiles, segmentPropertiesManager)
                 .loadInto(segmentCache);
         return segmentCache;
+    }
+
+    private SegmentDirectoryResolution resolveDirectoryLayout(
+            final AsyncDirectory baseDirectory,
+            final SegmentDirectoryLayout layout,
+            final SegmentId segmentId) {
+        final AsyncDirectory rootDirectory = baseDirectory
+                .openSubDirectory(segmentId.getName())
+                .toCompletableFuture().join();
+        final SegmentDirectoryPointer pointer = new SegmentDirectoryPointer(
+                rootDirectory, layout);
+        String activeDirectoryName = pointer.readActiveDirectory();
+        if (activeDirectoryName == null) {
+            activeDirectoryName = hasLegacyFiles(rootDirectory, layout)
+                    ? SegmentDirectoryLayout.ROOT_DIRECTORY_NAME
+                    : SegmentDirectoryLayout.getVersionDirectoryName(1);
+            pointer.writeActiveDirectory(activeDirectoryName);
+        }
+        final AsyncDirectory activeDirectory = openActiveDirectory(rootDirectory,
+                activeDirectoryName);
+        final SegmentDirectoryResolution resolved = new SegmentDirectoryResolution(
+                rootDirectory, activeDirectory, activeDirectoryName);
+        return recoverPreparedDirectory(resolved, layout, segmentId, pointer);
+    }
+
+    private SegmentDirectoryResolution recoverPreparedDirectory(
+            final SegmentDirectoryResolution resolved,
+            final SegmentDirectoryLayout layout,
+            final SegmentId segmentId,
+            final SegmentDirectoryPointer pointer) {
+        final long activeVersion = resolveVersion(resolved.activeDirectoryName);
+        if (activeVersion < 0) {
+            return resolved;
+        }
+        final String preparedDirectoryName = SegmentDirectoryLayout
+                .getVersionDirectoryName(activeVersion + 1);
+        final AsyncDirectory preparedDirectory = resolved.rootDirectory
+                .openSubDirectory(preparedDirectoryName)
+                .toCompletableFuture().join();
+        final boolean preparedPropertiesExists = preparedDirectory
+                .isFileExistsAsync(layout.getPropertiesFileName())
+                .toCompletableFuture().join();
+        if (!preparedPropertiesExists) {
+            return resolved;
+        }
+        final SegmentPropertiesManager preparedProperties = new SegmentPropertiesManager(
+                preparedDirectory, segmentId);
+        final SegmentDataState preparedState = preparedProperties.getState();
+        if (preparedState != SegmentDataState.PREPARED
+                && preparedState != SegmentDataState.ACTIVE) {
+            return resolved;
+        }
+        final boolean preparedIndexExists = preparedDirectory
+                .isFileExistsAsync(layout.getIndexFileName())
+                .toCompletableFuture().join();
+        if (!preparedIndexExists) {
+            return resolved;
+        }
+        pointer.writeActiveDirectory(preparedDirectoryName);
+        preparedProperties.setState(SegmentDataState.ACTIVE);
+        return new SegmentDirectoryResolution(resolved.rootDirectory,
+                preparedDirectory, preparedDirectoryName);
+    }
+
+    private AsyncDirectory openActiveDirectory(
+            final AsyncDirectory rootDirectory,
+            final String activeDirectoryName) {
+        if (SegmentDirectoryLayout.ROOT_DIRECTORY_NAME
+                .equals(activeDirectoryName)) {
+            return rootDirectory;
+        }
+        return rootDirectory.openSubDirectory(activeDirectoryName)
+                .toCompletableFuture().join();
+    }
+
+    private boolean hasLegacyFiles(final AsyncDirectory rootDirectory,
+            final SegmentDirectoryLayout layout) {
+        return rootDirectory.isFileExistsAsync(layout.getPropertiesFileName())
+                .toCompletableFuture().join();
+    }
+
+    private long resolveVersion(final String directoryName) {
+        if (SegmentDirectoryLayout.ROOT_DIRECTORY_NAME.equals(directoryName)) {
+            return 0;
+        }
+        return SegmentDirectoryLayout.parseVersionDirectoryName(directoryName);
+    }
+
+    private void initializeDirectoryMetadata(
+            final SegmentPropertiesManager propertiesManager,
+            final String activeDirectoryName) {
+        final long expectedVersion = resolveVersion(activeDirectoryName);
+        if (expectedVersion >= 0
+                && propertiesManager.getVersion() != expectedVersion) {
+            propertiesManager.setVersion(expectedVersion);
+        }
+        propertiesManager.setState(SegmentDataState.ACTIVE);
+    }
+
+    private static final class SegmentDirectoryResolution {
+        private final AsyncDirectory rootDirectory;
+        private final AsyncDirectory activeDirectory;
+        private final String activeDirectoryName;
+
+        private SegmentDirectoryResolution(final AsyncDirectory rootDirectory,
+                final AsyncDirectory activeDirectory,
+                final String activeDirectoryName) {
+            this.rootDirectory = rootDirectory;
+            this.activeDirectory = activeDirectory;
+            this.activeDirectoryName = activeDirectoryName;
+        }
     }
 
 }

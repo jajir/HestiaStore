@@ -317,4 +317,48 @@ class SegmentBuilderTest {
         assertEquals(DirectExecutor.class, executor.getClass());
         segment.close();
     }
+
+    @Test
+    void builder_promotes_prepared_directory() {
+        final Directory directory = new MemDirectory();
+        final var asyncDirectory = AsyncDirectoryAdapter.wrap(directory);
+        final SegmentId segmentId = SegmentId.of(1);
+        final SegmentDirectoryLayout layout = new SegmentDirectoryLayout(
+                segmentId);
+        final var rootDirectory = asyncDirectory
+                .openSubDirectory(segmentId.getName())
+                .toCompletableFuture().join();
+
+        new SegmentDirectoryPointer(rootDirectory, layout)
+                .writeActiveDirectory("v1");
+
+        final var preparedDirectory = rootDirectory
+                .openSubDirectory("v2").toCompletableFuture().join();
+        final SegmentPropertiesManager preparedProperties = new SegmentPropertiesManager(
+                preparedDirectory, segmentId);
+        preparedProperties.setVersion(2L);
+        preparedProperties
+                .setState(SegmentPropertiesManager.SegmentDataState.PREPARED);
+        preparedDirectory.getFileWriterAsync(layout.getIndexFileName())
+                .toCompletableFuture().join().close();
+
+        try (Segment<Integer, String> segment = Segment
+                .<Integer, String>builder()//
+                .withAsyncDirectory(asyncDirectory)//
+                .withId(segmentId)//
+                .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
+                .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
+                .withBloomFilterIndexSizeInBytes(0)//
+                .withEncodingChunkFilters(
+                        List.of(new ChunkFilterDoNothing()))//
+                .withDecodingChunkFilters(
+                        List.of(new ChunkFilterDoNothing()))//
+                .withSegmentRootDirectoryEnabled(true)//
+                .build()) {
+            assertNotNull(segment);
+        }
+
+        assertEquals("v2", new SegmentDirectoryPointer(rootDirectory, layout)
+                .readActiveDirectory());
+    }
 }
