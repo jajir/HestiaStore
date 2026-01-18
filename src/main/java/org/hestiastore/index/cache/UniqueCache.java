@@ -5,9 +5,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
@@ -21,14 +20,14 @@ import org.hestiastore.index.Vldtn;
  */
 public class UniqueCache<K, V> {
 
-    private static final Lock NOOP_LOCK = new NoopLock();
+    // ConcurrentHashMap does not allow null values; use a sentinel instead.
+    private static final Object NULL_VALUE = new Object();
 
-    private final Map<K, V> map;
+    private final Map<K, Object> map;
 
     private final Comparator<K> keyComparator;
-    private final Lock readLock;
-    private final Lock writeLock;
     private final AtomicInteger size = new AtomicInteger();
+    private final boolean threadSafe;
 
     /**
      * Create builder for unique cache.
@@ -48,16 +47,17 @@ public class UniqueCache<K, V> {
      */
     protected UniqueCache(final Comparator<K> keyComparator,
             int initialCapacity) {
-        this(keyComparator, initialCapacity, NOOP_LOCK, NOOP_LOCK);
+        this(keyComparator, initialCapacity, false);
     }
 
-    protected UniqueCache(final Comparator<K> keyComparator, int initialCapacity,
-            final Lock readLock, final Lock writeLock) {
+    protected UniqueCache(final Comparator<K> keyComparator,
+            final int initialCapacity, final boolean threadSafe) {
         this.keyComparator = Vldtn.requireNonNull(keyComparator,
                 "keyComparator");
-        this.map = new HashMap<>(initialCapacity, 0.75F);
-        this.readLock = Vldtn.requireNonNull(readLock, "readLock");
-        this.writeLock = Vldtn.requireNonNull(writeLock, "writeLock");
+        this.map = threadSafe
+                ? new ConcurrentHashMap<>(initialCapacity)
+                : new HashMap<>(initialCapacity, 0.75F);
+        this.threadSafe = threadSafe;
     }
 
     Comparator<K> getKeyComparator() {
@@ -68,16 +68,11 @@ public class UniqueCache<K, V> {
      * When there is old value than old value is rewritten.
      */
     public void put(final Entry<K, V> entry) {
-        writeLock.lock();
-        try {
-            final K key = entry.getKey();
-            final boolean existed = map.containsKey(key);
-            map.put(key, entry.getValue());
-            if (!existed) {
-                size.incrementAndGet();
-            }
-        } finally {
-            writeLock.unlock();
+        Vldtn.requireNonNull(entry, "entry");
+        final K key = Vldtn.requireNonNull(entry.getKey(), "entry.key");
+        final Object previous = map.put(key, boxValue(entry.getValue()));
+        if (previous == null) {
+            size.incrementAndGet();
         }
     }
 
@@ -89,25 +84,15 @@ public class UniqueCache<K, V> {
      */
     public V get(final K key) {
         Vldtn.requireNonNull(key, "key");
-        readLock.lock();
-        try {
-            return map.get(key);
-        } finally {
-            readLock.unlock();
-        }
+        return unboxValue(map.get(key));
     }
 
     /**
      * Clear all data in cache.
      */
     public void clear() {
-        writeLock.lock();
-        try {
-            map.clear();
-            size.set(0);
-        } finally {
-            writeLock.unlock();
-        }
+        map.clear();
+        size.set(0);
     }
 
     /**
@@ -160,24 +145,14 @@ public class UniqueCache<K, V> {
      * @return snapshot of entries at the time of clearing
      */
     public List<Entry<K, V>> snapshotAndClear() {
-        writeLock.lock();
-        try {
-            final List<Entry<K, V>> snapshot = snapshotEntriesLocked();
-            map.clear();
-            size.set(0);
-            return snapshot;
-        } finally {
-            writeLock.unlock();
-        }
+        final List<Entry<K, V>> snapshot = snapshotEntries();
+        map.clear();
+        size.set(0);
+        return snapshot;
     }
 
     private List<Entry<K, V>> snapshotEntries() {
-        readLock.lock();
-        try {
-            return snapshotEntriesLocked();
-        } finally {
-            readLock.unlock();
-        }
+        return snapshotEntriesLocked();
     }
 
     private List<Entry<K, V>> snapshotEntriesLocked() {
@@ -185,41 +160,26 @@ public class UniqueCache<K, V> {
             return List.of();
         }
         final List<Entry<K, V>> out = new ArrayList<>(map.size());
-        for (final Map.Entry<K, V> entry : map.entrySet()) {
+        for (final Map.Entry<K, Object> entry : map.entrySet()) {
             if (entry == null || entry.getKey() == null) {
                 continue;
             }
-            out.add(new Entry<>(entry.getKey(), entry.getValue()));
+            out.add(new Entry<>(entry.getKey(),
+                    unboxValue(entry.getValue())));
         }
         return out;
     }
 
-    private static final class NoopLock extends ReentrantLock {
+    boolean isThreadSafe() {
+        return threadSafe;
+    }
 
-        @Override
-        public void lock() {
-            // no-op
-        }
+    private static Object boxValue(final Object value) {
+        return value == null ? NULL_VALUE : value;
+    }
 
-        @Override
-        public void unlock() {
-            // no-op
-        }
-
-        @Override
-        public boolean tryLock() {
-            return true;
-        }
-
-        @Override
-        public void lockInterruptibly() {
-            // no-op
-        }
-
-        @Override
-        public boolean tryLock(final long time,
-                final java.util.concurrent.TimeUnit unit) {
-            return true;
-        }
+    @SuppressWarnings("unchecked")
+    private static <T> T unboxValue(final Object value) {
+        return value == NULL_VALUE ? null : (T) value;
     }
 }
