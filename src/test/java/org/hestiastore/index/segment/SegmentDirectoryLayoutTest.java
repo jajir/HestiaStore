@@ -29,9 +29,15 @@ class SegmentDirectoryLayoutTest {
         assertEquals("segment-00001.properties",
                 layout.getPropertiesFileName());
         assertEquals("segment-00001.lock", layout.getLockFileName());
+        assertEquals("segment-00001.active", layout.getActivePointerFileName());
         assertEquals("segment-00001-delta-000.cache",
                 layout.getDeltaCacheFileName(0));
         assertEquals("segment-00001-delta-1234.cache",
                 layout.getDeltaCacheFileName(1234));
+        assertEquals("v2", SegmentDirectoryLayout.getVersionDirectoryName(2));
+        assertEquals(2L,
+                SegmentDirectoryLayout.parseVersionDirectoryName("v2"));
+        assertEquals(-1L,
+                SegmentDirectoryLayout.parseVersionDirectoryName("invalid"));
     }
 }

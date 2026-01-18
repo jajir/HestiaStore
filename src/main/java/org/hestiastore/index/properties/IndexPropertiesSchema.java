@@ -31,6 +31,8 @@ public final class IndexPropertiesSchema {
         public static final String NUMBER_OF_KEYS_IN_MAIN_INDEX = "numberOfKeysInMainIndex";
         public static final String NUMBER_OF_KEYS_IN_SCARCE_INDEX = "numberOfKeysInScarceIndex";
         public static final String NUMBER_OF_SEGMENT_CACHE_DELTA_FILES = "numberOfSegmentDeltaFiles";
+        public static final String SEGMENT_STATE = "segmentState";
+        public static final String SEGMENT_VERSION = "segmentVersion";
 
         private SegmentKeys() {
         }
@@ -85,13 +87,23 @@ public final class IndexPropertiesSchema {
     private final String schemaName;
     private final List<String> requiredKeys;
     private final Map<String, DefaultValueProvider> defaultProviders;
+    private final Set<String> blankAllowedKeys;
 
     private IndexPropertiesSchema(final String schemaName,
             final Collection<String> requiredKeys,
             final Map<String, DefaultValueProvider> defaultProviders) {
+        this(schemaName, requiredKeys, defaultProviders, Set.of());
+    }
+
+    private IndexPropertiesSchema(final String schemaName,
+            final Collection<String> requiredKeys,
+            final Map<String, DefaultValueProvider> defaultProviders,
+            final Collection<String> blankAllowedKeys) {
         this.schemaName = Vldtn.requireNonNull(schemaName, "schemaName");
         this.requiredKeys = deduplicate(requiredKeys);
         this.defaultProviders = Map.copyOf(defaultProviders);
+        this.blankAllowedKeys = Set.copyOf(
+                Vldtn.requireNonNull(blankAllowedKeys, "blankAllowedKeys"));
         ensureDefaultsAreRequired();
     }
 
@@ -119,7 +131,8 @@ public final class IndexPropertiesSchema {
                     missing.add(key);
                 } else {
                     final String value = provider.provide(view);
-                    if (value == null || value.isBlank()) {
+                    if (value == null || (value.isBlank()
+                            && !blankAllowedKeys.contains(key))) {
                         missing.add(key);
                     } else {
                         updates.put(key, value);
@@ -167,7 +180,10 @@ public final class IndexPropertiesSchema {
 
     private boolean isMissing(final PropertyView view, final String key) {
         final String value = view.getString(key);
-        return value == null || value.isBlank();
+        if (value == null) {
+            return true;
+        }
+        return value.isBlank() && !blankAllowedKeys.contains(key);
     }
 
     private String serializeRequiredKeys() {
@@ -207,6 +223,8 @@ public final class IndexPropertiesSchema {
                 view -> "0");
         defaults.put(SegmentKeys.NUMBER_OF_SEGMENT_CACHE_DELTA_FILES,
                 view -> "0");
+        defaults.put(SegmentKeys.SEGMENT_STATE, view -> "ACTIVE");
+        defaults.put(SegmentKeys.SEGMENT_VERSION, view -> "0");
         return new IndexPropertiesSchema("segment-properties",
                 defaults.keySet(), defaults);
     }
@@ -291,8 +309,11 @@ public final class IndexPropertiesSchema {
         requiredKeys.add(IndexConfigurationKeys.PROP_VALUE_TYPE_DESCRIPTOR);
         requiredKeys.add(IndexConfigurationKeys.PROP_INDEX_NAME);
         requiredKeys.addAll(defaults.keySet());
-        return new IndexPropertiesSchema("index-configuration",
-                requiredKeys, defaults);
+        final Set<String> blankAllowed = Set.of(
+                IndexConfigurationKeys.PROP_ENCODING_CHUNK_FILTERS,
+                IndexConfigurationKeys.PROP_DECODING_CHUNK_FILTERS);
+        return new IndexPropertiesSchema("index-configuration", requiredKeys,
+                defaults, blankAllowed);
     }
 
     private static String defaultSegmentWriteCache(final PropertyView view) {

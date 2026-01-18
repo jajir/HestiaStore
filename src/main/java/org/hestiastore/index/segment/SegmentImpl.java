@@ -153,13 +153,11 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
     @Override
     public SegmentResult<CompletionStage<Void>> compact() {
         return maintenanceService.startMaintenance(() -> {
-            final List<Entry<K, V>> snapshotEntries = segmentCompacter
-                    .prepareCompaction(core);
-            final SegmentFullWriterTx<K, V> writerTx = core.openFullWriteTx();
+            final SegmentCompacter.CompactionPlan<K, V> plan = segmentCompacter
+                    .prepareCompactionPlan(core);
             return new SegmentMaintenanceWork(
-                    () -> segmentCompacter.writeCompaction(core,
-                            snapshotEntries, writerTx),
-                    () -> segmentCompacter.publishCompaction(core, writerTx));
+                    () -> segmentCompacter.writeCompaction(plan),
+                    () -> segmentCompacter.publishCompaction(plan));
         }, this::scheduleMaintenanceIfNeeded);
     }
 

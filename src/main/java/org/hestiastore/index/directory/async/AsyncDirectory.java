@@ -46,5 +46,13 @@ public interface AsyncDirectory extends CloseableResource {
      */
     CompletionStage<AsyncDirectory> openSubDirectory(String directoryName);
 
+    /**
+     * Removes an empty subdirectory in this directory.
+     *
+     * @param directoryName required subdirectory name
+     * @return true if removed, false when it does not exist
+     */
+    CompletionStage<Boolean> rmdir(String directoryName);
+
     CompletionStage<FileLock> getLockAsync(String fileName);
 }

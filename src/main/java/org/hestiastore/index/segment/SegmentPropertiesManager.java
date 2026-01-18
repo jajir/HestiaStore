@@ -23,11 +23,20 @@ public class SegmentPropertiesManager {
     private static final String NUMBER_OF_KEYS_IN_MAIN_INDEX = IndexPropertiesSchema.SegmentKeys.NUMBER_OF_KEYS_IN_MAIN_INDEX;
     private static final String NUMBER_OF_KEYS_IN_SCARCE_INDEX = IndexPropertiesSchema.SegmentKeys.NUMBER_OF_KEYS_IN_SCARCE_INDEX;
     private static final String NUMBER_OF_SEGMENT_CACHE_DELTA_FILES = IndexPropertiesSchema.SegmentKeys.NUMBER_OF_SEGMENT_CACHE_DELTA_FILES;
+    private static final String SEGMENT_STATE = IndexPropertiesSchema.SegmentKeys.SEGMENT_STATE;
+    private static final String SEGMENT_VERSION = IndexPropertiesSchema.SegmentKeys.SEGMENT_VERSION;
     private static final String PROPERTIES_FILENAME_EXTENSION = ".properties";
 
     private final SegmentId id;
-    private final PropertyStore propertyStore;
+    private volatile PropertyStore propertyStore;
     private final Object propertyLock = new Object();
+
+    /**
+     * States used for directory-level segment publishing.
+     */
+    public enum SegmentDataState {
+        ACTIVE, PREPARED
+    }
 
     /**
      * Creates a manager for the given segment properties file.
@@ -39,9 +48,14 @@ public class SegmentPropertiesManager {
             final SegmentId id) {
         Vldtn.requireNonNull(directoryFacade, "directoryFacade");
         this.id = Vldtn.requireNonNull(id, "segmentId");
-        this.propertyStore = PropertyStoreimpl.fromAsyncDirectory(
+        this.propertyStore = createStore(directoryFacade);
+    }
+
+    private PropertyStore createStore(final AsyncDirectory directoryFacade) {
+        final PropertyStore store = PropertyStoreimpl.fromAsyncDirectory(
                 directoryFacade, getPropertiesFilename(), false);
-        IndexPropertiesSchema.SEGMENT_SCHEMA.ensure(propertyStore);
+        IndexPropertiesSchema.SEGMENT_SCHEMA.ensure(store);
+        return store;
     }
 
     /**
@@ -64,6 +78,57 @@ public class SegmentPropertiesManager {
                 view.getLong(NUMBER_OF_KEYS_IN_DELTA_CACHE),
                 view.getLong(NUMBER_OF_KEYS_IN_MAIN_INDEX),
                 view.getLong(NUMBER_OF_KEYS_IN_SCARCE_INDEX));
+    }
+
+    /**
+     * Returns the directory-level state of the segment.
+     *
+     * @return segment data state
+     */
+    public SegmentDataState getState() {
+        final String state = propertyStore.snapshot().getString(SEGMENT_STATE);
+        if (state == null || state.isBlank()) {
+            return SegmentDataState.ACTIVE;
+        }
+        try {
+            return SegmentDataState.valueOf(state);
+        } catch (final IllegalArgumentException e) {
+            return SegmentDataState.ACTIVE;
+        }
+    }
+
+    /**
+     * Sets the directory-level state of the segment.
+     *
+     * @param state state to store
+     */
+    public void setState(final SegmentDataState state) {
+        Vldtn.requireNonNull(state, "state");
+        synchronized (propertyLock) {
+            updateTransaction(writer -> writer.setString(SEGMENT_STATE,
+                    state.name()));
+        }
+    }
+
+    /**
+     * Returns the version identifier stored with this segment.
+     *
+     * @return segment version
+     */
+    public long getVersion() {
+        return propertyStore.snapshot().getLong(SEGMENT_VERSION);
+    }
+
+    /**
+     * Sets the version identifier for this segment.
+     *
+     * @param version segment version
+     */
+    public void setVersion(final long version) {
+        synchronized (propertyLock) {
+            updateTransaction(
+                    writer -> writer.setLong(SEGMENT_VERSION, version));
+        }
     }
 
     /**
@@ -238,6 +303,18 @@ public class SegmentPropertiesManager {
         final PropertyWriter writer = tx.openPropertyWriter();
         updater.accept(writer);
         tx.close();
+    }
+
+    /**
+     * Switches the properties manager to a new directory.
+     *
+     * @param directoryFacade directory containing the properties file
+     */
+    void switchDirectory(final AsyncDirectory directoryFacade) {
+        Vldtn.requireNonNull(directoryFacade, "directoryFacade");
+        synchronized (propertyLock) {
+            this.propertyStore = createStore(directoryFacade);
+        }
     }
 
 }

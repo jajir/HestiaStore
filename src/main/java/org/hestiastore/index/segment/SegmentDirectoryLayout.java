@@ -13,9 +13,12 @@ public final class SegmentDirectoryLayout {
     private static final String BLOOM_FILTER_FILE_NAME_EXTENSION = ".bloom-filter";
     private static final String PROPERTIES_FILE_NAME_EXTENSION = ".properties";
     private static final String LOCK_FILE_NAME_EXTENSION = ".lock";
+    private static final String ACTIVE_POINTER_FILE_NAME_EXTENSION = ".active";
     private static final String DELTA_FILE_NAME_MIDDLE = "-delta-";
     private static final String CACHE_FILE_NAME_EXTENSION = ".cache";
     private static final int DELTA_ID_PAD_LENGTH = 3;
+    private static final String VERSION_DIRECTORY_PREFIX = "v";
+    static final String ROOT_DIRECTORY_NAME = ".";
 
     private final SegmentId segmentId;
 
@@ -83,6 +86,15 @@ public final class SegmentDirectoryLayout {
     }
 
     /**
+     * Returns the pointer file name that stores the active segment directory.
+     *
+     * @return active pointer file name
+     */
+    public String getActivePointerFileName() {
+        return segmentId.getName() + ACTIVE_POINTER_FILE_NAME_EXTENSION;
+    }
+
+    /**
      * Returns the delta cache file name for a numeric delta id.
      *
      * @param deltaFileId numeric delta id
@@ -94,5 +106,45 @@ public final class SegmentDirectoryLayout {
                 : FileNameUtil.getPaddedId(deltaFileId, DELTA_ID_PAD_LENGTH);
         return segmentId.getName() + DELTA_FILE_NAME_MIDDLE + paddedId
                 + CACHE_FILE_NAME_EXTENSION;
+    }
+
+    /**
+     * Builds a versioned directory name like {@code v2}.
+     *
+     * @param version positive version number
+     * @return versioned directory name
+     */
+    public static String getVersionDirectoryName(final long version) {
+        if (version <= 0) {
+            throw new IllegalArgumentException(String.format(
+                    "Version '%s' must be greater than 0", version));
+        }
+        return VERSION_DIRECTORY_PREFIX + version;
+    }
+
+    /**
+     * Parses a versioned directory name like {@code v2}.
+     *
+     * @param directoryName directory name to parse
+     * @return parsed version or {@code -1} when invalid
+     */
+    public static long parseVersionDirectoryName(
+            final String directoryName) {
+        if (directoryName == null || directoryName.isBlank()) {
+            return -1;
+        }
+        if (!directoryName.startsWith(VERSION_DIRECTORY_PREFIX)) {
+            return -1;
+        }
+        final String raw = directoryName
+                .substring(VERSION_DIRECTORY_PREFIX.length());
+        if (raw.isBlank()) {
+            return -1;
+        }
+        try {
+            return Long.parseLong(raw);
+        } catch (final NumberFormatException e) {
+            return -1;
+        }
     }
 }

@@ -29,7 +29,10 @@ public final class SegmentFiles<K, V> {
 
     static final String CACHE_FILE_NAME_EXTENSION = ".cache";
 
-    private final AsyncDirectory directoryFacade;
+    private final AsyncDirectory rootDirectory;
+    private final boolean segmentRootDirectoryEnabled;
+    private volatile AsyncDirectory directoryFacade;
+    private volatile String activeDirectoryName;
     private final SegmentId id;
     private final SegmentDirectoryLayout layout;
     private final TypeDescriptor<K> keyTypeDescriptor;
@@ -56,7 +59,8 @@ public final class SegmentFiles<K, V> {
             final int diskIoBufferSize,
             final List<ChunkFilter> encodingChunkFilters,
             final List<ChunkFilter> decodingChunkFilters) {
-        this(directoryFacade, new SegmentDirectoryLayout(id),
+        this(directoryFacade, directoryFacade, new SegmentDirectoryLayout(id),
+                SegmentDirectoryLayout.ROOT_DIRECTORY_NAME, false,
                 keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize,
                 encodingChunkFilters, decodingChunkFilters);
     }
@@ -80,8 +84,60 @@ public final class SegmentFiles<K, V> {
             final int diskIoBufferSize,
             final List<ChunkFilter> encodingChunkFilters,
             final List<ChunkFilter> decodingChunkFilters) {
-        this.directoryFacade = Vldtn.requireNonNull(segmentRootDirectory,
-                "segmentRootDirectory");
+        this(segmentRootDirectory, segmentRootDirectory, layout,
+                SegmentDirectoryLayout.ROOT_DIRECTORY_NAME, true,
+                keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize,
+                encodingChunkFilters, decodingChunkFilters);
+    }
+
+    /**
+     * Create accessor for segment files with explicit root and active
+     * directories.
+     *
+     * @param rootDirectory          segment root directory
+     * @param activeDirectory        active directory holding files
+     * @param layout                 segment file naming layout
+     * @param activeDirectoryName    active directory name in the root
+     * @param keyTypeDescriptor      descriptor for key serialization and
+     *                               comparison
+     * @param valueTypeDescriptor    descriptor for value serialization
+     * @param diskIoBufferSize       buffer size in bytes for on-disk operations
+     * @param encodingChunkFilters   filters applied when writing chunks
+     * @param decodingChunkFilters   filters applied when reading chunks
+     */
+    public SegmentFiles(final AsyncDirectory rootDirectory,
+            final AsyncDirectory activeDirectory,
+            final SegmentDirectoryLayout layout,
+            final String activeDirectoryName,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final int diskIoBufferSize,
+            final List<ChunkFilter> encodingChunkFilters,
+            final List<ChunkFilter> decodingChunkFilters) {
+        this(rootDirectory, activeDirectory, layout,
+                Vldtn.requireNonNull(activeDirectoryName,
+                        "activeDirectoryName"),
+                true, keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize,
+                encodingChunkFilters, decodingChunkFilters);
+    }
+
+    private SegmentFiles(final AsyncDirectory rootDirectory,
+            final AsyncDirectory activeDirectory,
+            final SegmentDirectoryLayout layout,
+            final String activeDirectoryName,
+            final boolean segmentRootDirectoryEnabled,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final int diskIoBufferSize,
+            final List<ChunkFilter> encodingChunkFilters,
+            final List<ChunkFilter> decodingChunkFilters) {
+        this.rootDirectory = Vldtn.requireNonNull(rootDirectory,
+                "rootDirectory");
+        this.directoryFacade = Vldtn.requireNonNull(activeDirectory,
+                "activeDirectory");
+        this.activeDirectoryName = Vldtn.requireNonNull(activeDirectoryName,
+                "activeDirectoryName");
+        this.segmentRootDirectoryEnabled = segmentRootDirectoryEnabled;
         this.layout = Vldtn.requireNonNull(layout, "segmentLayout");
         this.id = Vldtn.requireNonNull(layout.getSegmentId(), "segmentId");
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
@@ -217,6 +273,38 @@ public final class SegmentFiles<K, V> {
      */
     AsyncDirectory getAsyncDirectory() {
         return directoryFacade;
+    }
+
+    AsyncDirectory getRootDirectory() {
+        return rootDirectory;
+    }
+
+    boolean isSegmentRootDirectoryEnabled() {
+        return segmentRootDirectoryEnabled;
+    }
+
+    String getActiveDirectoryName() {
+        return activeDirectoryName;
+    }
+
+    void switchActiveDirectory(final String directoryName,
+            final AsyncDirectory directoryFacade) {
+        Vldtn.requireNonNull(directoryName, "directoryName");
+        Vldtn.requireNonNull(directoryFacade, "directoryFacade");
+        if (!segmentRootDirectoryEnabled) {
+            throw new IllegalStateException(
+                    "Segment root directory switching is disabled.");
+        }
+        this.directoryFacade = directoryFacade;
+        this.activeDirectoryName = directoryName;
+    }
+
+    SegmentFiles<K, V> copyWithDirectory(final String directoryName,
+            final AsyncDirectory directoryFacade) {
+        return new SegmentFiles<>(rootDirectory, directoryFacade, layout,
+                directoryName, segmentRootDirectoryEnabled, keyTypeDescriptor,
+                valueTypeDescriptor, diskIoBufferSize, encodingChunkFilters,
+                decodingChunkFilters);
     }
 
     /**

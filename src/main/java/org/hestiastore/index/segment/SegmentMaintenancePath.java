@@ -78,4 +78,12 @@ final class SegmentMaintenancePath<K, V> {
     private EntryWriter<K, V> openDeltaCacheWriter() {
         return new SegmentDeltaCacheCompactingWriter<>(deltaCacheController);
     }
+
+    SegmentConf getSegmentConf() {
+        return segmentConf;
+    }
+
+    SegmentDeltaCacheController<K, V> getDeltaCacheController() {
+        return deltaCacheController;
+    }
 }

@@ -127,6 +127,11 @@ public final class AsyncDirectoryAdapter extends AbstractCloseableResource
     }
 
     @Override
+    public CompletionStage<Boolean> rmdir(final String directoryName) {
+        return supply(() -> Boolean.valueOf(delegate.rmdir(directoryName)));
+    }
+
+    @Override
     public CompletionStage<FileLock> getLockAsync(final String fileName) {
         return supply(() -> delegate.getLock(fileName));
     }
