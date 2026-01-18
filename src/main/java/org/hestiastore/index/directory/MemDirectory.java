@@ -100,6 +100,17 @@ public class MemDirectory implements Directory {
                         "There is required file but '%s' is directory.",
                         newFileName));
             }
+            if (directories.containsKey(currentFileName)) {
+                if (data.containsKey(newFileName)) {
+                    throw new IndexException(String.format(
+                            "There is required directory but '%s' is file.",
+                            newFileName));
+                }
+                final MemDirectory directory = directories
+                        .remove(currentFileName);
+                directories.put(newFileName, directory);
+                return;
+            }
             if (data.containsKey(currentFileName)) {
                 final byte[] tmp = data.remove(currentFileName);
                 data.put(newFileName, tmp);
@@ -232,7 +243,8 @@ public class MemDirectory implements Directory {
     public boolean isFileExists(final String fileName) {
         readLock.lock();
         try {
-            return data.containsKey(fileName);
+            return data.containsKey(fileName)
+                    || directories.containsKey(fileName);
         } finally {
             readLock.unlock();
         }

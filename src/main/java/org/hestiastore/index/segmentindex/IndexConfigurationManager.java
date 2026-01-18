@@ -81,6 +81,10 @@ public class IndexConfigurationManager<K, V> {
             builder.withSegmentMaintenanceAutoEnabled(
                     defaults.isSegmentMaintenanceAutoEnabled());
         }
+        if (conf.isSegmentRootDirectoryEnabled() == null) {
+            builder.withSegmentRootDirectoryEnabled(
+                    defaults.isSegmentRootDirectoryEnabled());
+        }
         if (conf.getMaxNumberOfKeysInSegment() == null) {
             builder.withMaxNumberOfKeysInSegment(
                     defaults.getMaxNumberOfKeysInSegment());
@@ -617,6 +621,8 @@ public class IndexConfigurationManager<K, V> {
                 .withIndexBusyTimeoutMillis(conf.getIndexBusyTimeoutMillis())//
                 .withSegmentMaintenanceAutoEnabled(
                         conf.isSegmentMaintenanceAutoEnabled())//
+                .withSegmentRootDirectoryEnabled(
+                        conf.isSegmentRootDirectoryEnabled())//
                 .withName(conf.getIndexName())//
 
                 // SegmentIndex runtime properties
