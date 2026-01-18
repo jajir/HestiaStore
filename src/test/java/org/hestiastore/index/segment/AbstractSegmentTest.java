@@ -63,7 +63,8 @@ public abstract class AbstractSegmentTest extends AbstractDataTest {
     }
 
     protected int numberOfFilesInDirectory(final Directory directory) {
-        return (int) directory.getFileNames().count();
+        return (int) directory.getFileNames()
+                .filter(name -> !name.endsWith(".lock")).count();
     }
 
     protected void verifyCacheFiles(final Directory directory) {

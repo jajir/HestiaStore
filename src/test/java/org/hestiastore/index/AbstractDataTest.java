@@ -142,7 +142,9 @@ public abstract class AbstractDataTest {
     public static void verifyNumberOfFiles(final Directory directory,
             final int expecetdNumberOfFiles) {
         final List<String> fileNames = directory.getFileNames().toList();
-        final int fileCount = fileNames.size();
+        final List<String> countedFiles = fileNames.stream()
+                .filter(name -> !name.endsWith(".lock")).toList();
+        final int fileCount = countedFiles.size();
         if (fileCount != expecetdNumberOfFiles) {
             LOGGER.error("Unexpected files in directory: {}", fileNames);
         }

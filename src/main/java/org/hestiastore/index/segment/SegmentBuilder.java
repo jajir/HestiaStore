@@ -7,6 +7,7 @@ import java.util.concurrent.Executor;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.FileLock;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 
 /**
@@ -392,33 +393,42 @@ public final class SegmentBuilder<K, V> {
      */
     public Segment<K, V> build() {
         prepareBaseComponents();
-        final SegmentSearcher<K, V> segmentSearcher = new SegmentSearcher<>();
-        final SegmentDeltaCacheController<K, V> deltaCacheController = new SegmentDeltaCacheController<>(
-                segmentFiles, segmentPropertiesManager, segmentResources,
-                segmentConf.getMaxNumberOfKeysInSegmentWriteCache(),
-                segmentConf.getMaxNumberOfKeysInChunk());
-        final SegmentCache<K, V> segmentCache = createSegmentCache();
-        deltaCacheController.setSegmentCache(segmentCache);
-        final SegmentReadPath<K, V> readPath = new SegmentReadPath<>(
-                segmentFiles, segmentConf, segmentResources, segmentSearcher,
-                segmentCache, versionController);
-        final SegmentWritePath<K, V> writePath = new SegmentWritePath<>(
-                segmentCache, versionController);
-        final SegmentMaintenancePath<K, V> maintenancePath = new SegmentMaintenancePath<>(
-                segmentFiles, segmentConf, segmentPropertiesManager,
-                segmentResources, deltaCacheController);
-        final SegmentCompacter<K, V> compacter = new SegmentCompacter<>(
-                versionController);
-        final SegmentCore<K, V> core = new SegmentCore<>(segmentFiles,
-                versionController, segmentPropertiesManager, segmentCache,
-                readPath, writePath, maintenancePath);
-        final SegmentMaintenancePolicy<K, V> maintenancePolicy = segmentMaintenanceAutoEnabled
-                ? new SegmentMaintenancePolicyThreshold<>(
-                        segmentConf.getMaxNumberOfKeysInSegmentCache(),
-                        segmentConf.getMaxNumberOfKeysInSegmentWriteCache())
-                : SegmentMaintenancePolicy.none();
-        return new SegmentImpl<>(core, compacter, maintenanceExecutor,
-                maintenancePolicy);
+        final FileLock segmentLock = segmentFiles.acquireLock();
+        try {
+            final SegmentSearcher<K, V> segmentSearcher = new SegmentSearcher<>();
+            final SegmentDeltaCacheController<K, V> deltaCacheController = new SegmentDeltaCacheController<>(
+                    segmentFiles, segmentPropertiesManager, segmentResources,
+                    segmentConf.getMaxNumberOfKeysInSegmentWriteCache(),
+                    segmentConf.getMaxNumberOfKeysInChunk());
+            final SegmentCache<K, V> segmentCache = createSegmentCache();
+            deltaCacheController.setSegmentCache(segmentCache);
+            final SegmentReadPath<K, V> readPath = new SegmentReadPath<>(
+                    segmentFiles, segmentConf, segmentResources,
+                    segmentSearcher, segmentCache, versionController);
+            final SegmentWritePath<K, V> writePath = new SegmentWritePath<>(
+                    segmentCache, versionController);
+            final SegmentMaintenancePath<K, V> maintenancePath = new SegmentMaintenancePath<>(
+                    segmentFiles, segmentConf, segmentPropertiesManager,
+                    segmentResources, deltaCacheController);
+            final SegmentCompacter<K, V> compacter = new SegmentCompacter<>(
+                    versionController);
+            final SegmentCore<K, V> core = new SegmentCore<>(segmentFiles,
+                    versionController, segmentPropertiesManager, segmentCache,
+                    readPath, writePath, maintenancePath);
+            final SegmentMaintenancePolicy<K, V> maintenancePolicy = segmentMaintenanceAutoEnabled
+                    ? new SegmentMaintenancePolicyThreshold<>(
+                            segmentConf.getMaxNumberOfKeysInSegmentCache(),
+                            segmentConf
+                                    .getMaxNumberOfKeysInSegmentWriteCache())
+                    : SegmentMaintenancePolicy.none();
+            return new SegmentImpl<>(core, compacter, maintenanceExecutor,
+                    maintenancePolicy, segmentLock);
+        } catch (final RuntimeException e) {
+            if (segmentLock.isLocked()) {
+                segmentLock.unlock();
+            }
+            throw e;
+        }
     }
 
     /**

@@ -79,12 +79,15 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
     }
 
     protected int numberOfFilesInDirectory(final Directory directory) {
-        return (int) directory.getFileNames().count();
+        return (int) directory.getFileNames()
+                .filter(name -> !name.endsWith(".lock")).count();
     }
 
     protected int numberOfFilesInDirectoryP(final Directory directory) {
         final AtomicInteger cx = new AtomicInteger(0);
-        directory.getFileNames().forEach(fileName -> {
+        directory.getFileNames()
+                .filter(name -> !name.endsWith(".lock"))
+                .forEach(fileName -> {
             logger.debug("Found file name {}", fileName);
             cx.incrementAndGet();
         });

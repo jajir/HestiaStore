@@ -9,6 +9,7 @@ import org.hestiastore.index.chunkstore.ChunkStoreFile;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.FileLock;
 import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 
@@ -128,6 +129,29 @@ public final class SegmentFiles<K, V> {
      */
     String getPropertiesFilename() {
         return layout.getPropertiesFileName();
+    }
+
+    /**
+     * Acquire the per-segment lock file, failing fast when already locked.
+     *
+     * Stale locks must be removed manually.
+     *
+     * @return locked file lock handle
+     */
+    FileLock acquireLock() {
+        final String lockFileName = layout.getLockFileName();
+        final FileLock fileLock = directoryFacade.getLockAsync(lockFileName)
+                .toCompletableFuture().join();
+        if (fileLock.isLocked()) {
+            throw new IllegalStateException(
+                    lockHeldMessage(lockFileName));
+        }
+        try {
+            fileLock.lock();
+        } catch (final IllegalStateException e) {
+            throw new IllegalStateException(lockHeldMessage(lockFileName), e);
+        }
+        return fileLock;
     }
 
     /**
@@ -290,6 +314,13 @@ public final class SegmentFiles<K, V> {
         optionallyDeleteFile(getScarceFileName());
         optionallyDeleteFile(getBloomFilterFileName());
         optionallyDeleteFile(getPropertiesFilename());
+        optionallyDeleteFile(layout.getLockFileName());
+    }
+
+    private String lockHeldMessage(final String lockFileName) {
+        return String.format(
+                "Segment '%s' is already locked. Delete '%s' to recover.",
+                getSegmentIdName(), lockFileName);
     }
 
 }
