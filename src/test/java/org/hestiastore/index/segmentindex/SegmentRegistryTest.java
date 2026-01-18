@@ -13,6 +13,7 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
+import org.hestiastore.index.directory.FileLock;
 import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
@@ -41,6 +42,9 @@ class SegmentRegistryTest {
     @Mock
     private IndexConfiguration<Integer, String> conf;
 
+    @Mock
+    private FileLock segmentLock;
+
     private SegmentRegistry<Integer, String> registry;
 
     @BeforeEach
@@ -51,6 +55,9 @@ class SegmentRegistryTest {
         Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
         registry = new SegmentRegistry<>(directoryFacade, KEY_DESCRIPTOR,
                 VALUE_DESCRIPTOR, conf);
+        Mockito.when(directoryFacade.getLockAsync(ArgumentMatchers.anyString()))
+                .thenReturn(CompletableFuture.completedFuture(segmentLock));
+        Mockito.when(segmentLock.isLocked()).thenReturn(false);
     }
 
     @AfterEach

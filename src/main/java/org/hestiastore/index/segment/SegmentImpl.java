@@ -8,6 +8,7 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.directory.FileLock;
 
 /**
  * Public segment implementation that delegates single-threaded work to
@@ -25,6 +26,7 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
     private final SegmentMaintenanceService maintenanceService;
     private final SegmentMaintenancePolicy<K, V> maintenancePolicy;
     private final Executor maintenanceExecutor;
+    private final FileLock segmentLock;
 
     /**
      * Creates a segment implementation with the given core and executor.
@@ -38,6 +40,24 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
             final SegmentCompacter<K, V> segmentCompacter,
             final Executor maintenanceExecutor,
             final SegmentMaintenancePolicy<K, V> maintenancePolicy) {
+        this(core, segmentCompacter, maintenanceExecutor, maintenancePolicy,
+                null);
+    }
+
+    /**
+     * Creates a segment implementation with the given core and executor.
+     *
+     * @param core segment core implementation
+     * @param segmentCompacter compaction helper
+     * @param maintenanceExecutor executor for maintenance tasks
+     * @param maintenancePolicy maintenance decision policy
+     * @param segmentLock file lock held for the segment lifetime
+     */
+    SegmentImpl(final SegmentCore<K, V> core,
+            final SegmentCompacter<K, V> segmentCompacter,
+            final Executor maintenanceExecutor,
+            final SegmentMaintenancePolicy<K, V> maintenancePolicy,
+            final FileLock segmentLock) {
         this.core = Vldtn.requireNonNull(core, "core");
         this.segmentCompacter = Vldtn.requireNonNull(segmentCompacter,
                 "segmentCompacter");
@@ -47,6 +67,7 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
                 "maintenancePolicy");
         this.maintenanceService = new SegmentMaintenanceService(gate,
                 this.maintenanceExecutor);
+        this.segmentLock = segmentLock;
     }
 
     /**
@@ -257,7 +278,13 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
         gate.beginClose();
         gate.awaitIdleForClose();
         gate.forceClosed();
-        core.close();
+        try {
+            core.close();
+        } finally {
+            if (segmentLock != null && segmentLock.isLocked()) {
+                segmentLock.unlock();
+            }
+        }
     }
 
     /**
