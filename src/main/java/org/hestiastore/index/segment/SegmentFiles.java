@@ -26,14 +26,11 @@ import org.hestiastore.index.sorteddatafile.SortedDataFile;
  */
 public final class SegmentFiles<K, V> {
 
-    private static final String INDEX_FILE_NAME_EXTENSION = ".index";
-    private static final String SCARCE_FILE_NAME_EXTENSION = ".scarce";
     static final String CACHE_FILE_NAME_EXTENSION = ".cache";
-    private static final String BOOM_FILTER_FILE_NAME_EXTENSION = ".bloom-filter";
-    private static final String PROPERTIES_FILENAME_EXTENSION = ".properties";
 
     private final AsyncDirectory directoryFacade;
     private final SegmentId id;
+    private final SegmentDirectoryLayout layout;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final int diskIoBufferSize;
@@ -41,7 +38,7 @@ public final class SegmentFiles<K, V> {
     private final List<ChunkFilter> decodingChunkFilters;
 
     /**
-     * Create accessor for segment files.
+     * Create accessor for segment files stored in a flat directory layout.
      *
      * @param directoryFacade      directory facade used for I/O
      * @param id                   unique segment identifier
@@ -58,9 +55,34 @@ public final class SegmentFiles<K, V> {
             final int diskIoBufferSize,
             final List<ChunkFilter> encodingChunkFilters,
             final List<ChunkFilter> decodingChunkFilters) {
-        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
-                "directoryFacade");
-        this.id = Vldtn.requireNonNull(id, "segmentId");
+        this(directoryFacade, new SegmentDirectoryLayout(id),
+                keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize,
+                encodingChunkFilters, decodingChunkFilters);
+    }
+
+    /**
+     * Create accessor for segment files rooted at a segment directory.
+     *
+     * @param segmentRootDirectory directory for the segment files
+     * @param layout               segment file naming layout
+     * @param keyTypeDescriptor    descriptor for key serialization and
+     *                             comparison
+     * @param valueTypeDescriptor  descriptor for value serialization
+     * @param diskIoBufferSize     buffer size in bytes for on-disk operations
+     * @param encodingChunkFilters filters applied when writing chunks
+     * @param decodingChunkFilters filters applied when reading chunks
+     */
+    public SegmentFiles(final AsyncDirectory segmentRootDirectory,
+            final SegmentDirectoryLayout layout,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final int diskIoBufferSize,
+            final List<ChunkFilter> encodingChunkFilters,
+            final List<ChunkFilter> decodingChunkFilters) {
+        this.directoryFacade = Vldtn.requireNonNull(segmentRootDirectory,
+                "segmentRootDirectory");
+        this.layout = Vldtn.requireNonNull(layout, "segmentLayout");
+        this.id = Vldtn.requireNonNull(layout.getSegmentId(), "segmentId");
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
                 "keyTypeDescriptor");
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
@@ -78,7 +100,7 @@ public final class SegmentFiles<K, V> {
      * @return scarce index file name
      */
     String getScarceFileName() {
-        return id.getName() + SCARCE_FILE_NAME_EXTENSION;
+        return layout.getScarceFileName();
     }
 
     /**
@@ -87,7 +109,7 @@ public final class SegmentFiles<K, V> {
      * @return bloom filter file name
      */
     String getBloomFilterFileName() {
-        return id.getName() + BOOM_FILTER_FILE_NAME_EXTENSION;
+        return layout.getBloomFilterFileName();
     }
 
     /**
@@ -96,7 +118,7 @@ public final class SegmentFiles<K, V> {
      * @return index file name
      */
     String getIndexFileName() {
-        return id.getName() + INDEX_FILE_NAME_EXTENSION;
+        return layout.getIndexFileName();
     }
 
     /**
@@ -105,7 +127,7 @@ public final class SegmentFiles<K, V> {
      * @return properties file name
      */
     String getPropertiesFilename() {
-        return id.getName() + PROPERTIES_FILENAME_EXTENSION;
+        return layout.getPropertiesFileName();
     }
 
     /**

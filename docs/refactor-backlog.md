@@ -103,7 +103,7 @@ steps small and introduce feature flags/migration where needed.
       index, scarce, bloom, delta, properties, and lock files.
     - Add tests for directory creation and layout mapping.
 
-[ ] 26 Introduce segment-rooted `SegmentFiles` (Risk: HIGH)
+[x] 26 Introduce segment-rooted `SegmentFiles` (Risk: HIGH)
     - Add a `SegmentFiles` constructor that accepts a segment root
       `AsyncDirectory` (instead of a flat base directory + id).
     - Keep legacy flat layout working (auto-detect existing files, or flag in

@@ -44,6 +44,7 @@ public final class SegmentBuilder<K, V> {
     private final List<ChunkFilter> decodingChunkFilters = new ArrayList<>();
     private Executor maintenanceExecutor;
     private boolean segmentMaintenanceAutoEnabled = true;
+    private boolean segmentRootDirectoryEnabled = false;
 
     /**
      * Creates a new builder with default settings.
@@ -74,6 +75,18 @@ public final class SegmentBuilder<K, V> {
     public SegmentBuilder<K, V> withAsyncDirectory(
             final AsyncDirectory directoryFacade) {
         return withDirectory(directoryFacade);
+    }
+
+    /**
+     * Enables or disables the segment-rooted directory layout.
+     *
+     * @param enabled true to store files under a per-segment subdirectory
+     * @return this builder for chaining
+     */
+    public SegmentBuilder<K, V> withSegmentRootDirectoryEnabled(
+            final boolean enabled) {
+        this.segmentRootDirectoryEnabled = enabled;
+        return this;
     }
 
     /**
@@ -457,7 +470,16 @@ public final class SegmentBuilder<K, V> {
                     encodingChunkFilters, decodingChunkFilters);
         }
         if (segmentFiles == null) {
-            segmentFiles = new SegmentFiles<>(directoryFacade, id,
+            final SegmentId resolvedId = Vldtn.requireNonNull(id,
+                    "segmentId");
+            final SegmentDirectoryLayout layout = new SegmentDirectoryLayout(
+                    resolvedId);
+            final AsyncDirectory segmentDirectory = segmentRootDirectoryEnabled
+                    ? directoryFacade
+                            .openSubDirectory(resolvedId.getName())
+                            .toCompletableFuture().join()
+                    : directoryFacade;
+            segmentFiles = new SegmentFiles<>(segmentDirectory, layout,
                     keyTypeDescriptor, valueTypeDescriptor,
                     segmentConf.getDiskIoBufferSize(),
                     segmentConf.getEncodingChunkFilters(),

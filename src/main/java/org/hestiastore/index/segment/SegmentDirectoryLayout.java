@@ -29,6 +29,15 @@ public final class SegmentDirectoryLayout {
     }
 
     /**
+     * Returns the segment identifier tied to this layout.
+     *
+     * @return segment id
+     */
+    public SegmentId getSegmentId() {
+        return segmentId;
+    }
+
+    /**
      * Returns the main index file name.
      *
      * @return index file name
