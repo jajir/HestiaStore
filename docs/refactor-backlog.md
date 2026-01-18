@@ -117,7 +117,7 @@ steps small and introduce feature flags/migration where needed.
     - Add stale-lock recovery policy (manual delete or metadata timestamp).
     - Add tests for lock contention and cleanup.
 
-[ ] 28 Shared properties file structure (Risk: MEDIUM)
+[x] 28 Shared properties file structure (Risk: MEDIUM)
     - Introduce a common property schema used by segment + segmentindex
       packages (e.g. `IndexPropertiesSchema`).
     - Store schema version and required keys; add migration helpers.
