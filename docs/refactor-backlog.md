@@ -11,7 +11,7 @@
 
 #### High
 
-[ ] UniqueCache should not use read/write reentrant lock. It's proeprty of concurrent hash map.
+[ ] UniqueCache should not use read/write reentrant lock. It's property of concurrent hash map.
 
 #### Medium
 [ ] Stop materializing merged cache lists on read (Risk: MEDIUM)

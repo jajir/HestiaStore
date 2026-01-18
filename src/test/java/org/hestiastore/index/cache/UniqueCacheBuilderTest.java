@@ -138,7 +138,7 @@ class UniqueCacheBuilderTest {
     }
 
     @Test
-    void test_build_with_threadSafe_true_returns_synchronized_cache() {
+    void test_build_with_threadSafe_true_returns_thread_safe_cache() {
         final List<Entry<Integer, String>> data = List.of(
                 Entry.of(1, "a"), Entry.of(2, "b"));
         final EntryIteratorWithCurrent<Integer, String> iterator = new EntryIteratorList<>(
@@ -152,7 +152,7 @@ class UniqueCacheBuilderTest {
                 .withThreadSafe(true)
                 .build();
 
-        assertTrue(cache instanceof UniqueCacheSynchronizenizedAdapter);
+        assertTrue(cache.isThreadSafe());
     }
 
     @Test
@@ -169,7 +169,7 @@ class UniqueCacheBuilderTest {
                 .withThreadSafe(false)
                 .build();
 
-        assertFalse(cache instanceof UniqueCacheSynchronizenizedAdapter);
+        assertFalse(cache.isThreadSafe());
     }
 
     @Test
@@ -191,17 +191,17 @@ class UniqueCacheBuilderTest {
                 .withThreadSafe(false)
                 .buildEmpty();
 
-        assertFalse(cache instanceof UniqueCacheSynchronizenizedAdapter);
+        assertFalse(cache.isThreadSafe());
     }
 
     @Test
-    void test_buildEmpty_threadSafe_true_returns_synchronized_cache() {
+    void test_buildEmpty_threadSafe_true_returns_thread_safe_cache() {
         final UniqueCache<Integer, String> cache = UniqueCache
                 .<Integer, String>builder()
                 .withKeyComparator(Integer::compareTo)
                 .withThreadSafe(true)
                 .buildEmpty();
 
-        assertTrue(cache instanceof UniqueCacheSynchronizenizedAdapter);
+        assertTrue(cache.isThreadSafe());
     }
 }

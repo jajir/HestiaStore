@@ -61,7 +61,7 @@ public class UniqueCacheBuilder<K, V> {
     /**
      * Configure whether the built cache should be thread-safe.
      *
-     * @param threadSafe true to build a synchronized cache
+     * @param threadSafe true to build a thread-safe cache
      * @return this builder
      */
     public UniqueCacheBuilder<K, V> withThreadSafe(final boolean threadSafe) {
@@ -72,10 +72,7 @@ public class UniqueCacheBuilder<K, V> {
     public UniqueCache<K, V> build() {
         Vldtn.requireNonNull(sdf, "sdf");
         UniqueCache<K, V> out = new UniqueCache<>(keyComparator,
-                initialCapacity);
-        if (threadSafe) {
-            out = new UniqueCacheSynchronizenizedAdapter<>(out);
-        }
+                initialCapacity, threadSafe);
         try (EntryIterator<K, V> iterator = sdf.openIterator()) {
             if (!iterator.hasNext()) {
                 throw new IllegalArgumentException(
@@ -90,12 +87,7 @@ public class UniqueCacheBuilder<K, V> {
     }
 
     public UniqueCache<K, V> buildEmpty() {
-        UniqueCache<K, V> out = new UniqueCache<>(keyComparator,
-                initialCapacity);
-        if (threadSafe) {
-            out = new UniqueCacheSynchronizenizedAdapter<>(out);
-        }
-        return out;
+        return new UniqueCache<>(keyComparator, initialCapacity, threadSafe);
     }
 
 }
