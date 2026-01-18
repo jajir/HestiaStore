@@ -176,11 +176,17 @@ It increments when a new immutable view is published (after `flush()` or
 - `EXCLUSIVE_ACCESS` in this document maps to
   `SegmentIteratorIsolation.FULL_ISOLATION` in code.
 - `INTERRUPT_FAST` / `STOP_FAST` map to
-  `SegmentIteratorIsolation.FAIL_FAST` (only FAIL_FAST is implemented today).
+  `SegmentIteratorIsolation.FAIL_FAST`.
 - State transitions are enforced by `SegmentStateMachine` and executed in
   `SegmentImpl.startMaintenance(...)` and `SegmentImpl.runMaintenance(...)`.
 - Maintenance scheduling lives in `SegmentMaintenanceCoordinator` and uses the
   executor from `SegmentRegistry` (`SegmentAsyncExecutor`).
+
+## Iterator Isolation
+- FAIL_FAST: optimistic read; any mutation can invalidate the iterator and
+  terminate iteration early.
+- FULL_ISOLATION: exclusive access for the iterator lifetime; blocks writes,
+  flush/compact, and split on the same segment until closed.
 
 ## Future: MVCC
 Currently unused. MVCC could support iterators that remain consistent across version changes, balancing deadlocks, performance, and memory.

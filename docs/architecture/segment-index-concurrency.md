@@ -45,7 +45,9 @@
 - flushAndWait/compactAndWait: wait for every segment maintenance stage; do not
   call from a segment maintenance executor thread.
 - getStream: captures a snapshot of segment ids and iterates them using the
-  default segment iterator isolation (FAIL_FAST).
+  default segment iterator isolation (FAIL_FAST). An overload allows
+  FULL_ISOLATION for per-segment exclusivity; the stream must be closed to
+  release the segment lock.
 
 ## Maintenance & Splits
 - SegmentMaintenanceCoordinator evaluates thresholds after each write and
@@ -98,6 +100,13 @@ Only one index instance may hold the directory lock at a time.
 - SegmentMaintenanceCoordinator: post-write flush/compact/split decisions.
 - SegmentSplitCoordinator / SegmentAsyncSplitCoordinator: split execution and
   scheduling.
+
+## Iterator Isolation
+- FAIL_FAST: iteration is optimistic; any mutation can invalidate the
+  iterator and terminate the stream early.
+- FULL_ISOLATION: holds exclusive access per segment while its iterator is
+  open; writers, flush/compact, and split on that segment block until the
+  iterator (or stream) is closed.
 
 ## Implementation Mapping
 - Index implementation: IndexInternalConcurrent (caller-thread execution).
