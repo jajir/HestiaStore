@@ -7,6 +7,7 @@ import java.util.function.Consumer;
 import org.hestiastore.index.FileNameUtil;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.properties.IndexPropertiesSchema;
 import org.hestiastore.index.properties.PropertyStore;
 import org.hestiastore.index.properties.PropertyStoreimpl;
 import org.hestiastore.index.properties.PropertyTransaction;
@@ -18,10 +19,10 @@ import org.hestiastore.index.properties.PropertyWriter;
  */
 public class SegmentPropertiesManager {
 
-    private static final String NUMBER_OF_KEYS_IN_DELTA_CACHE = "numberOfKeysInDeltaCache";
-    private static final String NUMBER_OF_KEYS_IN_MAIN_INDEX = "numberOfKeysInMainIndex";
-    private static final String NUMBER_OF_KEYS_IN_SCARCE_INDEX = "numberOfKeysInScarceIndex";
-    private static final String NUMBER_OF_SEGMENT_CACHE_DELTA_FILES = "numberOfSegmentDeltaFiles";
+    private static final String NUMBER_OF_KEYS_IN_DELTA_CACHE = IndexPropertiesSchema.SegmentKeys.NUMBER_OF_KEYS_IN_DELTA_CACHE;
+    private static final String NUMBER_OF_KEYS_IN_MAIN_INDEX = IndexPropertiesSchema.SegmentKeys.NUMBER_OF_KEYS_IN_MAIN_INDEX;
+    private static final String NUMBER_OF_KEYS_IN_SCARCE_INDEX = IndexPropertiesSchema.SegmentKeys.NUMBER_OF_KEYS_IN_SCARCE_INDEX;
+    private static final String NUMBER_OF_SEGMENT_CACHE_DELTA_FILES = IndexPropertiesSchema.SegmentKeys.NUMBER_OF_SEGMENT_CACHE_DELTA_FILES;
     private static final String PROPERTIES_FILENAME_EXTENSION = ".properties";
 
     private final SegmentId id;
@@ -40,6 +41,7 @@ public class SegmentPropertiesManager {
         this.id = Vldtn.requireNonNull(id, "segmentId");
         this.propertyStore = PropertyStoreimpl.fromAsyncDirectory(
                 directoryFacade, getPropertiesFilename(), false);
+        IndexPropertiesSchema.SEGMENT_SCHEMA.ensure(propertyStore);
     }
 
     /**
