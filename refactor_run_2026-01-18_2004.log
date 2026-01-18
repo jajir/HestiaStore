@@ -1,0 +1,14 @@
+==== STEP: Step 25 ====
+error: unexpected argument '--full-auto-true' found
+
+  tip: a similar argument exists: '--full-auto'
+
+Usage: codex exec --full-auto [PROMPT]
+
+For more information, try '--help'.
+==== STEP: Step 25 ====
+error: unexpected value 'true' for '--full-auto' found; no more were expected
+
+Usage: codex exec --full-auto [PROMPT]
+
+For more information, try '--help'.

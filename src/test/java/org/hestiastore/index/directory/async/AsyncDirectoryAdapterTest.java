@@ -95,6 +95,34 @@ class AsyncDirectoryAdapterTest {
         assertTrue(ex.getCause() instanceof IllegalStateException);
     }
 
+    @Test
+    void open_subdirectory_round_trip() throws Exception {
+        final AsyncDirectory asyncDirectory = AsyncDirectoryAdapter
+                .wrap(new MemDirectory(), 1);
+        final AsyncDirectory subDirectory = asyncDirectory
+                .openSubDirectory("child").toCompletableFuture().get(5,
+                        TimeUnit.SECONDS);
+
+        final AsyncFileWriter writer = subDirectory.getFileWriterAsync("f")
+                .toCompletableFuture().get(5, TimeUnit.SECONDS);
+        writer.writeAsync("hi".getBytes(StandardCharsets.ISO_8859_1))
+                .toCompletableFuture().get(5, TimeUnit.SECONDS);
+        writer.close();
+
+        final AsyncFileReader reader = subDirectory.getFileReaderAsync("f")
+                .toCompletableFuture().get(5, TimeUnit.SECONDS);
+        final byte[] buffer = new byte[2];
+        reader.readAsync(buffer).toCompletableFuture().get(5,
+                TimeUnit.SECONDS);
+        assertEquals("hi", new String(buffer, StandardCharsets.ISO_8859_1));
+        reader.close();
+
+        subDirectory.close();
+        asyncDirectory.getFileWriterAsync("root").toCompletableFuture().get(5,
+                TimeUnit.SECONDS).close();
+        asyncDirectory.close();
+    }
+
     /**
      * Minimal {@link FileWriter} that records the thread name executing write
      * operations.
