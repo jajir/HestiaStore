@@ -16,6 +16,7 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -58,7 +59,8 @@ class SegmentsIteratorTest {
     void test_segments_in_one() {
         when(segmentRegistry.getSegment(SEGMENT_ID_17))
                 .thenReturn(SegmentResult.ok(segment17));
-        when(segment17.openIterator()).thenReturn(SegmentResult.ok(entryIterator17));
+        when(segment17.openIterator(SegmentIteratorIsolation.FAIL_FAST))
+                .thenReturn(SegmentResult.ok(entryIterator17));
         when(entryIterator17.hasNext()).thenReturn(true, false);
         when(entryIterator17.next()).thenReturn(new Entry<>("key1", "value1"));
 
@@ -82,13 +84,15 @@ class SegmentsIteratorTest {
     void test_segments_are_two() {
         when(segmentRegistry.getSegment(SEGMENT_ID_17))
                 .thenReturn(SegmentResult.ok(segment17));
-        when(segment17.openIterator()).thenReturn(SegmentResult.ok(entryIterator17));
+        when(segment17.openIterator(SegmentIteratorIsolation.FAIL_FAST))
+                .thenReturn(SegmentResult.ok(entryIterator17));
         when(entryIterator17.hasNext()).thenReturn(true, false);
         when(entryIterator17.next()).thenReturn(new Entry<>("key1", "value1"));
 
         when(segmentRegistry.getSegment(SEGMENT_ID_23))
                 .thenReturn(SegmentResult.ok(segment23));
-        when(segment23.openIterator()).thenReturn(SegmentResult.ok(entryIterator23));
+        when(segment23.openIterator(SegmentIteratorIsolation.FAIL_FAST))
+                .thenReturn(SegmentResult.ok(entryIterator23));
         when(entryIterator23.hasNext()).thenReturn(true, false);
         when(entryIterator23.next()).thenReturn(new Entry<>("key2", "value2"));
 
@@ -118,7 +122,8 @@ class SegmentsIteratorTest {
     void testClose() {
         when(segmentRegistry.getSegment(SEGMENT_ID_17))
                 .thenReturn(SegmentResult.ok(segment17));
-        when(segment17.openIterator()).thenReturn(SegmentResult.ok(entryIterator17));
+        when(segment17.openIterator(SegmentIteratorIsolation.FAIL_FAST))
+                .thenReturn(SegmentResult.ok(entryIterator17));
 
         final ArrayList<SegmentId> tst = new ArrayList<SegmentId>();
         tst.add(SEGMENT_ID_17);
@@ -135,7 +140,8 @@ class SegmentsIteratorTest {
     void test_close_does_throw_when_already_closed() {
         when(segmentRegistry.getSegment(SEGMENT_ID_17))
                 .thenReturn(SegmentResult.ok(segment17));
-        when(segment17.openIterator()).thenReturn(SegmentResult.ok(entryIterator17));
+        when(segment17.openIterator(SegmentIteratorIsolation.FAIL_FAST))
+                .thenReturn(SegmentResult.ok(entryIterator17));
 
         final ArrayList<SegmentId> ids = new ArrayList<>();
         ids.add(SEGMENT_ID_17);
@@ -151,7 +157,8 @@ class SegmentsIteratorTest {
     void test_make_sure_that_lastSegmentIterator_in_not_closed_double_time() {
         when(segmentRegistry.getSegment(SEGMENT_ID_17))
                 .thenReturn(SegmentResult.ok(segment17));
-        when(segment17.openIterator()).thenReturn(SegmentResult.ok(entryIterator17));
+        when(segment17.openIterator(SegmentIteratorIsolation.FAIL_FAST))
+                .thenReturn(SegmentResult.ok(entryIterator17));
         when(entryIterator17.hasNext()).thenReturn(true, false);
         when(entryIterator17.next()).thenReturn(new Entry<>("key1", "value1"));
 
@@ -165,6 +172,27 @@ class SegmentsIteratorTest {
         iterator.close();
 
         verify(entryIterator17, times(1)).close();
+    }
+
+    @Test
+    void test_full_isolation_is_propagated_to_segment() {
+        when(segmentRegistry.getSegment(SEGMENT_ID_17))
+                .thenReturn(SegmentResult.ok(segment17));
+        when(segment17.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
+                .thenReturn(SegmentResult.ok(entryIterator17));
+        when(entryIterator17.hasNext()).thenReturn(true, false);
+        when(entryIterator17.next()).thenReturn(new Entry<>("key1", "value1"));
+
+        final ArrayList<SegmentId> ids = new ArrayList<>();
+        ids.add(SEGMENT_ID_17);
+
+        try (SegmentsIterator<String, String> iterator = new SegmentsIterator<>(
+                ids, segmentRegistry, SegmentIteratorIsolation.FULL_ISOLATION)) {
+            assertTrue(iterator.hasNext());
+            iterator.next();
+        }
+
+        verify(segment17).openIterator(SegmentIteratorIsolation.FULL_ISOLATION);
     }
 
 }

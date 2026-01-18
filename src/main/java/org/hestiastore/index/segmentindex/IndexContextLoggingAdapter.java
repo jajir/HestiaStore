@@ -6,6 +6,7 @@ import java.util.stream.Stream;
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.slf4j.MDC;
 
 /**
@@ -190,6 +191,17 @@ public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         setContext();
         try {
             return index.getStream(segmentWindows);
+        } finally {
+            clearContext();
+        }
+    }
+
+    @Override
+    public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindows,
+            final SegmentIteratorIsolation isolation) {
+        setContext();
+        try {
+            return index.getStream(segmentWindows, isolation);
         } finally {
             clearContext();
         }

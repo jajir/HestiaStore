@@ -7,6 +7,7 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 
 /**
  * Wraps a {@link SegmentIndex} and ensures the internally created
@@ -78,6 +79,12 @@ final class IndexDirectoryClosingAdapter<K, V>
     @Override
     public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindows) {
         return index.getStream(segmentWindows);
+    }
+
+    @Override
+    public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindows,
+            final SegmentIteratorIsolation isolation) {
+        return index.getStream(segmentWindows, isolation);
     }
 
     @Override

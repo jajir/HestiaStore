@@ -111,24 +111,38 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
      * @return
      */
     EntryIterator<K, V> openSegmentIterator(final SegmentId segmentId) {
-        Vldtn.requireNonNull(segmentId, "segmentId");
-        return openIteratorWithRetry(segmentId,
+        return openSegmentIterator(segmentId,
                 SegmentIteratorIsolation.FAIL_FAST);
+    }
+
+    EntryIterator<K, V> openSegmentIterator(final SegmentId segmentId,
+            final SegmentIteratorIsolation isolation) {
+        Vldtn.requireNonNull(segmentId, "segmentId");
+        Vldtn.requireNonNull(isolation, "isolation");
+        return openIteratorWithRetry(segmentId, isolation);
     }
 
     @Override
     public EntryIterator<K, V> openSegmentIterator(
             SegmentWindow segmentWindows) {
-        if (segmentWindows == null) {
-            segmentWindows = SegmentWindow.unbounded();
-        }
+        return openSegmentIterator(segmentWindows,
+                SegmentIteratorIsolation.FAIL_FAST);
+    }
+
+    public EntryIterator<K, V> openSegmentIterator(
+            final SegmentWindow segmentWindows,
+            final SegmentIteratorIsolation isolation) {
+        final SegmentWindow resolvedWindows = segmentWindows == null
+                ? SegmentWindow.unbounded()
+                : segmentWindows;
+        Vldtn.requireNonNull(isolation, "isolation");
         final EntryIterator<K, V> segmentIterator = new SegmentsIterator<>(
-                keyToSegmentMap.getSegmentIds(segmentWindows), segmentRegistry);
+                keyToSegmentMap.getSegmentIds(resolvedWindows), segmentRegistry,
+                isolation);
         if (conf.isContextLoggingEnabled()) {
             return new EntryIteratorLoggingContext<>(segmentIterator, conf);
-        } else {
-            return segmentIterator;
         }
+        return segmentIterator;
     }
 
     @Override

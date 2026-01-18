@@ -9,6 +9,10 @@
     - Problem: segments are cached unbounded; memory grows as segments grow.
     - Fix: implement LRU or size-bounded cache; evict + close segments and
       invalidate resources on eviction.
+[x] 18 Provide index-level FULL_ISOLATION streaming (Risk: MEDIUM)
+    - Add overload or option to request FULL_ISOLATION on index iterators.
+    - Implement iterator that holds exclusivity across segments safely.
+    - Add tests for long-running scans during maintenance.
 
 ## Planned
 
@@ -80,14 +84,66 @@
     - Decide API surface (exception vs status/Optional).
     - Update callers and docs to distinguish "missing" vs "closed".
     - Add tests for CLOSED/ERROR paths.
-[ ] 18 Provide index-level FULL_ISOLATION streaming (Risk: MEDIUM)
-    - Add overload or option to request FULL_ISOLATION on index iterators.
-    - Implement iterator that holds exclusivity across segments safely.
-    - Add tests for long-running scans during maintenance.
 [ ] 19 Propagate MDC context to async ops and stream consumption (Risk: LOW)
     - Capture MDC context on submit and reapply in async tasks.
     - Wrap stream/iterator consumption with MDC scope; clear on close.
     - Add tests asserting `index.name` appears in async logs.
+
+### Segment-per-directory refactor plan (small steps)
+
+[ ] 25 Move segments into per-segment directories (Risk: HIGH)
+    - Goal: each segment lives under its own folder (e.g. `segment-00001/`).
+    - Keep steps small and introduce feature flags/migration where needed.
+
+    Step 0) Create directory API and layout helpers
+    - Add `Directory.openSubDirectory(String)` + `AsyncDirectory.openSubDirectory(String)`
+      (or a dedicated `DirectoryFactory`) and implement in `FsDirectory` /
+      `AsyncDirectoryAdapter`.
+    - Add `SegmentDirectoryLayout` (or similar) that builds names for:
+      index, scarce, bloom, delta, properties, and lock files.
+    - Add tests for directory creation and layout mapping.
+
+    Step 1) Introduce segment-rooted `SegmentFiles`
+    - Add a `SegmentFiles` constructor that accepts a segment root
+      `AsyncDirectory` (instead of a flat base directory + id).
+    - Keep legacy flat layout working (auto-detect existing files, or flag in
+      `SegmentBuilder`).
+    - Update `SegmentBuilder` to create/use the segment root directory.
+    - Add tests that both layouts open the same data correctly.
+
+    Step 2) Add per-segment `.lock` file
+    - Add `segment.lock` (or `.lock`) inside the segment directory.
+    - Acquire lock on segment open; release on close. Fail fast on lock held.
+    - Add stale-lock recovery policy (manual delete or metadata timestamp).
+    - Add tests for lock contention and cleanup.
+
+    Step 3) Shared properties file structure
+    - Introduce a common property schema used by segment + segmentindex
+      packages (e.g. `IndexPropertiesSchema`).
+    - Store schema version and required keys; add migration helpers.
+    - Update `SegmentPropertiesManager` and `IndexConfiguratonStorage`
+      to use the shared schema.
+
+    Step 4) Compact flow for directory layout (publish protocol)
+    - IO phase (`MAINTENANCE_RUNNING`):
+      - Create a new directory, e.g. `segment-00001.next/` or versioned
+        `segment-00001/v2/`.
+      - Write new index/scarce/bloom/cache files there.
+      - Write properties with state `PREPARED` + metadata.
+    - Publish phase (short `FREEZE`):
+      - Mark new directory as `ACTIVE` in properties (or update a pointer
+        file `segment-00001.active`).
+      - Reload `SegmentFiles`/`SegmentResources` to the new root.
+      - Bump version and return to `READY`.
+    - Cleanup:
+      - Delete old directory only after publish and resource reload.
+      - Add startup recovery for `PREPARED` without `ACTIVE`.
+    - Align with items 11/12 (atomic swaps + map updates).
+
+    Step 5) Split + replace updates
+    - Update split/rename logic to use directory swaps or pointer updates.
+    - Ensure registry + `segmentindex` metadata remain consistent.
+    - Add tests for crash recovery and partial swaps.
 
 ## Ready
 
