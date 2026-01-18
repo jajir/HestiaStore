@@ -9,6 +9,7 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
 import org.slf4j.Logger;
@@ -30,6 +31,7 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
 
     private final SegmentRegistry<K, V> segmentRegistry;
     private final List<SegmentId> ids;
+    private final SegmentIteratorIsolation isolation;
     private Entry<K, V> currentEntry = null;
     private Entry<K, V> nextEntry = null;
     private EntryIterator<K, V> currentIterator = null;
@@ -38,9 +40,16 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
 
     SegmentsIterator(final List<SegmentId> ids,
             final SegmentRegistry<K, V> segmentRegistry) {
+        this(ids, segmentRegistry, SegmentIteratorIsolation.FAIL_FAST);
+    }
+
+    SegmentsIterator(final List<SegmentId> ids,
+            final SegmentRegistry<K, V> segmentRegistry,
+            final SegmentIteratorIsolation isolation) {
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
         this.ids = Vldtn.requireNonNull(ids, "ids");
+        this.isolation = Vldtn.requireNonNull(isolation, "isolation");
         nextSegmentIterator();
     }
 
@@ -72,7 +81,7 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
             }
             while (true) {
                 final SegmentResult<EntryIterator<K, V>> result = segment
-                        .openIterator();
+                        .openIterator(isolation);
                 if (result.getStatus() == SegmentResultStatus.OK) {
                     final EntryIterator<K, V> iterator = result.getValue();
                     if (iterator.hasNext()) {

@@ -7,12 +7,13 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 
 /**
  * Default single-threaded implementation of {@link IndexInternal}. It inherits
  * the bulk of the segment-index behavior from {@link SegmentIndexImpl} and only
- * exposes an {@link #getStream(SegmentWindow)} implementation that converts
- * the low-level iterator into a Java {@link Stream}.
+ * exposes {@link #getStream(SegmentWindow, SegmentIteratorIsolation)}
+ * implementations that convert low-level iterators into Java {@link Stream}s.
  *
  * @param <K> key type handled by the index
  * @param <V> value type handled by the index
@@ -33,12 +34,23 @@ public class IndexInternalDefault<K, V> extends SegmentIndexImpl<K, V> {
      */
     @Override
     public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindow) {
+        return getStream(segmentWindow, SegmentIteratorIsolation.FAIL_FAST);
+    }
+
+    /**
+     * Streams over entries with the requested iterator isolation level. The
+     * returned stream is non-parallel and closes the underlying iterator when
+     * the stream is closed by the caller.
+     */
+    @Override
+    public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindow,
+            final SegmentIteratorIsolation isolation) {
         getIndexState().tryPerformOperation();
-        final EntryIterator<K, V> iterator = openSegmentIterator(segmentWindow);
+        final EntryIterator<K, V> iterator = openSegmentIterator(segmentWindow,
+                isolation);
         final EntryIteratorToSpliterator<K, V> spliterator = new EntryIteratorToSpliterator<K, V>(
                 iterator, keyTypeDescriptor);
-        return StreamSupport.stream(spliterator, false).onClose(() -> {
-            iterator.close();
-        });
+        return StreamSupport.stream(spliterator, false)
+                .onClose(iterator::close);
     }
 }

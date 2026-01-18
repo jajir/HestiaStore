@@ -12,6 +12,7 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.junit.jupiter.api.Test;
 
 class IndexInternalDefaultTest {
@@ -28,6 +29,29 @@ class IndexInternalDefaultTest {
 
             try (Stream<Entry<Integer, String>> stream = index
                     .getStream(SegmentWindow.unbounded())) {
+                final List<Entry<Integer, String>> entries = stream.toList();
+                assertEquals(2, entries.size());
+                assertTrue(entries.contains(Entry.of(1, "one")));
+                assertTrue(entries.contains(Entry.of(2, "two")));
+            }
+        } finally {
+            index.close();
+        }
+    }
+
+    @Test
+    void getStreamFullIsolationReturnsInsertedEntries() {
+        final IndexInternalDefault<Integer, String> index = new IndexInternalDefault<>(
+                AsyncDirectoryAdapter.wrap(new MemDirectory()),
+                new TypeDescriptorInteger(), new TypeDescriptorShortString(),
+                buildConf());
+        try {
+            index.put(1, "one");
+            index.put(2, "two");
+
+            try (Stream<Entry<Integer, String>> stream = index.getStream(
+                    SegmentWindow.unbounded(),
+                    SegmentIteratorIsolation.FULL_ISOLATION)) {
                 final List<Entry<Integer, String>> entries = stream.toList();
                 assertEquals(2, entries.size());
                 assertTrue(entries.contains(Entry.of(1, "one")));

@@ -8,6 +8,7 @@ import java.util.stream.Stream;
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 
 /**
  * Adapter that provides async operations by running synchronous calls on a
@@ -86,6 +87,12 @@ public class IndexAsyncAdapter<K, V> extends AbstractCloseableResource
     @Override
     public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindows) {
         return index.getStream(segmentWindows);
+    }
+
+    @Override
+    public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindows,
+            final SegmentIteratorIsolation isolation) {
+        return index.getStream(segmentWindows, isolation);
     }
 
     @Override

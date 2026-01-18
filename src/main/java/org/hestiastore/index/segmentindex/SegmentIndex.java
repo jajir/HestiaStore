@@ -12,6 +12,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 
 /**
  * High-level contract for the segment-index layer that sits above individual
@@ -325,8 +326,28 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * @param segmentWindows allows to limit examined segments. If empty then
      *                       all segments are used.
      * @return stream of all data.
+     * @implNote Equivalent to
+     *           {@link #getStream(SegmentWindow, SegmentIteratorIsolation)}
+     *           with {@link SegmentIteratorIsolation#FAIL_FAST}.
      */
     Stream<Entry<K, V>> getStream(SegmentWindow segmentWindows);
+
+    /**
+     * Streams entries using the requested iterator isolation level.
+     *
+     * @param segmentWindows segment selection to stream
+     * @param isolation iterator isolation mode to use
+     * @return stream of key-value entries from the selected segments
+     */
+    default Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindows,
+            final SegmentIteratorIsolation isolation) {
+        Vldtn.requireNonNull(isolation, "isolation");
+        if (isolation == SegmentIteratorIsolation.FAIL_FAST) {
+            return getStream(segmentWindows);
+        }
+        throw new UnsupportedOperationException(
+                "FULL_ISOLATION streaming is not supported.");
+    }
 
     /**
      * Convenience shortcut for streaming all segments.
@@ -335,6 +356,17 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      */
     default Stream<Entry<K, V>> getStream() {
         return getStream(SegmentWindow.unbounded());
+    }
+
+    /**
+     * Convenience shortcut for streaming all segments with explicit isolation.
+     *
+     * @param isolation iterator isolation mode to use
+     * @return sequential stream of all entries
+     */
+    default Stream<Entry<K, V>> getStream(
+            final SegmentIteratorIsolation isolation) {
+        return getStream(SegmentWindow.unbounded(), isolation);
     }
 
     /**

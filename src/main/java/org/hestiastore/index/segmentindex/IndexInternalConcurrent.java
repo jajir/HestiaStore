@@ -3,11 +3,13 @@ package org.hestiastore.index.segmentindex;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 
 /**
  * Direct, caller-thread implementation of {@link SegmentIndex}.
@@ -29,19 +31,33 @@ public class IndexInternalConcurrent<K, V> extends SegmentIndexImpl<K, V> {
 
     @Override
     public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindow) {
+        return getStream(segmentWindow, SegmentIteratorIsolation.FAIL_FAST);
+    }
+
+    @Override
+    public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindow,
+            final SegmentIteratorIsolation isolation) {
         getIndexState().tryPerformOperation();
         awaitSplitsIdle();
-        final EntryIterator<K, V> iterator = openSegmentIterator(
-                segmentWindow);
-        try {
-            final List<Entry<K, V>> snapshot = new ArrayList<>();
-            while (iterator.hasNext()) {
-                snapshot.add(iterator.next());
+        if (isolation == SegmentIteratorIsolation.FAIL_FAST) {
+            final EntryIterator<K, V> iterator = openSegmentIterator(
+                    segmentWindow, isolation);
+            try {
+                final List<Entry<K, V>> snapshot = new ArrayList<>();
+                while (iterator.hasNext()) {
+                    snapshot.add(iterator.next());
+                }
+                return snapshot.stream();
+            } finally {
+                iterator.close();
             }
-            return snapshot.stream();
-        } finally {
-            iterator.close();
         }
+        final EntryIterator<K, V> iterator = openSegmentIterator(segmentWindow,
+                isolation);
+        final EntryIteratorToSpliterator<K, V> spliterator = new EntryIteratorToSpliterator<K, V>(
+                iterator, keyTypeDescriptor);
+        return StreamSupport.stream(spliterator, false)
+                .onClose(iterator::close);
     }
 
     @Override
