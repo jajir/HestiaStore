@@ -91,19 +91,19 @@
 
 ### Segment-per-directory refactor plan (small steps)
 
-[ ] 25 Move segments into per-segment directories (Risk: HIGH)
-    - Goal: each segment lives under its own folder (e.g. `segment-00001/`).
-    - Keep steps small and introduce feature flags/migration where needed.
+Goal: each segment lives under its own folder (e.g. `segment-00001/`). Keep
+steps small and introduce feature flags/migration where needed.
 
-    Step 0) Create directory API and layout helpers
+[ ] 25 Create directory API and layout helpers (Risk: HIGH)
     - Add `Directory.openSubDirectory(String)` + `AsyncDirectory.openSubDirectory(String)`
-      (or a dedicated `DirectoryFactory`) and implement in `FsDirectory` /
-      `AsyncDirectoryAdapter`.
+      and lifecycle helpers `Directory.mkdir(String)` / `Directory.rmdir(String)`.
+    - Implement in `FsDirectory`, `AsyncDirectoryAdapter`, and in-memory
+      `MemDirectory` equivalents; define semantics for non-empty rmdir.
     - Add `SegmentDirectoryLayout` (or similar) that builds names for:
       index, scarce, bloom, delta, properties, and lock files.
     - Add tests for directory creation and layout mapping.
 
-    Step 1) Introduce segment-rooted `SegmentFiles`
+[ ] 26 Introduce segment-rooted `SegmentFiles` (Risk: HIGH)
     - Add a `SegmentFiles` constructor that accepts a segment root
       `AsyncDirectory` (instead of a flat base directory + id).
     - Keep legacy flat layout working (auto-detect existing files, or flag in
@@ -111,20 +111,20 @@
     - Update `SegmentBuilder` to create/use the segment root directory.
     - Add tests that both layouts open the same data correctly.
 
-    Step 2) Add per-segment `.lock` file
+[ ] 27 Add per-segment `.lock` file (Risk: MEDIUM)
     - Add `segment.lock` (or `.lock`) inside the segment directory.
     - Acquire lock on segment open; release on close. Fail fast on lock held.
     - Add stale-lock recovery policy (manual delete or metadata timestamp).
     - Add tests for lock contention and cleanup.
 
-    Step 3) Shared properties file structure
+[ ] 28 Shared properties file structure (Risk: MEDIUM)
     - Introduce a common property schema used by segment + segmentindex
       packages (e.g. `IndexPropertiesSchema`).
     - Store schema version and required keys; add migration helpers.
     - Update `SegmentPropertiesManager` and `IndexConfiguratonStorage`
       to use the shared schema.
 
-    Step 4) Compact flow for directory layout (publish protocol)
+[ ] 29 Compact flow for directory layout (publish protocol) (Risk: HIGH)
     - IO phase (`MAINTENANCE_RUNNING`):
       - Create a new directory, e.g. `segment-00001.next/` or versioned
         `segment-00001/v2/`.
@@ -140,7 +140,7 @@
       - Add startup recovery for `PREPARED` without `ACTIVE`.
     - Align with items 11/12 (atomic swaps + map updates).
 
-    Step 5) Split + replace updates
+[ ] 30 Split + replace updates (Risk: HIGH)
     - Update split/rename logic to use directory swaps or pointer updates.
     - Ensure registry + `segmentindex` metadata remain consistent.
     - Add tests for crash recovery and partial swaps.
