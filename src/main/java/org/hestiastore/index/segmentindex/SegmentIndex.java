@@ -223,16 +223,18 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     /**
      * Inserts or updates a single entry in the index.
      *
-     * @param key   key to write
-     * @param value value to associate with the key
+     * @param key   key to write (must not be null)
+     * @param value value to associate with the key (must not be null and must
+     *              not be a tombstone value)
      */
     void put(K key, V value);
 
     /**
      * Asynchronously inserts or updates a single entry.
      *
-     * @param key   key to write
-     * @param value value to associate with the key
+     * @param key   key to write (must not be null)
+     * @param value value to associate with the key (must not be null and must
+     *              not be a tombstone value)
      * @return completion that finishes when the write completes
      */
     CompletionStage<Void> putAsync(K key, V value);

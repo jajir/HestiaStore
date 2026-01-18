@@ -20,10 +20,7 @@ import org.hestiastore.index.Vldtn;
  */
 public class UniqueCache<K, V> {
 
-    // ConcurrentHashMap does not allow null values; use a sentinel instead.
-    private static final Object NULL_VALUE = new Object();
-
-    private final Map<K, Object> map;
+    private final Map<K, V> map;
 
     private final Comparator<K> keyComparator;
     private final AtomicInteger size = new AtomicInteger();
@@ -70,7 +67,8 @@ public class UniqueCache<K, V> {
     public void put(final Entry<K, V> entry) {
         Vldtn.requireNonNull(entry, "entry");
         final K key = Vldtn.requireNonNull(entry.getKey(), "entry.key");
-        final Object previous = map.put(key, boxValue(entry.getValue()));
+        final V value = Vldtn.requireNonNull(entry.getValue(), "entry.value");
+        final V previous = map.put(key, value);
         if (previous == null) {
             size.incrementAndGet();
         }
@@ -84,7 +82,7 @@ public class UniqueCache<K, V> {
      */
     public V get(final K key) {
         Vldtn.requireNonNull(key, "key");
-        return unboxValue(map.get(key));
+        return map.get(key);
     }
 
     /**
@@ -160,26 +158,13 @@ public class UniqueCache<K, V> {
             return List.of();
         }
         final List<Entry<K, V>> out = new ArrayList<>(map.size());
-        for (final Map.Entry<K, Object> entry : map.entrySet()) {
-            if (entry == null || entry.getKey() == null) {
-                continue;
-            }
-            out.add(new Entry<>(entry.getKey(),
-                    unboxValue(entry.getValue())));
+        for (final Map.Entry<K, V> entry : map.entrySet()) {
+            out.add(new Entry<>(entry.getKey(), entry.getValue()));
         }
         return out;
     }
 
     boolean isThreadSafe() {
         return threadSafe;
-    }
-
-    private static Object boxValue(final Object value) {
-        return value == null ? NULL_VALUE : value;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T> T unboxValue(final Object value) {
-        return value == NULL_VALUE ? null : (T) value;
     }
 }

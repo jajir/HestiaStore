@@ -48,6 +48,7 @@ class SegmentRegistryTest {
         Mockito.when(conf.getNumberOfSegmentIndexMaintenanceThreads())
                 .thenReturn(1);
         Mockito.when(conf.getNumberOfIndexMaintenanceThreads()).thenReturn(1);
+        Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
         registry = new SegmentRegistry<>(directoryFacade, KEY_DESCRIPTOR,
                 VALUE_DESCRIPTOR, conf);
     }
@@ -127,6 +128,28 @@ class SegmentRegistryTest {
                 .getSegment(segmentId);
         assertSame(SegmentResultStatus.OK, ok.getStatus());
         assertNotNull(ok.getValue());
+    }
+
+    @Test
+    void getSegment_evicts_least_recently_used_when_limit_exceeded() {
+        Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(2);
+        registry.close();
+        registry = new SegmentRegistry<>(directoryFacade, KEY_DESCRIPTOR,
+                VALUE_DESCRIPTOR, conf);
+        stubSegmentConfig();
+        final SegmentId firstId = SegmentId.of(1);
+        final SegmentId secondId = SegmentId.of(2);
+        final SegmentId thirdId = SegmentId.of(3);
+
+        final Segment<Integer, String> first = registry.getSegment(firstId)
+                .getValue();
+        registry.getSegment(secondId);
+        registry.getSegment(thirdId);
+
+        assertTrue(first.wasClosed());
+        final Segment<Integer, String> firstReloaded = registry
+                .getSegment(firstId).getValue();
+        assertNotSame(first, firstReloaded);
     }
 
     private void stubSegmentConfig() {

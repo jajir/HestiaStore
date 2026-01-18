@@ -254,6 +254,8 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
      */
     @Override
     protected void doClose() {
+        gate.beginClose();
+        gate.awaitIdleForClose();
         gate.forceClosed();
         core.close();
     }
