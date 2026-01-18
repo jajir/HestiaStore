@@ -1,9 +1,0 @@
-==== STEP: Step 25 ====
-error: unexpected argument '-y' found
-
-  tip: to pass '-y' as a value, use '-- -y'
-
-Usage: codex [OPTIONS] [PROMPT]
-       codex [OPTIONS] <COMMAND> [ARGS]
-
-For more information, try '--help'.
