@@ -1,5 +1,6 @@
 package org.hestiastore.index.segment;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -12,6 +13,8 @@ final class SegmentConcurrencyGate {
     private final SegmentStateMachine stateMachine = new SegmentStateMachine();
     private final AtomicInteger inFlightReads = new AtomicInteger();
     private final AtomicInteger inFlightWrites = new AtomicInteger();
+    private final AtomicBoolean closing = new AtomicBoolean(false);
+    private final Object closeMonitor = new Object();
 
     /**
      * Returns the current segment state.
@@ -20,6 +23,43 @@ final class SegmentConcurrencyGate {
      */
     SegmentState getState() {
         return stateMachine.getState();
+    }
+
+    /**
+     * Marks the gate as closing to stop admitting new operations.
+     */
+    void beginClose() {
+        if (closing.compareAndSet(false, true)) {
+            signalCloseMonitor();
+        }
+    }
+
+    /**
+     * Returns true when close has been requested.
+     *
+     * @return true when closing is in progress
+     */
+    boolean isClosing() {
+        return closing.get();
+    }
+
+    /**
+     * Waits for all in-flight operations and maintenance to finish.
+     */
+    void awaitIdleForClose() {
+        boolean interrupted = false;
+        synchronized (closeMonitor) {
+            while (hasInFlight() || isStateBlockingClose()) {
+                try {
+                    closeMonitor.wait();
+                } catch (final InterruptedException e) {
+                    interrupted = true;
+                }
+            }
+        }
+        if (interrupted) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     /**
@@ -45,6 +85,7 @@ final class SegmentConcurrencyGate {
      */
     void exitRead() {
         inFlightReads.decrementAndGet();
+        signalCloseMonitor();
     }
 
     /**
@@ -52,6 +93,7 @@ final class SegmentConcurrencyGate {
      */
     void exitWrite() {
         inFlightWrites.decrementAndGet();
+        signalCloseMonitor();
     }
 
     /**
@@ -60,9 +102,13 @@ final class SegmentConcurrencyGate {
      * @return true when freeze and drain succeeded
      */
     boolean tryEnterFreezeAndDrain() {
+        if (closing.get()) {
+            return false;
+        }
         if (!stateMachine.tryEnterFreeze()) {
             return false;
         }
+        signalCloseMonitor();
         return awaitNoInFlight();
     }
 
@@ -72,7 +118,11 @@ final class SegmentConcurrencyGate {
      * @return true when transition succeeded
      */
     boolean enterMaintenanceRunning() {
-        return stateMachine.enterMaintenanceRunning();
+        if (!stateMachine.enterMaintenanceRunning()) {
+            return false;
+        }
+        signalCloseMonitor();
+        return true;
     }
 
     /**
@@ -84,6 +134,7 @@ final class SegmentConcurrencyGate {
         if (!stateMachine.finishMaintenanceToFreeze()) {
             return false;
         }
+        signalCloseMonitor();
         return awaitNoInFlight();
     }
 
@@ -93,7 +144,11 @@ final class SegmentConcurrencyGate {
      * @return true when transition succeeded
      */
     boolean finishFreezeToReady() {
-        return stateMachine.finishFreezeToReady();
+        if (!stateMachine.finishFreezeToReady()) {
+            return false;
+        }
+        signalCloseMonitor();
+        return true;
     }
 
     /**
@@ -101,6 +156,7 @@ final class SegmentConcurrencyGate {
      */
     void forceClosed() {
         stateMachine.forceClosed();
+        signalCloseMonitor();
     }
 
     /**
@@ -108,6 +164,7 @@ final class SegmentConcurrencyGate {
      */
     void fail() {
         stateMachine.fail();
+        signalCloseMonitor();
     }
 
     /**
@@ -135,13 +192,16 @@ final class SegmentConcurrencyGate {
      * @return true when admission succeeded
      */
     private boolean tryEnterOperation(final AtomicInteger counter) {
+        if (closing.get()) {
+            return false;
+        }
         SegmentState state = stateMachine.getState();
         if (!isOperationAllowed(state)) {
             return false;
         }
         counter.incrementAndGet();
         state = stateMachine.getState();
-        if (isOperationAllowed(state)) {
+        if (!closing.get() && isOperationAllowed(state)) {
             return true;
         }
         counter.decrementAndGet();
@@ -167,6 +227,18 @@ final class SegmentConcurrencyGate {
             }
         }
         return stateMachine.getState() == SegmentState.FREEZE;
+    }
+
+    private boolean isStateBlockingClose() {
+        final SegmentState state = stateMachine.getState();
+        return state == SegmentState.FREEZE
+                || state == SegmentState.MAINTENANCE_RUNNING;
+    }
+
+    private void signalCloseMonitor() {
+        synchronized (closeMonitor) {
+            closeMonitor.notifyAll();
+        }
     }
 
     /**

@@ -1,5 +1,8 @@
 package org.hestiastore.index.segmentindex;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,7 +25,9 @@ import org.hestiastore.index.segment.SegmentResourcesImpl;
 
 public class SegmentRegistry<K, V> {
 
-    private final Map<SegmentId, Segment<K, V>> segments = new ConcurrentHashMap<>();
+    private final LinkedHashMap<SegmentId, Segment<K, V>> segments = new LinkedHashMap<>(
+            16, 0.75f, true);
+    private final Object segmentsLock = new Object();
     private final Set<SegmentId> splitsInFlight = ConcurrentHashMap.newKeySet();
 
     private final IndexConfiguration<K, V> conf;
@@ -33,6 +38,7 @@ public class SegmentRegistry<K, V> {
     private final SplitAsyncExecutor splitAsyncExecutor;
     private final ExecutorService maintenanceExecutor;
     private final ExecutorService splitExecutor;
+    private final int maxNumberOfSegmentsInCache;
 
     SegmentRegistry(final AsyncDirectory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
@@ -45,6 +51,12 @@ public class SegmentRegistry<K, V> {
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
         this.conf = Vldtn.requireNonNull(conf, "conf");
+        final int maxSegments = Vldtn
+                .requireNonNull(conf.getMaxNumberOfSegmentsInCache(),
+                        "maxNumberOfSegmentsInCache")
+                .intValue();
+        this.maxNumberOfSegmentsInCache = Vldtn.requireGreaterThanZero(
+                maxSegments, "maxNumberOfSegmentsInCache");
         final Integer maintenanceThreadsConf = conf
                 .getNumberOfSegmentIndexMaintenanceThreads();
         final int threads = maintenanceThreadsConf.intValue();
@@ -72,13 +84,13 @@ public class SegmentRegistry<K, V> {
         if (splitsInFlight.contains(segmentId)) {
             return SegmentResult.busy();
         }
-        final Segment<K, V> out = segments.compute(segmentId,
-                (id, existing) -> {
-                    if (existing == null || existing.wasClosed()) {
-                        return instantiateSegment(id);
-                    }
-                    return existing;
-                });
+        final List<Segment<K, V>> evicted = new ArrayList<>();
+        final Segment<K, V> out;
+        synchronized (segmentsLock) {
+            out = getOrCreateSegmentLocked(segmentId);
+            evictIfNeededLocked(evicted);
+        }
+        closeEvictedSegments(evicted);
         return SegmentResult.ok(out);
     }
 
@@ -96,15 +108,23 @@ public class SegmentRegistry<K, V> {
             final Segment<K, V> expected) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         Vldtn.requireNonNull(expected, "expected");
-        return segments.get(segmentId) == expected;
+        synchronized (segmentsLock) {
+            return segments.get(segmentId) == expected;
+        }
     }
 
     void executeWithRegistryLock(final Runnable action) {
-        Vldtn.requireNonNull(action, "action").run();
+        Vldtn.requireNonNull(action, "action");
+        synchronized (segmentsLock) {
+            action.run();
+        }
     }
 
     <T> T executeWithRegistryLock(final Supplier<T> action) {
-        return Vldtn.requireNonNull(action, "action").get();
+        Vldtn.requireNonNull(action, "action");
+        synchronized (segmentsLock) {
+            return action.get();
+        }
     }
 
     public void removeSegment(final SegmentId segmentId) {
@@ -130,17 +150,24 @@ public class SegmentRegistry<K, V> {
             final Segment<K, V> expected) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         Vldtn.requireNonNull(expected, "expected");
-        if (!segments.remove(segmentId, expected)) {
-            return false;
+        final Segment<K, V> removed;
+        synchronized (segmentsLock) {
+            final Segment<K, V> current = segments.get(segmentId);
+            if (current != expected) {
+                return false;
+            }
+            removed = segments.remove(segmentId);
         }
-        closeSegmentIfNeeded(expected);
-        return true;
+        closeSegmentIfNeeded(removed);
+        return removed != null;
     }
 
     protected Segment<K, V> removeSegmentFromRegistry(
             final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
-        return segments.remove(segmentId);
+        synchronized (segmentsLock) {
+            return segments.remove(segmentId);
+        }
     }
 
     protected Segment<K, V> evictSegmentFromRegistry(
@@ -235,6 +262,33 @@ public class SegmentRegistry<K, V> {
         }
         if (!splitAsyncExecutor.wasClosed()) {
             splitAsyncExecutor.close();
+        }
+    }
+
+    private Segment<K, V> getOrCreateSegmentLocked(final SegmentId segmentId) {
+        Segment<K, V> existing = segments.get(segmentId);
+        if (existing == null || existing.wasClosed()) {
+            existing = instantiateSegment(segmentId);
+            segments.put(segmentId, existing);
+        }
+        return existing;
+    }
+
+    private void evictIfNeededLocked(final List<Segment<K, V>> evicted) {
+        while (segments.size() > maxNumberOfSegmentsInCache) {
+            final Map.Entry<SegmentId, Segment<K, V>> eldest = segments
+                    .entrySet().iterator().next();
+            segments.remove(eldest.getKey());
+            evicted.add(eldest.getValue());
+        }
+    }
+
+    private void closeEvictedSegments(final List<Segment<K, V>> evicted) {
+        if (evicted.isEmpty()) {
+            return;
+        }
+        for (final Segment<K, V> segment : evicted) {
+            closeSegmentIfNeeded(segment);
         }
     }
 

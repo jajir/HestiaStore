@@ -107,6 +107,27 @@ class UniqueCacheTest {
     }
 
     @Test
+    void test_put_with_null_entry_throws() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> cache.put(null));
+        assertEquals("Property 'entry' must not be null.", e.getMessage());
+    }
+
+    @Test
+    void test_put_with_null_key_throws() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> cache.put(Entry.of(null, "value")));
+        assertEquals("Property 'entry.key' must not be null.", e.getMessage());
+    }
+
+    @Test
+    void test_put_with_null_value_throws() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> cache.put(Entry.of(1, null)));
+        assertEquals("Property 'entry.value' must not be null.", e.getMessage());
+    }
+
+    @Test
     void test_get_with_null_key_throws() {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> cache.get(null));

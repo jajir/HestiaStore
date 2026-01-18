@@ -365,6 +365,9 @@ class SegmentImplTest {
             assertNotNull(first.getValue());
             assertEquals(SegmentResultStatus.BUSY, second.getStatus());
             assertNull(second.getValue());
+
+            assertNotNull(executor.task);
+            executor.task.run();
         }
     }
 
@@ -422,6 +425,9 @@ class SegmentImplTest {
 
             assertEquals(SegmentResultStatus.BUSY, compactResult.getStatus());
             assertNull(compactResult.getValue());
+
+            assertNotNull(executor.task);
+            executor.task.run();
         }
     }
 
@@ -462,6 +468,9 @@ class SegmentImplTest {
             assertNotNull(first.getValue());
             assertEquals(SegmentResultStatus.BUSY, second.getStatus());
             assertNull(second.getValue());
+
+            assertNotNull(executor.task);
+            executor.task.run();
         }
     }
 
@@ -517,7 +526,27 @@ class SegmentImplTest {
     }
 
     @Test
-    void maintenance_keeps_closed_state_after_completion() {
+    void close_waits_for_full_isolation_iterator() throws Exception {
+        final SegmentImpl<Integer, String> segment = newSegment(Runnable::run,
+                versionController);
+        final SegmentResult<EntryIterator<Integer, String>> iteratorResult = segment
+                .openIterator(SegmentIteratorIsolation.FULL_ISOLATION);
+
+        assertEquals(SegmentResultStatus.OK, iteratorResult.getStatus());
+        assertNotNull(iteratorResult.getValue());
+
+        final CompletableFuture<Void> closing = CompletableFuture
+                .runAsync(segment::close);
+        assertFalse(closing.isDone());
+
+        iteratorResult.getValue().close();
+        closing.get(1, java.util.concurrent.TimeUnit.SECONDS);
+
+        assertEquals(SegmentState.CLOSED, segment.getState());
+    }
+
+    @Test
+    void maintenance_keeps_closed_state_after_completion() throws Exception {
         final CapturingExecutor executor = new CapturingExecutor();
         final SegmentCompacter<Integer, String> compacter = new SegmentCompacter<>(
                 versionController);
@@ -531,8 +560,13 @@ class SegmentImplTest {
         assertEquals(SegmentResultStatus.OK, result.getStatus());
         assertNotNull(executor.task);
 
-        segment.close();
+        final CompletableFuture<Void> closing = CompletableFuture
+                .runAsync(segment::close);
+        assertFalse(closing.isDone());
+
         executor.task.run();
+
+        closing.get(1, java.util.concurrent.TimeUnit.SECONDS);
 
         assertEquals(SegmentState.CLOSED, segment.getState());
         assertTrue(result.getValue().toCompletableFuture().isDone());
