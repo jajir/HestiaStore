@@ -63,6 +63,7 @@ public final class IndexPropertiesSchema {
         public static final String PROP_INDEX_BUSY_BACKOFF_MILLIS = "indexBusyBackoffMillis";
         public static final String PROP_INDEX_BUSY_TIMEOUT_MILLIS = "indexBusyTimeoutMillis";
         public static final String PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED = "segmentMaintenanceAutoEnabled";
+        public static final String PROP_SEGMENT_ROOT_DIRECTORY_ENABLED = "segmentRootDirectoryEnabled";
         public static final String PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS = "bloomFilterNumberOfHashFunctions";
         public static final String PROP_BLOOM_FILTER_INDEX_SIZE_IN_BYTES = "bloomFilterIndexSizeInBytes";
         public static final String PROP_BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE = "bloomFilterProbabilityOfFalsePositive";
@@ -281,6 +282,10 @@ public final class IndexPropertiesSchema {
                 IndexConfigurationKeys.PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED,
                 view -> String.valueOf(
                         IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_AUTO_ENABLED));
+        defaults.put(
+                IndexConfigurationKeys.PROP_SEGMENT_ROOT_DIRECTORY_ENABLED,
+                view -> String.valueOf(
+                        IndexConfigurationContract.DEFAULT_SEGMENT_ROOT_DIRECTORY_ENABLED));
         defaults.put(
                 IndexConfigurationKeys.PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
                 view -> String.valueOf(

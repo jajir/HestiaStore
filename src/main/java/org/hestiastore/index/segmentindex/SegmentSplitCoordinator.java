@@ -146,10 +146,10 @@ public class SegmentSplitCoordinator<K, V> {
             final SegmentId segmentId, final SegmentId upperSegmentId,
             final SegmentSplitterResult<K, V> result) {
         if (result.isSplit()) {
-            replaceCurrentWithSegment(segmentId, upperSegmentId);
             keyToSegmentMap.insertSegment(result.getMaxKey(),
                     result.getSegmentId());
             keyToSegmentMap.optionalyFlush();
+            replaceCurrentWithSegment(segmentId, upperSegmentId);
             logger.debug("Splitting of segment '{}' to '{}' is done.",
                     segmentId, result.getSegmentId());
             final SplitOutcome outcome = new SplitOutcome(true, segmentId,
@@ -219,6 +219,11 @@ public class SegmentSplitCoordinator<K, V> {
     private void replaceCurrentWithSegment(final SegmentId segmentId,
             final SegmentId replacementSegmentId) {
         segmentRegistry.executeWithRegistryLock(() -> {
+            if (segmentRegistry.isSegmentRootDirectoryEnabled()) {
+                segmentRegistry.swapSegmentDirectories(segmentId,
+                        replacementSegmentId);
+                return;
+            }
             final SegmentPropertiesManager currentProperties = segmentRegistry
                     .newSegmentPropertiesManager(segmentId);
             final SegmentFiles<K, V> currentFiles = segmentRegistry

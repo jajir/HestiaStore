@@ -39,6 +39,8 @@ public class SegmentRegistry<K, V> {
     private final ExecutorService maintenanceExecutor;
     private final ExecutorService splitExecutor;
     private final int maxNumberOfSegmentsInCache;
+    private final boolean segmentRootDirectoryEnabled;
+    private final SegmentDirectorySwap directorySwap;
 
     SegmentRegistry(final AsyncDirectory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
@@ -57,6 +59,11 @@ public class SegmentRegistry<K, V> {
                 .intValue();
         this.maxNumberOfSegmentsInCache = Vldtn.requireGreaterThanZero(
                 maxSegments, "maxNumberOfSegmentsInCache");
+        this.segmentRootDirectoryEnabled = Boolean.TRUE
+                .equals(conf.isSegmentRootDirectoryEnabled());
+        this.directorySwap = segmentRootDirectoryEnabled
+                ? new SegmentDirectorySwap(directoryFacade)
+                : null;
         final Integer maintenanceThreadsConf = conf
                 .getNumberOfSegmentIndexMaintenanceThreads();
         final int threads = maintenanceThreadsConf.intValue();
@@ -178,25 +185,15 @@ public class SegmentRegistry<K, V> {
     SegmentBuilder<K, V> newSegmentBuilder(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         final SegmentConf segmentConf = buildSegmentConf();
-        final SegmentPropertiesManager segmentPropertiesManager = newSegmentPropertiesManager(
-                segmentId);
-        final SegmentFiles<K, V> segmentFiles = newSegmentFiles(segmentId);
-        final SegmentDataSupplier<K, V> segmentDataSupplier = new SegmentDataSupplier<>(
-                segmentFiles, segmentConf);
-        final SegmentResources<K, V> dataProvider = new SegmentResourcesImpl<>(
-                segmentDataSupplier);
-
-        return Segment.<K, V>builder()//
+        final SegmentBuilder<K, V> builder = Segment.<K, V>builder()//
                 .withAsyncDirectory(directoryFacade)//
                 .withId(segmentId)//
                 .withKeyTypeDescriptor(keyTypeDescriptor)//
-                .withSegmentResources(dataProvider)//
                 .withSegmentConf(segmentConf)//
                 .withMaintenanceExecutor(maintenanceExecutor)//
                 .withSegmentMaintenanceAutoEnabled(Boolean.TRUE
                         .equals(conf.isSegmentMaintenanceAutoEnabled()))//
-                .withSegmentFiles(segmentFiles)//
-                .withSegmentPropertiesManager(segmentPropertiesManager)//
+                .withSegmentRootDirectoryEnabled(segmentRootDirectoryEnabled)//
                 .withMaxNumberOfKeysInSegmentWriteCache(
                         conf.getMaxNumberOfKeysInSegmentWriteCache().intValue())//
                 .withMaxNumberOfKeysInSegmentCache(
@@ -212,6 +209,19 @@ public class SegmentRegistry<K, V> {
                 .withBloomFilterIndexSizeInBytes(
                         conf.getBloomFilterIndexSizeInBytes())//
                 .withDiskIoBufferSize(conf.getDiskIoBufferSize());
+        if (!segmentRootDirectoryEnabled) {
+            final SegmentPropertiesManager segmentPropertiesManager = newSegmentPropertiesManager(
+                    segmentId);
+            final SegmentFiles<K, V> segmentFiles = newSegmentFiles(segmentId);
+            final SegmentDataSupplier<K, V> segmentDataSupplier = new SegmentDataSupplier<>(
+                    segmentFiles, segmentConf);
+            final SegmentResources<K, V> dataProvider = new SegmentResourcesImpl<>(
+                    segmentDataSupplier);
+            builder.withSegmentResources(dataProvider)//
+                    .withSegmentFiles(segmentFiles)//
+                    .withSegmentPropertiesManager(segmentPropertiesManager);
+        }
+        return builder;
     }
 
     SegmentFiles<K, V> newSegmentFiles(final SegmentId segmentId) {
@@ -244,10 +254,46 @@ public class SegmentRegistry<K, V> {
     }
 
     protected void deleteSegmentFiles(final SegmentId segmentId) {
+        if (segmentRootDirectoryEnabled) {
+            deleteSegmentRootDirectory(segmentId);
+            return;
+        }
         final SegmentFiles<K, V> segmentFiles = newSegmentFiles(segmentId);
         final SegmentPropertiesManager segmentPropertiesManager = newSegmentPropertiesManager(
                 segmentId);
         segmentFiles.deleteAllFiles(segmentPropertiesManager);
+    }
+
+    boolean isSegmentRootDirectoryEnabled() {
+        return segmentRootDirectoryEnabled;
+    }
+
+    void swapSegmentDirectories(final SegmentId segmentId,
+            final SegmentId replacementSegmentId) {
+        Vldtn.requireNonNull(segmentId, "segmentId");
+        Vldtn.requireNonNull(replacementSegmentId, "replacementSegmentId");
+        if (!segmentRootDirectoryEnabled) {
+            throw new IllegalStateException(
+                    "Segment root directory layout is disabled.");
+        }
+        directorySwap.swap(segmentId, replacementSegmentId);
+    }
+
+    void recoverDirectorySwaps(final List<SegmentId> segmentIds) {
+        Vldtn.requireNonNull(segmentIds, "segmentIds");
+        if (!segmentRootDirectoryEnabled) {
+            return;
+        }
+        for (final SegmentId segmentId : segmentIds) {
+            directorySwap.recoverIfNeeded(segmentId);
+        }
+    }
+
+    private void deleteSegmentRootDirectory(final SegmentId segmentId) {
+        if (directorySwap == null) {
+            return;
+        }
+        directorySwap.deleteSegmentRootDirectory(segmentId);
     }
 
     private void closeSegmentIfNeeded(final Segment<K, V> segment) {
