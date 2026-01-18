@@ -1,0 +1,9 @@
+==== STEP: Step 25 ====
+error: unexpected argument '--exec' found
+
+  tip: to pass '--exec' as a value, use '-- --exec'
+
+Usage: codex [OPTIONS] [PROMPT]
+       codex [OPTIONS] <COMMAND> [ARGS]
+
+For more information, try '--help'.

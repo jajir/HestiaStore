@@ -120,6 +120,13 @@ public final class AsyncDirectoryAdapter extends AbstractCloseableResource
     }
 
     @Override
+    public CompletionStage<AsyncDirectory> openSubDirectory(
+            final String directoryName) {
+        return supply(() -> new AsyncDirectoryAdapter(
+                delegate.openSubDirectory(directoryName), executor, false));
+    }
+
+    @Override
     public CompletionStage<FileLock> getLockAsync(final String fileName) {
         return supply(() -> delegate.getLock(fileName));
     }

@@ -5,6 +5,7 @@ import java.util.concurrent.CompletionStage;
 
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.FileLock;
 
 /**
  * Asynchronous facade over {@link Directory} that routes blocking filesystem
@@ -37,7 +38,13 @@ public interface AsyncDirectory extends CloseableResource {
     CompletionStage<Void> renameFileAsync(String currentFileName,
             String newFileName);
 
-    CompletionStage<org.hestiastore.index.directory.FileLock> getLockAsync(
-            String fileName);
-}
+    /**
+     * Opens a subdirectory for use, creating it if it does not exist.
+     *
+     * @param directoryName required subdirectory name
+     * @return async directory handle for the subdirectory
+     */
+    CompletionStage<AsyncDirectory> openSubDirectory(String directoryName);
 
+    CompletionStage<FileLock> getLockAsync(String fileName);
+}

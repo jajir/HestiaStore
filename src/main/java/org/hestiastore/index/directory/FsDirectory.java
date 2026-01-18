@@ -2,6 +2,7 @@ package org.hestiastore.index.directory;
 
 import java.io.File;
 
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 
 public final class FsDirectory extends AbstractDirectory {
@@ -48,6 +49,75 @@ public final class FsDirectory extends AbstractDirectory {
     @Override
     public FileLock getLock(String fileName) {
         return new FsFileLock(this, fileName);
+    }
+
+    @Override
+    public Directory openSubDirectory(final String directoryName) {
+        Vldtn.requireNonNull(directoryName, "directoryName");
+        final File subdirectory = getFile(directoryName);
+        if (subdirectory.exists()) {
+            if (subdirectory.isFile()) {
+                throw new IndexException(String.format(
+                        "There is required directory but '%s' is file.",
+                        subdirectory.getAbsolutePath()));
+            }
+        } else if (!subdirectory.mkdirs()) {
+            throw new IndexException(String.format(
+                    "Unable to create directory '%s'.",
+                    subdirectory.getAbsolutePath()));
+        }
+        return new FsDirectory(subdirectory);
+    }
+
+    @Override
+    public boolean mkdir(final String directoryName) {
+        Vldtn.requireNonNull(directoryName, "directoryName");
+        final File subdirectory = getFile(directoryName);
+        if (subdirectory.exists()) {
+            if (subdirectory.isFile()) {
+                throw new IndexException(String.format(
+                        "There is required directory but '%s' is file.",
+                        subdirectory.getAbsolutePath()));
+            }
+            return false;
+        }
+        if (!subdirectory.mkdirs()) {
+            throw new IndexException(String.format(
+                    "Unable to create directory '%s'.",
+                    subdirectory.getAbsolutePath()));
+        }
+        return true;
+    }
+
+    @Override
+    public boolean rmdir(final String directoryName) {
+        Vldtn.requireNonNull(directoryName, "directoryName");
+        final File subdirectory = getFile(directoryName);
+        if (!subdirectory.exists()) {
+            return false;
+        }
+        if (subdirectory.isFile()) {
+            throw new IndexException(String.format(
+                    "There is required directory but '%s' is file.",
+                    subdirectory.getAbsolutePath()));
+        }
+        final String[] entries = subdirectory.list();
+        if (entries == null) {
+            throw new IndexException(String.format(
+                    "Unable to list directory '%s'.",
+                    subdirectory.getAbsolutePath()));
+        }
+        if (entries.length > 0) {
+            throw new IndexException(String.format(
+                    "Directory '%s' is not empty.",
+                    subdirectory.getAbsolutePath()));
+        }
+        if (!subdirectory.delete()) {
+            throw new IndexException(String.format(
+                    "Unable to remove directory '%s'.",
+                    subdirectory.getAbsolutePath()));
+        }
+        return true;
     }
 
     @Override

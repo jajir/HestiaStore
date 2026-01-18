@@ -94,7 +94,7 @@
 Goal: each segment lives under its own folder (e.g. `segment-00001/`). Keep
 steps small and introduce feature flags/migration where needed.
 
-[ ] 25 Create directory API and layout helpers (Risk: HIGH)
+[x] 25 Create directory API and layout helpers (Risk: HIGH)
     - Add `Directory.openSubDirectory(String)` + `AsyncDirectory.openSubDirectory(String)`
       and lifecycle helpers `Directory.mkdir(String)` / `Directory.rmdir(String)`.
     - Implement in `FsDirectory`, `AsyncDirectoryAdapter`, and in-memory

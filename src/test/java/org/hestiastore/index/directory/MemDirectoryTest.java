@@ -5,7 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.hestiastore.index.IndexException;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.Directory.Access;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class MemDirectoryTest {
@@ -21,9 +25,20 @@ class MemDirectoryTest {
             + "Storing a copy of the object is better approach in many "
             + "situations.").getBytes();
 
+    private MemDirectory directory;
+
+    @BeforeEach
+    void setUp() {
+        directory = new MemDirectory();
+    }
+
+    @AfterEach
+    void tearDown() {
+        directory = null;
+    }
+
     @Test
     void test_write_and_append() {
-        final MemDirectory directory = new MemDirectory();
         FileWriter fw = directory.getFileWriter("pok");
         fw.write(NAME);
         fw.close();
@@ -41,7 +56,6 @@ class MemDirectoryTest {
 
     @Test
     void test_write_and_overwrite() {
-        final MemDirectory directory = new MemDirectory();
         FileWriter fw = directory.getFileWriter("pok");
         fw.write(NAME);
         fw.close();
@@ -59,7 +73,6 @@ class MemDirectoryTest {
 
     @Test
     void test_fileExists() {
-        final MemDirectory directory = new MemDirectory();
         FileWriter fw = directory.getFileWriter("pok");
         fw.write(NAME);
         fw.close();
@@ -70,7 +83,6 @@ class MemDirectoryTest {
 
     @Test
     void test_fileReader_skip() {
-        final MemDirectory directory = new MemDirectory();
         FileWriter fw = directory.getFileWriter("pok");
         fw.write(TEXT);
         fw.close();
@@ -88,7 +100,6 @@ class MemDirectoryTest {
 
     @Test
     void test_fileReaderSeakable_seek() {
-        final MemDirectory directory = new MemDirectory();
         FileWriter fw = directory.getFileWriter("pok");
         fw.write(TEXT);
         fw.close();
@@ -106,12 +117,38 @@ class MemDirectoryTest {
 
     @Test
     void test_getFileWriter_invalid_cacheSize() {
-        final MemDirectory directory = new MemDirectory();
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> directory.getFileWriter("pok", Access.OVERWRITE, 0));
 
         assertEquals("Buffer size must be greater than zero.", e.getMessage());
 
+    }
+
+    @Test
+    void test_subdirectory_mkdir_rmdir_flow() {
+        assertTrue(directory.mkdir("sub"));
+        assertFalse(directory.mkdir("sub"));
+
+        final Directory subDirectory = directory.openSubDirectory("sub");
+        FileWriter fw = subDirectory.getFileWriter("data");
+        fw.write(NAME);
+        fw.close();
+
+        assertThrows(IndexException.class, () -> directory.rmdir("sub"));
+
+        subDirectory.deleteFile("data");
+        assertTrue(directory.rmdir("sub"));
+        assertFalse(directory.rmdir("sub"));
+    }
+
+    @Test
+    void test_subdirectory_rejects_file_name_conflict() {
+        FileWriter fw = directory.getFileWriter("sub");
+        fw.write(NAME);
+        fw.close();
+
+        assertThrows(IndexException.class,
+                () -> directory.openSubDirectory("sub"));
     }
 
     private String readStr(final FileReader fr, final int length) {

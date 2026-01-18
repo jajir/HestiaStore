@@ -9,11 +9,13 @@ import java.util.stream.Stream;
 
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.Vldtn;
 
 public class MemDirectory implements Directory {
 
     private static final String ERROR_MSG_NO_FILE = "There is no file '%s'";
     private final Map<String, byte[]> data = new HashMap<>();
+    private final Map<String, MemDirectory> directories = new HashMap<>();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final Lock readLock = lock.readLock();
     private final Lock writeLock = lock.writeLock();
@@ -93,6 +95,11 @@ public class MemDirectory implements Directory {
             final String newFileName) {
         writeLock.lock();
         try {
+            if (directories.containsKey(newFileName)) {
+                throw new IndexException(String.format(
+                        "There is required file but '%s' is directory.",
+                        newFileName));
+            }
             if (data.containsKey(currentFileName)) {
                 final byte[] tmp = data.remove(currentFileName);
                 data.put(newFileName, tmp);
@@ -106,6 +113,11 @@ public class MemDirectory implements Directory {
             final Access access) {
         writeLock.lock();
         try {
+            if (directories.containsKey(fileName)) {
+                throw new IndexException(String.format(
+                        "There is required file but '%s' is directory.",
+                        fileName));
+            }
             if (Access.OVERWRITE == access) {
                 data.put(fileName, bytes);
             } else {
@@ -150,6 +162,73 @@ public class MemDirectory implements Directory {
     }
 
     @Override
+    public Directory openSubDirectory(final String directoryName) {
+        Vldtn.requireNonNull(directoryName, "directoryName");
+        writeLock.lock();
+        try {
+            if (data.containsKey(directoryName)) {
+                throw new IndexException(String.format(
+                        "There is required directory but '%s' is file.",
+                        directoryName));
+            }
+            MemDirectory directory = directories.get(directoryName);
+            if (directory == null) {
+                directory = new MemDirectory();
+                directories.put(directoryName, directory);
+            }
+            return directory;
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    @Override
+    public boolean mkdir(final String directoryName) {
+        Vldtn.requireNonNull(directoryName, "directoryName");
+        writeLock.lock();
+        try {
+            if (data.containsKey(directoryName)) {
+                throw new IndexException(String.format(
+                        "There is required directory but '%s' is file.",
+                        directoryName));
+            }
+            if (directories.containsKey(directoryName)) {
+                return false;
+            }
+            directories.put(directoryName, new MemDirectory());
+            return true;
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    @Override
+    public boolean rmdir(final String directoryName) {
+        Vldtn.requireNonNull(directoryName, "directoryName");
+        writeLock.lock();
+        try {
+            if (data.containsKey(directoryName)) {
+                throw new IndexException(String.format(
+                        "There is required directory but '%s' is file.",
+                        directoryName));
+            }
+            final MemDirectory directory = directories.get(directoryName);
+            if (directory == null) {
+                return false;
+            }
+            if (!directory.isEmpty()) {
+                throw new IndexException(
+                        String.format("Directory '%s' is not empty.",
+                                directoryName));
+            }
+            directories.remove(directoryName);
+            return true;
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    @Override
     public boolean isFileExists(final String fileName) {
         readLock.lock();
         try {
@@ -174,6 +253,15 @@ public class MemDirectory implements Directory {
                         String.format("No such file '%s'.", fileName));
             }
             return new MemFileReaderSeekable(fileData);
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    private boolean isEmpty() {
+        readLock.lock();
+        try {
+            return data.isEmpty() && directories.isEmpty();
         } finally {
             readLock.unlock();
         }

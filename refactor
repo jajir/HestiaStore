@@ -1,0 +1,53 @@
+#!/bin/bash
+set -euo pipefail
+
+LOG=refactor_run_$(date +%F_%H%M).log
+exec > >(tee -a "$LOG") 2>&1
+
+step () {
+  local name="$1"
+  echo "==== STEP: $name ===="
+}
+
+run_codex () {
+  local prompt="$1"
+  codex exec  "$prompt"
+}
+
+git_clean_check () {
+  if ! git diff --quiet || ! git diff --cached --quiet; then
+    echo "Working tree dirty (expected)."
+  fi
+}
+
+commit_all () {
+  local msg="$1"
+  git add -A
+  git commit -m "$msg"
+}
+
+step "Step 25"
+run_codex "From docs/refactor-backlog.md execute 25"
+commit_all "refactor: step 25"
+
+step "Step 26"
+run_codex "From docs/refactor-backlog.md execute 26"
+commit_all "refactor: step 26"
+
+step "Step 27"
+run_codex "From docs/refactor-backlog.md execute 27"
+commit_all "refactor: step 27"
+
+step "Step 28"
+run_codex "From docs/refactor-backlog.md execute 28"
+commit_all "refactor: step 28"
+
+step "Step 29"
+run_codex "From docs/refactor-backlog.md execute 29"
+commit_all "refactor: step 29"
+
+step "Step 30"
+run_codex "From docs/refactor-backlog.md execute 30"
+commit_all "refactor: step 30"
+
+echo "ALL DONE"
