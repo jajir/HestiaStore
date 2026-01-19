@@ -7,8 +7,8 @@ import org.hestiastore.index.Vldtn;
  *
  * <p>The IO phase performs long-running disk work while the segment is in
  * MAINTENANCE. The publish phase runs after the gate transitions back to
- * FREEZE and should be short, applying metadata/resource updates before
- * returning to READY.
+ * FREEZE and should be short and memory-only, applying metadata/resource
+ * updates before returning to READY.
  */
 final class SegmentMaintenanceWork {
 

@@ -1,6 +1,7 @@
 package org.hestiastore.index.segment;
 
 import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.Entry;
@@ -79,6 +80,7 @@ final class SegmentCompacter<K, V> {
         Vldtn.requireNonNull(snapshotEntries, "snapshotEntries");
         final SegmentFullWriterTx<K, V> writerTx = segment.openFullWriteTx();
         writeCompaction(segment, snapshotEntries, writerTx);
+        writerTx.commit();
         publishCompaction(segment, writerTx);
     }
 
@@ -104,29 +106,31 @@ final class SegmentCompacter<K, V> {
             writerTx = prepareDirectorySwitch(plan);
         }
         writeCompaction(plan.segment, plan.snapshotEntries, writerTx);
+        writerTx.commit();
+        if (plan.directorySwitch != null) {
+            finalizeDirectorySwitch(plan);
+        }
     }
 
     /**
-     * Commits compaction results, updates version, and logs completion.
+     * Publishes compaction results, updates version, and logs completion.
      *
      * @param segment segment core
-     * @param writerTx full writer transaction to commit
+     * @param writerTx full writer transaction (already committed)
      */
     void publishCompaction(final SegmentCore<K, V> segment,
             final SegmentFullWriterTx<K, V> writerTx) {
         Vldtn.requireNonNull(segment, "segment");
-        Vldtn.requireNonNull(writerTx, "writerTx");
-        writerTx.commit();
         versionController.changeVersion();
         logger.debug("End of compacting '{}'", segment.getId());
     }
 
     void publishCompaction(final CompactionPlan<K, V> plan) {
         Vldtn.requireNonNull(plan, "plan");
-        publishCompaction(plan.segment, plan.writerTx);
         if (plan.directorySwitch != null) {
             applyDirectorySwitch(plan);
         }
+        publishCompaction(plan.segment, plan.writerTx);
     }
 
     /**
@@ -176,19 +180,50 @@ final class SegmentCompacter<K, V> {
         return writerTx;
     }
 
-    private void applyDirectorySwitch(final CompactionPlan<K, V> plan) {
+    private void finalizeDirectorySwitch(final CompactionPlan<K, V> plan) {
         final DirectorySwitch<K, V> directorySwitch = plan.directorySwitch;
+        if (directorySwitch == null) {
+            return;
+        }
         directorySwitch.preparedProperties.setState(SegmentDataState.ACTIVE);
         final SegmentDirectoryLayout layout = new SegmentDirectoryLayout(
                 plan.segment.getId());
         final SegmentDirectoryPointer pointer = new SegmentDirectoryPointer(
                 directorySwitch.rootDirectory, layout);
         pointer.writeActiveDirectory(directorySwitch.preparedDirectoryName);
+    }
+
+    private void applyDirectorySwitch(final CompactionPlan<K, V> plan) {
+        final DirectorySwitch<K, V> directorySwitch = plan.directorySwitch;
         plan.segment.switchActiveDirectory(
                 directorySwitch.preparedDirectoryName,
-                directorySwitch.preparedDirectory);
-        cleanupOldDirectory(directorySwitch, layout.getActivePointerFileName(),
+                directorySwitch.preparedDirectory,
+                directorySwitch.preparedProperties.getPropertyStore());
+    }
+
+    Runnable buildCleanupTask(final CompactionPlan<K, V> plan) {
+        if (plan == null || plan.directorySwitch == null) {
+            return null;
+        }
+        final SegmentDirectoryLayout layout = new SegmentDirectoryLayout(
                 plan.segment.getId());
+        return () -> cleanupOldDirectory(plan.directorySwitch,
+                layout.getActivePointerFileName(), plan.segment.getId());
+    }
+
+    void scheduleCleanup(final CompactionPlan<K, V> plan,
+            final Executor executor) {
+        Vldtn.requireNonNull(executor, "executor");
+        final Runnable cleanup = buildCleanupTask(plan);
+        if (cleanup == null) {
+            return;
+        }
+        try {
+            executor.execute(cleanup);
+        } catch (final RuntimeException e) {
+            logger.warn("Failed to schedule cleanup for segment '{}'",
+                    plan.segment.getId(), e);
+        }
     }
 
     private void cleanupOldDirectory(final DirectorySwitch<K, V> directorySwitch,
