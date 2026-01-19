@@ -103,23 +103,25 @@ public class SegmentSplitCoordinator<K, V> {
                 writerTxFactory);
         final SegmentSplitter.SplitExecution<K, V> execution = splitter
                 .splitWithIterator(lowerSegmentId, upperSegmentId, plan);
+        final SegmentSplitterResult<K, V> result;
         try {
-            final SplitOutcome outcome = doSplit(segment, segmentId,
-                    upperSegmentId, execution.getResult());
-            if (outcome != null) {
-                if (outcome.evictSegmentId != null) {
-                    segmentRegistry.evictSegmentIfSame(outcome.evictSegmentId,
-                            segment);
-                }
-                if (outcome.removeSegmentId != null) {
-                    segmentRegistry.removeSegment(outcome.removeSegmentId);
-                }
-                return outcome.splitApplied;
-            }
-            return false;
+            result = execution.getResult();
         } finally {
             execution.close();
         }
+        final SplitOutcome outcome = doSplit(segment, segmentId,
+                upperSegmentId, result);
+        if (outcome != null) {
+            if (outcome.evictSegmentId != null) {
+                segmentRegistry.evictSegmentIfSame(outcome.evictSegmentId,
+                        segment);
+            }
+            if (outcome.removeSegmentId != null) {
+                segmentRegistry.removeSegment(outcome.removeSegmentId);
+            }
+            return outcome.splitApplied;
+        }
+        return false;
     }
 
     private void compactSegment(final Segment<K, V> segment) {

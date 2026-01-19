@@ -55,9 +55,10 @@ class SegmentRegistryTest {
         Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
         registry = new SegmentRegistry<>(directoryFacade, KEY_DESCRIPTOR,
                 VALUE_DESCRIPTOR, conf);
-        Mockito.when(directoryFacade.getLockAsync(ArgumentMatchers.anyString()))
+        Mockito.lenient()
+                .when(directoryFacade.getLockAsync(ArgumentMatchers.anyString()))
                 .thenReturn(CompletableFuture.completedFuture(segmentLock));
-        Mockito.when(segmentLock.isLocked()).thenReturn(false);
+        Mockito.lenient().when(segmentLock.isLocked()).thenReturn(false);
     }
 
     @AfterEach

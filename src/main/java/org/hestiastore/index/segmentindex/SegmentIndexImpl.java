@@ -170,12 +170,9 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         stats.incGetCx();
 
         final IndexResult<V> result = retryWhileBusy(() -> core.get(key),
-                "get", null, false);
+                "get", null, true);
         if (result.getStatus() == IndexResultStatus.OK) {
             return result.getValue();
-        }
-        if (result.getStatus() == IndexResultStatus.CLOSED) {
-            return null;
         }
         throw newIndexException("get", null, result.getStatus());
     }

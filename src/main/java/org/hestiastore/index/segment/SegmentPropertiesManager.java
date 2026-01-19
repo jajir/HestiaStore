@@ -54,7 +54,10 @@ public class SegmentPropertiesManager {
     private PropertyStore createStore(final AsyncDirectory directoryFacade) {
         final PropertyStore store = PropertyStoreimpl.fromAsyncDirectory(
                 directoryFacade, getPropertiesFilename(), false);
-        IndexPropertiesSchema.SEGMENT_SCHEMA.ensure(store);
+        if (directoryFacade.isFileExistsAsync(getPropertiesFilename())
+                .toCompletableFuture().join()) {
+            IndexPropertiesSchema.SEGMENT_SCHEMA.ensure(store);
+        }
         return store;
     }
 
@@ -299,6 +302,7 @@ public class SegmentPropertiesManager {
      * @param updater callback that mutates the property writer
      */
     private void updateTransaction(final Consumer<PropertyWriter> updater) {
+        IndexPropertiesSchema.SEGMENT_SCHEMA.ensure(propertyStore);
         final PropertyTransaction tx = propertyStore.beginTransaction();
         final PropertyWriter writer = tx.openPropertyWriter();
         updater.accept(writer);
