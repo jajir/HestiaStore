@@ -85,7 +85,7 @@ class IntegrationSegmentIndexIteratorTest {
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
 
         data.stream().forEach(index1::put);
-        index1.compact();
+        index1.compactAndWait();
         logger.debug("verify that after that point no segment "
                 + "is loaded into memory.");
         index1.getStream(SegmentWindow.unbounded()).forEach(entry -> {

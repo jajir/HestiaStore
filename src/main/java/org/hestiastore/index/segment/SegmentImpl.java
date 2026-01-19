@@ -3,6 +3,7 @@ package org.hestiastore.index.segment;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
@@ -152,13 +153,18 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
      */
     @Override
     public SegmentResult<CompletionStage<Void>> compact() {
+        final AtomicReference<SegmentCompacter.CompactionPlan<K, V>> planRef = new AtomicReference<>();
         return maintenanceService.startMaintenance(() -> {
             final SegmentCompacter.CompactionPlan<K, V> plan = segmentCompacter
                     .prepareCompactionPlan(core);
+            planRef.set(plan);
             return new SegmentMaintenanceWork(
                     () -> segmentCompacter.writeCompaction(plan),
                     () -> segmentCompacter.publishCompaction(plan));
-        }, this::scheduleMaintenanceIfNeeded);
+        }, () -> {
+            segmentCompacter.scheduleCleanup(planRef.get(), maintenanceExecutor);
+            scheduleMaintenanceIfNeeded();
+        });
     }
 
     /**

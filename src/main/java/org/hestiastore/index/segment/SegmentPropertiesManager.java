@@ -309,6 +309,17 @@ public class SegmentPropertiesManager {
         tx.close();
     }
 
+    PropertyStore getPropertyStore() {
+        return propertyStore;
+    }
+
+    void switchToStore(final PropertyStore store) {
+        Vldtn.requireNonNull(store, "store");
+        synchronized (propertyLock) {
+            this.propertyStore = store;
+        }
+    }
+
     /**
      * Switches the properties manager to a new directory.
      *
@@ -316,9 +327,7 @@ public class SegmentPropertiesManager {
      */
     void switchDirectory(final AsyncDirectory directoryFacade) {
         Vldtn.requireNonNull(directoryFacade, "directoryFacade");
-        synchronized (propertyLock) {
-            this.propertyStore = createStore(directoryFacade);
-        }
+        switchToStore(createStore(directoryFacade));
     }
 
 }

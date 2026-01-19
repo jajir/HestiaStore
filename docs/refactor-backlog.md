@@ -44,15 +44,6 @@
     - Fix: rebuild map on clear when size exceeds a threshold; add tests.
 
 ### Other refactors (non-OOM)
-
-[ ] 11 Make segment replacement atomic (Risk: HIGH)
-    - Define crash-safe swap protocol (temp names, fsync, rename order).
-    - Implement rename-then-delete flow and keep old files until swap commits.
-    - Add recovery logic for partial swaps and tests with crash/failure hooks.
-[ ] 12 Tie `index.map` updates to segment file swaps (Risk: HIGH)
-    - Introduce a marker/txn file with PREPARED/COMMITTED states.
-    - Write map changes to temp + fsync, then atomically swap on COMMIT.
-    - Reconcile marker on startup to roll forward/backward; add tests.
 [ ] 13 Implement a real registry lock (Risk: MEDIUM)
     - Add an explicit lock around registry mutations + file ops.
     - Replace/rename `executeWithRegistryLock` to actually serialize callers.
@@ -77,11 +68,6 @@
     - Wrap stream/iterator consumption with MDC scope; clear on close.
     - Add tests asserting `index.name` appears in async logs.
 
-### Segment-per-directory refactor plan (small steps)
-
-Goal: each segment lives under its own folder (e.g. `segment-00001/`). Keep
-steps small and introduce feature flags/migration where needed.
-
 ## Ready
 
 - (move items here when they are scoped and ready to execute)
@@ -91,12 +77,9 @@ steps small and introduce feature flags/migration where needed.
 [ ] 20 - segment: from segment index do not call flush; only user or segment decides.
 [ ] 21 - segment: add SegmentSyncAdapters wrapper to retry BUSY with backoff until OK or throw on ERROR/CLOSED.
 [ ] 22 - segment: add configurable BUSY timeout to avoid infinite wait (split waits).
-[ ] 23 - segment: avoid file rename for flush/compact switching; point index to new version.
 [ ] 24 - segment: consider segment per directory.
 
 ## In Progress
-
-- (move items here when actively working)
 
 ## Done (Archive)
 
@@ -166,3 +149,19 @@ steps small and introduce feature flags/migration where needed.
     - Update split/rename logic to use directory swaps or pointer updates.
     - Ensure registry + `segmentindex` metadata remain consistent.
     - Add tests for crash recovery and partial swaps.
+[x] 31 Segment maintenance: separate IO vs publish, publish is memory-only (Risk: HIGH)
+    - Define a maintenance plan for flush/compact with prepared resources.
+    - IO phase performs all filesystem writes (data + properties + markers).
+    - Publish phase only swaps in-memory state and bumps version.
+[x] 32 Compaction: prepared version + pointer marker, no renames (Risk: HIGH)
+    - Write new index/scarce/bloom/delta + properties into a prepared path.
+    - Commit writer tx and delta cleanup in IO phase.
+    - Write ACTIVE pointer/marker in IO after fsync; do not rename directories.
+    - Publish swaps `SegmentFiles`/`SegmentResources` and resets searchers.
+[x] 33 Flush: keep publish phase in-memory only (Risk: MEDIUM)
+    - Keep delta writes + property updates in IO.
+    - Publish only merges frozen cache + updates in-memory stats/version.
+[x] 34 Recovery + cleanup for pointer-based switching (Risk: HIGH)
+    - Resolve PREPARED vs ACTIVE markers on startup.
+    - Cleanup old data after publish (async), not during publish.
+    - Add crash-window + "no IO in publish" tests.
