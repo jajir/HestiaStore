@@ -16,6 +16,7 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.junit.jupiter.api.Test;
 
 class IntegrationSegmentIndexConcurrencyTest {
@@ -124,8 +125,8 @@ class IntegrationSegmentIndexConcurrencyTest {
             final var maint = executor.submit(() -> {
                 start.await();
                 for (int i = 0; i < 5; i++) {
-                    index.flush();
-                    index.compact();
+                    index.flushAndWait();
+                    index.compactAndWait();
                 }
                 return null;
             });
@@ -137,7 +138,9 @@ class IntegrationSegmentIndexConcurrencyTest {
             executor.shutdownNow();
 
             index.flushAndWait();
-            final long count = index.getStream(SegmentWindow.unbounded())
+            index.compactAndWait();
+            final long count = index.getStream(SegmentWindow.unbounded(),
+                    SegmentIteratorIsolation.FULL_ISOLATION)
                     .count();
             assertTrue(count >= 40, "Expected at least 40 entries");
         } finally {

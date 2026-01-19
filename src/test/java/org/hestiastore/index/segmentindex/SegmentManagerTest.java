@@ -12,6 +12,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.FileLock;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.Test;
@@ -32,8 +33,17 @@ class SegmentManagerTest {
     @Mock
     private IndexConfiguration<Integer, String> conf;
 
+    @Mock
+    private FileLock segmentLock;
+
     @Test
     void test_getting_same_segmentId() {
+        org.mockito.Mockito.lenient()
+                .when(directory.getLock(
+                        org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(segmentLock);
+        org.mockito.Mockito.lenient().when(segmentLock.isLocked())
+                .thenReturn(false);
         when(conf.getNumberOfSegmentIndexMaintenanceThreads()).thenReturn(1);
         when(conf.getNumberOfIndexMaintenanceThreads()).thenReturn(1);
         when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
@@ -72,6 +82,12 @@ class SegmentManagerTest {
 
     @Test
     void test_close() {
+        org.mockito.Mockito.lenient()
+                .when(directory.getLock(
+                        org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(segmentLock);
+        org.mockito.Mockito.lenient().when(segmentLock.isLocked())
+                .thenReturn(false);
         when(conf.getNumberOfSegmentIndexMaintenanceThreads()).thenReturn(1);
         when(conf.getNumberOfIndexMaintenanceThreads()).thenReturn(1);
         when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);

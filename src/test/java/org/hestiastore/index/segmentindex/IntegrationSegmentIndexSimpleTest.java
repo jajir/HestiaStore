@@ -78,6 +78,7 @@ class IntegrationSegmentIndexSimpleTest {
             final String value = index2.get(entry.getKey());
             assertEquals(entry.getValue(), value);
         });
+        index2.close();
 
         final List<Entry<Integer, String>> combined = new ArrayList<>();
         for (final SegmentId segmentId : segmentIds) {
@@ -270,14 +271,15 @@ class IntegrationSegmentIndexSimpleTest {
 
     private List<Entry<Integer, String>> getSegmentData(
             final SegmentId segmentId) {
-        final Segment<Integer, String> seg = makeSegment(segmentId);
         final List<Entry<Integer, String>> out = new ArrayList<>();
-        final SegmentResult<EntryIterator<Integer, String>> result = seg
-                .openIterator();
-        assertEquals(SegmentResultStatus.OK, result.getStatus());
-        try (EntryIterator<Integer, String> iterator = result.getValue()) {
-            while (iterator.hasNext()) {
-                out.add(iterator.next());
+        try (Segment<Integer, String> seg = makeSegment(segmentId)) {
+            final SegmentResult<EntryIterator<Integer, String>> result = seg
+                    .openIterator();
+            assertEquals(SegmentResultStatus.OK, result.getStatus());
+            try (EntryIterator<Integer, String> iterator = result.getValue()) {
+                while (iterator.hasNext()) {
+                    out.add(iterator.next());
+                }
             }
         }
         return out;

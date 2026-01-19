@@ -5,10 +5,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.async.AsyncDirectory;
@@ -20,11 +22,15 @@ import org.hestiastore.index.segment.SegmentFiles;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentPropertiesManager;
 import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segment.SegmentResources;
 import org.hestiastore.index.segment.SegmentResourcesImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SegmentRegistry<K, V> {
 
+    private final Logger logger = LoggerFactory.getLogger(getClass());
     private final LinkedHashMap<SegmentId, Segment<K, V>> segments = new LinkedHashMap<>(
             16, 0.75f, true);
     private final Object segmentsLock = new Object();
@@ -41,6 +47,7 @@ public class SegmentRegistry<K, V> {
     private final int maxNumberOfSegmentsInCache;
     private final boolean segmentRootDirectoryEnabled;
     private final SegmentDirectorySwap directorySwap;
+    private final IndexRetryPolicy retryPolicy;
 
     SegmentRegistry(final AsyncDirectory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
@@ -64,6 +71,14 @@ public class SegmentRegistry<K, V> {
         this.directorySwap = segmentRootDirectoryEnabled
                 ? new SegmentDirectorySwap(directoryFacade)
                 : null;
+        final int busyBackoffMillis = sanitizeRetryConf(
+                conf.getIndexBusyBackoffMillis(),
+                IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS);
+        final int busyTimeoutMillis = sanitizeRetryConf(
+                conf.getIndexBusyTimeoutMillis(),
+                IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS);
+        this.retryPolicy = new IndexRetryPolicy(busyBackoffMillis,
+                busyTimeoutMillis);
         final Integer maintenanceThreadsConf = conf
                 .getNumberOfSegmentIndexMaintenanceThreads();
         final int threads = maintenanceThreadsConf.intValue();
@@ -93,9 +108,27 @@ public class SegmentRegistry<K, V> {
         }
         final List<Segment<K, V>> evicted = new ArrayList<>();
         final Segment<K, V> out;
+        final boolean lockedBusy;
         synchronized (segmentsLock) {
-            out = getOrCreateSegmentLocked(segmentId);
-            evictIfNeededLocked(evicted);
+            Segment<K, V> created = null;
+            boolean busy = false;
+            try {
+                created = getOrCreateSegmentLocked(segmentId);
+            } catch (final IllegalStateException e) {
+                if (isSegmentLockConflict(e)) {
+                    busy = true;
+                } else {
+                    throw e;
+                }
+            }
+            lockedBusy = busy;
+            out = created;
+            if (!lockedBusy) {
+                evictIfNeededLocked(evicted);
+            }
+        }
+        if (lockedBusy) {
+            return SegmentResult.busy();
         }
         closeEvictedSegments(evicted);
         return SegmentResult.ok(out);
@@ -298,11 +331,80 @@ public class SegmentRegistry<K, V> {
 
     private void closeSegmentIfNeeded(final Segment<K, V> segment) {
         if (segment != null && !segment.wasClosed()) {
-            segment.close();
+            try {
+                flushPendingWrites(segment);
+            } catch (final RuntimeException e) {
+                logger.warn("Failed to flush segment '{}' before close.",
+                        segment.getId(), e);
+            } finally {
+                segment.close();
+            }
         }
     }
 
+    private void flushPendingWrites(final Segment<K, V> segment) {
+        if (segment.getNumberOfKeysInWriteCache() == 0) {
+            return;
+        }
+        final long startNanos = retryPolicy.startNanos();
+        while (true) {
+            final SegmentResult<CompletionStage<Void>> result = segment.flush();
+            final SegmentResultStatus status = result.getStatus();
+            if (status == SegmentResultStatus.OK) {
+                awaitMaintenanceCompletion(segment.getId(), "flush",
+                        result.getValue());
+                return;
+            }
+            if (status == SegmentResultStatus.CLOSED) {
+                return;
+            }
+            if (status == SegmentResultStatus.BUSY) {
+                retryPolicy.backoffOrThrow(startNanos, "flush",
+                        segment.getId());
+                continue;
+            }
+            throw new IndexException(String.format(
+                    "Segment '%s' failed during flush: %s", segment.getId(),
+                    status));
+        }
+    }
+
+    private void awaitMaintenanceCompletion(final SegmentId segmentId,
+            final String operation, final CompletionStage<Void> completion) {
+        if (completion == null) {
+            return;
+        }
+        try {
+            completion.toCompletableFuture().join();
+        } catch (final RuntimeException e) {
+            throw new IndexException(String.format(
+                    "Segment '%s' failed during %s.", segmentId, operation), e);
+        }
+    }
+
+    private static int sanitizeRetryConf(final Integer configured,
+            final int fallback) {
+        if (configured == null || configured.intValue() < 1) {
+            return fallback;
+        }
+        return configured.intValue();
+    }
+
+    private static boolean isSegmentLockConflict(
+            final IllegalStateException exception) {
+        final String message = exception.getMessage();
+        return message != null && message.contains("already locked");
+    }
+
     public void close() {
+        final List<Segment<K, V>> toClose = new ArrayList<>();
+        synchronized (segmentsLock) {
+            if (!segments.isEmpty()) {
+                toClose.addAll(segments.values());
+                segments.clear();
+            }
+        }
+        closeEvictedSegments(toClose);
         if (!segmentAsyncExecutor.wasClosed()) {
             segmentAsyncExecutor.close();
         }
@@ -321,10 +423,17 @@ public class SegmentRegistry<K, V> {
     }
 
     private void evictIfNeededLocked(final List<Segment<K, V>> evicted) {
-        while (segments.size() > maxNumberOfSegmentsInCache) {
-            final Map.Entry<SegmentId, Segment<K, V>> eldest = segments
-                    .entrySet().iterator().next();
-            segments.remove(eldest.getKey());
+        if (segments.size() <= maxNumberOfSegmentsInCache) {
+            return;
+        }
+        final var iterator = segments.entrySet().iterator();
+        while (segments.size() > maxNumberOfSegmentsInCache
+                && iterator.hasNext()) {
+            final Map.Entry<SegmentId, Segment<K, V>> eldest = iterator.next();
+            if (splitsInFlight.contains(eldest.getKey())) {
+                continue;
+            }
+            iterator.remove();
             evicted.add(eldest.getValue());
         }
     }
