@@ -30,11 +30,9 @@ public class SegmentFilesRenamer {
         final AsyncDirectory dirFacade = from.getAsyncDirectory();
         final String fromSegmentIdName = from.getSegmentIdName();
         final String toSegmentIdName = to.getSegmentIdName();
-        final String fromPrefix = fromSegmentIdName + "-delta-";
-        final String toPrefix = toSegmentIdName + "-delta-";
         fromProperties.getCacheDeltaFileNames().forEach(fileName -> {
-            final String targetFileName = renameDeltaFileName(fromPrefix,
-                    toPrefix, fileName, fromSegmentIdName);
+            final String targetFileName = renameSegmentFileName(
+                    fromSegmentIdName, toSegmentIdName, fileName);
             dirFacade.renameFileAsync(fileName, targetFileName)
                     .toCompletableFuture().join();
         });
@@ -62,14 +60,13 @@ public class SegmentFilesRenamer {
      * @param fromSegmentIdName source segment identifier for validation
      * @return renamed delta file name
      */
-    private String renameDeltaFileName(final String fromPrefix,
-            final String toPrefix, final String fileName,
-            final String fromSegmentIdName) {
-        if (!fileName.startsWith(fromPrefix)) {
-            throw new IndexException("Delta cache file '" + fileName
+    private String renameSegmentFileName(final String fromSegmentIdName,
+            final String toSegmentIdName, final String fileName) {
+        if (!fileName.startsWith(fromSegmentIdName)) {
+            throw new IndexException("Segment file '" + fileName
                     + "' does not belong to segment '" + fromSegmentIdName
-                    + "'. Expected prefix '" + fromPrefix + "'.");
+                    + "'. Expected prefix '" + fromSegmentIdName + "'.");
         }
-        return toPrefix + fileName.substring(fromPrefix.length());
+        return toSegmentIdName + fileName.substring(fromSegmentIdName.length());
     }
 }

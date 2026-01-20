@@ -7,8 +7,6 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.WriteTransaction.WriterFunction;
-import org.hestiastore.index.directory.async.AsyncDirectory;
-import org.hestiastore.index.properties.PropertyStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -234,19 +232,8 @@ final class SegmentCore<K, V> {
         return maintenancePath.getDeltaCacheController();
     }
 
-    void switchActiveDirectory(final String directoryName,
-            final AsyncDirectory directoryFacade) {
-        segmentFiles.switchActiveDirectory(directoryName, directoryFacade);
-        segmentPropertiesManager.switchDirectory(directoryFacade);
-        readPath.resetSegmentIndexSearcher();
-    }
-
-    void switchActiveDirectory(final String directoryName,
-            final AsyncDirectory directoryFacade,
-            final PropertyStore propertyStore) {
-        Vldtn.requireNonNull(propertyStore, "propertyStore");
-        segmentFiles.switchActiveDirectory(directoryName, directoryFacade);
-        segmentPropertiesManager.switchToStore(propertyStore);
+    void switchActiveVersion(final long version) {
+        segmentFiles.switchActiveVersion(version);
         readPath.resetSegmentIndexSearcher();
     }
 

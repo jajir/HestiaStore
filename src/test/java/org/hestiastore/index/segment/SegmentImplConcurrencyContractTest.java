@@ -231,8 +231,7 @@ class SegmentImplConcurrencyContractTest {
     private Segment<Integer, String> newSegment(final int writeCacheSize,
             final Executor maintenanceExecutor) {
         final SegmentBuilder<Integer, String> builder = Segment
-                .<Integer, String>builder()
-                .withAsyncDirectory(
+                .<Integer, String>builder(
                         AsyncDirectoryAdapter.wrap(new MemDirectory()))
                 .withId(SegmentId.of(1))
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())

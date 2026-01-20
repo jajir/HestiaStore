@@ -114,18 +114,18 @@ public class SegmentPropertiesManager {
     }
 
     /**
-     * Returns the version identifier stored with this segment.
+     * Returns the active on-disk version for this segment.
      *
-     * @return segment version
+     * @return active version (0 indicates legacy unversioned files)
      */
     public long getVersion() {
         return propertyStore.snapshot().getLong(SEGMENT_VERSION);
     }
 
     /**
-     * Sets the version identifier for this segment.
+     * Sets the active on-disk version for this segment.
      *
-     * @param version segment version
+     * @param version active version (0 indicates legacy unversioned files)
      */
     public void setVersion(final long version) {
         synchronized (propertyLock) {
@@ -151,11 +151,13 @@ public class SegmentPropertiesManager {
      */
     public String getAndIncreaseDeltaFileName() {
         synchronized (propertyLock) {
-            final int counter = propertyStore.snapshot()
+            final PropertyView view = propertyStore.snapshot();
+            final int counter = view
                     .getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);
+            final long version = view.getLong(SEGMENT_VERSION);
             updateTransaction(writer -> writer.setInt(
                     NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, counter + 1));
-            return getDeltaString(counter);
+            return getDeltaString(version, counter);
         }
     }
 
@@ -166,9 +168,11 @@ public class SegmentPropertiesManager {
      */
     public String getNextDeltaFileName() {
         synchronized (propertyLock) {
-            final int counter = propertyStore.snapshot()
+            final PropertyView view = propertyStore.snapshot();
+            final int counter = view
                     .getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);
-            return getDeltaString(counter);
+            final long version = view.getLong(SEGMENT_VERSION);
+            return getDeltaString(version, counter);
         }
     }
 
@@ -190,11 +194,14 @@ public class SegmentPropertiesManager {
      * @param segmentCacheDeltaFileId delta file numeric id
      * @return delta file name
      */
-    private String getDeltaString(final int segmentCacheDeltaFileId) {
+    private String getDeltaString(final long version,
+            final int segmentCacheDeltaFileId) {
         final String rawId = String.valueOf(segmentCacheDeltaFileId);
         final String paddedId = rawId.length() > 3 ? rawId
                 : FileNameUtil.getPaddedId(segmentCacheDeltaFileId, 3);
-        return id.getName() + "-delta-" + paddedId
+        final String prefix = version <= 0 ? id.getName()
+                : id.getName() + "-v" + version;
+        return prefix + "-delta-" + paddedId
                 + SegmentFiles.CACHE_FILE_NAME_EXTENSION;
     }
 
@@ -207,8 +214,25 @@ public class SegmentPropertiesManager {
         final List<String> out = new ArrayList<>();
         final PropertyView view = propertyStore.snapshot();
         final int lastOne = view.getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);
+        final long version = view.getLong(SEGMENT_VERSION);
         for (int i = 0; i < lastOne; i++) {
-            out.add(getDeltaString(i));
+            out.add(getDeltaString(version, i));
+        }
+        return out;
+    }
+
+    /**
+     * Prepare cache delta file names for the given version.
+     *
+     * @param version version to use for naming
+     * @return sorted cache delta filenames
+     */
+    public List<String> getCacheDeltaFileNames(final long version) {
+        final List<String> out = new ArrayList<>();
+        final int lastOne = propertyStore.snapshot()
+                .getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);
+        for (int i = 0; i < lastOne; i++) {
+            out.add(getDeltaString(version, i));
         }
         return out;
     }
@@ -221,6 +245,18 @@ public class SegmentPropertiesManager {
     public int getDeltaFileCount() {
         return propertyStore.snapshot()
                 .getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);
+    }
+
+    /**
+     * Sets the number of delta files recorded in properties.
+     *
+     * @param count number of delta files
+     */
+    public void setDeltaFileCount(final int count) {
+        synchronized (propertyLock) {
+            updateTransaction(writer -> writer
+                    .setInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, count));
+        }
     }
 
     /**

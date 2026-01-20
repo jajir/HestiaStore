@@ -3,7 +3,6 @@ package org.hestiastore.index.segmentindex;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -13,49 +12,95 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Filter;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class SegmentSplitPipelineTest {
 
-    @Test
-    void runClosesIteratorAndReturnsResult() {
-        final ClosingIterator iterator = new ClosingIterator();
-        final SegmentSplitterResult<String, String> result = new SegmentSplitterResult<>(
-                SegmentId.of(1), "a", "z",
-                SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
+    @Mock
+    private Segment<String, String> segment;
+    @Mock
+    private SegmentSplitterPlan<String, String> plan;
 
-        final Filter<SegmentSplitContext<String, String>, SegmentSplitState<String, String>> step = (
-                ctx, state) -> {
-            state.setIterator(iterator);
-            state.setResult(result);
-            return false;
-        };
+    private SegmentSplitContext<String, String> context;
 
-        final SegmentSplitPipeline<String, String> pipeline = new SegmentSplitPipeline<>(
-                List.of(step));
-        final SegmentSplitContext<String, String> context = new SegmentSplitContext<>(
-                mock(Segment.class), mock(SegmentSplitterPlan.class),
-                SegmentId.of(1), SegmentId.of(2),
-                segmentId -> null);
-
-        final SegmentSplitterResult<String, String> out = pipeline.run(context);
-
-        assertSame(result, out);
-        assertTrue(iterator.closed);
+    @BeforeEach
+    void setUp() {
+        context = new SegmentSplitContext<>(segment, plan, SegmentId.of(1),
+                SegmentId.of(2), segmentId -> null);
     }
 
-    @Test
-    void runThrowsWhenNoResultProvided() {
-        final Filter<SegmentSplitContext<String, String>, SegmentSplitState<String, String>> step = (
-                ctx, state) -> true;
-        final SegmentSplitPipeline<String, String> pipeline = new SegmentSplitPipeline<>(
-                List.of(step));
-        final SegmentSplitContext<String, String> context = new SegmentSplitContext<>(
-                mock(Segment.class), mock(SegmentSplitterPlan.class),
-                SegmentId.of(1), SegmentId.of(2),
-                segmentId -> null);
+    @AfterEach
+    void tearDown() {
+        context = null;
+    }
 
-        assertThrows(IllegalStateException.class, () -> pipeline.run(context));
+    @Nested
+    class RunClosesIteratorAndReturnsResult {
+
+        private SegmentSplitPipeline<String, String> pipeline;
+        private ClosingIterator iterator;
+        private SegmentSplitterResult<String, String> result;
+
+        @BeforeEach
+        void setUp() {
+            iterator = new ClosingIterator();
+            result = new SegmentSplitterResult<>(SegmentId.of(1), "a", "z",
+                    SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
+            final Filter<SegmentSplitContext<String, String>, SegmentSplitState<String, String>> step = (
+                    ctx, state) -> {
+                state.setIterator(iterator);
+                state.setResult(result);
+                return false;
+            };
+            pipeline = new SegmentSplitPipeline<>(List.of(step));
+        }
+
+        @AfterEach
+        void tearDown() {
+            pipeline = null;
+            iterator = null;
+            result = null;
+        }
+
+        @Test
+        void runClosesIteratorAndReturnsResult() {
+            final SegmentSplitterResult<String, String> out = pipeline
+                    .run(context);
+
+            assertSame(result, out);
+            assertTrue(iterator.closed);
+        }
+    }
+
+    @Nested
+    class RunThrowsWhenNoResultProvided {
+
+        private SegmentSplitPipeline<String, String> pipeline;
+
+        @BeforeEach
+        void setUp() {
+            final Filter<SegmentSplitContext<String, String>, SegmentSplitState<String, String>> step = (
+                    ctx, state) -> true;
+            pipeline = new SegmentSplitPipeline<>(List.of(step));
+        }
+
+        @AfterEach
+        void tearDown() {
+            pipeline = null;
+        }
+
+        @Test
+        void runThrowsWhenNoResultProvided() {
+            assertThrows(IllegalStateException.class,
+                    () -> pipeline.run(context));
+        }
     }
 
     private static final class ClosingIterator

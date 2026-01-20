@@ -37,7 +37,8 @@ class SegmentMaintenanceCoordinatorTest {
 
     @BeforeEach
     void setUp() {
-        when(segmentRegistry.getSplitExecutor()).thenReturn(maintenanceExecutor);
+        when(segmentRegistry.getSplitExecutor())
+                .thenReturn(maintenanceExecutor);
         when(conf.getIndexBusyBackoffMillis()).thenReturn(1);
         when(conf.getIndexBusyTimeoutMillis()).thenReturn(1000);
         synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
@@ -78,16 +79,6 @@ class SegmentMaintenanceCoordinatorTest {
         coordinator.handlePostWrite(segment, "key", segmentId, 7L);
 
         verify(segment).getNumberOfKeysInCache();
-    }
-
-    private void prepareEligibleSegment(final SegmentId segmentId) {
-        when(segment.wasClosed()).thenReturn(false);
-        when(segmentRegistry.isSegmentInstance(segmentId, segment))
-                .thenReturn(true);
-        when(keyToSegmentMap.isKeyMappedToSegment("key", segmentId))
-                .thenReturn(true);
-        when(keyToSegmentMap.isMappingValid("key", segmentId, 7L))
-                .thenReturn(true);
     }
 
 }

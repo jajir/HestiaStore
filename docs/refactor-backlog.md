@@ -149,19 +149,18 @@
     - Update split/rename logic to use directory swaps or pointer updates.
     - Ensure registry + `segmentindex` metadata remain consistent.
     - Add tests for crash recovery and partial swaps.
-[x] 31 Segment maintenance: separate IO vs publish, publish is memory-only (Risk: HIGH)
-    - Define a maintenance plan for flush/compact with prepared resources.
-    - IO phase performs all filesystem writes (data + properties + markers).
-    - Publish phase only swaps in-memory state and bumps version.
-[x] 32 Compaction: prepared version + pointer marker, no renames (Risk: HIGH)
-    - Write new index/scarce/bloom/delta + properties into a prepared path.
-    - Commit writer tx and delta cleanup in IO phase.
-    - Write ACTIVE pointer/marker in IO after fsync; do not rename directories.
-    - Publish swaps `SegmentFiles`/`SegmentResources` and resets searchers.
-[x] 33 Flush: keep publish phase in-memory only (Risk: MEDIUM)
-    - Keep delta writes + property updates in IO.
-    - Publish only merges frozen cache + updates in-memory stats/version.
-[x] 34 Recovery + cleanup for pointer-based switching (Risk: HIGH)
-    - Resolve PREPARED vs ACTIVE markers on startup.
-    - Cleanup old data after publish (async), not during publish.
-    - Add crash-window + "no IO in publish" tests.
+[x] 31 Segment layout uses versioned file names in a single directory (Risk: HIGH)
+    - Name index/scarce/bloom/delta as `segment-00000-vN.*` (v0 keeps legacy).
+    - Store the active version in `segment-00000.properties` (no `.active` pointer).
+    - Keep legacy unversioned files readable as version 0.
+[x] 32 Builder/files treat the provided directory as the segment home (Risk: HIGH)
+    - Require `Segment.builder(AsyncDirectory)` for construction.
+    - Lock + properties live inside the segment directory.
+    - Resolve active version from properties or detected index files.
+[x] 33 Compaction/flush publish is memory-only (Risk: HIGH)
+    - IO phase writes versioned files and property updates.
+    - Publish swaps in-memory version/resources and bumps iterator version.
+    - Cleanup old version files asynchronously.
+[x] 34 Registry/tests align with single-directory versioning (Risk: MEDIUM)
+    - Registry passes segment directories; no active-directory switching.
+    - Update tests to accept versioned names and per-segment directories.

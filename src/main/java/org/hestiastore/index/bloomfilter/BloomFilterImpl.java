@@ -58,25 +58,7 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
             throw new IllegalArgumentException(
                     "Number of hash function cant be '0'");
         }
-        if (isExists() && indexSizeInBytes > 0) {
-            try (FileReader reader = new AsyncFileReaderBlockingAdapter(
-                    directoryFacade
-                            .getFileReaderAsync(bloomFilterFileName,
-                                    diskIoBufferSize)
-                            .toCompletableFuture().join())) {
-                final byte[] data = new byte[indexSizeInBytes];
-                final int readed = reader.read(data);
-                if (indexSizeInBytes != readed) {
-                    throw new IllegalStateException(String.format(
-                            "Bloom filter data from file '%s' wasn't loaded,"
-                                    + " index expected size is '%s' but '%s' was loaded",
-                            bloomFilterFileName, indexSizeInBytes, readed));
-                }
-                hash = new Hash(new BitArray(data), numberOfHashFunctions);
-            }
-        } else {
-            hash = null;
-        }
+        hash = loadHashIfPresent();
         logger.debug("Opening bloom filter for '{}'", relatedObjectName);
     }
 
@@ -96,6 +78,32 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
     private boolean isExists() {
         return directoryFacade.isFileExistsAsync(bloomFilterFileName)
                 .toCompletableFuture().join();
+    }
+
+    private Hash loadHashIfPresent() {
+        if (!isExists() || indexSizeInBytes <= 0) {
+            return null;
+        }
+        try (FileReader reader = new AsyncFileReaderBlockingAdapter(
+                directoryFacade
+                        .getFileReaderAsync(bloomFilterFileName,
+                                diskIoBufferSize)
+                        .toCompletableFuture().join())) {
+            final byte[] data = new byte[indexSizeInBytes];
+            final int readed = reader.read(data);
+            if (indexSizeInBytes != readed) {
+                throw new IllegalStateException(String.format(
+                        "Bloom filter data from file '%s' wasn't loaded,"
+                                + " index expected size is '%s' but '%s' was loaded",
+                        bloomFilterFileName, indexSizeInBytes, readed));
+            }
+            return new Hash(new BitArray(data), numberOfHashFunctions);
+        } catch (final RuntimeException e) {
+            if (!isExists()) {
+                return null;
+            }
+            throw e;
+        }
     }
 
     @Override

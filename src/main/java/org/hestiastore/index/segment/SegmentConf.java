@@ -9,14 +9,29 @@ import org.hestiastore.index.chunkstore.ChunkFilter;
  */
 public class SegmentConf {
 
+    /**
+     * Sentinel value for unset Bloom filter hash function count.
+     */
+    public static final int UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS = -1;
+
+    /**
+     * Sentinel value for unset Bloom filter index size.
+     */
+    public static final int UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES = -1;
+
+    /**
+     * Sentinel value for unset Bloom filter false positive probability.
+     */
+    public static final double UNSET_BLOOM_FILTER_PROBABILITY = -1D;
+
     private final int maxNumberOfKeysInSegmentWriteCache;
     private final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
     private final int maxNumberOfKeysInSegmentCache;
     private final int maxNumberOfKeysInChunk;
-    private final Integer bloomFilterNumberOfHashFunctions;
-    private final Integer bloomFilterIndexSizeInBytes;
-    private final Double bloomFilterProbabilityOfFalsePositive;
-    private final Integer diskIoBufferSize;
+    private final int bloomFilterNumberOfHashFunctions;
+    private final int bloomFilterIndexSizeInBytes;
+    private final double bloomFilterProbabilityOfFalsePositive;
+    private final int diskIoBufferSize;
     private final List<ChunkFilter> encodingChunkFilters;
     private final List<ChunkFilter> decodingChunkFilters;
 
@@ -28,10 +43,12 @@ public class SegmentConf {
      *        allowed during maintenance
      * @param maxNumberOfKeysInSegmentCache max segment cache size
      * @param maxNumberOfKeysInChunk max number of keys in a chunk
-     * @param bloomFilterNumberOfHashFunctions Bloom filter hash count
-     * @param bloomFilterIndexSizeInBytes Bloom filter index size in bytes
+     * @param bloomFilterNumberOfHashFunctions Bloom filter hash count or
+     *        {@link #UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS}
+     * @param bloomFilterIndexSizeInBytes Bloom filter index size in bytes or
+     *        {@link #UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES}
      * @param bloomFilterProbabilityOfFalsePositive Bloom filter false positive
-     *        probability
+     *        probability or {@link #UNSET_BLOOM_FILTER_PROBABILITY}
      * @param diskIoBufferSize disk I/O buffer size in bytes
      * @param encodingChunkFilters chunk filters applied during encoding
      * @param decodingChunkFilters chunk filters applied during decoding
@@ -40,10 +57,10 @@ public class SegmentConf {
             final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
             final int maxNumberOfKeysInSegmentCache,
             final int maxNumberOfKeysInChunk,
-            final Integer bloomFilterNumberOfHashFunctions,
-            final Integer bloomFilterIndexSizeInBytes,
-            final Double bloomFilterProbabilityOfFalsePositive,
-            final Integer diskIoBufferSize,
+            final int bloomFilterNumberOfHashFunctions,
+            final int bloomFilterIndexSizeInBytes,
+            final double bloomFilterProbabilityOfFalsePositive,
+            final int diskIoBufferSize,
             final List<ChunkFilter> encodingChunkFilters,
             final List<ChunkFilter> decodingChunkFilters) {
         this.maxNumberOfKeysInSegmentWriteCache = maxNumberOfKeysInSegmentWriteCache;
@@ -108,34 +125,37 @@ public class SegmentConf {
      *
      * @return max keys in a chunk
      */
-    Integer getMaxNumberOfKeysInChunk() {
+    int getMaxNumberOfKeysInChunk() {
         return maxNumberOfKeysInChunk;
     }
 
     /**
      * Returns the Bloom filter hash function count.
      *
-     * @return number of hash functions
+     * @return number of hash functions or
+     *         {@link #UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS}
      */
-    Integer getBloomFilterNumberOfHashFunctions() {
+    int getBloomFilterNumberOfHashFunctions() {
         return bloomFilterNumberOfHashFunctions;
     }
 
     /**
      * Returns the Bloom filter index size in bytes.
      *
-     * @return index size in bytes
+     * @return index size in bytes or
+     *         {@link #UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES}
      */
-    Integer getBloomFilterIndexSizeInBytes() {
+    int getBloomFilterIndexSizeInBytes() {
         return bloomFilterIndexSizeInBytes;
     }
 
     /**
      * Returns the configured Bloom filter false positive probability.
      *
-     * @return false positive probability
+     * @return false positive probability or
+     *         {@link #UNSET_BLOOM_FILTER_PROBABILITY}
      */
-    public Double getBloomFilterProbabilityOfFalsePositive() {
+    public double getBloomFilterProbabilityOfFalsePositive() {
         return bloomFilterProbabilityOfFalsePositive;
     }
 
@@ -144,8 +164,36 @@ public class SegmentConf {
      *
      * @return buffer size in bytes
      */
-    public Integer getDiskIoBufferSize() {
+    public int getDiskIoBufferSize() {
         return diskIoBufferSize;
+    }
+
+    /**
+     * Returns whether Bloom filter hash function count was configured.
+     *
+     * @return true when hash count is set
+     */
+    boolean hasBloomFilterNumberOfHashFunctions() {
+        return bloomFilterNumberOfHashFunctions != UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS;
+    }
+
+    /**
+     * Returns whether Bloom filter index size was configured.
+     *
+     * @return true when index size is set
+     */
+    boolean hasBloomFilterIndexSizeInBytes() {
+        return bloomFilterIndexSizeInBytes != UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES;
+    }
+
+    /**
+     * Returns whether Bloom filter false positive probability was configured.
+     *
+     * @return true when probability is set
+     */
+    boolean hasBloomFilterProbabilityOfFalsePositive() {
+        return Double.compare(bloomFilterProbabilityOfFalsePositive,
+                UNSET_BLOOM_FILTER_PROBABILITY) != 0;
     }
 
     /**

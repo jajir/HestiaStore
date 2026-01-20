@@ -48,7 +48,6 @@ public class IndexConfiguration<K, V> {
     private final Integer indexBusyBackoffMillis;
     private final Integer indexBusyTimeoutMillis;
     private final Boolean segmentMaintenanceAutoEnabled;
-    private final Boolean segmentRootDirectoryEnabled;
 
     private final Integer bloomFilterNumberOfHashFunctions;
     private final Integer bloomFilterIndexSizeInBytes;
@@ -93,7 +92,6 @@ public class IndexConfiguration<K, V> {
             final Integer indexBusyBackoffMillis,
             final Integer indexBusyTimeoutMillis,
             final Boolean segmentMaintenanceAutoEnabled,
-            final Boolean segmentRootDirectoryEnabled,
             final List<ChunkFilter> encodingChunkFilters,
             final List<ChunkFilter> decodingChunkFilters) {
         this.keyClass = keyClass;
@@ -115,7 +113,6 @@ public class IndexConfiguration<K, V> {
         this.indexBusyBackoffMillis = indexBusyBackoffMillis;
         this.indexBusyTimeoutMillis = indexBusyTimeoutMillis;
         this.segmentMaintenanceAutoEnabled = segmentMaintenanceAutoEnabled;
-        this.segmentRootDirectoryEnabled = segmentRootDirectoryEnabled;
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
         this.bloomFilterProbabilityOfFalsePositive = bloomFilterProbabilityOfFalsePositive;
@@ -271,15 +268,6 @@ public class IndexConfiguration<K, V> {
      */
     public Boolean isSegmentMaintenanceAutoEnabled() {
         return segmentMaintenanceAutoEnabled;
-    }
-
-    /**
-     * Returns whether segments use per-segment root directories.
-     *
-     * @return true when segment root directories are enabled
-     */
-    public Boolean isSegmentRootDirectoryEnabled() {
-        return segmentRootDirectoryEnabled;
     }
 
     public Integer getMaxNumberOfSegmentsInCache() {

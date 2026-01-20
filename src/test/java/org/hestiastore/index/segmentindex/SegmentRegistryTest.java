@@ -7,14 +7,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
-import org.hestiastore.index.directory.FileLock;
+import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentResult;
@@ -23,7 +22,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -36,14 +34,10 @@ class SegmentRegistryTest {
     private static final List<ChunkFilter> FILTERS = List
             .of(new ChunkFilterDoNothing());
 
-    @Mock
     private AsyncDirectory directoryFacade;
 
     @Mock
     private IndexConfiguration<Integer, String> conf;
-
-    @Mock
-    private FileLock segmentLock;
 
     private SegmentRegistry<Integer, String> registry;
 
@@ -53,12 +47,9 @@ class SegmentRegistryTest {
                 .thenReturn(1);
         Mockito.when(conf.getNumberOfIndexMaintenanceThreads()).thenReturn(1);
         Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
+        directoryFacade = AsyncDirectoryAdapter.wrap(new MemDirectory());
         registry = new SegmentRegistry<>(directoryFacade, KEY_DESCRIPTOR,
                 VALUE_DESCRIPTOR, conf);
-        Mockito.lenient()
-                .when(directoryFacade.getLockAsync(ArgumentMatchers.anyString()))
-                .thenReturn(CompletableFuture.completedFuture(segmentLock));
-        Mockito.lenient().when(segmentLock.isLocked()).thenReturn(false);
     }
 
     @AfterEach
@@ -174,8 +165,5 @@ class SegmentRegistryTest {
         Mockito.when(conf.getDiskIoBufferSize()).thenReturn(1024);
         Mockito.when(conf.getEncodingChunkFilters()).thenReturn(FILTERS);
         Mockito.when(conf.getDecodingChunkFilters()).thenReturn(FILTERS);
-        Mockito.when(
-                directoryFacade.isFileExistsAsync(ArgumentMatchers.anyString()))
-                .thenReturn(CompletableFuture.completedFuture(false));
     }
 }

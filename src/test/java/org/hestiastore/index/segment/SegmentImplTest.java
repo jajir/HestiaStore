@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -108,7 +109,9 @@ class SegmentImplTest {
 
     @BeforeEach
     void setUpSubject() {
-        conf = new SegmentConf(50, 100, 1000, 3, 0, 0, 0.01, 1024,
+        conf = new SegmentConf(50, 100, 1000, 3,
+                SegmentConf.UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
+                SegmentConf.UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES, 0.01, 1024,
                 List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()));
         when(segmentFiles.getId()).thenReturn(segmentId);
@@ -116,8 +119,10 @@ class SegmentImplTest {
         when(segmentFiles.getValueTypeDescriptor()).thenReturn(tds);
         when(segmentFiles.getIndexFile()).thenReturn(chunkPairFile);
         when(segmentFiles.getIndexFileName()).thenReturn("segment.index");
+        when(segmentFiles.getBloomFilterFileName()).thenReturn("segment.bloom");
         when(segmentFiles.getAsyncDirectory()).thenReturn(
                 AsyncDirectoryAdapter.wrap(directory));
+        when(segmentFiles.copyWithVersion(anyLong())).thenReturn(segmentFiles);
         when(directory.isFileExists("segment.index")).thenReturn(true);
         when(directory.getFileReaderSeekable("segment.index"))
                 .thenReturn(seekableReader);

@@ -69,7 +69,7 @@ class IntegrationSegmentIndexSimpleTest {
                 asyncDirectory, tdi);
         final List<SegmentId> segmentIds = keyToSegmentMap.getSegmentIds();
         assertEquals(expectedFileCount(segmentIds.size()),
-                numberOfFilesInDirectoryP(directory));
+                numberOfFilesInDirectoryP(directory, segmentIds));
         keyToSegmentMap.close();
         asyncDirectory.close();
 
@@ -255,13 +255,32 @@ class IntegrationSegmentIndexSimpleTest {
         return SegmentIndex.create(directory, conf);
     }
 
-    private int numberOfFilesInDirectoryP(final Directory directory) {
-        final AtomicInteger cx = new AtomicInteger(0);
-        directory.getFileNames().sorted().forEach(fileName -> {
-            logger.debug("Found file name {}", fileName);
-            cx.incrementAndGet();
-        });
-        return cx.get();
+    private int numberOfFilesInDirectoryP(final Directory directory,
+            final List<SegmentId> segmentIds) {
+        final AtomicInteger count = new AtomicInteger(0);
+        directory.getFileNames()
+                .filter(name -> !name.endsWith(".lock"))
+                .sorted()
+                .forEach(fileName -> {
+                    logger.debug("Found file name {}", fileName);
+                    count.incrementAndGet();
+                });
+        for (final SegmentId segmentId : segmentIds) {
+            if (!directory.isFileExists(segmentId.getName())) {
+                continue;
+            }
+            final Directory segmentDirectory = directory
+                    .openSubDirectory(segmentId.getName());
+            segmentDirectory.getFileNames()
+                    .filter(name -> !name.endsWith(".lock"))
+                    .sorted()
+                    .forEach(fileName -> {
+                        logger.debug("Found file name {}/{}",
+                                segmentId.getName(), fileName);
+                        count.incrementAndGet();
+                    });
+        }
+        return count.get();
     }
 
     private int expectedFileCount(final int segmentCount) {
@@ -286,10 +305,12 @@ class IntegrationSegmentIndexSimpleTest {
     }
 
     private Segment<Integer, String> makeSegment(final SegmentId segmentId) {
-        return Segment.<Integer, String>builder()//
-                .withAsyncDirectory(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(directory))//
+        final org.hestiastore.index.directory.async.AsyncDirectory asyncDirectory = org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                .wrap(directory);
+        final org.hestiastore.index.directory.async.AsyncDirectory segmentDirectory = asyncDirectory
+                .openSubDirectory(segmentId.getName()).toCompletableFuture()
+                .join();
+        return Segment.<Integer, String>builder(segmentDirectory)//
                 .withId(segmentId)//
                 .withDiskIoBufferSize(DISK_IO_BUFFER_SIZE)//
                 .withKeyTypeDescriptor(tdi)//

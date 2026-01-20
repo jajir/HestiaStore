@@ -33,7 +33,6 @@ public interface IndexConfigurationContract {
     int DEFAULT_INDEX_BUSY_BACKOFF_MILLIS = 5;
     int DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS = 30_000;
     boolean DEFAULT_SEGMENT_MAINTENANCE_AUTO_ENABLED = true;
-    boolean DEFAULT_SEGMENT_ROOT_DIRECTORY_ENABLED = false;
 
     default int getMaxNumberOfKeysInSegmentCache() {
         return MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
@@ -107,10 +106,6 @@ public interface IndexConfigurationContract {
 
     default boolean isSegmentMaintenanceAutoEnabled() {
         return DEFAULT_SEGMENT_MAINTENANCE_AUTO_ENABLED;
-    }
-
-    default boolean isSegmentRootDirectoryEnabled() {
-        return DEFAULT_SEGMENT_ROOT_DIRECTORY_ENABLED;
     }
 
     default boolean isContextLoggingEnabled() {

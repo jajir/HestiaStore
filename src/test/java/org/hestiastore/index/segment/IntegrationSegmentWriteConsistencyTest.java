@@ -64,7 +64,7 @@ class IntegrationSegmentWriteConsistencyTest {
 
         verifySegmentData(segment, data);
         // no data are flushed to disk
-        verifyNumberOfFiles(directory, 0);
+        verifyNumberOfFiles(directory, 1);
     }
 
     @Test
@@ -99,7 +99,7 @@ class IntegrationSegmentWriteConsistencyTest {
 
     private Segment<Integer, String> makeSegment(final Directory directory,
             final SegmentId id) {
-        return Segment.<Integer, String>builder().withAsyncDirectory(
+        return Segment.<Integer, String>builder(
                 org.hestiastore.index.directory.async.AsyncDirectoryAdapter
                         .wrap(directory))//
                 .withId(id)//

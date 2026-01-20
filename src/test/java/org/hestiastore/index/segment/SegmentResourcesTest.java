@@ -1,39 +1,49 @@
 package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.bloomfilter.BloomFilter;
 import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class SegmentResourcesTest {
+
+    @Mock
+    private SegmentDataSupplier<Integer, String> supplier;
+    @Mock
+    private BloomFilter<Integer> bloomFilter1;
+    @Mock
+    private BloomFilter<Integer> bloomFilter2;
+    @Mock
+    private ScarceSegmentIndex<Integer> scarce1;
+    @Mock
+    private ScarceSegmentIndex<Integer> scarce2;
+
+    private SegmentResourcesImpl<Integer, String> resources;
+
+    @BeforeEach
+    void setUp() {
+        resources = new SegmentResourcesImpl<>(supplier);
+    }
+
+    @AfterEach
+    void tearDown() {
+        resources = null;
+    }
 
     @Test
     void resourcesAreCachedAndInvalidated() {
-        @SuppressWarnings("unchecked")
-        final SegmentDataSupplier<Integer, String> supplier = (SegmentDataSupplier<Integer, String>) mock(
-                SegmentDataSupplier.class);
-        @SuppressWarnings("unchecked")
-        final BloomFilter<Integer> bloomFilter1 = (BloomFilter<Integer>) mock(
-                BloomFilter.class);
-        @SuppressWarnings("unchecked")
-        final BloomFilter<Integer> bloomFilter2 = (BloomFilter<Integer>) mock(
-                BloomFilter.class);
-        @SuppressWarnings("unchecked")
-        final ScarceSegmentIndex<Integer> scarce1 = (ScarceSegmentIndex<Integer>) mock(
-                ScarceSegmentIndex.class);
-        @SuppressWarnings("unchecked")
-        final ScarceSegmentIndex<Integer> scarce2 = (ScarceSegmentIndex<Integer>) mock(
-                ScarceSegmentIndex.class);
-
-        when(supplier.getBloomFilter()).thenReturn(bloomFilter1, bloomFilter2);
-        when(supplier.getScarceIndex()).thenReturn(scarce1, scarce2);
-
-        final SegmentResourcesImpl<Integer, String> resources = new SegmentResourcesImpl<>(
-                supplier);
+        when(supplier.getBloomFilter()).thenReturn(bloomFilter1)
+                .thenReturn(bloomFilter2);
+        when(supplier.getScarceIndex()).thenReturn(scarce1).thenReturn(scarce2);
 
         assertSame(bloomFilter1, resources.getBloomFilter());
         assertSame(bloomFilter1, resources.getBloomFilter());

@@ -126,13 +126,21 @@ public class SortedDataFile<K, V> {
                 .join()) {
             return new EmptyEntryIteratorWithCurrent<>();
         }
-        final DiffKeyReader<K> diffKeyReader = new DiffKeyReader<>(
-                keyTypeDescriptor.getConvertorFromBytes());
-        return new DataFileIterator<>(diffKeyReader,
-                valueTypeDescriptor.getTypeReader(),
-                new AsyncFileReaderBlockingAdapter(directoryFacade
-                        .getFileReaderAsync(fileName, diskIoBufferSize)
-                        .toCompletableFuture().join()));
+        try {
+            final DiffKeyReader<K> diffKeyReader = new DiffKeyReader<>(
+                    keyTypeDescriptor.getConvertorFromBytes());
+            return new DataFileIterator<>(diffKeyReader,
+                    valueTypeDescriptor.getTypeReader(),
+                    new AsyncFileReaderBlockingAdapter(directoryFacade
+                            .getFileReaderAsync(fileName, diskIoBufferSize)
+                            .toCompletableFuture().join()));
+        } catch (final RuntimeException e) {
+            if (!directoryFacade.isFileExistsAsync(fileName)
+                    .toCompletableFuture().join()) {
+                return new EmptyEntryIteratorWithCurrent<>();
+            }
+            throw e;
+        }
     }
 
     /**

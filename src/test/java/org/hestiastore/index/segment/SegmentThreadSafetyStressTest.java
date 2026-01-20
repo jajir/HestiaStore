@@ -121,9 +121,8 @@ class SegmentThreadSafetyStressTest {
 
     private static Segment<Integer, String> newSegment(
             final Executor maintenanceExecutor) {
-        return Segment.<Integer, String>builder()
-                .withAsyncDirectory(
-                        AsyncDirectoryAdapter.wrap(new MemDirectory()))
+        return Segment.<Integer, String>builder(
+                AsyncDirectoryAdapter.wrap(new MemDirectory()))
                 .withId(SegmentId.of(1))
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())
                 .withValueTypeDescriptor(new TypeDescriptorShortString())

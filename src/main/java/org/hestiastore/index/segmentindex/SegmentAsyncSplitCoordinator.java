@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -64,9 +66,9 @@ final class SegmentAsyncSplitCoordinator<K, V> {
         final long deadline = System.nanoTime()
                 + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
         while (true) {
-            final SplitInFlight<K, V>[] snapshot = inFlightSplits.values()
-                    .toArray(new SplitInFlight[0]);
-            if (snapshot.length == 0) {
+            final List<SplitInFlight<K, V>> snapshot = new ArrayList<>(
+                    inFlightSplits.values());
+            if (snapshot.isEmpty()) {
                 return;
             }
             for (final SplitInFlight<K, V> inFlight : snapshot) {

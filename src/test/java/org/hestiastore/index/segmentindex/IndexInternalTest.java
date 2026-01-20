@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.stream.Stream;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
@@ -16,13 +15,14 @@ class IndexInternalTest {
 
     @Test
     void defaultGetStreamThrows() {
-        final IndexInternal<String, String> index = new StubIndexInternal();
+        try (IndexInternal<String, String> index = new StubIndexInternal()) {
 
-        final UnsupportedOperationException ex = assertThrows(
-                UnsupportedOperationException.class,
-                () -> index.getStream(SegmentWindow.unbounded()));
-        assertEquals("should be definec in the concrete class",
-                ex.getMessage());
+            final UnsupportedOperationException ex = assertThrows(
+                    UnsupportedOperationException.class,
+                    () -> index.getStream(SegmentWindow.unbounded()));
+            assertEquals("should be definec in the concrete class",
+                    ex.getMessage());
+        }
     }
 
     private static final class StubIndexInternal
@@ -31,7 +31,8 @@ class IndexInternalTest {
         @Override
         public EntryIterator<String, String> openSegmentIterator(
                 SegmentWindow segmentWindows) {
-            return EntryIterator.make(List.<Entry<String, String>>of().iterator());
+            return EntryIterator
+                    .make(List.<Entry<String, String>>of().iterator());
         }
 
         @Override

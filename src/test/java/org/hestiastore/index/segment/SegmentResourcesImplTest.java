@@ -10,6 +10,8 @@ import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.bloomfilter.BloomFilter;
 import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -25,7 +27,22 @@ class SegmentResourcesImplTest {
     private BloomFilter<Integer> bloomFilter;
 
     @Mock
+    private BloomFilter<Integer> bloomFilterSecond;
+
+    @Mock
     private ScarceSegmentIndex<Integer> scarceIndex;
+
+    private SegmentResourcesImpl<Integer, String> resources;
+
+    @BeforeEach
+    void setUp() {
+        resources = new SegmentResourcesImpl<>(segmentDataSupplier);
+    }
+
+    @AfterEach
+    void tearDown() {
+        resources = null;
+    }
 
     @Test
     void constructorRejectsNullSupplier() {
@@ -35,9 +52,6 @@ class SegmentResourcesImplTest {
 
     @Test
     void invalidateWithoutLoadDoesNotTouchSupplier() {
-        final SegmentResourcesImpl<Integer, String> resources = new SegmentResourcesImpl<>(
-                segmentDataSupplier);
-
         resources.invalidate();
 
         verifyNoInteractions(segmentDataSupplier);
@@ -45,8 +59,6 @@ class SegmentResourcesImplTest {
 
     @Test
     void loadsResourcesLazilyAndCachesInstances() {
-        final SegmentResourcesImpl<Integer, String> resources = new SegmentResourcesImpl<>(
-                segmentDataSupplier);
         when(segmentDataSupplier.getBloomFilter()).thenReturn(bloomFilter);
         when(segmentDataSupplier.getScarceIndex()).thenReturn(scarceIndex);
 
@@ -61,8 +73,6 @@ class SegmentResourcesImplTest {
 
     @Test
     void invalidateClosesAndEvictsLoadedResources() {
-        final SegmentResourcesImpl<Integer, String> resources = new SegmentResourcesImpl<>(
-                segmentDataSupplier);
         when(segmentDataSupplier.getBloomFilter()).thenReturn(bloomFilter);
         when(segmentDataSupplier.getScarceIndex()).thenReturn(scarceIndex);
 
@@ -76,8 +86,6 @@ class SegmentResourcesImplTest {
 
     @Test
     void invalidateDoesNotTouchUnloadedResources() {
-        final SegmentResourcesImpl<Integer, String> resources = new SegmentResourcesImpl<>(
-                segmentDataSupplier);
         when(segmentDataSupplier.getBloomFilter()).thenReturn(bloomFilter);
 
         resources.getBloomFilter();
@@ -91,12 +99,8 @@ class SegmentResourcesImplTest {
 
     @Test
     void reloadsBloomFilterAfterInvalidation() {
-        final SegmentResourcesImpl<Integer, String> resources = new SegmentResourcesImpl<>(
-                segmentDataSupplier);
-        final BloomFilter<Integer> bloomFilterSecond = org.mockito.Mockito
-                .mock(BloomFilter.class);
-        when(segmentDataSupplier.getBloomFilter()).thenReturn(bloomFilter,
-                bloomFilterSecond);
+        when(segmentDataSupplier.getBloomFilter()).thenReturn(bloomFilter)
+                .thenReturn(bloomFilterSecond);
 
         assertSame(bloomFilter, resources.getBloomFilter());
         resources.invalidate();
