@@ -38,10 +38,9 @@ class IntegrationSegmentConsistencyTest extends AbstractSegmentTest {
     @BeforeEach
     void setUp() {
         dir = new MemDirectory();
-        seg = Segment.<Integer, Integer>builder()//
-                .withAsyncDirectory(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(dir))//
+        seg = Segment.<Integer, Integer>builder(
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(dir))//
                 .withId(id)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tdi)//

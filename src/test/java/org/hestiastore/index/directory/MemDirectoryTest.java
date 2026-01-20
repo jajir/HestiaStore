@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.Directory.Access;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

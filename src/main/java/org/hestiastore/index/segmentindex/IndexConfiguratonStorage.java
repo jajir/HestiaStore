@@ -39,7 +39,6 @@ public class IndexConfiguratonStorage<K, V> {
     private static final String PROP_INDEX_BUSY_BACKOFF_MILLIS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_BUSY_BACKOFF_MILLIS;
     private static final String PROP_INDEX_BUSY_TIMEOUT_MILLIS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_BUSY_TIMEOUT_MILLIS;
     private static final String PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED = IndexPropertiesSchema.IndexConfigurationKeys.PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED;
-    private static final String PROP_SEGMENT_ROOT_DIRECTORY_ENABLED = IndexPropertiesSchema.IndexConfigurationKeys.PROP_SEGMENT_ROOT_DIRECTORY_ENABLED;
     private static final String PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS;
     private static final String PROP_BLOOM_FILTER_INDEX_SIZE_IN_BYTES = IndexPropertiesSchema.IndexConfigurationKeys.PROP_BLOOM_FILTER_INDEX_SIZE_IN_BYTES;
     private static final String PROP_BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE = IndexPropertiesSchema.IndexConfigurationKeys.PROP_BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE;
@@ -133,10 +132,6 @@ public class IndexConfiguratonStorage<K, V> {
                         getOrDefaultBoolean(propsView,
                                 PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED,
                                 IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_AUTO_ENABLED))//
-                .withSegmentRootDirectoryEnabled(
-                        getOrDefaultBoolean(propsView,
-                                PROP_SEGMENT_ROOT_DIRECTORY_ENABLED,
-                                IndexConfigurationContract.DEFAULT_SEGMENT_ROOT_DIRECTORY_ENABLED))//
 
                 // Segment bloom filter properties
                 .withBloomFilterNumberOfHashFunctions(propsView
@@ -244,11 +239,6 @@ public class IndexConfiguratonStorage<K, V> {
                 Boolean.TRUE
                         .equals(indexConfiguration
                                 .isSegmentMaintenanceAutoEnabled()));
-        writer.setBoolean(PROP_SEGMENT_ROOT_DIRECTORY_ENABLED,
-                Boolean.TRUE
-                        .equals(indexConfiguration
-                                .isSegmentRootDirectoryEnabled()));
-
         // Segment bloom filter properties
         writer.setInt(PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
                 indexConfiguration.getBloomFilterNumberOfHashFunctions());

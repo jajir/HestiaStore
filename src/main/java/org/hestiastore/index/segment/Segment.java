@@ -4,6 +4,7 @@ import java.util.concurrent.CompletionStage;
 
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.directory.async.AsyncDirectory;
 
 /**
  * Public contract for a single on-disk index segment.
@@ -42,10 +43,12 @@ public interface Segment<K, V> extends CloseableResource {
      *
      * @param <M> key type for the segment to be built
      * @param <N> value type for the segment to be built
+     * @param directoryFacade segment directory for this segment
      * @return a new builder instance
      */
-    static <M, N> SegmentBuilder<M, N> builder() {
-        return new SegmentBuilder<>();
+    static <M, N> SegmentBuilder<M, N> builder(
+            final AsyncDirectory directoryFacade) {
+        return new SegmentBuilder<>(directoryFacade);
     }
 
     /**

@@ -16,15 +16,12 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentBuilder;
-import org.hestiastore.index.segment.SegmentConf;
-import org.hestiastore.index.segment.SegmentDataSupplier;
 import org.hestiastore.index.segment.SegmentFiles;
+import org.hestiastore.index.segment.SegmentFilesRenamer;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentPropertiesManager;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
-import org.hestiastore.index.segment.SegmentResources;
-import org.hestiastore.index.segment.SegmentResourcesImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,8 +42,8 @@ public class SegmentRegistry<K, V> {
     private final ExecutorService maintenanceExecutor;
     private final ExecutorService splitExecutor;
     private final int maxNumberOfSegmentsInCache;
-    private final boolean segmentRootDirectoryEnabled;
     private final SegmentDirectorySwap directorySwap;
+    private final SegmentFilesRenamer filesRenamer = new SegmentFilesRenamer();
     private final IndexRetryPolicy retryPolicy;
 
     SegmentRegistry(final AsyncDirectory directoryFacade,
@@ -66,11 +63,7 @@ public class SegmentRegistry<K, V> {
                 .intValue();
         this.maxNumberOfSegmentsInCache = Vldtn.requireGreaterThanZero(
                 maxSegments, "maxNumberOfSegmentsInCache");
-        this.segmentRootDirectoryEnabled = Boolean.TRUE
-                .equals(conf.isSegmentRootDirectoryEnabled());
-        this.directorySwap = segmentRootDirectoryEnabled
-                ? new SegmentDirectorySwap(directoryFacade)
-                : null;
+        this.directorySwap = new SegmentDirectorySwap(directoryFacade);
         final int busyBackoffMillis = sanitizeRetryConf(
                 conf.getIndexBusyBackoffMillis(),
                 IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS);
@@ -217,16 +210,14 @@ public class SegmentRegistry<K, V> {
 
     SegmentBuilder<K, V> newSegmentBuilder(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
-        final SegmentConf segmentConf = buildSegmentConf();
-        final SegmentBuilder<K, V> builder = Segment.<K, V>builder()//
-                .withAsyncDirectory(directoryFacade)//
+        final AsyncDirectory segmentDirectory = openSegmentDirectory(segmentId);
+        final SegmentBuilder<K, V> builder = Segment.<K, V>builder(
+                segmentDirectory)//
                 .withId(segmentId)//
                 .withKeyTypeDescriptor(keyTypeDescriptor)//
-                .withSegmentConf(segmentConf)//
                 .withMaintenanceExecutor(maintenanceExecutor)//
                 .withSegmentMaintenanceAutoEnabled(Boolean.TRUE
                         .equals(conf.isSegmentMaintenanceAutoEnabled()))//
-                .withSegmentRootDirectoryEnabled(segmentRootDirectoryEnabled)//
                 .withMaxNumberOfKeysInSegmentWriteCache(
                         conf.getMaxNumberOfKeysInSegmentWriteCache().intValue())//
                 .withMaxNumberOfKeysInSegmentCache(
@@ -241,45 +232,28 @@ public class SegmentRegistry<K, V> {
                         conf.getBloomFilterNumberOfHashFunctions())//
                 .withBloomFilterIndexSizeInBytes(
                         conf.getBloomFilterIndexSizeInBytes())//
-                .withDiskIoBufferSize(conf.getDiskIoBufferSize());
-        if (!segmentRootDirectoryEnabled) {
-            final SegmentPropertiesManager segmentPropertiesManager = newSegmentPropertiesManager(
-                    segmentId);
-            final SegmentFiles<K, V> segmentFiles = newSegmentFiles(segmentId);
-            final SegmentDataSupplier<K, V> segmentDataSupplier = new SegmentDataSupplier<>(
-                    segmentFiles, segmentConf);
-            final SegmentResources<K, V> dataProvider = new SegmentResourcesImpl<>(
-                    segmentDataSupplier);
-            builder.withSegmentResources(dataProvider)//
-                    .withSegmentFiles(segmentFiles)//
-                    .withSegmentPropertiesManager(segmentPropertiesManager);
-        }
+                .withBloomFilterProbabilityOfFalsePositive(
+                        conf.getBloomFilterProbabilityOfFalsePositive())//
+                .withDiskIoBufferSize(conf.getDiskIoBufferSize())//
+                .withEncodingChunkFilters(conf.getEncodingChunkFilters())//
+                .withDecodingChunkFilters(conf.getDecodingChunkFilters());
         return builder;
     }
 
     SegmentFiles<K, V> newSegmentFiles(final SegmentId segmentId) {
-        return new SegmentFiles<>(directoryFacade, segmentId, keyTypeDescriptor,
+        final AsyncDirectory segmentDirectory = openSegmentDirectory(segmentId);
+        final long activeVersion = newSegmentPropertiesManager(segmentId)
+                .getVersion();
+        return new SegmentFiles<>(segmentDirectory, segmentId, keyTypeDescriptor,
                 valueTypeDescriptor, conf.getDiskIoBufferSize(),
-                conf.getEncodingChunkFilters(), conf.getDecodingChunkFilters());
+                conf.getEncodingChunkFilters(), conf.getDecodingChunkFilters(),
+                activeVersion);
     }
 
     SegmentPropertiesManager newSegmentPropertiesManager(
             final SegmentId segmentId) {
-        return new SegmentPropertiesManager(directoryFacade, segmentId);
-    }
-
-    private SegmentConf buildSegmentConf() {
-        return new SegmentConf(
-                conf.getMaxNumberOfKeysInSegmentWriteCache().intValue(),
-                conf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance()
-                        .intValue(),
-                conf.getMaxNumberOfKeysInSegmentCache(),
-                conf.getMaxNumberOfKeysInSegmentChunk(),
-                conf.getBloomFilterNumberOfHashFunctions(),
-                conf.getBloomFilterIndexSizeInBytes(),
-                conf.getBloomFilterProbabilityOfFalsePositive(),
-                conf.getDiskIoBufferSize(), conf.getEncodingChunkFilters(),
-                conf.getDecodingChunkFilters());
+        return new SegmentPropertiesManager(openSegmentDirectory(segmentId),
+                segmentId);
     }
 
     private Segment<K, V> instantiateSegment(final SegmentId segmentId) {
@@ -287,46 +261,51 @@ public class SegmentRegistry<K, V> {
     }
 
     protected void deleteSegmentFiles(final SegmentId segmentId) {
-        if (segmentRootDirectoryEnabled) {
-            deleteSegmentRootDirectory(segmentId);
-            return;
-        }
-        final SegmentFiles<K, V> segmentFiles = newSegmentFiles(segmentId);
-        final SegmentPropertiesManager segmentPropertiesManager = newSegmentPropertiesManager(
-                segmentId);
-        segmentFiles.deleteAllFiles(segmentPropertiesManager);
-    }
-
-    boolean isSegmentRootDirectoryEnabled() {
-        return segmentRootDirectoryEnabled;
+        deleteSegmentRootDirectory(segmentId);
     }
 
     void swapSegmentDirectories(final SegmentId segmentId,
             final SegmentId replacementSegmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         Vldtn.requireNonNull(replacementSegmentId, "replacementSegmentId");
-        if (!segmentRootDirectoryEnabled) {
-            throw new IllegalStateException(
-                    "Segment root directory layout is disabled.");
-        }
         directorySwap.swap(segmentId, replacementSegmentId);
+        relabelSwappedSegment(segmentId, replacementSegmentId);
     }
 
     void recoverDirectorySwaps(final List<SegmentId> segmentIds) {
         Vldtn.requireNonNull(segmentIds, "segmentIds");
-        if (!segmentRootDirectoryEnabled) {
-            return;
-        }
         for (final SegmentId segmentId : segmentIds) {
             directorySwap.recoverIfNeeded(segmentId);
         }
     }
 
     private void deleteSegmentRootDirectory(final SegmentId segmentId) {
-        if (directorySwap == null) {
-            return;
-        }
         directorySwap.deleteSegmentRootDirectory(segmentId);
+    }
+
+    private AsyncDirectory openSegmentDirectory(final SegmentId segmentId) {
+        return directoryFacade.openSubDirectory(segmentId.getName())
+                .toCompletableFuture().join();
+    }
+
+    private void relabelSwappedSegment(final SegmentId targetSegmentId,
+            final SegmentId sourceSegmentId) {
+        final AsyncDirectory segmentDirectory = openSegmentDirectory(
+                targetSegmentId);
+        final SegmentPropertiesManager properties = new SegmentPropertiesManager(
+                segmentDirectory, sourceSegmentId);
+        final long activeVersion = properties.getVersion();
+        final SegmentFiles<K, V> fromFiles = new SegmentFiles<>(
+                segmentDirectory, sourceSegmentId, keyTypeDescriptor,
+                valueTypeDescriptor, conf.getDiskIoBufferSize(),
+                conf.getEncodingChunkFilters(), conf.getDecodingChunkFilters(),
+                activeVersion);
+        final SegmentFiles<K, V> toFiles = new SegmentFiles<>(
+                segmentDirectory, targetSegmentId, keyTypeDescriptor,
+                valueTypeDescriptor, conf.getDiskIoBufferSize(),
+                conf.getEncodingChunkFilters(), conf.getDecodingChunkFilters(),
+                activeVersion);
+        filesRenamer.renameFiles(fromFiles, toFiles, properties);
     }
 
     private void closeSegmentIfNeeded(final Segment<K, V> segment) {

@@ -44,9 +44,8 @@ class SegmentLockTest {
 
     private SegmentBuilder<Integer, String> newBuilder(
             final Directory directory) {
-        return Segment.<Integer, String>builder()//
-                .withAsyncDirectory(
-                        AsyncDirectoryAdapter.wrap(directory))//
+        return Segment.<Integer, String>builder(
+                AsyncDirectoryAdapter.wrap(directory))//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_DESCRIPTOR)//

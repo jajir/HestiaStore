@@ -1,6 +1,5 @@
 package org.hestiastore.index.segment;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -16,7 +15,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -64,11 +62,7 @@ class SegmentFullWriterTest {
         subject.write(Entry.of(2, "two"));
 
         verify(indexWriter).flush();
-        final ArgumentCaptor<Entry<Integer, Integer>> captor = ArgumentCaptor
-                .forClass(Entry.class);
-        verify(scarceWriter).write(captor.capture());
-        assertEquals(2, captor.getValue().getKey());
-        assertEquals(42, captor.getValue().getValue());
+        verify(scarceWriter).write(Entry.of(2, 42));
     }
 
     @Test

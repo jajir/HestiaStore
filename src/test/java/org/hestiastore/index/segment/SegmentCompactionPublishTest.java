@@ -32,19 +32,21 @@ class SegmentCompactionPublishTest {
         final GuardedAsyncDirectory guardedDirectory = new GuardedAsyncDirectory(
                 AsyncDirectoryAdapter.wrap(new MemDirectory()));
         final SegmentId segmentId = SegmentId.of(1);
-        final SegmentConf segmentConf = new SegmentConf(8, 16, 16, 4, null,
-                null, 0.01, 1024,
-                List.of(new ChunkFilterDoNothing()),
-                List.of(new ChunkFilterDoNothing()));
-
         try (Segment<Integer, String> segment = Segment
-                .<Integer, String>builder()//
-                .withAsyncDirectory(guardedDirectory)//
+                .<Integer, String>builder(guardedDirectory)//
                 .withId(segmentId)//
                 .withKeyTypeDescriptor(KEY_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_DESCRIPTOR)//
-                .withSegmentConf(segmentConf)//
-                .withSegmentRootDirectoryEnabled(true)//
+                .withMaxNumberOfKeysInSegmentWriteCache(8)//
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(16)//
+                .withMaxNumberOfKeysInSegmentCache(16)//
+                .withMaxNumberOfKeysInSegmentChunk(4)//
+                .withBloomFilterProbabilityOfFalsePositive(0.01)//
+                .withDiskIoBufferSize(1024)//
+                .withEncodingChunkFilters(
+                        List.of(new ChunkFilterDoNothing()))//
+                .withDecodingChunkFilters(
+                        List.of(new ChunkFilterDoNothing()))//
                 .withSegmentMaintenanceAutoEnabled(false)//
                 .build()) {
             assertEquals(SegmentResultStatus.OK,

@@ -30,7 +30,6 @@ public class IndexConfigurationBuilder<K, V> {
     private Integer indexBusyBackoffMillis;
     private Integer indexBusyTimeoutMillis;
     private Boolean segmentMaintenanceAutoEnabled;
-    private Boolean segmentRootDirectoryEnabled;
 
     private String indexName;
     private Class<K> keyClass;
@@ -204,12 +203,6 @@ public class IndexConfigurationBuilder<K, V> {
         return this;
     }
 
-    public IndexConfigurationBuilder<K, V> withSegmentRootDirectoryEnabled(
-            final Boolean segmentRootDirectoryEnabled) {
-        this.segmentRootDirectoryEnabled = segmentRootDirectoryEnabled;
-        return this;
-    }
-
     public IndexConfigurationBuilder<K, V> addEncodingFilter(
             final ChunkFilter filter) {
         encodingChunkFilters.add(Vldtn.requireNonNull(filter, "filter"));
@@ -294,9 +287,6 @@ public class IndexConfigurationBuilder<K, V> {
         final Boolean effectiveSegmentMaintenanceAutoEnabled = segmentMaintenanceAutoEnabled == null
                 ? IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_AUTO_ENABLED
                 : segmentMaintenanceAutoEnabled;
-        final Boolean effectiveSegmentRootDirectoryEnabled = segmentRootDirectoryEnabled == null
-                ? IndexConfigurationContract.DEFAULT_SEGMENT_ROOT_DIRECTORY_ENABLED
-                : segmentRootDirectoryEnabled;
         final Integer effectiveWriteCacheDuringMaintenance;
         if (maxNumberOfKeysInSegmentWriteCacheDuringMaintenance == null
                 && maxNumberOfKeysInSegmentWriteCache != null) {
@@ -334,7 +324,6 @@ public class IndexConfigurationBuilder<K, V> {
                 effectiveIndexBusyBackoffMillis,
                 effectiveIndexBusyTimeoutMillis,
                 effectiveSegmentMaintenanceAutoEnabled,
-                effectiveSegmentRootDirectoryEnabled,
                 encodingChunkFilters, decodingChunkFilters);
     }
 

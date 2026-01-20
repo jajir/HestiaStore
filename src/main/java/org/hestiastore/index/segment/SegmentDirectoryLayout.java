@@ -17,8 +17,8 @@ public final class SegmentDirectoryLayout {
     private static final String DELTA_FILE_NAME_MIDDLE = "-delta-";
     private static final String CACHE_FILE_NAME_EXTENSION = ".cache";
     private static final int DELTA_ID_PAD_LENGTH = 3;
+    private static final String VERSION_FILE_NAME_MARKER = "-v";
     private static final String VERSION_DIRECTORY_PREFIX = "v";
-    static final String ROOT_DIRECTORY_NAME = ".";
 
     private final SegmentId segmentId;
 
@@ -46,7 +46,17 @@ public final class SegmentDirectoryLayout {
      * @return index file name
      */
     public String getIndexFileName() {
-        return segmentId.getName() + INDEX_FILE_NAME_EXTENSION;
+        return getIndexFileName(0);
+    }
+
+    /**
+     * Returns the main index file name for the given version.
+     *
+     * @param version active version (0 means legacy, unversioned file)
+     * @return index file name
+     */
+    public String getIndexFileName(final long version) {
+        return buildVersionedName(version, INDEX_FILE_NAME_EXTENSION);
     }
 
     /**
@@ -55,7 +65,17 @@ public final class SegmentDirectoryLayout {
      * @return scarce index file name
      */
     public String getScarceFileName() {
-        return segmentId.getName() + SCARCE_FILE_NAME_EXTENSION;
+        return getScarceFileName(0);
+    }
+
+    /**
+     * Returns the scarce index file name for the given version.
+     *
+     * @param version active version (0 means legacy, unversioned file)
+     * @return scarce index file name
+     */
+    public String getScarceFileName(final long version) {
+        return buildVersionedName(version, SCARCE_FILE_NAME_EXTENSION);
     }
 
     /**
@@ -64,7 +84,17 @@ public final class SegmentDirectoryLayout {
      * @return bloom filter file name
      */
     public String getBloomFilterFileName() {
-        return segmentId.getName() + BLOOM_FILTER_FILE_NAME_EXTENSION;
+        return getBloomFilterFileName(0);
+    }
+
+    /**
+     * Returns the bloom filter file name for the given version.
+     *
+     * @param version active version (0 means legacy, unversioned file)
+     * @return bloom filter file name
+     */
+    public String getBloomFilterFileName(final long version) {
+        return buildVersionedName(version, BLOOM_FILTER_FILE_NAME_EXTENSION);
     }
 
     /**
@@ -101,11 +131,65 @@ public final class SegmentDirectoryLayout {
      * @return delta cache file name
      */
     public String getDeltaCacheFileName(final int deltaFileId) {
+        return getDeltaCacheFileName(0, deltaFileId);
+    }
+
+    /**
+     * Returns the delta cache file name for a numeric delta id and version.
+     *
+     * @param version active version (0 means legacy, unversioned file)
+     * @param deltaFileId numeric delta id
+     * @return delta cache file name
+     */
+    public String getDeltaCacheFileName(final long version,
+            final int deltaFileId) {
         final String rawId = String.valueOf(deltaFileId);
         final String paddedId = rawId.length() > DELTA_ID_PAD_LENGTH ? rawId
                 : FileNameUtil.getPaddedId(deltaFileId, DELTA_ID_PAD_LENGTH);
-        return segmentId.getName() + DELTA_FILE_NAME_MIDDLE + paddedId
+        return buildVersionedPrefix(version) + DELTA_FILE_NAME_MIDDLE + paddedId
                 + CACHE_FILE_NAME_EXTENSION;
+    }
+
+    /**
+     * Returns the delta cache prefix for the given version.
+     *
+     * @param version active version (0 means legacy, unversioned file)
+     * @return prefix including the delta separator
+     */
+    public String getDeltaCachePrefix(final long version) {
+        return buildVersionedPrefix(version) + DELTA_FILE_NAME_MIDDLE;
+    }
+
+    /**
+     * Parses the version from an index file name.
+     *
+     * @param fileName file name to parse
+     * @return parsed version, 0 for legacy names, or -1 when invalid
+     */
+    public long parseVersionFromIndexFileName(final String fileName) {
+        if (fileName == null || fileName.isBlank()) {
+            return -1;
+        }
+        if (fileName.equals(getIndexFileName(0))) {
+            return 0;
+        }
+        final String prefix = segmentId.getName() + VERSION_FILE_NAME_MARKER;
+        if (!fileName.startsWith(prefix)
+                || !fileName.endsWith(INDEX_FILE_NAME_EXTENSION)) {
+            return -1;
+        }
+        final int versionStart = prefix.length();
+        final int versionEnd = fileName.length()
+                - INDEX_FILE_NAME_EXTENSION.length();
+        if (versionEnd <= versionStart) {
+            return -1;
+        }
+        final String rawVersion = fileName.substring(versionStart, versionEnd);
+        try {
+            return Long.parseLong(rawVersion);
+        } catch (final NumberFormatException e) {
+            return -1;
+        }
     }
 
     /**
@@ -146,5 +230,17 @@ public final class SegmentDirectoryLayout {
         } catch (final NumberFormatException e) {
             return -1;
         }
+    }
+
+    private String buildVersionedName(final long version,
+            final String extension) {
+        return buildVersionedPrefix(version) + extension;
+    }
+
+    private String buildVersionedPrefix(final long version) {
+        if (version <= 0) {
+            return segmentId.getName();
+        }
+        return segmentId.getName() + VERSION_FILE_NAME_MARKER + version;
     }
 }

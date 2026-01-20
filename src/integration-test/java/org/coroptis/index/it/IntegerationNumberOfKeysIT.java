@@ -64,10 +64,9 @@ public class IntegerationNumberOfKeysIT {
     }
 
     private Segment<String, Long> getCommonBuilder() {
-        return Segment.<String, Long>builder()//
-                .withAsyncDirectory(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(directory))//
+        return Segment.<String, Long>builder(
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(directory))//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(TYPE_DESCRIPTOR_STRING)//
                 .withValueTypeDescriptor(TYPE_DESCRIPTOR_LONG)//

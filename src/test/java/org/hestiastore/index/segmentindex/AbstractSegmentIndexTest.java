@@ -26,9 +26,9 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
     /**
      * Simplify filling index with data.
      * 
-     * @param <M>   key type
-     * @param <N>   value type
-     * @param seg   required index
+     * @param <M>     key type
+     * @param <N>     value type
+     * @param seg     required index
      * @param entries required list of entries
      */
     protected <M, N> void writeEntries(final SegmentIndex<M, N> index,
@@ -42,9 +42,9 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
      * Open segment search and verify that found value for given key is equals
      * to expected value
      * 
-     * @param <M>   key type
-     * @param <N>   value type
-     * @param seg   required segment
+     * @param <M>     key type
+     * @param <N>     value type
+     * @param seg     required segment
      * @param entries required list of entries of key and expected value
      */
     protected <M, N> void verifyIndexSearch(final SegmentIndex<M, N> index,
@@ -60,9 +60,9 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
      * Open index search and verify that found value for given key is equals to
      * expecetd value
      * 
-     * @param <M>   key type
-     * @param <N>   value type
-     * @param seg   required index
+     * @param <M>     key type
+     * @param <N>     value type
+     * @param seg     required index
      * @param entries required list of expected data in index
      */
     protected <M, N> void verifyIndexData(final SegmentIndex<M, N> index,
@@ -85,18 +85,16 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
 
     protected int numberOfFilesInDirectoryP(final Directory directory) {
         final AtomicInteger cx = new AtomicInteger(0);
-        directory.getFileNames()
-                .filter(name -> !name.endsWith(".lock"))
+        directory.getFileNames().filter(name -> !name.endsWith(".lock"))
                 .forEach(fileName -> {
-            logger.debug("Found file name {}", fileName);
-            cx.incrementAndGet();
-        });
+                    logger.debug("Found file name {}", fileName);
+                    cx.incrementAndGet();
+                });
         return cx.get();
     }
 
     protected void awaitMaintenanceIdle(final SegmentIndex<?, ?> index) {
-        final long deadline = System.nanoTime()
-                + TimeUnit.SECONDS.toNanos(5);
+        final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
         while (System.nanoTime() < deadline) {
             final SegmentRegistry<?, ?> registry = readSegmentRegistry(index);
             final Map<SegmentId, Segment<?, ?>> segments = readSegmentsMap(
@@ -105,8 +103,7 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
             for (final Segment<?, ?> segment : segments.values()) {
                 final SegmentState state = segment.getState();
                 if (state == SegmentState.ERROR) {
-                    Assertions.fail(
-                            "Segment entered ERROR during maintenance");
+                    Assertions.fail("Segment entered ERROR during maintenance");
                 }
                 if (state == SegmentState.MAINTENANCE_RUNNING
                         || state == SegmentState.FREEZE) {
@@ -127,7 +124,6 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
         Assertions.fail("Timed out waiting for maintenance to finish");
     }
 
-    @SuppressWarnings("unchecked")
     private static SegmentRegistry<?, ?> readSegmentRegistry(
             final SegmentIndex<?, ?> index) {
         try {

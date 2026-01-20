@@ -76,11 +76,19 @@ public class DataBlockFile {
         }
         if (directoryFacade.isFileExistsAsync(fileName).toCompletableFuture()
                 .join()) {
-            final FileReaderSeekable reader = getFileReader(blockPosition,
-                    seekableReader);
-            final boolean closeOnClose = seekableReader == null;
-            return new DataBlockReaderImpl(reader, blockPosition, blockSize,
-                    closeOnClose);
+            try {
+                final FileReaderSeekable reader = getFileReader(blockPosition,
+                        seekableReader);
+                final boolean closeOnClose = seekableReader == null;
+                return new DataBlockReaderImpl(reader, blockPosition, blockSize,
+                        closeOnClose);
+            } catch (final RuntimeException e) {
+                if (!directoryFacade.isFileExistsAsync(fileName)
+                        .toCompletableFuture().join()) {
+                    return new DataBlockReaderEmpty();
+                }
+                throw e;
+            }
         } else {
             return new DataBlockReaderEmpty();
         }

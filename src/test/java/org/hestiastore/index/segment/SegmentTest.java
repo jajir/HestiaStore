@@ -15,12 +15,12 @@ class SegmentTest {
 
     @Test
     void openIteratorDefaultsToFailFastIsolation() {
-        final StubSegment segment = new StubSegment();
+        try (StubSegment segment = new StubSegment()) {
+            segment.openIterator();
 
-        segment.openIterator();
-
-        assertEquals(SegmentIteratorIsolation.FAIL_FAST,
-                segment.getLastIsolation());
+            assertEquals(SegmentIteratorIsolation.FAIL_FAST,
+                    segment.getLastIsolation());
+        }
     }
 
     private static final class StubSegment extends AbstractCloseableResource

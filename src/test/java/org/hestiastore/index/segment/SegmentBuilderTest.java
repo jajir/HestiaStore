@@ -7,8 +7,6 @@ package org.hestiastore.index.segment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -38,27 +36,15 @@ class SegmentBuilderTest {
 
     @Test
     void test_directory_is_missing() {
-        final SegmentBuilder<Integer, String> builder = Segment
-                .<Integer, String>builder()//
-                // .withAsyncDirectory(org.hestiastore.index.directory.async.AsyncDirectoryAdapter.wrap(DIRECTORY))//
-                .withId(SEGMENT_ID)//
-                .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
-                .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
-                .withBloomFilterIndexSizeInBytes(0)//
-        ;
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> builder.build());
-
-        assertEquals("Directory can't be null", e.getMessage());
+                () -> Segment.<Integer, String>builder(null));
+        assertEquals("Property 'directoryFacade' must not be null.",
+                e.getMessage());
     }
 
     @Test
     void test_keyTypeDescriptor_is_missing() {
-        final SegmentBuilder<Integer, String> builder = Segment
-                .<Integer, String>builder()//
-                .withAsyncDirectory(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(DIRECTORY))//
+        final SegmentBuilder<Integer, String> builder = newBuilder()//
                 .withId(SEGMENT_ID)//
                 // .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
@@ -67,16 +53,13 @@ class SegmentBuilderTest {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> builder.build());
 
-        assertEquals("KeyTypeDescriptor can't be null", e.getMessage());
+        assertEquals("Property 'keyTypeDescriptor' must not be null.",
+                e.getMessage());
     }
 
     @Test
     void test_valueTypeDescriptor_is_missing() {
-        final SegmentBuilder<Integer, String> builder = Segment
-                .<Integer, String>builder()//
-                .withAsyncDirectory(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(DIRECTORY))//
+        final SegmentBuilder<Integer, String> builder = newBuilder()//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 // .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
@@ -85,13 +68,13 @@ class SegmentBuilderTest {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> builder.build());
 
-        assertEquals("ValueTypeDescriptor can't be null", e.getMessage());
+        assertEquals("Property 'valueTypeDescriptor' must not be null.",
+                e.getMessage());
     }
 
     @Test
     void test_withMaxNumberOfKeysInSegmentWriteCache_is_invalid() {
-        final SegmentBuilder<Integer, String> builder = Segment
-                .<Integer, String>builder();
+        final SegmentBuilder<Integer, String> builder = newBuilder();
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> builder.withMaxNumberOfKeysInSegmentWriteCache(0));
 
@@ -102,8 +85,7 @@ class SegmentBuilderTest {
 
     @Test
     void test_withMaxNumberOfKeysInSegmentChunk_is_invalid() {
-        final SegmentBuilder<Integer, String> builder = Segment
-                .<Integer, String>builder();
+        final SegmentBuilder<Integer, String> builder = newBuilder();
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> builder.withMaxNumberOfKeysInSegmentChunk(-1));
 
@@ -114,8 +96,7 @@ class SegmentBuilderTest {
 
     @Test
     void test_withDiskIoBufferSize_is_invalid() {
-        final SegmentBuilder<Integer, String> builder = Segment
-                .<Integer, String>builder();
+        final SegmentBuilder<Integer, String> builder = newBuilder();
         final Exception e1 = assertThrows(IllegalArgumentException.class,
                 () -> builder.withDiskIoBufferSize(0));
         assertEquals("Property 'ioBufferSize' must be greater than 0",
@@ -130,75 +111,38 @@ class SegmentBuilderTest {
 
     @Test
     void test_encodingChunkFilters_are_missing() {
-        final SegmentConf segmentConf = mock(SegmentConf.class);
-        when(segmentConf.getEncodingChunkFilters()).thenReturn(null);
-        when(segmentConf.getDecodingChunkFilters()).thenReturn(List.of());
-        when(segmentConf.getMaxNumberOfKeysInSegmentWriteCache()).thenReturn(5);
-        when(segmentConf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance())
-                .thenReturn(10);
-        when(segmentConf.getMaxNumberOfKeysInSegmentCache()).thenReturn(100);
-        when(segmentConf.getMaxNumberOfKeysInChunk()).thenReturn(1);
-        when(segmentConf.getBloomFilterNumberOfHashFunctions()).thenReturn(0);
-        when(segmentConf.getBloomFilterIndexSizeInBytes()).thenReturn(0);
-        when(segmentConf.getDiskIoBufferSize()).thenReturn(1024);
-
-        final SegmentBuilder<Integer, String> builder = Segment
-                .<Integer, String>builder()//
-                .withAsyncDirectory(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(DIRECTORY))//
+        final SegmentBuilder<Integer, String> builder = newBuilder()//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
-                .withSegmentConf(segmentConf)//
+                .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
         ;
 
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> builder.build());
 
-        assertEquals("Property 'encodingChunkFilters' must not be null.",
+        assertEquals("Property 'encodingChunkFilters' must not be empty.",
                 e.getMessage());
     }
 
     @Test
     void test_decodingChunkFilters_are_missing() {
-        final SegmentConf segmentConf = mock(SegmentConf.class);
-        when(segmentConf.getEncodingChunkFilters())
-                .thenReturn(List.of(new ChunkFilterDoNothing()));
-        when(segmentConf.getDecodingChunkFilters()).thenReturn(List.of());
-        when(segmentConf.getMaxNumberOfKeysInSegmentWriteCache()).thenReturn(5);
-        when(segmentConf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance())
-                .thenReturn(10);
-        when(segmentConf.getMaxNumberOfKeysInSegmentCache()).thenReturn(100);
-        when(segmentConf.getMaxNumberOfKeysInChunk()).thenReturn(1);
-        when(segmentConf.getBloomFilterNumberOfHashFunctions()).thenReturn(0);
-        when(segmentConf.getBloomFilterIndexSizeInBytes()).thenReturn(0);
-        when(segmentConf.getDiskIoBufferSize()).thenReturn(1024);
-
-        final SegmentBuilder<Integer, String> builder = Segment
-                .<Integer, String>builder()//
-                .withAsyncDirectory(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(DIRECTORY))//
+        final SegmentBuilder<Integer, String> builder = newBuilder()//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
-                // .withEncodingChunkFilters(List.of(new
-                // ChunkFilterDoNothing()))
-                .withSegmentConf(segmentConf)//
+                .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
         ;
 
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> builder.build());
-
         assertEquals("Property 'decodingChunkFilters' must not be empty.",
                 e.getMessage());
     }
 
     @Test
     void test_withEncodingChunkFilters_null() {
-        final SegmentBuilder<Integer, String> builder = Segment
-                .<Integer, String>builder();
+        final SegmentBuilder<Integer, String> builder = newBuilder();
 
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> builder.withEncodingChunkFilters(null));
@@ -209,8 +153,7 @@ class SegmentBuilderTest {
 
     @Test
     void test_withEncodingChunkFilters_empty() {
-        final SegmentBuilder<Integer, String> builder = Segment
-                .<Integer, String>builder();
+        final SegmentBuilder<Integer, String> builder = newBuilder();
 
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> builder.withEncodingChunkFilters(List.of()));
@@ -221,8 +164,7 @@ class SegmentBuilderTest {
 
     @Test
     void test_withDecodingChunkFilters_null() {
-        final SegmentBuilder<Integer, String> builder = Segment
-                .<Integer, String>builder();
+        final SegmentBuilder<Integer, String> builder = newBuilder();
 
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> builder.withDecodingChunkFilters(null));
@@ -233,8 +175,7 @@ class SegmentBuilderTest {
 
     @Test
     void test_withDecodingChunkFilters_empty() {
-        final SegmentBuilder<Integer, String> builder = Segment
-                .<Integer, String>builder();
+        final SegmentBuilder<Integer, String> builder = newBuilder();
 
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> builder.withDecodingChunkFilters(List.of()));
@@ -246,8 +187,7 @@ class SegmentBuilderTest {
     @Test
     void test_build_withProvidedChunkFilters() {
         final Segment<Integer, String> segment = Segment
-                .<Integer, String>builder()//
-                .withAsyncDirectory(AsyncDirectoryAdapter.wrap(DIRECTORY))//
+                .<Integer, String>builder(AsyncDirectoryAdapter.wrap(DIRECTORY))//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
@@ -263,8 +203,7 @@ class SegmentBuilderTest {
     void test_openWriterTx_writes_segment_and_builds() {
         final Directory directory = new MemDirectory();
         final SegmentBuilder<Integer, String> builder = Segment
-                .<Integer, String>builder()//
-                .withAsyncDirectory(
+                .<Integer, String>builder(
                         org.hestiastore.index.directory.async.AsyncDirectoryAdapter
                                 .wrap(directory))//
                 .withId(SEGMENT_ID)//
@@ -297,8 +236,7 @@ class SegmentBuilderTest {
     void test_build_sets_direct_maintenance_executor_when_missing()
             throws Exception {
         final Segment<Integer, String> segment = Segment
-                .<Integer, String>builder()//
-                .withAsyncDirectory(
+                .<Integer, String>builder(
                         org.hestiastore.index.directory.async.AsyncDirectoryAdapter
                                 .wrap(DIRECTORY))//
                 .withId(SEGMENT_ID)//
@@ -319,46 +257,51 @@ class SegmentBuilderTest {
     }
 
     @Test
-    void builder_promotes_prepared_directory() {
+    void builder_honors_active_version_from_properties() throws Exception {
         final Directory directory = new MemDirectory();
         final var asyncDirectory = AsyncDirectoryAdapter.wrap(directory);
         final SegmentId segmentId = SegmentId.of(1);
         final SegmentDirectoryLayout layout = new SegmentDirectoryLayout(
                 segmentId);
-        final var rootDirectory = asyncDirectory
-                .openSubDirectory(segmentId.getName())
-                .toCompletableFuture().join();
 
-        new SegmentDirectoryPointer(rootDirectory, layout)
-                .writeActiveDirectory("v1");
-
-        final var preparedDirectory = rootDirectory
-                .openSubDirectory("v2").toCompletableFuture().join();
-        final SegmentPropertiesManager preparedProperties = new SegmentPropertiesManager(
-                preparedDirectory, segmentId);
-        preparedProperties.setVersion(2L);
-        preparedProperties
-                .setState(SegmentPropertiesManager.SegmentDataState.PREPARED);
-        preparedDirectory.getFileWriterAsync(layout.getIndexFileName())
+        final SegmentPropertiesManager propertiesManager = new SegmentPropertiesManager(
+                asyncDirectory, segmentId);
+        propertiesManager.setVersion(2L);
+        propertiesManager
+                .setState(SegmentPropertiesManager.SegmentDataState.ACTIVE);
+        asyncDirectory.getFileWriterAsync(layout.getIndexFileName(2))
                 .toCompletableFuture().join().close();
 
         try (Segment<Integer, String> segment = Segment
-                .<Integer, String>builder()//
-                .withAsyncDirectory(asyncDirectory)//
+                .<Integer, String>builder(asyncDirectory)//
                 .withId(segmentId)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
                 .withBloomFilterIndexSizeInBytes(0)//
-                .withEncodingChunkFilters(
-                        List.of(new ChunkFilterDoNothing()))//
-                .withDecodingChunkFilters(
-                        List.of(new ChunkFilterDoNothing()))//
-                .withSegmentRootDirectoryEnabled(true)//
+                .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
+                .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
                 .build()) {
             assertNotNull(segment);
+            final SegmentImpl<Integer, String> impl = (SegmentImpl<Integer, String>) segment;
+            final Field coreField = SegmentImpl.class.getDeclaredField("core");
+            coreField.setAccessible(true);
+            final SegmentCore<?, ?> core = (SegmentCore<?, ?>) coreField
+                    .get(impl);
+            final Field filesField = SegmentCore.class
+                    .getDeclaredField("segmentFiles");
+            filesField.setAccessible(true);
+            final SegmentFiles<?, ?> files = (SegmentFiles<?, ?>) filesField
+                    .get(core);
+            assertEquals(2L, files.getActiveVersion());
         }
 
-        assertEquals("v2", new SegmentDirectoryPointer(rootDirectory, layout)
-                .readActiveDirectory());
+        final SegmentPropertiesManager rootProperties = new SegmentPropertiesManager(
+                asyncDirectory, segmentId);
+        assertEquals(2L, rootProperties.getVersion());
+    }
+
+    private SegmentBuilder<Integer, String> newBuilder() {
+        return Segment.<Integer, String>builder(
+                AsyncDirectoryAdapter.wrap(DIRECTORY));
     }
 }

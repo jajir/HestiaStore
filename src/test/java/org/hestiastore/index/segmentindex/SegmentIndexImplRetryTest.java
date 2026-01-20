@@ -2,7 +2,6 @@ package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -10,8 +9,6 @@ import static org.mockito.Mockito.when;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -22,13 +19,19 @@ import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segment.SegmentStats;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class SegmentIndexImplRetryTest {
 
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
+
+    @Mock
+    private Segment<Integer, String> segment;
 
     @Test
     void getRetriesOnBusyThenOk() {
@@ -44,7 +47,6 @@ class SegmentIndexImplRetryTest {
             final Segment<Integer, String> original = registry
                     .getSegment(segmentId).getValue();
 
-            final Segment<Integer, String> segment = mock(Segment.class);
             final AtomicInteger attempts = new AtomicInteger();
             when(segment.get(eq(1))).thenAnswer(invocation -> {
                 if (attempts.getAndIncrement() == 0) {
@@ -52,10 +54,6 @@ class SegmentIndexImplRetryTest {
                 }
                 return SegmentResult.ok("value");
             });
-            when(segment.getId()).thenReturn(segmentId);
-            when(segment.wasClosed()).thenReturn(false);
-            when(segment.flush()).thenReturn(okMaintenance());
-            when(segment.compact()).thenReturn(okMaintenance());
 
             replaceSegment(registry, segmentId, segment);
 
@@ -82,7 +80,6 @@ class SegmentIndexImplRetryTest {
             final Segment<Integer, String> original = registry
                     .getSegment(segmentId).getValue();
 
-            final Segment<Integer, String> segment = mock(Segment.class);
             final AtomicInteger attempts = new AtomicInteger();
             when(segment.put(eq(2), eq("two"))).thenAnswer(invocation -> {
                 if (attempts.getAndIncrement() == 0) {
@@ -90,15 +87,6 @@ class SegmentIndexImplRetryTest {
                 }
                 return SegmentResult.ok();
             });
-            final SegmentStats stats = mock(SegmentStats.class);
-            when(stats.getNumberOfKeysInDeltaCache()).thenReturn(0L);
-            when(segment.getStats()).thenReturn(stats);
-            when(segment.getNumberOfKeysInWriteCache()).thenReturn(0);
-            when(segment.getNumberOfKeysInCache()).thenReturn(0L);
-            when(segment.getId()).thenReturn(segmentId);
-            when(segment.wasClosed()).thenReturn(false);
-            when(segment.flush()).thenReturn(okMaintenance());
-            when(segment.compact()).thenReturn(okMaintenance());
 
             replaceSegment(registry, segmentId, segment);
 
@@ -118,16 +106,10 @@ class SegmentIndexImplRetryTest {
                 buildConf());
     }
 
-    private SegmentResult<CompletionStage<Void>> okMaintenance() {
-        return SegmentResult.ok(CompletableFuture.completedFuture(null));
-    }
-
     private IndexConfiguration<Integer, String> buildConf() {
         return IndexConfiguration.<Integer, String>builder()
-                .withKeyClass(Integer.class)
-                .withValueClass(String.class)
-                .withKeyTypeDescriptor(tdi)
-                .withValueTypeDescriptor(tds)
+                .withKeyClass(Integer.class).withValueClass(String.class)
+                .withKeyTypeDescriptor(tdi).withValueTypeDescriptor(tds)
                 .withName("segment-index-retry-test")
                 .withContextLoggingEnabled(false)
                 .withMaxNumberOfKeysInSegmentCache(10)
@@ -140,8 +122,7 @@ class SegmentIndexImplRetryTest {
                 .withBloomFilterNumberOfHashFunctions(1)
                 .withBloomFilterIndexSizeInBytes(1024)
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)
-                .withDiskIoBufferSizeInBytes(1024)
-                .withNumberOfCpuThreads(1)
+                .withDiskIoBufferSizeInBytes(1024).withNumberOfCpuThreads(1)
                 .withNumberOfIoThreads(1)
                 .withEncodingFilters(List.of(new ChunkFilterDoNothing()))
                 .withDecodingFilters(List.of(new ChunkFilterDoNothing()))
@@ -151,7 +132,8 @@ class SegmentIndexImplRetryTest {
     private static <K, V> void replaceSegment(
             final SegmentRegistry<K, V> registry, final SegmentId segmentId,
             final Segment<K, V> segment) {
-        final Map<SegmentId, Segment<K, V>> segments = readSegmentsMap(registry);
+        final Map<SegmentId, Segment<K, V>> segments = readSegmentsMap(
+                registry);
         registry.executeWithRegistryLock(
                 () -> segments.put(segmentId, segment));
     }

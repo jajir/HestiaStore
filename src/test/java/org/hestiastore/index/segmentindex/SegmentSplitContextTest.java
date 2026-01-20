@@ -1,41 +1,66 @@
 package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.mockito.Mockito.mock;
 
 import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class SegmentSplitContextTest {
+
+    @Mock
+    private Segment<String, String> segment;
+    @Mock
+    private SegmentSplitterPlan<String, String> plan;
+    @Mock
+    private Segment<String, String> newSegment;
+    @Mock
+    private SegmentSplitterPlan<String, String> newPlan;
+    @Mock
+    private WriteTransaction<String, String> writeTransaction;
+    @Mock
+    private WriteTransaction<String, String> newWriteTransaction;
+
+    private SegmentSplitContext<String, String> context;
+    private SegmentWriterTxFactory<String, String> factory;
+    private SegmentId lower;
+    private SegmentId upper;
+
+    @BeforeEach
+    void setUp() {
+        lower = SegmentId.of(1);
+        upper = SegmentId.of(2);
+        factory = id -> writeTransaction;
+        context = new SegmentSplitContext<>(segment, plan, lower, upper,
+                factory);
+    }
+
+    @AfterEach
+    void tearDown() {
+        context = null;
+        factory = null;
+        lower = null;
+        upper = null;
+    }
 
     @Test
     void gettersAndSettersReflectValues() {
-        final Segment<String, String> segment = mock(Segment.class);
-        final SegmentSplitterPlan<String, String> plan = mock(
-                SegmentSplitterPlan.class);
-        final SegmentId lower = SegmentId.of(1);
-        final SegmentId upper = SegmentId.of(2);
-        final SegmentWriterTxFactory<String, String> factory = id -> mock(
-                WriteTransaction.class);
-
-        final SegmentSplitContext<String, String> context = new SegmentSplitContext<>(
-                segment, plan, lower, upper, factory);
-
         assertSame(segment, context.getSegment());
         assertSame(plan, context.getPlan());
         assertSame(lower, context.getLowerSegmentId());
         assertSame(upper, context.getUpperSegmentId());
         assertSame(factory, context.getWriterTxFactory());
 
-        final Segment<String, String> newSegment = mock(Segment.class);
-        final SegmentSplitterPlan<String, String> newPlan = mock(
-                SegmentSplitterPlan.class);
         final SegmentId newLower = SegmentId.of(3);
         final SegmentId newUpper = SegmentId.of(4);
-        final SegmentWriterTxFactory<String, String> newFactory = id -> mock(
-                WriteTransaction.class);
+        final SegmentWriterTxFactory<String, String> newFactory = id -> newWriteTransaction;
 
         context.setSegment(newSegment);
         context.setPlan(newPlan);

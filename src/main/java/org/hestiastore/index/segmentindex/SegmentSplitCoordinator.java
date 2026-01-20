@@ -3,12 +3,9 @@ package org.hestiastore.index.segmentindex;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segment.SegmentFiles;
-import org.hestiastore.index.segment.SegmentFilesRenamer;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segment.SegmentPropertiesManager;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
 import org.slf4j.Logger;
@@ -26,7 +23,6 @@ public class SegmentSplitCoordinator<K, V> {
     private final IndexConfiguration<K, V> conf;
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
-    private final SegmentFilesRenamer filesRenamer = new SegmentFilesRenamer();
     private final IndexRetryPolicy retryPolicy;
 
     SegmentSplitCoordinator(final IndexConfiguration<K, V> conf,
@@ -221,23 +217,8 @@ public class SegmentSplitCoordinator<K, V> {
     private void replaceCurrentWithSegment(final SegmentId segmentId,
             final SegmentId replacementSegmentId) {
         segmentRegistry.executeWithRegistryLock(() -> {
-            if (segmentRegistry.isSegmentRootDirectoryEnabled()) {
-                segmentRegistry.swapSegmentDirectories(segmentId,
-                        replacementSegmentId);
-                return;
-            }
-            final SegmentPropertiesManager currentProperties = segmentRegistry
-                    .newSegmentPropertiesManager(segmentId);
-            final SegmentFiles<K, V> currentFiles = segmentRegistry
-                    .newSegmentFiles(segmentId);
-            currentFiles.deleteAllFiles(currentProperties);
-
-            final SegmentFiles<K, V> replacementFiles = segmentRegistry
-                    .newSegmentFiles(replacementSegmentId);
-            final SegmentPropertiesManager replacementProperties = segmentRegistry
-                    .newSegmentPropertiesManager(replacementSegmentId);
-            filesRenamer.renameFiles(replacementFiles, currentFiles,
-                    replacementProperties);
+            segmentRegistry.swapSegmentDirectories(segmentId,
+                    replacementSegmentId);
         });
     }
 }

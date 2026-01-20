@@ -35,20 +35,20 @@ public final class SegmentDataSupplier<K, V> {
      * @return Bloom filter instance
      */
     public BloomFilter<K> getBloomFilter() {
-        return BloomFilter.<K>builder()
+        final var builder = BloomFilter.<K>builder()
                 .withBloomFilterFileName(segmentFiles.getBloomFilterFileName())
                 .withConvertorToBytes(segmentFiles.getKeyTypeDescriptor()
                         .getConvertorToBytes())
                 .withAsyncDirectory(segmentFiles.getAsyncDirectory())
+                .withRelatedObjectName(segmentFiles.getSegmentIdName())
+                .withDiskIoBufferSize(segmentConf.getDiskIoBufferSize())
                 .withIndexSizeInBytes(
                         segmentConf.getBloomFilterIndexSizeInBytes())
                 .withNumberOfHashFunctions(
                         segmentConf.getBloomFilterNumberOfHashFunctions())
                 .withProbabilityOfFalsePositive(
-                        segmentConf.getBloomFilterProbabilityOfFalsePositive())
-                .withRelatedObjectName(segmentFiles.getSegmentIdName())
-                .withDiskIoBufferSize(segmentConf.getDiskIoBufferSize())
-                .build();
+                        segmentConf.getBloomFilterProbabilityOfFalsePositive());
+        return builder.build();
     }
 
     /**

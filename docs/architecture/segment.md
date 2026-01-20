@@ -74,6 +74,31 @@ Lazy-loaded resources:
 * `SegmentReadPath` also caches `SegmentIndexSearcher` for point lookups and
   resets it on maintenance.
 
+## 📁 Segment directory layout
+
+Segment writes all files into the `AsyncDirectory` passed to
+`SegmentBuilder`. That directory can point to:
+
+* Index root (flat layout): segment files live next to `index.map`.
+* Per-segment directory (segment-root layout): e.g. `segment-00001/` contains
+  all files for that segment. File names still include the segment prefix, so
+  paths look like `segment-00001/segment-00001.index`.
+
+For segment id `segment-00001` the directory contains:
+
+* `segment-00001.index` - main SST file
+* `segment-00001.scarce` - sparse index
+* `segment-00001.bloom-filter` - Bloom filter store
+* `segment-00001.properties` - segment metadata (active version, delta count)
+* `segment-00001.lock` - segment lock file
+* `segment-00001-delta-000.cache`, `segment-00001-delta-001.cache`, ... - delta
+  cache files (3-digit padded counter)
+
+Versioned layouts use the `-v<version>` marker in file names when
+`SegmentPropertiesManager` records a positive active version, e.g.
+`segment-00001-v2.index` and `segment-00001-v2-delta-000.cache`. Version `0`
+keeps the legacy unversioned names.
+
 ## ✍️ Writing to segment
 
 Opening segment writer immediatelly close all segment readers. When writing operation add key that is in index but is not in cache this value will not returned updated. 

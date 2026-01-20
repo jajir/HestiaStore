@@ -10,7 +10,6 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.junit.jupiter.api.Test;
 
@@ -22,12 +21,12 @@ class SegmentFilesTest {
                 AsyncDirectoryAdapter.wrap(new MemDirectory()), SegmentId.of(1),
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(),
                 1024, List.of(new ChunkFilterDoNothing()),
-                List.of(new ChunkFilterDoNothing()));
+                List.of(new ChunkFilterDoNothing()), 2L);
 
         final String base = files.getSegmentIdName();
-        assertEquals(base + ".index", files.getIndexFileName());
-        assertEquals(base + ".scarce", files.getScarceFileName());
-        assertEquals(base + ".bloom-filter", files.getBloomFilterFileName());
+        assertEquals(base + "-v2.index", files.getIndexFileName());
+        assertEquals(base + "-v2.scarce", files.getScarceFileName());
+        assertEquals(base + "-v2.bloom-filter", files.getBloomFilterFileName());
     }
 
     @Test
@@ -36,7 +35,7 @@ class SegmentFilesTest {
                 AsyncDirectoryAdapter.wrap(new MemDirectory()), SegmentId.of(1),
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(),
                 1024, List.of(new ChunkFilterDoNothing()),
-                List.of(new ChunkFilterDoNothing()));
+                List.of(new ChunkFilterDoNothing()), 1L);
 
         assertThrows(UnsupportedOperationException.class,
                 () -> files.getEncodingChunkFilters()
@@ -53,58 +52,44 @@ class SegmentFilesTest {
                         AsyncDirectoryAdapter.wrap(new MemDirectory()),
                         SegmentId.of(1), new TypeDescriptorInteger(),
                         new TypeDescriptorShortString(), 1024, List.of(),
-                        List.of(new ChunkFilterDoNothing())));
+                        List.of(new ChunkFilterDoNothing()), 1L));
     }
 
     @Test
-    void switchActiveDirectory_updates_active_directory_reference() {
-        final AsyncDirectory rootDirectory = AsyncDirectoryAdapter
-                .wrap(new MemDirectory());
+    void switchActiveVersion_updates_active_version() {
         final SegmentDirectoryLayout layout = new SegmentDirectoryLayout(
                 SegmentId.of(1));
         final SegmentFiles<Integer, String> files = new SegmentFiles<>(
-                rootDirectory,
-                rootDirectory.openSubDirectory("v1")
-                        .toCompletableFuture().join(),
+                AsyncDirectoryAdapter.wrap(new MemDirectory()),
                 layout,
-                "v1",
+                1L,
                 new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(),
                 1024, List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()));
 
-        final AsyncDirectory v2Directory = rootDirectory
-                .openSubDirectory("v2").toCompletableFuture().join();
-        files.switchActiveDirectory("v2", v2Directory);
+        files.switchActiveVersion(2L);
 
-        assertEquals("v2", files.getActiveDirectoryName());
-        assertSame(v2Directory, files.getAsyncDirectory());
+        assertEquals(2L, files.getActiveVersion());
     }
 
     @Test
-    void copyWithDirectory_creates_new_instance() {
-        final AsyncDirectory rootDirectory = AsyncDirectoryAdapter
-                .wrap(new MemDirectory());
+    void copyWithVersion_creates_new_instance() {
         final SegmentDirectoryLayout layout = new SegmentDirectoryLayout(
                 SegmentId.of(1));
         final SegmentFiles<Integer, String> files = new SegmentFiles<>(
-                rootDirectory,
-                rootDirectory.openSubDirectory("v1")
-                        .toCompletableFuture().join(),
+                AsyncDirectoryAdapter.wrap(new MemDirectory()),
                 layout,
-                "v1",
+                1L,
                 new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(),
                 1024, List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()));
 
-        final AsyncDirectory v3Directory = rootDirectory
-                .openSubDirectory("v3").toCompletableFuture().join();
-        final SegmentFiles<Integer, String> copy = files
-                .copyWithDirectory("v3", v3Directory);
+        final SegmentFiles<Integer, String> copy = files.copyWithVersion(3L);
 
-        assertEquals("v1", files.getActiveDirectoryName());
-        assertEquals("v3", copy.getActiveDirectoryName());
-        assertSame(v3Directory, copy.getAsyncDirectory());
+        assertEquals(1L, files.getActiveVersion());
+        assertEquals(3L, copy.getActiveVersion());
+        assertSame(files.getAsyncDirectory(), copy.getAsyncDirectory());
     }
 }

@@ -150,8 +150,8 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
     void test_duplicities() {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
-        final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
-                .withAsyncDirectory(
+        final Segment<Integer, String> seg = Segment
+                .<Integer, String>builder(
                         org.hestiastore.index.directory.async.AsyncDirectoryAdapter
                                 .wrap(directory))//
                 .withId(id)//
@@ -204,8 +204,8 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
     void test_write_unordered() {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
-        final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
-                .withAsyncDirectory(
+        final Segment<Integer, String> seg = Segment
+                .<Integer, String>builder(
                         org.hestiastore.index.directory.async.AsyncDirectoryAdapter
                                 .wrap(directory))//
                 .withId(id)//
@@ -258,8 +258,8 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
     void test_write_unordered_tombstone() {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
-        final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
-                .withAsyncDirectory(
+        final Segment<Integer, String> seg = Segment
+                .<Integer, String>builder(
                         org.hestiastore.index.directory.async.AsyncDirectoryAdapter
                                 .wrap(directory))//
                 .withId(id)//
@@ -337,8 +337,8 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
     void test_write_delete_operations() {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
-        final Segment<Integer, String> seg = Segment.<Integer, String>builder()
-                .withAsyncDirectory(
+        final Segment<Integer, String> seg = Segment
+                .<Integer, String>builder(
                         org.hestiastore.index.directory.async.AsyncDirectoryAdapter
                                 .wrap(directory))
                 .withId(id).withKeyTypeDescriptor(tdi)
@@ -393,43 +393,37 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .wrap(directory);
         final SegmentId segmentId = SegmentId.of(27);
 
-        SegmentConf segmentConf = new SegmentConf(64, 128, 256, 3, 2, 0, 0.01,
-                1024, List.of(), List.of());
-
         final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
                 asyncDirectory, segmentId);
+        segmentPropertiesManager.setVersion(1L);
+        segmentPropertiesManager
+                .setState(SegmentPropertiesManager.SegmentDataState.ACTIVE);
 
-        final SegmentFiles<Integer, String> segmentFiles = new SegmentFiles<>(
-                asyncDirectory, segmentId, tdi, tds, 1024, //
-                List.of(new ChunkFilterMagicNumberWriting(), //
-                        new ChunkFilterCrc32Writing(), //
-                        new ChunkFilterDoNothing()//
-                ), //
-                List.of(new ChunkFilterMagicNumberValidation(), //
-                        new ChunkFilterCrc32Validation(), //
-                        new ChunkFilterDoNothing()//
-                )//
-        );
-
-        final SegmentDataSupplier<Integer, String> segmentDataSupplier = new SegmentDataSupplier<>(
-                segmentFiles, segmentConf);
-
-        final SegmentResourcesImpl<Integer, String> dataProvider = new SegmentResourcesImpl<>(
-                segmentDataSupplier);
-
-        final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
-                .withAsyncDirectory(
+        final Segment<Integer, String> seg = Segment
+                .<Integer, String>builder(
                         org.hestiastore.index.directory.async.AsyncDirectoryAdapter
                                 .wrap(directory))//
                 .withId(segmentId)//
-                .withSegmentConf(segmentConf)//
-                .withSegmentFiles(segmentFiles)//
-                .withSegmentPropertiesManager(segmentPropertiesManager)//
-                .withSegmentResources(dataProvider)//
+                .withMaxNumberOfKeysInSegmentWriteCache(64)//
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(128)//
+                .withMaxNumberOfKeysInSegmentCache(256)//
                 .withMaxNumberOfKeysInSegmentChunk(3)//
                 .withKeyTypeDescriptor(tdi)//
+                .withBloomFilterNumberOfHashFunctions(2)//
                 .withBloomFilterIndexSizeInBytes(0)//
+                .withBloomFilterProbabilityOfFalsePositive(0.01)//
                 .withValueTypeDescriptor(tds)//
+                .withDiskIoBufferSize(1024)//
+                .withEncodingChunkFilters(
+                        List.of(new ChunkFilterMagicNumberWriting(), //
+                                new ChunkFilterCrc32Writing(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
+                .withDecodingChunkFilters(
+                        List.of(new ChunkFilterMagicNumberValidation(), //
+                                new ChunkFilterCrc32Validation(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
                 .build();
 
         writeEntries(seg, Arrays.asList(//
@@ -455,11 +449,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 Entry.of(14, "aad"), //
                 Entry.of(15, "aae") //
         ));
-
-        /**
-         * Force unloading segment data
-         */
-        dataProvider.invalidate();
+        seg.close();
     }
 
     /**
@@ -480,8 +470,8 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
     void test_write_unordered_tombstone_with_compact() {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
-        final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
-                .withAsyncDirectory(
+        final Segment<Integer, String> seg = Segment
+                .<Integer, String>builder(
                         org.hestiastore.index.directory.async.AsyncDirectoryAdapter
                                 .wrap(directory))//
                 .withId(id)//
@@ -545,8 +535,8 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
     void test_search_on_disk() {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
-        final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
-                .withAsyncDirectory(
+        final Segment<Integer, String> seg = Segment
+                .<Integer, String>builder(
                         org.hestiastore.index.directory.async.AsyncDirectoryAdapter
                                 .wrap(directory))//
                 .withId(id)//
@@ -605,8 +595,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         final int smallCacheSize = 1024;
         final int smallWriteCache = 256;
         return Stream.of(arguments(tdi, tds, dir1, Segment
-                .<Integer, String>builder()//
-                .withAsyncDirectory(
+                .<Integer, String>builder(
                         org.hestiastore.index.directory.async.AsyncDirectoryAdapter
                                 .wrap(dir1))//
                 .withId(id1)//
@@ -630,10 +619,9 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .build(), //
                 1, // expectedNumberKeysInScarceIndex,
                 10 // expectedNumberOfFile
-        ), arguments(tdi, tds, dir2, Segment.<Integer, String>builder()//
-                .withAsyncDirectory(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(dir2))//
+        ), arguments(tdi, tds, dir2, Segment.<Integer, String>builder(
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(dir2))//
                 .withId(id2)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//
@@ -656,10 +644,9 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .build(), //
                 9, // expectedNumberKeysInScarceIndex
                 10// expectedNumberOfFile
-        ), arguments(tdi, tds, dir3, Segment.<Integer, String>builder()//
-                .withAsyncDirectory(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(dir3))//
+        ), arguments(tdi, tds, dir3, Segment.<Integer, String>builder(
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(dir3))//
                 .withId(id3)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//

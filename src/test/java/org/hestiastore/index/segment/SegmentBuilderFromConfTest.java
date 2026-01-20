@@ -21,27 +21,26 @@ public class SegmentBuilderFromConfTest {
     private static final TypeDescriptor<Integer> KEY_TYPE_DESCRIPTOR = new TypeDescriptorInteger();
 
     @Test
-    void test_verify_that_given_segment_conf_is_used() {
-        SegmentConf conf = new SegmentConf(500, // maxNumberOfKeysInSegmentWriteCache
-                1000, // maxNumberOfKeysInSegmentWriteCacheDuringMaintenance
-                5000, // maxNumberOfKeysInSegmentCache
-                50, // maxNumberOfKeysInIndexPage
-                3, // bloomFilterNumberOfHashFunctions
-                1024, // bloomFilterIndexSizeInBytes
-                0.01, // bloomFilterProbabilityOfFalsePositive
-                1024, // diskIoBufferSize
-                List.of(new ChunkFilterMagicNumberWriting()), //
-                List.of(new ChunkFilterMagicNumberValidation())//
-        );
+    void test_verify_that_builder_configuration_is_used() {
         final SegmentBuilder<Integer, String> builder = Segment
-                .<Integer, String>builder()//
-                .withAsyncDirectory(
+                .<Integer, String>builder(
                         org.hestiastore.index.directory.async.AsyncDirectoryAdapter
                                 .wrap(DIRECTORY))//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
-                .withSegmentConf(conf)//
+                .withMaxNumberOfKeysInSegmentWriteCache(500)//
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(1000)//
+                .withMaxNumberOfKeysInSegmentCache(5000)//
+                .withMaxNumberOfKeysInSegmentChunk(50)//
+                .withBloomFilterNumberOfHashFunctions(3)//
+                .withBloomFilterIndexSizeInBytes(1024)//
+                .withBloomFilterProbabilityOfFalsePositive(0.01)//
+                .withDiskIoBufferSize(1024)//
+                .withEncodingChunkFilters(
+                        List.of(new ChunkFilterMagicNumberWriting()))//
+                .withDecodingChunkFilters(
+                        List.of(new ChunkFilterMagicNumberValidation()))//
         ;
         Segment<Integer, String> seg = builder.build();
         assertEquals(SegmentResultStatus.OK, seg.put(1, "A").getStatus());
