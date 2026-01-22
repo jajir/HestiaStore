@@ -77,7 +77,6 @@
 [ ] 20 - segment: from segment index do not call flush; only user or segment decides.
 [ ] 21 - segment: add SegmentSyncAdapters wrapper to retry BUSY with backoff until OK or throw on ERROR/CLOSED.
 [ ] 22 - segment: add configurable BUSY timeout to avoid infinite wait (split waits).
-[ ] 24 - segment: consider segment per directory.
 
 ## In Progress
 
