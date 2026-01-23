@@ -8,6 +8,9 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -18,6 +21,21 @@ class IndexStateTest {
 
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
+    private IndexInternalConcurrent<Integer, String> index;
+
+    @BeforeEach
+    void setUp() {
+        index = new IndexInternalConcurrent<>(
+                AsyncDirectoryAdapter.wrap(new MemDirectory()),
+                tdi, tds, buildConf());
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (index != null && !index.wasClosed()) {
+            index.close();
+        }
+    }
 
     /**
      * Ensures that all public operations fail with an
@@ -26,10 +44,6 @@ class IndexStateTest {
      */
     @Test
     void operationsFailAfterClose() {
-        final IndexInternalDefault<Integer, String> index = new IndexInternalDefault<>(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(new MemDirectory()),
-                tdi, tds, buildConf());
         index.put(1, "one");
         index.close();
 

@@ -11,8 +11,7 @@ final class SegmentConcurrencyGate {
     private static final int SPIN_LIMIT = 1_000;
 
     private final SegmentStateMachine stateMachine = new SegmentStateMachine();
-    private final AtomicInteger inFlightReads = new AtomicInteger();
-    private final AtomicInteger inFlightWrites = new AtomicInteger();
+    private final AtomicInteger inFlightOperations = new AtomicInteger();
     private final AtomicBoolean closing = new AtomicBoolean(false);
 
     /**
@@ -43,7 +42,7 @@ final class SegmentConcurrencyGate {
      * @return true when read admission succeeded
      */
     boolean tryEnterRead() {
-        return tryEnterOperation(inFlightReads);
+        return tryEnterOperation(inFlightOperations);
     }
 
     /**
@@ -52,21 +51,21 @@ final class SegmentConcurrencyGate {
      * @return true when write admission succeeded
      */
     boolean tryEnterWrite() {
-        return tryEnterOperation(inFlightWrites);
+        return tryEnterOperation(inFlightOperations);
     }
 
     /**
      * Marks completion of a read operation.
      */
     void exitRead() {
-        inFlightReads.decrementAndGet();
+        inFlightOperations.decrementAndGet();
     }
 
     /**
      * Marks completion of a write operation.
      */
     void exitWrite() {
-        inFlightWrites.decrementAndGet();
+        inFlightOperations.decrementAndGet();
     }
 
     /**
@@ -140,24 +139,6 @@ final class SegmentConcurrencyGate {
     }
 
     /**
-     * Returns the number of in-flight read operations.
-     *
-     * @return in-flight reads
-     */
-    int getInFlightReads() {
-        return inFlightReads.get();
-    }
-
-    /**
-     * Returns the number of in-flight write operations.
-     *
-     * @return in-flight writes
-     */
-    int getInFlightWrites() {
-        return inFlightWrites.get();
-    }
-
-    /**
      * Attempts to enter a read or write operation.
      *
      * @param counter in-flight counter to increment
@@ -202,12 +183,12 @@ final class SegmentConcurrencyGate {
     }
 
     /**
-     * Returns true when there are reads or writes in flight.
+     * Returns true when there are operations in flight.
      *
      * @return true when operations are in flight
      */
     private boolean hasInFlight() {
-        return inFlightReads.get() > 0 || inFlightWrites.get() > 0;
+        return inFlightOperations.get() > 0;
     }
 
     /**

@@ -8,15 +8,27 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class SegmentConcurrencyGateTest {
 
+    private SegmentConcurrencyGate gate;
+
+    @BeforeEach
+    void setUp() {
+        gate = new SegmentConcurrencyGate();
+    }
+
+    @AfterEach
+    void tearDown() {
+        gate = null;
+    }
+
     @Test
-    void freeze_waits_for_in_flight_reads() throws Exception {
-        final SegmentConcurrencyGate gate = new SegmentConcurrencyGate();
+    void freeze_waits_for_in_flight_operations() throws Exception {
         assertTrue(gate.tryEnterRead());
-        assertEquals(1, gate.getInFlightReads());
 
         final CountDownLatch started = new CountDownLatch(1);
         final CompletableFuture<Boolean> result = new CompletableFuture<>();
@@ -31,7 +43,6 @@ class SegmentConcurrencyGateTest {
         assertFalse(result.isDone());
 
         gate.exitRead();
-        assertEquals(0, gate.getInFlightReads());
 
         assertTrue(result.get(1, TimeUnit.SECONDS));
         assertEquals(SegmentState.FREEZE, gate.getState());
@@ -41,7 +52,6 @@ class SegmentConcurrencyGateTest {
 
     @Test
     void tryEnterRead_refuses_freeze() {
-        final SegmentConcurrencyGate gate = new SegmentConcurrencyGate();
         assertTrue(gate.tryEnterFreezeAndDrain());
 
         assertFalse(gate.tryEnterRead());
@@ -50,23 +60,19 @@ class SegmentConcurrencyGateTest {
 
     @Test
     void tryEnterWrite_allows_maintenance_running() {
-        final SegmentConcurrencyGate gate = new SegmentConcurrencyGate();
         assertTrue(gate.tryEnterFreezeAndDrain());
         assertTrue(gate.enterMaintenanceRunning());
 
         assertTrue(gate.tryEnterWrite());
-        assertEquals(1, gate.getInFlightWrites());
         gate.exitWrite();
-        assertEquals(0, gate.getInFlightWrites());
     }
 
     @Test
-    void finishMaintenanceToFreeze_waits_for_in_flight_reads() throws Exception {
-        final SegmentConcurrencyGate gate = new SegmentConcurrencyGate();
+    void finishMaintenanceToFreeze_waits_for_in_flight_operations()
+            throws Exception {
         assertTrue(gate.tryEnterFreezeAndDrain());
         assertTrue(gate.enterMaintenanceRunning());
         assertTrue(gate.tryEnterRead());
-        assertEquals(1, gate.getInFlightReads());
 
         final CountDownLatch started = new CountDownLatch(1);
         final CompletableFuture<Boolean> result = new CompletableFuture<>();
@@ -81,7 +87,6 @@ class SegmentConcurrencyGateTest {
         assertFalse(result.isDone());
 
         gate.exitRead();
-        assertEquals(0, gate.getInFlightReads());
 
         assertTrue(result.get(1, TimeUnit.SECONDS));
         assertEquals(SegmentState.FREEZE, gate.getState());

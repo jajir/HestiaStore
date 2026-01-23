@@ -2,19 +2,12 @@
 
 ## Active
 
-[ ] 36 Consolidate in-flight read/write counters in `SegmentConcurrencyGate` (Risk: LOW)
-    - Replace `inFlightReads`/`inFlightWrites` with a single counter.
-    - Keep admission rules and drain behavior unchanged.
-    - Update any stats or tests that rely on read/write split (if introduced).
-[ ] 37 Audit `segment` package for unused or test-only code (Risk: LOW)
-    - Identify unused classes/methods/fields.
-    - Remove code only referenced by tests or move test helpers into test scope.
-    - Ensure public API docs and tests remain consistent after cleanup.
-[ ] 38 Audit `segmentindex` package for unused or test-only code (Risk: LOW)
-    - Identify unused classes/methods/fields.
-    - Remove code only referenced by tests or move test helpers into test scope.
-    - Ensure public API docs and tests remain consistent after cleanup.
-
+[ ] 39 Review `segment` package for test and Javadoc coverage (Risk: LOW)
+    - Ensure each class has a JUnit test or document why coverage is excluded.
+    - Ensure each public class/method has Javadoc; add missing docs.
+[ ] 40 Review `segmentindex` package for test and Javadoc coverage (Risk: LOW)
+    - Ensure each class has a JUnit test or document why coverage is excluded.
+    - Ensure each public class/method has Javadoc; add missing docs.
 
 ## Planned
 
@@ -81,6 +74,55 @@
     - Capture MDC context on submit and reapply in async tasks.
     - Wrap stream/iterator consumption with MDC scope; clear on close.
     - Add tests asserting `index.name` appears in async logs.
+[ ] 41 Unify async execution for segment index (Risk: MEDIUM)
+    - Route `SegmentIndexImpl.runAsyncTracked` and `IndexAsyncAdapter.runAsyncTracked`
+      through a shared, dedicated executor (no common pool).
+    - Decide whether to keep both async layers or make one delegate to the other.
+    - Align async close behavior and document rejection/backpressure outcomes.
+[ ] 42 Revisit `SegmentAsyncExecutor` rejection policy (Risk: MEDIUM)
+    - Ensure maintenance IO never runs on caller threads.
+    - Choose `AbortPolicy` + BUSY/error mapping or custom handler.
+    - Update docs and metrics if behavior changes.
+[ ] 43 Replace registry close polling with completion signal (Risk: MEDIUM)
+    - Add a close completion handle or signal in `Segment`.
+    - Update `SegmentRegistry.closeSegmentIfNeeded` to wait on completion rather
+      than polling `getState()`.
+    - Ensure close-from-maintenance thread does not deadlock.
+[ ] 44 Normalize split close/eviction flow (Risk: MEDIUM)
+    - Centralize segment close/eviction in `SegmentRegistry`.
+    - Remove direct `segment.close()` calls from split coordinator.
+    - Ensure split outcome updates mapping, eviction, and close are ordered.
+[ ] 45 Replace spin-wait in `SegmentConcurrencyGate.awaitNoInFlight` (Risk: LOW)
+    - Use `wait/notify` or `ManagedBlocker` with timeout.
+    - Preserve FREEZE semantics and early exit on state change.
+    - Add tests for drain behavior under load.
+[ ] 46 Align iterator isolation naming and semantics (Risk: LOW)
+    - Choose between `FAIL_FAST`/`FULL_ISOLATION` and the legacy
+      `INTERRUPT_FAST`/`STOP_FAST` terminology.
+    - Update docs, comments, and any mapping code consistently.
+[ ] 47 Consolidate BUSY/CLOSED retry loops (Risk: LOW)
+    - Extract shared retry helper for segmentindex operations.
+    - Replace ad-hoc loops in `SegmentRegistry`, `SegmentSplitCoordinator`,
+      and `SegmentIndexImpl`.
+    - Keep backoff/timeout semantics and error messages consistent.
+
+### Testing/Quality
+[ ] 48 Test executor saturation and backpressure paths (Risk: MEDIUM)
+    - Add tests for `SegmentAsyncExecutor` queue saturation and rejection handling.
+    - Add tests for `SplitAsyncExecutor` rejection and in-flight cleanup.
+    - Verify maintenance IO never runs on caller threads.
+[ ] 49 Test close path interactions (Risk: MEDIUM)
+    - Close while segment is `MAINTENANCE_RUNNING` and ensure backoff/timeout works.
+    - Close during async operations should fail fast with clear error.
+    - Assert no deadlock when waiting for segment READY/CLOSED.
+[ ] 50 Test split failure cleanup (Risk: MEDIUM)
+    - Force exceptions in split steps and assert `splitsInFlight` clears.
+    - Validate directory swap and key-to-segment map remain consistent.
+    - Ensure resources/locks are released on failure.
+[ ] 51 Test maintenance failure transitions (Risk: MEDIUM)
+    - Inject failures in maintenance IO and publish phases.
+    - Assert segment moves to `ERROR` and callers see ERROR status.
+    - Verify rejection handling does not leave the segment in FREEZE.
 
 ## Ready
 
@@ -195,3 +237,15 @@
 [x] 35 Remove unused close monitor in `SegmentConcurrencyGate` (Risk: LOW)
     - Remove `closeMonitor` and `signalCloseMonitor` since nothing waits on it.
     - Keep drain behavior in `awaitNoInFlight()` unchanged.
+[x] 36 Consolidate in-flight read/write counters in `SegmentConcurrencyGate` (Risk: LOW)
+    - Replace `inFlightReads`/`inFlightWrites` with a single counter.
+    - Keep admission rules and drain behavior unchanged.
+    - Update any stats or tests that rely on read/write split (if introduced).
+[x] 37 Audit `segment` package for unused or test-only code (Risk: LOW)
+    - Identify unused classes/methods/fields.
+    - Remove code only referenced by tests or move test helpers into test scope.
+    - Ensure public API docs and tests remain consistent after cleanup.
+[x] 38 Audit `segmentindex` package for unused or test-only code (Risk: LOW)
+    - Identify unused classes/methods/fields.
+    - Remove code only referenced by tests or move test helpers into test scope.
+    - Ensure public API docs and tests remain consistent after cleanup.
