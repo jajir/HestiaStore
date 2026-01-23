@@ -19,6 +19,8 @@ import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentResult;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -30,78 +32,82 @@ class SegmentIndexImplRetryTest {
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
 
+    private IndexInternalConcurrent<Integer, String> index;
+
     @Mock
     private Segment<Integer, String> segment;
 
-    @Test
-    void getRetriesOnBusyThenOk() {
-        final IndexInternalDefault<Integer, String> index = newIndex();
-        try {
-            index.put(1, "one");
+    @BeforeEach
+    void setUp() {
+        index = newIndex();
+    }
 
-            final KeyToSegmentMapSynchronizedAdapter<Integer> cache = readKeyToSegmentMap(
-                    index);
-            final SegmentId segmentId = cache.findSegmentId(1);
-            final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
-                    index);
-            final Segment<Integer, String> original = registry
-                    .getSegment(segmentId).getValue();
-
-            final AtomicInteger attempts = new AtomicInteger();
-            when(segment.get(eq(1))).thenAnswer(invocation -> {
-                if (attempts.getAndIncrement() == 0) {
-                    return SegmentResult.busy();
-                }
-                return SegmentResult.ok("value");
-            });
-
-            replaceSegment(registry, segmentId, segment);
-
-            assertEquals("value", index.get(1));
-            verify(segment, times(2)).get(1);
-
-            replaceSegment(registry, segmentId, original);
-        } finally {
+    @AfterEach
+    void tearDown() {
+        if (index != null && !index.wasClosed()) {
             index.close();
         }
+    }
+
+    @Test
+    void getRetriesOnBusyThenOk() {
+        index.put(1, "one");
+
+        final KeyToSegmentMapSynchronizedAdapter<Integer> cache = readKeyToSegmentMap(
+                index);
+        final SegmentId segmentId = cache.findSegmentId(1);
+        final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
+                index);
+        final Segment<Integer, String> original = registry.getSegment(segmentId)
+                .getValue();
+
+        final AtomicInteger attempts = new AtomicInteger();
+        when(segment.get(eq(1))).thenAnswer(invocation -> {
+            if (attempts.getAndIncrement() == 0) {
+                return SegmentResult.busy();
+            }
+            return SegmentResult.ok("value");
+        });
+
+        replaceSegment(registry, segmentId, segment);
+
+        assertEquals("value", index.get(1));
+        verify(segment, times(2)).get(1);
+
+        replaceSegment(registry, segmentId, original);
     }
 
     @Test
     void putRetriesOnBusyThenOk() {
-        final IndexInternalDefault<Integer, String> index = newIndex();
-        try {
-            index.put(1, "one");
+        index.put(1, "one");
 
-            final KeyToSegmentMapSynchronizedAdapter<Integer> cache = readKeyToSegmentMap(
-                    index);
-            final SegmentId segmentId = cache.findSegmentId(1);
-            final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
-                    index);
-            final Segment<Integer, String> original = registry
-                    .getSegment(segmentId).getValue();
+        final KeyToSegmentMapSynchronizedAdapter<Integer> cache = readKeyToSegmentMap(
+                index);
+        final SegmentId segmentId = cache.findSegmentId(1);
+        final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
+                index);
+        final Segment<Integer, String> original = registry.getSegment(segmentId)
+                .getValue();
 
-            final AtomicInteger attempts = new AtomicInteger();
-            when(segment.put(eq(2), eq("two"))).thenAnswer(invocation -> {
-                if (attempts.getAndIncrement() == 0) {
-                    return SegmentResult.busy();
-                }
-                return SegmentResult.ok();
-            });
+        final AtomicInteger attempts = new AtomicInteger();
+        when(segment.put(eq(2), eq("two"))).thenAnswer(invocation -> {
+            if (attempts.getAndIncrement() == 0) {
+                return SegmentResult.busy();
+            }
+            return SegmentResult.ok();
+        });
 
-            replaceSegment(registry, segmentId, segment);
+        replaceSegment(registry, segmentId, segment);
 
-            index.put(2, "two");
+        index.put(2, "two");
 
-            verify(segment, times(2)).put(2, "two");
+        verify(segment, times(2)).put(2, "two");
 
-            replaceSegment(registry, segmentId, original);
-        } finally {
-            index.close();
-        }
+        replaceSegment(registry, segmentId, original);
     }
 
-    private IndexInternalDefault<Integer, String> newIndex() {
-        return new IndexInternalDefault<>(
+    private IndexInternalConcurrent<Integer, String> newIndex() {
+        return new IndexInternalConcurrent<>(
                 AsyncDirectoryAdapter.wrap(new MemDirectory()), tdi, tds,
                 buildConf());
     }

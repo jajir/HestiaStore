@@ -9,48 +9,55 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
+import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
+import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentState;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class SegmentIndexImplPutTest {
 
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
+    private TestIndex<Integer, String> index;
+
+    @BeforeEach
+    void setUp() {
+        resetIndex(10, 1);
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (index != null && !index.wasClosed()) {
+            index.close();
+        }
+    }
 
     @Test
     void putWritesDirectlyToSegment() {
-        final IndexInternalDefault<Integer, String> index = new IndexInternalDefault<>(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(new MemDirectory()),
-                tdi, tds, buildConf(10, 1));
-
         index.put(1, "one");
 
         assertEquals("one", index.get(1));
-        index.close();
     }
 
     @Test
     void putRejectsTombstoneValues() {
-        final IndexInternalDefault<Integer, String> index = new IndexInternalDefault<>(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(new MemDirectory()),
-                tdi, tds, buildConf(10, 2));
+        resetIndex(10, 2);
 
         assertThrows(IllegalArgumentException.class,
                 () -> index.put(1, TypeDescriptorShortString.TOMBSTONE_VALUE));
-        index.close();
     }
 
     @Test
     void putOptionallySplitsSegmentWhenThresholdReached() {
-        final IndexInternalDefault<Integer, String> index = new IndexInternalDefault<>(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(new MemDirectory()),
-                tdi, tds, buildConf(4, 1));
+        resetIndex(4, 1);
 
         index.put(1, "a");
         index.put(2, "b");
@@ -60,23 +67,56 @@ class SegmentIndexImplPutTest {
 
         final KeyToSegmentMapSynchronizedAdapter<Integer> cache = readKeyToSegmentMap(
                 index);
+        index.awaitSplitsIdlePublic();
+        final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
+                index);
+        final SegmentId segmentId = cache.findSegmentId(1);
+        final Segment<Integer, String> segment = registry.getSegment(segmentId)
+                .getValue();
+        awaitSegmentReady(segment);
+        final SegmentSplitCoordinator<Integer, String> splitCoordinator = new SegmentSplitCoordinator<>(
+                index.getConfiguration(), cache, registry);
+        splitCoordinator.optionallySplit(segment);
         awaitSegmentCount(cache, 2);
         assertEquals(SegmentId.of(1), cache.findSegmentId(1));
-        index.close();
     }
 
     @Test
     void deleteWritesTombstoneToSegment() {
-        final IndexInternalDefault<Integer, String> index = new IndexInternalDefault<>(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(new MemDirectory()),
-                tdi, tds, buildConf(10, 1));
-
         index.put(1, "one");
         index.delete(1);
 
         assertNull(index.get(1));
-        index.close();
+    }
+
+    private void resetIndex(
+            final int maxKeysInSegment,
+            final int maxNumberOfKeysInSegmentWriteCache) {
+        if (index != null && !index.wasClosed()) {
+            index.close();
+        }
+        index = new TestIndex<>(
+                AsyncDirectoryAdapter.wrap(new MemDirectory()),
+                tdi, tds,
+                buildConf(maxKeysInSegment,
+                        maxNumberOfKeysInSegmentWriteCache));
+    }
+
+    private static final class TestIndex<K, V>
+            extends IndexInternalConcurrent<K, V> {
+
+        private TestIndex(
+                final AsyncDirectory directoryFacade,
+                final TypeDescriptor<K> keyTypeDescriptor,
+                final TypeDescriptor<V> valueTypeDescriptor,
+                final IndexConfiguration<K, V> conf) {
+            super(directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
+                    conf);
+        }
+
+        void awaitSplitsIdlePublic() {
+            awaitSplitsIdle();
+        }
     }
 
     private IndexConfiguration<Integer, String> buildConf(
@@ -124,6 +164,22 @@ class SegmentIndexImplPutTest {
         assertEquals(expectedCount, cache.getSegmentIds().size());
     }
 
+    private static void awaitSegmentReady(final Segment<?, ?> segment) {
+        final long deadline = System.nanoTime()
+                + TimeUnit.SECONDS.toNanos(2);
+        while (System.nanoTime() < deadline) {
+            final SegmentState state = segment.getState();
+            if (state == SegmentState.READY || state == SegmentState.CLOSED) {
+                return;
+            }
+            if (state == SegmentState.ERROR) {
+                throw new AssertionError("Segment failed during maintenance.");
+            }
+            Thread.onSpinWait();
+        }
+        throw new AssertionError("Timed out waiting for READY segment.");
+    }
+
     @SuppressWarnings("unchecked")
     private static <K, V> KeyToSegmentMapSynchronizedAdapter<K> readKeyToSegmentMap(
             final SegmentIndexImpl<K, V> index) {
@@ -135,6 +191,20 @@ class SegmentIndexImplPutTest {
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
                     "Unable to read keyToSegmentMap for test", ex);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <K, V> SegmentRegistry<K, V> readSegmentRegistry(
+            final SegmentIndexImpl<K, V> index) {
+        try {
+            final Field field = SegmentIndexImpl.class
+                    .getDeclaredField("segmentRegistry");
+            field.setAccessible(true);
+            return (SegmentRegistry<K, V>) field.get(index);
+        } catch (final ReflectiveOperationException ex) {
+            throw new IllegalStateException(
+                    "Unable to read segmentRegistry for test", ex);
         }
     }
 }
