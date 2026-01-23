@@ -38,6 +38,13 @@ public class DataTypeDescriptorRegistry {
         addTypeDescriptor(NullValue.class, new TypeDescriptorNull());
     }
 
+    /**
+     * Registers a type descriptor instance for the provided class.
+     *
+     * @param <T>            type being registered
+     * @param clazz          class that maps to the descriptor
+     * @param typeDescriptor descriptor instance
+     */
     public static final <T> void addTypeDescriptor(final Class<T> clazz,
             final TypeDescriptor<T> typeDescriptor) {
         Vldtn.requireNonNull(clazz, CLAZZ);
@@ -45,6 +52,13 @@ public class DataTypeDescriptorRegistry {
         descriptors.put(clazz, typeDescriptor.getClass().getName());
     }
 
+    /**
+     * Registers a type descriptor class name for the provided class.
+     *
+     * @param <T>            type being registered
+     * @param clazz          class that maps to the descriptor
+     * @param typeDescriptor descriptor class name
+     */
     public static final <T> void addTypeDescriptor(final Class<T> clazz,
             final String typeDescriptor) {
         Vldtn.requireNonNull(clazz, CLAZZ);
@@ -52,6 +66,13 @@ public class DataTypeDescriptorRegistry {
         descriptors.put(clazz, typeDescriptor);
     }
 
+    /**
+     * Returns the registered descriptor class name for the provided class.
+     *
+     * @param <T>   type being looked up
+     * @param clazz class that maps to the descriptor
+     * @return descriptor class name
+     */
     public static final <T> String getTypeDescriptor(final Class<T> clazz) {
         Vldtn.requireNonNull(clazz, CLAZZ);
         final String typeDescriptor = descriptors.get(clazz);
@@ -64,6 +85,13 @@ public class DataTypeDescriptorRegistry {
 
     }
 
+    /**
+     * Creates a descriptor instance from the provided class name.
+     *
+     * @param <N>       type represented by the descriptor
+     * @param className descriptor class name
+     * @return instantiated type descriptor
+     */
     @SuppressWarnings("unchecked")
     public static <N> TypeDescriptor<N> makeInstance(String className) {
         Vldtn.requireNonNull(className, "className");

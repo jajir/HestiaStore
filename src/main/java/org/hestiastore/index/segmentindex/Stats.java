@@ -29,14 +29,29 @@ public class Stats {
         deleteCx.increment();
     }
 
+    /**
+     * Returns the number of put operations recorded.
+     *
+     * @return put count
+     */
     public long getPutCx() {
         return putCx.sum();
     }
 
+    /**
+     * Returns the number of get operations recorded.
+     *
+     * @return get count
+     */
     public long getGetCx() {
         return getCx.sum();
     }
 
+    /**
+     * Returns the number of delete operations recorded.
+     *
+     * @return delete count
+     */
     public long getDeleteCx() {
         return deleteCx.sum();
     }

@@ -9,6 +9,7 @@ import org.hestiastore.index.Vldtn;
 final class SegmentSplitStepFillLowerUntilTarget<K, V>
         implements Filter<SegmentSplitContext<K, V>, SegmentSplitState<K, V>> {
 
+    /** {@inheritDoc} */
     @Override
     public boolean filter(final SegmentSplitContext<K, V> ctx,
             final SegmentSplitState<K, V> state) {

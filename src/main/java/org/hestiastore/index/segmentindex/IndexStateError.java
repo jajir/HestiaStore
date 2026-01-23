@@ -15,11 +15,13 @@ public class IndexStateError<K, V> implements IndexState<K, V> {
         this.fileLock = fileLock;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void onReady(final SegmentIndexImpl<K, V> index) {
         throw new IllegalStateException("Can't make ready index in ERROR.");
     }
 
+    /** {@inheritDoc} */
     @Override
     public void onClose(final SegmentIndexImpl<K, V> index) {
         if (fileLock != null && fileLock.isLocked()) {
@@ -28,6 +30,7 @@ public class IndexStateError<K, V> implements IndexState<K, V> {
         index.setIndexState(new IndexStateClosed<>());
     }
 
+    /** {@inheritDoc} */
     @Override
     public void tryPerformOperation() {
         throw new IllegalStateException("Index is in ERROR state.", failure);

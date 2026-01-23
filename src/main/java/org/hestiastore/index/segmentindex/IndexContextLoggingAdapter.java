@@ -102,6 +102,7 @@ public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public CompletionStage<Void> putAsync(final K key, final V value) {
         setContext();
@@ -112,6 +113,7 @@ public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public CompletionStage<V> getAsync(final K key) {
         setContext();
@@ -122,6 +124,7 @@ public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public CompletionStage<Void> deleteAsync(final K key) {
         setContext();
@@ -145,6 +148,7 @@ public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void compactAndWait() {
         setContext();
@@ -169,6 +173,7 @@ public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void flushAndWait() {
         setContext();
@@ -196,6 +201,7 @@ public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindows,
             final SegmentIteratorIsolation isolation) {
@@ -237,6 +243,7 @@ public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public SegmentIndexState getState() {
         setContext();

@@ -28,6 +28,14 @@ public class SegmentSplitterResult<K, V> {
     private final K minKey;
     private final SegmentSplittingStatus status;
 
+    /**
+     * Creates a split result with the provided segment metadata.
+     *
+     * @param segmentId segment id for the lower segment
+     * @param minKey minimum key of the lower segment
+     * @param maxKey maximum key of the lower segment
+     * @param segmentSplittingStatus split status
+     */
     public SegmentSplitterResult(final SegmentId segmentId, final K minKey,
             final K maxKey,
             final SegmentSplittingStatus segmentSplittingStatus) {

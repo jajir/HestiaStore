@@ -45,6 +45,14 @@ public final class SegmentSplitterPolicy<K, V> {
                 estimateNumberOfKeys());
     }
 
+    /**
+     * Evaluates whether a compaction step should precede splitting given a
+     * supplied estimate.
+     *
+     * @param maxNumberOfKeysInSegment configured split threshold
+     * @param estimatedNumberOfKeys estimated key count
+     * @return {@code true} when compaction is recommended before splitting
+     */
     public boolean shouldBeCompactedBeforeSplitting(
             final long maxNumberOfKeysInSegment,
             final long estimatedNumberOfKeys) {

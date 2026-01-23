@@ -21,6 +21,12 @@ public final class SegmentAsyncExecutor extends AbstractCloseableResource {
     private final ExecutorService executor;
     private final int queueCapacity;
 
+    /**
+     * Creates a shared executor for segment maintenance tasks.
+     *
+     * @param threads number of threads in the pool
+     * @param threadNamePrefix thread name prefix
+     */
     public SegmentAsyncExecutor(final int threads,
             final String threadNamePrefix) {
         Vldtn.requireGreaterThanZero(threads, "threads");
@@ -33,6 +39,11 @@ public final class SegmentAsyncExecutor extends AbstractCloseableResource {
                 new ThreadPoolExecutor.CallerRunsPolicy());
     }
 
+    /**
+     * Returns the underlying executor service.
+     *
+     * @return executor service
+     */
     public ExecutorService getExecutor() {
         return executor;
     }

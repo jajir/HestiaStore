@@ -102,11 +102,13 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean hasNext() {
         return nextEntry != null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Entry<K, V> next() {
         if (nextEntry == null) {
@@ -122,6 +124,7 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
         return currentEntry;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void doClose() {
         if (currentIterator != null) {

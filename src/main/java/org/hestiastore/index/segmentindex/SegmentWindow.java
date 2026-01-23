@@ -19,10 +19,21 @@ public class SegmentWindow {
         this.limit = limit;
     }
 
+    /**
+     * Returns the limit as an integer, defaulting to {@link Integer#MAX_VALUE}
+     * when unset.
+     *
+     * @return limit value or {@link Integer#MAX_VALUE}
+     */
     public int getIntLimit() {
         return limit.orElse(Integer.MAX_VALUE);
     }
 
+    /**
+     * Returns the offset as an integer, defaulting to 0 when unset.
+     *
+     * @return offset value or 0 when unset
+     */
     public int getIntOffset() {
         return offset.orElse(0);
     }

@@ -42,6 +42,10 @@ public class IndexConsistencyChecker<K, V> {
         this.keyComparator = keyTypeDescriptor.getComparator();
     }
 
+    /**
+     * Scans all segments and verifies map-to-segment consistency, attempting to
+     * repair obvious corruption when possible.
+     */
     public void checkAndRepairConsistency() {
         keyToSegmentMap.getSegmentsAsStream().forEach(segmentPair -> {
             final K segmentKey = segmentPair.getKey();

@@ -9,6 +9,12 @@ import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Loads, merges, and validates index configuration values.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 public class IndexConfigurationManager<K, V> {
 
     private final IndexConfiguratonStorage<K, V> confStorage;

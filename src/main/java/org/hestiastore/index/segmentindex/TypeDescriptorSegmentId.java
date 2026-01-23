@@ -21,11 +21,13 @@ public class TypeDescriptorSegmentId implements TypeDescriptor<SegmentId> {
 
     private static final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
 
+    /** {@inheritDoc} */
     @Override
     public Comparator<SegmentId> getComparator() {
         return (segId1, segId2) -> segId2.getId() - segId1.getId();
     }
 
+    /** {@inheritDoc} */
     @Override
     public TypeReader<SegmentId> getTypeReader() {
         return fileReader -> {
@@ -37,6 +39,7 @@ public class TypeDescriptorSegmentId implements TypeDescriptor<SegmentId> {
         };
     }
 
+    /** {@inheritDoc} */
     @Override
     public TypeWriter<SegmentId> getTypeWriter() {
         return (writer, object) -> {
@@ -44,18 +47,21 @@ public class TypeDescriptorSegmentId implements TypeDescriptor<SegmentId> {
         };
     }
 
+    /** {@inheritDoc} */
     @Override
     public ConvertorFromBytes<SegmentId> getConvertorFromBytes() {
         return bytes -> SegmentId
                 .of(tdi.getConvertorFromBytes().fromBytes(bytes));
     }
 
+    /** {@inheritDoc} */
     @Override
     public ConvertorToBytes<SegmentId> getConvertorToBytes() {
         return segmentId -> tdi.getConvertorToBytes()
                 .toBytes(segmentId.getId());
     }
 
+    /** {@inheritDoc} */
     @Override
     public SegmentId getTombstone() {
         return SegmentId.of(TypeDescriptorInteger.TOMBSTONE_VALUE);

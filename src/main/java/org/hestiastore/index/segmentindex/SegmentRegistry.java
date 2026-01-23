@@ -25,6 +25,12 @@ import org.hestiastore.index.segment.SegmentState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Registry that manages segment lifecycles and caches loaded segments.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 public class SegmentRegistry<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -94,6 +100,12 @@ public class SegmentRegistry<K, V> {
         return splitExecutor;
     }
 
+    /**
+     * Returns the segment for the provided id, loading it if needed.
+     *
+     * @param segmentId segment id to load
+     * @return result containing the segment or a status
+     */
     public SegmentResult<Segment<K, V>> getSegment(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         if (splitsInFlight.contains(segmentId)) {
@@ -160,6 +172,11 @@ public class SegmentRegistry<K, V> {
         }
     }
 
+    /**
+     * Removes a segment from the registry and closes it.
+     *
+     * @param segmentId segment id to remove
+     */
     public void removeSegment(final SegmentId segmentId) {
         final Segment<K, V> segment = removeSegmentFromRegistry(segmentId);
         closeSegmentIfNeeded(segment);
@@ -373,6 +390,9 @@ public class SegmentRegistry<K, V> {
         return message != null && message.contains("already locked");
     }
 
+    /**
+     * Closes all tracked segments and releases executors.
+     */
     public void close() {
         final List<Segment<K, V>> toClose = new ArrayList<>();
         synchronized (segmentsLock) {
