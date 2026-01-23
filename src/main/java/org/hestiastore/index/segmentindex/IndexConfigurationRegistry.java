@@ -26,6 +26,13 @@ public class IndexConfigurationRegistry {
 
         private final String memory;
 
+        /**
+         * Creates a registry key for the provided class and memory identifier.
+         *
+         * @param clazz  class used as the key
+         * @param memory optional memory descriptor
+         * @return registry key
+         */
         public static final Key of(final Class<?> clazz, final String memory) {
             return new Key(clazz, memory);
         }
@@ -35,11 +42,13 @@ public class IndexConfigurationRegistry {
             this.memory = memory;
         }
 
+        /** {@inheritDoc} */
         @Override
         public int hashCode() {
             return Objects.hash(clazz, memory);
         }
 
+        /** {@inheritDoc} */
         @Override
         public boolean equals(final Object obj) {
             if (this == obj)
@@ -64,6 +73,13 @@ public class IndexConfigurationRegistry {
         addTypeDefaultConf(String.class, new IndexConfigurationDefaultString());
     }
 
+    /**
+     * Registers a default configuration for the provided class.
+     *
+     * @param <T>               type handled by the defaults
+     * @param clazz             class to associate with defaults
+     * @param typeConfiguration default configuration
+     */
     public static final <T> void addTypeDefaultConf(final Class<T> clazz,
             final IndexConfigurationContract typeConfiguration) {
         Vldtn.requireNonNull(clazz, "clazz");
@@ -71,6 +87,14 @@ public class IndexConfigurationRegistry {
         add(clazz, null, typeConfiguration);
     }
 
+    /**
+     * Registers a configuration for the provided class and memory descriptor.
+     *
+     * @param <T>               type handled by the configuration
+     * @param clazz             class to associate with the configuration
+     * @param memory            optional memory descriptor
+     * @param typeConfiguration configuration to register
+     */
     public static final <T> void add(final Class<T> clazz, final String memory,
             final IndexConfigurationContract typeConfiguration) {
         Vldtn.requireNonNull(clazz, "");
@@ -78,11 +102,27 @@ public class IndexConfigurationRegistry {
         confs.put(Key.of(clazz, memory), typeConfiguration);
     }
 
+    /**
+     * Returns the registered configuration for the provided class.
+     *
+     * @param <T>   type handled by the configuration
+     * @param clazz class to look up
+     * @return optional configuration for the class
+     */
     public static final <T> Optional<IndexConfigurationContract> get(
             final Class<T> clazz) {
         return get(clazz, null);
     }
 
+    /**
+     * Returns the registered configuration for the provided class and memory
+     * descriptor.
+     *
+     * @param <T>   type handled by the configuration
+     * @param clazz class to look up
+     * @param memory optional memory descriptor
+     * @return optional configuration for the key
+     */
     public static final <T> Optional<IndexConfigurationContract> get(
             final Class<T> clazz, final String memory) {
         Vldtn.requireNonNull(clazz, "class");

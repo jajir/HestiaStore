@@ -15,6 +15,13 @@ import org.hestiastore.index.properties.PropertyTransaction;
 import org.hestiastore.index.properties.PropertyView;
 import org.hestiastore.index.properties.PropertyWriter;
 
+/**
+ * Persists {@link IndexConfiguration} instances to the index configuration
+ * property store.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 public class IndexConfiguratonStorage<K, V> {
 
     private static final IndexPropertiesSchema SCHEMA = IndexPropertiesSchema.INDEX_CONFIGURATION_SCHEMA;
@@ -166,6 +173,11 @@ public class IndexConfiguratonStorage<K, V> {
         return builder.build();
     }
 
+    /**
+     * Persists the provided configuration to the backing property store.
+     *
+     * @param indexConfiguration configuration to persist
+     */
     public void save(IndexConfiguration<K, V> indexConfiguration) {
         final PropertyStore props = PropertyStoreimpl.fromAsyncDirectory(
                 directoryFacade, CONFIGURATION_FILENAME, false);

@@ -10,6 +10,7 @@ import org.hestiastore.index.segment.SegmentId;
 final class SegmentSplitStepWriteRemainingToCurrent<K, V>
         implements Filter<SegmentSplitContext<K, V>, SegmentSplitState<K, V>> {
 
+    /** {@inheritDoc} */
     @Override
     public boolean filter(final SegmentSplitContext<K, V> ctx,
             final SegmentSplitState<K, V> state) {

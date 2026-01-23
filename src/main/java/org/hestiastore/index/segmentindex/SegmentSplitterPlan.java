@@ -23,6 +23,14 @@ public final class SegmentSplitterPlan<K, V> {
         this.half = estimatedNumberOfKeys / 2;
     }
 
+    /**
+     * Builds a split plan from the supplied policy.
+     *
+     * @param <K> key type
+     * @param <V> value type
+     * @param segmentSplitterPolicy policy describing the segment
+     * @return new split plan
+     */
     public static <K, V> SegmentSplitterPlan<K, V> fromPolicy(
             final SegmentSplitterPolicy<K, V> segmentSplitterPolicy) {
         Vldtn.requireNonNull(segmentSplitterPolicy, "segmentSplitterPolicy");
@@ -57,6 +65,11 @@ public final class SegmentSplitterPlan<K, V> {
         return higherCount;
     }
 
+    /**
+     * Returns the estimated number of keys used to build this plan.
+     *
+     * @return estimated key count
+     */
     public long getEstimatedNumberOfKeys() {
         return estimatedNumberOfKeys;
     }

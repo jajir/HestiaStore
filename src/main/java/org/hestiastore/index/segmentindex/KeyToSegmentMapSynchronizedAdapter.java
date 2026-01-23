@@ -25,6 +25,9 @@ final class KeyToSegmentMapSynchronizedAdapter<K>
         this.delegate = Vldtn.requireNonNull(delegate, "delegate");
     }
 
+    /**
+     * Verifies that all segment ids are unique.
+     */
     public void checkUniqueSegmentIds() {
         readLock.lock();
         try {
@@ -34,6 +37,12 @@ final class KeyToSegmentMapSynchronizedAdapter<K>
         }
     }
 
+    /**
+     * Finds the segment id mapped to the provided key.
+     *
+     * @param key key to look up
+     * @return segment id or {@code null} when not mapped
+     */
     public SegmentId findSegmentId(final K key) {
         readLock.lock();
         try {
@@ -73,6 +82,11 @@ final class KeyToSegmentMapSynchronizedAdapter<K>
         }
     }
 
+    /**
+     * Allocates a new, unused segment id.
+     *
+     * @return new segment id
+     */
     public SegmentId findNewSegmentId() {
         writeLock.lock();
         try {
@@ -92,6 +106,13 @@ final class KeyToSegmentMapSynchronizedAdapter<K>
         }
     }
 
+    /**
+     * Inserts a mapping for the provided key, allocating a segment id when
+     * needed.
+     *
+     * @param key key to map
+     * @return segment id assigned to the key
+     */
     public SegmentId insertKeyToSegment(final K key) {
         writeLock.lock();
         try {
@@ -101,6 +122,12 @@ final class KeyToSegmentMapSynchronizedAdapter<K>
         }
     }
 
+    /**
+     * Inserts or updates a mapping for the provided key and segment id.
+     *
+     * @param key key to map
+     * @param segmentId segment id to associate
+     */
     public void insertSegment(final K key, final SegmentId segmentId) {
         writeLock.lock();
         try {
@@ -119,6 +146,11 @@ final class KeyToSegmentMapSynchronizedAdapter<K>
         }
     }
 
+    /**
+     * Removes the mapping for the provided segment id.
+     *
+     * @param segmentId segment id to remove
+     */
     public void removeSegment(final SegmentId segmentId) {
         writeLock.lock();
         try {
@@ -128,6 +160,11 @@ final class KeyToSegmentMapSynchronizedAdapter<K>
         }
     }
 
+    /**
+     * Returns a stream of key-to-segment mappings.
+     *
+     * @return stream of entries
+     */
     public Stream<Entry<K, SegmentId>> getSegmentsAsStream() {
         readLock.lock();
         try {
@@ -137,6 +174,11 @@ final class KeyToSegmentMapSynchronizedAdapter<K>
         }
     }
 
+    /**
+     * Returns the segment ids in key order.
+     *
+     * @return ordered list of segment ids
+     */
     public List<SegmentId> getSegmentIds() {
         readLock.lock();
         try {
@@ -146,6 +188,12 @@ final class KeyToSegmentMapSynchronizedAdapter<K>
         }
     }
 
+    /**
+     * Returns the segment ids within the provided window.
+     *
+     * @param segmentWindow window to apply
+     * @return ordered list of segment ids
+     */
     public List<SegmentId> getSegmentIds(final SegmentWindow segmentWindow) {
         readLock.lock();
         try {
@@ -155,6 +203,9 @@ final class KeyToSegmentMapSynchronizedAdapter<K>
         }
     }
 
+    /**
+     * Flushes the mapping to disk if it has changed.
+     */
     public void optionalyFlush() {
         writeLock.lock();
         try {

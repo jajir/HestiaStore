@@ -22,6 +22,13 @@ import org.hestiastore.index.segment.SegmentState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Base implementation of the segment index that manages segments, mappings,
+ * and maintenance coordination.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         implements IndexInternal<K, V> {
 
@@ -78,6 +85,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void put(final K key, final V value) {
         getIndexState().tryPerformOperation();
@@ -98,6 +106,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         throw newIndexException("put", null, result.getStatus());
     }
 
+    /** {@inheritDoc} */
     @Override
     public CompletionStage<Void> putAsync(final K key, final V value) {
         return runAsyncTracked(() -> {
@@ -124,6 +133,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         return openIteratorWithRetry(segmentId, isolation);
     }
 
+    /** {@inheritDoc} */
     @Override
     public EntryIterator<K, V> openSegmentIterator(
             SegmentWindow segmentWindows) {
@@ -131,6 +141,13 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 SegmentIteratorIsolation.FAIL_FAST);
     }
 
+    /**
+     * Opens a segment iterator using the provided isolation level.
+     *
+     * @param segmentWindows window selecting segments to iterate
+     * @param isolation iterator isolation mode
+     * @return entry iterator over the selected segments
+     */
     public EntryIterator<K, V> openSegmentIterator(
             final SegmentWindow segmentWindows,
             final SegmentIteratorIsolation isolation) {
@@ -147,6 +164,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         return segmentIterator;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void compact() {
         getIndexState().tryPerformOperation();
@@ -154,6 +172,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 .forEach(segmentId -> compactSegment(segmentId, false));
     }
 
+    /** {@inheritDoc} */
     @Override
     public void compactAndWait() {
         getIndexState().tryPerformOperation();
@@ -161,6 +180,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 .forEach(segmentId -> compactSegment(segmentId, true));
     }
 
+    /** {@inheritDoc} */
     @Override
     public V get(final K key) {
         getIndexState().tryPerformOperation();
@@ -175,11 +195,13 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         throw newIndexException("get", null, result.getStatus());
     }
 
+    /** {@inheritDoc} */
     @Override
     public CompletionStage<V> getAsync(final K key) {
         return runAsyncTracked(() -> get(key));
     }
 
+    /** {@inheritDoc} */
     @Override
     public void delete(final K key) {
         getIndexState().tryPerformOperation();
@@ -194,6 +216,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         throw newIndexException("delete", null, result.getStatus());
     }
 
+    /** {@inheritDoc} */
     @Override
     public CompletionStage<Void> deleteAsync(final K key) {
         return runAsyncTracked(() -> {
@@ -202,6 +225,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         });
     }
 
+    /** {@inheritDoc} */
     @Override
     public void checkAndRepairConsistency() {
         getIndexState().tryPerformOperation();
@@ -211,6 +235,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         checker.checkAndRepairConsistency();
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void doClose() {
         getIndexState().onClose(this);
@@ -288,6 +313,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         return indexState;
     }
 
+    /** {@inheritDoc} */
     @Override
     public SegmentIndexState getState() {
         return segmentIndexState;
@@ -309,12 +335,14 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         setIndexState(new IndexStateError<>(failure, fileLock));
     }
 
+    /** {@inheritDoc} */
     @Override
     public void flush() {
         flushSegments(false);
         keyToSegmentMap.optionalyFlush();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void flushAndWait() {
         flushSegments(true);
@@ -514,6 +542,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         return TimeUnit.NANOSECONDS.toMillis(remainingNanos);
     }
 
+    /** {@inheritDoc} */
     @Override
     public IndexConfiguration<K, V> getConfiguration() {
         return conf;

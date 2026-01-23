@@ -30,6 +30,12 @@ public class SegmentSplitter<K, V> {
     private final Segment<K, V> segment;
     private final SegmentWriterTxFactory<K, V> writerTxFactory;
 
+    /**
+     * Creates a splitter for the provided segment.
+     *
+     * @param segment segment to split
+     * @param writerTxFactory transaction factory used during the split
+     */
     public SegmentSplitter(final Segment<K, V> segment,
             final SegmentWriterTxFactory<K, V> writerTxFactory) {
         this.segment = Vldtn.requireNonNull(segment, "segment");

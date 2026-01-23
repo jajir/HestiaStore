@@ -115,6 +115,12 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
         }
     }
 
+    /**
+     * Finds the segment id mapped to the provided key.
+     *
+     * @param key key to look up
+     * @return segment id or {@code null} when not mapped
+     */
     public SegmentId findSegmentId(final K key) {
         ensureOpen();
         Vldtn.requireNonNull(key, "key");
@@ -141,6 +147,11 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
         return expectedSegmentId.equals(current);
     }
 
+    /**
+     * Allocates a new, unused segment id.
+     *
+     * @return new segment id
+     */
     public SegmentId findNewSegmentId() {
         ensureOpen();
         return SegmentId.of(nextSegmentId.getAndIncrement());
@@ -170,6 +181,13 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
         return true;
     }
 
+    /**
+     * Inserts a mapping for the provided key, allocating a segment id when
+     * needed.
+     *
+     * @param key key to map
+     * @return segment id assigned to the key
+     */
     public SegmentId insertKeyToSegment(final K key) {
         ensureOpen();
         Vldtn.requireNonNull(key, "key");
@@ -216,6 +234,12 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
         }
     }
 
+    /**
+     * Inserts or updates a mapping for the provided key and segment id.
+     *
+     * @param key key to map
+     * @param segmentId segment id to associate
+     */
     public void insertSegment(final K key, final SegmentId segmentId) {
         ensureOpen();
         Vldtn.requireNonNull(key, "key");
@@ -262,6 +286,11 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
         isDirty = true;
     }
 
+    /**
+     * Removes the mapping for the provided segment id.
+     *
+     * @param segmentId segment id to remove
+     */
     public void removeSegment(final SegmentId segmentId) {
         ensureOpen();
         Vldtn.requireNonNull(segmentId, "segmentId");
@@ -284,16 +313,32 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
         }
     }
 
+    /**
+     * Returns a stream of key-to-segment mappings.
+     *
+     * @return stream of entries
+     */
     public Stream<Entry<K, SegmentId>> getSegmentsAsStream() {
         ensureOpen();
         return snapshotSegments().stream();
     }
 
+    /**
+     * Returns the segment ids in key order.
+     *
+     * @return ordered list of segment ids
+     */
     public List<SegmentId> getSegmentIds() {
         ensureOpen();
         return getSegmentIds(SegmentWindow.unbounded());
     }
 
+    /**
+     * Returns the segment ids within the provided window.
+     *
+     * @param segmentWindow window to apply
+     * @return ordered list of segment ids
+     */
     public List<SegmentId> getSegmentIds(SegmentWindow segmentWindow) {
         ensureOpen();
         return snapshot.entrySet().stream()//

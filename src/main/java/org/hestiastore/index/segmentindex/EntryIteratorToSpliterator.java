@@ -10,6 +10,12 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.sorteddatafile.EntryComparator;
 
+/**
+ * Spliterator adapter for {@link EntryIterator} instances.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 public class EntryIteratorToSpliterator<K, V>
         implements Spliterator<Entry<K, V>> {
 
@@ -17,6 +23,12 @@ public class EntryIteratorToSpliterator<K, V>
 
     private final EntryComparator<K, V> entryComparator;
 
+    /**
+     * Creates a spliterator backed by the provided entry iterator.
+     *
+     * @param entryIterator    iterator providing the entries
+     * @param keyTypeDescriptor key type descriptor used for ordering
+     */
     public EntryIteratorToSpliterator(final EntryIterator<K, V> entryIterator,
             final TypeDescriptor<K> keyTypeDescriptor) {
         this.entryIterator = Vldtn.requireNonNull(entryIterator, "entryIterator");
@@ -25,6 +37,7 @@ public class EntryIteratorToSpliterator<K, V>
                 keyTypeDescriptor.getComparator());
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean tryAdvance(final Consumer<? super Entry<K, V>> action) {
         if (entryIterator.hasNext()) {
@@ -35,11 +48,13 @@ public class EntryIteratorToSpliterator<K, V>
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public Comparator<? super Entry<K, V>> getComparator() {
         return entryComparator;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Spliterator<Entry<K, V>> trySplit() {
         /*
@@ -48,6 +63,7 @@ public class EntryIteratorToSpliterator<K, V>
         return null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public long estimateSize() {
         /*
@@ -56,6 +72,7 @@ public class EntryIteratorToSpliterator<K, V>
         return Integer.MAX_VALUE;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int characteristics() {
         return Spliterator.DISTINCT | Spliterator.IMMUTABLE

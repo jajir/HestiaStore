@@ -122,105 +122,114 @@ public class IndexConfiguration<K, V> {
         this.decodingChunkFilters = List.copyOf(decodingChunkFilters);
     }
 
+    /**
+     * Returns the maximum number of keys held in the in-memory segment cache.
+     *
+     * @return max keys in segment cache
+     */
     public Integer getMaxNumberOfKeysInSegmentCache() {
-        /**
-         * Returns the maximum number of keys held in the in-memory segment
-         * cache.
-         *
-         * @return max keys in segment cache
-         */
         return maxNumberOfKeysInSegmentCache;
     }
 
+    /**
+     * Returns the maximum number of keys held in the segment write cache before
+     * flushing to disk.
+     *
+     * @return max keys in segment write cache
+     */
     public Integer getMaxNumberOfKeysInSegmentWriteCache() {
-        /**
-         * Returns the maximum number of keys held in the segment write cache
-         * before flushing to disk.
-         *
-         * @return max keys in segment write cache
-         */
         return maxNumberOfKeysInSegmentWriteCache;
     }
 
+    /**
+     * Returns the maximum number of keys allowed while maintenance is in flight
+     * before back-pressure is applied to writers.
+     *
+     * @return max buffered keys during maintenance
+     */
     public Integer getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance() {
-        /**
-         * Returns the maximum number of keys allowed while maintenance is in
-         * flight before back-pressure is applied to writers.
-         *
-         * @return max buffered keys during maintenance
-         */
         return maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
     }
 
+    /**
+     * Returns the maximum number of keys per segment chunk used for on-disk
+     * layout and indexing.
+     *
+     * @return max keys per segment chunk
+     */
     public Integer getMaxNumberOfKeysInSegmentChunk() {
-        /**
-         * Returns the maximum number of keys per segment chunk used for on-disk
-         * layout and indexing.
-         *
-         * @return max keys per segment chunk
-         */
         return maxNumberOfKeysInSegmentChunk;
     }
 
+    /**
+     * Returns the logical name of the index.
+     *
+     * @return index name
+     */
     public String getIndexName() {
-        /**
-         * Returns the logical name of the index.
-         *
-         * @return index name
-         */
         return indexName;
     }
 
+    /**
+     * Returns the maximum number of keys kept in the top-level index cache.
+     *
+     * @return max keys in index cache
+     */
     public Integer getMaxNumberOfKeysInCache() {
-        /**
-         * Returns the maximum number of keys kept in the top-level index cache.
-         *
-         * @return max keys in index cache
-         */
         return maxNumberOfKeysInCache;
     }
 
+    /**
+     * Returns the maximum number of keys allowed within a single segment.
+     *
+     * @return max keys per segment
+     */
     public Integer getMaxNumberOfKeysInSegment() {
-        /**
-         * Returns the maximum number of keys allowed within a single segment.
-         *
-         * @return max keys per segment
-         */
         return maxNumberOfKeysInSegment;
     }
 
+    /**
+     * Returns the number of hash functions used by the Bloom filter.
+     *
+     * @return Bloom filter hash function count
+     */
     public Integer getBloomFilterNumberOfHashFunctions() {
-        /**
-         * Returns the number of hash functions used by the Bloom filter.
-         *
-         * @return Bloom filter hash function count
-         */
         return bloomFilterNumberOfHashFunctions;
     }
 
+    /**
+     * Returns the size of the Bloom filter index in bytes.
+     *
+     * @return Bloom filter size in bytes
+     */
     public Integer getBloomFilterIndexSizeInBytes() {
-        /**
-         * Returns the size of the Bloom filter index in bytes.
-         *
-         * @return Bloom filter size in bytes
-         */
         return bloomFilterIndexSizeInBytes;
     }
 
+    /**
+     * Returns the target false-positive probability for the Bloom filter
+     * (0.0–1.0).
+     *
+     * @return Bloom filter false-positive probability
+     */
     public Double getBloomFilterProbabilityOfFalsePositive() {
-        /**
-         * Returns the target false-positive probability for the Bloom filter
-         * (0.0–1.0).
-         *
-         * @return Bloom filter false-positive probability
-         */
         return bloomFilterProbabilityOfFalsePositive;
     }
 
+    /**
+     * Returns the number of CPU threads used for index operations.
+     *
+     * @return CPU thread count
+     */
     public Integer getNumberOfThreads() {
         return numberOfThreads;
     }
 
+    /**
+     * Returns the number of IO threads used by the async directory wrapper.
+     *
+     * @return IO thread count
+     */
     public Integer getNumberOfIoThreads() {
         return numberOfIoThreads;
     }
@@ -270,89 +279,89 @@ public class IndexConfiguration<K, V> {
         return segmentMaintenanceAutoEnabled;
     }
 
+    /**
+     * Returns the maximum number of segments retained in the in-memory segment
+     * cache.
+     *
+     * @return max segments in cache
+     */
     public Integer getMaxNumberOfSegmentsInCache() {
-        /**
-         * Returns the maximum number of segments retained in the in-memory
-         * segment cache.
-         *
-         * @return max segments in cache
-         */
         return maxNumberOfSegmentsInCache;
     }
 
+    /**
+     * Returns the disk I/O buffer size in bytes.
+     *
+     * @return disk I/O buffer size in bytes
+     */
     public Integer getDiskIoBufferSize() {
-        /**
-         * Returns the disk I/O buffer size in bytes.
-         *
-         * @return disk I/O buffer size in bytes
-         */
         return diskIoBufferSize;
     }
 
+    /**
+     * Indicates whether logging context propagation via MDC is enabled.
+     *
+     * @return true if context logging is enabled; otherwise false
+     */
     public Boolean isContextLoggingEnabled() {
-        /**
-         * Indicates whether logging context propagation via MDC is enabled.
-         *
-         * @return true if context logging is enabled; otherwise false
-         */
         return contextLoggingEnabled;
     }
 
+    /**
+     * Returns the key class for this index.
+     *
+     * @return key class
+     */
     public Class<K> getKeyClass() {
-        /**
-         * Returns the key class for this index.
-         *
-         * @return key class
-         */
         return keyClass;
     }
 
+    /**
+     * Returns the value class for this index.
+     *
+     * @return value class
+     */
     public Class<V> getValueClass() {
-        /**
-         * Returns the value class for this index.
-         *
-         * @return value class
-         */
         return valueClass;
     }
 
+    /**
+     * Returns the fully qualified class name of the key type descriptor used
+     * for serialization.
+     *
+     * @return key type descriptor class name
+     */
     public String getKeyTypeDescriptor() {
-        /**
-         * Returns the fully qualified class name of the key type descriptor
-         * used for serialization.
-         *
-         * @return key type descriptor class name
-         */
         return keyTypeDescriptor;
     }
 
+    /**
+     * Returns the fully qualified class name of the value type descriptor used
+     * for serialization.
+     *
+     * @return value type descriptor class name
+     */
     public String getValueTypeDescriptor() {
-        /**
-         * Returns the fully qualified class name of the value type descriptor
-         * used for serialization.
-         *
-         * @return value type descriptor class name
-         */
         return valueTypeDescriptor;
     }
 
+    /**
+     * Returns the ordered list of chunk filters applied during encoding (write
+     * path).
+     *
+     * @return encoding chunk filters
+     */
     public List<ChunkFilter> getEncodingChunkFilters() {
-        /**
-         * Returns the ordered list of chunk filters applied during encoding
-         * (write path).
-         *
-         * @return encoding chunk filters
-         */
         return encodingChunkFilters;
     }
 
+    /**
+     * Returns the ordered list of chunk filters applied during decoding (read
+     * path).
+     *
+     * @return decoding chunk filters
+     */
     public List<ChunkFilter> getDecodingChunkFilters() {
-        /**
-         * Returns the ordered list of chunk filters applied during decoding
-         * (read path).
-         *
-         * @return decoding chunk filters
-         */
         return decodingChunkFilters;
     }
 }

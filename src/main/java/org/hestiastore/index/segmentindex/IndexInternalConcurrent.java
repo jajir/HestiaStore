@@ -22,6 +22,15 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
  */
 public class IndexInternalConcurrent<K, V> extends SegmentIndexImpl<K, V> {
 
+    /**
+     * Creates a concurrent index implementation bound to the given directory
+     * and type descriptors.
+     *
+     * @param directoryFacade async directory facade
+     * @param keyTypeDescriptor key type descriptor
+     * @param valueTypeDescriptor value type descriptor
+     * @param conf configuration for the index
+     */
     public IndexInternalConcurrent(final AsyncDirectory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
@@ -29,11 +38,13 @@ public class IndexInternalConcurrent<K, V> extends SegmentIndexImpl<K, V> {
         super(directoryFacade, keyTypeDescriptor, valueTypeDescriptor, conf);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindow) {
         return getStream(segmentWindow, SegmentIteratorIsolation.FAIL_FAST);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindow,
             final SegmentIteratorIsolation isolation) {
@@ -60,30 +71,35 @@ public class IndexInternalConcurrent<K, V> extends SegmentIndexImpl<K, V> {
                 .onClose(iterator::close);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void flush() {
         invalidateSegmentIterators();
         super.flush();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void flushAndWait() {
         invalidateSegmentIterators();
         super.flushAndWait();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void compact() {
         invalidateSegmentIterators();
         super.compact();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void compactAndWait() {
         invalidateSegmentIterators();
         super.compactAndWait();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void checkAndRepairConsistency() {
         invalidateSegmentIterators();
