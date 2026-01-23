@@ -10,8 +10,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -146,7 +144,7 @@ class CompactSupportTest {
         assertEquals(List.of(), cs.getEligibleSegmentIds());
     }
 
-    private SegmentResult<CompletionStage<Void>> okMaintenance() {
-        return SegmentResult.ok(CompletableFuture.completedFuture(null));
+    private SegmentResult<Void> okMaintenance() {
+        return SegmentResult.ok();
     }
 }

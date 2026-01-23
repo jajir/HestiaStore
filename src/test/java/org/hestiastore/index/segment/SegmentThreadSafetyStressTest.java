@@ -4,15 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 
 import java.util.List;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -34,54 +31,54 @@ class SegmentThreadSafetyStressTest {
             final Segment<Integer, String> segment = newSegment(
                     maintenanceExecutor.get());
             try {
-            final CountDownLatch start = new CountDownLatch(1);
-            final Future<?> writer = workerExecutor.get().submit(() -> {
-                awaitStart(start);
-                for (int i = 0; i < ITERATIONS; i++) {
-                    final int key = i % 64;
-                    SegmentResult<Void> result = segment.put(key, "v-" + i);
-                    while (result.getStatus() == SegmentResultStatus.BUSY) {
-                        Thread.onSpinWait();
-                        result = segment.put(key, "v-" + i);
+                final CountDownLatch start = new CountDownLatch(1);
+                final Future<?> writer = workerExecutor.get().submit(() -> {
+                    awaitStart(start);
+                    for (int i = 0; i < ITERATIONS; i++) {
+                        final int key = i % 64;
+                        SegmentResult<Void> result = segment.put(key, "v-" + i);
+                        while (result.getStatus() == SegmentResultStatus.BUSY) {
+                            Thread.onSpinWait();
+                            result = segment.put(key, "v-" + i);
+                        }
+                        if (result.getStatus() != SegmentResultStatus.OK) {
+                            throw new IllegalStateException(
+                                    "Put returned " + result.getStatus());
+                        }
                     }
-                    if (result.getStatus() != SegmentResultStatus.OK) {
-                        throw new IllegalStateException(
-                                "Put returned " + result.getStatus());
+                    return null;
+                });
+                final Future<?> reader = workerExecutor.get().submit(() -> {
+                    awaitStart(start);
+                    for (int i = 0; i < ITERATIONS; i++) {
+                        final int key = i % 64;
+                        final SegmentResult<String> result = segment.get(key);
+                        if (result.getStatus() == SegmentResultStatus.BUSY) {
+                            Thread.onSpinWait();
+                            continue;
+                        }
+                        if (result.getStatus() != SegmentResultStatus.OK) {
+                            throw new IllegalStateException(
+                                    "Get returned " + result.getStatus());
+                        }
                     }
-                }
-                return null;
-            });
-            final Future<?> reader = workerExecutor.get().submit(() -> {
-                awaitStart(start);
-                for (int i = 0; i < ITERATIONS; i++) {
-                    final int key = i % 64;
-                    final SegmentResult<String> result = segment.get(key);
-                    if (result.getStatus() == SegmentResultStatus.BUSY) {
-                        Thread.onSpinWait();
-                        continue;
+                    return null;
+                });
+                final Future<?> maintenance = workerExecutor.get().submit(() -> {
+                    awaitStart(start);
+                    for (int i = 0; i < ITERATIONS / 10; i++) {
+                        awaitCompletion(segment, segment.flush(), "flush");
+                        awaitCompletion(segment, segment.compact(), "compact");
                     }
-                    if (result.getStatus() != SegmentResultStatus.OK) {
-                        throw new IllegalStateException(
-                                "Get returned " + result.getStatus());
-                    }
-                }
-                return null;
-            });
-            final Future<?> maintenance = workerExecutor.get().submit(() -> {
-                awaitStart(start);
-                for (int i = 0; i < ITERATIONS / 10; i++) {
-                    awaitCompletion(segment.flush(), "flush");
-                    awaitCompletion(segment.compact(), "compact");
-                }
-                return null;
-            });
+                    return null;
+                });
 
-            start.countDown();
-            writer.get(5, TimeUnit.SECONDS);
-            reader.get(5, TimeUnit.SECONDS);
-            maintenance.get(5, TimeUnit.SECONDS);
+                start.countDown();
+                writer.get(5, TimeUnit.SECONDS);
+                reader.get(5, TimeUnit.SECONDS);
+                maintenance.get(5, TimeUnit.SECONDS);
 
-            assertNotEquals(SegmentState.ERROR, segment.getState());
+                assertNotEquals(SegmentState.ERROR, segment.getState());
             } finally {
                 closeAndAwait(segment);
             }
@@ -98,9 +95,8 @@ class SegmentThreadSafetyStressTest {
         }
     }
 
-    private static void awaitCompletion(
-            final SegmentResult<CompletionStage<Void>> result,
-            final String operation) {
+    private static void awaitCompletion(final Segment<?, ?> segment,
+            final SegmentResult<Void> result, final String operation) {
         if (result.getStatus() == SegmentResultStatus.BUSY) {
             return;
         }
@@ -108,20 +104,26 @@ class SegmentThreadSafetyStressTest {
             throw new IllegalStateException(
                     operation + " returned " + result.getStatus());
         }
-        final CompletionStage<Void> stage = result.getValue();
-        if (stage == null) {
-            return;
+        awaitReady(segment, operation);
+    }
+
+    private static void awaitReady(final Segment<?, ?> segment,
+            final String operation) {
+        final long deadline = System.nanoTime()
+                + TimeUnit.SECONDS.toNanos(2);
+        while (System.nanoTime() < deadline) {
+            final SegmentState state = segment.getState();
+            if (state == SegmentState.READY) {
+                return;
+            }
+            if (state == SegmentState.ERROR) {
+                throw new IllegalStateException(
+                        operation + " failed with ERROR");
+            }
+            Thread.onSpinWait();
         }
-        try {
-            stage.toCompletableFuture().get(2, TimeUnit.SECONDS);
-        } catch (final InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException(
-                    operation + " interrupted while waiting", e);
-        } catch (final ExecutionException | TimeoutException e) {
-            throw new IllegalStateException(
-                    operation + " failed to complete", e);
-        }
+        throw new IllegalStateException(
+                operation + " did not return to READY");
     }
 
     private static Segment<Integer, String> newSegment(

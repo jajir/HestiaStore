@@ -2,12 +2,10 @@ package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 
 import java.util.List;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -115,12 +113,10 @@ class SegmentImplConcurrencyContractTest {
             assertEquals(SegmentResultStatus.OK,
                     segment.put(1, "a").getStatus());
 
-            final SegmentResult<CompletionStage<Void>> result = segment.flush();
+            final SegmentResult<Void> result = segment.flush();
             assertEquals(SegmentResultStatus.OK, result.getStatus());
             assertEquals(SegmentState.MAINTENANCE_RUNNING, segment.getState());
-            assertNotNull(result.getValue());
             assertTrue(executor.hasTask());
-            assertFalse(result.getValue().toCompletableFuture().isDone());
 
             assertEquals(SegmentResultStatus.OK,
                     segment.put(2, "b").getStatus());
@@ -131,7 +127,6 @@ class SegmentImplConcurrencyContractTest {
             executor.runTask();
 
             assertEquals(SegmentState.READY, segment.getState());
-            assertTrue(result.getValue().toCompletableFuture().isDone());
             assertEquals("a", segment.get(1).getValue());
             assertEquals("b", segment.get(2).getValue());
         } finally {
@@ -160,13 +155,10 @@ class SegmentImplConcurrencyContractTest {
             assertEquals(SegmentResultStatus.OK,
                     segment.put(1, "a").getStatus());
 
-            final SegmentResult<CompletionStage<Void>> result = segment
-                    .compact();
+            final SegmentResult<Void> result = segment.compact();
             assertEquals(SegmentResultStatus.OK, result.getStatus());
             assertEquals(SegmentState.MAINTENANCE_RUNNING, segment.getState());
-            assertNotNull(result.getValue());
             assertTrue(executor.hasTask());
-            assertFalse(result.getValue().toCompletableFuture().isDone());
 
             assertEquals(SegmentResultStatus.OK,
                     segment.put(2, "b").getStatus());
@@ -177,7 +169,6 @@ class SegmentImplConcurrencyContractTest {
             executor.runTask();
 
             assertEquals(SegmentState.READY, segment.getState());
-            assertTrue(result.getValue().toCompletableFuture().isDone());
             assertEquals("a", segment.get(1).getValue());
             assertEquals("b", segment.get(2).getValue());
         } finally {

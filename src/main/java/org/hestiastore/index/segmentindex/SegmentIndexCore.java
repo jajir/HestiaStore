@@ -1,7 +1,5 @@
 package org.hestiastore.index.segmentindex;
 
-import java.util.concurrent.CompletionStage;
-
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segment.Segment;
@@ -136,7 +134,7 @@ final class SegmentIndexCore<K, V> {
         return IndexResult.error();
     }
 
-    IndexResult<CompletionStage<Void>> compact(final SegmentId segmentId) {
+    IndexResult<Segment<K, V>> compact(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         final SegmentResult<Segment<K, V>> segmentResult = segmentRegistry
                 .getSegment(segmentId);
@@ -150,9 +148,9 @@ final class SegmentIndexCore<K, V> {
             return IndexResult.error();
         }
         final Segment<K, V> segment = segmentResult.getValue();
-        final SegmentResult<CompletionStage<Void>> result = segment.compact();
+        final SegmentResult<Void> result = segment.compact();
         if (result.getStatus() == SegmentResultStatus.OK) {
-            return IndexResult.ok(result.getValue());
+            return IndexResult.ok(segment);
         }
         if (result.getStatus() == SegmentResultStatus.BUSY) {
             return IndexResult.busy();
@@ -163,7 +161,7 @@ final class SegmentIndexCore<K, V> {
         return IndexResult.error();
     }
 
-    IndexResult<CompletionStage<Void>> flush(final SegmentId segmentId) {
+    IndexResult<Segment<K, V>> flush(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         final SegmentResult<Segment<K, V>> segmentResult = segmentRegistry
                 .getSegment(segmentId);
@@ -177,9 +175,9 @@ final class SegmentIndexCore<K, V> {
             return IndexResult.error();
         }
         final Segment<K, V> segment = segmentResult.getValue();
-        final SegmentResult<CompletionStage<Void>> result = segment.flush();
+        final SegmentResult<Void> result = segment.flush();
         if (result.getStatus() == SegmentResultStatus.OK) {
-            return IndexResult.ok(result.getValue());
+            return IndexResult.ok(segment);
         }
         if (result.getStatus() == SegmentResultStatus.BUSY) {
             return IndexResult.busy();

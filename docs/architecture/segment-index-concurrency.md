@@ -42,8 +42,8 @@
   thread via IndexAsyncAdapter and return a CompletionStage.
 - flush/compact: start maintenance on each segment and return once accepted;
   do not wait for IO completion; BUSY retries follow IndexRetryPolicy.
-- flushAndWait/compactAndWait: wait for every segment maintenance stage; do not
-  call from a segment maintenance executor thread.
+- flushAndWait/compactAndWait: wait for each segment to return to `READY`
+  (or `CLOSED`); do not call from a segment maintenance executor thread.
 - getStream: captures a snapshot of segment ids and iterates them using the
   default segment iterator isolation (FAIL_FAST). An overload allows
   FULL_ISOLATION for per-segment exclusivity; the stream must be closed to
@@ -83,8 +83,8 @@ Only one index instance may hold the directory lock at a time.
 
 ## Failure Handling
 - SegmentResultStatus.ERROR from any segment results in IndexException.
-- Maintenance failures complete per-segment CompletionStages exceptionally;
-  flushAndWait/compactAndWait propagate as IndexException.
+- Maintenance failures move the segment to ERROR; flushAndWait/compactAndWait
+  propagate as IndexException.
 - Split failures surface through the split future and are rethrown when joined.
 - When entering ERROR, the index stops accepting operations and requires manual
   intervention (recovery/repair or restore from backups).

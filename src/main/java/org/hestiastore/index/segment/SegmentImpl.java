@@ -1,7 +1,6 @@
 package org.hestiastore.index.segment;
 
 import java.util.List;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -150,7 +149,7 @@ class SegmentImpl<K, V> implements Segment<K, V> {
      * {@inheritDoc}
      */
     @Override
-    public SegmentResult<CompletionStage<Void>> compact() {
+    public SegmentResult<Void> compact() {
         final AtomicReference<SegmentCompacter.CompactionPlan<K, V>> planRef = new AtomicReference<>();
         return maintenanceService.startMaintenance(() -> {
             final SegmentCompacter.CompactionPlan<K, V> plan = segmentCompacter
@@ -196,7 +195,7 @@ class SegmentImpl<K, V> implements Segment<K, V> {
      * {@inheritDoc}
      */
     @Override
-    public SegmentResult<CompletionStage<Void>> flush() {
+    public SegmentResult<Void> flush() {
         return maintenanceService.startMaintenance(() -> {
             final List<Entry<K, V>> entries = core.freezeWriteCacheForFlush();
             return new SegmentMaintenanceWork(

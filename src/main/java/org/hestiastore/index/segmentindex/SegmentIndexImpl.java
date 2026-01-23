@@ -2,7 +2,6 @@ package org.hestiastore.index.segmentindex;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -19,6 +18,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
+import org.hestiastore.index.segment.SegmentState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -331,13 +331,14 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final boolean waitForCompletion) {
         final long startNanos = retryPolicy.startNanos();
         while (true) {
-            final IndexResult<CompletionStage<Void>> result = core
-                    .compact(segmentId);
+            final IndexResult<Segment<K, V>> result = core.compact(segmentId);
             final IndexResultStatus status = result.getStatus();
             if (status == IndexResultStatus.OK) {
                 if (waitForCompletion) {
-                    awaitMaintenanceCompletion(segmentId, "compact",
-                            result.getValue());
+                    final Segment<K, V> segment = result.getValue();
+                    if (segment != null) {
+                        awaitSegmentReady(segmentId, "compact", segment);
+                    }
                 }
                 return;
             }
@@ -357,13 +358,14 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final boolean waitForCompletion) {
         final long startNanos = retryPolicy.startNanos();
         while (true) {
-            final IndexResult<CompletionStage<Void>> result = core
-                    .flush(segmentId);
+            final IndexResult<Segment<K, V>> result = core.flush(segmentId);
             final IndexResultStatus status = result.getStatus();
             if (status == IndexResultStatus.OK) {
                 if (waitForCompletion) {
-                    awaitMaintenanceCompletion(segmentId, "flush",
-                            result.getValue());
+                    final Segment<K, V> segment = result.getValue();
+                    if (segment != null) {
+                        awaitSegmentReady(segmentId, "flush", segment);
+                    }
                 }
                 return;
             }
@@ -378,18 +380,20 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         }
     }
 
-    private void awaitMaintenanceCompletion(final SegmentId segmentId,
-            final String operation,
-            final CompletionStage<Void> completion) {
-        if (completion == null) {
-            return;
-        }
-        try {
-            completion.toCompletableFuture().join();
-        } catch (final CompletionException e) {
-            throw new IndexException(String.format(
-                    "Segment '%s' failed during %s.", segmentId, operation),
-                    e.getCause());
+    private void awaitSegmentReady(final SegmentId segmentId,
+            final String operation, final Segment<K, V> segment) {
+        final long startNanos = retryPolicy.startNanos();
+        while (true) {
+            final SegmentState state = segment.getState();
+            if (state == SegmentState.READY || state == SegmentState.CLOSED) {
+                return;
+            }
+            if (state == SegmentState.ERROR) {
+                throw new IndexException(String.format(
+                        "Segment '%s' failed during %s.", segmentId,
+                        operation));
+            }
+            retryPolicy.backoffOrThrow(startNanos, operation, segmentId);
         }
     }
 
