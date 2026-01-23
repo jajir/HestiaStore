@@ -101,10 +101,9 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
                 segmentConf).build();
         try {
             writeEntries(segment, entries);
-            final SegmentResult<java.util.concurrent.CompletionStage<Void>> result = segment
-                    .compact();
+            final SegmentResult<Void> result = segment.compact();
             assertEquals(SegmentResultStatus.OK, result.getStatus());
-            result.getValue().toCompletableFuture().join();
+            awaitReady(segment);
         } finally {
             closeAndAwait(segment);
         }
@@ -219,5 +218,21 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
                         segmentConf.getEncodingChunkFilters())
                 .withDecodingChunkFilters(
                         segmentConf.getDecodingChunkFilters());
+    }
+
+    private static void awaitReady(final Segment<?, ?> segment) {
+        final long deadline = System.nanoTime()
+                + java.util.concurrent.TimeUnit.SECONDS.toNanos(2);
+        while (System.nanoTime() < deadline) {
+            final SegmentState state = segment.getState();
+            if (state == SegmentState.READY) {
+                return;
+            }
+            if (state == SegmentState.ERROR) {
+                throw new AssertionError("Segment failed during compact.");
+            }
+            Thread.onSpinWait();
+        }
+        throw new AssertionError("Timed out waiting for READY state.");
     }
 }

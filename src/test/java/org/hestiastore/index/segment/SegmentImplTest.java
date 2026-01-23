@@ -21,8 +21,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 
 import org.hestiastore.index.IndexException;
@@ -224,8 +222,7 @@ class SegmentImplTest {
         final SegmentImpl<Integer, String> segment = spy(
                 newSegmentWithPolicy(SegmentMaintenanceDecision.flushOnly()));
         try {
-            doReturn(SegmentResult.ok(CompletableFuture.completedFuture(null)))
-                    .when(segment).flush();
+            doReturn(SegmentResult.ok()).when(segment).flush();
 
             final SegmentResult<Void> result = segment.put(1, "A");
 
@@ -242,8 +239,7 @@ class SegmentImplTest {
         final SegmentImpl<Integer, String> segment = spy(
                 newSegmentWithPolicy(SegmentMaintenanceDecision.compactOnly()));
         try {
-            doReturn(SegmentResult.ok(CompletableFuture.completedFuture(null)))
-                    .when(segment).compact();
+            doReturn(SegmentResult.ok()).when(segment).compact();
 
             final SegmentResult<Void> result = segment.put(1, "A");
 
@@ -330,17 +326,14 @@ class SegmentImplTest {
         final SegmentImpl<Integer, String> segment = newSegment(executor,
                 versionController);
         try {
-            final SegmentResult<CompletionStage<Void>> result = segment.flush();
+            final SegmentResult<Void> result = segment.flush();
             assertEquals(SegmentResultStatus.OK, result.getStatus());
             assertEquals(SegmentState.MAINTENANCE_RUNNING, segment.getState());
             assertTrue(executor.hasTask());
-            assertNotNull(result.getValue());
-            assertFalse(result.getValue().toCompletableFuture().isDone());
 
             executor.runTask();
 
             assertEquals(SegmentState.READY, segment.getState());
-            assertTrue(result.getValue().toCompletableFuture().isDone());
         } finally {
             segment.close();
             executor.runTask();
@@ -356,7 +349,7 @@ class SegmentImplTest {
             assertEquals(SegmentResultStatus.OK,
                     segment.put(1, "A").getStatus());
 
-            final SegmentResult<CompletionStage<Void>> result = segment.flush();
+            final SegmentResult<Void> result = segment.flush();
             assertEquals(SegmentResultStatus.OK, result.getStatus());
             assertEquals(SegmentState.MAINTENANCE_RUNNING, segment.getState());
             assertEquals(SegmentResultStatus.OK,
@@ -376,18 +369,16 @@ class SegmentImplTest {
     }
 
     @Test
-    void flush_returns_busy_with_null_stage_when_maintenance_running() {
+    void flush_returns_busy_when_maintenance_running() {
         final CapturingExecutor executor = new CapturingExecutor();
         final SegmentImpl<Integer, String> segment = newSegment(executor,
                 versionController);
         try {
-            final SegmentResult<CompletionStage<Void>> first = segment.flush();
-            final SegmentResult<CompletionStage<Void>> second = segment.flush();
+            final SegmentResult<Void> first = segment.flush();
+            final SegmentResult<Void> second = segment.flush();
 
             assertEquals(SegmentResultStatus.OK, first.getStatus());
-            assertNotNull(first.getValue());
             assertEquals(SegmentResultStatus.BUSY, second.getStatus());
-            assertNull(second.getValue());
 
             assertTrue(executor.hasTask());
             executor.runTask();
@@ -398,7 +389,7 @@ class SegmentImplTest {
     }
 
     @Test
-    void flush_returns_closed_with_null_stage_when_closed() {
+    void flush_returns_closed_when_closed() {
         final CapturingExecutor executor = new CapturingExecutor();
         final SegmentImpl<Integer, String> segment = newSegment(executor,
                 versionController);
@@ -406,10 +397,9 @@ class SegmentImplTest {
         assertTrue(executor.hasTask());
         executor.runTask();
 
-        final SegmentResult<CompletionStage<Void>> result = segment.flush();
+        final SegmentResult<Void> result = segment.flush();
 
         assertEquals(SegmentResultStatus.CLOSED, result.getStatus());
-        assertNull(result.getValue());
     }
 
     @Test
@@ -423,8 +413,7 @@ class SegmentImplTest {
             assertEquals(SegmentResultStatus.OK,
                     segment.put(1, "A").getStatus());
 
-            final SegmentResult<CompletionStage<Void>> result = segment
-                    .compact();
+            final SegmentResult<Void> result = segment.compact();
             assertEquals(SegmentResultStatus.OK, result.getStatus());
             assertEquals(SegmentState.MAINTENANCE_RUNNING, segment.getState());
 
@@ -449,15 +438,12 @@ class SegmentImplTest {
         final SegmentImpl<Integer, String> segment = newSegment(executor,
                 versionController);
         try {
-            final SegmentResult<CompletionStage<Void>> flushResult = segment
-                    .flush();
+            final SegmentResult<Void> flushResult = segment.flush();
             assertEquals(SegmentResultStatus.OK, flushResult.getStatus());
 
-            final SegmentResult<CompletionStage<Void>> compactResult = segment
-                    .compact();
+            final SegmentResult<Void> compactResult = segment.compact();
 
             assertEquals(SegmentResultStatus.BUSY, compactResult.getStatus());
-            assertNull(compactResult.getValue());
 
             assertTrue(executor.hasTask());
             executor.runTask();
@@ -475,18 +461,14 @@ class SegmentImplTest {
         final SegmentImpl<Integer, String> segment = newSegment(executor,
                 versionController);
         try {
-            final SegmentResult<CompletionStage<Void>> result = segment
-                    .compact();
+            final SegmentResult<Void> result = segment.compact();
             assertEquals(SegmentResultStatus.OK, result.getStatus());
             assertEquals(SegmentState.MAINTENANCE_RUNNING, segment.getState());
             assertTrue(executor.hasTask());
-            assertNotNull(result.getValue());
-            assertFalse(result.getValue().toCompletableFuture().isDone());
 
             executor.runTask();
 
             assertEquals(SegmentState.READY, segment.getState());
-            assertTrue(result.getValue().toCompletableFuture().isDone());
         } finally {
             segment.close();
             executor.runTask();
@@ -494,21 +476,18 @@ class SegmentImplTest {
     }
 
     @Test
-    void compact_returns_busy_with_null_stage_when_maintenance_running() {
+    void compact_returns_busy_when_maintenance_running() {
         when(segmentPropertiesManager.getCacheDeltaFileNames())
                 .thenReturn(List.of());
         final CapturingExecutor executor = new CapturingExecutor();
         final SegmentImpl<Integer, String> segment = newSegment(executor,
                 versionController);
         try {
-            final SegmentResult<CompletionStage<Void>> first = segment.compact();
-            final SegmentResult<CompletionStage<Void>> second = segment
-                    .compact();
+            final SegmentResult<Void> first = segment.compact();
+            final SegmentResult<Void> second = segment.compact();
 
             assertEquals(SegmentResultStatus.OK, first.getStatus());
-            assertNotNull(first.getValue());
             assertEquals(SegmentResultStatus.BUSY, second.getStatus());
-            assertNull(second.getValue());
 
             assertTrue(executor.hasTask());
             executor.runTask();
@@ -529,14 +508,12 @@ class SegmentImplTest {
             when(deltaCacheController.openWriter())
                     .thenThrow(new RuntimeException("flush failed"));
 
-            final SegmentResult<CompletionStage<Void>> result = segment.flush();
+            final SegmentResult<Void> result = segment.flush();
             assertEquals(SegmentResultStatus.OK, result.getStatus());
             assertTrue(executor.hasTask());
             executor.runTask();
 
             assertEquals(SegmentState.ERROR, segment.getState());
-            assertTrue(result.getValue().toCompletableFuture()
-                    .isCompletedExceptionally());
         } finally {
             segment.close();
             executor.runTask();
@@ -551,15 +528,12 @@ class SegmentImplTest {
         final SegmentImpl<Integer, String> segment = newSegment(executor,
                 versionController);
         try {
-            final SegmentResult<CompletionStage<Void>> result = segment
-                    .compact();
+            final SegmentResult<Void> result = segment.compact();
             assertEquals(SegmentResultStatus.OK, result.getStatus());
             assertTrue(executor.hasTask());
             executor.runTask();
 
             assertEquals(SegmentState.ERROR, segment.getState());
-            assertTrue(result.getValue().toCompletableFuture()
-                    .isCompletedExceptionally());
         } finally {
             segment.close();
             executor.runTask();
@@ -608,7 +582,7 @@ class SegmentImplTest {
         final SegmentImpl<Integer, String> segment = new SegmentImpl<>(
                 core, compacter, executor, maintenancePolicy);
 
-        final SegmentResult<CompletionStage<Void>> result = segment.flush();
+        final SegmentResult<Void> result = segment.flush();
         assertEquals(SegmentResultStatus.OK, result.getStatus());
         assertTrue(executor.hasTask());
 
@@ -623,7 +597,6 @@ class SegmentImplTest {
         executor.runTask();
 
         assertEquals(SegmentState.CLOSED, segment.getState());
-        assertTrue(result.getValue().toCompletableFuture().isDone());
     }
 
     @Test

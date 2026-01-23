@@ -1,7 +1,5 @@
 package org.hestiastore.index.segment;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
@@ -26,9 +24,9 @@ final class SegmentMaintenanceService {
      * Starts a maintenance operation by freezing the segment and running work.
      *
      * @param workSupplier supplier of maintenance tasks
-     * @return result with completion stage
+     * @return result status for the maintenance request
      */
-    SegmentResult<CompletionStage<Void>> startMaintenance(
+    SegmentResult<Void> startMaintenance(
             final Supplier<SegmentMaintenanceWork> workSupplier) {
         return startMaintenance(workSupplier, null);
     }
@@ -39,9 +37,9 @@ final class SegmentMaintenanceService {
      *
      * @param workSupplier supplier of maintenance tasks
      * @param onReady optional callback to run after maintenance completes
-     * @return result with completion stage
+     * @return result status for the maintenance request
      */
-    SegmentResult<CompletionStage<Void>> startMaintenance(
+    SegmentResult<Void> startMaintenance(
             final Supplier<SegmentMaintenanceWork> workSupplier,
             final Runnable onReady) {
         Vldtn.requireNonNull(workSupplier, "workSupplier");
@@ -59,64 +57,53 @@ final class SegmentMaintenanceService {
             failUnlessClosed();
             return SegmentResult.error();
         }
-        final CompletableFuture<Void> completion = new CompletableFuture<>();
         try {
-            maintenanceExecutor.execute(
-                    () -> runMaintenance(work, completion, onReady));
+            maintenanceExecutor.execute(() -> runMaintenance(work, onReady));
         } catch (final RuntimeException e) {
             failUnlessClosed();
             return SegmentResult.error();
         }
-        return SegmentResult.ok(completion);
+        return SegmentResult.ok();
     }
 
     /**
      * Executes maintenance work and transitions the gate through states.
      *
      * @param work maintenance work bundle
-     * @param completion completion stage to resolve
      */
     private void runMaintenance(final SegmentMaintenanceWork work,
-            final CompletableFuture<Void> completion, final Runnable onReady) {
+            final Runnable onReady) {
         try {
             work.ioWork().run();
         } catch (final RuntimeException e) {
             failUnlessClosed();
-            completion.completeExceptionally(e);
             return;
         }
         if (gate.getState() == SegmentState.CLOSED) {
-            completion.complete(null);
             return;
         }
         if (!gate.finishMaintenanceToFreeze()) {
             failUnlessClosed();
-            completion.completeExceptionally(new IllegalStateException(
-                    "Segment maintenance failed to transition to FREEZE."));
             return;
         }
         try {
             work.publishWork().run();
         } catch (final RuntimeException e) {
             failUnlessClosed();
-            completion.completeExceptionally(e);
             return;
         }
         if (!gate.finishFreezeToReady()) {
             failUnlessClosed();
-            completion.completeExceptionally(new IllegalStateException(
-                    "Segment maintenance failed to transition to READY."));
             return;
         }
         if (onReady != null) {
             try {
                 onReady.run();
             } catch (final RuntimeException e) {
-                completion.completeExceptionally(e);
+                gate.fail();
                 return;
             }
         }
-        completion.complete(null);
     }
 
     private static <T> SegmentResult<T> resultForState(

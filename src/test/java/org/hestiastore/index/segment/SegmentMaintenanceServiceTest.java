@@ -2,10 +2,8 @@ package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -21,7 +19,7 @@ class SegmentMaintenanceServiceTest {
         final AtomicReference<SegmentState> stateAtCallback = new AtomicReference<>();
         final AtomicBoolean called = new AtomicBoolean(false);
 
-        final SegmentResult<java.util.concurrent.CompletionStage<Void>> result = service
+        final SegmentResult<Void> result = service
                 .startMaintenance(() -> new SegmentMaintenanceWork(() -> {
                 }, () -> {
                 }), () -> {
@@ -30,8 +28,6 @@ class SegmentMaintenanceServiceTest {
                 });
 
         assertEquals(SegmentResultStatus.OK, result.getStatus());
-        result.getValue().toCompletableFuture().join();
-
         assertTrue(called.get());
         assertEquals(SegmentState.READY, stateAtCallback.get());
         assertEquals(SegmentState.READY, gate.getState());
@@ -44,15 +40,13 @@ class SegmentMaintenanceServiceTest {
                 gate, new DirectExecutor());
         final AtomicBoolean called = new AtomicBoolean(false);
 
-        final SegmentResult<java.util.concurrent.CompletionStage<Void>> result = service
+        final SegmentResult<Void> result = service
                 .startMaintenance(() -> new SegmentMaintenanceWork(() -> {
                 }, () -> {
                     throw new IllegalStateException("boom");
                 }), () -> called.set(true));
 
         assertEquals(SegmentResultStatus.OK, result.getStatus());
-        assertThrows(CompletionException.class,
-                () -> result.getValue().toCompletableFuture().join());
 
         assertFalse(called.get());
         assertEquals(SegmentState.ERROR, gate.getState());
@@ -64,7 +58,7 @@ class SegmentMaintenanceServiceTest {
         final SegmentMaintenanceService service = new SegmentMaintenanceService(
                 gate, new DirectExecutor());
 
-        final SegmentResult<java.util.concurrent.CompletionStage<Void>> result = service
+        final SegmentResult<Void> result = service
                 .startMaintenance(() -> new SegmentMaintenanceWork(() -> {
                 }, () -> {
                 }), () -> {
@@ -72,8 +66,6 @@ class SegmentMaintenanceServiceTest {
                 });
 
         assertEquals(SegmentResultStatus.OK, result.getStatus());
-        assertThrows(CompletionException.class,
-                () -> result.getValue().toCompletableFuture().join());
-        assertEquals(SegmentState.READY, gate.getState());
+        assertEquals(SegmentState.ERROR, gate.getState());
     }
 }

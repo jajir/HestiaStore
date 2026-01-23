@@ -1,7 +1,5 @@
 package org.hestiastore.index.segment;
 
-import java.util.concurrent.CompletionStage;
-
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.directory.async.AsyncDirectory;
 
@@ -60,17 +58,14 @@ public interface Segment<K, V> {
 
     /**
      * Starts a compaction pass that rewrites on-disk data and updates
-     * metadata. The returned completion stage (when status is OK) completes
-     * when the maintenance finishes.
+     * metadata. The call returns once compaction is accepted.
      *
-     * When the segment is BUSY/CLOSED/ERROR, the operation is not started and
-     * the result carries a {@code null} completion stage.
+     * Completion is observed when {@link #getState()} returns
+     * {@link SegmentState#READY}.
      *
-     * Callers must not block on the returned completion stage while running on
-     * the segment maintenance executor thread, otherwise they can deadlock the
-     * maintenance queue.
+     * When the segment is BUSY/CLOSED/ERROR, the operation is not started.
      */
-    SegmentResult<CompletionStage<Void>> compact();
+    SegmentResult<Void> compact();
 
     /**
      * Validates that the logical contents of this segment are consistent.
@@ -138,17 +133,14 @@ public interface Segment<K, V> {
 
     /**
      * Starts a flush of the in-memory write cache into the delta cache. The
-     * returned completion stage (when status is OK) completes when the flush
-     * finishes.
+     * call returns once flush is accepted.
      *
-     * When the segment is BUSY/CLOSED/ERROR, the operation is not started and
-     * the result carries a {@code null} completion stage.
+     * Completion is observed when {@link #getState()} returns
+     * {@link SegmentState#READY}.
      *
-     * Callers must not block on the returned completion stage while running on
-     * the segment maintenance executor thread, otherwise they can deadlock the
-     * maintenance queue.
+     * When the segment is BUSY/CLOSED/ERROR, the operation is not started.
      */
-    SegmentResult<CompletionStage<Void>> flush();
+    SegmentResult<Void> flush();
 
     /**
      * Returns the current number of entries waiting in the write cache.

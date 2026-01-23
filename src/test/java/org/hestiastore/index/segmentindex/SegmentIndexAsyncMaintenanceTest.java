@@ -8,7 +8,6 @@ import static org.mockito.Mockito.when;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -24,6 +23,7 @@ import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segment.SegmentState;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -67,16 +67,17 @@ class SegmentIndexAsyncMaintenanceTest {
             final Segment<Integer, String> originalSegment = registry
                     .getSegment(segmentId).getValue();
             final CountDownLatch started = new CountDownLatch(1);
-            final AtomicReference<CompletableFuture<Void>> futureRef = new AtomicReference<>();
+            final AtomicReference<SegmentState> stateRef = new AtomicReference<>(
+                    SegmentState.READY);
             final Segment<Integer, String> blockingSegment = mockBlockingSegment(
-                    segmentId, started, futureRef, true);
+                    segmentId, started, stateRef, true);
             replaceSegment(registry, segmentId, blockingSegment);
 
             final Future<?> flushTask = executor.submit(index::flushAndWait);
             assertTrue(started.await(1, TimeUnit.SECONDS));
             assertFalse(flushTask.isDone());
-            assertNotNull(futureRef.get());
-            futureRef.get().complete(null);
+            assertNotNull(stateRef.get());
+            stateRef.set(SegmentState.READY);
             flushTask.get(1, TimeUnit.SECONDS);
             replaceSegment(registry, segmentId, originalSegment);
         } finally {
@@ -98,16 +99,17 @@ class SegmentIndexAsyncMaintenanceTest {
             final Segment<Integer, String> originalSegment = registry
                     .getSegment(segmentId).getValue();
             final CountDownLatch started = new CountDownLatch(1);
-            final AtomicReference<CompletableFuture<Void>> futureRef = new AtomicReference<>();
+            final AtomicReference<SegmentState> stateRef = new AtomicReference<>(
+                    SegmentState.READY);
             final Segment<Integer, String> blockingSegment = mockBlockingSegment(
-                    segmentId, started, futureRef, false);
+                    segmentId, started, stateRef, false);
             replaceSegment(registry, segmentId, blockingSegment);
 
             final Future<?> compactTask = executor.submit(index::compactAndWait);
             assertTrue(started.await(1, TimeUnit.SECONDS));
             assertFalse(compactTask.isDone());
-            assertNotNull(futureRef.get());
-            futureRef.get().complete(null);
+            assertNotNull(stateRef.get());
+            stateRef.set(SegmentState.READY);
             compactTask.get(1, TimeUnit.SECONDS);
             replaceSegment(registry, segmentId, originalSegment);
         } finally {
@@ -149,21 +151,21 @@ class SegmentIndexAsyncMaintenanceTest {
 
     private Segment<Integer, String> mockBlockingSegment(
             final SegmentId segmentId, final CountDownLatch started,
-            final AtomicReference<CompletableFuture<Void>> futureRef,
+            final AtomicReference<SegmentState> stateRef,
             final boolean forFlush) {
+        when(blockingSegment.getState()).thenAnswer(
+                invocation -> stateRef.get());
         if (forFlush) {
             when(blockingSegment.flush()).thenAnswer(invocation -> {
-                final CompletableFuture<Void> future = new CompletableFuture<>();
-                futureRef.set(future);
+                stateRef.set(SegmentState.MAINTENANCE_RUNNING);
                 started.countDown();
-                return SegmentResult.ok(future);
+                return SegmentResult.ok();
             });
         } else {
             when(blockingSegment.compact()).thenAnswer(invocation -> {
-                final CompletableFuture<Void> future = new CompletableFuture<>();
-                futureRef.set(future);
+                stateRef.set(SegmentState.MAINTENANCE_RUNNING);
                 started.countDown();
-                return SegmentResult.ok(future);
+                return SegmentResult.ok();
             });
         }
         return blockingSegment;
