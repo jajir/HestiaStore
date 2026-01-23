@@ -2,13 +2,13 @@
 
 ## Active
 
-[ ] 24 Add integration test: in-memory segment lock prevents double-open (Risk: LOW)
-    - Create an integration test that opens a segment in a directory and
-      asserts a second open in the same directory fails (lock enforcement).
 [ ] 25 Simplify `Segment.flush()`/`compact()` to return status only (Risk: MEDIUM)
     - Remove `CompletionStage` return values from `flush()` and `compact()`.
     - Operation completion is observable when segment state returns to `READY`.
     - Update callers, docs, and tests that wait on completion stages.
+[ ] 35 Remove unused close monitor in `SegmentConcurrencyGate` (Risk: LOW)
+    - Remove `closeMonitor` and `signalCloseMonitor` since nothing waits on it.
+    - Keep drain behavior in `awaitNoInFlight()` unchanged.
 
 ## Planned
 
@@ -114,6 +114,9 @@
     - Completion marks `CLOSED`, releases locks/resources, and stops admissions.
     - Move close-state tracking into segment index (avoid `Segment.wasClosed()`).
     - Update state machine/gate/docs/tests to match the new close lifecycle.
+[x] 24 Add integration test: in-memory segment lock prevents double-open (Risk: LOW)
+    - Create an integration test that opens a segment in a directory and
+      asserts a second open in the same directory fails (lock enforcement).
 [x] 25 Create directory API and layout helpers (Risk: HIGH)
     - Add `Directory.openSubDirectory(String)` + `AsyncDirectory.openSubDirectory(String)`
       and lifecycle helpers `Directory.mkdir(String)` / `Directory.rmdir(String)`.

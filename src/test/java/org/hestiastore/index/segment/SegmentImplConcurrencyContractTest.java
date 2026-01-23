@@ -52,15 +52,7 @@ class SegmentImplConcurrencyContractTest {
                     segment.put(2, "b").getStatus());
             assertEquals(SegmentResultStatus.OK, segment.get(1).getStatus());
         } finally {
-            final SegmentResult<Void> closeResult = segment.close();
-            if (closeResult.getStatus() == SegmentResultStatus.BUSY
-                    && executor.hasTask()) {
-                executor.runTask();
-                segment.close();
-            }
-            if (executor.hasTask()) {
-                executor.runTask();
-            }
+            closeAndAwait(segment);
         }
     }
 
@@ -88,15 +80,7 @@ class SegmentImplConcurrencyContractTest {
             exclusive.getValue().close();
             failFast.close();
         } finally {
-            final SegmentResult<Void> closeResult = segment.close();
-            if (closeResult.getStatus() == SegmentResultStatus.BUSY
-                    && executor.hasTask()) {
-                executor.runTask();
-                segment.close();
-            }
-            if (executor.hasTask()) {
-                executor.runTask();
-            }
+            closeAndAwait(segment);
         }
     }
 
@@ -151,7 +135,7 @@ class SegmentImplConcurrencyContractTest {
             assertEquals("a", segment.get(1).getValue());
             assertEquals("b", segment.get(2).getValue());
         } finally {
-            closeAndAwait(segment);
+            closeAndDrainExecutor(segment, executor);
         }
     }
 
@@ -197,7 +181,7 @@ class SegmentImplConcurrencyContractTest {
             assertEquals("a", segment.get(1).getValue());
             assertEquals("b", segment.get(2).getValue());
         } finally {
-            closeAndAwait(segment);
+            closeAndDrainExecutor(segment, executor);
         }
     }
 
@@ -285,6 +269,25 @@ class SegmentImplConcurrencyContractTest {
             builder.withMaintenanceExecutor(maintenanceExecutor);
         }
         return builder.build();
+    }
+
+    private static void closeAndDrainExecutor(final Segment<?, ?> segment,
+            final CapturingExecutor executor) {
+        if (segment == null) {
+            return;
+        }
+        final SegmentResult<Void> closeResult = segment.close();
+        if (closeResult.getStatus() == SegmentResultStatus.BUSY
+                && executor.hasTask()) {
+            executor.runTask();
+            segment.close();
+        }
+        if (executor.hasTask()) {
+            executor.runTask();
+        }
+        if (segment.getState() != SegmentState.CLOSED) {
+            throw new AssertionError("Segment did not close.");
+        }
     }
 
     private static final class CapturingExecutor implements Executor {
