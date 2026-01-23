@@ -157,7 +157,9 @@ class SegmentImplTest {
     @AfterEach
     void tearDown() {
         if (subject != null) {
-            closeAndAwait(subject);
+            if (subject.getState() != SegmentState.ERROR) {
+                closeAndAwait(subject);
+            }
         }
     }
 
