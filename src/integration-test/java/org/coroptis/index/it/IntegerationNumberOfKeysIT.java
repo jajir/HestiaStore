@@ -1,6 +1,7 @@
 package org.coroptis.index.it;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 
 import java.util.List;
 import java.util.Random;
@@ -41,7 +42,7 @@ public class IntegerationNumberOfKeysIT {
         segment.compact();
 
         assertEquals(NUMBER_OF_TESTING_ENTRIES, segment.getNumberOfKeys());
-        segment.close();
+        closeAndAwait(segment);
     }
 
     @Test
@@ -49,7 +50,7 @@ public class IntegerationNumberOfKeysIT {
         Segment<String, Long> segment = getCommonBuilder();
         writeData(segment);
         segment.compact();
-        segment.close();
+        closeAndAwait(segment);
         segment = getCommonBuilder();
 
         assertEquals(NUMBER_OF_TESTING_ENTRIES, segment.getNumberOfKeys());
@@ -60,7 +61,7 @@ public class IntegerationNumberOfKeysIT {
         Segment<String, Long> segment = getCommonBuilder();
         writeData(segment);
         assertEquals(NUMBER_OF_TESTING_ENTRIES, segment.getNumberOfKeys());
-        segment.close();
+        closeAndAwait(segment);
     }
 
     private Segment<String, Long> getCommonBuilder() {

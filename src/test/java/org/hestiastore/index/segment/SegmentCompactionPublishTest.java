@@ -2,6 +2,7 @@ package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -32,7 +33,7 @@ class SegmentCompactionPublishTest {
         final GuardedAsyncDirectory guardedDirectory = new GuardedAsyncDirectory(
                 AsyncDirectoryAdapter.wrap(new MemDirectory()));
         final SegmentId segmentId = SegmentId.of(1);
-        try (Segment<Integer, String> segment = Segment
+        final Segment<Integer, String> segment = Segment
                 .<Integer, String>builder(guardedDirectory)//
                 .withId(segmentId)//
                 .withKeyTypeDescriptor(KEY_DESCRIPTOR)//
@@ -48,7 +49,8 @@ class SegmentCompactionPublishTest {
                 .withDecodingChunkFilters(
                         List.of(new ChunkFilterDoNothing()))//
                 .withSegmentMaintenanceAutoEnabled(false)//
-                .build()) {
+                .build();
+        try {
             assertEquals(SegmentResultStatus.OK,
                     segment.put(1, "one").getStatus());
             assertEquals(SegmentResultStatus.OK,
@@ -65,6 +67,8 @@ class SegmentCompactionPublishTest {
             guardedDirectory.blockIo();
             assertDoesNotThrow(() -> compacter.publishCompaction(plan));
             guardedDirectory.allowIo();
+        } finally {
+            closeAndAwait(segment);
         }
     }
 

@@ -48,6 +48,10 @@
   default segment iterator isolation (FAIL_FAST). An overload allows
   FULL_ISOLATION for per-segment exclusivity; the stream must be closed to
   release the segment lock.
+- Segment close (async): once close starts, the segment drains in-flight work
+  and rejects/blocks new operations until CLOSED. The registry should not
+  reopen a closing segment; attempts should retry until the close completes.
+  The per-segment `.lock` file enforces single-open at the directory level.
 
 ## Maintenance & Splits
 - SegmentMaintenanceCoordinator evaluates thresholds after each write and
@@ -71,7 +75,7 @@ States:
 
 Transitions:
 - OPENING -> READY: after initialization and consistency checks complete.
-- READY -> CLOSED: close() called; file lock released.
+- READY -> CLOSED: close() completes; file lock released.
 - any -> ERROR: unrecoverable failure (e.g., OOM, disk full, failed split/file
   swap, or consistency check failure).
 

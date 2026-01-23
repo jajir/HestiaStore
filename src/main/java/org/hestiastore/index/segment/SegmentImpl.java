@@ -5,7 +5,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
@@ -18,8 +17,7 @@ import org.hestiastore.index.directory.FileLock;
  * @param <K> key type stored in this segment
  * @param <V> value type stored in this segment
  */
-class SegmentImpl<K, V> extends AbstractCloseableResource
-        implements Segment<K, V> {
+class SegmentImpl<K, V> implements Segment<K, V> {
 
     private final SegmentCore<K, V> core;
     private final SegmentCompacter<K, V> segmentCompacter;
@@ -275,15 +273,35 @@ class SegmentImpl<K, V> extends AbstractCloseableResource
     }
 
     /**
-     * Closes the segment and marks it CLOSED.
+     * Starts closing the segment in the maintenance thread.
      */
     @Override
-    protected void doClose() {
-        gate.beginClose();
-        gate.awaitIdleForClose();
-        gate.forceClosed();
+    public SegmentResult<Void> close() {
+        if (!gate.tryEnterCloseAndDrain()) {
+            return resultForState(gate.getState());
+        }
+        final List<Entry<K, V>> entries = core.freezeWriteCacheForFlush();
         try {
+            maintenanceExecutor.execute(() -> runClose(entries));
+        } catch (final RuntimeException e) {
+            failUnlessClosed();
+            return SegmentResult.error();
+        }
+        return SegmentResult.ok();
+    }
+
+    private void runClose(final List<Entry<K, V>> entries) {
+        try {
+            if (!entries.isEmpty()) {
+                core.flushFrozenWriteCacheToDeltaFile(entries);
+                core.applyFrozenWriteCacheAfterFlush();
+            }
             core.close();
+            if (!gate.finishCloseToClosed()) {
+                gate.fail();
+            }
+        } catch (final RuntimeException e) {
+            gate.fail();
         } finally {
             if (segmentLock != null && segmentLock.isLocked()) {
                 segmentLock.unlock();

@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.junit.jupiter.api.Test;
@@ -15,18 +14,22 @@ class SegmentTest {
 
     @Test
     void openIteratorDefaultsToFailFastIsolation() {
-        try (StubSegment segment = new StubSegment()) {
+        final StubSegment segment = new StubSegment();
+        try {
             segment.openIterator();
 
             assertEquals(SegmentIteratorIsolation.FAIL_FAST,
                     segment.getLastIsolation());
+        } finally {
+            segment.close();
         }
     }
 
-    private static final class StubSegment extends AbstractCloseableResource
+    private static final class StubSegment
             implements Segment<Integer, String> {
 
         private SegmentIteratorIsolation lastIsolation;
+        private SegmentState state = SegmentState.READY;
 
         @Override
         public SegmentStats getStats() {
@@ -96,18 +99,19 @@ class SegmentTest {
             return SegmentId.of(1);
         }
 
-        @Override
-        public SegmentState getState() {
-            return SegmentState.READY;
-        }
-
         SegmentIteratorIsolation getLastIsolation() {
             return lastIsolation;
         }
 
         @Override
-        protected void doClose() {
-            // no-op
+        public SegmentResult<Void> close() {
+            state = SegmentState.CLOSED;
+            return SegmentResult.ok();
+        }
+
+        @Override
+        public SegmentState getState() {
+            return state;
         }
     }
 }

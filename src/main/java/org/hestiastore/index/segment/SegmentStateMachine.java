@@ -58,12 +58,12 @@ final class SegmentStateMachine {
     }
 
     /**
-     * Closes the segment from READY without going through maintenance states.
+     * Moves from FREEZE into CLOSED.
      *
      * @return true when the transition succeeds
      */
-    boolean closeFromReady() {
-        return state.compareAndSet(SegmentState.READY, SegmentState.CLOSED);
+    boolean finishFreezeToClosed() {
+        return state.compareAndSet(SegmentState.FREEZE, SegmentState.CLOSED);
     }
 
     /**

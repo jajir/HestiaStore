@@ -35,12 +35,13 @@ class SegmentStateMachineTest {
     }
 
     @Test
-    void close_from_ready_sets_closed() {
+    void close_from_freeze_sets_closed() {
         final SegmentStateMachine machine = new SegmentStateMachine();
 
-        assertTrue(machine.closeFromReady());
+        assertTrue(machine.tryEnterFreeze());
+        assertTrue(machine.finishFreezeToClosed());
         assertEquals(SegmentState.CLOSED, machine.getState());
-        assertFalse(machine.closeFromReady());
+        assertFalse(machine.finishFreezeToClosed());
     }
 
     @Test

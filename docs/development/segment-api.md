@@ -147,7 +147,8 @@ Different segments:
   tombstone-only segment).
 - Split closes and replaces the current segment instance; stale references to
   the old segment must not be reused.
-- Calls on a closed segment should no-op (the adapter checks `wasClosed()`).
+- Calls on a closed segment return `SegmentResultStatus.CLOSED`; callers can
+  check `getState()` or handle the status directly.
 - Version overflow throws in `VersionController`; long-running services should
   monitor for it.
 

@@ -2,7 +2,6 @@ package org.hestiastore.index.segment;
 
 import java.util.concurrent.CompletionStage;
 
-import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.directory.async.AsyncDirectory;
 
@@ -35,7 +34,7 @@ import org.hestiastore.index.directory.async.AsyncDirectory;
  * @param <K> key type
  * @param <V> value type
  */
-public interface Segment<K, V> extends CloseableResource {
+public interface Segment<K, V> {
 
     /**
      * Creates a new {@link SegmentBuilder} for constructing a segment with a
@@ -211,5 +210,23 @@ public interface Segment<K, V> extends CloseableResource {
      * @return current segment state
      */
     SegmentState getState();
+
+    /**
+     * Starts closing the segment, releasing locks and resources in the
+     * background. Close is asynchronous and returns once the close workflow is
+     * accepted.
+     *
+     * <p>
+     * Close starts only from {@link SegmentState#READY} and transitions the
+     * segment into {@link SegmentState#FREEZE} while in-flight operations are
+     * drained. When the background close completes, the segment moves to
+     * {@link SegmentState#CLOSED}. After close, all segment operations return
+     * {@link SegmentResultStatus#CLOSED} (or throw) and no further maintenance
+     * is performed.
+     * </p>
+     *
+     * Calls in other states return BUSY/CLOSED/ERROR as appropriate.
+     */
+    SegmentResult<Void> close();
 
 }

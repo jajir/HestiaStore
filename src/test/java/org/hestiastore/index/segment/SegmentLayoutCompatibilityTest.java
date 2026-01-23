@@ -3,6 +3,7 @@ package org.hestiastore.index.segment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 
 import java.util.List;
 
@@ -42,12 +43,13 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
         final List<Entry<Integer, String>> entries = List.of(Entry.of(1, "one"),
                 Entry.of(2, "two"));
 
-        try (Segment<Integer, String> segment = applyConf(
+        final Segment<Integer, String> segment = applyConf(
                 Segment.<Integer, String>builder(segmentDirectory)//
                         .withId(segmentId)//
                         .withKeyTypeDescriptor(keyDescriptor)//
                         .withValueTypeDescriptor(valueDescriptor),
-                segmentConf).build()) {
+                segmentConf).build();
+        try {
             writeEntries(segment, entries);
             final long flatFileCount = directory.getFileNames().count();
             if (useSegmentRoot) {
@@ -57,15 +59,20 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
                 assertTrue(flatFileCount > 0,
                         "Expected flat segment files in base directory.");
             }
+        } finally {
+            closeAndAwait(segment);
         }
 
-        try (Segment<Integer, String> reopened = applyConf(
+        final Segment<Integer, String> reopened = applyConf(
                 Segment.<Integer, String>builder(segmentDirectory)//
                         .withId(segmentId)//
                         .withKeyTypeDescriptor(keyDescriptor)//
                         .withValueTypeDescriptor(valueDescriptor),
-                segmentConf).build()) {
+                segmentConf).build();
+        try {
             verifySegmentSearch(reopened, entries);
+        } finally {
+            closeAndAwait(reopened);
         }
     }
 
@@ -86,17 +93,20 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
         final List<Entry<Integer, String>> entries = List.of(Entry.of(1, "one"),
                 Entry.of(2, "two"));
 
-        try (Segment<Integer, String> segment = applyConf(
+        final Segment<Integer, String> segment = applyConf(
                 Segment.<Integer, String>builder(segmentDirectory)//
                         .withId(segmentId)//
                         .withKeyTypeDescriptor(keyDescriptor)//
                         .withValueTypeDescriptor(valueDescriptor),
-                segmentConf).build()) {
+                segmentConf).build();
+        try {
             writeEntries(segment, entries);
             final SegmentResult<java.util.concurrent.CompletionStage<Void>> result = segment
                     .compact();
             assertEquals(SegmentResultStatus.OK, result.getStatus());
             result.getValue().toCompletableFuture().join();
+        } finally {
+            closeAndAwait(segment);
         }
 
         final AsyncDirectory rootDirectory = asyncDirectory
@@ -121,13 +131,16 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
                 SegmentConf.UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES, 0.01, 1024,
                 List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()));
-        try (Segment<Integer, String> segment = applyConf(
+        final Segment<Integer, String> segment = applyConf(
                 Segment.<Integer, String>builder(segmentDirectory)//
                         .withId(segmentId)//
                         .withKeyTypeDescriptor(keyDescriptor)//
                         .withValueTypeDescriptor(valueDescriptor),
-                segmentConf).build()) {
+                segmentConf).build();
+        try {
             assertEquals(SegmentResultStatus.OK, segment.flush().getStatus());
+        } finally {
+            closeAndAwait(segment);
         }
 
         final AsyncDirectory rootDirectory = asyncDirectory
@@ -160,13 +173,16 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
         propertiesManager.setVersion(7L);
         propertiesManager.setState(SegmentPropertiesManager.SegmentDataState.ACTIVE);
 
-        try (Segment<Integer, String> segment = applyConf(
+        final Segment<Integer, String> segment = applyConf(
                 Segment.<Integer, String>builder(segmentDirectory)//
                         .withId(segmentId)//
                         .withKeyTypeDescriptor(keyDescriptor)//
                         .withValueTypeDescriptor(valueDescriptor),
-                segmentConf).build()) {
+                segmentConf).build();
+        try {
             assertNotNull(segment);
+        } finally {
+            closeAndAwait(segment);
         }
 
         final SegmentPropertiesManager reloaded = new SegmentPropertiesManager(

@@ -2,6 +2,7 @@ package org.hestiastore.index.segment;
 
 import static org.hestiastore.index.segment.AbstractSegmentTest.verifySegmentData;
 import static org.hestiastore.index.AbstractDataTest.verifyNumberOfFiles;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 
 import java.util.List;
 import java.util.stream.IntStream;
@@ -45,6 +46,9 @@ class IntegrationSegmentWriteConsistencyTest {
 
     @AfterEach
     void tearDown() {
+        if (segment != null) {
+            closeAndAwait(segment);
+        }
         segment = null;
         directory = null;
     }
@@ -71,12 +75,12 @@ class IntegrationSegmentWriteConsistencyTest {
     void write_close_reopen_reads_back() {
         data.forEach(entry -> segment.put(entry.getKey(), entry.getValue()));
         segment.flush();
-        segment.close();
+        closeAndAwait(segment);
 
         final Segment<Integer, String> reopened = makeSegment(directory,
                 SEGMENT_ID_1);
         verifySegmentData(reopened, data);
-        reopened.close();
+        closeAndAwait(reopened);
         verifyNumberOfFiles(directory, 2);
     }
 
@@ -85,7 +89,7 @@ class IntegrationSegmentWriteConsistencyTest {
         data.forEach(entry -> segment.put(entry.getKey(), entry.getValue()));
         segment.flush();
         verifySegmentData(segment, data);
-        segment.close();
+        closeAndAwait(segment);
 
         final Segment<Integer, String> segment2 = makeSegment(directory,
                 SEGMENT_ID_1);
@@ -93,7 +97,7 @@ class IntegrationSegmentWriteConsistencyTest {
                 entry -> segment2.put(entry.getKey(), entry.getValue()));
         segment2.flush();
         verifySegmentData(segment2, updatedData);
-        segment2.close();
+        closeAndAwait(segment2);
         verifyNumberOfFiles(directory, 3);
     }
 

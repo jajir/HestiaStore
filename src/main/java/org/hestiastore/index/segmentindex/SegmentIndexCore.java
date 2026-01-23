@@ -9,6 +9,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
+import org.hestiastore.index.segment.SegmentState;
 
 /**
  * Single-attempt core for segment-index operations that returns status
@@ -86,7 +87,7 @@ final class SegmentIndexCore<K, V> {
             return IndexResult.error();
         }
         final Segment<K, V> segment = segmentResult.getValue();
-        if (segment.wasClosed()) {
+        if (segment.getState() == SegmentState.CLOSED) {
             return IndexResult.busy();
         }
         if (!keyToSegmentMap.isMappingValid(key, segmentId,

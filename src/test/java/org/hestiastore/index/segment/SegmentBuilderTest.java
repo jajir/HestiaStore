@@ -7,6 +7,7 @@ package org.hestiastore.index.segment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -196,7 +197,7 @@ class SegmentBuilderTest {
                 .build();
 
         assertNotNull(segment);
-        segment.close();
+        closeAndAwait(segment);
     }
 
     @Test
@@ -229,7 +230,7 @@ class SegmentBuilderTest {
         assertEquals(SegmentResultStatus.OK, second.getStatus());
         assertEquals("a", first.getValue());
         assertEquals("b", second.getValue());
-        segment.close();
+        closeAndAwait(segment);
     }
 
     @Test
@@ -253,7 +254,7 @@ class SegmentBuilderTest {
         final Object executor = field.get(impl);
 
         assertEquals(DirectExecutor.class, executor.getClass());
-        segment.close();
+        closeAndAwait(segment);
     }
 
     @Test
@@ -272,7 +273,7 @@ class SegmentBuilderTest {
         asyncDirectory.getFileWriterAsync(layout.getIndexFileName(2))
                 .toCompletableFuture().join().close();
 
-        try (Segment<Integer, String> segment = Segment
+        final Segment<Integer, String> segment = Segment
                 .<Integer, String>builder(asyncDirectory)//
                 .withId(segmentId)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
@@ -280,7 +281,8 @@ class SegmentBuilderTest {
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
                 .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
-                .build()) {
+                .build();
+        try {
             assertNotNull(segment);
             final SegmentImpl<Integer, String> impl = (SegmentImpl<Integer, String>) segment;
             final Field coreField = SegmentImpl.class.getDeclaredField("core");
@@ -293,6 +295,8 @@ class SegmentBuilderTest {
             final SegmentFiles<?, ?> files = (SegmentFiles<?, ?>) filesField
                     .get(core);
             assertEquals(2L, files.getActiveVersion());
+        } finally {
+            closeAndAwait(segment);
         }
 
         final SegmentPropertiesManager rootProperties = new SegmentPropertiesManager(
