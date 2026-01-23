@@ -112,7 +112,8 @@ Segment can be accessd from multiple threads in paraell. Segment
 | `openIterator(EXCLUSIVE_ACCESS)` | `READY` | Yes (on lock acquisition) | Invalidates existing iterators; blocks others | Yes | Yes | Maintenance only; must be short. |
 | `close` | `READY` | No | Invalidates existing iterators; blocks others | N/A | N/A | Sets `FREEZE`, optionally flushes the write cache, schedules close on maintenance thread, then transitions to `CLOSED`. |
 
-## Flush/Compact Lifecycle
+### Flush/Compact Lifecycle
+
 1. Caller enters `FREEZE`, drains in-flight ops, and prepares the maintenance
    plan (flush freezes the write cache; compact captures a snapshot).
 2. Maintenance thread sets `MAINTENANCE_RUNNING` and performs IO.
@@ -121,84 +122,97 @@ Segment can be accessd from multiple threads in paraell. Segment
 5. State becomes `READY`.
 6. Concurrent `flush()`/`compact()` requests return `BUSY`.
 
-## Failure & Cancellation
+### Failure & Cancellation
+
 - On `flush()` or `compact()` failure, the current maintenance task aborts and
   the segment moves to `ERROR` (unless already `CLOSED`).
 - If `close()` is called during maintenance, the segment returns `BUSY`.
   Retry after the segment returns to `READY`.
 
 
-## Implementation details
-
 ---
 
 ---
 
-## Core Rules
+## Concepts
+
+### Core Rules
 - Concurrent reads/writes are supported; published data is immutable to readers.
 - No disk IO in caller threads; the maintenance thread performs disk IO.
 - Keep locks short; the state machine is the admission control.
 - `flush()` and `compact()` are commit points and are started asynchronously.
 - `Segment` is thread-safe by contract; callers may access it concurrently.
-- `FREEZE`: short exclusive phase for snapshot or swap of a published view or phafe closing or initilizing segment.
-- A failure during maintenance moves the segment to `ERROR`.
+- `FREEZE` is a short exclusive phase used for snapshotting, publish swaps, or
+  close admission.
 
-## Thread Safety
-- Segment version is stored in `VersionController` (currently an
-  `AtomicInteger`).
-- The write cache map uses a thread-safe implementation.
-- Thread safety is achieved without external locks by:
-  - in-flight counters for `get`/`put` operations (drained during maintenance),
-  - atomic state transitions that freeze admissions before maintenance,
-  - atomic publish of immutable views + version bump for iterator safety.
+### Contracts and Guarantees
 
-## Contracts
-
-### Atomic Publish Invariant
+#### Atomic Publish Invariant
 - Publication of a new immutable view is atomic: readers see either the old view or the new view, never a partial mix.
 - The view swap and version increment are linearized; operations after the swap observe the new view.
 
-### FREEZE Prohibitions
+#### FREEZE Prohibitions
 - During `FREEZE`, all external operations return `BUSY`.
 - Only internal maintenance steps (snapshot and swap) run in this phase.
 
-### EXCLUSIVE_ACCESS Lifecycle
+#### EXCLUSIVE_ACCESS Lifecycle
 - `openIterator(EXCLUSIVE_ACCESS)` is allowed only in `READY`; otherwise it returns `BUSY`.
 - On acquisition, the segment enters `FREEZE` and increments the version.
 - While held, all other operations return `BUSY`. The iterator must be closed to return to `READY`.
 
-### BUSY Reasons
+#### BUSY Reasons
 - Write cache full during `MAINTENANCE_RUNNING` (backpressure).
 - Segment is in `FREEZE`.
 - `MAINTENANCE_RUNNING` and the requested operation is not allowed.
 - `flush()` / `compact()` already running.
 - `EXCLUSIVE_ACCESS` held or requested while not `READY`.
 
-### Retry and Backpressure Guidance
+#### Retry and Backpressure Guidance
 - Treat `BUSY` as transient; retry with backoff and jitter.
 - For write-cache full during `MAINTENANCE_RUNNING`, retry writes after maintenance publishes a new view.
 - For maintenance or exclusive access, retry after the segment returns to `READY`.
 
-### Automatic Maintenance Triggers
+#### Automatic Maintenance Triggers
 - If the delta cache becomes full, the segment schedules `compact()`.
 - If the write cache becomes full, the segment schedules `flush()`.
 - These triggers transition the segment out of `READY` (into `FREEZE`/`MAINTENANCE_RUNNING`) before refusing new writes.
 
-### Memory Visibility
+#### Memory Visibility
 - The published view is swapped under `FREEZE` (exclusive); new reads see only the old or the new view, never a partial publish.
 - Version increments provide an ordering point for optimistic iterators.
 
-### Freshness vs Consistency
+#### Freshness vs Consistency
 - `get` reads from the write cache and published view (freshest data).
 - Iterators read a snapshot of the merged view (published + write cache) taken
   at open time; later `put()` calls are not visible. Iterators are invalidated
   only by version changes (publish or `EXCLUSIVE_ACCESS`).
 
-### Serialized State Transitions
+#### Serialized State Transitions
 - State transitions are serialized; only one transition is in flight at a time.
 - `flush()`, `compact()`, and `EXCLUSIVE_ACCESS` are mutually exclusive and linearized.
 
-## Components
+## Implementation Details
+
+### Thread Safety Mechanisms
+- Segment version is stored in `VersionController` (an `AtomicInteger`).
+- The write cache uses a thread-safe map implementation.
+- `SegmentConcurrencyGate` tracks in-flight reads/writes and drains them during `FREEZE`.
+
+### Maintenance Execution
+- `SegmentMaintenanceService.startMaintenance(...)` enters `FREEZE`, drains in-flight ops, builds work, then transitions to `MAINTENANCE_RUNNING` and schedules the maintenance task.
+- `runMaintenance(...)` executes IO work, returns to `FREEZE`, runs publish work, then returns to `READY` and optionally runs the `onReady` callback.
+- Failures call `gate.fail()` unless the segment is already `CLOSED`.
+
+### Versioning and Iterator Invalidation
+- `SegmentWritePath.applyFrozenWriteCacheAfterFlush()` merges frozen entries and bumps the version when a snapshot was applied.
+- `SegmentCompacter.publishCompaction(...)` bumps the version after publish.
+- `SegmentCore.invalidateIterators()` bumps the version for explicit invalidation or exclusive access.
+
+### Close Workflow
+- `SegmentImpl.close()` enters `FREEZE`, drains in-flight ops, freezes the write cache, and schedules `runClose(...)` on the maintenance executor.
+- `runClose(...)` flushes frozen data (if any), closes the core, transitions to `CLOSED`, and releases the segment lock.
+
+### Components
 - **Segment**: user-facing API (`put`, `get`, `openIterator`, `flush`,
   `compact`) implemented by `SegmentImpl`.
 - **SegmentImpl**: owns `SegmentStateMachine`, checks state, and delegates
@@ -216,20 +230,21 @@ Segment can be accessd from multiple threads in paraell. Segment
 - **SegmentAsyncSplitCoordinator / SegmentSplitCoordinator** (segmentindex):
   schedule and perform segment splits.
 
-## Responsibilities
+### Responsibilities
 - **SegmentImpl**: gates operations with the state machine, schedules
   maintenance on the executor, and reports status via `SegmentResult`.
 - **SegmentCore**: executes single-threaded read/write/maintenance steps,
   manages caches and version updates, and performs no threading or state
   transitions.
 
-## Implementation Mapping
+### Implementation Mapping
 - `EXCLUSIVE_ACCESS` in this document maps to
   `SegmentIteratorIsolation.FULL_ISOLATION` in code.
 - `INTERRUPT_FAST` / `STOP_FAST` map to
   `SegmentIteratorIsolation.FAIL_FAST`.
 - State transitions are enforced by `SegmentStateMachine` and executed in
-  `SegmentImpl.startMaintenance(...)` and `SegmentImpl.runMaintenance(...)`.
+  `SegmentMaintenanceService.startMaintenance(...)` and
+  `SegmentMaintenanceService.runMaintenance(...)`.
 - Maintenance scheduling lives in `SegmentMaintenanceCoordinator` and uses the
   executor from `SegmentRegistry` (`SegmentAsyncExecutor`).
 

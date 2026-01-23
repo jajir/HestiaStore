@@ -2,9 +2,19 @@
 
 ## Active
 
-[ ] 35 Remove unused close monitor in `SegmentConcurrencyGate` (Risk: LOW)
-    - Remove `closeMonitor` and `signalCloseMonitor` since nothing waits on it.
-    - Keep drain behavior in `awaitNoInFlight()` unchanged.
+[ ] 36 Consolidate in-flight read/write counters in `SegmentConcurrencyGate` (Risk: LOW)
+    - Replace `inFlightReads`/`inFlightWrites` with a single counter.
+    - Keep admission rules and drain behavior unchanged.
+    - Update any stats or tests that rely on read/write split (if introduced).
+[ ] 37 Audit `segment` package for unused or test-only code (Risk: LOW)
+    - Identify unused classes/methods/fields.
+    - Remove code only referenced by tests or move test helpers into test scope.
+    - Ensure public API docs and tests remain consistent after cleanup.
+[ ] 38 Audit `segmentindex` package for unused or test-only code (Risk: LOW)
+    - Identify unused classes/methods/fields.
+    - Remove code only referenced by tests or move test helpers into test scope.
+    - Ensure public API docs and tests remain consistent after cleanup.
+
 
 ## Planned
 
@@ -182,3 +192,6 @@
 [x] 34 Registry/tests align with single-directory versioning (Risk: MEDIUM)
     - Registry passes segment directories; no active-directory switching.
     - Update tests to accept versioned names and per-segment directories.
+[x] 35 Remove unused close monitor in `SegmentConcurrencyGate` (Risk: LOW)
+    - Remove `closeMonitor` and `signalCloseMonitor` since nothing waits on it.
+    - Keep drain behavior in `awaitNoInFlight()` unchanged.
