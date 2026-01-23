@@ -8,6 +8,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
+import org.hestiastore.index.segment.SegmentState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -152,7 +153,7 @@ public class SegmentSplitCoordinator<K, V> {
                     segmentId, result.getSegmentId());
             final SplitOutcome outcome = new SplitOutcome(true, segmentId,
                     null);
-            if (!segment.wasClosed()) {
+            if (segment.getState() != SegmentState.CLOSED) {
                 segment.close();
             }
             return outcome;
@@ -166,7 +167,7 @@ public class SegmentSplitCoordinator<K, V> {
                     segmentId, result.getSegmentId());
             final SplitOutcome outcome = new SplitOutcome(true, segmentId,
                     result.getSegmentId());
-            if (!segment.wasClosed()) {
+            if (segment.getState() != SegmentState.CLOSED) {
                 segment.close();
             }
             return outcome;

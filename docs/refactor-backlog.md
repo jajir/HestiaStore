@@ -2,6 +2,14 @@
 
 ## Active
 
+[ ] 24 Add integration test: in-memory segment lock prevents double-open (Risk: LOW)
+    - Create an integration test that opens a segment in a directory and
+      asserts a second open in the same directory fails (lock enforcement).
+[ ] 25 Simplify `Segment.flush()`/`compact()` to return status only (Risk: MEDIUM)
+    - Remove `CompletionStage` return values from `flush()` and `compact()`.
+    - Operation completion is observable when segment state returns to `READY`.
+    - Update callers, docs, and tests that wait on completion stages.
+
 ## Planned
 
 ### OOM-related (sorted by severity)
@@ -98,6 +106,14 @@
     - Add overload or option to request FULL_ISOLATION on index iterators.
     - Implement iterator that holds exclusivity across segments safely.
     - Add tests for long-running scans during maintenance.
+[x] 23 Refactor `Segment.close()` to async fire-and-forget with READY-only entry (Risk: MEDIUM)
+    - Change `Segment` to drop `CloseableResource` and return
+      `SegmentResult<Void>` from `close()`.
+    - Close starts only in `READY`: transition to `FREEZE`, drain, optionally
+      flush write cache, then run close work on maintenance thread.
+    - Completion marks `CLOSED`, releases locks/resources, and stops admissions.
+    - Move close-state tracking into segment index (avoid `Segment.wasClosed()`).
+    - Update state machine/gate/docs/tests to match the new close lifecycle.
 [x] 25 Create directory API and layout helpers (Risk: HIGH)
     - Add `Directory.openSubDirectory(String)` + `AsyncDirectory.openSubDirectory(String)`
       and lifecycle helpers `Directory.mkdir(String)` / `Directory.rmdir(String)`.

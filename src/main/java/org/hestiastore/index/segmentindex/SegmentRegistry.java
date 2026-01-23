@@ -5,7 +5,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
@@ -22,6 +21,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentPropertiesManager;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
+import org.hestiastore.index.segment.SegmentState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -309,55 +309,53 @@ public class SegmentRegistry<K, V> {
     }
 
     private void closeSegmentIfNeeded(final Segment<K, V> segment) {
-        if (segment != null && !segment.wasClosed()) {
-            try {
-                flushPendingWrites(segment);
-            } catch (final RuntimeException e) {
-                logger.warn("Failed to flush segment '{}' before close.",
-                        segment.getId(), e);
-            } finally {
-                segment.close();
-            }
-        }
-    }
-
-    private void flushPendingWrites(final Segment<K, V> segment) {
-        if (segment.getNumberOfKeysInWriteCache() == 0) {
+        if (segment == null) {
             return;
         }
         final long startNanos = retryPolicy.startNanos();
         while (true) {
-            final SegmentResult<CompletionStage<Void>> result = segment.flush();
+            final SegmentState state = segment.getState();
+            if (state == SegmentState.CLOSED) {
+                return;
+            }
+            if (state == SegmentState.ERROR) {
+                throw new IndexException(String.format(
+                        "Segment '%s' failed during close: %s", segment.getId(),
+                        state));
+            }
+            final SegmentResult<Void> result = segment.close();
             final SegmentResultStatus status = result.getStatus();
             if (status == SegmentResultStatus.OK) {
-                awaitMaintenanceCompletion(segment.getId(), "flush",
-                        result.getValue());
+                awaitSegmentClosed(segment, startNanos);
                 return;
             }
             if (status == SegmentResultStatus.CLOSED) {
                 return;
             }
             if (status == SegmentResultStatus.BUSY) {
-                retryPolicy.backoffOrThrow(startNanos, "flush",
+                retryPolicy.backoffOrThrow(startNanos, "close",
                         segment.getId());
                 continue;
             }
             throw new IndexException(String.format(
-                    "Segment '%s' failed during flush: %s", segment.getId(),
+                    "Segment '%s' failed during close: %s", segment.getId(),
                     status));
         }
     }
 
-    private void awaitMaintenanceCompletion(final SegmentId segmentId,
-            final String operation, final CompletionStage<Void> completion) {
-        if (completion == null) {
-            return;
-        }
-        try {
-            completion.toCompletableFuture().join();
-        } catch (final RuntimeException e) {
-            throw new IndexException(String.format(
-                    "Segment '%s' failed during %s.", segmentId, operation), e);
+    private void awaitSegmentClosed(final Segment<K, V> segment,
+            final long startNanos) {
+        while (true) {
+            final SegmentState state = segment.getState();
+            if (state == SegmentState.CLOSED) {
+                return;
+            }
+            if (state == SegmentState.ERROR) {
+                throw new IndexException(String.format(
+                        "Segment '%s' failed during close: %s", segment.getId(),
+                        state));
+            }
+            retryPolicy.backoffOrThrow(startNanos, "close", segment.getId());
         }
     }
 
@@ -394,7 +392,7 @@ public class SegmentRegistry<K, V> {
 
     private Segment<K, V> getOrCreateSegmentLocked(final SegmentId segmentId) {
         Segment<K, V> existing = segments.get(segmentId);
-        if (existing == null || existing.wasClosed()) {
+        if (existing == null || existing.getState() == SegmentState.CLOSED) {
             existing = instantiateSegment(segmentId);
             segments.put(segmentId, existing);
         }

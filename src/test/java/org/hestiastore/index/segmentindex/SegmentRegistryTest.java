@@ -1,9 +1,11 @@
 package org.hestiastore.index.segmentindex;
 
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -18,6 +20,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
+import org.hestiastore.index.segment.SegmentState;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -74,7 +77,7 @@ class SegmentRegistryTest {
         final Segment<Integer, String> second = secondResult.getValue();
 
         assertSame(first, second);
-        first.close();
+        closeAndAwait(first);
         final Segment<Integer, String> third = registry.getSegment(segmentId)
                 .getValue();
 
@@ -145,7 +148,7 @@ class SegmentRegistryTest {
         registry.getSegment(secondId);
         registry.getSegment(thirdId);
 
-        assertTrue(first.wasClosed());
+        assertEquals(SegmentState.CLOSED, first.getState());
         final Segment<Integer, String> firstReloaded = registry
                 .getSegment(firstId).getValue();
         assertNotSame(first, firstReloaded);

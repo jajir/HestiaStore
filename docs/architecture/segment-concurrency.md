@@ -5,16 +5,118 @@
 - Write cache: mutable map of recent writes not yet published.
 - Segment version: monotonic epoch counter used by optimistic iterators.
 - Maintenance thread: dedicated background thread for disk IO.
-- `FREEZE`: short exclusive phase for snapshot or swap of a published view.
+
+## Segment operations
+
+Please look at main operations supported by segment. Other operations are from thread-safety not interesting.
+
+| Operation                    | Description                                                            |
+|------------------------------|------------------------------------------------------------------------|
+| `Segment.builder(directory)` | Create a builder for constructing a segment with the provided directory. |
+| `compact()`                  | Start compaction; returns a completion stage when accepted.             |
+| `openIterator(isolation)`    | Open an iterator with the requested isolation level.                    |
+| `put(key, value)`            | Write into the in-memory write cache.                                   |
+| `flush()`                    | Flush write cache to delta cache; returns a completion stage when accepted. |
+| `get(key)`                   | Perform a point lookup.                                                 |
+| `getState()`                 | Return the current segment   state.                                     |
+| `close()`                    | Start async close; transitions to `CLOSED` when finished.               |
+
+- `flush()` and `compact()` return `SegmentResult<CompletionStage<Void>>`, this allows caller to easiy wait for finish of operations.
+- `close()` returns `SegmentResult<Void>` only; completion is observed via `getState()`.
+- Do not block on the completion stage while running on the segment maintenance
+  executor thread; this can deadlock the maintenance queue.
+
+### Response Codes
+
+All method depending on segment state could replay with on of the follown codes: 
+
+| Code     | Description                                                                                                   |
+|----------|---------------------------------------------------------------------------------------------------------------|
+| `OK`     | Processed successfully or operation was accepted and scheduled; the completion stage finishes when maintenance completes. |
+| `BUSY`   | Temporary refusal; retry makes sense.                                                                          |
+| `CLOSED` | Segment permanently unavailable.                                                                               |
+| `ERROR`  | Unrecoverable.                                                                                                 |
+
+- `BUSY`/`CLOSED`/`ERROR` mean the operation was not started.
+
+### Iterator Modes
+
+Segmend can open iterator in following modes:
+
+- `INTERRUPT_FAST` (default): optimistic read; throws on version change. Reads
+  a snapshot of the merged view captured at open time.
+- `STOP_FAST`: optimistic read; stops on version change. Reads a snapshot of the
+  merged view captured at open time.
+- `EXCLUSIVE_ACCESS`: stop-the-world maintenance; blocks other operations and
+  must be short. Reads a merged snapshot captured while the segment is frozen.
+
+## Segment States
+
+Segment could be in one of following states. States:
+
+- `READY`: normal operation.
+- `MAINTENANCE_RUNNING`: background `flush()` or `compact()` is executing.
+- `FREEZE`: short exclusive phase for snapshot or swap.
+- `CLOSED`: segment closed.
+- `ERROR`: unrecoverable.
+
+If an operation is not allowed in the current state, return `BUSY` in `FREEZE` or `MAINTENANCE_RUNNING`, `CLOSED` in `CLOSED`, and `ERROR` in `ERROR`.
+
+![Segment state machine](./segment-state-machine.png)
+
+### Transitions
+
+| Original State        | New State             | When                                                             |
+|-----------------------|-----------------------|------------------------------------------------------------------|
+| `READY`               | `FREEZE`              | start of `flush()`, `compact()`, `close` or `openIterator(EXCLUSIVE_ACCESS)` |
+| `FREEZE`              | `MAINTENANCE_RUNNING` | maintenance thread starts `flush()` or `compact()`               |
+| `MAINTENANCE_RUNNING` | `FREEZE`              | maintenance IO finished, swap to new files starts                |
+| `FREEZE`              | `READY`               | swap complete or `openIterator(EXCLUSIVE_ACCESS)` closed         |
+| any                   | `ERROR`               | index or IO failure                                              |
+| `FREEZE`              | `CLOSED`              | `close()` completes                                              |
+
+
+
+## Optimistic locking
+
+Core concept is that all data read via an iterator are immutable to the reader. When
+`flush()` is called, iterators must stop to avoid serving a stale snapshot. This is
+done via optimistic locking: when a segment iterator is opened it reads the segment
+version, and before each read it verifies the version has not changed. If the version
+changes, the iterator is interrupted. The version increments when a new immutable
+view is published (after `flush()` or `compact()` swaps in new files) and when
+`EXCLUSIVE_ACCESS` is acquired.
+
+## Segment Behavior
+
+### Operation Behavior Matrix
+
+| Operation | Allowed states | Version bump | Iterator impact | Read write cache | Read delta cache | Notes |
+|---|---|---|---|---|---|---|
+| `put` | `READY`; `MAINTENANCE_RUNNING` (until cache full) | No | None | N/A | N/A | Writes to write cache; in `MAINTENANCE_RUNNING`, returns `BUSY` if cache full. |
+| `get` | `READY`, `MAINTENANCE_RUNNING` | No | None | Yes | Yes | No read lock required. |
+| `flush` | `READY` | Yes (after publish) | Invalidates optimistic iterators | N/A | N/A | Serialized; concurrent request returns `BUSY`. May be triggered by full write cache. |
+| `compact` | `READY` | Yes (after publish) | Invalidates optimistic iterators | N/A | N/A | Serialized; concurrent request returns `BUSY`. May be triggered by full delta cache. |
+| `openIterator(INTERRUPT_FAST)` | `READY` | No | Throws on version change | Yes (snapshot) | Yes | Default mode. |
+| `openIterator(STOP_FAST)` | `READY` | No | Stops on version change | Yes (snapshot) | Yes | Snapshot captured at open time. |
+| `openIterator(EXCLUSIVE_ACCESS)` | `READY` | Yes (on lock acquisition) | Invalidates existing iterators; blocks others | Yes | Yes | Maintenance only; must be short. |
+| `close` | `READY` | No | Invalidates existing iterators; blocks others | N/A | N/A | Sets `FREEZE`, optionally flushes the write cache, schedules close on maintenance thread, then transitions to `CLOSED`. |
+
+---
+
+---
 
 ## Core Rules
 - Concurrent reads/writes are supported; published data is immutable to readers.
 - No disk IO in caller threads; the maintenance thread performs disk IO.
 - Keep locks short; the state machine is the admission control.
 - `flush()` and `compact()` are commit points and are started asynchronously.
+- `Segment` is thread-safe by contract; callers may access it concurrently.
+- `FREEZE`: short exclusive phase for snapshot or swap of a published view or phafe closing or initilizing segment.
+- A failure during maintenance completes the stage exceptionally and moves the
+  segment to `ERROR`.
 
 ## Thread Safety
-- `Segment` is thread-safe by contract; callers may access it concurrently.
 - Segment version is stored in `VersionController` (currently an
   `AtomicInteger`).
 - The write cache map uses a thread-safe implementation.
@@ -23,24 +125,8 @@
   - atomic state transitions that freeze admissions before maintenance,
   - atomic publish of immutable views + version bump for iterator safety.
 
-## Response Codes
-- `OK`: processed successfully.
-- `BUSY`: temporary refusal; retry makes sense.
-- `CLOSED`: segment permanently unavailable.
-- `ERROR`: unrecoverable.
-
-## Maintenance Completion Handle
-- `flush()` and `compact()` return `SegmentResult<CompletionStage<Void>>`.
-- `OK` means the operation was accepted and scheduled. The completion stage
-  finishes when maintenance completes.
-- `BUSY`/`CLOSED`/`ERROR` mean the operation was not started; the stage is
-  `null`.
-- A failure during maintenance completes the stage exceptionally and moves the
-  segment to `ERROR`.
-- Do not block on the completion stage while running on the segment maintenance
-  executor thread; this can deadlock the maintenance queue.
-
 ## Contracts
+
 ### Atomic Publish Invariant
 - Publication of a new immutable view is atomic: readers see either the old view or the new view, never a partial mix.
 - The view swap and version increment are linearized; operations after the swap observe the new view.
@@ -85,43 +171,6 @@
 - State transitions are serialized; only one transition is in flight at a time.
 - `flush()`, `compact()`, and `EXCLUSIVE_ACCESS` are mutually exclusive and linearized.
 
-## State Machine
-States:
-- `READY`: normal operation.
-- `MAINTENANCE_RUNNING`: background `flush()` or `compact()` is executing.
-- `FREEZE`: short exclusive phase for snapshot or swap.
-- `CLOSED`: segment closed.
-- `ERROR`: unrecoverable.
-
-If an operation is not allowed in the current state, return `BUSY` in `FREEZE` or `MAINTENANCE_RUNNING`, `CLOSED` in `CLOSED`, and `ERROR` in `ERROR`.
-
-### Transitions
-| Original State | New State | When |
-|---|---|---|
-| `READY` | `FREEZE` | start of `flush()`, `compact()`, or `openIterator(EXCLUSIVE_ACCESS)` |
-| `FREEZE` | `MAINTENANCE_RUNNING` | maintenance thread starts `flush()` or `compact()` |
-| `MAINTENANCE_RUNNING` | `FREEZE` | maintenance IO finished, swap to new files starts |
-| `FREEZE` | `READY` | swap complete or `openIterator(EXCLUSIVE_ACCESS)` closed |
-| any | `ERROR` | index or IO failure |
-| `READY` | `CLOSED` | `close()` |
-
-### Legacy State Names
-- `READY_MAINTENANCE` maps to `MAINTENANCE_RUNNING`.
-- Old `BUSY` is split: `FREEZE` (short exclusive phase) and `MAINTENANCE_RUNNING` with backpressure.
-
-## Segment Version
-The segment version is a monotonic epoch counter.
-It increments when a new immutable view is published (after `flush()` or
-`compact()` swaps in new files) and when `EXCLUSIVE_ACCESS` is acquired.
-
-## Iterator Modes
-- `INTERRUPT_FAST` (default): optimistic read; throws on version change. Reads
-  a snapshot of the merged view captured at open time.
-- `STOP_FAST`: optimistic read; stops on version change. Reads a snapshot of the
-  merged view captured at open time.
-- `EXCLUSIVE_ACCESS`: stop-the-world maintenance; blocks other operations and
-  must be short. Reads a merged snapshot captured while the segment is frozen.
-
 ## Flush/Compact Lifecycle
 1. Caller sets `FREEZE` and snapshots the write cache.
 2. Maintenance thread sets `MAINTENANCE_RUNNING` and performs IO.
@@ -130,22 +179,10 @@ It increments when a new immutable view is published (after `flush()` or
 5. State becomes `READY`.
 6. Concurrent `flush()`/`compact()` requests return `BUSY`.
 
-## Operation Behavior Matrix
-| Operation | Allowed states | Version bump | Iterator impact | Read write cache | Read delta cache | Notes |
-|---|---|---|---|---|---|---|
-| `put` | `READY`; `MAINTENANCE_RUNNING` (until cache full) | No | None | N/A | N/A | Writes to write cache; in `MAINTENANCE_RUNNING`, returns `BUSY` if cache full. |
-| `get` | `READY`, `MAINTENANCE_RUNNING` | No | None | Yes | Yes | No read lock required. |
-| `flush` | `READY` | Yes (after publish) | Invalidates optimistic iterators | N/A | N/A | Serialized; concurrent request returns `BUSY`. May be triggered by full write cache. |
-| `compact` | `READY` | Yes (after publish) | Invalidates optimistic iterators | N/A | N/A | Serialized; concurrent request returns `BUSY`. May be triggered by full delta cache. |
-| `openIterator(INTERRUPT_FAST)` | `READY` | No | Throws on version change | Yes (snapshot) | Yes | Default mode. |
-| `openIterator(STOP_FAST)` | `READY` | No | Stops on version change | Yes (snapshot) | Yes | Snapshot captured at open time. |
-| `openIterator(EXCLUSIVE_ACCESS)` | `READY` | Yes (on lock acquisition) | Invalidates existing iterators; blocks others | Yes | Yes | Maintenance only; must be short. |
-| `close` | `READY` | No | N/A | N/A | N/A | Transitions to `CLOSED`. |
-
 ## Failure & Cancellation
 - On `flush()` or `compact()` failure, the maintenance thread stops and the segment moves to `ERROR`.
-- If `close()` is called during maintenance, the segment transitions to `CLOSED`
-  and stays closed even if maintenance completes.
+- If `close()` is called during maintenance, the segment returns `BUSY`.
+  Retry after the segment returns to `READY`.
 
 ## Components
 - **Segment**: user-facing API (`put`, `get`, `openIterator`, `flush`,

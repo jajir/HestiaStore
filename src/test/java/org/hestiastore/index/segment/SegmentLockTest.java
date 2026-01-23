@@ -3,6 +3,7 @@ package org.hestiastore.index.segment;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 
 import java.util.List;
 
@@ -23,9 +24,12 @@ class SegmentLockTest {
     @Test
     void build_fails_when_segment_is_locked() {
         final Directory directory = new MemDirectory();
-        try (Segment<Integer, String> segment = newBuilder(directory).build()) {
+        final Segment<Integer, String> segment = newBuilder(directory).build();
+        try {
             assertThrows(IllegalStateException.class,
                     () -> newBuilder(directory).build());
+        } finally {
+            closeAndAwait(segment);
         }
     }
 
@@ -35,8 +39,11 @@ class SegmentLockTest {
         final String lockFileName = new SegmentDirectoryLayout(SEGMENT_ID)
                 .getLockFileName();
 
-        try (Segment<Integer, String> segment = newBuilder(directory).build()) {
+        final Segment<Integer, String> segment = newBuilder(directory).build();
+        try {
             assertTrue(directory.isFileExists(lockFileName));
+        } finally {
+            closeAndAwait(segment);
         }
 
         assertFalse(directory.isFileExists(lockFileName));

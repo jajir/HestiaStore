@@ -14,6 +14,7 @@ final class SegmentConcurrencyGate {
     private final AtomicInteger inFlightReads = new AtomicInteger();
     private final AtomicInteger inFlightWrites = new AtomicInteger();
     private final AtomicBoolean closing = new AtomicBoolean(false);
+    // TODO remove closeMonitor
     private final Object closeMonitor = new Object();
 
     /**
@@ -26,40 +27,17 @@ final class SegmentConcurrencyGate {
     }
 
     /**
-     * Marks the gate as closing to stop admitting new operations.
-     */
-    void beginClose() {
-        if (closing.compareAndSet(false, true)) {
-            signalCloseMonitor();
-        }
-    }
-
-    /**
-     * Returns true when close has been requested.
+     * Enters FREEZE for close and drains in-flight operations.
      *
-     * @return true when closing is in progress
+     * @return true when close admission succeeded
      */
-    boolean isClosing() {
-        return closing.get();
-    }
-
-    /**
-     * Waits for all in-flight operations and maintenance to finish.
-     */
-    void awaitIdleForClose() {
-        boolean interrupted = false;
-        synchronized (closeMonitor) {
-            while (hasInFlight() || isStateBlockingClose()) {
-                try {
-                    closeMonitor.wait();
-                } catch (final InterruptedException e) {
-                    interrupted = true;
-                }
-            }
+    boolean tryEnterCloseAndDrain() {
+        if (!stateMachine.tryEnterFreeze()) {
+            return false;
         }
-        if (interrupted) {
-            Thread.currentThread().interrupt();
-        }
+        closing.set(true);
+        signalCloseMonitor();
+        return awaitNoInFlight();
     }
 
     /**
@@ -160,6 +138,19 @@ final class SegmentConcurrencyGate {
     }
 
     /**
+     * Transitions from FREEZE to CLOSED.
+     *
+     * @return true when transition succeeded
+     */
+    boolean finishCloseToClosed() {
+        if (!stateMachine.finishFreezeToClosed()) {
+            return false;
+        }
+        signalCloseMonitor();
+        return true;
+    }
+
+    /**
      * Marks the segment as failed.
      */
     void fail() {
@@ -227,12 +218,6 @@ final class SegmentConcurrencyGate {
             }
         }
         return stateMachine.getState() == SegmentState.FREEZE;
-    }
-
-    private boolean isStateBlockingClose() {
-        final SegmentState state = stateMachine.getState();
-        return state == SegmentState.FREEZE
-                || state == SegmentState.MAINTENANCE_RUNNING;
     }
 
     private void signalCloseMonitor() {

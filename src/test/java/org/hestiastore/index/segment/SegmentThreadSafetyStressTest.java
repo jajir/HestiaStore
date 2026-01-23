@@ -1,6 +1,7 @@
 package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 
 import java.util.List;
 import java.util.concurrent.CompletionStage;
@@ -29,9 +30,10 @@ class SegmentThreadSafetyStressTest {
     @Timeout(value = 10, unit = TimeUnit.SECONDS)
     void mixed_workload_does_not_deadlock_or_error() throws Exception {
         try (ClosingExecutor maintenanceExecutor = new ClosingExecutor(1);
-                ClosingExecutor workerExecutor = new ClosingExecutor(3);
-                Segment<Integer, String> segment = newSegment(
-                        maintenanceExecutor.get())) {
+                ClosingExecutor workerExecutor = new ClosingExecutor(3)) {
+            final Segment<Integer, String> segment = newSegment(
+                    maintenanceExecutor.get());
+            try {
             final CountDownLatch start = new CountDownLatch(1);
             final Future<?> writer = workerExecutor.get().submit(() -> {
                 awaitStart(start);
@@ -80,6 +82,9 @@ class SegmentThreadSafetyStressTest {
             maintenance.get(5, TimeUnit.SECONDS);
 
             assertNotEquals(SegmentState.ERROR, segment.getState());
+            } finally {
+                closeAndAwait(segment);
+            }
         }
     }
 

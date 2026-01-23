@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentindex;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentState;
 
 /**
  * Coordinates post-write maintenance triggers and split decisions.
@@ -34,7 +35,7 @@ final class SegmentMaintenanceCoordinator<K, V> {
         if (maxWriteCacheKeys == null || maxWriteCacheKeys < 1) {
             return;
         }
-        if (segment.wasClosed()) {
+        if (segment.getState() == SegmentState.CLOSED) {
             return;
         }
         if (!segmentRegistry.isSegmentInstance(segmentId, segment)) {

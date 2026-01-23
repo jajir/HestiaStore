@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -291,7 +292,8 @@ class IntegrationSegmentIndexSimpleTest {
     private List<Entry<Integer, String>> getSegmentData(
             final SegmentId segmentId) {
         final List<Entry<Integer, String>> out = new ArrayList<>();
-        try (Segment<Integer, String> seg = makeSegment(segmentId)) {
+        final Segment<Integer, String> seg = makeSegment(segmentId);
+        try {
             final SegmentResult<EntryIterator<Integer, String>> result = seg
                     .openIterator();
             assertEquals(SegmentResultStatus.OK, result.getStatus());
@@ -300,6 +302,8 @@ class IntegrationSegmentIndexSimpleTest {
                     out.add(iterator.next());
                 }
             }
+        } finally {
+            closeAndAwait(seg);
         }
         return out;
     }

@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutorService;
 
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -63,7 +64,7 @@ class SegmentMaintenanceCoordinatorTest {
     void checksCacheSizeWhenEligible() {
         final SegmentId segmentId = SegmentId.of(1);
         when(conf.getMaxNumberOfKeysInSegmentWriteCache()).thenReturn(1);
-        when(segment.wasClosed()).thenReturn(false);
+        when(segment.getState()).thenReturn(SegmentState.READY);
         when(segmentRegistry.isSegmentInstance(segmentId, segment))
                 .thenReturn(true);
         when(keyToSegmentMap.isKeyMappedToSegment("key", segmentId))
