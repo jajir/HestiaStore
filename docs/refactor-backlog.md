@@ -2,13 +2,8 @@
 
 ## Active
 
-[x] 40 Review `segmentindex` package for test and Javadoc coverage (Risk: LOW)
-    - Ensure each class has a JUnit test or document why coverage is excluded.
-    - Ensure each public class/method has Javadoc; add missing docs.
 
 ## Planned
-
-### OOM-related (sorted by severity)
 
 #### High
 
@@ -247,5 +242,8 @@
     - Remove code only referenced by tests or move test helpers into test scope.
     - Ensure public API docs and tests remain consistent after cleanup.
 [x] 39 Review `segment` package for test and Javadoc coverage (Risk: LOW)
+    - Ensure each class has a JUnit test or document why coverage is excluded.
+    - Ensure each public class/method has Javadoc; add missing docs.
+[x] 40 Review `segmentindex` package for test and Javadoc coverage (Risk: LOW)
     - Ensure each class has a JUnit test or document why coverage is excluded.
     - Ensure each public class/method has Javadoc; add missing docs.
