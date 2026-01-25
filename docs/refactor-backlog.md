@@ -18,6 +18,14 @@
 [ ] 15 Enforce delta cache file cap in policy (Risk: MEDIUM)
     - In `SegmentMaintenancePolicyThreshold` (~line 44), trigger maintenance
       when delta cache file count exceeds the cap.
+[ ] 16 Enforce segment lock test on open (Risk: MEDIUM)
+    - Add a test that opening a segment with an existing `.lock` fails.
+    - Cover both in-memory and filesystem-backed directories.
+[ ] 17 Document locked-directory behavior in `SegmentBuilder` (Risk: LOW)
+    - Clarify how builder reacts when the segment directory is already locked.
+[ ] 18 Acquire segment lock before `prepareBuildContext()` (Risk: MEDIUM)
+    - Move lock acquisition to the start of `SegmentBuilder.build()`.
+    - Ensure failures release locks and leave no partial state.
 
 ## Planned
 
