@@ -173,6 +173,13 @@ public interface Segment<K, V> {
     long getNumberOfKeysInSegmentCache();
 
     /**
+     * Returns the number of delta cache files recorded for this segment.
+     *
+     * @return number of delta cache files tracked in segment properties
+     */
+    int getMaxNumberOfDeltaCacheFiles();
+
+    /**
      * Returns the total number of keys in this segment (delta cache + on-disk
      * index). Tombstones are accounted for according to implementation rules.
      *

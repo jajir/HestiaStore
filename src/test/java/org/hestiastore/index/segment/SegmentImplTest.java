@@ -170,6 +170,13 @@ class SegmentImplTest {
     }
 
     @Test
+    void getMaxNumberOfDeltaCacheFiles_delegates_to_properties() {
+        when(segmentPropertiesManager.getDeltaFileCount()).thenReturn(4);
+
+        assertEquals(4, subject.getMaxNumberOfDeltaCacheFiles());
+    }
+
+    @Test
     void constructor_requires_maintenance_executor() {
         final SegmentCompacter<Integer, String> compacter = new SegmentCompacter<>(
                 versionController);

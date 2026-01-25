@@ -244,6 +244,14 @@ class SegmentImpl<K, V> implements Segment<K, V> {
      * {@inheritDoc}
      */
     @Override
+    public int getMaxNumberOfDeltaCacheFiles() {
+        return core.getDeltaCacheFileCount();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public SegmentResult<V> get(final K key) {
         if (!gate.tryEnterRead()) {
             return resultForState(gate.getState());
