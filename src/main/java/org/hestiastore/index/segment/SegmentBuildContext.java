@@ -153,7 +153,7 @@ final class SegmentBuildContext<K, V> {
     }
 
     /**
-     * Ensures the properties manager reflects the active version and state.
+     * Ensures the properties manager reflects the active version.
      *
      * @param propertiesManager segment properties manager
      * @param activeVersion     active index version
@@ -165,8 +165,6 @@ final class SegmentBuildContext<K, V> {
                 && propertiesManager.getVersion() != activeVersion) {
             propertiesManager.setVersion(activeVersion);
         }
-        propertiesManager
-                .setState(SegmentPropertiesManager.SegmentDataState.ACTIVE);
     }
 
 }

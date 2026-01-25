@@ -268,8 +268,6 @@ class SegmentBuilderTest {
         final SegmentPropertiesManager propertiesManager = new SegmentPropertiesManager(
                 asyncDirectory, segmentId);
         propertiesManager.setVersion(2L);
-        propertiesManager
-                .setState(SegmentPropertiesManager.SegmentDataState.ACTIVE);
         asyncDirectory.getFileWriterAsync(layout.getIndexFileName(2))
                 .toCompletableFuture().join().close();
 

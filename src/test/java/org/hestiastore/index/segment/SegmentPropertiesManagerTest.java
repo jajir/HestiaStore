@@ -182,13 +182,7 @@ class SegmentPropertiesManagerTest {
     }
 
     @Test
-    void state_and_version_round_trip() {
-        assertEquals(SegmentPropertiesManager.SegmentDataState.ACTIVE,
-                props.getState());
-        props.setState(SegmentPropertiesManager.SegmentDataState.PREPARED);
-        assertEquals(SegmentPropertiesManager.SegmentDataState.PREPARED,
-                props.getState());
-
+    void version_round_trip() {
         assertEquals(0L, props.getVersion());
         props.setVersion(3L);
         assertEquals(3L, props.getVersion());
@@ -203,8 +197,6 @@ class SegmentPropertiesManagerTest {
         props.switchDirectory(newDirectory);
 
         assertEquals(0L, props.getVersion());
-        assertEquals(SegmentPropertiesManager.SegmentDataState.ACTIVE,
-                props.getState());
     }
 
     @BeforeEach

@@ -170,7 +170,6 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
         final SegmentPropertiesManager propertiesManager = new SegmentPropertiesManager(
                 rootDirectory, segmentId);
         propertiesManager.setVersion(7L);
-        propertiesManager.setState(SegmentPropertiesManager.SegmentDataState.ACTIVE);
 
         final Segment<Integer, String> segment = applyConf(
                 Segment.<Integer, String>builder(segmentDirectory)//

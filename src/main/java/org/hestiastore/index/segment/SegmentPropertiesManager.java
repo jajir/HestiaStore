@@ -28,20 +28,12 @@ public class SegmentPropertiesManager {
     private static final String NUMBER_OF_KEYS_IN_MAIN_INDEX = IndexPropertiesSchema.SegmentKeys.NUMBER_OF_KEYS_IN_MAIN_INDEX;
     private static final String NUMBER_OF_KEYS_IN_SCARCE_INDEX = IndexPropertiesSchema.SegmentKeys.NUMBER_OF_KEYS_IN_SCARCE_INDEX;
     private static final String NUMBER_OF_SEGMENT_CACHE_DELTA_FILES = IndexPropertiesSchema.SegmentKeys.NUMBER_OF_SEGMENT_CACHE_DELTA_FILES;
-    private static final String SEGMENT_STATE = IndexPropertiesSchema.SegmentKeys.SEGMENT_STATE;
     private static final String SEGMENT_VERSION = IndexPropertiesSchema.SegmentKeys.SEGMENT_VERSION;
     private static final String PROPERTIES_FILENAME_EXTENSION = ".properties";
 
     private final SegmentId id;
     private volatile PropertyStore propertyStore;
     private final Object propertyLock = new Object();
-
-    /**
-     * States used for directory-level segment publishing.
-     */
-    public enum SegmentDataState {
-        ACTIVE, PREPARED
-    }
 
     /**
      * Creates a manager for the given segment properties file.
@@ -93,36 +85,6 @@ public class SegmentPropertiesManager {
                 view.getLong(NUMBER_OF_KEYS_IN_DELTA_CACHE),
                 view.getLong(NUMBER_OF_KEYS_IN_MAIN_INDEX),
                 view.getLong(NUMBER_OF_KEYS_IN_SCARCE_INDEX));
-    }
-
-    /**
-     * Returns the directory-level state of the segment.
-     *
-     * @return segment data state
-     */
-    public SegmentDataState getState() {
-        final String state = propertyStore.snapshot().getString(SEGMENT_STATE);
-        if (state == null || state.isBlank()) {
-            return SegmentDataState.ACTIVE;
-        }
-        try {
-            return SegmentDataState.valueOf(state);
-        } catch (final IllegalArgumentException e) {
-            return SegmentDataState.ACTIVE;
-        }
-    }
-
-    /**
-     * Sets the directory-level state of the segment.
-     *
-     * @param state state to store
-     */
-    public void setState(final SegmentDataState state) {
-        Vldtn.requireNonNull(state, "state");
-        synchronized (propertyLock) {
-            updateTransaction(writer -> writer.setString(SEGMENT_STATE,
-                    state.name()));
-        }
     }
 
     /**

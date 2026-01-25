@@ -128,8 +128,6 @@ final class SegmentCompacter<K, V> {
         final SegmentPropertiesManager propertiesManager = plan.segment
                 .getSegmentPropertiesManager();
         propertiesManager.setVersion(plan.nextVersion);
-        propertiesManager
-                .setState(SegmentPropertiesManager.SegmentDataState.ACTIVE);
     }
 
     private void applyVersionSwitch(final CompactionPlan<K, V> plan) {
