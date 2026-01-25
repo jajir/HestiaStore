@@ -3,12 +3,17 @@ package org.hestiastore.index.segment;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.IndexException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Provides a utility method to rename all files associated with a segment from
  * one SegmentFiles instance to another.
  */
 public class SegmentFilesRenamer {
+
+    private static final Logger logger = LoggerFactory
+            .getLogger(SegmentFilesRenamer.class);
 
     /**
      * Renames all files from the 'from' SegmentFiles to the 'to' SegmentFiles.
@@ -45,6 +50,12 @@ public class SegmentFilesRenamer {
                 .renameFileAsync(from.getBloomFilterFileName(),
                         to.getBloomFilterFileName())
                 .toCompletableFuture().join();
+        if (logger.isDebugEnabled()) {
+            logger.debug(
+                    "Segment properties rename: from='{}' to='{}' thread='{}'",
+                    from.getPropertiesFilename(), to.getPropertiesFilename(),
+                    Thread.currentThread().getName());
+        }
         dirFacade
                 .renameFileAsync(from.getPropertiesFilename(),
                         to.getPropertiesFilename())

@@ -13,11 +13,16 @@ import org.hestiastore.index.properties.PropertyStoreimpl;
 import org.hestiastore.index.properties.PropertyTransaction;
 import org.hestiastore.index.properties.PropertyView;
 import org.hestiastore.index.properties.PropertyWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Manages segment metadata stored in the properties file.
  */
 public class SegmentPropertiesManager {
+
+    private static final Logger logger = LoggerFactory
+            .getLogger(SegmentPropertiesManager.class);
 
     private static final String NUMBER_OF_KEYS_IN_DELTA_CACHE = IndexPropertiesSchema.SegmentKeys.NUMBER_OF_KEYS_IN_DELTA_CACHE;
     private static final String NUMBER_OF_KEYS_IN_MAIN_INDEX = IndexPropertiesSchema.SegmentKeys.NUMBER_OF_KEYS_IN_MAIN_INDEX;
@@ -49,6 +54,13 @@ public class SegmentPropertiesManager {
         Vldtn.requireNonNull(directoryFacade, "directoryFacade");
         this.id = Vldtn.requireNonNull(id, "segmentId");
         this.propertyStore = createStore(directoryFacade);
+        if (logger.isDebugEnabled()) {
+            logger.debug(
+                    "SegmentPropertiesManager created: segment='{}' file='{}' thread='{}' manager='{}'",
+                    this.id.getName(), getPropertiesFilename(),
+                    Thread.currentThread().getName(),
+                    Integer.toHexString(System.identityHashCode(this)));
+        }
     }
 
     private PropertyStore createStore(final AsyncDirectory directoryFacade) {
@@ -338,11 +350,25 @@ public class SegmentPropertiesManager {
      * @param updater callback that mutates the property writer
      */
     private void updateTransaction(final Consumer<PropertyWriter> updater) {
+        if (logger.isDebugEnabled()) {
+            logger.debug(
+                    "Segment properties update begin: segment='{}' file='{}' thread='{}' manager='{}'",
+                    id.getName(), getPropertiesFilename(),
+                    Thread.currentThread().getName(),
+                    Integer.toHexString(System.identityHashCode(this)));
+        }
         IndexPropertiesSchema.SEGMENT_SCHEMA.ensure(propertyStore);
         final PropertyTransaction tx = propertyStore.beginTransaction();
         final PropertyWriter writer = tx.openPropertyWriter();
         updater.accept(writer);
         tx.close();
+        if (logger.isDebugEnabled()) {
+            logger.debug(
+                    "Segment properties update end: segment='{}' file='{}' thread='{}' manager='{}'",
+                    id.getName(), getPropertiesFilename(),
+                    Thread.currentThread().getName(),
+                    Integer.toHexString(System.identityHashCode(this)));
+        }
     }
 
     PropertyStore getPropertyStore() {
