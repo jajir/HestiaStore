@@ -15,7 +15,7 @@
 [x] 14 Wire delta cache file cap into `SegmentMaintenancePolicyThreshold` (Risk: MEDIUM)
     - Add the max file count to policy constructor/state.
     - Pass the value from configuration.
-[ ] 15 Enforce delta cache file cap in policy (Risk: MEDIUM)
+[x] 15 Enforce delta cache file cap in policy (Risk: MEDIUM)
     - In `SegmentMaintenancePolicyThreshold` (~line 44), trigger maintenance
       when delta cache file count exceeds the cap.
 [ ] 16 Enforce segment lock test on open (Risk: MEDIUM)

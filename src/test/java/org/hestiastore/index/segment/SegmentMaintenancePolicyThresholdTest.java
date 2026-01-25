@@ -25,13 +25,14 @@ class SegmentMaintenancePolicyThresholdTest {
 
         @BeforeEach
         void setUp() {
-            policy = new SegmentMaintenancePolicyThreshold<>(10, 5, 0);
+            policy = new SegmentMaintenancePolicyThreshold<>(10, 5, 3);
         }
 
         @Test
         void flush_only_when_write_cache_threshold_reached() {
             when(segment.getNumberOfKeysInWriteCache()).thenReturn(5);
             when(segment.getNumberOfKeysInSegmentCache()).thenReturn(4L);
+            when(segment.getNumberOfDeltaCacheFiles()).thenReturn(3);
 
             final SegmentMaintenanceDecision decision = policy
                     .evaluateAfterWrite(segment);
@@ -76,38 +77,41 @@ class SegmentMaintenancePolicyThresholdTest {
     }
 
     @Nested
-    class DisabledThresholds {
+    class ZeroSegmentCacheThreshold {
 
         private SegmentMaintenancePolicyThreshold<Integer, String> policy;
 
         @BeforeEach
         void setUp() {
-            policy = new SegmentMaintenancePolicyThreshold<>(0, 0, 0);
+            policy = new SegmentMaintenancePolicyThreshold<>(0, 5, 3);
         }
 
         @Test
-        void none_when_thresholds_disabled_even_if_counts_high() {
+        void compact_when_segment_cache_threshold_is_zero() {
+            when(segment.getNumberOfKeysInSegmentCache()).thenReturn(0L);
             final SegmentMaintenanceDecision decision = policy
                     .evaluateAfterWrite(segment);
 
             assertFalse(decision.shouldFlush());
-            assertFalse(decision.shouldCompact());
+            assertTrue(decision.shouldCompact());
         }
     }
 
     @Nested
-    class WriteCacheOnly {
+    class WriteCacheThreshold {
 
         private SegmentMaintenancePolicyThreshold<Integer, String> policy;
 
         @BeforeEach
         void setUp() {
-            policy = new SegmentMaintenancePolicyThreshold<>(0, 5, 0);
+            policy = new SegmentMaintenancePolicyThreshold<>(10, 5, 3);
         }
 
         @Test
-        void flush_when_write_cache_reached_and_segment_cache_disabled() {
+        void flush_when_write_cache_reached_and_segment_cache_below_threshold() {
+            when(segment.getNumberOfKeysInSegmentCache()).thenReturn(9L);
             when(segment.getNumberOfKeysInWriteCache()).thenReturn(5);
+            when(segment.getNumberOfDeltaCacheFiles()).thenReturn(0);
 
             final SegmentMaintenanceDecision decision = policy
                     .evaluateAfterWrite(segment);
@@ -118,18 +122,19 @@ class SegmentMaintenancePolicyThresholdTest {
     }
 
     @Nested
-    class SegmentCacheOnly {
+    class SegmentCacheThreshold {
 
         private SegmentMaintenancePolicyThreshold<Integer, String> policy;
 
         @BeforeEach
         void setUp() {
-            policy = new SegmentMaintenancePolicyThreshold<>(10, 0, 0);
+            policy = new SegmentMaintenancePolicyThreshold<>(10, 5, 3);
         }
 
         @Test
-        void none_when_write_cache_disabled_and_segment_cache_below() {
+        void none_when_segment_cache_below_and_write_cache_below() {
             when(segment.getNumberOfKeysInSegmentCache()).thenReturn(9L);
+            when(segment.getNumberOfKeysInWriteCache()).thenReturn(4);
 
             final SegmentMaintenanceDecision decision = policy
                     .evaluateAfterWrite(segment);
@@ -139,7 +144,7 @@ class SegmentMaintenancePolicyThresholdTest {
         }
 
         @Test
-        void compact_when_segment_cache_reached_and_write_cache_disabled() {
+        void compact_when_segment_cache_reached() {
             when(segment.getNumberOfKeysInSegmentCache()).thenReturn(10L);
 
             final SegmentMaintenanceDecision decision = policy
@@ -147,6 +152,55 @@ class SegmentMaintenancePolicyThresholdTest {
 
             assertFalse(decision.shouldFlush());
             assertTrue(decision.shouldCompact());
+        }
+    }
+
+    @Nested
+    class DeltaCacheFilesWithWriteCache {
+
+        private SegmentMaintenancePolicyThreshold<Integer, String> policy;
+
+        @BeforeEach
+        void setUp() {
+            policy = new SegmentMaintenancePolicyThreshold<>(10, 5, 3);
+        }
+
+        @Test
+        void compact_when_write_cache_reached_and_delta_cache_exceeds_cap() {
+            when(segment.getNumberOfKeysInSegmentCache()).thenReturn(4L);
+            when(segment.getNumberOfKeysInWriteCache()).thenReturn(5);
+            when(segment.getNumberOfDeltaCacheFiles()).thenReturn(4);
+
+            final SegmentMaintenanceDecision decision = policy
+                    .evaluateAfterWrite(segment);
+
+            assertFalse(decision.shouldFlush());
+            assertTrue(decision.shouldCompact());
+        }
+
+        @Test
+        void flush_when_write_cache_reached_and_delta_cache_at_cap() {
+            when(segment.getNumberOfKeysInSegmentCache()).thenReturn(4L);
+            when(segment.getNumberOfKeysInWriteCache()).thenReturn(5);
+            when(segment.getNumberOfDeltaCacheFiles()).thenReturn(3);
+
+            final SegmentMaintenanceDecision decision = policy
+                    .evaluateAfterWrite(segment);
+
+            assertTrue(decision.shouldFlush());
+            assertFalse(decision.shouldCompact());
+        }
+
+        @Test
+        void none_when_write_cache_below_threshold_even_if_delta_cache_exceeds() {
+            when(segment.getNumberOfKeysInSegmentCache()).thenReturn(4L);
+            when(segment.getNumberOfKeysInWriteCache()).thenReturn(4);
+
+            final SegmentMaintenanceDecision decision = policy
+                    .evaluateAfterWrite(segment);
+
+            assertFalse(decision.shouldFlush());
+            assertFalse(decision.shouldCompact());
         }
     }
 
