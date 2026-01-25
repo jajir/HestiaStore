@@ -7,7 +7,6 @@ import java.util.concurrent.Executor;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.async.AsyncDirectory;
-import org.hestiastore.index.directory.FileLock;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 
 /**
@@ -311,7 +310,8 @@ public final class SegmentBuilder<K, V> {
      * @return transaction for streaming the segment contents
      */
     public SegmentFullWriterTx<K, V> openWriterTx() {
-        final SegmentBuildContext<K, V> context = prepareBuildContext();
+        final SegmentBuildContext<K, V> context = prepareBuildContext(
+                resolveLayout());
         final SegmentDeltaCacheController<K, V> deltaCacheController = new SegmentDeltaCacheController<>(
                 context.segmentFiles, context.segmentPropertiesManager,
                 context.segmentResources,
@@ -333,11 +333,17 @@ public final class SegmentBuilder<K, V> {
      * @return initialized segment instance
      * @throws IllegalArgumentException if required fields are missing or
      *                                  invalid
+     * @throws IllegalStateException if the segment directory is already
+     *                               locked by another segment instance
      */
     public Segment<K, V> build() {
-        final SegmentBuildContext<K, V> context = prepareBuildContext();
-        final FileLock segmentLock = context.segmentFiles.acquireLock();
+        final SegmentDirectoryLayout layout = resolveLayout();
+        final SegmentDirectoryLocking directoryLocking = new SegmentDirectoryLocking(
+                getDirectoryFacade(), layout);
+        directoryLocking.lock();
         try {
+            final SegmentBuildContext<K, V> context = prepareBuildContext(
+                    layout);
             final SegmentSearcher<K, V> segmentSearcher = new SegmentSearcher<>();
             final SegmentDeltaCacheController<K, V> deltaCacheController = new SegmentDeltaCacheController<>(
                     context.segmentFiles, context.segmentPropertiesManager,
@@ -374,17 +380,21 @@ public final class SegmentBuilder<K, V> {
                     : SegmentMaintenancePolicy.none();
             return new SegmentImpl<>(core, compacter,
                     context.maintenanceExecutor, maintenancePolicy,
-                    segmentLock);
+                    directoryLocking);
         } catch (final RuntimeException e) {
-            if (segmentLock.isLocked()) {
-                segmentLock.unlock();
-            }
+            directoryLocking.unlock();
             throw e;
         }
     }
 
-    private SegmentBuildContext<K, V> prepareBuildContext() {
-        return new SegmentBuildContext<>(this);
+    private SegmentBuildContext<K, V> prepareBuildContext(
+            final SegmentDirectoryLayout layout) {
+        return new SegmentBuildContext<>(this, layout);
+    }
+
+    private SegmentDirectoryLayout resolveLayout() {
+        final SegmentId segmentId = Vldtn.requireNonNull(getId(), "segmentId");
+        return new SegmentDirectoryLayout(segmentId);
     }
 
     AsyncDirectory getDirectoryFacade() {

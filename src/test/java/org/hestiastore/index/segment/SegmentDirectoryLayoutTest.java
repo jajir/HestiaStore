@@ -32,7 +32,7 @@ class SegmentDirectoryLayoutTest {
                 layout.getBloomFilterFileName(2));
         assertEquals("segment-00001.properties",
                 layout.getPropertiesFileName());
-        assertEquals("segment-00001.lock", layout.getLockFileName());
+        assertEquals(".lock", layout.getLockFileName());
         assertEquals("segment-00001-delta-000.cache",
                 layout.getDeltaCacheFileName(0));
         assertEquals("segment-00001-v2-delta-000.cache",

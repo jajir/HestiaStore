@@ -7,7 +7,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.directory.FileLock;
 
 /**
  * Public segment implementation that delegates single-threaded work to
@@ -24,7 +23,7 @@ class SegmentImpl<K, V> implements Segment<K, V> {
     private final SegmentMaintenanceService maintenanceService;
     private final SegmentMaintenancePolicy<K, V> maintenancePolicy;
     private final Executor maintenanceExecutor;
-    private final FileLock segmentLock;
+    private final SegmentDirectoryLocking directoryLocking;
 
     /**
      * Creates a segment implementation with the given core and executor.
@@ -49,13 +48,13 @@ class SegmentImpl<K, V> implements Segment<K, V> {
      * @param segmentCompacter compaction helper
      * @param maintenanceExecutor executor for maintenance tasks
      * @param maintenancePolicy maintenance decision policy
-     * @param segmentLock file lock held for the segment lifetime
+     * @param directoryLocking lock helper for the segment directory
      */
     SegmentImpl(final SegmentCore<K, V> core,
             final SegmentCompacter<K, V> segmentCompacter,
             final Executor maintenanceExecutor,
             final SegmentMaintenancePolicy<K, V> maintenancePolicy,
-            final FileLock segmentLock) {
+            final SegmentDirectoryLocking directoryLocking) {
         this.core = Vldtn.requireNonNull(core, "core");
         this.segmentCompacter = Vldtn.requireNonNull(segmentCompacter,
                 "segmentCompacter");
@@ -65,7 +64,7 @@ class SegmentImpl<K, V> implements Segment<K, V> {
                 "maintenancePolicy");
         this.maintenanceService = new SegmentMaintenanceService(gate,
                 this.maintenanceExecutor);
-        this.segmentLock = segmentLock;
+        this.directoryLocking = directoryLocking;
     }
 
     /**
@@ -310,8 +309,8 @@ class SegmentImpl<K, V> implements Segment<K, V> {
         } catch (final RuntimeException e) {
             gate.fail();
         } finally {
-            if (segmentLock != null && segmentLock.isLocked()) {
-                segmentLock.unlock();
+            if (directoryLocking != null) {
+                directoryLocking.unlock();
             }
         }
     }

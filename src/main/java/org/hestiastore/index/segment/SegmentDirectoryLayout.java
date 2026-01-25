@@ -112,7 +112,7 @@ public final class SegmentDirectoryLayout {
      * @return lock file name
      */
     public String getLockFileName() {
-        return segmentId.getName() + LOCK_FILE_NAME_EXTENSION;
+        return LOCK_FILE_NAME_EXTENSION;
     }
 
     /**
@@ -137,7 +137,7 @@ public final class SegmentDirectoryLayout {
     /**
      * Returns the delta cache file name for a numeric delta id and version.
      *
-     * @param version active version (0 means legacy, unversioned file)
+     * @param version     active version (0 means legacy, unversioned file)
      * @param deltaFileId numeric delta id
      * @return delta cache file name
      */
@@ -200,8 +200,8 @@ public final class SegmentDirectoryLayout {
      */
     public static String getVersionDirectoryName(final long version) {
         if (version <= 0) {
-            throw new IllegalArgumentException(String.format(
-                    "Version '%s' must be greater than 0", version));
+            throw new IllegalArgumentException(String
+                    .format("Version '%s' must be greater than 0", version));
         }
         return VERSION_DIRECTORY_PREFIX + version;
     }
@@ -212,8 +212,7 @@ public final class SegmentDirectoryLayout {
      * @param directoryName directory name to parse
      * @return parsed version or {@code -1} when invalid
      */
-    public static long parseVersionDirectoryName(
-            final String directoryName) {
+    public static long parseVersionDirectoryName(final String directoryName) {
         if (directoryName == null || directoryName.isBlank()) {
             return -1;
         }

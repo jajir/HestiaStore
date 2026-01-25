@@ -27,8 +27,10 @@ final class SegmentBuildContext<K, V> {
      * default components as needed.
      *
      * @param builder configured builder
+     * @param layout directory layout for the segment
      */
-    SegmentBuildContext(final SegmentBuilder<K, V> builder) {
+    SegmentBuildContext(final SegmentBuilder<K, V> builder,
+            final SegmentDirectoryLayout layout) {
         final AsyncDirectory directoryFacade = Vldtn.requireNonNull(
                 builder.getDirectoryFacade(), "directoryFacade");
         final TypeDescriptor<K> keyTypeDescriptor = Vldtn.requireNonNull(
@@ -59,13 +61,13 @@ final class SegmentBuildContext<K, V> {
 
         final SegmentId resolvedId = Vldtn.requireNonNull(builder.getId(),
                 "segmentId");
-        final SegmentDirectoryLayout layout = new SegmentDirectoryLayout(
-                resolvedId);
+        final SegmentDirectoryLayout resolvedLayout = Vldtn.requireNonNull(
+                layout, "layout");
         final SegmentPropertiesManager propertiesManager = new SegmentPropertiesManager(
                 directoryFacade, resolvedId);
-        final long activeVersion = resolveActiveVersion(directoryFacade, layout,
-                propertiesManager);
-        segmentFiles = new SegmentFiles<>(directoryFacade, layout,
+        final long activeVersion = resolveActiveVersion(directoryFacade,
+                resolvedLayout, propertiesManager);
+        segmentFiles = new SegmentFiles<>(directoryFacade, resolvedLayout,
                 activeVersion, keyTypeDescriptor, valueTypeDescriptor,
                 segmentConf.getDiskIoBufferSize(),
                 segmentConf.getEncodingChunkFilters(),
