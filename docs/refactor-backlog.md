@@ -2,31 +2,6 @@
 
 ## Active
 
-[x] 11 Remove `segmentState` from segment properties schema (Risk: MEDIUM)
-    - Remove `SegmentKeys.SEGMENT_STATE` from `IndexPropertiesSchema`.
-    - Update `SegmentPropertiesManager` to drop `getState`/`setState` usage.
-    - Decide migration behavior for existing properties files.
-[x] 12 Add `getMaxNumberOfDeltaCacheFiles()` to `Segment` (Risk: LOW)
-    - Implement in `SegmentImpl`.
-    - Update any callers/tests that need the accessor.
-[x] 13 Add `maxNumberOfDeltaCacheFiles` to `IndexConfiguration` + builder (Risk: MEDIUM)
-    - Add config property, validation, defaults, and persistence.
-    - Plumb through `SegmentBuilder`/`SegmentConf` as needed.
-[x] 14 Wire delta cache file cap into `SegmentMaintenancePolicyThreshold` (Risk: MEDIUM)
-    - Add the max file count to policy constructor/state.
-    - Pass the value from configuration.
-[x] 15 Enforce delta cache file cap in policy (Risk: MEDIUM)
-    - In `SegmentMaintenancePolicyThreshold` (~line 44), trigger maintenance
-      when delta cache file count exceeds the cap.
-[ ] 16 Enforce segment lock test on open (Risk: MEDIUM)
-    - Add a test that opening a segment with an existing `.lock` fails.
-    - Cover both in-memory and filesystem-backed directories.
-[ ] 17 Document locked-directory behavior in `SegmentBuilder` (Risk: LOW)
-    - Clarify how builder reacts when the segment directory is already locked.
-[ ] 18 Acquire segment lock before `prepareBuildContext()` (Risk: MEDIUM)
-    - Move lock acquisition to the start of `SegmentBuilder.build()`.
-    - Ensure failures release locks and leave no partial state.
-
 ## Planned
 
 ### High
@@ -270,3 +245,27 @@
 [x] 40 Review `segmentindex` package for test and Javadoc coverage (Risk: LOW)
     - Ensure each class has a JUnit test or document why coverage is excluded.
     - Ensure each public class/method has Javadoc; add missing docs.
+[x] 11 Remove `segmentState` from segment properties schema (Risk: MEDIUM)
+    - Remove `SegmentKeys.SEGMENT_STATE` from `IndexPropertiesSchema`.
+    - Update `SegmentPropertiesManager` to drop `getState`/`setState` usage.
+    - Decide migration behavior for existing properties files.
+[x] 12 Add `getMaxNumberOfDeltaCacheFiles()` to `Segment` (Risk: LOW)
+    - Implement in `SegmentImpl`.
+    - Update any callers/tests that need the accessor.
+[x] 13 Add `maxNumberOfDeltaCacheFiles` to `IndexConfiguration` + builder (Risk: MEDIUM)
+    - Add config property, validation, defaults, and persistence.
+    - Plumb through `SegmentBuilder`/`SegmentConf` as needed.
+[x] 14 Wire delta cache file cap into `SegmentMaintenancePolicyThreshold` (Risk: MEDIUM)
+    - Add the max file count to policy constructor/state.
+    - Pass the value from configuration.
+[x] 15 Enforce delta cache file cap in policy (Risk: MEDIUM)
+    - In `SegmentMaintenancePolicyThreshold` (~line 44), trigger maintenance
+      when delta cache file count exceeds the cap.
+[x] 16 Enforce segment lock test on open (Risk: MEDIUM)
+    - Add a test that opening a segment with an existing `.lock` fails.
+    - Cover both in-memory and filesystem-backed directories.
+[x] 17 Document locked-directory behavior in `SegmentBuilder` (Risk: LOW)
+    - Clarify how builder reacts when the segment directory is already locked.
+[x] 18 Acquire segment lock before `prepareBuildContext()` (Risk: MEDIUM)
+    - Move lock acquisition to the start of `SegmentBuilder.build()`.
+    - Ensure failures release locks and leave no partial state.

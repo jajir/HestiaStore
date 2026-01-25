@@ -40,7 +40,8 @@ class SegmentBuildContextTest {
                             List.of(new ChunkFilterDoNothing()))
                     .withDecodingChunkFilters(
                             List.of(new ChunkFilterDoNothing()));
-            context = new SegmentBuildContext<>(builder);
+            context = new SegmentBuildContext<>(builder,
+                    new SegmentDirectoryLayout(SEGMENT_ID));
         }
 
         @AfterEach
@@ -84,7 +85,8 @@ class SegmentBuildContextTest {
                             List.of(new ChunkFilterDoNothing()))
                     .withDecodingChunkFilters(
                             List.of(new ChunkFilterDoNothing()));
-            context = new SegmentBuildContext<>(builder);
+            context = new SegmentBuildContext<>(builder,
+                    new SegmentDirectoryLayout(SEGMENT_ID));
         }
 
         @AfterEach
