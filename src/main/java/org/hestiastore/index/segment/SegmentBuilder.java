@@ -21,6 +21,7 @@ public final class SegmentBuilder<K, V> {
     private static final int DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE = 1000
             * 1000 * 5;
     private static final int DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK = 1000;
+    private static final int DEFAULT_MAX_NUMBER_OF_DELTA_CACHE_FILES = 10;
 
     private static final int DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES = 1024 * 4;
 
@@ -33,6 +34,7 @@ public final class SegmentBuilder<K, V> {
     private int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
     private boolean maxNumberOfKeysInSegmentWriteCacheDuringMaintenanceSet;
     private int maxNumberOfKeysInSegmentChunk = DEFAULT_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK;
+    private int maxNumberOfDeltaCacheFiles = DEFAULT_MAX_NUMBER_OF_DELTA_CACHE_FILES;
     private int bloomFilterNumberOfHashFunctions = SegmentConf.UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS;
     private int bloomFilterIndexSizeInBytes = SegmentConf.UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES;
     private double bloomFilterProbabilityOfFalsePositive = SegmentConf.UNSET_BLOOM_FILTER_PROBABILITY;
@@ -179,6 +181,19 @@ public final class SegmentBuilder<K, V> {
             final int maxNumberOfKeysInSegmentChunk) {
         this.maxNumberOfKeysInSegmentChunk = Vldtn.requireGreaterThanZero(
                 maxNumberOfKeysInSegmentChunk, "maxNumberOfKeysInSegmentChunk");
+        return this;
+    }
+
+    /**
+     * Sets the maximum number of delta cache files allowed per segment.
+     *
+     * @param maxNumberOfDeltaCacheFiles max delta cache file count
+     * @return this builder for chaining
+     */
+    public SegmentBuilder<K, V> withMaxNumberOfDeltaCacheFiles(
+            final int maxNumberOfDeltaCacheFiles) {
+        this.maxNumberOfDeltaCacheFiles = Vldtn.requireGreaterThanZero(
+                maxNumberOfDeltaCacheFiles, "maxNumberOfDeltaCacheFiles");
         return this;
     }
 
@@ -353,7 +368,9 @@ public final class SegmentBuilder<K, V> {
                             context.segmentConf
                                     .getMaxNumberOfKeysInSegmentCache(),
                             context.segmentConf
-                                    .getMaxNumberOfKeysInSegmentWriteCache())
+                                    .getMaxNumberOfKeysInSegmentWriteCache(),
+                            context.segmentConf
+                                    .getMaxNumberOfDeltaCacheFiles())
                     : SegmentMaintenancePolicy.none();
             return new SegmentImpl<>(core, compacter,
                     context.maintenanceExecutor, maintenancePolicy,
@@ -410,6 +427,10 @@ public final class SegmentBuilder<K, V> {
 
     int getMaxNumberOfKeysInSegmentChunk() {
         return maxNumberOfKeysInSegmentChunk;
+    }
+
+    int getMaxNumberOfDeltaCacheFiles() {
+        return maxNumberOfDeltaCacheFiles;
     }
 
     int getBloomFilterNumberOfHashFunctions() {

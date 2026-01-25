@@ -28,6 +28,7 @@ public class SegmentConf {
     private final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
     private final int maxNumberOfKeysInSegmentCache;
     private final int maxNumberOfKeysInChunk;
+    private final int maxNumberOfDeltaCacheFiles;
     private final int bloomFilterNumberOfHashFunctions;
     private final int bloomFilterIndexSizeInBytes;
     private final double bloomFilterProbabilityOfFalsePositive;
@@ -43,6 +44,7 @@ public class SegmentConf {
      *        allowed during maintenance
      * @param maxNumberOfKeysInSegmentCache max segment cache size
      * @param maxNumberOfKeysInChunk max number of keys in a chunk
+     * @param maxNumberOfDeltaCacheFiles max delta cache file count
      * @param bloomFilterNumberOfHashFunctions Bloom filter hash count or
      *        {@link #UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS}
      * @param bloomFilterIndexSizeInBytes Bloom filter index size in bytes or
@@ -57,6 +59,7 @@ public class SegmentConf {
             final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
             final int maxNumberOfKeysInSegmentCache,
             final int maxNumberOfKeysInChunk,
+            final int maxNumberOfDeltaCacheFiles,
             final int bloomFilterNumberOfHashFunctions,
             final int bloomFilterIndexSizeInBytes,
             final double bloomFilterProbabilityOfFalsePositive,
@@ -67,6 +70,7 @@ public class SegmentConf {
         this.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
         this.maxNumberOfKeysInChunk = maxNumberOfKeysInChunk;
+        this.maxNumberOfDeltaCacheFiles = maxNumberOfDeltaCacheFiles;
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
         this.bloomFilterProbabilityOfFalsePositive = bloomFilterProbabilityOfFalsePositive;
@@ -85,6 +89,7 @@ public class SegmentConf {
         this.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = segmentConf.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
         this.maxNumberOfKeysInSegmentCache = segmentConf.maxNumberOfKeysInSegmentCache;
         this.maxNumberOfKeysInChunk = segmentConf.maxNumberOfKeysInChunk;
+        this.maxNumberOfDeltaCacheFiles = segmentConf.maxNumberOfDeltaCacheFiles;
         this.bloomFilterNumberOfHashFunctions = segmentConf.bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = segmentConf.bloomFilterIndexSizeInBytes;
         this.bloomFilterProbabilityOfFalsePositive = segmentConf.bloomFilterProbabilityOfFalsePositive;
@@ -127,6 +132,15 @@ public class SegmentConf {
      */
     int getMaxNumberOfKeysInChunk() {
         return maxNumberOfKeysInChunk;
+    }
+
+    /**
+     * Returns the maximum number of delta cache files allowed per segment.
+     *
+     * @return max delta cache file count
+     */
+    int getMaxNumberOfDeltaCacheFiles() {
+        return maxNumberOfDeltaCacheFiles;
     }
 
     /**

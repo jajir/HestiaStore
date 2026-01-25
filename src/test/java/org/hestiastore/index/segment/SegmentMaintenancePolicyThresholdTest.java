@@ -25,7 +25,7 @@ class SegmentMaintenancePolicyThresholdTest {
 
         @BeforeEach
         void setUp() {
-            policy = new SegmentMaintenancePolicyThreshold<>(10, 5);
+            policy = new SegmentMaintenancePolicyThreshold<>(10, 5, 0);
         }
 
         @Test
@@ -82,7 +82,7 @@ class SegmentMaintenancePolicyThresholdTest {
 
         @BeforeEach
         void setUp() {
-            policy = new SegmentMaintenancePolicyThreshold<>(0, 0);
+            policy = new SegmentMaintenancePolicyThreshold<>(0, 0, 0);
         }
 
         @Test
@@ -102,7 +102,7 @@ class SegmentMaintenancePolicyThresholdTest {
 
         @BeforeEach
         void setUp() {
-            policy = new SegmentMaintenancePolicyThreshold<>(0, 5);
+            policy = new SegmentMaintenancePolicyThreshold<>(0, 5, 0);
         }
 
         @Test
@@ -124,7 +124,7 @@ class SegmentMaintenancePolicyThresholdTest {
 
         @BeforeEach
         void setUp() {
-            policy = new SegmentMaintenancePolicyThreshold<>(10, 0);
+            policy = new SegmentMaintenancePolicyThreshold<>(10, 0, 0);
         }
 
         @Test
@@ -154,12 +154,17 @@ class SegmentMaintenancePolicyThresholdTest {
     void constructor_rejects_negative_thresholds() {
         final IllegalArgumentException segmentCache = assertThrows(
                 IllegalArgumentException.class,
-                () -> new SegmentMaintenancePolicyThreshold<>(-1, 1));
+                () -> new SegmentMaintenancePolicyThreshold<>(-1, 1, 0));
         assertTrue(segmentCache.getMessage().contains("maxSegmentCacheKeys"));
 
         final IllegalArgumentException writeCache = assertThrows(
                 IllegalArgumentException.class,
-                () -> new SegmentMaintenancePolicyThreshold<>(1, -1));
+                () -> new SegmentMaintenancePolicyThreshold<>(1, -1, 0));
         assertTrue(writeCache.getMessage().contains("maxWriteCacheKeys"));
+
+        final IllegalArgumentException deltaCache = assertThrows(
+                IllegalArgumentException.class,
+                () -> new SegmentMaintenancePolicyThreshold<>(1, 1, -1));
+        assertTrue(deltaCache.getMessage().contains("maxDeltaCacheFiles"));
     }
 }

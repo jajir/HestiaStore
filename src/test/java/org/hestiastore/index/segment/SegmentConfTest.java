@@ -12,7 +12,7 @@ class SegmentConfTest {
 
     @Test
     void copyConstructorPreservesValues() {
-        final SegmentConf original = new SegmentConf(5, 6, 10, 2, 1, 1024,
+        final SegmentConf original = new SegmentConf(5, 6, 10, 2, 4, 1, 1024,
                 0.01D, 1024, List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()));
 
@@ -26,6 +26,8 @@ class SegmentConfTest {
                 copy.getMaxNumberOfKeysInSegmentCache());
         assertEquals(original.getMaxNumberOfKeysInChunk(),
                 copy.getMaxNumberOfKeysInChunk());
+        assertEquals(original.getMaxNumberOfDeltaCacheFiles(),
+                copy.getMaxNumberOfDeltaCacheFiles());
         assertEquals(original.getBloomFilterNumberOfHashFunctions(),
                 copy.getBloomFilterNumberOfHashFunctions());
         assertEquals(original.getBloomFilterIndexSizeInBytes(),
@@ -38,8 +40,8 @@ class SegmentConfTest {
 
     @Test
     void filterListsAreImmutable() {
-        final SegmentConf conf = new SegmentConf(5, 6, 10, 2, 1, 1024, 0.01D,
-                1024, List.of(new ChunkFilterDoNothing()),
+        final SegmentConf conf = new SegmentConf(5, 6, 10, 2, 4, 1, 1024,
+                0.01D, 1024, List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()));
 
         assertThrows(UnsupportedOperationException.class,

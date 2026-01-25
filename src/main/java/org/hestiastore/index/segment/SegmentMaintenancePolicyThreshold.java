@@ -3,26 +3,32 @@ package org.hestiastore.index.segment;
 import org.hestiastore.index.Vldtn;
 
 /**
- * Simple maintenance policy based on segment cache and write cache sizes.
+ * Simple maintenance policy based on segment cache, write cache, and delta
+ * cache file thresholds.
  */
 public final class SegmentMaintenancePolicyThreshold<K, V>
         implements SegmentMaintenancePolicy<K, V> {
 
     private final int maxSegmentCacheKeys;
     private final int maxWriteCacheKeys;
+    private final int maxDeltaCacheFiles;
 
     /**
      * Creates a threshold-based maintenance policy.
      *
      * @param maxSegmentCacheKeys max cached keys before compaction is requested
      * @param maxWriteCacheKeys max write-cache keys before flush is requested
+     * @param maxDeltaCacheFiles max delta cache files before compaction is
+     *                           requested
      */
     public SegmentMaintenancePolicyThreshold(final int maxSegmentCacheKeys,
-            final int maxWriteCacheKeys) {
+            final int maxWriteCacheKeys, final int maxDeltaCacheFiles) {
         this.maxSegmentCacheKeys = Vldtn.requireBetween(maxSegmentCacheKeys, 0,
                 Integer.MAX_VALUE, "maxSegmentCacheKeys");
         this.maxWriteCacheKeys = Vldtn.requireBetween(maxWriteCacheKeys, 0,
                 Integer.MAX_VALUE, "maxWriteCacheKeys");
+        this.maxDeltaCacheFiles = Vldtn.requireBetween(maxDeltaCacheFiles, 0,
+                Integer.MAX_VALUE, "maxDeltaCacheFiles");
     }
 
     /**

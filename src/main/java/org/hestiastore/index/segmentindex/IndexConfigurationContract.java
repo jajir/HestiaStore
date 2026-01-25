@@ -20,6 +20,7 @@ public interface IndexConfigurationContract {
     int MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = 10_000;
     int MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK = 1_000;
     int MAX_NUMBER_OF_SEGMENTS_IN_CACHE = 10;
+    int MAX_NUMBER_OF_DELTA_CACHE_FILES = 10;
 
     int BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS = 3;
     int BLOOM_FILTER_INDEX_SIZE_IN_BYTES = 5_000_000;
@@ -73,6 +74,16 @@ public interface IndexConfigurationContract {
      */
     default int getMaxNumberOfKeysInSegmentChunk() {
         return MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK;
+    }
+
+    /**
+     * Returns the default maximum number of delta cache files allowed for a
+     * segment before maintenance should be triggered.
+     *
+     * @return default max delta cache files per segment
+     */
+    default int getMaxNumberOfDeltaCacheFiles() {
+        return MAX_NUMBER_OF_DELTA_CACHE_FILES;
     }
 
     /**

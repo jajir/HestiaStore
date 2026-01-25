@@ -108,7 +108,7 @@ class SegmentImplTest {
 
     @BeforeEach
     void setUpSubject() {
-        conf = new SegmentConf(50, 100, 1000, 3,
+        conf = new SegmentConf(50, 100, 1000, 3, 7,
                 SegmentConf.UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
                 SegmentConf.UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES, 0.01, 1024,
                 List.of(new ChunkFilterDoNothing()),
@@ -147,7 +147,8 @@ class SegmentImplTest {
         core = createCore(versionController);
         final SegmentMaintenancePolicyThreshold<Integer, String> maintenancePolicy = new SegmentMaintenancePolicyThreshold<>(
                 conf.getMaxNumberOfKeysInSegmentCache(),
-                conf.getMaxNumberOfKeysInSegmentWriteCache());
+                conf.getMaxNumberOfKeysInSegmentWriteCache(),
+                conf.getMaxNumberOfDeltaCacheFiles());
         subject = new SegmentImpl<>(core, compacter, Runnable::run,
                 maintenancePolicy);
     }
@@ -182,7 +183,8 @@ class SegmentImplTest {
                 versionController);
         final SegmentMaintenancePolicyThreshold<Integer, String> maintenancePolicy = new SegmentMaintenancePolicyThreshold<>(
                 conf.getMaxNumberOfKeysInSegmentCache(),
-                conf.getMaxNumberOfKeysInSegmentWriteCache());
+                conf.getMaxNumberOfKeysInSegmentWriteCache(),
+                conf.getMaxNumberOfDeltaCacheFiles());
 
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> new SegmentImpl<>(core, compacter, null,
@@ -585,7 +587,8 @@ class SegmentImplTest {
                 versionController);
         final SegmentMaintenancePolicyThreshold<Integer, String> maintenancePolicy = new SegmentMaintenancePolicyThreshold<>(
                 conf.getMaxNumberOfKeysInSegmentCache(),
-                conf.getMaxNumberOfKeysInSegmentWriteCache());
+                conf.getMaxNumberOfKeysInSegmentWriteCache(),
+                conf.getMaxNumberOfDeltaCacheFiles());
         final SegmentImpl<Integer, String> segment = new SegmentImpl<>(
                 core, compacter, executor, maintenancePolicy);
 
@@ -650,7 +653,8 @@ class SegmentImplTest {
         final SegmentCore<Integer, String> localCore = createCore(controller);
         final SegmentMaintenancePolicyThreshold<Integer, String> maintenancePolicy = new SegmentMaintenancePolicyThreshold<>(
                 conf.getMaxNumberOfKeysInSegmentCache(),
-                conf.getMaxNumberOfKeysInSegmentWriteCache());
+                conf.getMaxNumberOfKeysInSegmentWriteCache(),
+                conf.getMaxNumberOfDeltaCacheFiles());
         return new SegmentImpl<>(localCore, compacter, executor,
                 maintenancePolicy);
     }

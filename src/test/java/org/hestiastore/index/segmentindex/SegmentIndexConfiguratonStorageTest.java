@@ -40,6 +40,7 @@ class SegmentIndexConfiguratonStorageTest {
     private static final int MAX_KEYS_IN_SEGMENT_CACHE = 5000;
     private static final int MAX_KEYS_IN_SEGMENT_WRITE_CACHE = 2500;
     private static final int MAX_INDEX_PAGE = 256;
+    private static final int MAX_DELTA_CACHE_FILES = 12;
     private static final int MAX_KEYS_CACHE = 10000;
     private static final int MAX_KEYS_SEGMENT = 20000;
     private static final int MAX_SEGMENTS_CACHE = 8;
@@ -63,6 +64,7 @@ class SegmentIndexConfiguratonStorageTest {
                 .withMaxNumberOfKeysInSegmentWriteCache(
                         MAX_KEYS_IN_SEGMENT_WRITE_CACHE)//
                 .withMaxNumberOfKeysInSegmentChunk(256)//
+                .withMaxNumberOfDeltaCacheFiles(MAX_DELTA_CACHE_FILES)//
                 .withMaxNumberOfKeysInCache(10000)//
                 .withMaxNumberOfKeysInSegment(20000)//
                 .withMaxNumberOfSegmentsInCache(8)//
@@ -90,6 +92,8 @@ class SegmentIndexConfiguratonStorageTest {
         assertEquals((int) MAX_KEYS_IN_SEGMENT_WRITE_CACHE,
                 ret.getMaxNumberOfKeysInSegmentWriteCache());
         assertEquals(MAX_INDEX_PAGE, ret.getMaxNumberOfKeysInSegmentChunk());
+        assertEquals(MAX_DELTA_CACHE_FILES,
+                ret.getMaxNumberOfDeltaCacheFiles());
         assertEquals(MAX_KEYS_CACHE, ret.getMaxNumberOfKeysInCache());
         assertEquals(MAX_KEYS_SEGMENT, ret.getMaxNumberOfKeysInSegment());
         assertEquals(MAX_SEGMENTS_CACHE, ret.getMaxNumberOfSegmentsInCache());
@@ -120,6 +124,7 @@ class SegmentIndexConfiguratonStorageTest {
                 .withMaxNumberOfKeysInSegmentWriteCache(
                         MAX_KEYS_IN_SEGMENT_WRITE_CACHE)//
                 .withMaxNumberOfKeysInSegmentChunk(MAX_INDEX_PAGE)//
+                .withMaxNumberOfDeltaCacheFiles(MAX_DELTA_CACHE_FILES)//
                 .withMaxNumberOfKeysInCache(MAX_KEYS_CACHE)//
                 .withMaxNumberOfKeysInSegment(MAX_KEYS_SEGMENT)//
                 .withMaxNumberOfSegmentsInCache(MAX_SEGMENTS_CACHE)//
@@ -173,6 +178,7 @@ class SegmentIndexConfiguratonStorageTest {
                 .withMaxNumberOfKeysInSegmentWriteCache(
                         MAX_KEYS_IN_SEGMENT_WRITE_CACHE)//
                 .withMaxNumberOfKeysInSegmentChunk(256)//
+                .withMaxNumberOfDeltaCacheFiles(MAX_DELTA_CACHE_FILES)//
                 .withMaxNumberOfKeysInCache(10000)//
                 .withMaxNumberOfKeysInSegment(20000)//
                 .withMaxNumberOfSegmentsInCache(8)//
@@ -195,6 +201,8 @@ class SegmentIndexConfiguratonStorageTest {
         assertEquals((int) MAX_KEYS_IN_SEGMENT_WRITE_CACHE,
                 ret.getMaxNumberOfKeysInSegmentWriteCache());
         assertEquals(MAX_INDEX_PAGE, ret.getMaxNumberOfKeysInSegmentChunk());
+        assertEquals(MAX_DELTA_CACHE_FILES,
+                ret.getMaxNumberOfDeltaCacheFiles());
         assertEquals(MAX_KEYS_CACHE, ret.getMaxNumberOfKeysInCache());
         assertEquals(MAX_KEYS_SEGMENT, ret.getMaxNumberOfKeysInSegment());
         assertEquals(MAX_SEGMENTS_CACHE, ret.getMaxNumberOfSegmentsInCache());

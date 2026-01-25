@@ -244,6 +244,8 @@ public class SegmentRegistry<K, V> {
                                 .intValue())//
                 .withMaxNumberOfKeysInSegmentChunk(
                         conf.getMaxNumberOfKeysInSegmentChunk())//
+                .withMaxNumberOfDeltaCacheFiles(
+                        conf.getMaxNumberOfDeltaCacheFiles())//
                 .withValueTypeDescriptor(valueTypeDescriptor)//
                 .withBloomFilterNumberOfHashFunctions(
                         conf.getBloomFilterNumberOfHashFunctions())//

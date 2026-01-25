@@ -25,8 +25,8 @@ class SegmentDataSupplierTest {
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(),
                 1024, List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()), 1L);
-        final SegmentConf conf = new SegmentConf(5, 6, 10, 2, 1, 1024, 0.01D,
-                1024, List.of(new ChunkFilterDoNothing()),
+        final SegmentConf conf = new SegmentConf(5, 6, 10, 2, 4, 1, 1024,
+                0.01D, 1024, List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()));
         final SegmentDataSupplier<Integer, String> supplier = new SegmentDataSupplier<>(
                 files, conf);
@@ -55,7 +55,7 @@ class SegmentDataSupplierTest {
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(),
                 1024, List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()), 1L);
-        final SegmentConf conf = new SegmentConf(5, 6, 10, 2,
+        final SegmentConf conf = new SegmentConf(5, 6, 10, 2, 4,
                 SegmentConf.UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
                 SegmentConf.UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES,
                 SegmentConf.UNSET_BLOOM_FILTER_PROBABILITY, 1024,

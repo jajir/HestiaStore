@@ -59,7 +59,8 @@ class SegmentReadPathTest {
 
     @BeforeEach
     void setUp() {
-        final SegmentConf conf = new SegmentConf(1, 1, 1, 1, 0, 0, 0.01, 1024,
+        final SegmentConf conf = new SegmentConf(1, 1, 1, 1, 1, 0, 0, 0.01,
+                1024,
                 List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()));
         when(segmentFiles.getIndexFile()).thenReturn(chunkEntryFile);

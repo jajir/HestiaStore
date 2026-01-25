@@ -33,6 +33,7 @@ public class IndexConfiguration<K, V> {
     private final Integer maxNumberOfKeysInSegmentWriteCache;
     private final Integer maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
     private final Integer maxNumberOfKeysInSegmentChunk;
+    private final Integer maxNumberOfDeltaCacheFiles;
 
     /*
      * Segment index configuration
@@ -78,6 +79,7 @@ public class IndexConfiguration<K, V> {
             final Integer maxNumberOfKeysInSegmentWriteCache, //
             final Integer maxNumberOfKeysInSegmentWriteCacheDuringMaintenance, //
             final Integer maxNumberOfKeysInSegmentChunk, //
+            final Integer maxNumberOfDeltaCacheFiles, //
             final Integer maxNumberOfKeysInCache, //
             final Integer maxNumberOfKeysInSegment, //
             final Integer maxNumberOfSegmentsInCache, //
@@ -102,6 +104,7 @@ public class IndexConfiguration<K, V> {
         this.maxNumberOfKeysInSegmentWriteCache = maxNumberOfKeysInSegmentWriteCache;
         this.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
         this.maxNumberOfKeysInSegmentChunk = maxNumberOfKeysInSegmentChunk;
+        this.maxNumberOfDeltaCacheFiles = maxNumberOfDeltaCacheFiles;
         this.indexName = indexName;
         this.maxNumberOfKeysInCache = maxNumberOfKeysInCache;
         this.maxNumberOfKeysInSegment = maxNumberOfKeysInSegment;
@@ -159,6 +162,16 @@ public class IndexConfiguration<K, V> {
      */
     public Integer getMaxNumberOfKeysInSegmentChunk() {
         return maxNumberOfKeysInSegmentChunk;
+    }
+
+    /**
+     * Returns the maximum number of delta cache files allowed before
+     * maintenance is triggered.
+     *
+     * @return max delta cache files per segment
+     */
+    public Integer getMaxNumberOfDeltaCacheFiles() {
+        return maxNumberOfDeltaCacheFiles;
     }
 
     /**

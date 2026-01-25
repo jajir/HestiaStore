@@ -15,6 +15,8 @@ class IndexConfigurationDefaultStringTest {
         assertEquals(5_000_000, defaults.getMaxNumberOfKeysInCache());
         assertEquals(10_000_000, defaults.getMaxNumberOfKeysInSegment());
         assertEquals(10, defaults.getMaxNumberOfSegmentsInCache());
+        assertEquals(IndexConfigurationContract.MAX_NUMBER_OF_DELTA_CACHE_FILES,
+                defaults.getMaxNumberOfDeltaCacheFiles());
         assertEquals(1024 * 1024, defaults.getDiskIoBufferSizeInBytes());
         assertEquals(2, defaults.getBloomFilterNumberOfHashFunctions());
         assertEquals(1_000_000, defaults.getBloomFilterIndexSizeInBytes());

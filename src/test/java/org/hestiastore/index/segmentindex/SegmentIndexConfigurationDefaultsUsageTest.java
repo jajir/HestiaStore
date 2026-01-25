@@ -37,6 +37,9 @@ class SegmentIndexConfigurationDefaultsUsageTest {
             assertEquals(defaults.getMaxNumberOfKeysInSegmentChunk(),
                     actual.getMaxNumberOfKeysInSegmentChunk(),
                     "Segment chunk size must come from contract defaults");
+            assertEquals(defaults.getMaxNumberOfDeltaCacheFiles(),
+                    actual.getMaxNumberOfDeltaCacheFiles(),
+                    "Delta cache file cap must come from contract defaults");
             assertEquals(defaults.getMaxNumberOfKeysInCache(),
                     actual.getMaxNumberOfKeysInCache(),
                     "Index cache size must come from contract defaults");
