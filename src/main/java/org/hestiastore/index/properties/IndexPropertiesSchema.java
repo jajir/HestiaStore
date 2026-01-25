@@ -31,7 +31,6 @@ public final class IndexPropertiesSchema {
         public static final String NUMBER_OF_KEYS_IN_MAIN_INDEX = "numberOfKeysInMainIndex";
         public static final String NUMBER_OF_KEYS_IN_SCARCE_INDEX = "numberOfKeysInScarceIndex";
         public static final String NUMBER_OF_SEGMENT_CACHE_DELTA_FILES = "numberOfSegmentDeltaFiles";
-        public static final String SEGMENT_STATE = "segmentState";
         public static final String SEGMENT_VERSION = "segmentVersion";
 
         private SegmentKeys() {
@@ -223,7 +222,6 @@ public final class IndexPropertiesSchema {
                 view -> "0");
         defaults.put(SegmentKeys.NUMBER_OF_SEGMENT_CACHE_DELTA_FILES,
                 view -> "0");
-        defaults.put(SegmentKeys.SEGMENT_STATE, view -> "ACTIVE");
         defaults.put(SegmentKeys.SEGMENT_VERSION, view -> "0");
         return new IndexPropertiesSchema("segment-properties",
                 defaults.keySet(), defaults);

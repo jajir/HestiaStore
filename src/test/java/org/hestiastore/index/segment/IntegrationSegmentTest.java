@@ -396,8 +396,6 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
                 asyncDirectory, segmentId);
         segmentPropertiesManager.setVersion(1L);
-        segmentPropertiesManager
-                .setState(SegmentPropertiesManager.SegmentDataState.ACTIVE);
 
         final Segment<Integer, String> seg = Segment
                 .<Integer, String>builder(
