@@ -2,13 +2,29 @@
 
 ## Active
 
+[ ] 11 Remove `segmentState` from segment properties schema (Risk: MEDIUM)
+    - Remove `SegmentKeys.SEGMENT_STATE` from `IndexPropertiesSchema`.
+    - Update `SegmentPropertiesManager` to drop `getState`/`setState` usage.
+    - Decide migration behavior for existing properties files.
+[ ] 12 Add `getMaxNumberOfDeltaCacheFiles()` to `Segment` (Risk: LOW)
+    - Implement in `SegmentImpl`.
+    - Update any callers/tests that need the accessor.
+[ ] 13 Add `maxNumberOfDeltaCacheFiles` to `IndexConfiguration` + builder (Risk: MEDIUM)
+    - Add config property, validation, defaults, and persistence.
+    - Plumb through `SegmentBuilder`/`SegmentConf` as needed.
+[ ] 14 Wire delta cache file cap into `SegmentMaintenancePolicyThreshold` (Risk: MEDIUM)
+    - Add the max file count to policy constructor/state.
+    - Pass the value from configuration.
+[ ] 15 Enforce delta cache file cap in policy (Risk: MEDIUM)
+    - In `SegmentMaintenancePolicyThreshold` (~line 44), trigger maintenance
+      when delta cache file count exceeds the cap.
 
 ## Planned
 
-#### High
+### High
 
+### Medium
 
-#### Medium
 [ ] 5 Stop materializing merged cache lists on read (Risk: MEDIUM)
     - Problem: `SegmentReadPath.openIterator` calls `getAsSortedList`, building
       full merged lists for each iterator.
@@ -43,6 +59,7 @@
     - Fix: rebuild map on clear when size exceeds a threshold; add tests.
 
 ### Other refactors (non-OOM)
+
 [ ] 13 Implement a real registry lock (Risk: MEDIUM)
     - Add an explicit lock around registry mutations + file ops.
     - Replace/rename `executeWithRegistryLock` to actually serialize callers.
@@ -99,6 +116,7 @@
     - Keep backoff/timeout semantics and error messages consistent.
 
 ### Testing/Quality
+
 [ ] 48 Test executor saturation and backpressure paths (Risk: MEDIUM)
     - Add tests for `SegmentAsyncExecutor` queue saturation and rejection handling.
     - Add tests for `SplitAsyncExecutor` rejection and in-flight cleanup.
@@ -131,9 +149,6 @@
 ## Done (Archive)
 
 - (keep completed items here; do not delete)
-
-
-
 
 [x] 1 everiwhere rename maxNumberOfKeysInSegmentWriteCacheDuringFlush to maxNumberOfKeysInSegmentWriteCacheDuringMaintenance including all configurations setter getter all all posssible usages.
 [x] 2 Wnen write cache reach size as maxNumberOfKeysInSegmentWriteCacheDuringMaintenance than response to put with BUSY.
