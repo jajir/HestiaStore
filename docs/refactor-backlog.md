@@ -2,11 +2,11 @@
 
 ## Active
 
-[ ] 11 Remove `segmentState` from segment properties schema (Risk: MEDIUM)
+[x] 11 Remove `segmentState` from segment properties schema (Risk: MEDIUM)
     - Remove `SegmentKeys.SEGMENT_STATE` from `IndexPropertiesSchema`.
     - Update `SegmentPropertiesManager` to drop `getState`/`setState` usage.
     - Decide migration behavior for existing properties files.
-[ ] 12 Add `getMaxNumberOfDeltaCacheFiles()` to `Segment` (Risk: LOW)
+[x] 12 Add `getMaxNumberOfDeltaCacheFiles()` to `Segment` (Risk: LOW)
     - Implement in `SegmentImpl`.
     - Update any callers/tests that need the accessor.
 [ ] 13 Add `maxNumberOfDeltaCacheFiles` to `IndexConfiguration` + builder (Risk: MEDIUM)

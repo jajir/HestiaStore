@@ -198,6 +198,15 @@ final class SegmentCore<K, V> {
     }
 
     /**
+     * Returns the number of delta cache files recorded for this segment.
+     *
+     * @return number of delta cache files tracked in properties
+     */
+    int getDeltaCacheFileCount() {
+        return segmentPropertiesManager.getDeltaFileCount();
+    }
+
+    /**
      * Returns the value for the given key, considering cache and disk.
      *
      * @param key key to look up

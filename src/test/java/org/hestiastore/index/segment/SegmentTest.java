@@ -83,6 +83,11 @@ class SegmentTest {
         }
 
         @Override
+        public int getMaxNumberOfDeltaCacheFiles() {
+            return 0;
+        }
+
+        @Override
         public long getNumberOfKeys() {
             return 0L;
         }
