@@ -45,6 +45,7 @@ class SegmentManagerTest {
                 .thenReturn(2);
         when(conf.getMaxNumberOfKeysInSegmentCache()).thenReturn(4);
         when(conf.getMaxNumberOfKeysInSegmentChunk()).thenReturn(1);
+        when(conf.getMaxNumberOfDeltaCacheFiles()).thenReturn(3);
         when(conf.getDiskIoBufferSize()).thenReturn(1024);
         when(conf.getBloomFilterNumberOfHashFunctions()).thenReturn(1);
         when(conf.getBloomFilterIndexSizeInBytes()).thenReturn(0);

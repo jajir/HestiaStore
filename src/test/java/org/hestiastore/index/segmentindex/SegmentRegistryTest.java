@@ -161,6 +161,7 @@ class SegmentRegistryTest {
                 .thenReturn(6);
         Mockito.when(conf.getMaxNumberOfKeysInSegmentCache()).thenReturn(10);
         Mockito.when(conf.getMaxNumberOfKeysInSegmentChunk()).thenReturn(2);
+        Mockito.when(conf.getMaxNumberOfDeltaCacheFiles()).thenReturn(7);
         Mockito.when(conf.getBloomFilterNumberOfHashFunctions()).thenReturn(1);
         Mockito.when(conf.getBloomFilterIndexSizeInBytes()).thenReturn(1024);
         Mockito.when(conf.getBloomFilterProbabilityOfFalsePositive())

@@ -40,6 +40,8 @@ class IndexConfigurationManagerTest {
                 .withMaxNumberOfKeysInSegmentWriteCache(5)
                 .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(6)
                 .withMaxNumberOfKeysInSegmentChunk(2)
+                .withMaxNumberOfDeltaCacheFiles(
+                        IndexConfigurationContract.MAX_NUMBER_OF_DELTA_CACHE_FILES)
                 .withMaxNumberOfKeysInCache(10)
                 .withMaxNumberOfKeysInSegment(100)
                 .withMaxNumberOfSegmentsInCache(3)

@@ -43,6 +43,7 @@ class SegmentIndexConfigurationManagerTest {
             .withMaxNumberOfKeysInSegmentCache(11)//
             .withMaxNumberOfKeysInSegmentWriteCache(5)//
             .withMaxNumberOfKeysInSegmentChunk(33)//
+            .withMaxNumberOfDeltaCacheFiles(7)//
             .withMaxNumberOfKeysInSegment(44)//
             .withMaxNumberOfKeysInCache(55)//
             .withMaxNumberOfSegmentsInCache(66)//
@@ -269,6 +270,7 @@ class SegmentIndexConfigurationManagerTest {
                 .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInSegmentWriteCache(5)//
                 .withMaxNumberOfKeysInSegmentChunk(33)//
+                .withMaxNumberOfDeltaCacheFiles(7)//
                 .withMaxNumberOfKeysInSegment(44)//
                 .withMaxNumberOfSegmentsInCache(66)//
                 .withMaxNumberOfKeysInCache(1000)
@@ -300,6 +302,7 @@ class SegmentIndexConfigurationManagerTest {
                 .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInSegmentWriteCache(5)//
                 .withMaxNumberOfKeysInSegmentChunk(33)//
+                .withMaxNumberOfDeltaCacheFiles(7)//
                 .withMaxNumberOfKeysInSegment(44)//
                 .withMaxNumberOfSegmentsInCache(66)//
                 .withMaxNumberOfKeysInCache(1000)//

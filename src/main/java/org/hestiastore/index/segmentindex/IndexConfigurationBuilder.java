@@ -20,6 +20,7 @@ public class IndexConfigurationBuilder<K, V> {
     private Integer maxNumberOfKeysInSegmentWriteCache;
     private Integer maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
     private Integer maxNumberOfKeysInSegmentChunk;
+    private Integer maxNumberOfDeltaCacheFiles;
     private Integer maxNumberOfKeysInCache;
     private Integer maxNumberOfKeysInSegment;
     private Integer maxNumberOfSegmentsInCache;
@@ -170,6 +171,18 @@ public class IndexConfigurationBuilder<K, V> {
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentChunk(
             final Integer maxNumberOfKeysInSegmentChunk) {
         this.maxNumberOfKeysInSegmentChunk = maxNumberOfKeysInSegmentChunk;
+        return this;
+    }
+
+    /**
+     * Sets the max number of delta cache files allowed per segment.
+     *
+     * @param maxNumberOfDeltaCacheFiles max delta cache file count
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> withMaxNumberOfDeltaCacheFiles(
+            final Integer maxNumberOfDeltaCacheFiles) {
+        this.maxNumberOfDeltaCacheFiles = maxNumberOfDeltaCacheFiles;
         return this;
     }
 
@@ -503,6 +516,9 @@ public class IndexConfigurationBuilder<K, V> {
         final Boolean effectiveSegmentMaintenanceAutoEnabled = segmentMaintenanceAutoEnabled == null
                 ? IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_AUTO_ENABLED
                 : segmentMaintenanceAutoEnabled;
+        final Integer effectiveMaxNumberOfDeltaCacheFiles = maxNumberOfDeltaCacheFiles == null
+                ? IndexConfigurationContract.MAX_NUMBER_OF_DELTA_CACHE_FILES
+                : maxNumberOfDeltaCacheFiles;
         final Integer effectiveWriteCacheDuringMaintenance;
         if (maxNumberOfKeysInSegmentWriteCacheDuringMaintenance == null
                 && maxNumberOfKeysInSegmentWriteCache != null) {
@@ -529,7 +545,8 @@ public class IndexConfigurationBuilder<K, V> {
                 maxNumberOfKeysInSegmentCache,
                 maxNumberOfKeysInSegmentWriteCache,
                 effectiveWriteCacheDuringMaintenance,
-                maxNumberOfKeysInSegmentChunk, maxNumberOfKeysInCache,
+                maxNumberOfKeysInSegmentChunk, effectiveMaxNumberOfDeltaCacheFiles,
+                maxNumberOfKeysInCache,
                 maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache, indexName,
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
                 bloomFilterProbabilityOfFalsePositive, diskIoBufferSizeInBytes,

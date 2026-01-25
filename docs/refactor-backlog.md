@@ -9,10 +9,10 @@
 [x] 12 Add `getMaxNumberOfDeltaCacheFiles()` to `Segment` (Risk: LOW)
     - Implement in `SegmentImpl`.
     - Update any callers/tests that need the accessor.
-[ ] 13 Add `maxNumberOfDeltaCacheFiles` to `IndexConfiguration` + builder (Risk: MEDIUM)
+[x] 13 Add `maxNumberOfDeltaCacheFiles` to `IndexConfiguration` + builder (Risk: MEDIUM)
     - Add config property, validation, defaults, and persistence.
     - Plumb through `SegmentBuilder`/`SegmentConf` as needed.
-[ ] 14 Wire delta cache file cap into `SegmentMaintenancePolicyThreshold` (Risk: MEDIUM)
+[x] 14 Wire delta cache file cap into `SegmentMaintenancePolicyThreshold` (Risk: MEDIUM)
     - Add the max file count to policy constructor/state.
     - Pass the value from configuration.
 [ ] 15 Enforce delta cache file cap in policy (Risk: MEDIUM)

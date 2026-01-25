@@ -49,6 +49,7 @@ final class SegmentBuildContext<K, V> {
                 builder.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(),
                 builder.getMaxNumberOfKeysInSegmentCache(),
                 builder.getMaxNumberOfKeysInSegmentChunk(),
+                builder.getMaxNumberOfDeltaCacheFiles(),
                 builder.getBloomFilterNumberOfHashFunctions(),
                 builder.getBloomFilterIndexSizeInBytes(),
                 builder.getBloomFilterProbabilityOfFalsePositive(),

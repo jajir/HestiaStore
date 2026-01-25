@@ -91,6 +91,14 @@ class SegmentIndexConfigurationBuilderTest {
     }
 
     @Test
+    void withMaxNumberOfDeltaCacheFilesSetsValue() {
+        final int value = 7;
+        final IndexConfiguration<Integer, String> config = newBuilder()
+                .withMaxNumberOfDeltaCacheFiles(value).build();
+        assertEquals(value, config.getMaxNumberOfDeltaCacheFiles());
+    }
+
+    @Test
     void withMaxNumberOfKeysInCacheSetsValue() {
         final int value = 555;
         final IndexConfiguration<Integer, String> config = newBuilder()

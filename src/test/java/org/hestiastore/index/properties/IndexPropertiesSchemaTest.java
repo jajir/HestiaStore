@@ -99,6 +99,8 @@ class IndexPropertiesSchemaTest {
                 IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE));
         assertEquals(IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_CACHE,
                 view.getInt(IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_CACHE));
+        assertEquals(IndexConfigurationContract.MAX_NUMBER_OF_DELTA_CACHE_FILES,
+                view.getInt(IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES));
         assertEquals("",
                 view.getString(IndexPropertiesSchema.IndexConfigurationKeys.PROP_ENCODING_CHUNK_FILTERS));
         assertEquals("",

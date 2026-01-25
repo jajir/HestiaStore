@@ -35,7 +35,7 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
                 ? asyncDirectory.openSubDirectory(segmentId.getName())
                         .toCompletableFuture().join()
                 : asyncDirectory;
-        final SegmentConf segmentConf = new SegmentConf(8, 16, 16, 4,
+        final SegmentConf segmentConf = new SegmentConf(8, 16, 16, 4, 5,
                 SegmentConf.UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
                 SegmentConf.UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES, 0.01, 1024,
                 List.of(new ChunkFilterDoNothing()),
@@ -85,7 +85,7 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
         final AsyncDirectory segmentDirectory = asyncDirectory
                 .openSubDirectory(segmentId.getName()).toCompletableFuture()
                 .join();
-        final SegmentConf segmentConf = new SegmentConf(8, 16, 16, 4,
+        final SegmentConf segmentConf = new SegmentConf(8, 16, 16, 4, 5,
                 SegmentConf.UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
                 SegmentConf.UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES, 0.01, 1024,
                 List.of(new ChunkFilterDoNothing()),
@@ -125,7 +125,7 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
         final AsyncDirectory segmentDirectory = asyncDirectory
                 .openSubDirectory(segmentId.getName()).toCompletableFuture()
                 .join();
-        final SegmentConf segmentConf = new SegmentConf(8, 16, 16, 4,
+        final SegmentConf segmentConf = new SegmentConf(8, 16, 16, 4, 5,
                 SegmentConf.UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
                 SegmentConf.UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES, 0.01, 1024,
                 List.of(new ChunkFilterDoNothing()),
@@ -159,7 +159,7 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
         final AsyncDirectory segmentDirectory = asyncDirectory
                 .openSubDirectory(segmentId.getName()).toCompletableFuture()
                 .join();
-        final SegmentConf segmentConf = new SegmentConf(8, 16, 16, 4,
+        final SegmentConf segmentConf = new SegmentConf(8, 16, 16, 4, 5,
                 SegmentConf.UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
                 SegmentConf.UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES, 0.01, 1024,
                 List.of(new ChunkFilterDoNothing()),

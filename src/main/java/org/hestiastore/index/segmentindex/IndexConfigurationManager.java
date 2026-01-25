@@ -127,6 +127,10 @@ public class IndexConfigurationManager<K, V> {
             builder.withMaxNumberOfKeysInSegmentChunk(
                     defaults.getMaxNumberOfKeysInSegmentChunk());
         }
+        if (conf.getMaxNumberOfDeltaCacheFiles() == null) {
+            builder.withMaxNumberOfDeltaCacheFiles(
+                    defaults.getMaxNumberOfDeltaCacheFiles());
+        }
         if (conf.getMaxNumberOfKeysInSegmentChunk() == null) {
             builder.withMaxNumberOfKeysInSegmentChunk(
                     defaults.getMaxNumberOfKeysInSegmentChunk());
@@ -211,6 +215,11 @@ public class IndexConfigurationManager<K, V> {
                 storedConf, indexConf)) {
             builder.withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
                     indexConf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance());
+            dirty = true;
+        }
+        if (isMaxNumberOfDeltaCacheFilesOverriden(storedConf, indexConf)) {
+            builder.withMaxNumberOfDeltaCacheFiles(
+                    indexConf.getMaxNumberOfDeltaCacheFiles());
             dirty = true;
         }
 
@@ -342,6 +351,15 @@ public class IndexConfigurationManager<K, V> {
                 && indexConf.getMaxNumberOfKeysInCache() > 0
                 && !indexConf.getMaxNumberOfKeysInCache()
                         .equals(storedConf.getMaxNumberOfKeysInCache());
+    }
+
+    private boolean isMaxNumberOfDeltaCacheFilesOverriden(
+            final IndexConfiguration<K, V> storedConf,
+            final IndexConfiguration<K, V> indexConf) {
+        return indexConf.getMaxNumberOfDeltaCacheFiles() != null
+                && indexConf.getMaxNumberOfDeltaCacheFiles() > 0
+                && !indexConf.getMaxNumberOfDeltaCacheFiles()
+                        .equals(storedConf.getMaxNumberOfDeltaCacheFiles());
     }
 
     void validateThatFixPropertiesAreNotOverriden(
@@ -528,6 +546,13 @@ public class IndexConfigurationManager<K, V> {
                     "Max number of keys in segment write cache during maintenance must be greater than the flush threshold.");
         }
 
+        Vldtn.requireNonNull(conf.getMaxNumberOfDeltaCacheFiles(),
+                "MaxNumberOfDeltaCacheFiles");
+        if (conf.getMaxNumberOfDeltaCacheFiles() < 1) {
+            throw new IllegalArgumentException(
+                    "Max number of delta cache files must be at least 1.");
+        }
+
         Vldtn.requireNonNull(conf.getDiskIoBufferSize(), "DiskIoBufferSize");
         if (conf.getDiskIoBufferSize() <= 0) {
             throw new IllegalArgumentException(String.format(
@@ -642,6 +667,8 @@ public class IndexConfigurationManager<K, V> {
                         conf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance())//
                 .withMaxNumberOfKeysInSegmentChunk(
                         conf.getMaxNumberOfKeysInSegmentChunk())//
+                .withMaxNumberOfDeltaCacheFiles(
+                        conf.getMaxNumberOfDeltaCacheFiles())//
 
                 // Segment bloom filter properties
                 .withBloomFilterNumberOfHashFunctions(
