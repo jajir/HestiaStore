@@ -17,9 +17,9 @@ public final class SegmentMaintenancePolicyThreshold<K, V>
      * Creates a threshold-based maintenance policy.
      *
      * @param maxSegmentCacheKeys max cached keys before compaction is requested
-     * @param maxWriteCacheKeys max write-cache keys before flush is requested
-     * @param maxDeltaCacheFiles max delta cache files before compaction is
-     *                           requested
+     * @param maxWriteCacheKeys   max write-cache keys before flush is requested
+     * @param maxDeltaCacheFiles  max delta cache files before compaction is
+     *                            requested
      */
     public SegmentMaintenancePolicyThreshold(final int maxSegmentCacheKeys,
             final int maxWriteCacheKeys, final int maxDeltaCacheFiles) {
@@ -32,7 +32,8 @@ public final class SegmentMaintenancePolicyThreshold<K, V>
     }
 
     /**
-     * Evaluates the segment cache sizes and returns a maintenance decision.
+     * Evaluates the segment cache sizes and delta cache file count and returns
+     * a maintenance decision.
      *
      * @param segment segment to evaluate
      * @return decision based on configured thresholds
@@ -41,12 +42,13 @@ public final class SegmentMaintenancePolicyThreshold<K, V>
     public SegmentMaintenanceDecision evaluateAfterWrite(
             final Segment<K, V> segment) {
         Vldtn.requireNonNull(segment, "segment");
-        if (maxSegmentCacheKeys > 0 && segment
-                .getNumberOfKeysInSegmentCache() >= maxSegmentCacheKeys) {
+        if (segment.getNumberOfKeysInSegmentCache() >= maxSegmentCacheKeys) {
             return SegmentMaintenanceDecision.compactOnly();
         }
-        if (maxWriteCacheKeys > 0
-                && segment.getNumberOfKeysInWriteCache() >= maxWriteCacheKeys) {
+        if (segment.getNumberOfKeysInWriteCache() >= maxWriteCacheKeys) {
+            if (segment.getNumberOfDeltaCacheFiles() > maxDeltaCacheFiles) {
+                return SegmentMaintenanceDecision.compactOnly();
+            }
             return SegmentMaintenanceDecision.flushOnly();
         }
         return SegmentMaintenanceDecision.none();

@@ -177,7 +177,7 @@ public interface Segment<K, V> {
      *
      * @return number of delta cache files tracked in segment properties
      */
-    int getMaxNumberOfDeltaCacheFiles();
+    int getNumberOfDeltaCacheFiles();
 
     /**
      * Returns the total number of keys in this segment (delta cache + on-disk

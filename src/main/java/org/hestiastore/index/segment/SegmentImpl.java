@@ -244,7 +244,7 @@ class SegmentImpl<K, V> implements Segment<K, V> {
      * {@inheritDoc}
      */
     @Override
-    public int getMaxNumberOfDeltaCacheFiles() {
+    public int getNumberOfDeltaCacheFiles() {
         return core.getDeltaCacheFileCount();
     }
 

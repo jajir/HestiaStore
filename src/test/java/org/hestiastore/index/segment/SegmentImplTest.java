@@ -171,10 +171,10 @@ class SegmentImplTest {
     }
 
     @Test
-    void getMaxNumberOfDeltaCacheFiles_delegates_to_properties() {
+    void getNumberOfDeltaCacheFiles_delegates_to_properties() {
         when(segmentPropertiesManager.getDeltaFileCount()).thenReturn(4);
 
-        assertEquals(4, subject.getMaxNumberOfDeltaCacheFiles());
+        assertEquals(4, subject.getNumberOfDeltaCacheFiles());
     }
 
     @Test
