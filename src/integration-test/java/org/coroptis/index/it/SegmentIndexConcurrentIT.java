@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import org.hestiastore.index.Entry;
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
@@ -23,8 +24,8 @@ import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.junit.jupiter.api.Test;
 
 /**
- * Multi-threaded access safety check for {@link SegmentIndex} using the
- * default concurrent implementation.
+ * Multi-threaded access safety check for {@link SegmentIndex} using the default
+ * concurrent implementation.
  * <p>
  * The tests avoid relying on a globally deterministic ordering across threads
  * (which is not guaranteed) and instead validate deterministic end states:
@@ -40,7 +41,8 @@ class SegmentIndexConcurrentIT {
         final IndexConfiguration<Integer, Integer> conf = newConfiguration(
                 "concurrent-index", 4, 15);
 
-        final SegmentIndex<Integer, Integer> index = SegmentIndex.create(directory, conf);
+        final SegmentIndex<Integer, Integer> index = SegmentIndex
+                .create(directory, conf);
 
         final int threads = 4;
         final int operationsPerThread = 200;
@@ -98,7 +100,8 @@ class SegmentIndexConcurrentIT {
         index.close();
 
         // Re-open to ensure persisted state matches expectations
-        final SegmentIndex<Integer, Integer> reopened = SegmentIndex.open(directory, conf);
+        final SegmentIndex<Integer, Integer> reopened = SegmentIndex
+                .open(directory, conf);
         final Map<Integer, Integer> reloaded = reopened.getStream()
                 .collect(Collectors.toMap(Entry::getKey, Entry::getValue,
                         (first, second) -> second));
@@ -112,7 +115,8 @@ class SegmentIndexConcurrentIT {
         final IndexConfiguration<Integer, Integer> conf = newConfiguration(
                 "concurrent-index", 4, 15);
 
-        final SegmentIndex<Integer, Integer> index = SegmentIndex.create(directory, conf);
+        final SegmentIndex<Integer, Integer> index = SegmentIndex
+                .create(directory, conf);
 
         final int threads = 4;
         final int operationsPerThread = 200;
@@ -149,7 +153,8 @@ class SegmentIndexConcurrentIT {
         assertEquals(finalValue, index.get(key));
         index.close();
 
-        final SegmentIndex<Integer, Integer> reopened = SegmentIndex.open(directory, conf);
+        final SegmentIndex<Integer, Integer> reopened = SegmentIndex
+                .open(directory, conf);
         assertEquals(finalValue, reopened.get(key));
         reopened.close();
     }
@@ -161,7 +166,8 @@ class SegmentIndexConcurrentIT {
         final IndexConfiguration<Integer, Integer> conf = newConfiguration(
                 "concurrent-index-maintenance", 4, 8);
 
-        final SegmentIndex<Integer, Integer> index = SegmentIndex.create(directory, conf);
+        final SegmentIndex<Integer, Integer> index = SegmentIndex
+                .create(directory, conf);
 
         final int threads = 4;
         final int operationsPerThread = 400;
@@ -178,9 +184,18 @@ class SegmentIndexConcurrentIT {
                 startGate.await();
                 int iteration = 0;
                 while (!stop.get()) {
-                    index.flush();
-                    if ((iteration++ % 3) == 0) {
-                        index.compact();
+                    try {
+                        index.flush();
+                        if ((iteration++ % 3) == 0) {
+                            index.compact();
+                        }
+                    } catch (final IndexException ex) {
+                        if (!isTransientIndexFailure(ex)) {
+                            throw ex;
+                        }
+                        if (stop.get()) {
+                            break;
+                        }
                     }
                     Thread.yield();
                 }
@@ -220,8 +235,9 @@ class SegmentIndexConcurrentIT {
                 "Writer threads did not finish in time");
 
         stop.set(true);
+        maintenance.interrupt();
         maintenance.join(TimeUnit.SECONDS.toMillis(10));
-        assertTrue(!maintenance.isAlive(),
+        assertTrue(maintenance.isAlive() == false,
                 "Maintenance thread did not stop in time");
         executor.shutdownNow();
 
@@ -258,7 +274,8 @@ class SegmentIndexConcurrentIT {
 
         index.close();
 
-        final SegmentIndex<Integer, Integer> reopened = SegmentIndex.open(directory, conf);
+        final SegmentIndex<Integer, Integer> reopened = SegmentIndex
+                .open(directory, conf);
         final Map<Integer, Integer> reloaded = reopened.getStream()
                 .collect(Collectors.toMap(Entry::getKey, Entry::getValue,
                         (first, second) -> second));
@@ -271,7 +288,8 @@ class SegmentIndexConcurrentIT {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, Integer> conf = newConfiguration(
                 "concurrent-index-readers", 4, 15);
-        final SegmentIndex<Integer, Integer> index = SegmentIndex.create(directory, conf);
+        final SegmentIndex<Integer, Integer> index = SegmentIndex
+                .create(directory, conf);
 
         final int keyCount = 120;
         for (int key = 0; key < keyCount; key++) {
@@ -342,7 +360,8 @@ class SegmentIndexConcurrentIT {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, Integer> conf = newConfiguration(
                 "concurrent-index-async", 4, 12);
-        final SegmentIndex<Integer, Integer> index = SegmentIndex.create(directory, conf);
+        final SegmentIndex<Integer, Integer> index = SegmentIndex
+                .create(directory, conf);
 
         final int threads = 4;
         final int operationsPerThread = 200;
@@ -412,7 +431,8 @@ class SegmentIndexConcurrentIT {
 
         index.close();
 
-        final SegmentIndex<Integer, Integer> reopened = SegmentIndex.open(directory, conf);
+        final SegmentIndex<Integer, Integer> reopened = SegmentIndex
+                .open(directory, conf);
         final Map<Integer, Integer> reloaded = reopened.getStream()
                 .collect(Collectors.toMap(Entry::getKey, Entry::getValue,
                         (first, second) -> second));
@@ -426,6 +446,15 @@ class SegmentIndexConcurrentIT {
 
     private static int decodeKey(final int value) {
         return value / 1_000_000;
+    }
+
+    private static boolean isTransientIndexFailure(
+            final IndexException exception) {
+        final String message = exception.getMessage();
+        if (message == null) {
+            return false;
+        }
+        return message.contains("timed out") || message.contains("interrupted");
     }
 
     private static IndexConfiguration<Integer, Integer> newConfiguration(

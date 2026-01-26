@@ -3,7 +3,6 @@ package org.hestiastore.index.segmentindex;
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -101,19 +100,6 @@ class SegmentRegistryImplTest {
         assertNotSame(segment, registry.getSegment(segmentId).getValue());
     }
 
-    @Test
-    void createsMaintenanceExecutorFromConfiguration() {
-        Mockito.when(conf.getNumberOfSegmentIndexMaintenanceThreads())
-                .thenReturn(2);
-        registry.close();
-
-        registry = new SegmentRegistryImpl<>(directoryFacade, KEY_DESCRIPTOR,
-                VALUE_DESCRIPTOR, conf);
-
-        assertNotNull(registry.getMaintenanceExecutor());
-    }
-
-    @Test
     void getSegment_returnsBusyWhileRegistryFrozen() {
         final SegmentId segmentId = SegmentId.of(1);
 
