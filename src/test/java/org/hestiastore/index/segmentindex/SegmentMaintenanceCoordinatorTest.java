@@ -28,7 +28,7 @@ class SegmentMaintenanceCoordinatorTest {
     private KeyToSegmentMapSynchronizedAdapter<String> synchronizedKeyToSegmentMap;
 
     @Mock
-    private SegmentRegistry<String, String> segmentRegistry;
+    private SegmentRegistryImpl<String, String> segmentRegistry;
 
     @Mock
     private Segment<String, String> segment;

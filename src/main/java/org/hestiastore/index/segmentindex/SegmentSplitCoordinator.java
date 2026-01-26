@@ -23,12 +23,12 @@ public class SegmentSplitCoordinator<K, V> {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final IndexConfiguration<K, V> conf;
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
-    private final SegmentRegistry<K, V> segmentRegistry;
+    private final SegmentRegistryImpl<K, V> segmentRegistry;
     private final IndexRetryPolicy retryPolicy;
 
     SegmentSplitCoordinator(final IndexConfiguration<K, V> conf,
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
-            final SegmentRegistry<K, V> segmentRegistry) {
+            final SegmentRegistryImpl<K, V> segmentRegistry) {
         this.conf = Vldtn.requireNonNull(conf, "conf");
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");

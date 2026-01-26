@@ -37,7 +37,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     protected final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
-    private final SegmentRegistry<K, V> segmentRegistry;
+    private final SegmentRegistryImpl<K, V> segmentRegistry;
     private final SegmentMaintenanceCoordinator<K, V> maintenanceCoordinator;
     private final SegmentIndexCore<K, V> core;
     private final IndexRetryPolicy retryPolicy;
@@ -66,7 +66,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     directoryFacade, keyTypeDescriptor);
             this.keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                     keyToSegmentMapDelegate);
-            this.segmentRegistry = new SegmentRegistry<>(directoryFacade,
+            this.segmentRegistry = new SegmentRegistryImpl<>(directoryFacade,
                     keyTypeDescriptor, valueTypeDescriptor, conf);
             segmentRegistry
                     .recoverDirectorySwaps(keyToSegmentMap.getSegmentIds());
@@ -491,13 +491,13 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         keyToSegmentMap.getSegmentIds().forEach(segmentId -> {
             final long startNanos = retryPolicy.startNanos();
             while (true) {
-                final SegmentResult<Segment<K, V>> segmentResult = segmentRegistry
+                final SegmentRegistryResult<Segment<K, V>> segmentResult = segmentRegistry
                         .getSegment(segmentId);
-                if (segmentResult.getStatus() == SegmentResultStatus.OK) {
+                if (segmentResult.getStatus() == SegmentRegistryResultStatus.OK) {
                     segmentResult.getValue().invalidateIterators();
                     return;
                 }
-                if (segmentResult.getStatus() == SegmentResultStatus.BUSY) {
+                if (segmentResult.getStatus() == SegmentRegistryResultStatus.BUSY) {
                     retryPolicy.backoffOrThrow(startNanos,
                             "invalidateIterators", segmentId);
                     continue;

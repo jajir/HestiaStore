@@ -61,7 +61,7 @@ class SegmentIndexConsistencyCheckerTest {
         when(keyToSegmentMap.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
         when(segmentRegistry.getSegment(SEGMENT_ID))
-                .thenReturn(SegmentResult.error());
+                .thenReturn(SegmentRegistryResult.error());
 
         final Exception e = assertThrows(IndexException.class,
                 () -> checker.checkAndRepairConsistency());
@@ -106,7 +106,7 @@ class SegmentIndexConsistencyCheckerTest {
         when(keyToSegmentMap.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
         when(segmentRegistry.getSegment(SEGMENT_ID))
-                .thenReturn(SegmentResult.ok(segment));
+                .thenReturn(SegmentRegistryResult.ok(segment));
         when(segment.checkAndRepairConsistency()).thenReturn(null);
         when(segment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
                 .thenReturn(SegmentResult.ok(
@@ -125,7 +125,7 @@ class SegmentIndexConsistencyCheckerTest {
         when(keyToSegmentMap.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
         when(segmentRegistry.getSegment(SEGMENT_ID))
-                .thenReturn(SegmentResult.ok(segment));
+                .thenReturn(SegmentRegistryResult.ok(segment));
         when(segment.checkAndRepairConsistency())
                 .thenReturn(SEGMENT_MAX_KEY + 1);
 
@@ -143,7 +143,7 @@ class SegmentIndexConsistencyCheckerTest {
         when(keyToSegmentMap.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
         when(segmentRegistry.getSegment(SEGMENT_ID))
-                .thenReturn(SegmentResult.ok(segment));
+                .thenReturn(SegmentRegistryResult.ok(segment));
         when(segment.checkAndRepairConsistency()).thenReturn(SEGMENT_MAX_KEY);
 
         checker.checkAndRepairConsistency();

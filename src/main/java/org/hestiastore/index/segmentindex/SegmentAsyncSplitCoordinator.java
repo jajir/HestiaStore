@@ -22,13 +22,13 @@ import org.hestiastore.index.segment.SegmentId;
 final class SegmentAsyncSplitCoordinator<K, V> {
 
     private final SegmentSplitCoordinator<K, V> splitCoordinator;
-    private final SegmentRegistry<K, V> segmentRegistry;
+    private final SegmentRegistryImpl<K, V> segmentRegistry;
     private final Executor splitExecutor;
     private final Map<SegmentId, SplitInFlight<K, V>> inFlightSplits = new ConcurrentHashMap<>();
 
     SegmentAsyncSplitCoordinator(final IndexConfiguration<K, V> conf,
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
-            final SegmentRegistry<K, V> segmentRegistry,
+            final SegmentRegistryImpl<K, V> segmentRegistry,
             final Executor splitExecutor) {
         this(new SegmentSplitCoordinator<>(conf, keyToSegmentMap,
                 segmentRegistry), segmentRegistry, splitExecutor);
@@ -36,7 +36,7 @@ final class SegmentAsyncSplitCoordinator<K, V> {
 
     SegmentAsyncSplitCoordinator(
             final SegmentSplitCoordinator<K, V> splitCoordinator,
-            final SegmentRegistry<K, V> segmentRegistry,
+            final SegmentRegistryImpl<K, V> segmentRegistry,
             final Executor splitExecutor) {
         this.splitCoordinator = Vldtn.requireNonNull(splitCoordinator,
                 "splitCoordinator");

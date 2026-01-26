@@ -30,7 +30,7 @@ class SegmentAsyncSplitCoordinatorTest {
     @Mock
     private SegmentSplitCoordinator<Integer, String> splitCoordinator;
     @Mock
-    private SegmentRegistry<Integer, String> segmentRegistry;
+    private SegmentRegistryImpl<Integer, String> segmentRegistry;
 
     @Test
     void constructor_rejectsMissingExecutor() {

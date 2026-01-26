@@ -82,7 +82,7 @@ class SegmentIndexCoreTest {
     void get_returnsBusyWhenSegmentIsBusy() {
         final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
         when(segmentRegistry.getSegment(segmentId))
-                .thenReturn(SegmentResult.ok(segment));
+                .thenReturn(SegmentRegistryResult.ok(segment));
         when(segment.get("key")).thenReturn(SegmentResult.busy());
 
         final IndexResult<String> result = core.get("key");
@@ -96,7 +96,7 @@ class SegmentIndexCoreTest {
         final KeyToSegmentMap.Snapshot<String> snapshot = synchronizedKeyToSegmentMap
                 .snapshot();
         when(segmentRegistry.getSegment(segmentId))
-                .thenReturn(SegmentResult.ok(segment));
+                .thenReturn(SegmentRegistryResult.ok(segment));
         when(segment.put("key", "value")).thenReturn(SegmentResult.ok());
 
         final IndexResult<Void> result = core.put("key", "value");
@@ -110,7 +110,7 @@ class SegmentIndexCoreTest {
     void put_returnsBusyWhenSegmentIsBusy() {
         final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
         when(segmentRegistry.getSegment(segmentId))
-                .thenReturn(SegmentResult.ok(segment));
+                .thenReturn(SegmentRegistryResult.ok(segment));
         when(segment.put("key", "value")).thenReturn(SegmentResult.busy());
 
         final IndexResult<Void> result = core.put("key", "value");
@@ -125,7 +125,7 @@ class SegmentIndexCoreTest {
         final EntryIterator<String, String> iterator = EntryIterator
                 .make(List.<Entry<String, String>>of().iterator());
         when(segmentRegistry.getSegment(segmentId))
-                .thenReturn(SegmentResult.ok(segment));
+                .thenReturn(SegmentRegistryResult.ok(segment));
         when(segment.openIterator(SegmentIteratorIsolation.FAIL_FAST))
                 .thenReturn(SegmentResult.ok(iterator));
 

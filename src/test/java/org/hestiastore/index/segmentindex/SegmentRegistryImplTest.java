@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.reflect.Field;
 import java.util.List;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.chunkstore.ChunkFilter;
@@ -18,8 +19,6 @@ import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segment.SegmentState;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,7 +29,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class SegmentRegistryTest {
+class SegmentRegistryImplTest {
 
     private static final TypeDescriptorInteger KEY_DESCRIPTOR = new TypeDescriptorInteger();
     private static final TypeDescriptorShortString VALUE_DESCRIPTOR = new TypeDescriptorShortString();
@@ -42,7 +41,7 @@ class SegmentRegistryTest {
     @Mock
     private IndexConfiguration<Integer, String> conf;
 
-    private SegmentRegistry<Integer, String> registry;
+    private SegmentRegistryImpl<Integer, String> registry;
 
     @BeforeEach
     void setUp() {
@@ -51,7 +50,7 @@ class SegmentRegistryTest {
         Mockito.when(conf.getNumberOfIndexMaintenanceThreads()).thenReturn(1);
         Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
         directoryFacade = AsyncDirectoryAdapter.wrap(new MemDirectory());
-        registry = new SegmentRegistry<>(directoryFacade, KEY_DESCRIPTOR,
+        registry = new SegmentRegistryImpl<>(directoryFacade, KEY_DESCRIPTOR,
                 VALUE_DESCRIPTOR, conf);
     }
 
@@ -67,12 +66,12 @@ class SegmentRegistryTest {
         stubSegmentConfig();
         final SegmentId segmentId = SegmentId.of(1);
 
-        final SegmentResult<Segment<Integer, String>> firstResult = registry
+        final SegmentRegistryResult<Segment<Integer, String>> firstResult = registry
                 .getSegment(segmentId);
-        final SegmentResult<Segment<Integer, String>> secondResult = registry
+        final SegmentRegistryResult<Segment<Integer, String>> secondResult = registry
                 .getSegment(segmentId);
-        assertSame(SegmentResultStatus.OK, firstResult.getStatus());
-        assertSame(SegmentResultStatus.OK, secondResult.getStatus());
+        assertSame(SegmentRegistryResultStatus.OK, firstResult.getStatus());
+        assertSame(SegmentRegistryResultStatus.OK, secondResult.getStatus());
         final Segment<Integer, String> first = firstResult.getValue();
         final Segment<Integer, String> second = secondResult.getValue();
 
@@ -108,35 +107,40 @@ class SegmentRegistryTest {
                 .thenReturn(2);
         registry.close();
 
-        registry = new SegmentRegistry<>(directoryFacade, KEY_DESCRIPTOR,
+        registry = new SegmentRegistryImpl<>(directoryFacade, KEY_DESCRIPTOR,
                 VALUE_DESCRIPTOR, conf);
 
         assertNotNull(registry.getMaintenanceExecutor());
     }
 
     @Test
-    void getSegment_returnsBusyWhileSplitInFlight() {
-        stubSegmentConfig();
+    void getSegment_returnsBusyWhileRegistryFrozen() {
         final SegmentId segmentId = SegmentId.of(1);
 
-        registry.markSplitInFlight(segmentId);
+        final SegmentRegistryGate gate = readGate(registry);
+        assertTrue(gate.tryEnterFreeze());
+        try (GateGuard ignored = new GateGuard(gate)) {
+            final SegmentRegistryResult<Segment<Integer, String>> busy = registry
+                    .getSegment(segmentId);
+            assertSame(SegmentRegistryResultStatus.BUSY, busy.getStatus());
+        }
+    }
 
-        final SegmentResult<Segment<Integer, String>> busy = registry
-                .getSegment(segmentId);
-        assertSame(SegmentResultStatus.BUSY, busy.getStatus());
+    @Test
+    void getSegment_returnsClosedWhenRegistryClosed() {
+        registry.close();
 
-        registry.clearSplitInFlight(segmentId);
-        final SegmentResult<Segment<Integer, String>> ok = registry
-                .getSegment(segmentId);
-        assertSame(SegmentResultStatus.OK, ok.getStatus());
-        assertNotNull(ok.getValue());
+        final SegmentRegistryResult<Segment<Integer, String>> result = registry
+                .getSegment(SegmentId.of(1));
+
+        assertSame(SegmentRegistryResultStatus.CLOSED, result.getStatus());
     }
 
     @Test
     void getSegment_evicts_least_recently_used_when_limit_exceeded() {
         Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(2);
         registry.close();
-        registry = new SegmentRegistry<>(directoryFacade, KEY_DESCRIPTOR,
+        registry = new SegmentRegistryImpl<>(directoryFacade, KEY_DESCRIPTOR,
                 VALUE_DESCRIPTOR, conf);
         stubSegmentConfig();
         final SegmentId firstId = SegmentId.of(1);
@@ -169,5 +173,31 @@ class SegmentRegistryTest {
         Mockito.when(conf.getDiskIoBufferSize()).thenReturn(1024);
         Mockito.when(conf.getEncodingChunkFilters()).thenReturn(FILTERS);
         Mockito.when(conf.getDecodingChunkFilters()).thenReturn(FILTERS);
+    }
+
+    private SegmentRegistryGate readGate(
+            final SegmentRegistryImpl<Integer, String> target) {
+        try {
+            final Field field = SegmentRegistryImpl.class
+                    .getDeclaredField("gate");
+            field.setAccessible(true);
+            return (SegmentRegistryGate) field.get(target);
+        } catch (final ReflectiveOperationException ex) {
+            throw new IllegalStateException(
+                    "Unable to read gate for test", ex);
+        }
+    }
+
+    private static final class GateGuard implements AutoCloseable {
+        private final SegmentRegistryGate gate;
+
+        private GateGuard(final SegmentRegistryGate gate) {
+            this.gate = gate;
+        }
+
+        @Override
+        public void close() {
+            gate.finishFreezeToReady();
+        }
     }
 }

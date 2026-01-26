@@ -36,7 +36,7 @@ class SegmentManagerTest {
         when(conf.getNumberOfSegmentIndexMaintenanceThreads()).thenReturn(1);
         when(conf.getNumberOfIndexMaintenanceThreads()).thenReturn(1);
         when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
-        final SegmentRegistry<Integer, String> segmentRegistry = new SegmentRegistry<>(
+        final SegmentRegistryImpl<Integer, String> segmentRegistry = new SegmentRegistryImpl<>(
                 org.hestiastore.index.directory.async.AsyncDirectoryAdapter
                         .wrap(directory),
                 keyTypeDescriptor, valueTypeDescriptor, conf);
@@ -76,7 +76,7 @@ class SegmentManagerTest {
         when(conf.getNumberOfSegmentIndexMaintenanceThreads()).thenReturn(1);
         when(conf.getNumberOfIndexMaintenanceThreads()).thenReturn(1);
         when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
-        final SegmentRegistry<Integer, String> segmentRegistry = new SegmentRegistry<>(
+        final SegmentRegistryImpl<Integer, String> segmentRegistry = new SegmentRegistryImpl<>(
                 org.hestiastore.index.directory.async.AsyncDirectoryAdapter
                         .wrap(directory),
                 keyTypeDescriptor, valueTypeDescriptor, conf);

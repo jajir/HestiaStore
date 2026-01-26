@@ -98,6 +98,8 @@ class SegmentIndexAsyncCloseRaceIT {
                 .withValueTypeDescriptor(
                         new BlockingTombstoneTypeDescriptorString())//
                 .withMaxNumberOfKeysInCache(10_000)//
+                .withIndexBusyBackoffMillis(5)//
+                .withIndexBusyTimeoutMillis(2_000)//
                 .build();
     }
 

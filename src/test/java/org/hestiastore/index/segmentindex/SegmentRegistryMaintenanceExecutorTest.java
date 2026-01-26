@@ -19,7 +19,7 @@ class SegmentRegistryMaintenanceExecutorTest {
     @Test
     void internal_executor_is_closed_on_registry_close() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        final SegmentRegistry<Integer, String> registry = new SegmentRegistry<>(
+        final SegmentRegistryImpl<Integer, String> registry = new SegmentRegistryImpl<>(
                 AsyncDirectoryAdapter.wrap(new MemDirectory()),
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(),
                 conf);

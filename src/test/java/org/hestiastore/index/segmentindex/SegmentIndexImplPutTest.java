@@ -68,7 +68,7 @@ class SegmentIndexImplPutTest {
         final KeyToSegmentMapSynchronizedAdapter<Integer> cache = readKeyToSegmentMap(
                 index);
         index.awaitSplitsIdlePublic();
-        final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
+        final SegmentRegistryImpl<Integer, String> registry = readSegmentRegistry(
                 index);
         final SegmentId segmentId = cache.findSegmentId(1);
         final Segment<Integer, String> segment = registry.getSegment(segmentId)
@@ -195,13 +195,13 @@ class SegmentIndexImplPutTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static <K, V> SegmentRegistry<K, V> readSegmentRegistry(
+    private static <K, V> SegmentRegistryImpl<K, V> readSegmentRegistry(
             final SegmentIndexImpl<K, V> index) {
         try {
             final Field field = SegmentIndexImpl.class
                     .getDeclaredField("segmentRegistry");
             field.setAccessible(true);
-            return (SegmentRegistry<K, V>) field.get(index);
+            return (SegmentRegistryImpl<K, V>) field.get(index);
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
                     "Unable to read segmentRegistry for test", ex);

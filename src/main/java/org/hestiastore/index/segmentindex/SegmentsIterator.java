@@ -66,12 +66,12 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
             position++;
             final Segment<K, V> segment;
             while (true) {
-                final SegmentResult<Segment<K, V>> segmentResult = segmentRegistry
+                final SegmentRegistryResult<Segment<K, V>> segmentResult = segmentRegistry
                         .getSegment(segmentId);
-                if (segmentResult.getStatus() == SegmentResultStatus.BUSY) {
+                if (segmentResult.getStatus() == SegmentRegistryResultStatus.BUSY) {
                     continue;
                 }
-                if (segmentResult.getStatus() != SegmentResultStatus.OK) {
+                if (segmentResult.getStatus() != SegmentRegistryResultStatus.OK) {
                     throw new org.hestiastore.index.IndexException(String.format(
                             "Segment '%s' failed to load: %s", segmentId,
                             segmentResult.getStatus()));

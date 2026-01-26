@@ -25,7 +25,7 @@ class SegmentSplitCoordinatorTest {
     private KeyToSegmentMapSynchronizedAdapter<Integer> synchronizedKeyToSegmentMap;
 
     @Mock
-    private SegmentRegistry<Integer, String> segmentRegistry;
+    private SegmentRegistryImpl<Integer, String> segmentRegistry;
 
     private SegmentSplitCoordinator<Integer, String> coordinator;
 
