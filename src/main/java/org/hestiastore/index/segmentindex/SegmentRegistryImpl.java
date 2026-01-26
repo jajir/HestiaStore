@@ -93,10 +93,6 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         this.splitExecutor = splitAsyncExecutor.getExecutor();
     }
 
-    ExecutorService getMaintenanceExecutor() {
-        return maintenanceExecutor;
-    }
-
     ExecutorService getSplitExecutor() {
         return splitExecutor;
     }
