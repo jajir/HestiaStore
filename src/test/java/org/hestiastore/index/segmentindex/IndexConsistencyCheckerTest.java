@@ -59,7 +59,7 @@ class IndexConsistencyCheckerTest {
                 .thenReturn(Stream.of(
                         Entry.of(10, SegmentId.of(1))));
         when(segmentRegistry.getSegment(SegmentId.of(1)))
-                .thenReturn(SegmentResult.ok(segment));
+                .thenReturn(SegmentRegistryResult.ok(segment));
 
         checker.checkAndRepairConsistency();
 

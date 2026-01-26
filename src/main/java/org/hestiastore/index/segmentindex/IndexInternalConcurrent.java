@@ -74,6 +74,7 @@ public class IndexInternalConcurrent<K, V> extends SegmentIndexImpl<K, V> {
     /** {@inheritDoc} */
     @Override
     public void flush() {
+        getIndexState().tryPerformOperation();
         invalidateSegmentIterators();
         super.flush();
     }
@@ -81,6 +82,7 @@ public class IndexInternalConcurrent<K, V> extends SegmentIndexImpl<K, V> {
     /** {@inheritDoc} */
     @Override
     public void flushAndWait() {
+        getIndexState().tryPerformOperation();
         invalidateSegmentIterators();
         super.flushAndWait();
     }
@@ -88,6 +90,7 @@ public class IndexInternalConcurrent<K, V> extends SegmentIndexImpl<K, V> {
     /** {@inheritDoc} */
     @Override
     public void compact() {
+        getIndexState().tryPerformOperation();
         invalidateSegmentIterators();
         super.compact();
     }
@@ -95,6 +98,7 @@ public class IndexInternalConcurrent<K, V> extends SegmentIndexImpl<K, V> {
     /** {@inheritDoc} */
     @Override
     public void compactAndWait() {
+        getIndexState().tryPerformOperation();
         invalidateSegmentIterators();
         super.compactAndWait();
     }
@@ -102,6 +106,7 @@ public class IndexInternalConcurrent<K, V> extends SegmentIndexImpl<K, V> {
     /** {@inheritDoc} */
     @Override
     public void checkAndRepairConsistency() {
+        getIndexState().tryPerformOperation();
         invalidateSegmentIterators();
         super.checkAndRepairConsistency();
     }

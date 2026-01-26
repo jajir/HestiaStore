@@ -56,7 +56,7 @@ class SegmentIndexImplRetryTest {
         final KeyToSegmentMapSynchronizedAdapter<Integer> cache = readKeyToSegmentMap(
                 index);
         final SegmentId segmentId = cache.findSegmentId(1);
-        final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
+        final SegmentRegistryImpl<Integer, String> registry = readSegmentRegistry(
                 index);
         final Segment<Integer, String> original = registry.getSegment(segmentId)
                 .getValue();
@@ -84,7 +84,7 @@ class SegmentIndexImplRetryTest {
         final KeyToSegmentMapSynchronizedAdapter<Integer> cache = readKeyToSegmentMap(
                 index);
         final SegmentId segmentId = cache.findSegmentId(1);
-        final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
+        final SegmentRegistryImpl<Integer, String> registry = readSegmentRegistry(
                 index);
         final Segment<Integer, String> original = registry.getSegment(segmentId)
                 .getValue();
@@ -136,7 +136,7 @@ class SegmentIndexImplRetryTest {
     }
 
     private static <K, V> void replaceSegment(
-            final SegmentRegistry<K, V> registry, final SegmentId segmentId,
+            final SegmentRegistryImpl<K, V> registry, final SegmentId segmentId,
             final Segment<K, V> segment) {
         final Map<SegmentId, Segment<K, V>> segments = readSegmentsMap(
                 registry);
@@ -145,13 +145,13 @@ class SegmentIndexImplRetryTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static <K, V> SegmentRegistry<K, V> readSegmentRegistry(
+    private static <K, V> SegmentRegistryImpl<K, V> readSegmentRegistry(
             final SegmentIndexImpl<K, V> index) {
         try {
             final Field field = SegmentIndexImpl.class
                     .getDeclaredField("segmentRegistry");
             field.setAccessible(true);
-            return (SegmentRegistry<K, V>) field.get(index);
+            return (SegmentRegistryImpl<K, V>) field.get(index);
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
                     "Unable to read segmentRegistry for test", ex);
@@ -174,9 +174,9 @@ class SegmentIndexImplRetryTest {
 
     @SuppressWarnings("unchecked")
     private static <K, V> Map<SegmentId, Segment<K, V>> readSegmentsMap(
-            final SegmentRegistry<K, V> registry) {
+            final SegmentRegistryImpl<K, V> registry) {
         try {
-            final Field field = SegmentRegistry.class
+            final Field field = SegmentRegistryImpl.class
                     .getDeclaredField("segments");
             field.setAccessible(true);
             return (Map<SegmentId, Segment<K, V>>) field.get(registry);

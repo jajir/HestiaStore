@@ -2,6 +2,24 @@
 
 ## Active
 
+[x] 19 Add `SegmentRegistryResult` + status + adapters (Risk: MEDIUM)
+    - Define result/status types and adapters to/from `SegmentResult`.
+    - Unit tests only; no wiring.
+[x] 20 Add registry state enum + gate (Risk: MEDIUM)
+    - Define `SegmentRegistryState` and a small gate/state holder.
+    - Unit tests only; no integration.
+[x] 21 Introduce `SegmentRegistry` interface + `SegmentRegistryImpl` (Risk: MEDIUM)
+    - Keep interface minimal and keep `SegmentResult` returns for now.
+    - Rename existing class to impl and update call sites in same step.
+[x] 22 Add `SegmentRegistrySyncAdapter` with BUSY retry (Risk: MEDIUM)
+    - Wrap `SegmentRegistry` and retry BUSY (use `IndexRetryPolicy`).
+[x] 23 Wire state gate into impl (Risk: HIGH)
+    - BUSY only from registry state; FREEZE only around map changes.
+    - Keep `SegmentResult` API to avoid broad changes.
+[x] 24 Switch registry API to `SegmentRegistryResult` (Risk: HIGH)
+    - Introduce `SegmentRegistryLegacyAdapter` to keep old callers working.
+    - Migrate call sites/tests, then remove legacy adapter.
+
 ## Planned
 
 ### High
@@ -123,11 +141,22 @@
 
 ## Deferred (segment scope, do not touch now)
 
-[ ] 20 - segment: from segment index do not call flush; only user or segment decides.
-[ ] 21 - segment: add SegmentSyncAdapters wrapper to retry BUSY with backoff until OK or throw on ERROR/CLOSED.
-[ ] 22 - segment: add configurable BUSY timeout to avoid infinite wait (split waits).
+## Maintenance tasks
 
-## In Progress
+[ ] 37 Audit `segment` package for unused or test-only code (Risk: LOW)
+    - Identify unused classes/methods/fields.
+    - Remove code only referenced by tests or move test helpers into test scope.
+    - Ensure public API docs and tests remain consistent after cleanup.
+[ ] 38 Review `segment` package for test and Javadoc coverage (Risk: LOW)
+    - Ensure each class has a JUnit test or document why coverage is excluded.
+    - Ensure each public class/method has Javadoc; add missing docs.
+[ ] 39 Audit `segmentindex` package for unused or test-only code (Risk: LOW)
+    - Identify unused classes/methods/fields.
+    - Remove code only referenced by tests or move test helpers into test scope.
+    - Ensure public API docs and tests remain consistent after cleanup.
+[ ] 40 Review `segmentindex` package for test and Javadoc coverage (Risk: LOW)
+    - Ensure each class has a JUnit test or document why coverage is excluded.
+    - Ensure each public class/method has Javadoc; add missing docs.
 
 ## Done (Archive)
 
@@ -231,20 +260,6 @@
     - Replace `inFlightReads`/`inFlightWrites` with a single counter.
     - Keep admission rules and drain behavior unchanged.
     - Update any stats or tests that rely on read/write split (if introduced).
-[x] 37 Audit `segment` package for unused or test-only code (Risk: LOW)
-    - Identify unused classes/methods/fields.
-    - Remove code only referenced by tests or move test helpers into test scope.
-    - Ensure public API docs and tests remain consistent after cleanup.
-[x] 38 Audit `segmentindex` package for unused or test-only code (Risk: LOW)
-    - Identify unused classes/methods/fields.
-    - Remove code only referenced by tests or move test helpers into test scope.
-    - Ensure public API docs and tests remain consistent after cleanup.
-[x] 39 Review `segment` package for test and Javadoc coverage (Risk: LOW)
-    - Ensure each class has a JUnit test or document why coverage is excluded.
-    - Ensure each public class/method has Javadoc; add missing docs.
-[x] 40 Review `segmentindex` package for test and Javadoc coverage (Risk: LOW)
-    - Ensure each class has a JUnit test or document why coverage is excluded.
-    - Ensure each public class/method has Javadoc; add missing docs.
 [x] 11 Remove `segmentState` from segment properties schema (Risk: MEDIUM)
     - Remove `SegmentKeys.SEGMENT_STATE` from `IndexPropertiesSchema`.
     - Update `SegmentPropertiesManager` to drop `getState`/`setState` usage.
@@ -267,5 +282,3 @@
 [x] 17 Document locked-directory behavior in `SegmentBuilder` (Risk: LOW)
     - Clarify how builder reacts when the segment directory is already locked.
 [x] 18 Acquire segment lock before `prepareBuildContext()` (Risk: MEDIUM)
-    - Move lock acquisition to the start of `SegmentBuilder.build()`.
-    - Ensure failures release locks and leave no partial state.

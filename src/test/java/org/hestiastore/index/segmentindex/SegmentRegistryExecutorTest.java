@@ -16,7 +16,7 @@ class SegmentRegistryExecutorTest {
 
     @Test
     void usesMinimumQueueCapacity() {
-        final SegmentRegistry<Integer, String> registry = newRegistry(1);
+        final SegmentRegistryImpl<Integer, String> registry = newRegistry(1);
         try {
             final ThreadPoolExecutor executor = maintenanceExecutor(registry);
             assertEquals(1, executor.getCorePoolSize());
@@ -29,7 +29,7 @@ class SegmentRegistryExecutorTest {
 
     @Test
     void scalesQueueCapacityWithThreads() {
-        final SegmentRegistry<Integer, String> registry = newRegistry(2);
+        final SegmentRegistryImpl<Integer, String> registry = newRegistry(2);
         try {
             final ThreadPoolExecutor executor = maintenanceExecutor(registry);
             assertEquals(2, executor.getCorePoolSize());
@@ -41,11 +41,11 @@ class SegmentRegistryExecutorTest {
     }
 
     private ThreadPoolExecutor maintenanceExecutor(
-            final SegmentRegistry<Integer, String> registry) {
+            final SegmentRegistryImpl<Integer, String> registry) {
         return (ThreadPoolExecutor) registry.getMaintenanceExecutor();
     }
 
-    private SegmentRegistry<Integer, String> newRegistry(final int threads) {
+    private SegmentRegistryImpl<Integer, String> newRegistry(final int threads) {
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
                 .withKeyClass(Integer.class)//
@@ -69,7 +69,7 @@ class SegmentRegistryExecutorTest {
                 .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
                 .withNumberOfSegmentIndexMaintenanceThreads(threads)//
                 .build();
-        return new SegmentRegistry<>(AsyncDirectoryAdapter.wrap(
+        return new SegmentRegistryImpl<>(AsyncDirectoryAdapter.wrap(
                 new MemDirectory()), new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(), conf);
     }

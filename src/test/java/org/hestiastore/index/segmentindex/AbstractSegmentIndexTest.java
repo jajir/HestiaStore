@@ -96,7 +96,8 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
     protected void awaitMaintenanceIdle(final SegmentIndex<?, ?> index) {
         final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
         while (System.nanoTime() < deadline) {
-            final SegmentRegistry<?, ?> registry = readSegmentRegistry(index);
+            final SegmentRegistryImpl<?, ?> registry = readSegmentRegistry(
+                    index);
             final Map<SegmentId, Segment<?, ?>> segments = readSegmentsMap(
                     registry);
             boolean idle = true;
@@ -124,14 +125,14 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
         Assertions.fail("Timed out waiting for maintenance to finish");
     }
 
-    private static SegmentRegistry<?, ?> readSegmentRegistry(
+    private static SegmentRegistryImpl<?, ?> readSegmentRegistry(
             final SegmentIndex<?, ?> index) {
         try {
             final SegmentIndexImpl<?, ?> impl = unwrapSegmentIndex(index);
             final Field field = SegmentIndexImpl.class
                     .getDeclaredField("segmentRegistry");
             field.setAccessible(true);
-            return (SegmentRegistry<?, ?>) field.get(impl);
+            return (SegmentRegistryImpl<?, ?>) field.get(impl);
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
                     "Unable to read segmentRegistry for test", ex);
@@ -140,9 +141,9 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
 
     @SuppressWarnings("unchecked")
     private static Map<SegmentId, Segment<?, ?>> readSegmentsMap(
-            final SegmentRegistry<?, ?> registry) {
+            final SegmentRegistryImpl<?, ?> registry) {
         try {
-            final Field field = SegmentRegistry.class
+            final Field field = SegmentRegistryImpl.class
                     .getDeclaredField("segments");
             field.setAccessible(true);
             return (Map<SegmentId, Segment<?, ?>>) field.get(registry);

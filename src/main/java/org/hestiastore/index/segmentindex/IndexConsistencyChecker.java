@@ -59,13 +59,13 @@ public class IndexConsistencyChecker<K, V> {
             logger.debug("checking segment '{}'.", segmentId);
             final Segment<K, V> segment;
             while (true) {
-                final SegmentResult<Segment<K, V>> segmentResult = segmentRegistry
+                final SegmentRegistryResult<Segment<K, V>> segmentResult = segmentRegistry
                         .getSegment(segmentId);
-                if (segmentResult.getStatus() == SegmentResultStatus.BUSY) {
+                if (segmentResult.getStatus() == SegmentRegistryResultStatus.BUSY) {
                     Thread.onSpinWait();
                     continue;
                 }
-                if (segmentResult.getStatus() != SegmentResultStatus.OK) {
+                if (segmentResult.getStatus() != SegmentRegistryResultStatus.OK) {
                     throw new IndexException(String.format(
                             ERROR_MSG + "Segment '%s' is not found in index.",
                             segmentId));
