@@ -47,7 +47,7 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
     private SegmentSplitterPlan<Integer, String> planWithEstimate(
             long estimate) {
         final SegmentSplitterPolicy<Integer, String> policy = new SegmentSplitterPolicy<>(
-                estimate, false);
+                estimate);
         return SegmentSplitterPlan.fromPolicy(policy);
     }
 
@@ -72,7 +72,7 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.filter(new SegmentSplitContext<>(null,
                         SegmentSplitterPlan.fromPolicy(
-                                new SegmentSplitterPolicy<>(5, false)),
+                                new SegmentSplitterPolicy<>(5)),
                         SegmentId.of(1), SegmentId.of(2), id -> tx),
                         new SegmentSplitState<>()));
         assertEquals("Property 'segment' must not be null.", err.getMessage());
@@ -91,7 +91,7 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
     @Test
     void test_missing_iterator() {
         final SegmentSplitterPlan<Integer, String> plan = SegmentSplitterPlan
-                .fromPolicy(new SegmentSplitterPolicy<>(5, false));
+                .fromPolicy(new SegmentSplitterPolicy<>(5));
         plan.recordLower(Entry.of(0, "z"));
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.filter(
@@ -104,7 +104,7 @@ class SegmentSplitStepWriteRemainingToCurrentTest {
     @Test
     void test_missing_lower_segment_id() {
         final SegmentSplitterPlan<Integer, String> plan = SegmentSplitterPlan
-                .fromPolicy(new SegmentSplitterPolicy<>(5, false));
+                .fromPolicy(new SegmentSplitterPolicy<>(5));
         plan.recordLower(Entry.of(0, "z"));
         final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
         state.setIterator(new EntryIteratorList<Integer, String>(

@@ -6,7 +6,7 @@ package org.hestiastore.index.segmentindex;
  * @param <K> key type
  * @param <V> value type
  */
-public class IndexStateClosed<K, V> implements IndexState<K, V> {
+class IndexStateClosed<K, V> implements IndexState<K, V> {
 
     /** {@inheritDoc} */
     @Override

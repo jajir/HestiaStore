@@ -6,7 +6,7 @@ package org.hestiastore.index.segmentindex;
  * @param <K> key type
  * @param <V> value type
  */
-public interface IndexState<K, V> {
+interface IndexState<K, V> {
 
     /**
      * Handles transition to READY.

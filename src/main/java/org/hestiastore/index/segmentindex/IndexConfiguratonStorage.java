@@ -22,7 +22,7 @@ import org.hestiastore.index.properties.PropertyWriter;
  * @param <K> key type
  * @param <V> value type
  */
-public class IndexConfiguratonStorage<K, V> {
+class IndexConfiguratonStorage<K, V> {
 
     private static final IndexPropertiesSchema SCHEMA = IndexPropertiesSchema.INDEX_CONFIGURATION_SCHEMA;
     private static final String PROP_KEY_CLASS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_KEY_CLASS;

@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
  * @param <K>
  * @param <V>
  */
-public class IndexConsistencyChecker<K, V> {
+class IndexConsistencyChecker<K, V> {
     private static final String ERROR_MSG = "Index is broken. "
             + "File 'index.map' containing information about segments is corrupted. ";
     private final Logger logger = LoggerFactory.getLogger(getClass());

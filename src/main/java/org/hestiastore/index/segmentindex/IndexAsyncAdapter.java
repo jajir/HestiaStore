@@ -17,7 +17,7 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
  * @param <K> type of keys stored in the index
  * @param <V> type of values stored in the index
  */
-public class IndexAsyncAdapter<K, V> extends AbstractCloseableResource
+class IndexAsyncAdapter<K, V> extends AbstractCloseableResource
         implements SegmentIndex<K, V> {
 
     private final SegmentIndex<K, V> index;

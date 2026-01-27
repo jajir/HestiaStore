@@ -3,7 +3,7 @@ package org.hestiastore.index.segmentindex;
 /**
  * Outcome states for segment registry operations.
  */
-public enum SegmentRegistryResultStatus {
+enum SegmentRegistryResultStatus {
     /** Operation succeeded and any payload is valid. */
     OK,
     /** Registry is temporarily busy and the operation should be retried. */

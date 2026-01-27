@@ -17,7 +17,7 @@ import org.hestiastore.index.segment.SegmentId;
  * @author honza
  *
  */
-public class TypeDescriptorSegmentId implements TypeDescriptor<SegmentId> {
+class TypeDescriptorSegmentId implements TypeDescriptor<SegmentId> {
 
     private static final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
 

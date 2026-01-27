@@ -19,6 +19,19 @@
 [x] 24 Switch registry API to `SegmentRegistryResult` (Risk: HIGH)
     - Introduce `SegmentRegistryLegacyAdapter` to keep old callers working.
     - Migrate call sites/tests, then remove legacy adapter.
+[ ] 52 Remove automatic compaction from `segmentindex` (Risk: MEDIUM)
+    - Drop pre-split compaction in `SegmentSplitCoordinator` and remove
+      `SegmentSplitterPolicy.shouldBeCompactedBeforeSplitting` + related retry
+      logic.
+    - Simplify split planning to use estimated key counts directly (remove
+      compaction/tombstone hints from `SegmentSplitterPolicy` or replace with a
+      minimal estimate helper).
+    - Keep `SegmentIndex.compact` / `compactAndWait` as the only
+      segmentindex-triggered compaction entry point; update Javadocs to reflect
+      compaction being handled inside the segment package otherwise.
+    - Update tests that construct `SegmentSplitterPolicy` and add coverage that
+      split does not call `Segment.compact` while user-invoked compaction still
+      does.
 
 ## Planned
 
@@ -144,6 +157,7 @@
 ## Maintenance tasks
 
 [ ] M37 Audit `segment` package for unused or test-only code (Risk: LOW)
+    - Limit class, method and variables visiblity
     - Identify unused classes/methods/fields.
     - Remove code only referenced by tests or move test helpers into test scope.
     - Ensure public API docs and tests remain consistent after cleanup.
@@ -151,6 +165,7 @@
     - Ensure each class has a JUnit test or document why coverage is excluded.
     - Ensure each public class/method has Javadoc; add missing docs.
 [ ] M39 Audit `segmentindex` package for unused or test-only code (Risk: LOW)
+    - Limit class, method and variables visiblity
     - Identify unused classes/methods/fields.
     - Remove code only referenced by tests or move test helpers into test scope.
     - Ensure public API docs and tests remain consistent after cleanup.

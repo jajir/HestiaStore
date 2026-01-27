@@ -5,7 +5,7 @@ import org.hestiastore.index.directory.FileLock;
 /**
  * Index state that rejects all operations due to an unrecoverable failure.
  */
-public class IndexStateError<K, V> implements IndexState<K, V> {
+class IndexStateError<K, V> implements IndexState<K, V> {
 
     private final Throwable failure;
     private final FileLock fileLock;

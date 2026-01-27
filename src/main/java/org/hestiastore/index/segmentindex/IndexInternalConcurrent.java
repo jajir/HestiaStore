@@ -20,7 +20,7 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
  * @param <K> key type
  * @param <V> value type
  */
-public class IndexInternalConcurrent<K, V> extends SegmentIndexImpl<K, V> {
+class IndexInternalConcurrent<K, V> extends SegmentIndexImpl<K, V> {
 
     /**
      * Creates a concurrent index implementation bound to the given directory

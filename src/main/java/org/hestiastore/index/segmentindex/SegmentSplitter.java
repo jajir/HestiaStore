@@ -14,9 +14,9 @@ import org.slf4j.LoggerFactory;
  * Splits a segment into two logical halves by streaming entries in key order.
  * <p>
  * Algorithm: - Create a new “lower” segment and copy the first half of entries
- * into it. - If there are no remaining entries, replace the current segment with
- * the lower segment (compaction outcome). - Otherwise, stream the remaining
- * entries back into the current segment (splitting outcome).
+ * into it. - If there are no remaining entries, replace the current segment
+ * with the lower segment (replacement outcome). - Otherwise, stream the
+ * remaining entries back into the current segment (splitting outcome).
  *
  * The caller supplies a precomputed {@link SegmentSplitterPlan} which carries
  * the target lower size and tracks statistics during the split.
@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
  * @param <K> key type
  * @param <V> value type
  */
-public class SegmentSplitter<K, V> {
+class SegmentSplitter<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final Segment<K, V> segment;
@@ -53,7 +53,7 @@ public class SegmentSplitter<K, V> {
      *
      * Post-conditions: - Returns SPLIT when remaining entries were written to
      * the temporary upper segment; otherwise COMPACTED when the current segment
-     * is replaced by the lower segment.
+     * is replaced by the lower segment (no separate compaction step).
      */
     public SegmentSplitterResult<K, V> split(final SegmentId lowerSegmentId,
             final SegmentId upperSegmentId,

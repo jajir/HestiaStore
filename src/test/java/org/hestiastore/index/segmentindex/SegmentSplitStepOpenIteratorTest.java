@@ -36,7 +36,7 @@ class SegmentSplitStepOpenIteratorTest {
     void setUp() {
         step = new SegmentSplitStepOpenIterator<>();
         final SegmentSplitterPlan<Integer, String> plan = SegmentSplitterPlan
-                .fromPolicy(new SegmentSplitterPolicy<>(4, false));
+                .fromPolicy(new SegmentSplitterPolicy<>(4));
         context = new SegmentSplitContext<>(segment, plan, SegmentId.of(1),
                 SegmentId.of(2), id -> null);
         state = new SegmentSplitState<>();

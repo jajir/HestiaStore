@@ -28,7 +28,7 @@ public final class SegmentSplitterPlan<K, V> {
      *
      * @param <K> key type
      * @param <V> value type
-     * @param segmentSplitterPolicy policy describing the segment
+     * @param segmentSplitterPolicy policy describing the estimated key count
      * @return new split plan
      */
     public static <K, V> SegmentSplitterPlan<K, V> fromPolicy(

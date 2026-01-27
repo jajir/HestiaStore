@@ -284,6 +284,9 @@ public interface SegmentIndex<K, V> extends CloseableResource {
 
     /**
      * Starts a compaction pass over in-memory and on-disk data structures.
+     * This is the explicit index-level entry point for compaction; automatic
+     * split logic does not invoke compaction.
+     *
      * The call returns after compaction is accepted by each segment.
      */
     void compact();
@@ -298,6 +301,9 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * Starts a compaction pass and waits until all segment maintenance
      * operations complete. Do not call from a segment maintenance executor
      * thread.
+     *
+     * This is the explicit index-level entry point for compaction; automatic
+     * split logic does not invoke compaction.
      */
     void compactAndWait();
 

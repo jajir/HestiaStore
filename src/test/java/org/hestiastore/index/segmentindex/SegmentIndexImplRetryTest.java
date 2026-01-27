@@ -176,13 +176,17 @@ class SegmentIndexImplRetryTest {
     private static <K, V> Map<SegmentId, Segment<K, V>> readSegmentsMap(
             final SegmentRegistryImpl<K, V> registry) {
         try {
-            final Field field = SegmentRegistryImpl.class
+            final Field cacheField = SegmentRegistryImpl.class
+                    .getDeclaredField("cache");
+            cacheField.setAccessible(true);
+            final Object cache = cacheField.get(registry);
+            final Field segmentsField = SegmentRegistryCache.class
                     .getDeclaredField("segments");
-            field.setAccessible(true);
-            return (Map<SegmentId, Segment<K, V>>) field.get(registry);
+            segmentsField.setAccessible(true);
+            return (Map<SegmentId, Segment<K, V>>) segmentsField.get(cache);
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
-                    "Unable to read segments map for test", ex);
+                    "Unable to read segments cache for test", ex);
         }
     }
 }
