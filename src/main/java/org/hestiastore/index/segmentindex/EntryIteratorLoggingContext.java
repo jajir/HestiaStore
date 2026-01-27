@@ -13,7 +13,7 @@ import org.slf4j.MDC;
  * @param <K> key type
  * @param <V> value type
  */
-public class EntryIteratorLoggingContext<K, V> extends AbstractCloseableResource
+class EntryIteratorLoggingContext<K, V> extends AbstractCloseableResource
         implements EntryIterator<K, V> {
 
     private final EntryIterator<K, V> entryIterator;

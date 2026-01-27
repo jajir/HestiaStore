@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
  * @param <K> Key type
  * @param <V> Value type
  */
-public class SegmentSplitCoordinator<K, V> {
+class SegmentSplitCoordinator<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final IndexConfiguration<K, V> conf;
@@ -52,22 +52,13 @@ public class SegmentSplitCoordinator<K, V> {
     boolean optionallySplit(final Segment<K, V> segment,
             final long maxNumberOfKeysInSegment) {
         Vldtn.requireNonNull(segment, "segment");
-        SegmentSplitterPolicy<K, V> policy = createPolicy(segment);
-        SegmentSplitterPlan<K, V> plan = SegmentSplitterPlan.fromPolicy(policy);
+        final SegmentSplitterPolicy<K, V> policy = createPolicy(segment);
+        final SegmentSplitterPlan<K, V> plan = SegmentSplitterPlan
+                .fromPolicy(policy);
         if (plan.getEstimatedNumberOfKeys() < maxNumberOfKeysInSegment) {
             return false;
         }
-        final boolean compactBeforeSplit = policy
-                .shouldBeCompactedBeforeSplitting(maxNumberOfKeysInSegment,
-                        plan.getEstimatedNumberOfKeys());
-        if (compactBeforeSplit) {
-            compactSegment(segment);
-            policy = createPolicy(segment);
-            plan = SegmentSplitterPlan.fromPolicy(policy);
-            if (plan.getEstimatedNumberOfKeys() < maxNumberOfKeysInSegment) {
-                return true;
-            }
-        } else if (!shouldBeSplit(segment, maxNumberOfKeysInSegment)) {
+        if (!shouldBeSplit(segment, maxNumberOfKeysInSegment)) {
             return false;
         }
         if (!hasLiveEntries(segment)) {
@@ -121,26 +112,6 @@ public class SegmentSplitCoordinator<K, V> {
         return false;
     }
 
-    private void compactSegment(final Segment<K, V> segment) {
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final SegmentResult<?> result = segment.compact();
-            final SegmentResultStatus status = result.getStatus();
-            if (status == SegmentResultStatus.OK
-                    || status == SegmentResultStatus.CLOSED) {
-                return;
-            }
-            if (status == SegmentResultStatus.BUSY) {
-                retryPolicy.backoffOrThrow(startNanos, "compact",
-                        segment.getId());
-                continue;
-            }
-            throw new IndexException(String.format(
-                    "Segment '%s' failed during compact: %s", segment.getId(),
-                    status));
-        }
-    }
-
     private SplitOutcome doSplit(final Segment<K, V> segment,
             final SegmentId segmentId, final SegmentId upperSegmentId,
             final SegmentSplitterResult<K, V> result) {
@@ -163,7 +134,7 @@ public class SegmentSplitCoordinator<K, V> {
             keyToSegmentMap.optionalyFlush();
             logger.debug(
                     "Splitting of segment '{}' is done, "
-                            + "but at the end it was compacting.",
+                            + "but it resulted in a replacement segment.",
                     segmentId, result.getSegmentId());
             final SplitOutcome outcome = new SplitOutcome(true, segmentId,
                     result.getSegmentId());
@@ -191,7 +162,7 @@ public class SegmentSplitCoordinator<K, V> {
     private SegmentSplitterPolicy<K, V> createPolicy(
             final Segment<K, V> segment) {
         final long estimatedNumberOfKeys = segment.getNumberOfKeysInCache();
-        return new SegmentSplitterPolicy<>(estimatedNumberOfKeys, false);
+        return new SegmentSplitterPolicy<>(estimatedNumberOfKeys);
     }
 
     private boolean hasLiveEntries(final Segment<K, V> segment) {

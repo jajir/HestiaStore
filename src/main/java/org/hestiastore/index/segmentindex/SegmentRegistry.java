@@ -9,7 +9,7 @@ import org.hestiastore.index.segment.SegmentId;
  * @param <K> key type
  * @param <V> value type
  */
-public interface SegmentRegistry<K, V> {
+interface SegmentRegistry<K, V> {
 
     /**
      * Returns the segment for the provided id, loading it if needed.

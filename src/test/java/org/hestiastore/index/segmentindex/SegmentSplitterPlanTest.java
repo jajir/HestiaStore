@@ -10,7 +10,7 @@ class SegmentSplitterPlanTest {
 
     private SegmentSplitterPlan<String, String> newPlan() {
         final SegmentSplitterPolicy<String, String> policy = new SegmentSplitterPolicy<>(
-                3L, false);
+                3L);
         return SegmentSplitterPlan.fromPolicy(policy);
     }
 

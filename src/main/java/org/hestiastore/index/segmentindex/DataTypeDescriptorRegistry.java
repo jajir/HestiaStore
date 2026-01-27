@@ -23,7 +23,7 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
  * @author honza
  *
  */
-public class DataTypeDescriptorRegistry {
+class DataTypeDescriptorRegistry {
 
     private static final String CLAZZ = "clazz";
     private static final Map<Class<?>, String> descriptors = new HashMap<>();

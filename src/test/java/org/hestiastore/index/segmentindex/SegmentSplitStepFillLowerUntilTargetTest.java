@@ -38,7 +38,7 @@ class SegmentSplitStepFillLowerUntilTargetTest {
 
     private SegmentSplitterPlan<Integer, String> feasiblePlan() {
         final SegmentSplitterPolicy<Integer, String> policy = new SegmentSplitterPolicy<>(
-                6, false);
+                6);
         return SegmentSplitterPlan.fromPolicy(policy);
     }
 

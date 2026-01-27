@@ -50,7 +50,7 @@ class SegmentSplitStepReplaceIfNoRemainingTest {
     void test_missing_iterator() {
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
                 null, SegmentSplitterPlan.fromPolicy(
-                        new SegmentSplitterPolicy<>(5, false)),
+                        new SegmentSplitterPolicy<>(5)),
                 SegmentId.of(1), null, null);
         final Exception err = assertThrows(IllegalArgumentException.class,
                 () -> step.filter(ctx, new SegmentSplitState<>()));
@@ -61,7 +61,7 @@ class SegmentSplitStepReplaceIfNoRemainingTest {
     void test_missing_lower_segment_id() {
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
                 null, SegmentSplitterPlan.fromPolicy(
-                        new SegmentSplitterPolicy<>(5, false)),
+                        new SegmentSplitterPolicy<>(5)),
                 null, null, null);
         final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
         state.setIterator(
@@ -75,7 +75,7 @@ class SegmentSplitStepReplaceIfNoRemainingTest {
     @Test
     void sets_result_when_no_remaining_and_skips_when_remaining() {
         final SegmentSplitterPlan<Integer, String> plan = SegmentSplitterPlan
-                .fromPolicy(new SegmentSplitterPolicy<>(5, false));
+                .fromPolicy(new SegmentSplitterPolicy<>(5));
         plan.recordLower(Entry.of(1, "a"));
 
         final SegmentSplitState<Integer, String> state1 = new SegmentSplitState<>();

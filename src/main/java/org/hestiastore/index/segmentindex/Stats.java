@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.LongAdder;
  * @author honza
  *
  */
-public class Stats {
+class Stats {
     private final LongAdder putCx = new LongAdder();
     private final LongAdder getCx = new LongAdder();
     private final LongAdder deleteCx = new LongAdder();

@@ -6,7 +6,7 @@ package org.hestiastore.index.segmentindex;
  * @author honza
  *
  */
-public class IndexConfigurationDefaultString
+class IndexConfigurationDefaultString
         implements IndexConfigurationContract {
 
     /** {@inheritDoc} */

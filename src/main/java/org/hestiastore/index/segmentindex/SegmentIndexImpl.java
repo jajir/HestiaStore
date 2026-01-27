@@ -16,20 +16,18 @@ import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segment.SegmentState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Base implementation of the segment index that manages segments, mappings,
- * and maintenance coordination.
+ * Base implementation of the segment index that manages segments, mappings, and
+ * maintenance coordination.
  *
  * @param <K> key type
  * @param <V> value type
  */
-public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
+abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         implements IndexInternal<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -145,7 +143,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
      * Opens a segment iterator using the provided isolation level.
      *
      * @param segmentWindows window selecting segments to iterate
-     * @param isolation iterator isolation mode
+     * @param isolation      iterator isolation mode
      * @return entry iterator over the selected segments
      */
     public EntryIterator<K, V> openSegmentIterator(
@@ -187,8 +185,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         Vldtn.requireNonNull(key, "key");
         stats.incGetCx();
 
-        final IndexResult<V> result = retryWhileBusy(() -> core.get(key),
-                "get", null, true);
+        final IndexResult<V> result = retryWhileBusy(() -> core.get(key), "get",
+                null, true);
         if (result.getStatus() == IndexResultStatus.OK) {
             return result.getValue();
         }
@@ -350,9 +348,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     }
 
     private void flushSegments(final boolean waitForCompletion) {
-        keyToSegmentMap.getSegmentIds()
-                .forEach(segmentId -> flushSegment(segmentId,
-                        waitForCompletion));
+        keyToSegmentMap.getSegmentIds().forEach(
+                segmentId -> flushSegment(segmentId, waitForCompletion));
     }
 
     private void compactSegment(final SegmentId segmentId,
@@ -374,8 +371,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 return;
             }
             if (status == IndexResultStatus.BUSY) {
-                retryPolicy.backoffOrThrow(startNanos, "compact",
-                        segmentId);
+                retryPolicy.backoffOrThrow(startNanos, "compact", segmentId);
                 continue;
             }
             throw newIndexException("compact", segmentId, status);
@@ -417,16 +413,15 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 return;
             }
             if (state == SegmentState.ERROR) {
-                throw new IndexException(String.format(
-                        "Segment '%s' failed during %s.", segmentId,
-                        operation));
+                throw new IndexException(
+                        String.format("Segment '%s' failed during %s.",
+                                segmentId, operation));
             }
             retryPolicy.backoffOrThrow(startNanos, operation, segmentId);
         }
     }
 
-    private EntryIterator<K, V> openIteratorWithRetry(
-            final SegmentId segmentId,
+    private EntryIterator<K, V> openIteratorWithRetry(final SegmentId segmentId,
             final SegmentIteratorIsolation isolation) {
         final long startNanos = retryPolicy.startNanos();
         while (true) {
@@ -480,8 +475,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     private IndexException newIndexException(final String operation,
             final SegmentId segmentId, final IndexResultStatus status) {
-        final String target = segmentId == null ? "" : String
-                .format(" on segment '%s'", segmentId);
+        final String target = segmentId == null ? ""
+                : String.format(" on segment '%s'", segmentId);
         return new IndexException(
                 String.format("Index operation '%s' failed%s: %s", operation,
                         target, status));
@@ -493,18 +488,20 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             while (true) {
                 final SegmentRegistryResult<Segment<K, V>> segmentResult = segmentRegistry
                         .getSegment(segmentId);
-                if (segmentResult.getStatus() == SegmentRegistryResultStatus.OK) {
+                if (segmentResult
+                        .getStatus() == SegmentRegistryResultStatus.OK) {
                     segmentResult.getValue().invalidateIterators();
                     return;
                 }
-                if (segmentResult.getStatus() == SegmentRegistryResultStatus.BUSY) {
+                if (segmentResult
+                        .getStatus() == SegmentRegistryResultStatus.BUSY) {
                     retryPolicy.backoffOrThrow(startNanos,
                             "invalidateIterators", segmentId);
                     continue;
                 }
-                throw new IndexException(String.format(
-                        "Segment '%s' failed to load: %s", segmentId,
-                        segmentResult.getStatus()));
+                throw new IndexException(
+                        String.format("Segment '%s' failed to load: %s",
+                                segmentId, segmentResult.getStatus()));
             }
         });
     }
@@ -534,8 +531,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private long remainingBusyTimeoutMillis(final long startNanos) {
         final long timeoutMillis = conf.getIndexBusyTimeoutMillis();
         final long elapsedNanos = System.nanoTime() - startNanos;
-        final long remainingNanos = TimeUnit.MILLISECONDS
-                .toNanos(timeoutMillis) - elapsedNanos;
+        final long remainingNanos = TimeUnit.MILLISECONDS.toNanos(timeoutMillis)
+                - elapsedNanos;
         if (remainingNanos <= 0) {
             return 0;
         }

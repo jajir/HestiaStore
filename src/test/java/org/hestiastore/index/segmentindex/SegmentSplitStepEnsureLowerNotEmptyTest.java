@@ -29,7 +29,7 @@ class SegmentSplitStepEnsureLowerNotEmptyTest {
     private SegmentSplitterPlan<Integer, String> planWithEstimate(
             long estimate) {
         final SegmentSplitterPolicy<Integer, String> policy = new SegmentSplitterPolicy<>(
-                estimate, false);
+                estimate);
         return SegmentSplitterPlan.fromPolicy(policy);
     }
 

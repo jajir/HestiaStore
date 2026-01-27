@@ -7,14 +7,15 @@ import org.hestiastore.index.segment.SegmentId;
 /**
  * Provides result of segment splitting.
  */
-public class SegmentSplitterResult<K, V> {
+class SegmentSplitterResult<K, V> {
 
     /**
      * Status of segment after splitting.
      */
     public enum SegmentSplittingStatus {
         /**
-         * Segment was just compacted. It means that segmentId was not used.
+         * Split produced a replacement using the lower segment; the temporary
+         * upper segment id was not used.
          */
         COMPACTED,
         /**
@@ -56,8 +57,7 @@ public class SegmentSplitterResult<K, V> {
     }
 
     /**
-     * Returns the identifier of the lower segment created during the split or
-     * compaction.
+     * Returns the identifier of the lower segment created during the split.
      *
      * @return segment id of the lower segment
      */

@@ -1,7 +1,6 @@
 # General rules
 - be honest
 - when it make sense structure response as numbered list of points
-- refactoring backlog lives in `docs/refactor-backlog.md`
 
 # Repository Guidelines
 
@@ -39,6 +38,13 @@
 - For each mocked parameter create private class field.
 - When tested class have to be instantiated than do it in `setUp()` and `teadDown()` methods.
 - instead of try{}finally{} use try-with-resources statement. 
+
+## Refactoring guidelines
+
+- refactoring backlog lives in `docs/refactor-backlog.md`
+- each reafactoring step ha unique id and brackets to identified what;s done [ ]
+- task that are done are moved to section "## Done (Archive)" and are marked as done
+- only tasks with ID started with M are maintenance task and even after perfoming are not marked as done and are not moved below. The could be repeated after some time again.
 
 ## Commit & Pull Request Guidelines
 - Follow the existing log style: short, imperative titles that describe the change (e.g., “Improve segment cache eviction logic”); stay under ~72 characters.

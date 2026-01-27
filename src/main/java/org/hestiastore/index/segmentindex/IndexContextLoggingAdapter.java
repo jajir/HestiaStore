@@ -22,7 +22,7 @@ import org.slf4j.MDC;
  * @param <K> type of keys stored in the index
  * @param <V> type of values stored in the index
  */
-public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
+class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         implements SegmentIndex<K, V> {
 
     private final static String INDEX_NAME_MDC_KEY = "index.name";

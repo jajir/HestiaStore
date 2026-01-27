@@ -16,7 +16,7 @@ import org.hestiastore.index.sorteddatafile.EntryComparator;
  * @param <K> key type
  * @param <V> value type
  */
-public class EntryIteratorToSpliterator<K, V>
+class EntryIteratorToSpliterator<K, V>
         implements Spliterator<Entry<K, V>> {
 
     private final EntryIterator<K, V> entryIterator;

@@ -13,7 +13,7 @@ import org.hestiastore.index.Vldtn;
  * @author honza
  *
  */
-public class IndexConfigurationRegistry {
+class IndexConfigurationRegistry {
     /**
      * memory attribute could be null.
      * 

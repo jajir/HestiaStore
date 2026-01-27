@@ -9,7 +9,7 @@ import org.hestiastore.index.directory.FileLock;
  * @param <K> key type
  * @param <V> value type
  */
-public class IndexStateReady<K, V> implements IndexState<K, V> {
+class IndexStateReady<K, V> implements IndexState<K, V> {
 
     private final FileLock fileLock;
 
