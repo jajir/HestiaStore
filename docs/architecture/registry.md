@@ -8,7 +8,8 @@ coordination, map updates, and directory swaps.
 ## Scope
 - The registry owns:
   - in-memory segment cache (LRU)
-  - segment directory swapping
+  - segment directory swapping (used for recovery or legacy flows; the planned
+    split path does not swap directories)
   - the key-to-segment map updates (via the index layer)
   - registry-level state gate (`READY`, `FREEZE`, `CLOSED`, `ERROR`)
 - The only structural operation that should reach the registry is **split**.
@@ -22,6 +23,13 @@ coordination, map updates, and directory swaps.
 | `removeSegment(id)` | Close and delete a segment, then remove from cache.            |
 | `swapSegmentDirectories(a, b)` | Atomic swap for segment directory replacement.      |
 | `close()`         | Close cached segments and executors.                             |
+
+### Split Executor
+
+Split work runs on a **dedicated executor**, separate from segment maintenance.
+Threads are named with the `index-maintenance-*` prefix (created by the split
+executor). This helps operations distinguish split workload from other
+maintenance activity.
 
 ### Response Codes
 
@@ -55,16 +63,15 @@ ERROR
 
 | Original State | New State | When                                                     |
 |---|---|---|
-| `READY`  | `FREEZE` | short exclusive window for map + directory updates        |
-| `FREEZE` | `READY`  | map swap + directory swap complete                        |
+| `READY`  | `FREEZE` | short exclusive window for registry map updates           |
+| `FREEZE` | `READY`  | registry map update complete                              |
 | any      | `CLOSED` | index closing                                             |
 | any      | `ERROR`  | unrecoverable registry failure                            |
 
 ### Rules
 - `FREEZE` is **short**; it only wraps changes to:
   - key‑to‑segment map updates
-  - directory swaps
-  - cache updates tied to the swap
+  - cache updates tied to the map replacement
 - `getSegment()` and `removeSegment()` return `BUSY` if registry is `FREEZE`.
 - `CLOSED` and `ERROR` are terminal.
 
@@ -88,31 +95,36 @@ and **apply** under a short registry freeze.
    The split job returns a `SegmentSplitterResult` with the new segment ids and
    split metadata (min/max keys, outcome).
 
-4) **Release segment resources**  
+4) **Freeze registry and update registry map**  
+   Enter `FREEZE` and atomically update registry state:
+   - remove the old segment id from the registry map
+   - add the two new segment ids (lower + upper) to the registry map
+   - evict the old segment instance from the cache
+   - exit `FREEZE` immediately after the update to keep the window short
+
+5) **Update map file**  
+   Persist the key‑to‑segment map update:
+   - remove the old segment id
+   - add the new lower + upper segment ids with their key ranges
+   - flush the map to disk
+
+6) **Release segment resources**  
    Close the exclusive iterator and release segment locks. Close/free any
    temporary segment instances created for the split.
 
-5) **Update map file**  
-   Update the key‑to‑segment map:
-   - insert the new lower segment
-   - update max key for the current segment
-   - flush the map to disk
+7) **Delete the old segment from disk**  
+   Remove the old segment directory after it is no longer referenced and
+   no locks are held.
 
-6) **Freeze registry and apply directory swap**  
-   Enter `FREEZE` and apply the directory swap atomically:
-   - swap current segment directory with the new upper (or replacement) segment
-   - relabel swapped files to the target segment id
-   - evict old segment instance from cache
-
-7) **Unlock and resume**  
-   Exit `FREEZE`, return registry to `READY`, and allow normal operations.
+8) **Unlock and resume**  
+   Ensure the registry is back to `READY` and release any remaining locks.
 
 ### Split Outcome Mapping
 
-| Split Status | Map Update | Directory Swap | Cache Update |
+| Split Status | Map Update | Directory Action | Cache Update |
 |---|---|---|---|
-| `SPLIT` | insert lower + update current max key | swap current <- upper | evict old instance |
-| `COMPACTED` | update current max key only | swap current <- lower | evict old instance |
+| `SPLIT` | remove old + add lower + add upper | no swap (new ids only) | evict old instance |
+| `COMPACTED` | remove old + add lower | no swap (new id only) | evict old instance |
 
 ## Locking & Ordering Rules
 
@@ -120,11 +132,21 @@ and **apply** under a short registry freeze.
   The exclusive segment iterator is acquired before registry `FREEZE`.
   This avoids long registry freezes and keeps map updates short.
 
+- **Key-map lock remains required**  
+  The registry `FREEZE` does not replace the key‑to‑segment map’s own
+  synchronization. Always use the map’s lock/adapter when mutating or reading
+  the on‑disk map, because other index operations may bypass the registry lock.
+
 - **Registry freeze is not held during split IO**  
   The split worker writes new segment files without holding registry `FREEZE`.
 
 - **Single registry freeze per split**  
-  The registry only freezes for the apply phase (map + directory swap).
+  The registry only freezes for the apply phase (map update + cache eviction).
+
+- **Lock/unlock order is consistent**  
+  Acquire locks in a single global order and release in reverse order
+  (segment -> registry -> key‑map; unlock key‑map -> registry -> segment) to
+  avoid deadlocks.
 
 ## Failure Handling
 
@@ -134,17 +156,17 @@ and **apply** under a short registry freeze.
 - Callers see `BUSY` or `ERROR` depending on root cause.
 
 ### Split failure during apply
-- Registry transitions to `ERROR` if directory swap or map flush fails.
-- Recovery relies on `SegmentDirectorySwap` marker file to complete or rollback
-  swap on next open.
+- Registry transitions to `ERROR` if the map update or eviction fails.
+- Recovery focuses on restoring a consistent map; orphaned segment directories
+  are cleaned up on next open.
 
 ### Lock conflicts
 - Segment directory lock conflicts return `BUSY` (retryable).
 
 ## Invariants
 
-- **Map + directory swap are consistent**: apply phase must update both or
-  transition to `ERROR`.
+- **Map updates are consistent**: apply phase must fully replace the old
+  segment with the new segment ids or transition to `ERROR`.
 - **FREEZE is short**: all IO happens outside `FREEZE`.
 - **No hidden compaction**: split does not implicitly run `compact()`.
 
@@ -153,5 +175,5 @@ and **apply** under a short registry freeze.
 The segment state machine (see `segment-concurrency.md`) guarantees that
 `FULL_ISOLATION` blocks writes and maintenance while the split iterator is
 open. The registry relies on that exclusivity to build new segments without
-concurrent mutation, then applies the map and directory swap atomically under
-`FREEZE`.
+concurrent mutation, then applies the map update and cache eviction atomically
+under `FREEZE`.
