@@ -2,11 +2,67 @@
 
 ## Active
 
+[ ] 53.1 Split “apply” DTO (Risk: LOW)
+    - Introduce a small DTO for split apply (oldId, lowerId, upperId,
+      min/max keys, status).
+    - Unit tests for DTO invariants.
+[ ] 53.2 Split worker extraction (Risk: MEDIUM)
+    - Refactor split execution to: open FULL_ISOLATION iterator, run split on
+      maintenance executor, return DTO without touching registry or map.
+    - Ensure iterator is closed in all paths.
+    - Unit tests for result wiring.
+[ ] 53.3 Registry apply entry point (Risk: MEDIUM)
+    - Add registry apply method that (a) FREEZE, (b) update cache
+      (remove old, add new ids), (c) exit FREEZE.
+    - Keep key‑map lock separate.
+    - Unit tests for cache mutation under FREEZE.
+[ ] 53.4 Key‑map persistence (Risk: MEDIUM)
+    - Update key‑to‑segment map using its own lock/adapter.
+    - Persist map file after in‑memory registry apply.
+    - Tests that map persistence order is enforced.
+[ ] 53.5 Old segment deletion (Risk: MEDIUM)
+    - Delete old segment directory only after map persistence and after
+      iterator/segment locks are released.
+    - Tests that deletion never happens before map persistence.
+[ ] 53.6 Lock order contract (Risk: LOW)
+    - Enforce lock order (segment → registry → map; release map → registry
+      → segment) and document in code.
+    - Add a small test or assertion helper to catch order violations.
+[ ] 53.7 Split concurrency scenarios (Risk: HIGH)
+    - Tests:
+      - split does not run under registry FREEZE (short window)
+      - split returns BUSY on lock conflict and retries safely
+      - concurrent get/put during split never sees missing segment mapping
+
 ## Planned
 
 ### High
 
 ### Medium
+
+[ ] 54 Dedicated executor for index async ops (Risk: MEDIUM)
+    - Use a dedicated, bounded executor for `SegmentIndexImpl.runAsyncTracked`
+      (no common pool).
+    - Define rejection policy: map saturation to BUSY/error with clear message.
+    - Ensure close waits for in‑flight async work or cancels safely.
+    - Tests: saturation/backpressure, close ordering, no caller‑thread IO.
+
+[ ] 55 Replace busy spin loops with retry + jitter (Risk: MEDIUM)
+    - Replace `Thread.onSpinWait`/busy loops in split iterator open and other
+      retry paths with `IndexRetryPolicy` + jitter.
+    - Make timeouts explicit and surface `IndexException` with operation name.
+    - Tests: BUSY retry exits on READY, timeout path, interrupt handling.
+
+[ ] 56 Key‑to‑segment map read contention reduction (Risk: MEDIUM)
+    - Evaluate snapshot‑based reads or `StampedLock` for high‑read workloads.
+    - Keep version validation semantics intact for split/extend paths.
+    - Tests: concurrent get/put under splits, no missing mappings, no deadlocks.
+
+[ ] 57 Streaming iterators without full materialization (Risk: MEDIUM)
+    - Replace list materialization in `getStream`/FULL_ISOLATION with streaming
+      merge iterators over write/delta caches and segment files.
+    - Ensure iterator close releases resources and does not leak locks.
+    - Tests: large data set memory profile, iterator isolation correctness.
 
 [ ] 5 Stop materializing merged cache lists on read (Risk: MEDIUM)
     - Problem: `SegmentReadPath.openIterator` calls `getAsSortedList`, building
