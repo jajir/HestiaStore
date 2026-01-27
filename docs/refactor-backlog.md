@@ -2,24 +2,6 @@
 
 ## Active
 
-[x] 19 Add `SegmentRegistryResult` + status + adapters (Risk: MEDIUM)
-    - Define result/status types and adapters to/from `SegmentResult`.
-    - Unit tests only; no wiring.
-[x] 20 Add registry state enum + gate (Risk: MEDIUM)
-    - Define `SegmentRegistryState` and a small gate/state holder.
-    - Unit tests only; no integration.
-[x] 21 Introduce `SegmentRegistry` interface + `SegmentRegistryImpl` (Risk: MEDIUM)
-    - Keep interface minimal and keep `SegmentResult` returns for now.
-    - Rename existing class to impl and update call sites in same step.
-[x] 22 Add `SegmentRegistrySyncAdapter` with BUSY retry (Risk: MEDIUM)
-    - Wrap `SegmentRegistry` and retry BUSY (use `IndexRetryPolicy`).
-[x] 23 Wire state gate into impl (Risk: HIGH)
-    - BUSY only from registry state; FREEZE only around map changes.
-    - Keep `SegmentResult` API to avoid broad changes.
-[x] 24 Switch registry API to `SegmentRegistryResult` (Risk: HIGH)
-    - Introduce `SegmentRegistryLegacyAdapter` to keep old callers working.
-    - Migrate call sites/tests, then remove legacy adapter.
-
 ## Planned
 
 ### High
@@ -298,3 +280,20 @@
 [x] 17 Document locked-directory behavior in `SegmentBuilder` (Risk: LOW)
     - Clarify how builder reacts when the segment directory is already locked.
 [x] 18 Acquire segment lock before `prepareBuildContext()` (Risk: MEDIUM)
+[x] 19 Add `SegmentRegistryResult` + status + adapters (Risk: MEDIUM)
+    - Define result/status types and adapters to/from `SegmentResult`.
+    - Unit tests only; no wiring.
+[x] 20 Add registry state enum + gate (Risk: MEDIUM)
+    - Define `SegmentRegistryState` and a small gate/state holder.
+    - Unit tests only; no integration.
+[x] 21 Introduce `SegmentRegistry` interface + `SegmentRegistryImpl` (Risk: MEDIUM)
+    - Keep interface minimal and keep `SegmentResult` returns for now.
+    - Rename existing class to impl and update call sites in same step.
+[x] 22 Add `SegmentRegistrySyncAdapter` with BUSY retry (Risk: MEDIUM)
+    - Wrap `SegmentRegistry` and retry BUSY (use `IndexRetryPolicy`).
+[x] 23 Wire state gate into impl (Risk: HIGH)
+    - BUSY only from registry state; FREEZE only around map changes.
+    - Keep `SegmentResult` API to avoid broad changes.
+[x] 24 Switch registry API to `SegmentRegistryResult` (Risk: HIGH)
+    - Introduce `SegmentRegistryLegacyAdapter` to keep old callers working.
+    - Migrate call sites/tests, then remove legacy adapter.
