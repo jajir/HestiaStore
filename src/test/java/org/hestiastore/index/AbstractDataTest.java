@@ -8,9 +8,12 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
+import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -110,6 +113,31 @@ public abstract class AbstractDataTest {
                 "Expected iterator result OK");
         assertNotNull(result.getValue());
         verifyIteratorData(entries, result.getValue());
+    }
+
+    /**
+     * Verifies segment index data using FULL_ISOLATION iteration.
+     *
+     * @param <M> key type
+     * @param <N> value type
+     * @param index required index
+     * @param entries expected entries in key order
+     */
+    public static <M, N> void verifySegmentIndexData(
+            final SegmentIndex<M, N> index,
+            final List<Entry<M, N>> entries) {
+        assertNotNull(index);
+        final List<Entry<M, N>> data;
+        try (Stream<Entry<M, N>> stream = index
+                .getStream(SegmentWindow.unbounded(),
+                        SegmentIteratorIsolation.FULL_ISOLATION)) {
+            data = stream.toList();
+        }
+        assertEquals(entries.size(), data.size(),
+                "Unexpected number of entries in index");
+        for (int i = 0; i < entries.size(); i++) {
+            assertEquals(entries.get(i), data.get(i));
+        }
     }
 
     /**

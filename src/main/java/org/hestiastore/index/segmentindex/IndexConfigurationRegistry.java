@@ -20,7 +20,7 @@ class IndexConfigurationRegistry {
      * @author honza
      *
      */
-    public static class Key {
+    static final class Key {
 
         private final Class<?> clazz;
 
@@ -33,7 +33,7 @@ class IndexConfigurationRegistry {
          * @param memory optional memory descriptor
          * @return registry key
          */
-        public static final Key of(final Class<?> clazz, final String memory) {
+        static Key of(final Class<?> clazz, final String memory) {
             return new Key(clazz, memory);
         }
 
@@ -80,7 +80,7 @@ class IndexConfigurationRegistry {
      * @param clazz             class to associate with defaults
      * @param typeConfiguration default configuration
      */
-    public static final <T> void addTypeDefaultConf(final Class<T> clazz,
+    static <T> void addTypeDefaultConf(final Class<T> clazz,
             final IndexConfigurationContract typeConfiguration) {
         Vldtn.requireNonNull(clazz, "clazz");
         Vldtn.requireNonNull(typeConfiguration, "typeConfiguration");
@@ -95,7 +95,7 @@ class IndexConfigurationRegistry {
      * @param memory            optional memory descriptor
      * @param typeConfiguration configuration to register
      */
-    public static final <T> void add(final Class<T> clazz, final String memory,
+    static <T> void add(final Class<T> clazz, final String memory,
             final IndexConfigurationContract typeConfiguration) {
         Vldtn.requireNonNull(clazz, "");
         Vldtn.requireNonNull(typeConfiguration, "typeConfiguration");
@@ -109,7 +109,7 @@ class IndexConfigurationRegistry {
      * @param clazz class to look up
      * @return optional configuration for the class
      */
-    public static final <T> Optional<IndexConfigurationContract> get(
+    static <T> Optional<IndexConfigurationContract> get(
             final Class<T> clazz) {
         return get(clazz, null);
     }
@@ -123,7 +123,7 @@ class IndexConfigurationRegistry {
      * @param memory optional memory descriptor
      * @return optional configuration for the key
      */
-    public static final <T> Optional<IndexConfigurationContract> get(
+    static <T> Optional<IndexConfigurationContract> get(
             final Class<T> clazz, final String memory) {
         Vldtn.requireNonNull(clazz, "class");
         return Optional.ofNullable(confs.get(Key.of(clazz, memory)));

@@ -185,8 +185,8 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         Vldtn.requireNonNull(key, "key");
         stats.incGetCx();
 
-        final IndexResult<V> result = retryWhileBusy(() -> core.get(key), "get",
-                null, true);
+        final IndexResult<V> result = retryWhileBusyWithSplitWait(
+                () -> core.get(key), "get", key, true);
         if (result.getStatus() == IndexResultStatus.OK) {
             return result.getValue();
         }
@@ -437,22 +437,6 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             }
             throw newIndexException("openIterator", segmentId,
                     result.getStatus());
-        }
-    }
-
-    private <T> IndexResult<T> retryWhileBusy(
-            final Supplier<IndexResult<T>> operation, final String opName,
-            final SegmentId segmentId, final boolean retryClosed) {
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final IndexResult<T> result = operation.get();
-            final IndexResultStatus status = result.getStatus();
-            if (status == IndexResultStatus.BUSY
-                    || (retryClosed && status == IndexResultStatus.CLOSED)) {
-                retryPolicy.backoffOrThrow(startNanos, opName, segmentId);
-                continue;
-            }
-            return result;
         }
     }
 

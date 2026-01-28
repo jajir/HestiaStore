@@ -58,12 +58,9 @@ class SegmentSplitter<K, V> {
     public SegmentSplitterResult<K, V> split(final SegmentId lowerSegmentId,
             final SegmentId upperSegmentId,
             final SegmentSplitterPlan<K, V> plan) {
-        final SplitExecution<K, V> execution = splitWithIterator(lowerSegmentId,
-                upperSegmentId, plan);
-        try {
+        try (SplitExecution<K, V> execution = splitWithIterator(lowerSegmentId,
+                upperSegmentId, plan)) {
             return execution.getResult();
-        } finally {
-            execution.close();
         }
     }
 
@@ -98,7 +95,7 @@ class SegmentSplitter<K, V> {
         return new SplitExecution<>(result, state.getIterator());
     }
 
-    static final class SplitExecution<K, V> {
+    static final class SplitExecution<K, V> implements AutoCloseable {
         private final SegmentSplitterResult<K, V> result;
         private final EntryIterator<K, V> iterator;
 
@@ -112,7 +109,8 @@ class SegmentSplitter<K, V> {
             return result;
         }
 
-        void close() {
+        @Override
+        public void close() {
             if (iterator != null) {
                 iterator.close();
             }

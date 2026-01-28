@@ -4,6 +4,7 @@ import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -39,6 +40,15 @@ class SegmentRegistryImplTest {
 
     @Mock
     private IndexConfiguration<Integer, String> conf;
+
+    @Mock
+    private Segment<Integer, String> oldSegment;
+
+    @Mock
+    private Segment<Integer, String> lowerSegment;
+
+    @Mock
+    private Segment<Integer, String> upperSegment;
 
     private SegmentRegistryImpl<Integer, String> registry;
 
@@ -144,6 +154,65 @@ class SegmentRegistryImplTest {
         assertNotSame(first, firstReloaded);
     }
 
+    @Test
+    void applySplitPlan_removes_old_and_adds_new_segments() {
+        final SegmentId oldId = SegmentId.of(1);
+        final SegmentId lowerId = SegmentId.of(2);
+        final SegmentId upperId = SegmentId.of(3);
+        final SegmentSplitApplyPlan<Integer, String> plan = new SegmentSplitApplyPlan<>(
+                oldId, lowerId, upperId, 1, 10,
+                SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
+        Mockito.when(lowerSegment.getId()).thenReturn(lowerId);
+        Mockito.when(lowerSegment.getState()).thenReturn(SegmentState.CLOSED);
+        Mockito.when(upperSegment.getId()).thenReturn(upperId);
+        Mockito.when(upperSegment.getState()).thenReturn(SegmentState.CLOSED);
+        final SegmentRegistryCache<Integer, String> cache = readCache(
+                registry);
+        cache.withLock(() -> cache.putLocked(oldId, oldSegment));
+
+        final SegmentRegistryResult<Segment<Integer, String>> result = registry
+                .applySplitPlan(plan, lowerSegment, upperSegment);
+
+        assertSame(SegmentRegistryResultStatus.OK, result.getStatus());
+        assertSame(oldSegment, result.getValue());
+        cache.withLock(() -> {
+            assertNull(cache.getLocked(oldId));
+            assertSame(lowerSegment, cache.getLocked(lowerId));
+            assertSame(upperSegment, cache.getLocked(upperId));
+        });
+        assertSame(SegmentRegistryState.READY, readGate(registry).getState());
+    }
+
+    @Test
+    void applySplitPlan_returns_busy_when_registry_frozen() {
+        final SegmentId oldId = SegmentId.of(1);
+        final SegmentId lowerId = SegmentId.of(2);
+        final SegmentId upperId = SegmentId.of(3);
+        final SegmentSplitApplyPlan<Integer, String> plan = new SegmentSplitApplyPlan<>(
+                oldId, lowerId, upperId, 1, 10,
+                SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
+        Mockito.when(oldSegment.getState()).thenReturn(SegmentState.CLOSED);
+        Mockito.when(lowerSegment.getId()).thenReturn(lowerId);
+        Mockito.when(upperSegment.getId()).thenReturn(upperId);
+        final SegmentRegistryCache<Integer, String> cache = readCache(
+                registry);
+        cache.withLock(() -> cache.putLocked(oldId, oldSegment));
+        final SegmentRegistryGate gate = readGate(registry);
+
+        assertTrue(gate.tryEnterFreeze());
+        try (GateGuard ignored = new GateGuard(gate)) {
+            final SegmentRegistryResult<Segment<Integer, String>> result = registry
+                    .applySplitPlan(plan, lowerSegment, upperSegment);
+            assertSame(SegmentRegistryResultStatus.BUSY, result.getStatus());
+        }
+
+        cache.withLock(() -> {
+            assertSame(oldSegment, cache.getLocked(oldId));
+            assertNull(cache.getLocked(lowerId));
+            assertNull(cache.getLocked(upperId));
+        });
+    }
+
     private void stubSegmentConfig() {
         Mockito.when(conf.getMaxNumberOfKeysInSegmentWriteCache())
                 .thenReturn(5);
@@ -171,6 +240,19 @@ class SegmentRegistryImplTest {
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
                     "Unable to read gate for test", ex);
+        }
+    }
+
+    private SegmentRegistryCache<Integer, String> readCache(
+            final SegmentRegistryImpl<Integer, String> target) {
+        try {
+            final Field field = SegmentRegistryImpl.class
+                    .getDeclaredField("cache");
+            field.setAccessible(true);
+            return (SegmentRegistryCache<Integer, String>) field.get(target);
+        } catch (final ReflectiveOperationException ex) {
+            throw new IllegalStateException(
+                    "Unable to read cache for test", ex);
         }
     }
 

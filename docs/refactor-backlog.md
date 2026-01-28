@@ -2,38 +2,6 @@
 
 ## Active
 
-[ ] 53.1 Split “apply” DTO (Risk: LOW)
-    - Introduce a small DTO for split apply (oldId, lowerId, upperId,
-      min/max keys, status).
-    - Unit tests for DTO invariants.
-[ ] 53.2 Split worker extraction (Risk: MEDIUM)
-    - Refactor split execution to: open FULL_ISOLATION iterator, run split on
-      maintenance executor, return DTO without touching registry or map.
-    - Ensure iterator is closed in all paths.
-    - Unit tests for result wiring.
-[ ] 53.3 Registry apply entry point (Risk: MEDIUM)
-    - Add registry apply method that (a) FREEZE, (b) update cache
-      (remove old, add new ids), (c) exit FREEZE.
-    - Keep key‑map lock separate.
-    - Unit tests for cache mutation under FREEZE.
-[ ] 53.4 Key‑map persistence (Risk: MEDIUM)
-    - Update key‑to‑segment map using its own lock/adapter.
-    - Persist map file after in‑memory registry apply.
-    - Tests that map persistence order is enforced.
-[ ] 53.5 Old segment deletion (Risk: MEDIUM)
-    - Delete old segment directory only after map persistence and after
-      iterator/segment locks are released.
-    - Tests that deletion never happens before map persistence.
-[ ] 53.6 Lock order contract (Risk: LOW)
-    - Enforce lock order (segment → registry → map; release map → registry
-      → segment) and document in code.
-    - Add a small test or assertion helper to catch order violations.
-[ ] 53.7 Split concurrency scenarios (Risk: HIGH)
-    - Tests:
-      - split does not run under registry FREEZE (short window)
-      - split returns BUSY on lock conflict and retries safely
-      - concurrent get/put during split never sees missing segment mapping
-
 ## Planned
 
 ### High
@@ -353,3 +321,36 @@
 [x] 24 Switch registry API to `SegmentRegistryResult` (Risk: HIGH)
     - Introduce `SegmentRegistryLegacyAdapter` to keep old callers working.
     - Migrate call sites/tests, then remove legacy adapter.
+[x] 53.1 Split “apply” DTO (Risk: LOW)
+    - Introduce a small DTO for split apply (oldId, lowerId, upperId,
+      min/max keys, status).
+    - Unit tests for DTO invariants.
+[x] 53.2 Split worker extraction (Risk: MEDIUM)
+    - Refactor split execution to: open FULL_ISOLATION iterator, run split on
+      maintenance executor, return DTO without touching registry or map.
+    - Ensure iterator is closed in all paths.
+    - Unit tests for result wiring.
+[x] 53.3 Registry apply entry point (Risk: MEDIUM)
+    - Add registry apply method that (a) FREEZE, (b) update cache
+      (remove old, add new ids), (c) exit FREEZE.
+    - Keep key‑map lock separate.
+    - Unit tests for cache mutation under FREEZE.
+[x] 53.4 Key‑map persistence (Risk: MEDIUM)
+    - Update key‑to‑segment map using its own lock/adapter.
+    - Persist map file after in‑memory registry apply.
+    - Tests that map persistence order is enforced.
+[x] 53.5 Old segment deletion (Risk: MEDIUM)
+    - Delete old segment directory only after map persistence and after
+      iterator/segment locks are released.
+    - Tests that deletion never happens before map persistence.
+[x] 53.6 Lock order contract (Risk: LOW)
+    - Enforce lock order (segment → registry → map; release map → registry
+      → segment) and document in code.
+    - Add a small test or assertion helper to catch order violations.
+[x] 53.7 Split concurrency scenarios (Risk: HIGH)
+    - Tests:
+      - split does not run under registry FREEZE (short window)
+      - split returns BUSY on lock conflict and retries safely
+      - concurrent get/put during split never sees missing segment mapping
+
+

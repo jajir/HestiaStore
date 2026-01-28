@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
  * @param <K> key type
  * @param <V> value type
  */
-public class IndexConfigurationManager<K, V> {
+class IndexConfigurationManager<K, V> {
 
     private final IndexConfiguratonStorage<K, V> confStorage;
     private final Logger logger = LoggerFactory.getLogger(getClass());
