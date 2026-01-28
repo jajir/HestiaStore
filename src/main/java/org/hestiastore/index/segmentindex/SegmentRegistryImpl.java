@@ -120,10 +120,10 @@ class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
                     && cache.needsEvictionLocked(maxNumberOfSegmentsInCache,
                             splitsInFlight);
             if (needsCreate || needsEviction) {
-                try (FreezeGuard guard = new FreezeGuard(gate)) {
-                    if (!guard.isActive()) {
-                        return resultForState(gate.getState());
-                    }
+                if (state != SegmentRegistryState.READY) {
+                    return resultForState(state);
+                }
+                try {
                     if (needsCreate) {
                         existing = instantiateSegment(segmentId);
                         cache.putLocked(segmentId, existing);
@@ -188,9 +188,11 @@ class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         if (Boolean.getBoolean("hestiastore.enforceSplitLockOrder")) {
             final String keyMapLock = System
                     .getProperty("hestiastore.keyMapLockHeld");
-            if (!"true".equals(keyMapLock)) {
+            final String registryLock = System
+                    .getProperty("hestiastore.registryLockHeld");
+            if ("true".equals(keyMapLock) && !"true".equals(registryLock)) {
                 throw new IllegalStateException(
-                        "Split apply requires key-map lock before registry lock.");
+                        "Split apply requires registry lock before key-map lock.");
             }
         }
         validateSegmentIdMatch(lowerSegment, plan.getLowerSegmentId(),

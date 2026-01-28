@@ -74,7 +74,7 @@ class SegmentSplitCoordinatorTest {
         when(segment.getNumberOfKeysInCache()).thenReturn(10L);
         final EntryIterator<Integer, String> iterator = new EntryIteratorList<>(
                 List.of(Entry.of(1, "a")));
-        when(segment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
+        when(segment.openIterator(SegmentIteratorIsolation.FAIL_FAST))
                 .thenReturn(SegmentResult.ok(iterator));
 
         coordinator.optionallySplit(segment, 5L);

@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentindex;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -91,6 +92,20 @@ class SegmentIndexCoreTest {
     }
 
     @Test
+    void get_returnsBusyWhenMappingChangesDuringRead() {
+        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
+        when(segmentRegistry.getSegment(segmentId)).thenAnswer(invocation -> {
+            synchronizedKeyToSegmentMap.updateSegmentMaxKey(segmentId, "key-2");
+            return SegmentRegistryResult.ok(segment);
+        });
+        when(segment.get("key")).thenReturn(SegmentResult.ok("value"));
+
+        final IndexResult<String> result = core.get("key");
+
+        assertEquals(IndexResultStatus.BUSY, result.getStatus());
+    }
+
+    @Test
     void put_schedulesMaintenanceOnSuccess() {
         final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
         final KeyToSegmentMap.Snapshot<String> snapshot = synchronizedKeyToSegmentMap
@@ -104,6 +119,21 @@ class SegmentIndexCoreTest {
         assertEquals(IndexResultStatus.OK, result.getStatus());
         verify(maintenanceCoordinator).handlePostWrite(segment, "key",
                 segmentId, snapshot.version());
+    }
+
+    @Test
+    void put_returnsBusyWhenMappingChangesBeforeWrite() {
+        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
+        when(segmentRegistry.getSegment(segmentId)).thenAnswer(invocation -> {
+            synchronizedKeyToSegmentMap.updateSegmentMaxKey(segmentId, "key-2");
+            return SegmentRegistryResult.ok(segment);
+        });
+
+        final IndexResult<Void> result = core.put("key", "value");
+
+        assertEquals(IndexResultStatus.BUSY, result.getStatus());
+        verify(segment, never()).put("key", "value");
+        verifyNoInteractions(maintenanceCoordinator);
     }
 
     @Test

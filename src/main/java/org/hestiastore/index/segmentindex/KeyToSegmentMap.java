@@ -44,6 +44,8 @@ import org.slf4j.LoggerFactory;
 final class KeyToSegmentMap<K> extends AbstractCloseableResource {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
+    private static final boolean DEBUG_SPLIT_LOSS = Boolean
+            .getBoolean("hestiastore.debugSplitLoss");
     private static final TypeDescriptorSegmentId tdSegId = new TypeDescriptorSegmentId();
 
     private static final String FILE_NAME = "index.map";
@@ -329,6 +331,13 @@ final class KeyToSegmentMap<K> extends AbstractCloseableResource {
         if (upperMaxKey == null) {
             return false;
         }
+        if (DEBUG_SPLIT_LOSS) {
+            logger.warn(
+                    "Split debug: map apply oldSegmentId='{}', oldMaxKey='{}', lowerSegmentId='{}', lowerMaxKey='{}', status='{}', upperSegmentId='{}'.",
+                    oldSegmentId, upperMaxKey, lowerSegmentId,
+                    plan.getMaxKey(), plan.getStatus(),
+                    plan.getUpperSegmentId().orElse(null));
+        }
         insertSegment(plan.getMaxKey(), lowerSegmentId);
         if (plan.getStatus() == SegmentSplitterResult.SegmentSplittingStatus.SPLIT) {
             final SegmentId upperSegmentId = Vldtn.requireNonNull(
@@ -348,7 +357,7 @@ final class KeyToSegmentMap<K> extends AbstractCloseableResource {
                 "hestiastore.keyMapLockHeld");
         if (!"true".equals(keyMapLock)) {
             throw new IllegalStateException(
-                    "Split apply requires key-map lock before registry lock.");
+                    "Split apply requires key-map lock during map update.");
         }
         final String registryLock = System.getProperty(
                 "hestiastore.registryLockHeld");

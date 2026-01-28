@@ -2,6 +2,66 @@
 
 ## Active
 
+[ ] 59 Introduce `SegmentHandler` lock gate in segmentindex (Risk: HIGH)
+    - Add `SegmentHandler` with `getSegment()` returning `SegmentHandlerResult`:
+      `OK` (segment), `LOCKED`, and handler states `READY`/`LOCKED`.
+    - `lock()` returns a privileged handle/token that allows access to the
+      underlying segment while handler state is `LOCKED`.
+    - `getSegment()` must return `LOCKED` while locked for all non-privileged
+      callers (no segment exposure during lock).
+    - Wire split flow to lock via handler before opening `FULL_ISOLATION`
+      iterator, then unlock after apply/cleanup.
+    - Add tests: `LOCKED` is returned during lock; lock holder can operate;
+      unlock restores `OK`.
+[ ] 60 Move registry implementation to `segmentregistry` package (Risk: MEDIUM)
+    - Move `SegmentRegistryImpl`, `SegmentRegistryGate`, `SegmentRegistryCache`,
+      `SegmentRegistryState`, `SegmentRegistryResult`, and `SegmentDirectorySwap`
+      to `org.hestiastore.index.segmentregistry`.
+    - Update imports/usages in `segmentindex` and tests.
+    - Keep public API surface the same; verify no package-private access leaks.
+[ ] 61.1 Wire `SegmentHandler` into key-to-segment map usage (Risk: HIGH)
+    - Replace direct segment references in key-to-segment map paths with
+      `SegmentHandler` usage.
+    - Ensure handlers are used consistently for segment access in index flows.
+[ ] 61.2 Refactor split algorithm around handler locks (Risk: HIGH)
+    - When a segment is eligible for split: acquire handler lock, re-check
+      eligibility under lock, then either unlock or proceed with split.
+    - Split apply ordering: update map on disk first, then in-memory map,
+      then close old segment, delete files, and finally unlock.
+    - Ensure failures unlock the handler and clean up temporary segments.
+    - Update `docs/architecture/registry.md` to reflect handler-based locking.
+[x] 58.1 Split: keep split IO outside registry freeze (Risk: HIGH)
+    - `SegmentSplitCoordinator.split(...)`: ensure all IO (iterator open, writes)
+      happens before any registry `FREEZE`.
+    - `SegmentSplitStepOpenIterator`: keep `FULL_ISOLATION` acquisition once per split.
+    - `SegmentSplitCoordinator.hasLiveEntries(...)`: now uses `FAIL_FAST` to
+      avoid a second `FULL_ISOLATION` lock.
+    - Tests may fail if ordering assumptions change; fix after step 58.4.
+[x] 58.2 Split: invert lock order for apply phase (Risk: HIGH)
+    - `SegmentSplitCoordinator.applySplitPlan(...)`: remove outer
+      `keyToSegmentMap.withWriteLock(...)`.
+    - `SegmentRegistryImpl.applySplitPlan(...)`: acquire registry freeze first,
+      then call `onApplied` which acquires key-map write lock.
+    - Update lock-order enforcement flags to match registry -> key-map.
+[x] 58.3 Split: propagate lock-order flags into key-map adapter (Risk: MEDIUM)
+    - `KeyToSegmentMapSynchronizedAdapter`: set/clear `keyMapLockHeld` around
+      write-lock acquisition when enforcement is enabled.
+    - Ensure registry checks validate `registryLockHeld` before key-map lock.
+[x] 58.4 Split: finalize apply/cleanup ordering (Risk: MEDIUM)
+    - Ensure apply evicts old segment instance and closes it via
+      `SegmentRegistryImpl.closeSegmentInstance(...)`.
+    - Keep key-map flush outside registry freeze:
+      `keyToSegmentMap.optionalyFlush()` only after apply OK.
+    - Delete old segment files only after apply succeeds and locks released.
+[x] 58.5 Split: test alignment (Risk: MEDIUM)
+    - Add/update tests to assert no directory swap in split flow.
+    - Add tests for enforced lock order (registry -> key-map).
+    - Add tests for split failure cleanup of new segments.
+[ ] 59.1 Concurrency: remove lock-order inversion in core ops (Risk: HIGH)
+    - `SegmentIndexCore.get/put`: avoid holding key-map read lock while calling
+      `SegmentRegistry.getSegment` or touching segments.
+    - Use key-map snapshot + version re-check on retry/BUSY paths.
+    - Tests: `IntegrationSegmentIndexConcurrencyTest` + new split/put stress.
 ## Planned
 
 ### High
@@ -169,6 +229,19 @@
 ## Done (Archive)
 
 - (keep completed items here; do not delete)
+
+[x] 59.2 Concurrency: reduce redundant key-map read locks (Risk: MEDIUM)
+    - Make `KeyToSegmentMapSynchronizedAdapter.snapshot()` lock-free
+      (volatile snapshot + AtomicLong version).
+    - Keep read locks only for map-only operations; do not wrap segment calls.
+    - Tests: snapshot consistency + existing `KeyToSegmentMapTest`.
+
+[x] 59.3 Concurrency: limit registry FREEZE to split apply (Risk: MEDIUM)
+    - Remove `FreezeGuard` usage from `SegmentRegistryImpl.getSegment` create/
+      eviction path; keep cache lock for LRU safety.
+    - Reserve registry `FREEZE` for split apply only.
+    - Tests: split + eviction concurrency (`SegmentRegistryCacheTest`,
+      `SegmentSplitCoordinatorConcurrencyTest`, integration stress).
 
 [x] 52 Remove automatic compaction from `segmentindex` (Risk: MEDIUM)
     - Drop pre-split compaction in `SegmentSplitCoordinator` and remove
@@ -352,5 +425,3 @@
       - split does not run under registry FREEZE (short window)
       - split returns BUSY on lock conflict and retries safely
       - concurrent get/put during split never sees missing segment mapping
-
-

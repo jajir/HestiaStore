@@ -23,16 +23,28 @@ class SegmentSplitCoordinator<K, V> {
     private final IndexConfiguration<K, V> conf;
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
     private final SegmentRegistryImpl<K, V> segmentRegistry;
+    private final SegmentIndexSplitPolicy<K, V> splitPolicy;
     private final IndexRetryPolicy retryPolicy;
+    private static final boolean DEBUG_SPLIT_LOSS = Boolean
+            .getBoolean("hestiastore.debugSplitLoss");
 
     SegmentSplitCoordinator(final IndexConfiguration<K, V> conf,
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
             final SegmentRegistryImpl<K, V> segmentRegistry) {
+        this(conf, keyToSegmentMap, segmentRegistry,
+                new SegmentIndexSplitPolicyThreshold<>());
+    }
+
+    SegmentSplitCoordinator(final IndexConfiguration<K, V> conf,
+            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final SegmentRegistryImpl<K, V> segmentRegistry,
+            final SegmentIndexSplitPolicy<K, V> splitPolicy) {
         this.conf = Vldtn.requireNonNull(conf, "conf");
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
+        this.splitPolicy = Vldtn.requireNonNull(splitPolicy, "splitPolicy");
         this.retryPolicy = new IndexRetryPolicy(
                 conf.getIndexBusyBackoffMillis(),
                 conf.getIndexBusyTimeoutMillis());
@@ -72,7 +84,7 @@ class SegmentSplitCoordinator<K, V> {
 
     boolean shouldBeSplit(final Segment<K, V> segment,
             final long maxNumberOfKeysInSegment) {
-        return segment.getNumberOfKeysInCache() >= maxNumberOfKeysInSegment;
+        return splitPolicy.shouldSplit(segment, maxNumberOfKeysInSegment);
     }
 
     private boolean split(final Segment<K, V> segment,
@@ -82,7 +94,6 @@ class SegmentSplitCoordinator<K, V> {
         if (!segmentRegistry.isSegmentInstance(segmentId, segment)) {
             return false;
         }
-        final long mapVersion = keyToSegmentMap.snapshot().version();
         final SegmentId lowerSegmentId = keyToSegmentMap.findNewSegmentId();
         final SegmentId upperSegmentId = keyToSegmentMap.findNewSegmentId();
         final SegmentWriterTxFactory<K, V> writerTxFactory = id -> segmentRegistry
@@ -95,14 +106,15 @@ class SegmentSplitCoordinator<K, V> {
         SegmentSplitter.SplitExecution<K, V> execution = splitter
                 .splitWithIterator(lowerSegmentId, upperSegmentId, plan);
         try {
-            applyPlan = toApplyPlan(
-                    segmentId, upperSegmentId, execution.getResult());
-            if (keyToSegmentMap.snapshot().version() != mapVersion) {
-                deleteSplitSegments(lowerSegmentId, upperSegmentId);
-                return false;
-            }
+            applyPlan = toApplyPlan(segmentId, upperSegmentId,
+                    execution.getResult());
             applyResult = applySplitPlan(applyPlan);
             if (!applyResult.isOk()) {
+                if (DEBUG_SPLIT_LOSS) {
+                    logger.warn(
+                            "Split debug: apply failed for segment '{}', status '{}'.",
+                            segmentId, applyResult.getStatus());
+                }
                 deleteSplitSegments(lowerSegmentId, upperSegmentId);
                 return false;
             }
@@ -152,7 +164,7 @@ class SegmentSplitCoordinator<K, V> {
         final long startNanos = retryPolicy.startNanos();
         while (true) {
             final SegmentResult<EntryIterator<K, V>> result = segment
-                    .openIterator(SegmentIteratorIsolation.FULL_ISOLATION);
+                    .openIterator(SegmentIteratorIsolation.FAIL_FAST);
             if (result.getStatus() == SegmentResultStatus.OK) {
                 try (EntryIterator<K, V> iterator = result.getValue()) {
                     return iterator.hasNext();
@@ -163,24 +175,22 @@ class SegmentSplitCoordinator<K, V> {
                         segment.getId());
                 continue;
             }
-            throw new IndexException(String.format(
-                    "Segment '%s' failed to open iterator: %s",
-                    segment.getId(), result.getStatus()));
+            throw new IndexException(
+                    String.format("Segment '%s' failed to open iterator: %s",
+                            segment.getId(), result.getStatus()));
         }
     }
 
     SegmentRegistryResult<Segment<K, V>> applySplitPlan(
             final SegmentSplitApplyPlan<K, V> plan) {
         Vldtn.requireNonNull(plan, "plan");
-        return keyToSegmentMap.withWriteLock(() -> {
-            final SegmentRegistryResult<Segment<K, V>> applyResult = segmentRegistry
-                    .applySplitPlan(plan, null, null,
-                            () -> keyToSegmentMap.applySplitPlan(plan));
-            if (!applyResult.isOk()) {
-                return applyResult;
-            }
-            keyToSegmentMap.optionalyFlush();
+        final SegmentRegistryResult<Segment<K, V>> applyResult = segmentRegistry
+                .applySplitPlan(plan, null, null,
+                        () -> keyToSegmentMap.applySplitPlan(plan));
+        if (!applyResult.isOk()) {
             return applyResult;
-        });
+        }
+        keyToSegmentMap.optionalyFlush();
+        return applyResult;
     }
 }
