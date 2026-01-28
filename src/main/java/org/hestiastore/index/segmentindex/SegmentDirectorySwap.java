@@ -117,13 +117,23 @@ final class SegmentDirectorySwap {
         try (Stream<String> files = directory.getFileNamesAsync()
                 .toCompletableFuture().join()) {
             files.forEach(fileName -> {
+                boolean deleted = false;
                 try {
-                    if (directory.deleteFileAsync(fileName).toCompletableFuture()
-                            .join()) {
+                    deleted = directory.deleteFileAsync(fileName)
+                            .toCompletableFuture().join();
+                    if (deleted) {
                         return;
                     }
                 } catch (final RuntimeException e) {
                     // fall through to directory cleanup
+                }
+                try {
+                    if (!directory.isFileExistsAsync(fileName)
+                            .toCompletableFuture().join()) {
+                        return;
+                    }
+                } catch (final RuntimeException e) {
+                    return;
                 }
                 try {
                     final AsyncDirectory subDirectory = directory

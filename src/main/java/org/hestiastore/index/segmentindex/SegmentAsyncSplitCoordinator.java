@@ -109,8 +109,8 @@ final class SegmentAsyncSplitCoordinator<K, V> {
                 segmentRegistry.markSplitInFlight(segmentId);
                 handle.markStarted();
                 try {
-                    final boolean split = splitCoordinator.optionallySplit(
-                            segment, maxNumberOfKeysInSegment);
+                    final boolean split = splitCoordinator
+                            .optionallySplit(segment, maxNumberOfKeysInSegment);
                     handle.complete(split);
                 } catch (final Throwable t) {
                     handle.completeExceptionally(t);
@@ -122,8 +122,7 @@ final class SegmentAsyncSplitCoordinator<K, V> {
         } catch (final RuntimeException e) {
             handle.completeExceptionally(e);
             throw new IndexException(String.format(
-                    "Split scheduling failed for segment '%s'.", segmentId),
-                    e);
+                    "Split scheduling failed for segment '%s'.", segmentId), e);
         }
         return inFlight;
     }
@@ -144,17 +143,14 @@ final class SegmentAsyncSplitCoordinator<K, V> {
                 Thread.currentThread().interrupt();
                 throw new IndexException(String.format(
                         "Split scheduling interrupted for segment '%s'.",
-                        segmentId),
-                        e);
+                        segmentId), e);
             } catch (final TimeoutException e) {
                 throw new IndexException(String.format(
                         "Split scheduling timed out after %d ms for segment '%s'.",
-                        timeoutMillis, segmentId),
-                        e);
+                        timeoutMillis, segmentId), e);
             } catch (final ExecutionException e) {
                 throw new IndexException(String.format(
-                        "Split scheduling failed for segment '%s'.",
-                        segmentId),
+                        "Split scheduling failed for segment '%s'.", segmentId),
                         e.getCause());
             }
         }
@@ -166,17 +162,14 @@ final class SegmentAsyncSplitCoordinator<K, V> {
                 Thread.currentThread().interrupt();
                 throw new IndexException(String.format(
                         "Split completion interrupted for segment '%s'.",
-                        segmentId),
-                        e);
+                        segmentId), e);
             } catch (final TimeoutException e) {
                 throw new IndexException(String.format(
                         "Split completion timed out after %d ms for segment '%s'.",
-                        timeoutMillis, segmentId),
-                        e);
+                        timeoutMillis, segmentId), e);
             } catch (final ExecutionException e) {
                 throw new IndexException(String.format(
-                        "Split completion failed for segment '%s'.",
-                        segmentId),
+                        "Split completion failed for segment '%s'.", segmentId),
                         e.getCause());
             }
         }

@@ -55,6 +55,7 @@ class SegmentAsyncSplitCoordinatorTest {
             submissions.incrementAndGet();
             scheduled.set(command);
         };
+        when(segment.getNumberOfKeysInCache()).thenReturn(10L);
         when(splitCoordinator.optionallySplit(segment, 10L)).thenReturn(true);
 
         final SegmentAsyncSplitCoordinator<Integer, String> coordinator = new SegmentAsyncSplitCoordinator<>(

@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentindex;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -103,6 +104,45 @@ class SegmentSplitCoordinatorConcurrencyTest {
         assertTrue(coordinator.applySplitPlan(plan).isOk());
         assertEquals(List.of(SegmentId.of(2), SegmentId.of(3), SegmentId.of(4)),
                 keyToSegmentMap.getSegmentIds());
+    }
+
+    @Test
+    void applySplitPlan_requires_registry_lock_before_key_map_when_enforced() {
+        final SegmentSplitApplyPlan<Integer, String> plan = new SegmentSplitApplyPlan<>(
+                SegmentId.of(1), SegmentId.of(2), SegmentId.of(3), 1, 5,
+                SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
+        final String previousEnforce = System.getProperty(
+                "hestiastore.enforceSplitLockOrder");
+        final String previousRegistry = System.getProperty(
+                "hestiastore.registryLockHeld");
+        final String previousKeyMap = System.getProperty(
+                "hestiastore.keyMapLockHeld");
+        System.setProperty("hestiastore.enforceSplitLockOrder", "true");
+        System.clearProperty("hestiastore.registryLockHeld");
+        System.setProperty("hestiastore.keyMapLockHeld", "true");
+        try {
+            assertThrows(IllegalStateException.class,
+                    () -> registry.applySplitPlan(plan, null, null, () -> true));
+        } finally {
+            if (previousEnforce == null) {
+                System.clearProperty("hestiastore.enforceSplitLockOrder");
+            } else {
+                System.setProperty("hestiastore.enforceSplitLockOrder",
+                        previousEnforce);
+            }
+            if (previousRegistry == null) {
+                System.clearProperty("hestiastore.registryLockHeld");
+            } else {
+                System.setProperty("hestiastore.registryLockHeld",
+                        previousRegistry);
+            }
+            if (previousKeyMap == null) {
+                System.clearProperty("hestiastore.keyMapLockHeld");
+            } else {
+                System.setProperty("hestiastore.keyMapLockHeld",
+                        previousKeyMap);
+            }
+        }
     }
 
     private KeyToSegmentMap<Integer> newCacheWithEntries(
