@@ -8,7 +8,6 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
-import org.hestiastore.index.segment.SegmentState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,80 +82,64 @@ class SegmentSplitCoordinator<K, V> {
         if (!segmentRegistry.isSegmentInstance(segmentId, segment)) {
             return false;
         }
+        final long mapVersion = keyToSegmentMap.snapshot().version();
         final SegmentId lowerSegmentId = keyToSegmentMap.findNewSegmentId();
         final SegmentId upperSegmentId = keyToSegmentMap.findNewSegmentId();
         final SegmentWriterTxFactory<K, V> writerTxFactory = id -> segmentRegistry
                 .newSegmentBuilder(id).openWriterTx();
         final SegmentSplitter<K, V> splitter = new SegmentSplitter<>(segment,
                 writerTxFactory);
-        final SegmentSplitter.SplitExecution<K, V> execution = splitter
+        final SegmentSplitApplyPlan<K, V> applyPlan;
+        final SegmentRegistryResult<Segment<K, V>> applyResult;
+        final Segment<K, V> removed;
+        SegmentSplitter.SplitExecution<K, V> execution = splitter
                 .splitWithIterator(lowerSegmentId, upperSegmentId, plan);
-        final SegmentSplitterResult<K, V> result;
         try {
-            result = execution.getResult();
+            applyPlan = toApplyPlan(
+                    segmentId, upperSegmentId, execution.getResult());
+            if (keyToSegmentMap.snapshot().version() != mapVersion) {
+                deleteSplitSegments(lowerSegmentId, upperSegmentId);
+                return false;
+            }
+            applyResult = applySplitPlan(applyPlan);
+            if (!applyResult.isOk()) {
+                deleteSplitSegments(lowerSegmentId, upperSegmentId);
+                return false;
+            }
+            removed = applyResult.getValue();
         } finally {
             execution.close();
         }
-        final SplitOutcome outcome = doSplit(segment, segmentId,
-                upperSegmentId, result);
-        if (outcome != null) {
-            if (outcome.evictSegmentId != null) {
-                segmentRegistry.evictSegmentIfSame(outcome.evictSegmentId,
-                        segment);
-            }
-            if (outcome.removeSegmentId != null) {
-                segmentRegistry.removeSegment(outcome.removeSegmentId);
-            }
-            return outcome.splitApplied;
+        if (removed != null) {
+            segmentRegistry.closeSegmentInstance(removed);
         }
-        return false;
+        segmentRegistry.deleteSegmentFiles(applyPlan.getOldSegmentId());
+        return true;
     }
 
-    private SplitOutcome doSplit(final Segment<K, V> segment,
-            final SegmentId segmentId, final SegmentId upperSegmentId,
+    private void deleteSplitSegments(final SegmentId lowerSegmentId,
+            final SegmentId upperSegmentId) {
+        segmentRegistry.deleteSegmentFiles(lowerSegmentId);
+        if (upperSegmentId != null) {
+            segmentRegistry.deleteSegmentFiles(upperSegmentId);
+        }
+    }
+
+    static <K, V> SegmentSplitApplyPlan<K, V> toApplyPlan(
+            final SegmentId oldSegmentId, final SegmentId upperSegmentId,
             final SegmentSplitterResult<K, V> result) {
+        Vldtn.requireNonNull(oldSegmentId, "oldSegmentId");
+        Vldtn.requireNonNull(result, "result");
+        final SegmentId resolvedUpperId;
         if (result.isSplit()) {
-            keyToSegmentMap.insertSegment(result.getMaxKey(),
-                    result.getSegmentId());
-            keyToSegmentMap.optionalyFlush();
-            replaceCurrentWithSegment(segmentId, upperSegmentId);
-            logger.debug("Splitting of segment '{}' to '{}' is done.",
-                    segmentId, result.getSegmentId());
-            final SplitOutcome outcome = new SplitOutcome(true, segmentId,
-                    null);
-            if (segment.getState() != SegmentState.CLOSED) {
-                segment.close();
-            }
-            return outcome;
+            resolvedUpperId = Vldtn.requireNonNull(upperSegmentId,
+                    "upperSegmentId");
         } else {
-            replaceCurrentWithSegment(segmentId, result.getSegmentId());
-            keyToSegmentMap.updateSegmentMaxKey(segmentId, result.getMaxKey());
-            keyToSegmentMap.optionalyFlush();
-            logger.debug(
-                    "Splitting of segment '{}' is done, "
-                            + "but it resulted in a replacement segment.",
-                    segmentId, result.getSegmentId());
-            final SplitOutcome outcome = new SplitOutcome(true, segmentId,
-                    result.getSegmentId());
-            if (segment.getState() != SegmentState.CLOSED) {
-                segment.close();
-            }
-            return outcome;
+            resolvedUpperId = null;
         }
-    }
-
-    private static final class SplitOutcome {
-        private final boolean splitApplied;
-        private final SegmentId evictSegmentId;
-        private final SegmentId removeSegmentId;
-
-        private SplitOutcome(final boolean splitApplied,
-                final SegmentId evictSegmentId,
-                final SegmentId removeSegmentId) {
-            this.splitApplied = splitApplied;
-            this.evictSegmentId = evictSegmentId;
-            this.removeSegmentId = removeSegmentId;
-        }
+        return new SegmentSplitApplyPlan<>(oldSegmentId, result.getSegmentId(),
+                resolvedUpperId, result.getMinKey(), result.getMaxKey(),
+                result.getStatus());
     }
 
     private SegmentSplitterPolicy<K, V> createPolicy(
@@ -186,11 +169,18 @@ class SegmentSplitCoordinator<K, V> {
         }
     }
 
-    private void replaceCurrentWithSegment(final SegmentId segmentId,
-            final SegmentId replacementSegmentId) {
-        segmentRegistry.executeWithRegistryLock(() -> {
-            segmentRegistry.swapSegmentDirectories(segmentId,
-                    replacementSegmentId);
+    SegmentRegistryResult<Segment<K, V>> applySplitPlan(
+            final SegmentSplitApplyPlan<K, V> plan) {
+        Vldtn.requireNonNull(plan, "plan");
+        return keyToSegmentMap.withWriteLock(() -> {
+            final SegmentRegistryResult<Segment<K, V>> applyResult = segmentRegistry
+                    .applySplitPlan(plan, null, null,
+                            () -> keyToSegmentMap.applySplitPlan(plan));
+            if (!applyResult.isOk()) {
+                return applyResult;
+            }
+            keyToSegmentMap.optionalyFlush();
+            return applyResult;
         });
     }
 }

@@ -137,6 +137,11 @@ and **apply** under a short registry freeze.
   synchronization. Always use the map’s lock/adapter when mutating or reading
   the on‑disk map, because other index operations may bypass the registry lock.
 
+- **Lock order (apply phase)**  
+  During split apply, acquire the registry lock/freeze first and then the
+  key‑map lock. Release in reverse order. This ordering is the only allowed
+  path for split map updates to avoid deadlocks.
+
 - **Registry freeze is not held during split IO**  
   The split worker writes new segment files without holding registry `FREEZE`.
 

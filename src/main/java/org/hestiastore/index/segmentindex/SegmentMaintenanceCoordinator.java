@@ -30,6 +30,9 @@ final class SegmentMaintenanceCoordinator<K, V> {
 
     void handlePostWrite(final Segment<K, V> segment, final K key,
             final SegmentId segmentId, final long mappingVersion) {
+        if (Boolean.getBoolean("hestiastore.disableSplits")) {
+            return;
+        }
         final Integer maxWriteCacheKeys = conf
                 .getMaxNumberOfKeysInSegmentWriteCache();
         if (maxWriteCacheKeys == null || maxWriteCacheKeys < 1) {

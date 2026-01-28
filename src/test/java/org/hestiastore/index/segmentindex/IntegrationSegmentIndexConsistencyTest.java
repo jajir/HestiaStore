@@ -11,6 +11,7 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -44,7 +45,8 @@ class IntegrationSegmentIndexConsistencyTest extends AbstractSegmentIndexTest {
             writeEntries(index, makeList(i));
             index.flush();
             awaitMaintenanceIdle(index);
-            verifyIndexData(index, makeList(i));
+            verifyIndexData(index, makeList(i),
+                    SegmentIteratorIsolation.FULL_ISOLATION);
         }
     }
 
@@ -65,7 +67,8 @@ class IntegrationSegmentIndexConsistencyTest extends AbstractSegmentIndexTest {
                 int cx = acx.incrementAndGet();
                 writeEntries(index, makeList(cx));
                 logger.debug("{} {}", cx, entry);
-                verifyIndexData(index, makeList(cx));
+                verifyIndexData(index, makeList(cx),
+                        SegmentIteratorIsolation.FULL_ISOLATION);
             });
         }
     }

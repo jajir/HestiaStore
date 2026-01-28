@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex;
 
+import static org.hestiastore.index.AbstractDataTest.verifySegmentIndexData;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -12,6 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
@@ -29,12 +31,12 @@ class IntegrationSegmentIndexConcurrencyTest {
     void parallel_puts_and_gets_on_different_keys() throws Exception {
         final Directory directory = new MemDirectory();
         final SegmentIndex<Integer, String> index = newIndex(directory, 4, 1);
-        final ExecutorService executor = Executors.newFixedThreadPool(4);
+        final ExecutorService executor = Executors.newFixedThreadPool(40);
         try {
             final List<CompletableFuture<Void>> writes = new ArrayList<>();
             final CountDownLatch start = new CountDownLatch(1);
-            IntStream.range(0, 50).forEach(i -> writes.add(
-                    CompletableFuture.runAsync(() -> {
+            IntStream.range(0, 50)
+                    .forEach(i -> writes.add(CompletableFuture.runAsync(() -> {
                         try {
                             start.await();
                         } catch (final InterruptedException e) {
@@ -50,10 +52,9 @@ class IntegrationSegmentIndexConcurrencyTest {
 
             index.flushAndWait();
 
-            IntStream.range(0, 50).forEach(
-                    i -> assertEquals("v-" + i, index.get(i)));
-            assertEquals(50,
-                    index.getStream(SegmentWindow.unbounded()).count());
+            final List<Entry<Integer, String>> expected = IntStream.range(0, 50)
+                    .mapToObj(i -> Entry.of(i, "v-" + i)).toList();
+            verifySegmentIndexData(index, expected);
         } finally {
             executor.shutdownNow();
             index.close();
@@ -140,8 +141,7 @@ class IntegrationSegmentIndexConcurrencyTest {
             index.flushAndWait();
             index.compactAndWait();
             final long count = index.getStream(SegmentWindow.unbounded(),
-                    SegmentIteratorIsolation.FULL_ISOLATION)
-                    .count();
+                    SegmentIteratorIsolation.FULL_ISOLATION).count();
             assertTrue(count >= 40, "Expected at least 40 entries");
         } finally {
             index.close();

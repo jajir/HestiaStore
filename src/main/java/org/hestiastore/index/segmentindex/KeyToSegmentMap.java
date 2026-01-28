@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  *
  * @param <K>
  */
-public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
+final class KeyToSegmentMap<K> extends AbstractCloseableResource {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private static final TypeDescriptorSegmentId tdSegId = new TypeDescriptorSegmentId();
@@ -51,7 +51,7 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
     /**
      * When new index is created than this is id of first segment.
      */
-    public static final SegmentId FIRST_SEGMENT_ID = SegmentId.of(0);
+    private static final SegmentId FIRST_SEGMENT_ID = SegmentId.of(0);
 
     private TreeMap<K, SegmentId> list;
     private volatile TreeMap<K, SegmentId> snapshot;
@@ -92,7 +92,7 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
     /**
      * Verify, that all segment ids are unique.
      */
-    public void checkUniqueSegmentIds() {
+    void checkUniqueSegmentIds() {
         ensureOpen();
         final TreeMap<K, SegmentId> current = snapshot;
         final HashMap<SegmentId, K> tmp = new HashMap<SegmentId, K>();
@@ -121,7 +121,7 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
      * @param key key to look up
      * @return segment id or {@code null} when not mapped
      */
-    public SegmentId findSegmentId(final K key) {
+    SegmentId findSegmentId(final K key) {
         ensureOpen();
         Vldtn.requireNonNull(key, "key");
         final Entry<K, SegmentId> entry = localFindSegmentForKey(key, snapshot);
@@ -152,7 +152,7 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
      *
      * @return new segment id
      */
-    public SegmentId findNewSegmentId() {
+    SegmentId findNewSegmentId() {
         ensureOpen();
         return SegmentId.of(nextSegmentId.getAndIncrement());
     }
@@ -188,7 +188,7 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
      * @param key key to map
      * @return segment id assigned to the key
      */
-    public SegmentId insertKeyToSegment(final K key) {
+    SegmentId insertKeyToSegment(final K key) {
         ensureOpen();
         Vldtn.requireNonNull(key, "key");
         final Entry<K, SegmentId> entry = localFindSegmentForKey(key, list);
@@ -240,7 +240,7 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
      * @param key key to map
      * @param segmentId segment id to associate
      */
-    public void insertSegment(final K key, final SegmentId segmentId) {
+    void insertSegment(final K key, final SegmentId segmentId) {
         ensureOpen();
         Vldtn.requireNonNull(key, "key");
         if (list.containsValue(segmentId)) {
@@ -291,25 +291,70 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
      *
      * @param segmentId segment id to remove
      */
-    public void removeSegment(final SegmentId segmentId) {
+    void removeSegment(final SegmentId segmentId) {
+        removeSegmentAndReturnMaxKey(segmentId);
+    }
+
+    K removeSegmentAndReturnMaxKey(final SegmentId segmentId) {
         ensureOpen();
         Vldtn.requireNonNull(segmentId, "segmentId");
         if (list.isEmpty()) {
-            return;
+            return null;
         }
         boolean removed = false;
+        K removedKey = null;
         final java.util.Iterator<Map.Entry<K, SegmentId>> iterator = list
                 .entrySet().iterator();
         while (iterator.hasNext()) {
             final Map.Entry<K, SegmentId> entry = iterator.next();
             if (segmentId.equals(entry.getValue())) {
                 iterator.remove();
+                removedKey = entry.getKey();
                 removed = true;
             }
         }
         if (removed) {
             refreshSnapshot();
             isDirty = true;
+        }
+        return removedKey;
+    }
+
+    boolean applySplitPlan(final SegmentSplitApplyPlan<K, ?> plan) {
+        ensureSplitApplyLockOrder();
+        Vldtn.requireNonNull(plan, "plan");
+        final SegmentId oldSegmentId = plan.getOldSegmentId();
+        final SegmentId lowerSegmentId = plan.getLowerSegmentId();
+        final K upperMaxKey = removeSegmentAndReturnMaxKey(oldSegmentId);
+        if (upperMaxKey == null) {
+            return false;
+        }
+        insertSegment(plan.getMaxKey(), lowerSegmentId);
+        if (plan.getStatus() == SegmentSplitterResult.SegmentSplittingStatus.SPLIT) {
+            final SegmentId upperSegmentId = Vldtn.requireNonNull(
+                    plan.getUpperSegmentId().orElse(null), "upperSegmentId");
+            insertSegment(upperMaxKey, upperSegmentId);
+        }
+        return true;
+    }
+
+    private void ensureSplitApplyLockOrder() {
+        final String lockOrder = System.getProperty(
+                "hestiastore.enforceSplitLockOrder");
+        if (!"true".equals(lockOrder)) {
+            return;
+        }
+        final String keyMapLock = System.getProperty(
+                "hestiastore.keyMapLockHeld");
+        if (!"true".equals(keyMapLock)) {
+            throw new IllegalStateException(
+                    "Split apply requires key-map lock before registry lock.");
+        }
+        final String registryLock = System.getProperty(
+                "hestiastore.registryLockHeld");
+        if (!"true".equals(registryLock)) {
+            throw new IllegalStateException(
+                    "Split apply requires registry lock during key-map update.");
         }
     }
 
@@ -318,7 +363,7 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
      *
      * @return stream of entries
      */
-    public Stream<Entry<K, SegmentId>> getSegmentsAsStream() {
+    Stream<Entry<K, SegmentId>> getSegmentsAsStream() {
         ensureOpen();
         return snapshotSegments().stream();
     }
@@ -328,7 +373,7 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
      *
      * @return ordered list of segment ids
      */
-    public List<SegmentId> getSegmentIds() {
+    List<SegmentId> getSegmentIds() {
         ensureOpen();
         return getSegmentIds(SegmentWindow.unbounded());
     }
@@ -339,7 +384,7 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
      * @param segmentWindow window to apply
      * @return ordered list of segment ids
      */
-    public List<SegmentId> getSegmentIds(SegmentWindow segmentWindow) {
+    List<SegmentId> getSegmentIds(SegmentWindow segmentWindow) {
         ensureOpen();
         return snapshot.entrySet().stream()//
                 .skip(segmentWindow.getIntOffset())//
@@ -352,7 +397,7 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
      * Flushes all changes to disk if there are any. This method is
      * automatically called when this cache is closed.
      */
-    public void optionalyFlush() {
+    void optionalyFlush() {
         ensureOpen();
         flushIfDirty();
     }

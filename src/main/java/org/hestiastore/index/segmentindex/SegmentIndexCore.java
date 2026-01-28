@@ -31,78 +31,84 @@ final class SegmentIndexCore<K, V> {
     }
 
     IndexResult<V> get(final K key) {
-        final SegmentId segmentId = keyToSegmentMap.findSegmentId(key);
-        if (segmentId == null) {
-            return IndexResult.ok(null);
-        }
-        final SegmentRegistryResult<Segment<K, V>> segmentResult = segmentRegistry
-                .getSegment(segmentId);
-        if (segmentResult.getStatus() == SegmentRegistryResultStatus.BUSY) {
-            return IndexResult.busy();
-        }
-        if (segmentResult.getStatus() == SegmentRegistryResultStatus.CLOSED) {
-            return IndexResult.closed();
-        }
-        if (segmentResult.getStatus() != SegmentRegistryResultStatus.OK) {
+        return keyToSegmentMap.withReadLock(() -> {
+            final KeyToSegmentMap.Snapshot<K> snapshot = keyToSegmentMap
+                    .snapshot();
+            final SegmentId segmentId = snapshot.findSegmentId(key);
+            if (segmentId == null) {
+                return IndexResult.ok(null);
+            }
+            final SegmentRegistryResult<Segment<K, V>> segmentResult = segmentRegistry
+                    .getSegment(segmentId);
+            if (segmentResult
+                    .getStatus() == SegmentRegistryResultStatus.BUSY) {
+                return IndexResult.busy();
+            }
+            if (segmentResult
+                    .getStatus() == SegmentRegistryResultStatus.CLOSED) {
+                return IndexResult.closed();
+            }
+            if (segmentResult.getStatus() != SegmentRegistryResultStatus.OK) {
+                return IndexResult.error();
+            }
+            final Segment<K, V> segment = segmentResult.getValue();
+            final SegmentResult<V> result = segment.get(key);
+            if (result.getStatus() == SegmentResultStatus.OK) {
+                return IndexResult.ok(result.getValue());
+            }
+            if (result.getStatus() == SegmentResultStatus.BUSY) {
+                return IndexResult.busy();
+            }
+            if (result.getStatus() == SegmentResultStatus.CLOSED) {
+                return IndexResult.closed();
+            }
             return IndexResult.error();
-        }
-        final Segment<K, V> segment = segmentResult.getValue();
-        final SegmentResult<V> result = segment.get(key);
-        if (result.getStatus() == SegmentResultStatus.OK) {
-            return IndexResult.ok(result.getValue());
-        }
-        if (result.getStatus() == SegmentResultStatus.BUSY) {
-            return IndexResult.busy();
-        }
-        if (result.getStatus() == SegmentResultStatus.CLOSED) {
-            return IndexResult.closed();
-        }
-        return IndexResult.error();
+        });
     }
 
     IndexResult<Void> put(final K key, final V value) {
-        KeyToSegmentMap.Snapshot<K> snapshot = keyToSegmentMap.snapshot();
-        SegmentId segmentId = snapshot.findSegmentId(key);
-        if (segmentId == null) {
+        final KeyToSegmentMap.Snapshot<K> snapshot = keyToSegmentMap.snapshot();
+        if (snapshot.findSegmentId(key) == null) {
             if (!keyToSegmentMap.tryExtendMaxKey(key, snapshot)) {
                 return IndexResult.busy();
             }
-            snapshot = keyToSegmentMap.snapshot();
-            segmentId = snapshot.findSegmentId(key);
+        }
+        return keyToSegmentMap.withReadLock(() -> {
+            final KeyToSegmentMap.Snapshot<K> stableSnapshot = keyToSegmentMap
+                    .snapshot();
+            final SegmentId segmentId = stableSnapshot.findSegmentId(key);
             if (segmentId == null) {
                 return IndexResult.busy();
             }
-        }
-        final SegmentRegistryResult<Segment<K, V>> segmentResult = segmentRegistry
-                .getSegment(segmentId);
-        if (segmentResult.getStatus() == SegmentRegistryResultStatus.BUSY) {
-            return IndexResult.busy();
-        }
-        if (segmentResult.getStatus() == SegmentRegistryResultStatus.CLOSED) {
-            return IndexResult.closed();
-        }
-        if (segmentResult.getStatus() != SegmentRegistryResultStatus.OK) {
+            final SegmentRegistryResult<Segment<K, V>> segmentResult = segmentRegistry
+                    .getSegment(segmentId);
+            if (segmentResult
+                    .getStatus() == SegmentRegistryResultStatus.BUSY) {
+                return IndexResult.busy();
+            }
+            if (segmentResult
+                    .getStatus() == SegmentRegistryResultStatus.CLOSED) {
+                return IndexResult.closed();
+            }
+            if (segmentResult.getStatus() != SegmentRegistryResultStatus.OK) {
+                return IndexResult.error();
+            }
+            final Segment<K, V> segment = segmentResult.getValue();
+            if (segment.getState() == SegmentState.CLOSED) {
+                return IndexResult.busy();
+            }
+            final SegmentResult<Void> result = segment.put(key, value);
+            if (result.getStatus() == SegmentResultStatus.OK) {
+                maintenanceCoordinator.handlePostWrite(segment, key, segmentId,
+                        stableSnapshot.version());
+                return IndexResult.ok();
+            }
+            if (result.getStatus() == SegmentResultStatus.BUSY
+                    || result.getStatus() == SegmentResultStatus.CLOSED) {
+                return IndexResult.busy();
+            }
             return IndexResult.error();
-        }
-        final Segment<K, V> segment = segmentResult.getValue();
-        if (segment.getState() == SegmentState.CLOSED) {
-            return IndexResult.busy();
-        }
-        if (!keyToSegmentMap.isMappingValid(key, segmentId,
-                snapshot.version())) {
-            return IndexResult.busy();
-        }
-        final SegmentResult<Void> result = segment.put(key, value);
-        if (result.getStatus() == SegmentResultStatus.OK) {
-            maintenanceCoordinator.handlePostWrite(segment, key, segmentId,
-                    snapshot.version());
-            return IndexResult.ok();
-        }
-        if (result.getStatus() == SegmentResultStatus.BUSY
-                || result.getStatus() == SegmentResultStatus.CLOSED) {
-            return IndexResult.busy();
-        }
-        return IndexResult.error();
+        });
     }
 
     IndexResult<EntryIterator<K, V>> openIterator(final SegmentId segmentId,

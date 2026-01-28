@@ -7,7 +7,7 @@ package org.hestiastore.index.segmentindex;
  * @param <K> key type handled by the segment
  * @param <V> value type handled by the segment
  */
-public final class SegmentSplitterPolicy<K, V> {
+final class SegmentSplitterPolicy<K, V> {
 
     private final long estimatedNumberOfKeys;
 

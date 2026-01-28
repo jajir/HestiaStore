@@ -9,7 +9,7 @@ import org.hestiastore.index.Vldtn;
  * @param <K> key type
  * @param <V> value type
  */
-public final class SegmentSplitterPlan<K, V> {
+final class SegmentSplitterPlan<K, V> {
 
     private K minKey;
     private K maxKey;
@@ -31,7 +31,7 @@ public final class SegmentSplitterPlan<K, V> {
      * @param segmentSplitterPolicy policy describing the estimated key count
      * @return new split plan
      */
-    public static <K, V> SegmentSplitterPlan<K, V> fromPolicy(
+    static <K, V> SegmentSplitterPlan<K, V> fromPolicy(
             final SegmentSplitterPolicy<K, V> segmentSplitterPolicy) {
         Vldtn.requireNonNull(segmentSplitterPolicy, "segmentSplitterPolicy");
         final long estimatedNumberOfKeys = segmentSplitterPolicy
@@ -70,7 +70,7 @@ public final class SegmentSplitterPlan<K, V> {
      *
      * @return estimated key count
      */
-    public long getEstimatedNumberOfKeys() {
+    long getEstimatedNumberOfKeys() {
         return estimatedNumberOfKeys;
     }
 

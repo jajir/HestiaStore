@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentindex;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -10,7 +11,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hestiastore.index.AbstractDataTest;
 import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
@@ -67,14 +70,48 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
      */
     protected <M, N> void verifyIndexData(final SegmentIndex<M, N> index,
             final List<Entry<M, N>> entries) {
-        final List<Entry<M, N>> data = toList(
-                index.getStream(SegmentWindow.unbounded()));
+        final List<Entry<M, N>> data = readIndexData(index,
+                SegmentIteratorIsolation.FAIL_FAST);
         assertEquals(entries.size(), data.size(),
                 "Unexpected number of entries in index");
         for (int i = 0; i < entries.size(); i++) {
             final Entry<M, N> expectedPair = entries.get(i);
             final Entry<M, N> realPair = data.get(i);
             assertEquals(expectedPair, realPair);
+        }
+    }
+
+    protected <M, N> void verifyIndexData(final SegmentIndex<M, N> index,
+            final List<Entry<M, N>> entries,
+            final SegmentIteratorIsolation isolation) {
+        final List<Entry<M, N>> data = readIndexData(index, isolation);
+        assertEquals(entries.size(), data.size(),
+                "Unexpected number of entries in index");
+        for (int i = 0; i < entries.size(); i++) {
+            final Entry<M, N> expectedPair = entries.get(i);
+            final Entry<M, N> realPair = data.get(i);
+            assertEquals(expectedPair, realPair);
+        }
+    }
+
+    private <M, N> List<Entry<M, N>> readIndexData(
+            final SegmentIndex<M, N> index,
+            final SegmentIteratorIsolation isolation) {
+        if (isolation == SegmentIteratorIsolation.FAIL_FAST) {
+            return toList(index.getStream(SegmentWindow.unbounded()));
+        }
+        final SegmentIndexImpl<?, ?> impl = unwrapSegmentIndex(index);
+        @SuppressWarnings("unchecked")
+        final EntryIterator<M, N> iterator = (EntryIterator<M, N>) impl
+                .openSegmentIterator(SegmentWindow.unbounded(), isolation);
+        try {
+            final List<Entry<M, N>> out = new ArrayList<>();
+            while (iterator.hasNext()) {
+                out.add(iterator.next());
+            }
+            return out;
+        } finally {
+            iterator.close();
         }
     }
 

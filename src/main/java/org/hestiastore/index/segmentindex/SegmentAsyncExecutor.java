@@ -13,7 +13,7 @@ import org.hestiastore.index.Vldtn;
 /**
  * Shared executor for segment maintenance tasks.
  */
-public final class SegmentAsyncExecutor extends AbstractCloseableResource {
+final class SegmentAsyncExecutor extends AbstractCloseableResource {
 
     private static final int MIN_QUEUE_CAPACITY = 64;
     private static final int QUEUE_CAPACITY_MULTIPLIER = 64;
@@ -27,7 +27,7 @@ public final class SegmentAsyncExecutor extends AbstractCloseableResource {
      * @param threads number of threads in the pool
      * @param threadNamePrefix thread name prefix
      */
-    public SegmentAsyncExecutor(final int threads,
+    SegmentAsyncExecutor(final int threads,
             final String threadNamePrefix) {
         Vldtn.requireGreaterThanZero(threads, "threads");
         this.queueCapacity = Math.max(MIN_QUEUE_CAPACITY,
@@ -44,7 +44,7 @@ public final class SegmentAsyncExecutor extends AbstractCloseableResource {
      *
      * @return executor service
      */
-    public ExecutorService getExecutor() {
+    ExecutorService getExecutor() {
         return executor;
     }
 

@@ -45,7 +45,7 @@ class DataTypeDescriptorRegistry {
      * @param clazz          class that maps to the descriptor
      * @param typeDescriptor descriptor instance
      */
-    public static final <T> void addTypeDescriptor(final Class<T> clazz,
+    static <T> void addTypeDescriptor(final Class<T> clazz,
             final TypeDescriptor<T> typeDescriptor) {
         Vldtn.requireNonNull(clazz, CLAZZ);
         Vldtn.requireNonNull(typeDescriptor, "typeDescriptor");
@@ -59,7 +59,7 @@ class DataTypeDescriptorRegistry {
      * @param clazz          class that maps to the descriptor
      * @param typeDescriptor descriptor class name
      */
-    public static final <T> void addTypeDescriptor(final Class<T> clazz,
+    static <T> void addTypeDescriptor(final Class<T> clazz,
             final String typeDescriptor) {
         Vldtn.requireNonNull(clazz, CLAZZ);
         Vldtn.requireNonNull(typeDescriptor, "typeDescriptor");
@@ -73,7 +73,7 @@ class DataTypeDescriptorRegistry {
      * @param clazz class that maps to the descriptor
      * @return descriptor class name
      */
-    public static final <T> String getTypeDescriptor(final Class<T> clazz) {
+    static <T> String getTypeDescriptor(final Class<T> clazz) {
         Vldtn.requireNonNull(clazz, CLAZZ);
         final String typeDescriptor = descriptors.get(clazz);
         if (typeDescriptor == null) {
@@ -93,7 +93,7 @@ class DataTypeDescriptorRegistry {
      * @return instantiated type descriptor
      */
     @SuppressWarnings("unchecked")
-    public static <N> TypeDescriptor<N> makeInstance(String className) {
+    static <N> TypeDescriptor<N> makeInstance(String className) {
         Vldtn.requireNonNull(className, "className");
         try {
             // Load class by name

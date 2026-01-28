@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.IndexException;
@@ -171,6 +172,73 @@ class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         return cache.withLock(action);
     }
 
+    SegmentRegistryResult<Segment<K, V>> applySplitPlan(
+            final SegmentSplitApplyPlan<K, V> plan,
+            final Segment<K, V> lowerSegment,
+            final Segment<K, V> upperSegment) {
+        return applySplitPlan(plan, lowerSegment, upperSegment, null);
+    }
+
+    SegmentRegistryResult<Segment<K, V>> applySplitPlan(
+            final SegmentSplitApplyPlan<K, V> plan,
+            final Segment<K, V> lowerSegment,
+            final Segment<K, V> upperSegment,
+            final BooleanSupplier onApplied) {
+        Vldtn.requireNonNull(plan, "plan");
+        if (Boolean.getBoolean("hestiastore.enforceSplitLockOrder")) {
+            final String keyMapLock = System
+                    .getProperty("hestiastore.keyMapLockHeld");
+            if (!"true".equals(keyMapLock)) {
+                throw new IllegalStateException(
+                        "Split apply requires key-map lock before registry lock.");
+            }
+        }
+        validateSegmentIdMatch(lowerSegment, plan.getLowerSegmentId(),
+                "lowerSegment");
+        if (plan.getStatus() == SegmentSplitterResult.SegmentSplittingStatus.SPLIT) {
+            final SegmentId upperId = Vldtn.requireNonNull(
+                    plan.getUpperSegmentId().orElse(null), "upperSegmentId");
+            validateSegmentIdMatch(upperSegment, upperId, "upperSegment");
+        }
+        return cache.withLock(() -> {
+            final SegmentRegistryState state = gate.getState();
+            if (state != SegmentRegistryState.READY) {
+                return resultForState(state);
+            }
+            try (FreezeGuard guard = new FreezeGuard(gate)) {
+                if (!guard.isActive()) {
+                    return resultForState(gate.getState());
+                }
+                if (Boolean.getBoolean("hestiastore.enforceSplitLockOrder")) {
+                    System.setProperty("hestiastore.registryLockHeld", "true");
+                }
+                try {
+                    if (onApplied != null && !onApplied.getAsBoolean()) {
+                        return SegmentRegistryResult.busy();
+                    }
+                    final Segment<K, V> removed = cache
+                            .removeLocked(plan.getOldSegmentId());
+                    if (lowerSegment != null) {
+                        cache.putLocked(plan.getLowerSegmentId(),
+                                lowerSegment);
+                    }
+                    if (plan.getStatus() == SegmentSplitterResult.SegmentSplittingStatus.SPLIT
+                            && upperSegment != null) {
+                        final SegmentId upperId = plan.getUpperSegmentId()
+                                .get();
+                        cache.putLocked(upperId, upperSegment);
+                    }
+                    return SegmentRegistryResult.ok(removed);
+                } finally {
+                    if (Boolean.getBoolean(
+                            "hestiastore.enforceSplitLockOrder")) {
+                        System.clearProperty("hestiastore.registryLockHeld");
+                    }
+                }
+            }
+        });
+    }
+
     /**
      * Removes a segment from the registry and closes it.
      *
@@ -231,6 +299,10 @@ class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         return removedSegment != null;
     }
 
+    void closeSegmentInstance(final Segment<K, V> segment) {
+        closeSegmentIfNeeded(segment);
+    }
+
     private Segment<K, V> removeSegmentFromRegistry(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         return cache.removeLocked(segmentId);
@@ -274,7 +346,7 @@ class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         return newSegmentBuilder(segmentId).build();
     }
 
-    private void deleteSegmentFiles(final SegmentId segmentId) {
+    void deleteSegmentFiles(final SegmentId segmentId) {
         deleteSegmentRootDirectory(segmentId);
     }
 
@@ -395,6 +467,21 @@ class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
             final IllegalStateException exception) {
         final String message = exception.getMessage();
         return message != null && message.contains("already locked");
+    }
+
+    private static <K, V> void validateSegmentIdMatch(
+            final Segment<K, V> segment, final SegmentId expectedId,
+            final String propertyName) {
+        if (segment == null) {
+            return;
+        }
+        final SegmentId actual = Vldtn.requireNonNull(segment.getId(),
+                propertyName);
+        if (!expectedId.equals(actual)) {
+            throw new IllegalArgumentException(String.format(
+                    "Property '%s' must match id '%s'. Got: '%s'",
+                    propertyName, expectedId, actual));
+        }
     }
 
     private static final class FreezeGuard implements AutoCloseable {
