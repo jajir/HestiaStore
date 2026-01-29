@@ -13,7 +13,7 @@ import org.hestiastore.index.Vldtn;
 /**
  * Dedicated executor for split maintenance tasks.
  */
-final class SplitAsyncExecutor extends AbstractCloseableResource {
+public final class SplitAsyncExecutor extends AbstractCloseableResource {
 
     private static final int MIN_QUEUE_CAPACITY = 64;
     private static final int QUEUE_CAPACITY_MULTIPLIER = 64;
@@ -21,7 +21,8 @@ final class SplitAsyncExecutor extends AbstractCloseableResource {
     private final ExecutorService executor;
     private final int queueCapacity;
 
-    SplitAsyncExecutor(final int threads, final String threadNamePrefix) {
+    public SplitAsyncExecutor(final int threads,
+            final String threadNamePrefix) {
         Vldtn.requireGreaterThanZero(threads, "threads");
         this.queueCapacity = Math.max(MIN_QUEUE_CAPACITY,
                 threads * QUEUE_CAPACITY_MULTIPLIER);
@@ -32,11 +33,11 @@ final class SplitAsyncExecutor extends AbstractCloseableResource {
                 new ThreadPoolExecutor.AbortPolicy());
     }
 
-    ExecutorService getExecutor() {
+    public ExecutorService getExecutor() {
         return executor;
     }
 
-    int getQueueCapacity() {
+    public int getQueueCapacity() {
         return queueCapacity;
     }
 

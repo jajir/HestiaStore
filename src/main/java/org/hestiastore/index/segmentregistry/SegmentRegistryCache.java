@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex;
+package org.hestiastore.index.segmentregistry;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -16,42 +16,43 @@ import org.hestiastore.index.segment.SegmentId;
  * @param <K> key type
  * @param <V> value type
  */
-final class SegmentRegistryCache<K, V> {
+public final class SegmentRegistryCache<K, V> {
 
     private final LinkedHashMap<SegmentId, Segment<K, V>> segments = new LinkedHashMap<>(
             16, 0.75f, true);
     private final Object lock = new Object();
 
-    <T> T withLock(final Supplier<T> action) {
+    public <T> T withLock(final Supplier<T> action) {
         synchronized (lock) {
             return action.get();
         }
     }
 
-    void withLock(final Runnable action) {
+    public void withLock(final Runnable action) {
         synchronized (lock) {
             action.run();
         }
     }
 
-    Segment<K, V> getLocked(final SegmentId segmentId) {
+    public Segment<K, V> getLocked(final SegmentId segmentId) {
         return segments.get(segmentId);
     }
 
-    void putLocked(final SegmentId segmentId, final Segment<K, V> segment) {
+    public void putLocked(final SegmentId segmentId,
+            final Segment<K, V> segment) {
         segments.put(segmentId, segment);
     }
 
-    Segment<K, V> removeLocked(final SegmentId segmentId) {
+    public Segment<K, V> removeLocked(final SegmentId segmentId) {
         return segments.remove(segmentId);
     }
 
-    boolean isSegmentInstanceLocked(final SegmentId segmentId,
+    public boolean isSegmentInstanceLocked(final SegmentId segmentId,
             final Segment<K, V> expected) {
         return segments.get(segmentId) == expected;
     }
 
-    List<Segment<K, V>> snapshotAndClearLocked() {
+    public List<Segment<K, V>> snapshotAndClearLocked() {
         if (segments.isEmpty()) {
             return List.of();
         }
@@ -60,7 +61,7 @@ final class SegmentRegistryCache<K, V> {
         return snapshot;
     }
 
-    boolean needsEvictionLocked(final int maxSegments,
+    public boolean needsEvictionLocked(final int maxSegments,
             final Set<SegmentId> protectedIds) {
         if (segments.size() <= maxSegments) {
             return false;
@@ -73,7 +74,7 @@ final class SegmentRegistryCache<K, V> {
         return false;
     }
 
-    void evictIfNeededLocked(final int maxSegments,
+    public void evictIfNeededLocked(final int maxSegments,
             final Set<SegmentId> protectedIds,
             final List<Segment<K, V>> evicted) {
         if (segments.size() <= maxSegments) {

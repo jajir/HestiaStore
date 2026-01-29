@@ -17,6 +17,8 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentBuilder;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentResultStatus;
+import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
+import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 import org.junit.jupiter.api.Test;
 
@@ -162,14 +164,14 @@ class SegmentSplitCoordinatorFlowTest {
         }
 
         @Override
-        SegmentBuilder<Integer, String> newSegmentBuilder(
+        public SegmentBuilder<Integer, String> newSegmentBuilder(
                 final SegmentId segmentId) {
             createdSegments.add(segmentId);
             return super.newSegmentBuilder(segmentId);
         }
 
         @Override
-        SegmentRegistryResult<Segment<Integer, String>> applySplitPlan(
+        public SegmentRegistryResult<Segment<Integer, String>> applySplitPlan(
                 final SegmentSplitApplyPlan<Integer, String> plan,
                 final Segment<Integer, String> lowerSegment,
                 final Segment<Integer, String> upperSegment,
@@ -182,13 +184,13 @@ class SegmentSplitCoordinatorFlowTest {
         }
 
         @Override
-        void deleteSegmentFiles(final SegmentId segmentId) {
+        public void deleteSegmentFiles(final SegmentId segmentId) {
             deletedSegments.add(segmentId);
             super.deleteSegmentFiles(segmentId);
         }
 
         @Override
-        void swapSegmentDirectories(final SegmentId segmentId,
+        public void swapSegmentDirectories(final SegmentId segmentId,
                 final SegmentId replacementSegmentId) {
             swapCalled = true;
             super.swapSegmentDirectories(segmentId, replacementSegmentId);

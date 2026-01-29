@@ -11,7 +11,7 @@ import org.hestiastore.index.segment.SegmentId;
  * @param <K> key type
  * @param <V> value type
  */
-final class SegmentSplitApplyPlan<K, V> {
+public final class SegmentSplitApplyPlan<K, V> {
 
     private final SegmentId oldSegmentId;
     private final SegmentId lowerSegmentId;
@@ -20,7 +20,7 @@ final class SegmentSplitApplyPlan<K, V> {
     private final K maxKey;
     private final SegmentSplitterResult.SegmentSplittingStatus status;
 
-    SegmentSplitApplyPlan(final SegmentId oldSegmentId,
+    public SegmentSplitApplyPlan(final SegmentId oldSegmentId,
             final SegmentId lowerSegmentId,
             final SegmentId upperSegmentId, final K minKey, final K maxKey,
             final SegmentSplitterResult.SegmentSplittingStatus status) {
@@ -38,27 +38,27 @@ final class SegmentSplitApplyPlan<K, V> {
         this.maxKey = Vldtn.requireNonNull(maxKey, "maxKey");
     }
 
-    SegmentId getOldSegmentId() {
+    public SegmentId getOldSegmentId() {
         return oldSegmentId;
     }
 
-    SegmentId getLowerSegmentId() {
+    public SegmentId getLowerSegmentId() {
         return lowerSegmentId;
     }
 
-    Optional<SegmentId> getUpperSegmentId() {
+    public Optional<SegmentId> getUpperSegmentId() {
         return Optional.ofNullable(upperSegmentId);
     }
 
-    K getMinKey() {
+    public K getMinKey() {
         return minKey;
     }
 
-    K getMaxKey() {
+    public K getMaxKey() {
         return maxKey;
     }
 
-    SegmentSplitterResult.SegmentSplittingStatus getStatus() {
+    public SegmentSplitterResult.SegmentSplittingStatus getStatus() {
         return status;
     }
 }

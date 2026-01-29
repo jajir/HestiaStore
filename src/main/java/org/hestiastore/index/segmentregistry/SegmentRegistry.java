@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex;
+package org.hestiastore.index.segmentregistry;
 
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
@@ -9,7 +9,7 @@ import org.hestiastore.index.segment.SegmentId;
  * @param <K> key type
  * @param <V> value type
  */
-interface SegmentRegistry<K, V> {
+public interface SegmentRegistry<K, V> {
 
     /**
      * Returns the segment for the provided id, loading it if needed.

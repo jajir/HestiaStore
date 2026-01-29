@@ -8,6 +8,9 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
+import org.hestiastore.index.segmentregistry.SegmentHandlerLockStatus;
+import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
+import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,39 +97,48 @@ class SegmentSplitCoordinator<K, V> {
         if (!segmentRegistry.isSegmentInstance(segmentId, segment)) {
             return false;
         }
-        final SegmentId lowerSegmentId = keyToSegmentMap.findNewSegmentId();
-        final SegmentId upperSegmentId = keyToSegmentMap.findNewSegmentId();
-        final SegmentWriterTxFactory<K, V> writerTxFactory = id -> segmentRegistry
-                .newSegmentBuilder(id).openWriterTx();
-        final SegmentSplitter<K, V> splitter = new SegmentSplitter<>(segment,
-                writerTxFactory);
-        final SegmentSplitApplyPlan<K, V> applyPlan;
-        final SegmentRegistryResult<Segment<K, V>> applyResult;
-        final Segment<K, V> removed;
-        SegmentSplitter.SplitExecution<K, V> execution = splitter
-                .splitWithIterator(lowerSegmentId, upperSegmentId, plan);
+        final SegmentHandlerLockStatus lockStatus = segmentRegistry
+                .lockSegmentHandler(segmentId, segment);
+        if (lockStatus != SegmentHandlerLockStatus.OK) {
+            return false;
+        }
         try {
-            applyPlan = toApplyPlan(segmentId, upperSegmentId,
-                    execution.getResult());
-            applyResult = applySplitPlan(applyPlan);
-            if (!applyResult.isOk()) {
-                if (DEBUG_SPLIT_LOSS) {
-                    logger.warn(
-                            "Split debug: apply failed for segment '{}', status '{}'.",
-                            segmentId, applyResult.getStatus());
-                }
-                deleteSplitSegments(lowerSegmentId, upperSegmentId);
+            if (!hasLiveEntries(segment)) {
                 return false;
             }
-            removed = applyResult.getValue();
+            final SegmentId lowerSegmentId = keyToSegmentMap.findNewSegmentId();
+            final SegmentId upperSegmentId = keyToSegmentMap.findNewSegmentId();
+            final SegmentWriterTxFactory<K, V> writerTxFactory = id -> segmentRegistry
+                    .newSegmentBuilder(id).openWriterTx();
+            final SegmentSplitter<K, V> splitter = new SegmentSplitter<>(
+                    segment, writerTxFactory);
+            final SegmentSplitApplyPlan<K, V> applyPlan;
+            final SegmentRegistryResult<Segment<K, V>> applyResult;
+            final Segment<K, V> removed;
+            try (SegmentSplitter.SplitExecution<K, V> execution = splitter
+                    .splitWithIterator(lowerSegmentId, upperSegmentId, plan)) {
+                applyPlan = toApplyPlan(segmentId, upperSegmentId,
+                        execution.getResult());
+                applyResult = applySplitPlan(applyPlan);
+                if (!applyResult.isOk()) {
+                    if (DEBUG_SPLIT_LOSS) {
+                        logger.warn(
+                                "Split debug: apply failed for segment '{}', status '{}'.",
+                                segmentId, applyResult.getStatus());
+                    }
+                    deleteSplitSegments(lowerSegmentId, upperSegmentId);
+                    return false;
+                }
+                removed = applyResult.getValue();
+            }
+            if (removed != null) {
+                segmentRegistry.closeSegmentInstance(removed);
+            }
+            segmentRegistry.deleteSegmentFiles(applyPlan.getOldSegmentId());
+            return true;
         } finally {
-            execution.close();
+            segmentRegistry.unlockSegmentHandler(segmentId, segment);
         }
-        if (removed != null) {
-            segmentRegistry.closeSegmentInstance(removed);
-        }
-        segmentRegistry.deleteSegmentFiles(applyPlan.getOldSegmentId());
-        return true;
     }
 
     private void deleteSplitSegments(final SegmentId lowerSegmentId,

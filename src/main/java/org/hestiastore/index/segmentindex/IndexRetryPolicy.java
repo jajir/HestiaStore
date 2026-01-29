@@ -9,13 +9,14 @@ import org.hestiastore.index.segment.SegmentId;
 /**
  * Backoff/timeout policy for retrying BUSY index operations.
  */
-final class IndexRetryPolicy {
+public final class IndexRetryPolicy {
 
     private final int backoffMillis;
     private final int timeoutMillis;
     private final long timeoutNanos;
 
-    IndexRetryPolicy(final int backoffMillis, final int timeoutMillis) {
+    public IndexRetryPolicy(final int backoffMillis,
+            final int timeoutMillis) {
         this.backoffMillis = Vldtn.requireGreaterThanZero(backoffMillis,
                 "indexBusyBackoffMillis");
         this.timeoutMillis = Vldtn.requireGreaterThanZero(timeoutMillis,
@@ -23,11 +24,11 @@ final class IndexRetryPolicy {
         this.timeoutNanos = TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
     }
 
-    long startNanos() {
+    public long startNanos() {
         return System.nanoTime();
     }
 
-    void backoffOrThrow(final long startNanos, final String operation,
+    public void backoffOrThrow(final long startNanos, final String operation,
             final SegmentId segmentId) {
         if (hasTimedOut(startNanos)) {
             throw new IndexException(formatTimeoutMessage(operation,

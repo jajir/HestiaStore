@@ -17,6 +17,8 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
+import org.hestiastore.index.segmentregistry.SegmentRegistryCache;
+import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

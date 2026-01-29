@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex;
+package org.hestiastore.index.segmentregistry;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
