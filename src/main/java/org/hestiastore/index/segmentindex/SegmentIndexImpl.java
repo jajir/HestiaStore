@@ -18,6 +18,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentregistry.SegmentHandler;
+import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
@@ -39,7 +40,7 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     protected final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
-    private final SegmentRegistryImpl<K, V> segmentRegistry;
+    private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentMaintenanceCoordinator<K, V> maintenanceCoordinator;
     private final SegmentIndexCore<K, V> core;
     private final IndexRetryPolicy retryPolicy;
@@ -68,10 +69,12 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     directoryFacade, keyTypeDescriptor);
             this.keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                     keyToSegmentMapDelegate);
-            this.segmentRegistry = new SegmentRegistryImpl<>(directoryFacade,
-                    keyTypeDescriptor, valueTypeDescriptor, conf);
+            final SegmentRegistryImpl<K, V> registry = new SegmentRegistryImpl<>(
+                    directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
+                    conf);
+            this.segmentRegistry = registry;
             this.maintenanceCoordinator = new SegmentMaintenanceCoordinator<>(
-                    conf, keyToSegmentMap, segmentRegistry);
+                    conf, keyToSegmentMap, registry);
             this.core = new SegmentIndexCore<>(keyToSegmentMap, segmentRegistry,
                     maintenanceCoordinator);
             this.retryPolicy = new IndexRetryPolicy(

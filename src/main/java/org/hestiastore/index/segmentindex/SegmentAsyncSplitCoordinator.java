@@ -15,7 +15,7 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
+import org.hestiastore.index.segmentregistry.SegmentRegistryMaintenance;
 
 /**
  * Schedules segment splits on the async maintenance queue.
@@ -23,13 +23,13 @@ import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 final class SegmentAsyncSplitCoordinator<K, V> {
 
     private final SegmentSplitCoordinator<K, V> splitCoordinator;
-    private final SegmentRegistryImpl<K, V> segmentRegistry;
+    private final SegmentRegistryMaintenance<K, V> segmentRegistry;
     private final Executor splitExecutor;
     private final Map<SegmentId, SplitInFlight<K, V>> inFlightSplits = new ConcurrentHashMap<>();
 
     SegmentAsyncSplitCoordinator(final IndexConfiguration<K, V> conf,
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
-            final SegmentRegistryImpl<K, V> segmentRegistry,
+            final SegmentRegistryMaintenance<K, V> segmentRegistry,
             final Executor splitExecutor) {
         this(new SegmentSplitCoordinator<>(conf, keyToSegmentMap,
                 segmentRegistry), segmentRegistry, splitExecutor);
@@ -37,7 +37,7 @@ final class SegmentAsyncSplitCoordinator<K, V> {
 
     SegmentAsyncSplitCoordinator(
             final SegmentSplitCoordinator<K, V> splitCoordinator,
-            final SegmentRegistryImpl<K, V> segmentRegistry,
+            final SegmentRegistryMaintenance<K, V> segmentRegistry,
             final Executor splitExecutor) {
         this.splitCoordinator = Vldtn.requireNonNull(splitCoordinator,
                 "splitCoordinator");

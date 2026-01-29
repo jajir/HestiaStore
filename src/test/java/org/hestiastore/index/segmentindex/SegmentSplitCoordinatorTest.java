@@ -15,7 +15,7 @@ import org.hestiastore.index.EntryIteratorList;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
+import org.hestiastore.index.segmentregistry.SegmentRegistryMaintenance;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,7 +35,7 @@ class SegmentSplitCoordinatorTest {
     private KeyToSegmentMapSynchronizedAdapter<Integer> synchronizedKeyToSegmentMap;
 
     @Mock
-    private SegmentRegistryImpl<Integer, String> segmentRegistry;
+    private SegmentRegistryMaintenance<Integer, String> segmentRegistry;
 
     private SegmentSplitCoordinator<Integer, String> coordinator;
 

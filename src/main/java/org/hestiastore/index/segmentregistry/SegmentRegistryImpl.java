@@ -37,7 +37,8 @@ import org.hestiastore.index.segmentindex.SplitAsyncExecutor;
  * @param <K> key type
  * @param <V> value type
  */
-public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
+public class SegmentRegistryImpl<K, V>
+        implements SegmentRegistry<K, V>, SegmentRegistryMaintenance<K, V> {
 
     private final SegmentRegistryCache<K, V> cache = new SegmentRegistryCache<>();
     private final SegmentRegistryGate gate = new SegmentRegistryGate();
@@ -94,6 +95,7 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         this.splitExecutor = splitAsyncExecutor.getExecutor();
     }
 
+    @Override
     public ExecutorService getSplitExecutor() {
         return splitExecutor;
     }
@@ -191,16 +193,19 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         return result;
     }
 
+    @Override
     public void markSplitInFlight(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         splitsInFlight.add(segmentId);
     }
 
+    @Override
     public void clearSplitInFlight(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         splitsInFlight.remove(segmentId);
     }
 
+    @Override
     public boolean isSegmentInstance(final SegmentId segmentId,
             final Segment<K, V> expected) {
         Vldtn.requireNonNull(segmentId, "segmentId");
@@ -209,6 +214,7 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
                 () -> cache.isSegmentInstanceLocked(segmentId, expected));
     }
 
+    @Override
     public SegmentHandlerLockStatus lockSegmentHandler(final SegmentId segmentId,
             final Segment<K, V> expected) {
         Vldtn.requireNonNull(segmentId, "segmentId");
@@ -228,6 +234,7 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         });
     }
 
+    @Override
     public void unlockSegmentHandler(final SegmentId segmentId,
             final Segment<K, V> expected) {
         Vldtn.requireNonNull(segmentId, "segmentId");
@@ -263,6 +270,7 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         return applySplitPlan(plan, lowerSegment, upperSegment, null);
     }
 
+    @Override
     public SegmentRegistryResult<Segment<K, V>> applySplitPlan(
             final SegmentSplitApplyPlan<K, V> plan,
             final Segment<K, V> lowerSegment,
@@ -396,6 +404,7 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         return removedSegment != null;
     }
 
+    @Override
     public void closeSegmentInstance(final Segment<K, V> segment) {
         closeSegmentIfNeeded(segment);
     }
@@ -436,6 +445,7 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         return cache.removeLocked(segmentId);
     }
 
+    @Override
     public SegmentBuilder<K, V> newSegmentBuilder(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         final AsyncDirectory segmentDirectory = openSegmentDirectory(segmentId);
@@ -484,6 +494,7 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
      *
      * @param segmentId segment id to delete
      */
+    @Override
     public void deleteSegmentFiles(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         deleteSegmentRootDirectory(segmentId);

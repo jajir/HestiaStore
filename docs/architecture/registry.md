@@ -7,26 +7,32 @@ coordination and map updates.
 
 ## Scope
 - The registry owns:
+  - safe access to segment resources (load/create/delete)
   - in-memory segment cache (LRU)
-  - the key-to-segment map updates (via the index layer)
   - registry-level state gate (`READY`, `FREEZE`, `CLOSED`, `ERROR`)
+  - segment id allocation for new segments
 - The only structural operation that should reach the registry is **split**.
   Flush/compact belong to the segment package.
+- The registry does not own split scheduling/executors or in-flight tracking.
+  Those belong to the segment index layer.
 
 ## Registry Operations
 
-| Operation          | Description                                                      |
-|-------------------|------------------------------------------------------------------|
-| `getSegment(id)`  | Load or return cached segment by id.                             |
-| `removeSegment(id)` | Close and delete a segment, then remove from cache.            |
-| `close()`         | Close cached segments and executors.                             |
+| Operation              | Description                                                      |
+|-----------------------|------------------------------------------------------------------|
+| `getSegment(id)`      | Load or return cached segment by id.                             |
+| `createSegment(conf)` | Allocate id and create a new segment (returns id + segment).     |
+| `deleteSegment(id)`   | Close and delete a segment, then remove from cache.              |
+| `close()`             | Close cached segments.                                           |
 
-### Split Executor
+All registry operations return `SegmentRegistryResult` so callers can react to
+`BUSY`/`CLOSED`/`ERROR` states without explicit lock/unlock in normal flows.
 
-Split work runs on a **dedicated executor**, separate from segment maintenance.
-Threads are named with the `index-maintenance-*` prefix (created by the split
-executor). This helps operations distinguish split workload from other
-maintenance activity.
+### Split Executor (out of scope)
+
+Split scheduling and execution live in the segment index layer. The registry
+only provides safe access to segment resources; it does not own executors or
+track in-flight split operations.
 
 ### Response Codes
 
