@@ -3,13 +3,11 @@
 This document describes the segment registry responsibilities and the planned
 split workflow. It mirrors the structure and tone of
 `docs/architecture/segment-concurrency.md`, but focuses on registry-level
-coordination, map updates, and directory swaps.
+coordination and map updates.
 
 ## Scope
 - The registry owns:
   - in-memory segment cache (LRU)
-  - segment directory swapping (used for recovery or legacy flows; the planned
-    split path does not swap directories)
   - the key-to-segment map updates (via the index layer)
   - registry-level state gate (`READY`, `FREEZE`, `CLOSED`, `ERROR`)
 - The only structural operation that should reach the registry is **split**.
@@ -21,7 +19,6 @@ coordination, map updates, and directory swaps.
 |-------------------|------------------------------------------------------------------|
 | `getSegment(id)`  | Load or return cached segment by id.                             |
 | `removeSegment(id)` | Close and delete a segment, then remove from cache.            |
-| `swapSegmentDirectories(a, b)` | Atomic swap for segment directory replacement.      |
 | `close()`         | Close cached segments and executors.                             |
 
 ### Split Executor

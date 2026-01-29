@@ -56,7 +56,6 @@ class SegmentSplitCoordinatorFlowTest {
             assertTrue(registry.getDeletedSegments().containsAll(created));
             assertFalse(registry.getDeletedSegments()
                     .contains(SegmentId.of(0)));
-            assertFalse(registry.wasSwapCalled());
         } finally {
             keyToSegmentMap.close();
             registry.close();
@@ -87,7 +86,6 @@ class SegmentSplitCoordinatorFlowTest {
 
             coordinator.optionallySplit(segment, 2);
 
-            assertFalse(registry.wasSwapCalled());
             assertEquals(2, keyToSegmentMap.getSegmentIds().size());
         } finally {
             keyToSegmentMap.close();
@@ -154,7 +152,6 @@ class SegmentSplitCoordinatorFlowTest {
         private final List<SegmentId> deletedSegments = new ArrayList<>();
         private final List<SegmentId> createdSegments = new ArrayList<>();
         private final boolean forceApplyFailure;
-        private boolean swapCalled;
 
         private TrackingRegistry(final AsyncDirectory directoryFacade,
                 final IndexConfiguration<Integer, String> conf,
@@ -189,13 +186,6 @@ class SegmentSplitCoordinatorFlowTest {
             super.deleteSegmentFiles(segmentId);
         }
 
-        @Override
-        public void swapSegmentDirectories(final SegmentId segmentId,
-                final SegmentId replacementSegmentId) {
-            swapCalled = true;
-            super.swapSegmentDirectories(segmentId, replacementSegmentId);
-        }
-
         private List<SegmentId> getDeletedSegments() {
             return deletedSegments;
         }
@@ -206,10 +196,6 @@ class SegmentSplitCoordinatorFlowTest {
 
         private void clearCreatedSegments() {
             createdSegments.clear();
-        }
-
-        private boolean wasSwapCalled() {
-            return swapCalled;
         }
     }
 }

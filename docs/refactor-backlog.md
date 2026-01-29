@@ -223,7 +223,7 @@
 
 [x] 60 Move registry implementation to `segmentregistry` package (Risk: MEDIUM)
     - Move `SegmentRegistryImpl`, `SegmentRegistryGate`, `SegmentRegistryCache`,
-      `SegmentRegistryState`, `SegmentRegistryResult`, and `SegmentDirectorySwap`
+      `SegmentRegistryState`, and `SegmentRegistryResult`
       to `org.hestiastore.index.segmentregistry`.
     - Update imports/usages in `segmentindex` and tests.
     - Keep public API surface the same; verify no package-private access leaks.

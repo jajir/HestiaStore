@@ -70,8 +70,6 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     keyToSegmentMapDelegate);
             this.segmentRegistry = new SegmentRegistryImpl<>(directoryFacade,
                     keyTypeDescriptor, valueTypeDescriptor, conf);
-            segmentRegistry
-                    .recoverDirectorySwaps(keyToSegmentMap.getSegmentIds());
             this.maintenanceCoordinator = new SegmentMaintenanceCoordinator<>(
                     conf, keyToSegmentMap, segmentRegistry);
             this.core = new SegmentIndexCore<>(keyToSegmentMap, segmentRegistry,

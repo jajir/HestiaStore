@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
@@ -18,10 +19,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentBuilder;
-import org.hestiastore.index.segment.SegmentFiles;
-import org.hestiastore.index.segment.SegmentFilesRenamer;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segment.SegmentPropertiesManager;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segment.SegmentState;
@@ -55,8 +53,6 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
     private final ExecutorService maintenanceExecutor;
     private final ExecutorService splitExecutor;
     private final int maxNumberOfSegmentsInCache;
-    private final SegmentDirectorySwap directorySwap;
-    private final SegmentFilesRenamer filesRenamer = new SegmentFilesRenamer();
     private final IndexRetryPolicy retryPolicy;
 
     public SegmentRegistryImpl(final AsyncDirectory directoryFacade,
@@ -76,7 +72,6 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
                 .intValue();
         this.maxNumberOfSegmentsInCache = Vldtn.requireGreaterThanZero(
                 maxSegments, "maxNumberOfSegmentsInCache");
-        this.directorySwap = new SegmentDirectorySwap(directoryFacade);
         final int busyBackoffMillis = sanitizeRetryConf(
                 conf.getIndexBusyBackoffMillis(),
                 IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS);
@@ -479,51 +474,77 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         return newSegmentBuilder(segmentId).build();
     }
 
-    public void deleteSegmentFiles(final SegmentId segmentId) {
-        deleteSegmentRootDirectory(segmentId);
-    }
-
-    public void swapSegmentDirectories(final SegmentId segmentId,
-            final SegmentId replacementSegmentId) {
-        Vldtn.requireNonNull(segmentId, "segmentId");
-        Vldtn.requireNonNull(replacementSegmentId, "replacementSegmentId");
-        directorySwap.swap(segmentId, replacementSegmentId);
-        relabelSwappedSegment(segmentId, replacementSegmentId);
-    }
-
-    public void recoverDirectorySwaps(final List<SegmentId> segmentIds) {
-        Vldtn.requireNonNull(segmentIds, "segmentIds");
-        for (final SegmentId segmentId : segmentIds) {
-            directorySwap.recoverIfNeeded(segmentId);
-        }
-    }
-
-    private void deleteSegmentRootDirectory(final SegmentId segmentId) {
-        directorySwap.deleteSegmentRootDirectory(segmentId);
-    }
-
     private AsyncDirectory openSegmentDirectory(final SegmentId segmentId) {
         return directoryFacade.openSubDirectory(segmentId.getName())
                 .toCompletableFuture().join();
     }
 
-    private void relabelSwappedSegment(final SegmentId targetSegmentId,
-            final SegmentId sourceSegmentId) {
-        final AsyncDirectory segmentDirectory = openSegmentDirectory(
-                targetSegmentId);
-        final SegmentPropertiesManager properties = new SegmentPropertiesManager(
-                segmentDirectory, sourceSegmentId);
-        final long activeVersion = properties.getVersion();
-        final SegmentFiles<K, V> fromFiles = new SegmentFiles<>(
-                segmentDirectory, sourceSegmentId, keyTypeDescriptor,
-                valueTypeDescriptor, conf.getDiskIoBufferSize(),
-                conf.getEncodingChunkFilters(), conf.getDecodingChunkFilters(),
-                activeVersion);
-        final SegmentFiles<K, V> toFiles = new SegmentFiles<>(segmentDirectory,
-                targetSegmentId, keyTypeDescriptor, valueTypeDescriptor,
-                conf.getDiskIoBufferSize(), conf.getEncodingChunkFilters(),
-                conf.getDecodingChunkFilters(), activeVersion);
-        filesRenamer.renameFiles(fromFiles, toFiles, properties);
+    /**
+     * Deletes segment files for the provided id.
+     *
+     * @param segmentId segment id to delete
+     */
+    public void deleteSegmentFiles(final SegmentId segmentId) {
+        Vldtn.requireNonNull(segmentId, "segmentId");
+        deleteSegmentRootDirectory(segmentId);
+    }
+
+    private void deleteSegmentRootDirectory(final SegmentId segmentId) {
+        deleteDirectory(segmentId.getName());
+    }
+
+    private void deleteDirectory(final String directoryName) {
+        if (!exists(directoryName)) {
+            return;
+        }
+        final AsyncDirectory directory = directoryFacade
+                .openSubDirectory(directoryName).toCompletableFuture().join();
+        clearDirectory(directory);
+        try {
+            directoryFacade.rmdir(directoryName).toCompletableFuture().join();
+        } catch (final RuntimeException e) {
+            // Best-effort cleanup.
+        }
+    }
+
+    private void clearDirectory(final AsyncDirectory directory) {
+        try (Stream<String> files = directory.getFileNamesAsync()
+                .toCompletableFuture().join()) {
+            files.forEach(fileName -> {
+                boolean deleted = false;
+                try {
+                    deleted = directory.deleteFileAsync(fileName)
+                            .toCompletableFuture().join();
+                    if (deleted) {
+                        return;
+                    }
+                } catch (final RuntimeException e) {
+                    // fall through to directory cleanup
+                }
+                try {
+                    if (!directory.isFileExistsAsync(fileName)
+                            .toCompletableFuture().join()) {
+                        return;
+                    }
+                } catch (final RuntimeException e) {
+                    return;
+                }
+                try {
+                    final AsyncDirectory subDirectory = directory
+                            .openSubDirectory(fileName).toCompletableFuture()
+                            .join();
+                    clearDirectory(subDirectory);
+                    directory.rmdir(fileName).toCompletableFuture().join();
+                } catch (final RuntimeException e) {
+                    // Best-effort cleanup.
+                }
+            });
+        }
+    }
+
+    private boolean exists(final String fileName) {
+        return directoryFacade.isFileExistsAsync(fileName).toCompletableFuture()
+                .join();
     }
 
     private void closeSegmentIfNeeded(final Segment<K, V> segment) {
