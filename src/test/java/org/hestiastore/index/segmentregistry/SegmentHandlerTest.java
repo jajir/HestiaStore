@@ -39,6 +39,15 @@ class SegmentHandlerTest {
     }
 
     @Test
+    void getSegmentIfReady_returnsOkWhenReady() {
+        final SegmentRegistryResult<Segment<Integer, String>> result = handler
+                .getSegmentIfReady();
+
+        assertSame(SegmentRegistryResultStatus.OK, result.getStatus());
+        assertSame(segment, result.getValue());
+    }
+
+    @Test
     void lock_transitionsToLocked() {
         final SegmentHandlerLockStatus status = handler.lock();
 
@@ -48,6 +57,16 @@ class SegmentHandlerTest {
         final SegmentHandlerResult<Segment<Integer, String>> result = handler
                 .getSegment();
         assertSame(SegmentHandlerResultStatus.LOCKED, result.getStatus());
+    }
+
+    @Test
+    void getSegmentIfReady_returnsBusyWhenLocked() {
+        assertSame(SegmentHandlerLockStatus.OK, handler.lock());
+
+        final SegmentRegistryResult<Segment<Integer, String>> result = handler
+                .getSegmentIfReady();
+
+        assertSame(SegmentRegistryResultStatus.BUSY, result.getStatus());
     }
 
     @Test

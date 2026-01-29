@@ -25,6 +25,18 @@ public final class SegmentHandler<K, V> {
         return state.get();
     }
 
+    /**
+     * Returns the segment when the handler is ready; otherwise returns BUSY.
+     *
+     * @return registry result with segment or BUSY status
+     */
+    public SegmentRegistryResult<Segment<K, V>> getSegmentIfReady() {
+        if (state.get() == SegmentHandlerState.READY) {
+            return SegmentRegistryResult.ok(segment);
+        }
+        return SegmentRegistryResult.busy();
+    }
+
     SegmentHandlerResult<Segment<K, V>> getSegment() {
         if (state.get() == SegmentHandlerState.READY) {
             return SegmentHandlerResult.ok(segment);

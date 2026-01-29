@@ -18,6 +18,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segmentregistry.SegmentHandler;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.junit.jupiter.api.AfterEach;
@@ -62,7 +63,7 @@ class SegmentIndexConsistencyCheckerTest {
     void test_missingSegment() {
         when(keyToSegmentMap.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
-        when(segmentRegistry.getSegment(SEGMENT_ID))
+        when(segmentRegistry.getSegmentHandler(SEGMENT_ID))
                 .thenReturn(SegmentRegistryResult.error());
 
         final Exception e = assertThrows(IndexException.class,
@@ -107,8 +108,9 @@ class SegmentIndexConsistencyCheckerTest {
     void test_oneSegment_segmentMaxKey_is_null_removes_segment() {
         when(keyToSegmentMap.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
-        when(segmentRegistry.getSegment(SEGMENT_ID))
-                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segmentRegistry.getSegmentHandler(SEGMENT_ID))
+                .thenReturn(SegmentRegistryResult.ok(
+                        new SegmentHandler<>(segment)));
         when(segment.checkAndRepairConsistency()).thenReturn(null);
         when(segment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
                 .thenReturn(SegmentResult.ok(
@@ -126,8 +128,9 @@ class SegmentIndexConsistencyCheckerTest {
     void test_oneSegment_segmentMaxKeyIsHigher() {
         when(keyToSegmentMap.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
-        when(segmentRegistry.getSegment(SEGMENT_ID))
-                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segmentRegistry.getSegmentHandler(SEGMENT_ID))
+                .thenReturn(SegmentRegistryResult.ok(
+                        new SegmentHandler<>(segment)));
         when(segment.checkAndRepairConsistency())
                 .thenReturn(SEGMENT_MAX_KEY + 1);
 
@@ -144,8 +147,9 @@ class SegmentIndexConsistencyCheckerTest {
     void test_oneSegment() {
         when(keyToSegmentMap.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
-        when(segmentRegistry.getSegment(SEGMENT_ID))
-                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segmentRegistry.getSegmentHandler(SEGMENT_ID))
+                .thenReturn(SegmentRegistryResult.ok(
+                        new SegmentHandler<>(segment)));
         when(segment.checkAndRepairConsistency()).thenReturn(SEGMENT_MAX_KEY);
 
         checker.checkAndRepairConsistency();

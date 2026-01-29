@@ -20,6 +20,15 @@ public interface SegmentRegistry<K, V> {
     SegmentRegistryResult<Segment<K, V>> getSegment(SegmentId segmentId);
 
     /**
+     * Returns the handler for the provided segment id.
+     *
+     * @param segmentId segment id to load
+     * @return registry result containing the handler or a status
+     */
+    SegmentRegistryResult<SegmentHandler<K, V>> getSegmentHandler(
+            SegmentId segmentId);
+
+    /**
      * Removes a segment from the registry and deletes its files.
      *
      * @param segmentId segment id to remove

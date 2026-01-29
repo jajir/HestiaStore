@@ -20,6 +20,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segmentregistry.SegmentHandler;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.junit.jupiter.api.AfterEach;
@@ -84,8 +85,9 @@ class SegmentIndexCoreTest {
     @Test
     void get_returnsBusyWhenSegmentIsBusy() {
         final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
-        when(segmentRegistry.getSegment(segmentId))
-                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segmentRegistry.getSegmentHandler(segmentId))
+                .thenReturn(SegmentRegistryResult.ok(
+                        new SegmentHandler<>(segment)));
         when(segment.get("key")).thenReturn(SegmentResult.busy());
 
         final IndexResult<String> result = core.get("key");
@@ -96,9 +98,10 @@ class SegmentIndexCoreTest {
     @Test
     void get_returnsBusyWhenMappingChangesDuringRead() {
         final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
-        when(segmentRegistry.getSegment(segmentId)).thenAnswer(invocation -> {
+        when(segmentRegistry.getSegmentHandler(segmentId)).thenAnswer(
+                invocation -> {
             synchronizedKeyToSegmentMap.updateSegmentMaxKey(segmentId, "key-2");
-            return SegmentRegistryResult.ok(segment);
+            return SegmentRegistryResult.ok(new SegmentHandler<>(segment));
         });
         when(segment.get("key")).thenReturn(SegmentResult.ok("value"));
 
@@ -112,8 +115,9 @@ class SegmentIndexCoreTest {
         final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
         final KeyToSegmentMap.Snapshot<String> snapshot = synchronizedKeyToSegmentMap
                 .snapshot();
-        when(segmentRegistry.getSegment(segmentId))
-                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segmentRegistry.getSegmentHandler(segmentId))
+                .thenReturn(SegmentRegistryResult.ok(
+                        new SegmentHandler<>(segment)));
         when(segment.put("key", "value")).thenReturn(SegmentResult.ok());
 
         final IndexResult<Void> result = core.put("key", "value");
@@ -126,9 +130,10 @@ class SegmentIndexCoreTest {
     @Test
     void put_returnsBusyWhenMappingChangesBeforeWrite() {
         final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
-        when(segmentRegistry.getSegment(segmentId)).thenAnswer(invocation -> {
+        when(segmentRegistry.getSegmentHandler(segmentId)).thenAnswer(
+                invocation -> {
             synchronizedKeyToSegmentMap.updateSegmentMaxKey(segmentId, "key-2");
-            return SegmentRegistryResult.ok(segment);
+            return SegmentRegistryResult.ok(new SegmentHandler<>(segment));
         });
 
         final IndexResult<Void> result = core.put("key", "value");
@@ -141,8 +146,9 @@ class SegmentIndexCoreTest {
     @Test
     void put_returnsBusyWhenSegmentIsBusy() {
         final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
-        when(segmentRegistry.getSegment(segmentId))
-                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segmentRegistry.getSegmentHandler(segmentId))
+                .thenReturn(SegmentRegistryResult.ok(
+                        new SegmentHandler<>(segment)));
         when(segment.put("key", "value")).thenReturn(SegmentResult.busy());
 
         final IndexResult<Void> result = core.put("key", "value");
@@ -156,8 +162,9 @@ class SegmentIndexCoreTest {
         final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
         final EntryIterator<String, String> iterator = EntryIterator
                 .make(List.<Entry<String, String>>of().iterator());
-        when(segmentRegistry.getSegment(segmentId))
-                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segmentRegistry.getSegmentHandler(segmentId))
+                .thenReturn(SegmentRegistryResult.ok(
+                        new SegmentHandler<>(segment)));
         when(segment.openIterator(SegmentIteratorIsolation.FAIL_FAST))
                 .thenReturn(SegmentResult.ok(iterator));
 

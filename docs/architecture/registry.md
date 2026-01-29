@@ -82,31 +82,30 @@ and **apply** under a short registry freeze.
 
 ### Step‑by‑step (proposed)
 
-1) **Open exclusive iterator**  
+1) **Lock handler and re‑check eligibility**  
+   Acquire the `SegmentHandler` lock for the target segment to block
+   non‑privileged access. Re‑check split eligibility under the handler lock.
+
+2) **Open exclusive iterator**  
    Acquire `SegmentIteratorIsolation.FULL_ISOLATION` on the target segment.
    This blocks concurrent writes/flush/compact for the segment and yields a
    stable view.
 
-2) **Split on maintenance executor**  
+3) **Split on maintenance executor**  
    Run the split in a background maintenance thread. Create two **new**
    segments (lower + upper) by streaming from the exclusive iterator.
 
-3) **Return work to registry**  
-   The split job returns a `SegmentSplitterResult` with the new segment ids and
-   split metadata (min/max keys, outcome).
-
-4) **Freeze registry and update registry map**  
-   Enter `FREEZE` and atomically update registry state:
-   - remove the old segment id from the registry map
-   - add the two new segment ids (lower + upper) to the registry map
-   - evict the old segment instance from the cache
-   - exit `FREEZE` immediately after the update to keep the window short
-
-5) **Update map file**  
-   Persist the key‑to‑segment map update:
+4) **Freeze registry and persist key‑map update**  
+   Enter `FREEZE` and update the key‑to‑segment map first:
    - remove the old segment id
    - add the new lower + upper segment ids with their key ranges
    - flush the map to disk
+
+5) **Update registry cache**  
+   Still under `FREEZE`, update registry state:
+   - remove the old segment id from the registry cache
+   - add the two new segment ids (lower + upper) to the cache
+   - exit `FREEZE` immediately after the update to keep the window short
 
 6) **Release segment resources**  
    Close the exclusive iterator and release segment locks. Close/free any
@@ -117,7 +116,7 @@ and **apply** under a short registry freeze.
    no locks are held.
 
 8) **Unlock and resume**  
-   Ensure the registry is back to `READY` and release any remaining locks.
+   Ensure the registry is back to `READY` and release the handler lock.
 
 ### Split Outcome Mapping
 
@@ -128,9 +127,9 @@ and **apply** under a short registry freeze.
 
 ## Locking & Ordering Rules
 
-- **Segment lock first, registry lock second**  
-  The exclusive segment iterator is acquired before registry `FREEZE`.
-  This avoids long registry freezes and keeps map updates short.
+- **Handler lock first, iterator lock second**  
+  The `SegmentHandler` lock is acquired before opening the
+  `FULL_ISOLATION` iterator. Eligibility is re‑checked under the handler lock.
 
 - **Key-map lock remains required**  
   The registry `FREEZE` does not replace the key‑to‑segment map’s own
@@ -138,19 +137,20 @@ and **apply** under a short registry freeze.
   the on‑disk map, because other index operations may bypass the registry lock.
 
 - **Lock order (apply phase)**  
-  During split apply, acquire the registry lock/freeze first and then the
-  key‑map lock. Release in reverse order. This ordering is the only allowed
-  path for split map updates to avoid deadlocks.
+  During split apply, acquire the handler lock, then the registry `FREEZE`,
+  and then the key‑map lock. Release in reverse order.
 
 - **Registry freeze is not held during split IO**  
   The split worker writes new segment files without holding registry `FREEZE`.
+  The registry `FREEZE` does cover key‑map persistence so the on‑disk map is
+  updated before cache changes.
 
 - **Single registry freeze per split**  
   The registry only freezes for the apply phase (map update + cache eviction).
 
 - **Lock/unlock order is consistent**  
   Acquire locks in a single global order and release in reverse order
-  (segment -> registry -> key‑map; unlock key‑map -> registry -> segment) to
+  (handler -> registry -> key‑map; unlock key‑map -> registry -> handler) to
   avoid deadlocks.
 
 ## Failure Handling
@@ -172,7 +172,8 @@ and **apply** under a short registry freeze.
 
 - **Map updates are consistent**: apply phase must fully replace the old
   segment with the new segment ids or transition to `ERROR`.
-- **FREEZE is short**: all IO happens outside `FREEZE`.
+- **FREEZE is short**: split IO happens outside `FREEZE`; only key‑map
+  persistence and cache updates run under `FREEZE`.
 - **No hidden compaction**: split does not implicitly run `compact()`.
 
 ## Relation to Segment Concurrency
