@@ -4,7 +4,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
+import org.hestiastore.index.segmentregistry.SegmentRegistryMaintenance;
 
 /**
  * Coordinates post-write maintenance triggers and split decisions.
@@ -13,12 +13,12 @@ final class SegmentMaintenanceCoordinator<K, V> {
 
     private final IndexConfiguration<K, V> conf;
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
-    private final SegmentRegistryImpl<K, V> segmentRegistry;
+    private final SegmentRegistryMaintenance<K, V> segmentRegistry;
     private final SegmentAsyncSplitCoordinator<K, V> splitCoordinator;
 
     SegmentMaintenanceCoordinator(final IndexConfiguration<K, V> conf,
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
-            final SegmentRegistryImpl<K, V> segmentRegistry) {
+            final SegmentRegistryMaintenance<K, V> segmentRegistry) {
         this.conf = Vldtn.requireNonNull(conf, "conf");
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");

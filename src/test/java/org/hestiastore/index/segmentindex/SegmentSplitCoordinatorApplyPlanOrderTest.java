@@ -12,7 +12,7 @@ import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
+import org.hestiastore.index.segmentregistry.SegmentRegistryMaintenance;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +29,7 @@ class SegmentSplitCoordinatorApplyPlanOrderTest {
     private KeyToSegmentMapSynchronizedAdapter<Integer> keyToSegmentMap;
 
     @Mock
-    private SegmentRegistryImpl<Integer, String> segmentRegistry;
+    private SegmentRegistryMaintenance<Integer, String> segmentRegistry;
 
     @Mock
     private Segment<Integer, String> removedSegment;

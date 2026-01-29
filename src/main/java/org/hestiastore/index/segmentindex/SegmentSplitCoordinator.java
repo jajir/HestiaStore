@@ -9,7 +9,7 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segmentregistry.SegmentHandlerLockStatus;
-import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
+import org.hestiastore.index.segmentregistry.SegmentRegistryMaintenance;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +25,7 @@ class SegmentSplitCoordinator<K, V> {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final IndexConfiguration<K, V> conf;
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
-    private final SegmentRegistryImpl<K, V> segmentRegistry;
+    private final SegmentRegistryMaintenance<K, V> segmentRegistry;
     private final SegmentIndexSplitPolicy<K, V> splitPolicy;
     private final IndexRetryPolicy retryPolicy;
     private static final boolean DEBUG_SPLIT_LOSS = Boolean
@@ -33,14 +33,14 @@ class SegmentSplitCoordinator<K, V> {
 
     SegmentSplitCoordinator(final IndexConfiguration<K, V> conf,
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
-            final SegmentRegistryImpl<K, V> segmentRegistry) {
+            final SegmentRegistryMaintenance<K, V> segmentRegistry) {
         this(conf, keyToSegmentMap, segmentRegistry,
                 new SegmentIndexSplitPolicyThreshold<>());
     }
 
     SegmentSplitCoordinator(final IndexConfiguration<K, V> conf,
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
-            final SegmentRegistryImpl<K, V> segmentRegistry,
+            final SegmentRegistryMaintenance<K, V> segmentRegistry,
             final SegmentIndexSplitPolicy<K, V> splitPolicy) {
         this.conf = Vldtn.requireNonNull(conf, "conf");
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,

@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
+import org.hestiastore.index.segmentregistry.SegmentRegistryMaintenance;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -31,7 +31,7 @@ class SegmentAsyncSplitCoordinatorTest {
     @Mock
     private SegmentSplitCoordinator<Integer, String> splitCoordinator;
     @Mock
-    private SegmentRegistryImpl<Integer, String> segmentRegistry;
+    private SegmentRegistryMaintenance<Integer, String> segmentRegistry;
 
     @Test
     void constructor_rejectsMissingExecutor() {
