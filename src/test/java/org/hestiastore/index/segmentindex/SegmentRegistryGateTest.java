@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.hestiastore.index.segmentregistry.SegmentRegistryGate;
+import org.hestiastore.index.segmentregistry.SegmentRegistryState;
 import org.junit.jupiter.api.Test;
 
 class SegmentRegistryGateTest {

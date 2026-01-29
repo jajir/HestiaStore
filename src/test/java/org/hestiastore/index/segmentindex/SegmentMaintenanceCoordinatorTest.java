@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutorService;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
+import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

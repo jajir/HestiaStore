@@ -1,30 +1,30 @@
-package org.hestiastore.index.segmentindex;
+package org.hestiastore.index.segmentregistry;
 
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Simple state holder for registry lifecycle transitions.
  */
-final class SegmentRegistryGate {
+public final class SegmentRegistryGate {
 
     private final AtomicReference<SegmentRegistryState> state = new AtomicReference<>(
             SegmentRegistryState.READY);
 
-    SegmentRegistryState getState() {
+    public SegmentRegistryState getState() {
         return state.get();
     }
 
-    boolean tryEnterFreeze() {
+    public boolean tryEnterFreeze() {
         return state.compareAndSet(SegmentRegistryState.READY,
                 SegmentRegistryState.FREEZE);
     }
 
-    boolean finishFreezeToReady() {
+    public boolean finishFreezeToReady() {
         return state.compareAndSet(SegmentRegistryState.FREEZE,
                 SegmentRegistryState.READY);
     }
 
-    boolean close() {
+    public boolean close() {
         while (true) {
             final SegmentRegistryState current = state.get();
             if (current == SegmentRegistryState.ERROR) {
@@ -39,7 +39,7 @@ final class SegmentRegistryGate {
         }
     }
 
-    void fail() {
+    public void fail() {
         state.set(SegmentRegistryState.ERROR);
     }
 }

@@ -1,11 +1,11 @@
-package org.hestiastore.index.segmentindex;
+package org.hestiastore.index.segmentregistry;
 
 /**
  * Result wrapper for segment registry operations.
  *
  * @param <T> value type for successful results
  */
-final class SegmentRegistryResult<T> {
+public final class SegmentRegistryResult<T> {
 
     private final SegmentRegistryResultStatus status;
     private final T value;
@@ -23,7 +23,7 @@ final class SegmentRegistryResult<T> {
      * @param <T>   value type
      * @return OK result with value
      */
-    static <T> SegmentRegistryResult<T> ok(final T value) {
+    public static <T> SegmentRegistryResult<T> ok(final T value) {
         return new SegmentRegistryResult<>(SegmentRegistryResultStatus.OK,
                 value);
     }
@@ -34,7 +34,7 @@ final class SegmentRegistryResult<T> {
      * @param <T> value type
      * @return OK result with null value
      */
-    static <T> SegmentRegistryResult<T> ok() {
+    public static <T> SegmentRegistryResult<T> ok() {
         return new SegmentRegistryResult<>(SegmentRegistryResultStatus.OK,
                 null);
     }
@@ -45,7 +45,7 @@ final class SegmentRegistryResult<T> {
      * @param <T> value type
      * @return BUSY result with null value
      */
-    static <T> SegmentRegistryResult<T> busy() {
+    public static <T> SegmentRegistryResult<T> busy() {
         return new SegmentRegistryResult<>(SegmentRegistryResultStatus.BUSY,
                 null);
     }
@@ -56,7 +56,7 @@ final class SegmentRegistryResult<T> {
      * @param <T> value type
      * @return CLOSED result with null value
      */
-    static <T> SegmentRegistryResult<T> closed() {
+    public static <T> SegmentRegistryResult<T> closed() {
         return new SegmentRegistryResult<>(SegmentRegistryResultStatus.CLOSED,
                 null);
     }
@@ -67,7 +67,7 @@ final class SegmentRegistryResult<T> {
      * @param <T> value type
      * @return ERROR result with null value
      */
-    static <T> SegmentRegistryResult<T> error() {
+    public static <T> SegmentRegistryResult<T> error() {
         return new SegmentRegistryResult<>(SegmentRegistryResultStatus.ERROR,
                 null);
     }
@@ -77,7 +77,7 @@ final class SegmentRegistryResult<T> {
      *
      * @return status enum
      */
-    SegmentRegistryResultStatus getStatus() {
+    public SegmentRegistryResultStatus getStatus() {
         return status;
     }
 
@@ -86,7 +86,7 @@ final class SegmentRegistryResult<T> {
      *
      * @return value or null
      */
-    T getValue() {
+    public T getValue() {
         return value;
     }
 
@@ -95,7 +95,7 @@ final class SegmentRegistryResult<T> {
      *
      * @return true for OK results
      */
-    boolean isOk() {
+    public boolean isOk() {
         return status == SegmentRegistryResultStatus.OK;
     }
 }

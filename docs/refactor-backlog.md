@@ -2,23 +2,6 @@
 
 ## Active
 
-[ ] 59 Introduce `SegmentHandler` lock gate in segmentindex (Risk: HIGH)
-    - Add `SegmentHandler` with `getSegment()` returning `SegmentHandlerResult`:
-      `OK` (segment), `LOCKED`, and handler states `READY`/`LOCKED`.
-    - `lock()` returns a privileged handle/token that allows access to the
-      underlying segment while handler state is `LOCKED`.
-    - `getSegment()` must return `LOCKED` while locked for all non-privileged
-      callers (no segment exposure during lock).
-    - Wire split flow to lock via handler before opening `FULL_ISOLATION`
-      iterator, then unlock after apply/cleanup.
-    - Add tests: `LOCKED` is returned during lock; lock holder can operate;
-      unlock restores `OK`.
-[ ] 60 Move registry implementation to `segmentregistry` package (Risk: MEDIUM)
-    - Move `SegmentRegistryImpl`, `SegmentRegistryGate`, `SegmentRegistryCache`,
-      `SegmentRegistryState`, `SegmentRegistryResult`, and `SegmentDirectorySwap`
-      to `org.hestiastore.index.segmentregistry`.
-    - Update imports/usages in `segmentindex` and tests.
-    - Keep public API surface the same; verify no package-private access leaks.
 [ ] 61.1 Wire `SegmentHandler` into key-to-segment map usage (Risk: HIGH)
     - Replace direct segment references in key-to-segment map paths with
       `SegmentHandler` usage.
@@ -229,6 +212,31 @@
 ## Done (Archive)
 
 - (keep completed items here; do not delete)
+
+[x] 61.3 Simplify `SegmentHandler` lock API (Risk: MEDIUM)
+    - Keep internal handler state as `READY`/`LOCKED`.
+    - `lock()` returns `SegmentHandlerLockStatus` with `OK` or `BUSY`.
+    - Replace token-based lock/unlock usage across registry + split flows.
+    - Update handler-related tests to match the new API.
+
+[x] 60 Move registry implementation to `segmentregistry` package (Risk: MEDIUM)
+    - Move `SegmentRegistryImpl`, `SegmentRegistryGate`, `SegmentRegistryCache`,
+      `SegmentRegistryState`, `SegmentRegistryResult`, and `SegmentDirectorySwap`
+      to `org.hestiastore.index.segmentregistry`.
+    - Update imports/usages in `segmentindex` and tests.
+    - Keep public API surface the same; verify no package-private access leaks.
+
+[x] 59 Introduce `SegmentHandler` lock gate in segmentindex (Risk: HIGH)
+    - Add `SegmentHandler` with `getSegment()` returning `SegmentHandlerResult`:
+      `OK` (segment), `LOCKED`, and handler states `READY`/`LOCKED`.
+    - `lock()` returns a privileged handle/token that allows access to the
+      underlying segment while handler state is `LOCKED`.
+    - `getSegment()` must return `LOCKED` while locked for all non-privileged
+      callers (no segment exposure during lock).
+    - Wire split flow to lock via handler before opening `FULL_ISOLATION`
+      iterator, then unlock after apply/cleanup.
+    - Add tests: `LOCKED` is returned during lock; lock holder can operate;
+      unlock restores `OK`.
 
 [x] 59.2 Concurrency: reduce redundant key-map read locks (Risk: MEDIUM)
     - Make `KeyToSegmentMapSynchronizedAdapter.snapshot()` lock-free

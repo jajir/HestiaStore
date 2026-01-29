@@ -4,6 +4,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
+import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 
 /**
  * Coordinates post-write maintenance triggers and split decisions.

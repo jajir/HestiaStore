@@ -12,6 +12,8 @@ import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
+import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,14 +41,6 @@ class SegmentSplitCoordinatorApplyPlanOrderTest {
         coordinator = new SegmentSplitCoordinator<>(
                 IndexConfiguration.<Integer, String>builder().build(),
                 keyToSegmentMap, segmentRegistry);
-        when(keyToSegmentMap.withWriteLock(
-                org.mockito.ArgumentMatchers
-                        .<java.util.function.Supplier<?>>any()))
-                .thenAnswer(invocation -> {
-            final java.util.function.Supplier<?> action = invocation
-                    .getArgument(0);
-            return action.get();
-        });
     }
 
     @AfterEach
@@ -73,9 +67,6 @@ class SegmentSplitCoordinatorApplyPlanOrderTest {
         assertTrue(coordinator.applySplitPlan(plan).isOk());
 
         final InOrder inOrder = inOrder(segmentRegistry, keyToSegmentMap);
-        inOrder.verify(keyToSegmentMap).withWriteLock(
-                org.mockito.ArgumentMatchers
-                        .<java.util.function.Supplier<?>>any());
         inOrder.verify(segmentRegistry).applySplitPlan(eq(plan), isNull(),
                 isNull(), any());
         inOrder.verify(keyToSegmentMap).applySplitPlan(plan);
@@ -93,9 +84,6 @@ class SegmentSplitCoordinatorApplyPlanOrderTest {
 
         assertFalse(coordinator.applySplitPlan(plan).isOk());
 
-        verify(keyToSegmentMap).withWriteLock(
-                org.mockito.ArgumentMatchers
-                        .<java.util.function.Supplier<?>>any());
         verify(keyToSegmentMap, never()).applySplitPlan(plan);
         verify(keyToSegmentMap, never()).optionalyFlush();
         verify(segmentRegistry).applySplitPlan(eq(plan), isNull(), isNull(),

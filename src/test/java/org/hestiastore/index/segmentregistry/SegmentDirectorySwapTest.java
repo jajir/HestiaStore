@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex;
+package org.hestiastore.index.segmentregistry;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -65,8 +65,8 @@ class SegmentDirectorySwapTest {
         writeFile(replacementId, "replacement.txt", "replacement");
         writeMarker(currentId, replacementId);
 
-        asyncDirectory.renameFileAsync(currentId.getName(),
-                tempName(currentId)).toCompletableFuture().join();
+        asyncDirectory.renameFileAsync(currentId.getName(), tempName(currentId))
+                .toCompletableFuture().join();
 
         swapper.recoverIfNeeded(currentId);
 
@@ -84,8 +84,8 @@ class SegmentDirectorySwapTest {
         writeFile(currentId, "current.txt", "current");
         writeMarker(currentId, replacementId);
 
-        asyncDirectory.renameFileAsync(currentId.getName(),
-                tempName(currentId)).toCompletableFuture().join();
+        asyncDirectory.renameFileAsync(currentId.getName(), tempName(currentId))
+                .toCompletableFuture().join();
 
         swapper.recoverIfNeeded(currentId);
 
