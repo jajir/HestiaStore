@@ -12,6 +12,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
+import org.hestiastore.index.segmentregistry.SegmentHandler;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
@@ -56,6 +57,22 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
         nextSegmentIterator();
     }
 
+    private SegmentRegistryResult<Segment<K, V>> loadSegment(
+            final SegmentId segmentId) {
+        final SegmentRegistryResult<SegmentHandler<K, V>> handlerResult = segmentRegistry
+                .getSegmentHandler(segmentId);
+        if (handlerResult.getStatus() == SegmentRegistryResultStatus.OK) {
+            return handlerResult.getValue().getSegmentIfReady();
+        }
+        if (handlerResult.getStatus() == SegmentRegistryResultStatus.CLOSED) {
+            return SegmentRegistryResult.closed();
+        }
+        if (handlerResult.getStatus() == SegmentRegistryResultStatus.ERROR) {
+            return SegmentRegistryResult.error();
+        }
+        return SegmentRegistryResult.busy();
+    }
+
     private void nextSegmentIterator() {
         if (currentIterator != null) {
             currentIterator.close();
@@ -69,8 +86,8 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
             position++;
             final Segment<K, V> segment;
             while (true) {
-                final SegmentRegistryResult<Segment<K, V>> segmentResult = segmentRegistry
-                        .getSegment(segmentId);
+                final SegmentRegistryResult<Segment<K, V>> segmentResult = loadSegment(
+                        segmentId);
                 if (segmentResult.getStatus() == SegmentRegistryResultStatus.BUSY) {
                     continue;
                 }

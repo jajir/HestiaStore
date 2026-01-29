@@ -112,58 +112,86 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
     @Override
     public SegmentRegistryResult<Segment<K, V>> getSegment(
             final SegmentId segmentId) {
+        final SegmentRegistryResult<SegmentHandler<K, V>> handlerResult = getSegmentHandler(
+                segmentId);
+        if (handlerResult.getStatus() == SegmentRegistryResultStatus.OK) {
+            return handlerResult.getValue().getSegmentIfReady();
+        }
+        if (handlerResult.getStatus() == SegmentRegistryResultStatus.CLOSED) {
+            return SegmentRegistryResult.closed();
+        }
+        if (handlerResult.getStatus() == SegmentRegistryResultStatus.ERROR) {
+            return SegmentRegistryResult.error();
+        }
+        return SegmentRegistryResult.busy();
+    }
+
+    /**
+     * Returns the segment handler for the provided id, loading the segment if needed.
+     *
+     * @param segmentId segment id to load
+     * @return result containing the handler or a status
+     */
+    @Override
+    public SegmentRegistryResult<SegmentHandler<K, V>> getSegmentHandler(
+            final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         final SegmentRegistryState initialState = gate.getState();
         if (initialState != SegmentRegistryState.READY) {
             return resultForState(initialState);
         }
         final List<Segment<K, V>> evicted = new ArrayList<>();
-        final SegmentRegistryResult<Segment<K, V>> result = cache.withLock(() -> {
-            final SegmentRegistryState state = gate.getState();
-            if (state != SegmentRegistryState.READY) {
-                return resultForState(state);
-            }
-            SegmentHandler<K, V> handler = handlers.get(segmentId);
-            if (handler != null
-                    && handler.getState() == SegmentHandlerState.LOCKED) {
-                return SegmentRegistryResult.busy();
-            }
-            Segment<K, V> existing = cache.getLocked(segmentId);
-            final boolean needsCreate = existing == null
-                    || existing.getState() == SegmentState.CLOSED;
-            final boolean needsEviction = !needsCreate
-                    && cache.needsEvictionLocked(maxNumberOfSegmentsInCache,
-                            splitsInFlight);
-            if (needsCreate || needsEviction) {
-                if (state != SegmentRegistryState.READY) {
-                    return resultForState(state);
-                }
-                try {
-                    if (needsCreate) {
-                        existing = instantiateSegment(segmentId);
-                        cache.putLocked(segmentId, existing);
+        final SegmentRegistryResult<SegmentHandler<K, V>> result = cache
+                .withLock(() -> {
+                    final SegmentRegistryState state = gate.getState();
+                    if (state != SegmentRegistryState.READY) {
+                        return resultForState(state);
                     }
-                    cache.evictIfNeededLocked(maxNumberOfSegmentsInCache,
-                            splitsInFlight, evicted);
-                    removeHandlersForEvictedLocked(evicted);
+                    SegmentHandler<K, V> handler = handlers.get(segmentId);
+                    if (handler != null
+                            && handler.getState() == SegmentHandlerState.LOCKED) {
+                        return SegmentRegistryResult.busy();
+                    }
+                    Segment<K, V> existing = cache.getLocked(segmentId);
+                    final boolean needsCreate = existing == null
+                            || existing.getState() == SegmentState.CLOSED;
+                    final boolean needsEviction = !needsCreate
+                            && cache.needsEvictionLocked(
+                                    maxNumberOfSegmentsInCache,
+                                    splitsInFlight);
+                    if (needsCreate || needsEviction) {
+                        if (state != SegmentRegistryState.READY) {
+                            return resultForState(state);
+                        }
+                        try {
+                            if (needsCreate) {
+                                existing = instantiateSegment(segmentId);
+                                cache.putLocked(segmentId, existing);
+                            }
+                            cache.evictIfNeededLocked(
+                                    maxNumberOfSegmentsInCache, splitsInFlight,
+                                    evicted);
+                            removeHandlersForEvictedLocked(evicted);
+                            handler = getOrCreateHandlerLocked(segmentId,
+                                    existing);
+                            if (handler
+                                    .getState() == SegmentHandlerState.LOCKED) {
+                                return SegmentRegistryResult.busy();
+                            }
+                            return SegmentRegistryResult.ok(handler);
+                        } catch (final IllegalStateException e) {
+                            if (isSegmentLockConflict(e)) {
+                                return SegmentRegistryResult.busy();
+                            }
+                            throw e;
+                        }
+                    }
                     handler = getOrCreateHandlerLocked(segmentId, existing);
                     if (handler.getState() == SegmentHandlerState.LOCKED) {
                         return SegmentRegistryResult.busy();
                     }
-                    return SegmentRegistryResult.ok(existing);
-                } catch (final IllegalStateException e) {
-                    if (isSegmentLockConflict(e)) {
-                        return SegmentRegistryResult.busy();
-                    }
-                    throw e;
-                }
-            }
-            handler = getOrCreateHandlerLocked(segmentId, existing);
-            if (handler.getState() == SegmentHandlerState.LOCKED) {
-                return SegmentRegistryResult.busy();
-            }
-            return SegmentRegistryResult.ok(existing);
-        });
+                    return SegmentRegistryResult.ok(handler);
+                });
         closeEvictedSegments(evicted);
         return result;
     }

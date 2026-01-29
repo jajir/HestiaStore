@@ -2,17 +2,6 @@
 
 ## Active
 
-[ ] 61.1 Wire `SegmentHandler` into key-to-segment map usage (Risk: HIGH)
-    - Replace direct segment references in key-to-segment map paths with
-      `SegmentHandler` usage.
-    - Ensure handlers are used consistently for segment access in index flows.
-[ ] 61.2 Refactor split algorithm around handler locks (Risk: HIGH)
-    - When a segment is eligible for split: acquire handler lock, re-check
-      eligibility under lock, then either unlock or proceed with split.
-    - Split apply ordering: update map on disk first, then in-memory map,
-      then close old segment, delete files, and finally unlock.
-    - Ensure failures unlock the handler and clean up temporary segments.
-    - Update `docs/architecture/registry.md` to reflect handler-based locking.
 [x] 58.1 Split: keep split IO outside registry freeze (Risk: HIGH)
     - `SegmentSplitCoordinator.split(...)`: ensure all IO (iterator open, writes)
       happens before any registry `FREEZE`.
@@ -212,6 +201,19 @@
 ## Done (Archive)
 
 - (keep completed items here; do not delete)
+
+[x] 61.1 Wire `SegmentHandler` into key-to-segment map usage (Risk: HIGH)
+    - Replace direct segment references in key-to-segment map paths with
+      `SegmentHandler` usage.
+    - Ensure handlers are used consistently for segment access in index flows.
+
+[x] 61.2 Refactor split algorithm around handler locks (Risk: HIGH)
+    - When a segment is eligible for split: acquire handler lock, re-check
+      eligibility under lock, then either unlock or proceed with split.
+    - Split apply ordering: update map on disk first, then in-memory map,
+      then close old segment, delete files, and finally unlock.
+    - Ensure failures unlock the handler and clean up temporary segments.
+    - Update `docs/architecture/registry.md` to reflect handler-based locking.
 
 [x] 61.3 Simplify `SegmentHandler` lock API (Risk: MEDIUM)
     - Keep internal handler state as `READY`/`LOCKED`.

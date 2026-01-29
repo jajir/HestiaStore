@@ -17,6 +17,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentState;
+import org.hestiastore.index.segmentregistry.SegmentHandler;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
@@ -473,14 +474,23 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         keyToSegmentMap.getSegmentIds().forEach(segmentId -> {
             final long startNanos = retryPolicy.startNanos();
             while (true) {
-                final SegmentRegistryResult<Segment<K, V>> segmentResult = segmentRegistry
-                        .getSegment(segmentId);
-                if (segmentResult
-                        .getStatus() == SegmentRegistryResultStatus.OK) {
-                    segmentResult.getValue().invalidateIterators();
-                    return;
-                }
-                if (segmentResult
+                final SegmentRegistryResult<SegmentHandler<K, V>> handlerResult = segmentRegistry
+                        .getSegmentHandler(segmentId);
+                if (handlerResult.getStatus() == SegmentRegistryResultStatus.OK) {
+                    final SegmentRegistryResult<Segment<K, V>> segmentResult = handlerResult
+                            .getValue().getSegmentIfReady();
+                    if (segmentResult
+                            .getStatus() == SegmentRegistryResultStatus.OK) {
+                        segmentResult.getValue().invalidateIterators();
+                        return;
+                    }
+                    if (segmentResult
+                            .getStatus() == SegmentRegistryResultStatus.BUSY) {
+                        retryPolicy.backoffOrThrow(startNanos,
+                                "invalidateIterators", segmentId);
+                        continue;
+                    }
+                } else if (handlerResult
                         .getStatus() == SegmentRegistryResultStatus.BUSY) {
                     retryPolicy.backoffOrThrow(startNanos,
                             "invalidateIterators", segmentId);
@@ -488,7 +498,7 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 }
                 throw new IndexException(
                         String.format("Segment '%s' failed to load: %s",
-                                segmentId, segmentResult.getStatus()));
+                                segmentId, handlerResult.getStatus()));
             }
         });
     }

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentregistry.SegmentHandler;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.junit.jupiter.api.AfterEach;
@@ -61,6 +62,12 @@ class SegmentRegistryTest {
         public SegmentRegistryResult<Segment<K, V>> getSegment(
                 final SegmentId segmentId) {
             return SegmentRegistryResult.ok(segment);
+        }
+
+        @Override
+        public SegmentRegistryResult<SegmentHandler<K, V>> getSegmentHandler(
+                final SegmentId segmentId) {
+            return SegmentRegistryResult.ok(new SegmentHandler<>(segment));
         }
 
         @Override
