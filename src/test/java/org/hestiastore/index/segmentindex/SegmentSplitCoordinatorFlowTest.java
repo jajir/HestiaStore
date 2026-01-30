@@ -22,6 +22,8 @@ import org.hestiastore.index.segmentregistry.SegmentFactory;
 import org.hestiastore.index.segmentregistry.SegmentIdAllocator;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
+import org.hestiastore.index.segmentregistry.SegmentRegistryGate;
+import org.hestiastore.index.segmentregistry.SegmentRegistryState;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 import org.junit.jupiter.api.Test;
 
@@ -71,12 +73,27 @@ class SegmentSplitCoordinatorFlowTest {
             assertTrue(registry.getDeletedSegments().containsAll(created));
             assertFalse(registry.getDeletedSegments()
                     .contains(SegmentId.of(0)));
+            assertEquals(SegmentRegistryState.ERROR,
+                    readGate(registry).getState());
         } finally {
             keyToSegmentMap.close();
             registry.close();
             if (!maintenanceExecutor.wasClosed()) {
                 maintenanceExecutor.close();
             }
+        }
+    }
+
+    private static SegmentRegistryGate readGate(
+            final SegmentRegistryImpl<?, ?> registry) {
+        try {
+            final var field = SegmentRegistryImpl.class
+                    .getDeclaredField("gate");
+            field.setAccessible(true);
+            return (SegmentRegistryGate) field.get(registry);
+        } catch (final ReflectiveOperationException ex) {
+            throw new IllegalStateException(
+                    "Unable to read registry gate", ex);
         }
     }
 

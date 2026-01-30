@@ -4,7 +4,9 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentregistry.SegmentHandlerLockStatus;
+import org.hestiastore.index.segmentregistry.SegmentRegistryFreeze;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
+import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 
 /**
  * Adapter that exposes split/maintenance registry operations without leaking
@@ -35,5 +37,27 @@ final class SegmentRegistryAccessAdapter<K, V>
     public void unlockSegmentHandler(final SegmentId segmentId,
             final Segment<K, V> expected) {
         registry.unlockSegmentHandler(segmentId, expected);
+    }
+
+    @Override
+    public SegmentRegistryResult<SegmentRegistryFreeze> tryEnterFreeze() {
+        return registry.tryEnterFreeze();
+    }
+
+    @Override
+    public SegmentRegistryResult<Void> evictSegmentFromCache(
+            final SegmentId segmentId, final Segment<K, V> expected) {
+        return registry.evictSegmentFromCache(segmentId, expected);
+    }
+
+    @Override
+    public SegmentRegistryResult<Void> deleteSegmentFiles(
+            final SegmentId segmentId) {
+        return registry.deleteSegmentFiles(segmentId);
+    }
+
+    @Override
+    public void failRegistry() {
+        registry.failRegistry();
     }
 }

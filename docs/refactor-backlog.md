@@ -7,6 +7,16 @@
       `SegmentRegistry.getSegment` or touching segments.
     - Use key-map snapshot + version re-check on retry/BUSY paths.
     - Tests: `IntegrationSegmentIndexConcurrencyTest` + new split/put stress.
+
+[ ] 62 Add `SegmentRegistryBuilder` modeled after `Segment.builder(...)` (Risk: MEDIUM)
+    - Add `SegmentRegistryBuilder` in `segmentregistry` with required inputs
+      (directory, type descriptors, config, maintenance executor).
+    - Provide optional setters for `SegmentIdAllocator` and `SegmentFactory`.
+    - Add static factory `SegmentRegistry.builder(...)` (or on impl) to return builder.
+    - Move default wiring (factory + allocator creation) into builder.
+    - Keep `SegmentRegistryImpl` constructor with full DI for tests.
+    - Update `SegmentIndexImpl` (and other callers) to use the builder.
+    - Add unit tests for missing required fields and default wiring.
   
 ## Planned
 
@@ -472,3 +482,22 @@
 [x] 67 Tests + docs for allocator move (Risk: LOW)
     - Add allocator tests (empty dir, max id, thread-safety).
     - Update `docs/architecture/registry.md` to reflect registry allocator.
+
+[x] 68 Align split apply with registry FREEZE + lock-order enforcement (Risk: MEDIUM)
+    - Expose registry FREEZE in `SegmentRegistryAccess` (or equivalent) so
+      split apply can run under FREEZE while holding handler + key-map locks.
+    - While FREEZE is active, set `hestiastore.registryLockHeld=true` so
+      key-map lock order enforcement can be enabled safely.
+    - Wrap key-map apply + cache eviction inside the FREEZE window.
+
+[x] 69 Separate cache eviction from file deletion in split apply (Risk: MEDIUM)
+    - Add registry operation to evict a specific segment from cache while the
+      handler lock is held (no file deletion).
+    - After apply: evict old segment under handler+FREEZE, release iterator,
+      unlock handler, then delete old segment files via registry helper.
+    - Keep `deleteSegment` behavior for general callers unchanged.
+
+[x] 70 Apply-failure should mark registry ERROR (Risk: LOW)
+    - When split apply fails mid-update, set registry gate to ERROR and
+      surface the failure (avoid silent BUSY loops).
+    - Add tests for apply-failure transitions.

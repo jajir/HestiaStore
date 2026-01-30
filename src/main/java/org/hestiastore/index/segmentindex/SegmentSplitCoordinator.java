@@ -8,8 +8,10 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
+import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentregistry.SegmentHandlerLockStatus;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
+import org.hestiastore.index.segmentregistry.SegmentRegistryFreeze;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.slf4j.Logger;
@@ -113,7 +115,13 @@ class SegmentSplitCoordinator<K, V> {
             registryAccess.unlockSegmentHandler(segmentId, segment);
         }
         if (split) {
-            segmentRegistry.deleteSegment(segmentId);
+            final SegmentRegistryResult<Void> deleteResult = registryAccess
+                    .deleteSegmentFiles(segmentId);
+            if (!deleteResult.isOk()) {
+                logger.warn(
+                        "Split cleanup: unable to delete segment files for '{}', status '{}'.",
+                        segmentId, deleteResult.getStatus());
+            }
         }
         return split;
     }
@@ -130,11 +138,12 @@ class SegmentSplitCoordinator<K, V> {
                 writerTxFactory);
         final SegmentSplitApplyPlan<K, V> applyPlan;
         final SegmentRegistryResult<Void> applyResult;
+        boolean applied = false;
         try (SegmentSplitter.SplitExecution<K, V> execution = splitter
                 .splitWithIterator(lowerSegmentId, upperSegmentId, plan)) {
             applyPlan = toApplyPlan(segmentId, upperSegmentId,
                     execution.getResult());
-            applyResult = applySplitPlan(applyPlan);
+            applyResult = applySplitPlan(applyPlan, segment);
             if (!applyResult.isOk()) {
                 if (DEBUG_SPLIT_LOSS) {
                     logger.warn(
@@ -144,12 +153,16 @@ class SegmentSplitCoordinator<K, V> {
                 deleteSplitSegments(lowerSegmentId, upperSegmentId);
                 return false;
             }
+            applied = true;
         } catch (final SegmentSplitAbortException e) {
             deleteSplitSegments(lowerSegmentId, upperSegmentId);
             return false;
         } catch (final RuntimeException e) {
             deleteSplitSegments(lowerSegmentId, upperSegmentId);
             throw e;
+        }
+        if (applied) {
+            closeSegmentAfterSplit(segment);
         }
         return true;
     }
@@ -224,13 +237,87 @@ class SegmentSplitCoordinator<K, V> {
     }
 
     SegmentRegistryResult<Void> applySplitPlan(
-            final SegmentSplitApplyPlan<K, V> plan) {
+            final SegmentSplitApplyPlan<K, V> plan,
+            final Segment<K, V> segment) {
         Vldtn.requireNonNull(plan, "plan");
-        if (!keyToSegmentMap.applySplitPlan(plan)) {
+        Vldtn.requireNonNull(segment, "segment");
+        final SegmentRegistryResult<SegmentRegistryFreeze> freezeResult = registryAccess
+                .tryEnterFreeze();
+        if (freezeResult.getStatus() != SegmentRegistryResultStatus.OK) {
+            if (freezeResult.getStatus() == SegmentRegistryResultStatus.CLOSED) {
+                return SegmentRegistryResult.closed();
+            }
+            if (freezeResult.getStatus() == SegmentRegistryResultStatus.ERROR) {
+                return SegmentRegistryResult.error();
+            }
             return SegmentRegistryResult.busy();
         }
-        keyToSegmentMap.optionalyFlush();
-        return SegmentRegistryResult.ok();
+        try (SegmentRegistryFreeze guard = freezeResult.getValue()) {
+            if (!keyToSegmentMap.applySplitPlan(plan)) {
+                registryAccess.failRegistry();
+                return SegmentRegistryResult.error();
+            }
+            keyToSegmentMap.optionalyFlush();
+            final SegmentRegistryResult<Void> evictResult = registryAccess
+                    .evictSegmentFromCache(plan.getOldSegmentId(), segment);
+            if (!evictResult.isOk()) {
+                registryAccess.failRegistry();
+                return SegmentRegistryResult.error();
+            }
+            return SegmentRegistryResult.ok();
+        } catch (final RuntimeException e) {
+            registryAccess.failRegistry();
+            return SegmentRegistryResult.error();
+        }
+    }
+
+    private void closeSegmentAfterSplit(final Segment<K, V> segment) {
+        Vldtn.requireNonNull(segment, "segment");
+        final long startNanos = retryPolicy.startNanos();
+        while (true) {
+            final SegmentState state = segment.getState();
+            if (state == SegmentState.CLOSED) {
+                return;
+            }
+            if (state == SegmentState.ERROR) {
+                throw new IndexException(
+                        String.format("Segment '%s' failed during close: %s",
+                                segment.getId(), state));
+            }
+            final SegmentResult<Void> result = segment.close();
+            final SegmentResultStatus status = result.getStatus();
+            if (status == SegmentResultStatus.OK) {
+                awaitSegmentClosed(segment, startNanos);
+                return;
+            }
+            if (status == SegmentResultStatus.CLOSED) {
+                return;
+            }
+            if (status == SegmentResultStatus.BUSY) {
+                retryPolicy.backoffOrThrow(startNanos, "close",
+                        segment.getId());
+                continue;
+            }
+            throw new IndexException(
+                    String.format("Segment '%s' failed during close: %s",
+                            segment.getId(), status));
+        }
+    }
+
+    private void awaitSegmentClosed(final Segment<K, V> segment,
+            final long startNanos) {
+        while (true) {
+            final SegmentState state = segment.getState();
+            if (state == SegmentState.CLOSED) {
+                return;
+            }
+            if (state == SegmentState.ERROR) {
+                throw new IndexException(
+                        String.format("Segment '%s' failed during close: %s",
+                                segment.getId(), state));
+            }
+            retryPolicy.backoffOrThrow(startNanos, "close", segment.getId());
+        }
     }
 
     private SegmentId allocateSegmentId() {

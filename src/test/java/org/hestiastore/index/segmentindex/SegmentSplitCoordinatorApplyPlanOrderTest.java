@@ -6,8 +6,11 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentregistry.SegmentRegistryFreeze;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
+import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +29,9 @@ class SegmentSplitCoordinatorApplyPlanOrderTest {
 
     @Mock
     private SegmentRegistryAccess<Integer, String> registryAccess;
+
+    @Mock
+    private Segment<Integer, String> segment;
 
     private SegmentWriterTxFactory<Integer, String> writerTxFactory;
 
@@ -53,12 +59,20 @@ class SegmentSplitCoordinatorApplyPlanOrderTest {
         final SegmentSplitApplyPlan<Integer, String> plan = new SegmentSplitApplyPlan<>(
                 SegmentId.of(1), SegmentId.of(2), SegmentId.of(3), 1, 10,
                 SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
+        final SegmentRegistryFreeze freeze = () -> {
+        };
+        when(registryAccess.tryEnterFreeze())
+                .thenReturn(SegmentRegistryResult.ok(freeze));
         when(keyToSegmentMap.applySplitPlan(plan)).thenReturn(true);
+        when(registryAccess.evictSegmentFromCache(plan.getOldSegmentId(),
+                segment)).thenReturn(SegmentRegistryResult.ok());
 
-        assertTrue(coordinator.applySplitPlan(plan).isOk());
+        assertTrue(coordinator.applySplitPlan(plan, segment).isOk());
 
         verify(keyToSegmentMap).applySplitPlan(plan);
         verify(keyToSegmentMap).optionalyFlush();
+        verify(registryAccess).evictSegmentFromCache(plan.getOldSegmentId(),
+                segment);
     }
 
     @Test
@@ -66,10 +80,17 @@ class SegmentSplitCoordinatorApplyPlanOrderTest {
         final SegmentSplitApplyPlan<Integer, String> plan = new SegmentSplitApplyPlan<>(
                 SegmentId.of(1), SegmentId.of(2), SegmentId.of(3), 1, 10,
                 SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
+        final SegmentRegistryFreeze freeze = () -> {
+        };
+        when(registryAccess.tryEnterFreeze())
+                .thenReturn(SegmentRegistryResult.ok(freeze));
         when(keyToSegmentMap.applySplitPlan(plan)).thenReturn(false);
 
-        assertFalse(coordinator.applySplitPlan(plan).isOk());
+        assertFalse(coordinator.applySplitPlan(plan, segment).isOk());
 
         verify(keyToSegmentMap, never()).optionalyFlush();
+        verify(registryAccess).failRegistry();
+        verify(registryAccess, never()).evictSegmentFromCache(
+                plan.getOldSegmentId(), segment);
     }
 }
