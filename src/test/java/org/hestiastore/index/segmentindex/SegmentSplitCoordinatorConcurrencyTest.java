@@ -2,6 +2,9 @@ package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 
@@ -9,8 +12,11 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
+import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentregistry.SegmentRegistryFreeze;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
+import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 import org.junit.jupiter.api.AfterEach;
@@ -28,6 +34,9 @@ class SegmentSplitCoordinatorConcurrencyTest {
 
     @Mock
     private SegmentRegistryAccess<Integer, String> registryAccess;
+
+    @Mock
+    private Segment<Integer, String> segment;
 
     private SegmentWriterTxFactory<Integer, String> writerTxFactory;
     private KeyToSegmentMapSynchronizedAdapter<Integer> keyToSegmentMap;
@@ -64,9 +73,16 @@ class SegmentSplitCoordinatorConcurrencyTest {
         final SegmentSplitApplyPlan<Integer, String> plan = new SegmentSplitApplyPlan<>(
                 SegmentId.of(9), SegmentId.of(2), SegmentId.of(3), 1, 5,
                 SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
+        final SegmentRegistryFreeze freeze = () -> {
+        };
+        when(registryAccess.tryEnterFreeze())
+                .thenReturn(SegmentRegistryResult.ok(freeze));
         final SegmentRegistryResultStatus status = coordinator
-                .applySplitPlan(plan).getStatus();
-        assertEquals(SegmentRegistryResultStatus.BUSY, status);
+                .applySplitPlan(plan, segment).getStatus();
+        assertEquals(SegmentRegistryResultStatus.ERROR, status);
+        verify(registryAccess).failRegistry();
+        verify(registryAccess, never()).evictSegmentFromCache(
+                plan.getOldSegmentId(), segment);
     }
 
     @Test
@@ -74,10 +90,18 @@ class SegmentSplitCoordinatorConcurrencyTest {
         final SegmentSplitApplyPlan<Integer, String> plan = new SegmentSplitApplyPlan<>(
                 SegmentId.of(1), SegmentId.of(2), SegmentId.of(3), 1, 5,
                 SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
+        final SegmentRegistryFreeze freeze = () -> {
+        };
+        when(registryAccess.tryEnterFreeze())
+                .thenReturn(SegmentRegistryResult.ok(freeze));
+        when(registryAccess.evictSegmentFromCache(plan.getOldSegmentId(),
+                segment)).thenReturn(SegmentRegistryResult.ok());
 
-        assertTrue(coordinator.applySplitPlan(plan).isOk());
+        assertTrue(coordinator.applySplitPlan(plan, segment).isOk());
         assertEquals(List.of(SegmentId.of(2), SegmentId.of(3), SegmentId.of(4)),
                 keyToSegmentMap.getSegmentIds());
+        verify(registryAccess).evictSegmentFromCache(plan.getOldSegmentId(),
+                segment);
     }
 
     private KeyToSegmentMap<Integer> newCacheWithEntries(

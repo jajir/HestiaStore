@@ -274,7 +274,7 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
                 statusRef.set(SegmentRegistryResult.busy());
                 return null;
             }
-            try (FreezeGuard guard = new FreezeGuard(gate)) {
+            try (FreezeGuard guard = new FreezeGuard(gate, false)) {
                 if (!guard.isActive()) {
                     statusRef.set(resultForState(gate.getState()));
                     return null;
@@ -286,8 +286,88 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
             return statusRef.get();
         }
         closeSegmentIfNeeded(segment);
-        deleteSegmentFiles(segmentId);
+        deleteSegmentFilesInternal(segmentId);
         return SegmentRegistryResult.ok();
+    }
+
+    /**
+     * Enters registry FREEZE for split apply.
+     *
+     * @return freeze handle or status when not available
+     */
+    public SegmentRegistryResult<SegmentRegistryFreeze> tryEnterFreeze() {
+        final SegmentRegistryState state = gate.getState();
+        if (state != SegmentRegistryState.READY) {
+            return resultForState(state);
+        }
+        final FreezeGuard guard = new FreezeGuard(gate, true);
+        if (!guard.isActive()) {
+            return resultForState(gate.getState());
+        }
+        return SegmentRegistryResult.ok(guard);
+    }
+
+    /**
+     * Evicts a segment from the cache while its handler is locked.
+     *
+     * @param segmentId segment id to evict
+     * @param expected  expected segment instance
+     * @return result status
+     */
+    public SegmentRegistryResult<Void> evictSegmentFromCache(
+            final SegmentId segmentId, final Segment<K, V> expected) {
+        Vldtn.requireNonNull(segmentId, "segmentId");
+        Vldtn.requireNonNull(expected, "expected");
+        final AtomicReference<SegmentRegistryResult<Void>> statusRef = new AtomicReference<>();
+        cache.withLock(() -> {
+            final SegmentRegistryState state = gate.getState();
+            if (state != SegmentRegistryState.READY
+                    && state != SegmentRegistryState.FREEZE) {
+                statusRef.set(resultForState(state));
+                return null;
+            }
+            final SegmentHandler<K, V> handler = handlers.get(segmentId);
+            if (handler == null || !handler.isForSegment(expected)
+                    || handler.getState() != SegmentHandlerState.LOCKED) {
+                statusRef.set(SegmentRegistryResult.busy());
+                return null;
+            }
+            final Segment<K, V> current = cache.getLocked(segmentId);
+            if (current != expected) {
+                statusRef.set(SegmentRegistryResult.busy());
+                return null;
+            }
+            cache.removeLocked(segmentId);
+            return null;
+        });
+        if (statusRef.get() != null) {
+            return statusRef.get();
+        }
+        return SegmentRegistryResult.ok();
+    }
+
+    /**
+     * Deletes segment files without touching the registry cache.
+     *
+     * @param segmentId segment id to delete from disk
+     * @return result status
+     */
+    public SegmentRegistryResult<Void> deleteSegmentFiles(
+            final SegmentId segmentId) {
+        Vldtn.requireNonNull(segmentId, "segmentId");
+        final SegmentRegistryState state = gate.getState();
+        if (state != SegmentRegistryState.READY) {
+            return resultForState(state);
+        }
+        deleteSegmentFilesInternal(segmentId);
+        return SegmentRegistryResult.ok();
+    }
+
+    /**
+     * Marks the registry as failed.
+     */
+    public void failRegistry() {
+        gate.fail();
     }
 
     private SegmentHandler<K, V> getOrCreateHandlerLocked(
@@ -348,7 +428,7 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
      *
      * @param segmentId segment id to delete
      */
-    private void deleteSegmentFiles(final SegmentId segmentId) {
+    private void deleteSegmentFilesInternal(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         deleteSegmentRootDirectory(segmentId);
     }
@@ -487,13 +567,26 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         return message != null && message.contains("already locked");
     }
 
-    private static final class FreezeGuard implements AutoCloseable {
+    private static final class FreezeGuard implements SegmentRegistryFreeze {
         private final SegmentRegistryGate gate;
         private final boolean active;
+        private final boolean enforceLockOrder;
+        private final String previousRegistryLock;
 
-        private FreezeGuard(final SegmentRegistryGate gate) {
+        private FreezeGuard(final SegmentRegistryGate gate,
+                final boolean setRegistryLockProperty) {
             this.gate = gate;
             this.active = gate.tryEnterFreeze();
+            if (active && setRegistryLockProperty && Boolean
+                    .getBoolean("hestiastore.enforceSplitLockOrder")) {
+                this.enforceLockOrder = true;
+                this.previousRegistryLock = System
+                        .getProperty("hestiastore.registryLockHeld");
+                System.setProperty("hestiastore.registryLockHeld", "true");
+            } else {
+                this.enforceLockOrder = false;
+                this.previousRegistryLock = null;
+            }
         }
 
         private boolean isActive() {
@@ -503,7 +596,18 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         @Override
         public void close() {
             if (active) {
-                gate.finishFreezeToReady();
+                try {
+                    gate.finishFreezeToReady();
+                } finally {
+                    if (enforceLockOrder) {
+                        if (previousRegistryLock == null) {
+                            System.clearProperty("hestiastore.registryLockHeld");
+                        } else {
+                            System.setProperty("hestiastore.registryLockHeld",
+                                    previousRegistryLock);
+                        }
+                    }
+                }
             }
         }
     }
