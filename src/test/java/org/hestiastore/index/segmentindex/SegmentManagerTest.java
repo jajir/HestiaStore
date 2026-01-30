@@ -13,6 +13,7 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.segmentregistry.SegmentFactory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
@@ -34,13 +35,18 @@ class SegmentManagerTest {
     @Test
     void test_getting_same_segmentId() {
         final Directory directory = new MemDirectory();
-        when(conf.getNumberOfSegmentIndexMaintenanceThreads()).thenReturn(1);
-        when(conf.getNumberOfIndexMaintenanceThreads()).thenReturn(1);
         when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
+        final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
+                1, "segment-maintenance");
+        final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(directory),
+                keyTypeDescriptor, valueTypeDescriptor, conf,
+                maintenanceExecutor.getExecutor());
         final SegmentRegistryImpl<Integer, String> segmentRegistry = new SegmentRegistryImpl<>(
                 org.hestiastore.index.directory.async.AsyncDirectoryAdapter
                         .wrap(directory),
-                keyTypeDescriptor, valueTypeDescriptor, conf);
+                segmentFactory, () -> SegmentId.of(1), conf);
         when(conf.getMaxNumberOfKeysInSegmentWriteCache()).thenReturn(1);
         when(conf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance())
                 .thenReturn(2);
@@ -69,19 +75,31 @@ class SegmentManagerTest {
          * from map.
          */
         assertSame(s1, s2);
+        segmentRegistry.close();
+        if (!maintenanceExecutor.wasClosed()) {
+            maintenanceExecutor.close();
+        }
     }
 
     @Test
     void test_close() {
         final Directory directory = new MemDirectory();
-        when(conf.getNumberOfSegmentIndexMaintenanceThreads()).thenReturn(1);
-        when(conf.getNumberOfIndexMaintenanceThreads()).thenReturn(1);
         when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
+        final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
+                1, "segment-maintenance");
+        final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
+                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                        .wrap(directory),
+                keyTypeDescriptor, valueTypeDescriptor, conf,
+                maintenanceExecutor.getExecutor());
         final SegmentRegistryImpl<Integer, String> segmentRegistry = new SegmentRegistryImpl<>(
                 org.hestiastore.index.directory.async.AsyncDirectoryAdapter
                         .wrap(directory),
-                keyTypeDescriptor, valueTypeDescriptor, conf);
+                segmentFactory, () -> SegmentId.of(1), conf);
         assertDoesNotThrow(segmentRegistry::close);
+        if (!maintenanceExecutor.wasClosed()) {
+            maintenanceExecutor.close();
+        }
     }
 
 }

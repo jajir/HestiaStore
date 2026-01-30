@@ -4,7 +4,6 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentregistry.SegmentRegistryMaintenance;
 
 /**
  * Coordinates post-write maintenance triggers and split decisions.
@@ -13,20 +12,20 @@ final class SegmentMaintenanceCoordinator<K, V> {
 
     private final IndexConfiguration<K, V> conf;
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
-    private final SegmentRegistryMaintenance<K, V> segmentRegistry;
+    private final SegmentRegistryAccess<K, V> registryAccess;
     private final SegmentAsyncSplitCoordinator<K, V> splitCoordinator;
 
     SegmentMaintenanceCoordinator(final IndexConfiguration<K, V> conf,
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
-            final SegmentRegistryMaintenance<K, V> segmentRegistry) {
+            final SegmentRegistryAccess<K, V> registryAccess,
+            final SegmentAsyncSplitCoordinator<K, V> splitCoordinator) {
         this.conf = Vldtn.requireNonNull(conf, "conf");
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
-        this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
-                "segmentRegistry");
-        this.splitCoordinator = new SegmentAsyncSplitCoordinator<>(conf,
-                keyToSegmentMap, segmentRegistry,
-                segmentRegistry.getSplitExecutor());
+        this.registryAccess = Vldtn.requireNonNull(registryAccess,
+                "registryAccess");
+        this.splitCoordinator = Vldtn.requireNonNull(splitCoordinator,
+                "splitCoordinator");
     }
 
     void handlePostWrite(final Segment<K, V> segment, final K key,
@@ -42,7 +41,7 @@ final class SegmentMaintenanceCoordinator<K, V> {
         if (segment.getState() == SegmentState.CLOSED) {
             return;
         }
-        if (!segmentRegistry.isSegmentInstance(segmentId, segment)) {
+        if (!registryAccess.isSegmentInstance(segmentId, segment)) {
             return;
         }
         if (!keyToSegmentMap.isKeyMappedToSegment(key, segmentId)

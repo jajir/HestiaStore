@@ -11,22 +11,25 @@ coordination and map updates.
   - in-memory segment cache (LRU)
   - registry-level state gate (`READY`, `FREEZE`, `CLOSED`, `ERROR`)
   - segment id allocation for new segments
-- The only structural operation that should reach the registry is **split**.
-  Flush/compact belong to the segment package.
-- The registry does not own split scheduling/executors or in-flight tracking.
-  Those belong to the segment index layer.
+- The registry does **not** own split execution, scheduling, or in-flight
+  tracking. Those belong to the segment index layer.
+- The registry is about safe access to segment resources; it should not manage
+  operations *on* those resources (flush/compact/split remain outside).
 
 ## Registry Operations
 
-| Operation              | Description                                                      |
-|-----------------------|------------------------------------------------------------------|
-| `getSegment(id)`      | Load or return cached segment by id.                             |
-| `createSegment(conf)` | Allocate id and create a new segment (returns id + segment).     |
-| `deleteSegment(id)`   | Close and delete a segment, then remove from cache.              |
-| `close()`             | Close cached segments.                                           |
+| Operation                 | Description                                                      |
+|--------------------------|------------------------------------------------------------------|
+| `getSegment(id)`         | Load or return cached segment by id.                             |
+| `allocateSegmentId()`    | Allocate a new segment id for split or growth.                   |
+| `createSegment()`        | Allocate id and create a new segment (returns segment instance). |
+| `deleteSegment(id)`      | Close and delete a segment, then remove from cache.              |
+| `close()`                | Close cached segments.                                           |
 
 All registry operations return `SegmentRegistryResult` so callers can react to
 `BUSY`/`CLOSED`/`ERROR` states without explicit lock/unlock in normal flows.
+Explicit lock/unlock is an internal split safety mechanism, not part of the
+public registry API.
 
 ### Split Executor (out of scope)
 
@@ -78,10 +81,12 @@ ERROR
 - `getSegment()` and `removeSegment()` return `BUSY` if registry is `FREEZE`.
 - `CLOSED` and `ERROR` are terminal.
 
-## Planned Split Workflow
+## Split Workflow (Index Layer)
 
 The split workflow is intentionally two‑phase: **prepare** outside the registry
-and **apply** under a short registry freeze.
+and **apply** under short, targeted locks in the index layer (key‑map lock and
+handler lock). Registry involvement is limited to safe segment access and id
+allocation.
 
 ### Step‑by‑step (proposed)
 
@@ -98,17 +103,16 @@ and **apply** under a short registry freeze.
    Run the split in a background maintenance thread. Create two **new**
    segments (lower + upper) by streaming from the exclusive iterator.
 
-4) **Freeze registry and persist key‑map update**  
-   Enter `FREEZE` and update the key‑to‑segment map first:
+4) **Persist key‑map update**  
+   Update the key‑to‑segment map under the map lock:
    - remove the old segment id
    - add the new lower + upper segment ids with their key ranges
    - flush the map to disk
 
 5) **Update registry cache**  
-   Still under `FREEZE`, update registry state:
+   Update registry state (no directory swap; new ids only):
    - remove the old segment id from the registry cache
-   - add the two new segment ids (lower + upper) to the cache
-   - exit `FREEZE` immediately after the update to keep the window short
+   - allow new segment ids to be loaded on demand
 
 6) **Release segment resources**  
    Close the exclusive iterator and release segment locks. Close/free any
@@ -140,21 +144,16 @@ and **apply** under a short registry freeze.
   the on‑disk map, because other index operations may bypass the registry lock.
 
 - **Lock order (apply phase)**  
-  During split apply, acquire the handler lock, then the registry `FREEZE`,
-  and then the key‑map lock. Release in reverse order.
+  During split apply, acquire the handler lock, then the key‑map lock.
+  Release in reverse order.
 
-- **Registry freeze is not held during split IO**  
-  The split worker writes new segment files without holding registry `FREEZE`.
-  The registry `FREEZE` does cover key‑map persistence so the on‑disk map is
-  updated before cache changes.
-
-- **Single registry freeze per split**  
-  The registry only freezes for the apply phase (map update + cache eviction).
+- **No directory swap**  
+  New segment ids are always created for split outputs; index data is not
+  swapped in place.
 
 - **Lock/unlock order is consistent**  
   Acquire locks in a single global order and release in reverse order
-  (handler -> registry -> key‑map; unlock key‑map -> registry -> handler) to
-  avoid deadlocks.
+  (handler -> key‑map; unlock key‑map -> handler) to avoid deadlocks.
 
 ## Failure Handling
 

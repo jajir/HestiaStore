@@ -8,7 +8,6 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentregistry.SegmentHandler;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
@@ -43,18 +42,7 @@ final class SegmentIndexCore<K, V> {
 
     private SegmentRegistryResult<Segment<K, V>> loadSegment(
             final SegmentId segmentId) {
-        final SegmentRegistryResult<SegmentHandler<K, V>> handlerResult = segmentRegistry
-                .getSegmentHandler(segmentId);
-        if (handlerResult.getStatus() == SegmentRegistryResultStatus.OK) {
-            return handlerResult.getValue().getSegmentIfReady();
-        }
-        if (handlerResult.getStatus() == SegmentRegistryResultStatus.CLOSED) {
-            return SegmentRegistryResult.closed();
-        }
-        if (handlerResult.getStatus() == SegmentRegistryResultStatus.ERROR) {
-            return SegmentRegistryResult.error();
-        }
-        return SegmentRegistryResult.busy();
+        return segmentRegistry.getSegment(segmentId);
     }
 
     IndexResult<V> get(final K key) {

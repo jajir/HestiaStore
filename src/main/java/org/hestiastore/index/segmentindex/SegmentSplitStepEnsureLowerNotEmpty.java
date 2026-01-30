@@ -14,7 +14,7 @@ final class SegmentSplitStepEnsureLowerNotEmpty<K, V>
         Vldtn.requireNonNull(state, "state");
         Vldtn.requireNonNull(ctx.getPlan(), "plan");
         if (ctx.getPlan().isLowerSegmentEmpty()) {
-            throw new IllegalStateException(
+            throw new SegmentSplitAbortException(
                     "Splitting failed. Lower segment doesn't contains any data");
         }
         return true;

@@ -15,7 +15,6 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentregistry.SegmentRegistryMaintenance;
 
 /**
  * Schedules segment splits on the async maintenance queue.
@@ -23,26 +22,13 @@ import org.hestiastore.index.segmentregistry.SegmentRegistryMaintenance;
 final class SegmentAsyncSplitCoordinator<K, V> {
 
     private final SegmentSplitCoordinator<K, V> splitCoordinator;
-    private final SegmentRegistryMaintenance<K, V> segmentRegistry;
     private final Executor splitExecutor;
     private final Map<SegmentId, SplitInFlight<K, V>> inFlightSplits = new ConcurrentHashMap<>();
 
-    SegmentAsyncSplitCoordinator(final IndexConfiguration<K, V> conf,
-            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
-            final SegmentRegistryMaintenance<K, V> segmentRegistry,
-            final Executor splitExecutor) {
-        this(new SegmentSplitCoordinator<>(conf, keyToSegmentMap,
-                segmentRegistry), segmentRegistry, splitExecutor);
-    }
-
-    SegmentAsyncSplitCoordinator(
-            final SegmentSplitCoordinator<K, V> splitCoordinator,
-            final SegmentRegistryMaintenance<K, V> segmentRegistry,
+    SegmentAsyncSplitCoordinator(final SegmentSplitCoordinator<K, V> splitCoordinator,
             final Executor splitExecutor) {
         this.splitCoordinator = Vldtn.requireNonNull(splitCoordinator,
                 "splitCoordinator");
-        this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
-                "segmentRegistry");
         this.splitExecutor = Vldtn.requireNonNull(splitExecutor,
                 "splitExecutor");
     }
@@ -107,7 +93,6 @@ final class SegmentAsyncSplitCoordinator<K, V> {
                 handle);
         try {
             splitExecutor.execute(() -> {
-                segmentRegistry.markSplitInFlight(segmentId);
                 handle.markStarted();
                 try {
                     final boolean split = splitCoordinator
@@ -116,7 +101,6 @@ final class SegmentAsyncSplitCoordinator<K, V> {
                 } catch (final Throwable t) {
                     handle.completeExceptionally(t);
                 } finally {
-                    segmentRegistry.clearSplitInFlight(segmentId);
                     inFlightSplits.remove(segmentId, inFlight);
                 }
             });

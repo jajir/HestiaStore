@@ -18,6 +18,7 @@ import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
+import org.hestiastore.index.segmentregistry.SegmentFactory;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +29,7 @@ class SegmentIndexImplPutTest {
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
     private TestIndex<Integer, String> index;
+    private AsyncDirectory directory;
 
     @BeforeEach
     void setUp() {
@@ -75,11 +77,25 @@ class SegmentIndexImplPutTest {
         final Segment<Integer, String> segment = registry.getSegment(segmentId)
                 .getValue();
         awaitSegmentReady(segment);
-        final SegmentSplitCoordinator<Integer, String> splitCoordinator = new SegmentSplitCoordinator<>(
-                index.getConfiguration(), cache, registry);
-        splitCoordinator.optionallySplit(segment);
-        awaitSegmentCount(cache, 2);
-        assertEquals(SegmentId.of(1), cache.findSegmentId(1));
+        final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
+                1, "segment-maintenance-test");
+        try {
+            final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
+                    directory, tdi, tds, index.getConfiguration(),
+                    maintenanceExecutor.getExecutor());
+            final SegmentWriterTxFactory<Integer, String> writerTxFactory = id -> segmentFactory
+                    .newSegmentBuilder(id).openWriterTx();
+            final SegmentRegistryAccess<Integer, String> registryAccess = new SegmentRegistryAccessAdapter<>(
+                    registry);
+            final SegmentSplitCoordinator<Integer, String> splitCoordinator = new SegmentSplitCoordinator<>(
+                    index.getConfiguration(), cache, registry, registryAccess,
+                    writerTxFactory);
+            splitCoordinator.optionallySplit(segment);
+            awaitSegmentCount(cache, 2);
+            assertEquals(SegmentId.of(1), cache.findSegmentId(1));
+        } finally {
+            maintenanceExecutor.close();
+        }
     }
 
     @Test
@@ -90,24 +106,20 @@ class SegmentIndexImplPutTest {
         assertNull(index.get(1));
     }
 
-    private void resetIndex(
-            final int maxKeysInSegment,
+    private void resetIndex(final int maxKeysInSegment,
             final int maxNumberOfKeysInSegmentWriteCache) {
         if (index != null && !index.wasClosed()) {
             index.close();
         }
-        index = new TestIndex<>(
-                AsyncDirectoryAdapter.wrap(new MemDirectory()),
-                tdi, tds,
-                buildConf(maxKeysInSegment,
-                        maxNumberOfKeysInSegmentWriteCache));
+        directory = AsyncDirectoryAdapter.wrap(new MemDirectory());
+        index = new TestIndex<>(directory, tdi, tds, buildConf(maxKeysInSegment,
+                maxNumberOfKeysInSegmentWriteCache));
     }
 
     private static final class TestIndex<K, V>
             extends IndexInternalConcurrent<K, V> {
 
-        private TestIndex(
-                final AsyncDirectory directoryFacade,
+        private TestIndex(final AsyncDirectory directoryFacade,
                 final TypeDescriptor<K> keyTypeDescriptor,
                 final TypeDescriptor<V> valueTypeDescriptor,
                 final IndexConfiguration<K, V> conf) {
@@ -149,8 +161,7 @@ class SegmentIndexImplPutTest {
     private static void awaitSegmentCount(
             final KeyToSegmentMapSynchronizedAdapter<Integer> cache,
             final int expectedCount) {
-        final long deadline = System.nanoTime()
-                + TimeUnit.SECONDS.toNanos(2);
+        final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
         while (System.nanoTime() < deadline) {
             if (cache.getSegmentIds().size() == expectedCount) {
                 return;
@@ -166,8 +177,7 @@ class SegmentIndexImplPutTest {
     }
 
     private static void awaitSegmentReady(final Segment<?, ?> segment) {
-        final long deadline = System.nanoTime()
-                + TimeUnit.SECONDS.toNanos(2);
+        final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
         while (System.nanoTime() < deadline) {
             final SegmentState state = segment.getState();
             if (state == SegmentState.READY || state == SegmentState.CLOSED) {

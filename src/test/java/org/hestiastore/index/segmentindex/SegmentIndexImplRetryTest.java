@@ -8,7 +8,6 @@ import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -140,10 +139,8 @@ class SegmentIndexImplRetryTest {
     private static <K, V> void replaceSegment(
             final SegmentRegistryImpl<K, V> registry, final SegmentId segmentId,
             final Segment<K, V> segment) {
-        final Map<SegmentId, Segment<K, V>> segments = readSegmentsMap(
-                registry);
-        registry.executeWithRegistryLock(
-                () -> segments.put(segmentId, segment));
+        final SegmentRegistryCache<K, V> cache = readCache(registry);
+        cache.withLock(() -> cache.putLocked(segmentId, segment));
     }
 
     @SuppressWarnings("unchecked")
@@ -175,20 +172,16 @@ class SegmentIndexImplRetryTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static <K, V> Map<SegmentId, Segment<K, V>> readSegmentsMap(
+    private static <K, V> SegmentRegistryCache<K, V> readCache(
             final SegmentRegistryImpl<K, V> registry) {
         try {
             final Field cacheField = SegmentRegistryImpl.class
                     .getDeclaredField("cache");
             cacheField.setAccessible(true);
-            final Object cache = cacheField.get(registry);
-            final Field segmentsField = SegmentRegistryCache.class
-                    .getDeclaredField("segments");
-            segmentsField.setAccessible(true);
-            return (Map<SegmentId, Segment<K, V>>) segmentsField.get(cache);
+            return (SegmentRegistryCache<K, V>) cacheField.get(registry);
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
-                    "Unable to read segments cache for test", ex);
+                    "Unable to read registry cache for test", ex);
         }
     }
 }

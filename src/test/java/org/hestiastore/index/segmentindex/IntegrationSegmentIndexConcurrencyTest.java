@@ -1,6 +1,5 @@
 package org.hestiastore.index.segmentindex;
 
-import static org.hestiastore.index.AbstractDataTest.verifySegmentIndexData;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -8,8 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -232,10 +231,8 @@ class IntegrationSegmentIndexConcurrencyTest {
             final var actualKeys = actual.stream().map(Entry::getKey).toList();
             final var missingKeys = expected.stream().map(Entry::getKey)
                     .filter(key -> !actualKeys.contains(key)).toList();
-            final var extraKeys = actualKeys.stream()
-                    .filter(key -> expected.stream()
-                            .noneMatch(e -> e.getKey().equals(key)))
-                    .toList();
+            final var extraKeys = actualKeys.stream().filter(key -> expected
+                    .stream().noneMatch(e -> e.getKey().equals(key))).toList();
             throw new AssertionError(String.format(
                     "Unexpected number of entries in index, expected %d but was %d. Missing keys: %s. Extra keys: %s",
                     expected.size(), actual.size(), missingKeys, extraKeys));

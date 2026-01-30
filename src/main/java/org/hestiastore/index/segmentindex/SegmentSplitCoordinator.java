@@ -9,8 +9,9 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segmentregistry.SegmentHandlerLockStatus;
-import org.hestiastore.index.segmentregistry.SegmentRegistryMaintenance;
+import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
+import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +26,9 @@ class SegmentSplitCoordinator<K, V> {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final IndexConfiguration<K, V> conf;
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
-    private final SegmentRegistryMaintenance<K, V> segmentRegistry;
+    private final SegmentRegistry<K, V> segmentRegistry;
+    private final SegmentRegistryAccess<K, V> registryAccess;
+    private final SegmentWriterTxFactory<K, V> writerTxFactory;
     private final SegmentIndexSplitPolicy<K, V> splitPolicy;
     private final IndexRetryPolicy retryPolicy;
     private static final boolean DEBUG_SPLIT_LOSS = Boolean
@@ -33,20 +36,29 @@ class SegmentSplitCoordinator<K, V> {
 
     SegmentSplitCoordinator(final IndexConfiguration<K, V> conf,
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
-            final SegmentRegistryMaintenance<K, V> segmentRegistry) {
-        this(conf, keyToSegmentMap, segmentRegistry,
+            final SegmentRegistry<K, V> segmentRegistry,
+            final SegmentRegistryAccess<K, V> registryAccess,
+            final SegmentWriterTxFactory<K, V> writerTxFactory) {
+        this(conf, keyToSegmentMap, segmentRegistry, registryAccess,
+                writerTxFactory,
                 new SegmentIndexSplitPolicyThreshold<>());
     }
 
     SegmentSplitCoordinator(final IndexConfiguration<K, V> conf,
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
-            final SegmentRegistryMaintenance<K, V> segmentRegistry,
+            final SegmentRegistry<K, V> segmentRegistry,
+            final SegmentRegistryAccess<K, V> registryAccess,
+            final SegmentWriterTxFactory<K, V> writerTxFactory,
             final SegmentIndexSplitPolicy<K, V> splitPolicy) {
         this.conf = Vldtn.requireNonNull(conf, "conf");
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
+        this.registryAccess = Vldtn.requireNonNull(registryAccess,
+                "registryAccess");
+        this.writerTxFactory = Vldtn.requireNonNull(writerTxFactory,
+                "writerTxFactory");
         this.splitPolicy = Vldtn.requireNonNull(splitPolicy, "splitPolicy");
         this.retryPolicy = new IndexRetryPolicy(
                 conf.getIndexBusyBackoffMillis(),
@@ -82,40 +94,42 @@ class SegmentSplitCoordinator<K, V> {
             final long maxNumberOfKeysInSegment) {
         final SegmentId segmentId = segment.getId();
         logger.debug("Splitting of '{}' started.", segmentId);
-        if (!segmentRegistry.isSegmentInstance(segmentId, segment)) {
+        if (!registryAccess.isSegmentInstance(segmentId, segment)) {
             return false;
         }
-        final SegmentHandlerLockStatus lockStatus = segmentRegistry
+        final SegmentHandlerLockStatus lockStatus = registryAccess
                 .lockSegmentHandler(segmentId, segment);
         if (lockStatus != SegmentHandlerLockStatus.OK) {
             return false;
         }
+        boolean split = false;
         try {
             final SegmentSplitterPlan<K, V> plan = buildPlan(segment);
-            if (!isEligibleForSplit(segment, plan, maxNumberOfKeysInSegment)) {
-                return false;
+            if (isEligibleForSplit(segment, plan, maxNumberOfKeysInSegment)
+                    && hasLiveEntries(segment)) {
+                split = splitLocked(segment, plan);
             }
-            if (!hasLiveEntries(segment)) {
-                return false;
-            }
-            return splitLocked(segment, plan);
         } finally {
-            segmentRegistry.unlockSegmentHandler(segmentId, segment);
+            registryAccess.unlockSegmentHandler(segmentId, segment);
         }
+        if (split) {
+            segmentRegistry.deleteSegment(segmentId);
+        }
+        return split;
     }
 
     private boolean splitLocked(final Segment<K, V> segment,
             final SegmentSplitterPlan<K, V> plan) {
         final SegmentId segmentId = segment.getId();
-        final SegmentId lowerSegmentId = keyToSegmentMap.findNewSegmentId();
-        final SegmentId upperSegmentId = keyToSegmentMap.findNewSegmentId();
-        final SegmentWriterTxFactory<K, V> writerTxFactory = id -> segmentRegistry
-                .newSegmentBuilder(id).openWriterTx();
+        final SegmentId lowerSegmentId = allocateSegmentId();
+        final SegmentId upperSegmentId = allocateSegmentId();
+        if (lowerSegmentId == null || upperSegmentId == null) {
+            return false;
+        }
         final SegmentSplitter<K, V> splitter = new SegmentSplitter<>(segment,
                 writerTxFactory);
         final SegmentSplitApplyPlan<K, V> applyPlan;
-        final SegmentRegistryResult<Segment<K, V>> applyResult;
-        final Segment<K, V> removed;
+        final SegmentRegistryResult<Void> applyResult;
         try (SegmentSplitter.SplitExecution<K, V> execution = splitter
                 .splitWithIterator(lowerSegmentId, upperSegmentId, plan)) {
             applyPlan = toApplyPlan(segmentId, upperSegmentId,
@@ -130,23 +144,21 @@ class SegmentSplitCoordinator<K, V> {
                 deleteSplitSegments(lowerSegmentId, upperSegmentId);
                 return false;
             }
-            removed = applyResult.getValue();
+        } catch (final SegmentSplitAbortException e) {
+            deleteSplitSegments(lowerSegmentId, upperSegmentId);
+            return false;
         } catch (final RuntimeException e) {
             deleteSplitSegments(lowerSegmentId, upperSegmentId);
             throw e;
         }
-        if (removed != null) {
-            segmentRegistry.closeSegmentInstance(removed);
-        }
-        segmentRegistry.deleteSegmentFiles(applyPlan.getOldSegmentId());
         return true;
     }
 
     private void deleteSplitSegments(final SegmentId lowerSegmentId,
             final SegmentId upperSegmentId) {
-        segmentRegistry.deleteSegmentFiles(lowerSegmentId);
+        segmentRegistry.deleteSegment(lowerSegmentId);
         if (upperSegmentId != null) {
-            segmentRegistry.deleteSegmentFiles(upperSegmentId);
+            segmentRegistry.deleteSegment(upperSegmentId);
         }
     }
 
@@ -211,15 +223,22 @@ class SegmentSplitCoordinator<K, V> {
         }
     }
 
-    SegmentRegistryResult<Segment<K, V>> applySplitPlan(
+    SegmentRegistryResult<Void> applySplitPlan(
             final SegmentSplitApplyPlan<K, V> plan) {
         Vldtn.requireNonNull(plan, "plan");
-        return segmentRegistry.applySplitPlan(plan, null, null, () -> {
-            if (!keyToSegmentMap.applySplitPlan(plan)) {
-                return false;
-            }
-            keyToSegmentMap.optionalyFlush();
-            return true;
-        });
+        if (!keyToSegmentMap.applySplitPlan(plan)) {
+            return SegmentRegistryResult.busy();
+        }
+        keyToSegmentMap.optionalyFlush();
+        return SegmentRegistryResult.ok();
+    }
+
+    private SegmentId allocateSegmentId() {
+        final SegmentRegistryResult<SegmentId> result = segmentRegistry
+                .allocateSegmentId();
+        if (result.getStatus() == SegmentRegistryResultStatus.OK) {
+            return result.getValue();
+        }
+        return null;
     }
 }
