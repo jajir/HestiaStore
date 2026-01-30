@@ -7,6 +7,7 @@
       `SegmentRegistry.getSegment` or touching segments.
     - Use key-map snapshot + version re-check on retry/BUSY paths.
     - Tests: `IntegrationSegmentIndexConcurrencyTest` + new split/put stress.
+  
 ## Planned
 
 ### High
@@ -444,3 +445,30 @@
     - Add/update tests to assert no directory swap in split flow.
     - Add tests for enforced lock order (registry -> key-map).
     - Add tests for split failure cleanup of new segments.
+[x] 63 SegmentIdAllocator in segmentregistry (Risk: MEDIUM)
+    - Add `SegmentIdAllocator` interface and directory-backed implementation.
+    - Scan `AsyncDirectory.getFileNamesAsync()` for segment directories named
+      `segment-00001` (prefix `segment-` + 5 digits) and initialize next id
+      to max+1 (or 1 when none found).
+    - Allocate ids with thread-safe counter.
+
+[x] 64 Include directories in `Directory.getFileNames()` (Risk: LOW)
+    - Ensure `Directory.getFileNames()` returns subdirectory names as well.
+    - Update `MemDirectory` to include subdirectory names in its stream.
+    - Verify no tests rely on file-only behavior.
+
+[x] 65 Remove id allocation from key-to-segment map (Risk: MEDIUM)
+    - Remove `nextSegmentId` and `findNewSegmentId()` from `KeyToSegmentMap`
+      and its synchronized adapter.
+    - Remove updates to `nextSegmentId` in `tryExtendMaxKey`/`updateMaxKey`.
+
+[x] 66 Wire allocator into registry + index (Risk: MEDIUM)
+    - Update `SegmentRegistryImpl` to use `SegmentIdAllocator` instead of
+      supplier.
+    - Update `SegmentIndexImpl` wiring and split coordinator to use registry
+      allocation only.
+    - Update tests to stub allocator or use directory-backed allocator.
+
+[x] 67 Tests + docs for allocator move (Risk: LOW)
+    - Add allocator tests (empty dir, max id, thread-safety).
+    - Update `docs/architecture/registry.md` to reflect registry allocator.

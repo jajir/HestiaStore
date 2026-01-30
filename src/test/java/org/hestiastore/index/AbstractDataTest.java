@@ -171,6 +171,7 @@ public abstract class AbstractDataTest {
             final int expecetdNumberOfFiles) {
         final List<String> fileNames = directory.getFileNames().toList();
         final List<String> countedFiles = fileNames.stream()
+                .filter(name -> name.contains("."))
                 .filter(name -> !name.endsWith(".lock")).toList();
         final int fileCount = countedFiles.size();
         if (fileCount != expecetdNumberOfFiles) {

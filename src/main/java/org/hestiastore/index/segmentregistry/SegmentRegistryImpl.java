@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.IndexException;
@@ -36,7 +35,7 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
 
     private final AsyncDirectory directoryFacade;
     private final SegmentFactory<K, V> segmentFactory;
-    private final Supplier<SegmentId> segmentIdSupplier;
+    private final SegmentIdAllocator segmentIdAllocator;
     private final int maxNumberOfSegmentsInCache;
     private final IndexRetryPolicy retryPolicy;
 
@@ -45,19 +44,19 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
      *
      * @param directoryFacade   async directory facade
      * @param segmentFactory    factory for creating segment instances
-     * @param segmentIdSupplier supplier for new segment ids
+     * @param segmentIdAllocator allocator for new segment ids
      * @param conf              index configuration
      */
     public SegmentRegistryImpl(final AsyncDirectory directoryFacade,
             final SegmentFactory<K, V> segmentFactory,
-            final Supplier<SegmentId> segmentIdSupplier,
+            final SegmentIdAllocator segmentIdAllocator,
             final IndexConfiguration<K, V> conf) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
         this.segmentFactory = Vldtn.requireNonNull(segmentFactory,
                 "segmentFactory");
-        this.segmentIdSupplier = Vldtn.requireNonNull(segmentIdSupplier,
-                "segmentIdSupplier");
+        this.segmentIdAllocator = Vldtn.requireNonNull(segmentIdAllocator,
+                "segmentIdAllocator");
         Vldtn.requireNonNull(conf, "conf");
         final int maxSegments = Vldtn
                 .requireNonNull(conf.getMaxNumberOfSegmentsInCache(),
@@ -86,7 +85,7 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         }
         final SegmentId segmentId;
         try {
-            segmentId = segmentIdSupplier.get();
+            segmentId = segmentIdAllocator.nextId();
         } catch (final RuntimeException e) {
             return SegmentRegistryResult.error();
         }

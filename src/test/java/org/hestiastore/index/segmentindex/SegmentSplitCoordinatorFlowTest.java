@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.WriteTransaction;
@@ -19,6 +19,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segmentregistry.SegmentFactory;
+import org.hestiastore.index.segmentregistry.SegmentIdAllocator;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
@@ -41,8 +42,11 @@ class SegmentSplitCoordinatorFlowTest {
         final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
                 directory, KEY_DESCRIPTOR, VALUE_DESCRIPTOR, conf,
                 maintenanceExecutor.getExecutor());
+        final AtomicInteger nextId = new AtomicInteger(1);
+        final SegmentIdAllocator segmentIdAllocator = () -> SegmentId
+                .of(nextId.getAndIncrement());
         final TrackingRegistry registry = new TrackingRegistry(directory,
-                segmentFactory, keyToSegmentMap::findNewSegmentId, conf);
+                segmentFactory, segmentIdAllocator, conf);
         final TrackingWriterTxFactory writerTxFactory = new TrackingWriterTxFactory(
                 segmentFactory);
         final SegmentRegistryAccess<Integer, String> registryAccess = new SegmentRegistryAccessAdapter<>(
@@ -88,8 +92,11 @@ class SegmentSplitCoordinatorFlowTest {
         final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
                 directory, KEY_DESCRIPTOR, VALUE_DESCRIPTOR, conf,
                 maintenanceExecutor.getExecutor());
+        final AtomicInteger nextId = new AtomicInteger(1);
+        final SegmentIdAllocator segmentIdAllocator = () -> SegmentId
+                .of(nextId.getAndIncrement());
         final TrackingRegistry registry = new TrackingRegistry(directory,
-                segmentFactory, keyToSegmentMap::findNewSegmentId, conf);
+                segmentFactory, segmentIdAllocator, conf);
         final TrackingWriterTxFactory writerTxFactory = new TrackingWriterTxFactory(
                 segmentFactory);
         final SegmentRegistryAccess<Integer, String> registryAccess = new SegmentRegistryAccessAdapter<>(
@@ -178,9 +185,9 @@ class SegmentSplitCoordinatorFlowTest {
 
         private TrackingRegistry(final AsyncDirectory directoryFacade,
                 final SegmentFactory<Integer, String> segmentFactory,
-                final Supplier<SegmentId> segmentIdSupplier,
+                final SegmentIdAllocator segmentIdAllocator,
                 final IndexConfiguration<Integer, String> conf) {
-            super(directoryFacade, segmentFactory, segmentIdSupplier, conf);
+            super(directoryFacade, segmentFactory, segmentIdAllocator, conf);
         }
 
         @Override

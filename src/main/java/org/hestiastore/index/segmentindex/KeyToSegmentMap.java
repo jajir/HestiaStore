@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
@@ -60,7 +59,6 @@ final class KeyToSegmentMap<K> extends AbstractCloseableResource {
     private final SortedDataFile<K, SegmentId> sdf;
     private final Comparator<K> keyComparator;
     private boolean isDirty = false;
-    private final AtomicInteger nextSegmentId;
     private final AtomicLong version = new AtomicLong(0);
 
     KeyToSegmentMap(final AsyncDirectory directoryFacade,
@@ -86,9 +84,6 @@ final class KeyToSegmentMap<K> extends AbstractCloseableResource {
         }
         this.snapshot = new TreeMap<>(list);
         checkUniqueSegmentIds();
-        this.nextSegmentId = new AtomicInteger(
-                list.values().stream().mapToInt(SegmentId::getId).max()
-                        .orElse(-1) + 1);
     }
 
     /**
@@ -149,16 +144,6 @@ final class KeyToSegmentMap<K> extends AbstractCloseableResource {
         return expectedSegmentId.equals(current);
     }
 
-    /**
-     * Allocates a new, unused segment id.
-     *
-     * @return new segment id
-     */
-    SegmentId findNewSegmentId() {
-        ensureOpen();
-        return SegmentId.of(nextSegmentId.getAndIncrement());
-    }
-
     boolean tryExtendMaxKey(final K key, final Snapshot<K> snapshot) {
         Vldtn.requireNonNull(key, "key");
         Vldtn.requireNonNull(snapshot, "snapshot");
@@ -167,8 +152,6 @@ final class KeyToSegmentMap<K> extends AbstractCloseableResource {
         }
         if (list.isEmpty()) {
             list.put(key, FIRST_SEGMENT_ID);
-            nextSegmentId.updateAndGet(current -> Math.max(current,
-                    FIRST_SEGMENT_ID.getId() + 1));
             refreshSnapshot();
             isDirty = true;
             return true;
@@ -222,8 +205,6 @@ final class KeyToSegmentMap<K> extends AbstractCloseableResource {
         if (list.size() == 0) {
             list.put(key, FIRST_SEGMENT_ID);
             refreshSnapshot();
-            nextSegmentId.updateAndGet(
-                    current -> Math.max(current, FIRST_SEGMENT_ID.getId() + 1));
             return FIRST_SEGMENT_ID;
         } else {
             final Entry<K, SegmentId> max = Entry.of(list.lastEntry().getKey(),

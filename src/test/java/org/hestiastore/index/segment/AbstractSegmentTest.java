@@ -64,6 +64,7 @@ public abstract class AbstractSegmentTest extends AbstractDataTest {
 
     protected int numberOfFilesInDirectory(final Directory directory) {
         return (int) directory.getFileNames()
+                .filter(name -> name.contains("."))
                 .filter(name -> !name.endsWith(".lock")).count();
     }
 
