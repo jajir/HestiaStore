@@ -19,34 +19,6 @@ import org.junit.jupiter.api.Test;
 class KeyToSegmentMapTest {
 
     @Test
-    void findNewSegmentIdUsesMaxPlusOne() {
-        final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of(
-                Entry.of(10, SegmentId.of(0)), Entry.of(20, SegmentId.of(2))));
-        assertEquals(SegmentId.of(3), cache.findNewSegmentId());
-    }
-
-    @Test
-    void findNewSegmentIdUsesHighestIdNotKeyOrder() {
-        final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of(
-                Entry.of(10, SegmentId.of(5)), Entry.of(20, SegmentId.of(1))));
-        // highest id is 5 even though its key is lower
-        assertEquals(SegmentId.of(6), cache.findNewSegmentId());
-    }
-
-    @Test
-    void findNewSegmentIdBridgesGaps() {
-        final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of(
-                Entry.of(5, SegmentId.of(1)), Entry.of(6, SegmentId.of(3))));
-        assertEquals(SegmentId.of(4), cache.findNewSegmentId());
-    }
-
-    @Test
-    void findNewSegmentIdStartsAtZeroWhenEmpty() {
-        final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of());
-        assertEquals(SegmentId.of(0), cache.findNewSegmentId());
-    }
-
-    @Test
     void insertSegmentRejectsDuplicateId() {
         final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of());
         cache.insertSegment(5, SegmentId.of(0));

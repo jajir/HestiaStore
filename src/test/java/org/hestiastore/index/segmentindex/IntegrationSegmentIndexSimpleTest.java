@@ -260,6 +260,7 @@ class IntegrationSegmentIndexSimpleTest {
             final List<SegmentId> segmentIds) {
         final AtomicInteger count = new AtomicInteger(0);
         directory.getFileNames()
+                .filter(name -> name.contains("."))
                 .filter(name -> !name.endsWith(".lock"))
                 .sorted()
                 .forEach(fileName -> {
@@ -273,6 +274,7 @@ class IntegrationSegmentIndexSimpleTest {
             final Directory segmentDirectory = directory
                     .openSubDirectory(segmentId.getName());
             segmentDirectory.getFileNames()
+                    .filter(name -> name.contains("."))
                     .filter(name -> !name.endsWith(".lock"))
                     .sorted()
                     .forEach(fileName -> {

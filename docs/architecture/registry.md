@@ -10,7 +10,7 @@ coordination and map updates.
   - safe access to segment resources (load/create/delete)
   - in-memory segment cache (LRU)
   - registry-level state gate (`READY`, `FREEZE`, `CLOSED`, `ERROR`)
-  - segment id allocation for new segments
+  - segment id allocation for new segments via `SegmentIdAllocator`
 - The registry does **not** own split execution, scheduling, or in-flight
   tracking. Those belong to the segment index layer.
 - The registry is about safe access to segment resources; it should not manage
@@ -150,6 +150,11 @@ allocation.
 - **No directory swap**  
   New segment ids are always created for split outputs; index data is not
   swapped in place.
+
+- **Directory-backed id allocation**  
+  Segment ids are allocated by `SegmentIdAllocator`, which scans the index
+  directory for segment roots named `segment-00001` and returns max+1 (or 1
+  when none exist). Allocation is not tied to the key-to-segment map.
 
 - **Lock/unlock order is consistent**  
   Acquire locks in a single global order and release in reverse order

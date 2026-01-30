@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -26,6 +25,7 @@ import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.hestiastore.index.segmentregistry.SegmentFactory;
 import org.hestiastore.index.segmentregistry.SegmentHandlerLockStatus;
+import org.hestiastore.index.segmentregistry.SegmentIdAllocator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,7 +50,7 @@ class SegmentRegistryImplTest {
     private SegmentRegistryImpl<Integer, String> registry;
     private SegmentAsyncExecutor maintenanceExecutor;
     private SegmentFactory<Integer, String> segmentFactory;
-    private Supplier<SegmentId> segmentIdSupplier;
+    private SegmentIdAllocator segmentIdAllocator;
 
     @BeforeEach
     void setUp() {
@@ -61,9 +61,9 @@ class SegmentRegistryImplTest {
         segmentFactory = new SegmentFactory<>(directoryFacade, KEY_DESCRIPTOR,
                 VALUE_DESCRIPTOR, conf, maintenanceExecutor.getExecutor());
         final AtomicInteger nextId = new AtomicInteger(1);
-        segmentIdSupplier = () -> SegmentId.of(nextId.getAndIncrement());
+        segmentIdAllocator = () -> SegmentId.of(nextId.getAndIncrement());
         registry = new SegmentRegistryImpl<>(directoryFacade, segmentFactory,
-                segmentIdSupplier, conf);
+                segmentIdAllocator, conf);
     }
 
     @AfterEach
@@ -126,7 +126,7 @@ class SegmentRegistryImplTest {
         Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(2);
         registry.close();
         registry = new SegmentRegistryImpl<>(directoryFacade, segmentFactory,
-                segmentIdSupplier, conf);
+                segmentIdAllocator, conf);
         stubSegmentConfig();
         final SegmentId firstId = SegmentId.of(1);
         final SegmentId secondId = SegmentId.of(2);

@@ -17,7 +17,9 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentState;
+import org.hestiastore.index.segmentregistry.DirectorySegmentIdAllocator;
 import org.hestiastore.index.segmentregistry.SegmentFactory;
+import org.hestiastore.index.segmentregistry.SegmentIdAllocator;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
@@ -84,9 +86,10 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final SegmentFactory<K, V> segmentFactory = new SegmentFactory<>(
                     directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
                     conf, segmentAsyncExecutor.getExecutor());
+            final SegmentIdAllocator segmentIdAllocator = new DirectorySegmentIdAllocator(
+                    directoryFacade);
             final SegmentRegistryImpl<K, V> registry = new SegmentRegistryImpl<>(
-                    directoryFacade, segmentFactory,
-                    keyToSegmentMap::findNewSegmentId, conf);
+                    directoryFacade, segmentFactory, segmentIdAllocator, conf);
             this.segmentRegistry = registry;
             final SegmentRegistryAccess<K, V> registryAccess = new SegmentRegistryAccessAdapter<>(
                     registry);

@@ -166,7 +166,11 @@ public class MemDirectory implements Directory {
     public Stream<String> getFileNames() {
         readLock.lock();
         try {
-            return new ArrayList<>(data.keySet()).stream();
+            final ArrayList<String> names = new ArrayList<>(
+                    data.size() + directories.size());
+            names.addAll(data.keySet());
+            names.addAll(directories.keySet());
+            return names.stream();
         } finally {
             readLock.unlock();
         }

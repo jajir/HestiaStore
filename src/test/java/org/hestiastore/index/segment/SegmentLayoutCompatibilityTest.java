@@ -51,7 +51,8 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
                 segmentConf).build();
         try {
             writeEntries(segment, entries);
-            final long flatFileCount = directory.getFileNames().count();
+            final long flatFileCount = directory.getFileNames()
+                    .filter(name -> name.contains(".")).count();
             if (useSegmentRoot) {
                 assertEquals(0, flatFileCount,
                         "Expected segment files under a subdirectory.");

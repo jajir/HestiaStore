@@ -145,15 +145,6 @@ final class KeyToSegmentMapSynchronizedAdapter<K>
         }
     }
 
-    /**
-     * Allocates a new, unused segment id.
-     *
-     * @return new segment id
-     */
-    SegmentId findNewSegmentId() {
-        return withWriteLock(delegate::findNewSegmentId);
-    }
-
     boolean tryExtendMaxKey(final K key,
             final KeyToSegmentMap.Snapshot<K> snapshot) {
         return withWriteLock(() -> delegate.tryExtendMaxKey(key, snapshot));
