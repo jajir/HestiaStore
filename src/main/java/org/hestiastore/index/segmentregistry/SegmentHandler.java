@@ -17,10 +17,20 @@ public final class SegmentHandler<K, V> {
     private final AtomicReference<SegmentHandlerState> state = new AtomicReference<>(
             SegmentHandlerState.READY);
 
+    /**
+     * Creates a handler for the provided segment instance.
+     *
+     * @param segment segment instance to protect
+     */
     public SegmentHandler(final Segment<K, V> segment) {
         this.segment = Vldtn.requireNonNull(segment, "segment");
     }
 
+    /**
+     * Returns the current handler state.
+     *
+     * @return handler state
+     */
     public SegmentHandlerState getState() {
         return state.get();
     }
@@ -37,13 +47,11 @@ public final class SegmentHandler<K, V> {
         return SegmentRegistryResult.busy();
     }
 
-    SegmentHandlerResult<Segment<K, V>> getSegment() {
-        if (state.get() == SegmentHandlerState.READY) {
-            return SegmentHandlerResult.ok(segment);
-        }
-        return SegmentHandlerResult.locked();
-    }
-
+    /**
+     * Attempts to lock the handler for exclusive use.
+     *
+     * @return lock status indicating success or BUSY
+     */
     public SegmentHandlerLockStatus lock() {
         if (state.compareAndSet(SegmentHandlerState.READY,
                 SegmentHandlerState.LOCKED)) {
@@ -52,6 +60,11 @@ public final class SegmentHandler<K, V> {
         return SegmentHandlerLockStatus.BUSY;
     }
 
+    /**
+     * Releases the handler lock.
+     *
+     * @throws IllegalStateException if the handler was not locked
+     */
     public void unlock() {
         if (!state.compareAndSet(SegmentHandlerState.LOCKED,
                 SegmentHandlerState.READY)) {
@@ -59,6 +72,12 @@ public final class SegmentHandler<K, V> {
         }
     }
 
+    /**
+     * Returns true if this handler wraps the provided segment instance.
+     *
+     * @param candidate segment instance to compare
+     * @return true when the instance matches
+     */
     public boolean isForSegment(final Segment<K, V> candidate) {
         return segment == candidate;
     }

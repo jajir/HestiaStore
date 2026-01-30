@@ -17,7 +17,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentregistry.SegmentHandler;
+import org.hestiastore.index.segmentregistry.SegmentFactory;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
@@ -42,6 +42,8 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentMaintenanceCoordinator<K, V> maintenanceCoordinator;
+    private final SegmentAsyncExecutor segmentAsyncExecutor;
+    private final SplitAsyncExecutor splitAsyncExecutor;
     private final SegmentIndexCore<K, V> core;
     private final IndexRetryPolicy retryPolicy;
     private final Stats stats = new Stats();
@@ -69,12 +71,35 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     directoryFacade, keyTypeDescriptor);
             this.keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                     keyToSegmentMapDelegate);
-            final SegmentRegistryImpl<K, V> registry = new SegmentRegistryImpl<>(
+            final Integer maintenanceThreadsConf = conf
+                    .getNumberOfSegmentIndexMaintenanceThreads();
+            final int maintenanceThreads = maintenanceThreadsConf.intValue();
+            this.segmentAsyncExecutor = new SegmentAsyncExecutor(
+                    maintenanceThreads, "segment-maintenance");
+            final Integer splitThreadsConf = conf
+                    .getNumberOfIndexMaintenanceThreads();
+            final int splitThreads = splitThreadsConf.intValue();
+            this.splitAsyncExecutor = new SplitAsyncExecutor(splitThreads,
+                    "index-maintenance");
+            final SegmentFactory<K, V> segmentFactory = new SegmentFactory<>(
                     directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
-                    conf);
+                    conf, segmentAsyncExecutor.getExecutor());
+            final SegmentRegistryImpl<K, V> registry = new SegmentRegistryImpl<>(
+                    directoryFacade, segmentFactory,
+                    keyToSegmentMap::findNewSegmentId, conf);
             this.segmentRegistry = registry;
+            final SegmentRegistryAccess<K, V> registryAccess = new SegmentRegistryAccessAdapter<>(
+                    registry);
+            final SegmentWriterTxFactory<K, V> writerTxFactory = id -> segmentFactory
+                    .newSegmentBuilder(id).openWriterTx();
+            final SegmentSplitCoordinator<K, V> splitCoordinator = new SegmentSplitCoordinator<>(
+                    conf, keyToSegmentMap, segmentRegistry, registryAccess,
+                    writerTxFactory);
+            final SegmentAsyncSplitCoordinator<K, V> asyncSplitCoordinator = new SegmentAsyncSplitCoordinator<>(
+                    splitCoordinator, splitAsyncExecutor.getExecutor());
             this.maintenanceCoordinator = new SegmentMaintenanceCoordinator<>(
-                    conf, keyToSegmentMap, registry);
+                    conf, keyToSegmentMap, registryAccess,
+                    asyncSplitCoordinator);
             this.core = new SegmentIndexCore<>(keyToSegmentMap, segmentRegistry,
                     maintenanceCoordinator);
             this.retryPolicy = new IndexRetryPolicy(
@@ -247,6 +272,12 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         flushSegments(true);
         segmentRegistry.close();
         keyToSegmentMap.optionalyFlush();
+        if (!segmentAsyncExecutor.wasClosed()) {
+            segmentAsyncExecutor.close();
+        }
+        if (!splitAsyncExecutor.wasClosed()) {
+            splitAsyncExecutor.close();
+        }
         if (logger.isDebugEnabled()) {
             logger.debug(String.format(
                     "Index is closing, where was %s gets, %s puts and %s deletes.",
@@ -475,23 +506,14 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         keyToSegmentMap.getSegmentIds().forEach(segmentId -> {
             final long startNanos = retryPolicy.startNanos();
             while (true) {
-                final SegmentRegistryResult<SegmentHandler<K, V>> handlerResult = segmentRegistry
-                        .getSegmentHandler(segmentId);
-                if (handlerResult.getStatus() == SegmentRegistryResultStatus.OK) {
-                    final SegmentRegistryResult<Segment<K, V>> segmentResult = handlerResult
-                            .getValue().getSegmentIfReady();
-                    if (segmentResult
-                            .getStatus() == SegmentRegistryResultStatus.OK) {
-                        segmentResult.getValue().invalidateIterators();
-                        return;
-                    }
-                    if (segmentResult
-                            .getStatus() == SegmentRegistryResultStatus.BUSY) {
-                        retryPolicy.backoffOrThrow(startNanos,
-                                "invalidateIterators", segmentId);
-                        continue;
-                    }
-                } else if (handlerResult
+                final SegmentRegistryResult<Segment<K, V>> segmentResult = segmentRegistry
+                        .getSegment(segmentId);
+                if (segmentResult
+                        .getStatus() == SegmentRegistryResultStatus.OK) {
+                    segmentResult.getValue().invalidateIterators();
+                    return;
+                }
+                if (segmentResult
                         .getStatus() == SegmentRegistryResultStatus.BUSY) {
                     retryPolicy.backoffOrThrow(startNanos,
                             "invalidateIterators", segmentId);
@@ -499,7 +521,7 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 }
                 throw new IndexException(
                         String.format("Segment '%s' failed to load: %s",
-                                segmentId, handlerResult.getStatus()));
+                                segmentId, segmentResult.getStatus()));
             }
         });
     }

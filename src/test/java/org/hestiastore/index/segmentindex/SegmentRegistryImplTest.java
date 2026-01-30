@@ -2,14 +2,14 @@ package org.hestiastore.index.segmentindex;
 
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -20,12 +20,12 @@ import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentregistry.SegmentRegistryCache;
 import org.hestiastore.index.segmentregistry.SegmentRegistryGate;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
-import org.hestiastore.index.segmentregistry.SegmentRegistryState;
+import org.hestiastore.index.segmentregistry.SegmentFactory;
+import org.hestiastore.index.segmentregistry.SegmentHandlerLockStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,32 +47,32 @@ class SegmentRegistryImplTest {
     @Mock
     private IndexConfiguration<Integer, String> conf;
 
-    @Mock
-    private Segment<Integer, String> oldSegment;
-
-    @Mock
-    private Segment<Integer, String> lowerSegment;
-
-    @Mock
-    private Segment<Integer, String> upperSegment;
-
     private SegmentRegistryImpl<Integer, String> registry;
+    private SegmentAsyncExecutor maintenanceExecutor;
+    private SegmentFactory<Integer, String> segmentFactory;
+    private Supplier<SegmentId> segmentIdSupplier;
 
     @BeforeEach
     void setUp() {
-        Mockito.when(conf.getNumberOfSegmentIndexMaintenanceThreads())
-                .thenReturn(1);
-        Mockito.when(conf.getNumberOfIndexMaintenanceThreads()).thenReturn(1);
         Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
         directoryFacade = AsyncDirectoryAdapter.wrap(new MemDirectory());
-        registry = new SegmentRegistryImpl<>(directoryFacade, KEY_DESCRIPTOR,
-                VALUE_DESCRIPTOR, conf);
+        maintenanceExecutor = new SegmentAsyncExecutor(1,
+                "segment-maintenance");
+        segmentFactory = new SegmentFactory<>(directoryFacade, KEY_DESCRIPTOR,
+                VALUE_DESCRIPTOR, conf, maintenanceExecutor.getExecutor());
+        final AtomicInteger nextId = new AtomicInteger(1);
+        segmentIdSupplier = () -> SegmentId.of(nextId.getAndIncrement());
+        registry = new SegmentRegistryImpl<>(directoryFacade, segmentFactory,
+                segmentIdSupplier, conf);
     }
 
     @AfterEach
     void tearDown() {
         if (registry != null) {
             registry.close();
+        }
+        if (maintenanceExecutor != null && !maintenanceExecutor.wasClosed()) {
+            maintenanceExecutor.close();
         }
     }
 
@@ -99,23 +99,6 @@ class SegmentRegistryImplTest {
     }
 
     @Test
-    void evictSegmentIfSame_removesOnlyMatchingInstance() {
-        stubSegmentConfig();
-        final SegmentId segmentId = SegmentId.of(1);
-        final SegmentId otherId = SegmentId.of(2);
-
-        final Segment<Integer, String> segment = registry.getSegment(segmentId)
-                .getValue();
-        final Segment<Integer, String> otherSegment = registry
-                .getSegment(otherId).getValue();
-
-        assertFalse(registry.evictSegmentIfSame(segmentId, otherSegment));
-        assertSame(segment, registry.getSegment(segmentId).getValue());
-
-        assertTrue(registry.evictSegmentIfSame(segmentId, segment));
-        assertNotSame(segment, registry.getSegment(segmentId).getValue());
-    }
-
     void getSegment_returnsBusyWhileRegistryFrozen() {
         final SegmentId segmentId = SegmentId.of(1);
 
@@ -142,8 +125,8 @@ class SegmentRegistryImplTest {
     void getSegment_evicts_least_recently_used_when_limit_exceeded() {
         Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(2);
         registry.close();
-        registry = new SegmentRegistryImpl<>(directoryFacade, KEY_DESCRIPTOR,
-                VALUE_DESCRIPTOR, conf);
+        registry = new SegmentRegistryImpl<>(directoryFacade, segmentFactory,
+                segmentIdSupplier, conf);
         stubSegmentConfig();
         final SegmentId firstId = SegmentId.of(1);
         final SegmentId secondId = SegmentId.of(2);
@@ -161,63 +144,22 @@ class SegmentRegistryImplTest {
     }
 
     @Test
-    void applySplitPlan_removes_old_and_adds_new_segments() {
-        final SegmentId oldId = SegmentId.of(1);
-        final SegmentId lowerId = SegmentId.of(2);
-        final SegmentId upperId = SegmentId.of(3);
-        final SegmentSplitApplyPlan<Integer, String> plan = new SegmentSplitApplyPlan<>(
-                oldId, lowerId, upperId, 1, 10,
-                SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
-        Mockito.when(lowerSegment.getId()).thenReturn(lowerId);
-        Mockito.when(lowerSegment.getState()).thenReturn(SegmentState.CLOSED);
-        Mockito.when(upperSegment.getId()).thenReturn(upperId);
-        Mockito.when(upperSegment.getState()).thenReturn(SegmentState.CLOSED);
-        final SegmentRegistryCache<Integer, String> cache = readCache(
-                registry);
-        cache.withLock(() -> cache.putLocked(oldId, oldSegment));
+    void deleteSegment_returnsBusyWhenHandlerLocked() {
+        stubSegmentConfig();
+        final SegmentId segmentId = SegmentId.of(1);
+        final Segment<Integer, String> segment = registry.getSegment(segmentId)
+                .getValue();
 
-        final SegmentRegistryResult<Segment<Integer, String>> result = registry
-                .applySplitPlan(plan, lowerSegment, upperSegment);
+        assertSame(SegmentHandlerLockStatus.OK,
+                registry.lockSegmentHandler(segmentId, segment));
 
-        assertSame(SegmentRegistryResultStatus.OK, result.getStatus());
-        assertSame(oldSegment, result.getValue());
-        cache.withLock(() -> {
-            assertNull(cache.getLocked(oldId));
-            assertSame(lowerSegment, cache.getLocked(lowerId));
-            assertSame(upperSegment, cache.getLocked(upperId));
-        });
-        assertSame(SegmentRegistryState.READY, readGate(registry).getState());
+        final SegmentRegistryResult<Void> result = registry
+                .deleteSegment(segmentId);
+        assertSame(SegmentRegistryResultStatus.BUSY, result.getStatus());
+
+        registry.unlockSegmentHandler(segmentId, segment);
     }
 
-    @Test
-    void applySplitPlan_returns_busy_when_registry_frozen() {
-        final SegmentId oldId = SegmentId.of(1);
-        final SegmentId lowerId = SegmentId.of(2);
-        final SegmentId upperId = SegmentId.of(3);
-        final SegmentSplitApplyPlan<Integer, String> plan = new SegmentSplitApplyPlan<>(
-                oldId, lowerId, upperId, 1, 10,
-                SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
-        Mockito.when(oldSegment.getState()).thenReturn(SegmentState.CLOSED);
-        Mockito.when(lowerSegment.getId()).thenReturn(lowerId);
-        Mockito.when(upperSegment.getId()).thenReturn(upperId);
-        final SegmentRegistryCache<Integer, String> cache = readCache(
-                registry);
-        cache.withLock(() -> cache.putLocked(oldId, oldSegment));
-        final SegmentRegistryGate gate = readGate(registry);
-
-        assertTrue(gate.tryEnterFreeze());
-        try (GateGuard ignored = new GateGuard(gate)) {
-            final SegmentRegistryResult<Segment<Integer, String>> result = registry
-                    .applySplitPlan(plan, lowerSegment, upperSegment);
-            assertSame(SegmentRegistryResultStatus.BUSY, result.getStatus());
-        }
-
-        cache.withLock(() -> {
-            assertSame(oldSegment, cache.getLocked(oldId));
-            assertNull(cache.getLocked(lowerId));
-            assertNull(cache.getLocked(upperId));
-        });
-    }
 
     private void stubSegmentConfig() {
         Mockito.when(conf.getMaxNumberOfKeysInSegmentWriteCache())
@@ -246,19 +188,6 @@ class SegmentRegistryImplTest {
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
                     "Unable to read gate for test", ex);
-        }
-    }
-
-    private SegmentRegistryCache<Integer, String> readCache(
-            final SegmentRegistryImpl<Integer, String> target) {
-        try {
-            final Field field = SegmentRegistryImpl.class
-                    .getDeclaredField("cache");
-            field.setAccessible(true);
-            return (SegmentRegistryCache<Integer, String>) field.get(target);
-        } catch (final ReflectiveOperationException ex) {
-            throw new IllegalStateException(
-                    "Unable to read cache for test", ex);
         }
     }
 

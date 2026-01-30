@@ -7,15 +7,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
-
-import org.hestiastore.index.Entry;
-import org.hestiastore.index.EntryIterator;
-import org.hestiastore.index.EntryIteratorList;
 import org.hestiastore.index.segment.Segment;
-import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segmentregistry.SegmentRegistryMaintenance;
+import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,7 +29,12 @@ class SegmentSplitCoordinatorTest {
     private KeyToSegmentMapSynchronizedAdapter<Integer> synchronizedKeyToSegmentMap;
 
     @Mock
-    private SegmentRegistryMaintenance<Integer, String> segmentRegistry;
+    private SegmentRegistry<Integer, String> segmentRegistry;
+
+    @Mock
+    private SegmentRegistryAccess<Integer, String> registryAccess;
+
+    private SegmentWriterTxFactory<Integer, String> writerTxFactory;
 
     private SegmentSplitCoordinator<Integer, String> coordinator;
 
@@ -43,15 +42,20 @@ class SegmentSplitCoordinatorTest {
     void setUp() {
         synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                 keyToSegmentMap);
+        writerTxFactory = id -> {
+            throw new IllegalStateException("writerTxFactory not configured");
+        };
         coordinator = new SegmentSplitCoordinator<>(
                 IndexConfiguration.<Integer, String>builder().build(),
-                synchronizedKeyToSegmentMap, segmentRegistry);
+                synchronizedKeyToSegmentMap, segmentRegistry, registryAccess,
+                writerTxFactory);
     }
 
     @AfterEach
     void tearDown() {
         coordinator = null;
         synchronizedKeyToSegmentMap = null;
+        writerTxFactory = null;
     }
 
     @Test
@@ -73,10 +77,10 @@ class SegmentSplitCoordinatorTest {
     @Test
     void optionallySplit_doesNotInvokeCompaction() {
         when(segment.getNumberOfKeysInCache()).thenReturn(10L);
-        final EntryIterator<Integer, String> iterator = new EntryIteratorList<>(
-                List.of(Entry.of(1, "a")));
-        when(segment.openIterator(SegmentIteratorIsolation.FAIL_FAST))
-                .thenReturn(SegmentResult.ok(iterator));
+        final SegmentId segmentId = SegmentId.of(1);
+        when(segment.getId()).thenReturn(segmentId);
+        when(registryAccess.isSegmentInstance(segmentId, segment))
+                .thenReturn(false);
 
         coordinator.optionallySplit(segment, 5L);
 

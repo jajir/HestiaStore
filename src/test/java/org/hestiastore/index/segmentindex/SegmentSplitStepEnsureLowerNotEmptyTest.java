@@ -53,7 +53,7 @@ class SegmentSplitStepEnsureLowerNotEmptyTest {
     void throws_when_lower_empty_and_passes_when_not() {
         final SegmentSplitContext<Integer, String> ctxEmpty = new SegmentSplitContext<>(
                 null, planWithEstimate(10), null, null, null);
-        assertThrows(IllegalStateException.class,
+        assertThrows(SegmentSplitAbortException.class,
                 () -> step.filter(ctxEmpty, new SegmentSplitState<>()));
 
         final SegmentSplitterPlan<Integer, String> plan = planWithEstimate(10);

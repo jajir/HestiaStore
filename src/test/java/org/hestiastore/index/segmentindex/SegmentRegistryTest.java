@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentregistry.SegmentHandler;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.junit.jupiter.api.AfterEach;
@@ -40,7 +39,7 @@ class SegmentRegistryTest {
                 .getSegment(segmentId);
 
         assertSame(segment, result.getValue());
-        registry.removeSegment(segmentId);
+        registry.deleteSegment(segmentId);
         registry.close();
 
         assertSame(segmentId, registry.getLastRemoved());
@@ -65,19 +64,21 @@ class SegmentRegistryTest {
         }
 
         @Override
-        public SegmentRegistryResult<SegmentHandler<K, V>> getSegmentHandler(
+        public SegmentRegistryResult<SegmentId> allocateSegmentId() {
+            return SegmentRegistryResult.ok(SegmentId.of(1));
+        }
+
+        @Override
+        public SegmentRegistryResult<Void> deleteSegment(
                 final SegmentId segmentId) {
-            return SegmentRegistryResult.ok(new SegmentHandler<>(segment));
-        }
-
-        @Override
-        public void removeSegment(final SegmentId segmentId) {
             lastRemoved = segmentId;
+            return SegmentRegistryResult.ok();
         }
 
         @Override
-        public void close() {
+        public SegmentRegistryResult<Void> close() {
             closed = true;
+            return SegmentRegistryResult.ok();
         }
 
         private SegmentId getLastRemoved() {
