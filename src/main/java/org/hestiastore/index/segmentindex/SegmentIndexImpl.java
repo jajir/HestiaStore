@@ -85,10 +85,14 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
                     conf, segmentAsyncExecutor.getExecutor());
             final SegmentRegistryImpl<K, V> registry = SegmentRegistry
-                    .<K, V>builder(directoryFacade, keyTypeDescriptor,
-                            valueTypeDescriptor, conf,
-                            segmentAsyncExecutor.getExecutor())
-                    .withSegmentFactory(segmentFactory).build();
+                    .<K, V>builder()
+                    .withDirectoryFacade(directoryFacade)
+                    .withKeyTypeDescriptor(keyTypeDescriptor)
+                    .withValueTypeDescriptor(valueTypeDescriptor)
+                    .withConfiguration(conf)
+                    .withMaintenanceExecutor(segmentAsyncExecutor.getExecutor())
+                    .withSegmentFactory(segmentFactory)
+                    .build();
             this.segmentRegistry = registry;
             final SegmentRegistryAccess<K, V> registryAccess = new SegmentRegistryAccessAdapter<>(
                     registry);

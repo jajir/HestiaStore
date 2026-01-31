@@ -29,68 +29,37 @@ class SegmentRegistryBuilderTest {
 
     @Test
     void builderRejectsNullDirectory() {
-        final ExecutorService executor = Executors.newSingleThreadExecutor();
-        try {
-            assertThrows(IllegalArgumentException.class,
-                    () -> SegmentRegistry.builder(null,
-                            new TypeDescriptorInteger(),
-                            new TypeDescriptorShortString(), conf, executor));
-        } finally {
-            executor.shutdownNow();
-        }
+        assertThrows(IllegalArgumentException.class,
+                () -> SegmentRegistry.<Integer, String>builder()
+                        .withDirectoryFacade(null));
     }
 
     @Test
     void builderRejectsNullKeyDescriptor() {
-        final ExecutorService executor = Executors.newSingleThreadExecutor();
-        try {
-            final AsyncDirectory directory = AsyncDirectoryAdapter
-                    .wrap(new MemDirectory());
-            assertThrows(IllegalArgumentException.class,
-                    () -> SegmentRegistry.builder(directory, null,
-                            new TypeDescriptorShortString(), conf, executor));
-        } finally {
-            executor.shutdownNow();
-        }
+        assertThrows(IllegalArgumentException.class,
+                () -> SegmentRegistry.<Integer, String>builder()
+                        .withKeyTypeDescriptor(null));
     }
 
     @Test
     void builderRejectsNullValueDescriptor() {
-        final ExecutorService executor = Executors.newSingleThreadExecutor();
-        try {
-            final AsyncDirectory directory = AsyncDirectoryAdapter
-                    .wrap(new MemDirectory());
-            assertThrows(IllegalArgumentException.class,
-                    () -> SegmentRegistry.builder(directory,
-                            new TypeDescriptorInteger(), null, conf, executor));
-        } finally {
-            executor.shutdownNow();
-        }
+        assertThrows(IllegalArgumentException.class,
+                () -> SegmentRegistry.<Integer, String>builder()
+                        .withValueTypeDescriptor(null));
     }
 
     @Test
     void builderRejectsNullConfiguration() {
-        final ExecutorService executor = Executors.newSingleThreadExecutor();
-        try {
-            final AsyncDirectory directory = AsyncDirectoryAdapter
-                    .wrap(new MemDirectory());
-            assertThrows(IllegalArgumentException.class,
-                    () -> SegmentRegistry.builder(directory,
-                            new TypeDescriptorInteger(),
-                            new TypeDescriptorShortString(), null, executor));
-        } finally {
-            executor.shutdownNow();
-        }
+        assertThrows(IllegalArgumentException.class,
+                () -> SegmentRegistry.<Integer, String>builder()
+                        .withConfiguration(null));
     }
 
     @Test
     void builderRejectsNullExecutor() {
-        final AsyncDirectory directory = AsyncDirectoryAdapter
-                .wrap(new MemDirectory());
         assertThrows(IllegalArgumentException.class,
-                () -> SegmentRegistry.builder(directory,
-                        new TypeDescriptorInteger(),
-                        new TypeDescriptorShortString(), conf, null));
+                () -> SegmentRegistry.<Integer, String>builder()
+                        .withMaintenanceExecutor(null));
     }
 
     @Test
@@ -105,8 +74,12 @@ class SegmentRegistryBuilderTest {
         final ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
             final SegmentRegistryImpl<Integer, String> registry = SegmentRegistry
-                    .builder(asyncDirectory, new TypeDescriptorInteger(),
-                            new TypeDescriptorShortString(), conf, executor)
+                    .<Integer, String>builder()
+                    .withDirectoryFacade(asyncDirectory)
+                    .withKeyTypeDescriptor(new TypeDescriptorInteger())
+                    .withValueTypeDescriptor(new TypeDescriptorShortString())
+                    .withConfiguration(conf)
+                    .withMaintenanceExecutor(executor)
                     .build();
             try {
                 assertEquals(SegmentId.of(6),
