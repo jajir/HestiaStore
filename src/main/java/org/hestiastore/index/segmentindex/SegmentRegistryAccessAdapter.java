@@ -15,6 +15,8 @@ import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 final class SegmentRegistryAccessAdapter<K, V>
         implements SegmentRegistryAccess<K, V> {
 
+    @Deprecated
+    // TODO change type to interface
     private final SegmentRegistryImpl<K, V> registry;
 
     SegmentRegistryAccessAdapter(final SegmentRegistryImpl<K, V> registry) {

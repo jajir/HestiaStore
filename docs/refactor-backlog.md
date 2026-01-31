@@ -8,16 +8,13 @@
     - Use key-map snapshot + version re-check on retry/BUSY paths.
     - Tests: `IntegrationSegmentIndexConcurrencyTest` + new split/put stress.
 
-[ ] 62 Add `SegmentRegistryBuilder` modeled after `Segment.builder(...)` (Risk: MEDIUM)
-    - Add `SegmentRegistryBuilder` in `segmentregistry` with required inputs
-      (directory, type descriptors, config, maintenance executor).
-    - Provide optional setters for `SegmentIdAllocator` and `SegmentFactory`.
-    - Add static factory `SegmentRegistry.builder(...)` (or on impl) to return builder.
-    - Move default wiring (factory + allocator creation) into builder.
-    - Keep `SegmentRegistryImpl` constructor with full DI for tests.
-    - Update `SegmentIndexImpl` (and other callers) to use the builder.
-    - Add unit tests for missing required fields and default wiring.
-  
+[ ] 59.2 SegmentRegistry: expose NOT_FOUND for missing segments (Risk: LOW)
+    - Add `NOT_FOUND` to `SegmentRegistryResultStatus` + factory method.
+    - Return NOT_FOUND when `getSegment` targets a missing directory.
+    - Keep `createSegment` creating new segments even when others exist.
+    - Tests: missing-segment lookup, status plumbing.
+
+
 ## Planned
 
 ### High
@@ -482,6 +479,16 @@
 [x] 67 Tests + docs for allocator move (Risk: LOW)
     - Add allocator tests (empty dir, max id, thread-safety).
     - Update `docs/architecture/registry.md` to reflect registry allocator.
+
+[x] 62 Add `SegmentRegistryBuilder` modeled after `Segment.builder(...)` (Risk: MEDIUM)
+    - Add `SegmentRegistryBuilder` in `segmentregistry` with required inputs
+      (directory, type descriptors, config, maintenance executor).
+    - Provide optional setters for `SegmentIdAllocator` and `SegmentFactory`.
+    - Add static factory `SegmentRegistry.builder(...)` (or on impl) to return builder.
+    - Move default wiring (factory + allocator creation) into builder.
+    - Keep `SegmentRegistryImpl` constructor with full DI for tests.
+    - Update `SegmentIndexImpl` (and other callers) to use the builder.
+    - Add unit tests for missing required fields and default wiring.
 
 [x] 68 Align split apply with registry FREEZE + lock-order enforcement (Risk: MEDIUM)
     - Expose registry FREEZE in `SegmentRegistryAccess` (or equivalent) so

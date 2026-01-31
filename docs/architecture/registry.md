@@ -1,16 +1,13 @@
 # Segment Registry Concurrency
 
-This document describes the segment registry responsibilities and the planned
-split workflow. It mirrors the structure and tone of
-`docs/architecture/segment-concurrency.md`, but focuses on registry-level
-coordination and map updates.
+This document describes the segment registry responsibilities and supported operations. 
 
 ## Scope
 - The registry owns:
-  - safe access to segment resources (load/create/delete)
-  - in-memory segment cache (LRU)
-  - registry-level state gate (`READY`, `FREEZE`, `CLOSED`, `ERROR`)
-  - segment id allocation for new segments via `SegmentIdAllocator`
+    - safe access to segment resources (load/create/delete)
+    - in-memory segment cache (LRU)
+    - registry-level state gate (`READY`, `FREEZE`, `CLOSED`, `ERROR`)
+    - segment id allocation for new segments via `SegmentIdAllocator`
 - The registry does **not** own split execution, scheduling, or in-flight
   tracking. Those belong to the segment index layer.
 - The registry is about safe access to segment resources; it should not manage
@@ -18,61 +15,45 @@ coordination and map updates.
 
 ## Registry Operations
 
-| Operation                 | Description                                                      |
-|--------------------------|------------------------------------------------------------------|
-| `getSegment(id)`         | Load or return cached segment by id.                             |
-| `allocateSegmentId()`    | Allocate a new segment id for split or growth.                   |
-| `createSegment()`        | Allocate id and create a new segment (returns segment instance). |
-| `deleteSegment(id)`      | Close and delete a segment, then remove from cache.              |
-| `close()`                | Close cached segments.                                           |
+| Operation             | Description                                                      |
+| --------------------- | ---------------------------------------------------------------- |
+| `getSegment(id)`      | Load or return cached segment by id.                             |
+| `allocateSegmentId()` | Allocate a new segment id for split or growth.                   |
+| `createSegment()`     | Allocate id and create a new segment (returns segment instance). |
+| `deleteSegment(id)`   | Close and delete a segment, then remove from cache.              |
+| `close()`             | Close cached segments.                                           |
 
 All registry operations return `SegmentRegistryResult` so callers can react to
 `BUSY`/`CLOSED`/`ERROR` states without explicit lock/unlock in normal flows.
 Explicit lock/unlock is an internal split safety mechanism, not part of the
 public registry API.
 
-### Split Executor (out of scope)
-
-Split scheduling and execution live in the segment index layer. The registry
-only provides safe access to segment resources; it does not own executors or
-track in-flight split operations.
-
 ### Response Codes
 
 `SegmentRegistryResultStatus` mirrors segment semantics:
 
-| Code     | Description                                                                 |
-|----------|-----------------------------------------------------------------------------|
-| `OK`     | Segment returned or operation accepted.                                     |
-| `BUSY`   | Temporary refusal (e.g., registry in `FREEZE` or lock conflict).            |
-| `CLOSED` | Registry closed; no further operations.                                     |
-| `ERROR`  | Unrecoverable registry failure.                                             |
+| Code        | Description                                                      |
+| ----------- | ---------------------------------------------------------------- |
+| `OK`        | Segment returned or operation accepted.                          |
+| `BUSY`      | Temporary refusal (e.g., registry in `FREEZE` or lock conflict). |
+| `NOT_FOUND` | Requested segment does not exist in registry storage.            |
+| `CLOSED`    | Registry closed; no further operations.                          |
+| `ERROR`     | Unrecoverable registry failure.                                  |
 
 ## Registry State Machine
 
 Registry states are intentionally small and short‑lived.
 
-```
-READY
-  | tryEnterFreeze
-  v
-FREEZE ----> READY
-  | close()         ^
-  v                 |
-CLOSED <------------+
-  |
-  v
-ERROR
-```
+![Segment state machine](./registry-states.png)
 
 ### Transitions
 
-| Original State | New State | When                                                     |
-|---|---|---|
-| `READY`  | `FREEZE` | short exclusive window for registry map updates           |
-| `FREEZE` | `READY`  | registry map update complete                              |
-| any      | `CLOSED` | index closing                                             |
-| any      | `ERROR`  | unrecoverable registry failure                            |
+| Original State | New State | When                                            |
+| -------------- | --------- | ----------------------------------------------- |
+| `READY`        | `FREEZE`  | short exclusive window for registry map updates |
+| `FREEZE`       | `READY`   | registry map update complete                    |
+| any            | `CLOSED`  | index closing                                   |
+| any            | `ERROR`   | unrecoverable registry failure                  |
 
 ### Rules
 - `FREEZE` is **short**; it only wraps changes to:
@@ -127,10 +108,10 @@ allocation.
 
 ### Split Outcome Mapping
 
-| Split Status | Map Update | Directory Action | Cache Update |
-|---|---|---|---|
-| `SPLIT` | remove old + add lower + add upper | no swap (new ids only) | evict old instance |
-| `COMPACTED` | remove old + add lower | no swap (new id only) | evict old instance |
+| Split Status | Map Update                         | Directory Action       | Cache Update       |
+| ------------ | ---------------------------------- | ---------------------- | ------------------ |
+| `SPLIT`      | remove old + add lower + add upper | no swap (new ids only) | evict old instance |
+| `COMPACTED`  | remove old + add lower             | no swap (new id only)  | evict old instance |
 
 ## Locking & Ordering Rules
 

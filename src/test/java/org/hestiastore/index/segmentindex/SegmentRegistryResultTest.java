@@ -41,6 +41,17 @@ class SegmentRegistryResultTest {
     }
 
     @Test
+    void notFoundHasNullValue() {
+        final SegmentRegistryResult<String> result = SegmentRegistryResult
+                .notFound();
+
+        assertEquals(SegmentRegistryResultStatus.NOT_FOUND,
+                result.getStatus());
+        assertNull(result.getValue());
+        assertFalse(result.isOk());
+    }
+
+    @Test
     void closedHasNullValue() {
         final SegmentRegistryResult<String> result = SegmentRegistryResult
                 .closed();

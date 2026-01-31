@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.IndexException;
@@ -28,6 +29,9 @@ import org.hestiastore.index.segmentindex.IndexRetryPolicy;
  * @param <V> value type
  */
 public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
+
+    private static final Pattern SEGMENT_DIR_PATTERN = Pattern
+            .compile("^segment-\\d{5}$");
 
     private final SegmentRegistryCache<K, V> cache = new SegmentRegistryCache<>();
     private final SegmentRegistryGate gate = new SegmentRegistryGate();
@@ -104,10 +108,46 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
     @Override
     public SegmentRegistryResult<Segment<K, V>> getSegment(
             final SegmentId segmentId) {
+        return loadSegment(segmentId, false);
+    }
+
+    /**
+     * Creates and registers a new segment using a freshly allocated id.
+     *
+     * @return registry result containing the new segment or a status
+     */
+    @Override
+    public SegmentRegistryResult<Segment<K, V>> createSegment() {
+        final SegmentRegistryResult<SegmentId> idResult = allocateSegmentId();
+        if (idResult.getStatus() == SegmentRegistryResultStatus.OK) {
+            return loadSegment(idResult.getValue(), true);
+        }
+        if (idResult.getStatus() == SegmentRegistryResultStatus.CLOSED) {
+            return SegmentRegistryResult.closed();
+        }
+        if (idResult.getStatus() == SegmentRegistryResultStatus.ERROR) {
+            return SegmentRegistryResult.error();
+        }
+        return SegmentRegistryResult.busy();
+    }
+
+    /**
+     * Returns the segment for the provided id, with optional create-on-miss.
+     *
+     * @param segmentId segment id to load
+     * @param allowCreateWhenMissing whether to create missing segments
+     * @return result containing the segment or a status
+     */
+    private SegmentRegistryResult<Segment<K, V>> loadSegment(
+            final SegmentId segmentId, final boolean allowCreateWhenMissing) {
         final SegmentRegistryResult<SegmentHandler<K, V>> handlerResult = getSegmentHandler(
-                segmentId);
+                segmentId, allowCreateWhenMissing);
         if (handlerResult.getStatus() == SegmentRegistryResultStatus.OK) {
             return handlerResult.getValue().getSegmentIfReady();
+        }
+        if (handlerResult
+                .getStatus() == SegmentRegistryResultStatus.NOT_FOUND) {
+            return SegmentRegistryResult.notFound();
         }
         if (handlerResult.getStatus() == SegmentRegistryResultStatus.CLOSED) {
             return SegmentRegistryResult.closed();
@@ -123,10 +163,11 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
      * needed.
      *
      * @param segmentId segment id to load
+     * @param allowCreateWhenMissing whether to create missing segments
      * @return result containing the handler or a status
      */
     private SegmentRegistryResult<SegmentHandler<K, V>> getSegmentHandler(
-            final SegmentId segmentId) {
+            final SegmentId segmentId, final boolean allowCreateWhenMissing) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         final SegmentRegistryState initialState = gate.getState();
         if (initialState != SegmentRegistryState.READY) {
@@ -157,6 +198,11 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
                         }
                         try {
                             if (needsCreate) {
+                                if (!allowCreateWhenMissing
+                                        && !segmentDirectoryExists(segmentId)
+                                        && hasAnySegmentDirectories()) {
+                                    return SegmentRegistryResult.notFound();
+                                }
                                 existing = instantiateSegment(segmentId);
                                 cache.putLocked(segmentId, existing);
                             }
@@ -417,6 +463,24 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         Vldtn.requireNonNull(segmentId, "segmentId");
         handlers.remove(segmentId);
         return cache.removeLocked(segmentId);
+    }
+
+    private boolean segmentDirectoryExists(final SegmentId segmentId) {
+        return exists(segmentId.getName());
+    }
+
+    private boolean hasAnySegmentDirectories() {
+        try (Stream<String> names = directoryFacade.getFileNamesAsync()
+                .toCompletableFuture().join()) {
+            return names.anyMatch(SegmentRegistryImpl::isSegmentDirectoryName);
+        }
+    }
+
+    private static boolean isSegmentDirectoryName(final String name) {
+        if (name == null || name.isBlank()) {
+            return false;
+        }
+        return SEGMENT_DIR_PATTERN.matcher(name).matches();
     }
 
     private Segment<K, V> instantiateSegment(final SegmentId segmentId) {
