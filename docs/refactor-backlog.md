@@ -8,11 +8,17 @@
     - Use key-map snapshot + version re-check on retry/BUSY paths.
     - Tests: `IntegrationSegmentIndexConcurrencyTest` + new split/put stress.
 
-[ ] 59.2 SegmentRegistry: expose NOT_FOUND for missing segments (Risk: LOW)
-    - Add `NOT_FOUND` to `SegmentRegistryResultStatus` + factory method.
-    - Return NOT_FOUND when `getSegment` targets a missing directory.
-    - Keep `createSegment` creating new segments even when others exist.
-    - Tests: missing-segment lookup, status plumbing.
+[ ] 73 SegmentRegistry handler-backed cache (Risk: MEDIUM)
+    - Make `SegmentRegistryCache` store `SegmentHandler` per `SegmentId`
+      (segment + lock state as one entry).
+    - Keep `SegmentRegistry.getSegment` returning `SegmentRegistryResult`
+      to signal registry state; map LOCKED to BUSY.
+    - Add internal accessors for handler-only flows (split/evict) without
+      exposing handler in the public registry API.
+    - Update eviction logic to skip LOCKED handlers and keep cache/handler
+      in sync.
+    - Tests: locked entry not evicted, handler/segment consistency, BUSY
+      returned when handler locked.
 
 
 ## Planned
@@ -508,3 +514,14 @@
     - When split apply fails mid-update, set registry gate to ERROR and
       surface the failure (avoid silent BUSY loops).
     - Add tests for apply-failure transitions.
+
+[x] 71 SegmentRegistry: expose NOT_FOUND for missing segments (Risk: LOW)
+    - Add `NOT_FOUND` to `SegmentRegistryResultStatus` + factory method.
+    - Return NOT_FOUND when `getSegment` targets a missing directory.
+    - Keep `createSegment` creating new segments even when others exist.
+    - Tests: missing-segment lookup, status plumbing.
+
+[x] 72 SegmentRegistryBuilder: configure only via `with*` methods (Risk: LOW)
+    - Remove constructor parameters from `SegmentRegistryBuilder`.
+    - Ensure all required inputs are set via `with...` methods.
+    - Update call sites and tests to use the builder setters.

@@ -13,6 +13,28 @@ This document describes the segment registry responsibilities and supported oper
 - The registry is about safe access to segment resources; it should not manage
   operations *on* those resources (flush/compact/split remain outside).
 
+## Registry State Machine
+
+Registry states are intentionally small and short‑lived.
+
+![Segment state machine](./registry-states.png)
+
+### Transitions
+
+| Original State | New State | When                                            |
+| -------------- | --------- | ----------------------------------------------- |
+| `READY`        | `FREEZE`  | short exclusive window for registry map updates |
+| `FREEZE`       | `READY`   | registry map update complete                    |
+| any            | `CLOSED`  | index closing                                   |
+| any            | `ERROR`   | unrecoverable registry failure                  |
+
+### Rules
+- `FREEZE` is **short**; it only wraps changes to:
+  - key‑to‑segment map updates
+  - cache updates tied to the map replacement
+- `getSegment()` and `removeSegment()` return `BUSY` if registry is `FREEZE`.
+- `CLOSED` and `ERROR` are terminal.
+
 ## Registry Operations
 
 | Operation             | Description                                                      |
@@ -39,28 +61,6 @@ public registry API.
 | `NOT_FOUND` | Requested segment does not exist in registry storage.            |
 | `CLOSED`    | Registry closed; no further operations.                          |
 | `ERROR`     | Unrecoverable registry failure.                                  |
-
-## Registry State Machine
-
-Registry states are intentionally small and short‑lived.
-
-![Segment state machine](./registry-states.png)
-
-### Transitions
-
-| Original State | New State | When                                            |
-| -------------- | --------- | ----------------------------------------------- |
-| `READY`        | `FREEZE`  | short exclusive window for registry map updates |
-| `FREEZE`       | `READY`   | registry map update complete                    |
-| any            | `CLOSED`  | index closing                                   |
-| any            | `ERROR`   | unrecoverable registry failure                  |
-
-### Rules
-- `FREEZE` is **short**; it only wraps changes to:
-  - key‑to‑segment map updates
-  - cache updates tied to the map replacement
-- `getSegment()` and `removeSegment()` return `BUSY` if registry is `FREEZE`.
-- `CLOSED` and `ERROR` are terminal.
 
 ## Split Workflow (Index Layer)
 

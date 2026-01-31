@@ -24,20 +24,7 @@ public final class SegmentRegistryBuilder<K, V> {
     private SegmentIdAllocator segmentIdAllocator;
     private SegmentFactory<K, V> segmentFactory;
 
-    SegmentRegistryBuilder(final AsyncDirectory directoryFacade,
-            final TypeDescriptor<K> keyTypeDescriptor,
-            final TypeDescriptor<V> valueTypeDescriptor,
-            final IndexConfiguration<K, V> conf,
-            final ExecutorService maintenanceExecutor) {
-        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
-                "directoryFacade");
-        this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
-                "keyTypeDescriptor");
-        this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
-                "valueTypeDescriptor");
-        this.conf = Vldtn.requireNonNull(conf, "conf");
-        this.maintenanceExecutor = Vldtn.requireNonNull(maintenanceExecutor,
-                "maintenanceExecutor");
+    SegmentRegistryBuilder() {
     }
 
     /**
