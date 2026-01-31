@@ -157,6 +157,23 @@ class SegmentRegistryImplTest {
     }
 
     @Test
+    void getSegment_returnsBusyWhenHandlerLocked() {
+        stubSegmentConfig();
+        final SegmentId segmentId = SegmentId.of(1);
+        final Segment<Integer, String> segment = registry.getSegment(segmentId)
+                .getValue();
+
+        assertSame(SegmentHandlerLockStatus.OK,
+                registry.lockSegmentHandler(segmentId, segment));
+
+        final SegmentRegistryResult<Segment<Integer, String>> result = registry
+                .getSegment(segmentId);
+        assertSame(SegmentRegistryResultStatus.BUSY, result.getStatus());
+
+        registry.unlockSegmentHandler(segmentId, segment);
+    }
+
+    @Test
     void getSegment_returnsNotFoundWhenSegmentMissing() {
         stubSegmentConfig();
         final Segment<Integer, String> existing = registry.createSegment()

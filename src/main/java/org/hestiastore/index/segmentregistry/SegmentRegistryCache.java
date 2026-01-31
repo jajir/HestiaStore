@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.segment.Segment;
@@ -18,7 +17,7 @@ import org.hestiastore.index.segment.SegmentId;
  */
 public final class SegmentRegistryCache<K, V> {
 
-    private final LinkedHashMap<SegmentId, Segment<K, V>> segments = new LinkedHashMap<>(
+    private final LinkedHashMap<SegmentId, SegmentHandler<K, V>> handlers = new LinkedHashMap<>(
             16, 0.75f, true);
     private final Object lock = new Object();
 
@@ -47,34 +46,34 @@ public final class SegmentRegistryCache<K, V> {
     }
 
     /**
-     * Returns the cached segment instance for the provided id.
+     * Returns the cached handler instance for the provided id.
      *
      * @param segmentId segment id to look up
-     * @return cached segment or null when absent
+     * @return cached handler or null when absent
      */
-    public Segment<K, V> getLocked(final SegmentId segmentId) {
-        return segments.get(segmentId);
+    public SegmentHandler<K, V> getLocked(final SegmentId segmentId) {
+        return handlers.get(segmentId);
     }
 
     /**
-     * Inserts or replaces a cached segment instance.
+     * Inserts or replaces a cached handler instance.
      *
      * @param segmentId segment id to cache
-     * @param segment   segment instance
+     * @param handler   handler instance
      */
     public void putLocked(final SegmentId segmentId,
-            final Segment<K, V> segment) {
-        segments.put(segmentId, segment);
+            final SegmentHandler<K, V> handler) {
+        handlers.put(segmentId, handler);
     }
 
     /**
-     * Removes the cached segment instance for the provided id.
+     * Removes the cached handler instance for the provided id.
      *
      * @param segmentId segment id to remove
-     * @return removed segment or null when missing
+     * @return removed handler or null when missing
      */
-    public Segment<K, V> removeLocked(final SegmentId segmentId) {
-        return segments.remove(segmentId);
+    public SegmentHandler<K, V> removeLocked(final SegmentId segmentId) {
+        return handlers.remove(segmentId);
     }
 
     /**
@@ -86,7 +85,8 @@ public final class SegmentRegistryCache<K, V> {
      */
     public boolean isSegmentInstanceLocked(final SegmentId segmentId,
             final Segment<K, V> expected) {
-        return segments.get(segmentId) == expected;
+        final SegmentHandler<K, V> handler = handlers.get(segmentId);
+        return handler != null && handler.isForSegment(expected);
     }
 
     /**
@@ -95,28 +95,29 @@ public final class SegmentRegistryCache<K, V> {
      * @return snapshot list (may be empty)
      */
     public List<Segment<K, V>> snapshotAndClearLocked() {
-        if (segments.isEmpty()) {
+        if (handlers.isEmpty()) {
             return List.of();
         }
-        final List<Segment<K, V>> snapshot = new ArrayList<>(segments.values());
-        segments.clear();
+        final List<Segment<K, V>> snapshot = new ArrayList<>(handlers.size());
+        for (final SegmentHandler<K, V> handler : handlers.values()) {
+            snapshot.add(handler.getSegment());
+        }
+        handlers.clear();
         return snapshot;
     }
 
     /**
-     * Determines whether eviction is needed, ignoring protected ids.
+     * Determines whether eviction is needed, skipping locked handlers.
      *
-     * @param maxSegments  max allowed cache size
-     * @param protectedIds ids that must not be evicted
+     * @param maxSegments max allowed cache size
      * @return true when eviction is required
      */
-    public boolean needsEvictionLocked(final int maxSegments,
-            final Set<SegmentId> protectedIds) {
-        if (segments.size() <= maxSegments) {
+    public boolean needsEvictionLocked(final int maxSegments) {
+        if (handlers.size() <= maxSegments) {
             return false;
         }
-        for (final SegmentId segmentId : segments.keySet()) {
-            if (!protectedIds.contains(segmentId)) {
+        for (final SegmentHandler<K, V> handler : handlers.values()) {
+            if (handler.getState() != SegmentHandlerState.LOCKED) {
                 return true;
             }
         }
@@ -124,26 +125,27 @@ public final class SegmentRegistryCache<K, V> {
     }
 
     /**
-     * Evicts least-recently-used segments until the cache fits.
+     * Evicts least-recently-used segments until the cache fits, skipping
+     * locked handlers.
      *
-     * @param maxSegments  max allowed cache size
-     * @param protectedIds ids that must not be evicted
-     * @param evicted      output list of evicted segments
+     * @param maxSegments max allowed cache size
+     * @param evicted     output list of evicted segments
      */
     public void evictIfNeededLocked(final int maxSegments,
-            final Set<SegmentId> protectedIds,
             final List<Segment<K, V>> evicted) {
-        if (segments.size() <= maxSegments) {
+        if (handlers.size() <= maxSegments) {
             return;
         }
-        final var iterator = segments.entrySet().iterator();
-        while (segments.size() > maxSegments && iterator.hasNext()) {
-            final Map.Entry<SegmentId, Segment<K, V>> eldest = iterator.next();
-            if (protectedIds.contains(eldest.getKey())) {
+        final var iterator = handlers.entrySet().iterator();
+        while (handlers.size() > maxSegments && iterator.hasNext()) {
+            final Map.Entry<SegmentId, SegmentHandler<K, V>> eldest = iterator
+                    .next();
+            if (eldest.getValue()
+                    .getState() == SegmentHandlerState.LOCKED) {
                 continue;
             }
             iterator.remove();
-            evicted.add(eldest.getValue());
+            evicted.add(eldest.getValue().getSegment());
         }
     }
 }
