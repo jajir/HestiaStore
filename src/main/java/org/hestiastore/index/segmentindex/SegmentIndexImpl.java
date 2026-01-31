@@ -19,8 +19,7 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentregistry.SegmentFactory;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
+import org.hestiastore.index.segmentregistry.SegmentRegistryAccess;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,28 +83,22 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final SegmentFactory<K, V> segmentFactory = new SegmentFactory<>(
                     directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
                     conf, segmentAsyncExecutor.getExecutor());
-            final SegmentRegistryImpl<K, V> registry = SegmentRegistry
-                    .<K, V>builder()
-                    .withDirectoryFacade(directoryFacade)
+            final SegmentRegistry<K, V> registry = SegmentRegistry
+                    .<K, V>builder().withDirectoryFacade(directoryFacade)
                     .withKeyTypeDescriptor(keyTypeDescriptor)
                     .withValueTypeDescriptor(valueTypeDescriptor)
                     .withConfiguration(conf)
                     .withMaintenanceExecutor(segmentAsyncExecutor.getExecutor())
-                    .withSegmentFactory(segmentFactory)
-                    .build();
+                    .withSegmentFactory(segmentFactory).build();
             this.segmentRegistry = registry;
-            final SegmentRegistryAccess<K, V> registryAccess = new SegmentRegistryAccessAdapter<>(
-                    registry);
             final SegmentWriterTxFactory<K, V> writerTxFactory = id -> segmentFactory
                     .newSegmentBuilder(id).openWriterTx();
             final SegmentSplitCoordinator<K, V> splitCoordinator = new SegmentSplitCoordinator<>(
-                    conf, keyToSegmentMap, segmentRegistry, registryAccess,
-                    writerTxFactory);
+                    conf, keyToSegmentMap, segmentRegistry, writerTxFactory);
             final SegmentAsyncSplitCoordinator<K, V> asyncSplitCoordinator = new SegmentAsyncSplitCoordinator<>(
                     splitCoordinator, splitAsyncExecutor.getExecutor());
             this.maintenanceCoordinator = new SegmentMaintenanceCoordinator<>(
-                    conf, keyToSegmentMap, registryAccess,
-                    asyncSplitCoordinator);
+                    conf, keyToSegmentMap, asyncSplitCoordinator);
             this.core = new SegmentIndexCore<>(keyToSegmentMap, segmentRegistry,
                     maintenanceCoordinator);
             this.retryPolicy = new IndexRetryPolicy(
@@ -512,22 +505,29 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         keyToSegmentMap.getSegmentIds().forEach(segmentId -> {
             final long startNanos = retryPolicy.startNanos();
             while (true) {
-                final SegmentRegistryResult<Segment<K, V>> segmentResult = segmentRegistry
+                final SegmentRegistryAccess<Segment<K, V>> segmentResult = segmentRegistry
                         .getSegment(segmentId);
                 if (segmentResult
-                        .getStatus() == SegmentRegistryResultStatus.OK) {
-                    segmentResult.getValue().invalidateIterators();
+                        .getSegmentStatus() == SegmentRegistryResultStatus.OK) {
+                    final Segment<K, V> segment = segmentResult.getSegment()
+                            .orElse(null);
+                    if (segment == null) {
+                        throw new IndexException(String.format(
+                                "Segment '%s' failed to load: %s", segmentId,
+                                segmentResult.getSegmentStatus()));
+                    }
+                    segment.invalidateIterators();
                     return;
                 }
                 if (segmentResult
-                        .getStatus() == SegmentRegistryResultStatus.BUSY) {
+                        .getSegmentStatus() == SegmentRegistryResultStatus.BUSY) {
                     retryPolicy.backoffOrThrow(startNanos,
                             "invalidateIterators", segmentId);
                     continue;
                 }
                 throw new IndexException(
                         String.format("Segment '%s' failed to load: %s",
-                                segmentId, segmentResult.getStatus()));
+                                segmentId, segmentResult.getSegmentStatus()));
             }
         });
     }

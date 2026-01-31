@@ -1,10 +1,6 @@
 /**
- * 
- */
-/**
  * Core index package.
- * 
- * @author jajir
  *
+ * @author jajir
  */
 package org.hestiastore.index.segmentindex;

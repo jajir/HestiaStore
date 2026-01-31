@@ -5,8 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentregistry.SegmentRegistryAccess;
+import org.hestiastore.index.segmentregistry.SegmentRegistryAccessImpl;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
+import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,10 +37,10 @@ class SegmentRegistryTest {
     @Test
     void get_remove_close_delegate_to_registry() {
         final SegmentId segmentId = SegmentId.of(1);
-        final SegmentRegistryResult<Segment<Integer, String>> result = registry
+        final SegmentRegistryAccess<Segment<Integer, String>> result = registry
                 .getSegment(segmentId);
 
-        assertSame(segment, result.getValue());
+        assertSame(segment, result.getSegment().orElse(null));
         registry.deleteSegment(segmentId);
         registry.close();
 
@@ -58,27 +60,31 @@ class SegmentRegistryTest {
         }
 
         @Override
-        public SegmentRegistryResult<Segment<K, V>> getSegment(
+        public SegmentRegistryAccess<Segment<K, V>> getSegment(
                 final SegmentId segmentId) {
-            return SegmentRegistryResult.ok(segment);
+            return SegmentRegistryAccessImpl
+                    .forValue(SegmentRegistryResultStatus.OK, segment);
         }
 
         @Override
-        public SegmentRegistryResult<SegmentId> allocateSegmentId() {
-            return SegmentRegistryResult.ok(SegmentId.of(1));
+        public SegmentRegistryAccess<SegmentId> allocateSegmentId() {
+            return SegmentRegistryAccessImpl.forValue(
+                    SegmentRegistryResultStatus.OK, SegmentId.of(1));
         }
 
         @Override
-        public SegmentRegistryResult<Void> deleteSegment(
+        public SegmentRegistryAccess<Void> deleteSegment(
                 final SegmentId segmentId) {
             lastRemoved = segmentId;
-            return SegmentRegistryResult.ok();
+            return SegmentRegistryAccessImpl
+                    .forStatus(SegmentRegistryResultStatus.OK);
         }
 
         @Override
-        public SegmentRegistryResult<Void> close() {
+        public SegmentRegistryAccess<Void> close() {
             closed = true;
-            return SegmentRegistryResult.ok();
+            return SegmentRegistryAccessImpl
+                    .forStatus(SegmentRegistryResultStatus.OK);
         }
 
         private SegmentId getLastRemoved() {

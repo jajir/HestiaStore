@@ -10,6 +10,8 @@ import static org.mockito.Mockito.when;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
+import org.hestiastore.index.segmentregistry.SegmentRegistryAccessImpl;
+import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,9 +33,6 @@ class SegmentSplitCoordinatorTest {
     @Mock
     private SegmentRegistry<Integer, String> segmentRegistry;
 
-    @Mock
-    private SegmentRegistryAccess<Integer, String> registryAccess;
-
     private SegmentWriterTxFactory<Integer, String> writerTxFactory;
 
     private SegmentSplitCoordinator<Integer, String> coordinator;
@@ -47,8 +46,7 @@ class SegmentSplitCoordinatorTest {
         };
         coordinator = new SegmentSplitCoordinator<>(
                 IndexConfiguration.<Integer, String>builder().build(),
-                synchronizedKeyToSegmentMap, segmentRegistry, registryAccess,
-                writerTxFactory);
+                synchronizedKeyToSegmentMap, segmentRegistry, writerTxFactory);
     }
 
     @AfterEach
@@ -79,8 +77,9 @@ class SegmentSplitCoordinatorTest {
         when(segment.getNumberOfKeysInCache()).thenReturn(10L);
         final SegmentId segmentId = SegmentId.of(1);
         when(segment.getId()).thenReturn(segmentId);
-        when(registryAccess.isSegmentInstance(segmentId, segment))
-                .thenReturn(false);
+        when(segmentRegistry.getSegment(segmentId)).thenReturn(
+                SegmentRegistryAccessImpl
+                        .forStatus(SegmentRegistryResultStatus.BUSY));
 
         coordinator.optionallySplit(segment, 5L);
 

@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Simple state holder for registry lifecycle transitions.
  */
-public final class SegmentRegistryGate {
+public final class SegmentRegistryStateMachine {
 
     private final AtomicReference<SegmentRegistryState> state = new AtomicReference<>(
             SegmentRegistryState.READY);

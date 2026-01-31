@@ -19,9 +19,10 @@ import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentregistry.SegmentRegistryGate;
+import org.hestiastore.index.segmentregistry.SegmentRegistryAccess;
+import org.hestiastore.index.segmentregistry.SegmentRegistry;
+import org.hestiastore.index.segmentregistry.SegmentRegistryStateMachine;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.hestiastore.index.segmentregistry.SegmentFactory;
 import org.hestiastore.index.segmentregistry.SegmentHandlerLockStatus;
@@ -62,8 +63,14 @@ class SegmentRegistryImplTest {
                 VALUE_DESCRIPTOR, conf, maintenanceExecutor.getExecutor());
         final AtomicInteger nextId = new AtomicInteger(1);
         segmentIdAllocator = () -> SegmentId.of(nextId.getAndIncrement());
-        registry = new SegmentRegistryImpl<>(directoryFacade, segmentFactory,
-                segmentIdAllocator, conf);
+        registry = (SegmentRegistryImpl<Integer, String>) SegmentRegistry
+                .<Integer, String>builder().withDirectoryFacade(directoryFacade)
+                .withKeyTypeDescriptor(KEY_DESCRIPTOR)
+                .withValueTypeDescriptor(VALUE_DESCRIPTOR)
+                .withConfiguration(conf)
+                .withMaintenanceExecutor(maintenanceExecutor.getExecutor())
+                .withSegmentFactory(segmentFactory)
+                .withSegmentIdAllocator(segmentIdAllocator).build();
     }
 
     @AfterEach
@@ -81,19 +88,23 @@ class SegmentRegistryImplTest {
         stubSegmentConfig();
         final SegmentId segmentId = SegmentId.of(1);
 
-        final SegmentRegistryResult<Segment<Integer, String>> firstResult = registry
+        final SegmentRegistryAccess<Segment<Integer, String>> firstResult = registry
                 .getSegment(segmentId);
-        final SegmentRegistryResult<Segment<Integer, String>> secondResult = registry
+        final SegmentRegistryAccess<Segment<Integer, String>> secondResult = registry
                 .getSegment(segmentId);
-        assertSame(SegmentRegistryResultStatus.OK, firstResult.getStatus());
-        assertSame(SegmentRegistryResultStatus.OK, secondResult.getStatus());
-        final Segment<Integer, String> first = firstResult.getValue();
-        final Segment<Integer, String> second = secondResult.getValue();
+        assertSame(SegmentRegistryResultStatus.OK,
+                firstResult.getSegmentStatus());
+        assertSame(SegmentRegistryResultStatus.OK,
+                secondResult.getSegmentStatus());
+        final Segment<Integer, String> first = firstResult.getSegment()
+                .orElse(null);
+        final Segment<Integer, String> second = secondResult.getSegment()
+                .orElse(null);
 
         assertSame(first, second);
         closeAndAwait(first);
         final Segment<Integer, String> third = registry.getSegment(segmentId)
-                .getValue();
+                .getSegment().orElse(null);
 
         assertNotSame(first, third);
     }
@@ -102,12 +113,13 @@ class SegmentRegistryImplTest {
     void getSegment_returnsBusyWhileRegistryFrozen() {
         final SegmentId segmentId = SegmentId.of(1);
 
-        final SegmentRegistryGate gate = readGate(registry);
+        final SegmentRegistryStateMachine gate = readGate(registry);
         assertTrue(gate.tryEnterFreeze());
         try (GateGuard ignored = new GateGuard(gate)) {
-            final SegmentRegistryResult<Segment<Integer, String>> busy = registry
+            final SegmentRegistryAccess<Segment<Integer, String>> busy = registry
                     .getSegment(segmentId);
-            assertSame(SegmentRegistryResultStatus.BUSY, busy.getStatus());
+            assertSame(SegmentRegistryResultStatus.BUSY,
+                    busy.getSegmentStatus());
         }
     }
 
@@ -115,27 +127,34 @@ class SegmentRegistryImplTest {
     void getSegment_returnsClosedWhenRegistryClosed() {
         registry.close();
 
-        final SegmentRegistryResult<Segment<Integer, String>> result = registry
+        final SegmentRegistryAccess<Segment<Integer, String>> result = registry
                 .getSegment(SegmentId.of(1));
 
-        assertSame(SegmentRegistryResultStatus.CLOSED, result.getStatus());
+        assertSame(SegmentRegistryResultStatus.CLOSED,
+                result.getSegmentStatus());
     }
 
     @Test
     void getSegment_evicts_least_recently_used_when_limit_exceeded() {
         Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(2);
         registry.close();
-        registry = new SegmentRegistryImpl<>(directoryFacade, segmentFactory,
-                segmentIdAllocator, conf);
+        registry = (SegmentRegistryImpl<Integer, String>) SegmentRegistry
+                .<Integer, String>builder().withDirectoryFacade(directoryFacade)
+                .withKeyTypeDescriptor(KEY_DESCRIPTOR)
+                .withValueTypeDescriptor(VALUE_DESCRIPTOR)
+                .withConfiguration(conf)
+                .withMaintenanceExecutor(maintenanceExecutor.getExecutor())
+                .withSegmentFactory(segmentFactory)
+                .withSegmentIdAllocator(segmentIdAllocator).build();
         stubSegmentConfig();
         final Segment<Integer, String> first = registry.createSegment()
-                .getValue();
+                .getSegment().orElse(null);
         registry.createSegment();
         registry.createSegment();
 
         assertEquals(SegmentState.CLOSED, first.getState());
         final Segment<Integer, String> firstReloaded = registry
-                .getSegment(first.getId()).getValue();
+                .getSegment(first.getId()).getSegment().orElse(null);
         assertNotSame(first, firstReloaded);
     }
 
@@ -143,55 +162,53 @@ class SegmentRegistryImplTest {
     void deleteSegment_returnsBusyWhenHandlerLocked() {
         stubSegmentConfig();
         final SegmentId segmentId = SegmentId.of(1);
-        final Segment<Integer, String> segment = registry.getSegment(segmentId)
-                .getValue();
+        final SegmentRegistryAccess<Segment<Integer, String>> access = registry
+                .getSegment(segmentId);
+        assertSame(SegmentRegistryResultStatus.OK, access.getSegmentStatus());
+        assertSame(SegmentHandlerLockStatus.OK, access.lock());
 
-        assertSame(SegmentHandlerLockStatus.OK,
-                registry.lockSegmentHandler(segmentId, segment));
-
-        final SegmentRegistryResult<Void> result = registry
+        final SegmentRegistryAccess<Void> result = registry
                 .deleteSegment(segmentId);
-        assertSame(SegmentRegistryResultStatus.BUSY, result.getStatus());
+        assertSame(SegmentRegistryResultStatus.BUSY, result.getSegmentStatus());
 
-        registry.unlockSegmentHandler(segmentId, segment);
+        access.unlock();
     }
 
     @Test
     void getSegment_returnsBusyWhenHandlerLocked() {
         stubSegmentConfig();
         final SegmentId segmentId = SegmentId.of(1);
-        final Segment<Integer, String> segment = registry.getSegment(segmentId)
-                .getValue();
-
-        assertSame(SegmentHandlerLockStatus.OK,
-                registry.lockSegmentHandler(segmentId, segment));
-
-        final SegmentRegistryResult<Segment<Integer, String>> result = registry
+        final SegmentRegistryAccess<Segment<Integer, String>> access = registry
                 .getSegment(segmentId);
-        assertSame(SegmentRegistryResultStatus.BUSY, result.getStatus());
+        assertSame(SegmentRegistryResultStatus.OK, access.getSegmentStatus());
+        assertSame(SegmentHandlerLockStatus.OK, access.lock());
 
-        registry.unlockSegmentHandler(segmentId, segment);
+        final SegmentRegistryAccess<Segment<Integer, String>> result = registry
+                .getSegment(segmentId);
+        assertSame(SegmentRegistryResultStatus.BUSY, result.getSegmentStatus());
+
+        access.unlock();
     }
 
     @Test
     void getSegment_returnsNotFoundWhenSegmentMissing() {
         stubSegmentConfig();
         final Segment<Integer, String> existing = registry.createSegment()
-                .getValue();
+                .getSegment().orElse(null);
         final SegmentId missingId = SegmentId.of(existing.getId().getId() + 1);
 
-        final SegmentRegistryResult<Segment<Integer, String>> result = registry
+        final SegmentRegistryAccess<Segment<Integer, String>> result = registry
                 .getSegment(missingId);
 
         assertSame(SegmentRegistryResultStatus.NOT_FOUND,
-                result.getStatus());
+                result.getSegmentStatus());
     }
-
 
     private void stubSegmentConfig() {
         Mockito.when(conf.getMaxNumberOfKeysInSegmentWriteCache())
                 .thenReturn(5);
-        Mockito.when(conf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance())
+        Mockito.when(
+                conf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance())
                 .thenReturn(6);
         Mockito.when(conf.getMaxNumberOfKeysInSegmentCache()).thenReturn(10);
         Mockito.when(conf.getMaxNumberOfKeysInSegmentChunk()).thenReturn(2);
@@ -205,23 +222,22 @@ class SegmentRegistryImplTest {
         Mockito.when(conf.getDecodingChunkFilters()).thenReturn(FILTERS);
     }
 
-    private SegmentRegistryGate readGate(
+    private SegmentRegistryStateMachine readGate(
             final SegmentRegistryImpl<Integer, String> target) {
         try {
             final Field field = SegmentRegistryImpl.class
                     .getDeclaredField("gate");
             field.setAccessible(true);
-            return (SegmentRegistryGate) field.get(target);
+            return (SegmentRegistryStateMachine) field.get(target);
         } catch (final ReflectiveOperationException ex) {
-            throw new IllegalStateException(
-                    "Unable to read gate for test", ex);
+            throw new IllegalStateException("Unable to read gate for test", ex);
         }
     }
 
     private static final class GateGuard implements AutoCloseable {
-        private final SegmentRegistryGate gate;
+        private final SegmentRegistryStateMachine gate;
 
-        private GateGuard(final SegmentRegistryGate gate) {
+        private GateGuard(final SegmentRegistryStateMachine gate) {
             this.gate = gate;
         }
 

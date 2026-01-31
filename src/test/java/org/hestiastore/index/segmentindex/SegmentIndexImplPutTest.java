@@ -75,7 +75,7 @@ class SegmentIndexImplPutTest {
                 index);
         final SegmentId segmentId = cache.findSegmentId(1);
         final Segment<Integer, String> segment = registry.getSegment(segmentId)
-                .getValue();
+                .getSegment().orElse(null);
         awaitSegmentReady(segment);
         final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
                 1, "segment-maintenance-test");
@@ -85,11 +85,8 @@ class SegmentIndexImplPutTest {
                     maintenanceExecutor.getExecutor());
             final SegmentWriterTxFactory<Integer, String> writerTxFactory = id -> segmentFactory
                     .newSegmentBuilder(id).openWriterTx();
-            final SegmentRegistryAccess<Integer, String> registryAccess = new SegmentRegistryAccessAdapter<>(
-                    registry);
             final SegmentSplitCoordinator<Integer, String> splitCoordinator = new SegmentSplitCoordinator<>(
-                    index.getConfiguration(), cache, registry, registryAccess,
-                    writerTxFactory);
+                    index.getConfiguration(), cache, registry, writerTxFactory);
             splitCoordinator.optionallySplit(segment);
             awaitSegmentCount(cache, 2);
             assertEquals(SegmentId.of(1), cache.findSegmentId(1));

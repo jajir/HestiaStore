@@ -67,7 +67,7 @@ class SegmentIndexAsyncMaintenanceTest {
             final SegmentRegistryImpl<Integer, String> registry = readSegmentRegistry(
                     index);
             final Segment<Integer, String> originalSegment = registry
-                    .getSegment(segmentId).getValue();
+                    .getSegment(segmentId).getSegment().orElse(null);
             final CountDownLatch started = new CountDownLatch(1);
             final AtomicReference<SegmentState> stateRef = new AtomicReference<>(
                     SegmentState.READY);
@@ -99,7 +99,7 @@ class SegmentIndexAsyncMaintenanceTest {
             final SegmentRegistryImpl<Integer, String> registry = readSegmentRegistry(
                     index);
             final Segment<Integer, String> originalSegment = registry
-                    .getSegment(segmentId).getValue();
+                    .getSegment(segmentId).getSegment().orElse(null);
             final CountDownLatch started = new CountDownLatch(1);
             final AtomicReference<SegmentState> stateRef = new AtomicReference<>(
                     SegmentState.READY);

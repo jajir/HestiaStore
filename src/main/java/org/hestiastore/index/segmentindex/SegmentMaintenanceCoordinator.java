@@ -12,18 +12,14 @@ final class SegmentMaintenanceCoordinator<K, V> {
 
     private final IndexConfiguration<K, V> conf;
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
-    private final SegmentRegistryAccess<K, V> registryAccess;
     private final SegmentAsyncSplitCoordinator<K, V> splitCoordinator;
 
     SegmentMaintenanceCoordinator(final IndexConfiguration<K, V> conf,
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
-            final SegmentRegistryAccess<K, V> registryAccess,
             final SegmentAsyncSplitCoordinator<K, V> splitCoordinator) {
         this.conf = Vldtn.requireNonNull(conf, "conf");
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
-        this.registryAccess = Vldtn.requireNonNull(registryAccess,
-                "registryAccess");
         this.splitCoordinator = Vldtn.requireNonNull(splitCoordinator,
                 "splitCoordinator");
     }
@@ -39,9 +35,6 @@ final class SegmentMaintenanceCoordinator<K, V> {
             return;
         }
         if (segment.getState() == SegmentState.CLOSED) {
-            return;
-        }
-        if (!registryAccess.isSegmentInstance(segmentId, segment)) {
             return;
         }
         if (!keyToSegmentMap.isKeyMappedToSegment(key, segmentId)

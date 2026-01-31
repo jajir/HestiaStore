@@ -16,7 +16,7 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentregistry.SegmentFactory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
+import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -43,10 +43,18 @@ class SegmentManagerTest {
                         .wrap(directory),
                 keyTypeDescriptor, valueTypeDescriptor, conf,
                 maintenanceExecutor.getExecutor());
-        final SegmentRegistryImpl<Integer, String> segmentRegistry = new SegmentRegistryImpl<>(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                segmentFactory, () -> SegmentId.of(1), conf);
+        final SegmentRegistry<Integer, String> segmentRegistry = SegmentRegistry
+                .<Integer, String>builder()
+                .withDirectoryFacade(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(directory))
+                .withKeyTypeDescriptor(keyTypeDescriptor)
+                .withValueTypeDescriptor(valueTypeDescriptor)
+                .withConfiguration(conf)
+                .withMaintenanceExecutor(maintenanceExecutor.getExecutor())
+                .withSegmentFactory(segmentFactory)
+                .withSegmentIdAllocator(() -> SegmentId.of(1))
+                .build();
         when(conf.getMaxNumberOfKeysInSegmentWriteCache()).thenReturn(1);
         when(conf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance())
                 .thenReturn(2);
@@ -63,11 +71,11 @@ class SegmentManagerTest {
                 .thenReturn(List.of(new ChunkFilterDoNothing()));
 
         final Segment<Integer, String> s1 = segmentRegistry
-                .getSegment(SegmentId.of(1)).getValue();
+                .getSegment(SegmentId.of(1)).getSegment().orElse(null);
         assertNotNull(s1);
 
         final Segment<Integer, String> s2 = segmentRegistry
-                .getSegment(SegmentId.of(1)).getValue();
+                .getSegment(SegmentId.of(1)).getSegment().orElse(null);
         assertNotNull(s1);
 
         /*
@@ -92,10 +100,18 @@ class SegmentManagerTest {
                         .wrap(directory),
                 keyTypeDescriptor, valueTypeDescriptor, conf,
                 maintenanceExecutor.getExecutor());
-        final SegmentRegistryImpl<Integer, String> segmentRegistry = new SegmentRegistryImpl<>(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                segmentFactory, () -> SegmentId.of(1), conf);
+        final SegmentRegistry<Integer, String> segmentRegistry = SegmentRegistry
+                .<Integer, String>builder()
+                .withDirectoryFacade(
+                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
+                                .wrap(directory))
+                .withKeyTypeDescriptor(keyTypeDescriptor)
+                .withValueTypeDescriptor(valueTypeDescriptor)
+                .withConfiguration(conf)
+                .withMaintenanceExecutor(maintenanceExecutor.getExecutor())
+                .withSegmentFactory(segmentFactory)
+                .withSegmentIdAllocator(() -> SegmentId.of(1))
+                .build();
         assertDoesNotThrow(segmentRegistry::close);
         if (!maintenanceExecutor.wasClosed()) {
             maintenanceExecutor.close();

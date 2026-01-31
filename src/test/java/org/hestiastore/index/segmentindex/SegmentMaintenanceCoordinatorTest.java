@@ -25,9 +25,6 @@ class SegmentMaintenanceCoordinatorTest {
     private KeyToSegmentMapSynchronizedAdapter<String> synchronizedKeyToSegmentMap;
 
     @Mock
-    private SegmentRegistryAccess<String, String> registryAccess;
-
-    @Mock
     private Segment<String, String> segment;
 
     @Mock
@@ -44,13 +41,11 @@ class SegmentMaintenanceCoordinatorTest {
         when(conf.getMaxNumberOfKeysInSegmentWriteCache()).thenReturn(null);
 
         final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
-                conf, synchronizedKeyToSegmentMap, registryAccess,
-                splitCoordinator);
+                conf, synchronizedKeyToSegmentMap, splitCoordinator);
 
         coordinator.handlePostWrite(segment, "key", SegmentId.of(1), 1L);
 
-        verifyNoInteractions(segment, keyToSegmentMap, registryAccess,
-                splitCoordinator);
+        verifyNoInteractions(segment, keyToSegmentMap, splitCoordinator);
     }
 
     @Test
@@ -58,8 +53,6 @@ class SegmentMaintenanceCoordinatorTest {
         final SegmentId segmentId = SegmentId.of(1);
         when(conf.getMaxNumberOfKeysInSegmentWriteCache()).thenReturn(1);
         when(segment.getState()).thenReturn(SegmentState.READY);
-        when(registryAccess.isSegmentInstance(segmentId, segment))
-                .thenReturn(true);
         when(keyToSegmentMap.isKeyMappedToSegment("key", segmentId))
                 .thenReturn(true);
         when(keyToSegmentMap.isMappingValid("key", segmentId, 7L))
@@ -68,8 +61,7 @@ class SegmentMaintenanceCoordinatorTest {
         when(segment.getNumberOfKeysInCache()).thenReturn(10L);
 
         final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
-                conf, synchronizedKeyToSegmentMap, registryAccess,
-                splitCoordinator);
+                conf, synchronizedKeyToSegmentMap, splitCoordinator);
 
         coordinator.handlePostWrite(segment, "key", segmentId, 7L);
 

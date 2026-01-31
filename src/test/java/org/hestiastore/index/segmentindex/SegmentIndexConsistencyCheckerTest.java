@@ -19,7 +19,8 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
+import org.hestiastore.index.segmentregistry.SegmentRegistryAccessImpl;
+import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,7 +64,8 @@ class SegmentIndexConsistencyCheckerTest {
         when(keyToSegmentMap.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
         when(segmentRegistry.getSegment(SEGMENT_ID))
-                .thenReturn(SegmentRegistryResult.error());
+                .thenReturn(SegmentRegistryAccessImpl
+                        .forStatus(SegmentRegistryResultStatus.ERROR));
 
         final Exception e = assertThrows(IndexException.class,
                 () -> checker.checkAndRepairConsistency());
@@ -108,7 +110,8 @@ class SegmentIndexConsistencyCheckerTest {
         when(keyToSegmentMap.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
         when(segmentRegistry.getSegment(SEGMENT_ID))
-                .thenReturn(SegmentRegistryResult.ok(segment));
+                .thenReturn(SegmentRegistryAccessImpl
+                        .forValue(SegmentRegistryResultStatus.OK, segment));
         when(segment.checkAndRepairConsistency()).thenReturn(null);
         when(segment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
                 .thenReturn(SegmentResult.ok(
@@ -127,7 +130,8 @@ class SegmentIndexConsistencyCheckerTest {
         when(keyToSegmentMap.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
         when(segmentRegistry.getSegment(SEGMENT_ID))
-                .thenReturn(SegmentRegistryResult.ok(segment));
+                .thenReturn(SegmentRegistryAccessImpl
+                        .forValue(SegmentRegistryResultStatus.OK, segment));
         when(segment.checkAndRepairConsistency())
                 .thenReturn(SEGMENT_MAX_KEY + 1);
 
@@ -145,7 +149,8 @@ class SegmentIndexConsistencyCheckerTest {
         when(keyToSegmentMap.getSegmentsAsStream())
                 .thenReturn(Stream.of(segmentPair));
         when(segmentRegistry.getSegment(SEGMENT_ID))
-                .thenReturn(SegmentRegistryResult.ok(segment));
+                .thenReturn(SegmentRegistryAccessImpl
+                        .forValue(SegmentRegistryResultStatus.OK, segment));
         when(segment.checkAndRepairConsistency()).thenReturn(SEGMENT_MAX_KEY);
 
         checker.checkAndRepairConsistency();
