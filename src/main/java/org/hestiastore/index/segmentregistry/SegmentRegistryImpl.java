@@ -1,11 +1,7 @@
 package org.hestiastore.index.segmentregistry;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -35,7 +31,6 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
 
     private final SegmentRegistryCache<K, V> cache = new SegmentRegistryCache<>();
     private final SegmentRegistryGate gate = new SegmentRegistryGate();
-    private final Map<SegmentId, SegmentHandler<K, V>> handlers = new HashMap<>();
 
     private final AsyncDirectory directoryFacade;
     private final SegmentFactory<K, V> segmentFactory;
@@ -180,43 +175,28 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
                     if (state != SegmentRegistryState.READY) {
                         return resultForState(state);
                     }
-                    SegmentHandler<K, V> handler = handlers.get(segmentId);
-                    if (handler != null && handler
-                            .getState() == SegmentHandlerState.LOCKED) {
+                    SegmentHandler<K, V> handler = cache.getLocked(segmentId);
+                    if (handler != null
+                            && handler.getState() == SegmentHandlerState.LOCKED) {
                         return SegmentRegistryResult.busy();
                     }
-                    Segment<K, V> existing = cache.getLocked(segmentId);
+                    Segment<K, V> existing = handler == null ? null
+                            : handler.getSegment();
                     final boolean needsCreate = existing == null
                             || existing.getState() == SegmentState.CLOSED;
-                    final Set<SegmentId> protectedIds = lockedHandlerIdsLocked();
-                    final boolean needsEviction = !needsCreate
-                            && cache.needsEvictionLocked(
-                                    maxNumberOfSegmentsInCache, protectedIds);
-                    if (needsCreate || needsEviction) {
+                    if (needsCreate) {
                         if (state != SegmentRegistryState.READY) {
                             return resultForState(state);
                         }
                         try {
-                            if (needsCreate) {
-                                if (!allowCreateWhenMissing
-                                        && !segmentDirectoryExists(segmentId)
-                                        && hasAnySegmentDirectories()) {
-                                    return SegmentRegistryResult.notFound();
-                                }
-                                existing = instantiateSegment(segmentId);
-                                cache.putLocked(segmentId, existing);
+                            if (!allowCreateWhenMissing
+                                    && !segmentDirectoryExists(segmentId)
+                                    && hasAnySegmentDirectories()) {
+                                return SegmentRegistryResult.notFound();
                             }
-                            cache.evictIfNeededLocked(
-                                    maxNumberOfSegmentsInCache, protectedIds,
-                                    evicted);
-                            removeHandlersForEvictedLocked(evicted);
-                            handler = getOrCreateHandlerLocked(segmentId,
-                                    existing);
-                            if (handler
-                                    .getState() == SegmentHandlerState.LOCKED) {
-                                return SegmentRegistryResult.busy();
-                            }
-                            return SegmentRegistryResult.ok(handler);
+                            existing = instantiateSegment(segmentId);
+                            handler = new SegmentHandler<>(existing);
+                            cache.putLocked(segmentId, handler);
                         } catch (final IllegalStateException e) {
                             if (isSegmentLockConflict(e)) {
                                 return SegmentRegistryResult.busy();
@@ -224,7 +204,16 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
                             throw e;
                         }
                     }
-                    handler = getOrCreateHandlerLocked(segmentId, existing);
+                    if (cache.needsEvictionLocked(maxNumberOfSegmentsInCache)) {
+                        cache.evictIfNeededLocked(maxNumberOfSegmentsInCache,
+                                evicted);
+                    }
+                    if (handler == null) {
+                        handler = cache.getLocked(segmentId);
+                    }
+                    if (handler == null) {
+                        return SegmentRegistryResult.error();
+                    }
                     if (handler.getState() == SegmentHandlerState.LOCKED) {
                         return SegmentRegistryResult.busy();
                     }
@@ -265,12 +254,10 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
             if (state != SegmentRegistryState.READY) {
                 return SegmentHandlerLockStatus.BUSY;
             }
-            final Segment<K, V> current = cache.getLocked(segmentId);
-            if (current != expected) {
+            final SegmentHandler<K, V> handler = cache.getLocked(segmentId);
+            if (handler == null || !handler.isForSegment(expected)) {
                 return SegmentHandlerLockStatus.BUSY;
             }
-            final SegmentHandler<K, V> handler = getOrCreateHandlerLocked(
-                    segmentId, current);
             return handler.lock();
         });
     }
@@ -286,15 +273,14 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         Vldtn.requireNonNull(segmentId, "segmentId");
         Vldtn.requireNonNull(expected, "expected");
         cache.withLock(() -> {
-            final SegmentHandler<K, V> handler = handlers.get(segmentId);
-            if (handler == null || !handler.isForSegment(expected)) {
+            final SegmentHandler<K, V> handler = cache.getLocked(segmentId);
+            if (handler == null) {
+                return;
+            }
+            if (!handler.isForSegment(expected)) {
                 throw new IllegalStateException("Segment handler mismatch.");
             }
             handler.unlock();
-            final Segment<K, V> current = cache.getLocked(segmentId);
-            if (current != expected) {
-                handlers.remove(segmentId);
-            }
         });
     }
 
@@ -314,7 +300,7 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
                 statusRef.set(resultForState(state));
                 return null;
             }
-            final SegmentHandler<K, V> handler = handlers.get(segmentId);
+            final SegmentHandler<K, V> handler = cache.getLocked(segmentId);
             if (handler != null
                     && handler.getState() == SegmentHandlerState.LOCKED) {
                 statusRef.set(SegmentRegistryResult.busy());
@@ -372,14 +358,9 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
                 statusRef.set(resultForState(state));
                 return null;
             }
-            final SegmentHandler<K, V> handler = handlers.get(segmentId);
+            final SegmentHandler<K, V> handler = cache.getLocked(segmentId);
             if (handler == null || !handler.isForSegment(expected)
                     || handler.getState() != SegmentHandlerState.LOCKED) {
-                statusRef.set(SegmentRegistryResult.busy());
-                return null;
-            }
-            final Segment<K, V> current = cache.getLocked(segmentId);
-            if (current != expected) {
                 statusRef.set(SegmentRegistryResult.busy());
                 return null;
             }
@@ -416,53 +397,10 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         gate.fail();
     }
 
-    private SegmentHandler<K, V> getOrCreateHandlerLocked(
-            final SegmentId segmentId, final Segment<K, V> segment) {
-        final SegmentHandler<K, V> existing = handlers.get(segmentId);
-        if (existing != null && existing.isForSegment(segment)) {
-            return existing;
-        }
-        final SegmentHandler<K, V> handler = new SegmentHandler<>(segment);
-        handlers.put(segmentId, handler);
-        return handler;
-    }
-
-    private void removeHandlersForEvictedLocked(
-            final List<Segment<K, V>> evicted) {
-        if (evicted.isEmpty()) {
-            return;
-        }
-        handlers.entrySet().removeIf(entry -> {
-            if (entry.getValue().getState() == SegmentHandlerState.LOCKED) {
-                return false;
-            }
-            for (final Segment<K, V> segment : evicted) {
-                if (entry.getValue().isForSegment(segment)) {
-                    return true;
-                }
-            }
-            return false;
-        });
-    }
-
-    private Set<SegmentId> lockedHandlerIdsLocked() {
-        if (handlers.isEmpty()) {
-            return Set.of();
-        }
-        final Set<SegmentId> protectedIds = new HashSet<>();
-        for (final Map.Entry<SegmentId, SegmentHandler<K, V>> entry : handlers
-                .entrySet()) {
-            if (entry.getValue().getState() == SegmentHandlerState.LOCKED) {
-                protectedIds.add(entry.getKey());
-            }
-        }
-        return protectedIds;
-    }
-
     private Segment<K, V> removeSegmentFromRegistry(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
-        handlers.remove(segmentId);
-        return cache.removeLocked(segmentId);
+        final SegmentHandler<K, V> handler = cache.removeLocked(segmentId);
+        return handler == null ? null : handler.getSegment();
     }
 
     private boolean segmentDirectoryExists(final SegmentId segmentId) {
@@ -684,7 +622,6 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         gate.close();
         final List<Segment<K, V>> toClose = cache.withLock(() -> {
             final List<Segment<K, V>> snapshot = cache.snapshotAndClearLocked();
-            handlers.clear();
             return snapshot;
         });
         closeEvictedSegments(toClose);

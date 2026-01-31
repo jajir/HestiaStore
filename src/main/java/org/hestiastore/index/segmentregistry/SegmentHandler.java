@@ -36,6 +36,15 @@ public final class SegmentHandler<K, V> {
     }
 
     /**
+     * Returns the wrapped segment instance.
+     *
+     * @return segment instance
+     */
+    public Segment<K, V> getSegment() {
+        return segment;
+    }
+
+    /**
      * Returns the segment when the handler is ready; otherwise returns BUSY.
      *
      * @return registry result with segment or BUSY status

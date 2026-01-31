@@ -8,10 +8,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentregistry.SegmentHandler;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCache;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,15 +45,17 @@ class SegmentRegistryCacheTest {
     @Test
     void put_get_remove_tracks_instances() {
         final SegmentId segmentId = SegmentId.of(1);
-        cache.withLock(() -> cache.putLocked(segmentId, segmentA));
+        final SegmentHandler<Integer, String> handlerA = new SegmentHandler<>(
+                segmentA);
+        cache.withLock(() -> cache.putLocked(segmentId, handlerA));
 
-        assertSame(segmentA, cache.withLock(() -> cache.getLocked(segmentId)));
+        assertSame(handlerA, cache.withLock(() -> cache.getLocked(segmentId)));
         assertTrue(cache.withLock(
                 () -> cache.isSegmentInstanceLocked(segmentId, segmentA)));
         assertFalse(cache.withLock(
                 () -> cache.isSegmentInstanceLocked(segmentId, segmentB)));
 
-        assertSame(segmentA,
+        assertSame(handlerA,
                 cache.withLock(() -> cache.removeLocked(segmentId)));
         assertNull(cache.withLock(() -> cache.getLocked(segmentId)));
     }
@@ -62,9 +64,13 @@ class SegmentRegistryCacheTest {
     void snapshotAndClearLocked_returns_snapshot_and_clears_cache() {
         final SegmentId firstId = SegmentId.of(1);
         final SegmentId secondId = SegmentId.of(2);
+        final SegmentHandler<Integer, String> handlerA = new SegmentHandler<>(
+                segmentA);
+        final SegmentHandler<Integer, String> handlerB = new SegmentHandler<>(
+                segmentB);
         final List<Segment<Integer, String>> snapshot = cache.withLock(() -> {
-            cache.putLocked(firstId, segmentA);
-            cache.putLocked(secondId, segmentB);
+            cache.putLocked(firstId, handlerA);
+            cache.putLocked(secondId, handlerB);
             return cache.snapshotAndClearLocked();
         });
 
@@ -77,11 +83,16 @@ class SegmentRegistryCacheTest {
     void needsEvictionLocked_returns_false_when_only_protected() {
         final SegmentId firstId = SegmentId.of(1);
         final SegmentId secondId = SegmentId.of(2);
+        final SegmentHandler<Integer, String> handlerA = new SegmentHandler<>(
+                segmentA);
+        final SegmentHandler<Integer, String> handlerB = new SegmentHandler<>(
+                segmentB);
+        handlerA.lock();
+        handlerB.lock();
         final boolean needsEviction = cache.withLock(() -> {
-            cache.putLocked(firstId, segmentA);
-            cache.putLocked(secondId, segmentB);
-            return cache.needsEvictionLocked(1,
-                    Set.of(firstId, secondId));
+            cache.putLocked(firstId, handlerA);
+            cache.putLocked(secondId, handlerB);
+            return cache.needsEvictionLocked(1);
         });
 
         assertFalse(needsEviction);
@@ -93,13 +104,19 @@ class SegmentRegistryCacheTest {
         final SegmentId secondId = SegmentId.of(2);
         final SegmentId thirdId = SegmentId.of(3);
         final List<Segment<Integer, String>> evicted = new ArrayList<>();
+        final SegmentHandler<Integer, String> handlerA = new SegmentHandler<>(
+                segmentA);
+        final SegmentHandler<Integer, String> handlerB = new SegmentHandler<>(
+                segmentB);
+        final SegmentHandler<Integer, String> handlerC = new SegmentHandler<>(
+                segmentC);
 
         cache.withLock(() -> {
-            cache.putLocked(firstId, segmentA);
-            cache.putLocked(secondId, segmentB);
+            cache.putLocked(firstId, handlerA);
+            cache.putLocked(secondId, handlerB);
             cache.getLocked(firstId); // refresh LRU order
-            cache.putLocked(thirdId, segmentC);
-            cache.evictIfNeededLocked(2, Set.of(), evicted);
+            cache.putLocked(thirdId, handlerC);
+            cache.evictIfNeededLocked(2, evicted);
         });
 
         assertEquals(List.of(segmentB), evicted);
@@ -111,19 +128,24 @@ class SegmentRegistryCacheTest {
 
     @Test
     void evictIfNeededLocked_skips_protected_ids() {
-        final SegmentId protectedId = SegmentId.of(1);
+        final SegmentId lockedId = SegmentId.of(1);
         final SegmentId evictedId = SegmentId.of(2);
         final List<Segment<Integer, String>> evicted = new ArrayList<>();
+        final SegmentHandler<Integer, String> lockedHandler = new SegmentHandler<>(
+                segmentA);
+        final SegmentHandler<Integer, String> evictedHandler = new SegmentHandler<>(
+                segmentB);
+        lockedHandler.lock();
 
         cache.withLock(() -> {
-            cache.putLocked(protectedId, segmentA);
-            cache.putLocked(evictedId, segmentB);
-            cache.evictIfNeededLocked(1, Set.of(protectedId), evicted);
+            cache.putLocked(lockedId, lockedHandler);
+            cache.putLocked(evictedId, evictedHandler);
+            cache.evictIfNeededLocked(1, evicted);
         });
 
         assertEquals(List.of(segmentB), evicted);
         assertTrue(cache.withLock(
-                () -> cache.isSegmentInstanceLocked(protectedId, segmentA)));
+                () -> cache.isSegmentInstanceLocked(lockedId, segmentA)));
         assertFalse(cache.withLock(
                 () -> cache.isSegmentInstanceLocked(evictedId, segmentB)));
     }

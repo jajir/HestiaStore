@@ -18,6 +18,7 @@ import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segmentregistry.SegmentHandler;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCache;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.junit.jupiter.api.AfterEach;
@@ -140,7 +141,8 @@ class SegmentIndexImplRetryTest {
             final SegmentRegistryImpl<K, V> registry, final SegmentId segmentId,
             final Segment<K, V> segment) {
         final SegmentRegistryCache<K, V> cache = readCache(registry);
-        cache.withLock(() -> cache.putLocked(segmentId, segment));
+        cache.withLock(
+                () -> cache.putLocked(segmentId, new SegmentHandler<>(segment)));
     }
 
     @SuppressWarnings("unchecked")

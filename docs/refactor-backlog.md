@@ -8,19 +8,6 @@
     - Use key-map snapshot + version re-check on retry/BUSY paths.
     - Tests: `IntegrationSegmentIndexConcurrencyTest` + new split/put stress.
 
-[ ] 73 SegmentRegistry handler-backed cache (Risk: MEDIUM)
-    - Make `SegmentRegistryCache` store `SegmentHandler` per `SegmentId`
-      (segment + lock state as one entry).
-    - Keep `SegmentRegistry.getSegment` returning `SegmentRegistryResult`
-      to signal registry state; map LOCKED to BUSY.
-    - Add internal accessors for handler-only flows (split/evict) without
-      exposing handler in the public registry API.
-    - Update eviction logic to skip LOCKED handlers and keep cache/handler
-      in sync.
-    - Tests: locked entry not evicted, handler/segment consistency, BUSY
-      returned when handler locked.
-
-
 ## Planned
 
 ### High
@@ -525,3 +512,15 @@
     - Remove constructor parameters from `SegmentRegistryBuilder`.
     - Ensure all required inputs are set via `with...` methods.
     - Update call sites and tests to use the builder setters.
+
+[x] 73 SegmentRegistry handler-backed cache (Risk: MEDIUM)
+    - Make `SegmentRegistryCache` store `SegmentHandler` per `SegmentId`
+      (segment + lock state as one entry).
+    - Keep `SegmentRegistry.getSegment` returning `SegmentRegistryResult`
+      to signal registry state; map LOCKED to BUSY.
+    - Add internal accessors for handler-only flows (split/evict) without
+      exposing handler in the public registry API.
+    - Update eviction logic to skip LOCKED handlers and keep cache/handler
+      in sync.
+    - Tests: locked entry not evicted, handler/segment consistency, BUSY
+      returned when handler locked.

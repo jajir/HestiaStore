@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -17,6 +18,7 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
+import org.hestiastore.index.segmentregistry.SegmentHandler;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCache;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.junit.jupiter.api.Assertions;
@@ -189,10 +191,17 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
                     .getDeclaredField("cache");
             cacheField.setAccessible(true);
             final Object cache = cacheField.get(registry);
-            final Field segmentsField = SegmentRegistryCache.class
-                    .getDeclaredField("segments");
-            segmentsField.setAccessible(true);
-            return (Map<SegmentId, Segment<?, ?>>) segmentsField.get(cache);
+            final Field handlersField = SegmentRegistryCache.class
+                    .getDeclaredField("handlers");
+            handlersField.setAccessible(true);
+            final Map<SegmentId, SegmentHandler<?, ?>> handlers = (Map<SegmentId, SegmentHandler<?, ?>>) handlersField
+                    .get(cache);
+            final Map<SegmentId, Segment<?, ?>> segments = new HashMap<>();
+            for (final Map.Entry<SegmentId, SegmentHandler<?, ?>> entry : handlers
+                    .entrySet()) {
+                segments.put(entry.getKey(), entry.getValue().getSegment());
+            }
+            return segments;
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
                     "Unable to read segments cache for test", ex);
