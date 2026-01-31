@@ -6,7 +6,7 @@ This document describes the segment registry responsibilities and supported oper
 - The registry owns:
     - safe access to segment resources (load/create/delete)
     - in-memory segment cache (LRU)
-    - registry-level state gate (`READY`, `FREEZE`, `CLOSED`, `ERROR`)
+    - registry-level state gate (`READY`, `CLOSED`, `ERROR`)
     - segment id allocation for new segments via `SegmentIdAllocator`
 - The registry does **not** own split execution, scheduling, or in-flight
   tracking. Those belong to the segment index layer.
@@ -21,18 +21,14 @@ Registry states are intentionally small and short‑lived.
 
 ### Transitions
 
-| Original State | New State | When                                            |
-| -------------- | --------- | ----------------------------------------------- |
-| `READY`        | `FREEZE`  | short exclusive window for registry map updates |
-| `FREEZE`       | `READY`   | registry map update complete                    |
-| any            | `CLOSED`  | index closing                                   |
-| any            | `ERROR`   | unrecoverable registry failure                  |
+| Original State | New State | When                           |
+| -------------- | --------- | ------------------------------ |
+| `READY`        | `CLOSED`  | index closing                  |
+| any            | `ERROR`   | unrecoverable registry failure |
 
 ### Rules
-- `FREEZE` is **short**; it only wraps changes to:
-  - key‑to‑segment map updates
-  - cache updates tied to the map replacement
-- `getSegment()` and `removeSegment()` return `BUSY` if registry is `FREEZE`.
+- `getSegment()` and `deleteSegment()` return `BUSY` when the registry is not
+  `READY` or when the target handler is locked.
 - `CLOSED` and `ERROR` are terminal.
 
 ## Registry Operations
@@ -45,10 +41,18 @@ Registry states are intentionally small and short‑lived.
 | `deleteSegment(id)`   | Close and delete a segment, then remove from cache.              |
 | `close()`             | Close cached segments.                                           |
 
-All registry operations return `SegmentRegistryResult` so callers can react to
-`BUSY`/`CLOSED`/`ERROR` states without explicit lock/unlock in normal flows.
-Explicit lock/unlock is an internal split safety mechanism, not part of the
-public registry API.
+All registry operations return `SegmentRegistryAccess` so callers can react to
+`BUSY`/`CLOSED`/`ERROR` states and (when available) acquire a handler lock via
+`lock()/unlock()` without exposing the handler itself.
+
+### `deleteSegment(id)` flow
+
+1) Lock the cached handler (if present); return `BUSY` if it is already locked.
+2) Close the segment with retry/backoff until it is `CLOSED` or returns `OK`.
+3) Delete the segment directory and files on disk.
+4) Evict the handler from the cache (unlock is unnecessary after eviction).
+
+When the segment is not cached, deletion is best‑effort and only touches disk.
 
 ### Response Codes
 
@@ -57,7 +61,7 @@ public registry API.
 | Code        | Description                                                      |
 | ----------- | ---------------------------------------------------------------- |
 | `OK`        | Segment returned or operation accepted.                          |
-| `BUSY`      | Temporary refusal (e.g., registry in `FREEZE` or lock conflict). |
+| `BUSY`      | Temporary refusal (registry not `READY` or lock conflict).       |
 | `NOT_FOUND` | Requested segment does not exist in registry storage.            |
 | `CLOSED`    | Registry closed; no further operations.                          |
 | `ERROR`     | Unrecoverable registry failure.                                  |
@@ -66,8 +70,8 @@ public registry API.
 
 The split workflow is intentionally two‑phase: **prepare** outside the registry
 and **apply** under short, targeted locks in the index layer (key‑map lock and
-handler lock). Registry involvement is limited to safe segment access and id
-allocation.
+handler lock). Registry involvement is limited to safe segment access, id
+allocation, and deletion of the old segment after a successful apply.
 
 ### Step‑by‑step (proposed)
 
@@ -90,21 +94,13 @@ allocation.
    - add the new lower + upper segment ids with their key ranges
    - flush the map to disk
 
-5) **Update registry cache**  
-   Update registry state (no directory swap; new ids only):
-   - remove the old segment id from the registry cache
-   - allow new segment ids to be loaded on demand
-
-6) **Release segment resources**  
+5) **Release segment resources**  
    Close the exclusive iterator and release segment locks. Close/free any
    temporary segment instances created for the split.
 
-7) **Delete the old segment from disk**  
-   Remove the old segment directory after it is no longer referenced and
-   no locks are held.
-
-8) **Unlock and resume**  
-   Ensure the registry is back to `READY` and release the handler lock.
+6) **Delete the old segment**  
+   Call `SegmentRegistry.deleteSegment(oldId)` to lock the handler, close the
+   segment, delete files, and evict it from cache.
 
 ### Split Outcome Mapping
 
@@ -120,9 +116,9 @@ allocation.
   `FULL_ISOLATION` iterator. Eligibility is re‑checked under the handler lock.
 
 - **Key-map lock remains required**  
-  The registry `FREEZE` does not replace the key‑to‑segment map’s own
-  synchronization. Always use the map’s lock/adapter when mutating or reading
-  the on‑disk map, because other index operations may bypass the registry lock.
+  The registry does not replace the key‑to‑segment map’s own synchronization.
+  Always use the map’s lock/adapter when mutating or reading the on‑disk map,
+  because other index operations may bypass the registry lock.
 
 - **Lock order (apply phase)**  
   During split apply, acquire the handler lock, then the key‑map lock.
@@ -149,9 +145,8 @@ allocation.
 - Callers see `BUSY` or `ERROR` depending on root cause.
 
 ### Split failure during apply
-- Registry transitions to `ERROR` if the map update or eviction fails.
-- Recovery focuses on restoring a consistent map; orphaned segment directories
-  are cleaned up on next open.
+- Apply failure keeps the registry in `READY`; map recovery is handled by the
+  index layer, and orphaned segment directories are cleaned up on next open.
 
 ### Lock conflicts
 - Segment directory lock conflicts return `BUSY` (retryable).
@@ -160,8 +155,8 @@ allocation.
 
 - **Map updates are consistent**: apply phase must fully replace the old
   segment with the new segment ids or transition to `ERROR`.
-- **FREEZE is short**: split IO happens outside `FREEZE`; only key‑map
-  persistence and cache updates run under `FREEZE`.
+- **Map lock is short**: split IO happens outside the key‑map lock; only
+  in‑memory updates and persistence run under the map lock.
 - **No hidden compaction**: split does not implicitly run `compact()`.
 
 ## Relation to Segment Concurrency
@@ -169,5 +164,5 @@ allocation.
 The segment state machine (see `segment-concurrency.md`) guarantees that
 `FULL_ISOLATION` blocks writes and maintenance while the split iterator is
 open. The registry relies on that exclusivity to build new segments without
-concurrent mutation, then applies the map update and cache eviction atomically
-under `FREEZE`.
+concurrent mutation, then applies the map update and finally deletes the old
+segment via `SegmentRegistry.deleteSegment(...)`.

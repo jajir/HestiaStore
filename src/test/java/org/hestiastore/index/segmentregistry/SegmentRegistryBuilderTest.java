@@ -73,7 +73,7 @@ class SegmentRegistryBuilderTest {
         when(conf.getIndexBusyTimeoutMillis()).thenReturn(10);
         final ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
-            final SegmentRegistryImpl<Integer, String> registry = SegmentRegistry
+            final SegmentRegistry<Integer, String> registry = SegmentRegistry
                     .<Integer, String>builder()
                     .withDirectoryFacade(asyncDirectory)
                     .withKeyTypeDescriptor(new TypeDescriptorInteger())
@@ -83,10 +83,11 @@ class SegmentRegistryBuilderTest {
                     .build();
             try {
                 assertEquals(SegmentId.of(6),
-                        registry.allocateSegmentId().getValue());
-                assertNotNull(readField(registry, "segmentFactory"),
+                        registry.allocateSegmentId().getSegment().orElse(null));
+                final SegmentRegistryImpl<Integer, String> impl = (SegmentRegistryImpl<Integer, String>) registry;
+                assertNotNull(readField(impl, "segmentFactory"),
                         "Expected default segment factory");
-                assertNotNull(readField(registry, "segmentIdAllocator"),
+                assertNotNull(readField(impl, "segmentIdAllocator"),
                         "Expected default segment id allocator");
             } finally {
                 registry.close();

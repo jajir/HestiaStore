@@ -61,7 +61,7 @@ class SegmentIndexImplRetryTest {
         final SegmentRegistryImpl<Integer, String> registry = readSegmentRegistry(
                 index);
         final Segment<Integer, String> original = registry.getSegment(segmentId)
-                .getValue();
+                .getSegment().orElse(null);
 
         final AtomicInteger attempts = new AtomicInteger();
         when(segment.get(eq(1))).thenAnswer(invocation -> {
@@ -89,7 +89,7 @@ class SegmentIndexImplRetryTest {
         final SegmentRegistryImpl<Integer, String> registry = readSegmentRegistry(
                 index);
         final Segment<Integer, String> original = registry.getSegment(segmentId)
-                .getValue();
+                .getSegment().orElse(null);
 
         final AtomicInteger attempts = new AtomicInteger();
         when(segment.put(eq(2), eq("two"))).thenAnswer(invocation -> {
@@ -141,8 +141,8 @@ class SegmentIndexImplRetryTest {
             final SegmentRegistryImpl<K, V> registry, final SegmentId segmentId,
             final Segment<K, V> segment) {
         final SegmentRegistryCache<K, V> cache = readCache(registry);
-        cache.withLock(
-                () -> cache.putLocked(segmentId, new SegmentHandler<>(segment)));
+        cache.withLock(() -> cache.putLocked(segmentId,
+                new SegmentHandler<>(segment)));
     }
 
     @SuppressWarnings("unchecked")

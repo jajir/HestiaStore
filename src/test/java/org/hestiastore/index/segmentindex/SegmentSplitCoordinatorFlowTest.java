@@ -20,10 +20,11 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segmentregistry.SegmentFactory;
 import org.hestiastore.index.segmentregistry.SegmentIdAllocator;
+import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
-import org.hestiastore.index.segmentregistry.SegmentRegistryGate;
+import org.hestiastore.index.segmentregistry.SegmentRegistryStateMachine;
 import org.hestiastore.index.segmentregistry.SegmentRegistryState;
+import org.hestiastore.index.segmentregistry.SegmentRegistryAccess;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 import org.junit.jupiter.api.Test;
 
@@ -47,18 +48,23 @@ class SegmentSplitCoordinatorFlowTest {
         final AtomicInteger nextId = new AtomicInteger(1);
         final SegmentIdAllocator segmentIdAllocator = () -> SegmentId
                 .of(nextId.getAndIncrement());
-        final TrackingRegistry registry = new TrackingRegistry(directory,
-                segmentFactory, segmentIdAllocator, conf);
+        final SegmentRegistryImpl<Integer, String> registryImpl = (SegmentRegistryImpl<Integer, String>) SegmentRegistry
+                .<Integer, String>builder().withDirectoryFacade(directory)
+                .withKeyTypeDescriptor(KEY_DESCRIPTOR)
+                .withValueTypeDescriptor(VALUE_DESCRIPTOR)
+                .withConfiguration(conf)
+                .withMaintenanceExecutor(maintenanceExecutor.getExecutor())
+                .withSegmentFactory(segmentFactory)
+                .withSegmentIdAllocator(segmentIdAllocator).build();
+        final TrackingRegistry<Integer, String> registry = new TrackingRegistry<>(
+                registryImpl);
         final TrackingWriterTxFactory writerTxFactory = new TrackingWriterTxFactory(
                 segmentFactory);
-        final SegmentRegistryAccess<Integer, String> registryAccess = new SegmentRegistryAccessAdapter<>(
-                registry);
         final SegmentSplitCoordinator<Integer, String> coordinator = new SegmentSplitCoordinator<>(
-                conf, keyToSegmentMap, registry, registryAccess,
-                writerTxFactory);
+                conf, keyToSegmentMap, registry, writerTxFactory);
         try {
             final Segment<Integer, String> segment = registry
-                    .getSegment(SegmentId.of(0)).getValue();
+                    .getSegment(SegmentId.of(0)).getSegment().orElse(null);
             writerTxFactory.clearCreatedSegments();
             for (int i = 0; i < 4; i++) {
                 assertEquals(SegmentResultStatus.OK,
@@ -68,13 +74,14 @@ class SegmentSplitCoordinatorFlowTest {
             keyToSegmentMap.removeSegment(SegmentId.of(0));
             coordinator.optionallySplit(segment, 2);
 
-            final List<SegmentId> created = writerTxFactory.getCreatedSegments();
+            final List<SegmentId> created = writerTxFactory
+                    .getCreatedSegments();
             assertEquals(2, created.size());
             assertTrue(registry.getDeletedSegments().containsAll(created));
-            assertFalse(registry.getDeletedSegments()
-                    .contains(SegmentId.of(0)));
-            assertEquals(SegmentRegistryState.ERROR,
-                    readGate(registry).getState());
+            assertFalse(
+                    registry.getDeletedSegments().contains(SegmentId.of(0)));
+            assertEquals(SegmentRegistryState.READY,
+                    readGate(registryImpl).getState());
         } finally {
             keyToSegmentMap.close();
             registry.close();
@@ -84,16 +91,15 @@ class SegmentSplitCoordinatorFlowTest {
         }
     }
 
-    private static SegmentRegistryGate readGate(
+    private static SegmentRegistryStateMachine readGate(
             final SegmentRegistryImpl<?, ?> registry) {
         try {
             final var field = SegmentRegistryImpl.class
                     .getDeclaredField("gate");
             field.setAccessible(true);
-            return (SegmentRegistryGate) field.get(registry);
+            return (SegmentRegistryStateMachine) field.get(registry);
         } catch (final ReflectiveOperationException ex) {
-            throw new IllegalStateException(
-                    "Unable to read registry gate", ex);
+            throw new IllegalStateException("Unable to read registry gate", ex);
         }
     }
 
@@ -112,18 +118,23 @@ class SegmentSplitCoordinatorFlowTest {
         final AtomicInteger nextId = new AtomicInteger(1);
         final SegmentIdAllocator segmentIdAllocator = () -> SegmentId
                 .of(nextId.getAndIncrement());
-        final TrackingRegistry registry = new TrackingRegistry(directory,
-                segmentFactory, segmentIdAllocator, conf);
+        final SegmentRegistryImpl<Integer, String> registryImpl = (SegmentRegistryImpl<Integer, String>) SegmentRegistry
+                .<Integer, String>builder().withDirectoryFacade(directory)
+                .withKeyTypeDescriptor(KEY_DESCRIPTOR)
+                .withValueTypeDescriptor(VALUE_DESCRIPTOR)
+                .withConfiguration(conf)
+                .withMaintenanceExecutor(maintenanceExecutor.getExecutor())
+                .withSegmentFactory(segmentFactory)
+                .withSegmentIdAllocator(segmentIdAllocator).build();
+        final TrackingRegistry<Integer, String> registry = new TrackingRegistry<>(
+                registryImpl);
         final TrackingWriterTxFactory writerTxFactory = new TrackingWriterTxFactory(
                 segmentFactory);
-        final SegmentRegistryAccess<Integer, String> registryAccess = new SegmentRegistryAccessAdapter<>(
-                registry);
         final SegmentSplitCoordinator<Integer, String> coordinator = new SegmentSplitCoordinator<>(
-                conf, keyToSegmentMap, registry, registryAccess,
-                writerTxFactory);
+                conf, keyToSegmentMap, registry, writerTxFactory);
         try {
             final Segment<Integer, String> segment = registry
-                    .getSegment(SegmentId.of(0)).getValue();
+                    .getSegment(SegmentId.of(0)).getSegment().orElse(null);
             writerTxFactory.clearCreatedSegments();
             for (int i = 0; i < 4; i++) {
                 assertEquals(SegmentResultStatus.OK,
@@ -186,8 +197,7 @@ class SegmentSplitCoordinatorFlowTest {
                 .withAsyncDirectory(AsyncDirectoryAdapter.wrap(dir))
                 .withFileName("index.map")
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())
-                .withValueTypeDescriptor(new TypeDescriptorSegmentId())
-                .build();
+                .withValueTypeDescriptor(new TypeDescriptorSegmentId()).build();
         sdf.openWriterTx()
                 .execute(writer -> entries.stream().sorted(
                         (e1, e2) -> Integer.compare(e1.getKey(), e2.getKey()))
@@ -196,22 +206,36 @@ class SegmentSplitCoordinatorFlowTest {
                 new TypeDescriptorInteger());
     }
 
-    private static final class TrackingRegistry
-            extends SegmentRegistryImpl<Integer, String> {
+    private static final class TrackingRegistry<K, V>
+            implements SegmentRegistry<K, V> {
+        private final SegmentRegistryImpl<K, V> delegate;
         private final List<SegmentId> deletedSegments = new ArrayList<>();
 
-        private TrackingRegistry(final AsyncDirectory directoryFacade,
-                final SegmentFactory<Integer, String> segmentFactory,
-                final SegmentIdAllocator segmentIdAllocator,
-                final IndexConfiguration<Integer, String> conf) {
-            super(directoryFacade, segmentFactory, segmentIdAllocator, conf);
+        private TrackingRegistry(final SegmentRegistryImpl<K, V> delegate) {
+            this.delegate = delegate;
         }
 
         @Override
-        public SegmentRegistryResult<Void> deleteSegment(
+        public SegmentRegistryAccess<Segment<K, V>> getSegment(
+                final SegmentId segmentId) {
+            return delegate.getSegment(segmentId);
+        }
+
+        @Override
+        public SegmentRegistryAccess<SegmentId> allocateSegmentId() {
+            return delegate.allocateSegmentId();
+        }
+
+        @Override
+        public SegmentRegistryAccess<Void> deleteSegment(
                 final SegmentId segmentId) {
             deletedSegments.add(segmentId);
-            return super.deleteSegment(segmentId);
+            return delegate.deleteSegment(segmentId);
+        }
+
+        @Override
+        public SegmentRegistryAccess<Void> close() {
+            return delegate.close();
         }
 
         private List<SegmentId> getDeletedSegments() {

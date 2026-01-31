@@ -196,7 +196,7 @@
     - Update handler-related tests to match the new API.
 
 [x] 60 Move registry implementation to `segmentregistry` package (Risk: MEDIUM)
-    - Move `SegmentRegistryImpl`, `SegmentRegistryGate`, `SegmentRegistryCache`,
+    - Move `SegmentRegistryImpl`, `SegmentRegystryState`, `SegmentRegistryCache`,
       `SegmentRegistryState`, and `SegmentRegistryResult`
       to `org.hestiastore.index.segmentregistry`.
     - Update imports/usages in `segmentindex` and tests.
@@ -524,3 +524,23 @@
       in sync.
     - Tests: locked entry not evicted, handler/segment consistency, BUSY
       returned when handler locked.
+
+[x] 74 RegistryAccess: lock via `SegmentHandler` (Risk: MEDIUM)
+    - Add internal accessor that returns the `SegmentHandler` for a
+      `segmentId` + expected segment instance (BUSY/ERROR when mismatch).
+    - Remove `lockSegmentHandler`/`unlockSegmentHandler` from
+      `SegmentRegistryLocking` and `SegmentRegistryAccess`.
+    - Update `SegmentRegistryAccessAdapter` to expose handler instead of
+      lock/unlock methods.
+
+[x] 75 Split flow: use handler lock directly (Risk: MEDIUM)
+    - In `SegmentSplitCoordinator`, acquire handler via registry access and
+      call `handler.lock()`/`handler.unlock()` directly.
+    - Keep BUSY mapping when handler is locked.
+    - Ensure eviction path still validates handler instance + state.
+
+[x] 76 Tests + cleanup for handler locking (Risk: LOW)
+    - Update tests that currently call registry lock/unlock to use handler
+      locking instead.
+    - Remove unused lock methods from `SegmentRegistryImpl`.
+    - Verify eviction skips locked handlers and BUSY is returned when locked.

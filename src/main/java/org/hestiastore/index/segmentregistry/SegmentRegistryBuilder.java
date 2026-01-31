@@ -122,7 +122,7 @@ public final class SegmentRegistryBuilder<K, V> {
      *
      * @return registry instance
      */
-    public SegmentRegistryImpl<K, V> build() {
+    public SegmentRegistry<K, V> build() {
         final AsyncDirectory resolvedDirectory = Vldtn.requireNonNull(
                 directoryFacade, "directoryFacade");
         final TypeDescriptor<K> resolvedKeyDescriptor = Vldtn.requireNonNull(

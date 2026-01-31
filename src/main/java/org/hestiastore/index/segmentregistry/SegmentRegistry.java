@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentregistry;
 
+import java.util.Optional;
+
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 
@@ -28,32 +30,32 @@ public interface SegmentRegistry<K, V> {
      * @param segmentId segment id to load
      * @return registry result containing the segment or a status
      */
-    SegmentRegistryResult<Segment<K, V>> getSegment(SegmentId segmentId);
+    SegmentRegistryAccess<Segment<K, V>> getSegment(SegmentId segmentId);
 
     /**
      * Allocates a new, unused segment id.
      *
      * @return registry result containing the new segment id or a status
      */
-    SegmentRegistryResult<SegmentId> allocateSegmentId();
+    SegmentRegistryAccess<SegmentId> allocateSegmentId();
 
     /**
      * Creates and registers a new segment using a freshly allocated id.
      *
      * @return registry result containing the new segment or a status
      */
-    default SegmentRegistryResult<Segment<K, V>> createSegment() {
-        final SegmentRegistryResult<SegmentId> idResult = allocateSegmentId();
-        if (idResult.getStatus() == SegmentRegistryResultStatus.OK) {
-            return getSegment(idResult.getValue());
+    default SegmentRegistryAccess<Segment<K, V>> createSegment() {
+        final SegmentRegistryAccess<SegmentId> idResult = allocateSegmentId();
+        if (idResult.getSegmentStatus() != SegmentRegistryResultStatus.OK) {
+            return SegmentRegistryAccessImpl
+                    .forStatus(idResult.getSegmentStatus());
         }
-        if (idResult.getStatus() == SegmentRegistryResultStatus.CLOSED) {
-            return SegmentRegistryResult.closed();
+        final Optional<SegmentId> segmentId = idResult.getSegment();
+        if (segmentId.isEmpty()) {
+            return SegmentRegistryAccessImpl
+                    .forStatus(SegmentRegistryResultStatus.ERROR);
         }
-        if (idResult.getStatus() == SegmentRegistryResultStatus.ERROR) {
-            return SegmentRegistryResult.error();
-        }
-        return SegmentRegistryResult.busy();
+        return getSegment(segmentId.get());
     }
 
     /**
@@ -62,12 +64,12 @@ public interface SegmentRegistry<K, V> {
      * @param segmentId segment id to remove
      * @return registry result status
      */
-    SegmentRegistryResult<Void> deleteSegment(SegmentId segmentId);
+    SegmentRegistryAccess<Void> deleteSegment(SegmentId segmentId);
 
     /**
      * Closes the registry, releasing cached segments and executors.
      *
      * @return registry result status
      */
-    SegmentRegistryResult<Void> close();
+    SegmentRegistryAccess<Void> close();
 }
