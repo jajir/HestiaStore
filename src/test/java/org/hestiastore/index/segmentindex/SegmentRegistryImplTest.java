@@ -128,18 +128,14 @@ class SegmentRegistryImplTest {
         registry = new SegmentRegistryImpl<>(directoryFacade, segmentFactory,
                 segmentIdAllocator, conf);
         stubSegmentConfig();
-        final SegmentId firstId = SegmentId.of(1);
-        final SegmentId secondId = SegmentId.of(2);
-        final SegmentId thirdId = SegmentId.of(3);
-
-        final Segment<Integer, String> first = registry.getSegment(firstId)
+        final Segment<Integer, String> first = registry.createSegment()
                 .getValue();
-        registry.getSegment(secondId);
-        registry.getSegment(thirdId);
+        registry.createSegment();
+        registry.createSegment();
 
         assertEquals(SegmentState.CLOSED, first.getState());
         final Segment<Integer, String> firstReloaded = registry
-                .getSegment(firstId).getValue();
+                .getSegment(first.getId()).getValue();
         assertNotSame(first, firstReloaded);
     }
 
@@ -158,6 +154,20 @@ class SegmentRegistryImplTest {
         assertSame(SegmentRegistryResultStatus.BUSY, result.getStatus());
 
         registry.unlockSegmentHandler(segmentId, segment);
+    }
+
+    @Test
+    void getSegment_returnsNotFoundWhenSegmentMissing() {
+        stubSegmentConfig();
+        final Segment<Integer, String> existing = registry.createSegment()
+                .getValue();
+        final SegmentId missingId = SegmentId.of(existing.getId().getId() + 1);
+
+        final SegmentRegistryResult<Segment<Integer, String>> result = registry
+                .getSegment(missingId);
+
+        assertSame(SegmentRegistryResultStatus.NOT_FOUND,
+                result.getStatus());
     }
 
 

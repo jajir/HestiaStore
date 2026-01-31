@@ -8,6 +8,8 @@ public enum SegmentRegistryResultStatus {
     OK,
     /** Registry is temporarily busy and the operation should be retried. */
     BUSY,
+    /** Requested segment does not exist in the registry storage. */
+    NOT_FOUND,
     /** Registry is closed and will not accept further operations. */
     CLOSED,
     /** Registry encountered an error while handling the request. */

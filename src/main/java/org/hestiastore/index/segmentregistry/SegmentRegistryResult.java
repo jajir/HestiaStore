@@ -51,6 +51,17 @@ public final class SegmentRegistryResult<T> {
     }
 
     /**
+     * Creates a NOT_FOUND result.
+     *
+     * @param <T> value type
+     * @return NOT_FOUND result with null value
+     */
+    public static <T> SegmentRegistryResult<T> notFound() {
+        return new SegmentRegistryResult<>(SegmentRegistryResultStatus.NOT_FOUND,
+                null);
+    }
+
+    /**
      * Creates a CLOSED result.
      *
      * @param <T> value type
