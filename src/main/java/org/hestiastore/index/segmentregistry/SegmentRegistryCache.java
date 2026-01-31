@@ -28,7 +28,7 @@ public final class SegmentRegistryCache<K, V> {
      * @param <T>    return type
      * @return action result
      */
-    public <T> T withLock(final Supplier<T> action) {
+    <T> T withLock(final Supplier<T> action) {
         synchronized (lock) {
             return action.get();
         }
@@ -39,7 +39,7 @@ public final class SegmentRegistryCache<K, V> {
      *
      * @param action action to execute
      */
-    public void withLock(final Runnable action) {
+    void withLock(final Runnable action) {
         synchronized (lock) {
             action.run();
         }
@@ -51,7 +51,7 @@ public final class SegmentRegistryCache<K, V> {
      * @param segmentId segment id to look up
      * @return cached handler or null when absent
      */
-    public SegmentHandler<K, V> getLocked(final SegmentId segmentId) {
+    SegmentHandler<K, V> getLocked(final SegmentId segmentId) {
         return handlers.get(segmentId);
     }
 
@@ -61,7 +61,7 @@ public final class SegmentRegistryCache<K, V> {
      * @param segmentId segment id to cache
      * @param handler   handler instance
      */
-    public void putLocked(final SegmentId segmentId,
+    void putLocked(final SegmentId segmentId,
             final SegmentHandler<K, V> handler) {
         handlers.put(segmentId, handler);
     }
@@ -72,7 +72,7 @@ public final class SegmentRegistryCache<K, V> {
      * @param segmentId segment id to remove
      * @return removed handler or null when missing
      */
-    public SegmentHandler<K, V> removeLocked(final SegmentId segmentId) {
+    SegmentHandler<K, V> removeLocked(final SegmentId segmentId) {
         return handlers.remove(segmentId);
     }
 
@@ -83,7 +83,7 @@ public final class SegmentRegistryCache<K, V> {
      * @param expected  expected segment instance
      * @return true when the instance matches
      */
-    public boolean isSegmentInstanceLocked(final SegmentId segmentId,
+    boolean isSegmentInstanceLocked(final SegmentId segmentId,
             final Segment<K, V> expected) {
         final SegmentHandler<K, V> handler = handlers.get(segmentId);
         return handler != null && handler.isForSegment(expected);
@@ -94,7 +94,7 @@ public final class SegmentRegistryCache<K, V> {
      *
      * @return snapshot list (may be empty)
      */
-    public List<Segment<K, V>> snapshotAndClearLocked() {
+    List<Segment<K, V>> snapshotAndClearLocked() {
         if (handlers.isEmpty()) {
             return List.of();
         }
@@ -112,7 +112,7 @@ public final class SegmentRegistryCache<K, V> {
      * @param maxSegments max allowed cache size
      * @return true when eviction is required
      */
-    public boolean needsEvictionLocked(final int maxSegments) {
+    boolean needsEvictionLocked(final int maxSegments) {
         if (handlers.size() <= maxSegments) {
             return false;
         }
@@ -125,13 +125,13 @@ public final class SegmentRegistryCache<K, V> {
     }
 
     /**
-     * Evicts least-recently-used segments until the cache fits, skipping
-     * locked handlers.
+     * Evicts least-recently-used segments until the cache fits, skipping locked
+     * handlers.
      *
      * @param maxSegments max allowed cache size
      * @param evicted     output list of evicted segments
      */
-    public void evictIfNeededLocked(final int maxSegments,
+    void evictIfNeededLocked(final int maxSegments,
             final List<Segment<K, V>> evicted) {
         if (handlers.size() <= maxSegments) {
             return;
@@ -140,8 +140,7 @@ public final class SegmentRegistryCache<K, V> {
         while (handlers.size() > maxSegments && iterator.hasNext()) {
             final Map.Entry<SegmentId, SegmentHandler<K, V>> eldest = iterator
                     .next();
-            if (eldest.getValue()
-                    .getState() == SegmentHandlerState.LOCKED) {
+            if (eldest.getValue().getState() == SegmentHandlerState.LOCKED) {
                 continue;
             }
             iterator.remove();

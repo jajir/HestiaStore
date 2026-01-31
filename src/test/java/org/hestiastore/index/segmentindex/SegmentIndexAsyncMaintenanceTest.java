@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -177,8 +178,8 @@ class SegmentIndexAsyncMaintenanceTest {
             final SegmentRegistryImpl<K, V> registry, final SegmentId segmentId,
             final Segment<K, V> segment) {
         final SegmentRegistryCache<K, V> cache = readCache(registry);
-        cache.withLock(
-                () -> cache.putLocked(segmentId, new SegmentHandler<>(segment)));
+        withCacheLock(cache, () -> putCacheEntry(cache, segmentId,
+                new SegmentHandler<>(segment)));
     }
 
     @SuppressWarnings("unchecked")
@@ -220,6 +221,32 @@ class SegmentIndexAsyncMaintenanceTest {
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
                     "Unable to read registry cache for test", ex);
+        }
+    }
+
+    private static void withCacheLock(final Object cache,
+            final Runnable action) {
+        try {
+            final Method method = cache.getClass()
+                    .getDeclaredMethod("withLock", Runnable.class);
+            method.setAccessible(true);
+            method.invoke(cache, action);
+        } catch (final ReflectiveOperationException ex) {
+            throw new IllegalStateException(
+                    "Unable to lock registry cache for test", ex);
+        }
+    }
+
+    private static void putCacheEntry(final Object cache,
+            final SegmentId segmentId, final SegmentHandler<?, ?> handler) {
+        try {
+            final Method method = cache.getClass().getDeclaredMethod("putLocked",
+                    SegmentId.class, SegmentHandler.class);
+            method.setAccessible(true);
+            method.invoke(cache, segmentId, handler);
+        } catch (final ReflectiveOperationException ex) {
+            throw new IllegalStateException(
+                    "Unable to update registry cache for test", ex);
         }
     }
 }
