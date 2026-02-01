@@ -46,6 +46,7 @@ nav:
             - Filters & Integrity: architecture/filters.md
         - Performance:
             - Caching Strategy: architecture/caching.md
+            - Cache LRU: architecture/cache-lru.md
             - Performance Model & Sizing: architecture/performance.md
         - Concurrency:
             - Access Model: architecture/concurrency.md

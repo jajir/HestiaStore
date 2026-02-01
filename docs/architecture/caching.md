@@ -111,7 +111,8 @@ See: `segmentindex/IndexConfiguration`, `segment/SegmentConf`.
 
 - SegmentIndex write buffer: `src/main/java/org/hestiastore/index/segmentindex/SegmentIndexImpl.java`
 - Segment caches and providers: `src/main/java/org/hestiastore/index/segmentindex/*SegmentData*`, `src/main/java/org/hestiastore/index/segment/SegmentData*`
-- LRU cache: `src/main/java/org/hestiastore/index/cache/CacheLru.java`
+- LRU cache: `src/main/java/org/hestiastore/index/cache/CacheLru.java`,
+  `src/main/java/org/hestiastore/index/cache/CacheLruImpl.java`
 - Key→segment map: `src/main/java/org/hestiastore/index/segmentindex/KeySegmentCache.java`
 
 ## 🔗 Related Glossary
