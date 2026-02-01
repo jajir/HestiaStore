@@ -9,7 +9,7 @@ package org.hestiastore.index.cache;
  */
 public abstract class CacheElement<V> {
 
-    private volatile long cx;
+    private long cx;
 
     CacheElement(final long initialCx) {
         cx = initialCx;

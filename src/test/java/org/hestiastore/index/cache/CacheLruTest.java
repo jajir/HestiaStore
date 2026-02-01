@@ -2,6 +2,7 @@ package org.hestiastore.index.cache;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -9,6 +10,13 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
 import org.junit.jupiter.api.Test;
@@ -24,7 +32,7 @@ class CacheLruTest {
 
     @Test
     void putAndGetReturnStoredValues() {
-        Cache<Integer, String> cache = new CacheLru<>(3, failOnEviction());
+        Cache<Integer, String> cache = new CacheLruImpl<>(3, failOnEviction());
 
         cache.put(1, "one");
         cache.put(2, "two");
@@ -38,7 +46,7 @@ class CacheLruTest {
 
     @Test
     void evictsLeastRecentlyUsedEntryWhenLimitReached() {
-        Cache<Integer, String> cache = new CacheLru<>(2, evictionListener);
+        Cache<Integer, String> cache = new CacheLruImpl<>(2, evictionListener);
 
         cache.put(1, "one");
         cache.put(2, "two");
@@ -52,7 +60,7 @@ class CacheLruTest {
 
     @Test
     void getUpdatesRecency() {
-        Cache<Integer, String> cache = new CacheLru<>(2, evictionListener);
+        Cache<Integer, String> cache = new CacheLruImpl<>(2, evictionListener);
 
         cache.put(1, "one");
         cache.put(2, "two");
@@ -67,7 +75,8 @@ class CacheLruTest {
 
     @Test
     void evictionOfNullElementDoesNotThrowOrNotify() {
-        CacheLru<Integer, String> cache = new CacheLru<>(1, evictionListener);
+        CacheLru<Integer, String> cache = new CacheLruImpl<>(1,
+                evictionListener);
 
         cache.putNull(1); // cache is full with a null marker
 
@@ -79,7 +88,8 @@ class CacheLruTest {
 
     @Test
     void putNullEntryCannotBeRead() {
-        CacheLru<Integer, String> cache = new CacheLru<>(1, failOnEviction());
+        CacheLru<Integer, String> cache = new CacheLruImpl<>(1,
+                failOnEviction());
 
         cache.putNull(1);
 
@@ -91,7 +101,7 @@ class CacheLruTest {
 
     @Test
     void ivalidateRemovesKeyAndNotifiesListener() {
-        Cache<Integer, String> cache = new CacheLru<>(3, evictionListener);
+        Cache<Integer, String> cache = new CacheLruImpl<>(3, evictionListener);
 
         cache.put(1, "one");
         cache.put(2, "two");
@@ -104,7 +114,7 @@ class CacheLruTest {
 
     @Test
     void invalidateAllClearsCacheAndNotifiesForEachEntry() {
-        Cache<Integer, String> cache = new CacheLru<>(3, evictionListener);
+        Cache<Integer, String> cache = new CacheLruImpl<>(3, evictionListener);
 
         cache.put(1, "one");
         cache.put(2, "two");
@@ -123,7 +133,8 @@ class CacheLruTest {
     @Test
     void constructorRejectsNullEvictionListener() {
         IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class, () -> new CacheLru<>(2, null));
+                IllegalArgumentException.class,
+                () -> new CacheLruImpl<>(2, null));
 
         assertEquals("Property 'evictedElementConsumer' must not be null.",
                 exception.getMessage());
@@ -133,7 +144,7 @@ class CacheLruTest {
     void constructorRejectsLimitTooLow() {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> new CacheLru<>(0, evictionListener));
+                () -> new CacheLruImpl<>(0, evictionListener));
 
         assertEquals("Property 'limit' must be greater than 0",
                 exception.getMessage());
@@ -142,7 +153,8 @@ class CacheLruTest {
 
     @Test
     void putRejectsNullKey() {
-        CacheLru<Integer, String> cache = new CacheLru<>(1, evictionListener);
+        CacheLru<Integer, String> cache = new CacheLruImpl<>(1,
+                evictionListener);
 
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class, () -> cache.put(null, "value"));
@@ -154,7 +166,8 @@ class CacheLruTest {
 
     @Test
     void putRejectsNullValue() {
-        CacheLru<Integer, String> cache = new CacheLru<>(1, evictionListener);
+        CacheLru<Integer, String> cache = new CacheLruImpl<>(1,
+                evictionListener);
 
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class, () -> cache.put(1, null));
@@ -166,7 +179,8 @@ class CacheLruTest {
 
     @Test
     void putNullRejectsNullKey() {
-        CacheLru<Integer, String> cache = new CacheLru<>(1, evictionListener);
+        CacheLru<Integer, String> cache = new CacheLruImpl<>(1,
+                evictionListener);
 
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class, () -> cache.putNull(null));
@@ -178,7 +192,7 @@ class CacheLruTest {
 
     @Test
     void ivalidateRejectsNullKey() {
-        Cache<Integer, String> cache = new CacheLru<>(1, evictionListener);
+        Cache<Integer, String> cache = new CacheLruImpl<>(1, evictionListener);
 
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class, () -> cache.ivalidate(null));
@@ -186,6 +200,53 @@ class CacheLruTest {
         assertEquals("Property 'key' must not be null.",
                 exception.getMessage());
         verify(evictionListener, never()).accept(null, null);
+    }
+
+    @Test
+    void evictionDoesNotDuplicateKeysUnderConcurrentPuts()
+            throws InterruptedException {
+        final int threads = Math.min(32, Math.max(8,
+                Runtime.getRuntime().availableProcessors() * 2));
+        final int operationsPerThread = 1000;
+        final Set<Integer> evictedKeys = ConcurrentHashMap.newKeySet();
+        final AtomicBoolean duplicateEviction = new AtomicBoolean(false);
+        final CacheLru<Integer, String> cache = new CacheLruImpl<>(32,
+                (key, value) -> {
+                    if (!evictedKeys.add(key)) {
+                        duplicateEviction.set(true);
+                    }
+                });
+        final ExecutorService executor = Executors.newFixedThreadPool(threads);
+        final CountDownLatch start = new CountDownLatch(1);
+        final CountDownLatch done = new CountDownLatch(threads);
+
+        try {
+            for (int t = 0; t < threads; t++) {
+                final int base = t * operationsPerThread;
+                executor.execute(() -> {
+                    try {
+                        start.await();
+                        for (int i = 0; i < operationsPerThread; i++) {
+                            final int key = base + i;
+                            cache.put(key, "value-" + key);
+                        }
+                    } catch (final InterruptedException ex) {
+                        Thread.currentThread().interrupt();
+                    } finally {
+                        done.countDown();
+                    }
+                });
+            }
+            start.countDown();
+            assertTrue(done.await(5, TimeUnit.SECONDS),
+                    "Timed out waiting for writers");
+        } finally {
+            executor.shutdownNow();
+        }
+
+        assertFalse(evictedKeys.isEmpty(), "Expected evictions to occur");
+        assertFalse(duplicateEviction.get(),
+                "Eviction listener invoked more than once for the same key");
     }
 
     private BiConsumer<Integer, String> failOnEviction() {
