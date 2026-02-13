@@ -54,7 +54,7 @@ class SegmentSplitCoordinatorApplyPlanOrderTest {
                 SegmentId.of(1), SegmentId.of(2), SegmentId.of(3), 1, 10,
                 SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
         when(keyToSegmentMap.applySplitPlan(plan)).thenReturn(true);
-        assertTrue(coordinator.applySplitPlan(plan, segment).isOk());
+        assertTrue(coordinator.applySplitPlan(plan, segment));
 
         verify(keyToSegmentMap).applySplitPlan(plan);
         verify(keyToSegmentMap).optionalyFlush();
@@ -67,7 +67,7 @@ class SegmentSplitCoordinatorApplyPlanOrderTest {
                 SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
         when(keyToSegmentMap.applySplitPlan(plan)).thenReturn(false);
 
-        assertFalse(coordinator.applySplitPlan(plan, segment).isOk());
+        assertFalse(coordinator.applySplitPlan(plan, segment));
 
         verify(keyToSegmentMap, never()).optionalyFlush();
     }

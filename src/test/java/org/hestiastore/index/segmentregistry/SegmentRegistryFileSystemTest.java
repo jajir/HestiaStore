@@ -26,21 +26,6 @@ class SegmentRegistryFileSystemTest {
     }
 
     @Test
-    void hasAnySegmentDirectoriesUsesSegmentPattern() {
-        final MemDirectory directory = new MemDirectory();
-        directory.touch("random-file");
-        directory.mkdir("tmp");
-        final SegmentRegistryFileSystem fileSystem = new SegmentRegistryFileSystem(
-                AsyncDirectoryAdapter.wrap(directory));
-
-        assertFalse(fileSystem.hasAnySegmentDirectories());
-
-        directory.mkdir("segment-00017");
-
-        assertTrue(fileSystem.hasAnySegmentDirectories());
-    }
-
-    @Test
     void deleteSegmentFilesRemovesNestedDirectoryTree() {
         final MemDirectory directory = new MemDirectory();
         final Directory segmentDirectory = directory

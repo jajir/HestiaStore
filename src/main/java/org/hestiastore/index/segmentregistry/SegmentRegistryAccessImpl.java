@@ -3,7 +3,6 @@ package org.hestiastore.index.segmentregistry;
 import java.util.Optional;
 
 import org.hestiastore.index.segment.Segment;
-import org.hestiastore.index.segment.SegmentId;
 
 /**
  * Default {@link SegmentRegistryAccess} implementation.
@@ -63,16 +62,11 @@ public final class SegmentRegistryAccessImpl<T>
 
     static <K, V> SegmentRegistryAccess<Segment<K, V>> forHandler(
             final SegmentRegistryResultStatus status,
-            final SegmentHandler<K, V> handler,
-            final SegmentRegistryCache<SegmentId, SegmentHandler<K, V>> cache,
-            final SegmentId segmentId) {
-        final CachePin pin = cache == null || segmentId == null ? null
-                : new CachePin(() -> cache.retain(segmentId),
-                        () -> cache.release(segmentId));
+            final SegmentHandler<K, V> handler) {
         return new SegmentRegistryAccessImpl<>(status,
                 handler == null ? null : handler.getSegment(),
                 handler == null ? NO_LOCK
-                        : new HandlerLockActions<>(handler, pin));
+                        : new HandlerLockActions<>(handler));
     }
 
     /**
@@ -122,47 +116,21 @@ public final class SegmentRegistryAccessImpl<T>
         void unlock();
     }
 
-    private static final class CachePin {
-        private final Runnable retain;
-        private final Runnable release;
-
-        private CachePin(final Runnable retain, final Runnable release) {
-            this.retain = retain;
-            this.release = release;
-        }
-    }
-
     private static final class HandlerLockActions<K, V> implements LockActions {
         private final SegmentHandler<K, V> handler;
-        private final CachePin pin;
 
-        private HandlerLockActions(final SegmentHandler<K, V> handler,
-                final CachePin pin) {
+        private HandlerLockActions(final SegmentHandler<K, V> handler) {
             this.handler = handler;
-            this.pin = pin;
         }
 
         @Override
         public SegmentHandlerLockStatus lock() {
-            if (pin != null) {
-                pin.retain.run();
-            }
-            final SegmentHandlerLockStatus status = handler.lock();
-            if (status != SegmentHandlerLockStatus.OK && pin != null) {
-                pin.release.run();
-            }
-            return status;
+            return handler.lock();
         }
 
         @Override
         public void unlock() {
-            try {
-                handler.unlock();
-            } finally {
-                if (pin != null) {
-                    pin.release.run();
-                }
-            }
+            handler.unlock();
         }
     }
 }

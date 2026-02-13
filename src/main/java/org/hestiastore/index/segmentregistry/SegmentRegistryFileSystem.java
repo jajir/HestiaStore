@@ -1,6 +1,5 @@
 package org.hestiastore.index.segmentregistry;
 
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.Vldtn;
@@ -11,10 +10,6 @@ import org.hestiastore.index.segment.SegmentId;
  * Filesystem operations used by {@link SegmentRegistryImpl}.
  */
 final class SegmentRegistryFileSystem {
-
-    private static final Pattern SEGMENT_DIR_PATTERN = Pattern
-            .compile("^segment-\\d{5}$");
-
     private final AsyncDirectory directoryFacade;
 
     /**
@@ -40,20 +35,6 @@ final class SegmentRegistryFileSystem {
     }
 
     /**
-     * Determines whether any segment directory currently exists.
-     *
-     * @return {@code true} when at least one directory name matches the segment
-     *         naming convention
-     */
-    boolean hasAnySegmentDirectories() {
-        try (Stream<String> names = directoryFacade.getFileNamesAsync()
-                .toCompletableFuture().join()) {
-            return names.anyMatch(
-                    SegmentRegistryFileSystem::isSegmentDirectoryName);
-        }
-    }
-
-    /**
      * Deletes all files and directories owned by the specified segment.
      *
      * @param segmentId segment identifier
@@ -64,17 +45,14 @@ final class SegmentRegistryFileSystem {
     }
 
     /**
-     * Checks whether the provided name follows the segment directory pattern.
+     * Ensures the segment directory exists.
      *
-     * @param name candidate directory name
-     * @return {@code true} if the name is non-blank and matches
-     *         {@code segment-#####}
+     * @param segmentId segment identifier
      */
-    private static boolean isSegmentDirectoryName(final String name) {
-        if (name == null || name.isBlank()) {
-            return false;
-        }
-        return SEGMENT_DIR_PATTERN.matcher(name).matches();
+    void ensureSegmentDirectory(final SegmentId segmentId) {
+        Vldtn.requireNonNull(segmentId, "segmentId");
+        directoryFacade.openSubDirectory(segmentId.getName())
+                .toCompletableFuture().join();
     }
 
     /**
@@ -157,4 +135,5 @@ final class SegmentRegistryFileSystem {
         return directoryFacade.isFileExistsAsync(fileName).toCompletableFuture()
                 .join();
     }
+
 }

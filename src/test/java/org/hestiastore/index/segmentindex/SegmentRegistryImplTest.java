@@ -95,7 +95,9 @@ class SegmentRegistryImplTest {
     @Test
     void getSegment_reusesInstanceUntilClosed() {
         stubSegmentConfig();
-        final SegmentId segmentId = SegmentId.of(1);
+        final Segment<Integer, String> created = registry.createSegment()
+                .getSegment().orElse(null);
+        final SegmentId segmentId = created.getId();
 
         final SegmentRegistryAccess<Segment<Integer, String>> firstResult = registry
                 .getSegment(segmentId);
@@ -197,7 +199,9 @@ class SegmentRegistryImplTest {
     @Test
     void deleteSegment_returnsBusyWhenHandlerLocked() {
         stubSegmentConfig();
-        final SegmentId segmentId = SegmentId.of(1);
+        final Segment<Integer, String> created = registry.createSegment()
+                .getSegment().orElse(null);
+        final SegmentId segmentId = created.getId();
         final SegmentRegistryAccess<Segment<Integer, String>> access = registry
                 .getSegment(segmentId);
         assertSame(SegmentRegistryResultStatus.OK, access.getSegmentStatus());
@@ -213,7 +217,9 @@ class SegmentRegistryImplTest {
     @Test
     void getSegment_returnsBusyWhenHandlerLocked() {
         stubSegmentConfig();
-        final SegmentId segmentId = SegmentId.of(1);
+        final Segment<Integer, String> created = registry.createSegment()
+                .getSegment().orElse(null);
+        final SegmentId segmentId = created.getId();
         final SegmentRegistryAccess<Segment<Integer, String>> access = registry
                 .getSegment(segmentId);
         assertSame(SegmentRegistryResultStatus.OK, access.getSegmentStatus());
@@ -227,16 +233,14 @@ class SegmentRegistryImplTest {
     }
 
     @Test
-    void getSegment_returnsBusyWhenSegmentMissing() {
+    void getSegment_throwsWhenSegmentMissing() {
         stubSegmentConfig();
         final Segment<Integer, String> existing = registry.createSegment()
                 .getSegment().orElse(null);
         final SegmentId missingId = SegmentId.of(existing.getId().getId() + 1);
 
-        final SegmentRegistryAccess<Segment<Integer, String>> result = registry
-                .getSegment(missingId);
-        assertSame(SegmentRegistryResultStatus.BUSY,
-                result.getSegmentStatus());
+        assertThrows(RuntimeException.class,
+                () -> registry.getSegment(missingId));
     }
 
     @Test
@@ -276,7 +280,9 @@ class SegmentRegistryImplTest {
     @Test
     void getSegment_returnsBusyWhenEntryIsUnloading() throws Exception {
         stubSegmentConfig();
-        final SegmentId segmentId = SegmentId.of(7);
+        final Segment<Integer, String> created = registry.createSegment()
+                .getSegment().orElse(null);
+        final SegmentId segmentId = created.getId();
         final SegmentRegistryAccess<Segment<Integer, String>> access = registry
                 .getSegment(segmentId);
         assertSame(SegmentRegistryResultStatus.OK, access.getSegmentStatus());
@@ -284,8 +290,7 @@ class SegmentRegistryImplTest {
         assertNotNull(segment);
 
         final Object entry = getCacheEntry(segmentId);
-        final Object unloaded = invokeTryStartUnload(entry);
-        assertNotNull(unloaded);
+        assertTrue(invokeTryStartUnload(entry));
 
         final SegmentRegistryAccess<Segment<Integer, String>> result = registry
                 .getSegment(segmentId);
@@ -368,12 +373,14 @@ class SegmentRegistryImplTest {
         }
     }
 
-    private Object invokeTryStartUnload(final Object entry) {
+    private boolean invokeTryStartUnload(final Object entry) {
         try {
             final java.lang.reflect.Method method = entry.getClass()
-                    .getDeclaredMethod("tryStartUnload");
+                    .getDeclaredMethod("tryStartUnload",
+                            java.util.function.Predicate.class);
             method.setAccessible(true);
-            return method.invoke(entry);
+            final java.util.function.Predicate<Object> alwaysTrue = value -> true;
+            return ((Boolean) method.invoke(entry, alwaysTrue)).booleanValue();
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException("Unable to start unload", ex);
         }
