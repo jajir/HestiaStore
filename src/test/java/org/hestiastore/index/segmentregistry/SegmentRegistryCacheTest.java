@@ -2,151 +2,211 @@ package org.hestiastore.index.segmentregistry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
-import org.hestiastore.index.segment.Segment;
-import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentregistry.SegmentHandler;
-import org.hestiastore.index.segmentregistry.SegmentRegistryCache;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-@ExtendWith(MockitoExtension.class)
 class SegmentRegistryCacheTest {
 
-    @Mock
-    private Segment<Integer, String> segmentA;
-    @Mock
-    private Segment<Integer, String> segmentB;
-    @Mock
-    private Segment<Integer, String> segmentC;
-
-    private SegmentRegistryCache<Integer, String> cache;
+    private ExecutorService executor;
 
     @BeforeEach
     void setUp() {
-        cache = new SegmentRegistryCache<>();
+        executor = Executors.newCachedThreadPool();
     }
 
     @AfterEach
     void tearDown() {
-        cache = null;
+        if (executor != null) {
+            executor.shutdownNow();
+        }
     }
 
     @Test
-    void put_get_remove_tracks_instances() {
-        final SegmentId segmentId = SegmentId.of(1);
-        final SegmentHandler<Integer, String> handlerA = new SegmentHandler<>(
-                segmentA);
-        cache.withLock(() -> cache.putLocked(segmentId, handlerA));
+    void getLoadsOnceAndReturnsSameInstance() {
+        final AtomicInteger loads = new AtomicInteger();
+        final SegmentRegistryCache<Integer, Object> cache = new SegmentRegistryCache<>(
+                10, key -> {
+                    loads.incrementAndGet();
+                    return new Object();
+                }, value -> {
+                });
 
-        assertSame(handlerA, cache.withLock(() -> cache.getLocked(segmentId)));
-        assertTrue(cache.withLock(
-                () -> cache.isSegmentInstanceLocked(segmentId, segmentA)));
-        assertFalse(cache.withLock(
-                () -> cache.isSegmentInstanceLocked(segmentId, segmentB)));
+        final Object first = cache.get(1);
+        final Object second = cache.get(1);
 
-        assertSame(handlerA,
-                cache.withLock(() -> cache.removeLocked(segmentId)));
-        assertNull(cache.withLock(() -> cache.getLocked(segmentId)));
+        assertSame(first, second);
+        assertEquals(1, loads.get());
     }
 
     @Test
-    void snapshotAndClearLocked_returns_snapshot_and_clears_cache() {
-        final SegmentId firstId = SegmentId.of(1);
-        final SegmentId secondId = SegmentId.of(2);
-        final SegmentHandler<Integer, String> handlerA = new SegmentHandler<>(
-                segmentA);
-        final SegmentHandler<Integer, String> handlerB = new SegmentHandler<>(
-                segmentB);
-        final List<Segment<Integer, String>> snapshot = cache.withLock(() -> {
-            cache.putLocked(firstId, handlerA);
-            cache.putLocked(secondId, handlerB);
-            return cache.snapshotAndClearLocked();
+    void getBlocksSameKeyWhileLoading() throws Exception {
+        final CountDownLatch loadStarted = new CountDownLatch(1);
+        final CountDownLatch allowLoad = new CountDownLatch(1);
+        final SegmentRegistryCache<Integer, String> cache = new SegmentRegistryCache<>(
+                10, key -> {
+                    loadStarted.countDown();
+                    awaitLatch(allowLoad);
+                    return "value";
+                }, value -> {
+                });
+
+        final Future<String> first = executor.submit(() -> cache.get(1));
+        loadStarted.await(1, TimeUnit.SECONDS);
+        final Future<String> second = executor.submit(() -> cache.get(1));
+
+        assertFalse(second.isDone());
+        allowLoad.countDown();
+
+        assertEquals("value", first.get(1, TimeUnit.SECONDS));
+        assertEquals("value", second.get(1, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void getDifferentKeysDoNotBlock() throws Exception {
+        final CountDownLatch loadStarted = new CountDownLatch(1);
+        final CountDownLatch allowLoad = new CountDownLatch(1);
+        final SegmentRegistryCache<Integer, String> cache = new SegmentRegistryCache<>(
+                10, key -> {
+                    if (key == 1) {
+                        loadStarted.countDown();
+                        awaitLatch(allowLoad);
+                        return "slow";
+                    }
+                    return "fast";
+                }, value -> {
+                });
+
+        final Future<String> slow = executor.submit(() -> cache.get(1));
+        loadStarted.await(1, TimeUnit.SECONDS);
+
+        assertEquals("fast", cache.get(2));
+
+        allowLoad.countDown();
+        assertEquals("slow", slow.get(1, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void evictsLeastRecentlyUsedWhenLimitExceeded() {
+        final List<Integer> evicted = new CopyOnWriteArrayList<>();
+        final SegmentRegistryCache<Integer, Integer> cache = new SegmentRegistryCache<>(
+                2, key -> key, evicted::add);
+
+        cache.get(1);
+        cache.get(2);
+        cache.get(1); // key 2 becomes the least recently used
+        cache.get(3);
+
+        assertTrue(cache.getSize() <= 2);
+        assertEquals(1, evicted.size());
+        assertEquals(2, evicted.get(0));
+    }
+
+    @Test
+    void waitsForUnloadThenReloadsSameKey() throws Exception {
+        final AtomicInteger loads = new AtomicInteger();
+        final CountDownLatch unloadStarted = new CountDownLatch(1);
+        final CountDownLatch allowUnload = new CountDownLatch(1);
+        final SegmentRegistryCache<Integer, String> cache = new SegmentRegistryCache<>(
+                2, key -> "value-" + loads.incrementAndGet(), value -> {
+                    unloadStarted.countDown();
+                    awaitLatch(allowUnload);
+                });
+
+        assertEquals("value-1", cache.get(1));
+
+        final Future<SegmentRegistryCache.InvalidateStatus> invalidation = executor
+                .submit(() -> cache.invalidate(1));
+        unloadStarted.await(1, TimeUnit.SECONDS);
+
+        final Future<String> reloaded = executor.submit(() -> cache.get(1));
+
+        assertThrows(TimeoutException.class,
+                () -> reloaded.get(100, TimeUnit.MILLISECONDS));
+
+        allowUnload.countDown();
+
+        assertEquals(SegmentRegistryCache.InvalidateStatus.REMOVED,
+                invalidation.get(1, TimeUnit.SECONDS));
+        assertEquals("value-2", reloaded.get(1, TimeUnit.SECONDS));
+        assertEquals(2, loads.get());
+    }
+
+    /**
+     * Demonstrates bug: eviction/unload can run while a value is still in use
+     * without refCount pinning.
+     * 
+     * @throws Exception
+     */
+    @Test
+    void invalidateCanUnloadValueWhileInUse() throws Exception {
+        final CountDownLatch inUse = new CountDownLatch(1);
+        final CountDownLatch allowFinish = new CountDownLatch(1);
+        final AtomicReference<TrackedValue> current = new AtomicReference<>();
+        final SegmentRegistryCache<Integer, TrackedValue> cache = new SegmentRegistryCache<>(
+                2, key -> {
+                    final TrackedValue value = new TrackedValue();
+                    current.set(value);
+                    return value;
+                }, TrackedValue::close);
+
+        final Future<Void> user = executor.submit(() -> {
+            cache.get(1);
+            inUse.countDown();
+            awaitLatch(allowFinish);
+            return null;
         });
+        /**
+         * This test prove nothing. I get object, that evict that element and
+         * thats all.
+         */
 
-        assertEquals(List.of(segmentA, segmentB), snapshot);
-        assertNull(cache.withLock(() -> cache.getLocked(firstId)));
-        assertNull(cache.withLock(() -> cache.getLocked(secondId)));
+        assertTrue(inUse.await(1, TimeUnit.SECONDS),
+                "Value was not observed in use");
+
+        cache.invalidate(1);
+
+        assertFalse(current.get().isClosed(),
+                "Value should not be closed while still in use");
+
+        allowFinish.countDown();
+        user.get(1, TimeUnit.SECONDS);
     }
 
-    @Test
-    void needsEvictionLocked_returns_false_when_only_protected() {
-        final SegmentId firstId = SegmentId.of(1);
-        final SegmentId secondId = SegmentId.of(2);
-        final SegmentHandler<Integer, String> handlerA = new SegmentHandler<>(
-                segmentA);
-        final SegmentHandler<Integer, String> handlerB = new SegmentHandler<>(
-                segmentB);
-        handlerA.lock();
-        handlerB.lock();
-        final boolean needsEviction = cache.withLock(() -> {
-            cache.putLocked(firstId, handlerA);
-            cache.putLocked(secondId, handlerB);
-            return cache.needsEvictionLocked(1);
-        });
+    private static final class TrackedValue {
+        private final AtomicBoolean closed = new AtomicBoolean();
 
-        assertFalse(needsEviction);
+        void close() {
+            closed.set(true);
+        }
+
+        boolean isClosed() {
+            return closed.get();
+        }
     }
 
-    @Test
-    void evictIfNeededLocked_removes_lru_unprotected() {
-        final SegmentId firstId = SegmentId.of(1);
-        final SegmentId secondId = SegmentId.of(2);
-        final SegmentId thirdId = SegmentId.of(3);
-        final List<Segment<Integer, String>> evicted = new ArrayList<>();
-        final SegmentHandler<Integer, String> handlerA = new SegmentHandler<>(
-                segmentA);
-        final SegmentHandler<Integer, String> handlerB = new SegmentHandler<>(
-                segmentB);
-        final SegmentHandler<Integer, String> handlerC = new SegmentHandler<>(
-                segmentC);
-
-        cache.withLock(() -> {
-            cache.putLocked(firstId, handlerA);
-            cache.putLocked(secondId, handlerB);
-            cache.getLocked(firstId); // refresh LRU order
-            cache.putLocked(thirdId, handlerC);
-            cache.evictIfNeededLocked(2, evicted);
-        });
-
-        assertEquals(List.of(segmentB), evicted);
-        assertTrue(cache.withLock(
-                () -> cache.isSegmentInstanceLocked(firstId, segmentA)));
-        assertTrue(cache.withLock(
-                () -> cache.isSegmentInstanceLocked(thirdId, segmentC)));
-    }
-
-    @Test
-    void evictIfNeededLocked_skips_protected_ids() {
-        final SegmentId lockedId = SegmentId.of(1);
-        final SegmentId evictedId = SegmentId.of(2);
-        final List<Segment<Integer, String>> evicted = new ArrayList<>();
-        final SegmentHandler<Integer, String> lockedHandler = new SegmentHandler<>(
-                segmentA);
-        final SegmentHandler<Integer, String> evictedHandler = new SegmentHandler<>(
-                segmentB);
-        lockedHandler.lock();
-
-        cache.withLock(() -> {
-            cache.putLocked(lockedId, lockedHandler);
-            cache.putLocked(evictedId, evictedHandler);
-            cache.evictIfNeededLocked(1, evicted);
-        });
-
-        assertEquals(List.of(segmentB), evicted);
-        assertTrue(cache.withLock(
-                () -> cache.isSegmentInstanceLocked(lockedId, segmentA)));
-        assertFalse(cache.withLock(
-                () -> cache.isSegmentInstanceLocked(evictedId, segmentB)));
+    private static void awaitLatch(final CountDownLatch latch) {
+        try {
+            latch.await(2, TimeUnit.SECONDS);
+        } catch (final InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
     }
 }

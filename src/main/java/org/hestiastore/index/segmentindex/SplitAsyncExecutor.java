@@ -21,6 +21,12 @@ public final class SplitAsyncExecutor extends AbstractCloseableResource {
     private final ExecutorService executor;
     private final int queueCapacity;
 
+    /**
+     * Creates a dedicated executor for split maintenance tasks.
+     *
+     * @param threads number of threads in the pool
+     * @param threadNamePrefix thread name prefix
+     */
     public SplitAsyncExecutor(final int threads,
             final String threadNamePrefix) {
         Vldtn.requireGreaterThanZero(threads, "threads");
@@ -33,11 +39,16 @@ public final class SplitAsyncExecutor extends AbstractCloseableResource {
                 new ThreadPoolExecutor.AbortPolicy());
     }
 
+    /**
+     * Returns the underlying executor service.
+     *
+     * @return executor service
+     */
     public ExecutorService getExecutor() {
         return executor;
     }
 
-    public int getQueueCapacity() {
+    int getQueueCapacity() {
         return queueCapacity;
     }
 

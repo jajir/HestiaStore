@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentregistry;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -141,7 +142,14 @@ public final class SegmentRegistryBuilder<K, V> {
         final SegmentIdAllocator resolvedAllocator = segmentIdAllocator != null
                 ? segmentIdAllocator
                 : new DirectorySegmentIdAllocator(resolvedDirectory);
+        final ExecutorService lifecycleExecutor = Executors
+                .newSingleThreadExecutor(runnable -> {
+                    final Thread thread = new Thread(runnable,
+                            "segment-registry-lifecycle");
+                    thread.setDaemon(true);
+                    return thread;
+                });
         return new SegmentRegistryImpl<>(resolvedDirectory, resolvedFactory,
-                resolvedAllocator, resolvedConf);
+                resolvedAllocator, resolvedConf, lifecycleExecutor);
     }
 }

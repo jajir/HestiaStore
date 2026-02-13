@@ -1,0 +1,36 @@
+@startuml registry-seq04
+title Cache method removeLastRecentUsedSegment(exceptSegmentId)
+
+participant "Registry" as registry
+participant "Cache" as cache
+participant "Victim Entry(43)" as victim
+participant "Segment Close Executor" as closer
+
+registry -> cache ++ : removeLastRecentUsedSegment(exceptSegmentId=17)
+
+loop until candidate selected or we loop more than 100
+    cache -> cache : selectLeastRecentlyUsedCandidate(exceptId=17) in state READY
+    cache -> cache : if (no eligible candidate) => continue loop
+    cache -> victim ++ : tryStartUnload()
+    victim -> victim : READY -> UNLOADING
+    victim -> cache -- : tryStartUnload() result
+    cache -> cache : if (unable to start unload) => continue loop
+end
+
+alt No candidate selected after 100 loops
+    cache --> registry : not removed, return false
+else Candidate selected
+    cache -> victim ++ : getSegmentForUnload()
+    victim --> cache -- : segment
+    cache --> closer ++ : closeSegmentAsync(candidateId=43, segment)
+    cache --> registry -- : unload scheduled
+
+    closer -> closer : segment.close() and wait CLOSED
+    closer -> cache ++ : removeClosedEntryFromCache(candidateId=43)
+    cache -> cache : map.remove(candidateId, expectedEntry)
+    cache --> closer -- : removed, return true
+    deactivate closer    
+end
+
+
+@enduml

@@ -36,7 +36,7 @@ class SegmentSplitter<K, V> {
      * @param segment segment to split
      * @param writerTxFactory transaction factory used during the split
      */
-    public SegmentSplitter(final Segment<K, V> segment,
+    SegmentSplitter(final Segment<K, V> segment,
             final SegmentWriterTxFactory<K, V> writerTxFactory) {
         this.segment = Vldtn.requireNonNull(segment, "segment");
         this.writerTxFactory = Vldtn.requireNonNull(writerTxFactory,
@@ -54,8 +54,13 @@ class SegmentSplitter<K, V> {
      * Post-conditions: - Returns SPLIT when remaining entries were written to
      * the temporary upper segment; otherwise COMPACTED when the current segment
      * is replaced by the lower segment (no separate compaction step).
+     *
+     * @param lowerSegmentId newly created lower segment id
+     * @param upperSegmentId temporary upper segment id
+     * @param plan split plan with precomputed boundaries
+     * @return split execution result
      */
-    public SegmentSplitterResult<K, V> split(final SegmentId lowerSegmentId,
+    SegmentSplitterResult<K, V> split(final SegmentId lowerSegmentId,
             final SegmentId upperSegmentId,
             final SegmentSplitterPlan<K, V> plan) {
         try (SplitExecution<K, V> execution = splitWithIterator(lowerSegmentId,

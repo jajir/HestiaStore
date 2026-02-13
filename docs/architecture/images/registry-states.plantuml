@@ -7,11 +7,10 @@ state CLOSED
 state ERROR
 
 
-[*] --> READY
-READY --> FREEZE : tryEnterFreeze
+[*] --> FREEZE
+READY --> FREEZE : is part of close()\nprocedure
 FREEZE --> READY
-FREEZE --> CLOSED : close()
-CLOSED --> READY
+FREEZE --> CLOSED : is part of close()\nprocedure
 
 ERROR -[hidden]-> FREEZE
 

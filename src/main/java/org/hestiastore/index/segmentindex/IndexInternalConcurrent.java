@@ -31,7 +31,7 @@ class IndexInternalConcurrent<K, V> extends SegmentIndexImpl<K, V> {
      * @param valueTypeDescriptor value type descriptor
      * @param conf configuration for the index
      */
-    public IndexInternalConcurrent(final AsyncDirectory directoryFacade,
+    IndexInternalConcurrent(final AsyncDirectory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf) {

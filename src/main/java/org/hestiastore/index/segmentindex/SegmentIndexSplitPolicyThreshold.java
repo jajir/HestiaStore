@@ -12,6 +12,14 @@ import org.hestiastore.index.segment.Segment;
 public final class SegmentIndexSplitPolicyThreshold<K, V>
         implements SegmentIndexSplitPolicy<K, V> {
 
+    /**
+     * Returns true when the in-memory key count reaches the configured
+     * threshold.
+     *
+     * @param segment evaluated segment
+     * @param maxNumberOfKeysInSegment split threshold
+     * @return true when split should be triggered
+     */
     @Override
     public boolean shouldSplit(final Segment<K, V> segment,
             final long maxNumberOfKeysInSegment) {
