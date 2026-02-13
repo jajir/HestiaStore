@@ -17,6 +17,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.hestiastore.index.Vldtn;
 
@@ -50,6 +51,7 @@ public final class SegmentRegistryCache<K, V> {
     private final Function<K, V> loader;
     private final Consumer<V> unloader;
     private final ExecutorService unloadExecutor;
+    private final Predicate<V> unloadablePredicate;
 
     /**
      * Creates a cache with a fixed size limit.
@@ -60,17 +62,27 @@ public final class SegmentRegistryCache<K, V> {
      */
     public SegmentRegistryCache(final int limit, final Function<K, V> loader,
             final Consumer<V> unloader) {
-        this(limit, loader, unloader, DirectExecutorService.INSTANCE);
+        this(limit, loader, unloader, DirectExecutorService.INSTANCE,
+                value -> true);
     }
 
     SegmentRegistryCache(final int limit, final Function<K, V> loader,
             final Consumer<V> unloader,
             final ExecutorService unloadExecutor) {
+        this(limit, loader, unloader, unloadExecutor, value -> true);
+    }
+
+    SegmentRegistryCache(final int limit, final Function<K, V> loader,
+            final Consumer<V> unloader,
+            final ExecutorService unloadExecutor,
+            final Predicate<V> unloadablePredicate) {
         this.limit = Vldtn.requireGreaterThanZero(limit, "limit");
         this.loader = Vldtn.requireNonNull(loader, "loader");
         this.unloader = Vldtn.requireNonNull(unloader, "unloader");
         this.unloadExecutor = Vldtn.requireNonNull(unloadExecutor,
                 "unloadExecutor");
+        this.unloadablePredicate = Vldtn.requireNonNull(unloadablePredicate,
+                "unloadablePredicate");
     }
 
     /**
@@ -107,27 +119,16 @@ public final class SegmentRegistryCache<K, V> {
         }
     }
 
-    void retain(final K key) {
-        final Entry<V> entry = map.get(key);
-        if (entry != null) {
-            entry.retain();
-        }
-    }
-
-    void release(final K key) {
-        final Entry<V> entry = map.get(key);
-        if (entry != null) {
-            entry.release();
-        }
-    }
-
     InvalidateStatus invalidate(final K key) {
         Vldtn.requireNonNull(key, "key");
         final Entry<V> entry = map.get(key);
         if (entry == null) {
             return InvalidateStatus.NOT_FOUND;
         }
-        final V value = entry.tryStartUnload();
+        if (!entry.tryStartUnload(unloadablePredicate)) {
+            return InvalidateStatus.BUSY;
+        }
+        final V value = entry.getValueForUnload();
         if (value == null) {
             return InvalidateStatus.BUSY;
         }
@@ -174,7 +175,7 @@ public final class SegmentRegistryCache<K, V> {
         final EvictionCandidate<K, V> candidate;
         evictionLock.lock();
         try {
-            candidate = selectLeastRecentlyUsedCandidate(exceptKey);
+            candidate = selectLeastRecentlyUsedCandidate(exceptKey, 100);
             if (candidate == null) {
                 return false;
             }
@@ -186,12 +187,12 @@ public final class SegmentRegistryCache<K, V> {
     }
 
     private EvictionCandidate<K, V> selectLeastRecentlyUsedCandidate(
-            final K exceptKey) {
+            final K exceptKey, final int maxAttempts) {
         final Set<K> excluded = new HashSet<>();
         if (exceptKey != null) {
             excluded.add(exceptKey);
         }
-        while (true) {
+        for (int attempts = 0; attempts < maxAttempts; attempts++) {
             long oldestAccessCx = Long.MAX_VALUE;
             K oldestKey = null;
             Entry<V> oldestEntry = null;
@@ -217,14 +218,19 @@ public final class SegmentRegistryCache<K, V> {
                 return null;
             }
 
-            final V value = oldestEntry.tryStartUnload();
-            if (value != null) {
+            if (oldestEntry.tryStartUnload(unloadablePredicate)) {
+                final V value = oldestEntry.getValueForUnload();
+                if (value == null) {
+                    excluded.add(oldestKey);
+                    continue;
+                }
                 return new EvictionCandidate<>(oldestKey, oldestEntry, value);
             }
             // Candidate changed state between selection and unload start;
             // retry selection with a different candidate.
             excluded.add(oldestKey);
         }
+        return null;
     }
 
     private boolean unloadValue(final V value) {
@@ -303,7 +309,6 @@ public final class SegmentRegistryCache<K, V> {
         private volatile long accessCx;
         private EntryState state = EntryState.LOADING;
         private V value;
-        private int refCount;
         private RuntimeException failure;
 
         Entry(final long accessCx) {
@@ -391,35 +396,10 @@ public final class SegmentRegistryCache<K, V> {
             }
         }
 
-        void retain() {
-            lock.lock();
-            try {
-                if (state == EntryState.READY && value != null) {
-                    refCount++;
-                }
-            } finally {
-                lock.unlock();
-            }
-        }
-
-        void release() {
-            lock.lock();
-            try {
-                if (refCount > 0) {
-                    refCount--;
-                    if (refCount == 0) {
-                        ready.signalAll();
-                    }
-                }
-            } finally {
-                lock.unlock();
-            }
-        }
-
         long getEvictionOrder() {
             lock.lock();
             try {
-                if (state != EntryState.READY || value == null || refCount > 0) {
+                if (state != EntryState.READY || value == null) {
                     return Long.MAX_VALUE;
                 }
                 return accessCx;
@@ -428,16 +408,28 @@ public final class SegmentRegistryCache<K, V> {
             }
         }
 
-        V tryStartUnload() {
+        boolean tryStartUnload(final Predicate<V> unloadablePredicate) {
             lock.lock();
             try {
                 if (state != EntryState.READY || value == null) {
-                    return null;
+                    return false;
                 }
-                if (refCount > 0) {
-                    return null;
+                if (!unloadablePredicate.test(value)) {
+                    return false;
                 }
                 state = EntryState.UNLOADING;
+                return true;
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        V getValueForUnload() {
+            lock.lock();
+            try {
+                if (state != EntryState.UNLOADING) {
+                    return null;
+                }
                 return value;
             } finally {
                 lock.unlock();

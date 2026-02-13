@@ -12,11 +12,6 @@ public enum SegmentRegistryResultStatus {
      * registry gate in FREEZE.
      */
     BUSY,
-    /**
-     * Legacy compatibility status for missing segments.
-     * Target contract uses exception-driven load/open failures.
-     */
-    NOT_FOUND,
     /** Registry is closed and will not accept further operations. */
     CLOSED,
     /** Registry encountered an error while handling the request. */

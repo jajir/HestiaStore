@@ -8,21 +8,31 @@ Scope: `src/main/java/org/hestiastore/index/segmentregistry`
 - Removed unused field:
   - `SegmentRegistryImpl#directoryFacade` (stored but never read).
 - Removed test-only production helper:
-  - `SegmentRegistryAccessImpl#forHandler(status, handler)` overload.
-  - Tests now use `forHandler(status, handler, cache, segmentId)` with
-    `null` pin arguments when pinning is not needed.
+  - removed cache-pin based `SegmentRegistryAccessImpl#forHandler(...)` shape.
+  - `SegmentRegistryAccessImpl` now exposes a single handler path:
+    `forHandler(status, handler)`.
 - Tightened visibility:
   - `SegmentHandler#getState()` changed from `public` to package-private.
-- Compatibility note (identified, intentionally kept):
-  - `SegmentRegistryResultStatus.NOT_FOUND` and
-    `SegmentRegistryResult.notFound()` are currently used only by tests in this
-    repository, but remain as legacy compatibility API and are documented as
-    such.
+- Removed legacy status code path that was outside `registry.md` contract:
+  - removed `SegmentRegistryResultStatus.NOT_FOUND`
+  - removed `SegmentRegistryResult.notFound()`
+- Removed reference-pin/cache-retain path from registry cache entry lifecycle:
+  - removed `retain/release` APIs
+  - removed `Entry.refCount`
+  - unload eligibility now relies on per-entry state and value predicate,
+    not pin counting.
 
 ## M42 Findings (tests + Javadocs)
 
 - Public Javadocs check: no missing Javadocs found for public classes/methods
   in `segmentregistry`.
+- Contract alignment updates to match `registry.md`:
+  - missing segment load in established registry now throws runtime exception
+    (exception-driven policy).
+  - removed implicit create-on-miss from `getSegment`; segment creation is only
+    via `createSegment()`.
+  - `Entry.tryStartUnload()` now returns boolean and value retrieval is explicit
+    (`getValueForUnload()`), matching diagram/state-machine intent.
 - Test coverage matrix:
   - `DirectorySegmentIdAllocator` -> `DirectorySegmentIdAllocatorTest`
   - `SegmentFactory` -> `SegmentFactoryTest`
@@ -34,7 +44,6 @@ Scope: `src/main/java/org/hestiastore/index/segmentregistry`
   - `SegmentRegistryCache` -> `SegmentRegistryCacheTest`
   - `SegmentRegistryFileSystem` -> `SegmentRegistryFileSystemTest`
   - `SegmentRegistryImpl` -> `SegmentRegistryImplTest`
-  - `SegmentRegistryResult` -> `SegmentRegistryResultTest`
   - `SegmentRegistryResultStatus` -> `SegmentRegistryResultStatusTest`
   - `SegmentRegistryState` -> `SegmentRegistryStateTest`
   - `SegmentRegistryStateMachine` -> `SegmentRegistryStateMachineTest`
@@ -48,4 +57,4 @@ Scope: `src/main/java/org/hestiastore/index/segmentregistry`
 
 ## Verification Run
 
-- `mvn -q -Dtest=DirectorySegmentIdAllocatorTest,SegmentFactoryTest,SegmentHandlerTest,SegmentHandlerLockStatusTest,SegmentHandlerStateTest,SegmentRegistryAccessImplTest,SegmentRegistryBuilderTest,SegmentRegistryCacheTest,SegmentRegistryFileSystemTest,SegmentRegistryStateMachineTest,SegmentRegistryImplTest,SegmentRegistryResultTest,SegmentRegistryResultStatusTest,SegmentRegistryStateTest,SegmentRegistryTest test`
+- `mvn -q -Dtest=DirectorySegmentIdAllocatorTest,SegmentFactoryTest,SegmentHandlerTest,SegmentHandlerLockStatusTest,SegmentHandlerStateTest,SegmentRegistryAccessImplTest,SegmentRegistryBuilderTest,SegmentRegistryCacheTest,SegmentRegistryFileSystemTest,SegmentRegistryStateMachineTest,SegmentRegistryImplTest,SegmentRegistryResultStatusTest,SegmentRegistryStateTest,SegmentRegistryTest test`

@@ -12,7 +12,6 @@ import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentregistry.SegmentHandlerLockStatus;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryAccess;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -136,18 +135,18 @@ class SegmentSplitCoordinator<K, V> {
         final SegmentSplitter<K, V> splitter = new SegmentSplitter<>(segment,
                 writerTxFactory);
         final SegmentSplitApplyPlan<K, V> applyPlan;
-        final SegmentRegistryResult<Void> applyResult;
+        final boolean applyResult;
         boolean applied = false;
         try (SegmentSplitter.SplitExecution<K, V> execution = splitter
                 .splitWithIterator(lowerSegmentId, upperSegmentId, plan)) {
             applyPlan = toApplyPlan(segmentId, upperSegmentId,
                     execution.getResult());
             applyResult = applySplitPlan(applyPlan, segment);
-            if (!applyResult.isOk()) {
+            if (!applyResult) {
                 if (DEBUG_SPLIT_LOSS) {
                     logger.warn(
-                            "Split debug: apply failed for segment '{}', status '{}'.",
-                            segmentId, applyResult.getStatus());
+                            "Split debug: apply failed for segment '{}'.",
+                            segmentId);
                 }
                 deleteSplitSegments(lowerSegmentId, upperSegmentId);
                 return false;
@@ -235,19 +234,19 @@ class SegmentSplitCoordinator<K, V> {
         }
     }
 
-    SegmentRegistryResult<Void> applySplitPlan(
+    boolean applySplitPlan(
             final SegmentSplitApplyPlan<K, V> plan,
             final Segment<K, V> segment) {
         Vldtn.requireNonNull(plan, "plan");
         Vldtn.requireNonNull(segment, "segment");
         try {
             if (!keyToSegmentMap.applySplitPlan(plan)) {
-                return SegmentRegistryResult.error();
+                return false;
             }
             keyToSegmentMap.optionalyFlush();
-            return SegmentRegistryResult.ok();
+            return true;
         } catch (final RuntimeException e) {
-            return SegmentRegistryResult.error();
+            return false;
         }
     }
 

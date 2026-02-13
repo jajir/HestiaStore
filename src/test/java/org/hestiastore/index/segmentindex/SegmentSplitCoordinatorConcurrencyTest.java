@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -12,7 +13,6 @@ import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,9 +64,7 @@ class SegmentSplitCoordinatorConcurrencyTest {
         final SegmentSplitApplyPlan<Integer, String> plan = new SegmentSplitApplyPlan<>(
                 SegmentId.of(9), SegmentId.of(2), SegmentId.of(3), 1, 5,
                 SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
-        final SegmentRegistryResultStatus status = coordinator
-                .applySplitPlan(plan, segment).getStatus();
-        assertEquals(SegmentRegistryResultStatus.ERROR, status);
+        assertFalse(coordinator.applySplitPlan(plan, segment));
     }
 
     @Test
@@ -74,7 +72,7 @@ class SegmentSplitCoordinatorConcurrencyTest {
         final SegmentSplitApplyPlan<Integer, String> plan = new SegmentSplitApplyPlan<>(
                 SegmentId.of(1), SegmentId.of(2), SegmentId.of(3), 1, 5,
                 SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
-        assertTrue(coordinator.applySplitPlan(plan, segment).isOk());
+        assertTrue(coordinator.applySplitPlan(plan, segment));
         assertEquals(List.of(SegmentId.of(2), SegmentId.of(3), SegmentId.of(4)),
                 keyToSegmentMap.getSegmentIds());
     }

@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.segment.Segment;
-import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -41,8 +40,7 @@ class SegmentRegistryAccessImplTest {
         final SegmentHandler<Integer, String> handler = new SegmentHandler<>(
                 segment);
         final SegmentRegistryAccess<Segment<Integer, String>> access = SegmentRegistryAccessImpl
-                .forHandler(SegmentRegistryResultStatus.OK, handler, null,
-                        null);
+                .forHandler(SegmentRegistryResultStatus.OK, handler);
 
         assertSame(segment, access.getSegment().orElse(null));
         assertSame(SegmentHandlerLockStatus.OK, access.lock());
@@ -61,8 +59,7 @@ class SegmentRegistryAccessImplTest {
         final SegmentHandler<Integer, String> handler = new SegmentHandler<>(
                 segment);
         final SegmentRegistryAccess<Segment<Integer, String>> access = SegmentRegistryAccessImpl
-                .forHandler(SegmentRegistryResultStatus.BUSY, handler, null,
-                        null);
+                .forHandler(SegmentRegistryResultStatus.BUSY, handler);
 
         assertSame(SegmentHandlerLockStatus.BUSY, access.lock());
         assertSame(SegmentHandlerState.READY, handler.getState());
@@ -81,28 +78,4 @@ class SegmentRegistryAccessImplTest {
         assertSame(SegmentHandlerLockStatus.BUSY, error.lock());
     }
 
-    @Test
-    void forHandlerWithCachePinRetainsUntilUnlock() {
-        @SuppressWarnings("unchecked")
-        final Segment<Integer, String> segment = Mockito.mock(Segment.class);
-        final SegmentHandler<Integer, String> handler = new SegmentHandler<>(
-                segment);
-        final SegmentId segmentId = SegmentId.of(1);
-        final SegmentRegistryCache<SegmentId, SegmentHandler<Integer, String>> cache = new SegmentRegistryCache<>(
-                2, key -> handler, value -> {
-                });
-        cache.get(segmentId);
-        final SegmentRegistryAccess<Segment<Integer, String>> access = SegmentRegistryAccessImpl
-                .forHandler(SegmentRegistryResultStatus.OK, handler, cache,
-                        segmentId);
-
-        assertSame(SegmentHandlerLockStatus.OK, access.lock());
-        assertSame(SegmentRegistryCache.InvalidateStatus.BUSY,
-                cache.invalidate(segmentId));
-
-        access.unlock();
-
-        assertSame(SegmentRegistryCache.InvalidateStatus.REMOVED,
-                cache.invalidate(segmentId));
-    }
 }

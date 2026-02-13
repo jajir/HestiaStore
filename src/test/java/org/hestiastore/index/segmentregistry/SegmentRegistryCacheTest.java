@@ -228,26 +228,40 @@ class SegmentRegistryCacheTest {
     }
 
     @Test
-    void removeLastRecentUsedSegmentSkipsBusyCandidateWithoutStall() {
-        final List<Integer> evicted = new CopyOnWriteArrayList<>();
-        final SegmentRegistryCache<Integer, Integer> cache = new SegmentRegistryCache<>(
-                10, key -> key, evicted::add);
+    void removeLastRecentUsedSegmentSkipsBusyCandidateWithoutStall()
+            throws Exception {
+        final class Value {
+            private final int id;
+            private volatile boolean unloadAllowed = true;
 
-        cache.get(1);
-        cache.get(2);
-        cache.get(3);
-        cache.get(2);
-        cache.get(3);
-        cache.retain(2);
-        try {
-            assertTrue(cache.removeLastRecentUsedSegment(1));
-        } finally {
-            cache.release(2);
+            private Value(final int id) {
+                this.id = id;
+            }
         }
 
-        assertEquals(1, evicted.size());
-        assertEquals(3, evicted.get(0));
-        assertEquals(2, cache.get(2));
+        final List<Integer> evicted = new CopyOnWriteArrayList<>();
+        final ExecutorService unloadExecutor = Executors.newSingleThreadExecutor();
+        try {
+            final SegmentRegistryCache<Integer, Value> cache = new SegmentRegistryCache<>(
+                    10, Value::new, value -> evicted.add(value.id),
+                    unloadExecutor, value -> value.unloadAllowed);
+
+            cache.get(1);
+            cache.get(2);
+            cache.get(3);
+            cache.get(2);
+            cache.get(3);
+            cache.get(2).unloadAllowed = false;
+
+            assertTrue(cache.removeLastRecentUsedSegment(1));
+            waitUntil(() -> evicted.size() == 1, 1000);
+
+            assertEquals(1, evicted.size());
+            assertEquals(3, evicted.get(0));
+            assertEquals(2, cache.get(2).id);
+        } finally {
+            unloadExecutor.shutdownNow();
+        }
     }
 
     @Test
@@ -355,24 +369,27 @@ class SegmentRegistryCacheTest {
     }
 
     @Test
-    void invalidateIsBusyWhileValueIsRetained() {
-        final SegmentRegistryCache<Integer, TrackedValue> cache = new SegmentRegistryCache<>(
-                2, key -> new TrackedValue(), TrackedValue::close);
-
-        final TrackedValue value = cache.get(1);
-        cache.retain(1);
+    void invalidateIsBusyWhileUnloadPredicateRejectsValue() {
+        final ExecutorService unloadExecutor = Executors.newSingleThreadExecutor();
         try {
+            final SegmentRegistryCache<Integer, TrackedValue> cache = new SegmentRegistryCache<>(
+                    2, key -> new TrackedValue(), TrackedValue::close,
+                    unloadExecutor, value -> value.isUnloadAllowed());
+
+            final TrackedValue value = cache.get(1);
+            value.setUnloadAllowed(false);
             assertEquals(SegmentRegistryCache.InvalidateStatus.BUSY,
                     cache.invalidate(1));
             assertFalse(value.isClosed(),
-                    "Value should not be closed while retained");
-        } finally {
-            cache.release(1);
-        }
+                    "Value should not be closed when unload predicate rejects.");
 
-        assertEquals(SegmentRegistryCache.InvalidateStatus.REMOVED,
-                cache.invalidate(1));
-        assertTrue(value.isClosed(), "Value should be closed after release");
+            value.setUnloadAllowed(true);
+            assertEquals(SegmentRegistryCache.InvalidateStatus.REMOVED,
+                    cache.invalidate(1));
+            assertTrue(value.isClosed(), "Value should be closed after removal.");
+        } finally {
+            unloadExecutor.shutdownNow();
+        }
     }
 
     @Test
@@ -385,7 +402,8 @@ class SegmentRegistryCacheTest {
         entry.finishLoad("value");
         assertEquals("value", entry.waitWhileLoading(8L));
 
-        assertEquals("value", entry.tryStartUnload());
+        assertTrue(entry.tryStartUnload(value -> true));
+        assertEquals("value", entry.getValueForUnload());
         entry.finishUnload();
 
         assertThrows(SegmentRegistryCache.EntryBusyException.class,
@@ -408,6 +426,7 @@ class SegmentRegistryCacheTest {
 
     private static final class TrackedValue {
         private final AtomicBoolean closed = new AtomicBoolean();
+        private final AtomicBoolean unloadAllowed = new AtomicBoolean(true);
 
         void close() {
             closed.set(true);
@@ -415,6 +434,14 @@ class SegmentRegistryCacheTest {
 
         boolean isClosed() {
             return closed.get();
+        }
+
+        boolean isUnloadAllowed() {
+            return unloadAllowed.get();
+        }
+
+        void setUnloadAllowed(final boolean allowed) {
+            unloadAllowed.set(allowed);
         }
     }
 

@@ -16,7 +16,6 @@ class SegmentRegistryResultStatusTest {
 
         assertTrue(statuses.contains(SegmentRegistryResultStatus.OK));
         assertTrue(statuses.contains(SegmentRegistryResultStatus.BUSY));
-        assertTrue(statuses.contains(SegmentRegistryResultStatus.NOT_FOUND));
         assertTrue(statuses.contains(SegmentRegistryResultStatus.CLOSED));
         assertTrue(statuses.contains(SegmentRegistryResultStatus.ERROR));
     }
