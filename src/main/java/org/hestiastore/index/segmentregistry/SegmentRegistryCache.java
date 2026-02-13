@@ -1,13 +1,9 @@
 package org.hestiastore.index.segmentregistry;
 
 import java.util.Map;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -132,7 +128,7 @@ public final class SegmentRegistryCache<K, V> {
         if (value == null) {
             return InvalidateStatus.BUSY;
         }
-        if (!unloadValueAndWait(value)) {
+        if (!unloadValue(value)) {
             return InvalidateStatus.BUSY;
         }
         return finalizeRemoval(key, entry) ? InvalidateStatus.REMOVED
@@ -175,7 +171,7 @@ public final class SegmentRegistryCache<K, V> {
         final EvictionCandidate<K, V> candidate;
         evictionLock.lock();
         try {
-            candidate = selectLeastRecentlyUsedCandidate(exceptKey, 100);
+            candidate = selectLeastRecentlyUsedCandidate(exceptKey);
             if (candidate == null) {
                 return false;
             }
@@ -187,50 +183,38 @@ public final class SegmentRegistryCache<K, V> {
     }
 
     private EvictionCandidate<K, V> selectLeastRecentlyUsedCandidate(
-            final K exceptKey, final int maxAttempts) {
-        final Set<K> excluded = new HashSet<>();
-        if (exceptKey != null) {
-            excluded.add(exceptKey);
+            final K exceptKey) {
+        long oldestAccessCx = Long.MAX_VALUE;
+        K oldestKey = null;
+        Entry<V> oldestEntry = null;
+        for (final Map.Entry<K, Entry<V>> mapEntry : map.entrySet()) {
+            final K key = mapEntry.getKey();
+            if (exceptKey != null && exceptKey.equals(key)) {
+                continue;
+            }
+            final Entry<V> entry = mapEntry.getValue();
+            final long entryAccessCx = entry
+                    .getEvictionOrder(unloadablePredicate);
+            if (entryAccessCx == Long.MAX_VALUE) {
+                continue;
+            }
+            if (entryAccessCx < oldestAccessCx) {
+                oldestAccessCx = entryAccessCx;
+                oldestKey = key;
+                oldestEntry = entry;
+            }
         }
-        for (int attempts = 0; attempts < maxAttempts; attempts++) {
-            long oldestAccessCx = Long.MAX_VALUE;
-            K oldestKey = null;
-            Entry<V> oldestEntry = null;
-
-            for (final Map.Entry<K, Entry<V>> mapEntry : map.entrySet()) {
-                final K key = mapEntry.getKey();
-                if (excluded.contains(key)) {
-                    continue;
-                }
-                final Entry<V> entry = mapEntry.getValue();
-                final long entryAccessCx = entry.getEvictionOrder();
-                if (entryAccessCx == Long.MAX_VALUE) {
-                    continue;
-                }
-                if (entryAccessCx < oldestAccessCx) {
-                    oldestAccessCx = entryAccessCx;
-                    oldestKey = key;
-                    oldestEntry = entry;
-                }
-            }
-
-            if (oldestEntry == null || oldestKey == null) {
-                return null;
-            }
-
-            if (oldestEntry.tryStartUnload(unloadablePredicate)) {
-                final V value = oldestEntry.getValueForUnload();
-                if (value == null) {
-                    excluded.add(oldestKey);
-                    continue;
-                }
-                return new EvictionCandidate<>(oldestKey, oldestEntry, value);
-            }
-            // Candidate changed state between selection and unload start;
-            // retry selection with a different candidate.
-            excluded.add(oldestKey);
+        if (oldestEntry == null || oldestKey == null) {
+            return null;
         }
-        return null;
+        if (!oldestEntry.tryStartUnload()) {
+            return null;
+        }
+        final V value = oldestEntry.getValueForUnload();
+        if (value == null) {
+            return null;
+        }
+        return new EvictionCandidate<>(oldestKey, oldestEntry, value);
     }
 
     private boolean unloadValue(final V value) {
@@ -238,28 +222,6 @@ public final class SegmentRegistryCache<K, V> {
             unloader.accept(value);
             return true;
         } catch (final RuntimeException ex) {
-            return false;
-        }
-    }
-
-    private boolean unloadValueAndWait(final V value) {
-        final Future<?> task;
-        try {
-            task = unloadExecutor.submit(() -> {
-                if (!unloadValue(value)) {
-                    throw new IllegalStateException("Unload failed");
-                }
-            });
-        } catch (final RejectedExecutionException ex) {
-            return false;
-        }
-        try {
-            task.get();
-            return true;
-        } catch (final InterruptedException ex) {
-            Thread.currentThread().interrupt();
-            return false;
-        } catch (final ExecutionException ex) {
             return false;
         }
     }
@@ -396,10 +358,13 @@ public final class SegmentRegistryCache<K, V> {
             }
         }
 
-        long getEvictionOrder() {
+        long getEvictionOrder(final Predicate<V> unloadablePredicate) {
             lock.lock();
             try {
                 if (state != EntryState.READY || value == null) {
+                    return Long.MAX_VALUE;
+                }
+                if (!unloadablePredicate.test(value)) {
                     return Long.MAX_VALUE;
                 }
                 return accessCx;
@@ -408,13 +373,10 @@ public final class SegmentRegistryCache<K, V> {
             }
         }
 
-        boolean tryStartUnload(final Predicate<V> unloadablePredicate) {
+        boolean tryStartUnload() {
             lock.lock();
             try {
                 if (state != EntryState.READY || value == null) {
-                    return false;
-                }
-                if (!unloadablePredicate.test(value)) {
                     return false;
                 }
                 state = EntryState.UNLOADING;
