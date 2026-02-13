@@ -3,11 +3,19 @@ package org.hestiastore.index.segmentindex;
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.chunkstore.ChunkFilter;
@@ -25,6 +33,7 @@ import org.hestiastore.index.segmentregistry.SegmentRegistryStateMachine;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.hestiastore.index.segmentregistry.SegmentFactory;
+import org.hestiastore.index.segmentregistry.SegmentHandler;
 import org.hestiastore.index.segmentregistry.SegmentHandlerLockStatus;
 import org.hestiastore.index.segmentregistry.SegmentIdAllocator;
 import org.junit.jupiter.api.AfterEach;
@@ -110,6 +119,13 @@ class SegmentRegistryImplTest {
     }
 
     @Test
+    void registryStartupTransitionsGateToReady() {
+        final SegmentRegistryStateMachine gate = readGate(registry);
+        assertSame(org.hestiastore.index.segmentregistry.SegmentRegistryState.READY,
+                gate.getState());
+    }
+
+    @Test
     void getSegment_returnsBusyWhileRegistryFrozen() {
         final SegmentId segmentId = SegmentId.of(1);
 
@@ -131,6 +147,18 @@ class SegmentRegistryImplTest {
                 .getSegment(SegmentId.of(1));
 
         assertSame(SegmentRegistryResultStatus.CLOSED,
+                result.getSegmentStatus());
+    }
+
+    @Test
+    void getSegment_returnsErrorWhenRegistryIsInErrorState() {
+        final SegmentRegistryStateMachine gate = readGate(registry);
+        gate.fail();
+
+        final SegmentRegistryAccess<Segment<Integer, String>> result = registry
+                .getSegment(SegmentId.of(1));
+
+        assertSame(SegmentRegistryResultStatus.ERROR,
                 result.getSegmentStatus());
     }
 
@@ -157,8 +185,13 @@ class SegmentRegistryImplTest {
         final long closedCount = List.of(first, second, third).stream()
                 .filter(segment -> segment.getState() == SegmentState.CLOSED)
                 .count();
-
-        assertTrue(closedCount >= 1);
+        if (closedCount == 0L) {
+            awaitCondition(() -> List.of(first, second, third).stream()
+                    .anyMatch(segment -> segment.getState() == SegmentState.CLOSED),
+                    1500L);
+        }
+        assertTrue(List.of(first, second, third).stream()
+                .anyMatch(segment -> segment.getState() == SegmentState.CLOSED));
     }
 
     @Test
@@ -194,7 +227,7 @@ class SegmentRegistryImplTest {
     }
 
     @Test
-    void getSegment_returnsNotFoundWhenSegmentMissing() {
+    void getSegment_returnsBusyWhenSegmentMissing() {
         stubSegmentConfig();
         final Segment<Integer, String> existing = registry.createSegment()
                 .getSegment().orElse(null);
@@ -202,9 +235,82 @@ class SegmentRegistryImplTest {
 
         final SegmentRegistryAccess<Segment<Integer, String>> result = registry
                 .getSegment(missingId);
-
-        assertSame(SegmentRegistryResultStatus.NOT_FOUND,
+        assertSame(SegmentRegistryResultStatus.BUSY,
                 result.getSegmentStatus());
+    }
+
+    @Test
+    void getSegment_waitsForLoadingEntryAndReturnsOkAfterFinishLoad()
+            throws Exception {
+        final SegmentId segmentId = SegmentId.of(999);
+        final Object entry = createLoadingEntry(10L);
+        putCacheEntry(segmentId, entry);
+
+        @SuppressWarnings("unchecked")
+        final Segment<Integer, String> segment = Mockito.mock(Segment.class);
+        Mockito.when(segment.getState()).thenReturn(SegmentState.READY);
+        final SegmentHandler<Integer, String> handler = new SegmentHandler<>(
+                segment);
+
+        final ExecutorService callers = Executors.newSingleThreadExecutor();
+        try {
+            final Future<SegmentRegistryAccess<Segment<Integer, String>>> waiter = callers
+                    .submit(() -> registry.getSegment(segmentId));
+
+            assertThrows(TimeoutException.class,
+                    () -> waiter.get(100, TimeUnit.MILLISECONDS));
+
+            finishLoad(entry, handler);
+
+            final SegmentRegistryAccess<Segment<Integer, String>> result = waiter
+                    .get(1, TimeUnit.SECONDS);
+            assertSame(SegmentRegistryResultStatus.OK,
+                    result.getSegmentStatus());
+            assertSame(segment, result.getSegment().orElse(null));
+        } finally {
+            callers.shutdownNow();
+            removeCacheEntry(segmentId);
+        }
+    }
+
+    @Test
+    void getSegment_returnsBusyWhenEntryIsUnloading() throws Exception {
+        stubSegmentConfig();
+        final SegmentId segmentId = SegmentId.of(7);
+        final SegmentRegistryAccess<Segment<Integer, String>> access = registry
+                .getSegment(segmentId);
+        assertSame(SegmentRegistryResultStatus.OK, access.getSegmentStatus());
+        final Segment<Integer, String> segment = access.getSegment().orElse(null);
+        assertNotNull(segment);
+
+        final Object entry = getCacheEntry(segmentId);
+        final Object unloaded = invokeTryStartUnload(entry);
+        assertNotNull(unloaded);
+
+        final SegmentRegistryAccess<Segment<Integer, String>> result = registry
+                .getSegment(segmentId);
+        assertSame(SegmentRegistryResultStatus.BUSY,
+                result.getSegmentStatus());
+
+        closeAndAwait(segment);
+        removeCacheEntry(segmentId);
+    }
+
+    private static void awaitCondition(final java.util.function.BooleanSupplier condition,
+            final long timeoutMillis) {
+        final long deadline = System.nanoTime()
+                + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+        while (!condition.getAsBoolean()) {
+            if (System.nanoTime() >= deadline) {
+                return;
+            }
+            try {
+                Thread.sleep(10L);
+            } catch (final InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
     }
 
     private void stubSegmentConfig() {
@@ -234,6 +340,70 @@ class SegmentRegistryImplTest {
             return (SegmentRegistryStateMachine) field.get(target);
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException("Unable to read gate for test", ex);
+        }
+    }
+
+    private Object createLoadingEntry(final long accessCx) {
+        try {
+            final Class<?> entryClass = Class.forName(
+                    "org.hestiastore.index.segmentregistry.SegmentRegistryCache$Entry");
+            final java.lang.reflect.Constructor<?> constructor = entryClass
+                    .getDeclaredConstructor(long.class);
+            constructor.setAccessible(true);
+            return constructor.newInstance(accessCx);
+        } catch (final ReflectiveOperationException ex) {
+            throw new IllegalStateException("Unable to create loading entry", ex);
+        }
+    }
+
+    private void finishLoad(final Object entry,
+            final SegmentHandler<Integer, String> handler) {
+        try {
+            final java.lang.reflect.Method method = entry.getClass()
+                    .getDeclaredMethod("finishLoad", Object.class);
+            method.setAccessible(true);
+            method.invoke(entry, handler);
+        } catch (final ReflectiveOperationException ex) {
+            throw new IllegalStateException("Unable to finish load", ex);
+        }
+    }
+
+    private Object invokeTryStartUnload(final Object entry) {
+        try {
+            final java.lang.reflect.Method method = entry.getClass()
+                    .getDeclaredMethod("tryStartUnload");
+            method.setAccessible(true);
+            return method.invoke(entry);
+        } catch (final ReflectiveOperationException ex) {
+            throw new IllegalStateException("Unable to start unload", ex);
+        }
+    }
+
+    private void putCacheEntry(final SegmentId segmentId, final Object entry) {
+        readCacheMap().put(segmentId, entry);
+    }
+
+    private Object getCacheEntry(final SegmentId segmentId) {
+        return readCacheMap().get(segmentId);
+    }
+
+    private void removeCacheEntry(final SegmentId segmentId) {
+        readCacheMap().remove(segmentId);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<SegmentId, Object> readCacheMap() {
+        try {
+            final Field cacheField = SegmentRegistryImpl.class
+                    .getDeclaredField("cache");
+            cacheField.setAccessible(true);
+            final Object cache = cacheField.get(registry);
+
+            final Field mapField = cache.getClass().getDeclaredField("map");
+            mapField.setAccessible(true);
+            return (Map<SegmentId, Object>) mapField.get(cache);
+        } catch (final ReflectiveOperationException ex) {
+            throw new IllegalStateException("Unable to read cache map", ex);
         }
     }
 

@@ -50,7 +50,7 @@ final class SegmentMaintenanceCoordinator<K, V> {
                 final SegmentAsyncSplitCoordinator.SplitHandle handle = splitCoordinator
                         .optionallySplitAsync(segment,
                                 maxSegmentCacheKeys.longValue());
-                handle.awaitStarted(conf.getIndexBusyTimeoutMillis());
+                handle.awaitCompletion(conf.getIndexBusyTimeoutMillis());
             }
         }
     }

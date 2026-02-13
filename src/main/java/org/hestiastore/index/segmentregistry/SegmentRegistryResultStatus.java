@@ -6,9 +6,16 @@ package org.hestiastore.index.segmentregistry;
 public enum SegmentRegistryResultStatus {
     /** Operation succeeded and any payload is valid. */
     OK,
-    /** Registry is temporarily busy and the operation should be retried. */
+    /**
+     * Registry is temporarily busy and the operation should be retried.
+     * Typical reasons: handler lock conflict, entry in UNLOADING, or
+     * registry gate in FREEZE.
+     */
     BUSY,
-    /** Requested segment does not exist in the registry storage. */
+    /**
+     * Legacy compatibility status for missing segments.
+     * Target contract uses exception-driven load/open failures.
+     */
     NOT_FOUND,
     /** Registry is closed and will not accept further operations. */
     CLOSED,

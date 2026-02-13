@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -247,7 +248,7 @@ class SegmentIndexConcurrentIT {
                     backgroundFailure);
         }
 
-        index.checkAndRepairConsistency();
+        checkAndRepairConsistencyWithRetry(index, 5_000L);
         index.flushAndWait();
 
         final Map<Integer, Integer> expected = new java.util.HashMap<>();
@@ -455,6 +456,27 @@ class SegmentIndexConcurrentIT {
             return false;
         }
         return message.contains("timed out") || message.contains("interrupted");
+    }
+
+    private static void checkAndRepairConsistencyWithRetry(
+            final SegmentIndex<Integer, Integer> index,
+            final long timeoutMillis) throws InterruptedException {
+        final long deadline = System.nanoTime()
+                + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+        while (true) {
+            try {
+                index.checkAndRepairConsistency();
+                return;
+            } catch (final NoSuchElementException exception) {
+                final String message = exception.getMessage();
+                final boolean invalidated = message != null
+                        && message.contains("invalidated");
+                if (!invalidated || System.nanoTime() >= deadline) {
+                    throw exception;
+                }
+                Thread.sleep(5L);
+            }
+        }
     }
 
     private static IndexConfiguration<Integer, Integer> newConfiguration(

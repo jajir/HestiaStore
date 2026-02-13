@@ -171,12 +171,12 @@
 [ ] M40 Review `segmentindex` package for test and Javadoc coverage (Risk: LOW)
     - Ensure each class has a JUnit test or document why coverage is excluded.
     - Ensure each public class/method has Javadoc; add missing docs.
-[ ] M41 Audit `segmentregistry` package for unused or test-only code (Risk: LOW)
+[x] M41 Audit `segmentregistry` package for unused or test-only code (Risk: LOW)
     - Limit class, method and variables visiblity
     - Identify unused classes/methods/fields.
     - Remove code only referenced by tests or move test helpers into test scope.
     - Ensure public API docs and tests remain consistent after cleanup.
-[ ] M42 Review `segmentregistry` package for test and Javadoc coverage (Risk: LOW)
+[x] M42 Review `segmentregistry` package for test and Javadoc coverage (Risk: LOW)
     - Ensure each class has a JUnit test or document why coverage is excluded.
     - Ensure each public class/method has Javadoc; add missing docs.
     - See `docs/development/segmentregistry-audit.md` for audit notes.
@@ -553,3 +553,179 @@
       locking instead.
     - Remove unused lock methods from `SegmentRegistryImpl`.
     - Verify eviction skips locked handlers and BUSY is returned when locked.
+
+[x] 77 SegmentRegistry target-state rollout from `docs/architecture/registry.md` (Risk: HIGH)
+    - Goal: make implementation fully match the documented registry model
+      (state gate + per-key `Entry` state machine + single-flight load +
+      bounded cache eviction + unload semantics).
+    - Global rule: every step in 77.x must preserve behavioral parity with
+      `docs/architecture/registry.md`. If behavior must change, update
+      `registry.md` and diagrams first in the same PR before code changes.
+    - Hard constraints:
+      - no global lock in `get` hot path
+      - unrelated keys must not block each other
+      - per-key wait only on the same `Entry`
+      - `LOADING` waits, `UNLOADING` maps to `BUSY`
+      - load/open failures are exception-driven
+    - Exit criteria:
+      - behavior parity with `docs/architecture/registry.md` and
+        `docs/architecture/images/registry-seq*.plantuml`
+      - all new/updated tests green
+      - no flakiness in repeated concurrency runs
+
+[x] 77.1 Freeze target contract and remove ambiguity (Risk: HIGH)
+    - Pin `docs/architecture/registry.md` + diagrams as source of truth.
+    - Explicitly list non-negotiable runtime rules in code comments/Javadocs:
+      - state gate mapping: `READY` normal, `FREEZE` -> `BUSY`,
+        `CLOSED` -> `CLOSED`, `ERROR` -> `ERROR`
+      - cache state mapping: `LOADING` wait, `UNLOADING` -> `BUSY`
+      - failed unload leaves `UNLOADING` (documented behavior)
+    - Acceptance:
+      - no contradictory comments/Javadocs in `segmentregistry` package
+      - docs and code contracts use same method names
+
+[x] 77.2 Implement/align per-key `Entry` API contract (Risk: HIGH)
+    - Ensure `SegmentRegistryCache.Entry` exposes and follows:
+      - `tryStartLoad()`
+      - `waitWhileLoading(currentAccessCx)`
+      - `finishLoad(value)`
+      - `fail(exception)`
+      - `tryStartUnload()`
+      - `finishUnload()`
+      - `getEvictionOrder()`
+    - Ensure lock/condition is strictly per-entry (no cross-key monitor).
+    - Acceptance:
+      - transitions only: `MISSING->LOADING->READY->UNLOADING->MISSING`
+      - invalid transitions return fast/fail predictably
+
+[x] 77.3 Align `get(key)` miss path to single-flight semantics (Risk: HIGH)
+    - Use `putIfAbsent` race semantics correctly:
+      - winner: `entryInMap == null` then load
+      - loser: wait on the existing entry from map
+    - Ensure wait target is the entry stored in map, not a local temporary.
+    - Ensure load failure path calls `fail(exception)`, wakes waiters, and
+      removes the expected entry from map.
+    - Acceptance:
+      - exactly one loader execution per key under high contention
+      - all losers observe winner result or propagated exception
+
+[x] 77.4 Align `get(key)` hit path semantics (Risk: HIGH)
+    - READY: immediate return + recency update.
+    - LOADING: block only on same entry until READY/failure.
+    - UNLOADING: do not wait; return BUSY to caller.
+    - Acceptance:
+      - no waiting on keys in `UNLOADING`
+      - no blocking between unrelated keys
+
+[x] 77.5 Implement bounded eviction flow per docs (Risk: HIGH)
+    - Keep capacity enforcement in cache layer.
+    - Candidate selection:
+      - LRU by `accessCx`
+      - exclude requested key in `removeLastRecentUsedSegment(exceptSegmentId)`
+      - only READY candidates can move to UNLOADING
+    - Start close asynchronously, remove only after close success.
+    - Acceptance:
+      - eviction never unloads `exceptSegmentId`
+      - failed `tryStartUnload` retries candidate selection without global stall
+
+[x] 77.6 Lifecycle executor behavior and failure handling (Risk: HIGH)
+    - Verify load/open and close/unload execution contexts follow design:
+      - load for seq03 scenario in caller thread
+      - close/unload on lifecycle executor thread
+    - Define exact reaction to close failure:
+      - keep entry `UNLOADING`
+      - subsequent `get` returns BUSY
+      - do not remove cache entry
+    - Acceptance:
+      - no caller-thread close IO
+      - failed close path is deterministic and test-covered
+
+[x] 77.7 Registry gate lifecycle alignment (Risk: MEDIUM)
+    - Ensure startup: `FREEZE -> READY`.
+    - Ensure close flow: `READY -> FREEZE -> CLOSED`.
+    - Ensure idempotent close and terminal ERROR semantics.
+    - Acceptance:
+      - gate transitions are atomic and race-safe under concurrent calls
+      - status mapping is consistent for all operations
+
+[x] 77.8 API/status cleanup to match exception-driven load policy (Risk: MEDIUM)
+    - Preserve `SegmentRegistryAccess` for status-oriented flows.
+    - Keep load/open failure as propagated runtime exception from registry
+      load paths (per docs).
+    - Remove or deprecate status branches that conflict with this policy.
+    - Acceptance:
+      - no mixed behavior where same failure is sometimes status, sometimes throw
+
+[x] 77.9 Unit tests for Entry/cache state machine (Risk: HIGH)
+    - Extend `SegmentRegistryCacheTest` with deterministic tests:
+      - single-flight: same key, many threads -> loader called once
+      - wait-on-loading: loser threads block and then return same value
+      - load failure wakeup: all waiters receive same failure
+      - unloading maps to BUSY (no waiting)
+      - eviction excludes `exceptSegmentId`
+      - close failure leaves `UNLOADING`
+    - Use `CountDownLatch`/`CyclicBarrier` to force races.
+    - Add `@Timeout` to every concurrency-sensitive test.
+
+[x] 77.10 Registry-level behavior tests (Risk: HIGH)
+    - Update/add tests in:
+      - `SegmentRegistryImplTest`
+      - `SegmentRegistryStateMachineTest`
+      - `SegmentRegistryAccessImplTest`
+    - Verify:
+      - gate mapping (`FREEZE/BUSY`, `CLOSED/CLOSED`, `ERROR/ERROR`)
+      - startup transition (`FREEZE->READY`)
+      - `getSegment` behavior across READY/LOADING/UNLOADING
+      - exception propagation on load/open failure
+
+[x] 77.11 High-concurrency integration verification (Risk: HIGH)
+    - Extend/execute:
+      - `IntegrationSegmentIndexConcurrencyTest`
+      - `SegmentIndexImplConcurrencyTest`
+      - `SegmentSplitCoordinatorConcurrencyTest`
+    - Add focused registry stress tests (new class):
+      - many threads on same key (single-flight proof)
+      - many threads on different keys (independence proof)
+      - eviction + concurrent gets + split coordinator interaction
+    - Run repeated stress cycles to catch flakes.
+    - Completed:
+      - Added and executed
+        `src/test/java/org/hestiastore/index/segmentindex/SegmentRegistryConcurrencyStressTest.java`.
+      - Passed:
+        `mvn -q -Dtest=IntegrationSegmentIndexConcurrencyTest,SegmentIndexImplConcurrencyTest,SegmentSplitCoordinatorConcurrencyTest,SegmentRegistryConcurrencyStressTest test`
+      - Flake gate passed: 20/20 repeated runs with 0 failures.
+
+[x] 77.12 Quality gates and release checklist (Risk: HIGH)
+    - Mandatory local gates before merge:
+      - targeted unit tests:
+        `mvn -q -Dtest=SegmentRegistryCacheTest,SegmentRegistryImplTest,SegmentRegistryStateMachineTest test`
+      - concurrency/integration tests:
+        `mvn -q -Dtest=IntegrationSegmentIndexConcurrencyTest,SegmentIndexImplConcurrencyTest,SegmentSplitCoordinatorConcurrencyTest test`
+      - full verification:
+        `mvn verify`
+    - Flake gate:
+      - rerun concurrency suite N times (recommended N=20) and require 0 flakes.
+    - Code quality gate:
+      - no TODO/FIXME left in touched files
+      - Javadocs reflect final behavior
+      - diagrams and `registry.md` updated if behavior changed
+    - Completed:
+      - Passed targeted unit tests:
+        `mvn -q -Dtest=SegmentRegistryCacheTest,SegmentRegistryImplTest,SegmentRegistryStateMachineTest test`
+      - Passed concurrency/integration tests:
+        `mvn -q -Dtest=IntegrationSegmentIndexConcurrencyTest,SegmentIndexImplConcurrencyTest,SegmentSplitCoordinatorConcurrencyTest,SegmentRegistryConcurrencyStressTest test`
+      - Passed full verification:
+        `mvn verify`
+      - `TODO/FIXME` scan on touched files: none found.
+
+[x] 77.13 Rollout and fallback plan (Risk: MEDIUM)
+    - Deliver in small PRs matching 77.1-77.12 order.
+    - After each PR:
+      - run targeted regression suite
+      - update `docs/architecture/registry.md` if contract changed
+    - Keep a temporary feature flag only if needed for safe migration.
+    - Remove fallback/compatibility code when final parity is reached.
+    - Completed:
+      - Work delivered incrementally following 77.1 -> 77.12 sequence.
+      - Regression suites executed after key steps and before final merge gate.
+      - No temporary feature flag required for this rollout.

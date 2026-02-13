@@ -77,8 +77,10 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
             assertEquals("kachna", index.get(i));
             index.delete(i);
             assertNull(index.get(i));
+            awaitMaintenanceIdle(index);
             verifyIndexData(index, List.of());
         }
+        awaitMaintenanceIdle(index);
         verifyIndexData(index, List.of());
     }
 

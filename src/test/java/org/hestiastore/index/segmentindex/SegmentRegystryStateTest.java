@@ -11,15 +11,16 @@ import org.junit.jupiter.api.Test;
 class SegmentRegystryStateTest {
 
     @Test
-    void starts_ready() {
+    void starts_freeze() {
         final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
 
-        assertSame(SegmentRegistryState.READY, gate.getState());
+        assertSame(SegmentRegistryState.FREEZE, gate.getState());
     }
 
     @Test
     void tryEnterFreeze_moves_from_ready() {
         final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
+        assertTrue(gate.finishFreezeToReady());
 
         assertTrue(gate.tryEnterFreeze());
         assertSame(SegmentRegistryState.FREEZE, gate.getState());
@@ -46,6 +47,7 @@ class SegmentRegystryStateTest {
     @Test
     void close_sets_closed_from_ready() {
         final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
+        assertTrue(gate.finishFreezeToReady());
 
         assertTrue(gate.close());
         assertSame(SegmentRegistryState.CLOSED, gate.getState());

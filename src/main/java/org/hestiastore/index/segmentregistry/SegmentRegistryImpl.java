@@ -1,7 +1,7 @@
 package org.hestiastore.index.segmentregistry;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
@@ -17,6 +17,10 @@ import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 
 /**
  * Registry that manages segment lifecycles and caches loaded segments.
+ * <p>
+ * Design contract follows {@code docs/architecture/registry.md}:
+ * state-gated request handling, per-key cache coordination, and
+ * exception-driven load/open failures.
  *
  * @param <K> key type
  * @param <V> value type
@@ -25,10 +29,10 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
 
     private final SegmentRegistryCache<SegmentId, SegmentHandler<K, V>> cache;
     private final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
+    private final AtomicBoolean closeInProgress = new AtomicBoolean();
     private final ThreadLocal<Boolean> allowCreateOnMiss = ThreadLocal
             .withInitial(() -> Boolean.FALSE);
 
-    private final AsyncDirectory directoryFacade;
     private final SegmentFactory<K, V> segmentFactory;
     private final SegmentIdAllocator segmentIdAllocator;
     private final IndexRetryPolicy retryPolicy;
@@ -48,15 +52,15 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
             final SegmentIdAllocator segmentIdAllocator,
             final IndexConfiguration<K, V> conf,
             final ExecutorService segmentLifecycleExecutor) {
-        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
-                "directoryFacade");
+        final AsyncDirectory resolvedDirectory = Vldtn
+                .requireNonNull(directoryFacade, "directoryFacade");
         this.segmentFactory = Vldtn.requireNonNull(segmentFactory,
                 "segmentFactory");
         this.segmentIdAllocator = Vldtn.requireNonNull(segmentIdAllocator,
                 "segmentIdAllocator");
         this.segmentLifecycleExecutor = Vldtn.requireNonNull(
                 segmentLifecycleExecutor, "segmentLifecycleExecutor");
-        this.fileSystem = new SegmentRegistryFileSystem(this.directoryFacade);
+        this.fileSystem = new SegmentRegistryFileSystem(resolvedDirectory);
         Vldtn.requireNonNull(conf, "conf");
         final int maxSegments = Vldtn
                 .requireNonNull(conf.getMaxNumberOfSegmentsInCache(),
@@ -73,8 +77,12 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         this.retryPolicy = new IndexRetryPolicy(busyBackoffMillis,
                 busyTimeoutMillis);
         this.cache = new SegmentRegistryCache<>(maxNumberOfSegmentsInCache,
-                this::loadSegmentHandlerViaExecutor,
-                this::closeHandlerViaExecutor);
+                this::loadSegmentHandlerDirect,
+                this::closeHandlerDirect, segmentLifecycleExecutor);
+        if (!gate.finishFreezeToReady()) {
+            throw new IllegalStateException(
+                    "Failed to transition registry from FREEZE to READY");
+        }
     }
 
     /**
@@ -104,6 +112,9 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
 
     /**
      * Returns the segment for the provided id, loading it if needed.
+     * <p>
+     * When gate is not READY this method maps state to BUSY/CLOSED/ERROR
+     * without entering the cache path.
      *
      * @param segmentId segment id to load
      * @return result containing the segment or a status
@@ -179,7 +190,9 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
                 try {
                     handler = cache.get(segmentId);
                 } catch (final SegmentNotFoundException ex) {
-                    return SegmentRegistryResult.notFound();
+                    return SegmentRegistryResult.busy();
+                } catch (final SegmentRegistryCache.EntryBusyException ex) {
+                    return SegmentRegistryResult.busy();
                 } catch (final SegmentBusyException ex) {
                     return SegmentRegistryResult.busy();
                 }
@@ -200,9 +213,6 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
                 }
                 return SegmentRegistryResult.ok(handler);
             }
-        } catch (final RuntimeException ex) {
-            gate.fail();
-            return SegmentRegistryResult.error();
         } finally {
             allowCreateOnMiss.set(previousAllowCreate);
         }
@@ -298,6 +308,8 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
 
     private static <T> SegmentRegistryResult<T> resultForState(
             final SegmentRegistryState state) {
+        // Contract mapping:
+        // CLOSED -> CLOSED, ERROR -> ERROR, otherwise (FREEZE) -> BUSY.
         if (state == SegmentRegistryState.CLOSED) {
             return SegmentRegistryResult.closed();
         }
@@ -315,58 +327,60 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
 
     /**
      * Closes all tracked segments.
+     * <p>
+     * Close is idempotent. Runtime close failures while unloading are handled by
+     * cache/entry semantics and may leave entries unavailable (BUSY) by design.
      */
     @Override
     public SegmentRegistryAccess<Void> close() {
-        gate.close();
         try {
+            final SegmentRegistryState initialState = gate.getState();
+            if (initialState == SegmentRegistryState.ERROR) {
+                return SegmentRegistryAccessImpl
+                        .forStatus(SegmentRegistryResultStatus.ERROR);
+            }
+            if (initialState == SegmentRegistryState.CLOSED) {
+                return SegmentRegistryAccessImpl
+                        .forStatus(SegmentRegistryResultStatus.OK);
+            }
+            if (!closeInProgress.compareAndSet(false, true)) {
+                final SegmentRegistryState state = gate.getState();
+                if (state == SegmentRegistryState.CLOSED) {
+                    return SegmentRegistryAccessImpl
+                            .forStatus(SegmentRegistryResultStatus.OK);
+                }
+                if (state == SegmentRegistryState.ERROR) {
+                    return SegmentRegistryAccessImpl
+                            .forStatus(SegmentRegistryResultStatus.ERROR);
+                }
+                return SegmentRegistryAccessImpl
+                        .forStatus(SegmentRegistryResultStatus.BUSY);
+            }
+            if (gate.getState() == SegmentRegistryState.READY) {
+                gate.tryEnterFreeze();
+            }
+            final SegmentRegistryState freezeState = gate.getState();
+            if (freezeState == SegmentRegistryState.ERROR) {
+                return SegmentRegistryAccessImpl
+                        .forStatus(SegmentRegistryResultStatus.ERROR);
+            }
+            if (freezeState == SegmentRegistryState.CLOSED) {
+                return SegmentRegistryAccessImpl
+                        .forStatus(SegmentRegistryResultStatus.OK);
+            }
+            if (freezeState != SegmentRegistryState.FREEZE) {
+                return SegmentRegistryAccessImpl
+                        .forStatus(SegmentRegistryResultStatus.BUSY);
+            }
             cache.clear();
+            if (!gate.finishFreezeToClosed()) {
+                return SegmentRegistryAccessImpl
+                        .forStatus(SegmentRegistryResultStatus.ERROR);
+            }
             return SegmentRegistryAccessImpl
                     .forStatus(SegmentRegistryResultStatus.OK);
         } finally {
             segmentLifecycleExecutor.shutdownNow();
-        }
-    }
-
-    private SegmentHandler<K, V> loadSegmentHandlerViaExecutor(
-            final SegmentId segmentId) {
-        final boolean allowCreate = Boolean.TRUE.equals(allowCreateOnMiss.get());
-        return runInLifecycleExecutor(() -> {
-            final boolean previousAllowCreate = allowCreateOnMiss.get();
-            allowCreateOnMiss.set(allowCreate);
-            try {
-                return loadSegmentHandlerDirect(segmentId);
-            } finally {
-                allowCreateOnMiss.set(previousAllowCreate);
-            }
-        });
-    }
-
-    private void closeHandlerViaExecutor(final SegmentHandler<K, V> handler) {
-        runInLifecycleExecutor(() -> {
-            closeHandlerDirect(handler);
-            return null;
-        });
-    }
-
-    private <T> T runInLifecycleExecutor(
-            final java.util.concurrent.Callable<T> task) {
-        try {
-            return segmentLifecycleExecutor.submit(task).get();
-        } catch (final InterruptedException ex) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException(
-                    "Interrupted while waiting for lifecycle task", ex);
-        } catch (final ExecutionException ex) {
-            final Throwable cause = ex.getCause();
-            if (cause instanceof RuntimeException runtimeException) {
-                throw runtimeException;
-            }
-            if (cause instanceof Error error) {
-                throw error;
-            }
-            throw new IllegalStateException(
-                    "Lifecycle task failed with checked exception", cause);
         }
     }
 

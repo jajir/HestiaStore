@@ -77,7 +77,9 @@ final class SegmentAsyncSplitCoordinator<K, V> {
         final SegmentId segmentId = segment.getId();
         final SplitInFlight<K, V> inFlight = inFlightSplits.compute(segmentId,
                 (id, existing) -> {
-                    if (existing != null && existing.segment == segment) {
+                    // Keep a single in-flight split per segment id so awaitAllCompletions
+                    // observes all running work and callers do not race on stale instances.
+                    if (existing != null) {
                         return existing;
                     }
                     return scheduleSplit(segment, maxNumberOfKeysInSegment,

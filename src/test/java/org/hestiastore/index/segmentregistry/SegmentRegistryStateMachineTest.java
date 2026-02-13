@@ -9,15 +9,16 @@ import org.junit.jupiter.api.Test;
 class SegmentRegistryStateMachineTest {
 
     @Test
-    void startsReady() {
+    void startsFreeze() {
         final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
 
-        assertSame(SegmentRegistryState.READY, gate.getState());
+        assertSame(SegmentRegistryState.FREEZE, gate.getState());
     }
 
     @Test
     void tryEnterFreezeMovesFromReady() {
         final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
+        gate.finishFreezeToReady();
 
         assertTrue(gate.tryEnterFreeze());
         assertSame(SegmentRegistryState.FREEZE, gate.getState());
@@ -26,6 +27,7 @@ class SegmentRegistryStateMachineTest {
     @Test
     void tryEnterFreezeFailsWhenNotReady() {
         final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
+        gate.finishFreezeToReady();
         gate.tryEnterFreeze();
 
         assertFalse(gate.tryEnterFreeze());
@@ -35,7 +37,6 @@ class SegmentRegistryStateMachineTest {
     @Test
     void finishFreezeToReadySucceedsFromFreeze() {
         final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
-        gate.tryEnterFreeze();
 
         assertTrue(gate.finishFreezeToReady());
         assertSame(SegmentRegistryState.READY, gate.getState());
@@ -43,6 +44,15 @@ class SegmentRegistryStateMachineTest {
 
     @Test
     void closeSetsClosedFromReady() {
+        final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
+        gate.finishFreezeToReady();
+
+        assertTrue(gate.close());
+        assertSame(SegmentRegistryState.CLOSED, gate.getState());
+    }
+
+    @Test
+    void closeSetsClosedFromFreeze() {
         final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
 
         assertTrue(gate.close());
@@ -52,9 +62,18 @@ class SegmentRegistryStateMachineTest {
     @Test
     void closeIsIdempotent() {
         final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
+        gate.finishFreezeToReady();
 
         assertTrue(gate.close());
         assertTrue(gate.close());
+        assertSame(SegmentRegistryState.CLOSED, gate.getState());
+    }
+
+    @Test
+    void finishFreezeToClosedSucceedsFromFreeze() {
+        final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
+
+        assertTrue(gate.finishFreezeToClosed());
         assertSame(SegmentRegistryState.CLOSED, gate.getState());
     }
 
