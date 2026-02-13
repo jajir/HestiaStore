@@ -25,6 +25,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +53,7 @@ class IntegrationSegmentIndexSimpleTest {
 
         testData.stream().forEach(index1::put);
 
-        index1.compact();
+        index1.compactAndWait();
 
         try (final Stream<Entry<Integer, String>> stream = testData.stream()) {
             stream.forEach(entry -> {
@@ -60,7 +61,7 @@ class IntegrationSegmentIndexSimpleTest {
                 assertEquals(entry.getValue(), value);
             });
         }
-        index1.compact();
+        index1.compactAndWait();
 
         index1.close();
 
@@ -201,6 +202,7 @@ class IntegrationSegmentIndexSimpleTest {
 
         final SegmentIndex<Integer, String> index2 = makeSegmentIndex();
         updatedData.stream().forEach(index2::put);
+        index2.flushAndWait();
         verifyDataIndex(index2, updatedData);
         index2.close();
     }
@@ -208,7 +210,9 @@ class IntegrationSegmentIndexSimpleTest {
     private void verifyDataIndex(final SegmentIndex<Integer, String> index,
             final List<Entry<Integer, String>> data) {
         final List<Entry<Integer, String>> indexData = index
-                .getStream(SegmentWindow.unbounded()).toList();
+                .getStream(SegmentWindow.unbounded(),
+                        SegmentIteratorIsolation.FULL_ISOLATION)
+                .toList();
         assertEquals(data.size(), indexData.size());
         for (int i = 0; i < data.size(); i++) {
             final Entry<Integer, String> entryData = data.get(i);

@@ -1,7 +1,16 @@
 package org.hestiastore.index.segmentregistry;
 
 import java.util.Map;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.AbstractExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
@@ -23,6 +32,9 @@ import org.hestiastore.index.Vldtn;
  *   the entry condition.</li>
  *   <li>Eviction picks the least recently used READY entry and marks it as
  *   UNLOADING before calling the unloader outside the locks.</li>
+ *   <li>Registry contract treats LOADING and UNLOADING differently:
+ *   LOADING is awaited on the same key, UNLOADING is surfaced as BUSY to
+ *   callers by registry layer decisions.</li>
  * </ul>
  *
  * @param <K> key type
@@ -37,6 +49,7 @@ public final class SegmentRegistryCache<K, V> {
     private final int limit;
     private final Function<K, V> loader;
     private final Consumer<V> unloader;
+    private final ExecutorService unloadExecutor;
 
     /**
      * Creates a cache with a fixed size limit.
@@ -47,9 +60,17 @@ public final class SegmentRegistryCache<K, V> {
      */
     public SegmentRegistryCache(final int limit, final Function<K, V> loader,
             final Consumer<V> unloader) {
+        this(limit, loader, unloader, DirectExecutorService.INSTANCE);
+    }
+
+    SegmentRegistryCache(final int limit, final Function<K, V> loader,
+            final Consumer<V> unloader,
+            final ExecutorService unloadExecutor) {
         this.limit = Vldtn.requireGreaterThanZero(limit, "limit");
         this.loader = Vldtn.requireNonNull(loader, "loader");
         this.unloader = Vldtn.requireNonNull(unloader, "unloader");
+        this.unloadExecutor = Vldtn.requireNonNull(unloadExecutor,
+                "unloadExecutor");
     }
 
     /**
@@ -65,13 +86,20 @@ public final class SegmentRegistryCache<K, V> {
             Entry<V> entry = map.get(key);
             if (entry == null) {
                 final Entry<V> created = new Entry<>(currentAccessCx);
-                final Entry<V> existing = map.putIfAbsent(key, created);
-                if (existing == null) {
+                final Entry<V> entryInMap = map.putIfAbsent(key, created);
+                if (entryInMap == null) {
+                    // Winner path: created is now the value associated with key.
+                    if (!created.tryStartLoad()) {
+                        map.remove(key, created);
+                        throw new IllegalStateException(
+                                "Entry cannot start load from current state");
+                    }
                     return loadValue(key, created);
                 }
-                entry = existing;
+                // Loser path: always wait on the entry returned from the map.
+                entry = entryInMap;
             }
-            final V value = entry.awaitReady(currentAccessCx);
+            final V value = entry.waitWhileLoading(currentAccessCx);
             if (value != null) {
                 return value;
             }
@@ -103,9 +131,11 @@ public final class SegmentRegistryCache<K, V> {
         if (value == null) {
             return InvalidateStatus.BUSY;
         }
-        unloadValue(value);
-        finalizeRemoval(key, entry);
-        return InvalidateStatus.REMOVED;
+        if (!unloadValueAndWait(value)) {
+            return InvalidateStatus.BUSY;
+        }
+        return finalizeRemoval(key, entry) ? InvalidateStatus.REMOVED
+                : InvalidateStatus.BUSY;
     }
 
     void clear() {
@@ -129,70 +159,116 @@ public final class SegmentRegistryCache<K, V> {
         }
         entry.finishLoad(value);
         size.incrementAndGet();
-        evictIfNeeded();
+        evictIfNeeded(key);
         return value;
     }
 
-    private void evictIfNeeded() {
-        while (size.get() > limit) {
-            if (!evictLeastRecentlyUsed()) {
-                return;
-            }
+    private void evictIfNeeded(final K exceptKey) {
+        if (size.get() <= limit) {
+            return;
         }
+        removeLastRecentUsedSegment(exceptKey);
     }
 
-    private boolean evictLeastRecentlyUsed() {
+    boolean removeLastRecentUsedSegment(final K exceptKey) {
         final EvictionCandidate<K, V> candidate;
         evictionLock.lock();
         try {
-            if (size.get() <= limit) {
-                return true;
-            }
-            candidate = selectLeastRecentlyUsedCandidate();
+            candidate = selectLeastRecentlyUsedCandidate(exceptKey);
             if (candidate == null) {
                 return false;
             }
         } finally {
             evictionLock.unlock();
         }
-        unloadValue(candidate.value);
-        return finalizeRemoval(candidate.key, candidate.entry);
+        startUnloadAsync(candidate);
+        return true;
     }
 
-    private EvictionCandidate<K, V> selectLeastRecentlyUsedCandidate() {
-        long oldestAccessCx = Long.MAX_VALUE;
-        K oldestKey = null;
-        Entry<V> oldestEntry = null;
+    private EvictionCandidate<K, V> selectLeastRecentlyUsedCandidate(
+            final K exceptKey) {
+        final Set<K> excluded = new HashSet<>();
+        if (exceptKey != null) {
+            excluded.add(exceptKey);
+        }
+        while (true) {
+            long oldestAccessCx = Long.MAX_VALUE;
+            K oldestKey = null;
+            Entry<V> oldestEntry = null;
 
-        for (final Map.Entry<K, Entry<V>> mapEntry : map.entrySet()) {
-            final Entry<V> entry = mapEntry.getValue();
-            final long entryAccessCx = entry.getEvictionOrder();
-            if (entryAccessCx == Long.MAX_VALUE) {
-                continue;
+            for (final Map.Entry<K, Entry<V>> mapEntry : map.entrySet()) {
+                final K key = mapEntry.getKey();
+                if (excluded.contains(key)) {
+                    continue;
+                }
+                final Entry<V> entry = mapEntry.getValue();
+                final long entryAccessCx = entry.getEvictionOrder();
+                if (entryAccessCx == Long.MAX_VALUE) {
+                    continue;
+                }
+                if (entryAccessCx < oldestAccessCx) {
+                    oldestAccessCx = entryAccessCx;
+                    oldestKey = key;
+                    oldestEntry = entry;
+                }
             }
-            if (entryAccessCx < oldestAccessCx) {
-                oldestAccessCx = entryAccessCx;
-                oldestKey = mapEntry.getKey();
-                oldestEntry = entry;
+
+            if (oldestEntry == null || oldestKey == null) {
+                return null;
             }
-        }
 
-        if (oldestEntry == null) {
-            return null;
+            final V value = oldestEntry.tryStartUnload();
+            if (value != null) {
+                return new EvictionCandidate<>(oldestKey, oldestEntry, value);
+            }
+            // Candidate changed state between selection and unload start;
+            // retry selection with a different candidate.
+            excluded.add(oldestKey);
         }
-
-        final V value = oldestEntry.tryStartUnload();
-        if (value == null) {
-            return null;
-        }
-        return new EvictionCandidate<>(oldestKey, oldestEntry, value);
     }
 
-    private void unloadValue(final V value) {
+    private boolean unloadValue(final V value) {
         try {
             unloader.accept(value);
+            return true;
         } catch (final RuntimeException ex) {
-            // Best-effort unload; eviction continues even if unload fails.
+            return false;
+        }
+    }
+
+    private boolean unloadValueAndWait(final V value) {
+        final Future<?> task;
+        try {
+            task = unloadExecutor.submit(() -> {
+                if (!unloadValue(value)) {
+                    throw new IllegalStateException("Unload failed");
+                }
+            });
+        } catch (final RejectedExecutionException ex) {
+            return false;
+        }
+        try {
+            task.get();
+            return true;
+        } catch (final InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            return false;
+        } catch (final ExecutionException ex) {
+            return false;
+        }
+    }
+
+    private void startUnloadAsync(final EvictionCandidate<K, V> candidate) {
+        try {
+            unloadExecutor.execute(() -> {
+                if (!unloadValue(candidate.value)) {
+                    // Keep entry in UNLOADING on close failure.
+                    return;
+                }
+                finalizeRemoval(candidate.key, candidate.entry);
+            });
+        } catch (final RejectedExecutionException ex) {
+            // Keep entry in UNLOADING if lifecycle executor is not accepting tasks.
         }
     }
 
@@ -200,8 +276,8 @@ public final class SegmentRegistryCache<K, V> {
         final boolean removed = map.remove(key, entry);
         if (removed) {
             size.decrementAndGet();
+            entry.finishUnload();
         }
-        entry.finishUnload();
         return removed;
     }
 
@@ -217,6 +293,10 @@ public final class SegmentRegistryCache<K, V> {
         UNLOADING
     }
 
+    static final class EntryBusyException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+    }
+
     static final class Entry<V> {
         private final ReentrantLock lock = new ReentrantLock();
         private final Condition ready = lock.newCondition();
@@ -230,11 +310,28 @@ public final class SegmentRegistryCache<K, V> {
             this.accessCx = accessCx;
         }
 
-        V awaitReady(final long currentAccessCx) {
+        boolean tryStartLoad() {
             lock.lock();
             try {
-                while (state == EntryState.LOADING
-                        || (state == EntryState.UNLOADING && value != null)) {
+                return state == EntryState.LOADING && value == null
+                        && failure == null;
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        /**
+         * Waits for this key while loading is in progress and returns the
+         * currently visible value.
+         *
+         * @param currentAccessCx access sequence for recency tracking
+         * @return loaded value when READY, otherwise null when entry became
+         *         unavailable
+         */
+        V waitWhileLoading(final long currentAccessCx) {
+            lock.lock();
+            try {
+                while (state == EntryState.LOADING) {
                     if (failure != null) {
                         throw failure;
                     }
@@ -254,6 +351,9 @@ public final class SegmentRegistryCache<K, V> {
                     accessCx = currentAccessCx;
                     return value;
                 }
+                if (state == EntryState.UNLOADING) {
+                    throw new EntryBusyException();
+                }
                 return null;
             } finally {
                 lock.unlock();
@@ -263,6 +363,11 @@ public final class SegmentRegistryCache<K, V> {
         void finishLoad(final V value) {
             lock.lock();
             try {
+                if (state != EntryState.LOADING || this.value != null
+                        || failure != null) {
+                    throw new IllegalStateException(
+                            "Invalid transition to READY from " + state);
+                }
                 this.value = value;
                 this.state = EntryState.READY;
                 ready.signalAll();
@@ -274,8 +379,12 @@ public final class SegmentRegistryCache<K, V> {
         void fail(final RuntimeException failure) {
             lock.lock();
             try {
+                if (state != EntryState.LOADING || this.value != null
+                        || this.failure != null) {
+                    throw new IllegalStateException(
+                            "Invalid fail transition from " + state);
+                }
                 this.failure = failure;
-                this.state = EntryState.UNLOADING;
                 ready.signalAll();
             } finally {
                 lock.unlock();
@@ -338,6 +447,10 @@ public final class SegmentRegistryCache<K, V> {
         void finishUnload() {
             lock.lock();
             try {
+                if (state != EntryState.UNLOADING) {
+                    throw new IllegalStateException(
+                            "Invalid transition to missing from " + state);
+                }
                 value = null;
                 ready.signalAll();
             } finally {
@@ -356,6 +469,48 @@ public final class SegmentRegistryCache<K, V> {
             this.key = key;
             this.entry = entry;
             this.value = value;
+        }
+    }
+
+    private static final class DirectExecutorService
+            extends AbstractExecutorService {
+        private static final DirectExecutorService INSTANCE = new DirectExecutorService();
+        private volatile boolean shutdown;
+
+        @Override
+        public void shutdown() {
+            shutdown = true;
+        }
+
+        @Override
+        public List<Runnable> shutdownNow() {
+            shutdown = true;
+            return List.of();
+        }
+
+        @Override
+        public boolean isShutdown() {
+            return shutdown;
+        }
+
+        @Override
+        public boolean isTerminated() {
+            return shutdown;
+        }
+
+        @Override
+        public boolean awaitTermination(final long timeout,
+                final TimeUnit unit) {
+            return true;
+        }
+
+        @Override
+        public void execute(final Runnable command) {
+            if (shutdown) {
+                throw new RejectedExecutionException(
+                        "Direct executor is shutdown");
+            }
+            command.run();
         }
     }
 }

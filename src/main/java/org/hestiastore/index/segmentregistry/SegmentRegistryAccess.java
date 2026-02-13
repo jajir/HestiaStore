@@ -5,6 +5,10 @@ import java.util.Optional;
 /**
  * Access wrapper that exposes registry status, optional value, and
  * lock/unlock operations when supported by the underlying source.
+ * <p>
+ * Status contract is defined by registry state gate and per-entry cache state:
+ * FREEZE/UNLOADING/lock conflicts map to BUSY, CLOSED maps to CLOSED, and
+ * terminal failures map to ERROR.
  *
  * @param <T> value type returned from the registry
  */

@@ -8,6 +8,7 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segment.SegmentState;
+import org.hestiastore.index.segmentregistry.SegmentHandlerLockStatus;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryAccess;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
@@ -117,42 +118,49 @@ final class SegmentIndexCore<K, V> {
         if (segment == null) {
             return IndexResult.error();
         }
-        if (segment.getState() == SegmentState.CLOSED) {
+        if (segmentResult.lock() != SegmentHandlerLockStatus.OK) {
             return IndexResult.busy();
         }
-        if (!keyToSegmentMap.isMappingValid(key, segmentId,
-                stableSnapshot.version())) {
-            return IndexResult.busy();
-        }
-        final SegmentResult<Void> result = segment.put(key, value);
-        final IndexResult<Void> putResult;
-        if (result.getStatus() == SegmentResultStatus.OK) {
-            putResult = IndexResult.ok();
-        } else if (result.getStatus() == SegmentResultStatus.BUSY
-                || result.getStatus() == SegmentResultStatus.CLOSED) {
-            putResult = IndexResult.busy();
-        } else {
-            putResult = IndexResult.error();
-        }
-        if (putResult.getStatus() == IndexResultStatus.OK) {
-            maintenanceCoordinator.handlePostWrite(segment, key, segmentId,
-                    stableSnapshot.version());
-            if (DEBUG_SPLIT_LOSS) {
-                final KeyToSegmentMap.Snapshot<K> currentSnapshot = keyToSegmentMap
-                        .snapshot();
-                final SegmentId currentSegmentId = currentSnapshot
-                        .findSegmentId(key);
-                if (!segmentId.equals(currentSegmentId)
-                        || currentSnapshot.version() != stableSnapshot
-                                .version()) {
-                    logger.warn(
-                            "Split debug: key '{}' wrote to segment '{}' at map version '{}', now mapped to '{}' (version '{}').",
-                            key, segmentId, stableSnapshot.version(),
-                            currentSegmentId, currentSnapshot.version());
+        try {
+            if (segment.getState() == SegmentState.CLOSED) {
+                return IndexResult.busy();
+            }
+            if (!keyToSegmentMap.isMappingValid(key, segmentId,
+                    stableSnapshot.version())) {
+                return IndexResult.busy();
+            }
+            final SegmentResult<Void> result = segment.put(key, value);
+            final IndexResult<Void> putResult;
+            if (result.getStatus() == SegmentResultStatus.OK) {
+                putResult = IndexResult.ok();
+            } else if (result.getStatus() == SegmentResultStatus.BUSY
+                    || result.getStatus() == SegmentResultStatus.CLOSED) {
+                putResult = IndexResult.busy();
+            } else {
+                putResult = IndexResult.error();
+            }
+            if (putResult.getStatus() == IndexResultStatus.OK) {
+                maintenanceCoordinator.handlePostWrite(segment, key, segmentId,
+                        stableSnapshot.version());
+                if (DEBUG_SPLIT_LOSS) {
+                    final KeyToSegmentMap.Snapshot<K> currentSnapshot = keyToSegmentMap
+                            .snapshot();
+                    final SegmentId currentSegmentId = currentSnapshot
+                            .findSegmentId(key);
+                    if (!segmentId.equals(currentSegmentId)
+                            || currentSnapshot.version() != stableSnapshot
+                                    .version()) {
+                        logger.warn(
+                                "Split debug: key '{}' wrote to segment '{}' at map version '{}', now mapped to '{}' (version '{}').",
+                                key, segmentId, stableSnapshot.version(),
+                                currentSegmentId, currentSnapshot.version());
+                    }
                 }
             }
+            return putResult;
+        } finally {
+            segmentResult.unlock();
         }
-        return putResult;
     }
 
     IndexResult<EntryIterator<K, V>> openIterator(final SegmentId segmentId,

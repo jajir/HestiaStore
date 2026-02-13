@@ -63,15 +63,6 @@ public final class SegmentRegistryAccessImpl<T>
 
     static <K, V> SegmentRegistryAccess<Segment<K, V>> forHandler(
             final SegmentRegistryResultStatus status,
-            final SegmentHandler<K, V> handler) {
-        return new SegmentRegistryAccessImpl<>(status,
-                handler == null ? null : handler.getSegment(),
-                handler == null ? NO_LOCK : new HandlerLockActions<>(handler,
-                        null));
-    }
-
-    static <K, V> SegmentRegistryAccess<Segment<K, V>> forHandler(
-            final SegmentRegistryResultStatus status,
             final SegmentHandler<K, V> handler,
             final SegmentRegistryCache<SegmentId, SegmentHandler<K, V>> cache,
             final SegmentId segmentId) {

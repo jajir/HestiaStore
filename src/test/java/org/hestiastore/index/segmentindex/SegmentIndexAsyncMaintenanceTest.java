@@ -232,9 +232,9 @@ class SegmentIndexAsyncMaintenanceTest {
                     .get(cache);
             final Class<?> entryClass = Class.forName(
                     SegmentRegistryCache.class.getName() + "$Entry");
-            final var ctor = entryClass.getDeclaredConstructor();
+            final var ctor = entryClass.getDeclaredConstructor(long.class);
             ctor.setAccessible(true);
-            final Object entry = ctor.newInstance();
+            final Object entry = ctor.newInstance(0L);
             final Field stateField = entryClass.getDeclaredField("state");
             stateField.setAccessible(true);
             final Class<?> stateClass = Class.forName(

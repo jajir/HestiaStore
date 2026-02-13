@@ -31,7 +31,7 @@ public final class SegmentHandler<K, V> {
      *
      * @return handler state
      */
-    public SegmentHandlerState getState() {
+    SegmentHandlerState getState() {
         return state.get();
     }
 

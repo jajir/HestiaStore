@@ -406,6 +406,9 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 return;
             }
             if (status == IndexResultStatus.BUSY) {
+                if (!isSegmentStillMapped(segmentId)) {
+                    return;
+                }
                 retryPolicy.backoffOrThrow(startNanos, "compact", segmentId);
                 continue;
             }
@@ -432,6 +435,9 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 return;
             }
             if (status == IndexResultStatus.BUSY) {
+                if (!isSegmentStillMapped(segmentId)) {
+                    return;
+                }
                 retryPolicy.backoffOrThrow(startNanos, "flush", segmentId);
                 continue;
             }
@@ -521,6 +527,9 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 }
                 if (segmentResult
                         .getSegmentStatus() == SegmentRegistryResultStatus.BUSY) {
+                    if (!isSegmentStillMapped(segmentId)) {
+                        return;
+                    }
                     retryPolicy.backoffOrThrow(startNanos,
                             "invalidateIterators", segmentId);
                     continue;
@@ -563,6 +572,10 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             return 0;
         }
         return TimeUnit.NANOSECONDS.toMillis(remainingNanos);
+    }
+
+    private boolean isSegmentStillMapped(final SegmentId segmentId) {
+        return keyToSegmentMap.getSegmentIds().contains(segmentId);
     }
 
     /** {@inheritDoc} */

@@ -52,6 +52,9 @@ public final class SegmentRegistryResult<T> {
 
     /**
      * Creates a NOT_FOUND result.
+     * <p>
+     * Kept for compatibility with existing callers while the registry converges
+     * to exception-driven load/open failures.
      *
      * @param <T> value type
      * @return NOT_FOUND result with null value

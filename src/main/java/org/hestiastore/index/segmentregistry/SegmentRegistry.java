@@ -7,6 +7,19 @@ import org.hestiastore.index.segment.SegmentId;
 
 /**
  * Minimal contract for retrieving and managing segments from a registry.
+ * <p>
+ * Contract source of truth is
+ * {@code docs/architecture/registry.md}. Core behavior:
+ * <ul>
+ * <li>Registry state gate mapping:
+ * {@code READY -> normal flow}, {@code FREEZE -> BUSY},
+ * {@code CLOSED -> CLOSED}, {@code ERROR -> ERROR}.</li>
+ * <li>Per-key cache behavior:
+ * {@code LOADING} waits on the same key only, {@code UNLOADING} is exposed as
+ * {@code BUSY} to callers.</li>
+ * <li>Load/open failures are exception-driven and may propagate as runtime
+ * exceptions.</li>
+ * </ul>
  *
  * @param <K> key type
  * @param <V> value type
@@ -26,6 +39,9 @@ public interface SegmentRegistry<K, V> {
 
     /**
      * Returns the segment for the provided id, loading it if needed.
+     * <p>
+     * In {@code READY} state this operation uses per-key synchronization.
+     * Unrelated keys must not block each other.
      *
      * @param segmentId segment id to load
      * @return registry result containing the segment or a status
@@ -72,6 +88,9 @@ public interface SegmentRegistry<K, V> {
 
     /**
      * Closes the registry, releasing cached segments and executors.
+     * <p>
+     * Close is idempotent and maps the gate to {@code CLOSED} unless the gate is
+     * already terminal {@code ERROR}.
      *
      * @return registry result status
      */
