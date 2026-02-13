@@ -45,18 +45,6 @@ public final class SegmentHandler<K, V> {
     }
 
     /**
-     * Returns the segment when the handler is ready; otherwise returns BUSY.
-     *
-     * @return registry result with segment or BUSY status
-     */
-    public SegmentRegistryResult<Segment<K, V>> getSegmentIfReady() {
-        if (state.get() == SegmentHandlerState.READY) {
-            return SegmentRegistryResult.ok(segment);
-        }
-        return SegmentRegistryResult.busy();
-    }
-
-    /**
      * Attempts to lock the handler for exclusive use.
      *
      * @return lock status indicating success or BUSY
@@ -79,15 +67,5 @@ public final class SegmentHandler<K, V> {
                 SegmentHandlerState.READY)) {
             throw new IllegalStateException("Segment handler was not locked.");
         }
-    }
-
-    /**
-     * Returns true if this handler wraps the provided segment instance.
-     *
-     * @param candidate segment instance to compare
-     * @return true when the instance matches
-     */
-    public boolean isForSegment(final Segment<K, V> candidate) {
-        return segment == candidate;
     }
 }

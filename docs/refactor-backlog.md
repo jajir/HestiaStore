@@ -171,6 +171,15 @@
 [ ] M40 Review `segmentindex` package for test and Javadoc coverage (Risk: LOW)
     - Ensure each class has a JUnit test or document why coverage is excluded.
     - Ensure each public class/method has Javadoc; add missing docs.
+[ ] M41 Audit `segmentregistry` package for unused or test-only code (Risk: LOW)
+    - Limit class, method and variables visiblity
+    - Identify unused classes/methods/fields.
+    - Remove code only referenced by tests or move test helpers into test scope.
+    - Ensure public API docs and tests remain consistent after cleanup.
+[ ] M42 Review `segmentregistry` package for test and Javadoc coverage (Risk: LOW)
+    - Ensure each class has a JUnit test or document why coverage is excluded.
+    - Ensure each public class/method has Javadoc; add missing docs.
+    - See `docs/development/segmentregistry-audit.md` for audit notes.
 
 ## Done (Archive)
 

@@ -48,7 +48,7 @@ public final class SegmentAsyncExecutor extends AbstractCloseableResource {
         return executor;
     }
 
-    public int getQueueCapacity() {
+    int getQueueCapacity() {
         return queueCapacity;
     }
 

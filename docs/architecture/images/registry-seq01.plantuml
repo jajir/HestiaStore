@@ -1,0 +1,17 @@
+@startuml registry-seq01
+title Registry get (cache hit, Entry READY)
+
+participant "Client Thread" as client
+participant "Registry" as registry
+participant "Cache" as cache
+participant "Entry(13)" as entry13
+
+client -> registry ++ : get(13)
+registry -> cache ++: get(13)
+cache -> entry13 ++: waitWhileLoading(accessCx++)
+entry13 -> entry13 : state=READY\nupdate lastAccessCx
+entry13 --> cache --: Entry Segment 13
+cache --> registry --: Entry Segment 13
+registry --> client --: Entry Segment 13
+
+@enduml

@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -178,8 +177,7 @@ class SegmentIndexAsyncMaintenanceTest {
             final SegmentRegistryImpl<K, V> registry, final SegmentId segmentId,
             final Segment<K, V> segment) {
         final SegmentRegistryCache<K, V> cache = readCache(registry);
-        withCacheLock(cache, () -> putCacheEntry(cache, segmentId,
-                new SegmentHandler<>(segment)));
+        putCacheEntry(cache, segmentId, new SegmentHandler<>(segment));
     }
 
     @SuppressWarnings("unchecked")
@@ -224,26 +222,34 @@ class SegmentIndexAsyncMaintenanceTest {
         }
     }
 
-    private static void withCacheLock(final Object cache,
-            final Runnable action) {
-        try {
-            final Method method = cache.getClass()
-                    .getDeclaredMethod("withLock", Runnable.class);
-            method.setAccessible(true);
-            method.invoke(cache, action);
-        } catch (final ReflectiveOperationException ex) {
-            throw new IllegalStateException(
-                    "Unable to lock registry cache for test", ex);
-        }
-    }
-
     private static void putCacheEntry(final Object cache,
             final SegmentId segmentId, final SegmentHandler<?, ?> handler) {
         try {
-            final Method method = cache.getClass().getDeclaredMethod("putLocked",
-                    SegmentId.class, SegmentHandler.class);
-            method.setAccessible(true);
-            method.invoke(cache, segmentId, handler);
+            final Field mapField = cache.getClass().getDeclaredField("map");
+            mapField.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            final java.util.concurrent.ConcurrentHashMap<SegmentId, Object> map = (java.util.concurrent.ConcurrentHashMap<SegmentId, Object>) mapField
+                    .get(cache);
+            final Class<?> entryClass = Class.forName(
+                    SegmentRegistryCache.class.getName() + "$Entry");
+            final var ctor = entryClass.getDeclaredConstructor();
+            ctor.setAccessible(true);
+            final Object entry = ctor.newInstance();
+            final Field stateField = entryClass.getDeclaredField("state");
+            stateField.setAccessible(true);
+            final Class<?> stateClass = Class.forName(
+                    SegmentRegistryCache.class.getName() + "$EntryState");
+            stateField.set(entry, Enum.valueOf(
+                    stateClass.asSubclass(Enum.class), "READY"));
+            final Field valueField = entryClass.getDeclaredField("value");
+            valueField.setAccessible(true);
+            valueField.set(entry, handler);
+            map.put(segmentId, entry);
+            final Field sizeField = cache.getClass().getDeclaredField("size");
+            sizeField.setAccessible(true);
+            final java.util.concurrent.atomic.AtomicInteger size = (java.util.concurrent.atomic.AtomicInteger) sizeField
+                    .get(cache);
+            size.incrementAndGet();
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
                     "Unable to update registry cache for test", ex);

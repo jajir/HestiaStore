@@ -191,15 +191,23 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
                     .getDeclaredField("cache");
             cacheField.setAccessible(true);
             final Object cache = cacheField.get(registry);
-            final Field handlersField = SegmentRegistryCache.class
-                    .getDeclaredField("handlers");
-            handlersField.setAccessible(true);
-            final Map<SegmentId, SegmentHandler<?, ?>> handlers = (Map<SegmentId, SegmentHandler<?, ?>>) handlersField
+            final Field mapField = SegmentRegistryCache.class
+                    .getDeclaredField("map");
+            mapField.setAccessible(true);
+            final Map<SegmentId, ?> handlers = (Map<SegmentId, ?>) mapField
                     .get(cache);
+            final Class<?> entryClass = Class.forName(
+                    SegmentRegistryCache.class.getName() + "$Entry");
+            final Field valueField = entryClass.getDeclaredField("value");
+            valueField.setAccessible(true);
             final Map<SegmentId, Segment<?, ?>> segments = new HashMap<>();
-            for (final Map.Entry<SegmentId, SegmentHandler<?, ?>> entry : handlers
+            for (final Map.Entry<SegmentId, ?> entry : handlers
                     .entrySet()) {
-                segments.put(entry.getKey(), entry.getValue().getSegment());
+                final Object entryValue = entry.getValue();
+                final Object handlerObj = valueField.get(entryValue);
+                if (handlerObj instanceof SegmentHandler<?, ?> handler) {
+                    segments.put(entry.getKey(), handler.getSegment());
+                }
             }
             return segments;
         } catch (final ReflectiveOperationException ex) {

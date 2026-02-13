@@ -1,0 +1,37 @@
+@startuml registry-seq03
+title Registry get (cache miss, single-flight load in caller thread)
+
+participant "Client Thread 1" as client1
+participant "Registry" as registry
+participant "Cache" as cache
+participant "Entry" as entry17
+
+client1 -> registry ++ : get(17)
+registry -> cache ++: get(17)
+cache -> cache : there is no entry for 17
+cache -> cache : currentAccessCx = accessCx++
+cache -> entry17 ++: create Entry(initialAccessCx=currentAccessCx)
+entry17 -> entry17 : newEntry  Entry{LOADING\n,lastAccessCx=currentAccessCx}
+entry17 -> cache -- : return
+cache -> cache : entryInMap = putIfAbsent(17, newEntry)
+
+alt entryInMap is null
+    cache -> cache : load segment 17\n(loader.apply in caller thread)
+    cache -> entry17 ++ : finishLoad(segment)
+    entry17 -> entry17 : LOADING -> READY\nsignal waiters
+    note left of cache
+      If loading throws, the exception is propagated upstream.
+      Following diagram is just success case for simplicity.
+    end note
+    entry17 --> cache -- :
+    cache -> cache : set entryInMap to entry17 
+end
+
+cache -> entry17 ++ : entryInMap.waitWhileLoading(currentAccessCx)
+entry17 -> entry17 : if LOADING => wait()
+entry17 -> entry17 : return entry 17
+entry17 --> cache -- : return entry 17
+cache --> registry -- : return entry17
+registry --> client1 -- : return entry 17
+
+@enduml

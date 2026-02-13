@@ -20,6 +20,17 @@ public final class SegmentSplitApplyPlan<K, V> {
     private final K maxKey;
     private final SegmentSplitterResult.SegmentSplittingStatus status;
 
+    /**
+     * Creates an immutable plan describing how to apply split/compaction
+     * outcome to the key-to-segment map.
+     *
+     * @param oldSegmentId replaced segment id
+     * @param lowerSegmentId newly created lower segment id
+     * @param upperSegmentId new upper segment id; required for SPLIT status
+     * @param minKey minimum key covered by the lower segment
+     * @param maxKey maximum key covered by the lower segment
+     * @param status split outcome status
+     */
     public SegmentSplitApplyPlan(final SegmentId oldSegmentId,
             final SegmentId lowerSegmentId,
             final SegmentId upperSegmentId, final K minKey, final K maxKey,
@@ -38,26 +49,44 @@ public final class SegmentSplitApplyPlan<K, V> {
         this.maxKey = Vldtn.requireNonNull(maxKey, "maxKey");
     }
 
+    /**
+     * @return id of the segment being replaced
+     */
     public SegmentId getOldSegmentId() {
         return oldSegmentId;
     }
 
+    /**
+     * @return id of the lower segment produced by split/compaction
+     */
     public SegmentId getLowerSegmentId() {
         return lowerSegmentId;
     }
 
+    /**
+     * @return optional upper segment id (present for SPLIT, absent for COMPACTED)
+     */
     public Optional<SegmentId> getUpperSegmentId() {
         return Optional.ofNullable(upperSegmentId);
     }
 
+    /**
+     * @return minimum key covered by the lower segment
+     */
     public K getMinKey() {
         return minKey;
     }
 
+    /**
+     * @return maximum key covered by the lower segment
+     */
     public K getMaxKey() {
         return maxKey;
     }
 
+    /**
+     * @return split outcome status
+     */
     public SegmentSplitterResult.SegmentSplittingStatus getStatus() {
         return status;
     }

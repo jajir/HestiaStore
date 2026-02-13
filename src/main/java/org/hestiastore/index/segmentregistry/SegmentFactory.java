@@ -54,6 +54,7 @@ public final class SegmentFactory<K, V> {
      *
      * @param segmentId segment id
      * @return new segment instance
+     * @throws RuntimeException when segment directory open/build fails
      */
     public Segment<K, V> buildSegment(final SegmentId segmentId) {
         return newSegmentBuilder(segmentId).build();

@@ -29,6 +29,8 @@ public interface SegmentRegistry<K, V> {
      *
      * @param segmentId segment id to load
      * @return registry result containing the segment or a status
+     * @throws RuntimeException when segment loading/opening fails, including
+     *                          missing segment files reported by segment layer
      */
     SegmentRegistryAccess<Segment<K, V>> getSegment(SegmentId segmentId);
 
@@ -43,6 +45,8 @@ public interface SegmentRegistry<K, V> {
      * Creates and registers a new segment using a freshly allocated id.
      *
      * @return registry result containing the new segment or a status
+     * @throws RuntimeException when segment loading/opening fails while
+     *                          creating the segment instance
      */
     default SegmentRegistryAccess<Segment<K, V>> createSegment() {
         final SegmentRegistryAccess<SegmentId> idResult = allocateSegmentId();

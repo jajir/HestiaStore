@@ -15,6 +15,12 @@ public final class IndexRetryPolicy {
     private final int timeoutMillis;
     private final long timeoutNanos;
 
+    /**
+     * Creates a retry policy for BUSY operations.
+     *
+     * @param backoffMillis sleep duration between retries
+     * @param timeoutMillis overall timeout budget for a retry loop
+     */
     public IndexRetryPolicy(final int backoffMillis,
             final int timeoutMillis) {
         this.backoffMillis = Vldtn.requireGreaterThanZero(backoffMillis,
@@ -24,10 +30,23 @@ public final class IndexRetryPolicy {
         this.timeoutNanos = TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
     }
 
+    /**
+     * Captures the start timestamp for a retry loop.
+     *
+     * @return start timestamp in nanoseconds
+     */
     public long startNanos() {
         return System.nanoTime();
     }
 
+    /**
+     * Sleeps for one backoff interval or throws when timeout/interruption is
+     * reached.
+     *
+     * @param startNanos retry loop start timestamp
+     * @param operation operation label used in error messages
+     * @param segmentId optional segment id for error context
+     */
     public void backoffOrThrow(final long startNanos, final String operation,
             final SegmentId segmentId) {
         if (hasTimedOut(startNanos)) {

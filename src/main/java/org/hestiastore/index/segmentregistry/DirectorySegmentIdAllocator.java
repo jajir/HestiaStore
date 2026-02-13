@@ -33,6 +33,9 @@ public final class DirectorySegmentIdAllocator implements SegmentIdAllocator {
         this.nextId = new AtomicInteger(startId);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public SegmentId nextId() {
         return SegmentId.of(nextId.getAndIncrement());
