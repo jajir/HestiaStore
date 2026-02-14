@@ -13,7 +13,7 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryAccess;
+import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +56,7 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
         nextSegmentIterator();
     }
 
-    private SegmentRegistryAccess<Segment<K, V>> loadSegment(
+    private SegmentRegistryResult<Segment<K, V>> loadSegment(
             final SegmentId segmentId) {
         return segmentRegistry.getSegment(segmentId);
     }
@@ -72,27 +72,24 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
             logger.debug("Starting processing segment '{}' which is {} of {}",
                     segmentId, position, ids.size());
             position++;
-            final Segment<K, V> segment;
+            Segment<K, V> segment = null;
             while (true) {
-                final SegmentRegistryAccess<Segment<K, V>> segmentResult = loadSegment(
+                final SegmentRegistryResult<Segment<K, V>> loaded = loadSegment(
                         segmentId);
-                if (segmentResult
-                        .getSegmentStatus() == SegmentRegistryResultStatus.BUSY) {
+                if (loaded.getStatus() == SegmentRegistryResultStatus.BUSY) {
                     continue;
                 }
-                if (segmentResult
-                        .getSegmentStatus() != SegmentRegistryResultStatus.OK) {
+                if (loaded.getStatus() != SegmentRegistryResultStatus.OK) {
                     throw new org.hestiastore.index.IndexException(String.format(
                             "Segment '%s' failed to load: %s", segmentId,
-                            segmentResult.getSegmentStatus()));
+                            loaded.getStatus()));
                 }
-                segment = segmentResult.getSegment().orElse(null);
-                if (segment == null) {
-                    throw new org.hestiastore.index.IndexException(String.format(
-                            "Segment '%s' failed to load: %s", segmentId,
-                            segmentResult.getSegmentStatus()));
+                segment = loaded.getValue();
+                if (segment != null) {
+                    break;
                 }
-                break;
+                throw new org.hestiastore.index.IndexException(String.format(
+                        "Segment '%s' failed to load.", segmentId));
             }
             while (true) {
                 final SegmentResult<EntryIterator<K, V>> result = segment

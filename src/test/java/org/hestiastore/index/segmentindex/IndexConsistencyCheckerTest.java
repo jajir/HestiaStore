@@ -13,8 +13,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryAccessImpl;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
+import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -62,8 +61,7 @@ class IndexConsistencyCheckerTest {
                 .thenReturn(Stream.of(
                         Entry.of(10, SegmentId.of(1))));
         when(segmentRegistry.getSegment(SegmentId.of(1)))
-                .thenReturn(SegmentRegistryAccessImpl
-                        .forValue(SegmentRegistryResultStatus.OK, segment));
+                .thenReturn(SegmentRegistryResult.ok(segment));
 
         checker.checkAndRepairConsistency();
 

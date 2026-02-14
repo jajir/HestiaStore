@@ -83,7 +83,7 @@ class SegmentRegistryBuilderTest {
                     .build();
             try {
                 assertEquals(SegmentId.of(6),
-                        registry.allocateSegmentId().getSegment().orElse(null));
+                        registry.allocateSegmentId().getValue());
                 final SegmentRegistryImpl<Integer, String> impl = (SegmentRegistryImpl<Integer, String>) registry;
                 assertNotNull(readField(impl, "segmentFactory"),
                         "Expected default segment factory");

@@ -10,8 +10,7 @@ import static org.mockito.Mockito.when;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryAccessImpl;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
+import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -77,9 +76,8 @@ class SegmentSplitCoordinatorTest {
         when(segment.getNumberOfKeysInCache()).thenReturn(10L);
         final SegmentId segmentId = SegmentId.of(1);
         when(segment.getId()).thenReturn(segmentId);
-        when(segmentRegistry.getSegment(segmentId)).thenReturn(
-                SegmentRegistryAccessImpl
-                        .forStatus(SegmentRegistryResultStatus.BUSY));
+        when(segmentRegistry.getSegment(segmentId))
+                .thenReturn(SegmentRegistryResult.busy());
 
         coordinator.optionallySplit(segment, 5L);
 

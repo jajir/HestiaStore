@@ -10,6 +10,7 @@ import org.hestiastore.index.segment.SegmentId;
  * Filesystem operations used by {@link SegmentRegistryImpl}.
  */
 final class SegmentRegistryFileSystem {
+
     private final AsyncDirectory directoryFacade;
 
     /**

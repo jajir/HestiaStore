@@ -18,7 +18,6 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentregistry.SegmentHandler;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCache;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.junit.jupiter.api.Assertions;
@@ -194,19 +193,19 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
             final Field mapField = SegmentRegistryCache.class
                     .getDeclaredField("map");
             mapField.setAccessible(true);
-            final Map<SegmentId, ?> handlers = (Map<SegmentId, ?>) mapField
+            final Map<SegmentId, ?> entries = (Map<SegmentId, ?>) mapField
                     .get(cache);
             final Class<?> entryClass = Class.forName(
                     SegmentRegistryCache.class.getName() + "$Entry");
             final Field valueField = entryClass.getDeclaredField("value");
             valueField.setAccessible(true);
             final Map<SegmentId, Segment<?, ?>> segments = new HashMap<>();
-            for (final Map.Entry<SegmentId, ?> entry : handlers
+            for (final Map.Entry<SegmentId, ?> entry : entries
                     .entrySet()) {
                 final Object entryValue = entry.getValue();
-                final Object handlerObj = valueField.get(entryValue);
-                if (handlerObj instanceof SegmentHandler<?, ?> handler) {
-                    segments.put(entry.getKey(), handler.getSegment());
+                final Object segmentObj = valueField.get(entryValue);
+                if (segmentObj instanceof Segment<?, ?> segment) {
+                    segments.put(entry.getKey(), segment);
                 }
             }
             return segments;

@@ -10,7 +10,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
@@ -23,10 +22,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryAccess;
-import org.hestiastore.index.segmentregistry.SegmentRegistryAccessImpl;
-import org.hestiastore.index.segmentregistry.SegmentHandlerLockStatus;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
+import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -90,8 +86,7 @@ class SegmentIndexCoreTest {
     void get_returnsBusyWhenSegmentIsBusy() {
         final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
         when(segmentRegistry.getSegment(segmentId))
-                .thenReturn(SegmentRegistryAccessImpl
-                        .forValue(SegmentRegistryResultStatus.OK, segment));
+                .thenReturn(SegmentRegistryResult.ok(segment));
         when(segment.get("key")).thenReturn(SegmentResult.busy());
 
         final IndexResult<String> result = core.get("key");
@@ -105,8 +100,7 @@ class SegmentIndexCoreTest {
         when(segmentRegistry.getSegment(segmentId)).thenAnswer(
                 invocation -> {
             synchronizedKeyToSegmentMap.updateSegmentMaxKey(segmentId, "key-2");
-            return SegmentRegistryAccessImpl
-                    .forValue(SegmentRegistryResultStatus.OK, segment);
+            return SegmentRegistryResult.ok(segment);
         });
         when(segment.get("key")).thenReturn(SegmentResult.ok("value"));
 
@@ -120,9 +114,8 @@ class SegmentIndexCoreTest {
         final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
         final KeyToSegmentMap.Snapshot<String> snapshot = synchronizedKeyToSegmentMap
                 .snapshot();
-        final SegmentRegistryAccess<Segment<String, String>> access = okSegmentAccess(
-                segment);
-        when(segmentRegistry.getSegment(segmentId)).thenReturn(access);
+        when(segmentRegistry.getSegment(segmentId))
+                .thenReturn(SegmentRegistryResult.ok(segment));
         when(segment.put("key", "value")).thenReturn(SegmentResult.ok());
 
         final IndexResult<Void> result = core.put("key", "value");
@@ -135,12 +128,10 @@ class SegmentIndexCoreTest {
     @Test
     void put_returnsBusyWhenMappingChangesBeforeWrite() {
         final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
-        final SegmentRegistryAccess<Segment<String, String>> access = okSegmentAccess(
-                segment);
         when(segmentRegistry.getSegment(segmentId)).thenAnswer(
                 invocation -> {
             synchronizedKeyToSegmentMap.updateSegmentMaxKey(segmentId, "key-2");
-            return access;
+            return SegmentRegistryResult.ok(segment);
         });
 
         final IndexResult<Void> result = core.put("key", "value");
@@ -153,9 +144,8 @@ class SegmentIndexCoreTest {
     @Test
     void put_returnsBusyWhenSegmentIsBusy() {
         final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
-        final SegmentRegistryAccess<Segment<String, String>> access = okSegmentAccess(
-                segment);
-        when(segmentRegistry.getSegment(segmentId)).thenReturn(access);
+        when(segmentRegistry.getSegment(segmentId))
+                .thenReturn(SegmentRegistryResult.ok(segment));
         when(segment.put("key", "value")).thenReturn(SegmentResult.busy());
 
         final IndexResult<Void> result = core.put("key", "value");
@@ -170,8 +160,7 @@ class SegmentIndexCoreTest {
         final EntryIterator<String, String> iterator = EntryIterator
                 .make(List.<Entry<String, String>>of().iterator());
         when(segmentRegistry.getSegment(segmentId))
-                .thenReturn(SegmentRegistryAccessImpl
-                        .forValue(SegmentRegistryResultStatus.OK, segment));
+                .thenReturn(SegmentRegistryResult.ok(segment));
         when(segment.openIterator(SegmentIteratorIsolation.FAIL_FAST))
                 .thenReturn(SegmentResult.ok(iterator));
 
@@ -180,16 +169,5 @@ class SegmentIndexCoreTest {
 
         assertEquals(IndexResultStatus.OK, result.getStatus());
         assertSame(iterator, result.getValue());
-    }
-
-    private SegmentRegistryAccess<Segment<String, String>> okSegmentAccess(
-            final Segment<String, String> resolvedSegment) {
-        @SuppressWarnings("unchecked")
-        final SegmentRegistryAccess<Segment<String, String>> access = mock(
-                SegmentRegistryAccess.class);
-        when(access.getSegmentStatus()).thenReturn(SegmentRegistryResultStatus.OK);
-        when(access.getSegment()).thenReturn(Optional.of(resolvedSegment));
-        when(access.lock()).thenReturn(SegmentHandlerLockStatus.OK);
-        return access;
     }
 }

@@ -12,7 +12,7 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryAccess;
+import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +45,7 @@ class IndexConsistencyChecker<K, V> {
         this.keyComparator = keyTypeDescriptor.getComparator();
     }
 
-    private SegmentRegistryAccess<Segment<K, V>> loadSegment(
+    private SegmentRegistryResult<Segment<K, V>> loadSegment(
             final SegmentId segmentId) {
         return segmentRegistry.getSegment(segmentId);
     }
@@ -65,28 +65,26 @@ class IndexConsistencyChecker<K, V> {
                 throw new IndexException(ERROR_MSG + "Segment id is null.");
             }
             logger.debug("checking segment '{}'.", segmentId);
-            final Segment<K, V> segment;
+            Segment<K, V> segment = null;
             while (true) {
-                final SegmentRegistryAccess<Segment<K, V>> segmentResult = loadSegment(
+                final SegmentRegistryResult<Segment<K, V>> loaded = loadSegment(
                         segmentId);
-                if (segmentResult
-                        .getSegmentStatus() == SegmentRegistryResultStatus.BUSY) {
+                if (loaded.getStatus() == SegmentRegistryResultStatus.BUSY) {
                     Thread.onSpinWait();
                     continue;
                 }
-                if (segmentResult
-                        .getSegmentStatus() != SegmentRegistryResultStatus.OK) {
+                if (loaded.getStatus() != SegmentRegistryResultStatus.OK) {
                     throw new IndexException(String.format(
                             ERROR_MSG + "Segment '%s' is not found in index.",
                             segmentId));
                 }
-                segment = segmentResult.getSegment().orElse(null);
-                if (segment == null) {
-                    throw new IndexException(String.format(
-                            ERROR_MSG + "Segment '%s' is not found in index.",
-                            segmentId));
+                segment = loaded.getValue();
+                if (segment != null) {
+                    break;
                 }
-                break;
+                throw new IndexException(String.format(
+                        ERROR_MSG + "Segment '%s' is not found in index.",
+                        segmentId));
             }
             final K maxKey = segment.checkAndRepairConsistency();
             if (maxKey == null) {

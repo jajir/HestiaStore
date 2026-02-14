@@ -71,11 +71,11 @@ class SegmentManagerTest {
                 .thenReturn(List.of(new ChunkFilterDoNothing()));
 
         final Segment<Integer, String> s1 = segmentRegistry
-                .getSegment(SegmentId.of(1)).getSegment().orElse(null);
+                .getSegment(SegmentId.of(1)).getValue();
         assertNotNull(s1);
 
         final Segment<Integer, String> s2 = segmentRegistry
-                .getSegment(SegmentId.of(1)).getSegment().orElse(null);
+                .getSegment(SegmentId.of(1)).getValue();
         assertNotNull(s1);
 
         /*
@@ -112,7 +112,7 @@ class SegmentManagerTest {
                 .withSegmentFactory(segmentFactory)
                 .withSegmentIdAllocator(() -> SegmentId.of(1))
                 .build();
-        assertDoesNotThrow(segmentRegistry::close);
+        assertDoesNotThrow(() -> segmentRegistry.close());
         if (!maintenanceExecutor.wasClosed()) {
             maintenanceExecutor.close();
         }

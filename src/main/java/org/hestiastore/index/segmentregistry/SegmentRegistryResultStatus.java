@@ -8,7 +8,7 @@ public enum SegmentRegistryResultStatus {
     OK,
     /**
      * Registry is temporarily busy and the operation should be retried.
-     * Typical reasons: handler lock conflict, entry in UNLOADING, or
+     * Typical reasons: entry state conflict, entry in UNLOADING, or
      * registry gate in FREEZE.
      */
     BUSY,
