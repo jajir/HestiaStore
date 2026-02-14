@@ -8,14 +8,16 @@ This document describes the segment registry responsibilities and supported oper
     - in-memory segment cache (LRU)
     - registry-level state gate (`READY`, `CLOSED`, `ERROR`, `FREEZE`)
     - segment id allocation for new segments via `SegmentIdAllocator`
+- The registry does **not** own protection of "segment in use" vs "segment close/delete" races.
+  This responsibility belongs to the Segment package. Segment implementations
+  must remain safe when one thread uses a segment while another thread closes it.
 - The registry does **not** own split execution, scheduling, or in-flight
   tracking. Those belong to the segment index layer.
 - The registry is about safe access to segment resources; it should not manage
   operations *on* those resources (flush/compact/split remain outside).
-- Segment load/open failures are exception-driven:
-  `getSegment()` and `createSegment()` may propagate runtime exceptions from
-  segment initialization (including missing segment files) instead of mapping
-  these failures to a result status code.
+- Segment load/open failures are status-driven:
+  `getSegment()` and `createSegment()` return `ERROR` when loading/opening
+  fails (including missing segment files), with no dedicated registry-status exception type.
 
 ## Registry State Machine
 
@@ -40,7 +42,7 @@ when startup completes.
   `READY` -> normal flow, `FREEZE` -> `BUSY`, `CLOSED` -> `CLOSED`,
   `ERROR` -> `ERROR`.
 - In `READY`, `getSegment()` and `deleteSegment()` can still return `BUSY`
-  on handler/cache lock conflict.
+  on cache entry state conflict.
 - `close()` is idempotent and moves `READY` to `FREEZE` and than to  `CLOSED`.
 - `ERROR` is terminal for the state machine; `close()` does not transition
   `ERROR` to `CLOSED`.
@@ -49,24 +51,25 @@ when startup completes.
 
 | Operation             | Description                                                      |
 | --------------------- | ---------------------------------------------------------------- |
-| `getSegment(id)`      | Load or return cached segment by id.                             |
-| `allocateSegmentId()` | Allocate a new segment id for split or growth.                   |
-| `createSegment()`     | Allocate id and create a new segment (returns segment instance). |
-| `deleteSegment(id)`   | Close and delete a segment, then remove from cache.              |
-| `close()`             | Close cached segments.                                           |
+| `getSegment(id)`      | Load or return cached segment by id (`SegmentRegistryResult<Segment>`). |
+| `allocateSegmentId()` | Allocate a new segment id for split or growth (`SegmentRegistryResult<SegmentId>`). |
+| `createSegment()`     | Allocate id and create a new segment (`SegmentRegistryResult<Segment>`). |
+| `deleteSegment(id)`   | Close and delete a segment, then remove from cache (`SegmentRegistryResult<Void>`). |
+| `close()`             | Close cached segments (`SegmentRegistryResult<Void>`).           |
 
-All registry operations return `SegmentRegistryAccess`, and they may also throw runtime exceptions; callers can react to
-`BUSY`/`CLOSED`/`ERROR` states and (when available) acquire a handler lock via
-`lock()/unlock()` without exposing the handler itself.
+All registry operations return `SegmentRegistryResult<T>` (status + optional value).
+Registry BUSY/CLOSED/ERROR outcomes are propagated by `SegmentRegistryResultStatus`.
+The primary safety model is the registry state
+gate + per-key cache entry state machine, not caller-side pinning.
 
 ### Response Codes
 
-All registry operations return `SegmentRegistryResultStatus` with semantics:
+`SegmentRegistryResultStatus` is carried by `SegmentRegistryResult<T>` with semantics:
 
 | Code     | Description                                                                               |
 | -------- | ----------------------------------------------------------------------------------------- |
 | `OK`     | Segment returned or operation accepted.                                                   |
-| `BUSY`   | Temporary refusal (lock conflict, or cache entry is `UNLOADING` or registry is `FREEZE`). |
+| `BUSY`   | Temporary refusal (cache entry state conflict, `UNLOADING`, or registry is `FREEZE`). |
 | `CLOSED` | Registry closed; no further operations.                                                   |
 | `ERROR`  | Unrecoverable registry failure.                                                           |
 
@@ -149,9 +152,9 @@ The diagram shows only the case where `segment.close()` succeeds. If `segment.cl
 
 ### `deleteSegment(id)` flow
 
-1. Lock the cached handler (if present); return `BUSY` if it is already locked.
+1. Try to transition the cached entry to `UNLOADING`; return `BUSY` when the entry is not unloadable.
 1. Close the segment with retry/backoff until it is `CLOSED` or returns `OK`.
 1. Delete the segment directory and files on disk.
-1. Evict the handler from the cache (unlock is unnecessary after eviction).
+1. Remove the unloaded entry from cache memory.
 
 When the segment is not cached, deletion is best‑effort and only touches disk.

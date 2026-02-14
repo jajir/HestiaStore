@@ -75,7 +75,7 @@ class SegmentIndexImplPutTest {
                 index);
         final SegmentId segmentId = cache.findSegmentId(1);
         final Segment<Integer, String> segment = registry.getSegment(segmentId)
-                .getSegment().orElse(null);
+                .getValue();
         awaitSegmentReady(segment);
         final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
                 1, "segment-maintenance-test");

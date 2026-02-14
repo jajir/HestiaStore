@@ -19,14 +19,14 @@ import org.hestiastore.index.segmentindex.IndexRetryPolicy;
  * <p>
  * Design contract follows {@code docs/architecture/registry.md}:
  * state-gated request handling, per-key cache coordination, and
- * exception-driven load/open failures.
+ * status-driven load/open outcomes.
  *
  * @param <K> key type
  * @param <V> value type
  */
 public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
 
-    private final SegmentRegistryCache<SegmentId, SegmentHandler<K, V>> cache;
+    private final SegmentRegistryCache<SegmentId, Segment<K, V>> cache;
     private final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
 
     private final SegmentFactory<K, V> segmentFactory;
@@ -73,10 +73,8 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         this.retryPolicy = new IndexRetryPolicy(busyBackoffMillis,
                 busyTimeoutMillis);
         this.cache = new SegmentRegistryCache<>(maxNumberOfSegmentsInCache,
-                this::loadSegmentHandlerDirect,
-                this::closeHandlerDirect, segmentLifecycleExecutor,
-                handler -> handler != null
-                        && handler.getState() == SegmentHandlerState.READY);
+                this::loadSegmentDirect, this::closeSegmentIfNeeded,
+                segmentLifecycleExecutor, segment -> segment != null);
         if (!gate.finishFreezeToReady()) {
             throw new IllegalStateException(
                     "Failed to transition registry from FREEZE to READY");
@@ -87,25 +85,20 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
      * {@inheritDoc}
      */
     @Override
-    public SegmentRegistryAccess<SegmentId> allocateSegmentId() {
+    public SegmentRegistryResult<SegmentId> allocateSegmentId() {
         final SegmentRegistryState state = gate.getState();
         if (state != SegmentRegistryState.READY) {
-            return SegmentRegistryAccessImpl
-                    .forStatus(resultForState(state));
+            return SegmentRegistryResult.fromStatus(resultForState(state));
         }
-        final SegmentId segmentId;
         try {
-            segmentId = segmentIdAllocator.nextId();
+            final SegmentId segmentId = segmentIdAllocator.nextId();
+            if (segmentId == null) {
+                return SegmentRegistryResult.error();
+            }
+            return SegmentRegistryResult.ok(segmentId);
         } catch (final RuntimeException e) {
-            return SegmentRegistryAccessImpl
-                    .forStatus(SegmentRegistryResultStatus.ERROR);
+            return SegmentRegistryResult.error();
         }
-        if (segmentId == null) {
-            return SegmentRegistryAccessImpl
-                    .forStatus(SegmentRegistryResultStatus.ERROR);
-        }
-        return SegmentRegistryAccessImpl
-                .forValue(SegmentRegistryResultStatus.OK, segmentId);
     }
 
     /**
@@ -118,7 +111,7 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
      * @return result containing the segment or a status
      */
     @Override
-    public SegmentRegistryAccess<Segment<K, V>> getSegment(
+    public SegmentRegistryResult<Segment<K, V>> getSegment(
             final SegmentId segmentId) {
         return loadSegment(segmentId);
     }
@@ -129,18 +122,17 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
      * @return registry result containing the new segment or a status
      */
     @Override
-    public SegmentRegistryAccess<Segment<K, V>> createSegment() {
-        final SegmentRegistryAccess<SegmentId> idResult = allocateSegmentId();
-        if (idResult.getSegmentStatus() == SegmentRegistryResultStatus.OK) {
-            final SegmentId segmentId = idResult.getSegment().orElse(null);
-            if (segmentId == null) {
-                return SegmentRegistryAccessImpl
-                        .forStatus(SegmentRegistryResultStatus.ERROR);
-            }
-            fileSystem.ensureSegmentDirectory(segmentId);
-            return loadSegment(segmentId);
+    public SegmentRegistryResult<Segment<K, V>> createSegment() {
+        final SegmentRegistryResult<SegmentId> allocated = allocateSegmentId();
+        if (!allocated.isOk()) {
+            return SegmentRegistryResult.fromStatus(allocated.getStatus());
         }
-        return SegmentRegistryAccessImpl.forStatus(idResult.getSegmentStatus());
+        if (allocated.getValue() == null) {
+            return SegmentRegistryResult.error();
+        }
+        final SegmentId segmentId = allocated.getValue();
+        fileSystem.ensureSegmentDirectory(segmentId);
+        return loadSegment(segmentId);
     }
 
     /**
@@ -149,42 +141,31 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
      * @param segmentId segment id to load
      * @return result containing the segment or a status
      */
-    private SegmentRegistryAccess<Segment<K, V>> loadSegment(
+    private SegmentRegistryResult<Segment<K, V>> loadSegment(
             final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         final SegmentRegistryState state = gate.getState();
         if (state != SegmentRegistryState.READY) {
-            return SegmentRegistryAccessImpl
-                    .forStatus(resultForState(state));
+            return SegmentRegistryResult.fromStatus(resultForState(state));
         }
         while (true) {
-            final SegmentHandler<K, V> handler;
+            final Segment<K, V> segment;
             try {
-                handler = cache.get(segmentId);
+                segment = cache.get(segmentId);
             } catch (final SegmentRegistryCache.EntryBusyException
                     | SegmentBusyException ex) {
-                return SegmentRegistryAccessImpl
-                        .forStatus(SegmentRegistryResultStatus.BUSY);
+                return SegmentRegistryResult.busy();
+            } catch (final RuntimeException ex) {
+                return SegmentRegistryResult.error();
             }
-            if (handler == null) {
-                return SegmentRegistryAccessImpl
-                        .forStatus(SegmentRegistryResultStatus.ERROR);
-            }
-            if (handler.getState() == SegmentHandlerState.LOCKED) {
-                return SegmentRegistryAccessImpl
-                        .forStatus(SegmentRegistryResultStatus.BUSY);
-            }
-            final Segment<K, V> segment = handler.getSegment();
             if (segment == null) {
-                cache.invalidate(segmentId);
-                continue;
+                return SegmentRegistryResult.error();
             }
             if (segment.getState() == SegmentState.CLOSED) {
                 cache.invalidate(segmentId);
                 continue;
             }
-            return SegmentRegistryAccessImpl
-                    .forHandler(SegmentRegistryResultStatus.OK, handler);
+            return SegmentRegistryResult.ok(segment);
         }
     }
 
@@ -194,23 +175,24 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
      * @param segmentId segment id to remove
      */
     @Override
-    public SegmentRegistryAccess<Void> deleteSegment(
+    public SegmentRegistryResult<Void> deleteSegment(
             final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         final SegmentRegistryState state = gate.getState();
         if (state != SegmentRegistryState.READY) {
-            return SegmentRegistryAccessImpl
-                    .forStatus(resultForState(state));
+            return SegmentRegistryResult.fromStatus(resultForState(state));
         }
         final SegmentRegistryCache.InvalidateStatus status = cache
                 .invalidate(segmentId);
         if (status == SegmentRegistryCache.InvalidateStatus.BUSY) {
-            return SegmentRegistryAccessImpl
-                    .forStatus(SegmentRegistryResultStatus.BUSY);
+            return SegmentRegistryResult.busy();
         }
-        fileSystem.deleteSegmentFiles(segmentId);
-        return SegmentRegistryAccessImpl
-                .forStatus(SegmentRegistryResultStatus.OK);
+        try {
+            fileSystem.deleteSegmentFiles(segmentId);
+        } catch (final RuntimeException ex) {
+            return SegmentRegistryResult.error();
+        }
+        return SegmentRegistryResult.ok();
     }
 
     private void closeSegmentIfNeeded(final Segment<K, V> segment) {
@@ -292,46 +274,39 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
      * cache/entry semantics and may leave entries unavailable (BUSY) by design.
      */
     @Override
-    public SegmentRegistryAccess<Void> close() {
+    public SegmentRegistryResult<Void> close() {
         try {
             SegmentRegistryState state = gate.getState();
             if (state == SegmentRegistryState.ERROR) {
-                return SegmentRegistryAccessImpl
-                        .forStatus(SegmentRegistryResultStatus.ERROR);
+                return SegmentRegistryResult.error();
             }
             if (state == SegmentRegistryState.CLOSED) {
-                return SegmentRegistryAccessImpl
-                        .forStatus(SegmentRegistryResultStatus.OK);
+                return SegmentRegistryResult.closed();
             }
             if (state == SegmentRegistryState.READY) {
                 gate.tryEnterFreeze();
             }
             state = gate.getState();
             if (state == SegmentRegistryState.ERROR) {
-                return SegmentRegistryAccessImpl
-                        .forStatus(SegmentRegistryResultStatus.ERROR);
+                return SegmentRegistryResult.error();
             }
             if (state == SegmentRegistryState.CLOSED) {
-                return SegmentRegistryAccessImpl
-                        .forStatus(SegmentRegistryResultStatus.OK);
+                return SegmentRegistryResult.closed();
             }
             if (state != SegmentRegistryState.FREEZE) {
-                return SegmentRegistryAccessImpl
-                        .forStatus(SegmentRegistryResultStatus.BUSY);
+                return SegmentRegistryResult.busy();
             }
             cache.clear();
             if (!gate.finishFreezeToClosed()) {
-                return SegmentRegistryAccessImpl
-                        .forStatus(SegmentRegistryResultStatus.ERROR);
+                return SegmentRegistryResult.error();
             }
-            return SegmentRegistryAccessImpl
-                    .forStatus(SegmentRegistryResultStatus.OK);
+            return SegmentRegistryResult.ok();
         } finally {
             segmentLifecycleExecutor.shutdownNow();
         }
     }
 
-    private SegmentHandler<K, V> loadSegmentHandlerDirect(
+    private Segment<K, V> loadSegmentDirect(
             final SegmentId segmentId) {
         final SegmentRegistryState state = gate.getState();
         if (state != SegmentRegistryState.READY) {
@@ -342,32 +317,13 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
                     String.format("Segment '%s' was not found.", segmentId));
         }
         try {
-            return new SegmentHandler<>(segmentFactory.buildSegment(segmentId));
+            return segmentFactory.buildSegment(segmentId);
         } catch (final IllegalStateException e) {
             final String message = e.getMessage();
             if (message != null && message.contains("already locked")) {
                 throw new SegmentBusyException(e.getMessage(), e);
             }
             throw e;
-        }
-    }
-
-    private void closeHandlerDirect(final SegmentHandler<K, V> handler) {
-        if (handler == null) {
-            return;
-        }
-        final Segment<K, V> segment = handler.getSegment();
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            if (handler.lock() == SegmentHandlerLockStatus.OK) {
-                break;
-            }
-            retryPolicy.backoffOrThrow(startNanos, "lock", segment.getId());
-        }
-        try {
-            closeSegmentIfNeeded(segment);
-        } finally {
-            handler.unlock();
         }
     }
 

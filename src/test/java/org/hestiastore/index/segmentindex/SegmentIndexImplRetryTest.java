@@ -18,7 +18,6 @@ import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segmentregistry.SegmentHandler;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCache;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.junit.jupiter.api.AfterEach;
@@ -61,7 +60,7 @@ class SegmentIndexImplRetryTest {
         final SegmentRegistryImpl<Integer, String> registry = readSegmentRegistry(
                 index);
         final Segment<Integer, String> original = registry.getSegment(segmentId)
-                .getSegment().orElse(null);
+                .getValue();
 
         final AtomicInteger attempts = new AtomicInteger();
         when(segment.get(eq(1))).thenAnswer(invocation -> {
@@ -89,7 +88,7 @@ class SegmentIndexImplRetryTest {
         final SegmentRegistryImpl<Integer, String> registry = readSegmentRegistry(
                 index);
         final Segment<Integer, String> original = registry.getSegment(segmentId)
-                .getSegment().orElse(null);
+                .getValue();
 
         final AtomicInteger attempts = new AtomicInteger();
         when(segment.put(eq(2), eq("two"))).thenAnswer(invocation -> {
@@ -141,7 +140,7 @@ class SegmentIndexImplRetryTest {
             final SegmentRegistryImpl<K, V> registry, final SegmentId segmentId,
             final Segment<K, V> segment) {
         final SegmentRegistryCache<K, V> cache = readCache(registry);
-        putCacheEntry(cache, segmentId, new SegmentHandler<>(segment));
+        putCacheEntry(cache, segmentId, segment);
     }
 
     @SuppressWarnings("unchecked")
@@ -187,7 +186,7 @@ class SegmentIndexImplRetryTest {
     }
 
     private static void putCacheEntry(final Object cache,
-            final SegmentId segmentId, final SegmentHandler<?, ?> handler) {
+            final SegmentId segmentId, final Segment<?, ?> segment) {
         try {
             final Field mapField = cache.getClass().getDeclaredField("map");
             mapField.setAccessible(true);
@@ -207,7 +206,7 @@ class SegmentIndexImplRetryTest {
                     stateClass.asSubclass(Enum.class), "READY"));
             final Field valueField = entryClass.getDeclaredField("value");
             valueField.setAccessible(true);
-            valueField.set(entry, handler);
+            valueField.set(entry, segment);
             map.put(segmentId, entry);
             final Field sizeField = cache.getClass().getDeclaredField("size");
             sizeField.setAccessible(true);

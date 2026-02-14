@@ -9,9 +9,8 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentregistry.SegmentHandlerLockStatus;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryAccess;
+import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,36 +88,33 @@ class SegmentSplitCoordinator<K, V> {
             final long maxNumberOfKeysInSegment) {
         final SegmentId segmentId = segment.getId();
         logger.debug("Splitting of '{}' started.", segmentId);
-        final SegmentRegistryAccess<Segment<K, V>> access = segmentRegistry
+        final SegmentRegistryResult<Segment<K, V>> currentResult = segmentRegistry
                 .getSegment(segmentId);
-        if (access.getSegmentStatus() != SegmentRegistryResultStatus.OK) {
+        if (currentResult.getStatus() != SegmentRegistryResultStatus.OK
+                || currentResult.getValue() == null) {
             return false;
         }
-        final Segment<K, V> current = access.getSegment().orElse(null);
-        if (current == null || current != segment) {
+        final Segment<K, V> current = currentResult.getValue();
+        if (current != segment) {
             return false;
         }
-        final SegmentHandlerLockStatus lockStatus = access.lock();
-        if (lockStatus != SegmentHandlerLockStatus.OK) {
-            return false;
-        }
-        boolean split = false;
-        try {
-            final SegmentSplitterPlan<K, V> plan = buildPlan(segment);
-            if (isEligibleForSplit(segment, plan, maxNumberOfKeysInSegment)
-                    && hasLiveEntries(segment)) {
-                split = splitLocked(segment, plan);
-            }
-        } finally {
-            access.unlock();
+        final SegmentSplitterPlan<K, V> plan = buildPlan(segment);
+        final boolean split;
+        if (isEligibleForSplit(segment, plan, maxNumberOfKeysInSegment)
+                && hasLiveEntries(segment)) {
+            split = splitLocked(segment, plan);
+        } else {
+            split = false;
         }
         if (split) {
-            final SegmentRegistryAccess<Void> deleteResult = segmentRegistry
+            final SegmentRegistryResult<Void> deleteResult = segmentRegistry
                     .deleteSegment(segmentId);
-            if (deleteResult.getSegmentStatus() != SegmentRegistryResultStatus.OK) {
+            if (deleteResult.getStatus() != SegmentRegistryResultStatus.OK
+                    && deleteResult
+                            .getStatus() != SegmentRegistryResultStatus.CLOSED) {
                 logger.warn(
                         "Split cleanup: unable to delete segment files for '{}', status '{}'.",
-                        segmentId, deleteResult.getSegmentStatus());
+                        segmentId, deleteResult.getStatus());
             }
         }
         return split;
@@ -300,11 +296,11 @@ class SegmentSplitCoordinator<K, V> {
     }
 
     private SegmentId allocateSegmentId() {
-        final SegmentRegistryAccess<SegmentId> result = segmentRegistry
+        final SegmentRegistryResult<SegmentId> result = segmentRegistry
                 .allocateSegmentId();
-        if (result.getSegmentStatus() == SegmentRegistryResultStatus.OK) {
-            return result.getSegment().orElse(null);
+        if (result.getStatus() != SegmentRegistryResultStatus.OK) {
+            return null;
         }
-        return null;
+        return result.getValue();
     }
 }

@@ -22,9 +22,9 @@ import org.hestiastore.index.segmentregistry.SegmentFactory;
 import org.hestiastore.index.segmentregistry.SegmentIdAllocator;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
+import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryStateMachine;
 import org.hestiastore.index.segmentregistry.SegmentRegistryState;
-import org.hestiastore.index.segmentregistry.SegmentRegistryAccess;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 import org.junit.jupiter.api.Test;
 
@@ -64,7 +64,7 @@ class SegmentSplitCoordinatorFlowTest {
                 conf, keyToSegmentMap, registry, writerTxFactory);
         try {
             final Segment<Integer, String> segment = registry
-                    .getSegment(SegmentId.of(0)).getSegment().orElse(null);
+                    .getSegment(SegmentId.of(0)).getValue();
             writerTxFactory.clearCreatedSegments();
             for (int i = 0; i < 4; i++) {
                 assertEquals(SegmentResultStatus.OK,
@@ -134,7 +134,7 @@ class SegmentSplitCoordinatorFlowTest {
                 conf, keyToSegmentMap, registry, writerTxFactory);
         try {
             final Segment<Integer, String> segment = registry
-                    .getSegment(SegmentId.of(0)).getSegment().orElse(null);
+                    .getSegment(SegmentId.of(0)).getValue();
             writerTxFactory.clearCreatedSegments();
             for (int i = 0; i < 4; i++) {
                 assertEquals(SegmentResultStatus.OK,
@@ -216,25 +216,25 @@ class SegmentSplitCoordinatorFlowTest {
         }
 
         @Override
-        public SegmentRegistryAccess<Segment<K, V>> getSegment(
+        public SegmentRegistryResult<Segment<K, V>> getSegment(
                 final SegmentId segmentId) {
             return delegate.getSegment(segmentId);
         }
 
         @Override
-        public SegmentRegistryAccess<SegmentId> allocateSegmentId() {
+        public SegmentRegistryResult<SegmentId> allocateSegmentId() {
             return delegate.allocateSegmentId();
         }
 
         @Override
-        public SegmentRegistryAccess<Void> deleteSegment(
+        public SegmentRegistryResult<Void> deleteSegment(
                 final SegmentId segmentId) {
             deletedSegments.add(segmentId);
             return delegate.deleteSegment(segmentId);
         }
 
         @Override
-        public SegmentRegistryAccess<Void> close() {
+        public SegmentRegistryResult<Void> close() {
             return delegate.close();
         }
 
