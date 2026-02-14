@@ -1,12 +1,9 @@
 package org.hestiastore.index.segmentregistry;
 
 import java.util.Map;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.AbstractExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
@@ -46,7 +43,7 @@ public final class SegmentRegistryCache<K, V> {
     private final int limit;
     private final Function<K, V> loader;
     private final Consumer<V> unloader;
-    private final ExecutorService unloadExecutor;
+    private final Executor unloadExecutor;
     private final Predicate<V> unloadablePredicate;
 
     /**
@@ -58,19 +55,17 @@ public final class SegmentRegistryCache<K, V> {
      */
     public SegmentRegistryCache(final int limit, final Function<K, V> loader,
             final Consumer<V> unloader) {
-        this(limit, loader, unloader, DirectExecutorService.INSTANCE,
+        this(limit, loader, unloader, Runnable::run,
                 value -> true);
     }
 
     SegmentRegistryCache(final int limit, final Function<K, V> loader,
-            final Consumer<V> unloader,
-            final ExecutorService unloadExecutor) {
+            final Consumer<V> unloader, final Executor unloadExecutor) {
         this(limit, loader, unloader, unloadExecutor, value -> true);
     }
 
     SegmentRegistryCache(final int limit, final Function<K, V> loader,
-            final Consumer<V> unloader,
-            final ExecutorService unloadExecutor,
+            final Consumer<V> unloader, final Executor unloadExecutor,
             final Predicate<V> unloadablePredicate) {
         this.limit = Vldtn.requireGreaterThanZero(limit, "limit");
         this.loader = Vldtn.requireNonNull(loader, "loader");
@@ -119,7 +114,7 @@ public final class SegmentRegistryCache<K, V> {
         Vldtn.requireNonNull(key, "key");
         final Entry<V> entry = map.get(key);
         if (entry == null) {
-            return InvalidateStatus.NOT_FOUND;
+            return InvalidateStatus.REMOVED;
         }
         if (!entry.tryStartUnload(unloadablePredicate)) {
             return InvalidateStatus.BUSY;
@@ -207,7 +202,7 @@ public final class SegmentRegistryCache<K, V> {
         if (oldestEntry == null || oldestKey == null) {
             return null;
         }
-        if (!oldestEntry.tryStartUnload()) {
+        if (!oldestEntry.tryStartUnload(unloadablePredicate)) {
             return null;
         }
         final V value = oldestEntry.getValueForUnload();
@@ -251,7 +246,6 @@ public final class SegmentRegistryCache<K, V> {
 
     enum InvalidateStatus {
         REMOVED,
-        NOT_FOUND,
         BUSY
     }
 
@@ -373,10 +367,13 @@ public final class SegmentRegistryCache<K, V> {
             }
         }
 
-        boolean tryStartUnload() {
+        boolean tryStartUnload(final Predicate<V> unloadablePredicate) {
             lock.lock();
             try {
                 if (state != EntryState.READY || value == null) {
+                    return false;
+                }
+                if (!unloadablePredicate.test(value)) {
                     return false;
                 }
                 state = EntryState.UNLOADING;
@@ -426,45 +423,4 @@ public final class SegmentRegistryCache<K, V> {
         }
     }
 
-    private static final class DirectExecutorService
-            extends AbstractExecutorService {
-        private static final DirectExecutorService INSTANCE = new DirectExecutorService();
-        private volatile boolean shutdown;
-
-        @Override
-        public void shutdown() {
-            shutdown = true;
-        }
-
-        @Override
-        public List<Runnable> shutdownNow() {
-            shutdown = true;
-            return List.of();
-        }
-
-        @Override
-        public boolean isShutdown() {
-            return shutdown;
-        }
-
-        @Override
-        public boolean isTerminated() {
-            return shutdown;
-        }
-
-        @Override
-        public boolean awaitTermination(final long timeout,
-                final TimeUnit unit) {
-            return true;
-        }
-
-        @Override
-        public void execute(final Runnable command) {
-            if (shutdown) {
-                throw new RejectedExecutionException(
-                        "Direct executor is shutdown");
-            }
-            command.run();
-        }
-    }
 }
