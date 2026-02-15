@@ -6,6 +6,7 @@ import java.util.NoSuchElementException;
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
@@ -80,16 +81,16 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
                     continue;
                 }
                 if (loaded.getStatus() != SegmentRegistryResultStatus.OK) {
-                    throw new org.hestiastore.index.IndexException(String.format(
-                            "Segment '%s' failed to load: %s", segmentId,
-                            loaded.getStatus()));
+                    throw new IndexException(
+                            String.format("Segment '%s' failed to load: %s",
+                                    segmentId, loaded.getStatus()));
                 }
                 segment = loaded.getValue();
                 if (segment != null) {
                     break;
                 }
-                throw new org.hestiastore.index.IndexException(String.format(
-                        "Segment '%s' failed to load.", segmentId));
+                throw new IndexException(String
+                        .format("Segment '%s' failed to load.", segmentId));
             }
             while (true) {
                 final SegmentResult<EntryIterator<K, V>> result = segment
@@ -107,7 +108,7 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
                 if (result.getStatus() == SegmentResultStatus.BUSY) {
                     continue;
                 }
-                throw new org.hestiastore.index.IndexException(String.format(
+                throw new IndexException(String.format(
                         "Segment '%s' failed to open iterator: %s",
                         segment.getId(), result.getStatus()));
             }
