@@ -2,6 +2,10 @@
 
 This page explains how reads resolve values with low latency and predictable I/O. It walks through point lookups, range iteration, and the interplay of caches, Bloom filter, and the sparse index, mapped to concrete classes in the codebase.
 
+Segment-internal details are centralized in
+[Segment Architecture](../segment/index.md). This page focuses on the
+SegmentIndex-level orchestration path.
+
 ## 🧭 High‑Level Flow (Point Lookup)
 
 1. API call: `SegmentIndex.get(key)`
@@ -15,10 +19,10 @@ Lookups are read‑after‑write consistent thanks to the in‑memory buffers.
 
 - `segmentindex/SegmentIndexImpl#get(K)` does:
   - Check the index‑level `UniqueCache` (holds latest writes prior to flush)
-  - If miss, find `SegmentId` via `KeySegmentCache.findSegmentId(key)`
+  - If miss, find `SegmentId` via `KeyToSegmentMap.findSegmentId(key)`
   - Delegate to `Segment.get(key)`
 
-Key classes: `segmentindex/SegmentIndexImpl.java`, `segmentindex/KeySegmentCache.java`, `cache/UniqueCache.java`.
+Key classes: `segmentindex/SegmentIndexImpl.java`, `segmentindex/KeyToSegmentMap.java`, `cache/UniqueCache.java`.
 
 ### Behavior
 
@@ -99,10 +103,10 @@ Key classes: `chunkstore/ChunkStoreReaderImpl`, `chunkstore/ChunkFilterMagicNumb
  
 ## 🔗 Related Glossary
 
-- [Segment](glossary.md#segment)
-- [Delta Cache](glossary.md#delta-cache)
-- [Bloom Filter](glossary.md#bloom-filter)
-- [Sparse Index](glossary.md#sparse-index-scarce-index)
-- [UniqueCache](glossary.md#uniquecache)
-- [EntryIterator](glossary.md#entryiterator)
-- [SegmentWindow](glossary.md#segmentwindow)
+- [Segment](../general/glossary.md#segment)
+- [Delta Cache](../general/glossary.md#delta-cache)
+- [Bloom Filter](../general/glossary.md#bloom-filter)
+- [Sparse Index](../general/glossary.md#sparse-index-scarce-index)
+- [UniqueCache](../general/glossary.md#uniquecache)
+- [EntryIterator](../general/glossary.md#entryiterator)
+- [SegmentWindow](../general/glossary.md#segmentwindow)

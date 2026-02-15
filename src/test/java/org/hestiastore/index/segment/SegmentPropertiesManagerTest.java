@@ -36,11 +36,11 @@ class SegmentPropertiesManagerTest {
         assertEquals(0, props.getCacheDeltaFileNames().size());
 
         // verify that first file is correct
-        assertEquals("segment-00027-delta-000.cache",
+        assertEquals("v01-delta-0000.cache",
                 props.getAndIncreaseDeltaFileName());
         assertEquals(1, props.getCacheDeltaFileNames().size());
         assertTrue(props.getCacheDeltaFileNames()
-                .contains("segment-00027-delta-000.cache"));
+                .contains("v01-delta-0000.cache"));
 
         // Set correct values
         props.setNumberOfKeysInCache(87);
@@ -55,13 +55,13 @@ class SegmentPropertiesManagerTest {
         assertEquals(132, stats.getNumberOfKeysInScarceIndex());
 
         // verify that newly added
-        assertEquals("segment-00027-delta-001.cache",
+        assertEquals("v01-delta-0001.cache",
                 props.getAndIncreaseDeltaFileName());
         assertEquals(2, props.getCacheDeltaFileNames().size());
         assertTrue(props.getCacheDeltaFileNames()
-                .contains("segment-00027-delta-000.cache"));
+                .contains("v01-delta-0000.cache"));
         assertTrue(props.getCacheDeltaFileNames()
-                .contains("segment-00027-delta-001.cache"));
+                .contains("v01-delta-0001.cache"));
 
         props.clearCacheDeltaFileNamesCouter();
         assertEquals(0, props.getCacheDeltaFileNames().size());
@@ -69,23 +69,23 @@ class SegmentPropertiesManagerTest {
 
     @Test
     void test_deltaFileNames_are_sorted() {
-        assertEquals("segment-00027-delta-000.cache",
+        assertEquals("v01-delta-0000.cache",
                 props.getAndIncreaseDeltaFileName());
-        assertEquals("segment-00027-delta-001.cache",
+        assertEquals("v01-delta-0001.cache",
                 props.getAndIncreaseDeltaFileName());
-        assertEquals("segment-00027-delta-002.cache",
+        assertEquals("v01-delta-0002.cache",
                 props.getAndIncreaseDeltaFileName());
-        assertEquals("segment-00027-delta-003.cache",
+        assertEquals("v01-delta-0003.cache",
                 props.getAndIncreaseDeltaFileName());
 
         assertEquals(4, props.getCacheDeltaFileNames().size());
-        assertEquals("segment-00027-delta-000.cache",
+        assertEquals("v01-delta-0000.cache",
                 props.getCacheDeltaFileNames().get(0));
-        assertEquals("segment-00027-delta-001.cache",
+        assertEquals("v01-delta-0001.cache",
                 props.getCacheDeltaFileNames().get(1));
-        assertEquals("segment-00027-delta-002.cache",
+        assertEquals("v01-delta-0002.cache",
                 props.getCacheDeltaFileNames().get(2));
-        assertEquals("segment-00027-delta-003.cache",
+        assertEquals("v01-delta-0003.cache",
                 props.getCacheDeltaFileNames().get(3));
     }
 
@@ -95,7 +95,7 @@ class SegmentPropertiesManagerTest {
             props.incrementDeltaFileNameCounter();
         }
 
-        assertEquals("segment-00027-delta-1000.cache",
+        assertEquals("v01-delta-1000.cache",
                 props.getNextDeltaFileName());
     }
 

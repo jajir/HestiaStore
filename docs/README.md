@@ -92,7 +92,8 @@ We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING
 
 ## 📚 Documentation
 
-- [Index architecture](https://hestiastore.org/architecture/arch-index/)
+- [Architecture overview](https://hestiastore.org/architecture/)
+- [Segment architecture](https://hestiastore.org/architecture/segment/)
 - [Getting started](https://hestiastore.org/how-to-use/) with a quick start and examples
 - [Configuration](https://hestiastore.org/configuration/) — properties overview and guidance
 - [Logging](https://hestiastore.org/configuration/logging/) — how to set up logging

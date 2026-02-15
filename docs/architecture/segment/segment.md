@@ -81,23 +81,21 @@ Segment writes all files into the `AsyncDirectory` passed to
 
 * Index root (flat layout): segment files live next to `index.map`.
 * Per-segment directory (segment-root layout): e.g. `segment-00001/` contains
-  all files for that segment. File names still include the segment prefix, so
-  paths look like `segment-00001/segment-00001.index`.
+  all files for that segment.
 
 For segment id `segment-00001` the directory contains:
 
-* `segment-00001.index` - main SST file
-* `segment-00001.scarce` - sparse index
-* `segment-00001.bloom-filter` - Bloom filter store
-* `segment-00001.properties` - segment metadata (active version, delta count)
-* `segment-00001.lock` - segment lock file
-* `segment-00001-delta-000.cache`, `segment-00001-delta-001.cache`, ... - delta
-  cache files (3-digit padded counter)
+* `v01-index.sst` - main SST file
+* `v01-scarce.sst` - sparse index
+* `v01-bloom-filter.bin` - Bloom filter store
+* `manifest.txt` - segment metadata (active version, delta count)
+* `.lock` - segment lock file
+* `v01-delta-0000.cache`, `v01-delta-0001.cache`, ... - delta cache files
+  (4-digit padded counter)
 
-Versioned layouts use the `-v<version>` marker in file names when
-`SegmentPropertiesManager` records a positive active version, e.g.
-`segment-00001-v2.index` and `segment-00001-v2-delta-000.cache`. Version `0`
-keeps the legacy unversioned names.
+Versioned layouts use the `vNN-` marker in file names when
+`SegmentPropertiesManager` records the active version, e.g.
+`v02-index.sst` and `v02-delta-0001.cache`.
 
 ## ✍️ Writing to segment
 
@@ -105,4 +103,4 @@ Opening segment writer immediatelly close all segment readers. When writing oper
 
 Putting new entry into segment is here:
 
-![Segment writing sequence diagram](../images/segment-writing-seq.png)
+![Segment writing sequence diagram](images/segment-writing-seq.png)

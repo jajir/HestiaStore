@@ -62,7 +62,7 @@ Segment could be in one of following states. States:
 
 If an operation is not allowed in the current state, return `BUSY` in `FREEZE` or `MAINTENANCE_RUNNING`, `CLOSED` in `CLOSED`, and `ERROR` in `ERROR`.
 
-![Segment state machine](./segment-state-machine.png)
+![Segment state machine](./images/segment-state-machine.png)
 
 ### Transitions
 

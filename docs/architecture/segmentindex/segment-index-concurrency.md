@@ -2,7 +2,7 @@
 
 ## Glossary
 - Segment index: top-level API that routes operations to segments.
-- Key-segment mapping: map of max key -> SegmentId (KeySegmentCache).
+- Key-segment mapping: map of max key -> SegmentId (KeyToSegmentMap).
 - Mapping version: monotonically increasing counter for optimistic mapping
   checks.
 - Segment registry: cache of Segment instances plus the maintenance executor.
@@ -29,7 +29,7 @@
   a global executor.
 - SegmentRegistrySynchronized serializes access to the segment instance map and
   registry mutations.
-- KeySegmentCache uses snapshot reads plus a mapping version; updates take a
+- KeyToSegmentMap uses snapshot reads plus a mapping version; updates take a
   write lock and increment the version.
 - Segment implementations are thread-safe; read/write operations proceed in
   parallel when the segment state allows it.
@@ -62,7 +62,7 @@
 - SegmentSplitCoordinator opens a FULL_ISOLATION iterator and keeps it open
   until file swap + mapping update completes to prevent partial splits from
   leaking to writers.
-- After a split, KeySegmentCache updates the mapping and flushes it to disk;
+- After a split, KeyToSegmentMap updates the mapping and flushes it to disk;
   any in-flight write with a stale mapping version retries.
 
 ## Index State Machine
@@ -98,7 +98,7 @@ Only one index instance may hold the directory lock at a time.
 - SegmentIndexCore: single-attempt mapping + segment selection.
 - IndexRetryPolicy: backoff + timeout for BUSY retries.
 - IndexResult/IndexResultStatus: internal OK/BUSY/CLOSED/ERROR wrapper.
-- KeySegmentCache: mapping, snapshot versioning, and persistence of segment ids.
+- KeyToSegmentMap: mapping, snapshot versioning, and persistence of segment ids.
 - SegmentRegistry(Synchronized): caches Segment instances and supplies the
   maintenance executor.
 - SegmentMaintenanceCoordinator: post-write flush/compact/split decisions.
@@ -114,7 +114,7 @@ Only one index instance may hold the directory lock at a time.
 
 ## Implementation Mapping
 - Index implementation: IndexInternalConcurrent (caller-thread execution).
-- Mapping version: KeySegmentCache.version (AtomicLong).
+- Mapping version: KeyToSegmentMap.version (AtomicLong).
 - Maintenance executor: SegmentRegistry.getMaintenanceExecutor() backed by
   IndexConfiguration.numberOfSegmentIndexMaintenanceThreads (default 10).
 - Split isolation: SegmentIteratorIsolation.FULL_ISOLATION.

@@ -196,7 +196,7 @@
     - Split apply ordering: update map on disk first, then in-memory map,
       then close old segment, delete files, and finally unlock.
     - Ensure failures unlock the handler and clean up temporary segments.
-    - Update `docs/architecture/registry.md` to reflect handler-based locking.
+    - Update `docs/architecture/registry/registry.md` to reflect handler-based locking.
 
 [x] 61.3 Simplify `SegmentHandler` lock API (Risk: MEDIUM)
     - Keep internal handler state as `READY`/`LOCKED`.
@@ -336,9 +336,11 @@
     - Ensure registry + `segmentindex` metadata remain consistent.
     - Add tests for crash recovery and partial swaps.
 [x] 31 Segment layout uses versioned file names in a single directory (Risk: HIGH)
-    - Name index/scarce/bloom/delta as `segment-00000-vN.*` (v0 keeps legacy).
-    - Store the active version in `segment-00000.properties` (no `.active` pointer).
-    - Keep legacy unversioned files readable as version 0.
+    - Name index/scarce/bloom/delta as `vNN-*` (for example `v01-index.sst`,
+      `v01-scarce.sst`, `v01-bloom-filter.bin`, `v01-delta-0000.cache`).
+    - Store the active version and counters in `manifest.txt` (no `.active`
+      pointer).
+    - Use zero-padded 2-digit versions and 4-digit delta ids.
 [x] 32 Builder/files treat the provided directory as the segment home (Risk: HIGH)
     - Require `Segment.builder(AsyncDirectory)` for construction.
     - Lock + properties live inside the segment directory.
@@ -480,7 +482,7 @@
 
 [x] 67 Tests + docs for allocator move (Risk: LOW)
     - Add allocator tests (empty dir, max id, thread-safety).
-    - Update `docs/architecture/registry.md` to reflect registry allocator.
+    - Update `docs/architecture/registry/registry.md` to reflect registry allocator.
 
 [x] 62 Add `SegmentRegistryBuilder` modeled after `Segment.builder(...)` (Risk: MEDIUM)
     - Add `SegmentRegistryBuilder` in `segmentregistry` with required inputs
@@ -554,12 +556,12 @@
     - Remove unused lock methods from `SegmentRegistryImpl`.
     - Verify eviction skips locked handlers and BUSY is returned when locked.
 
-[x] 77 SegmentRegistry target-state rollout from `docs/architecture/registry.md` (Risk: HIGH)
+[x] 77 SegmentRegistry target-state rollout from `docs/architecture/registry/registry.md` (Risk: HIGH)
     - Goal: make implementation fully match the documented registry model
       (state gate + per-key `Entry` state machine + single-flight load +
       bounded cache eviction + unload semantics).
     - Global rule: every step in 77.x must preserve behavioral parity with
-      `docs/architecture/registry.md`. If behavior must change, update
+      `docs/architecture/registry/registry.md`. If behavior must change, update
       `registry.md` and diagrams first in the same PR before code changes.
     - Hard constraints:
       - no global lock in `get` hot path
@@ -568,13 +570,13 @@
       - `LOADING` waits, `UNLOADING` maps to `BUSY`
       - load/open failures are exception-driven
     - Exit criteria:
-      - behavior parity with `docs/architecture/registry.md` and
+      - behavior parity with `docs/architecture/registry/registry.md` and
         `docs/architecture/images/registry-seq*.plantuml`
       - all new/updated tests green
       - no flakiness in repeated concurrency runs
 
 [x] 77.1 Freeze target contract and remove ambiguity (Risk: HIGH)
-    - Pin `docs/architecture/registry.md` + diagrams as source of truth.
+    - Pin `docs/architecture/registry/registry.md` + diagrams as source of truth.
     - Explicitly list non-negotiable runtime rules in code comments/Javadocs:
       - state gate mapping: `READY` normal, `FREEZE` -> `BUSY`,
         `CLOSED` -> `CLOSED`, `ERROR` -> `ERROR`
@@ -722,7 +724,7 @@
     - Deliver in small PRs matching 77.1-77.12 order.
     - After each PR:
       - run targeted regression suite
-      - update `docs/architecture/registry.md` if contract changed
+      - update `docs/architecture/registry/registry.md` if contract changed
     - Keep a temporary feature flag only if needed for safe migration.
     - Remove fallback/compatibility code when final parity is reached.
     - Completed:

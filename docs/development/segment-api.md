@@ -12,7 +12,7 @@ semantics.
 `Segment` is thread-safe by contract. The legacy lock-based adapter was removed;
 historical notes remain below for reference. For the lock-free `SegmentImpl`
 behavior and state machine rules, rely on
-`docs/architecture/segment-concurrency.md`.
+`docs/architecture/segment/segment-concurrency.md`.
 
 This document keeps legacy notes for context and describes the lock-free model
 used today.
@@ -75,7 +75,7 @@ What it does today (SegmentSplitCoordinator + SegmentSplitter):
 - Writes the first half into a new lower segment. Remaining entries go into a
   new upper segment. If there are no remaining entries, the result is a
   compaction: the lower segment replaces the current segment.
-- Replaces on-disk files and updates `KeySegmentCache`, then closes the old
+- Replaces on-disk files and updates `KeyToSegmentMap`, then closes the old
   segment instance.
 
 When a new write arrives while split is running:

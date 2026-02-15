@@ -33,7 +33,7 @@ class IndexPropertiesSchemaTest {
     @Test
     void segmentSchemaAddsDefaultsAndMetadata() {
         final PropertyStore store = PropertyStoreimpl.fromAsyncDirectory(
-                asyncDirectory, "segment-00001.properties", false);
+                asyncDirectory, "manifest.txt", false);
 
         IndexPropertiesSchema.SEGMENT_SCHEMA.ensure(store);
 

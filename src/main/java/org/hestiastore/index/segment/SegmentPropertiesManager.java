@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import org.hestiastore.index.FileNameUtil;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.properties.IndexPropertiesSchema;
@@ -29,9 +28,8 @@ public class SegmentPropertiesManager {
     private static final String NUMBER_OF_KEYS_IN_SCARCE_INDEX = IndexPropertiesSchema.SegmentKeys.NUMBER_OF_KEYS_IN_SCARCE_INDEX;
     private static final String NUMBER_OF_SEGMENT_CACHE_DELTA_FILES = IndexPropertiesSchema.SegmentKeys.NUMBER_OF_SEGMENT_CACHE_DELTA_FILES;
     private static final String SEGMENT_VERSION = IndexPropertiesSchema.SegmentKeys.SEGMENT_VERSION;
-    private static final String PROPERTIES_FILENAME_EXTENSION = ".properties";
-
     private final SegmentId id;
+    private final SegmentDirectoryLayout layout;
     private volatile PropertyStore propertyStore;
     private final Object propertyLock = new Object();
 
@@ -45,6 +43,7 @@ public class SegmentPropertiesManager {
             final SegmentId id) {
         Vldtn.requireNonNull(directoryFacade, "directoryFacade");
         this.id = Vldtn.requireNonNull(id, "segmentId");
+        this.layout = new SegmentDirectoryLayout(id);
         this.propertyStore = createStore(directoryFacade);
         if (logger.isDebugEnabled()) {
             logger.debug(
@@ -71,7 +70,7 @@ public class SegmentPropertiesManager {
      * @return properties file name
      */
     private String getPropertiesFilename() {
-        return id.getName() + PROPERTIES_FILENAME_EXTENSION;
+        return layout.getPropertiesFileName();
     }
 
     /**
@@ -170,13 +169,9 @@ public class SegmentPropertiesManager {
      */
     private String getDeltaString(final long version,
             final int segmentCacheDeltaFileId) {
-        final String rawId = String.valueOf(segmentCacheDeltaFileId);
-        final String paddedId = rawId.length() > 3 ? rawId
-                : FileNameUtil.getPaddedId(segmentCacheDeltaFileId, 3);
-        final String prefix = version <= 0 ? id.getName()
-                : id.getName() + "-v" + version;
-        return prefix + "-delta-" + paddedId
-                + SegmentFiles.CACHE_FILE_NAME_EXTENSION;
+        final long resolvedVersion = Math.max(1, version);
+        return layout.getDeltaCacheFileName(resolvedVersion,
+                segmentCacheDeltaFileId);
     }
 
     /**

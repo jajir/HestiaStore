@@ -28,18 +28,14 @@ class SegmentFilesRenamerTest {
 
     private static final String SOURCE_SEGMENT_ID = "segment-00038";
     private static final String TARGET_SEGMENT_ID = "segment-00099";
-    private static final String SOURCE_INDEX = SOURCE_SEGMENT_ID + ".index";
-    private static final String TARGET_INDEX = TARGET_SEGMENT_ID + ".index";
-    private static final String SOURCE_SCARCE = SOURCE_SEGMENT_ID + ".scarce";
-    private static final String TARGET_SCARCE = TARGET_SEGMENT_ID + ".scarce";
-    private static final String SOURCE_BLOOM = SOURCE_SEGMENT_ID
-            + ".bloom-filter";
-    private static final String TARGET_BLOOM = TARGET_SEGMENT_ID
-            + ".bloom-filter";
-    private static final String SOURCE_PROPERTIES = SOURCE_SEGMENT_ID
-            + ".properties";
-    private static final String TARGET_PROPERTIES = TARGET_SEGMENT_ID
-            + ".properties";
+    private static final String SOURCE_INDEX = "v01-index.sst";
+    private static final String TARGET_INDEX = "v02-index.sst";
+    private static final String SOURCE_SCARCE = "v01-scarce.sst";
+    private static final String TARGET_SCARCE = "v02-scarce.sst";
+    private static final String SOURCE_BLOOM = "v01-bloom-filter.bin";
+    private static final String TARGET_BLOOM = "v02-bloom-filter.bin";
+    private static final String SOURCE_PROPERTIES = "manifest.txt";
+    private static final String TARGET_PROPERTIES = "manifest.txt";
 
     @Mock
     private AsyncDirectory asyncDirectory;
@@ -106,15 +102,15 @@ class SegmentFilesRenamerTest {
         stubBaseFileNames();
         stubDefaultRenameSuccess();
         when(propertiesManager.getCacheDeltaFileNames())
-                .thenReturn(List.of("segment-00038-delta-001.cache",
-                        "segment-00038-delta-042.cache"));
+                .thenReturn(List.of("v01-delta-0001.cache",
+                        "v01-delta-0042.cache"));
 
         renamer.renameFiles(sourceFiles, targetFiles, propertiesManager);
 
-        verify(asyncDirectory).renameFileAsync("segment-00038-delta-001.cache",
-                "segment-00099-delta-001.cache");
-        verify(asyncDirectory).renameFileAsync("segment-00038-delta-042.cache",
-                "segment-00099-delta-042.cache");
+        verify(asyncDirectory).renameFileAsync("v01-delta-0001.cache",
+                "v01-delta-0001.cache");
+        verify(asyncDirectory).renameFileAsync("v01-delta-0042.cache",
+                "v01-delta-0042.cache");
         verify(asyncDirectory).renameFileAsync(SOURCE_INDEX, TARGET_INDEX);
         verify(asyncDirectory).renameFileAsync(SOURCE_SCARCE, TARGET_SCARCE);
         verify(asyncDirectory).renameFileAsync(SOURCE_BLOOM, TARGET_BLOOM);
@@ -124,18 +120,24 @@ class SegmentFilesRenamerTest {
     }
 
     @Test
-    void renameFiles_keeps_delta_names_without_source_prefix() {
-        stubDirectory();
-        stubSegmentIds();
+    void renameFiles_allows_delta_names_without_source_prefix() {
+        stubBaseFileNames();
+        stubDefaultRenameSuccess();
         when(propertiesManager.getCacheDeltaFileNames())
                 .thenReturn(List.of("other-segment-delta-001.cache",
-                        "segment-00038-delta-007.cache"));
+                        "v01-delta-0007.cache"));
 
-        final IndexException exception = assertThrows(IndexException.class,
-                () -> renamer.renameFiles(sourceFiles, targetFiles,
-                        propertiesManager));
-        assertTrue(exception.getMessage().contains("does not belong"),
-                "Expected failure for unexpected delta prefix.");
+        renamer.renameFiles(sourceFiles, targetFiles, propertiesManager);
+
+        verify(asyncDirectory).renameFileAsync("other-segment-delta-001.cache",
+                "other-segment-delta-001.cache");
+        verify(asyncDirectory).renameFileAsync("v01-delta-0007.cache",
+                "v01-delta-0007.cache");
+        verify(asyncDirectory).renameFileAsync(SOURCE_INDEX, TARGET_INDEX);
+        verify(asyncDirectory).renameFileAsync(SOURCE_SCARCE, TARGET_SCARCE);
+        verify(asyncDirectory).renameFileAsync(SOURCE_BLOOM, TARGET_BLOOM);
+        verify(asyncDirectory).renameFileAsync(SOURCE_PROPERTIES,
+                TARGET_PROPERTIES);
         verifyNoMoreInteractions(asyncDirectory);
     }
 
@@ -144,9 +146,9 @@ class SegmentFilesRenamerTest {
         stubDirectory();
         stubSegmentIds();
         when(propertiesManager.getCacheDeltaFileNames())
-                .thenReturn(List.of("segment-00038-delta-999.cache"));
-        when(asyncDirectory.renameFileAsync(eq("segment-00038-delta-999.cache"),
-                eq("segment-00099-delta-999.cache")))
+                .thenReturn(List.of("v01-delta-0999.cache"));
+        when(asyncDirectory.renameFileAsync(eq("v01-delta-0999.cache"),
+                eq("v01-delta-0999.cache")))
                 .thenReturn(CompletableFuture
                         .failedFuture(new IndexException("delta missing")));
 
@@ -156,8 +158,8 @@ class SegmentFilesRenamerTest {
                         propertiesManager));
         assertTrue(exception.getCause() instanceof IndexException,
                 "Expected IndexException as root cause");
-        verify(asyncDirectory).renameFileAsync("segment-00038-delta-999.cache",
-                "segment-00099-delta-999.cache");
+        verify(asyncDirectory).renameFileAsync("v01-delta-0999.cache",
+                "v01-delta-0999.cache");
         verify(asyncDirectory, never()).renameFileAsync(SOURCE_INDEX,
                 TARGET_INDEX);
         verify(asyncDirectory, never()).renameFileAsync(SOURCE_SCARCE,

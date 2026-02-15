@@ -295,14 +295,20 @@ public final class SegmentFiles<K, V> {
     }
 
     /**
-     * Removes all files that belong to this segment by name prefix.
+     * Removes all files that belong to this segment.
      */
     public void deleteAllFiles() {
         try (java.util.stream.Stream<String> files = directoryFacade
                 .getFileNamesAsync().toCompletableFuture().join()) {
-            files.filter(name -> name.startsWith(id.getName()))
+            files.filter(this::isSegmentManagedFile)
                     .forEach(this::optionallyDeleteFile);
         }
+    }
+
+    private boolean isSegmentManagedFile(final String fileName) {
+        return fileName.equals(getPropertiesFilename())
+                || fileName.equals(layout.getLockFileName())
+                || fileName.startsWith("v");
     }
 
 

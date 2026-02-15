@@ -9,7 +9,7 @@ registry).
 
 Segment-level concurrency does not require external locks. `SegmentImpl`
 enforces its own lock-free admission gate (see
-`docs/architecture/segment-concurrency.md`).
+`docs/architecture/segment/segment-concurrency.md`).
 
 ## Concurrency Invariants (Target Design)
 
@@ -33,7 +33,7 @@ These invariants must hold for the current per-segment concurrency design:
 These structures are shared across threads and require synchronization:
 
 - `UniqueCache` (index write buffer)
-- `KeySegmentCache` (key→segment map)
+- `KeyToSegmentMap` (key→segment map)
 - `SegmentRegistry` and `SegmentDataCache` (segment lookup + cached data)
 - `SegmentSplitCoordinator` (topology updates)
 - `IndexState` (open/close state) and `Stats` (counters)
