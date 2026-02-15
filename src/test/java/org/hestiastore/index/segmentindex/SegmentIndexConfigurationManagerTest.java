@@ -500,6 +500,22 @@ class SegmentIndexConfigurationManagerTest {
         assertEquals(3, ret.getNumberOfIoThreads());
     }
 
+    @Test
+    void test_mergeWithStored_numberOfRegistryLifecycleThreads() {
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
+                .withNumberOfRegistryLifecycleThreads(4)//
+                .build();
+
+        when(storage.load()).thenReturn(CONFIG);
+        final IndexConfiguration<Long, String> ret = manager
+                .mergeWithStored(config);
+        verify(storage, Mockito.times(1)).save(any());
+        assertNotNull(ret);
+
+        assertEquals(4, ret.getNumberOfRegistryLifecycleThreads());
+    }
+
     @SuppressWarnings({ "rawtypes", "unchecked" })
     @Test
     void test_mergeWithStored_keyClass() {

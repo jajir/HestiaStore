@@ -44,6 +44,7 @@ class IndexConfiguratonStorage<K, V> {
     private static final String PROP_NUMBER_OF_IO_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_IO_THREADS;
     private static final String PROP_SEGMENT_INDEX_MAINTENANCE_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_SEGMENT_INDEX_MAINTENANCE_THREADS;
     private static final String PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS;
+    private static final String PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS;
     private static final String PROP_INDEX_BUSY_BACKOFF_MILLIS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_BUSY_BACKOFF_MILLIS;
     private static final String PROP_INDEX_BUSY_TIMEOUT_MILLIS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_BUSY_TIMEOUT_MILLIS;
     private static final String PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED = IndexPropertiesSchema.IndexConfigurationKeys.PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED;
@@ -132,6 +133,10 @@ class IndexConfiguratonStorage<K, V> {
                         getOrDefault(propsView,
                                 PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS,
                                 IndexConfigurationContract.DEFAULT_INDEX_MAINTENANCE_THREADS))//
+                .withNumberOfRegistryLifecycleThreads(
+                        getOrDefault(propsView,
+                                PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS,
+                                IndexConfigurationContract.DEFAULT_REGISTRY_LIFECYCLE_THREADS))//
                 .withIndexBusyBackoffMillis(
                         getOrDefault(propsView,
                                 PROP_INDEX_BUSY_BACKOFF_MILLIS,
@@ -248,6 +253,12 @@ class IndexConfiguratonStorage<K, V> {
                         : indexConfiguration.getNumberOfIndexMaintenanceThreads();
         writer.setInt(PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS,
                 indexMaintenanceThreads);
+        final int registryLifecycleThreads = indexConfiguration
+                .getNumberOfRegistryLifecycleThreads() == null
+                        ? IndexConfigurationContract.DEFAULT_REGISTRY_LIFECYCLE_THREADS
+                        : indexConfiguration.getNumberOfRegistryLifecycleThreads();
+        writer.setInt(PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS,
+                registryLifecycleThreads);
         final int busyBackoffMillis = indexConfiguration
                 .getIndexBusyBackoffMillis() == null
                         ? IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS

@@ -46,6 +46,7 @@ public class IndexConfiguration<K, V> {
     private final Integer numberOfIoThreads;
     private final Integer numberOfSegmentIndexMaintenanceThreads;
     private final Integer numberOfIndexMaintenanceThreads;
+    private final Integer numberOfRegistryLifecycleThreads;
     private final Integer indexBusyBackoffMillis;
     private final Integer indexBusyTimeoutMillis;
     private final Boolean segmentMaintenanceAutoEnabled;
@@ -91,6 +92,7 @@ public class IndexConfiguration<K, V> {
             final Integer numberOfThreads, final Integer numberOfIoThreads,
             final Integer numberOfSegmentIndexMaintenanceThreads,
             final Integer numberOfIndexMaintenanceThreads,
+            final Integer numberOfRegistryLifecycleThreads,
             final Integer indexBusyBackoffMillis,
             final Integer indexBusyTimeoutMillis,
             final Boolean segmentMaintenanceAutoEnabled,
@@ -113,6 +115,7 @@ public class IndexConfiguration<K, V> {
         this.numberOfIoThreads = numberOfIoThreads;
         this.numberOfSegmentIndexMaintenanceThreads = numberOfSegmentIndexMaintenanceThreads;
         this.numberOfIndexMaintenanceThreads = numberOfIndexMaintenanceThreads;
+        this.numberOfRegistryLifecycleThreads = numberOfRegistryLifecycleThreads;
         this.indexBusyBackoffMillis = indexBusyBackoffMillis;
         this.indexBusyTimeoutMillis = indexBusyTimeoutMillis;
         this.segmentMaintenanceAutoEnabled = segmentMaintenanceAutoEnabled;
@@ -263,6 +266,15 @@ public class IndexConfiguration<K, V> {
      */
     public Integer getNumberOfIndexMaintenanceThreads() {
         return numberOfIndexMaintenanceThreads;
+    }
+
+    /**
+     * Returns the number of threads used by registry lifecycle maintenance.
+     *
+     * @return registry lifecycle thread count
+     */
+    public Integer getNumberOfRegistryLifecycleThreads() {
+        return numberOfRegistryLifecycleThreads;
     }
 
     /**
