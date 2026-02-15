@@ -195,6 +195,10 @@ class SegmentImpl<K, V> implements Segment<K, V> {
      */
     @Override
     public SegmentResult<Void> flush() {
+        if (core.getDeltaCacheFileCount() >= core.getSegmentConf()
+                .getMaxNumberOfDeltaCacheFiles()) {
+            return compact();
+        }
         return maintenanceService.startMaintenance(() -> {
             final List<Entry<K, V>> entries = core.freezeWriteCacheForFlush();
             return new SegmentMaintenanceWork(
@@ -204,6 +208,9 @@ class SegmentImpl<K, V> implements Segment<K, V> {
     }
 
     private void scheduleMaintenanceIfNeeded() {
+        if (gate.getState() != SegmentState.READY) {
+            return;
+        }
         final SegmentMaintenanceDecision decision = maintenancePolicy
                 .evaluateAfterWrite(this);
         if (decision.shouldCompact()) {
