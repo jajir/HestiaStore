@@ -3,13 +3,13 @@
 Concise definitions of terms used across HestiaStore’s architecture, with links and code pointers.
 
 ## 🧱 Segment
-Bounded shard of the index stored on disk with its own files: main SST (`.index`), sparse index (`.scarce`), Bloom filter (`.bloom-filter`), properties, and optional delta caches. See also: On‑Disk Layout. Code: `segment/*`, `segmentindex/SegmentRegistry.java`.
+Bounded shard of the index stored on disk with its own files: main SST (`vNN-index.sst`), sparse index (`vNN-scarce.sst`), Bloom filter (`vNN-bloom-filter.bin`), `manifest.txt`, optional delta caches (`vNN-delta-NNNN.cache`), and `.lock`. See also: On‑Disk Layout. Code: `segment/*`, `segmentindex/SegmentRegistry.java`.
 
 ## 🏷️ SegmentId
 Stable integer id rendered as `segment-00000`, used to name per‑segment files. Code: `segment/SegmentId.java`.
 
 ## 🗺️ Key-to-Segment Map
-Global sorted map of max key → SegmentId that routes lookups and flushes. Persisted as `index.map`. Code: `segmentindex/KeySegmentCache.java`.
+Global sorted map of max key → SegmentId that routes lookups and flushes. Persisted as `index.map`. Code: `segmentindex/KeyToSegmentMap.java`.
 
 ## 📚 Main SST
 On‑disk, chunked Sorted String Table containing sorted key/value entries for a segment. Code: `chunkentryfile/*`, `chunkstore/*`.
@@ -27,12 +27,12 @@ In‑memory map that keeps only the latest value per key. Used at the index‑le
 Drains the index‑level write buffer, routes entries to per‑segment delta caches, and updates `index.map`. `flush()` schedules the work; `flushAndWait()` waits for completion. Code: `segmentindex/SegmentIndexImpl#flush()`, `segmentindex/CompactSupport.java`.
 
 ## 🧹 Compaction
-Segment rewrite that merges main SST with delta caches into fresh `.index`, `.scarce`, and `.bloom-filter` files, then clears delta caches. Code: `segment/SegmentCompacter.java`, `segment/SegmentFullWriter*.java`.
+Segment rewrite that merges main SST with delta caches into fresh `vNN-index.sst`, `vNN-scarce.sst`, and `vNN-bloom-filter.bin` files, then clears delta caches. Code: `segment/SegmentCompacter.java`, `segment/SegmentFullWriter*.java`.
 
 ## ✂️ Split
 When a segment grows beyond `maxNumberOfKeysInSegment`, it is split into two; `index.map` is updated with a new max key and SegmentId. Code: `segmentindex/SegmentSplitCoordinator.java`, `segment/SegmentSplitter*.java`.
 
-## 🔍 Sparse SegmentIndex (Scarce Index)
+## 🔍 Sparse Index (Scarce Index)
 Per‑segment, sorted sample of keys that points to chunk start positions in the main SST to bound local scans. Code: `scarceindex/*`.
 
 ## 🌸 Bloom Filter

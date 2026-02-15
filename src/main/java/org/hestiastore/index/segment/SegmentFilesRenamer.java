@@ -2,7 +2,6 @@ package org.hestiastore.index.segment;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.async.AsyncDirectory;
-import org.hestiastore.index.IndexException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,20 +62,18 @@ public class SegmentFilesRenamer {
     }
 
     /**
-     * Rewrites a delta file name from the source prefix to the target prefix.
+     * Rewrites a delta file name from the source prefix to the target prefix
+     * when the source prefix is present.
      *
-     * @param fromPrefix expected source prefix
-     * @param toPrefix target prefix to apply
+     * @param fromSegmentIdName expected source prefix
+     * @param toSegmentIdName target prefix to apply
      * @param fileName current delta file name
-     * @param fromSegmentIdName source segment identifier for validation
      * @return renamed delta file name
      */
     private String renameSegmentFileName(final String fromSegmentIdName,
             final String toSegmentIdName, final String fileName) {
         if (!fileName.startsWith(fromSegmentIdName)) {
-            throw new IndexException("Segment file '" + fileName
-                    + "' does not belong to segment '" + fromSegmentIdName
-                    + "'. Expected prefix '" + fromSegmentIdName + "'.");
+            return fileName;
         }
         return toSegmentIdName + fileName.substring(fromSegmentIdName.length());
     }

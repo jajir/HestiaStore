@@ -2,6 +2,10 @@
 
 HestiaStore uses a few focused caches to deliver read‑after‑write visibility and predictable read latency while keeping memory bounded. This page outlines each layer, how it is populated/evicted, and which configuration knobs control sizing.
 
+For segment internals (delta, Bloom, sparse/scarce structures), use
+[Segment Architecture](../segment/index.md). This page describes cache roles at the
+SegmentIndex integration level.
+
 ## 🎯 Goals
 
 - Read‑after‑write consistency without synchronous disk I/O
@@ -31,7 +35,7 @@ HestiaStore uses a few focused caches to deliver read‑after‑write visibility
   - Classes: `scarceindex/ScarceIndex`, `ScarceIndexSnapshot`
 
 - Key→segment map: max‑key to SegmentId mapping
-  - Class: `segmentindex/KeySegmentCache` (TreeMap, persisted to `index.map`)
+  - Class: `segmentindex/KeyToSegmentMap` (TreeMap, persisted to `index.map`)
 
 ## ✍️ Write‑Time Caches
 
@@ -67,7 +71,7 @@ Code: `segmentindex/SegmentIndexImpl#get`, `segment/SegmentImpl#get`, `segment/S
 - UniqueCache (index write buffer): no incremental eviction; cleared on flush.
 - SegmentDataCache (LRU of SegmentData): evicts least‑recently‑used segment; eviction closes Bloom filter and clears delta cache via `close()` hook.
 - SegmentDeltaCache: cleared and files removed after compaction via `SegmentDeltaCacheController.clear()`; rebuilt on demand from delta files.
-- KeySegmentCache: persisted via `optionalyFlush()` when updated; survives process restarts by reading `index.map`.
+- KeyToSegmentMap: persisted via `optionalyFlush()` when updated; survives process restarts by reading `index.map`.
 
 ## ⚙️ Configuration Knobs
 
@@ -113,13 +117,13 @@ See: `segmentindex/IndexConfiguration`, `segment/SegmentConf`.
 - Segment caches and providers: `src/main/java/org/hestiastore/index/segmentindex/*SegmentData*`, `src/main/java/org/hestiastore/index/segment/SegmentData*`
 - LRU cache: `src/main/java/org/hestiastore/index/cache/CacheLru.java`,
   `src/main/java/org/hestiastore/index/cache/CacheLruImpl.java`
-- Key→segment map: `src/main/java/org/hestiastore/index/segmentindex/KeySegmentCache.java`
+- Key→segment map: `src/main/java/org/hestiastore/index/segmentindex/KeyToSegmentMap.java`
 
 ## 🔗 Related Glossary
 
-- [UniqueCache](glossary.md#uniquecache)
-- [Delta Cache](glossary.md#delta-cache)
-- [SegmentData](glossary.md#segmentdata-and-provider)
-- [Bloom Filter](glossary.md#bloom-filter)
-- [Sparse Index](glossary.md#sparse-index-scarce-index)
-- [Key-to-Segment Map](glossary.md#key-to-segment-map)
+- [UniqueCache](../general/glossary.md#uniquecache)
+- [Delta Cache](../general/glossary.md#delta-cache)
+- [SegmentData](../general/glossary.md#segmentdata-and-provider)
+- [Bloom Filter](../general/glossary.md#bloom-filter)
+- [Sparse Index](../general/glossary.md#sparse-index-scarce-index)
+- [Key-to-Segment Map](../general/glossary.md#key-to-segment-map)

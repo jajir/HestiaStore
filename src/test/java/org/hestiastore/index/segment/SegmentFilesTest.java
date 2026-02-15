@@ -16,17 +16,16 @@ import org.junit.jupiter.api.Test;
 class SegmentFilesTest {
 
     @Test
-    void fileNamesUseSegmentIdPrefix() {
+    void fileNamesUseVersionPrefix() {
         final SegmentFiles<Integer, String> files = new SegmentFiles<>(
                 AsyncDirectoryAdapter.wrap(new MemDirectory()), SegmentId.of(1),
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(),
                 1024, List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()), 2L);
 
-        final String base = files.getSegmentIdName();
-        assertEquals(base + "-v2.index", files.getIndexFileName());
-        assertEquals(base + "-v2.scarce", files.getScarceFileName());
-        assertEquals(base + "-v2.bloom-filter", files.getBloomFilterFileName());
+        assertEquals("v02-index.sst", files.getIndexFileName());
+        assertEquals("v02-scarce.sst", files.getScarceFileName());
+        assertEquals("v02-bloom-filter.bin", files.getBloomFilterFileName());
     }
 
     @Test

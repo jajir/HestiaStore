@@ -30,30 +30,32 @@ nav:
         - Logging: configuration/logging.md
     - Architecture:
         - Overview: architecture/index.md
-        - Core Building Blocks:
-            - Sparse Index: architecture/arch-index.md
-            - Segments & Compaction: architecture/segment.md
-            - Data Block Format: architecture/datablock.md
-            - Chain of Filters: architecture/chain-of-filters.md
-            - Segment Concurrency: architecture/segment-concurrency.md
-            - Segment Index Concurrency: architecture/segment-index-concurrency.md
-            - Segment Registry: architecture/registry.md
-        - Data Flow:
-            - Write Path: architecture/write-path.md
-            - Read Path: architecture/read-path.md
-        - Reliability:
-            - Consistency & Recovery: architecture/recovery.md
-            - Filters & Integrity: architecture/filters.md
-        - Performance:
-            - Caching Strategy: architecture/caching.md
-            - Cache LRU: architecture/cache-lru.md
-            - Performance Model & Sizing: architecture/performance.md
-        - Concurrency:
-            - Access Model: architecture/concurrency.md
-        - Reference:
-            - On-Disk Layout & File Names: architecture/on-disk-layout.md
-            - Limitations & Trade-offs: architecture/limits.md
-            - Glossary: architecture/glossary.md
+        - General:
+            - Overview: architecture/general/index.md
+            - Data Block Format: architecture/general/datablock.md
+            - Filters & Integrity: architecture/general/filters.md
+            - Chain of Filters: architecture/general/chain-of-filters.md
+            - Access Model: architecture/general/concurrency.md
+            - Consistency & Recovery: architecture/general/recovery.md
+            - Limitations & Trade-offs: architecture/general/limits.md
+            - Glossary: architecture/general/glossary.md
+        - SegmentIndex:
+            - Overview: architecture/segmentindex/index.md
+            - Write Path: architecture/segmentindex/write-path.md
+            - Read Path: architecture/segmentindex/read-path.md
+            - Caching Strategy: architecture/segmentindex/caching.md
+            - Cache LRU: architecture/segmentindex/cache-lru.md
+            - Performance Model & Sizing: architecture/segmentindex/performance.md
+            - Segment Index Concurrency: architecture/segmentindex/segment-index-concurrency.md
+        - Segment:
+            - Overview: architecture/segment/index.md
+            - Segment Design: architecture/segment/segment.md
+            - On-Disk Layout & File Names: architecture/segment/on-disk-layout.md
+            - Sparse Index: architecture/segment/arch-index.md
+            - Segment Concurrency: architecture/segment/segment-concurrency.md
+        - Registry:
+            - Overview: architecture/registry/index.md
+            - Segment Registry: architecture/registry/registry.md
 #    - Operations:
 #        - Production Guide: operations/index.md
 #        - Performance Tuning: operations/tuning.md
@@ -61,12 +63,16 @@ nav:
 #        - Observability: operations/monitoring.md
     - Community:
         - Changelog: CHANGELOG.md
+        - Development:
+            - Overview: development/index.md
+            - Documentation: development/documentation.md
+            - Guides: development/guides.md
+            - Segment API: development/segment-api.md
+            - JVM Profiling: development/profiler-stacktrace.md
+            - Refactor Backlog: refactor-backlog.md
         - Release Process: development/release.md
         - Contributing: CONTRIBUTING.md
         - Code of Conduct: CODE_OF_CONDUCT.md
-        - Development Docs: development/documentation.md
-        - Guides: development/guides.md
-        - JVM Profiling: development/profiler-stacktrace.md
 
 theme:
     name: material

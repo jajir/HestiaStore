@@ -3,7 +3,7 @@
 
 This document describes the structure and purpose of `Block` and `Chunk` objects in the HestiaStore storage engine.
 
-![Data block and chunk class diagram](../images/datablock.png)
+![Data block and chunk class diagram](images/datablock.png)
 
 ---
 

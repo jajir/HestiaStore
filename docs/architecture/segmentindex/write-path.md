@@ -2,6 +2,10 @@
 
 This page describes how a write travels through HestiaStore from the API call to on‑disk structures, highlighting buffering, compaction, and atomicity. It maps directly to the code so you can cross‑check behavior and tune configuration.
 
+Segment-internal structures are centralized in
+[Segment Architecture](../segment/index.md). This page focuses on SegmentIndex
+orchestration and operation flow.
+
 ## 🧭 High‑Level Flow
 
 1. API call: `SegmentIndex.put(key, value)` or `SegmentIndex.delete(key)`
@@ -53,18 +57,18 @@ On flush, buffered entries are sorted and routed to target segments based on the
 Flow:
 
 1) Sort unique cache entries by key.
-2) For each key, find the target segment id via `KeySegmentCache.insertKeyToSegment`.
+2) For each key, find the target segment id via `KeyToSegmentMap.insertKeyToSegment`.
 3) Buffer entries to the current segment; when switching segments, write the batch to that segment’s delta cache and continue.
 4) After all entries are written, optionally split segments that exceed size thresholds.
 5) Clear the unique buffer and flush the key‑segment map (if changed).
 
-Key classes: `segmentindex/CompactSupport`, `segmentindex/KeySegmentCache`, `segmentindex/SegmentSplitCoordinator`.
+Key classes: `segmentindex/CompactSupport`, `segmentindex/KeyToSegmentMap`, `segmentindex/SegmentSplitCoordinator`.
 
 ## 🗂️ Segment Delta Cache Files (Transactional)
 
 Writes land in a segment’s delta cache as sorted key/value files. Each delta file is written transactionally:
 
-- Data is written to `segmentId-delta-XXX.cache.tmp` and atomically renamed on commit.
+- Data is written to `vNN-delta-NNNN.cache.tmp` and atomically renamed on commit.
 - Segment properties track counts and delta file numbering.
 - If the segment data is currently cached in memory, the delta cache is also updated in‑memory to keep reads fresh.
 
@@ -95,7 +99,7 @@ Key classes: `segment/SegmentCompacter`, `segment/SegmentFullWriterTx`, `segment
 
 When a segment grows beyond `maxNumberOfKeysInSegment`, the split coordinator computes a plan, optionally compacts first, and then splits into two segments. The key‑to‑segment map is updated with the new segment’s max key.
 
-Key classes: `segmentindex/SegmentSplitCoordinator`, `segment/SegmentSplitter`, `segment/SegmentSplitterPlan`, `segmentindex/KeySegmentCache`.
+Key classes: `segmentindex/SegmentSplitCoordinator`, `segment/SegmentSplitter`, `segment/SegmentSplitterPlan`, `segmentindex/KeyToSegmentMap`.
 
 ## 🪦 Delete Semantics (Tombstones)
 
@@ -157,18 +161,18 @@ Key classes: `chunkstore/ChunkProcessor`, `chunkstore/ChunkFilterMagicNumberWrit
 
 For the read path and on‑disk layout, see the related pages:
 
-- Read Path: `architecture/read-path.md`
-- On‑Disk Layout & File Names: `architecture/on-disk-layout.md`
-- Filters & Integrity: `architecture/filters.md`
+- Read Path: `architecture/segmentindex/read-path.md`
+- On‑Disk Layout & File Names: `architecture/segment/on-disk-layout.md`
+- Filters & Integrity: `architecture/general/filters.md`
 
 ## Related Glossary
 
-- [Segment](glossary.md#segment)
-- [UniqueCache](glossary.md#uniquecache)
-- [Delta Cache](glossary.md#delta-cache)
-- [Flush](glossary.md#flush)
-- [Compaction](glossary.md#compaction)
-- [Split](glossary.md#split)
-- [Write Transaction](glossary.md#write-transaction)
-- [Filters](glossary.md#filters-chunk-filters)
-- [Tombstone](glossary.md#tombstone)
+- [Segment](../general/glossary.md#segment)
+- [UniqueCache](../general/glossary.md#uniquecache)
+- [Delta Cache](../general/glossary.md#delta-cache)
+- [Flush](../general/glossary.md#flush)
+- [Compaction](../general/glossary.md#compaction)
+- [Split](../general/glossary.md#split)
+- [Write Transaction](../general/glossary.md#write-transaction)
+- [Filters](../general/glossary.md#filters-chunk-filters)
+- [Tombstone](../general/glossary.md#tombstone)

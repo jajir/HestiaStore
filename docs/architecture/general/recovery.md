@@ -14,7 +14,7 @@ This page explains HestiaStore’s crash safety model and commit semantics. Ther
 - Segment merge/compaction: when a segment compacts, the new main SST, sparse index, and Bloom filter are built via transactional writers; on commit they atomically replace the old ones.
 - Key→segment map (`index.map`): persisted via a transactional sorted data writer during flush or when updated.
 
-Relevant code: `segmentindex/SegmentIndexImpl#flush()`, `segmentindex/CompactSupport`, `segmentindex/KeySegmentCache#optionalyFlush()`.
+Relevant code: `segmentindex/SegmentIndexImpl#flush()`, `segmentindex/CompactSupport`, `segmentindex/KeyToSegmentMap#optionalyFlush()`.
 
 ## ✍️ Transactional Write Primitives
 
@@ -35,7 +35,7 @@ Key classes:
 - Segment delta cache files
   - Writer: `segment/SegmentDeltaCacheWriter`
   - Mechanism: `SortedDataFileWriterTx.execute(…)`
-  - Naming: property counter assigns `segmentId-delta-XXX.cache` before write; if a crash happens before commit, the reader treats missing files as empty, so boot remains safe.
+  - Naming: manifest counter assigns `vNN-delta-NNNN.cache` before write; if a crash happens before commit, the reader treats missing files as empty, so boot remains safe.
 
 - Main SST (chunked) + sparse index ("scarce index")
   - Writers: `segment/SegmentFullWriterTx` and `segment/SegmentFullWriter`
@@ -46,12 +46,12 @@ Key classes:
   - Writes to a temporary file via `BloomFilterWriterTx.open()` and commits with `rename`; also updates the in‑memory hash snapshot on commit.
 
 - Key→segment map (`index.map`)
-  - Writer: `SortedDataFileWriterTx.execute(…)` inside `KeySegmentCache.optionalyFlush()`
+  - Writer: `SortedDataFileWriterTx.execute(…)` inside `KeyToSegmentMap.optionalyFlush()`
   - Ensures the map is replaced atomically.
 
 ## 🚫 What Is Not Transactional
 
-- Segment properties (counts and delta‑file numbering) are persisted via an overwrite (`Directory.Access.OVERWRITE`). They are updated after data files are committed, and are not critical to data correctness. If a crash corrupts or desynchronizes this metadata, the reader logic remains safe (e.g., missing delta file names yield empty reads) and you can re‑establish consistency via the checker below.
+- Segment manifest metadata (counts and delta‑file numbering) is persisted via an overwrite (`Directory.Access.OVERWRITE`). It is updated after data files are committed, and is not critical to data correctness. If a crash corrupts or desynchronizes this metadata, the reader logic remains safe (e.g., missing delta file names yield empty reads) and you can re‑establish consistency via the checker below.
 
 Code: `properties/PropertyStoreimpl` and `SegmentPropertiesManager`.
 

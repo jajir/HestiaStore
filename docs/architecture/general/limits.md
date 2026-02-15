@@ -17,7 +17,7 @@ This page lists the most important constraints and design trade‑offs so you ca
 
 ## 📏 Size and Addressing Limits
 
-- Per‑segment SST size bounded by 32‑bit positions: Sparse index stores an `Integer` position and readers cast to `int` (`ChunkEntryFile#openIteratorAtPosition((int)position)`). Keep a single `.index` file below ~2 GiB. Use multiple segments to scale. Code: `chunkentryfile/ChunkEntryFile.java`, `scarceindex/*`.
+- Per‑segment SST size bounded by 32‑bit positions: Sparse index stores an `Integer` position and readers cast to `int` (`ChunkEntryFile#openIteratorAtPosition((int)position)`). Keep a single `vNN-index.sst` file below ~2 GiB. Use multiple segments to scale. Code: `chunkentryfile/ChunkEntryFile.java`, `scarceindex/*`.
 - Data‑block and cell sizing constraints: `diskIoBufferSize` must be divisible by 1024; chunk cell size is fixed at 16 bytes. Payloads pad to whole cells (space overhead). Code: `Vldtn#requireIoBufferSize`, `chunkstore/CellPosition.java`.
 
 ## 🧱 Configuration Immutability
@@ -52,7 +52,7 @@ Attempts to change these raise an error in `IndexConfigurationManager.validateTh
 
 - Expecting durability without flush/close.
 - Relying on WAL replay (not implemented).
-- Very large single segments (>2 GiB `.index`); split into more segments.
+- Very large single segments (>2 GiB `vNN-index.sst`); split into more segments.
 - Heavy mixed concurrent reads/writes with strict low‑latency tail in synchronized mode (coarse locking).
 
 ## 🛠️ Mitigations and Best Practices
@@ -64,7 +64,7 @@ Attempts to change these raise an error in `IndexConfigurationManager.validateTh
 
 ## 🔗 Related Docs
 
-- Recovery: `architecture/recovery.md`
-- Concurrency: `architecture/concurrency.md`
-- Filters & Integrity: `architecture/filters.md`
-- On‑Disk Layout: `architecture/on-disk-layout.md`
+- Recovery: `architecture/general/recovery.md`
+- Concurrency: `architecture/general/concurrency.md`
+- Filters & Integrity: `architecture/general/filters.md`
+- On‑Disk Layout: `architecture/segment/on-disk-layout.md`

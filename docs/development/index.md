@@ -1,9 +1,12 @@
 # 🛠️ Development
 
-Here are some development related topiscs.
+This page links development-focused documentation.
 
-Topics:
+## Topics
+
+- [Documentation](documentation.md)
 - [Guides](guides.md)
-- [Profiler stacktrace](profiler-stacktrace.md)
 - [Segment API](segment-api.md)
-- [Segment splitting lock minimization](segment-splitting-lock-minimization.md)
+- [JVM Profiling](profiler-stacktrace.md)
+- [Release Process](release.md)
+- [Refactor Backlog](../refactor-backlog.md)

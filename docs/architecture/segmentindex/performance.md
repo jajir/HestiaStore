@@ -2,6 +2,9 @@
 
 This page summarizes how HestiaStore achieves high throughput and predictable latency, and how to size the main knobs. All claims map to code so you can verify behavior.
 
+Segment-specific internals referenced here are centralized in
+[Segment Architecture](../segment/index.md).
+
 ## 🧠 Mental Model (Hot Paths)
 
 - Put/Delete:
@@ -14,7 +17,7 @@ This page summarizes how HestiaStore achieves high throughput and predictable la
 
 - Get (positive):
   - Locate target segment via key→segment map (in‑memory TreeMap ceiling lookup).
-  - Seek into `.index` by sparse index pointer, then bounded local scan of at most `maxNumberOfKeysInSegmentChunk` entries in ascending order. Typically one chunk read.
+  - Seek into `vNN-index.sst` by sparse index pointer, then bounded local scan of at most `maxNumberOfKeysInSegmentChunk` entries in ascending order. Typically one chunk read.
 
 ## 💽 I/O Patterns and Amplification
 
@@ -93,10 +96,10 @@ This page summarizes how HestiaStore achieves high throughput and predictable la
 
 ## 🔗 Related Glossary
 
-- [Main SST](glossary.md#main-sst)
-- [Sparse Index](glossary.md#sparse-index-scarce-index)
-- [Bloom Filter](glossary.md#bloom-filter)
-- [UniqueCache](glossary.md#uniquecache)
-- [Delta Cache](glossary.md#delta-cache)
-- [Compaction](glossary.md#compaction)
-- [Write Transaction](glossary.md#write-transaction)
+- [Main SST](../general/glossary.md#main-sst)
+- [Sparse Index](../general/glossary.md#sparse-index-scarce-index)
+- [Bloom Filter](../general/glossary.md#bloom-filter)
+- [UniqueCache](../general/glossary.md#uniquecache)
+- [Delta Cache](../general/glossary.md#delta-cache)
+- [Compaction](../general/glossary.md#compaction)
+- [Write Transaction](../general/glossary.md#write-transaction)

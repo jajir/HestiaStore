@@ -8,16 +8,16 @@ import org.hestiastore.index.Vldtn;
  */
 public final class SegmentDirectoryLayout {
 
-    private static final String INDEX_FILE_NAME_EXTENSION = ".index";
-    private static final String SCARCE_FILE_NAME_EXTENSION = ".scarce";
-    private static final String BLOOM_FILTER_FILE_NAME_EXTENSION = ".bloom-filter";
-    private static final String PROPERTIES_FILE_NAME_EXTENSION = ".properties";
+    private static final String INDEX_FILE_NAME_SUFFIX = "-index.sst";
+    private static final String SCARCE_FILE_NAME_SUFFIX = "-scarce.sst";
+    private static final String BLOOM_FILTER_FILE_NAME_SUFFIX = "-bloom-filter.bin";
+    private static final String MANIFEST_FILE_NAME = "manifest.txt";
     private static final String LOCK_FILE_NAME_EXTENSION = ".lock";
     private static final String ACTIVE_POINTER_FILE_NAME_EXTENSION = ".active";
     private static final String DELTA_FILE_NAME_MIDDLE = "-delta-";
     private static final String CACHE_FILE_NAME_EXTENSION = ".cache";
-    private static final int DELTA_ID_PAD_LENGTH = 3;
-    private static final String VERSION_FILE_NAME_MARKER = "-v";
+    private static final int DELTA_ID_PAD_LENGTH = 4;
+    private static final int VERSION_PAD_LENGTH = 2;
     private static final String VERSION_DIRECTORY_PREFIX = "v";
 
     private final SegmentId segmentId;
@@ -46,17 +46,17 @@ public final class SegmentDirectoryLayout {
      * @return index file name
      */
     public String getIndexFileName() {
-        return getIndexFileName(0);
+        return getIndexFileName(1);
     }
 
     /**
      * Returns the main index file name for the given version.
      *
-     * @param version active version (0 means legacy, unversioned file)
+     * @param version active version encoded as zero-padded decimal
      * @return index file name
      */
     public String getIndexFileName(final long version) {
-        return buildVersionedName(version, INDEX_FILE_NAME_EXTENSION);
+        return buildVersionedName(version, INDEX_FILE_NAME_SUFFIX);
     }
 
     /**
@@ -65,17 +65,17 @@ public final class SegmentDirectoryLayout {
      * @return scarce index file name
      */
     public String getScarceFileName() {
-        return getScarceFileName(0);
+        return getScarceFileName(1);
     }
 
     /**
      * Returns the scarce index file name for the given version.
      *
-     * @param version active version (0 means legacy, unversioned file)
+     * @param version active version encoded as zero-padded decimal
      * @return scarce index file name
      */
     public String getScarceFileName(final long version) {
-        return buildVersionedName(version, SCARCE_FILE_NAME_EXTENSION);
+        return buildVersionedName(version, SCARCE_FILE_NAME_SUFFIX);
     }
 
     /**
@@ -84,17 +84,17 @@ public final class SegmentDirectoryLayout {
      * @return bloom filter file name
      */
     public String getBloomFilterFileName() {
-        return getBloomFilterFileName(0);
+        return getBloomFilterFileName(1);
     }
 
     /**
      * Returns the bloom filter file name for the given version.
      *
-     * @param version active version (0 means legacy, unversioned file)
+     * @param version active version encoded as zero-padded decimal
      * @return bloom filter file name
      */
     public String getBloomFilterFileName(final long version) {
-        return buildVersionedName(version, BLOOM_FILTER_FILE_NAME_EXTENSION);
+        return buildVersionedName(version, BLOOM_FILTER_FILE_NAME_SUFFIX);
     }
 
     /**
@@ -103,7 +103,7 @@ public final class SegmentDirectoryLayout {
      * @return properties file name
      */
     public String getPropertiesFileName() {
-        return segmentId.getName() + PROPERTIES_FILE_NAME_EXTENSION;
+        return MANIFEST_FILE_NAME;
     }
 
     /**
@@ -131,13 +131,13 @@ public final class SegmentDirectoryLayout {
      * @return delta cache file name
      */
     public String getDeltaCacheFileName(final int deltaFileId) {
-        return getDeltaCacheFileName(0, deltaFileId);
+        return getDeltaCacheFileName(1, deltaFileId);
     }
 
     /**
      * Returns the delta cache file name for a numeric delta id and version.
      *
-     * @param version     active version (0 means legacy, unversioned file)
+     * @param version     active version encoded as zero-padded decimal
      * @param deltaFileId numeric delta id
      * @return delta cache file name
      */
@@ -153,7 +153,7 @@ public final class SegmentDirectoryLayout {
     /**
      * Returns the delta cache prefix for the given version.
      *
-     * @param version active version (0 means legacy, unversioned file)
+     * @param version active version encoded as zero-padded decimal
      * @return prefix including the delta separator
      */
     public String getDeltaCachePrefix(final long version) {
@@ -170,17 +170,13 @@ public final class SegmentDirectoryLayout {
         if (fileName == null || fileName.isBlank()) {
             return -1;
         }
-        if (fileName.equals(getIndexFileName(0))) {
-            return 0;
-        }
-        final String prefix = segmentId.getName() + VERSION_FILE_NAME_MARKER;
-        if (!fileName.startsWith(prefix)
-                || !fileName.endsWith(INDEX_FILE_NAME_EXTENSION)) {
+        if (!fileName.startsWith(VERSION_DIRECTORY_PREFIX)
+                || !fileName.endsWith(INDEX_FILE_NAME_SUFFIX)) {
             return -1;
         }
-        final int versionStart = prefix.length();
+        final int versionStart = VERSION_DIRECTORY_PREFIX.length();
         final int versionEnd = fileName.length()
-                - INDEX_FILE_NAME_EXTENSION.length();
+                - INDEX_FILE_NAME_SUFFIX.length();
         if (versionEnd <= versionStart) {
             return -1;
         }
@@ -199,11 +195,12 @@ public final class SegmentDirectoryLayout {
      * @return versioned directory name
      */
     public static String getVersionDirectoryName(final long version) {
-        if (version <= 0) {
+        if (version < 0) {
             throw new IllegalArgumentException(String
-                    .format("Version '%s' must be greater than 0", version));
+                    .format("Version '%s' must be greater than or equal to 0",
+                            version));
         }
-        return VERSION_DIRECTORY_PREFIX + version;
+        return VERSION_DIRECTORY_PREFIX + padVersion(version);
     }
 
     /**
@@ -237,9 +234,24 @@ public final class SegmentDirectoryLayout {
     }
 
     private String buildVersionedPrefix(final long version) {
-        if (version <= 0) {
-            return segmentId.getName();
+        if (version < 0) {
+            throw new IllegalArgumentException(String.format(
+                    "Version '%s' must be greater than or equal to 0",
+                    version));
         }
-        return segmentId.getName() + VERSION_FILE_NAME_MARKER + version;
+        return VERSION_DIRECTORY_PREFIX + padVersion(version);
+    }
+
+    private static String padVersion(final long version) {
+        final String raw = String.valueOf(version);
+        if (raw.length() >= VERSION_PAD_LENGTH) {
+            return raw;
+        }
+        final StringBuilder out = new StringBuilder(VERSION_PAD_LENGTH);
+        for (int i = raw.length(); i < VERSION_PAD_LENGTH; i++) {
+            out.append('0');
+        }
+        out.append(raw);
+        return out.toString();
     }
 }
