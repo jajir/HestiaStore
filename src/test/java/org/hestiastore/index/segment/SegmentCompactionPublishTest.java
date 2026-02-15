@@ -49,7 +49,7 @@ class SegmentCompactionPublishTest {
                 .withDecodingChunkFilters(
                         List.of(new ChunkFilterDoNothing()))//
                 .withSegmentMaintenanceAutoEnabled(false)//
-                .build();
+                .build().getValue();
         try {
             assertEquals(SegmentResultStatus.OK,
                     segment.put(1, "one").getStatus());

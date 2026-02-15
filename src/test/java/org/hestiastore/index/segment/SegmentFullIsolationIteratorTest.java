@@ -32,7 +32,7 @@ class SegmentFullIsolationIteratorTest {
             writer.write(Entry.of(2, "index-2"));
         });
 
-        final Segment<Integer, String> segment = builder.build();
+        final Segment<Integer, String> segment = builder.build().getValue();
         try {
             // write-cache entries that will be flushed into delta-cache files
             segment.put(3, "delta-3");

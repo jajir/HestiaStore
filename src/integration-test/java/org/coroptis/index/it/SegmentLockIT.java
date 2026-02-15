@@ -1,8 +1,7 @@
 package org.coroptis.index.it;
 
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
@@ -13,6 +12,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segment.SegmentBuildStatus;
 import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.Test;
 
@@ -24,11 +24,22 @@ class SegmentLockIT {
         final SegmentId segmentId = SegmentId.of(1);
         final Segment<Integer, String> first = newSegment(directory, segmentId);
         try {
-            final IllegalStateException error = assertThrows(
-                    IllegalStateException.class,
-                    () -> newSegment(directory, segmentId));
-            assertTrue(error.getMessage() != null
-                    && error.getMessage().contains("already locked"));
+            assertEquals(SegmentBuildStatus.BUSY,
+                    Segment.<Integer, String>builder(
+                            AsyncDirectoryAdapter.wrap(directory))//
+                            .withId(segmentId)//
+                            .withKeyTypeDescriptor(new TypeDescriptorInteger())//
+                            .withValueTypeDescriptor(
+                                    new TypeDescriptorShortString())//
+                            .withMaxNumberOfKeysInSegmentWriteCache(4)//
+                            .withMaxNumberOfKeysInSegmentCache(8)//
+                            .withMaxNumberOfKeysInSegmentChunk(2)//
+                            .withBloomFilterIndexSizeInBytes(0)//
+                            .withEncodingChunkFilters(
+                                    List.of(new ChunkFilterDoNothing()))//
+                            .withDecodingChunkFilters(
+                                    List.of(new ChunkFilterDoNothing()))//
+                            .build().getStatus());
         } finally {
             closeAndAwait(first);
         }
@@ -51,6 +62,6 @@ class SegmentLockIT {
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
                 .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
-                .build();
+                .build().getValue();
     }
 }

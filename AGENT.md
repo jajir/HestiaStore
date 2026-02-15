@@ -23,6 +23,7 @@
 
 - Java 17; use the repository’s `eclipse-formatter.xml` profile (4-space indentation, no tabs).
 - Package namespace is `org.hestiastore.index...`; keep new modules under this root.
+- Try to avoid of inner classes like Enums and Exceptions, store them into separate files.
 - Prefer clear, descriptive class names (e.g., `*Adapter`, `*Cache`, `*Descriptor`) and follow existing suffixes for test doubles (`*Test`, `*IT`).
 - Add Javadoc for public types and non-trivial logic; keep methods small and side-effect aware.
 - Do not use fully qualified class names in code.

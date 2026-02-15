@@ -48,7 +48,7 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
                         .withId(segmentId)//
                         .withKeyTypeDescriptor(keyDescriptor)//
                         .withValueTypeDescriptor(valueDescriptor),
-                segmentConf).build();
+                segmentConf).build().getValue();
         try {
             writeEntries(segment, entries);
             final long flatFileCount = directory.getFileNames()
@@ -69,7 +69,7 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
                         .withId(segmentId)//
                         .withKeyTypeDescriptor(keyDescriptor)//
                         .withValueTypeDescriptor(valueDescriptor),
-                segmentConf).build();
+                segmentConf).build().getValue();
         try {
             verifySegmentSearch(reopened, entries);
         } finally {
@@ -99,7 +99,7 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
                         .withId(segmentId)//
                         .withKeyTypeDescriptor(keyDescriptor)//
                         .withValueTypeDescriptor(valueDescriptor),
-                segmentConf).build();
+                segmentConf).build().getValue();
         try {
             writeEntries(segment, entries);
             final SegmentResult<Void> result = segment.compact();
@@ -136,7 +136,7 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
                         .withId(segmentId)//
                         .withKeyTypeDescriptor(keyDescriptor)//
                         .withValueTypeDescriptor(valueDescriptor),
-                segmentConf).build();
+                segmentConf).build().getValue();
         try {
             assertEquals(SegmentResultStatus.OK, segment.flush().getStatus());
         } finally {
@@ -177,7 +177,7 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
                         .withId(segmentId)//
                         .withKeyTypeDescriptor(keyDescriptor)//
                         .withValueTypeDescriptor(valueDescriptor),
-                segmentConf).build();
+                segmentConf).build().getValue();
         try {
             assertNotNull(segment);
         } finally {

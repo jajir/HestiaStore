@@ -168,7 +168,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build();
+                .build().getValue();
 
         writeEntries(seg, Arrays.asList(//
                 Entry.of(2, "a"), //
@@ -222,7 +222,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build();
+                .build().getValue();
 
         writeEntries(seg, Arrays.asList(//
                 Entry.of(5, "d"), //
@@ -275,7 +275,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build();
+                .build().getValue();
 
         writeEntries(seg, Arrays.asList(//
                 Entry.of(5, "d"), //
@@ -354,7 +354,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build();
+                .build().getValue();
 
         writeEntries(seg, Arrays.asList(//
                 Entry.of(2, "a"), //
@@ -422,7 +422,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build();
+                .build().getValue();
 
         writeEntries(seg, Arrays.asList(//
                 Entry.of(11, "aaa"), //
@@ -486,7 +486,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build();
+                .build().getValue();
 
         writeEntries(seg, Arrays.asList(//
                 Entry.of(5, "d"), //
@@ -553,7 +553,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build();
+                .build().getValue();
 
         final List<Entry<Integer, String>> entries = new ArrayList<>();
         for (int i = 0; i < 1000; i++) {
@@ -614,7 +614,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build(), //
+                .build().getValue(), //
                 1, // expectedNumberKeysInScarceIndex,
                 10 // expectedNumberOfFile
         ), arguments(tdi, tds, dir2, Segment.<Integer, String>builder(
@@ -639,7 +639,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build(), //
+                .build().getValue(), //
                 9, // expectedNumberKeysInScarceIndex
                 10// expectedNumberOfFile
         ), arguments(tdi, tds, dir3, Segment.<Integer, String>builder(
@@ -664,7 +664,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build(), //
+                .build().getValue(), //
                 5, // expectedNumberKeysInScarceIndex
                 10 // expectedNumberOfFile
         ));
