@@ -20,22 +20,44 @@ final class SegmentDirectoryLocking {
         this.layout = Vldtn.requireNonNull(layout, "layout");
     }
 
-    FileLock lock() {
+    /**
+     * Attempts to acquire the segment lock.
+     *
+     * @return true when lock was acquired; false when lock is already held
+     */
+    boolean tryLock() {
         final String lockFileName = layout.getLockFileName();
         final FileLock lockHandle = directoryFacade.getLockAsync(lockFileName)
                 .toCompletableFuture().join();
         if (lockHandle.isLocked()) {
-            throw new LockBusyException(lockHeldMessage(lockFileName));
+            return false;
         }
         try {
             lockHandle.lock();
         } catch (final IllegalStateException e) {
-            throw new LockBusyException(lockHeldMessage(lockFileName), e);
+            return false;
         }
         this.fileLock = lockHandle;
-        return lockHandle;
+        return true;
     }
 
+    /**
+     * Acquires the segment lock.
+     *
+     * @return acquired lock handle
+     * @throws LockBusyException when the lock is already held
+     */
+    FileLock lock() {
+        final String lockFileName = layout.getLockFileName();
+        if (!tryLock()) {
+            throw new LockBusyException(lockHeldMessage(lockFileName));
+        }
+        return fileLock;
+    }
+
+    /**
+     * Releases the lock acquired by this helper.
+     */
     void unlock() {
         if (fileLock != null && fileLock.isLocked()) {
             fileLock.unlock();
@@ -46,18 +68,5 @@ final class SegmentDirectoryLocking {
         return String.format(
                 "Segment '%s' is already locked. Delete '%s' to recover.",
                 layout.getSegmentId().getName(), lockFileName);
-    }
-
-    static final class LockBusyException extends RuntimeException {
-        private static final long serialVersionUID = 1L;
-
-        private LockBusyException(final String message) {
-            super(message);
-        }
-
-        private LockBusyException(final String message,
-                final Throwable cause) {
-            super(message, cause);
-        }
     }
 }

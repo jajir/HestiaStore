@@ -330,7 +330,8 @@ public final class SegmentBuilder<K, V> {
      * components, creates defaults where not supplied, and wires dependent
      * parts together.
      *
-     * @return build result containing initialized segment or BUSY status
+     * @return build result containing initialized segment or BUSY status when
+     *         segment directory lock is already held
      * @throws IllegalArgumentException if required fields are missing or
      *                                  invalid
      */
@@ -338,9 +339,7 @@ public final class SegmentBuilder<K, V> {
         final SegmentDirectoryLayout layout = resolveLayout();
         final SegmentDirectoryLocking directoryLocking = new SegmentDirectoryLocking(
                 getDirectoryFacade(), layout);
-        try {
-            directoryLocking.lock();
-        } catch (final SegmentDirectoryLocking.LockBusyException e) {
+        if (!directoryLocking.tryLock()) {
             return SegmentBuildResult.busy();
         }
         try {
