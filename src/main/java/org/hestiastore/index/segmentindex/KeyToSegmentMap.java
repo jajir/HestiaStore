@@ -291,8 +291,9 @@ final class KeyToSegmentMap<K> extends AbstractCloseableResource {
         while (iterator.hasNext()) {
             final Map.Entry<K, SegmentId> entry = iterator.next();
             if (segmentId.equals(entry.getValue())) {
+                final K keyToRemove = entry.getKey();
                 iterator.remove();
-                removedKey = entry.getKey();
+                removedKey = keyToRemove;
                 removed = true;
             }
         }

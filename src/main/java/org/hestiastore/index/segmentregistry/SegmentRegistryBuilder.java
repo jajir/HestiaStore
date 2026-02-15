@@ -147,6 +147,9 @@ public final class SegmentRegistryBuilder<K, V> {
                 resolvedDirectory);
         final SegmentRegistryFileSystem resolvedFileSystem = new SegmentRegistryFileSystem(
                 resolvedDirectory);
+        // SegmentIndex key-map bootstraps the first logical segment with id 0.
+        // Ensure its directory exists so registry loads do not fail on a fresh index.
+        resolvedFileSystem.ensureSegmentDirectory(SegmentId.of(0));
         final IndexRetryPolicy resolvedCloseRetryPolicy = new IndexRetryPolicy(
                 busyBackoffMillis, busyTimeoutMillis);
         final IndexRetryPolicy resolvedSegmentBuildRetryPolicy = new IndexRetryPolicy(
@@ -160,7 +163,7 @@ public final class SegmentRegistryBuilder<K, V> {
                 maintenance::closeSegmentIfNeeded, resolvedLifecycleExecutor,
                 segment -> segment != null);
         return new SegmentRegistryImpl<>(resolvedAllocator, resolvedFileSystem,
-                resolvedLifecycleExecutor, cache, gate);
+                cache, gate);
     }
 
     private static int sanitizeRetryConf(final Integer configured,

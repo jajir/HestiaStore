@@ -1,7 +1,5 @@
 package org.hestiastore.index.segmentregistry;
 
-import java.util.concurrent.ExecutorService;
-
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
@@ -23,7 +21,6 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
     private final SegmentRegistryStateMachine gate;
 
     private final SegmentIdAllocator segmentIdAllocator;
-    private final ExecutorService segmentLifecycleExecutor;
     private final SegmentRegistryFileSystem fileSystem;
 
     /**
@@ -31,20 +28,16 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
      *
      * @param segmentIdAllocator allocator for new segment ids
      * @param fileSystem file system facade for segment directories/files
-     * @param segmentLifecycleExecutor lifecycle executor for async unload tasks
      * @param cache prebuilt segment cache
      * @param gate registry gate state machine shared by collaborators
      */
     SegmentRegistryImpl(final SegmentIdAllocator segmentIdAllocator,
             final SegmentRegistryFileSystem fileSystem,
-            final ExecutorService segmentLifecycleExecutor,
             final SegmentRegistryCache<SegmentId, Segment<K, V>> cache,
             final SegmentRegistryStateMachine gate) {
         this.segmentIdAllocator = Vldtn.requireNonNull(segmentIdAllocator,
                 "segmentIdAllocator");
         this.fileSystem = Vldtn.requireNonNull(fileSystem, "fileSystem");
-        this.segmentLifecycleExecutor = Vldtn.requireNonNull(
-                segmentLifecycleExecutor, "segmentLifecycleExecutor");
         this.cache = Vldtn.requireNonNull(cache, "cache");
         this.gate = Vldtn.requireNonNull(gate, "gate");
         if (!gate.finishFreezeToReady()) {
@@ -188,35 +181,31 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
      */
     @Override
     public SegmentRegistryResult<Void> close() {
-        try {
-            SegmentRegistryState state = gate.getState();
-            if (state == SegmentRegistryState.ERROR) {
-                return SegmentRegistryResult.error();
-            }
-            if (state == SegmentRegistryState.CLOSED) {
-                return SegmentRegistryResult.closed();
-            }
-            if (state == SegmentRegistryState.READY) {
-                gate.tryEnterFreeze();
-            }
-            state = gate.getState();
-            if (state == SegmentRegistryState.ERROR) {
-                return SegmentRegistryResult.error();
-            }
-            if (state == SegmentRegistryState.CLOSED) {
-                return SegmentRegistryResult.closed();
-            }
-            if (state != SegmentRegistryState.FREEZE) {
-                return SegmentRegistryResult.busy();
-            }
-            cache.clear();
-            if (!gate.finishFreezeToClosed()) {
-                return SegmentRegistryResult.error();
-            }
-            return SegmentRegistryResult.ok();
-        } finally {
-            segmentLifecycleExecutor.shutdownNow();
+        SegmentRegistryState state = gate.getState();
+        if (state == SegmentRegistryState.ERROR) {
+            return SegmentRegistryResult.error();
         }
+        if (state == SegmentRegistryState.CLOSED) {
+            return SegmentRegistryResult.closed();
+        }
+        if (state == SegmentRegistryState.READY) {
+            gate.tryEnterFreeze();
+        }
+        state = gate.getState();
+        if (state == SegmentRegistryState.ERROR) {
+            return SegmentRegistryResult.error();
+        }
+        if (state == SegmentRegistryState.CLOSED) {
+            return SegmentRegistryResult.closed();
+        }
+        if (state != SegmentRegistryState.FREEZE) {
+            return SegmentRegistryResult.busy();
+        }
+        cache.clear();
+        if (!gate.finishFreezeToClosed()) {
+            return SegmentRegistryResult.error();
+        }
+        return SegmentRegistryResult.ok();
     }
 
 }

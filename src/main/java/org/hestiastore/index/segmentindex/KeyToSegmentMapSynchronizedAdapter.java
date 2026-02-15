@@ -121,7 +121,12 @@ final class KeyToSegmentMapSynchronizedAdapter<K>
     }
 
     KeyToSegmentMap.Snapshot<K> snapshot() {
-        return delegate.snapshot();
+        readLock.lock();
+        try {
+            return delegate.snapshot();
+        } finally {
+            readLock.unlock();
+        }
     }
 
     boolean isMappingValid(final K key, final SegmentId expectedSegmentId,
