@@ -121,7 +121,7 @@ class IntegrationSegmentWriteConsistencyTest {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build();
+                .build().getValue();
     }
 
 }

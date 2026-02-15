@@ -12,6 +12,8 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segment.SegmentBuildResult;
+import org.hestiastore.index.segment.SegmentBuildStatus;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentTestHelper;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
@@ -32,9 +34,11 @@ class SegmentFactoryTest {
                 new TypeDescriptorShortString(), conf,
                 maintenanceExecutor.getExecutor());
         final SegmentId segmentId = SegmentId.of(1);
-        final Segment<Integer, String> segment = factory
+        final SegmentBuildResult<Segment<Integer, String>> buildResult = factory
                 .buildSegment(segmentId);
+        final Segment<Integer, String> segment = buildResult.getValue();
         try {
+            assertEquals(SegmentBuildStatus.OK, buildResult.getStatus());
             assertNotNull(segment);
             assertEquals(segmentId, segment.getId());
         } finally {

@@ -83,7 +83,7 @@ public class IntegerationNumberOfKeysIT {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build();
+                .build().getValue();
     }
 
     private void writeData(final Segment<String, Long> segment) {

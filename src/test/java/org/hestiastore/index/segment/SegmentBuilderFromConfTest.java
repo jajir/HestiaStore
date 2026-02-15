@@ -42,7 +42,7 @@ public class SegmentBuilderFromConfTest {
                 .withDecodingChunkFilters(
                         List.of(new ChunkFilterMagicNumberValidation()))//
         ;
-        Segment<Integer, String> seg = builder.build();
+        Segment<Integer, String> seg = builder.build().getValue();
         assertEquals(SegmentResultStatus.OK, seg.put(1, "A").getStatus());
         assertEquals(SegmentResultStatus.OK, seg.flush().getStatus());
         final SegmentResult<String> result = seg.get(1);

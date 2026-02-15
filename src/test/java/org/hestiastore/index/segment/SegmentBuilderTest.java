@@ -194,7 +194,7 @@ class SegmentBuilderTest {
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
                 .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
                 .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
-                .build();
+                .build().getValue();
 
         assertNotNull(segment);
         closeAndAwait(segment);
@@ -223,7 +223,7 @@ class SegmentBuilderTest {
         }
         tx.commit();
 
-        final Segment<Integer, String> segment = builder.build();
+        final Segment<Integer, String> segment = builder.build().getValue();
         final SegmentResult<String> first = segment.get(1);
         final SegmentResult<String> second = segment.get(2);
         assertEquals(SegmentResultStatus.OK, first.getStatus());
@@ -245,7 +245,7 @@ class SegmentBuilderTest {
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
                 .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
                 .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
-                .build();
+                .build().getValue();
 
         final SegmentImpl<Integer, String> impl = (SegmentImpl<Integer, String>) segment;
         final Field field = SegmentImpl.class
@@ -279,7 +279,7 @@ class SegmentBuilderTest {
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
                 .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
-                .build();
+                .build().getValue();
         try {
             assertNotNull(segment);
             final SegmentImpl<Integer, String> impl = (SegmentImpl<Integer, String>) segment;

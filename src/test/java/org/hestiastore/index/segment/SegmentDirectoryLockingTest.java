@@ -66,8 +66,8 @@ class SegmentDirectoryLockingTest {
         final SegmentDirectoryLocking locking = new SegmentDirectoryLocking(
                 asyncDirectory, LAYOUT);
 
-        final IllegalStateException error = assertThrows(
-                IllegalStateException.class, locking::lock);
+        final SegmentDirectoryLocking.LockBusyException error = assertThrows(
+                SegmentDirectoryLocking.LockBusyException.class, locking::lock);
 
         assertTrue(error.getMessage() != null
                 && error.getMessage().contains("already locked"));

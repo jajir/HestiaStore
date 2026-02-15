@@ -6,6 +6,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segment.SegmentBuildResult;
 import org.hestiastore.index.segment.SegmentBuilder;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
@@ -53,10 +54,11 @@ public final class SegmentFactory<K, V> {
      * Builds a new segment instance for the given id.
      *
      * @param segmentId segment id
-     * @return new segment instance
+     * @return build result with the new segment or BUSY status
      * @throws RuntimeException when segment directory open/build fails
      */
-    public Segment<K, V> buildSegment(final SegmentId segmentId) {
+    public SegmentBuildResult<Segment<K, V>> buildSegment(
+            final SegmentId segmentId) {
         return newSegmentBuilder(segmentId).build();
     }
 

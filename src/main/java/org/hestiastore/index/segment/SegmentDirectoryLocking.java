@@ -25,12 +25,12 @@ final class SegmentDirectoryLocking {
         final FileLock lockHandle = directoryFacade.getLockAsync(lockFileName)
                 .toCompletableFuture().join();
         if (lockHandle.isLocked()) {
-            throw new IllegalStateException(lockHeldMessage(lockFileName));
+            throw new LockBusyException(lockHeldMessage(lockFileName));
         }
         try {
             lockHandle.lock();
         } catch (final IllegalStateException e) {
-            throw new IllegalStateException(lockHeldMessage(lockFileName), e);
+            throw new LockBusyException(lockHeldMessage(lockFileName), e);
         }
         this.fileLock = lockHandle;
         return lockHandle;
@@ -46,5 +46,18 @@ final class SegmentDirectoryLocking {
         return String.format(
                 "Segment '%s' is already locked. Delete '%s' to recover.",
                 layout.getSegmentId().getName(), lockFileName);
+    }
+
+    static final class LockBusyException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+        private LockBusyException(final String message) {
+            super(message);
+        }
+
+        private LockBusyException(final String message,
+                final Throwable cause) {
+            super(message, cause);
+        }
     }
 }

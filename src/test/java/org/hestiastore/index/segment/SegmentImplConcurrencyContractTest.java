@@ -259,7 +259,7 @@ class SegmentImplConcurrencyContractTest {
         if (maintenanceExecutor != null) {
             builder.withMaintenanceExecutor(maintenanceExecutor);
         }
-        return builder.build();
+        return builder.build().getValue();
     }
 
     private static void closeAndDrainExecutor(final Segment<?, ?> segment,

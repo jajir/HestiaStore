@@ -330,17 +330,19 @@ public final class SegmentBuilder<K, V> {
      * components, creates defaults where not supplied, and wires dependent
      * parts together.
      *
-     * @return initialized segment instance
+     * @return build result containing initialized segment or BUSY status
      * @throws IllegalArgumentException if required fields are missing or
      *                                  invalid
-     * @throws IllegalStateException if the segment directory is already
-     *                               locked by another segment instance
      */
-    public Segment<K, V> build() {
+    public SegmentBuildResult<Segment<K, V>> build() {
         final SegmentDirectoryLayout layout = resolveLayout();
         final SegmentDirectoryLocking directoryLocking = new SegmentDirectoryLocking(
                 getDirectoryFacade(), layout);
-        directoryLocking.lock();
+        try {
+            directoryLocking.lock();
+        } catch (final SegmentDirectoryLocking.LockBusyException e) {
+            return SegmentBuildResult.busy();
+        }
         try {
             final SegmentBuildContext<K, V> context = prepareBuildContext(
                     layout);
@@ -378,9 +380,9 @@ public final class SegmentBuilder<K, V> {
                             context.segmentConf
                                     .getMaxNumberOfDeltaCacheFiles())
                     : SegmentMaintenancePolicy.none();
-            return new SegmentImpl<>(core, compacter,
+            return SegmentBuildResult.ok(new SegmentImpl<>(core, compacter,
                     context.maintenanceExecutor, maintenancePolicy,
-                    directoryLocking);
+                    directoryLocking));
         } catch (final RuntimeException e) {
             directoryLocking.unlock();
             throw e;

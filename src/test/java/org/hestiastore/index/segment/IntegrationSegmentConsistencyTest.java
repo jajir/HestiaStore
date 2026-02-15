@@ -55,7 +55,7 @@ class IntegrationSegmentConsistencyTest extends AbstractSegmentTest {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build();
+                .build().getValue();
     }
 
     /**

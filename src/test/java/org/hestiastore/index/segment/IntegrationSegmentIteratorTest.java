@@ -68,7 +68,7 @@ class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build();
+                .build().getValue();
 
         writeEntries(segment, indexFile);
         assertEquals(SegmentResultStatus.OK, segment.compact().getStatus());

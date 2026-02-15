@@ -140,7 +140,7 @@ class SegmentThreadSafetyStressTest {
                 .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))
                 .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()))
                 .withMaintenanceExecutor(maintenanceExecutor)
-                .build();
+                .build().getValue();
     }
 
     private static final class ClosingExecutor implements AutoCloseable {

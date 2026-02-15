@@ -6,6 +6,8 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segment.SegmentBuildResult;
+import org.hestiastore.index.segment.SegmentBuildStatus;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
@@ -316,15 +318,19 @@ public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
             throw new IndexException(
                     String.format("Segment '%s' was not found.", segmentId));
         }
-        try {
-            return segmentFactory.buildSegment(segmentId);
-        } catch (final IllegalStateException e) {
-            final String message = e.getMessage();
-            if (message != null && message.contains("already locked")) {
-                throw new SegmentBusyException(e.getMessage(), e);
-            }
-            throw e;
+        final SegmentBuildResult<Segment<K, V>> buildResult = segmentFactory
+                .buildSegment(segmentId);
+        if (buildResult.getStatus() == SegmentBuildStatus.OK
+                && buildResult.getValue() != null) {
+            return buildResult.getValue();
         }
+        if (buildResult.getStatus() == SegmentBuildStatus.BUSY) {
+            throw new SegmentBusyException(
+                    String.format("Segment '%s' is busy.", segmentId));
+        }
+        throw new IndexException(String.format(
+                "Segment '%s' failed to build with status '%s'.", segmentId,
+                buildResult.getStatus()));
     }
 
     private static final class SegmentBusyException extends RuntimeException {
