@@ -232,7 +232,7 @@ class SegmentIndexConfiguratonStorageTest {
                 () -> storage.load());
 
         assertTrue(e.getMessage().startsWith(
-                "File index-configuration.properties does not exist in directory"),
+                "File manifest.txt does not exist in directory"),
                 e.getMessage());
     }
 
@@ -253,7 +253,7 @@ class SegmentIndexConfiguratonStorageTest {
     private void logConfigurationFile() {
         if (directory instanceof MemDirectory) {
             final MemDirectory memDirectory = (MemDirectory) directory;
-            final String fileName = "index-configuration.properties";
+            final String fileName = "manifest.txt";
             if (memDirectory.isFileExists(fileName)) {
                 final String content = new String(
                         memDirectory.getFileBytes(fileName).getData(),
