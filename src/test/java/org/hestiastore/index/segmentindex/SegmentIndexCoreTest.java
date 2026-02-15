@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -97,8 +96,7 @@ class SegmentIndexCoreTest {
     @Test
     void get_returnsBusyWhenMappingChangesDuringRead() {
         final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
-        when(segmentRegistry.getSegment(segmentId)).thenAnswer(
-                invocation -> {
+        when(segmentRegistry.getSegment(segmentId)).thenAnswer(invocation -> {
             synchronizedKeyToSegmentMap.updateSegmentMaxKey(segmentId, "key-2");
             return SegmentRegistryResult.ok(segment);
         });
@@ -128,8 +126,7 @@ class SegmentIndexCoreTest {
     @Test
     void put_returnsBusyWhenMappingChangesBeforeWrite() {
         final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
-        when(segmentRegistry.getSegment(segmentId)).thenAnswer(
-                invocation -> {
+        when(segmentRegistry.getSegment(segmentId)).thenAnswer(invocation -> {
             synchronizedKeyToSegmentMap.updateSegmentMaxKey(segmentId, "key-2");
             return SegmentRegistryResult.ok(segment);
         });

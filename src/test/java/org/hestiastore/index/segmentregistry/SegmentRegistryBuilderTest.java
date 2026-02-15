@@ -97,8 +97,8 @@ class SegmentRegistryBuilderTest {
                 assertEquals(SegmentId.of(6),
                         registry.allocateSegmentId().getValue());
                 final SegmentRegistryImpl<Integer, String> impl = (SegmentRegistryImpl<Integer, String>) registry;
-                assertNotNull(readField(impl, "segmentFactory"),
-                        "Expected default segment factory");
+                assertNotNull(readField(impl, "cache"),
+                        "Expected prebuilt cache wiring");
                 assertNotNull(readField(impl, "segmentIdAllocator"),
                         "Expected default segment id allocator");
             } finally {
