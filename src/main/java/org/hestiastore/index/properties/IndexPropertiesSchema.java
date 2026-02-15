@@ -71,7 +71,7 @@ public final class IndexPropertiesSchema {
         public static final String PROP_ENCODING_CHUNK_FILTERS = "encodingChunkFilters";
         public static final String PROP_DECODING_CHUNK_FILTERS = "decodingChunkFilters";
 
-        public static final String CONFIGURATION_FILENAME = "index-configuration.properties";
+        public static final String CONFIGURATION_FILENAME = "manifest.txt";
 
         private IndexConfigurationKeys() {
         }

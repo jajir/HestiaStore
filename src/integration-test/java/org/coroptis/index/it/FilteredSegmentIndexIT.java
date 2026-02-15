@@ -85,7 +85,7 @@ class FilteredSegmentIndexIT {
                 .ifPresent(file -> LOGGER.info("{}: {}", prefix, file));
 
         directory.getFileNames()//
-                .filter(name -> name.equals("index-configuration.properties"))//
+                .filter(name -> name.equals("manifest.txt"))//
                 .findFirst()//
                 .ifPresent(name -> {
                     final FileReader reader = directory.getFileReader(name);
@@ -100,9 +100,7 @@ class FilteredSegmentIndexIT {
                         }
                         final String content = new String(out.toByteArray(),
                                 StandardCharsets.UTF_8);
-                        LOGGER.info(
-                                "index-configuration.properties content:\n{}",
-                                content);
+                        LOGGER.info("manifest.txt content:\n{}", content);
                     } catch (Exception ex) {
                         LOGGER.warn("Unable to read {}", name, ex);
                     }
