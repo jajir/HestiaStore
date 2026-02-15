@@ -113,22 +113,25 @@ final class SegmentIndexCore<K, V> {
             putResult = IndexResult.error();
         }
         if (putResult.getStatus() == IndexResultStatus.OK) {
-            maintenanceCoordinator.handlePostWrite(segment, key, segmentId,
-                    stableSnapshot.version());
-            if (DEBUG_SPLIT_LOSS) {
-                final KeyToSegmentMap.Snapshot<K> currentSnapshot = keyToSegmentMap
-                        .snapshot();
-                final SegmentId currentSegmentId = currentSnapshot
-                        .findSegmentId(key);
-                if (!segmentId.equals(currentSegmentId)
-                        || currentSnapshot.version() != stableSnapshot
-                                .version()) {
+            final boolean mappingUnchanged = keyToSegmentMap
+                    .isKeyMappedToSegment(key, segmentId)
+                    && keyToSegmentMap.isMappingValid(key, segmentId,
+                            stableSnapshot.version());
+            if (!mappingUnchanged) {
+                if (DEBUG_SPLIT_LOSS) {
+                    final KeyToSegmentMap.Snapshot<K> currentSnapshot = keyToSegmentMap
+                            .snapshot();
+                    final SegmentId currentSegmentId = currentSnapshot
+                            .findSegmentId(key);
                     logger.warn(
-                            "Split debug: key '{}' wrote to segment '{}' at map version '{}', now mapped to '{}' (version '{}').",
+                            "Split debug: key '{}' wrote to segment '{}' at map version '{}', now mapped to '{}' (version '{}'). Retrying write.",
                             key, segmentId, stableSnapshot.version(),
                             currentSegmentId, currentSnapshot.version());
                 }
+                return IndexResult.busy();
             }
+            maintenanceCoordinator.handlePostWrite(segment, key, segmentId,
+                    stableSnapshot.version());
         }
         return putResult;
     }

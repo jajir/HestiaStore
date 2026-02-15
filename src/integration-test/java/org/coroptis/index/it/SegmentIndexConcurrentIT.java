@@ -23,6 +23,7 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Multi-threaded access safety check for {@link SegmentIndex} using the default
@@ -33,6 +34,8 @@ import org.junit.jupiter.api.Test;
  * disjoint keyspaces (order-independent) and "last write wins" for a single
  * key.
  */
+@Timeout(value = 90, unit = TimeUnit.SECONDS,
+        threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
 class SegmentIndexConcurrentIT {
 
     @Test

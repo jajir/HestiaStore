@@ -436,6 +436,10 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 retryPolicy.backoffOrThrow(startNanos, "compact", segmentId);
                 continue;
             }
+            if (status == IndexResultStatus.ERROR
+                    && !isSegmentStillMapped(segmentId)) {
+                return;
+            }
             throw newIndexException("compact", segmentId, status);
         }
     }
@@ -464,6 +468,10 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 }
                 retryPolicy.backoffOrThrow(startNanos, "flush", segmentId);
                 continue;
+            }
+            if (status == IndexResultStatus.ERROR
+                    && !isSegmentStillMapped(segmentId)) {
+                return;
             }
             throw newIndexException("flush", segmentId, status);
         }
@@ -543,12 +551,12 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     return;
                 }
                 if (loaded.getStatus() != SegmentRegistryResultStatus.BUSY) {
-                    throw new IndexException(
-                            String.format("Segment '%s' failed to load: %s",
-                                    segmentId, loaded.getStatus()));
-                }
-                if (!isSegmentStillMapped(segmentId)) {
-                    return;
+                    if (!isSegmentStillMapped(segmentId)) {
+                        return;
+                    }
+                    retryPolicy.backoffOrThrow(startNanos,
+                            "invalidateIterators", segmentId);
+                    continue;
                 }
                 retryPolicy.backoffOrThrow(startNanos, "invalidateIterators",
                         segmentId);

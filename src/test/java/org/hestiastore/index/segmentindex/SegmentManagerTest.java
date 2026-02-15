@@ -17,6 +17,7 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
+import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -64,12 +65,14 @@ class SegmentManagerTest {
         when(conf.getDecodingChunkFilters())
                 .thenReturn(List.of(new ChunkFilterDoNothing()));
 
-        final Segment<Integer, String> s1 = segmentRegistry
-                .getSegment(SegmentId.of(1)).getValue();
+        final SegmentRegistryResult<Segment<Integer, String>> created = segmentRegistry
+                .createSegment();
+        final Segment<Integer, String> s1 = created.getValue();
         assertNotNull(s1);
+        final SegmentId segmentId = s1.getId();
 
         final Segment<Integer, String> s2 = segmentRegistry
-                .getSegment(SegmentId.of(1)).getValue();
+                .getSegment(segmentId).getValue();
         assertNotNull(s1);
 
         /*
