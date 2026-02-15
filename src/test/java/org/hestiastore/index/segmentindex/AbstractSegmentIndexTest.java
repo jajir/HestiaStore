@@ -34,7 +34,7 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
      * 
      * @param <M>     key type
      * @param <N>     value type
-     * @param seg     required index
+     * @param index   required index
      * @param entries required list of entries
      */
     protected <M, N> void writeEntries(final SegmentIndex<M, N> index,
@@ -50,7 +50,7 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
      * 
      * @param <M>     key type
      * @param <N>     value type
-     * @param seg     required segment
+     * @param index   required index
      * @param entries required list of entries of key and expected value
      */
     protected <M, N> void verifyIndexSearch(final SegmentIndex<M, N> index,
@@ -68,7 +68,7 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
      * 
      * @param <M>     key type
      * @param <N>     value type
-     * @param seg     required index
+     * @param index   required index
      * @param entries required list of expected data in index
      */
     protected <M, N> void verifyIndexData(final SegmentIndex<M, N> index,

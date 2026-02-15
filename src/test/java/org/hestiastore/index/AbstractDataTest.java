@@ -33,8 +33,8 @@ public abstract class AbstractDataTest {
      * 
      * @param <M>      key type
      * @param <N>      value type
-     * @param iterator
-     * @returnlist of entries with data from list
+     * @param iterator required stream of entries
+     * @return list of entries with data from stream
      */
     protected <M, N> List<Entry<M, N>> toList(
             final Stream<Entry<M, N>> iterator) {
@@ -62,8 +62,8 @@ public abstract class AbstractDataTest {
      * 
      * @param <M>      key type
      * @param <N>      value type
-     * @param iterator
-     * @returnlist of entries with data from list
+     * @param iterator required entry iterator
+     * @return list of entries with data from iterator
      */
     protected static <M, N> List<Entry<M, N>> toList(
             final EntryIterator<M, N> iterator) {
