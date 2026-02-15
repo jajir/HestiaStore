@@ -1,9 +1,8 @@
 package org.hestiastore.index.segmentindex;
 
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -15,8 +14,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
+
 import org.hestiastore.index.chunkstore.ChunkFilter;
+import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
@@ -26,10 +26,10 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryStateMachine;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
+import org.hestiastore.index.segmentregistry.SegmentRegistryStateMachine;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -103,7 +103,8 @@ class SegmentRegistryImplTest {
     @Test
     void registryStartupTransitionsGateToReady() {
         final SegmentRegistryStateMachine gate = readGate(registry);
-        assertSame(org.hestiastore.index.segmentregistry.SegmentRegistryState.READY,
+        assertSame(
+                org.hestiastore.index.segmentregistry.SegmentRegistryState.READY,
                 gate.getState());
     }
 
@@ -164,11 +165,12 @@ class SegmentRegistryImplTest {
                 .count();
         if (closedCount == 0L) {
             awaitCondition(() -> List.of(first, second, third).stream()
-                    .anyMatch(segment -> segment.getState() == SegmentState.CLOSED),
+                    .anyMatch(segment -> segment
+                            .getState() == SegmentState.CLOSED),
                     1500L);
         }
-        assertTrue(List.of(first, second, third).stream()
-                .anyMatch(segment -> segment.getState() == SegmentState.CLOSED));
+        assertTrue(List.of(first, second, third).stream().anyMatch(
+                segment -> segment.getState() == SegmentState.CLOSED));
     }
 
     @Test
@@ -199,7 +201,8 @@ class SegmentRegistryImplTest {
             final Future<SegmentRegistryResult<Segment<Integer, String>>> waiter = callers
                     .submit(() -> registry.getSegment(segmentId));
 
-            org.junit.jupiter.api.Assertions.assertThrows(TimeoutException.class,
+            org.junit.jupiter.api.Assertions.assertThrows(
+                    TimeoutException.class,
                     () -> waiter.get(100, TimeUnit.MILLISECONDS));
 
             finishLoad(entry, segment);
@@ -235,7 +238,8 @@ class SegmentRegistryImplTest {
         removeCacheEntry(segmentId);
     }
 
-    private static void awaitCondition(final java.util.function.BooleanSupplier condition,
+    private static void awaitCondition(
+            final java.util.function.BooleanSupplier condition,
             final long timeoutMillis) {
         final long deadline = System.nanoTime()
                 + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
@@ -291,7 +295,8 @@ class SegmentRegistryImplTest {
             constructor.setAccessible(true);
             return constructor.newInstance(accessCx);
         } catch (final ReflectiveOperationException ex) {
-            throw new IllegalStateException("Unable to create loading entry", ex);
+            throw new IllegalStateException("Unable to create loading entry",
+                    ex);
         }
     }
 
