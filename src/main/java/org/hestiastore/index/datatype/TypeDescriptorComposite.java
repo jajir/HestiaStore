@@ -64,8 +64,6 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
      * Compare elements one by one in order, and return the result of the first
      * non-zero comparison.
      * 
-     * @param a required first object to compare
-     * @param b required second object to compare
      * @return result of object comparison
      * @throws IndexException Throw an IndexException if the sizes of the two
      *                        CompositeValue instances differ.

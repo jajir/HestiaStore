@@ -35,9 +35,9 @@ public class DataBlockFile {
     /**
      * Creates a new data block file.
      *
-     * @param directory the directory where the data block file is stored
-     * @param fileName  the name of the data block file
-     * @param blockSize the size of each data block
+     * @param directoryFacade the directory where the data block file is stored
+     * @param fileName        the name of the data block file
+     * @param blockSize       the size of each data block
      */
     public DataBlockFile(final AsyncDirectory directoryFacade,
             final String fileName, final DataBlockSize blockSize) {
