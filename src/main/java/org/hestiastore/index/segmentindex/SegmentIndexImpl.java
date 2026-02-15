@@ -2,6 +2,8 @@ package org.hestiastore.index.segmentindex;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -83,13 +85,28 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final SegmentFactory<K, V> segmentFactory = new SegmentFactory<>(
                     directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
                     conf, segmentAsyncExecutor.getExecutor());
-            final SegmentRegistry<K, V> registry = SegmentRegistry
-                    .<K, V>builder().withDirectoryFacade(directoryFacade)
-                    .withKeyTypeDescriptor(keyTypeDescriptor)
-                    .withValueTypeDescriptor(valueTypeDescriptor)
-                    .withConfiguration(conf)
-                    .withMaintenanceExecutor(segmentAsyncExecutor.getExecutor())
-                    .withSegmentFactory(segmentFactory).build();
+            final ExecutorService registryLifecycleExecutor = Executors
+                    .newSingleThreadExecutor(runnable -> {
+                        final Thread thread = new Thread(runnable,
+                                "segment-registry-lifecycle");
+                        thread.setDaemon(true);
+                        return thread;
+                    });
+            final SegmentRegistry<K, V> registry;
+            try {
+                registry = SegmentRegistry.<K, V>builder()
+                        .withDirectoryFacade(directoryFacade)
+                        .withKeyTypeDescriptor(keyTypeDescriptor)
+                        .withValueTypeDescriptor(valueTypeDescriptor)
+                        .withConfiguration(conf)
+                        .withMaintenanceExecutor(
+                                segmentAsyncExecutor.getExecutor())
+                        .withLifecycleExecutor(registryLifecycleExecutor)
+                        .build();
+            } catch (final RuntimeException e) {
+                registryLifecycleExecutor.shutdownNow();
+                throw e;
+            }
             this.segmentRegistry = registry;
             final SegmentWriterTxFactory<K, V> writerTxFactory = id -> segmentFactory
                     .newSegmentBuilder(id).openWriterTx();

@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.Executors;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.WriteTransaction;
@@ -19,7 +19,6 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segmentregistry.SegmentFactory;
-import org.hestiastore.index.segmentregistry.SegmentIdAllocator;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
@@ -45,17 +44,14 @@ class SegmentSplitCoordinatorFlowTest {
         final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
                 directory, KEY_DESCRIPTOR, VALUE_DESCRIPTOR, conf,
                 maintenanceExecutor.getExecutor());
-        final AtomicInteger nextId = new AtomicInteger(1);
-        final SegmentIdAllocator segmentIdAllocator = () -> SegmentId
-                .of(nextId.getAndIncrement());
         final SegmentRegistryImpl<Integer, String> registryImpl = (SegmentRegistryImpl<Integer, String>) SegmentRegistry
                 .<Integer, String>builder().withDirectoryFacade(directory)
                 .withKeyTypeDescriptor(KEY_DESCRIPTOR)
                 .withValueTypeDescriptor(VALUE_DESCRIPTOR)
                 .withConfiguration(conf)
                 .withMaintenanceExecutor(maintenanceExecutor.getExecutor())
-                .withSegmentFactory(segmentFactory)
-                .withSegmentIdAllocator(segmentIdAllocator).build();
+                .withLifecycleExecutor(Executors.newSingleThreadExecutor())
+                .build();
         final TrackingRegistry<Integer, String> registry = new TrackingRegistry<>(
                 registryImpl);
         final TrackingWriterTxFactory writerTxFactory = new TrackingWriterTxFactory(
@@ -115,17 +111,14 @@ class SegmentSplitCoordinatorFlowTest {
         final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
                 directory, KEY_DESCRIPTOR, VALUE_DESCRIPTOR, conf,
                 maintenanceExecutor.getExecutor());
-        final AtomicInteger nextId = new AtomicInteger(1);
-        final SegmentIdAllocator segmentIdAllocator = () -> SegmentId
-                .of(nextId.getAndIncrement());
         final SegmentRegistryImpl<Integer, String> registryImpl = (SegmentRegistryImpl<Integer, String>) SegmentRegistry
                 .<Integer, String>builder().withDirectoryFacade(directory)
                 .withKeyTypeDescriptor(KEY_DESCRIPTOR)
                 .withValueTypeDescriptor(VALUE_DESCRIPTOR)
                 .withConfiguration(conf)
                 .withMaintenanceExecutor(maintenanceExecutor.getExecutor())
-                .withSegmentFactory(segmentFactory)
-                .withSegmentIdAllocator(segmentIdAllocator).build();
+                .withLifecycleExecutor(Executors.newSingleThreadExecutor())
+                .build();
         final TrackingRegistry<Integer, String> registry = new TrackingRegistry<>(
                 registryImpl);
         final TrackingWriterTxFactory writerTxFactory = new TrackingWriterTxFactory(

@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentregistry;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
@@ -56,10 +57,17 @@ class SegmentRegistryBuilderTest {
     }
 
     @Test
-    void builderRejectsNullExecutor() {
+    void builderRejectsNullMaintenanceExecutor() {
         assertThrows(IllegalArgumentException.class,
                 () -> SegmentRegistry.<Integer, String>builder()
                         .withMaintenanceExecutor(null));
+    }
+
+    @Test
+    void builderRejectsNullLifecycleExecutor() {
+        assertThrows(IllegalArgumentException.class,
+                () -> SegmentRegistry.<Integer, String>builder()
+                        .withLifecycleExecutor(null));
     }
 
     @Test
@@ -71,7 +79,10 @@ class SegmentRegistryBuilderTest {
         when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
         when(conf.getIndexBusyBackoffMillis()).thenReturn(1);
         when(conf.getIndexBusyTimeoutMillis()).thenReturn(10);
-        final ExecutorService executor = Executors.newSingleThreadExecutor();
+        final ExecutorService maintenanceExecutor = Executors
+                .newSingleThreadExecutor();
+        final ExecutorService lifecycleExecutor = Executors
+                .newSingleThreadExecutor();
         try {
             final SegmentRegistry<Integer, String> registry = SegmentRegistry
                     .<Integer, String>builder()
@@ -79,7 +90,8 @@ class SegmentRegistryBuilderTest {
                     .withKeyTypeDescriptor(new TypeDescriptorInteger())
                     .withValueTypeDescriptor(new TypeDescriptorShortString())
                     .withConfiguration(conf)
-                    .withMaintenanceExecutor(executor)
+                    .withMaintenanceExecutor(maintenanceExecutor)
+                    .withLifecycleExecutor(lifecycleExecutor)
                     .build();
             try {
                 assertEquals(SegmentId.of(6),
@@ -93,7 +105,34 @@ class SegmentRegistryBuilderTest {
                 registry.close();
             }
         } finally {
-            executor.shutdownNow();
+            maintenanceExecutor.shutdownNow();
+            lifecycleExecutor.shutdownNow();
+        }
+    }
+
+    @Test
+    void buildFailsWhenLifecycleExecutorIsMissing() {
+        final MemDirectory directory = new MemDirectory();
+        final AsyncDirectory asyncDirectory = AsyncDirectoryAdapter
+                .wrap(directory);
+        final ExecutorService maintenanceExecutor = Executors
+                .newSingleThreadExecutor();
+        try {
+            final IllegalArgumentException ex = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> SegmentRegistry.<Integer, String>builder()
+                            .withDirectoryFacade(asyncDirectory)
+                            .withKeyTypeDescriptor(
+                                    new TypeDescriptorInteger())
+                            .withValueTypeDescriptor(
+                                    new TypeDescriptorShortString())
+                            .withConfiguration(conf)
+                            .withMaintenanceExecutor(maintenanceExecutor)
+                            .build());
+            assertTrue(ex.getMessage()
+                    .contains("Property 'lifecycleExecutor' must not be null."));
+        } finally {
+            maintenanceExecutor.shutdownNow();
         }
     }
 
