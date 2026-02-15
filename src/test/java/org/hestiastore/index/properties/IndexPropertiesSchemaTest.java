@@ -101,6 +101,10 @@ class IndexPropertiesSchemaTest {
                 view.getInt(IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_CACHE));
         assertEquals(IndexConfigurationContract.MAX_NUMBER_OF_DELTA_CACHE_FILES,
                 view.getInt(IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES));
+        assertEquals(
+                IndexConfigurationContract.DEFAULT_REGISTRY_LIFECYCLE_THREADS,
+                view.getInt(
+                        IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS));
         assertEquals("",
                 view.getString(IndexPropertiesSchema.IndexConfigurationKeys.PROP_ENCODING_CHUNK_FILTERS));
         assertEquals("",

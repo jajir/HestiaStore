@@ -20,5 +20,6 @@ class IndexConfigurationDefaultStringTest {
         assertEquals(1024 * 1024, defaults.getDiskIoBufferSizeInBytes());
         assertEquals(2, defaults.getBloomFilterNumberOfHashFunctions());
         assertEquals(1_000_000, defaults.getBloomFilterIndexSizeInBytes());
+        assertEquals(3, defaults.getNumberOfRegistryLifecycleThreads());
     }
 }

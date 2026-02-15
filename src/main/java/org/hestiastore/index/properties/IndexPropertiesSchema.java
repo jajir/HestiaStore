@@ -60,6 +60,7 @@ public final class IndexPropertiesSchema {
         public static final String PROP_NUMBER_OF_IO_THREADS = "numberOfIoThreads";
         public static final String PROP_SEGMENT_INDEX_MAINTENANCE_THREADS = "segmentIndexMaintenanceThreads";
         public static final String PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS = "numberOfIndexMaintenanceThreads";
+        public static final String PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS = "numberOfRegistryLifecycleThreads";
         public static final String PROP_INDEX_BUSY_BACKOFF_MILLIS = "indexBusyBackoffMillis";
         public static final String PROP_INDEX_BUSY_TIMEOUT_MILLIS = "indexBusyTimeoutMillis";
         public static final String PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED = "segmentMaintenanceAutoEnabled";
@@ -274,6 +275,10 @@ public final class IndexPropertiesSchema {
                 IndexConfigurationKeys.PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS,
                 view -> String.valueOf(
                         IndexConfigurationContract.DEFAULT_INDEX_MAINTENANCE_THREADS));
+        defaults.put(
+                IndexConfigurationKeys.PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS,
+                view -> String.valueOf(
+                        IndexConfigurationContract.DEFAULT_REGISTRY_LIFECYCLE_THREADS));
         defaults.put(IndexConfigurationKeys.PROP_INDEX_BUSY_BACKOFF_MILLIS,
                 view -> String.valueOf(
                         IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS));

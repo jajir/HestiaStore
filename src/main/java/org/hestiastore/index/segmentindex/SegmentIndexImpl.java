@@ -5,6 +5,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.AbstractCloseableResource;
@@ -85,10 +86,16 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final SegmentFactory<K, V> segmentFactory = new SegmentFactory<>(
                     directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
                     conf, segmentAsyncExecutor.getExecutor());
+            final int registryLifecycleThreads = conf
+                    .getNumberOfRegistryLifecycleThreads().intValue();
+            final AtomicInteger registryLifecycleThreadCx = new AtomicInteger(
+                    1);
             final ExecutorService registryLifecycleExecutor = Executors
-                    .newSingleThreadExecutor(runnable -> {
+                    .newFixedThreadPool(registryLifecycleThreads, runnable -> {
                         final Thread thread = new Thread(runnable,
-                                "segment-registry-lifecycle");
+                                "segment-registry-lifecycle-"
+                                        + registryLifecycleThreadCx
+                                                .getAndIncrement());
                         thread.setDaemon(true);
                         return thread;
                     });

@@ -34,6 +34,7 @@ public class IndexConfigurationBuilder<K, V> {
     private Integer numberOfIoThreads;
     private Integer numberOfSegmentIndexMaintenanceThreads;
     private Integer numberOfIndexMaintenanceThreads;
+    private Integer numberOfRegistryLifecycleThreads;
     private Integer indexBusyBackoffMillis;
     private Integer indexBusyTimeoutMillis;
     private Boolean segmentMaintenanceAutoEnabled;
@@ -343,6 +344,19 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     /**
+     * Sets the number of registry lifecycle threads used for
+     * segment load/unload operations.
+     *
+     * @param numberOfRegistryLifecycleThreads registry lifecycle thread count
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> withNumberOfRegistryLifecycleThreads(
+            final Integer numberOfRegistryLifecycleThreads) {
+        this.numberOfRegistryLifecycleThreads = numberOfRegistryLifecycleThreads;
+        return this;
+    }
+
+    /**
      * Sets the busy backoff delay in milliseconds.
      *
      * @param indexBusyBackoffMillis backoff delay in milliseconds
@@ -507,6 +521,9 @@ public class IndexConfigurationBuilder<K, V> {
         final Integer effectiveIndexMaintenanceThreads = numberOfIndexMaintenanceThreads == null
                 ? IndexConfigurationContract.DEFAULT_INDEX_MAINTENANCE_THREADS
                 : numberOfIndexMaintenanceThreads;
+        final Integer effectiveRegistryLifecycleThreads = numberOfRegistryLifecycleThreads == null
+                ? IndexConfigurationContract.DEFAULT_REGISTRY_LIFECYCLE_THREADS
+                : numberOfRegistryLifecycleThreads;
         final Integer effectiveIndexBusyBackoffMillis = indexBusyBackoffMillis == null
                 ? IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS
                 : indexBusyBackoffMillis;
@@ -554,6 +571,7 @@ public class IndexConfigurationBuilder<K, V> {
                 effectiveNumberOfIoThreads,
                 effectiveSegmentIndexMaintenanceThreads,
                 effectiveIndexMaintenanceThreads,
+                effectiveRegistryLifecycleThreads,
                 effectiveIndexBusyBackoffMillis,
                 effectiveIndexBusyTimeoutMillis,
                 effectiveSegmentMaintenanceAutoEnabled,

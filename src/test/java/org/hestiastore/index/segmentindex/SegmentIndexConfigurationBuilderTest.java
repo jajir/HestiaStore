@@ -156,6 +156,14 @@ class SegmentIndexConfigurationBuilderTest {
     }
 
     @Test
+    void withNumberOfRegistryLifecycleThreadsSetsValue() {
+        final int value = 5;
+        final IndexConfiguration<Integer, String> config = newBuilder()
+                .withNumberOfRegistryLifecycleThreads(value).build();
+        assertEquals(value, config.getNumberOfRegistryLifecycleThreads());
+    }
+
+    @Test
     void withBloomFilterIndexSizeInBytesSetsValue() {
         final int value = 64;
         final IndexConfiguration<Integer, String> config = newBuilder()
