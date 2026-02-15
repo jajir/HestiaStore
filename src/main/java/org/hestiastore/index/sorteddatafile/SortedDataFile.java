@@ -104,7 +104,7 @@ public class SortedDataFile<K, V> {
      * Creates a new instance with the specified properties. The key and value
      * type descriptors remain unchanged.
      * 
-     * @param newDirectory        required new directory
+     * @param newAsyncDirectory   required new directory
      * @param newFileName         required new file name
      * @param newDiskIoBufferSize the new disk I/O buffer size
      * @return a new instance with the specified properties

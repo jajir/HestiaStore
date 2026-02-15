@@ -26,19 +26,30 @@ public final class IndexStateOpening<K, V> implements IndexState<K, V> {
         fileLock.lock();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * Transitions the index to the ready state while keeping the acquired
+     * directory lock.
+     *
+     * @param index index instance
+     */
     @Override
     public void onReady(final SegmentIndexImpl<K, V> index) {
         index.setIndexState(new IndexStateReady<>(fileLock));
     }
 
-    /** {@inheritDoc} */
+    /**
+     * Closing is not allowed while the index is still opening.
+     *
+     * @param index index instance
+     */
     @Override
     public void onClose(final SegmentIndexImpl<K, V> index) {
         throw new IllegalStateException("Can't close uninitialized index.");
     }
 
-    /** {@inheritDoc} */
+    /**
+     * Rejects operations while the index is still opening.
+     */
     @Override
     public void tryPerformOperation() {
         throw new IllegalStateException(

@@ -332,9 +332,9 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * @param segmentWindows allows to limit examined segments. If empty then
      *                       all segments are used.
      * @return stream of all data.
-     * @implNote Equivalent to
-     *           {@link #getStream(SegmentWindow, SegmentIteratorIsolation)}
-     *           with {@link SegmentIteratorIsolation#FAIL_FAST}.
+     * Equivalent to
+     * {@link #getStream(SegmentWindow, SegmentIteratorIsolation)} with
+     * {@link SegmentIteratorIsolation#FAIL_FAST}.
      */
     Stream<Entry<K, V>> getStream(SegmentWindow segmentWindows);
 

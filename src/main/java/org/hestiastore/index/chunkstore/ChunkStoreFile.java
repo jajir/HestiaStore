@@ -23,8 +23,8 @@ public class ChunkStoreFile {
     /**
      * Constructs a new ChunkStoreFile.
      *
-     * @param directory     required directory where the chunk store file is
-     *                      located
+     * @param directoryFacade required directory where the chunk store file is
+     *                        located
      * @param fileName      required name of the chunk store file
      * @param dataBlockSize required size of the data blocks in the chunk store
      *                      file
