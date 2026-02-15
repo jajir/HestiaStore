@@ -20,6 +20,8 @@ import org.hestiastore.index.segmentindex.IndexRetryPolicy;
  */
 public final class SegmentRegistryBuilder<K, V> {
 
+    private static final int REGISTRY_CLOSE_TIMEOUT_MILLIS = (int) TimeUnit.MINUTES
+            .toMillis(5);
     private static final int SEGMENT_BUILD_BUSY_TIMEOUT_MILLIS = (int) TimeUnit.MINUTES
             .toMillis(5);
 
@@ -152,6 +154,8 @@ public final class SegmentRegistryBuilder<K, V> {
         resolvedFileSystem.ensureSegmentDirectory(SegmentId.of(0));
         final IndexRetryPolicy resolvedCloseRetryPolicy = new IndexRetryPolicy(
                 busyBackoffMillis, busyTimeoutMillis);
+        final IndexRetryPolicy resolvedRegistryCloseRetryPolicy = new IndexRetryPolicy(
+                busyBackoffMillis, REGISTRY_CLOSE_TIMEOUT_MILLIS);
         final IndexRetryPolicy resolvedSegmentBuildRetryPolicy = new IndexRetryPolicy(
                 busyBackoffMillis, SEGMENT_BUILD_BUSY_TIMEOUT_MILLIS);
         final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
@@ -163,7 +167,7 @@ public final class SegmentRegistryBuilder<K, V> {
                 maintenance::closeSegmentIfNeeded, resolvedLifecycleExecutor,
                 segment -> segment != null);
         return new SegmentRegistryImpl<>(resolvedAllocator, resolvedFileSystem,
-                cache, gate);
+                cache, resolvedRegistryCloseRetryPolicy, gate);
     }
 
     private static int sanitizeRetryConf(final Integer configured,

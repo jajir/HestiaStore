@@ -4,6 +4,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
+import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 
 /**
  * Registry that manages segment lifecycles and caches loaded segments.
@@ -19,6 +20,7 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
 
     private final SegmentRegistryCache<SegmentId, Segment<K, V>> cache;
     private final SegmentRegistryStateMachine gate;
+    private final IndexRetryPolicy closeRetryPolicy;
 
     private final SegmentIdAllocator segmentIdAllocator;
     private final SegmentRegistryFileSystem fileSystem;
@@ -29,16 +31,20 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
      * @param segmentIdAllocator allocator for new segment ids
      * @param fileSystem file system facade for segment directories/files
      * @param cache prebuilt segment cache
+     * @param closeRetryPolicy retry policy for draining cache on close
      * @param gate registry gate state machine shared by collaborators
      */
     SegmentRegistryImpl(final SegmentIdAllocator segmentIdAllocator,
             final SegmentRegistryFileSystem fileSystem,
             final SegmentRegistryCache<SegmentId, Segment<K, V>> cache,
+            final IndexRetryPolicy closeRetryPolicy,
             final SegmentRegistryStateMachine gate) {
         this.segmentIdAllocator = Vldtn.requireNonNull(segmentIdAllocator,
                 "segmentIdAllocator");
         this.fileSystem = Vldtn.requireNonNull(fileSystem, "fileSystem");
         this.cache = Vldtn.requireNonNull(cache, "cache");
+        this.closeRetryPolicy = Vldtn.requireNonNull(closeRetryPolicy,
+                "closeRetryPolicy");
         this.gate = Vldtn.requireNonNull(gate, "gate");
         if (!gate.finishFreezeToReady()) {
             throw new IllegalStateException(
@@ -201,11 +207,27 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         if (state != SegmentRegistryState.FREEZE) {
             return SegmentRegistryResult.busy();
         }
-        cache.clear();
+        try {
+            awaitCacheClosed();
+        } catch (final RuntimeException ex) {
+            gate.fail();
+            return SegmentRegistryResult.error();
+        }
         if (!gate.finishFreezeToClosed()) {
             return SegmentRegistryResult.error();
         }
         return SegmentRegistryResult.ok();
+    }
+
+    private void awaitCacheClosed() {
+        final long startNanos = closeRetryPolicy.startNanos();
+        while (!cache.isEmpty()) {
+            cache.clear();
+            if (cache.isEmpty()) {
+                return;
+            }
+            closeRetryPolicy.backoffOrThrow(startNanos, "registryClose", null);
+        }
     }
 
 }

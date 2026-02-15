@@ -140,6 +140,10 @@ public final class SegmentRegistryCache<K, V> {
         return size.get();
     }
 
+    boolean isEmpty() {
+        return map.isEmpty();
+    }
+
     private V loadValue(final K key, final Entry<V> entry) {
         final V value;
         try {
