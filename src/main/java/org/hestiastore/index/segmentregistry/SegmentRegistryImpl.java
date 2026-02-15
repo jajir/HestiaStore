@@ -17,7 +17,7 @@ import org.hestiastore.index.segment.SegmentState;
  * @param <K> key type
  * @param <V> value type
  */
-public class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
+public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
 
     private final SegmentRegistryCache<SegmentId, Segment<K, V>> cache;
     private final SegmentRegistryStateMachine gate;

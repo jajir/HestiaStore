@@ -19,14 +19,4 @@ final class SegmentBusyException extends RuntimeException {
         super(message);
     }
 
-    /**
-     * Creates a busy exception with detail message and cause.
-     *
-     * @param message detail message
-     * @param cause root cause
-     */
-    SegmentBusyException(final String message,
-            final Throwable cause) {
-        super(message, cause);
-    }
 }
