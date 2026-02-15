@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.concurrent.Executors;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -13,7 +14,6 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentregistry.SegmentFactory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -38,11 +38,6 @@ class SegmentManagerTest {
         when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
         final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
                 1, "segment-maintenance");
-        final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                keyTypeDescriptor, valueTypeDescriptor, conf,
-                maintenanceExecutor.getExecutor());
         final SegmentRegistry<Integer, String> segmentRegistry = SegmentRegistry
                 .<Integer, String>builder()
                 .withDirectoryFacade(
@@ -52,8 +47,7 @@ class SegmentManagerTest {
                 .withValueTypeDescriptor(valueTypeDescriptor)
                 .withConfiguration(conf)
                 .withMaintenanceExecutor(maintenanceExecutor.getExecutor())
-                .withSegmentFactory(segmentFactory)
-                .withSegmentIdAllocator(() -> SegmentId.of(1))
+                .withLifecycleExecutor(Executors.newSingleThreadExecutor())
                 .build();
         when(conf.getMaxNumberOfKeysInSegmentWriteCache()).thenReturn(1);
         when(conf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance())
@@ -95,11 +89,6 @@ class SegmentManagerTest {
         when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
         final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
                 1, "segment-maintenance");
-        final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
-                keyTypeDescriptor, valueTypeDescriptor, conf,
-                maintenanceExecutor.getExecutor());
         final SegmentRegistry<Integer, String> segmentRegistry = SegmentRegistry
                 .<Integer, String>builder()
                 .withDirectoryFacade(
@@ -109,8 +98,7 @@ class SegmentManagerTest {
                 .withValueTypeDescriptor(valueTypeDescriptor)
                 .withConfiguration(conf)
                 .withMaintenanceExecutor(maintenanceExecutor.getExecutor())
-                .withSegmentFactory(segmentFactory)
-                .withSegmentIdAllocator(() -> SegmentId.of(1))
+                .withLifecycleExecutor(Executors.newSingleThreadExecutor())
                 .build();
         assertDoesNotThrow(() -> segmentRegistry.close());
         if (!maintenanceExecutor.wasClosed()) {

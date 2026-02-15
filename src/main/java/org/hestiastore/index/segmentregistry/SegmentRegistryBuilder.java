@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentregistry;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -21,9 +20,7 @@ public final class SegmentRegistryBuilder<K, V> {
     private TypeDescriptor<V> valueTypeDescriptor;
     private IndexConfiguration<K, V> conf;
     private ExecutorService maintenanceExecutor;
-
-    private SegmentIdAllocator segmentIdAllocator;
-    private SegmentFactory<K, V> segmentFactory;
+    private ExecutorService lifecycleExecutor;
 
     SegmentRegistryBuilder() {
     }
@@ -93,28 +90,15 @@ public final class SegmentRegistryBuilder<K, V> {
     }
 
     /**
-     * Overrides the default segment id allocator.
+     * Sets the registry lifecycle executor used for load/unload operations.
      *
-     * @param segmentIdAllocator allocator instance
+     * @param lifecycleExecutor lifecycle executor
      * @return this builder
      */
-    public SegmentRegistryBuilder<K, V> withSegmentIdAllocator(
-            final SegmentIdAllocator segmentIdAllocator) {
-        this.segmentIdAllocator = Vldtn.requireNonNull(segmentIdAllocator,
-                "segmentIdAllocator");
-        return this;
-    }
-
-    /**
-     * Overrides the default segment factory.
-     *
-     * @param segmentFactory segment factory
-     * @return this builder
-     */
-    public SegmentRegistryBuilder<K, V> withSegmentFactory(
-            final SegmentFactory<K, V> segmentFactory) {
-        this.segmentFactory = Vldtn.requireNonNull(segmentFactory,
-                "segmentFactory");
+    public SegmentRegistryBuilder<K, V> withLifecycleExecutor(
+            final ExecutorService lifecycleExecutor) {
+        this.lifecycleExecutor = Vldtn.requireNonNull(lifecycleExecutor,
+                "lifecycleExecutor");
         return this;
     }
 
@@ -134,22 +118,14 @@ public final class SegmentRegistryBuilder<K, V> {
                 "conf");
         final ExecutorService resolvedExecutor = Vldtn.requireNonNull(
                 maintenanceExecutor, "maintenanceExecutor");
-        final SegmentFactory<K, V> resolvedFactory = segmentFactory != null
-                ? segmentFactory
-                : new SegmentFactory<>(resolvedDirectory,
-                        resolvedKeyDescriptor, resolvedValueDescriptor,
-                        resolvedConf, resolvedExecutor);
-        final SegmentIdAllocator resolvedAllocator = segmentIdAllocator != null
-                ? segmentIdAllocator
-                : new DirectorySegmentIdAllocator(resolvedDirectory);
-        final ExecutorService lifecycleExecutor = Executors
-                .newSingleThreadExecutor(runnable -> {
-                    final Thread thread = new Thread(runnable,
-                            "segment-registry-lifecycle");
-                    thread.setDaemon(true);
-                    return thread;
-                });
+        final ExecutorService resolvedLifecycleExecutor = Vldtn.requireNonNull(
+                lifecycleExecutor, "lifecycleExecutor");
+        final SegmentFactory<K, V> resolvedFactory = new SegmentFactory<>(
+                resolvedDirectory, resolvedKeyDescriptor,
+                resolvedValueDescriptor, resolvedConf, resolvedExecutor);
+        final SegmentIdAllocator resolvedAllocator = new DirectorySegmentIdAllocator(
+                resolvedDirectory);
         return new SegmentRegistryImpl<>(resolvedDirectory, resolvedFactory,
-                resolvedAllocator, resolvedConf, lifecycleExecutor);
+                resolvedAllocator, resolvedConf, resolvedLifecycleExecutor);
     }
 }

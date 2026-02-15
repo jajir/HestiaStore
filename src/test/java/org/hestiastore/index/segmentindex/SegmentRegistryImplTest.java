@@ -15,7 +15,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -31,8 +30,6 @@ import org.hestiastore.index.segmentregistry.SegmentRegistryStateMachine;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
-import org.hestiastore.index.segmentregistry.SegmentFactory;
-import org.hestiastore.index.segmentregistry.SegmentIdAllocator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,8 +53,6 @@ class SegmentRegistryImplTest {
 
     private SegmentRegistryImpl<Integer, String> registry;
     private SegmentAsyncExecutor maintenanceExecutor;
-    private SegmentFactory<Integer, String> segmentFactory;
-    private SegmentIdAllocator segmentIdAllocator;
 
     @BeforeEach
     void setUp() {
@@ -65,18 +60,14 @@ class SegmentRegistryImplTest {
         directoryFacade = AsyncDirectoryAdapter.wrap(new MemDirectory());
         maintenanceExecutor = new SegmentAsyncExecutor(1,
                 "segment-maintenance");
-        segmentFactory = new SegmentFactory<>(directoryFacade, KEY_DESCRIPTOR,
-                VALUE_DESCRIPTOR, conf, maintenanceExecutor.getExecutor());
-        final AtomicInteger nextId = new AtomicInteger(1);
-        segmentIdAllocator = () -> SegmentId.of(nextId.getAndIncrement());
         registry = (SegmentRegistryImpl<Integer, String>) SegmentRegistry
                 .<Integer, String>builder().withDirectoryFacade(directoryFacade)
                 .withKeyTypeDescriptor(KEY_DESCRIPTOR)
                 .withValueTypeDescriptor(VALUE_DESCRIPTOR)
                 .withConfiguration(conf)
                 .withMaintenanceExecutor(maintenanceExecutor.getExecutor())
-                .withSegmentFactory(segmentFactory)
-                .withSegmentIdAllocator(segmentIdAllocator).build();
+                .withLifecycleExecutor(Executors.newSingleThreadExecutor())
+                .build();
     }
 
     @AfterEach
@@ -158,8 +149,8 @@ class SegmentRegistryImplTest {
                 .withValueTypeDescriptor(VALUE_DESCRIPTOR)
                 .withConfiguration(conf)
                 .withMaintenanceExecutor(maintenanceExecutor.getExecutor())
-                .withSegmentFactory(segmentFactory)
-                .withSegmentIdAllocator(segmentIdAllocator).build();
+                .withLifecycleExecutor(Executors.newSingleThreadExecutor())
+                .build();
         stubSegmentConfig();
         final Segment<Integer, String> first = registry.createSegment()
                 .getValue();
