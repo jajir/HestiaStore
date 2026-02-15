@@ -45,10 +45,10 @@ public final class SegmentMaintenancePolicyThreshold<K, V>
         if (segment.getNumberOfKeysInSegmentCache() >= maxSegmentCacheKeys) {
             return SegmentMaintenanceDecision.compactOnly();
         }
+        if (segment.getNumberOfDeltaCacheFiles() >= maxDeltaCacheFiles) {
+            return SegmentMaintenanceDecision.compactOnly();
+        }
         if (segment.getNumberOfKeysInWriteCache() >= maxWriteCacheKeys) {
-            if (segment.getNumberOfDeltaCacheFiles() > maxDeltaCacheFiles) {
-                return SegmentMaintenanceDecision.compactOnly();
-            }
             return SegmentMaintenanceDecision.flushOnly();
         }
         return SegmentMaintenanceDecision.none();

@@ -17,6 +17,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -227,6 +228,24 @@ class SegmentImplTest {
     }
 
     @Test
+    void flush_delegates_to_compact_when_delta_cap_reached() {
+        when(segmentPropertiesManager.getDeltaFileCount())
+                .thenReturn(conf.getMaxNumberOfDeltaCacheFiles());
+        final SegmentImpl<Integer, String> segment = spy(
+                newSegmentWithPolicy(SegmentMaintenanceDecision.none()));
+        try {
+            doReturn(SegmentResult.ok()).when(segment).compact();
+
+            final SegmentResult<Void> result = segment.flush();
+
+            assertEquals(SegmentResultStatus.OK, result.getStatus());
+            verify(segment).compact();
+        } finally {
+            closeAndAwait(segment);
+        }
+    }
+
+    @Test
     void put_triggers_flush_when_policy_requests() {
         final SegmentImpl<Integer, String> segment = spy(
                 newSegmentWithPolicy(SegmentMaintenanceDecision.flushOnly()));
@@ -371,6 +390,36 @@ class SegmentImplTest {
             assertEquals(1, segment.getNumberOfKeysInWriteCache());
             assertEquals("A", segment.get(1).getValue());
             assertEquals("B", segment.get(2).getValue());
+        } finally {
+            segment.close();
+            executor.runTask();
+        }
+    }
+
+    @Test
+    void put_does_not_reschedule_compact_while_maintenance_running() {
+        when(segmentPropertiesManager.getDeltaFileCount()).thenReturn(
+                conf.getMaxNumberOfDeltaCacheFiles(), 0);
+        when(segmentPropertiesManager.getCacheDeltaFileNames())
+                .thenReturn(List.of());
+        final CapturingExecutor executor = new CapturingExecutor();
+        final SegmentImpl<Integer, String> segment = spy(newSegment(executor,
+                versionController));
+        try {
+            assertEquals(SegmentResultStatus.OK,
+                    segment.put(1, "A").getStatus());
+            assertEquals(SegmentState.MAINTENANCE_RUNNING, segment.getState());
+
+            assertEquals(SegmentResultStatus.OK,
+                    segment.put(2, "B").getStatus());
+
+            verify(segment, times(1)).compact();
+            assertTrue(executor.hasTask());
+
+            executor.runTask();
+
+            assertEquals(SegmentState.READY, segment.getState());
+            verify(segment, times(1)).compact();
         } finally {
             segment.close();
             executor.runTask();

@@ -42,14 +42,15 @@ final class SegmentMaintenanceCoordinator<K, V> {
                         mappingVersion)) {
             return;
         }
-        final Integer maxSegmentCacheKeys = conf
-                .getMaxNumberOfKeysInSegmentCache();
-        if (maxSegmentCacheKeys != null && maxSegmentCacheKeys > 0) {
+        final Integer maxNumberOfKeysInSegment = conf
+                .getMaxNumberOfKeysInSegment();
+        if (maxNumberOfKeysInSegment != null
+                && maxNumberOfKeysInSegment > 0) {
             final long totalKeys = segment.getNumberOfKeysInCache();
-            if (totalKeys > maxSegmentCacheKeys.longValue()) {
+            if (totalKeys > maxNumberOfKeysInSegment.longValue()) {
                 final SegmentAsyncSplitCoordinator.SplitHandle handle = splitCoordinator
                         .optionallySplitAsync(segment,
-                                maxSegmentCacheKeys.longValue());
+                                maxNumberOfKeysInSegment.longValue());
                 handle.awaitCompletion(conf.getIndexBusyTimeoutMillis());
             }
         }
