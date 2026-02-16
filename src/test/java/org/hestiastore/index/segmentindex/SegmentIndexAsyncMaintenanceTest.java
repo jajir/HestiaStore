@@ -121,7 +121,7 @@ class SegmentIndexAsyncMaintenanceTest {
 
     private IndexInternalConcurrent<Integer, String> newIndex() {
         return new IndexInternalConcurrent<>(
-                AsyncDirectoryAdapter.wrap(new MemDirectory()),
+                new MemDirectory(),
                 tdi, tds, buildConf());
     }
 

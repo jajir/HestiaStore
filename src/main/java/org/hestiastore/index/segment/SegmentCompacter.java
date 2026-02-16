@@ -8,7 +8,7 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -140,8 +140,8 @@ final class SegmentCompacter<K, V> {
         }
         final SegmentDirectoryLayout layout = new SegmentDirectoryLayout(
                 plan.segment.getId());
-        final AsyncDirectory directory = plan.segment.getSegmentFiles()
-                .getAsyncDirectory();
+        final Directory directory = plan.segment.getSegmentFiles()
+                .getDirectory();
         final long previousVersion = plan.previousVersion;
         return () -> cleanupOldVersion(directory, layout, previousVersion);
     }
@@ -161,7 +161,7 @@ final class SegmentCompacter<K, V> {
         }
     }
 
-    private void cleanupOldVersion(final AsyncDirectory directory,
+    private void cleanupOldVersion(final Directory directory,
             final SegmentDirectoryLayout layout, final long version) {
         if (version < 0) {
             return;
@@ -170,17 +170,16 @@ final class SegmentCompacter<K, V> {
         deleteFile(directory, layout.getScarceFileName(version));
         deleteFile(directory, layout.getBloomFilterFileName(version));
         final String deltaPrefix = layout.getDeltaCachePrefix(version);
-        try (Stream<String> files = directory.getFileNamesAsync()
-                .toCompletableFuture().join()) {
+        try (Stream<String> files = directory.getFileNames()) {
             files.filter(name -> name.startsWith(deltaPrefix))
                     .forEach(name -> deleteFile(directory, name));
         }
     }
 
-    private void deleteFile(final AsyncDirectory directory,
+    private void deleteFile(final Directory directory,
             final String fileName) {
         try {
-            directory.deleteFileAsync(fileName).toCompletableFuture().join();
+            directory.deleteFile(fileName);
         } catch (final RuntimeException e) {
             logger.warn("Failed to delete file '{}' in '{}'", fileName,
                     directory, e);

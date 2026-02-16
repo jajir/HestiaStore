@@ -10,9 +10,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory.Access;
 import org.hestiastore.index.directory.FileReader;
 import org.hestiastore.index.directory.FileWriter;
-import org.hestiastore.index.directory.async.AsyncDirectory;
-import org.hestiastore.index.directory.async.AsyncFileReaderBlockingAdapter;
-import org.hestiastore.index.directory.async.AsyncFileWriterBlockingAdapter;
+import org.hestiastore.index.directory.Directory;
 
 /**
  * Manages the pointer file that stores the active segment directory name.
@@ -23,10 +21,10 @@ final class SegmentDirectoryPointer {
     private static final String POINTER_FILE_COMMENT = "Segment directory pointer";
     private static final String TEMP_SUFFIX = ".tmp";
 
-    private final AsyncDirectory rootDirectory;
+    private final Directory rootDirectory;
     private final String pointerFileName;
 
-    SegmentDirectoryPointer(final AsyncDirectory rootDirectory,
+    SegmentDirectoryPointer(final Directory rootDirectory,
             final SegmentDirectoryLayout layout) {
         this.rootDirectory = Vldtn.requireNonNull(rootDirectory,
                 "rootDirectory");
@@ -40,8 +38,7 @@ final class SegmentDirectoryPointer {
      * @return active directory name or null when not set
      */
     String readActiveDirectory() {
-        if (!rootDirectory.isFileExistsAsync(pointerFileName)
-                .toCompletableFuture().join()) {
+        if (!rootDirectory.isFileExists(pointerFileName)) {
             return null;
         }
         final Properties properties = readProperties();
@@ -70,9 +67,7 @@ final class SegmentDirectoryPointer {
 
     private Properties readProperties() {
         final Properties properties = new Properties();
-        try (FileReader reader = new AsyncFileReaderBlockingAdapter(
-                rootDirectory.getFileReaderAsync(pointerFileName)
-                        .toCompletableFuture().join())) {
+        try (FileReader reader = rootDirectory.getFileReader(pointerFileName)) {
             final byte[] bytes = readAllBytes(reader);
             properties.load(new ByteArrayInputStream(bytes));
         } catch (final IOException e) {
@@ -84,13 +79,11 @@ final class SegmentDirectoryPointer {
     private void writeProperties(final Properties properties) {
         final byte[] bytes = toBytes(properties);
         final String tmpFileName = pointerFileName + TEMP_SUFFIX;
-        try (FileWriter writer = new AsyncFileWriterBlockingAdapter(
-                rootDirectory.getFileWriterAsync(tmpFileName, Access.OVERWRITE)
-                        .toCompletableFuture().join())) {
+        try (FileWriter writer = rootDirectory.getFileWriter(tmpFileName,
+                Access.OVERWRITE)) {
             writer.write(bytes);
         }
-        rootDirectory.renameFileAsync(tmpFileName, pointerFileName)
-                .toCompletableFuture().join();
+        rootDirectory.renameFile(tmpFileName, pointerFileName);
     }
 
     private byte[] readAllBytes(final FileReader reader) {

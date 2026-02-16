@@ -14,7 +14,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.EntryIteratorWithCurrent;
@@ -23,7 +22,7 @@ import org.hestiastore.index.chunkentryfile.ChunkEntryFile;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,7 +48,7 @@ class SegmentReadPathTest {
     @Mock
     private ChunkEntryFile<Integer, String> chunkEntryFile;
     @Mock
-    private AsyncDirectory asyncDirectory;
+    private Directory asyncDirectory;
     @Mock
     private EntryIteratorWithCurrent<Integer, String> baseIterator;
 
@@ -68,9 +67,8 @@ class SegmentReadPathTest {
         when(segmentFiles.getValueTypeDescriptor()).thenReturn(valueDescriptor);
         when(segmentFiles.getId()).thenReturn(SegmentId.of(1));
         when(segmentFiles.getIndexFileName()).thenReturn("segment.index");
-        when(segmentFiles.getAsyncDirectory()).thenReturn(asyncDirectory);
-        when(asyncDirectory.isFileExistsAsync("segment.index")).thenReturn(
-                CompletableFuture.completedFuture(false));
+        when(segmentFiles.getDirectory()).thenReturn(asyncDirectory);
+        when(asyncDirectory.isFileExists("segment.index")).thenReturn(false);
         when(segmentCache.getAsSortedList()).thenReturn(List.of());
         when(chunkEntryFile.openIterator()).thenReturn(baseIterator);
         when(baseIterator.hasNext()).thenReturn(false);

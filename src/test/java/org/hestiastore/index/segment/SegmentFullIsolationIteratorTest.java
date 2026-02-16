@@ -12,7 +12,7 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.junit.jupiter.api.Test;
 
@@ -21,8 +21,7 @@ class SegmentFullIsolationIteratorTest {
     @Test
     void fullIsolationIterator_reads_index_delta_and_write_cache() {
         final MemDirectory directory = new MemDirectory();
-        final AsyncDirectory asyncDirectory = AsyncDirectoryAdapter
-                .wrap(directory);
+        final Directory asyncDirectory = directory;
         final SegmentId segmentId = SegmentId.of(1);
 
         final SegmentBuilder<Integer, String> builder = newBuilder(
@@ -66,7 +65,7 @@ class SegmentFullIsolationIteratorTest {
     }
 
     private SegmentBuilder<Integer, String> newBuilder(
-            final AsyncDirectory asyncDirectory, final SegmentId segmentId) {
+            final Directory asyncDirectory, final SegmentId segmentId) {
         return Segment.<Integer, String>builder(asyncDirectory)
                 .withId(segmentId)
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())

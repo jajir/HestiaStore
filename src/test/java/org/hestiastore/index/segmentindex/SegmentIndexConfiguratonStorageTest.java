@@ -240,8 +240,7 @@ class SegmentIndexConfiguratonStorageTest {
     void setup() {
         directory = new MemDirectory();
         storage = new IndexConfiguratonStorage<>(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory));
+                directory);
     }
 
     @AfterEach

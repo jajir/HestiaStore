@@ -7,9 +7,8 @@ import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory.Access;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileWriter;
-import org.hestiastore.index.directory.async.AsyncFileWriterBlockingAdapter;
 
 /**
  * Write transaction that buffers sorted data into a temporary file and renames
@@ -24,7 +23,7 @@ public class SortedDataFileWriterTx<K, V>
 
     private static final String TEMP_FILE_SUFFIX = ".tmp";
     private final String fileName;
-    private final AsyncDirectory directoryFacade;
+    private final Directory directoryFacade;
     private final int diskIoBufferSize;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
@@ -33,13 +32,13 @@ public class SortedDataFileWriterTx<K, V>
      * Creates a writer transaction for the given sorted data file.
      *
      * @param fileName required target file name
-     * @param directoryFacade required async directory
+     * @param directoryFacade required directory
      * @param diskIoBufferSize buffer size used for I/O
      * @param keyTypeDescriptor key type descriptor
      * @param valueTypeDescriptor value type descriptor
      */
     public SortedDataFileWriterTx(final String fileName,
-            final AsyncDirectory directoryFacade, final int diskIoBufferSize,
+            final Directory directoryFacade, final int diskIoBufferSize,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor) {
         this.fileName = Vldtn.requireNonNull(fileName, "fileName");
@@ -59,12 +58,8 @@ public class SortedDataFileWriterTx<K, V>
      */
     @Override
     protected EntryWriter<K, V> doOpen() {
-        final FileWriter fileWriter = new AsyncFileWriterBlockingAdapter(
-                directoryFacade
-                        .getFileWriterAsync(getTempFileName(),
-                                Access.OVERWRITE,
-                                diskIoBufferSize)
-                        .toCompletableFuture().join());
+        final FileWriter fileWriter = directoryFacade.getFileWriter(
+                getTempFileName(), Access.OVERWRITE, diskIoBufferSize);
         return new GuardedEntryWriter<>(new SortedDataFileWriter<>(
                 valueTypeDescriptor.getTypeWriter(), fileWriter,
                 keyTypeDescriptor));
@@ -77,8 +72,7 @@ public class SortedDataFileWriterTx<K, V>
      */
     @Override
     protected void doCommit(final EntryWriter<K, V> writer) {
-        directoryFacade.renameFileAsync(getTempFileName(), fileName)
-                .toCompletableFuture().join();
+        directoryFacade.renameFile(getTempFileName(), fileName);
     }
 
     /**

@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
@@ -93,8 +93,7 @@ class SegmentRegistryImplCloseTest {
             final SegmentRegistryCache<SegmentId, Segment<Integer, String>> cache,
             final SegmentRegistryStateMachine gate, final int backoffMillis,
             final int timeoutMillis) {
-        final AsyncDirectory directory = AsyncDirectoryAdapter
-                .wrap(new MemDirectory());
+        final Directory directory = new MemDirectory();
         final SegmentRegistryFileSystem fs = new SegmentRegistryFileSystem(
                 directory);
         final AtomicInteger counter = new AtomicInteger();

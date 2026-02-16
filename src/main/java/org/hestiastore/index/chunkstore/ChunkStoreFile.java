@@ -7,7 +7,7 @@ import org.hestiastore.index.datablockfile.DataBlockByteReader;
 import org.hestiastore.index.datablockfile.DataBlockByteReaderImpl;
 import org.hestiastore.index.datablockfile.DataBlockFile;
 import org.hestiastore.index.datablockfile.DataBlockSize;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileReaderSeekable;
 
 /**
@@ -29,7 +29,7 @@ public class ChunkStoreFile {
      * @param dataBlockSize required size of the data blocks in the chunk store
      *                      file
      */
-    public ChunkStoreFile(final AsyncDirectory directoryFacade,
+    public ChunkStoreFile(final Directory directoryFacade,
             final String fileName,
             final DataBlockSize dataBlockSize,
             final List<ChunkFilter> encodingChunkFilters,

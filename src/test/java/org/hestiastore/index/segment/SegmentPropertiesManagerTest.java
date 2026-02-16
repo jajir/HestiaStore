@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -191,8 +191,7 @@ class SegmentPropertiesManagerTest {
     @Test
     void switchDirectory_resets_to_new_store() {
         props.setVersion(5L);
-        final AsyncDirectory newDirectory = AsyncDirectoryAdapter
-                .wrap(new MemDirectory());
+        final Directory newDirectory = new MemDirectory();
 
         props.switchDirectory(newDirectory);
 
@@ -203,8 +202,7 @@ class SegmentPropertiesManagerTest {
     void beforeEeachTest() {
         directory = new MemDirectory();
         props = new SegmentPropertiesManager(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
+                directory,
                 id);
     }
 

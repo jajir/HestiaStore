@@ -41,9 +41,8 @@ class IntegrationSortTest extends AbstractSegmentTest {
     void setUp() {
         dir = new MemDirectory();
         unsorted = UnsortedDataFile.<String, Integer>builder()
-                .withAsyncDirectory(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(dir))//
+                .withDirectory(
+                        dir)//
                 .withFileName(UNSORTED_FILE_NAME)//
                 .withValueWriter(tdi.getTypeWriter())//
                 .withValueReader(tdi.getTypeReader())//
@@ -51,9 +50,8 @@ class IntegrationSortTest extends AbstractSegmentTest {
                 .withKeyReader(tds.getTypeReader())//
                 .build();
 
-        sdf = SortedDataFile.fromAsyncDirectory(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(dir),
+        sdf = SortedDataFile.fromDirectory(
+                dir,
                 SORTED_FILE_NAME, tds, tdi, 1024);
 
         sorter = new DataFileSorter<>(unsorted, sdf,

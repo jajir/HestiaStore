@@ -30,8 +30,7 @@ public class IntegrationChunkStoreFileTest {
     void setUp() {
         directory = new MemDirectory();
         chunkStoreFile = new ChunkStoreFile(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
+                directory,
                 FILE_NAME, DATABLOCK_SIZE,
                 List.of(new ChunkFilterMagicNumberWriting(),
                         new ChunkFilterCrc32Writing(),

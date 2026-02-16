@@ -19,7 +19,7 @@ class KeyToSegmentMapLifecycleTest {
     void setUp() {
         final MemDirectory directory = new MemDirectory();
         keyToSegmentMap = new KeyToSegmentMap<>(
-                AsyncDirectoryAdapter.wrap(directory),
+                directory,
                 new TypeDescriptorInteger());
     }
 

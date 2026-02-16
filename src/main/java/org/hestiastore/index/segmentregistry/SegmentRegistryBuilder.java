@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
@@ -23,7 +23,7 @@ public final class SegmentRegistryBuilder<K, V> {
     private static final int REGISTRY_CLOSE_TIMEOUT_MILLIS = (int) TimeUnit.MINUTES
             .toMillis(5);
 
-    private AsyncDirectory directoryFacade;
+    private Directory directoryFacade;
     private TypeDescriptor<K> keyTypeDescriptor;
     private TypeDescriptor<V> valueTypeDescriptor;
     private IndexConfiguration<K, V> conf;
@@ -40,7 +40,7 @@ public final class SegmentRegistryBuilder<K, V> {
      * @return this builder
      */
     public SegmentRegistryBuilder<K, V> withDirectoryFacade(
-            final AsyncDirectory directoryFacade) {
+            final Directory directoryFacade) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
         return this;
@@ -116,7 +116,7 @@ public final class SegmentRegistryBuilder<K, V> {
      * @return registry instance
      */
     public SegmentRegistry<K, V> build() {
-        final AsyncDirectory resolvedDirectory = Vldtn.requireNonNull(
+        final Directory resolvedDirectory = Vldtn.requireNonNull(
                 directoryFacade, "directoryFacade");
         final TypeDescriptor<K> resolvedKeyDescriptor = Vldtn.requireNonNull(
                 keyTypeDescriptor, "keyTypeDescriptor");

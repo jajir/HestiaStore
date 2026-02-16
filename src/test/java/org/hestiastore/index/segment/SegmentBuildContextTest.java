@@ -28,8 +28,7 @@ class SegmentBuildContextTest {
 
         @BeforeEach
         void setUp() {
-            final var asyncDirectory = AsyncDirectoryAdapter
-                    .wrap(new MemDirectory());
+            final var asyncDirectory = new MemDirectory();
             final SegmentBuilder<Integer, String> builder = Segment
                     .<Integer, String>builder(asyncDirectory)
                     .withId(SEGMENT_ID)
@@ -70,8 +69,7 @@ class SegmentBuildContextTest {
 
         @BeforeEach
         void setUp() {
-            final var asyncDirectory = AsyncDirectoryAdapter
-                    .wrap(new MemDirectory());
+            final var asyncDirectory = new MemDirectory();
             final SegmentBuilder<Integer, String> builder = Segment
                     .<Integer, String>builder(asyncDirectory)
                     .withId(SEGMENT_ID)

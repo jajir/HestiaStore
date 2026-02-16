@@ -1,7 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileLock;
 
 /**
@@ -16,9 +16,9 @@ public final class IndexStateOpening<K, V> implements IndexState<K, V> {
 
     private final FileLock fileLock;
 
-    IndexStateOpening(final AsyncDirectory directoryFacade) {
+    IndexStateOpening(final Directory directoryFacade) {
         this.fileLock = Vldtn.requireNonNull(directoryFacade, "directoryFacade")
-                .getLockAsync(LOCK_FILE_NAME).toCompletableFuture().join();
+                .getLock(LOCK_FILE_NAME);
         if (fileLock.isLocked()) {
             throw new IllegalStateException(
                     "Index directory is already locked.");

@@ -1,9 +1,8 @@
 package org.hestiastore.index.datablockfile;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileReaderSeekable;
-import org.hestiastore.index.directory.async.AsyncFileReaderSeekableBlockingAdapter;
 
 /**
  * Data block file is a file that contains data blocks of fixed size. Each data
@@ -30,7 +29,7 @@ public class DataBlockFile {
 
     private final DataBlockSize blockSize;
     private final String fileName;
-    private final AsyncDirectory directoryFacade;
+    private final Directory directoryFacade;
 
     /**
      * Creates a new data block file.
@@ -39,7 +38,7 @@ public class DataBlockFile {
      * @param fileName        the name of the data block file
      * @param blockSize       the size of each data block
      */
-    public DataBlockFile(final AsyncDirectory directoryFacade,
+    public DataBlockFile(final Directory directoryFacade,
             final String fileName, final DataBlockSize blockSize) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
@@ -74,8 +73,7 @@ public class DataBlockFile {
             throw new IllegalArgumentException(String.format(
                     "Block position must be >= '%s'", FIRST_BLOCK.getValue()));
         }
-        if (directoryFacade.isFileExistsAsync(fileName).toCompletableFuture()
-                .join()) {
+        if (directoryFacade.isFileExists(fileName)) {
             try {
                 final FileReaderSeekable reader = getFileReader(blockPosition,
                         seekableReader);
@@ -83,8 +81,7 @@ public class DataBlockFile {
                 return new DataBlockReaderImpl(reader, blockPosition, blockSize,
                         closeOnClose);
             } catch (final RuntimeException e) {
-                if (!directoryFacade.isFileExistsAsync(fileName)
-                        .toCompletableFuture().join()) {
+                if (!directoryFacade.isFileExists(fileName)) {
                     return new DataBlockReaderEmpty();
                 }
                 throw e;
@@ -98,9 +95,7 @@ public class DataBlockFile {
             final FileReaderSeekable seekableReader) {
         FileReaderSeekable out = seekableReader;
         if (out == null) {
-            out = new AsyncFileReaderSeekableBlockingAdapter(
-                    directoryFacade.getFileReaderSeekableAsync(fileName)
-                            .toCompletableFuture().join());
+            out = directoryFacade.getFileReaderSeekable(fileName);
         }
         out.seek(blockPosition.getValue());
         return out;

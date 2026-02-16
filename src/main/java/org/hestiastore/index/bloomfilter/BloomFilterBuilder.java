@@ -2,7 +2,7 @@ package org.hestiastore.index.bloomfilter;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 
 /**
  * Builder for {@link BloomFilter} instances.
@@ -49,7 +49,7 @@ public class BloomFilterBuilder<K> {
 
     private static final int DEFAULT_DISK_IO_BUFFER_SIZE = 2 * 1024;
 
-    private AsyncDirectory directoryFacade;
+    private Directory directoryFacade;
     private String bloomFilterFileName;
     private ConvertorToBytes<K> convertorToBytes;
     private long numberOfKeys = UNSET_NUMBER_OF_KEYS;
@@ -64,13 +64,13 @@ public class BloomFilterBuilder<K> {
     }
 
     /**
-     * Sets the async directory backing the bloom filter storage.
+     * Sets the directory backing the bloom filter storage.
      *
-     * @param directoryFacade async directory for bloom filter data
+     * @param directoryFacade directory for bloom filter data
      * @return this builder
      */
-    public BloomFilterBuilder<K> withAsyncDirectory(
-            final AsyncDirectory directoryFacade) {
+    public BloomFilterBuilder<K> withDirectory(
+            final Directory directoryFacade) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
         return this;

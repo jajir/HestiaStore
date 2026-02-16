@@ -8,7 +8,7 @@ import java.util.stream.StreamSupport;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 
 /**
@@ -26,12 +26,12 @@ class IndexInternalConcurrent<K, V> extends SegmentIndexImpl<K, V> {
      * Creates a concurrent index implementation bound to the given directory
      * and type descriptors.
      *
-     * @param directoryFacade async directory facade
+     * @param directoryFacade directory facade
      * @param keyTypeDescriptor key type descriptor
      * @param valueTypeDescriptor value type descriptor
      * @param conf configuration for the index
      */
-    IndexInternalConcurrent(final AsyncDirectory directoryFacade,
+    IndexInternalConcurrent(final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf) {

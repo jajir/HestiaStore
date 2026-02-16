@@ -17,8 +17,7 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentResult;
@@ -128,8 +127,7 @@ class SegmentLifecycleMaintenanceTest {
 
     private static final class Fixture implements AutoCloseable {
         private final MemDirectory directory = new MemDirectory();
-        private final AsyncDirectory asyncDirectory = AsyncDirectoryAdapter
-                .wrap(directory);
+        private final Directory asyncDirectory = directory;
         private final ExecutorService maintenanceExecutor = Executors
                 .newSingleThreadExecutor();
         private final IndexConfiguration<Integer, String> conf = newConfiguration();
@@ -151,7 +149,6 @@ class SegmentLifecycleMaintenanceTest {
         @Override
         public void close() {
             maintenanceExecutor.shutdownNow();
-            asyncDirectory.close();
         }
     }
 

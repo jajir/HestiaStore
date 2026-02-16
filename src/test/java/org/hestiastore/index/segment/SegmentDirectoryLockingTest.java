@@ -8,8 +8,6 @@ import java.io.File;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FsDirectory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -25,10 +23,8 @@ class SegmentDirectoryLockingTest {
     @Test
     void tryLock_creates_and_releases_lock_file_in_memory_directory() {
         final Directory directory = new MemDirectory();
-        final AsyncDirectory asyncDirectory = AsyncDirectoryAdapter
-                .wrap(directory);
         final SegmentDirectoryLocking locking = new SegmentDirectoryLocking(
-                asyncDirectory, LAYOUT);
+                directory, LAYOUT);
 
         assertTrue(locking.tryLock());
 
@@ -42,10 +38,8 @@ class SegmentDirectoryLockingTest {
     @Test
     void tryLock_creates_and_releases_lock_file_in_filesystem_directory() {
         final Directory directory = new FsDirectory(tempDir);
-        final AsyncDirectory asyncDirectory = AsyncDirectoryAdapter
-                .wrap(directory);
         final SegmentDirectoryLocking locking = new SegmentDirectoryLocking(
-                asyncDirectory, LAYOUT);
+                directory, LAYOUT);
 
         assertTrue(locking.tryLock());
 
@@ -60,10 +54,8 @@ class SegmentDirectoryLockingTest {
     void lock_fails_when_lock_file_exists() {
         final Directory directory = new MemDirectory();
         directory.touch(LAYOUT.getLockFileName());
-        final AsyncDirectory asyncDirectory = AsyncDirectoryAdapter
-                .wrap(directory);
         final SegmentDirectoryLocking locking = new SegmentDirectoryLocking(
-                asyncDirectory, LAYOUT);
+                directory, LAYOUT);
 
         assertFalse(locking.tryLock());
     }

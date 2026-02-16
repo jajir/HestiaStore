@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.segmentindex.IndexConfigurationContract;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,12 +16,12 @@ import org.junit.jupiter.api.Test;
 class IndexPropertiesSchemaTest {
 
     private MemDirectory directory;
-    private AsyncDirectory asyncDirectory;
+    private Directory asyncDirectory;
 
     @BeforeEach
     void setUp() {
         directory = new MemDirectory();
-        asyncDirectory = AsyncDirectoryAdapter.wrap(directory);
+        asyncDirectory = directory;
     }
 
     @AfterEach
@@ -32,7 +32,7 @@ class IndexPropertiesSchemaTest {
 
     @Test
     void segmentSchemaAddsDefaultsAndMetadata() {
-        final PropertyStore store = PropertyStoreimpl.fromAsyncDirectory(
+        final PropertyStore store = PropertyStoreimpl.fromDirectory(
                 asyncDirectory, "manifest.txt", false);
 
         IndexPropertiesSchema.SEGMENT_SCHEMA.ensure(store);
@@ -59,7 +59,7 @@ class IndexPropertiesSchemaTest {
 
     @Test
     void indexConfigurationSchemaAddsDefaultsAndMetadata() {
-        final PropertyStore store = PropertyStoreimpl.fromAsyncDirectory(
+        final PropertyStore store = PropertyStoreimpl.fromDirectory(
                 asyncDirectory,
                 IndexPropertiesSchema.IndexConfigurationKeys.CONFIGURATION_FILENAME,
                 false);
@@ -118,7 +118,7 @@ class IndexPropertiesSchemaTest {
 
     @Test
     void indexConfigurationSchemaRejectsMissingRequiredKeys() {
-        final PropertyStore store = PropertyStoreimpl.fromAsyncDirectory(
+        final PropertyStore store = PropertyStoreimpl.fromDirectory(
                 asyncDirectory,
                 IndexPropertiesSchema.IndexConfigurationKeys.CONFIGURATION_FILENAME,
                 false);

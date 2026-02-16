@@ -26,8 +26,7 @@ public class IntegrationDataBlockFileTest {
     void setUp() {
         directory = new MemDirectory();
         dataBlockFile = new DataBlockFile(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory),
+                directory,
                 FILE_NAME, BLOCK_SIZE);
     }
 

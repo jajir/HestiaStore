@@ -27,7 +27,7 @@ class SegmentLockIT {
         try {
             assertEquals(SegmentBuildStatus.BUSY,
                     Segment.<Integer, String>builder(
-                            AsyncDirectoryAdapter.wrap(directory))//
+                            directory)//
                             .withId(segmentId)//
                             .withKeyTypeDescriptor(new TypeDescriptorInteger())//
                             .withValueTypeDescriptor(
@@ -55,7 +55,7 @@ class SegmentLockIT {
     private Segment<Integer, String> newSegment(final Directory directory,
             final SegmentId segmentId) {
         return Segment.<Integer, String>builder(
-                AsyncDirectoryAdapter.wrap(directory))//
+                directory)//
                 .withId(segmentId)//
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())//
                 .withValueTypeDescriptor(new TypeDescriptorShortString())//

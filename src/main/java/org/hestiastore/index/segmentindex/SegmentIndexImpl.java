@@ -14,8 +14,8 @@ import org.hestiastore.index.F;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileLock;
-import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
@@ -56,7 +56,7 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private volatile IndexState<K, V> indexState;
     private volatile SegmentIndexState segmentIndexState = SegmentIndexState.OPENING;
 
-    protected SegmentIndexImpl(final AsyncDirectory directoryFacade,
+    protected SegmentIndexImpl(final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf) {

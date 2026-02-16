@@ -26,7 +26,7 @@ class IndexStateTest {
     @BeforeEach
     void setUp() {
         index = new IndexInternalConcurrent<>(
-                AsyncDirectoryAdapter.wrap(new MemDirectory()),
+                new MemDirectory(),
                 tdi, tds, buildConf());
     }
 

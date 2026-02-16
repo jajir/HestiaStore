@@ -13,8 +13,7 @@ import java.util.concurrent.Executors;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.junit.jupiter.api.Test;
@@ -32,7 +31,7 @@ class SegmentRegistryBuilderTest {
     void builderRejectsNullDirectory() {
         assertThrows(IllegalArgumentException.class,
                 () -> SegmentRegistry.<Integer, String>builder()
-                        .withDirectoryFacade(null));
+                        .withDirectoryFacade((Directory) null));
     }
 
     @Test
@@ -74,8 +73,7 @@ class SegmentRegistryBuilderTest {
     void builderUsesDefaultWiring() {
         final MemDirectory directory = new MemDirectory();
         directory.mkdir("segment-00005");
-        final AsyncDirectory asyncDirectory = AsyncDirectoryAdapter
-                .wrap(directory);
+        final Directory asyncDirectory = directory;
         when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
         when(conf.getIndexBusyBackoffMillis()).thenReturn(1);
         when(conf.getIndexBusyTimeoutMillis()).thenReturn(10);
@@ -113,8 +111,7 @@ class SegmentRegistryBuilderTest {
     @Test
     void buildFailsWhenLifecycleExecutorIsMissing() {
         final MemDirectory directory = new MemDirectory();
-        final AsyncDirectory asyncDirectory = AsyncDirectoryAdapter
-                .wrap(directory);
+        final Directory asyncDirectory = directory;
         final ExecutorService maintenanceExecutor = Executors
                 .newSingleThreadExecutor();
         try {

@@ -2,7 +2,7 @@ package org.hestiastore.index.sorteddatafile;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 
 /**
  * Builder for {@link SortedDataFile} instances.
@@ -14,7 +14,7 @@ public class SortedDataFileBuilder<K, V> {
 
     private static final int DELAULT_FILE_READING_BUFFER_SIZE = 1024 * 4;
 
-    private AsyncDirectory directoryFacade;
+    private Directory directoryFacade;
 
     private String fileName;
 
@@ -25,13 +25,13 @@ public class SortedDataFileBuilder<K, V> {
     private TypeDescriptor<V> valueTypeDescriptor;
 
     /**
-     * Sets the async directory used to access the file.
+     * Sets the directory used to access the file.
      *
-     * @param directoryFacade required async directory
+     * @param directoryFacade required directory
      * @return this builder
      */
-    public SortedDataFileBuilder<K, V> withAsyncDirectory(
-            final AsyncDirectory directoryFacade) {
+    public SortedDataFileBuilder<K, V> withDirectory(
+            final Directory directoryFacade) {
         Vldtn.requireNonNull(directoryFacade, "directoryFacade");
         this.directoryFacade = directoryFacade;
         return this;

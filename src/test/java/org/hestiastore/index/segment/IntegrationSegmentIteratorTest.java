@@ -52,8 +52,7 @@ class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
     void setUp() {
         directory = new MemDirectory();
         segment = Segment.<String, Integer>builder(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory))//
+                directory)//
                 .withId(id)//
                 .withKeyTypeDescriptor(tds)//
                 .withValueTypeDescriptor(tdi)//

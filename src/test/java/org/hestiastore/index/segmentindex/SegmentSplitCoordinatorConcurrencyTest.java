@@ -82,7 +82,7 @@ class SegmentSplitCoordinatorConcurrencyTest {
         final MemDirectory dir = new MemDirectory();
         final SortedDataFile<Integer, SegmentId> sdf = SortedDataFile
                 .<Integer, SegmentId>builder()
-                .withAsyncDirectory(AsyncDirectoryAdapter.wrap(dir))
+                .withDirectory(dir)
                 .withFileName("index.map")
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())
                 .withValueTypeDescriptor(new TypeDescriptorSegmentId()).build();
@@ -90,7 +90,7 @@ class SegmentSplitCoordinatorConcurrencyTest {
                 .execute(writer -> entries.stream().sorted(
                         (e1, e2) -> Integer.compare(e1.getKey(), e2.getKey()))
                         .forEach(writer::write));
-        return new KeyToSegmentMap<>(AsyncDirectoryAdapter.wrap(dir),
+        return new KeyToSegmentMap<>(dir,
                 new TypeDescriptorInteger());
     }
 

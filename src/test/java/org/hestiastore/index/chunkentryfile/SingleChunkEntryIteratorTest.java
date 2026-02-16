@@ -36,9 +36,8 @@ public class SingleChunkEntryIteratorTest {
     Chunk makeChunkFromEntryList(final List<Entry<Integer, String>> entryList) {
         final SortedDataFile<Integer, String> sortedDataFile = SortedDataFile
                 .<Integer, String>builder() //
-                .withAsyncDirectory(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(directory)) //
+                .withDirectory(
+                        directory) //
                 .withFileName(FILE_NAME)//
                 .withKeyTypeDescriptor(TestData.TYPE_DESCRIPTOR_INTEGER) //
                 .withValueTypeDescriptor(TestData.TYPE_DESCRIPTOR_STRING) //

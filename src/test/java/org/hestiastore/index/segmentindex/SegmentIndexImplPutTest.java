@@ -13,7 +13,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
@@ -29,7 +29,7 @@ class SegmentIndexImplPutTest {
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
     private TestIndex<Integer, String> index;
-    private AsyncDirectory directory;
+    private Directory directory;
 
     @BeforeEach
     void setUp() {
@@ -108,7 +108,7 @@ class SegmentIndexImplPutTest {
         if (index != null && !index.wasClosed()) {
             index.close();
         }
-        directory = AsyncDirectoryAdapter.wrap(new MemDirectory());
+        directory = new MemDirectory();
         index = new TestIndex<>(directory, tdi, tds, buildConf(maxKeysInSegment,
                 maxNumberOfKeysInSegmentWriteCache));
     }
@@ -116,7 +116,7 @@ class SegmentIndexImplPutTest {
     private static final class TestIndex<K, V>
             extends IndexInternalConcurrent<K, V> {
 
-        private TestIndex(final AsyncDirectory directoryFacade,
+        private TestIndex(final Directory directoryFacade,
                 final TypeDescriptor<K> keyTypeDescriptor,
                 final TypeDescriptor<V> valueTypeDescriptor,
                 final IndexConfiguration<K, V> conf) {

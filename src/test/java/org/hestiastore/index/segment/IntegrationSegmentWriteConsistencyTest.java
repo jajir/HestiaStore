@@ -104,8 +104,7 @@ class IntegrationSegmentWriteConsistencyTest {
     private Segment<Integer, String> makeSegment(final Directory directory,
             final SegmentId id) {
         return Segment.<Integer, String>builder(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(directory))//
+                directory)//
                 .withId(id)//
                 .withKeyTypeDescriptor(TDI)//
                 .withValueTypeDescriptor(TDS)//

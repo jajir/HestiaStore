@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilterBuilder;
 import org.hestiastore.index.chunkstore.ChunkFilter;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.properties.IndexPropertiesSchema;
 import org.hestiastore.index.properties.PropertyStore;
 import org.hestiastore.index.properties.PropertyStoreimpl;
@@ -57,15 +57,15 @@ class IndexConfiguratonStorage<K, V> {
 
     private static final String CONFIGURATION_FILENAME = IndexPropertiesSchema.IndexConfigurationKeys.CONFIGURATION_FILENAME;
 
-    private final AsyncDirectory directoryFacade;
+    private final Directory directoryFacade;
 
-    IndexConfiguratonStorage(final AsyncDirectory directoryFacade) {
+    IndexConfiguratonStorage(final Directory directoryFacade) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
     }
 
     IndexConfiguration<K, V> load() {
-        final PropertyStore props = PropertyStoreimpl.fromAsyncDirectory(
+        final PropertyStore props = PropertyStoreimpl.fromDirectory(
                 directoryFacade, CONFIGURATION_FILENAME, true);
         SCHEMA.ensure(props);
         final PropertyView propsView = props.snapshot();
@@ -189,7 +189,7 @@ class IndexConfiguratonStorage<K, V> {
      * @param indexConfiguration configuration to persist
      */
     public void save(IndexConfiguration<K, V> indexConfiguration) {
-        final PropertyStore props = PropertyStoreimpl.fromAsyncDirectory(
+        final PropertyStore props = PropertyStoreimpl.fromDirectory(
                 directoryFacade, CONFIGURATION_FILENAME, false);
         final PropertyTransaction tx = props.beginTransaction();
         final PropertyWriter writer = tx.openPropertyWriter();
@@ -297,8 +297,7 @@ class IndexConfiguratonStorage<K, V> {
     }
 
     boolean exists() {
-        return directoryFacade.isFileExistsAsync(CONFIGURATION_FILENAME)
-                .toCompletableFuture().join();
+        return directoryFacade.isFileExists(CONFIGURATION_FILENAME);
     }
 
     @SuppressWarnings("unchecked")

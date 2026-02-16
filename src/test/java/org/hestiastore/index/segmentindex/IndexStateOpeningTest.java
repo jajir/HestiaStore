@@ -4,10 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.concurrent.CompletableFuture;
-
 import org.hestiastore.index.directory.FileLock;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -17,15 +15,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class IndexStateOpeningTest {
 
     @Mock
-    private AsyncDirectory directory;
+    private Directory directory;
 
     @Mock
     private FileLock fileLock;
 
     @Test
     void locksFileOnConstruction() {
-        when(directory.getLockAsync(".lock"))
-                .thenReturn(CompletableFuture.completedFuture(fileLock));
+        when(directory.getLock(".lock")).thenReturn(fileLock);
         when(fileLock.isLocked()).thenReturn(false);
 
         new IndexStateOpening<>(directory);
@@ -35,8 +32,7 @@ class IndexStateOpeningTest {
 
     @Test
     void throwsWhenDirectoryAlreadyLocked() {
-        when(directory.getLockAsync(".lock"))
-                .thenReturn(CompletableFuture.completedFuture(fileLock));
+        when(directory.getLock(".lock")).thenReturn(fileLock);
         when(fileLock.isLocked()).thenReturn(true);
 
         assertThrows(IllegalStateException.class,

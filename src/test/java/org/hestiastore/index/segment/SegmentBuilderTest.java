@@ -20,7 +20,6 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -38,7 +37,7 @@ class SegmentBuilderTest {
     @Test
     void test_directory_is_missing() {
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> Segment.<Integer, String>builder(null));
+                () -> Segment.<Integer, String>builder((Directory) null));
         assertEquals("Property 'directoryFacade' must not be null.",
                 e.getMessage());
     }
@@ -61,7 +60,7 @@ class SegmentBuilderTest {
     @Test
     void test_maintenancePolicy_is_missing() {
         final SegmentBuilder<Integer, String> builder = Segment
-                .<Integer, String>builder(AsyncDirectoryAdapter.wrap(DIRECTORY))//
+                .<Integer, String>builder(DIRECTORY)//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
@@ -205,7 +204,7 @@ class SegmentBuilderTest {
     @Test
     void test_build_withProvidedChunkFilters() {
         final Segment<Integer, String> segment = Segment
-                .<Integer, String>builder(AsyncDirectoryAdapter.wrap(DIRECTORY))//
+                .<Integer, String>builder(DIRECTORY)//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
@@ -222,9 +221,7 @@ class SegmentBuilderTest {
     void test_openWriterTx_writes_segment_and_builds() {
         final Directory directory = new MemDirectory();
         final SegmentBuilder<Integer, String> builder = Segment
-                .<Integer, String>builder(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(directory))//
+                .<Integer, String>builder(directory)//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
@@ -256,9 +253,7 @@ class SegmentBuilderTest {
     void test_build_sets_direct_maintenance_executor_when_missing()
             throws Exception {
         final Segment<Integer, String> segment = Segment
-                .<Integer, String>builder(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(DIRECTORY))//
+                .<Integer, String>builder(DIRECTORY)//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
@@ -280,7 +275,7 @@ class SegmentBuilderTest {
     @Test
     void builder_honors_active_version_from_properties() throws Exception {
         final Directory directory = new MemDirectory();
-        final var asyncDirectory = AsyncDirectoryAdapter.wrap(directory);
+        final var asyncDirectory = directory;
         final SegmentId segmentId = SegmentId.of(1);
         final SegmentDirectoryLayout layout = new SegmentDirectoryLayout(
                 segmentId);
@@ -288,11 +283,10 @@ class SegmentBuilderTest {
         final SegmentPropertiesManager propertiesManager = new SegmentPropertiesManager(
                 asyncDirectory, segmentId);
         propertiesManager.setVersion(2L);
-        asyncDirectory.getFileWriterAsync(layout.getIndexFileName(2))
-                .toCompletableFuture().join().close();
+        asyncDirectory.getFileWriter(layout.getIndexFileName(2)).close();
 
         final Segment<Integer, String> segment = Segment
-                .<Integer, String>builder(asyncDirectory)//
+                .<Integer, String>builder(directory)//
                 .withId(segmentId)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
@@ -324,8 +318,7 @@ class SegmentBuilderTest {
     }
 
     private SegmentBuilder<Integer, String> newBuilder() {
-        return Segment.<Integer, String>builder(
-                AsyncDirectoryAdapter.wrap(DIRECTORY))
+        return Segment.<Integer, String>builder(DIRECTORY)
                 .withMaintenancePolicy(SegmentMaintenancePolicy.none());
     }
 }

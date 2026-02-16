@@ -100,9 +100,8 @@ class IntegrationScarceIndexTest {
         final MemDirectory directory = new MemDirectory();
         final ScarceSegmentIndex<String> index = ScarceSegmentIndex
                 .<String>builder()
-                .withAsyncDirectory(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(directory))
+                .withDirectory(
+                        directory)
                 .withFileName(FILE_NAME)//
                 .withKeyTypeDescriptor(stringTd)//
                 .build();

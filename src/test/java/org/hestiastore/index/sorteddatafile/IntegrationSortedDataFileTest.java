@@ -33,9 +33,8 @@ class IntegrationSortedDataFileTest extends AbstractDataTest {
     @BeforeEach
     void setUp() {
         dir = new MemDirectory();
-        sdf = SortedDataFile.fromAsyncDirectory(
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(dir),
+        sdf = SortedDataFile.fromDirectory(
+                dir,
                 FILE_NAME, tds, tdi, 1024);
     }
 

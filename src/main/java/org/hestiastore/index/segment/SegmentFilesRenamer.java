@@ -1,7 +1,7 @@
 package org.hestiastore.index.segment;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,34 +31,26 @@ public class SegmentFilesRenamer {
         Vldtn.requireNonNull(from, "from");
         Vldtn.requireNonNull(to, "to");
         Vldtn.requireNonNull(fromProperties, "fromProperties");
-        final AsyncDirectory dirFacade = from.getAsyncDirectory();
+        final Directory dirFacade = from.getDirectory();
         final String fromSegmentIdName = from.getSegmentIdName();
         final String toSegmentIdName = to.getSegmentIdName();
         fromProperties.getCacheDeltaFileNames().forEach(fileName -> {
             final String targetFileName = renameSegmentFileName(
                     fromSegmentIdName, toSegmentIdName, fileName);
-            dirFacade.renameFileAsync(fileName, targetFileName)
-                    .toCompletableFuture().join();
+            dirFacade.renameFile(fileName, targetFileName);
         });
-        dirFacade
-                .renameFileAsync(from.getIndexFileName(), to.getIndexFileName())
-                .toCompletableFuture().join();
-        dirFacade.renameFileAsync(from.getScarceFileName(),
-                to.getScarceFileName()).toCompletableFuture().join();
-        dirFacade
-                .renameFileAsync(from.getBloomFilterFileName(),
-                        to.getBloomFilterFileName())
-                .toCompletableFuture().join();
+        dirFacade.renameFile(from.getIndexFileName(), to.getIndexFileName());
+        dirFacade.renameFile(from.getScarceFileName(), to.getScarceFileName());
+        dirFacade.renameFile(from.getBloomFilterFileName(),
+                to.getBloomFilterFileName());
         if (logger.isDebugEnabled()) {
             logger.debug(
                     "Segment properties rename: from='{}' to='{}' thread='{}'",
                     from.getPropertiesFilename(), to.getPropertiesFilename(),
                     Thread.currentThread().getName());
         }
-        dirFacade
-                .renameFileAsync(from.getPropertiesFilename(),
-                        to.getPropertiesFilename())
-                .toCompletableFuture().join();
+        dirFacade.renameFile(from.getPropertiesFilename(),
+                to.getPropertiesFilename());
     }
 
     /**

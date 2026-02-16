@@ -2,6 +2,9 @@ package org.hestiastore.index.segmentindex;
 
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.CloseableResource;
@@ -10,8 +13,7 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.async.AsyncDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
+import org.hestiastore.index.directory.async.AsyncDirectoryBlockingAdapter;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 
 /**
@@ -19,19 +21,21 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
  * segments. It supports creating/opening instances, point mutations
  * (put/delete), range streaming, log inspection, and consistency checks.
  * Concrete implementations are created through the static factory helpers which
- * take care of configuration handling and async directory wrapping.
+ * take care of configuration handling and bounded directory wrapping.
  *
  * @param <K> key type
  * @param <V> value type
  */
 public interface SegmentIndex<K, V> extends CloseableResource {
 
+    AtomicInteger IO_THREAD_COUNTER = new AtomicInteger(1);
+
     /**
      * Creates a brand new index in the supplied directory. Default values are
      * applied to the provided configuration, then both the configuration and
      * the on-disk structures are persisted.
      * <p>
-     * The supplied directory is wrapped in an {@link AsyncDirectoryAdapter}
+     * The supplied directory is wrapped in an bounded directory adapter
      * configured with the resolved {@code numberOfIoThreads}. The returned
      * index owns that wrapper and will close it when the index is closed.
      * </p>
@@ -45,26 +49,24 @@ public interface SegmentIndex<K, V> extends CloseableResource {
             final IndexConfiguration<M, N> indexConf) {
         final int initialIoThreads = resolveIoThreads(
                 indexConf.getNumberOfIoThreads());
-        AsyncDirectory asyncDirectory = AsyncDirectoryAdapter.wrap(directory,
-                initialIoThreads);
+        Directory ioDirectory = newIoDirectory(directory, initialIoThreads);
         try {
             IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
-                    new IndexConfiguratonStorage<>(asyncDirectory));
+                    new IndexConfiguratonStorage<>(ioDirectory));
             final IndexConfiguration<M, N> conf = confManager
                     .applyDefaults(indexConf);
             final int configuredIoThreads = resolveIoThreads(
                     conf.getNumberOfIoThreads());
             if (configuredIoThreads != initialIoThreads) {
-                asyncDirectory.close();
-                asyncDirectory = AsyncDirectoryAdapter.wrap(directory,
-                        configuredIoThreads);
+                closeDirectory(ioDirectory);
+                ioDirectory = newIoDirectory(directory, configuredIoThreads);
                 confManager = new IndexConfigurationManager<>(
-                        new IndexConfiguratonStorage<>(asyncDirectory));
+                        new IndexConfiguratonStorage<>(ioDirectory));
             }
             confManager.save(conf);
-            return openIndex(asyncDirectory, conf);
+            return openIndex(ioDirectory, conf);
         } catch (final RuntimeException e) {
-            closeOnFailure(asyncDirectory, e);
+            closeOnFailure(ioDirectory, e);
             throw e;
         }
     }
@@ -73,7 +75,7 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * Opens an existing index, merging the provided configuration overrides
      * with the stored configuration on disk.
      * <p>
-     * The supplied directory is wrapped in an {@link AsyncDirectoryAdapter}
+     * The supplied directory is wrapped in an bounded directory adapter
      * configured with the merged {@code numberOfIoThreads}. The returned index
      * owns that wrapper and will close it when the index is closed.
      * </p>
@@ -87,23 +89,21 @@ public interface SegmentIndex<K, V> extends CloseableResource {
             final IndexConfiguration<M, N> indexConf) {
         final int initialIoThreads = resolveIoThreads(
                 indexConf.getNumberOfIoThreads());
-        AsyncDirectory asyncDirectory = AsyncDirectoryAdapter.wrap(directory,
-                initialIoThreads);
+        Directory ioDirectory = newIoDirectory(directory, initialIoThreads);
         try {
             final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
-                    new IndexConfiguratonStorage<>(asyncDirectory));
+                    new IndexConfiguratonStorage<>(ioDirectory));
             final IndexConfiguration<M, N> mergedConf = confManager
                     .mergeWithStored(indexConf);
             final int configuredIoThreads = resolveIoThreads(
                     mergedConf.getNumberOfIoThreads());
             if (configuredIoThreads != initialIoThreads) {
-                asyncDirectory.close();
-                asyncDirectory = AsyncDirectoryAdapter.wrap(directory,
-                        configuredIoThreads);
+                closeDirectory(ioDirectory);
+                ioDirectory = newIoDirectory(directory, configuredIoThreads);
             }
-            return openIndex(asyncDirectory, mergedConf);
+            return openIndex(ioDirectory, mergedConf);
         } catch (final RuntimeException e) {
-            closeOnFailure(asyncDirectory, e);
+            closeOnFailure(ioDirectory, e);
             throw e;
         }
     }
@@ -111,7 +111,7 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     /**
      * Opens an existing index using the configuration stored on disk.
      * <p>
-     * The supplied directory is wrapped in an {@link AsyncDirectoryAdapter}
+     * The supplied directory is wrapped in an bounded directory adapter
      * configured with the stored {@code numberOfIoThreads}. The returned index
      * owns that wrapper and will close it when the index is closed.
      * </p>
@@ -121,23 +121,22 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      */
     static <M, N> SegmentIndex<M, N> open(
             final Directory directory) {
-        AsyncDirectory asyncDirectory = AsyncDirectoryAdapter.wrap(directory,
+        Directory ioDirectory = newIoDirectory(directory,
                 IndexConfigurationContract.NUMBER_OF_IO_THREADS);
         try {
             final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
-                    new IndexConfiguratonStorage<>(asyncDirectory));
+                    new IndexConfiguratonStorage<>(ioDirectory));
             final IndexConfiguration<M, N> conf = confManager.loadExisting();
             final int configuredIoThreads = resolveIoThreads(
                     conf.getNumberOfIoThreads());
             if (configuredIoThreads
                     != IndexConfigurationContract.NUMBER_OF_IO_THREADS) {
-                asyncDirectory.close();
-                asyncDirectory = AsyncDirectoryAdapter.wrap(directory,
-                        configuredIoThreads);
+                closeDirectory(ioDirectory);
+                ioDirectory = newIoDirectory(directory, configuredIoThreads);
             }
-            return openIndex(asyncDirectory, conf);
+            return openIndex(ioDirectory, conf);
         } catch (final RuntimeException e) {
-            closeOnFailure(asyncDirectory, e);
+            closeOnFailure(ioDirectory, e);
             throw e;
         }
     }
@@ -145,7 +144,7 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     /**
      * Attempts to open an index when it may or may not exist.
      * <p>
-     * The supplied directory is wrapped in an {@link AsyncDirectoryAdapter}
+     * The supplied directory is wrapped in an bounded directory adapter
      * configured with the stored {@code numberOfIoThreads} when a configuration
      * is present. The returned index owns that wrapper and will close it when
      * the index is closed.
@@ -156,15 +155,15 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      */
     static <M, N> Optional<SegmentIndex<M, N>> tryOpen(
             final Directory directory) {
-        AsyncDirectory asyncDirectory = AsyncDirectoryAdapter.wrap(directory,
+        Directory ioDirectory = newIoDirectory(directory,
                 IndexConfigurationContract.NUMBER_OF_IO_THREADS);
         try {
             final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
-                    new IndexConfiguratonStorage<>(asyncDirectory));
+                    new IndexConfiguratonStorage<>(ioDirectory));
             final Optional<IndexConfiguration<M, N>> oConf = confManager
                     .tryToLoad();
             if (oConf.isEmpty()) {
-                asyncDirectory.close();
+                closeDirectory(ioDirectory);
                 return Optional.empty();
             }
             final IndexConfiguration<M, N> conf = oConf.get();
@@ -172,19 +171,18 @@ public interface SegmentIndex<K, V> extends CloseableResource {
                     conf.getNumberOfIoThreads());
             if (configuredIoThreads
                     != IndexConfigurationContract.NUMBER_OF_IO_THREADS) {
-                asyncDirectory.close();
-                asyncDirectory = AsyncDirectoryAdapter.wrap(directory,
-                        configuredIoThreads);
+                closeDirectory(ioDirectory);
+                ioDirectory = newIoDirectory(directory, configuredIoThreads);
             }
-            return Optional.of(openIndex(asyncDirectory, conf));
+            return Optional.of(openIndex(ioDirectory, conf));
         } catch (final RuntimeException e) {
-            closeOnFailure(asyncDirectory, e);
+            closeOnFailure(ioDirectory, e);
             throw e;
         }
     }
 
     private static <M, N> SegmentIndex<M, N> openIndex(
-            final AsyncDirectory directoryFacade,
+            final Directory directoryFacade,
             final IndexConfiguration<M, N> indexConf) {
         final TypeDescriptor<M> keyTypeDescriptor = DataTypeDescriptorRegistry
                 .makeInstance(indexConf.getKeyTypeDescriptor());
@@ -209,15 +207,34 @@ public interface SegmentIndex<K, V> extends CloseableResource {
         return configuredThreads.intValue();
     }
 
-    private static void closeOnFailure(final AsyncDirectory asyncDirectory,
+    private static Directory newIoDirectory(final Directory directory,
+            final int ioThreads) {
+        final ExecutorService ioExecutor = Executors
+                .newFixedThreadPool(ioThreads, runnable -> {
+                    final Thread thread = new Thread(runnable,
+                            "segment-index-io-"
+                                    + IO_THREAD_COUNTER.getAndIncrement());
+                    thread.setDaemon(true);
+                    return thread;
+                });
+        return AsyncDirectoryBlockingAdapter.wrap(directory, ioExecutor);
+    }
+
+    private static void closeOnFailure(final Directory directory,
             final RuntimeException failure) {
-        if (asyncDirectory == null) {
+        if (directory == null) {
             return;
         }
         try {
-            asyncDirectory.close();
+            closeDirectory(directory);
         } catch (final RuntimeException closeError) {
             failure.addSuppressed(closeError);
+        }
+    }
+
+    private static void closeDirectory(final Directory directory) {
+        if (directory instanceof CloseableResource closeableDirectory) {
+            closeableDirectory.close();
         }
     }
 

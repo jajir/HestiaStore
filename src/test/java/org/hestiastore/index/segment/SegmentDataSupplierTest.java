@@ -21,7 +21,7 @@ class SegmentDataSupplierTest {
     @Test
     void supplierCreatesNewInstancesPerCall() {
         final SegmentFiles<Integer, String> files = new SegmentFiles<>(
-                AsyncDirectoryAdapter.wrap(new MemDirectory()), SegmentId.of(1),
+                new MemDirectory(), SegmentId.of(1),
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(),
                 1024, List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()), 1L);
@@ -51,7 +51,7 @@ class SegmentDataSupplierTest {
     @Test
     void supplierHandlesUnsetBloomFilterConfig() {
         final SegmentFiles<Integer, String> files = new SegmentFiles<>(
-                AsyncDirectoryAdapter.wrap(new MemDirectory()), SegmentId.of(2),
+                new MemDirectory(), SegmentId.of(2),
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(),
                 1024, List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()), 1L);

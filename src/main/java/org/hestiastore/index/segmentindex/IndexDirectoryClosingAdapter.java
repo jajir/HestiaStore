@@ -4,26 +4,26 @@ import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.AbstractCloseableResource;
+import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 
 /**
  * Wraps a {@link SegmentIndex} and ensures the internally created
- * {@link AsyncDirectory} gets closed alongside the index.
+ * directory adapter gets closed alongside the index.
  */
 final class IndexDirectoryClosingAdapter<K, V>
         extends AbstractCloseableResource implements SegmentIndex<K, V> {
 
     private final SegmentIndex<K, V> index;
-    private final AsyncDirectory asyncDirectory;
+    private final Directory directory;
 
     IndexDirectoryClosingAdapter(final SegmentIndex<K, V> index,
-            final AsyncDirectory asyncDirectory) {
+            final Directory directory) {
         this.index = Vldtn.requireNonNull(index, "index");
-        this.asyncDirectory = Vldtn.requireNonNull(asyncDirectory,
-                "asyncDirectory");
+        this.directory = Vldtn.requireNonNull(directory, "directory");
     }
 
     /** {@inheritDoc} */
@@ -127,7 +127,9 @@ final class IndexDirectoryClosingAdapter<K, V>
             failure = e;
         }
         try {
-            asyncDirectory.close();
+            if (directory instanceof CloseableResource closeableDirectory) {
+                closeableDirectory.close();
+            }
         } catch (final RuntimeException e) {
             if (failure == null) {
                 failure = e;
@@ -139,4 +141,5 @@ final class IndexDirectoryClosingAdapter<K, V>
             throw failure;
         }
     }
+
 }
