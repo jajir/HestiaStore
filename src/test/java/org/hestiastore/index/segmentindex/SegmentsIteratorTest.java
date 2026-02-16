@@ -83,6 +83,55 @@ class SegmentsIteratorTest {
     }
 
     @Test
+    void test_segment_load_retries_when_registry_is_busy() {
+        when(segmentRegistry.getSegment(SEGMENT_ID_17))
+                .thenReturn(SegmentRegistryResult.busy())
+                .thenReturn(SegmentRegistryResult.ok(segment17));
+        when(segment17.openIterator(SegmentIteratorIsolation.FAIL_FAST))
+                .thenReturn(SegmentResult.ok(entryIterator17));
+        when(entryIterator17.hasNext()).thenReturn(true, false);
+        when(entryIterator17.next()).thenReturn(new Entry<>("key1", "value1"));
+
+        final ArrayList<SegmentId> ids = new ArrayList<>();
+        ids.add(SEGMENT_ID_17);
+
+        try (SegmentsIterator<String, String> iterator = new SegmentsIterator<>(
+                ids, segmentRegistry)) {
+            assertTrue(iterator.hasNext());
+            final Entry<String, String> entry = iterator.next();
+            assertEquals("key1", entry.getKey());
+            assertEquals("value1", entry.getValue());
+            assertFalse(iterator.hasNext());
+        }
+
+        verify(segmentRegistry, times(2)).getSegment(SEGMENT_ID_17);
+    }
+
+    @Test
+    void test_open_iterator_retries_when_segment_is_busy() {
+        when(segmentRegistry.getSegment(SEGMENT_ID_17))
+                .thenReturn(SegmentRegistryResult.ok(segment17));
+        when(segment17.openIterator(SegmentIteratorIsolation.FAIL_FAST))
+                .thenReturn(SegmentResult.busy())
+                .thenReturn(SegmentResult.ok(entryIterator17));
+        when(entryIterator17.hasNext()).thenReturn(true, false);
+        when(entryIterator17.next()).thenReturn(new Entry<>("key1", "value1"));
+
+        final ArrayList<SegmentId> ids = new ArrayList<>();
+        ids.add(SEGMENT_ID_17);
+
+        try (SegmentsIterator<String, String> iterator = new SegmentsIterator<>(
+                ids, segmentRegistry)) {
+            assertTrue(iterator.hasNext());
+            iterator.next();
+            assertFalse(iterator.hasNext());
+        }
+
+        verify(segment17, times(2))
+                .openIterator(SegmentIteratorIsolation.FAIL_FAST);
+    }
+
+    @Test
     void test_segments_are_two() {
         when(segmentRegistry.getSegment(SEGMENT_ID_17))
                 .thenReturn(SegmentRegistryResult.ok(segment17));

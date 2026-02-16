@@ -25,7 +25,8 @@ final class SegmentAsyncSplitCoordinator<K, V> {
     private final Executor splitExecutor;
     private final Map<SegmentId, SplitInFlight<K, V>> inFlightSplits = new ConcurrentHashMap<>();
 
-    SegmentAsyncSplitCoordinator(final SegmentSplitCoordinator<K, V> splitCoordinator,
+    SegmentAsyncSplitCoordinator(
+            final SegmentSplitCoordinator<K, V> splitCoordinator,
             final Executor splitExecutor) {
         this.splitCoordinator = Vldtn.requireNonNull(splitCoordinator,
                 "splitCoordinator");
@@ -77,8 +78,10 @@ final class SegmentAsyncSplitCoordinator<K, V> {
         final SegmentId segmentId = segment.getId();
         final SplitInFlight<K, V> inFlight = inFlightSplits.compute(segmentId,
                 (id, existing) -> {
-                    // Keep a single in-flight split per segment id so awaitAllCompletions
-                    // observes all running work and callers do not race on stale instances.
+                    // Keep a single in-flight split per segment id so
+                    // awaitAllCompletions
+                    // observes all running work and callers do not race on
+                    // stale instances.
                     if (existing != null) {
                         return existing;
                     }
@@ -91,8 +94,7 @@ final class SegmentAsyncSplitCoordinator<K, V> {
     private SplitInFlight<K, V> scheduleSplit(final Segment<K, V> segment,
             final long maxNumberOfKeysInSegment, final SegmentId segmentId) {
         final SplitHandle handle = new SplitHandle(segmentId);
-        final SplitInFlight<K, V> inFlight = new SplitInFlight<>(segment,
-                handle);
+        final SplitInFlight<K, V> inFlight = new SplitInFlight<>(handle);
         try {
             splitExecutor.execute(() -> {
                 handle.markStarted();
@@ -180,12 +182,9 @@ final class SegmentAsyncSplitCoordinator<K, V> {
     }
 
     private static final class SplitInFlight<K, V> {
-        private final Segment<K, V> segment;
         private final SplitHandle handle;
 
-        private SplitInFlight(final Segment<K, V> segment,
-                final SplitHandle handle) {
-            this.segment = segment;
+        private SplitInFlight(final SplitHandle handle) {
             this.handle = handle;
         }
     }

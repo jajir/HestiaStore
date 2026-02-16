@@ -81,8 +81,8 @@ class SegmentLifecycleMaintenanceTest {
             final Segment<Integer, String> segment = Mockito.mock(Segment.class);
             when(segment.getState()).thenReturn(SegmentState.READY,
                     SegmentState.READY, SegmentState.CLOSED);
-            when(segment.close()).thenReturn(SegmentResult.busy(),
-                    SegmentResult.ok());
+            when(segment.close()).thenReturn(SegmentResult.busy())
+                    .thenReturn(SegmentResult.ok());
 
             fixture.maintenance.closeSegmentIfNeeded(segment);
 
