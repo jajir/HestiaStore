@@ -7,6 +7,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Public segment implementation that delegates single-threaded work to
@@ -17,6 +19,7 @@ import org.hestiastore.index.Vldtn;
  */
 class SegmentImpl<K, V> implements Segment<K, V> {
 
+    private final Logger logger = LoggerFactory.getLogger(getClass());
     private final SegmentCore<K, V> core;
     private final SegmentCompacter<K, V> segmentCompacter;
     private final SegmentConcurrencyGate gate = new SegmentConcurrencyGate();
@@ -63,7 +66,7 @@ class SegmentImpl<K, V> implements Segment<K, V> {
         this.maintenancePolicy = Vldtn.requireNonNull(maintenancePolicy,
                 "maintenancePolicy");
         this.maintenanceService = new SegmentMaintenanceService(gate,
-                this.maintenanceExecutor);
+                this.maintenanceExecutor, this::onMaintenanceFailure);
         this.directoryLocking = directoryLocking;
     }
 
@@ -347,6 +350,10 @@ class SegmentImpl<K, V> implements Segment<K, V> {
         if (gate.getState() != SegmentState.CLOSED) {
             gate.fail();
         }
+    }
+
+    private void onMaintenanceFailure(final Throwable failure) {
+        logger.error("Segment '{}' maintenance failed.", core.getId(), failure);
     }
 
 }

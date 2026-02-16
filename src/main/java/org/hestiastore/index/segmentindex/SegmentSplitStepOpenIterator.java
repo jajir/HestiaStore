@@ -30,6 +30,11 @@ final class SegmentSplitStepOpenIterator<K, V>
                 Thread.onSpinWait();
                 continue;
             }
+            if (result.getStatus() == SegmentResultStatus.CLOSED) {
+                throw new SegmentSplitAbortException(String.format(
+                        "Segment '%s' closed while opening split iterator.",
+                        ctx.getSegment().getId()));
+            }
             throw new IndexException(String.format(
                     "Segment '%s' failed to open iterator: %s",
                     ctx.getSegment().getId(), result.getStatus()));
