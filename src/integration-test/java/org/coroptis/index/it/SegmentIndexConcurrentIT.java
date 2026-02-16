@@ -43,7 +43,7 @@ class SegmentIndexConcurrentIT {
             throws Exception {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, Integer> conf = newConfiguration(
-                "concurrent-index", 4, 15);
+                "concurrent-index", 4);
 
         final SegmentIndex<Integer, Integer> index = SegmentIndex
                 .create(directory, conf);
@@ -117,7 +117,7 @@ class SegmentIndexConcurrentIT {
     void concurrent_mutations_on_same_key_last_write_wins() throws Exception {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, Integer> conf = newConfiguration(
-                "concurrent-index", 4, 15);
+                "concurrent-index", 4);
 
         final SegmentIndex<Integer, Integer> index = SegmentIndex
                 .create(directory, conf);
@@ -168,7 +168,7 @@ class SegmentIndexConcurrentIT {
             throws Exception {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, Integer> conf = newConfiguration(
-                "concurrent-index-maintenance", 4, 8);
+                "concurrent-index-maintenance", 4);
 
         final SegmentIndex<Integer, Integer> index = SegmentIndex
                 .create(directory, conf);
@@ -291,7 +291,7 @@ class SegmentIndexConcurrentIT {
     void concurrent_reads_do_not_return_corrupted_values() throws Exception {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, Integer> conf = newConfiguration(
-                "concurrent-index-readers", 4, 15);
+                "concurrent-index-readers", 4);
         final SegmentIndex<Integer, Integer> index = SegmentIndex
                 .create(directory, conf);
 
@@ -363,7 +363,7 @@ class SegmentIndexConcurrentIT {
             throws Exception {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, Integer> conf = newConfiguration(
-                "concurrent-index-async", 4, 12);
+                "concurrent-index-async", 4);
         final SegmentIndex<Integer, Integer> index = SegmentIndex
                 .create(directory, conf);
 
@@ -483,8 +483,7 @@ class SegmentIndexConcurrentIT {
     }
 
     private static IndexConfiguration<Integer, Integer> newConfiguration(
-            final String name, final int cpuThreads,
-            final int maxNumberOfKeysInCache) {
+            final String name, final int cpuThreads) {
         return IndexConfiguration.<Integer, Integer>builder()//
                 .withKeyClass(Integer.class)//
                 .withValueClass(Integer.class)//
@@ -494,7 +493,6 @@ class SegmentIndexConcurrentIT {
                 .withMaxNumberOfKeysInSegmentCache(30)//
                 .withMaxNumberOfKeysInSegment(20)// small to trigger splits
                 .withMaxNumberOfKeysInSegmentChunk(5)//
-                .withMaxNumberOfKeysInCache(maxNumberOfKeysInCache)//
                 .withBloomFilterIndexSizeInBytes(1024)//
                 .withBloomFilterNumberOfHashFunctions(1)//
                 .withIndexWorkerThreadCount(cpuThreads)//

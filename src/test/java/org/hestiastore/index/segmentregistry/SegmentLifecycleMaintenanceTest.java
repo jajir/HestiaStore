@@ -163,7 +163,6 @@ class SegmentLifecycleMaintenanceTest {
                 .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(10)//
                 .withMaxNumberOfKeysInSegmentChunk(4)//
                 .withMaxNumberOfDeltaCacheFiles(2)//
-                .withMaxNumberOfKeysInCache(100)//
                 .withMaxNumberOfKeysInSegment(50)//
                 .withMaxNumberOfSegmentsInCache(5)//
                 .withBloomFilterNumberOfHashFunctions(1)//

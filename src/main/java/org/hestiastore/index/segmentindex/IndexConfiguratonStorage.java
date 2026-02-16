@@ -37,7 +37,6 @@ class IndexConfiguratonStorage<K, V> {
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE;
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK;
     private static final String PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES;
-    private static final String PROP_MAX_NUMBER_OF_KEYS_IN_CACHE = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_CACHE;
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT;
     private static final String PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE;
     private static final String PROP_INDEX_WORKER_THREAD_COUNT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_WORKER_THREAD_COUNT;
@@ -100,8 +99,6 @@ class IndexConfiguratonStorage<K, V> {
                         propsView.getBoolean(PROP_CONTEXT_LOGGING_ENABLED))//
 
                 // SegmentIndex runtime properties
-                .withMaxNumberOfKeysInCache(
-                        propsView.getInt(PROP_MAX_NUMBER_OF_KEYS_IN_CACHE))//
                 .withMaxNumberOfSegmentsInCache(
                         propsView.getInt(PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE))//
                 .withMaxNumberOfKeysInSegment(
@@ -206,8 +203,6 @@ class IndexConfiguratonStorage<K, V> {
                 indexConfiguration.isContextLoggingEnabled());
 
         // SegmentIndex runtime properties
-        writer.setLong(PROP_MAX_NUMBER_OF_KEYS_IN_CACHE,
-                indexConfiguration.getMaxNumberOfKeysInCache());
         writer.setInt(PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
                 indexConfiguration.getMaxNumberOfSegmentsInCache());
         writer.setInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT,

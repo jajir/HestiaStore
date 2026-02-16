@@ -30,9 +30,6 @@ Segment-specific internals referenced here are centralized in
 
 ## ⚙️ Key Knobs (What They Do)
 
-- `maxNumberOfKeysInCache` (index‑level write buffer)
-  - Higher ⇒ fewer flushes, larger batches, better write throughput; uses more RAM during bursts.
-
 - `maxNumberOfKeysInSegmentChunk` (sparse index cadence)
   - Lower ⇒ smaller local scan window (read latency) with more sparse‑index entries; slightly more write work during compaction.
 
@@ -54,7 +51,6 @@ Segment-specific internals referenced here are centralized in
 
 ## 🧮 Memory Sizing
 
-- SegmentIndex write buffer: up to `maxNumberOfKeysInCache` entries (latest per key). Backed by a HashMap.
 - Per‑segment delta overlay (in memory): when a segment is loaded, delta files are folded into a `UniqueCache`. Upper bound approximates number of unique keys across delta files (see segment properties).
 - Bloom filter: fully memory‑mapped in RAM when present; `indexSizeInBytes` bytes per segment plus metadata. Code: `bloomfilter/BloomFilterImpl.java`.
 - SegmentData LRU: holds delta cache + Bloom + scarce index for up to `maxNumberOfSegmentsInCache` segments; evictions call `close()` to free memory.
@@ -68,7 +64,6 @@ Segment-specific internals referenced here are centralized in
 ## 🧪 Practical Tuning Recipes
 
 - Write‑heavy ingestion:
-  - Increase `maxNumberOfKeysInCache` to batch and reduce flushes.
   - Consider enabling Snappy if values are highly compressible and I/O bound.
   - Keep `maxNumberOfKeysInSegmentChunk` moderate (e.g., 512–2048) to keep sparse index size reasonable during compaction.
 

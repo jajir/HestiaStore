@@ -43,7 +43,7 @@ SegmentIndex integration level.
 
 - On `SegmentIndex.put/delete`, the write is stored in an index‑level `UniqueCache`.
 - Replaces any prior value for the same key; deletes are represented as a tombstone value.
-- Triggered flush (`cache.size() > maxNumberOfKeysInCache`) routes sorted writes to target segments and clears the buffer.
+- Triggered flush routes sorted writes to target segments and clears the buffer.
 
 Code: `segmentindex/SegmentIndexImpl#put`, `segmentindex/SegmentIndexImpl#delete`, `segmentindex/SegmentIndexImpl#flushCache`, `cache/UniqueCache`.
 
@@ -76,7 +76,6 @@ Code: `segmentindex/SegmentIndexImpl#get`, `segment/SegmentImpl#get`, `segment/S
 ## ⚙️ Configuration Knobs
 
 Index‑level:
-- `IndexConfiguration.getMaxNumberOfKeysInCache()` — size of the index write buffer (triggers flush)
 - `IndexConfiguration.getMaxNumberOfSegmentsInCache()` — LRU size for `SegmentDataCache`
 
 Per‑segment (via `SegmentConf`, derived from index configuration):
@@ -106,7 +105,7 @@ See: `segmentindex/IndexConfiguration`, `segment/SegmentConf`.
 
 ## 🛠️ Tuning Guidance
 
-- Throughput‑oriented writes: increase `maxNumberOfKeysInCache` to batch more before flushing; monitor memory and flush latency.
+- Throughput‑oriented writes: tune `maxNumberOfKeysInSegmentWriteCache` and `maxNumberOfKeysInSegmentWriteCacheDuringMaintenance`; monitor memory and flush latency.
 - Read‑heavy workloads touching few segments: increase `maxNumberOfSegmentsInCache` so the working set of segments (Bloom + scarce + delta) stays resident.
 - Space‑sensitive deployments: reduce Bloom filter size (may increase false positives and extra reads) or disable compression filters to trade CPU for I/O.
 - Latency‑sensitive point lookups: ensure Bloom filter is sized adequately; keep segments’ working set in the LRU; consider slightly smaller `maxNumberOfKeysInSegmentChunk` to narrow the local scan window.

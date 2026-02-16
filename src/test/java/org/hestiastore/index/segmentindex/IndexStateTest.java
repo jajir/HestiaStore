@@ -69,7 +69,6 @@ class IndexStateTest {
                 .withMaxNumberOfKeysInSegmentCache(4)//
                 .withMaxNumberOfKeysInSegmentWriteCache(2)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
-                .withMaxNumberOfKeysInCache(10)//
                 .withMaxNumberOfKeysInSegment(10)//
                 .withMaxNumberOfSegmentsInCache(3)//
                 .withBloomFilterNumberOfHashFunctions(1)//

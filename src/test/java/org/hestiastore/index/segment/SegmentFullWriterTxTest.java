@@ -82,9 +82,7 @@ class SegmentFullWriterTxTest {
         verify(chunkWriterTx).commit();
         verify(bloomTx).commit();
         verify(deltaCacheController).clearPreservingWriteCache();
-        verify(properties).setNumberOfKeysInCache(0);
-        verify(properties).setNumberOfKeysInIndex(0);
-        verify(properties).setNumberOfKeysInScarceIndex(0);
+        verify(properties).setKeyCounters(0, 0, 0);
         verify(scarceWriter).close();
         verify(indexWriter).close();
         verify(bloomWriter).close();

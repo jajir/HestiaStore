@@ -250,7 +250,6 @@ class IntegrationSegmentIndexSimpleTest {
                 .withMaxNumberOfKeysInSegmentCache(3) //
                 .withMaxNumberOfKeysInSegment(5) //
                 .withMaxNumberOfKeysInSegmentChunk(2) //
-                .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
                 .withContextLoggingEnabled(withLog) //

@@ -156,7 +156,6 @@ class SegmentSplitCoordinatorFlowTest {
                 .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(150)//
                 .withMaxNumberOfKeysInSegmentChunk(10)//
                 .withMaxNumberOfDeltaCacheFiles(10)//
-                .withMaxNumberOfKeysInCache(200)//
                 .withMaxNumberOfKeysInSegment(4)//
                 .withMaxNumberOfSegmentsInCache(5)//
                 .withBloomFilterNumberOfHashFunctions(

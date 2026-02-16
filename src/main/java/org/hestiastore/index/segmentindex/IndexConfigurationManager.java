@@ -119,10 +119,6 @@ class IndexConfigurationManager<K, V> {
             builder.withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
                     effectiveFlushBackpressure);
         }
-        if (conf.getMaxNumberOfKeysInCache() == null) {
-            builder.withMaxNumberOfKeysInCache(
-                    defaults.getMaxNumberOfKeysInCache());
-        }
         if (conf.getMaxNumberOfSegmentsInCache() == null) {
             builder.withMaxNumberOfSegmentsInCache(
                     defaults.getMaxNumberOfSegmentsInCache());
@@ -227,11 +223,6 @@ class IndexConfigurationManager<K, V> {
             dirty = true;
         }
 
-        if (isMaxNumberOfKeysInCacheOverriden(storedConf, indexConf)) {
-            builder.withMaxNumberOfKeysInCache(
-                    indexConf.getMaxNumberOfKeysInCache());
-            dirty = true;
-        }
         if (indexConf.getIndexWorkerThreadCount() != null
                 && indexConf.getIndexWorkerThreadCount() > 0
                 && !indexConf.getIndexWorkerThreadCount()
@@ -355,15 +346,6 @@ class IndexConfigurationManager<K, V> {
                 && !indexConf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance()
                         .equals(storedConf
                                 .getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance());
-    }
-
-    private boolean isMaxNumberOfKeysInCacheOverriden(
-            final IndexConfiguration<K, V> storedConf,
-            final IndexConfiguration<K, V> indexConf) {
-        return indexConf.getMaxNumberOfKeysInCache() != null
-                && indexConf.getMaxNumberOfKeysInCache() > 0
-                && !indexConf.getMaxNumberOfKeysInCache()
-                        .equals(storedConf.getMaxNumberOfKeysInCache());
     }
 
     private boolean isMaxNumberOfDeltaCacheFilesOverriden(
@@ -519,13 +501,6 @@ class IndexConfigurationManager<K, V> {
         Vldtn.requireNonNull(conf.isContextLoggingEnabled(),
                 "isContextLoggingEnabled");
 
-        Vldtn.requireNonNull(conf.getMaxNumberOfKeysInCache(),
-                "MaxNumberOfKeysInCache");
-        if (conf.getMaxNumberOfKeysInCache() < 3) {
-            throw new IllegalArgumentException(
-                    "Max number of keys in cache must be at least 3.");
-        }
-
         Vldtn.requireNonNull(conf.getMaxNumberOfKeysInSegment(),
                 "MaxNumberOfKeysInSegment");
         if (conf.getMaxNumberOfKeysInSegment() < 4) {
@@ -673,7 +648,6 @@ class IndexConfigurationManager<K, V> {
                 .withName(conf.getIndexName())//
 
                 // SegmentIndex runtime properties
-                .withMaxNumberOfKeysInCache(conf.getMaxNumberOfKeysInCache())//
                 .withMaxNumberOfSegmentsInCache(
                         conf.getMaxNumberOfSegmentsInCache())//
                 .withMaxNumberOfKeysInSegment(

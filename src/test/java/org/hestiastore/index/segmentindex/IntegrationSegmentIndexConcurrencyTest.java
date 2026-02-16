@@ -150,7 +150,6 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .withMaxNumberOfKeysInSegmentCache(3) //
                 .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentChunk(2) //
-                .withMaxNumberOfKeysInCache(10) //
                 .withMaxNumberOfSegmentsInCache(5) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(3) //
@@ -176,7 +175,6 @@ class IntegrationSegmentIndexConcurrencyTest {
                         scenario.maxNumberOfKeysInSegmentWriteCache()) //
                 .withMaxNumberOfKeysInSegmentChunk(
                         scenario.maxNumberOfKeysInSegmentChunk()) //
-                .withMaxNumberOfKeysInCache(scenario.maxNumberOfKeysInCache()) //
                 .withMaxNumberOfKeysInSegment(
                         scenario.maxNumberOfKeysInSegment()) //
                 .withMaxNumberOfSegmentsInCache(
@@ -244,21 +242,21 @@ class IntegrationSegmentIndexConcurrencyTest {
 
     private static Stream<ParallelPutsScenario> parallelPutsScenarios() {
         return Stream.of(
-                new ParallelPutsScenario("small-cache-50-keys", 50, 3, 3, 2, 10,
+                new ParallelPutsScenario("small-cache-50-keys", 50, 3, 3, 2,
                         4, 5, 4, 1, 40),
                 new ParallelPutsScenario("write-cache-64-200-keys", 200, 128,
-                        64, 16, 250, 128, 10, 8, 2, 64),
+                        64, 16, 128, 10, 8, 2, 64),
                 new ParallelPutsScenario("write-cache-128-small-segment", 300,
-                        128, 128, 16, 350, 32, 5, 8, 2, 64),
-                new ParallelPutsScenario("large-segment-512", 300, 256, 64, 32,
-                        400, 512, 10, 8, 2, 40));
+                        128, 128, 16, 32, 5, 8, 2, 64),
+                new ParallelPutsScenario("large-segment-512", 300, 256, 64,
+                        32, 512, 10, 8, 2, 40));
     }
 
     private record ParallelPutsScenario(String name, int keyCount,
             int maxNumberOfKeysInSegmentCache,
             int maxNumberOfKeysInSegmentWriteCache,
-            int maxNumberOfKeysInSegmentChunk, int maxNumberOfKeysInCache,
-            int maxNumberOfKeysInSegment, int maxNumberOfSegmentsInCache,
+            int maxNumberOfKeysInSegmentChunk, int maxNumberOfKeysInSegment,
+            int maxNumberOfSegmentsInCache,
             int cpuThreads, int ioThreads, int writerThreads) {
         @Override
         public String toString() {

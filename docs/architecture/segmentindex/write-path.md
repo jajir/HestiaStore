@@ -39,14 +39,13 @@ additional files or provide durability.
 
 ## 🧰 Unique Write Buffer (Index‑Level)
 
-Every `put`/`delete` is first stored in an in‑memory unique cache that holds only the latest value per key. When the buffer exceeds `maxNumberOfKeysInCache`, the index flushes.
+Every `put`/`delete` is first stored in an in‑memory unique cache that holds only the latest value per key and is flushed by internal policy.
 
 - Structure: `UniqueCache` keyed by K with comparator ordering.
 - Behavior:
   - New write replaces any previous value for the same key.
   - Reads consult this buffer first (read‑after‑write visibility without disk I/O).
   - Deletes are represented as a tombstone value from the value type descriptor.
-- Trigger: `cache.size() > conf.getMaxNumberOfKeysInCache()` calls `flushCache()`.
 
 Key classes: `cache/UniqueCache`, `segmentindex/SegmentIndexImpl#put`, `segmentindex/SegmentIndexImpl#delete`.
 
@@ -119,7 +118,6 @@ Key classes: `segmentindex/SegmentIndexImpl#delete`, `datatype/TypeDescriptor#ge
 
 ## ⚙️ Configuration Knobs Affecting Writes
 
-- `maxNumberOfKeysInCache` – triggers flush of the index‑level buffer.
 - `maxNumberOfKeysInSegmentWriteCache` – bounds in‑segment write cache size before flushing to delta files.
 - `maxNumberOfKeysInSegmentCache` – bounds total in‑segment cache size before compaction/split decisions.
 - `maxNumberOfKeysInSegmentChunk` – controls sparse index sampling cadence.

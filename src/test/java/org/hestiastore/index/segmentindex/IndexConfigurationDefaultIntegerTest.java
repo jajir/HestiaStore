@@ -12,7 +12,6 @@ class IndexConfigurationDefaultIntegerTest {
 
         assertEquals(500_000, defaults.getMaxNumberOfKeysInSegmentCache());
         assertEquals(1_000, defaults.getMaxNumberOfKeysInSegmentChunk());
-        assertEquals(5_000_000, defaults.getMaxNumberOfKeysInCache());
         assertEquals(10_000_000, defaults.getMaxNumberOfKeysInSegment());
         assertEquals(10, defaults.getMaxNumberOfSegmentsInCache());
         assertEquals(IndexConfigurationContract.MAX_NUMBER_OF_DELTA_CACHE_FILES,

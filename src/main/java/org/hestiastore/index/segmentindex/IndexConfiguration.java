@@ -39,7 +39,6 @@ public class IndexConfiguration<K, V> {
      * Segment index configuration
      */
     private final String indexName;
-    private final Integer maxNumberOfKeysInCache;
     private final Integer maxNumberOfKeysInSegment;
     private final Integer maxNumberOfSegmentsInCache;
     private final Integer indexWorkerThreadCount;
@@ -81,7 +80,6 @@ public class IndexConfiguration<K, V> {
             final Integer maxNumberOfKeysInSegmentWriteCacheDuringMaintenance, //
             final Integer maxNumberOfKeysInSegmentChunk, //
             final Integer maxNumberOfDeltaCacheFiles, //
-            final Integer maxNumberOfKeysInCache, //
             final Integer maxNumberOfKeysInSegment, //
             final Integer maxNumberOfSegmentsInCache, //
             final String indexName, //
@@ -108,7 +106,6 @@ public class IndexConfiguration<K, V> {
         this.maxNumberOfKeysInSegmentChunk = maxNumberOfKeysInSegmentChunk;
         this.maxNumberOfDeltaCacheFiles = maxNumberOfDeltaCacheFiles;
         this.indexName = indexName;
-        this.maxNumberOfKeysInCache = maxNumberOfKeysInCache;
         this.maxNumberOfKeysInSegment = maxNumberOfKeysInSegment;
         this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
         this.indexWorkerThreadCount = indexWorkerThreadCount;
@@ -184,15 +181,6 @@ public class IndexConfiguration<K, V> {
      */
     public String getIndexName() {
         return indexName;
-    }
-
-    /**
-     * Returns the maximum number of keys kept in the top-level index cache.
-     *
-     * @return max keys in index cache
-     */
-    public Integer getMaxNumberOfKeysInCache() {
-        return maxNumberOfKeysInCache;
     }
 
     /**
