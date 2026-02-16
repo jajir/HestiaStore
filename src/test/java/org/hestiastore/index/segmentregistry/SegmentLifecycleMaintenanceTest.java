@@ -105,6 +105,23 @@ class SegmentLifecycleMaintenanceTest {
         }
     }
 
+    @Test
+    void loadSegment_throwsBusyException_whenSegmentDirectoryLockIsHeld() {
+        try (Fixture fixture = new Fixture()) {
+            final SegmentId segmentId = SegmentId.of(4);
+            fixture.createSegmentDirectory(segmentId);
+            fixture.gate.finishFreezeToReady();
+            final Segment<Integer, String> loaded = fixture.maintenance
+                    .loadSegment(segmentId);
+            try {
+                assertThrows(SegmentBusyException.class,
+                        () -> fixture.maintenance.loadSegment(segmentId));
+            } finally {
+                fixture.maintenance.closeSegmentIfNeeded(loaded);
+            }
+        }
+    }
+
     private static final class Fixture implements AutoCloseable {
         private final MemDirectory directory = new MemDirectory();
         private final AsyncDirectory asyncDirectory = AsyncDirectoryAdapter
@@ -121,7 +138,7 @@ class SegmentLifecycleMaintenanceTest {
         private final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
         private final SegmentLifecycleMaintenance<Integer, String> maintenance = new SegmentLifecycleMaintenance<>(
                 segmentFactory, fileSystem, new IndexRetryPolicy(1, 1000),
-                new IndexRetryPolicy(1, 1000), gate);
+                gate);
 
         private void createSegmentDirectory(final SegmentId segmentId) {
             directory.mkdir(segmentId.getName());

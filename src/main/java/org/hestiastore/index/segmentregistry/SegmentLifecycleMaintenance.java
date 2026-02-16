@@ -28,22 +28,17 @@ final class SegmentLifecycleMaintenance<K, V> {
     private final SegmentFactory<K, V> segmentFactory;
     private final SegmentRegistryFileSystem fileSystem;
     private final IndexRetryPolicy closeRetryPolicy;
-    private final IndexRetryPolicy segmentBuildRetryPolicy;
     private final SegmentRegistryStateMachine gate;
 
     SegmentLifecycleMaintenance(final SegmentFactory<K, V> segmentFactory,
             final SegmentRegistryFileSystem fileSystem,
             final IndexRetryPolicy closeRetryPolicy,
-            final IndexRetryPolicy segmentBuildRetryPolicy,
             final SegmentRegistryStateMachine gate) {
         this.segmentFactory = Vldtn.requireNonNull(segmentFactory,
                 "segmentFactory");
         this.fileSystem = Vldtn.requireNonNull(fileSystem, "fileSystem");
         this.closeRetryPolicy = Vldtn.requireNonNull(closeRetryPolicy,
                 "closeRetryPolicy");
-        this.segmentBuildRetryPolicy = Vldtn
-                .requireNonNull(segmentBuildRetryPolicy,
-                        "segmentBuildRetryPolicy");
         this.gate = Vldtn.requireNonNull(gate, "gate");
     }
 
@@ -53,32 +48,27 @@ final class SegmentLifecycleMaintenance<K, V> {
             throw new IndexException(
                     String.format("Segment '%s' was not found.", segmentId));
         }
-        final long startNanos = segmentBuildRetryPolicy.startNanos();
-        while (true) {
-            final SegmentRegistryState state = gate.getState();
-            if (state != SegmentRegistryState.READY) {
-                throw new SegmentBusyException("Registry state is " + state);
-            }
-            final SegmentBuildResult<Segment<K, V>> buildResult = segmentFactory
-                    .buildSegment(segmentId);
-            if (buildResult == null) {
-                throw new IndexException(String.format(
-                        "Segment '%s' failed to build: null result.",
-                        segmentId));
-            }
-            if (buildResult.getStatus() == SegmentBuildStatus.OK
-                    && buildResult.getValue() != null) {
-                return buildResult.getValue();
-            }
-            if (buildResult.getStatus() == SegmentBuildStatus.BUSY) {
-                segmentBuildRetryPolicy.backoffOrThrow(startNanos,
-                        "segmentBuild", segmentId);
-                continue;
-            }
-            throw new IndexException(String.format(
-                    "Segment '%s' failed to build with status '%s'.",
-                    segmentId, buildResult.getStatus()));
+        final SegmentRegistryState state = gate.getState();
+        if (state != SegmentRegistryState.READY) {
+            throw new SegmentBusyException("Registry state is " + state);
         }
+        final SegmentBuildResult<Segment<K, V>> buildResult = segmentFactory
+                .buildSegment(segmentId);
+        if (buildResult == null) {
+            throw new IndexException(String.format(
+                    "Segment '%s' failed to build: null result.", segmentId));
+        }
+        if (buildResult.getStatus() == SegmentBuildStatus.OK
+                && buildResult.getValue() != null) {
+            return buildResult.getValue();
+        }
+        if (buildResult.getStatus() == SegmentBuildStatus.BUSY) {
+            throw new SegmentBusyException(
+                    String.format("Segment '%s' is busy.", segmentId));
+        }
+        throw new IndexException(String.format(
+                "Segment '%s' failed to build with status '%s'.", segmentId,
+                buildResult.getStatus()));
     }
 
     void closeSegmentIfNeeded(final Segment<K, V> segment) {
