@@ -172,7 +172,7 @@ class SegmentSplitCoordinatorFlowTest {
                 .withEncodingFilters(defaults.getEncodingChunkFilters())//
                 .withDecodingFilters(defaults.getDecodingChunkFilters())//
                 .withSegmentMaintenanceAutoEnabled(false)//
-                .withNumberOfCpuThreads(1)//
+                .withIndexWorkerThreadCount(1)//
                 .withNumberOfIoThreads(1)//
                 .withNumberOfSegmentIndexMaintenanceThreads(1)//
                 .withNumberOfIndexMaintenanceThreads(1)//

@@ -30,7 +30,7 @@ public class IndexConfigurationBuilder<K, V> {
     private Double bloomFilterProbabilityOfFalsePositive;
 
     private Integer diskIoBufferSizeInBytes;
-    private Integer numberOfThreads;
+    private Integer indexWorkerThreadCount;
     private Integer numberOfIoThreads;
     private Integer numberOfSegmentIndexMaintenanceThreads;
     private Integer numberOfIndexMaintenanceThreads;
@@ -296,14 +296,14 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     /**
-     * Sets the number of CPU threads used for index operations.
+     * Sets the number of index worker threads used for index operations.
      *
-     * @param numberOfThreads CPU thread count
+     * @param indexWorkerThreadCount index worker thread count
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withNumberOfCpuThreads(
-            final Integer numberOfThreads) {
-        this.numberOfThreads = numberOfThreads;
+    public IndexConfigurationBuilder<K, V> withIndexWorkerThreadCount(
+            final Integer indexWorkerThreadCount) {
+        this.indexWorkerThreadCount = indexWorkerThreadCount;
         return this;
     }
 
@@ -509,9 +509,9 @@ public class IndexConfigurationBuilder<K, V> {
      * @return built configuration
      */
     public IndexConfiguration<K, V> build() {
-        final Integer effectiveNumberOfThreads = numberOfThreads == null
-                ? IndexConfigurationContract.NUMBER_OF_THREADS
-                : numberOfThreads;
+        final Integer effectiveIndexWorkerThreadCount = indexWorkerThreadCount == null
+                ? IndexConfigurationContract.INDEX_WORKER_THREAD_COUNT
+                : indexWorkerThreadCount;
         final Integer effectiveNumberOfIoThreads = numberOfIoThreads == null
                 ? IndexConfigurationContract.NUMBER_OF_IO_THREADS
                 : numberOfIoThreads;
@@ -567,7 +567,7 @@ public class IndexConfigurationBuilder<K, V> {
                 maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache, indexName,
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
                 bloomFilterProbabilityOfFalsePositive, diskIoBufferSizeInBytes,
-                contextLoggingEnabled, effectiveNumberOfThreads,
+                contextLoggingEnabled, effectiveIndexWorkerThreadCount,
                 effectiveNumberOfIoThreads,
                 effectiveSegmentIndexMaintenanceThreads,
                 effectiveIndexMaintenanceThreads,

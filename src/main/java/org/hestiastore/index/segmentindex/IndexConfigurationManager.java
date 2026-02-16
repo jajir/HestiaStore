@@ -61,8 +61,8 @@ class IndexConfigurationManager<K, V> {
             builder.withContextLoggingEnabled(
                     defaults.isContextLoggingEnabled());
         }
-        if (conf.getNumberOfThreads() == null) {
-            builder.withNumberOfCpuThreads(defaults.getNumberOfThreads());
+        if (conf.getIndexWorkerThreadCount() == null) {
+            builder.withIndexWorkerThreadCount(defaults.getIndexWorkerThreadCount());
         }
         if (conf.getNumberOfIoThreads() == null) {
             builder.withNumberOfIoThreads(defaults.getNumberOfIoThreads());
@@ -232,11 +232,11 @@ class IndexConfigurationManager<K, V> {
                     indexConf.getMaxNumberOfKeysInCache());
             dirty = true;
         }
-        if (indexConf.getNumberOfThreads() != null
-                && indexConf.getNumberOfThreads() > 0
-                && !indexConf.getNumberOfThreads()
-                        .equals(storedConf.getNumberOfThreads())) {
-            builder.withNumberOfCpuThreads(indexConf.getNumberOfThreads());
+        if (indexConf.getIndexWorkerThreadCount() != null
+                && indexConf.getIndexWorkerThreadCount() > 0
+                && !indexConf.getIndexWorkerThreadCount()
+                        .equals(storedConf.getIndexWorkerThreadCount())) {
+            builder.withIndexWorkerThreadCount(indexConf.getIndexWorkerThreadCount());
             dirty = true;
         }
         if (indexConf.getNumberOfIoThreads() != null
@@ -589,10 +589,11 @@ class IndexConfigurationManager<K, V> {
             throw new IllegalArgumentException(
                     "Decoding chunk filters must not be empty.");
         }
-        Vldtn.requireNonNull(conf.getNumberOfThreads(), "numberOfThreads");
-        if (conf.getNumberOfThreads() < 1) {
+        Vldtn.requireNonNull(conf.getIndexWorkerThreadCount(),
+                "indexWorkerThreadCount");
+        if (conf.getIndexWorkerThreadCount() < 1) {
             throw new IllegalArgumentException(
-                    "Number of threads must be at least 1.");
+                    "Index worker thread count must be at least 1.");
         }
         Vldtn.requireNonNull(conf.getNumberOfIoThreads(), "numberOfIoThreads");
         if (conf.getNumberOfIoThreads() < 1) {
@@ -657,7 +658,7 @@ class IndexConfigurationManager<K, V> {
                 .withKeyTypeDescriptor(conf.getKeyTypeDescriptor())//
                 .withValueTypeDescriptor(conf.getValueTypeDescriptor())//
                 .withContextLoggingEnabled(conf.isContextLoggingEnabled())//
-                .withNumberOfCpuThreads(conf.getNumberOfThreads())//
+                .withIndexWorkerThreadCount(conf.getIndexWorkerThreadCount())//
                 .withNumberOfIoThreads(conf.getNumberOfIoThreads())//
                 .withNumberOfSegmentIndexMaintenanceThreads(
                         conf.getNumberOfSegmentIndexMaintenanceThreads())//

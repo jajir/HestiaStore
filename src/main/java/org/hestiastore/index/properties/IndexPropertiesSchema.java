@@ -20,6 +20,7 @@ public final class IndexPropertiesSchema {
     public static final String SCHEMA_VERSION_KEY = "schema.version";
     public static final String REQUIRED_KEYS_KEY = "schema.requiredKeys";
     public static final int CURRENT_SCHEMA_VERSION = 1;
+    private static final String LEGACY_PROP_NUMBER_OF_THREADS = "numberOfThreads";
 
     private static final String REQUIRED_KEYS_SEPARATOR = ",";
 
@@ -56,7 +57,7 @@ public final class IndexPropertiesSchema {
         public static final String PROP_MAX_NUMBER_OF_KEYS_IN_CACHE = "maxNumberOfKeysInCache";
         public static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT = "maxNumberOfKeysInSegment";
         public static final String PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE = "maxNumberOfSegmentsInCache";
-        public static final String PROP_NUMBER_OF_THREADS = "numberOfThreads";
+        public static final String PROP_INDEX_WORKER_THREAD_COUNT = "indexWorkerThreadCount";
         public static final String PROP_NUMBER_OF_IO_THREADS = "numberOfIoThreads";
         public static final String PROP_SEGMENT_INDEX_MAINTENANCE_THREADS = "segmentIndexMaintenanceThreads";
         public static final String PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS = "numberOfIndexMaintenanceThreads";
@@ -261,9 +262,15 @@ public final class IndexPropertiesSchema {
                 IndexConfigurationKeys.PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
                 view -> String.valueOf(
                         IndexConfigurationContract.MAX_NUMBER_OF_SEGMENTS_IN_CACHE));
-        defaults.put(IndexConfigurationKeys.PROP_NUMBER_OF_THREADS,
-                view -> String.valueOf(
-                        IndexConfigurationContract.NUMBER_OF_THREADS));
+        defaults.put(IndexConfigurationKeys.PROP_INDEX_WORKER_THREAD_COUNT,
+                view -> {
+                    final String legacy = view
+                            .getString(LEGACY_PROP_NUMBER_OF_THREADS);
+                    return legacy == null || legacy.isBlank() ? String
+                            .valueOf(
+                                    IndexConfigurationContract.INDEX_WORKER_THREAD_COUNT)
+                            : legacy;
+                });
         defaults.put(IndexConfigurationKeys.PROP_NUMBER_OF_IO_THREADS,
                 view -> String.valueOf(
                         IndexConfigurationContract.NUMBER_OF_IO_THREADS));

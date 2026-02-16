@@ -40,7 +40,7 @@ class IndexConfiguratonStorage<K, V> {
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_CACHE = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_CACHE;
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT;
     private static final String PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE;
-    private static final String PROP_NUMBER_OF_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_THREADS;
+    private static final String PROP_INDEX_WORKER_THREAD_COUNT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_WORKER_THREAD_COUNT;
     private static final String PROP_NUMBER_OF_IO_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_IO_THREADS;
     private static final String PROP_SEGMENT_INDEX_MAINTENANCE_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_SEGMENT_INDEX_MAINTENANCE_THREADS;
     private static final String PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS;
@@ -119,9 +119,9 @@ class IndexConfiguratonStorage<K, V> {
                 .withMaxNumberOfKeysInSegmentChunk(
                         propsView.getInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK))//
                 .withMaxNumberOfDeltaCacheFiles(maxNumberOfDeltaCacheFiles)//
-                .withNumberOfCpuThreads(getOrDefault(propsView,
-                        PROP_NUMBER_OF_THREADS,
-                        IndexConfigurationContract.NUMBER_OF_THREADS))//
+                .withIndexWorkerThreadCount(getOrDefault(propsView,
+                        PROP_INDEX_WORKER_THREAD_COUNT,
+                        IndexConfigurationContract.INDEX_WORKER_THREAD_COUNT))//
                 .withNumberOfIoThreads(getOrDefault(propsView,
                         PROP_NUMBER_OF_IO_THREADS,
                         IndexConfigurationContract.NUMBER_OF_IO_THREADS))//
@@ -232,10 +232,10 @@ class IndexConfiguratonStorage<K, V> {
                         : indexConfiguration.getMaxNumberOfDeltaCacheFiles();
         writer.setInt(PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES,
                 deltaCacheFileCount);
-        final int threadCount = indexConfiguration.getNumberOfThreads() == null
-                ? IndexConfigurationContract.NUMBER_OF_THREADS
-                : indexConfiguration.getNumberOfThreads();
-        writer.setInt(PROP_NUMBER_OF_THREADS, threadCount);
+        final int threadCount = indexConfiguration.getIndexWorkerThreadCount() == null
+                ? IndexConfigurationContract.INDEX_WORKER_THREAD_COUNT
+                : indexConfiguration.getIndexWorkerThreadCount();
+        writer.setInt(PROP_INDEX_WORKER_THREAD_COUNT, threadCount);
         final int ioThreadCount = indexConfiguration.getNumberOfIoThreads() == null
                 ? IndexConfigurationContract.NUMBER_OF_IO_THREADS
                 : indexConfiguration.getNumberOfIoThreads();

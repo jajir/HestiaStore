@@ -176,7 +176,7 @@ class SegmentIndexConcurrencyStressIT {
                 .withMaxNumberOfSegmentsInCache(10)//
                 .withBloomFilterIndexSizeInBytes(1024)//
                 .withBloomFilterNumberOfHashFunctions(1)//
-                .withNumberOfCpuThreads(4)//
+                .withIndexWorkerThreadCount(4)//
                 .withNumberOfIoThreads(1)//
                 .build();
     }

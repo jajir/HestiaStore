@@ -42,7 +42,7 @@ public class IndexConfiguration<K, V> {
     private final Integer maxNumberOfKeysInCache;
     private final Integer maxNumberOfKeysInSegment;
     private final Integer maxNumberOfSegmentsInCache;
-    private final Integer numberOfThreads;
+    private final Integer indexWorkerThreadCount;
     private final Integer numberOfIoThreads;
     private final Integer numberOfSegmentIndexMaintenanceThreads;
     private final Integer numberOfIndexMaintenanceThreads;
@@ -89,7 +89,7 @@ public class IndexConfiguration<K, V> {
             final Integer bloomFilterIndexSizeInBytes, //
             final Double bloomFilterProbabilityOfFalsePositive, //
             final Integer diskIoBufferSize, final Boolean contextLoggingEnabled,
-            final Integer numberOfThreads, final Integer numberOfIoThreads,
+            final Integer indexWorkerThreadCount, final Integer numberOfIoThreads,
             final Integer numberOfSegmentIndexMaintenanceThreads,
             final Integer numberOfIndexMaintenanceThreads,
             final Integer numberOfRegistryLifecycleThreads,
@@ -111,7 +111,7 @@ public class IndexConfiguration<K, V> {
         this.maxNumberOfKeysInCache = maxNumberOfKeysInCache;
         this.maxNumberOfKeysInSegment = maxNumberOfKeysInSegment;
         this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
-        this.numberOfThreads = numberOfThreads;
+        this.indexWorkerThreadCount = indexWorkerThreadCount;
         this.numberOfIoThreads = numberOfIoThreads;
         this.numberOfSegmentIndexMaintenanceThreads = numberOfSegmentIndexMaintenanceThreads;
         this.numberOfIndexMaintenanceThreads = numberOfIndexMaintenanceThreads;
@@ -233,12 +233,12 @@ public class IndexConfiguration<K, V> {
     }
 
     /**
-     * Returns the number of CPU threads used for index operations.
+     * Returns the number of index worker threads used for index operations.
      *
-     * @return CPU thread count
+     * @return index worker thread count
      */
-    public Integer getNumberOfThreads() {
-        return numberOfThreads;
+    public Integer getIndexWorkerThreadCount() {
+        return indexWorkerThreadCount;
     }
 
     /**
