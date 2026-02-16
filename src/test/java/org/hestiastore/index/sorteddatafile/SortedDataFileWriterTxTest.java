@@ -36,8 +36,7 @@ class SortedDataFileWriterTxTest {
 
         final SortedDataFileWriterTx<String, String> tx = new SortedDataFileWriterTx<>(
                 fileName,
-                org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                        .wrap(dir),
+                dir,
                 bufferSize, td, td);
 
         try (final EntryWriter<String, String> w = tx.open()) {

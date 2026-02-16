@@ -109,7 +109,7 @@ class SegmentIndexImplRetryTest {
 
     private IndexInternalConcurrent<Integer, String> newIndex() {
         return new IndexInternalConcurrent<>(
-                AsyncDirectoryAdapter.wrap(new MemDirectory()), tdi, tds,
+                new MemDirectory(), tdi, tds,
                 buildConf());
     }
 

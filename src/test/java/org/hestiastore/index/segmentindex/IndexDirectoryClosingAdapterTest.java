@@ -1,24 +1,26 @@
 package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.withSettings;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.AbstractCloseableResource;
+import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
+import org.hestiastore.index.directory.Directory;
 import org.junit.jupiter.api.Test;
 
 class IndexDirectoryClosingAdapterTest {
 
     @Test
     void close_closes_delegate_and_async_directory() {
-        final AsyncDirectory asyncDirectory = AsyncDirectoryAdapter
-                .wrap(new MemDirectory());
+        final Directory asyncDirectory = (Directory) mock(Directory.class,
+                withSettings().extraInterfaces(CloseableResource.class));
         final NoopSegmentIndex delegate = new NoopSegmentIndex();
 
         try (IndexDirectoryClosingAdapter<String, String> adapter = new IndexDirectoryClosingAdapter<>(
@@ -27,8 +29,7 @@ class IndexDirectoryClosingAdapterTest {
         }
 
         assertTrue(delegate.wasClosed(), "Delegate index should be closed");
-        assertTrue(asyncDirectory.wasClosed(),
-                "AsyncDirectory should be closed");
+        verify((CloseableResource) asyncDirectory).close();
     }
 
     private static final class NoopSegmentIndex extends AbstractCloseableResource

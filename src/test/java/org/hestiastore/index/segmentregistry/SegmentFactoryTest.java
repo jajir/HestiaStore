@@ -8,9 +8,8 @@ import java.util.List;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentBuildResult;
 import org.hestiastore.index.segment.SegmentBuildStatus;
@@ -25,8 +24,7 @@ class SegmentFactoryTest {
     @Test
     void buildSegment_createsSegmentWithId() {
         final IndexConfiguration<Integer, String> conf = newConfiguration();
-        final AsyncDirectory directory = AsyncDirectoryAdapter
-                .wrap(new MemDirectory());
+        final Directory directory = new MemDirectory();
         final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
                 1, "segment-maintenance-test");
         final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
@@ -46,7 +44,6 @@ class SegmentFactoryTest {
             if (!maintenanceExecutor.wasClosed()) {
                 maintenanceExecutor.close();
             }
-            directory.close();
         }
     }
 

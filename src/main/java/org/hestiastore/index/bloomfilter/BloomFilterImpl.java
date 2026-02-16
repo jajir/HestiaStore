@@ -3,9 +3,8 @@ package org.hestiastore.index.bloomfilter;
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileReader;
-import org.hestiastore.index.directory.async.AsyncFileReaderBlockingAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +18,7 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final AsyncDirectory directoryFacade;
+    private final Directory directoryFacade;
 
     private final String bloomFilterFileName;
 
@@ -37,7 +36,7 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
 
     private final int diskIoBufferSize;
 
-    BloomFilterImpl(final AsyncDirectory directoryFacade,
+    BloomFilterImpl(final Directory directoryFacade,
             final String bloomFilterFileName,
             final int numberOfHashFunctions, final int indexSizeInBytes,
             final ConvertorToBytes<K> convertorToBytes,
@@ -76,19 +75,15 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
     }
 
     private boolean isExists() {
-        return directoryFacade.isFileExistsAsync(bloomFilterFileName)
-                .toCompletableFuture().join();
+        return directoryFacade.isFileExists(bloomFilterFileName);
     }
 
     private Hash loadHashIfPresent() {
         if (!isExists() || indexSizeInBytes <= 0) {
             return null;
         }
-        try (FileReader reader = new AsyncFileReaderBlockingAdapter(
-                directoryFacade
-                        .getFileReaderAsync(bloomFilterFileName,
-                                diskIoBufferSize)
-                        .toCompletableFuture().join())) {
+        try (FileReader reader = directoryFacade.getFileReader(
+                bloomFilterFileName, diskIoBufferSize)) {
             final byte[] data = new byte[indexSizeInBytes];
             final int readed = reader.read(data);
             if (indexSizeInBytes != readed) {

@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentId;
 
 /**
@@ -25,9 +25,9 @@ public final class DirectorySegmentIdAllocator implements SegmentIdAllocator {
      * Creates an allocator that scans the provided directory for segment
      * directories.
      *
-     * @param directoryFacade async directory facade
+     * @param directoryFacade directory facade
      */
-    public DirectorySegmentIdAllocator(final AsyncDirectory directoryFacade) {
+    public DirectorySegmentIdAllocator(final Directory directoryFacade) {
         Vldtn.requireNonNull(directoryFacade, "directoryFacade");
         final int startId = resolveStartId(directoryFacade, DEFAULT_FIRST_ID);
         this.nextId = new AtomicInteger(startId);
@@ -41,11 +41,10 @@ public final class DirectorySegmentIdAllocator implements SegmentIdAllocator {
         return SegmentId.of(nextId.getAndIncrement());
     }
 
-    private static int resolveStartId(final AsyncDirectory directoryFacade,
+    private static int resolveStartId(final Directory directoryFacade,
             final int defaultFirstId) {
         int maxId = -1;
-        try (Stream<String> names = directoryFacade.getFileNamesAsync()
-                .toCompletableFuture().join()) {
+        try (Stream<String> names = directoryFacade.getFileNames()) {
             maxId = names.map(DirectorySegmentIdAllocator::parseSegmentId)
                     .filter(id -> id >= 0)
                     .max(Integer::compareTo)

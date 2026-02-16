@@ -20,7 +20,7 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
@@ -46,7 +46,7 @@ class SegmentRegistryImplTest {
     private static final List<ChunkFilter> FILTERS = List
             .of(new ChunkFilterDoNothing());
 
-    private AsyncDirectory directoryFacade;
+    private Directory directoryFacade;
 
     @Mock
     private IndexConfiguration<Integer, String> conf;
@@ -57,7 +57,7 @@ class SegmentRegistryImplTest {
     @BeforeEach
     void setUp() {
         Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
-        directoryFacade = AsyncDirectoryAdapter.wrap(new MemDirectory());
+        directoryFacade = new MemDirectory();
         maintenanceExecutor = new SegmentAsyncExecutor(1,
                 "segment-maintenance");
         registry = (SegmentRegistryImpl<Integer, String>) SegmentRegistry

@@ -1,6 +1,7 @@
 package org.hestiastore.index.segment;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFile;
@@ -8,7 +9,7 @@ import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkStoreFile;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 
@@ -28,7 +29,7 @@ public final class SegmentFiles<K, V> {
 
     static final String CACHE_FILE_NAME_EXTENSION = ".cache";
 
-    private final AsyncDirectory directoryFacade;
+    private final Directory directoryFacade;
     private volatile long activeVersion;
     private final SegmentId id;
     private final SegmentDirectoryLayout layout;
@@ -51,7 +52,7 @@ public final class SegmentFiles<K, V> {
      * @param decodingChunkFilters filters applied when reading chunks
      * @param activeVersion        active on-disk version
      */
-    public SegmentFiles(final AsyncDirectory directoryFacade,
+    public SegmentFiles(final Directory directoryFacade,
             final SegmentId id, final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final int diskIoBufferSize,
@@ -76,7 +77,7 @@ public final class SegmentFiles<K, V> {
      * @param encodingChunkFilters filters applied when writing chunks
      * @param decodingChunkFilters filters applied when reading chunks
      */
-    public SegmentFiles(final AsyncDirectory directoryFacade,
+    public SegmentFiles(final Directory directoryFacade,
             final SegmentDirectoryLayout layout,
             final long activeVersion,
             final TypeDescriptor<K> keyTypeDescriptor,
@@ -143,7 +144,7 @@ public final class SegmentFiles<K, V> {
      * @return sorted data file handle
      */
     SortedDataFile<K, V> getDeltaCacheSortedDataFile(final String fileName) {
-        return SortedDataFile.fromAsyncDirectory(directoryFacade, fileName,
+        return SortedDataFile.fromDirectory(directoryFacade, fileName,
                 keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize);
     }
 
@@ -170,7 +171,7 @@ public final class SegmentFiles<K, V> {
      */
     ScarceSegmentIndex<K> getScarceIndex() {
         return ScarceSegmentIndex.<K>builder()//
-                .withAsyncDirectory(directoryFacade)//
+                .withDirectory(directoryFacade)//
                 .withFileName(getScarceFileName())//
                 .withKeyTypeDescriptor(getKeyTypeDescriptor())//
                 .withDiskIoBufferSize(diskIoBufferSize) //
@@ -193,11 +194,11 @@ public final class SegmentFiles<K, V> {
     }
 
     /**
-     * Returns the async directory backing this segment.
+     * Returns the directory backing this segment.
      *
-     * @return async directory facade
+     * @return directory facade
      */
-    AsyncDirectory getAsyncDirectory() {
+    Directory getDirectory() {
         return directoryFacade;
     }
 
@@ -277,8 +278,7 @@ public final class SegmentFiles<K, V> {
      * @throws IllegalStateException if the file could not be deleted
      */
     void deleteFile(final String fileName) {
-        if (!directoryFacade.deleteFileAsync(fileName).toCompletableFuture()
-                .join()) {
+        if (!directoryFacade.deleteFile(fileName)) {
             throw new IllegalStateException(String.format(
                     "Unable to delete file '%s' in directory '%s'", fileName,
                     directoryFacade));
@@ -291,15 +291,14 @@ public final class SegmentFiles<K, V> {
      * @param fileName file to delete if present
      */
     void optionallyDeleteFile(final String fileName) {
-        directoryFacade.deleteFileAsync(fileName).toCompletableFuture().join();
+        directoryFacade.deleteFile(fileName);
     }
 
     /**
      * Removes all files that belong to this segment.
      */
     public void deleteAllFiles() {
-        try (java.util.stream.Stream<String> files = directoryFacade
-                .getFileNamesAsync().toCompletableFuture().join()) {
+        try (Stream<String> files = directoryFacade.getFileNames()) {
             files.filter(this::isSegmentManagedFile)
                     .forEach(this::optionallyDeleteFile);
         }

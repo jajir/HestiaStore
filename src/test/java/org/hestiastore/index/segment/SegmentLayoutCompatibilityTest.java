@@ -12,8 +12,7 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
+import org.hestiastore.index.directory.Directory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -28,12 +27,10 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
     void segment_roundTrip_supports_flat_and_root_layouts(
             final boolean useSegmentRoot) {
         final MemDirectory directory = new MemDirectory();
-        final AsyncDirectory asyncDirectory = AsyncDirectoryAdapter
-                .wrap(directory);
+        final Directory asyncDirectory = directory;
         final SegmentId segmentId = SegmentId.of(1);
-        final AsyncDirectory segmentDirectory = useSegmentRoot
+        final Directory segmentDirectory = useSegmentRoot
                 ? asyncDirectory.openSubDirectory(segmentId.getName())
-                        .toCompletableFuture().join()
                 : asyncDirectory;
         final SegmentConf segmentConf = new SegmentConf(8, 16, 16, 4, 5,
                 SegmentConf.UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
@@ -80,12 +77,10 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
     @Test
     void compaction_updates_active_version_in_root_layout() {
         final MemDirectory directory = new MemDirectory();
-        final AsyncDirectory asyncDirectory = AsyncDirectoryAdapter
-                .wrap(directory);
+        final Directory asyncDirectory = directory;
         final SegmentId segmentId = SegmentId.of(1);
-        final AsyncDirectory segmentDirectory = asyncDirectory
-                .openSubDirectory(segmentId.getName()).toCompletableFuture()
-                .join();
+        final Directory segmentDirectory = asyncDirectory
+                .openSubDirectory(segmentId.getName());
         final SegmentConf segmentConf = new SegmentConf(8, 16, 16, 4, 5,
                 SegmentConf.UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
                 SegmentConf.UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES, 0.01, 1024,
@@ -109,9 +104,8 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
             closeAndAwait(segment);
         }
 
-        final AsyncDirectory rootDirectory = asyncDirectory
-                .openSubDirectory(segmentId.getName()).toCompletableFuture()
-                .join();
+        final Directory rootDirectory = asyncDirectory
+                .openSubDirectory(segmentId.getName());
         final SegmentPropertiesManager propertiesManager = new SegmentPropertiesManager(
                 rootDirectory, segmentId);
         assertEquals(2L, propertiesManager.getVersion());
@@ -120,12 +114,10 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
     @Test
     void root_properties_initialize_active_version() {
         final MemDirectory directory = new MemDirectory();
-        final AsyncDirectory asyncDirectory = AsyncDirectoryAdapter
-                .wrap(directory);
+        final Directory asyncDirectory = directory;
         final SegmentId segmentId = SegmentId.of(1);
-        final AsyncDirectory segmentDirectory = asyncDirectory
-                .openSubDirectory(segmentId.getName()).toCompletableFuture()
-                .join();
+        final Directory segmentDirectory = asyncDirectory
+                .openSubDirectory(segmentId.getName());
         final SegmentConf segmentConf = new SegmentConf(8, 16, 16, 4, 5,
                 SegmentConf.UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
                 SegmentConf.UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES, 0.01, 1024,
@@ -143,9 +135,8 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
             closeAndAwait(segment);
         }
 
-        final AsyncDirectory rootDirectory = asyncDirectory
-                .openSubDirectory(segmentId.getName()).toCompletableFuture()
-                .join();
+        final Directory rootDirectory = asyncDirectory
+                .openSubDirectory(segmentId.getName());
         final SegmentPropertiesManager propertiesManager = new SegmentPropertiesManager(
                 rootDirectory, segmentId);
         assertEquals(1L, propertiesManager.getVersion());
@@ -154,20 +145,17 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
     @Test
     void root_properties_recovers_invalid_active_version() {
         final MemDirectory directory = new MemDirectory();
-        final AsyncDirectory asyncDirectory = AsyncDirectoryAdapter
-                .wrap(directory);
+        final Directory asyncDirectory = directory;
         final SegmentId segmentId = SegmentId.of(1);
-        final AsyncDirectory segmentDirectory = asyncDirectory
-                .openSubDirectory(segmentId.getName()).toCompletableFuture()
-                .join();
+        final Directory segmentDirectory = asyncDirectory
+                .openSubDirectory(segmentId.getName());
         final SegmentConf segmentConf = new SegmentConf(8, 16, 16, 4, 5,
                 SegmentConf.UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
                 SegmentConf.UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES, 0.01, 1024,
                 List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()));
-        final AsyncDirectory rootDirectory = asyncDirectory
-                .openSubDirectory(segmentId.getName()).toCompletableFuture()
-                .join();
+        final Directory rootDirectory = asyncDirectory
+                .openSubDirectory(segmentId.getName());
         final SegmentPropertiesManager propertiesManager = new SegmentPropertiesManager(
                 rootDirectory, segmentId);
         propertiesManager.setVersion(7L);

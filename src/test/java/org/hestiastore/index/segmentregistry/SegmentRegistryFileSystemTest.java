@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.Test;
@@ -16,7 +16,7 @@ class SegmentRegistryFileSystemTest {
     void segmentDirectoryExistsReflectsDirectoryPresence() {
         final MemDirectory directory = new MemDirectory();
         final SegmentRegistryFileSystem fileSystem = new SegmentRegistryFileSystem(
-                AsyncDirectoryAdapter.wrap(directory));
+                directory);
 
         assertFalse(fileSystem.segmentDirectoryExists(SegmentId.of(1)));
 
@@ -35,8 +35,7 @@ class SegmentRegistryFileSystemTest {
                 .openSubDirectory("sub");
         nestedDirectory.touch("more.bin");
 
-        final AsyncDirectory asyncDirectory = AsyncDirectoryAdapter
-                .wrap(directory);
+        final Directory asyncDirectory = directory;
         final SegmentRegistryFileSystem fileSystem = new SegmentRegistryFileSystem(
                 asyncDirectory);
 

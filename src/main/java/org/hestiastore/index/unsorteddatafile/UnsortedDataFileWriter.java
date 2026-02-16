@@ -5,10 +5,9 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeWriter;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.Directory.Access;
-import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.directory.FileWriter;
-import org.hestiastore.index.directory.async.AsyncFileWriterBlockingAdapter;
 
 /**
  * Streaming writer that appends unsorted key/value entries to a file using the
@@ -31,7 +30,7 @@ public class UnsortedDataFileWriter<K, V> extends AbstractCloseableResource
      * @param access           file access mode
      * @param diskIoBufferSize buffer size in bytes used when writing
      */
-    public UnsortedDataFileWriter(final AsyncDirectory directoryFacade,
+    public UnsortedDataFileWriter(final Directory directoryFacade,
             final String fileName, final TypeWriter<K> keyWriter,
             final TypeWriter<V> valueWriter, final Access access,
             final int diskIoBufferSize) {
@@ -39,9 +38,8 @@ public class UnsortedDataFileWriter<K, V> extends AbstractCloseableResource
         this.valueWriter = Vldtn.requireNonNull(valueWriter, "valueWriter");
         Vldtn.requireNonNull(directoryFacade, "directoryFacade");
         Vldtn.requireNonNull(fileName, "fileName");
-        fileWriter = new AsyncFileWriterBlockingAdapter(
-                directoryFacade.getFileWriterAsync(fileName, access,
-                        diskIoBufferSize).toCompletableFuture().join());
+        fileWriter = directoryFacade.getFileWriter(fileName, access,
+                diskIoBufferSize);
     }
 
     /**

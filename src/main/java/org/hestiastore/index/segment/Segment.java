@@ -1,7 +1,7 @@
 package org.hestiastore.index.segment;
 
 import org.hestiastore.index.EntryIterator;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 
 /**
  * Public contract for a single on-disk index segment.
@@ -44,7 +44,7 @@ public interface Segment<K, V> {
      * @return a new builder instance
      */
     static <M, N> SegmentBuilder<M, N> builder(
-            final AsyncDirectory directoryFacade) {
+            final Directory directoryFacade) {
         return new SegmentBuilder<>(directoryFacade);
     }
 

@@ -1,10 +1,11 @@
 package org.hestiastore.index.segment;
 
 import java.util.concurrent.Executor;
+import java.util.stream.Stream;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 
 /**
  * Assembles segment components from a configured {@link SegmentBuilder} and
@@ -31,7 +32,7 @@ final class SegmentBuildContext<K, V> {
      */
     SegmentBuildContext(final SegmentBuilder<K, V> builder,
             final SegmentDirectoryLayout layout) {
-        final AsyncDirectory directoryFacade = Vldtn.requireNonNull(
+        final Directory directoryFacade = Vldtn.requireNonNull(
                 builder.getDirectoryFacade(), "directoryFacade");
         final TypeDescriptor<K> keyTypeDescriptor = Vldtn.requireNonNull(
                 builder.getKeyTypeDescriptor(), "keyTypeDescriptor");
@@ -112,7 +113,7 @@ final class SegmentBuildContext<K, V> {
      * @param propertiesManager properties manager for the segment
      * @return resolved active version
      */
-    private long resolveActiveVersion(final AsyncDirectory baseDirectory,
+    private long resolveActiveVersion(final Directory baseDirectory,
             final SegmentDirectoryLayout layout,
             final SegmentPropertiesManager propertiesManager) {
         long activeVersion = propertiesManager.getVersion();
@@ -132,10 +133,9 @@ final class SegmentBuildContext<K, V> {
      * @param layout    directory layout helper
      * @return highest index version, or -1 when none are present
      */
-    private long detectHighestIndexVersion(final AsyncDirectory directory,
+    private long detectHighestIndexVersion(final Directory directory,
             final SegmentDirectoryLayout layout) {
-        try (java.util.stream.Stream<String> files = directory
-                .getFileNamesAsync().toCompletableFuture().join()) {
+        try (Stream<String> files = directory.getFileNames()) {
             return files.mapToLong(layout::parseVersionFromIndexFileName).max()
                     .orElse(-1L);
         }
@@ -149,10 +149,9 @@ final class SegmentBuildContext<K, V> {
      * @param version   version to verify
      * @return true when the index file exists
      */
-    private boolean indexFileExists(final AsyncDirectory directory,
+    private boolean indexFileExists(final Directory directory,
             final SegmentDirectoryLayout layout, final long version) {
-        return directory.isFileExistsAsync(layout.getIndexFileName(version))
-                .toCompletableFuture().join();
+        return directory.isFileExists(layout.getIndexFileName(version));
     }
 
     /**

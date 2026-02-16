@@ -3,7 +3,7 @@ package org.hestiastore.index.segmentregistry;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentId;
 
 /**
@@ -11,15 +11,15 @@ import org.hestiastore.index.segment.SegmentId;
  */
 final class SegmentRegistryFileSystem {
 
-    private final AsyncDirectory directoryFacade;
+    private final Directory directoryFacade;
 
     /**
      * Creates a filesystem helper backed by the provided directory facade.
      *
-     * @param directoryFacade asynchronous directory abstraction for registry
+     * @param directoryFacade directory abstraction for registry
      *                        operations
      */
-    SegmentRegistryFileSystem(final AsyncDirectory directoryFacade) {
+    SegmentRegistryFileSystem(final Directory directoryFacade) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
     }
@@ -52,8 +52,7 @@ final class SegmentRegistryFileSystem {
      */
     void ensureSegmentDirectory(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
-        directoryFacade.openSubDirectory(segmentId.getName())
-                .toCompletableFuture().join();
+        directoryFacade.openSubDirectory(segmentId.getName());
     }
 
     /**
@@ -70,11 +69,11 @@ final class SegmentRegistryFileSystem {
         if (!exists(directoryName)) {
             return;
         }
-        final AsyncDirectory directory = directoryFacade
-                .openSubDirectory(directoryName).toCompletableFuture().join();
+        final Directory directory = directoryFacade
+                .openSubDirectory(directoryName);
         clearDirectory(directory);
         try {
-            directoryFacade.rmdir(directoryName).toCompletableFuture().join();
+            directoryFacade.rmdir(directoryName);
         } catch (final RuntimeException e) {
             // Best-effort cleanup.
         }
@@ -91,14 +90,12 @@ final class SegmentRegistryFileSystem {
      *
      * @param directory directory to clear
      */
-    private void clearDirectory(final AsyncDirectory directory) {
-        try (Stream<String> files = directory.getFileNamesAsync()
-                .toCompletableFuture().join()) {
+    private void clearDirectory(final Directory directory) {
+        try (Stream<String> files = directory.getFileNames()) {
             files.forEach(fileName -> {
                 boolean deleted = false;
                 try {
-                    deleted = directory.deleteFileAsync(fileName)
-                            .toCompletableFuture().join();
+                    deleted = directory.deleteFile(fileName);
                     if (deleted) {
                         return;
                     }
@@ -106,19 +103,17 @@ final class SegmentRegistryFileSystem {
                     // fall through to directory cleanup
                 }
                 try {
-                    if (!directory.isFileExistsAsync(fileName)
-                            .toCompletableFuture().join()) {
+                    if (!directory.isFileExists(fileName)) {
                         return;
                     }
                 } catch (final RuntimeException e) {
                     return;
                 }
                 try {
-                    final AsyncDirectory subDirectory = directory
-                            .openSubDirectory(fileName).toCompletableFuture()
-                            .join();
+                    final Directory subDirectory = directory
+                            .openSubDirectory(fileName);
                     clearDirectory(subDirectory);
-                    directory.rmdir(fileName).toCompletableFuture().join();
+                    directory.rmdir(fileName);
                 } catch (final RuntimeException e) {
                     // Best-effort cleanup.
                 }
@@ -133,8 +128,7 @@ final class SegmentRegistryFileSystem {
      * @return {@code true} when the entry exists
      */
     private boolean exists(final String fileName) {
-        return directoryFacade.isFileExistsAsync(fileName).toCompletableFuture()
-                .join();
+        return directoryFacade.isFileExists(fileName);
     }
 
 }

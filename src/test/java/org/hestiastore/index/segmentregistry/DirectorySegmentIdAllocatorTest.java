@@ -11,7 +11,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.Test;
@@ -20,8 +20,7 @@ class DirectorySegmentIdAllocatorTest {
 
     @Test
     void nextIdStartsAtOneWhenEmpty() {
-        final AsyncDirectory directory = AsyncDirectoryAdapter
-                .wrap(new MemDirectory());
+        final Directory directory = new MemDirectory();
 
         final DirectorySegmentIdAllocator allocator = new DirectorySegmentIdAllocator(
                 directory);
@@ -36,8 +35,7 @@ class DirectorySegmentIdAllocatorTest {
         directory.mkdir("segment-00001");
         directory.mkdir("segment-00005");
         directory.touch("index.map");
-        final AsyncDirectory asyncDirectory = AsyncDirectoryAdapter
-                .wrap(directory);
+        final Directory asyncDirectory = directory;
 
         final DirectorySegmentIdAllocator allocator = new DirectorySegmentIdAllocator(
                 asyncDirectory);
@@ -49,8 +47,7 @@ class DirectorySegmentIdAllocatorTest {
     void nextIdIsThreadSafe() throws Exception {
         final MemDirectory directory = new MemDirectory();
         directory.mkdir("segment-00003");
-        final AsyncDirectory asyncDirectory = AsyncDirectoryAdapter
-                .wrap(directory);
+        final Directory asyncDirectory = directory;
         final DirectorySegmentIdAllocator allocator = new DirectorySegmentIdAllocator(
                 asyncDirectory);
         final int threads = 4;

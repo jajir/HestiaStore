@@ -13,7 +13,7 @@ import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
@@ -35,8 +35,7 @@ class SegmentSplitCoordinatorFlowTest {
     @Test
     void split_applyFailureDeletesNewSegments() {
         final IndexConfiguration<Integer, String> conf = newConfiguration();
-        final AsyncDirectory directory = AsyncDirectoryAdapter
-                .wrap(new MemDirectory());
+        final Directory directory = new MemDirectory();
         final KeyToSegmentMapSynchronizedAdapter<Integer> keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                 newKeyMap(List.of(Entry.of(100, SegmentId.of(0)))));
         final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
@@ -102,8 +101,7 @@ class SegmentSplitCoordinatorFlowTest {
     @Test
     void split_doesNotSwapDirectoriesOnSuccess() {
         final IndexConfiguration<Integer, String> conf = newConfiguration();
-        final AsyncDirectory directory = AsyncDirectoryAdapter
-                .wrap(new MemDirectory());
+        final Directory directory = new MemDirectory();
         final KeyToSegmentMapSynchronizedAdapter<Integer> keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                 newKeyMap(List.of(Entry.of(100, SegmentId.of(0)))));
         final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
@@ -187,7 +185,7 @@ class SegmentSplitCoordinatorFlowTest {
         final MemDirectory dir = new MemDirectory();
         final SortedDataFile<Integer, SegmentId> sdf = SortedDataFile
                 .<Integer, SegmentId>builder()
-                .withAsyncDirectory(AsyncDirectoryAdapter.wrap(dir))
+                .withDirectory(dir)
                 .withFileName("index.map")
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())
                 .withValueTypeDescriptor(new TypeDescriptorSegmentId()).build();
@@ -195,7 +193,7 @@ class SegmentSplitCoordinatorFlowTest {
                 .execute(writer -> entries.stream().sorted(
                         (e1, e2) -> Integer.compare(e1.getKey(), e2.getKey()))
                         .forEach(writer::write));
-        return new KeyToSegmentMap<>(AsyncDirectoryAdapter.wrap(dir),
+        return new KeyToSegmentMap<>(dir,
                 new TypeDescriptorInteger());
     }
 

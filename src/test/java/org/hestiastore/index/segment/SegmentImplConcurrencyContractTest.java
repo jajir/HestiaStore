@@ -245,7 +245,7 @@ class SegmentImplConcurrencyContractTest {
             final Executor maintenanceExecutor) {
         final SegmentBuilder<Integer, String> builder = Segment
                 .<Integer, String>builder(
-                        AsyncDirectoryAdapter.wrap(new MemDirectory()))
+                        new MemDirectory())
                 .withId(SegmentId.of(1))
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())
                 .withValueTypeDescriptor(new TypeDescriptorShortString())

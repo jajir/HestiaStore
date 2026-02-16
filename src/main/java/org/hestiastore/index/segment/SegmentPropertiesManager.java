@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.properties.IndexPropertiesSchema;
 import org.hestiastore.index.properties.PropertyStore;
 import org.hestiastore.index.properties.PropertyStoreimpl;
@@ -36,10 +36,10 @@ public class SegmentPropertiesManager {
     /**
      * Creates a manager for the given segment properties file.
      *
-     * @param directoryFacade async directory for property storage
+     * @param directoryFacade directory for property storage
      * @param id segment identifier
      */
-    public SegmentPropertiesManager(final AsyncDirectory directoryFacade,
+    public SegmentPropertiesManager(final Directory directoryFacade,
             final SegmentId id) {
         Vldtn.requireNonNull(directoryFacade, "directoryFacade");
         this.id = Vldtn.requireNonNull(id, "segmentId");
@@ -54,11 +54,10 @@ public class SegmentPropertiesManager {
         }
     }
 
-    private PropertyStore createStore(final AsyncDirectory directoryFacade) {
-        final PropertyStore store = PropertyStoreimpl.fromAsyncDirectory(
+    private PropertyStore createStore(final Directory directoryFacade) {
+        final PropertyStore store = PropertyStoreimpl.fromDirectory(
                 directoryFacade, getPropertiesFilename(), false);
-        if (directoryFacade.isFileExistsAsync(getPropertiesFilename())
-                .toCompletableFuture().join()) {
+        if (directoryFacade.isFileExists(getPropertiesFilename())) {
             IndexPropertiesSchema.SEGMENT_SCHEMA.ensure(store);
         }
         return store;
@@ -344,7 +343,7 @@ public class SegmentPropertiesManager {
      *
      * @param directoryFacade directory containing the properties file
      */
-    void switchDirectory(final AsyncDirectory directoryFacade) {
+    void switchDirectory(final Directory directoryFacade) {
         Vldtn.requireNonNull(directoryFacade, "directoryFacade");
         switchToStore(createStore(directoryFacade));
     }

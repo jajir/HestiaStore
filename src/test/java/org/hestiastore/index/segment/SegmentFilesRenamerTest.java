@@ -2,20 +2,17 @@ package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,7 +35,7 @@ class SegmentFilesRenamerTest {
     private static final String TARGET_PROPERTIES = "manifest.txt";
 
     @Mock
-    private AsyncDirectory asyncDirectory;
+    private Directory asyncDirectory;
 
     @Mock
     private SegmentPropertiesManager propertiesManager;
@@ -89,10 +86,10 @@ class SegmentFilesRenamerTest {
 
         renamer.renameFiles(sourceFiles, targetFiles, propertiesManager);
 
-        verify(asyncDirectory).renameFileAsync(SOURCE_INDEX, TARGET_INDEX);
-        verify(asyncDirectory).renameFileAsync(SOURCE_SCARCE, TARGET_SCARCE);
-        verify(asyncDirectory).renameFileAsync(SOURCE_BLOOM, TARGET_BLOOM);
-        verify(asyncDirectory).renameFileAsync(SOURCE_PROPERTIES,
+        verify(asyncDirectory).renameFile(SOURCE_INDEX, TARGET_INDEX);
+        verify(asyncDirectory).renameFile(SOURCE_SCARCE, TARGET_SCARCE);
+        verify(asyncDirectory).renameFile(SOURCE_BLOOM, TARGET_BLOOM);
+        verify(asyncDirectory).renameFile(SOURCE_PROPERTIES,
                 TARGET_PROPERTIES);
         verifyNoMoreInteractions(asyncDirectory);
     }
@@ -107,14 +104,14 @@ class SegmentFilesRenamerTest {
 
         renamer.renameFiles(sourceFiles, targetFiles, propertiesManager);
 
-        verify(asyncDirectory).renameFileAsync("v01-delta-0001.cache",
+        verify(asyncDirectory).renameFile("v01-delta-0001.cache",
                 "v01-delta-0001.cache");
-        verify(asyncDirectory).renameFileAsync("v01-delta-0042.cache",
+        verify(asyncDirectory).renameFile("v01-delta-0042.cache",
                 "v01-delta-0042.cache");
-        verify(asyncDirectory).renameFileAsync(SOURCE_INDEX, TARGET_INDEX);
-        verify(asyncDirectory).renameFileAsync(SOURCE_SCARCE, TARGET_SCARCE);
-        verify(asyncDirectory).renameFileAsync(SOURCE_BLOOM, TARGET_BLOOM);
-        verify(asyncDirectory).renameFileAsync(SOURCE_PROPERTIES,
+        verify(asyncDirectory).renameFile(SOURCE_INDEX, TARGET_INDEX);
+        verify(asyncDirectory).renameFile(SOURCE_SCARCE, TARGET_SCARCE);
+        verify(asyncDirectory).renameFile(SOURCE_BLOOM, TARGET_BLOOM);
+        verify(asyncDirectory).renameFile(SOURCE_PROPERTIES,
                 TARGET_PROPERTIES);
         verifyNoMoreInteractions(asyncDirectory);
     }
@@ -129,14 +126,14 @@ class SegmentFilesRenamerTest {
 
         renamer.renameFiles(sourceFiles, targetFiles, propertiesManager);
 
-        verify(asyncDirectory).renameFileAsync("other-segment-delta-001.cache",
+        verify(asyncDirectory).renameFile("other-segment-delta-001.cache",
                 "other-segment-delta-001.cache");
-        verify(asyncDirectory).renameFileAsync("v01-delta-0007.cache",
+        verify(asyncDirectory).renameFile("v01-delta-0007.cache",
                 "v01-delta-0007.cache");
-        verify(asyncDirectory).renameFileAsync(SOURCE_INDEX, TARGET_INDEX);
-        verify(asyncDirectory).renameFileAsync(SOURCE_SCARCE, TARGET_SCARCE);
-        verify(asyncDirectory).renameFileAsync(SOURCE_BLOOM, TARGET_BLOOM);
-        verify(asyncDirectory).renameFileAsync(SOURCE_PROPERTIES,
+        verify(asyncDirectory).renameFile(SOURCE_INDEX, TARGET_INDEX);
+        verify(asyncDirectory).renameFile(SOURCE_SCARCE, TARGET_SCARCE);
+        verify(asyncDirectory).renameFile(SOURCE_BLOOM, TARGET_BLOOM);
+        verify(asyncDirectory).renameFile(SOURCE_PROPERTIES,
                 TARGET_PROPERTIES);
         verifyNoMoreInteractions(asyncDirectory);
     }
@@ -147,26 +144,24 @@ class SegmentFilesRenamerTest {
         stubSegmentIds();
         when(propertiesManager.getCacheDeltaFileNames())
                 .thenReturn(List.of("v01-delta-0999.cache"));
-        when(asyncDirectory.renameFileAsync(eq("v01-delta-0999.cache"),
-                eq("v01-delta-0999.cache")))
-                .thenReturn(CompletableFuture
-                        .failedFuture(new IndexException("delta missing")));
+        doThrow(new IndexException("delta missing")).when(asyncDirectory)
+                .renameFile(eq("v01-delta-0999.cache"),
+                        eq("v01-delta-0999.cache"));
 
-        final CompletionException exception = assertThrows(
-                CompletionException.class,
+        final IndexException exception = assertThrows(
+                IndexException.class,
                 () -> renamer.renameFiles(sourceFiles, targetFiles,
                         propertiesManager));
-        assertTrue(exception.getCause() instanceof IndexException,
-                "Expected IndexException as root cause");
-        verify(asyncDirectory).renameFileAsync("v01-delta-0999.cache",
+        assertEquals("delta missing", exception.getMessage());
+        verify(asyncDirectory).renameFile("v01-delta-0999.cache",
                 "v01-delta-0999.cache");
-        verify(asyncDirectory, never()).renameFileAsync(SOURCE_INDEX,
+        verify(asyncDirectory, never()).renameFile(SOURCE_INDEX,
                 TARGET_INDEX);
-        verify(asyncDirectory, never()).renameFileAsync(SOURCE_SCARCE,
+        verify(asyncDirectory, never()).renameFile(SOURCE_SCARCE,
                 TARGET_SCARCE);
-        verify(asyncDirectory, never()).renameFileAsync(SOURCE_BLOOM,
+        verify(asyncDirectory, never()).renameFile(SOURCE_BLOOM,
                 TARGET_BLOOM);
-        verify(asyncDirectory, never()).renameFileAsync(SOURCE_PROPERTIES,
+        verify(asyncDirectory, never()).renameFile(SOURCE_PROPERTIES,
                 TARGET_PROPERTIES);
         verifyNoMoreInteractions(asyncDirectory);
     }
@@ -185,7 +180,7 @@ class SegmentFilesRenamerTest {
     }
 
     private void stubDirectory() {
-        when(sourceFiles.getAsyncDirectory()).thenReturn(asyncDirectory);
+        when(sourceFiles.getDirectory()).thenReturn(asyncDirectory);
     }
 
     private void stubSegmentIds() {
@@ -194,7 +189,6 @@ class SegmentFilesRenamerTest {
     }
 
     private void stubDefaultRenameSuccess() {
-        when(asyncDirectory.renameFileAsync(anyString(), anyString()))
-                .thenReturn(CompletableFuture.completedFuture(null));
+        // renameFile is void; default Mockito behavior is no-op
     }
 }

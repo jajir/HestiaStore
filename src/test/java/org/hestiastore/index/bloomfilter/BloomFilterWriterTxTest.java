@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.hestiastore.index.datatype.ConvertorToBytes;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,11 +26,11 @@ class BloomFilterWriterTxTest {
     private BloomFilter<String> bloomFilter;
 
     private BloomFilterWriterTx<String> tx;
-    private AsyncDirectory directoryFacade;
+    private Directory directoryFacade;
 
     @BeforeEach
     void setUp() {
-        directoryFacade = org.hestiastore.index.directory.async.AsyncDirectoryAdapter.wrap(new MemDirectory());
+        directoryFacade = new MemDirectory();
         tx = new BloomFilterWriterTx<>(directoryFacade, FILE_NAME,
                 convertorToBytes, HASH_FUNCTIONS, INDEX_SIZE_IN_BYTES,
                 INDEX_SIZE_IN_BYTES, bloomFilter);

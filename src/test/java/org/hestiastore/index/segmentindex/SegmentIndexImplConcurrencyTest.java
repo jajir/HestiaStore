@@ -26,7 +26,7 @@ class SegmentIndexImplConcurrencyTest {
     @BeforeEach
     void setUp() {
         index = new IndexInternalConcurrent<>(
-                AsyncDirectoryAdapter.wrap(new MemDirectory()),
+                new MemDirectory(),
                 new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(),
                 buildConf());

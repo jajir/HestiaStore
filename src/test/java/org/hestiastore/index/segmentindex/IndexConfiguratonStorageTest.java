@@ -18,7 +18,7 @@ class IndexConfiguratonStorageTest {
     void existsReflectsConfigurationPresence() {
         final MemDirectory directory = new MemDirectory();
         final IndexConfiguratonStorage<String, String> storage = new IndexConfiguratonStorage<>(
-                AsyncDirectoryAdapter.wrap(directory));
+                directory);
 
         assertFalse(storage.exists());
 

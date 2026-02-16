@@ -3,8 +3,7 @@ package org.hestiastore.index.sorteddatafile;
 import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.async.AsyncDirectory;
-import org.hestiastore.index.directory.async.AsyncFileReaderBlockingAdapter;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.unsorteddatafile.DataFileIterator;
 
 /**
@@ -12,7 +11,7 @@ import org.hestiastore.index.unsorteddatafile.DataFileIterator;
  *
  * <p>
  * Readers iterate entries in key order, while writers are provided through
- * {@link SortedDataFileWriterTx}. The file lives in an {@link AsyncDirectory}
+ * {@link SortedDataFileWriterTx}. The file lives in a {@link Directory}
  * and uses the supplied type descriptors for encoding and decoding keys and
  * values.
  * </p>
@@ -22,7 +21,7 @@ import org.hestiastore.index.unsorteddatafile.DataFileIterator;
  */
 public class SortedDataFile<K, V> {
 
-    private final AsyncDirectory directoryFacade;
+    private final Directory directoryFacade;
 
     private final String fileName;
 
@@ -46,13 +45,13 @@ public class SortedDataFile<K, V> {
     /**
      * Creates a sorted data file accessor with fixed storage properties.
      *
-     * @param directoryFacade required async directory
+     * @param directoryFacade required directory
      * @param fileName required file name
      * @param keyTypeDescriptor key type descriptor
      * @param valueTypeDescriptor value type descriptor
      * @param diskIoBufferSize buffer size used for I/O
      */
-    public SortedDataFile(final AsyncDirectory directoryFacade,
+    public SortedDataFile(final Directory directoryFacade,
             final String fileName, final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final int diskIoBufferSize) {
@@ -80,9 +79,9 @@ public class SortedDataFile<K, V> {
     }
 
     /**
-     * Creates a new accessor bound to the given async directory.
+     * Creates a new accessor bound to the given directory.
      *
-     * @param directoryFacade required async directory
+     * @param directoryFacade required directory
      * @param fileName required file name
      * @param keyTypeDescriptor key type descriptor
      * @param valueTypeDescriptor value type descriptor
@@ -91,8 +90,8 @@ public class SortedDataFile<K, V> {
      * @param <V> value type
      * @return sorted data file accessor
      */
-    public static <K, V> SortedDataFile<K, V> fromAsyncDirectory(
-            final AsyncDirectory directoryFacade, final String fileName,
+    public static <K, V> SortedDataFile<K, V> fromDirectory(
+            final Directory directoryFacade, final String fileName,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final int diskIoBufferSize) {
@@ -104,15 +103,15 @@ public class SortedDataFile<K, V> {
      * Creates a new instance with the specified properties. The key and value
      * type descriptors remain unchanged.
      * 
-     * @param newAsyncDirectory   required new directory
+     * @param newDirectory   required new directory
      * @param newFileName         required new file name
      * @param newDiskIoBufferSize the new disk I/O buffer size
      * @return a new instance with the specified properties
      */
     public SortedDataFile<K, V> withProperties(
-            final AsyncDirectory newAsyncDirectory, final String newFileName,
+            final Directory newDirectory, final String newFileName,
             final int newDiskIoBufferSize) {
-        return new SortedDataFile<>(newAsyncDirectory, newFileName,
+        return new SortedDataFile<>(newDirectory, newFileName,
                 keyTypeDescriptor, valueTypeDescriptor, newDiskIoBufferSize);
     }
 
@@ -122,8 +121,7 @@ public class SortedDataFile<K, V> {
      * @return a entry iterator for the sorted data file
      */
     public EntryIteratorWithCurrent<K, V> openIterator() {
-        if (!directoryFacade.isFileExistsAsync(fileName).toCompletableFuture()
-                .join()) {
+        if (!directoryFacade.isFileExists(fileName)) {
             return new EmptyEntryIteratorWithCurrent<>();
         }
         try {
@@ -131,12 +129,9 @@ public class SortedDataFile<K, V> {
                     keyTypeDescriptor.getConvertorFromBytes());
             return new DataFileIterator<>(diffKeyReader,
                     valueTypeDescriptor.getTypeReader(),
-                    new AsyncFileReaderBlockingAdapter(directoryFacade
-                            .getFileReaderAsync(fileName, diskIoBufferSize)
-                            .toCompletableFuture().join()));
+                    directoryFacade.getFileReader(fileName, diskIoBufferSize));
         } catch (final RuntimeException e) {
-            if (!directoryFacade.isFileExistsAsync(fileName)
-                    .toCompletableFuture().join()) {
+            if (!directoryFacade.isFileExists(fileName)) {
                 return new EmptyEntryIteratorWithCurrent<>();
             }
             throw e;
@@ -158,7 +153,7 @@ public class SortedDataFile<K, V> {
      * Deletes the underlying file. Does nothing if the file does not exist.
      */
     public void delete() {
-        directoryFacade.deleteFileAsync(fileName).toCompletableFuture().join();
+        directoryFacade.deleteFile(fileName);
     }
 
 }

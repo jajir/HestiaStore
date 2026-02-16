@@ -9,26 +9,24 @@ import java.util.Properties;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.Directory.Access;
-import org.hestiastore.index.directory.async.AsyncDirectory;
 import org.hestiastore.index.directory.FileReader;
 import org.hestiastore.index.directory.FileWriter;
-import org.hestiastore.index.directory.async.AsyncFileReaderBlockingAdapter;
-import org.hestiastore.index.directory.async.AsyncFileWriterBlockingAdapter;
 
 /**
- * {@link PropertyStore} backed by the {@link AsyncDirectory} abstraction. It
+ * {@link PropertyStore} backed by the {@link Directory} abstraction. It
  * loads all properties into memory and persists changes atomically through
  * explicit transactions.
  */
 public final class PropertyStoreimpl implements PropertyStore {
 
-    private final AsyncDirectory directoryFacade;
+    private final Directory directoryFacade;
     private final String fileName;
     private final Properties properties = new Properties();
     private final PropertyConverters converters = new PropertyConverters();
 
-    public PropertyStoreimpl(final AsyncDirectory directoryFacade,
+    public PropertyStoreimpl(final Directory directoryFacade,
             final String fileName, final boolean force) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
@@ -36,15 +34,14 @@ public final class PropertyStoreimpl implements PropertyStore {
         loadIfPresent(force);
     }
 
-    public static PropertyStoreimpl fromAsyncDirectory(
-            final AsyncDirectory directoryFacade,
+    public static PropertyStoreimpl fromDirectory(
+            final Directory directoryFacade,
             final String fileName, final boolean force) {
         return new PropertyStoreimpl(directoryFacade, fileName, force);
     }
 
     private void loadIfPresent(final boolean force) {
-        if (!directoryFacade.isFileExistsAsync(fileName)
-                .toCompletableFuture().join()) {
+        if (!directoryFacade.isFileExists(fileName)) {
             if (force) {
                 throw new IndexException("File " + fileName
                         + " does not exist in directory " + directoryFacade);
@@ -60,9 +57,7 @@ public final class PropertyStoreimpl implements PropertyStore {
     }
 
     private byte[] readEntireFile() {
-        try (FileReader reader = new AsyncFileReaderBlockingAdapter(
-                directoryFacade.getFileReaderAsync(fileName)
-                        .toCompletableFuture().join())) {
+        try (FileReader reader = directoryFacade.getFileReader(fileName)) {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
             final byte[] buffer = new byte[256];
             int read = reader.read(buffer);
@@ -94,9 +89,8 @@ public final class PropertyStoreimpl implements PropertyStore {
 
     void writeToDisk(final Properties propsToWrite) {
         final byte[] bytes = convertToBytes(propsToWrite);
-        try (FileWriter writer = new AsyncFileWriterBlockingAdapter(
-                directoryFacade.getFileWriterAsync(fileName, Access.OVERWRITE)
-                        .toCompletableFuture().join())) {
+        try (FileWriter writer = directoryFacade.getFileWriter(fileName,
+                Access.OVERWRITE)) {
             writer.write(bytes);
         }
     }

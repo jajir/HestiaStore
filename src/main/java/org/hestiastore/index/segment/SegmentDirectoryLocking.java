@@ -1,19 +1,19 @@
 package org.hestiastore.index.segment;
 
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileLock;
-import org.hestiastore.index.directory.async.AsyncDirectory;
 
 /**
  * Coordinates acquisition and release of a segment directory lock.
  */
 final class SegmentDirectoryLocking {
 
-    private final AsyncDirectory directoryFacade;
+    private final Directory directoryFacade;
     private final SegmentDirectoryLayout layout;
     private FileLock fileLock;
 
-    SegmentDirectoryLocking(final AsyncDirectory directoryFacade,
+    SegmentDirectoryLocking(final Directory directoryFacade,
             final SegmentDirectoryLayout layout) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
@@ -27,8 +27,7 @@ final class SegmentDirectoryLocking {
      */
     boolean tryLock() {
         final String lockFileName = layout.getLockFileName();
-        final FileLock lockHandle = directoryFacade.getLockAsync(lockFileName)
-                .toCompletableFuture().join();
+        final FileLock lockHandle = directoryFacade.getLock(lockFileName);
         if (lockHandle.isLocked()) {
             return false;
         }

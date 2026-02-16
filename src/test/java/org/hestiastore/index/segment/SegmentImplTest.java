@@ -120,8 +120,8 @@ class SegmentImplTest {
         when(segmentFiles.getIndexFile()).thenReturn(chunkPairFile);
         when(segmentFiles.getIndexFileName()).thenReturn("segment.index");
         when(segmentFiles.getBloomFilterFileName()).thenReturn("segment.bloom");
-        when(segmentFiles.getAsyncDirectory()).thenReturn(
-                AsyncDirectoryAdapter.wrap(directory));
+        when(segmentFiles.getDirectory()).thenReturn(
+                directory);
         when(segmentFiles.copyWithVersion(anyLong())).thenReturn(segmentFiles);
         when(directory.isFileExists("segment.index")).thenReturn(true);
         when(directory.getFileReaderSeekable("segment.index"))

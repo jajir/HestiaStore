@@ -65,7 +65,7 @@ class IndexConfigurationManagerTest {
         private IndexConfiguration<K, V> saved;
 
         private TestStorage(final IndexConfiguration<K, V> stored) {
-            super(AsyncDirectoryAdapter.wrap(new MemDirectory()));
+            super(new MemDirectory());
             this.stored = stored;
         }
 

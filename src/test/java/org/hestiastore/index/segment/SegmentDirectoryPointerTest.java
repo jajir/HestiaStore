@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.junit.jupiter.api.Test;
 
@@ -13,8 +13,7 @@ class SegmentDirectoryPointerTest {
 
     @Test
     void readActiveDirectory_returns_null_when_missing() {
-        final AsyncDirectory directory = AsyncDirectoryAdapter
-                .wrap(new MemDirectory());
+        final Directory directory = new MemDirectory();
         final SegmentDirectoryPointer pointer = new SegmentDirectoryPointer(
                 directory, new SegmentDirectoryLayout(SegmentId.of(1)));
 
@@ -23,8 +22,7 @@ class SegmentDirectoryPointerTest {
 
     @Test
     void writeActiveDirectory_persists_value() {
-        final AsyncDirectory directory = AsyncDirectoryAdapter
-                .wrap(new MemDirectory());
+        final Directory directory = new MemDirectory();
         final SegmentDirectoryPointer pointer = new SegmentDirectoryPointer(
                 directory, new SegmentDirectoryLayout(SegmentId.of(1)));
 
@@ -35,8 +33,7 @@ class SegmentDirectoryPointerTest {
 
     @Test
     void writeActiveDirectory_rejects_blank_value() {
-        final AsyncDirectory directory = AsyncDirectoryAdapter
-                .wrap(new MemDirectory());
+        final Directory directory = new MemDirectory();
         final SegmentDirectoryPointer pointer = new SegmentDirectoryPointer(
                 directory, new SegmentDirectoryLayout(SegmentId.of(1)));
 

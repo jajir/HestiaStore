@@ -28,7 +28,7 @@ class IndexInternalConcurrentTest {
     @BeforeEach
     void setUp() {
         index = new IndexInternalConcurrent<>(
-                AsyncDirectoryAdapter.wrap(new MemDirectory()),
+                new MemDirectory(),
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(),
                 buildConf());
     }
@@ -117,7 +117,7 @@ class IndexInternalConcurrentTest {
 
         private RecordingIndex(final EntryIterator<Integer, String> iterator,
                 final IndexConfiguration<Integer, String> conf) {
-            super(AsyncDirectoryAdapter.wrap(new MemDirectory()),
+            super(new MemDirectory(),
                     new TypeDescriptorInteger(), new TypeDescriptorShortString(),
                     conf);
             this.iterator = iterator;

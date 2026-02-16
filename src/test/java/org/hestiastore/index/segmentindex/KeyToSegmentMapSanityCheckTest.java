@@ -24,9 +24,8 @@ class KeyToSegmentMapSanityCheckTest {
     @Test
     void test_sanityCheck() {
         final SortedDataFile<String, SegmentId> sdf = SortedDataFile
-                .fromAsyncDirectory(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(directory),
+                .fromDirectory(
+                        directory,
                         "index.map", stringTd, integerTd, 1024);
 
         sdf.openWriterTx().execute(writer -> {
@@ -39,8 +38,7 @@ class KeyToSegmentMapSanityCheckTest {
         });
         assertThrows(IllegalStateException.class, () -> {
             try (KeyToSegmentMap<String> fif = new KeyToSegmentMap<>(
-                    org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                            .wrap(directory),
+                    directory,
                     stringTd)) {
                 // Intentionally left empty to trigger Exception
             }

@@ -18,7 +18,7 @@ class SegmentFilesTest {
     @Test
     void fileNamesUseVersionPrefix() {
         final SegmentFiles<Integer, String> files = new SegmentFiles<>(
-                AsyncDirectoryAdapter.wrap(new MemDirectory()), SegmentId.of(1),
+                new MemDirectory(), SegmentId.of(1),
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(),
                 1024, List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()), 2L);
@@ -31,7 +31,7 @@ class SegmentFilesTest {
     @Test
     void filterListsAreImmutable() {
         final SegmentFiles<Integer, String> files = new SegmentFiles<>(
-                AsyncDirectoryAdapter.wrap(new MemDirectory()), SegmentId.of(1),
+                new MemDirectory(), SegmentId.of(1),
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(),
                 1024, List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()), 1L);
@@ -48,7 +48,7 @@ class SegmentFilesTest {
     void constructorRejectsEmptyFilterLists() {
         assertThrows(IllegalArgumentException.class,
                 () -> new SegmentFiles<>(
-                        AsyncDirectoryAdapter.wrap(new MemDirectory()),
+                        new MemDirectory(),
                         SegmentId.of(1), new TypeDescriptorInteger(),
                         new TypeDescriptorShortString(), 1024, List.of(),
                         List.of(new ChunkFilterDoNothing()), 1L));
@@ -59,7 +59,7 @@ class SegmentFilesTest {
         final SegmentDirectoryLayout layout = new SegmentDirectoryLayout(
                 SegmentId.of(1));
         final SegmentFiles<Integer, String> files = new SegmentFiles<>(
-                AsyncDirectoryAdapter.wrap(new MemDirectory()),
+                new MemDirectory(),
                 layout,
                 1L,
                 new TypeDescriptorInteger(),
@@ -77,7 +77,7 @@ class SegmentFilesTest {
         final SegmentDirectoryLayout layout = new SegmentDirectoryLayout(
                 SegmentId.of(1));
         final SegmentFiles<Integer, String> files = new SegmentFiles<>(
-                AsyncDirectoryAdapter.wrap(new MemDirectory()),
+                new MemDirectory(),
                 layout,
                 1L,
                 new TypeDescriptorInteger(),
@@ -89,6 +89,6 @@ class SegmentFilesTest {
 
         assertEquals(1L, files.getActiveVersion());
         assertEquals(3L, copy.getActiveVersion());
-        assertSame(files.getAsyncDirectory(), copy.getAsyncDirectory());
+        assertSame(files.getDirectory(), copy.getDirectory());
     }
 }

@@ -6,7 +6,7 @@ import java.util.concurrent.Executor;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 
 /**
@@ -24,7 +24,7 @@ public final class SegmentBuilder<K, V> {
 
     private static final int DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES = 1024 * 4;
 
-    private AsyncDirectory directoryFacade;
+    private Directory directoryFacade;
     private SegmentId id;
     private TypeDescriptor<K> keyTypeDescriptor;
     private TypeDescriptor<V> valueTypeDescriptor;
@@ -49,33 +49,21 @@ public final class SegmentBuilder<K, V> {
      *
      * @param directoryFacade non-null segment directory facade
      */
-    SegmentBuilder(final AsyncDirectory directoryFacade) {
-        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
-                "directoryFacade");
+    SegmentBuilder(final Directory directoryFacade) {
+        withDirectory(directoryFacade);
     }
 
     /**
-     * Set the {@link AsyncDirectory} used to store files for this segment.
+     * Sets the directory used to store files for this segment.
      *
-     * @param directoryFacade non-null segment directory facade
+     * @param directoryFacade non-null segment directory
      * @return this builder for chaining
      */
     public SegmentBuilder<K, V> withDirectory(
-            final AsyncDirectory directoryFacade) {
+            final Directory directoryFacade) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
         return this;
-    }
-
-    /**
-     * Backwards-compatible alias for {@link #withDirectory(AsyncDirectory)}.
-     *
-     * @param directoryFacade non-null directory facade
-     * @return this builder for chaining
-     */
-    public SegmentBuilder<K, V> withAsyncDirectory(
-            final AsyncDirectory directoryFacade) {
-        return withDirectory(directoryFacade);
     }
 
     /**
@@ -410,7 +398,7 @@ public final class SegmentBuilder<K, V> {
         return new SegmentDirectoryLayout(segmentId);
     }
 
-    AsyncDirectory getDirectoryFacade() {
+    Directory getDirectoryFacade() {
         return directoryFacade;
     }
 

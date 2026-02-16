@@ -14,7 +14,7 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.FileLock;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,8 +62,7 @@ class IndexStateErrorTest {
     @Test
     void onCloseUnlocksAndTransitionsToClosed() {
         when(fileLock.isLocked()).thenReturn(true);
-        final TestIndex index = new TestIndex(AsyncDirectoryAdapter
-                .wrap(new MemDirectory()), new TypeDescriptorInteger(),
+        final TestIndex index = new TestIndex(new MemDirectory(), new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(), buildConf());
 
         state.onClose(index);
@@ -102,7 +101,7 @@ class IndexStateErrorTest {
             extends SegmentIndexImpl<Integer, String> {
 
         private TestIndex(
-                final AsyncDirectory directoryFacade,
+                final Directory directoryFacade,
                 final TypeDescriptorInteger keyTypeDescriptor,
                 final TypeDescriptorShortString valueTypeDescriptor,
                 final IndexConfiguration<Integer, String> conf) {

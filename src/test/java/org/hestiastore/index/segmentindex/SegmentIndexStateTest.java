@@ -23,7 +23,7 @@ class SegmentIndexStateTest {
     void setUp() {
         index = SegmentIndex.create(new MemDirectory(), buildConf());
         errorIndex = new IndexInternalConcurrent<>(
-                AsyncDirectoryAdapter.wrap(new MemDirectory()),
+                new MemDirectory(),
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(),
                 buildConf());
     }

@@ -14,8 +14,7 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
@@ -41,14 +40,14 @@ class SegmentIndexCoreTest {
     @Mock
     private Segment<String, String> segment;
 
-    private AsyncDirectory asyncDirectory;
+    private Directory asyncDirectory;
     private KeyToSegmentMap<String> keyToSegmentMap;
     private KeyToSegmentMapSynchronizedAdapter<String> synchronizedKeyToSegmentMap;
     private SegmentIndexCore<String, String> core;
 
     @BeforeEach
     void setUp() {
-        asyncDirectory = AsyncDirectoryAdapter.wrap(new MemDirectory());
+        asyncDirectory = new MemDirectory();
         keyToSegmentMap = new KeyToSegmentMap<>(asyncDirectory,
                 new TypeDescriptorShortString());
         synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
@@ -62,9 +61,6 @@ class SegmentIndexCoreTest {
         if (synchronizedKeyToSegmentMap != null
                 && !synchronizedKeyToSegmentMap.wasClosed()) {
             synchronizedKeyToSegmentMap.close();
-        }
-        if (asyncDirectory != null && !asyncDirectory.wasClosed()) {
-            asyncDirectory.close();
         }
         core = null;
         keyToSegmentMap = null;

@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.junit.jupiter.api.Test;
 
 class PropertyStoreimplTest {
@@ -14,7 +14,7 @@ class PropertyStoreimplTest {
     void constructor_nullDirectory_throws() {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new PropertyStoreimpl((AsyncDirectory) null,
+                () -> new PropertyStoreimpl((Directory) null,
                         "file.properties", false));
         assertEquals("Property 'directoryFacade' must not be null.",
                 ex.getMessage());
@@ -25,7 +25,7 @@ class PropertyStoreimplTest {
         final Directory directory = mock(Directory.class);
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new PropertyStoreimpl(org.hestiastore.index.directory.async.AsyncDirectoryAdapter.wrap(directory), null,
+                () -> new PropertyStoreimpl(directory, null,
                         false));
         assertEquals("Property 'fileName' must not be null.", ex.getMessage());
     }

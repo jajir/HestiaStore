@@ -4,7 +4,7 @@ import java.util.concurrent.ExecutorService;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentBuildResult;
 import org.hestiastore.index.segment.SegmentBuilder;
@@ -21,7 +21,7 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
  */
 public final class SegmentFactory<K, V> {
 
-    private final AsyncDirectory directoryFacade;
+    private final Directory directoryFacade;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final IndexConfiguration<K, V> conf;
@@ -30,13 +30,13 @@ public final class SegmentFactory<K, V> {
     /**
      * Creates a factory for building segments with shared configuration.
      *
-     * @param directoryFacade    base async directory for segment storage
+     * @param directoryFacade    base directory for segment storage
      * @param keyTypeDescriptor  key type descriptor
      * @param valueTypeDescriptor value type descriptor
      * @param conf               index configuration
      * @param maintenanceExecutor executor for segment maintenance tasks
      */
-    public SegmentFactory(final AsyncDirectory directoryFacade,
+    public SegmentFactory(final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
@@ -72,7 +72,7 @@ public final class SegmentFactory<K, V> {
      */
     public SegmentBuilder<K, V> newSegmentBuilder(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
-        final AsyncDirectory segmentDirectory = openSegmentDirectory(segmentId);
+        final Directory segmentDirectory = openSegmentDirectory(segmentId);
         final SegmentMaintenancePolicy<K, V> maintenancePolicy = Boolean.TRUE
                 .equals(conf.isSegmentMaintenanceAutoEnabled())
                         ? new SegmentMaintenancePolicyThreshold<>(
@@ -109,8 +109,7 @@ public final class SegmentFactory<K, V> {
                 .withDecodingChunkFilters(conf.getDecodingChunkFilters());
     }
 
-    private AsyncDirectory openSegmentDirectory(final SegmentId segmentId) {
-        return directoryFacade.openSubDirectory(segmentId.getName())
-                .toCompletableFuture().join();
+    private Directory openSegmentDirectory(final SegmentId segmentId) {
+        return directoryFacade.openSubDirectory(segmentId.getName());
     }
 }

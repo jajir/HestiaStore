@@ -24,8 +24,7 @@ public class SegmentBuilderFromConfTest {
     void test_verify_that_builder_configuration_is_used() {
         final SegmentBuilder<Integer, String> builder = Segment
                 .<Integer, String>builder(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(DIRECTORY))//
+                        DIRECTORY)//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//

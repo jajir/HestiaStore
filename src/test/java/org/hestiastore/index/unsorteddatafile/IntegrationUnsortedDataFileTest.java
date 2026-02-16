@@ -29,9 +29,8 @@ class IntegrationUnsortedDataFileTest {
         final Directory dir = new MemDirectory();
         final UnsortedDataFile<Integer, String> unsorted = UnsortedDataFile
                 .<Integer, String>builder()
-                .withAsyncDirectory(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(dir))//
+                .withDirectory(
+                        dir)//
                 .withFileName("duck")//
                 .withKeyWriter(tdi.getTypeWriter())//
                 .withKeyReader(tdi.getTypeReader())//
@@ -69,9 +68,8 @@ class IntegrationUnsortedDataFileTest {
         final Directory dir = new MemDirectory();
         final UnsortedDataFile<Integer, String> unsorted = UnsortedDataFile
                 .<Integer, String>builder()
-                .withAsyncDirectory(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(dir))//
+                .withDirectory(
+                        dir)//
                 .withFileName("giraffe")//
                 .withKeyWriter(tdi.getTypeWriter())//
                 .withValueWriter(tds.getTypeWriter())//

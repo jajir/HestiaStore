@@ -5,13 +5,12 @@ import org.hestiastore.index.EntryIteratorStreamer;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.datatype.TypeWriter;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileReader;
-import org.hestiastore.index.directory.async.AsyncFileReaderBlockingAdapter;
 
 final class UnsortedDataFileImpl<K, V> implements UnsortedDataFile<K, V> {
 
-    private final AsyncDirectory directoryFacade;
+    private final Directory directoryFacade;
     private final String fileName;
     private final TypeWriter<K> keyWriter;
     private final TypeWriter<V> valueWriter;
@@ -19,7 +18,7 @@ final class UnsortedDataFileImpl<K, V> implements UnsortedDataFile<K, V> {
     private final TypeReader<V> valueReader;
     private final int diskIoBufferSize;
 
-    UnsortedDataFileImpl(final AsyncDirectory directoryFacade,
+    UnsortedDataFileImpl(final Directory directoryFacade,
             final String fileName,
             final TypeWriter<K> keyWriter, final TypeWriter<V> valueWriter,
             final TypeReader<K> keyReader, final TypeReader<V> valueReader,
@@ -59,8 +58,7 @@ final class UnsortedDataFileImpl<K, V> implements UnsortedDataFile<K, V> {
      */
     @Override
     public EntryIteratorStreamer<K, V> openStreamer() {
-        if (directoryFacade.isFileExistsAsync(fileName).toCompletableFuture()
-                .join()) {
+        if (directoryFacade.isFileExists(fileName)) {
             return new EntryIteratorStreamer<>(openIterator());
         } else {
             return new EntryIteratorStreamer<>(null);
@@ -68,8 +66,6 @@ final class UnsortedDataFileImpl<K, V> implements UnsortedDataFile<K, V> {
     }
 
     private FileReader getFileReader() {
-        return new AsyncFileReaderBlockingAdapter(
-                directoryFacade.getFileReaderAsync(fileName, diskIoBufferSize)
-                        .toCompletableFuture().join());
+        return directoryFacade.getFileReader(fileName, diskIoBufferSize);
     }
 }

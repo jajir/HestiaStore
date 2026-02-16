@@ -66,15 +66,13 @@ class IntegrationSegmentIndexSimpleTest {
 
         index1.close();
 
-        final org.hestiastore.index.directory.async.AsyncDirectory asyncDirectory = org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                .wrap(directory);
+        final Directory asyncDirectory = directory;
         final KeyToSegmentMap<Integer> keyToSegmentMap = new KeyToSegmentMap<>(
                 asyncDirectory, tdi);
         final List<SegmentId> segmentIds = keyToSegmentMap.getSegmentIds();
         assertEquals(expectedFileCount(segmentIds.size()),
                 numberOfFilesInDirectoryP(directory, segmentIds));
         keyToSegmentMap.close();
-        asyncDirectory.close();
 
         final SegmentIndex<Integer, String> index2 = makeSegmentIndex();
         testData.stream().forEach(entry -> {
@@ -316,11 +314,9 @@ class IntegrationSegmentIndexSimpleTest {
     }
 
     private Segment<Integer, String> makeSegment(final SegmentId segmentId) {
-        final org.hestiastore.index.directory.async.AsyncDirectory asyncDirectory = org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                .wrap(directory);
-        final org.hestiastore.index.directory.async.AsyncDirectory segmentDirectory = asyncDirectory
-                .openSubDirectory(segmentId.getName()).toCompletableFuture()
-                .join();
+        final Directory asyncDirectory = directory;
+        final Directory segmentDirectory = asyncDirectory
+                .openSubDirectory(segmentId.getName());
         return Segment.<Integer, String>builder(segmentDirectory)//
                 .withId(segmentId)//
                 .withDiskIoBufferSize(DISK_IO_BUFFER_SIZE)//

@@ -3,11 +3,11 @@ package org.hestiastore.index.unsorteddatafile;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.datatype.TypeWriter;
-import org.hestiastore.index.directory.async.AsyncDirectory;
+import org.hestiastore.index.directory.Directory;
 
 /**
  * Fluent builder for creating {@link UnsortedDataFile} instances backed by a
- * {@link AsyncDirectory}.
+ * {@link Directory}.
  *
  * @param <K> key type
  * @param <V> value type
@@ -16,7 +16,7 @@ public class UnsortedDataFileBuilder<K, V> {
 
     private static final int DEFAULT_DISK_IO_BUFFER_SIZE = 4 * 1024;
 
-    private AsyncDirectory directoryFacade;
+    private Directory directoryFacade;
     private String fileName;
     private TypeWriter<K> keyWriter;
     private TypeWriter<V> valueWriter;
@@ -24,8 +24,8 @@ public class UnsortedDataFileBuilder<K, V> {
     private TypeReader<V> valueReader;
     private int diskIoBufferSize = DEFAULT_DISK_IO_BUFFER_SIZE;
 
-    public UnsortedDataFileBuilder<K, V> withAsyncDirectory(
-            final AsyncDirectory directoryFacade) {
+    public UnsortedDataFileBuilder<K, V> withDirectory(
+            final Directory directoryFacade) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
         return this;

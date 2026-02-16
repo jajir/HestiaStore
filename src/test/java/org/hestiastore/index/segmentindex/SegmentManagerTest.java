@@ -42,8 +42,7 @@ class SegmentManagerTest {
         final SegmentRegistry<Integer, String> segmentRegistry = SegmentRegistry
                 .<Integer, String>builder()
                 .withDirectoryFacade(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(directory))
+                        directory)
                 .withKeyTypeDescriptor(keyTypeDescriptor)
                 .withValueTypeDescriptor(valueTypeDescriptor)
                 .withConfiguration(conf)
@@ -95,8 +94,7 @@ class SegmentManagerTest {
         final SegmentRegistry<Integer, String> segmentRegistry = SegmentRegistry
                 .<Integer, String>builder()
                 .withDirectoryFacade(
-                        org.hestiastore.index.directory.async.AsyncDirectoryAdapter
-                                .wrap(directory))
+                        directory)
                 .withKeyTypeDescriptor(keyTypeDescriptor)
                 .withValueTypeDescriptor(valueTypeDescriptor)
                 .withConfiguration(conf)
