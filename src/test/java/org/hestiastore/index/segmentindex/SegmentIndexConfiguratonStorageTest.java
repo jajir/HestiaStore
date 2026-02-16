@@ -44,7 +44,7 @@ class SegmentIndexConfiguratonStorageTest {
     private static final int MAX_KEYS_CACHE = 10000;
     private static final int MAX_KEYS_SEGMENT = 20000;
     private static final int MAX_SEGMENTS_CACHE = 8;
-    private static final int NUMBER_OF_THREADS = 2;
+    private static final int INDEX_WORKER_THREAD_COUNT = 2;
     private static final int NUMBER_OF_IO_THREADS = 2;
     private static final int NUMBER_OF_REGISTRY_LIFECYCLE_THREADS = 4;
     private static final String INDX_NAME = "specialIndex01";
@@ -69,7 +69,7 @@ class SegmentIndexConfiguratonStorageTest {
                 .withMaxNumberOfKeysInCache(10000)//
                 .withMaxNumberOfKeysInSegment(20000)//
                 .withMaxNumberOfSegmentsInCache(8)//
-                .withNumberOfCpuThreads(NUMBER_OF_THREADS)//
+                .withIndexWorkerThreadCount(INDEX_WORKER_THREAD_COUNT)//
                 .withNumberOfIoThreads(NUMBER_OF_IO_THREADS)//
                 .withNumberOfRegistryLifecycleThreads(
                         NUMBER_OF_REGISTRY_LIFECYCLE_THREADS)//
@@ -100,7 +100,7 @@ class SegmentIndexConfiguratonStorageTest {
         assertEquals(MAX_KEYS_CACHE, ret.getMaxNumberOfKeysInCache());
         assertEquals(MAX_KEYS_SEGMENT, ret.getMaxNumberOfKeysInSegment());
         assertEquals(MAX_SEGMENTS_CACHE, ret.getMaxNumberOfSegmentsInCache());
-        assertEquals(NUMBER_OF_THREADS, ret.getNumberOfThreads());
+        assertEquals(INDEX_WORKER_THREAD_COUNT, ret.getIndexWorkerThreadCount());
         assertEquals(NUMBER_OF_IO_THREADS, ret.getNumberOfIoThreads());
         assertEquals(NUMBER_OF_REGISTRY_LIFECYCLE_THREADS,
                 ret.getNumberOfRegistryLifecycleThreads());

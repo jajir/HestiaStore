@@ -497,7 +497,7 @@ class SegmentIndexConcurrentIT {
                 .withMaxNumberOfKeysInCache(maxNumberOfKeysInCache)//
                 .withBloomFilterIndexSizeInBytes(1024)//
                 .withBloomFilterNumberOfHashFunctions(1)//
-                .withNumberOfCpuThreads(cpuThreads)//
+                .withIndexWorkerThreadCount(cpuThreads)//
                 .build();
     }
 }

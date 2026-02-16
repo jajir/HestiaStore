@@ -71,7 +71,7 @@ class SegmentFactoryTest {
                 .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
                 .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
                 .withSegmentMaintenanceAutoEnabled(false)//
-                .withNumberOfCpuThreads(1)//
+                .withIndexWorkerThreadCount(1)//
                 .withNumberOfIoThreads(1)//
                 .withNumberOfSegmentIndexMaintenanceThreads(1)//
                 .withNumberOfIndexMaintenanceThreads(1)//

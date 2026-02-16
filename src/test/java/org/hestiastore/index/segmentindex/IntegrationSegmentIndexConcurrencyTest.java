@@ -155,7 +155,7 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(3) //
                 .withSegmentMaintenanceAutoEnabled(true) //
-                .withNumberOfCpuThreads(cpuThreads)//
+                .withIndexWorkerThreadCount(cpuThreads)//
                 .withNumberOfIoThreads(ioThreads)//
                 .withName("concurrency_index") //
                 .build();
@@ -184,7 +184,7 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(3) //
                 .withSegmentMaintenanceAutoEnabled(true) //
-                .withNumberOfCpuThreads(scenario.cpuThreads())//
+                .withIndexWorkerThreadCount(scenario.cpuThreads())//
                 .withNumberOfIoThreads(scenario.ioThreads())//
                 .withName("concurrency_index_" + scenario.name()) //
                 .build();

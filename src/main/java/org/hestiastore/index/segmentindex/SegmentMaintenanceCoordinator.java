@@ -48,10 +48,8 @@ final class SegmentMaintenanceCoordinator<K, V> {
                 && maxNumberOfKeysInSegment > 0) {
             final long totalKeys = segment.getNumberOfKeysInCache();
             if (totalKeys > maxNumberOfKeysInSegment.longValue()) {
-                final SegmentAsyncSplitCoordinator.SplitHandle handle = splitCoordinator
-                        .optionallySplitAsync(segment,
-                                maxNumberOfKeysInSegment.longValue());
-                handle.awaitCompletion(conf.getIndexBusyTimeoutMillis());
+                splitCoordinator.optionallySplitAsync(segment,
+                        maxNumberOfKeysInSegment.longValue());
             }
         }
     }

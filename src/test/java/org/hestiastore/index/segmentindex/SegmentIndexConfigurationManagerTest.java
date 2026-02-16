@@ -368,8 +368,8 @@ class SegmentIndexConfigurationManagerTest {
                 withDefaults.getDecodingChunkFilters().get(0).getClass());
         assertEquals(ChunkFilterCrc32Validation.class,
                 withDefaults.getDecodingChunkFilters().get(1).getClass());
-        assertEquals(IndexConfigurationContract.NUMBER_OF_THREADS,
-                withDefaults.getNumberOfThreads(),
+        assertEquals(IndexConfigurationContract.INDEX_WORKER_THREAD_COUNT,
+                withDefaults.getIndexWorkerThreadCount(),
                 "Number of threads should be defaulted");
     }
 
@@ -472,7 +472,7 @@ class SegmentIndexConfigurationManagerTest {
     void test_mergeWithStored_numberOfThreads() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withNumberOfCpuThreads(4)//
+                .withIndexWorkerThreadCount(4)//
                 .build();
 
         when(storage.load()).thenReturn(CONFIG);
@@ -481,7 +481,7 @@ class SegmentIndexConfigurationManagerTest {
         verify(storage, Mockito.times(1)).save(any());
         assertNotNull(ret);
 
-        assertEquals(4, ret.getNumberOfThreads());
+        assertEquals(4, ret.getIndexWorkerThreadCount());
     }
 
     @Test

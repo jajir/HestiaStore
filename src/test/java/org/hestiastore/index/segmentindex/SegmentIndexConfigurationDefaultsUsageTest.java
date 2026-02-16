@@ -49,8 +49,8 @@ class SegmentIndexConfigurationDefaultsUsageTest {
             assertEquals(defaults.getMaxNumberOfSegmentsInCache(),
                     actual.getMaxNumberOfSegmentsInCache(),
                     "Segments in cache must come from contract defaults");
-            assertEquals(defaults.getNumberOfThreads(),
-                    actual.getNumberOfThreads(),
+            assertEquals(defaults.getIndexWorkerThreadCount(),
+                    actual.getIndexWorkerThreadCount(),
                     "Number of threads must come from contract defaults");
             assertEquals(defaults.getNumberOfIoThreads(),
                     actual.getNumberOfIoThreads(),

@@ -206,6 +206,9 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 ? SegmentWindow.unbounded()
                 : segmentWindows;
         Vldtn.requireNonNull(isolation, "isolation");
+        if (isolation == SegmentIteratorIsolation.FULL_ISOLATION) {
+            awaitSplitsIdle();
+        }
         final EntryIterator<K, V> segmentIterator = new SegmentsIterator<>(
                 keyToSegmentMap.getSegmentIds(resolvedWindows), segmentRegistry,
                 isolation, retryPolicy);

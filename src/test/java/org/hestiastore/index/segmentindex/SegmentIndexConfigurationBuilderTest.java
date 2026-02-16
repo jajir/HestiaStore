@@ -140,11 +140,11 @@ class SegmentIndexConfigurationBuilderTest {
     }
 
     @Test
-    void withNumberOfCpuThreadsSetsValue() {
+    void withIndexWorkerThreadCountSetsValue() {
         final int value = 4;
         final IndexConfiguration<Integer, String> config = newBuilder()
-                .withNumberOfCpuThreads(value).build();
-        assertEquals(value, config.getNumberOfThreads());
+                .withIndexWorkerThreadCount(value).build();
+        assertEquals(value, config.getIndexWorkerThreadCount());
     }
 
     @Test
