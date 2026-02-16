@@ -23,7 +23,7 @@ import org.hestiastore.index.directory.FileReaderSeekable;
 public final class AsyncDirectoryAdapter extends AbstractCloseableResource
         implements AsyncDirectory {
 
-    private static final String IO_THREAD_NAME_PREFIX = "diskIoPool";
+    private static final String IO_THREAD_NAME_PREFIX = "io";
 
     private final Directory delegate;
     private final ExecutorService executor;

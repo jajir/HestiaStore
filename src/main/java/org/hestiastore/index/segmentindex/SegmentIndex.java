@@ -212,8 +212,7 @@ public interface SegmentIndex<K, V> extends CloseableResource {
         final ExecutorService ioExecutor = Executors
                 .newFixedThreadPool(ioThreads, runnable -> {
                     final Thread thread = new Thread(runnable,
-                            "segment-index-io-"
-                                    + IO_THREAD_COUNTER.getAndIncrement());
+                            "io-" + IO_THREAD_COUNTER.getAndIncrement());
                     thread.setDaemon(true);
                     return thread;
                 });

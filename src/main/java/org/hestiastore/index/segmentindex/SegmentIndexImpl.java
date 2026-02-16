@@ -93,7 +93,7 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final ExecutorService registryLifecycleExecutor = Executors
                     .newFixedThreadPool(registryLifecycleThreads, runnable -> {
                         final Thread thread = new Thread(runnable,
-                                "segment-registry-lifecycle-"
+                                "registry-lifecycle-"
                                         + registryLifecycleThreadCx
                                                 .getAndIncrement());
                         thread.setDaemon(true);
