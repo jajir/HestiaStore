@@ -75,7 +75,7 @@ class SegmentFullIsolationIteratorTest {
                 .withMaxNumberOfKeysInSegmentCache(20)
                 .withMaxNumberOfKeysInSegmentChunk(2)
                 .withBloomFilterIndexSizeInBytes(0)
-                .withSegmentMaintenanceAutoEnabled(false)
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())
                 .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))
                 .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()));
     }

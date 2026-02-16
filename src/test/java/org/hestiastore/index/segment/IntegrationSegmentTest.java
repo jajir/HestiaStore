@@ -158,6 +158,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withKeyTypeDescriptor(tdi)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withValueTypeDescriptor(tds)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterMagicNumberWriting(), //
                                 new ChunkFilterCrc32Writing(), //
@@ -212,6 +213,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withKeyTypeDescriptor(tdi)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withValueTypeDescriptor(tds)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterMagicNumberWriting(), //
                                 new ChunkFilterCrc32Writing(), //
@@ -265,6 +267,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withId(id)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterMagicNumberWriting(), //
                                 new ChunkFilterCrc32Writing(), //
@@ -344,6 +347,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withId(id).withKeyTypeDescriptor(tdi)
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withValueTypeDescriptor(tds)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterMagicNumberWriting(), //
                                 new ChunkFilterCrc32Writing(), //
@@ -411,6 +415,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withBloomFilterProbabilityOfFalsePositive(0.01)//
                 .withValueTypeDescriptor(tds)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withDiskIoBufferSize(1024)//
                 .withEncodingChunkFilters(
                         List.of(new ChunkFilterMagicNumberWriting(), //
@@ -476,6 +481,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withKeyTypeDescriptor(tdi)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withValueTypeDescriptor(tds)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterMagicNumberWriting(), //
                                 new ChunkFilterCrc32Writing(), //
@@ -543,6 +549,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withMaxNumberOfKeysInSegmentChunk(3)//
                 .withDiskIoBufferSize(3 * 1024)//
                 .withValueTypeDescriptor(tds)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterMagicNumberWriting(), //
                                 new ChunkFilterCrc32Writing(), //
@@ -599,6 +606,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withId(id1)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withMaxNumberOfKeysInSegmentCache(smallCacheSize)//
                 .withMaxNumberOfKeysInSegmentWriteCache(smallWriteCache)//
                 .withMaxNumberOfKeysInSegmentChunk(10)//
@@ -623,6 +631,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withId(id2)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withMaxNumberOfKeysInSegmentCache(smallCacheSize)//
                 .withMaxNumberOfKeysInSegmentWriteCache(smallWriteCache)//
                 .withMaxNumberOfKeysInSegmentChunk(1)//
@@ -648,6 +657,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 .withId(id3)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withMaxNumberOfKeysInSegmentCache(smallCacheSize)//
                 .withMaxNumberOfKeysInSegmentWriteCache(smallWriteCache)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//

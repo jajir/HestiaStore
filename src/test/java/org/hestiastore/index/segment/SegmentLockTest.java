@@ -106,6 +106,7 @@ class SegmentLockTest {
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_DESCRIPTOR)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterDoNothing()))//

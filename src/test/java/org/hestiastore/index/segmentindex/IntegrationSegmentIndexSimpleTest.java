@@ -25,6 +25,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
+import org.hestiastore.index.segment.SegmentMaintenancePolicy;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -325,6 +326,7 @@ class IntegrationSegmentIndexSimpleTest {
                 .withDiskIoBufferSize(DISK_IO_BUFFER_SIZE)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //

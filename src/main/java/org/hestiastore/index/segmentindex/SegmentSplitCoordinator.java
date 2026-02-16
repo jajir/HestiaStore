@@ -112,12 +112,23 @@ class SegmentSplitCoordinator<K, V> {
             if (deleteResult.getStatus() != SegmentRegistryResultStatus.OK
                     && deleteResult
                             .getStatus() != SegmentRegistryResultStatus.CLOSED) {
-                logger.warn(
-                        "Split cleanup: unable to delete segment files for '{}', status '{}'.",
-                        segmentId, deleteResult.getStatus());
+                logSplitCleanupFailure(segmentId, deleteResult.getStatus(),
+                        segment, plan);
             }
         }
         return split;
+    }
+
+    private void logSplitCleanupFailure(final SegmentId segmentId,
+            final SegmentRegistryResultStatus deleteStatus,
+            final Segment<K, V> segment, final SegmentSplitterPlan<K, V> plan) {
+        final SegmentState segmentState = segment.getState();
+        final boolean mappedInKeyMap = keyToSegmentMap.getSegmentIds()
+                .contains(segmentId);
+        logger.warn(
+                "Split cleanup: delete skipped for segment '{}' (deleteStatus='{}', segmentState='{}', mappedInKeyMap='{}', estimatedKeys='{}', index='{}'). BUSY usually means in-flight operations still reference the segment.",
+                segmentId, deleteStatus, segmentState, mappedInKeyMap,
+                plan.getEstimatedNumberOfKeys(), conf.getIndexName());
     }
 
     private boolean splitLocked(final Segment<K, V> segment,

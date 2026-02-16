@@ -14,6 +14,7 @@ import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentBuildStatus;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentMaintenancePolicy;
 import org.junit.jupiter.api.Test;
 
 class SegmentLockIT {
@@ -34,6 +35,8 @@ class SegmentLockIT {
                             .withMaxNumberOfKeysInSegmentWriteCache(4)//
                             .withMaxNumberOfKeysInSegmentCache(8)//
                             .withMaxNumberOfKeysInSegmentChunk(2)//
+                            .withMaintenancePolicy(
+                                    SegmentMaintenancePolicy.none())//
                             .withBloomFilterIndexSizeInBytes(0)//
                             .withEncodingChunkFilters(
                                     List.of(new ChunkFilterDoNothing()))//
@@ -59,6 +62,7 @@ class SegmentLockIT {
                 .withMaxNumberOfKeysInSegmentWriteCache(4)//
                 .withMaxNumberOfKeysInSegmentCache(8)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
                 .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()))//

@@ -9,6 +9,8 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentBuildResult;
 import org.hestiastore.index.segment.SegmentBuilder;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentMaintenancePolicy;
+import org.hestiastore.index.segment.SegmentMaintenancePolicyThreshold;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 
 /**
@@ -71,12 +73,19 @@ public final class SegmentFactory<K, V> {
     public SegmentBuilder<K, V> newSegmentBuilder(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         final AsyncDirectory segmentDirectory = openSegmentDirectory(segmentId);
+        final SegmentMaintenancePolicy<K, V> maintenancePolicy = Boolean.TRUE
+                .equals(conf.isSegmentMaintenanceAutoEnabled())
+                        ? new SegmentMaintenancePolicyThreshold<>(
+                                conf.getMaxNumberOfKeysInSegmentCache(),
+                                conf.getMaxNumberOfKeysInSegmentWriteCache(),
+                                conf.getMaxNumberOfDeltaCacheFiles())
+                        : SegmentMaintenancePolicy.none();
         return Segment.<K, V>builder(segmentDirectory)//
                 .withId(segmentId)//
+                .withDirectoryLockingEnabled(false)//
                 .withKeyTypeDescriptor(keyTypeDescriptor)//
                 .withMaintenanceExecutor(maintenanceExecutor)//
-                .withSegmentMaintenanceAutoEnabled(Boolean.TRUE
-                        .equals(conf.isSegmentMaintenanceAutoEnabled()))//
+                .withMaintenancePolicy(maintenancePolicy)//
                 .withMaxNumberOfKeysInSegmentWriteCache(
                         conf.getMaxNumberOfKeysInSegmentWriteCache().intValue())//
                 .withMaxNumberOfKeysInSegmentCache(

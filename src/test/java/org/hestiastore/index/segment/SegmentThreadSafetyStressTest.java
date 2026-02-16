@@ -137,6 +137,7 @@ class SegmentThreadSafetyStressTest {
                 .withMaxNumberOfKeysInSegmentCache(128)
                 .withMaxNumberOfKeysInSegmentChunk(4)
                 .withBloomFilterIndexSizeInBytes(0)
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())
                 .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))
                 .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()))
                 .withMaintenanceExecutor(maintenanceExecutor)

@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.hestiastore.index.IndexException;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -53,13 +52,14 @@ class SegmentLifecycleMaintenanceTest {
     }
 
     @Test
-    void loadSegment_throwsIndexException_whenDirectoryMissing() {
+    void loadSegment_throwsBusyException_whenDirectoryMissing() {
         try (Fixture fixture = new Fixture()) {
             fixture.gate.finishFreezeToReady();
 
-            final IndexException ex = assertThrows(IndexException.class,
+            final SegmentBusyException ex = assertThrows(
+                    SegmentBusyException.class,
                     () -> fixture.maintenance.loadSegment(SegmentId.of(10)));
-            assertSame(IndexException.class, ex.getClass());
+            assertSame(SegmentBusyException.class, ex.getClass());
         }
     }
 
@@ -106,17 +106,21 @@ class SegmentLifecycleMaintenanceTest {
     }
 
     @Test
-    void loadSegment_throwsBusyException_whenSegmentDirectoryLockIsHeld() {
+    void loadSegment_allows_reopen_when_segment_directory_locking_is_disabled() {
         try (Fixture fixture = new Fixture()) {
             final SegmentId segmentId = SegmentId.of(4);
             fixture.createSegmentDirectory(segmentId);
             fixture.gate.finishFreezeToReady();
             final Segment<Integer, String> loaded = fixture.maintenance
                     .loadSegment(segmentId);
+            Segment<Integer, String> reopened = null;
             try {
-                assertThrows(SegmentBusyException.class,
-                        () -> fixture.maintenance.loadSegment(segmentId));
+                reopened = fixture.maintenance.loadSegment(segmentId);
+                assertNotNull(reopened);
             } finally {
+                if (reopened != null) {
+                    fixture.maintenance.closeSegmentIfNeeded(reopened);
+                }
                 fixture.maintenance.closeSegmentIfNeeded(loaded);
             }
         }
