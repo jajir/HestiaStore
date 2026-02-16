@@ -77,6 +77,11 @@ public final class PropertyStoreimpl implements PropertyStore {
     }
 
     @Override
+    public PropertyMutationSession openMutationSession() {
+        return new PropertyMutationSession(beginTransaction());
+    }
+
+    @Override
     public PropertyView snapshot() {
         synchronized (properties) {
             final Map<String, String> copy = new HashMap<>();

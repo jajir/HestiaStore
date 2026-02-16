@@ -131,7 +131,6 @@ class SegmentIndexConcurrencySerializationIT {
                         new BlockingTombstoneTypeDescriptorString())//
                 .withName(name)//
                 .withContextLoggingEnabled(false)//
-                .withMaxNumberOfKeysInCache(10_000)//
                 .withMaxNumberOfKeysInSegment(
                         defaults.getMaxNumberOfKeysInSegment())//
                 .withMaxNumberOfSegmentsInCache(

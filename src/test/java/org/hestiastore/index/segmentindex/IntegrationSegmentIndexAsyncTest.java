@@ -137,7 +137,6 @@ class IntegrationSegmentIndexAsyncTest {
                 .withMaxNumberOfKeysInSegmentCache(3) //
                 .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentChunk(2) //
-                .withMaxNumberOfKeysInCache(3) //
                 .withMaxNumberOfSegmentsInCache(3) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(3) //

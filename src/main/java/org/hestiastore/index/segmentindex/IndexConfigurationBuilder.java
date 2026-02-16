@@ -21,7 +21,6 @@ public class IndexConfigurationBuilder<K, V> {
     private Integer maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
     private Integer maxNumberOfKeysInSegmentChunk;
     private Integer maxNumberOfDeltaCacheFiles;
-    private Integer maxNumberOfKeysInCache;
     private Integer maxNumberOfKeysInSegment;
     private Integer maxNumberOfSegmentsInCache;
 
@@ -196,18 +195,6 @@ public class IndexConfigurationBuilder<K, V> {
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
             final Integer maxNumberOfKeysInSegmentWriteCacheDuringMaintenance) {
         this.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
-        return this;
-    }
-
-    /**
-     * Sets the max number of keys kept in the top-level index cache.
-     *
-     * @param maxNumberOfKeysInCache max keys in index cache
-     * @return this builder
-     */
-    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInCache(
-            final Integer maxNumberOfKeysInCache) {
-        this.maxNumberOfKeysInCache = maxNumberOfKeysInCache;
         return this;
     }
 
@@ -563,7 +550,6 @@ public class IndexConfigurationBuilder<K, V> {
                 maxNumberOfKeysInSegmentWriteCache,
                 effectiveWriteCacheDuringMaintenance,
                 maxNumberOfKeysInSegmentChunk, effectiveMaxNumberOfDeltaCacheFiles,
-                maxNumberOfKeysInCache,
                 maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache, indexName,
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
                 bloomFilterProbabilityOfFalsePositive, diskIoBufferSizeInBytes,

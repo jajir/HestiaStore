@@ -14,7 +14,6 @@ IndexConfiguration<Integer, Integer> conf = IndexConfiguration
     .withMaxNumberOfKeysInSegment(4) //
     .withMaxNumberOfKeysInSegmentCache(10L) //
     .withMaxNumberOfKeysInSegmentIndexPage(2) //
-    .withMaxNumberOfKeysInCache(3) //
     .withBloomFilterIndexSizeInBytes(0) //
     .withBloomFilterNumberOfHashFunctions(4) //
     .withContextLoggingEnabled(false) //
@@ -80,10 +79,6 @@ Type descriptor for the key class. Required for non-default types.
 ### 🧩 Value type descriptor - `withValueTypeDescriptor()`
 
 Type descriptor for the value class. Required for non-default types.
-
-### 🗃️ Max number of keys in cache - `withMaxNumberOfKeysInCache()`
-
-Sets the maximum number of key-value entries allowed in the in-memory cache before flushing.
 
 ### 🧱 Max number of segments in cache - `withMaxNumberOfSegmentsInCache()`
 
@@ -164,7 +159,6 @@ At allows to pass `IndexConfiguration` object and this way change configuration 
 | maxNumberOfKeysInSegmentIndexPage           | Maximum keys in segment index page                   | 🟥             | segment              |
 | maxNumberOfKeysInSegmentCache               | Maximum number of keys in segment cache              | 🟩             | segment              |
 | maxNumberOfKeysInSegmentWriteCache          | Maximum number of keys in segment write cache        | 🟩             | segment              |
-| maxNumberOfKeysInCache                      | Maximum keys in the index cache                      | 🟩             | index                |
 | maxNumberOfKeysInSegment                    | Maximum keys in a segment                            | 🟥             | segment              |
 | maxNumberOfSegmentsInCache                  | Maximum number of segments in cache                  | 🟩             | index                |
 | bloomFilterNumberOfHashFunctions            | Bloom filter - number of hash functions used         | 🟥             | segment bloom filter |

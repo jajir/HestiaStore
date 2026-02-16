@@ -54,7 +54,6 @@ public final class IndexPropertiesSchema {
         public static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE = "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance";
         public static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK = "maxNumberOfKeysInSegmentChunk";
         public static final String PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES = "maxNumberOfDeltaCacheFiles";
-        public static final String PROP_MAX_NUMBER_OF_KEYS_IN_CACHE = "maxNumberOfKeysInCache";
         public static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT = "maxNumberOfKeysInSegment";
         public static final String PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE = "maxNumberOfSegmentsInCache";
         public static final String PROP_INDEX_WORKER_THREAD_COUNT = "indexWorkerThreadCount";
@@ -252,9 +251,6 @@ public final class IndexPropertiesSchema {
                 IndexConfigurationKeys.PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES,
                 view -> String.valueOf(
                         IndexConfigurationContract.MAX_NUMBER_OF_DELTA_CACHE_FILES));
-        defaults.put(IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_CACHE,
-                view -> String.valueOf(
-                        IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_CACHE));
         defaults.put(IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT,
                 view -> String.valueOf(
                         IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_SEGMENT));

@@ -40,9 +40,6 @@ class SegmentIndexConfigurationDefaultsUsageTest {
             assertEquals(defaults.getMaxNumberOfDeltaCacheFiles(),
                     actual.getMaxNumberOfDeltaCacheFiles(),
                     "Delta cache file cap must come from contract defaults");
-            assertEquals(defaults.getMaxNumberOfKeysInCache(),
-                    actual.getMaxNumberOfKeysInCache(),
-                    "Index cache size must come from contract defaults");
             assertEquals(defaults.getMaxNumberOfKeysInSegment(),
                     actual.getMaxNumberOfKeysInSegment(),
                     "Segment key count must come from contract defaults");

@@ -183,7 +183,6 @@ class SegmentRegistryConcurrencyStressTest {
                 .withMaxNumberOfKeysInSegmentCache(4)//
                 .withMaxNumberOfKeysInSegmentWriteCache(4)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
-                .withMaxNumberOfKeysInCache(500)//
                 .withMaxNumberOfKeysInSegment(8)//
                 .withMaxNumberOfSegmentsInCache(3)//
                 .withBloomFilterIndexSizeInBytes(1000)//

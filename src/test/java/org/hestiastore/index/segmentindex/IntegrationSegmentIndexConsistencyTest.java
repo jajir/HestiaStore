@@ -94,7 +94,6 @@ class IntegrationSegmentIndexConsistencyTest extends AbstractSegmentIndexTest {
                 .withMaxNumberOfKeysInSegmentCache(10) //
                 .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentChunk(2) //
-                .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(0) //
                 .withBloomFilterNumberOfHashFunctions(4) //
                 .withContextLoggingEnabled(false) //

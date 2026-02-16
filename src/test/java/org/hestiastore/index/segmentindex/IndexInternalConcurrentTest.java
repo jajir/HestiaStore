@@ -67,7 +67,6 @@ class IndexInternalConcurrentTest {
                 .withMaxNumberOfKeysInSegmentWriteCache(5)//
                 .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(6)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
-                .withMaxNumberOfKeysInCache(10)//
                 .withMaxNumberOfKeysInSegment(100)//
                 .withMaxNumberOfSegmentsInCache(3)//
                 .withBloomFilterNumberOfHashFunctions(1)//

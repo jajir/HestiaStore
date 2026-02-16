@@ -45,7 +45,6 @@ class SegmentIndexConfigurationManagerTest {
             .withMaxNumberOfKeysInSegmentChunk(33)//
             .withMaxNumberOfDeltaCacheFiles(7)//
             .withMaxNumberOfKeysInSegment(44)//
-            .withMaxNumberOfKeysInCache(55)//
             .withMaxNumberOfSegmentsInCache(66)//
             .withDiskIoBufferSizeInBytes(1024)//
             .withBloomFilterIndexSizeInBytes(77)//
@@ -138,45 +137,6 @@ class SegmentIndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_maxNumberOfKeysInCache_is_null() {
-        final IndexConfiguration<Long, String> config = IndexConfiguration
-                .<Long, String>builder()//
-                .withKeyClass(Long.class)//
-                .withValueClass(String.class)//
-                .withName("test_index")//
-                .withKeyTypeDescriptor(TD_LONG)//
-                .withValueTypeDescriptor(TD_STRING)//
-                .withContextLoggingEnabled(true)//
-                .build();
-
-        final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
-
-        assertEquals("Property 'MaxNumberOfKeysInCache' must not be null.",
-                ex.getMessage());
-    }
-
-    @Test
-    void test_save_maxNumberOfKeysInCache_is_less_than_3() {
-        final IndexConfiguration<Long, String> config = IndexConfiguration
-                .<Long, String>builder()//
-                .withKeyClass(Long.class)//
-                .withValueClass(String.class)//
-                .withName("test_index")//
-                .withKeyTypeDescriptor(TD_LONG)//
-                .withValueTypeDescriptor(TD_STRING)//
-                .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInCache(2)//
-                .build();
-
-        final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
-
-        assertEquals("Max number of keys in cache must be at least 3.",
-                ex.getMessage());
-    }
-
-    @Test
     void test_save_maxNumberOfKeysInSegment_is_null() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
@@ -186,7 +146,6 @@ class SegmentIndexConfigurationManagerTest {
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInCache(3)//
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -206,7 +165,6 @@ class SegmentIndexConfigurationManagerTest {
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(3)//
                 .build();
 
@@ -227,7 +185,6 @@ class SegmentIndexConfigurationManagerTest {
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(4)//
                 .build();
 
@@ -247,7 +204,6 @@ class SegmentIndexConfigurationManagerTest {
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(4)//
                 .withMaxNumberOfSegmentsInCache(1)//
                 .build();
@@ -273,7 +229,6 @@ class SegmentIndexConfigurationManagerTest {
                 .withMaxNumberOfDeltaCacheFiles(7)//
                 .withMaxNumberOfKeysInSegment(44)//
                 .withMaxNumberOfSegmentsInCache(66)//
-                .withMaxNumberOfKeysInCache(1000)
                 .withDiskIoBufferSizeInBytes(1024)//
                 .withBloomFilterIndexSizeInBytes(77)//
                 .withBloomFilterNumberOfHashFunctions(88)//
@@ -305,7 +260,6 @@ class SegmentIndexConfigurationManagerTest {
                 .withMaxNumberOfDeltaCacheFiles(7)//
                 .withMaxNumberOfKeysInSegment(44)//
                 .withMaxNumberOfSegmentsInCache(66)//
-                .withMaxNumberOfKeysInCache(1000)//
                 .withDiskIoBufferSizeInBytes(0)//
                 .withBloomFilterIndexSizeInBytes(77)//
                 .withBloomFilterNumberOfHashFunctions(88)//
@@ -739,7 +693,6 @@ class SegmentIndexConfigurationManagerTest {
                 .withMaxNumberOfKeysInSegmentWriteCache(5)//
                 .withMaxNumberOfKeysInSegmentChunk(33)//
                 .withMaxNumberOfKeysInSegment(44)//
-                .withMaxNumberOfKeysInCache(55)//
                 .withMaxNumberOfSegmentsInCache(66)//
                 .withDiskIoBufferSizeInBytes(1024)//
                 .withBloomFilterIndexSizeInBytes(77)//

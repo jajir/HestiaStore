@@ -172,7 +172,6 @@ class SegmentIndexConcurrencyStressIT {
                 .withMaxNumberOfKeysInSegmentCache(30)//
                 .withMaxNumberOfKeysInSegment(20)//
                 .withMaxNumberOfKeysInSegmentChunk(5)//
-                .withMaxNumberOfKeysInCache(60)//
                 .withMaxNumberOfSegmentsInCache(10)//
                 .withBloomFilterIndexSizeInBytes(1024)//
                 .withBloomFilterNumberOfHashFunctions(1)//

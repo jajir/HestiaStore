@@ -9,7 +9,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.properties.IndexPropertiesSchema;
 import org.hestiastore.index.properties.PropertyStore;
 import org.hestiastore.index.properties.PropertyStoreimpl;
-import org.hestiastore.index.properties.PropertyTransaction;
+import org.hestiastore.index.properties.PropertyMutationSession;
 import org.hestiastore.index.properties.PropertyView;
 import org.hestiastore.index.properties.PropertyWriter;
 import org.slf4j.Logger;
@@ -292,6 +292,29 @@ public class SegmentPropertiesManager {
     }
 
     /**
+     * Stores all key counters in one transaction to avoid repeated metadata
+     * writes.
+     *
+     * @param numberOfKeysInCache       number of keys in delta cache
+     * @param numberOfKeysInIndex       number of keys in main index
+     * @param numberOfKeysInScarceIndex number of keys in scarce index
+     */
+    public void setKeyCounters(final long numberOfKeysInCache,
+            final long numberOfKeysInIndex,
+            final long numberOfKeysInScarceIndex) {
+        synchronized (propertyLock) {
+            updateTransaction(writer -> {
+                writer.setLong(NUMBER_OF_KEYS_IN_DELTA_CACHE,
+                        numberOfKeysInCache);
+                writer.setLong(NUMBER_OF_KEYS_IN_MAIN_INDEX,
+                        numberOfKeysInIndex);
+                writer.setLong(NUMBER_OF_KEYS_IN_SCARCE_INDEX,
+                        numberOfKeysInScarceIndex);
+            });
+        }
+    }
+
+    /**
      * Returns the number of keys stored in the delta cache.
      *
      * @return delta cache key count
@@ -306,21 +329,16 @@ public class SegmentPropertiesManager {
      * @param updater callback that mutates the property writer
      */
     private void updateTransaction(final Consumer<PropertyWriter> updater) {
-        if (logger.isDebugEnabled()) {
-            logger.debug(
-                    "Segment properties update begin: segment='{}' file='{}' thread='{}' manager='{}'",
-                    id.getName(), getPropertiesFilename(),
-                    Thread.currentThread().getName(),
-                    Integer.toHexString(System.identityHashCode(this)));
-        }
         IndexPropertiesSchema.SEGMENT_SCHEMA.ensure(propertyStore);
-        final PropertyTransaction tx = propertyStore.beginTransaction();
-        final PropertyWriter writer = tx.openPropertyWriter();
-        updater.accept(writer);
-        tx.close();
-        if (logger.isDebugEnabled()) {
+        boolean changed = false;
+        try (PropertyMutationSession session = propertyStore
+                .openMutationSession()) {
+            updater.accept(session.writer());
+            changed = session.hasChanges();
+        }
+        if (changed && logger.isDebugEnabled()) {
             logger.debug(
-                    "Segment properties update end: segment='{}' file='{}' thread='{}' manager='{}'",
+                    "Segment properties write end: segment='{}' file='{}' thread='{}' manager='{}'",
                     id.getName(), getPropertiesFilename(),
                     Thread.currentThread().getName(),
                     Integer.toHexString(System.identityHashCode(this)));

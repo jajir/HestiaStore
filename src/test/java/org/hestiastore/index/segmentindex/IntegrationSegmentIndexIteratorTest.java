@@ -106,7 +106,6 @@ class IntegrationSegmentIndexIteratorTest {
                 .withMaxNumberOfKeysInSegmentCache(3) //
                 .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentChunk(1) //
-                .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
                 .withDiskIoBufferSizeInBytes(1024)//

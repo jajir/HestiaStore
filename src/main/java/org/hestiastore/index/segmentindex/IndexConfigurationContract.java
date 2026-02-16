@@ -15,7 +15,6 @@ import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
  *
  */
 public interface IndexConfigurationContract {
-    int MAX_NUMBER_OF_KEYS_IN_CACHE = 4321;
     int MAX_NUMBER_OF_KEYS_IN_SEGMENT = 10_000_000;
     int MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = 10_000;
     int MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK = 1_000;
@@ -85,16 +84,6 @@ public interface IndexConfigurationContract {
      */
     default int getMaxNumberOfDeltaCacheFiles() {
         return MAX_NUMBER_OF_DELTA_CACHE_FILES;
-    }
-
-    /**
-     * Returns the default maximum number of keys stored in the top-level index
-     * cache.
-     *
-     * @return default max keys in index cache
-     */
-    default int getMaxNumberOfKeysInCache() {
-        return MAX_NUMBER_OF_KEYS_IN_CACHE;
     }
 
     /**

@@ -135,7 +135,6 @@ class SegmentIndexAsyncMaintenanceTest {
                 .withMaxNumberOfKeysInSegmentCache(10)//
                 .withMaxNumberOfKeysInSegmentWriteCache(5)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
-                .withMaxNumberOfKeysInCache(10)//
                 .withMaxNumberOfKeysInSegment(100)//
                 .withMaxNumberOfSegmentsInCache(3)//
                 .withBloomFilterNumberOfHashFunctions(1)//

@@ -100,7 +100,6 @@ class SegmentIndexImplConcurrencyTest {
                 .withMaxNumberOfKeysInSegmentWriteCache(50)//
                 .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(60)//
                 .withMaxNumberOfKeysInSegmentChunk(10)//
-                .withMaxNumberOfKeysInCache(100)//
                 .withMaxNumberOfKeysInSegment(1000)//
                 .withMaxNumberOfSegmentsInCache(3)//
                 .withBloomFilterNumberOfHashFunctions(1)//
