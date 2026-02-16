@@ -96,4 +96,13 @@ class SegmentSplitStepOpenIteratorTest {
         verify(segment, times(2))
                 .openIterator(SegmentIteratorIsolation.FULL_ISOLATION);
     }
+
+    @Test
+    void filter_aborts_when_segment_is_closed() {
+        when(segment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
+                .thenReturn(SegmentResult.closed());
+
+        assertThrows(SegmentSplitAbortException.class,
+                () -> step.filter(context, state));
+    }
 }

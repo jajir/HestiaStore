@@ -551,26 +551,25 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     protected void invalidateSegmentIterators() {
         keyToSegmentMap.getSegmentIds().forEach(segmentId -> {
-            final long startNanos = retryPolicy.startNanos();
-            while (true) {
-                final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
-                        .getSegment(segmentId);
-                if (loaded.getStatus() == SegmentRegistryResultStatus.OK
-                        && loaded.getValue() != null) {
-                    loaded.getValue().invalidateIterators();
-                    return;
-                }
-                if (loaded.getStatus() != SegmentRegistryResultStatus.BUSY) {
-                    if (!isSegmentStillMapped(segmentId)) {
-                        return;
-                    }
-                    retryPolicy.backoffOrThrow(startNanos,
-                            "invalidateIterators", segmentId);
-                    continue;
-                }
-                retryPolicy.backoffOrThrow(startNanos, "invalidateIterators",
-                        segmentId);
+            final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
+                    .getSegment(segmentId);
+            if (loaded.getStatus() == SegmentRegistryResultStatus.OK
+                    && loaded.getValue() != null) {
+                loaded.getValue().invalidateIterators();
+                return;
             }
+            if (!isSegmentStillMapped(segmentId)) {
+                return;
+            }
+            if (loaded.getStatus() == SegmentRegistryResultStatus.BUSY) {
+                logger.debug(
+                        "Skipping iterator invalidation for segment '{}' because it is BUSY.",
+                        segmentId);
+                return;
+            }
+            logger.debug(
+                    "Skipping iterator invalidation for segment '{}' because registry returned status '{}'.",
+                    segmentId, loaded.getStatus());
         });
     }
 

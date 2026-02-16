@@ -1,6 +1,7 @@
 package org.hestiastore.index.segment;
 
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
@@ -12,12 +13,22 @@ final class SegmentMaintenanceService {
 
     private final SegmentConcurrencyGate gate;
     private final Executor maintenanceExecutor;
+    private final Consumer<Throwable> failureObserver;
 
     SegmentMaintenanceService(final SegmentConcurrencyGate gate,
             final Executor maintenanceExecutor) {
+        this(gate, maintenanceExecutor, t -> {
+        });
+    }
+
+    SegmentMaintenanceService(final SegmentConcurrencyGate gate,
+            final Executor maintenanceExecutor,
+            final Consumer<Throwable> failureObserver) {
         this.gate = Vldtn.requireNonNull(gate, "gate");
         this.maintenanceExecutor = Vldtn.requireNonNull(maintenanceExecutor,
                 "maintenanceExecutor");
+        this.failureObserver = Vldtn.requireNonNull(failureObserver,
+                "failureObserver");
     }
 
     /**
@@ -50,6 +61,7 @@ final class SegmentMaintenanceService {
         try {
             work = Vldtn.requireNonNull(workSupplier.get(), "work");
         } catch (final RuntimeException e) {
+            failureObserver.accept(e);
             failUnlessClosed();
             return SegmentResult.error();
         }
@@ -60,6 +72,7 @@ final class SegmentMaintenanceService {
         try {
             maintenanceExecutor.execute(() -> runMaintenance(work, onReady));
         } catch (final RuntimeException e) {
+            failureObserver.accept(e);
             failUnlessClosed();
             return SegmentResult.error();
         }
@@ -76,6 +89,7 @@ final class SegmentMaintenanceService {
         try {
             work.ioWork().run();
         } catch (final RuntimeException e) {
+            failureObserver.accept(e);
             failUnlessClosed();
             return;
         }
@@ -83,16 +97,21 @@ final class SegmentMaintenanceService {
             return;
         }
         if (!gate.finishMaintenanceToFreeze()) {
+            failureObserver.accept(new IllegalStateException(
+                    "Maintenance gate failed to transition to FREEZE."));
             failUnlessClosed();
             return;
         }
         try {
             work.publishWork().run();
         } catch (final RuntimeException e) {
+            failureObserver.accept(e);
             failUnlessClosed();
             return;
         }
         if (!gate.finishFreezeToReady()) {
+            failureObserver.accept(new IllegalStateException(
+                    "Maintenance gate failed to transition to READY."));
             failUnlessClosed();
             return;
         }
@@ -100,6 +119,7 @@ final class SegmentMaintenanceService {
             try {
                 onReady.run();
             } catch (final RuntimeException e) {
+                failureObserver.accept(e);
                 gate.fail();
                 return;
             }

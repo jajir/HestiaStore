@@ -7,8 +7,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.junit.jupiter.api.AfterEach;
@@ -82,5 +84,18 @@ class SegmentSplitCoordinatorTest {
         coordinator.optionallySplit(segment, 5L);
 
         verify(segment, never()).compact();
+    }
+
+    @Test
+    void optionallySplit_returnsFalse_when_segment_closes_before_iterator_open() {
+        final SegmentId segmentId = SegmentId.of(1);
+        when(segment.getId()).thenReturn(segmentId);
+        when(segment.getNumberOfKeysInCache()).thenReturn(10L);
+        when(segmentRegistry.getSegment(segmentId))
+                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segment.openIterator(SegmentIteratorIsolation.FAIL_FAST))
+                .thenReturn(SegmentResult.closed());
+
+        assertFalse(coordinator.optionallySplit(segment, 5L));
     }
 }

@@ -224,6 +224,9 @@ class SegmentSplitCoordinator<K, V> {
                         segment.getId());
                 continue;
             }
+            if (result.getStatus() == SegmentResultStatus.CLOSED) {
+                return false;
+            }
             throw new IndexException(
                     String.format("Segment '%s' failed to open iterator: %s",
                             segment.getId(), result.getStatus()));
