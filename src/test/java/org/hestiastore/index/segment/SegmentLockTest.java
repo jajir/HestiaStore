@@ -62,6 +62,43 @@ class SegmentLockTest {
         assertFalse(directory.isFileExists(lockFileName));
     }
 
+    @Test
+    void build_succeeds_when_lock_exists_and_directory_locking_is_disabled() {
+        final Directory directory = new MemDirectory();
+        final String lockFileName = new SegmentDirectoryLayout(SEGMENT_ID)
+                .getLockFileName();
+        createLockFile(directory);
+
+        final SegmentBuildResult<Segment<Integer, String>> result = newBuilder(
+                directory).withDirectoryLockingEnabled(false).build();
+
+        assertEquals(SegmentBuildStatus.OK, result.getStatus());
+        try {
+            assertTrue(directory.isFileExists(lockFileName));
+        } finally {
+            closeAndAwait(result.getValue());
+        }
+        assertTrue(directory.isFileExists(lockFileName));
+    }
+
+    @Test
+    void build_with_directory_locking_disabled_does_not_create_lock_file() {
+        final Directory directory = new MemDirectory();
+        final String lockFileName = new SegmentDirectoryLayout(SEGMENT_ID)
+                .getLockFileName();
+        assertFalse(directory.isFileExists(lockFileName));
+
+        final Segment<Integer, String> segment = newBuilder(directory)
+                .withDirectoryLockingEnabled(false).build().getValue();
+
+        try {
+            assertFalse(directory.isFileExists(lockFileName));
+        } finally {
+            closeAndAwait(segment);
+        }
+        assertFalse(directory.isFileExists(lockFileName));
+    }
+
     private SegmentBuilder<Integer, String> newBuilder(
             final Directory directory) {
         return Segment.<Integer, String>builder(

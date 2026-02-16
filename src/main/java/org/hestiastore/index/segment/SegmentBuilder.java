@@ -42,6 +42,7 @@ public final class SegmentBuilder<K, V> {
     private final List<ChunkFilter> decodingChunkFilters = new ArrayList<>();
     private Executor maintenanceExecutor;
     private boolean segmentMaintenanceAutoEnabled = true;
+    private boolean directoryLockingEnabled = true;
 
     /**
      * Creates a new builder with the required segment directory.
@@ -302,6 +303,18 @@ public final class SegmentBuilder<K, V> {
     }
 
     /**
+     * Enables or disables segment directory locking during build.
+     *
+     * @param enabled true to enforce directory locking, false to skip it
+     * @return this builder for chaining
+     */
+    public SegmentBuilder<K, V> withDirectoryLockingEnabled(
+            final boolean enabled) {
+        this.directoryLockingEnabled = enabled;
+        return this;
+    }
+
+    /**
      * Opens a full writer transaction that builds the segment from a sorted
      * stream of entries. Entries must be unique, sorted by key in ascending
      * order, and must not contain tombstones. The returned transaction writes
@@ -337,10 +350,13 @@ public final class SegmentBuilder<K, V> {
      */
     public SegmentBuildResult<Segment<K, V>> build() {
         final SegmentDirectoryLayout layout = resolveLayout();
-        final SegmentDirectoryLocking directoryLocking = new SegmentDirectoryLocking(
-                getDirectoryFacade(), layout);
-        if (!directoryLocking.tryLock()) {
-            return SegmentBuildResult.busy();
+        SegmentDirectoryLocking directoryLocking = null;
+        if (directoryLockingEnabled) {
+            directoryLocking = new SegmentDirectoryLocking(getDirectoryFacade(),
+                    layout);
+            if (!directoryLocking.tryLock()) {
+                return SegmentBuildResult.busy();
+            }
         }
         try {
             final SegmentBuildContext<K, V> context = prepareBuildContext(
@@ -383,7 +399,9 @@ public final class SegmentBuilder<K, V> {
                     context.maintenanceExecutor, maintenancePolicy,
                     directoryLocking));
         } catch (final RuntimeException e) {
-            directoryLocking.unlock();
+            if (directoryLocking != null) {
+                directoryLocking.unlock();
+            }
             throw e;
         }
     }
