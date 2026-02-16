@@ -21,6 +21,8 @@ import org.hestiastore.index.directory.FileWriter;
  */
 public final class PropertyStoreimpl implements PropertyStore {
 
+    private static final String PROPERTIES_HEADER_COMMENT = "HestiaStore metadata. Numeric format: underscore (_) is thousands separator; dot (.) is decimal separator.";
+
     private final Directory directoryFacade;
     private final String fileName;
     private final Properties properties = new Properties();
@@ -103,7 +105,7 @@ public final class PropertyStoreimpl implements PropertyStore {
     private byte[] convertToBytes(final Properties propertiesToConvert) {
         try {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            propertiesToConvert.store(baos, "Property file");
+            propertiesToConvert.store(baos, PROPERTIES_HEADER_COMMENT);
             return baos.toByteArray();
         } catch (IOException e) {
             throw new IndexException(e.getMessage(), e);
