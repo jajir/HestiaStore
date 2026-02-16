@@ -5,6 +5,8 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Registry that manages segment lifecycles and caches loaded segments.
@@ -17,6 +19,9 @@ import org.hestiastore.index.segmentindex.IndexRetryPolicy;
  * @param <V> value type
  */
 public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
+
+    private static final Logger logger = LoggerFactory
+            .getLogger(SegmentRegistryImpl.class);
 
     private final SegmentRegistryCache<SegmentId, Segment<K, V>> cache;
     private final SegmentRegistryStateMachine gate;
@@ -127,6 +132,7 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
                     | SegmentBusyException ex) {
                 return SegmentRegistryResult.busy();
             } catch (final RuntimeException ex) {
+                logger.error("Failed to load segment '{}'.", segmentId, ex);
                 return SegmentRegistryResult.error();
             }
             if (segment == null) {

@@ -22,8 +22,6 @@ public final class SegmentRegistryBuilder<K, V> {
 
     private static final int REGISTRY_CLOSE_TIMEOUT_MILLIS = (int) TimeUnit.MINUTES
             .toMillis(5);
-    private static final int SEGMENT_BUILD_BUSY_TIMEOUT_MILLIS = (int) TimeUnit.MINUTES
-            .toMillis(5);
 
     private AsyncDirectory directoryFacade;
     private TypeDescriptor<K> keyTypeDescriptor;
@@ -156,12 +154,10 @@ public final class SegmentRegistryBuilder<K, V> {
                 busyBackoffMillis, busyTimeoutMillis);
         final IndexRetryPolicy resolvedRegistryCloseRetryPolicy = new IndexRetryPolicy(
                 busyBackoffMillis, REGISTRY_CLOSE_TIMEOUT_MILLIS);
-        final IndexRetryPolicy resolvedSegmentBuildRetryPolicy = new IndexRetryPolicy(
-                busyBackoffMillis, SEGMENT_BUILD_BUSY_TIMEOUT_MILLIS);
         final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
         final SegmentLifecycleMaintenance<K, V> maintenance = new SegmentLifecycleMaintenance<>(
                 resolvedFactory, resolvedFileSystem, resolvedCloseRetryPolicy,
-                resolvedSegmentBuildRetryPolicy, gate);
+                gate);
         final SegmentRegistryCache<SegmentId, Segment<K, V>> cache = new SegmentRegistryCache<>(
                 maxNumberOfSegmentsInCache, maintenance::loadSegment,
                 maintenance::closeSegmentIfNeeded, resolvedLifecycleExecutor,
