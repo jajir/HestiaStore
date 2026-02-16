@@ -37,6 +37,7 @@ public class SegmentBuilderFromConfTest {
                 .withBloomFilterIndexSizeInBytes(1024)//
                 .withBloomFilterProbabilityOfFalsePositive(0.01)//
                 .withDiskIoBufferSize(1024)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withEncodingChunkFilters(
                         List.of(new ChunkFilterMagicNumberWriting()))//
                 .withDecodingChunkFilters(

@@ -16,6 +16,7 @@ import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.segment.SegmentMaintenancePolicy;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,6 +72,7 @@ public class IntegerationNumberOfKeysIT {
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(TYPE_DESCRIPTOR_STRING)//
                 .withValueTypeDescriptor(TYPE_DESCRIPTOR_LONG)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withMaxNumberOfKeysInSegmentChunk(100)//
                 .withBloomFilterIndexSizeInBytes(0)// disable bloom filter
                 .withEncodingChunkFilters(//

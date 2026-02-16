@@ -59,6 +59,23 @@ class SegmentBuilderTest {
     }
 
     @Test
+    void test_maintenancePolicy_is_missing() {
+        final SegmentBuilder<Integer, String> builder = Segment
+                .<Integer, String>builder(AsyncDirectoryAdapter.wrap(DIRECTORY))//
+                .withId(SEGMENT_ID)//
+                .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
+                .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
+                .withBloomFilterIndexSizeInBytes(0)//
+                .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
+                .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()));
+
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                builder::build);
+        assertEquals("Property 'maintenancePolicy' must not be null.",
+                e.getMessage());
+    }
+
+    @Test
     void test_valueTypeDescriptor_is_missing() {
         final SegmentBuilder<Integer, String> builder = newBuilder()//
                 .withId(SEGMENT_ID)//
@@ -192,6 +209,7 @@ class SegmentBuilderTest {
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
                 .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
                 .build().getValue();
@@ -213,6 +231,7 @@ class SegmentBuilderTest {
                 .withMaxNumberOfKeysInSegmentWriteCache(5)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withBloomFilterIndexSizeInBytes(0)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
                 .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()));
 
@@ -243,6 +262,7 @@ class SegmentBuilderTest {
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
                 .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
                 .build().getValue();
@@ -277,6 +297,7 @@ class SegmentBuilderTest {
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
                 .withBloomFilterIndexSizeInBytes(0)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
                 .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()))//
                 .build().getValue();
@@ -304,6 +325,7 @@ class SegmentBuilderTest {
 
     private SegmentBuilder<Integer, String> newBuilder() {
         return Segment.<Integer, String>builder(
-                AsyncDirectoryAdapter.wrap(DIRECTORY));
+                AsyncDirectoryAdapter.wrap(DIRECTORY))
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none());
     }
 }

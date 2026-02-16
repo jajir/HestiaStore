@@ -41,7 +41,7 @@ public final class SegmentBuilder<K, V> {
     private final List<ChunkFilter> encodingChunkFilters = new ArrayList<>();
     private final List<ChunkFilter> decodingChunkFilters = new ArrayList<>();
     private Executor maintenanceExecutor;
-    private boolean segmentMaintenanceAutoEnabled = true;
+    private SegmentMaintenancePolicy<K, V> maintenancePolicy;
     private boolean directoryLockingEnabled = true;
 
     /**
@@ -291,14 +291,15 @@ public final class SegmentBuilder<K, V> {
     }
 
     /**
-     * Enables or disables automatic maintenance scheduling after writes.
+     * Sets the maintenance policy evaluated after writes.
      *
-     * @param enabled true to enable auto maintenance
+     * @param maintenancePolicy non-null policy used to decide flush/compact
      * @return this builder for chaining
      */
-    public SegmentBuilder<K, V> withSegmentMaintenanceAutoEnabled(
-            final boolean enabled) {
-        this.segmentMaintenanceAutoEnabled = enabled;
+    public SegmentBuilder<K, V> withMaintenancePolicy(
+            final SegmentMaintenancePolicy<K, V> maintenancePolicy) {
+        this.maintenancePolicy = Vldtn.requireNonNull(maintenancePolicy,
+                "maintenancePolicy");
         return this;
     }
 
@@ -386,17 +387,10 @@ public final class SegmentBuilder<K, V> {
                     context.segmentFiles, context.versionController,
                     context.segmentPropertiesManager, segmentCache, readPath,
                     writePath, maintenancePath);
-            final SegmentMaintenancePolicy<K, V> maintenancePolicy = segmentMaintenanceAutoEnabled
-                    ? new SegmentMaintenancePolicyThreshold<>(
-                            context.segmentConf
-                                    .getMaxNumberOfKeysInSegmentCache(),
-                            context.segmentConf
-                                    .getMaxNumberOfKeysInSegmentWriteCache(),
-                            context.segmentConf
-                                    .getMaxNumberOfDeltaCacheFiles())
-                    : SegmentMaintenancePolicy.none();
+            final SegmentMaintenancePolicy<K, V> configuredMaintenancePolicy = Vldtn
+                    .requireNonNull(maintenancePolicy, "maintenancePolicy");
             return SegmentBuildResult.ok(new SegmentImpl<>(core, compacter,
-                    context.maintenanceExecutor, maintenancePolicy,
+                    context.maintenanceExecutor, configuredMaintenancePolicy,
                     directoryLocking));
         } catch (final RuntimeException e) {
             if (directoryLocking != null) {

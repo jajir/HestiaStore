@@ -174,7 +174,7 @@ class SegmentRegistryImplTest {
     }
 
     @Test
-    void getSegment_returnsErrorWhenSegmentMissing() {
+    void getSegment_returnsBusyWhenSegmentMissing() {
         stubSegmentConfig();
         final Segment<Integer, String> existing = registry.createSegment()
                 .getValue();
@@ -182,7 +182,7 @@ class SegmentRegistryImplTest {
 
         final SegmentRegistryResult<Segment<Integer, String>> result = registry
                 .getSegment(missingId);
-        assertSame(SegmentRegistryResultStatus.ERROR, result.getStatus());
+        assertSame(SegmentRegistryResultStatus.BUSY, result.getStatus());
     }
 
     @Test

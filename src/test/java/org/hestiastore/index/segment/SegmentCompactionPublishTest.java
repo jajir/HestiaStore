@@ -48,7 +48,7 @@ class SegmentCompactionPublishTest {
                         List.of(new ChunkFilterDoNothing()))//
                 .withDecodingChunkFilters(
                         List.of(new ChunkFilterDoNothing()))//
-                .withSegmentMaintenanceAutoEnabled(false)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .build().getValue();
         try {
             assertEquals(SegmentResultStatus.OK,

@@ -109,6 +109,7 @@ class IntegrationSegmentWriteConsistencyTest {
                 .withId(id)//
                 .withKeyTypeDescriptor(TDI)//
                 .withValueTypeDescriptor(TDS)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withEncodingChunkFilters(//

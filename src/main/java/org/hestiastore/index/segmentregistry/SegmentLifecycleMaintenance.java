@@ -45,7 +45,7 @@ final class SegmentLifecycleMaintenance<K, V> {
     Segment<K, V> loadSegment(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         if (!fileSystem.segmentDirectoryExists(segmentId)) {
-            throw new IndexException(
+            throw new SegmentBusyException(
                     String.format("Segment '%s' was not found.", segmentId));
         }
         final SegmentRegistryState state = gate.getState();

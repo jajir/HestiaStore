@@ -44,6 +44,7 @@ class IntegrationSegmentConsistencyTest extends AbstractSegmentTest {
                 .withId(id)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tdi)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterMagicNumberWriting(), //

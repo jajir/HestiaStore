@@ -213,6 +213,10 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
                         segmentConf.getMaxNumberOfKeysInSegmentCache())
                 .withMaxNumberOfKeysInSegmentChunk(
                         segmentConf.getMaxNumberOfKeysInChunk())
+                .withMaintenancePolicy(new SegmentMaintenancePolicyThreshold<>(
+                        segmentConf.getMaxNumberOfKeysInSegmentCache(),
+                        segmentConf.getMaxNumberOfKeysInSegmentWriteCache(),
+                        segmentConf.getMaxNumberOfDeltaCacheFiles()))
                 .withDiskIoBufferSize(segmentConf.getDiskIoBufferSize())
                 .withEncodingChunkFilters(
                         segmentConf.getEncodingChunkFilters())
