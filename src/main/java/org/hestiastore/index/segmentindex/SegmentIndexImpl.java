@@ -201,7 +201,7 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         Vldtn.requireNonNull(isolation, "isolation");
         final EntryIterator<K, V> segmentIterator = new SegmentsIterator<>(
                 keyToSegmentMap.getSegmentIds(resolvedWindows), segmentRegistry,
-                isolation);
+                isolation, retryPolicy);
         if (conf.isContextLoggingEnabled()) {
             return new EntryIteratorLoggingContext<>(segmentIterator, conf);
         }

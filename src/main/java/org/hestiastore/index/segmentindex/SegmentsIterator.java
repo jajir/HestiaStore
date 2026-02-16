@@ -14,8 +14,6 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,9 +29,14 @@ import org.slf4j.LoggerFactory;
 class SegmentsIterator<K, V> extends AbstractCloseableResource
         implements EntryIterator<K, V> {
 
+    private static final IndexRetryPolicy DEFAULT_RETRY_POLICY = new IndexRetryPolicy(
+            IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS,
+            IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS);
+
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final SegmentRegistry<K, V> segmentRegistry;
+    private final SegmentRegistryBlockingAdapter<K, V> segmentRegistryBlockingAdapter;
+    private final IndexRetryPolicy retryPolicy;
     private final List<SegmentId> ids;
     private final SegmentIteratorIsolation isolation;
     private Entry<K, V> currentEntry = null;
@@ -44,22 +47,26 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
 
     SegmentsIterator(final List<SegmentId> ids,
             final SegmentRegistry<K, V> segmentRegistry) {
-        this(ids, segmentRegistry, SegmentIteratorIsolation.FAIL_FAST);
+        this(ids, segmentRegistry, SegmentIteratorIsolation.FAIL_FAST,
+                DEFAULT_RETRY_POLICY);
     }
 
     SegmentsIterator(final List<SegmentId> ids,
             final SegmentRegistry<K, V> segmentRegistry,
             final SegmentIteratorIsolation isolation) {
-        this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
-                "segmentRegistry");
+        this(ids, segmentRegistry, isolation, DEFAULT_RETRY_POLICY);
+    }
+
+    SegmentsIterator(final List<SegmentId> ids,
+            final SegmentRegistry<K, V> segmentRegistry,
+            final SegmentIteratorIsolation isolation,
+            final IndexRetryPolicy retryPolicy) {
+        this.segmentRegistryBlockingAdapter = new SegmentRegistryBlockingAdapter<>(
+                segmentRegistry, retryPolicy);
+        this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
         this.ids = Vldtn.requireNonNull(ids, "ids");
         this.isolation = Vldtn.requireNonNull(isolation, "isolation");
         nextSegmentIterator();
-    }
-
-    private SegmentRegistryResult<Segment<K, V>> loadSegment(
-            final SegmentId segmentId) {
-        return segmentRegistry.getSegment(segmentId);
     }
 
     private void nextSegmentIterator() {
@@ -73,45 +80,35 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
             logger.debug("Starting processing segment '{}' which is {} of {}",
                     segmentId, position, ids.size());
             position++;
-            Segment<K, V> segment = null;
-            while (true) {
-                final SegmentRegistryResult<Segment<K, V>> loaded = loadSegment(
-                        segmentId);
-                if (loaded.getStatus() == SegmentRegistryResultStatus.BUSY) {
-                    continue;
-                }
-                if (loaded.getStatus() != SegmentRegistryResultStatus.OK) {
-                    throw new IndexException(
-                            String.format("Segment '%s' failed to load: %s",
-                                    segmentId, loaded.getStatus()));
-                }
-                segment = loaded.getValue();
-                if (segment != null) {
-                    break;
-                }
-                throw new IndexException(String
-                        .format("Segment '%s' failed to load.", segmentId));
+            final Segment<K, V> segment = segmentRegistryBlockingAdapter
+                    .awaitSegment(segmentId);
+            final EntryIterator<K, V> iterator = awaitOpenIterator(segment);
+            if (iterator.hasNext()) {
+                currentIterator = iterator;
+                nextEntry = currentIterator.next();
+                return;
             }
-            while (true) {
-                final SegmentResult<EntryIterator<K, V>> result = segment
-                        .openIterator(isolation);
-                if (result.getStatus() == SegmentResultStatus.OK) {
-                    final EntryIterator<K, V> iterator = result.getValue();
-                    if (iterator.hasNext()) {
-                        currentIterator = iterator;
-                        nextEntry = currentIterator.next();
-                        return;
-                    }
-                    iterator.close();
-                    break;
-                }
-                if (result.getStatus() == SegmentResultStatus.BUSY) {
-                    continue;
-                }
-                throw new IndexException(String.format(
-                        "Segment '%s' failed to open iterator: %s",
-                        segment.getId(), result.getStatus()));
+            iterator.close();
+        }
+    }
+
+    private EntryIterator<K, V> awaitOpenIterator(final Segment<K, V> segment) {
+        final long startNanos = retryPolicy.startNanos();
+        while (true) {
+            final SegmentResult<EntryIterator<K, V>> result = segment
+                    .openIterator(isolation);
+            if (result.getStatus() == SegmentResultStatus.OK
+                    && result.getValue() != null) {
+                return result.getValue();
             }
+            if (result.getStatus() == SegmentResultStatus.BUSY) {
+                retryPolicy.backoffOrThrow(startNanos, "openIterator",
+                        segment.getId());
+                continue;
+            }
+            throw new IndexException(String.format(
+                    "Segment '%s' failed to open iterator: %s", segment.getId(),
+                    result.getStatus()));
         }
     }
 
