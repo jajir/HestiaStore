@@ -2,8 +2,10 @@ package org.hestiastore.index.properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.directory.MemDirectory;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -37,6 +39,11 @@ class DirectoryPropertyStoreTest {
         assertEquals(7, reloadedView.getInt("alpha"));
         assertEquals(42L, reloadedView.getLong("beta"));
         assertEquals(true, reloadedView.getBoolean("gamma"));
+        final String fileContent = new String(
+                directory.getFileBytes(FILE_NAME).getData(),
+                StandardCharsets.UTF_8);
+        assertTrue(fileContent.contains(
+                "Numeric format: underscore (_) is thousands separator; dot (.) is decimal separator."));
     }
 
     @Test

@@ -16,14 +16,14 @@ class PropertyWriterImplTest {
         final PropertyWriter writer = new PropertyWriterImpl(workingCopy);
 
         final PropertyWriter returned = writer.setString("alpha", "value")
-                .setInt("beta", 7).setLong("gamma", 42L)
-                .setDouble("delta", 3.14).setBoolean("epsilon", true);
+                .setInt("beta", 1_234_567).setLong("gamma", 9_876_543_210L)
+                .setDouble("delta", 12_345.14).setBoolean("epsilon", true);
 
         assertSame(writer, returned);
         assertEquals("value", workingCopy.get("alpha"));
-        assertEquals("7", workingCopy.get("beta"));
-        assertEquals("42", workingCopy.get("gamma"));
-        assertEquals("3.14", workingCopy.get("delta"));
+        assertEquals("1_234_567", workingCopy.get("beta"));
+        assertEquals("9_876_543_210", workingCopy.get("gamma"));
+        assertEquals("12_345.14", workingCopy.get("delta"));
         assertEquals("true", workingCopy.get("epsilon"));
     }
 }

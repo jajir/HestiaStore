@@ -34,4 +34,18 @@ class PropertyConvertersTest {
         assertTrue(converters.toBoolean("true"));
         assertFalse(converters.toBoolean("false"));
     }
+
+    @Test
+    void primitive_conversions_parse_values_with_underscores() {
+        assertEquals(1_234_567, converters.toInt("1_234_567"));
+        assertEquals(9_876_543_210L, converters.toLong("9_876_543_210"));
+        assertEquals(12_345.678D, converters.toDouble("12_345.678"));
+    }
+
+    @Test
+    void formatting_uses_underscore_grouping_and_dot_decimal_separator() {
+        assertEquals("1_234_567", converters.formatInt(1_234_567));
+        assertEquals("-9_876_543_210", converters.formatLong(-9_876_543_210L));
+        assertEquals("12_345.678", converters.formatDouble(12_345.678D));
+    }
 }
