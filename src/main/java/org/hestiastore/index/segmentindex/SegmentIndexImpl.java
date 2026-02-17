@@ -386,6 +386,13 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         return segmentIndexState;
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public SegmentIndexMetricsSnapshot metricsSnapshot() {
+        return new SegmentIndexMetricsSnapshot(stats.getGetCx(),
+                stats.getPutCx(), stats.getDeleteCx(), getState());
+    }
+
     final void setSegmentIndexState(final SegmentIndexState state) {
         this.segmentIndexState = Vldtn.requireNonNull(state, "state");
     }

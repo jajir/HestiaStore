@@ -11,6 +11,14 @@
     -->
   </Appenders>
   <Loggers>
+    <Logger name="org.hestiastore.index.segment.SegmentImpl" level="fatal"
+        additivity="false">
+      <AppenderRef ref="Console"/>
+    </Logger>
+    <Logger name="org.hestiastore.index.segment.SegmentConsistencyChecker"
+        level="error" additivity="false">
+      <AppenderRef ref="Console"/>
+    </Logger>
     <Root level="info"> 
       <AppenderRef ref="Console"/>
     </Root>

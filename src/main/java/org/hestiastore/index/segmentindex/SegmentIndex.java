@@ -438,4 +438,18 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * @return index state
      */
     SegmentIndexState getState();
+
+    /**
+     * Returns an immutable snapshot of index-level operation counters and
+     * lifecycle state.
+     *
+     * Implementations should override this method to expose non-zero counters.
+     * The default keeps backward compatibility for custom implementations that
+     * have not yet added metrics support.
+     *
+     * @return metrics snapshot
+     */
+    default SegmentIndexMetricsSnapshot metricsSnapshot() {
+        return new SegmentIndexMetricsSnapshot(0L, 0L, 0L, getState());
+    }
 }
