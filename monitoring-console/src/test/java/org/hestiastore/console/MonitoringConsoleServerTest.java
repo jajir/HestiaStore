@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.sun.net.httpserver.HttpServer;
 
 class MonitoringConsoleServerTest {
 
@@ -34,6 +36,7 @@ class MonitoringConsoleServerTest {
 
     private final List<SegmentIndex<Integer, String>> indexes = new ArrayList<>();
     private final List<ManagementAgentServer> agents = new ArrayList<>();
+    private final List<HttpServer> stubs = new ArrayList<>();
 
     private MonitoringConsoleServer console;
     private String baseUrl;
@@ -62,6 +65,9 @@ class MonitoringConsoleServerTest {
             if (!index.wasClosed()) {
                 index.close();
             }
+        }
+        for (final HttpServer stub : stubs) {
+            stub.stop(0);
         }
     }
 
@@ -115,6 +121,79 @@ class MonitoringConsoleServerTest {
                         """,
                 null);
         assertEquals(403, forbidden.statusCode());
+    }
+
+    @Test
+    void dashboardMarksNodeUnavailableWhenNodeIsDown() throws Exception {
+        registerNode("dead", "index-dead", "http://127.0.0.1:1");
+
+        final HttpResponse<String> response = send("GET", "/console/v1/dashboard",
+                null, null);
+        assertEquals(200, response.statusCode());
+        final JsonNode payload = objectMapper.readTree(response.body());
+        assertEquals(1, payload.size());
+        assertEquals("dead", payload.get(0).get("nodeId").asText());
+        assertEquals(false, payload.get(0).get("reachable").asBoolean());
+        assertEquals("UNAVAILABLE", payload.get(0).get("state").asText());
+    }
+
+    @Test
+    void dashboardMarksNodeUnavailableOnPartialOrTimeoutResponses()
+            throws Exception {
+        final HttpServer partial = HttpServer.create(new InetSocketAddress(0), 0);
+        partial.createContext("/api/v1/state", exchange -> {
+            final byte[] ok = """
+                    {"indexName":"partial","state":"READY","ready":true,"capturedAt":"2026-01-01T00:00:00Z"}
+                    """.getBytes();
+            exchange.sendResponseHeaders(200, ok.length);
+            exchange.getResponseBody().write(ok);
+            exchange.close();
+        });
+        partial.createContext("/api/v1/metrics", exchange -> {
+            exchange.sendResponseHeaders(500, -1);
+            exchange.close();
+        });
+        partial.start();
+        stubs.add(partial);
+
+        final HttpServer timeout = HttpServer.create(new InetSocketAddress(0), 0);
+        timeout.createContext("/api/v1/state", exchange -> {
+            try {
+                Thread.sleep(3500L);
+                final byte[] ok = """
+                        {"indexName":"timeout","state":"READY","ready":true,"capturedAt":"2026-01-01T00:00:00Z"}
+                        """.getBytes();
+                exchange.sendResponseHeaders(200, ok.length);
+                exchange.getResponseBody().write(ok);
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } finally {
+                exchange.close();
+            }
+        });
+        timeout.createContext("/api/v1/metrics", exchange -> {
+            final byte[] ok = """
+                    {"indexName":"timeout","state":"READY","getOperationCount":1,"putOperationCount":1,"deleteOperationCount":0,"capturedAt":"2026-01-01T00:00:00Z"}
+                    """.getBytes();
+            exchange.sendResponseHeaders(200, ok.length);
+            exchange.getResponseBody().write(ok);
+            exchange.close();
+        });
+        timeout.start();
+        stubs.add(timeout);
+
+        registerNode("partial", "partial", "http://127.0.0.1:" + partial.getAddress().getPort());
+        registerNode("timeout", "timeout", "http://127.0.0.1:" + timeout.getAddress().getPort());
+
+        final HttpResponse<String> response = send("GET", "/console/v1/dashboard",
+                null, null);
+        assertEquals(200, response.statusCode());
+        final JsonNode payload = objectMapper.readTree(response.body());
+        assertEquals(2, payload.size());
+        for (final JsonNode node : payload) {
+            assertEquals(false, node.get("reachable").asBoolean());
+            assertEquals("UNAVAILABLE", node.get("state").asText());
+        }
     }
 
     private ManagedNode startNode(final String nodeId, final String name)
