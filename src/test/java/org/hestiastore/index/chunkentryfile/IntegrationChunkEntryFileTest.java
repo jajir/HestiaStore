@@ -34,8 +34,9 @@ public class IntegrationChunkEntryFileTest {
     @BeforeEach
     void setUp() {
         directory = new MemDirectory();
-        ChunkStoreFile chunkStoreFile = new ChunkStoreFile(directory, FILE_NAME,
-                BLOCK_SIZE,
+        ChunkStoreFile chunkStoreFile = new ChunkStoreFile(
+                directory,
+                FILE_NAME, BLOCK_SIZE,
                 List.of(new ChunkFilterMagicNumberWriting(),
                         new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()));
@@ -67,7 +68,8 @@ public class IntegrationChunkEntryFileTest {
         assertEquals(0, position.getValue());
 
         // Read data
-        Iterator<Entry<Integer, String>> iterator = chunkPairFile.openIterator();
+        Iterator<Entry<Integer, String>> iterator = chunkPairFile
+                .openIterator();
         assertTrue(iterator.hasNext());
         Entry<Integer, String> entry = iterator.next();
         assertEquals(TestData.ENTRY1, entry);

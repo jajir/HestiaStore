@@ -135,7 +135,7 @@ Streaming uses a snapshot at iteration time and does not use the index cache to 
 
 ### 🔒 Thread Safety
 
-Index is not thread‑safe by default. Enable synchronization via configuration. See option [withThreadSafe](../configuration/index.md#thread-safe-withthreadsafe).
+Index operations are synchronized internally to support concurrent access. Expect some locking overhead under heavy contention.
 
 ## 🧨 Exception Handling
 

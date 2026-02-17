@@ -23,8 +23,8 @@ public class ExampleIT {
                 .build();
 
         // create new index
-        SegmentIndex<String, String> index = SegmentIndex.<String, String>create(directory,
-                conf);
+        SegmentIndex<String, String> index = SegmentIndex
+                .<String, String>create(directory, conf);
 
         // Do some work with the index
         index.put("Hello", "World");
@@ -45,8 +45,8 @@ public class ExampleIT {
                 .withName("test_index") //
                 .build();
 
-        SegmentIndex<String, String> index = SegmentIndex.<String, String>open(directory,
-                conf);
+        SegmentIndex<String, String> index = SegmentIndex
+                .<String, String>open(directory, conf);
 
         index.getStream().forEach(entry -> {
             System.out.println("Entry: " + entry);

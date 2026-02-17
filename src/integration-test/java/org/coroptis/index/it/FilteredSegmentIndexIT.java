@@ -16,8 +16,8 @@ import org.hestiastore.index.chunkstore.ChunkFilterSnappyDecompress;
 import org.hestiastore.index.chunkstore.ChunkFilterXorDecrypt;
 import org.hestiastore.index.chunkstore.ChunkFilterXorEncrypt;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.directory.FileReader;
+import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.junit.jupiter.api.Test;
@@ -59,8 +59,7 @@ class FilteredSegmentIndexIT {
         entries.put("beta", "second value");
         entries.put("gamma", "third value");
 
-        try (SegmentIndex<String, String> index = SegmentIndex.create(directory,
-                createConf)) {
+        try (SegmentIndex<String, String> index = SegmentIndex.create(directory, createConf)) {
             entries.forEach(index::put);
             index.flush();
             index.compact();
@@ -86,7 +85,7 @@ class FilteredSegmentIndexIT {
                 .ifPresent(file -> LOGGER.info("{}: {}", prefix, file));
 
         directory.getFileNames()//
-                .filter(name -> name.equals("index-configuration.properties"))//
+                .filter(name -> name.equals("manifest.txt"))//
                 .findFirst()//
                 .ifPresent(name -> {
                     final FileReader reader = directory.getFileReader(name);
@@ -101,9 +100,7 @@ class FilteredSegmentIndexIT {
                         }
                         final String content = new String(out.toByteArray(),
                                 StandardCharsets.UTF_8);
-                        LOGGER.info(
-                                "index-configuration.properties content:\n{}",
-                                content);
+                        LOGGER.info("manifest.txt content:\n{}", content);
                     } catch (Exception ex) {
                         LOGGER.warn("Unable to read {}", name, ex);
                     }

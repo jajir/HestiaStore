@@ -22,7 +22,7 @@ import org.hestiastore.index.directory.FileReaderSeekable;
  * @param <K> key type
  * @param <V> value type
  */
-public class SegmentIndexSearcher<K, V> extends AbstractCloseableResource {
+class SegmentIndexSearcher<K, V> extends AbstractCloseableResource {
 
     private final ChunkEntryFile<K, V> chunkPairFile;
     private final int maxNumberOfKeysInIndexPage;
@@ -53,6 +53,10 @@ public class SegmentIndexSearcher<K, V> extends AbstractCloseableResource {
         this.seekableReader = seekableReader;
     }
 
+    /**
+     * Releases resources held by the searcher. This implementation is a no-op
+     * because the searcher does not own shared readers.
+     */
     @Override
     protected void doClose() {
         // intentionally no-op

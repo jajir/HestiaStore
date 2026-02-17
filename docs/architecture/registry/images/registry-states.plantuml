@@ -1,0 +1,22 @@
+@startuml Registry States
+title State Machine for Segment Registry 
+
+state READY
+state FREEZE
+state CLOSED
+state ERROR
+
+
+[*] --> FREEZE
+READY --> FREEZE : is part of close()\nprocedure
+FREEZE --> READY
+FREEZE --> CLOSED : is part of close()\nprocedure
+
+ERROR -[hidden]-> FREEZE
+
+note right of ERROR
+  Any state can transition to ERROR
+  on index or IO failure.
+end note
+
+@enduml

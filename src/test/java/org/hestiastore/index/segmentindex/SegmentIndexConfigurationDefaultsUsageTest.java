@@ -24,38 +24,37 @@ class SegmentIndexConfigurationDefaultsUsageTest {
                 .build();
 
         final IndexConfigurationContract defaults = IndexConfigurationRegistry
-                .get(Integer.class)
-                .orElseThrow(
-                        () -> new IllegalStateException("Missing contract defaults for Integer"));
+                .get(Integer.class).orElseThrow(() -> new IllegalStateException(
+                        "Missing contract defaults for Integer"));
 
-        try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
-                sparseConfiguration)) {
+        try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory, sparseConfiguration)) {
             final IndexConfiguration<Integer, String> actual = index
                     .getConfiguration();
 
             assertEquals((int) defaults.getMaxNumberOfKeysInSegmentCache(),
                     actual.getMaxNumberOfKeysInSegmentCache(),
                     "Segment cache size must come from contract defaults");
-            assertEquals(
-                    (int) defaults
-                            .getMaxNumberOfKeysInSegmentCacheDuringFlushing(),
-                    actual.getMaxNumberOfKeysInSegmentCacheDuringFlushing(),
-                    "Flushing cache size must come from contract defaults");
             assertEquals(defaults.getMaxNumberOfKeysInSegmentChunk(),
                     actual.getMaxNumberOfKeysInSegmentChunk(),
                     "Segment chunk size must come from contract defaults");
-            assertEquals(defaults.getMaxNumberOfKeysInCache(),
-                    actual.getMaxNumberOfKeysInCache(),
-                    "Index cache size must come from contract defaults");
-            assertEquals(defaults.getMaxNumberOfKeysInReadCache(),
-                    actual.getMaxNumberOfKeysInReadCache(),
-                    "Read cache size must come from contract defaults");
+            assertEquals(defaults.getMaxNumberOfDeltaCacheFiles(),
+                    actual.getMaxNumberOfDeltaCacheFiles(),
+                    "Delta cache file cap must come from contract defaults");
             assertEquals(defaults.getMaxNumberOfKeysInSegment(),
                     actual.getMaxNumberOfKeysInSegment(),
                     "Segment key count must come from contract defaults");
             assertEquals(defaults.getMaxNumberOfSegmentsInCache(),
                     actual.getMaxNumberOfSegmentsInCache(),
                     "Segments in cache must come from contract defaults");
+            assertEquals(defaults.getIndexWorkerThreadCount(),
+                    actual.getIndexWorkerThreadCount(),
+                    "Number of threads must come from contract defaults");
+            assertEquals(defaults.getNumberOfIoThreads(),
+                    actual.getNumberOfIoThreads(),
+                    "Number of IO threads must come from contract defaults");
+            assertEquals(defaults.getNumberOfRegistryLifecycleThreads(),
+                    actual.getNumberOfRegistryLifecycleThreads(),
+                    "Registry lifecycle threads must come from contract defaults");
             assertEquals(defaults.getDiskIoBufferSizeInBytes(),
                     actual.getDiskIoBufferSize(),
                     "Disk IO buffer size must come from contract defaults");
@@ -66,13 +65,10 @@ class SegmentIndexConfigurationDefaultsUsageTest {
                     actual.getBloomFilterIndexSizeInBytes(),
                     "Bloom index size must come from contract defaults");
             assertEquals(
-                    Double.valueOf(
-                            defaults.getBloomFilterProbabilityOfFalsePositive()),
+                    Double.valueOf(defaults
+                            .getBloomFilterProbabilityOfFalsePositive()),
                     actual.getBloomFilterProbabilityOfFalsePositive(),
                     "Bloom false-positive probability must come from contract defaults");
-            assertEquals(Boolean.valueOf(defaults.isThreadSafe()),
-                    actual.isThreadSafe(),
-                    "Thread-safety flag must come from contract defaults");
             assertEquals(Boolean.valueOf(defaults.isContextLoggingEnabled()),
                     actual.isContextLoggingEnabled(),
                     "Context logging flag must come from contract defaults");

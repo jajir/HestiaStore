@@ -33,7 +33,9 @@ class IntegrationSortedDataFileTest extends AbstractDataTest {
     @BeforeEach
     void setUp() {
         dir = new MemDirectory();
-        sdf = new SortedDataFile<>(dir, FILE_NAME, tds, tdi, 1024);
+        sdf = SortedDataFile.fromDirectory(
+                dir,
+                FILE_NAME, tds, tdi, 1024);
     }
 
     @AfterEach

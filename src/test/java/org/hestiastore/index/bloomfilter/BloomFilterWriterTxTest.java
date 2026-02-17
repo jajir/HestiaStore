@@ -26,14 +26,14 @@ class BloomFilterWriterTxTest {
     private BloomFilter<String> bloomFilter;
 
     private BloomFilterWriterTx<String> tx;
-    private Directory directory;
+    private Directory directoryFacade;
 
     @BeforeEach
     void setUp() {
-        directory = new MemDirectory();
-        tx = new BloomFilterWriterTx<>(directory, FILE_NAME, convertorToBytes,
-                HASH_FUNCTIONS, INDEX_SIZE_IN_BYTES, INDEX_SIZE_IN_BYTES,
-                bloomFilter);
+        directoryFacade = new MemDirectory();
+        tx = new BloomFilterWriterTx<>(directoryFacade, FILE_NAME,
+                convertorToBytes, HASH_FUNCTIONS, INDEX_SIZE_IN_BYTES,
+                INDEX_SIZE_IN_BYTES, bloomFilter);
     }
 
     @Test
@@ -45,7 +45,7 @@ class BloomFilterWriterTxTest {
     @Test
     void commitWithoutOpenFails() {
         final BloomFilterWriterTx<String> localTx = new BloomFilterWriterTx<>(
-                directory, FILE_NAME, convertorToBytes, HASH_FUNCTIONS,
+                directoryFacade, FILE_NAME, convertorToBytes, HASH_FUNCTIONS,
                 INDEX_SIZE_IN_BYTES, INDEX_SIZE_IN_BYTES, bloomFilter);
         assertThrows(IllegalStateException.class, localTx::commit);
     }
@@ -54,7 +54,8 @@ class BloomFilterWriterTxTest {
     void constructorRequiresNonNullConvertor() {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new BloomFilterWriterTx<>(directory, FILE_NAME, null,
+                () -> new BloomFilterWriterTx<>(directoryFacade, FILE_NAME,
+                        null,
                         HASH_FUNCTIONS, INDEX_SIZE_IN_BYTES,
                         INDEX_SIZE_IN_BYTES, bloomFilter));
         assertEquals("Property 'convertorToBytes' must not be null.",
@@ -65,7 +66,7 @@ class BloomFilterWriterTxTest {
     void constructorRequiresNonNullBloomFilter() {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new BloomFilterWriterTx<>(directory, FILE_NAME,
+                () -> new BloomFilterWriterTx<>(directoryFacade, FILE_NAME,
                         convertorToBytes, HASH_FUNCTIONS, INDEX_SIZE_IN_BYTES,
                         INDEX_SIZE_IN_BYTES, null));
         assertEquals("Property 'bloomFilter' must not be null.",

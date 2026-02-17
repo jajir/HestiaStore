@@ -1,6 +1,10 @@
 package org.hestiastore.index.segmentindex;
 
 import java.util.Optional;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.CloseableResource;
@@ -9,88 +13,176 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.async.AsyncDirectoryBlockingAdapter;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 
 /**
  * High-level contract for the segment-index layer that sits above individual
  * segments. It supports creating/opening instances, point mutations
- * (put/delete), range streaming, and consistency checks. Concrete
- * implementations are created through the static factory helpers which take
- * care of configuration handling.
+ * (put/delete), range streaming, log inspection, and consistency checks.
+ * Concrete implementations are created through the static factory helpers which
+ * take care of configuration handling and bounded directory wrapping.
  *
  * @param <K> key type
  * @param <V> value type
  */
 public interface SegmentIndex<K, V> extends CloseableResource {
 
+    AtomicInteger IO_THREAD_COUNTER = new AtomicInteger(1);
+
     /**
      * Creates a brand new index in the supplied directory. Default values are
      * applied to the provided configuration, then both the configuration and
      * the on-disk structures are persisted.
+     * <p>
+     * The supplied directory is wrapped in an bounded directory adapter
+     * configured with the resolved {@code numberOfIoThreads}. The returned
+     * index owns that wrapper and will close it when the index is closed.
+     * </p>
      *
      * @param directory backing directory for the index
      * @param indexConf requested configuration overrides
      * @return a newly created index instance
      */
-    static <M, N> SegmentIndex<M, N> create(final Directory directory,
+    static <M, N> SegmentIndex<M, N> create(
+            final Directory directory,
             final IndexConfiguration<M, N> indexConf) {
-        final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
-                new IndexConfiguratonStorage<>(directory));
-        final IndexConfiguration<M, N> conf = confManager
-                .applyDefaults(indexConf);
-        confManager.save(conf);
-        return openIndex(directory, conf);
+        final int initialIoThreads = resolveIoThreads(
+                indexConf.getNumberOfIoThreads());
+        Directory ioDirectory = newIoDirectory(directory, initialIoThreads);
+        try {
+            IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
+                    new IndexConfiguratonStorage<>(ioDirectory));
+            final IndexConfiguration<M, N> conf = confManager
+                    .applyDefaults(indexConf);
+            final int configuredIoThreads = resolveIoThreads(
+                    conf.getNumberOfIoThreads());
+            if (configuredIoThreads != initialIoThreads) {
+                closeDirectory(ioDirectory);
+                ioDirectory = newIoDirectory(directory, configuredIoThreads);
+                confManager = new IndexConfigurationManager<>(
+                        new IndexConfiguratonStorage<>(ioDirectory));
+            }
+            confManager.save(conf);
+            return openIndex(ioDirectory, conf);
+        } catch (final RuntimeException e) {
+            closeOnFailure(ioDirectory, e);
+            throw e;
+        }
     }
 
     /**
      * Opens an existing index, merging the provided configuration overrides
      * with the stored configuration on disk.
+     * <p>
+     * The supplied directory is wrapped in an bounded directory adapter
+     * configured with the merged {@code numberOfIoThreads}. The returned index
+     * owns that wrapper and will close it when the index is closed.
+     * </p>
      *
      * @param directory backing directory that already contains the index
      * @param indexConf configuration overrides to apply
      * @return index instance backed by the updated configuration
      */
-    static <M, N> SegmentIndex<M, N> open(final Directory directory,
+    static <M, N> SegmentIndex<M, N> open(
+            final Directory directory,
             final IndexConfiguration<M, N> indexConf) {
-        final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
-                new IndexConfiguratonStorage<>(directory));
-        final IndexConfiguration<M, N> mergedConf = confManager
-                .mergeWithStored(indexConf);
-        return openIndex(directory, mergedConf);
+        final int initialIoThreads = resolveIoThreads(
+                indexConf.getNumberOfIoThreads());
+        Directory ioDirectory = newIoDirectory(directory, initialIoThreads);
+        try {
+            final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
+                    new IndexConfiguratonStorage<>(ioDirectory));
+            final IndexConfiguration<M, N> mergedConf = confManager
+                    .mergeWithStored(indexConf);
+            final int configuredIoThreads = resolveIoThreads(
+                    mergedConf.getNumberOfIoThreads());
+            if (configuredIoThreads != initialIoThreads) {
+                closeDirectory(ioDirectory);
+                ioDirectory = newIoDirectory(directory, configuredIoThreads);
+            }
+            return openIndex(ioDirectory, mergedConf);
+        } catch (final RuntimeException e) {
+            closeOnFailure(ioDirectory, e);
+            throw e;
+        }
     }
 
     /**
      * Opens an existing index using the configuration stored on disk.
+     * <p>
+     * The supplied directory is wrapped in an bounded directory adapter
+     * configured with the stored {@code numberOfIoThreads}. The returned index
+     * owns that wrapper and will close it when the index is closed.
+     * </p>
      *
      * @param directory backing directory with an existing index
      * @return index instance backed by the persisted configuration
      */
-    static <M, N> SegmentIndex<M, N> open(final Directory directory) {
-        final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
-                new IndexConfiguratonStorage<>(directory));
-        return openIndex(directory, confManager.loadExisting());
+    static <M, N> SegmentIndex<M, N> open(
+            final Directory directory) {
+        Directory ioDirectory = newIoDirectory(directory,
+                IndexConfigurationContract.NUMBER_OF_IO_THREADS);
+        try {
+            final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
+                    new IndexConfiguratonStorage<>(ioDirectory));
+            final IndexConfiguration<M, N> conf = confManager.loadExisting();
+            final int configuredIoThreads = resolveIoThreads(
+                    conf.getNumberOfIoThreads());
+            if (configuredIoThreads
+                    != IndexConfigurationContract.NUMBER_OF_IO_THREADS) {
+                closeDirectory(ioDirectory);
+                ioDirectory = newIoDirectory(directory, configuredIoThreads);
+            }
+            return openIndex(ioDirectory, conf);
+        } catch (final RuntimeException e) {
+            closeOnFailure(ioDirectory, e);
+            throw e;
+        }
     }
 
     /**
      * Attempts to open an index when it may or may not exist.
+     * <p>
+     * The supplied directory is wrapped in an bounded directory adapter
+     * configured with the stored {@code numberOfIoThreads} when a configuration
+     * is present. The returned index owns that wrapper and will close it when
+     * the index is closed.
+     * </p>
      *
      * @param directory backing directory that may contain an index
      * @return optional index instance if the configuration was found
      */
     static <M, N> Optional<SegmentIndex<M, N>> tryOpen(
             final Directory directory) {
-        final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
-                new IndexConfiguratonStorage<>(directory));
-        final Optional<IndexConfiguration<M, N>> oConf = confManager
-                .tryToLoad();
-        if (oConf.isPresent()) {
-            return Optional.of(openIndex(directory, oConf.get()));
-        } else {
-            return Optional.empty();
+        Directory ioDirectory = newIoDirectory(directory,
+                IndexConfigurationContract.NUMBER_OF_IO_THREADS);
+        try {
+            final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
+                    new IndexConfiguratonStorage<>(ioDirectory));
+            final Optional<IndexConfiguration<M, N>> oConf = confManager
+                    .tryToLoad();
+            if (oConf.isEmpty()) {
+                closeDirectory(ioDirectory);
+                return Optional.empty();
+            }
+            final IndexConfiguration<M, N> conf = oConf.get();
+            final int configuredIoThreads = resolveIoThreads(
+                    conf.getNumberOfIoThreads());
+            if (configuredIoThreads
+                    != IndexConfigurationContract.NUMBER_OF_IO_THREADS) {
+                closeDirectory(ioDirectory);
+                ioDirectory = newIoDirectory(directory, configuredIoThreads);
+            }
+            return Optional.of(openIndex(ioDirectory, conf));
+        } catch (final RuntimeException e) {
+            closeOnFailure(ioDirectory, e);
+            throw e;
         }
     }
 
     private static <M, N> SegmentIndex<M, N> openIndex(
-            final Directory directory,
+            final Directory directoryFacade,
             final IndexConfiguration<M, N> indexConf) {
         final TypeDescriptor<M> keyTypeDescriptor = DataTypeDescriptorRegistry
                 .makeInstance(indexConf.getKeyTypeDescriptor());
@@ -98,29 +190,71 @@ public interface SegmentIndex<K, V> extends CloseableResource {
                 .makeInstance(indexConf.getValueTypeDescriptor());
         Vldtn.requireNonNull(indexConf.isContextLoggingEnabled(),
                 "isContextLoggingEnabled");
-        Vldtn.requireNonNull(indexConf.isThreadSafe(), "isThreadSafe");
-        SegmentIndex<M, N> index;
-        if (Boolean.TRUE.equals(indexConf.isThreadSafe())) {
-            index = new IndexInternalSynchronized<>(directory,
-                    keyTypeDescriptor, valueTypeDescriptor, indexConf);
-        } else {
-            index = new IndexInternalDefault<>(directory, keyTypeDescriptor,
-                    valueTypeDescriptor, indexConf);
-        }
+        SegmentIndex<M, N> index = new IndexInternalConcurrent<>(
+                directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
+                indexConf);
         if (Boolean.TRUE.equals(indexConf.isContextLoggingEnabled())) {
-            return new IndexContextLoggingAdapter<>(indexConf, index);
-        } else {
-            return index;
+            index = new IndexContextLoggingAdapter<>(indexConf, index);
+        }
+        index = new IndexAsyncAdapter<>(index);
+        return new IndexDirectoryClosingAdapter<>(index, directoryFacade);
+    }
+
+    private static int resolveIoThreads(final Integer configuredThreads) {
+        if (configuredThreads == null || configuredThreads.intValue() < 1) {
+            return IndexConfigurationContract.NUMBER_OF_IO_THREADS;
+        }
+        return configuredThreads.intValue();
+    }
+
+    private static Directory newIoDirectory(final Directory directory,
+            final int ioThreads) {
+        final ExecutorService ioExecutor = Executors
+                .newFixedThreadPool(ioThreads, runnable -> {
+                    final Thread thread = new Thread(runnable,
+                            "io-" + IO_THREAD_COUNTER.getAndIncrement());
+                    thread.setDaemon(true);
+                    return thread;
+                });
+        return AsyncDirectoryBlockingAdapter.wrap(directory, ioExecutor);
+    }
+
+    private static void closeOnFailure(final Directory directory,
+            final RuntimeException failure) {
+        if (directory == null) {
+            return;
+        }
+        try {
+            closeDirectory(directory);
+        } catch (final RuntimeException closeError) {
+            failure.addSuppressed(closeError);
+        }
+    }
+
+    private static void closeDirectory(final Directory directory) {
+        if (directory instanceof CloseableResource closeableDirectory) {
+            closeableDirectory.close();
         }
     }
 
     /**
      * Inserts or updates a single entry in the index.
      *
-     * @param key   key to write
-     * @param value value to associate with the key
+     * @param key   key to write (must not be null)
+     * @param value value to associate with the key (must not be null and must
+     *              not be a tombstone value)
      */
     void put(K key, V value);
+
+    /**
+     * Asynchronously inserts or updates a single entry.
+     *
+     * @param key   key to write (must not be null)
+     * @param value value to associate with the key (must not be null and must
+     *              not be a tombstone value)
+     * @return completion that finishes when the write completes
+     */
+    CompletionStage<Void> putAsync(K key, V value);
 
     /**
      * Convenience overload that accepts a pre-built {@link Entry}.
@@ -141,6 +275,15 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     V get(K key);
 
     /**
+     * Performs an asynchronous point lookup for the given key.
+     *
+     * @param key key to search for
+     * @return completion that supplies the stored value or {@code null} when no
+     *         entry exists
+     */
+    CompletionStage<V> getAsync(K key);
+
+    /**
      * Deletes (tombstones) the provided key.
      *
      * @param key key to remove from the index
@@ -148,14 +291,44 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     void delete(K key);
 
     /**
-     * Forces a compaction pass over in-memory and on-disk data structures.
+     * Asynchronously tombstones the provided key.
+     *
+     * @param key key to remove from the index
+     * @return completion that finishes when the delete completes
+     */
+    CompletionStage<Void> deleteAsync(K key);
+
+    /**
+     * Starts a compaction pass over in-memory and on-disk data structures.
+     * This is the explicit index-level entry point for compaction; automatic
+     * split logic does not invoke compaction.
+     *
+     * The call returns after compaction is accepted by each segment.
      */
     void compact();
 
     /**
-     * Flush all data to disk. When WAL is used then it starts new file.
+     * Starts flushing in-memory data to disk. The call returns after flush is
+     * accepted by each segment.
      */
     void flush();
+
+    /**
+     * Starts a compaction pass and waits until all segment maintenance
+     * operations complete. Do not call from a segment maintenance executor
+     * thread.
+     *
+     * This is the explicit index-level entry point for compaction; automatic
+     * split logic does not invoke compaction.
+     */
+    void compactAndWait();
+
+    /**
+     * Starts flushing in-memory data to disk and waits until all segment
+     * maintenance operations complete. Do not call from a segment maintenance
+     * executor thread.
+     */
+    void flushAndWait();
 
     /**
      * Went through all records. In fact read all index data. Doesn't use
@@ -175,8 +348,28 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * @param segmentWindows allows to limit examined segments. If empty then
      *                       all segments are used.
      * @return stream of all data.
+     * Equivalent to
+     * {@link #getStream(SegmentWindow, SegmentIteratorIsolation)} with
+     * {@link SegmentIteratorIsolation#FAIL_FAST}.
      */
     Stream<Entry<K, V>> getStream(SegmentWindow segmentWindows);
+
+    /**
+     * Streams entries using the requested iterator isolation level.
+     *
+     * @param segmentWindows segment selection to stream
+     * @param isolation iterator isolation mode to use
+     * @return stream of key-value entries from the selected segments
+     */
+    default Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindows,
+            final SegmentIteratorIsolation isolation) {
+        Vldtn.requireNonNull(isolation, "isolation");
+        if (isolation == SegmentIteratorIsolation.FAIL_FAST) {
+            return getStream(segmentWindows);
+        }
+        throw new UnsupportedOperationException(
+                "FULL_ISOLATION streaming is not supported.");
+    }
 
     /**
      * Convenience shortcut for streaming all segments.
@@ -185,6 +378,17 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      */
     default Stream<Entry<K, V>> getStream() {
         return getStream(SegmentWindow.unbounded());
+    }
+
+    /**
+     * Convenience shortcut for streaming all segments with explicit isolation.
+     *
+     * @param isolation iterator isolation mode to use
+     * @return sequential stream of all entries
+     */
+    default Stream<Entry<K, V>> getStream(
+            final SegmentIteratorIsolation isolation) {
+        return getStream(SegmentWindow.unbounded(), isolation);
     }
 
     /**
@@ -227,4 +431,11 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * @return effective configuration
      */
     IndexConfiguration<K, V> getConfiguration();
+
+    /**
+     * Returns the current lifecycle state of this index instance.
+     *
+     * @return index state
+     */
+    SegmentIndexState getState();
 }

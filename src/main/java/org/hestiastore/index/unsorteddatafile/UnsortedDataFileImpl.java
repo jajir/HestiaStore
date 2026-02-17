@@ -10,7 +10,7 @@ import org.hestiastore.index.directory.FileReader;
 
 final class UnsortedDataFileImpl<K, V> implements UnsortedDataFile<K, V> {
 
-    private final Directory directory;
+    private final Directory directoryFacade;
     private final String fileName;
     private final TypeWriter<K> keyWriter;
     private final TypeWriter<V> valueWriter;
@@ -18,11 +18,13 @@ final class UnsortedDataFileImpl<K, V> implements UnsortedDataFile<K, V> {
     private final TypeReader<V> valueReader;
     private final int diskIoBufferSize;
 
-    UnsortedDataFileImpl(final Directory directory, final String fileName,
+    UnsortedDataFileImpl(final Directory directoryFacade,
+            final String fileName,
             final TypeWriter<K> keyWriter, final TypeWriter<V> valueWriter,
             final TypeReader<K> keyReader, final TypeReader<V> valueReader,
             final int diskIoBufferSize) {
-        this.directory = Vldtn.requireNonNull(directory, "directory");
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
         this.fileName = Vldtn.requireNonNull(fileName, "fileName");
         this.keyWriter = Vldtn.requireNonNull(keyWriter, "keyWriter");
         this.valueWriter = Vldtn.requireNonNull(valueWriter, "valueWriter");
@@ -46,7 +48,7 @@ final class UnsortedDataFileImpl<K, V> implements UnsortedDataFile<K, V> {
      */
     @Override
     public UnsortedDataFileWriterTx<K, V> openWriterTx() {
-        return new UnsortedDataFileWriterTx<>(fileName, directory,
+        return new UnsortedDataFileWriterTx<>(fileName, directoryFacade,
                 diskIoBufferSize, keyWriter, valueWriter);
     }
 
@@ -56,7 +58,7 @@ final class UnsortedDataFileImpl<K, V> implements UnsortedDataFile<K, V> {
      */
     @Override
     public EntryIteratorStreamer<K, V> openStreamer() {
-        if (directory.isFileExists(fileName)) {
+        if (directoryFacade.isFileExists(fileName)) {
             return new EntryIteratorStreamer<>(openIterator());
         } else {
             return new EntryIteratorStreamer<>(null);
@@ -64,6 +66,6 @@ final class UnsortedDataFileImpl<K, V> implements UnsortedDataFile<K, V> {
     }
 
     private FileReader getFileReader() {
-        return directory.getFileReader(fileName, diskIoBufferSize);
+        return directoryFacade.getFileReader(fileName, diskIoBufferSize);
     }
 }

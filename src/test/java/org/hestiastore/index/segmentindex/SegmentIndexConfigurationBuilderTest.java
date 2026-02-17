@@ -3,7 +3,6 @@ package org.hestiastore.index.segmentindex;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
@@ -78,7 +77,8 @@ class SegmentIndexConfigurationBuilderTest {
     void withMaxNumberOfKeysInSegmentCacheSetsValue() {
         final int value = 123;
         final IndexConfiguration<Integer, String> config = newBuilder()
-                .withMaxNumberOfKeysInSegmentCache(value).build();
+                .withMaxNumberOfKeysInSegmentCache(value)
+                .build();
         assertEquals(value, config.getMaxNumberOfKeysInSegmentCache());
     }
 
@@ -91,19 +91,11 @@ class SegmentIndexConfigurationBuilderTest {
     }
 
     @Test
-    void withMaxNumberOfKeysInCacheSetsValue() {
-        final int value = 555;
+    void withMaxNumberOfDeltaCacheFilesSetsValue() {
+        final int value = 7;
         final IndexConfiguration<Integer, String> config = newBuilder()
-                .withMaxNumberOfKeysInCache(value).build();
-        assertEquals(value, config.getMaxNumberOfKeysInCache());
-    }
-
-    @Test
-    void withMaxNumberOfKeysInReadCacheSetsValue() {
-        final int value = 999;
-        final IndexConfiguration<Integer, String> config = newBuilder()
-                .withMaxNumberOfKeysInReadCache(value).build();
-        assertEquals(value, config.getMaxNumberOfKeysInReadCache());
+                .withMaxNumberOfDeltaCacheFiles(value).build();
+        assertEquals(value, config.getMaxNumberOfDeltaCacheFiles());
     }
 
     @Test
@@ -120,16 +112,6 @@ class SegmentIndexConfigurationBuilderTest {
         final IndexConfiguration<Integer, String> config = newBuilder()
                 .withMaxNumberOfSegmentsInCache(value).build();
         assertEquals(value, config.getMaxNumberOfSegmentsInCache());
-    }
-
-    @Test
-    void withMaxNumberOfKeysInSegmentCacheDuringFlushingSetsValue() {
-        final int value = 987;
-        final IndexConfiguration<Integer, String> config = newBuilder()
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(value)
-                .build();
-        assertEquals(value,
-                config.getMaxNumberOfKeysInSegmentCacheDuringFlushing());
     }
 
     @Test
@@ -150,10 +132,27 @@ class SegmentIndexConfigurationBuilderTest {
     }
 
     @Test
-    void withThreadSafeSetsValue() {
+    void withIndexWorkerThreadCountSetsValue() {
+        final int value = 4;
         final IndexConfiguration<Integer, String> config = newBuilder()
-                .withThreadSafe(Boolean.TRUE).build();
-        assertTrue(config.isThreadSafe());
+                .withIndexWorkerThreadCount(value).build();
+        assertEquals(value, config.getIndexWorkerThreadCount());
+    }
+
+    @Test
+    void withNumberOfIoThreadsSetsValue() {
+        final int value = 3;
+        final IndexConfiguration<Integer, String> config = newBuilder()
+                .withNumberOfIoThreads(value).build();
+        assertEquals(value, config.getNumberOfIoThreads());
+    }
+
+    @Test
+    void withNumberOfRegistryLifecycleThreadsSetsValue() {
+        final int value = 5;
+        final IndexConfiguration<Integer, String> config = newBuilder()
+                .withNumberOfRegistryLifecycleThreads(value).build();
+        assertEquals(value, config.getNumberOfRegistryLifecycleThreads());
     }
 
     @Test
@@ -269,7 +268,7 @@ class SegmentIndexConfigurationBuilderTest {
 
     private static class NoOpFilter implements ChunkFilter {
         @Override
-        public org.hestiastore.index.chunkstore.ChunkData apply(final ChunkData input) {
+        public ChunkData apply(final ChunkData input) {
             return input;
         }
     }

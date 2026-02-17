@@ -45,7 +45,7 @@ public class ScarceSegmentIndex<K> {
 
     private final Comparator<K> keyComparator;
 
-    private final Directory directory;
+    private final Directory directoryFacade;
 
     private final String fileName;
 
@@ -58,17 +58,19 @@ public class ScarceSegmentIndex<K> {
         return new ScarceIndexBuilder<M>();
     }
 
-    ScarceSegmentIndex(final Directory directory, final String fileName,
+    ScarceSegmentIndex(final Directory directoryFacade,
+            final String fileName,
             final TypeDescriptor<K> keyTypeDescriptor,
             final int diskIoBufferSize) {
-        this.directory = Vldtn.requireNonNull(directory, "directory");
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
         this.fileName = Vldtn.requireNonNull(fileName, "fileName");
         Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
         this.keyComparator = Vldtn.requireNonNull(
                 keyTypeDescriptor.getComparator(),
                 "keyTypeDescriptor.getComparator()");
         this.sortedDataFile = SortedDataFile.<K, Integer>builder() //
-                .withDirectory(directory) //
+                .withDirectory(directoryFacade) //
                 .withFileName(fileName)//
                 .withKeyTypeDescriptor(keyTypeDescriptor) //
                 .withValueTypeDescriptor(typeDescriptorInteger)
@@ -81,7 +83,7 @@ public class ScarceSegmentIndex<K> {
 
     private List<Entry<K, Integer>> loadCacheEntries() {
         final List<Entry<K, Integer>> entries = new ArrayList<>();
-        if (directory.isFileExists(fileName)) {
+        if (directoryFacade.isFileExists(fileName)) {
             try (EntryIterator<K, Integer> entryIterator = sortedDataFile
                     .openIterator()) {
                 while (entryIterator.hasNext()) {
@@ -123,6 +125,10 @@ public class ScarceSegmentIndex<K> {
 
     public ScarceIndexWriterTx<K> openWriterTx() {
         return new ScarceIndexWriterTx<>(this, sortedDataFile.openWriterTx());
+    }
+
+    public void close() {
+        snapshot = new ScarceIndexSnapshot<>(keyComparator, List.of());
     }
 
 }

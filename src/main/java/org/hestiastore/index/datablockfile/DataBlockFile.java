@@ -29,18 +29,19 @@ public class DataBlockFile {
 
     private final DataBlockSize blockSize;
     private final String fileName;
-    private final Directory directory;
+    private final Directory directoryFacade;
 
     /**
      * Creates a new data block file.
      *
-     * @param directory the directory where the data block file is stored
-     * @param fileName  the name of the data block file
-     * @param blockSize the size of each data block
+     * @param directoryFacade the directory where the data block file is stored
+     * @param fileName        the name of the data block file
+     * @param blockSize       the size of each data block
      */
-    public DataBlockFile(final Directory directory, final String fileName,
-            final DataBlockSize blockSize) {
-        this.directory = Vldtn.requireNonNull(directory, "directory");
+    public DataBlockFile(final Directory directoryFacade,
+            final String fileName, final DataBlockSize blockSize) {
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
         this.fileName = Vldtn.requireNonNull(fileName, "fileName");
         this.blockSize = Vldtn.requireNonNull(blockSize, "blockSize");
     }
@@ -72,12 +73,19 @@ public class DataBlockFile {
             throw new IllegalArgumentException(String.format(
                     "Block position must be >= '%s'", FIRST_BLOCK.getValue()));
         }
-        if (directory.isFileExists(fileName)) {
-            final FileReaderSeekable reader = getFileReader(blockPosition,
-                    seekableReader);
-            final boolean closeOnClose = seekableReader == null;
-            return new DataBlockReaderImpl(reader, blockPosition, blockSize,
-                    closeOnClose);
+        if (directoryFacade.isFileExists(fileName)) {
+            try {
+                final FileReaderSeekable reader = getFileReader(blockPosition,
+                        seekableReader);
+                final boolean closeOnClose = seekableReader == null;
+                return new DataBlockReaderImpl(reader, blockPosition, blockSize,
+                        closeOnClose);
+            } catch (final RuntimeException e) {
+                if (!directoryFacade.isFileExists(fileName)) {
+                    return new DataBlockReaderEmpty();
+                }
+                throw e;
+            }
         } else {
             return new DataBlockReaderEmpty();
         }
@@ -87,7 +95,7 @@ public class DataBlockFile {
             final FileReaderSeekable seekableReader) {
         FileReaderSeekable out = seekableReader;
         if (out == null) {
-            out = directory.getFileReaderSeekable(fileName);
+            out = directoryFacade.getFileReaderSeekable(fileName);
         }
         out.seek(blockPosition.getValue());
         return out;
@@ -99,7 +107,7 @@ public class DataBlockFile {
      * @return a writer transaction for the data block file
      */
     public DataBlockWriterTx openWriterTx() {
-        return new DataBlockWriterTx(fileName, directory, blockSize);
+        return new DataBlockWriterTx(fileName, directoryFacade, blockSize);
     }
 
 }

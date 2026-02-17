@@ -51,12 +51,12 @@ class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
     @BeforeEach
     void setUp() {
         directory = new MemDirectory();
-        segment = Segment.<String, Integer>builder()//
-                .withDirectory(directory)//
+        segment = Segment.<String, Integer>builder(
+                directory)//
                 .withId(id)//
                 .withKeyTypeDescriptor(tds)//
                 .withValueTypeDescriptor(tdi)//
-                .withMaxNumberOfKeysInSegmentCache(10)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterMagicNumberWriting(), //
@@ -68,10 +68,10 @@ class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build();
+                .build().getValue();
 
         writeEntries(segment, indexFile);
-        segment.forceCompact();
+        assertEquals(SegmentResultStatus.OK, segment.compact().getStatus());
         writeEntries(segment, deltaCache);
         /*
          * Now Content of main sst index file and delta cache should be as
@@ -87,17 +87,37 @@ class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
 
     @Test
     void test_case_5_compact_after_addding_entry() {
-        try (final EntryIterator<String, Integer> iterator = segment
-                .openIterator()) {
+        final SegmentResult<EntryIterator<String, Integer>> result = segment
+                .openIterator();
+        assertEquals(SegmentResultStatus.OK, result.getStatus());
+        try (final EntryIterator<String, Integer> iterator = result
+                .getValue()) {
             assertTrue(iterator.hasNext());
             assertEquals(Entry.of("a", 25), iterator.next());
 
             // write <c, 10>
             writeEntries(segment, Arrays.asList(Entry.of("c", 10)));
-            segment.forceCompact();
+            assertEquals(SegmentResultStatus.OK,
+                    segment.compact().getStatus());
 
             assertFalse(iterator.hasNext());
         }
+    }
+
+    @Test
+    void test_case_6_compact_includes_write_cache_and_clears_it() {
+        assertEquals(SegmentResultStatus.OK,
+                segment.put("g", 13).getStatus());
+        assertEquals(SegmentResultStatus.OK, segment.compact().getStatus());
+
+        verifySegmentSearch(segment,
+                Arrays.asList(Entry.of("a", 25), Entry.of("c", 40),
+                        Entry.of("e", 28), Entry.of("g", 13)));
+        verifySegmentData(segment,
+                Arrays.asList(Entry.of("a", 25), Entry.of("c", 40),
+                        Entry.of("e", 28), Entry.of("g", 13)));
+
+        assertEquals(0, segment.getNumberOfKeysInWriteCache());
     }
 
 }

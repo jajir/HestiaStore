@@ -25,11 +25,11 @@ class IntegrationSegmentIndexIteratorTest {
             .getLogger(IntegrationSegmentIndexIteratorTest.class);
 
     private final Directory directory = new MemDirectory();
-    private final List<Entry<Integer, String>> data = List.of(Entry.of(1, "bbb"),
-            Entry.of(2, "ccc"), Entry.of(3, "dde"), Entry.of(4, "ddf"),
-            Entry.of(5, "ddg"), Entry.of(6, "ddh"), Entry.of(7, "ddi"),
-            Entry.of(8, "ddj"), Entry.of(9, "ddk"), Entry.of(10, "ddl"),
-            Entry.of(11, "ddm"));
+    private final List<Entry<Integer, String>> data = List.of(
+            Entry.of(1, "bbb"), Entry.of(2, "ccc"), Entry.of(3, "dde"),
+            Entry.of(4, "ddf"), Entry.of(5, "ddg"), Entry.of(6, "ddh"),
+            Entry.of(7, "ddi"), Entry.of(8, "ddj"), Entry.of(9, "ddk"),
+            Entry.of(10, "ddl"), Entry.of(11, "ddm"));
     private final List<Entry<Integer, NullValue>> data2 = List.of(
             Entry.of(1, NULL), Entry.of(2, NULL), Entry.of(3, NULL),
             Entry.of(4, NULL), Entry.of(5, NULL), Entry.of(6, NULL),
@@ -85,7 +85,7 @@ class IntegrationSegmentIndexIteratorTest {
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
 
         data.stream().forEach(index1::put);
-        index1.compact();
+        index1.compactAndWait();
         logger.debug("verify that after that point no segment "
                 + "is loaded into memory.");
         index1.getStream(SegmentWindow.unbounded()).forEach(entry -> {
@@ -103,11 +103,9 @@ class IntegrationSegmentIndexIteratorTest {
                 .withValueClass(String.class)//
                 .withKeyTypeDescriptor(TD_INTEGER) //
                 .withValueTypeDescriptor(TD_STRING) //
-                .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(3) //
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(4)
+                .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentChunk(1) //
-                .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
                 .withDiskIoBufferSizeInBytes(1024)//

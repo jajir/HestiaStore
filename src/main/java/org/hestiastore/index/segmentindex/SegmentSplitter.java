@@ -1,0 +1,125 @@
+package org.hestiastore.index.segmentindex;
+
+import java.util.List;
+
+import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.F;
+import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segment.SegmentId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Splits a segment into two logical halves by streaming entries in key order.
+ * <p>
+ * Algorithm: - Create a new “lower” segment and copy the first half of entries
+ * into it. - If there are no remaining entries, replace the current segment
+ * with the lower segment (replacement outcome). - Otherwise, stream the
+ * remaining entries back into the current segment (splitting outcome).
+ *
+ * The caller supplies a precomputed {@link SegmentSplitterPlan} which carries
+ * the target lower size and tracks statistics during the split.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
+class SegmentSplitter<K, V> {
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+    private final Segment<K, V> segment;
+    private final SegmentWriterTxFactory<K, V> writerTxFactory;
+
+    /**
+     * Creates a splitter for the provided segment.
+     *
+     * @param segment segment to split
+     * @param writerTxFactory transaction factory used during the split
+     */
+    SegmentSplitter(final Segment<K, V> segment,
+            final SegmentWriterTxFactory<K, V> writerTxFactory) {
+        this.segment = Vldtn.requireNonNull(segment, "segment");
+        this.writerTxFactory = Vldtn.requireNonNull(writerTxFactory,
+                "writerTxFactory");
+    }
+
+    /**
+     * Executes a single split operation according to the supplied plan.
+     * <p>
+     * Pre-conditions: - {@code plan.isSplitFeasible()} is true (otherwise an
+     * exception is thrown) - The caller provides fresh ids for the lower
+     * segment and a temporary upper segment (the temporary upper is later
+     * replaced over the current segment).
+     *
+     * Post-conditions: - Returns SPLIT when remaining entries were written to
+     * the temporary upper segment; otherwise COMPACTED when the current segment
+     * is replaced by the lower segment (no separate compaction step).
+     *
+     * @param lowerSegmentId newly created lower segment id
+     * @param upperSegmentId temporary upper segment id
+     * @param plan split plan with precomputed boundaries
+     * @return split execution result
+     */
+    SegmentSplitterResult<K, V> split(final SegmentId lowerSegmentId,
+            final SegmentId upperSegmentId,
+            final SegmentSplitterPlan<K, V> plan) {
+        try (SplitExecution<K, V> execution = splitWithIterator(lowerSegmentId,
+                upperSegmentId, plan)) {
+            return execution.getResult();
+        }
+    }
+
+    SplitExecution<K, V> splitWithIterator(final SegmentId lowerSegmentId,
+            final SegmentId upperSegmentId,
+            final SegmentSplitterPlan<K, V> plan) {
+        Vldtn.requireNonNull(lowerSegmentId, "lowerSegmentId");
+        Vldtn.requireNonNull(upperSegmentId, "upperSegmentId");
+        Vldtn.requireNonNull(plan, "plan");
+        logger.debug("Splitting of '{}' started", segment.getId());
+        segment.invalidateIterators();
+
+        final SegmentSplitContext<K, V> ctx = new SegmentSplitContext<>(segment,
+                plan, lowerSegmentId, upperSegmentId, writerTxFactory);
+        final SegmentSplitPipeline<K, V> pipeline = new SegmentSplitPipeline<>(
+                List.of(new SegmentSplitStepValidateFeasibility<>(),
+                        new SegmentSplitStepOpenIterator<>(),
+                        new SegmentSplitStepCreateLowerSegment<>(),
+                        new SegmentSplitStepFillLowerUntilTarget<>(),
+                        new SegmentSplitStepEnsureLowerNotEmpty<>(),
+                        new SegmentSplitStepReplaceIfNoRemaining<>(),
+                        new SegmentSplitStepWriteRemainingToCurrent<>()));
+        final SegmentSplitState<K, V> state = pipeline.runKeepingIterator(ctx);
+        final SegmentSplitterResult<K, V> result = state.getResult();
+
+        if (logger.isDebugEnabled()) {
+            logger.debug(
+                    "Splitting of '{}' finished, '{}' was created. Estimated number of keys was '{}'",
+                    segment.getId(), result.getSegmentId(),
+                    F.fmt(plan.getEstimatedNumberOfKeys()));
+        }
+        return new SplitExecution<>(result, state.getIterator());
+    }
+
+    static final class SplitExecution<K, V> implements AutoCloseable {
+        private final SegmentSplitterResult<K, V> result;
+        private final EntryIterator<K, V> iterator;
+
+        private SplitExecution(final SegmentSplitterResult<K, V> result,
+                final EntryIterator<K, V> iterator) {
+            this.result = Vldtn.requireNonNull(result, "result");
+            this.iterator = iterator;
+        }
+
+        SegmentSplitterResult<K, V> getResult() {
+            return result;
+        }
+
+        @Override
+        public void close() {
+            if (iterator != null) {
+                iterator.close();
+            }
+        }
+    }
+
+}

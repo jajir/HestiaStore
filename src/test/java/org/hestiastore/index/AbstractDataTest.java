@@ -7,7 +7,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segment.SegmentResultStatus;
+import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.hestiastore.index.segmentindex.SegmentWindow;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Abstract class for data tests
@@ -17,13 +25,16 @@ import org.hestiastore.index.segment.Segment;
  */
 public abstract class AbstractDataTest {
 
+    private final static Logger LOGGER = LoggerFactory
+            .getLogger(AbstractDataTest.class);
+
     /**
      * Convert entry iterator data to list
      * 
      * @param <M>      key type
      * @param <N>      value type
-     * @param iterator
-     * @returnlist of entries with data from list
+     * @param iterator required stream of entries
+     * @return list of entries with data from stream
      */
     protected <M, N> List<Entry<M, N>> toList(
             final Stream<Entry<M, N>> iterator) {
@@ -36,7 +47,7 @@ public abstract class AbstractDataTest {
      * Compare two key value entries.
      * 
      * @param expectedPair expected entry
-     * @param entry         verified entry
+     * @param entry        verified entry
      */
     protected void verifyEquals(final Entry<String, Integer> expectedPair,
             final Entry<String, Integer> entry) {
@@ -51,8 +62,8 @@ public abstract class AbstractDataTest {
      * 
      * @param <M>      key type
      * @param <N>      value type
-     * @param iterator
-     * @returnlist of entries with data from list
+     * @param iterator required entry iterator
+     * @return list of entries with data from iterator
      */
     protected static <M, N> List<Entry<M, N>> toList(
             final EntryIterator<M, N> iterator) {
@@ -67,12 +78,13 @@ public abstract class AbstractDataTest {
     /**
      * Verify that data from iterator are same as expecetd values
      * 
-     * @param <M>          key type
-     * @param <N>          value type
-     * @param entries        required list of expected data in segment
+     * @param <M>           key type
+     * @param <N>           value type
+     * @param entries       required list of expected data in segment
      * @param entryIterator required entry iterator
      */
-    public static <M, N> void verifyIteratorData(final List<Entry<M, N>> entries,
+    public static <M, N> void verifyIteratorData(
+            final List<Entry<M, N>> entries,
             final EntryIterator<M, N> entryIterator) {
         final List<Entry<M, N>> data = toList(entryIterator);
         assertEquals(entries.size(), data.size(),
@@ -85,6 +97,50 @@ public abstract class AbstractDataTest {
     }
 
     /**
+     * Verify that data from iterator are same as expected values, using a
+     * SegmentResult wrapper.
+     *
+     * @param <M>      key type
+     * @param <N>      value type
+     * @param entries  required list of expected data in segment
+     * @param result   required segment result with iterator
+     */
+    public static <M, N> void verifyIteratorData(
+            final List<Entry<M, N>> entries,
+            final SegmentResult<EntryIterator<M, N>> result) {
+        assertNotNull(result);
+        assertEquals(SegmentResultStatus.OK, result.getStatus(),
+                "Expected iterator result OK");
+        assertNotNull(result.getValue());
+        verifyIteratorData(entries, result.getValue());
+    }
+
+    /**
+     * Verifies segment index data using FULL_ISOLATION iteration.
+     *
+     * @param <M> key type
+     * @param <N> value type
+     * @param index required index
+     * @param entries expected entries in key order
+     */
+    public static <M, N> void verifySegmentIndexData(
+            final SegmentIndex<M, N> index,
+            final List<Entry<M, N>> entries) {
+        assertNotNull(index);
+        final List<Entry<M, N>> data;
+        try (Stream<Entry<M, N>> stream = index
+                .getStream(SegmentWindow.unbounded(),
+                        SegmentIteratorIsolation.FULL_ISOLATION)) {
+            data = stream.toList();
+        }
+        assertEquals(entries.size(), data.size(),
+                "Unexpected number of entries in index");
+        for (int i = 0; i < entries.size(); i++) {
+            assertEquals(entries.get(i), data.get(i));
+        }
+    }
+
+    /**
      * Convert segment data to list.
      * 
      * @param segment required segment
@@ -92,11 +148,37 @@ public abstract class AbstractDataTest {
      */
     public static List<Entry<Integer, String>> segmentToList(
             final Segment<Integer, String> segment) {
-        try (EntryIterator<Integer, String> iterator = segment.openIterator()) {
+        final SegmentResult<EntryIterator<Integer, String>> result = segment
+                .openIterator();
+        assertEquals(SegmentResultStatus.OK, result.getStatus(),
+                "Expected iterator result OK");
+        assertNotNull(result.getValue());
+        try (EntryIterator<Integer, String> iterator = result.getValue()) {
             final List<Entry<Integer, String>> out = new ArrayList<>();
             iterator.forEachRemaining(out::add);
             return out;
         }
+    }
+
+    /**
+     * Verifies expected count of files in directory and logs the file list when
+     * the count does not match.
+     *
+     * @param directory             required directory to inspect
+     * @param expecetdNumberOfFiles expected number of files in directory
+     */
+    public static void verifyNumberOfFiles(final Directory directory,
+            final int expecetdNumberOfFiles) {
+        final List<String> fileNames = directory.getFileNames().toList();
+        final List<String> countedFiles = fileNames.stream()
+                .filter(name -> name.contains("."))
+                .filter(name -> !name.endsWith(".lock")).toList();
+        final int fileCount = countedFiles.size();
+        if (fileCount != expecetdNumberOfFiles) {
+            LOGGER.error("Unexpected files in directory: {}", fileNames);
+        }
+        assertEquals(expecetdNumberOfFiles, fileCount,
+                "Invalid numbe of files in directory");
     }
 
 }

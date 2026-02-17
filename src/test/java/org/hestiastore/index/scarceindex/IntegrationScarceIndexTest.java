@@ -40,7 +40,8 @@ class IntegrationScarceIndexTest {
 
     @Test
     void test_empty() {
-        final ScarceSegmentIndex<String> index = makeIndex(Collections.emptyList());
+        final ScarceSegmentIndex<String> index = makeIndex(
+                Collections.emptyList());
 
         assertNull(index.get("aaa"));
         assertNull(index.get("bbb"));
@@ -97,8 +98,11 @@ class IntegrationScarceIndexTest {
     private ScarceSegmentIndex<String> makeIndex(
             final List<Entry<String, Integer>> entries) {
         final MemDirectory directory = new MemDirectory();
-        final ScarceSegmentIndex<String> index = ScarceSegmentIndex.<String>builder()
-                .withDirectory(directory).withFileName(FILE_NAME)//
+        final ScarceSegmentIndex<String> index = ScarceSegmentIndex
+                .<String>builder()
+                .withDirectory(
+                        directory)
+                .withFileName(FILE_NAME)//
                 .withKeyTypeDescriptor(stringTd)//
                 .build();
 

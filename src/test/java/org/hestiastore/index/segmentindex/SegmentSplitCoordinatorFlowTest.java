@@ -1,0 +1,261 @@
+package org.hestiastore.index.segmentindex;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executors;
+
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.WriteTransaction;
+import org.hestiastore.index.datatype.TypeDescriptorInteger;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
+import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
+import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentResultStatus;
+import org.hestiastore.index.segmentregistry.SegmentFactory;
+import org.hestiastore.index.segmentregistry.SegmentRegistry;
+import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
+import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
+import org.hestiastore.index.segmentregistry.SegmentRegistryStateMachine;
+import org.hestiastore.index.segmentregistry.SegmentRegistryState;
+import org.hestiastore.index.sorteddatafile.SortedDataFile;
+import org.junit.jupiter.api.Test;
+
+class SegmentSplitCoordinatorFlowTest {
+
+    private static final TypeDescriptorInteger KEY_DESCRIPTOR = new TypeDescriptorInteger();
+    private static final TypeDescriptorShortString VALUE_DESCRIPTOR = new TypeDescriptorShortString();
+
+    @Test
+    void split_applyFailureDeletesNewSegments() {
+        final IndexConfiguration<Integer, String> conf = newConfiguration();
+        final Directory directory = new MemDirectory();
+        final KeyToSegmentMapSynchronizedAdapter<Integer> keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
+                newKeyMap(List.of(Entry.of(100, SegmentId.of(0)))));
+        final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
+                1, "segment-maintenance");
+        final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
+                directory, KEY_DESCRIPTOR, VALUE_DESCRIPTOR, conf,
+                maintenanceExecutor.getExecutor());
+        final SegmentRegistryImpl<Integer, String> registryImpl = (SegmentRegistryImpl<Integer, String>) SegmentRegistry
+                .<Integer, String>builder().withDirectoryFacade(directory)
+                .withKeyTypeDescriptor(KEY_DESCRIPTOR)
+                .withValueTypeDescriptor(VALUE_DESCRIPTOR)
+                .withConfiguration(conf)
+                .withMaintenanceExecutor(maintenanceExecutor.getExecutor())
+                .withLifecycleExecutor(Executors.newSingleThreadExecutor())
+                .build();
+        final TrackingRegistry<Integer, String> registry = new TrackingRegistry<>(
+                registryImpl);
+        final TrackingWriterTxFactory writerTxFactory = new TrackingWriterTxFactory(
+                segmentFactory);
+        final SegmentSplitCoordinator<Integer, String> coordinator = new SegmentSplitCoordinator<>(
+                conf, keyToSegmentMap, registry, writerTxFactory);
+        try {
+            final Segment<Integer, String> segment = registry
+                    .getSegment(SegmentId.of(0)).getValue();
+            writerTxFactory.clearCreatedSegments();
+            for (int i = 0; i < 4; i++) {
+                assertEquals(SegmentResultStatus.OK,
+                        segment.put(i, "v-" + i).getStatus());
+            }
+
+            keyToSegmentMap.removeSegment(SegmentId.of(0));
+            coordinator.optionallySplit(segment, 2);
+
+            final List<SegmentId> created = writerTxFactory
+                    .getCreatedSegments();
+            assertEquals(2, created.size());
+            assertTrue(registry.getDeletedSegments().containsAll(created));
+            assertFalse(
+                    registry.getDeletedSegments().contains(SegmentId.of(0)));
+            assertEquals(SegmentRegistryState.READY,
+                    readGate(registryImpl).getState());
+        } finally {
+            keyToSegmentMap.close();
+            registry.close();
+            if (!maintenanceExecutor.wasClosed()) {
+                maintenanceExecutor.close();
+            }
+        }
+    }
+
+    private static SegmentRegistryStateMachine readGate(
+            final SegmentRegistryImpl<?, ?> registry) {
+        try {
+            final var field = SegmentRegistryImpl.class
+                    .getDeclaredField("gate");
+            field.setAccessible(true);
+            return (SegmentRegistryStateMachine) field.get(registry);
+        } catch (final ReflectiveOperationException ex) {
+            throw new IllegalStateException("Unable to read registry gate", ex);
+        }
+    }
+
+    @Test
+    void split_doesNotSwapDirectoriesOnSuccess() {
+        final IndexConfiguration<Integer, String> conf = newConfiguration();
+        final Directory directory = new MemDirectory();
+        final KeyToSegmentMapSynchronizedAdapter<Integer> keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
+                newKeyMap(List.of(Entry.of(100, SegmentId.of(0)))));
+        final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
+                1, "segment-maintenance");
+        final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
+                directory, KEY_DESCRIPTOR, VALUE_DESCRIPTOR, conf,
+                maintenanceExecutor.getExecutor());
+        final SegmentRegistryImpl<Integer, String> registryImpl = (SegmentRegistryImpl<Integer, String>) SegmentRegistry
+                .<Integer, String>builder().withDirectoryFacade(directory)
+                .withKeyTypeDescriptor(KEY_DESCRIPTOR)
+                .withValueTypeDescriptor(VALUE_DESCRIPTOR)
+                .withConfiguration(conf)
+                .withMaintenanceExecutor(maintenanceExecutor.getExecutor())
+                .withLifecycleExecutor(Executors.newSingleThreadExecutor())
+                .build();
+        final TrackingRegistry<Integer, String> registry = new TrackingRegistry<>(
+                registryImpl);
+        final TrackingWriterTxFactory writerTxFactory = new TrackingWriterTxFactory(
+                segmentFactory);
+        final SegmentSplitCoordinator<Integer, String> coordinator = new SegmentSplitCoordinator<>(
+                conf, keyToSegmentMap, registry, writerTxFactory);
+        try {
+            final Segment<Integer, String> segment = registry
+                    .getSegment(SegmentId.of(0)).getValue();
+            writerTxFactory.clearCreatedSegments();
+            for (int i = 0; i < 4; i++) {
+                assertEquals(SegmentResultStatus.OK,
+                        segment.put(i, "v-" + i).getStatus());
+            }
+
+            coordinator.optionallySplit(segment, 2);
+
+            assertEquals(2, keyToSegmentMap.getSegmentIds().size());
+        } finally {
+            keyToSegmentMap.close();
+            registry.close();
+            if (!maintenanceExecutor.wasClosed()) {
+                maintenanceExecutor.close();
+            }
+        }
+    }
+
+    private static IndexConfiguration<Integer, String> newConfiguration() {
+        final IndexConfigurationContract defaults = new IndexConfigurationDefaultInteger();
+        return IndexConfiguration.<Integer, String>builder()//
+                .withKeyClass(Integer.class)//
+                .withValueClass(String.class)//
+                .withKeyTypeDescriptor(KEY_DESCRIPTOR)//
+                .withValueTypeDescriptor(VALUE_DESCRIPTOR)//
+                .withMaxNumberOfKeysInSegmentCache(100)//
+                .withMaxNumberOfKeysInSegmentWriteCache(100)//
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(150)//
+                .withMaxNumberOfKeysInSegmentChunk(10)//
+                .withMaxNumberOfDeltaCacheFiles(10)//
+                .withMaxNumberOfKeysInSegment(4)//
+                .withMaxNumberOfSegmentsInCache(5)//
+                .withBloomFilterNumberOfHashFunctions(
+                        defaults.getBloomFilterNumberOfHashFunctions())//
+                .withBloomFilterIndexSizeInBytes(
+                        defaults.getBloomFilterIndexSizeInBytes())//
+                .withBloomFilterProbabilityOfFalsePositive(
+                        defaults.getBloomFilterProbabilityOfFalsePositive())//
+                .withDiskIoBufferSizeInBytes(
+                        defaults.getDiskIoBufferSizeInBytes())//
+                .withEncodingFilters(defaults.getEncodingChunkFilters())//
+                .withDecodingFilters(defaults.getDecodingChunkFilters())//
+                .withSegmentMaintenanceAutoEnabled(false)//
+                .withIndexWorkerThreadCount(1)//
+                .withNumberOfIoThreads(1)//
+                .withNumberOfSegmentIndexMaintenanceThreads(1)//
+                .withNumberOfIndexMaintenanceThreads(1)//
+                .withIndexBusyBackoffMillis(1)//
+                .withIndexBusyTimeoutMillis(200)//
+                .withName("split-flow-test")//
+                .build();
+    }
+
+    private static KeyToSegmentMap<Integer> newKeyMap(
+            final List<Entry<Integer, SegmentId>> entries) {
+        final MemDirectory dir = new MemDirectory();
+        final SortedDataFile<Integer, SegmentId> sdf = SortedDataFile
+                .<Integer, SegmentId>builder()
+                .withDirectory(dir)
+                .withFileName("index.map")
+                .withKeyTypeDescriptor(new TypeDescriptorInteger())
+                .withValueTypeDescriptor(new TypeDescriptorSegmentId()).build();
+        sdf.openWriterTx()
+                .execute(writer -> entries.stream().sorted(
+                        (e1, e2) -> Integer.compare(e1.getKey(), e2.getKey()))
+                        .forEach(writer::write));
+        return new KeyToSegmentMap<>(dir,
+                new TypeDescriptorInteger());
+    }
+
+    private static final class TrackingRegistry<K, V>
+            implements SegmentRegistry<K, V> {
+        private final SegmentRegistryImpl<K, V> delegate;
+        private final List<SegmentId> deletedSegments = new ArrayList<>();
+
+        private TrackingRegistry(final SegmentRegistryImpl<K, V> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public SegmentRegistryResult<Segment<K, V>> getSegment(
+                final SegmentId segmentId) {
+            return delegate.getSegment(segmentId);
+        }
+
+        @Override
+        public SegmentRegistryResult<SegmentId> allocateSegmentId() {
+            return delegate.allocateSegmentId();
+        }
+
+        @Override
+        public SegmentRegistryResult<Void> deleteSegment(
+                final SegmentId segmentId) {
+            deletedSegments.add(segmentId);
+            return delegate.deleteSegment(segmentId);
+        }
+
+        @Override
+        public SegmentRegistryResult<Void> close() {
+            return delegate.close();
+        }
+
+        private List<SegmentId> getDeletedSegments() {
+            return deletedSegments;
+        }
+    }
+
+    private static final class TrackingWriterTxFactory
+            implements SegmentWriterTxFactory<Integer, String> {
+        private final SegmentFactory<Integer, String> segmentFactory;
+        private final List<SegmentId> createdSegments = new ArrayList<>();
+
+        private TrackingWriterTxFactory(
+                final SegmentFactory<Integer, String> segmentFactory) {
+            this.segmentFactory = segmentFactory;
+        }
+
+        @Override
+        public WriteTransaction<Integer, String> openWriterTx(
+                final SegmentId segmentId) {
+            createdSegments.add(segmentId);
+            return segmentFactory.newSegmentBuilder(segmentId).openWriterTx();
+        }
+
+        private List<SegmentId> getCreatedSegments() {
+            return createdSegments;
+        }
+
+        private void clearCreatedSegments() {
+            createdSegments.clear();
+        }
+    }
+}

@@ -1,6 +1,6 @@
 package org.hestiastore.index.segment;
 
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -19,14 +19,7 @@ class SegmentDeltaCacheCompactingWriterTest {
     private static final Entry<Integer, String> ENTRY_3 = Entry.of(3, "ccc");
 
     @Mock
-    private SegmentCompacter<Integer, String> segmentCompacter;
-    @Mock
-    private SegmentImpl<Integer, String> segment;
-
-    @Mock
     private SegmentDeltaCacheController<Integer, String> deltaCacheController;
-    @Mock
-    private SegmentCompactionPolicyWithManager compactionPolicy;
 
     @Mock
     private SegmentDeltaCacheWriter<Integer, String> deltaCacheWriter;
@@ -34,53 +27,45 @@ class SegmentDeltaCacheCompactingWriterTest {
     @Test
     void test_basic_writing() {
         when(deltaCacheController.openWriter()).thenReturn(deltaCacheWriter);
-        when(deltaCacheWriter.getNumberOfKeys()).thenReturn(1, 2, 3);
-        when(compactionPolicy.shouldCompactDuringWriting(1)).thenReturn(false);
-        when(compactionPolicy.shouldCompactDuringWriting(2)).thenReturn(false);
-        when(compactionPolicy.shouldCompactDuringWriting(3)).thenReturn(false);
         try (final EntryWriter<Integer, String> writer = new SegmentDeltaCacheCompactingWriter<>(
-                segment, segmentCompacter, deltaCacheController,
-                compactionPolicy)) {
+                deltaCacheController)) {
             writer.write(ENTRY_1);
             writer.write(ENTRY_2);
             writer.write(ENTRY_3);
         }
 
-        // verify that writing to cache delta file name was done
+        verify(deltaCacheController).openWriter();
         verify(deltaCacheWriter).write(ENTRY_1);
         verify(deltaCacheWriter).write(ENTRY_2);
         verify(deltaCacheWriter).write(ENTRY_3);
-
-        verify(compactionPolicy).shouldCompactDuringWriting(1);
-        verify(compactionPolicy).shouldCompactDuringWriting(2);
-        verify(compactionPolicy).shouldCompactDuringWriting(3);
+        verify(deltaCacheWriter).close();
     }
 
     @Test
-    void test_compact_during_writing() {
+    void test_writer_opened_once_for_multiple_writes() {
         when(deltaCacheController.openWriter()).thenReturn(deltaCacheWriter);
-        when(deltaCacheWriter.getNumberOfKeys()).thenReturn(1, 2, 3);
-        when(compactionPolicy.shouldCompactDuringWriting(1)).thenReturn(false);
-        when(compactionPolicy.shouldCompactDuringWriting(2)).thenReturn(true);
-        when(compactionPolicy.shouldCompactDuringWriting(3)).thenReturn(false);
         try (final EntryWriter<Integer, String> writer = new SegmentDeltaCacheCompactingWriter<>(
-                segment, segmentCompacter, deltaCacheController,
-                compactionPolicy)) {
+                deltaCacheController)) {
             writer.write(ENTRY_1);
             writer.write(ENTRY_2);
             writer.write(ENTRY_3);
         }
 
-        // verify that writing to cache delta file name was done
+        verify(deltaCacheController).openWriter();
         verify(deltaCacheWriter).write(ENTRY_1);
         verify(deltaCacheWriter).write(ENTRY_2);
         verify(deltaCacheWriter).write(ENTRY_3);
+        verify(deltaCacheWriter).close();
+    }
 
-        verify(compactionPolicy).shouldCompactDuringWriting(1);
-        verify(compactionPolicy).shouldCompactDuringWriting(2);
-        verify(compactionPolicy).shouldCompactDuringWriting(3);
+    @Test
+    void test_close_without_writes_does_not_open_writer() {
+        try (final EntryWriter<Integer, String> writer = new SegmentDeltaCacheCompactingWriter<>(
+                deltaCacheController)) {
+            // no writes
+        }
 
-        verify(segmentCompacter, times(1)).forceCompact(segment);
+        verify(deltaCacheController, never()).openWriter();
     }
 
 }

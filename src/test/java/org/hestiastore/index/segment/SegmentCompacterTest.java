@@ -1,11 +1,15 @@
 package org.hestiastore.index.segment;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
+
+import org.hestiastore.index.Entry;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -15,25 +19,24 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class SegmentCompacterTest {
 
     @Mock
-    private SegmentImpl<Integer, String> segment;
-
-    @Mock
-    private SegmentConf segmentConf;
+    private SegmentCore<Integer, String> segment;
 
     @Mock
     private VersionController versionController;
 
     @Mock
-    private SegmentPropertiesManager segmentPropertiesManager;
+    private SegmentFiles<Integer, String> files;
 
     private SegmentCompacter<Integer, String> sc;
 
     @BeforeEach
     void setUp() {
-        sc = new SegmentCompacter<>(versionController,
-                new SegmentCompactionPolicyWithManager(
-                        new SegmentCompactionPolicy(segmentConf),
-                        segmentPropertiesManager));
+        sc = new SegmentCompacter<>(versionController);
+    }
+
+    @AfterEach
+    void tearDown() {
+        sc = null;
     }
 
     @Test
@@ -42,31 +45,36 @@ class SegmentCompacterTest {
     }
 
     @Test
-    void test_policy_shouldCompactDuringWriting_yes() {
-        when(segmentPropertiesManager.getSegmentStats())
-                .thenReturn(new SegmentStats(10, 1000L, 15));
-        when(segmentConf.getMaxNumberOfKeysInDeltaCacheDuringWriting())
-                .thenReturn(20);
+    void prepareCompaction_snapshots_cache() {
+        final List<Entry<Integer, String>> snapshot = List
+                .of(Entry.of(1, "a"));
+        when(segment.snapshotCacheEntries()).thenReturn(snapshot);
+        when(segment.getId()).thenReturn(SegmentId.of(1));
 
-        SegmentCompactionPolicyWithManager policy = new SegmentCompactionPolicyWithManager(
-                new SegmentCompactionPolicy(segmentConf), segmentPropertiesManager);
-        assertTrue(policy.shouldCompactDuringWriting(25));
+        final List<Entry<Integer, String>> result = sc
+                .prepareCompaction(segment);
+
+        assertEquals(snapshot, result);
+        verify(segment).resetSegmentIndexSearcher();
+        verify(segment).freezeWriteCacheForFlush();
+        verify(segment).snapshotCacheEntries();
     }
 
     @Test
-    void test_policy_shouldCompactDuringWriting_no() {
-        when(segmentPropertiesManager.getSegmentStats())
-                .thenReturn(new SegmentStats(10, 1000L, 15));
-        when(segmentConf.getMaxNumberOfKeysInDeltaCacheDuringWriting())
-                .thenReturn(30);
+    void publishCompaction_switches_active_version_and_bumps_version() {
+        when(segment.getId()).thenReturn(SegmentId.of(1));
+        final List<Entry<Integer, String>> snapshot = List
+                .of(Entry.of(1, "a"), Entry.of(2, "b"));
+        when(segment.freezeWriteCacheForFlush()).thenReturn(snapshot);
+        when(segment.snapshotCacheEntries()).thenReturn(snapshot);
+        when(files.getActiveVersion()).thenReturn(1L);
+        when(segment.getSegmentFiles()).thenReturn(files);
 
-        SegmentCompactionPolicyWithManager policy = new SegmentCompactionPolicyWithManager(
-                new SegmentCompactionPolicy(segmentConf), segmentPropertiesManager);
-        assertFalse(policy.shouldCompactDuringWriting(10));
+        final SegmentCompacter.CompactionPlan<Integer, String> plan = sc
+                .prepareCompactionPlan(segment);
+        sc.publishCompaction(plan);
+
+        verify(segment).switchActiveVersion(2L);
+        verify(versionController).changeVersion();
     }
-
-    // 'shouldBeCompacted' is private now; compaction policy behavior
-    // is verified in SegmentCompactionPolicyTest. Here we keep
-    // 'shouldBeCompactedDuringWriting' covered above.
-
 }

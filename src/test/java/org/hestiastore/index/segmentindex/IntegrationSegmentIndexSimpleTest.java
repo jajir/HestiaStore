@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +23,10 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segment.SegmentResultStatus;
+import org.hestiastore.index.segment.SegmentMaintenancePolicy;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +54,7 @@ class IntegrationSegmentIndexSimpleTest {
 
         testData.stream().forEach(index1::put);
 
-        index1.compact();
+        index1.compactAndWait();
 
         try (final Stream<Entry<Integer, String>> stream = testData.stream()) {
             stream.forEach(entry -> {
@@ -57,39 +62,35 @@ class IntegrationSegmentIndexSimpleTest {
                 assertEquals(entry.getValue(), value);
             });
         }
-        index1.compact();
+        index1.compactAndWait();
 
         index1.close();
-        assertEquals(14, numberOfFilesInDirectoryP(directory));
+
+        final Directory asyncDirectory = directory;
+        final KeyToSegmentMap<Integer> keyToSegmentMap = new KeyToSegmentMap<>(
+                asyncDirectory, tdi);
+        final List<SegmentId> segmentIds = keyToSegmentMap.getSegmentIds();
+        assertEquals(expectedFileCount(segmentIds.size()),
+                numberOfFilesInDirectoryP(directory, segmentIds));
+        keyToSegmentMap.close();
 
         final SegmentIndex<Integer, String> index2 = makeSegmentIndex();
         testData.stream().forEach(entry -> {
             final String value = index2.get(entry.getKey());
             assertEquals(entry.getValue(), value);
         });
+        index2.close();
 
-        List<Entry<Integer, String>> entries1 = getSegmentData(1);
-        assertEquals(Entry.of(1, "bbb"), entries1.get(0));
-        assertEquals(Entry.of(2, "ccc"), entries1.get(1));
-        assertEquals(Entry.of(3, "dde"), entries1.get(2));
-        assertEquals(Entry.of(4, "ddf"), entries1.get(3));
-        assertEquals(4, entries1.size());
-
-        List<Entry<Integer, String>> entries2 = getSegmentData(2);
-        assertEquals(Entry.of(5, "ddg"), entries2.get(0));
-        assertEquals(Entry.of(6, "ddh"), entries2.get(1));
-        assertEquals(Entry.of(7, "ddi"), entries2.get(2));
-        assertEquals(3, entries2.size());
-
-        List<Entry<Integer, String>> entries3 = getSegmentData(3);
-        assertEquals(0, entries3.size());
-
-        List<Entry<Integer, String>> entries4 = getSegmentData(0);
-        assertEquals(Entry.of(8, "ddj"), entries4.get(0));
-        assertEquals(Entry.of(9, "ddk"), entries4.get(1));
-        assertEquals(Entry.of(10, "ddl"), entries4.get(2));
-        assertEquals(Entry.of(11, "ddm"), entries4.get(3));
-        assertEquals(4, entries4.size());
+        final List<Entry<Integer, String>> combined = new ArrayList<>();
+        for (final SegmentId segmentId : segmentIds) {
+            combined.addAll(getSegmentData(segmentId));
+        }
+        combined.sort(java.util.Comparator.comparing(Entry<Integer, String>::getKey,
+                tdi.getComparator()));
+        assertEquals(testData.size(), combined.size());
+        for (int i = 0; i < testData.size(); i++) {
+            assertEquals(testData.get(i), combined.get(i));
+        }
 
     }
 
@@ -200,6 +201,7 @@ class IntegrationSegmentIndexSimpleTest {
 
         final SegmentIndex<Integer, String> index2 = makeSegmentIndex();
         updatedData.stream().forEach(index2::put);
+        index2.flushAndWait();
         verifyDataIndex(index2, updatedData);
         index2.close();
     }
@@ -207,7 +209,9 @@ class IntegrationSegmentIndexSimpleTest {
     private void verifyDataIndex(final SegmentIndex<Integer, String> index,
             final List<Entry<Integer, String>> data) {
         final List<Entry<Integer, String>> indexData = index
-                .getStream(SegmentWindow.unbounded()).toList();
+                .getStream(SegmentWindow.unbounded(),
+                        SegmentIteratorIsolation.FULL_ISOLATION)
+                .toList();
         assertEquals(data.size(), indexData.size());
         for (int i = 0; i < data.size(); i++) {
             final Entry<Integer, String> entryData = data.get(i);
@@ -243,11 +247,9 @@ class IntegrationSegmentIndexSimpleTest {
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tds) //
                 .withDiskIoBufferSizeInBytes(DISK_IO_BUFFER_SIZE)//
-                .withMaxNumberOfKeysInSegment(5) //
                 .withMaxNumberOfKeysInSegmentCache(3) //
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(4) //
+                .withMaxNumberOfKeysInSegment(5) //
                 .withMaxNumberOfKeysInSegmentChunk(2) //
-                .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
                 .withContextLoggingEnabled(withLog) //
@@ -256,37 +258,73 @@ class IntegrationSegmentIndexSimpleTest {
         return SegmentIndex.create(directory, conf);
     }
 
-    private int numberOfFilesInDirectoryP(final Directory directory) {
-        final AtomicInteger cx = new AtomicInteger(0);
-        directory.getFileNames().sorted().forEach(fileName -> {
-            logger.debug("Found file name {}", fileName);
-            cx.incrementAndGet();
-        });
-        return cx.get();
+    private int numberOfFilesInDirectoryP(final Directory directory,
+            final List<SegmentId> segmentIds) {
+        final AtomicInteger count = new AtomicInteger(0);
+        directory.getFileNames()
+                .filter(name -> name.contains("."))
+                .filter(name -> !name.endsWith(".lock"))
+                .sorted()
+                .forEach(fileName -> {
+                    logger.debug("Found file name {}", fileName);
+                    count.incrementAndGet();
+                });
+        for (final SegmentId segmentId : segmentIds) {
+            if (!directory.isFileExists(segmentId.getName())) {
+                continue;
+            }
+            final Directory segmentDirectory = directory
+                    .openSubDirectory(segmentId.getName());
+            segmentDirectory.getFileNames()
+                    .filter(name -> name.contains("."))
+                    .filter(name -> !name.endsWith(".lock"))
+                    .sorted()
+                    .forEach(fileName -> {
+                        logger.debug("Found file name {}/{}",
+                                segmentId.getName(), fileName);
+                        count.incrementAndGet();
+                    });
+        }
+        return count.get();
     }
 
-    private List<Entry<Integer, String>> getSegmentData(final int segmentId) {
-        final Segment<Integer, String> seg = makeSegment(segmentId);
+    private int expectedFileCount(final int segmentCount) {
+        // index/scarce/bloom/properties per segment + index map + config
+        return segmentCount * 4 + 2;
+    }
+
+    private List<Entry<Integer, String>> getSegmentData(
+            final SegmentId segmentId) {
         final List<Entry<Integer, String>> out = new ArrayList<>();
-        try (EntryIterator<Integer, String> iterator = seg.openIterator()) {
-            while (iterator.hasNext()) {
-                out.add(iterator.next());
+        final Segment<Integer, String> seg = makeSegment(segmentId);
+        try {
+            final SegmentResult<EntryIterator<Integer, String>> result = seg
+                    .openIterator();
+            assertEquals(SegmentResultStatus.OK, result.getStatus());
+            try (EntryIterator<Integer, String> iterator = result.getValue()) {
+                while (iterator.hasNext()) {
+                    out.add(iterator.next());
+                }
             }
+        } finally {
+            closeAndAwait(seg);
         }
         return out;
     }
 
-    private Segment<Integer, String> makeSegment(final int segmentId) {
-        return Segment.<Integer, String>builder()//
-                .withDirectory(directory)//
-                .withId(SegmentId.of(segmentId))//
+    private Segment<Integer, String> makeSegment(final SegmentId segmentId) {
+        final Directory asyncDirectory = directory;
+        final Directory segmentDirectory = asyncDirectory
+                .openSubDirectory(segmentId.getName());
+        return Segment.<Integer, String>builder(segmentDirectory)//
+                .withId(segmentId)//
                 .withDiskIoBufferSize(DISK_IO_BUFFER_SIZE)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
-                .withMaxNumberOfKeysInSegmentCache(2)//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterMagicNumberWriting(), //
                                 new ChunkFilterCrc32Writing(), //
@@ -297,7 +335,7 @@ class IntegrationSegmentIndexSimpleTest {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build();
+                .build().getValue();
     }
 
 }

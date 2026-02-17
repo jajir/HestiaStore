@@ -13,9 +13,7 @@ IndexConfiguration<Integer, Integer> conf = IndexConfiguration
     .withValueTypeDescriptor(tdi) //
     .withMaxNumberOfKeysInSegment(4) //
     .withMaxNumberOfKeysInSegmentCache(10L) //
-    .withMaxNumberOfKeysInSegmentCacheDuringFlushing(12L)//
     .withMaxNumberOfKeysInSegmentIndexPage(2) //
-    .withMaxNumberOfKeysInCache(3) //
     .withBloomFilterIndexSizeInBytes(0) //
     .withBloomFilterNumberOfHashFunctions(4) //
     .withContextLoggingEnabled(false) //
@@ -82,19 +80,9 @@ Type descriptor for the key class. Required for non-default types.
 
 Type descriptor for the value class. Required for non-default types.
 
-### 🗃️ Max number of keys in cache - `withMaxNumberOfKeysInCache()`
-
-Sets the maximum number of key-value entries allowed in the in-memory cache before flushing.
-
 ### 🧱 Max number of segments in cache - `withMaxNumberOfSegmentsInCache()`
 
 Limits the number of segments stored in memory. Useful for controlling memory usage.
-
-### 🔒 Thread safe - `withThreadSafe()`
-
-Whether the index instance is safe for concurrent access by multiple threads. When it's set to `code` true than index will be synchronized between threads.
-
-Default value is 'false'.
 
 ### 🗒️ Context logging enabled - `withContextLoggingEnabled()`
 
@@ -120,10 +108,6 @@ Sets the maximum number of keys allowed in a single segment. Exceeding this spli
 ### 🗃️ Max number of keys in segment cache - `withMaxNumberOfKeysInSegmentCache()`
 
 Defines how many keys can be cached from a segment during regular operation.
-
-### 🚿 Max number of keys in segment cache during flushing - `withMaxNumberOfKeysInSegmentCacheDuringFlushing()`
-
-Specifies the maximum number of keys that can be temporarily cached from a segment during flushing.
 
 ### 📑 Max number of keys in segment index page - `withMaxNumberOfKeysInSegmentIndexPage()`
 
@@ -165,7 +149,7 @@ SegmentIndex<String, String> index = SegmentIndex.<String, String>open(directory
 
 At allows to pass `IndexConfiguration` object and this way change configuration parameters. Fllowing table shou parameters that can be changed.  
 
-| Name                                        | Meaning                                              | Can be changed | Applies to            |
+| Name                                        | Meaning                                              | Can be changed | Applies to           |
 | ------------------------------------------- | ---------------------------------------------------- | -------------- | -------------------- |
 | indexName                                   | Logical name of the index                            | 🟩             | index                |
 | keyClass                                    | Key class                                            | 🟥             | index                |
@@ -174,17 +158,15 @@ At allows to pass `IndexConfiguration` object and this way change configuration 
 | valueTypeDescriptor                         | Value class type descriptor                          | 🟥             | index                |
 | maxNumberOfKeysInSegmentIndexPage           | Maximum keys in segment index page                   | 🟥             | segment              |
 | maxNumberOfKeysInSegmentCache               | Maximum number of keys in segment cache              | 🟩             | segment              |
-| maxNumberOfKeysInSegmentCacheDuringFlushing | Maximum keys in cache during flushing                | 🟩             | segment              |
-| maxNumberOfKeysInCache                      | Maximum keys in the index cache                      | 🟩             | index                |
+| maxNumberOfKeysInSegmentWriteCache          | Maximum number of keys in segment write cache        | 🟩             | segment              |
 | maxNumberOfKeysInSegment                    | Maximum keys in a segment                            | 🟥             | segment              |
 | maxNumberOfSegmentsInCache                  | Maximum number of segments in cache                  | 🟩             | index                |
 | bloomFilterNumberOfHashFunctions            | Bloom filter - number of hash functions used         | 🟥             | segment bloom filter |
 | bloomFilterIndexSizeInBytes                 | Bloom filter - index size in bytes                   | 🟥             | segment bloom filter |
 | bloomFilterProbabilityOfFalsePositive       | Bloom filter - probability of false positives        | 🟥             | segment bloom filter |
 | diskIoBufferSize                            | Size of the disk I/O buffer                          | 🟩             | Disk IO              |
-| threadSafe                                  | If index is thread-safe                              | 🟩             | index                |
 | contextLoggingEnabled                       | If MDC-based context logging is enabled              | 🟩             | index                |
 
-# ➕ Add custom data type
+## ➕ Add custom data type
 
 HestiaStore have to know how to work with new data type. So first is create implementatio of `com.hestiastore.index.datatype.TypeDescriptor`. Than during index creation set let index know about your implementation by `withKeyTypeDescriptor`. And it's done.

@@ -12,6 +12,7 @@ public final class PropertyTransaction
         implements AutoCloseable {
 
     private final Map<String, String> workingCopy;
+    private final Map<String, String> originalCopy;
     private final Properties target;
     private final PropertyStoreimpl store;
 
@@ -23,6 +24,7 @@ public final class PropertyTransaction
         for (final String key : target.stringPropertyNames()) {
             workingCopy.put(key, target.getProperty(key));
         }
+        this.originalCopy = new HashMap<>(workingCopy);
     }
 
     public PropertyWriter openPropertyWriter() {
@@ -41,10 +43,17 @@ public final class PropertyTransaction
 
     @Override
     public void close() {
+        if (!hasChanges()) {
+            return;
+        }
         target.clear();
         for (final Map.Entry<String, String> entry : workingCopy.entrySet()) {
             target.setProperty(entry.getKey(), entry.getValue());
         }
         store.writeToDisk(target);
+    }
+
+    boolean hasChanges() {
+        return !workingCopy.equals(originalCopy);
     }
 }

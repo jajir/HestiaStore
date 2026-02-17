@@ -7,17 +7,35 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
 
+/**
+ * Comparator for iterators based on their current entry keys.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 public class EntryIteratorWithCurrentComparator<K, V>
         implements Comparator<EntryIteratorWithCurrent<K, V>> {
 
     private final Comparator<K> keyComparator;
 
+    /**
+     * Creates a comparator using the provided key comparator.
+     *
+     * @param keyComparator comparator for keys
+     */
     public EntryIteratorWithCurrentComparator(
             final Comparator<K> keyComparator) {
         this.keyComparator = Vldtn.requireNonNull(keyComparator,
                 "keyComparator");
     }
 
+    /**
+     * Compares two iterators by the key of their current entries.
+     *
+     * @param iter1 first iterator
+     * @param iter2 second iterator
+     * @return comparison result
+     */
     @Override
     public int compare(final EntryIteratorWithCurrent<K, V> iter1,
             final EntryIteratorWithCurrent<K, V> iter2) {

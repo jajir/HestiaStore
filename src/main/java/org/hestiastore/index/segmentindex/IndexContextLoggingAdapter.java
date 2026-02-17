@@ -1,10 +1,12 @@
 package org.hestiastore.index.segmentindex;
 
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.slf4j.MDC;
 
 /**
@@ -20,7 +22,7 @@ import org.slf4j.MDC;
  * @param <K> type of keys stored in the index
  * @param <V> type of values stored in the index
  */
-public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
+class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         implements SegmentIndex<K, V> {
 
     private final static String INDEX_NAME_MDC_KEY = "index.name";
@@ -100,6 +102,39 @@ public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         }
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public CompletionStage<Void> putAsync(final K key, final V value) {
+        setContext();
+        try {
+            return index.putAsync(key, value);
+        } finally {
+            clearContext();
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public CompletionStage<V> getAsync(final K key) {
+        setContext();
+        try {
+            return index.getAsync(key);
+        } finally {
+            clearContext();
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public CompletionStage<Void> deleteAsync(final K key) {
+        setContext();
+        try {
+            return index.deleteAsync(key);
+        } finally {
+            clearContext();
+        }
+    }
+
     /**
      * Triggers compaction on the delegate index while applying the MDC context.
      */
@@ -108,6 +143,17 @@ public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         setContext();
         try {
             index.compact();
+        } finally {
+            clearContext();
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void compactAndWait() {
+        setContext();
+        try {
+            index.compactAndWait();
         } finally {
             clearContext();
         }
@@ -127,6 +173,17 @@ public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         }
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public void flushAndWait() {
+        setContext();
+        try {
+            index.flushAndWait();
+        } finally {
+            clearContext();
+        }
+    }
+
     /**
      * Returns a stream of index entries with the MDC populated so any
      * streaming-related logs include the index name.
@@ -139,6 +196,18 @@ public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         setContext();
         try {
             return index.getStream(segmentWindows);
+        } finally {
+            clearContext();
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindows,
+            final SegmentIteratorIsolation isolation) {
+        setContext();
+        try {
+            return index.getStream(segmentWindows, isolation);
         } finally {
             clearContext();
         }
@@ -174,6 +243,17 @@ public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         }
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public SegmentIndexState getState() {
+        setContext();
+        try {
+            return index.getState();
+        } finally {
+            clearContext();
+        }
+    }
+
     /**
      * Closes the wrapped index while maintaining the {@code index.name} MDC
      * context.
@@ -187,5 +267,4 @@ public class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
             clearContext();
         }
     }
-
 }

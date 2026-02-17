@@ -70,7 +70,8 @@ class BloomFilterTest {
         final BloomFilterBuilder<String> builder = BloomFilter.<String>builder()//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(STD.getConvertorToBytes())//
-                .withDirectory(directory)//
+                .withDirectory(
+                        directory)//
                 .withIndexSizeInBytes(0)//
                 .withNumberOfHashFunctions(0)//
                 .withRelatedObjectName("segment-00323")//
@@ -86,7 +87,8 @@ class BloomFilterTest {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(STD.getConvertorToBytes())//
-                .withDirectory(directory)//
+                .withDirectory(
+                        directory)//
                 .withIndexSizeInBytes(0)//
                 .withNumberOfHashFunctions(2)//
                 .withRelatedObjectName("segment-00323")//
@@ -107,7 +109,8 @@ class BloomFilterTest {
         final BloomFilterBuilder<String> builder = BloomFilter.<String>builder()
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(STD.getConvertorToBytes())//
-                .withDirectory(directory)//
+                .withDirectory(
+                        directory)//
                 .withIndexSizeInBytes(0)//
                 .withRelatedObjectName("segment-00323")//
                 .withNumberOfHashFunctions(3)//
@@ -130,7 +133,8 @@ class BloomFilterTest {
         return BloomFilter.<String>builder()//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(STD.getConvertorToBytes())//
-                .withDirectory(directory)//
+                .withDirectory(
+                        directory)//
                 .withIndexSizeInBytes(100)//
                 .withNumberOfHashFunctions(2)//
                 .withRelatedObjectName("segment-00323")//

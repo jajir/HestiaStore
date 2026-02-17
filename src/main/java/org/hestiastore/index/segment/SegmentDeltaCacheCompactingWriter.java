@@ -15,57 +15,55 @@ import org.hestiastore.index.Vldtn;
  * @param <K>
  * @param <V>
  */
-public class SegmentDeltaCacheCompactingWriter<K, V>
+class SegmentDeltaCacheCompactingWriter<K, V>
         extends AbstractCloseableResource implements EntryWriter<K, V> {
 
-    private final SegmentImpl<K, V> segment;
-    private final SegmentCompacter<K, V> segmentCompacter;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
-    private final SegmentCompactionPolicyWithManager compactionPolicy;
 
     /**
      * holds current delta cache writer.
      */
     private SegmentDeltaCacheWriter<K, V> deltaCacheWriter;
 
-    public SegmentDeltaCacheCompactingWriter(final SegmentImpl<K, V> segment,
-            final SegmentCompacter<K, V> segmentCompacter,
-            final SegmentDeltaCacheController<K, V> deltaCacheController,
-            final SegmentCompactionPolicyWithManager compactionPolicy) {
-        this.segment = Vldtn.requireNonNull(segment, "segment");
-        this.segmentCompacter = Vldtn.requireNonNull(segmentCompacter,
-                "segmentCompacter");
+    /**
+     * Creates a writer that lazily opens a delta cache writer.
+     *
+     * @param deltaCacheController controller for delta cache operations
+     */
+    public SegmentDeltaCacheCompactingWriter(
+            final SegmentDeltaCacheController<K, V> deltaCacheController) {
         this.deltaCacheController = Vldtn.requireNonNull(deltaCacheController,
                 "deltaCacheController");
-        this.compactionPolicy = Vldtn.requireNonNull(compactionPolicy,
-                "compactionPolicy");
     }
 
+    /**
+     * Closes the underlying delta cache writer if opened.
+     */
     @Override
     protected void doClose() {
         if (deltaCacheWriter != null) {
             deltaCacheWriter.close();
             deltaCacheWriter = null;
-            segmentCompacter.optionallyCompact(segment);
         }
     }
 
+    /**
+     * Writes an entry to the delta cache, opening a writer if needed.
+     *
+     * @param entry entry to write
+     */
     @Override
     public void write(final Entry<K, V> entry) {
         optionallyOpenDeltaCacheWriter();
         deltaCacheWriter.write(entry);
-        if (compactionPolicy.shouldCompactDuringWriting(
-                deltaCacheWriter.getNumberOfKeys())) {
-            deltaCacheWriter.close();
-            deltaCacheWriter = null;
-            segmentCompacter.forceCompact(segment);
-        }
     }
 
+    /**
+     * Lazily opens the delta cache writer on first write.
+     */
     private void optionallyOpenDeltaCacheWriter() {
         if (deltaCacheWriter == null) {
             deltaCacheWriter = deltaCacheController.openWriter();
         }
     }
-
 }

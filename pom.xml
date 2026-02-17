@@ -23,7 +23,7 @@
 		<failsafe.plugin.version>3.5.3</failsafe.plugin.version>
 		<surefire.plugin.version>3.5.3</surefire.plugin.version>
 		<mockito.version>5.20.0</mockito.version>
-		<jacoco.version>0.8.13</jacoco.version>
+		<jacoco.version>0.8.14</jacoco.version>
 	</properties>
 	
 	<!-- mvn jdeps:jdkinternals -->	
@@ -222,12 +222,13 @@
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.4.1</version>
-				<configuration>
-					<additionalOptions>-Xdoclint:none</additionalOptions>
-				</configuration>
+				<plugin>
+					<artifactId>maven-javadoc-plugin</artifactId>
+					<version>3.4.1</version>
+					<configuration>
+						<quiet>true</quiet>
+						<additionalOptions>-Xdoclint:none</additionalOptions>
+					</configuration>
 				<executions>
 					<execution>
 						<id>attach-javadocs</id>
@@ -303,13 +304,14 @@
 					<dependencyLocationsEnabled>false</dependencyLocationsEnabled>
 				</configuration>
 			</plugin>
-			<plugin>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.4.1</version>
-				<configuration>
-					<additionalOptions>-Xdoclint:none</additionalOptions>
-				</configuration>
-			</plugin>
+				<plugin>
+					<artifactId>maven-javadoc-plugin</artifactId>
+					<version>3.4.1</version>
+					<configuration>
+						<quiet>true</quiet>
+						<additionalOptions>-Xdoclint:none</additionalOptions>
+					</configuration>
+				</plugin>
 			<plugin>
 				<artifactId>maven-pmd-plugin</artifactId>
 				<version>3.21.2</version>
@@ -324,7 +326,7 @@
 			<plugin>
 				<groupId>com.github.spotbugs</groupId>
 				<artifactId>spotbugs-maven-plugin</artifactId>
-				<version>4.9.3.0</version>
+				<version>4.9.8.2</version>
 				<configuration>
 					<plugins>
 					</plugins>
@@ -334,13 +336,14 @@
 				<artifactId>maven-surefire-report-plugin</artifactId>
                 <version>${surefire.plugin.version}</version>
 			</plugin>
-			<plugin>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.4.1</version>
-				<configuration>
-					<additionalOptions>-Xdoclint:none</additionalOptions>
-				</configuration>
-			</plugin>
+				<plugin>
+					<artifactId>maven-javadoc-plugin</artifactId>
+					<version>3.4.1</version>
+					<configuration>
+						<quiet>true</quiet>
+						<additionalOptions>-Xdoclint:none</additionalOptions>
+					</configuration>
+				</plugin>
 			<plugin>
 				<artifactId>maven-jxr-plugin</artifactId>
 				<version>2.5</version>

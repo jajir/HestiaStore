@@ -25,19 +25,21 @@ public class EntryIteratorWithLock<K, V> extends AbstractCloseableResource
     @Override
     public boolean hasNext() {
         if (lock.isLocked()) {
-            logger.debug("Skipping reading data from '{}', it's locked",
+            // Concurrent writes invalidate the iterator. End iteration
+            // gracefully instead of failing, so callers can re-open if needed.
+            logger.debug(
+                    "Iteration for '{}' interrupted by a concurrent write.",
                     lockedObjectName);
             return false;
-        } else {
-            return iterator.hasNext();
         }
+        return iterator.hasNext();
     }
 
     @Override
     public Entry<K, V> next() {
         if (lock.isLocked()) {
             throw new NoSuchElementException(String.format(
-                    "Unable to move to next element in iterator '%s' because it's locked.",
+                    "Iterator for '%s' was invalidated by a concurrent write.",
                     lockedObjectName));
         }
         return iterator.next();

@@ -18,9 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class SegmentSearcherContextTest {
 
     @Mock
-    private SegmentDataProvider<String, Long> dataProvider;
-    @Mock
-    private SegmentDeltaCache<String, Long> deltaCache;
+    private SegmentResources<String, Long> dataProvider;
     @Mock
     private BloomFilter<String> bloomFilter;
     @Mock
@@ -48,10 +46,8 @@ class SegmentSearcherContextTest {
 
     @Test
     void exposes_provider_resources() {
-        when(dataProvider.getSegmentDeltaCache()).thenReturn(deltaCache);
         when(dataProvider.getBloomFilter()).thenReturn(bloomFilter);
         when(dataProvider.getScarceIndex()).thenReturn(scarceIndex);
-        assertEquals(deltaCache, ctx.getDeltaCache());
         assertEquals(bloomFilter, ctx.getBloomFilter());
         assertEquals(scarceIndex, ctx.getScarceIndex());
     }

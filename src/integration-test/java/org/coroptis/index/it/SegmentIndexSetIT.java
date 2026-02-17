@@ -6,8 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import org.hestiastore.index.datatype.NullValue;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.junit.jupiter.api.Test;
 
 /**

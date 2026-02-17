@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -13,6 +14,8 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.Test;
+
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -20,6 +23,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 /**
  * Basic index integrations tests.
  */
+@Timeout(value = 30, unit = TimeUnit.SECONDS,
+        threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
 class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
     final Directory directory = new MemDirectory();
     final SegmentId id = SegmentId.of(27);
@@ -44,6 +49,7 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
 
         verifyIndexSearch(index, testData);
         index.compact();
+        awaitMaintenanceIdle(index);
 
         verifyIndexData(index, testData);
         verifyIndexSearch(index, testData);
@@ -59,6 +65,7 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
             index.delete(i);
         }
         index.compact();
+        awaitMaintenanceIdle(index);
         verifyIndexData(index, new ArrayList<>());
     }
 
@@ -70,8 +77,10 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
             assertEquals("kachna", index.get(i));
             index.delete(i);
             assertNull(index.get(i));
+            awaitMaintenanceIdle(index);
             verifyIndexData(index, List.of());
         }
+        awaitMaintenanceIdle(index);
         verifyIndexData(index, List.of());
     }
 
@@ -81,8 +90,8 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
      * @param iterations @
      */
     @ParameterizedTest
-    @CsvSource(value = { "1:0", "3:0", "5:4", "15:12", "100:100",
-            "102:100" }, delimiter = ':')
+    @CsvSource(value = { "1:1", "3:3", "5:5", "15:15", "100:100",
+            "102:102" }, delimiter = ':')
     void test_adds_and_deletes_operations_no_compacting(final int iterations,
             final int itemsInIndex) {
         final SegmentIndex<Integer, String> index = makeSegmentIndex(false);
@@ -109,6 +118,7 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
             assertEquals("kachna", index.get(i));
         }
         index.compact();
+        awaitMaintenanceIdle(index);
         assertEquals(iterations,
                 index.getStream(SegmentWindow.unbounded()).count());
         for (int i = 0; i < iterations; i++) {
@@ -116,6 +126,7 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
             assertNull(index.get(i));
         }
         index.compact();
+        awaitMaintenanceIdle(index);
         verifyIndexData(index, List.of());
     }
 
@@ -126,16 +137,14 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
                 .withValueClass(String.class)//
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tds) //
+                .withMaxNumberOfKeysInSegmentCache(16) //
+                .withMaxNumberOfKeysInSegmentWriteCache(8) //
                 .withMaxNumberOfKeysInSegment(4) //
-                .withMaxNumberOfKeysInSegmentCache(3) //
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(4) //
                 .withMaxNumberOfKeysInSegmentChunk(2) //
-                .withMaxNumberOfKeysInCache(3) //
                 .withMaxNumberOfSegmentsInCache(3)
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(3) //
                 .withContextLoggingEnabled(withLog) //
-                .withThreadSafe(false)//
                 .withName("test_index") //
                 .build();
         return SegmentIndex.create(directory, conf);

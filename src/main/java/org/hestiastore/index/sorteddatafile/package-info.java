@@ -1,18 +1,11 @@
 /**
- * 
- */
-/**
- * Sorted String Table (SST). Package allows to create SST with key value entries
- * and all operations with it. SST package is just about storing data in sorted
- * string table. All key records are unique.
- * 
- * 
- * Represent one file containing sorted key value entry.
- * <p>
- * SegmentIndex have separate writing phase from search phase.
- * </p>
- * 
- * @author jajir
+ * Sorted-data-file primitives for building and reading sorted key/value files.
  *
+ * <p>
+ * This package contains writers, readers, iterators, and sort/merge utilities
+ * used to construct SST-style files. Writers expect keys in ascending order
+ * and readers stream entries back in sorted order. Helper classes provide
+ * diff-key encoding and multi-way merge logic.
+ * </p>
  */
 package org.hestiastore.index.sorteddatafile;

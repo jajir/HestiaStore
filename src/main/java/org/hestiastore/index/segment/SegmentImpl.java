@@ -1,285 +1,359 @@
 package org.hestiastore.index.segment;
 
-import org.hestiastore.index.AbstractCloseableResource;
+import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
-import org.hestiastore.index.EntryIteratorWithLock;
-import org.hestiastore.index.EntryWriter;
-import org.hestiastore.index.OptimisticLock;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.WriteTransaction;
-import org.hestiastore.index.WriteTransaction.WriterFunction;
-import org.hestiastore.index.directory.FileReaderSeekable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A single on-disk index segment with delta-cache and compaction support.
- * <p>
- * Segment coordinates read and write operations for a bounded subset of the
- * index data. It encapsulates the underlying files, provides search and
- * iteration, accepts writes through a delta cache (with o̦ptional automatic
- * compaction), and exposes utilities for statistics, consistency checking, and
- * splitting oversized segments. Versioning is tracked via an optimistic lock to
- * guard concurrent readers while updates occur.
- *
- * @author honza
+ * Public segment implementation that delegates single-threaded work to
+ * {@link SegmentCore}.
  *
  * @param <K> key type stored in this segment
  * @param <V> value type stored in this segment
  */
-public class SegmentImpl<K, V> extends AbstractCloseableResource
-        implements Segment<K, V> {
+class SegmentImpl<K, V> implements Segment<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final SegmentConf segmentConf;
-    private final SegmentFiles<K, V> segmentFiles;
-    private final VersionController versionController;
-    private final SegmentPropertiesManager segmentPropertiesManager;
+    private final SegmentCore<K, V> core;
     private final SegmentCompacter<K, V> segmentCompacter;
-    private final SegmentDeltaCacheController<K, V> deltaCacheController;
-    private final SegmentSearcher<K, V> segmentSearcher;
-    private final SegmentDataProvider<K, V> segmentDataProvider;
-    private final SegmentSplitter<K, V> segmentSplitter;
-    private final SegmentSplitterPolicy<K, V> segmentSplitterPolicy;
-    private final SegmentCompactionPolicyWithManager segmentCompactionPolicy;
-    private SegmentIndexSearcher<K, V> segmentIndexSearcher;
-    private FileReaderSeekable seekableReader;
-
-    // Reduced constructors: keep only the most complex constructor below.
+    private final SegmentConcurrencyGate gate = new SegmentConcurrencyGate();
+    private final SegmentMaintenanceService maintenanceService;
+    private final SegmentMaintenancePolicy<K, V> maintenancePolicy;
+    private final Executor maintenanceExecutor;
+    private final SegmentDirectoryLocking directoryLocking;
 
     /**
-     * Full DI constructor allowing to inject both compacter and replacer.
-     * Useful for testing and advanced wiring.
+     * Creates a segment implementation with the given core and executor.
+     *
+     * @param core segment core implementation
+     * @param segmentCompacter compaction helper
+     * @param maintenanceExecutor executor for maintenance tasks
+     * @param maintenancePolicy maintenance decision policy
      */
-    public SegmentImpl(final SegmentFiles<K, V> segmentFiles,
-            final SegmentConf segmentConf,
-            final VersionController versionController,
-            final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentDataProvider<K, V> segmentDataProvider,
-            final SegmentDeltaCacheController<K, V> segmentDeltaCacheController,
-            final SegmentSearcher<K, V> segmentSearcher,
-            final SegmentCompactionPolicyWithManager segmentCompactionPolicy,
+    SegmentImpl(final SegmentCore<K, V> core,
             final SegmentCompacter<K, V> segmentCompacter,
-            final SegmentReplacer<K, V> segmentReplacer,
-            final SegmentSplitterPolicy<K, V> segmentSplitterPolicy) {
-        this.segmentConf = Vldtn.requireNonNull(segmentConf, "segmentConf");
-        this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
-        logger.debug("Initializing segment '{}'", segmentFiles.getId());
-        this.versionController = Vldtn.requireNonNull(versionController,
-                "versionController");
-        this.segmentDataProvider = Vldtn.requireNonNull(segmentDataProvider,
-                "segmentDataProvider");
-        this.segmentPropertiesManager = Vldtn.requireNonNull(
-                segmentPropertiesManager, "segmentPropertiesManager");
-        this.deltaCacheController = Vldtn.requireNonNull(
-                segmentDeltaCacheController, "segmentDeltaCacheController");
+            final Executor maintenanceExecutor,
+            final SegmentMaintenancePolicy<K, V> maintenancePolicy) {
+        this(core, segmentCompacter, maintenanceExecutor, maintenancePolicy,
+                null);
+    }
+
+    /**
+     * Creates a segment implementation with the given core and executor.
+     *
+     * @param core segment core implementation
+     * @param segmentCompacter compaction helper
+     * @param maintenanceExecutor executor for maintenance tasks
+     * @param maintenancePolicy maintenance decision policy
+     * @param directoryLocking lock helper for the segment directory
+     */
+    SegmentImpl(final SegmentCore<K, V> core,
+            final SegmentCompacter<K, V> segmentCompacter,
+            final Executor maintenanceExecutor,
+            final SegmentMaintenancePolicy<K, V> maintenancePolicy,
+            final SegmentDirectoryLocking directoryLocking) {
+        this.core = Vldtn.requireNonNull(core, "core");
         this.segmentCompacter = Vldtn.requireNonNull(segmentCompacter,
                 "segmentCompacter");
-        this.segmentCompactionPolicy = Vldtn.requireNonNull(
-                segmentCompactionPolicy, "segmentCompactionPolicy");
-        this.segmentSearcher = Vldtn.requireNonNull(segmentSearcher,
-                "segmentSearcher");
-        final SegmentSplitterPolicy<K, V> validatedSplitterPolicy = Vldtn
-                .requireNonNull(segmentSplitterPolicy, "segmentSplitterPolicy");
-        this.segmentSplitterPolicy = validatedSplitterPolicy;
-        final SegmentReplacer<K, V> injectedReplacer = Vldtn
-                .requireNonNull(segmentReplacer, "segmentReplacer");
-        this.segmentSplitter = new SegmentSplitter<>(this, versionController,
-                injectedReplacer);
+        this.maintenanceExecutor = Vldtn.requireNonNull(maintenanceExecutor,
+                "maintenanceExecutor");
+        this.maintenancePolicy = Vldtn.requireNonNull(maintenancePolicy,
+                "maintenancePolicy");
+        this.maintenanceService = new SegmentMaintenanceService(gate,
+                this.maintenanceExecutor, this::onMaintenanceFailure);
+        this.directoryLocking = directoryLocking;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public SegmentStats getStats() {
-        return segmentPropertiesManager.getSegmentStats();
+        return core.getStats();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public long getNumberOfKeys() {
-        return segmentPropertiesManager.getSegmentStats().getNumberOfKeys();
+        return core.getNumberOfKeys();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public K checkAndRepairConsistency() {
         final SegmentConsistencyChecker<K, V> consistencyChecker = new SegmentConsistencyChecker<>(
-                this, segmentFiles.getKeyTypeDescriptor().getComparator());
+                this, core.getKeyComparator());
         return consistencyChecker.checkAndRepairConsistency();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public EntryIterator<K, V> openIterator() {
-        final EntryIterator<K, V> mergedEntryIterator = new MergeDeltaCacheWithIndexIterator<>(
-                segmentFiles.getIndexFile().openIterator(),
-                segmentFiles.getKeyTypeDescriptor(),
-                segmentFiles.getValueTypeDescriptor(),
-                deltaCacheController.getDeltaCache().getAsSortedList());
-        return new EntryIteratorWithLock<>(mergedEntryIterator,
-                new OptimisticLock(versionController), getId().toString());
-    }
-
-    @Override
-    public void forceCompact() {
-        segmentCompacter.forceCompact(this);
-    }
-
-    @Override
-    public void optionallyCompact() {
-        segmentCompacter.optionallyCompact(this);
+    public void invalidateIterators() {
+        core.invalidateIterators();
     }
 
     /**
-     * Method should be called just from inside of this package. Method open
-     * direct writer to scarce index and main sst file.
-     * 
-     * Writer should be opend and closed as one atomic operation.
-     * 
-     * @return return segment writer object
+     * {@inheritDoc}
      */
-    void executeFullWriteTx(final WriterFunction<K, V> writeFunction) {
-        openFullWriteTx().execute(writeFunction);
-    }
-
-    WriteTransaction<K, V> openFullWriteTx() {
-        return new SegmentFullWriterTx<>(segmentFiles, segmentPropertiesManager,
-                segmentConf.getMaxNumberOfKeysInChunk(), segmentDataProvider,
-                deltaCacheController);
+    @Override
+    public SegmentResult<EntryIterator<K, V>> openIterator() {
+        return openIterator(SegmentIteratorIsolation.FAIL_FAST);
     }
 
     /**
-     * Allows to open writer that will write to delta cache. When number of keys
-     * in segment exceeds certain threshold, delta cache will be flushed to
-     * disk.
-     * 
-     * It's not necesarry to run it in transaction because it's always new file.
+     * {@inheritDoc}
      */
     @Override
-    public EntryWriter<K, V> openDeltaCacheWriter() {
-        versionController.changeVersion();
-        return new SegmentDeltaCacheCompactingWriter<>(this, segmentCompacter,
-                deltaCacheController, segmentCompactionPolicy);
-    }
-
-    @Override
-    public V get(final K key) {
-        return segmentSearcher.get(key, segmentDataProvider,
-                getSegmentIndexSearcher());
-    }
-
-    /**
-     * Creates a new, empty segment using the same configuration and type
-     * descriptors as this segment, bound to the provided id.
-     * <p>
-     * Only configuration/state is copied (directory, key/value descriptors, and
-     * a copied {@link SegmentConf}). No data is cloned.
-     *
-     * @param segmentId required id for the new sibling segment
-     * @return a new segment sharing the same configuration
-     */
-    @Override
-    public SegmentImpl<K, V> createSegmentWithSameConfig(SegmentId segmentId) {
-        Vldtn.requireNonNull(segmentId, "segmentId");
-        return Segment.<K, V>builder()
-                .withDirectory(segmentFiles.getDirectory()).withId(segmentId)
-                .withKeyTypeDescriptor(segmentFiles.getKeyTypeDescriptor())
-                .withValueTypeDescriptor(segmentFiles.getValueTypeDescriptor())
-                .withSegmentConf(new SegmentConf(segmentConf)).build();
-    }
-
-    /**
-     * Returns a helper responsible for executing a split of this segment into
-     * two parts when the number of keys grows beyond a configured threshold.
-     * <p>
-     * The returned {@link SegmentSplitter} performs the splitting algorithm
-     * using a precomputed {@link SegmentSplitterPlan}. Callers are expected to
-     * decide when to split (e.g., via {@link #getSegmentSplitterPolicy()} and
-     * index configuration) and then invoke the splitter with a newly allocated
-     * {@link SegmentId} for the lower half.
-     *
-     * @return the splitter bound to this segment
-     */
-    @Override
-    public SegmentSplitter<K, V> getSegmentSplitter() {
-        return segmentSplitter;
-    }
-
-    /**
-     * Returns the policy object that estimates the effective number of keys in
-     * this segment (on-disk + delta cache) and advises whether a compaction
-     * should take place before attempting to split.
-     * <p>
-     * Typical usage is to create a {@link SegmentSplitterPlan} from this
-     * policy, evaluate whether the split should occur based on index limits,
-     * and only then execute the split via {@link #getSegmentSplitter()}.
-     *
-     * @return the splitter policy associated with this segment
-     */
-    @Override
-    public SegmentSplitterPolicy<K, V> getSegmentSplitterPolicy() {
-        return segmentSplitterPolicy;
-    }
-
-    @Override
-    protected void doClose() {
-        resetSegmentIndexSearcher();
-        logger.debug("Closing segment '{}'", segmentFiles.getId());
-    }
-
-    @Override
-    public SegmentId getId() {
-        return segmentFiles.getId();
-    }
-
-    @Override
-    public int getVersion() {
-        return versionController.getVersion();
-    }
-
-    public SegmentFiles<K, V> getSegmentFiles() {
-        return segmentFiles;
-    }
-
-    public SegmentConf getSegmentConf() {
-        return segmentConf;
-    }
-
-    public SegmentPropertiesManager getSegmentPropertiesManager() {
-        return segmentPropertiesManager;
-    }
-
-    SegmentIndexSearcher<K, V> getSegmentIndexSearcher() {
-        if (segmentIndexSearcher == null) {
-            segmentIndexSearcher = new SegmentIndexSearcher<>(
-                    segmentFiles.getIndexFile(),
-                    segmentConf.getMaxNumberOfKeysInChunk(),
-                    segmentFiles.getKeyTypeDescriptor().getComparator(),
-                    getSeekableReader());
-        }
-        return segmentIndexSearcher;
-    }
-
-    FileReaderSeekable getSeekableReader() {
-        if (seekableReader == null) {
-            final String indexFileName = segmentFiles.getIndexFileName();
-            if (segmentFiles.getDirectory().isFileExists(indexFileName)) {
-                seekableReader = segmentFiles.getDirectory()
-                        .getFileReaderSeekable(indexFileName);
+    public SegmentResult<EntryIterator<K, V>> openIterator(
+            final SegmentIteratorIsolation isolation) {
+        Vldtn.requireNonNull(isolation, "isolation");
+        if (isolation == SegmentIteratorIsolation.FULL_ISOLATION) {
+            if (!gate.tryEnterFreezeAndDrain()) {
+                return resultForState(gate.getState());
+            }
+            try {
+                core.invalidateIterators();
+                final EntryIterator<K, V> iterator = core
+                        .openIterator(isolation);
+                return SegmentResult.ok(
+                        new ExclusiveAccessIterator<>(iterator, gate));
+            } catch (final RuntimeException e) {
+                failUnlessClosed();
+                return SegmentResult.error();
             }
         }
-        return seekableReader;
+        if (!gate.tryEnterRead()) {
+            return resultForState(gate.getState());
+        }
+        try {
+            return SegmentResult.ok(core.openIterator(isolation));
+        } catch (final RuntimeException e) {
+            failUnlessClosed();
+            return SegmentResult.error();
+        } finally {
+            gate.exitRead();
+        }
     }
 
-    void resetSegmentIndexSearcher() {
-        if (segmentIndexSearcher != null) {
-            segmentIndexSearcher.close();
-            segmentIndexSearcher = null;
-        }
-        resetSeekableReader();
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public SegmentResult<Void> compact() {
+        final AtomicReference<SegmentCompacter.CompactionPlan<K, V>> planRef = new AtomicReference<>();
+        return maintenanceService.startMaintenance(() -> {
+            final SegmentCompacter.CompactionPlan<K, V> plan = segmentCompacter
+                    .prepareCompactionPlan(core);
+            planRef.set(plan);
+            return new SegmentMaintenanceWork(
+                    () -> segmentCompacter.writeCompaction(plan),
+                    () -> segmentCompacter.publishCompaction(plan));
+        }, () -> {
+            segmentCompacter.scheduleCleanup(planRef.get(), maintenanceExecutor);
+            scheduleMaintenanceIfNeeded();
+        });
     }
 
-    void resetSeekableReader() {
-        if (seekableReader != null) {
-            seekableReader.close();
-            seekableReader = null;
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public SegmentResult<Void> put(final K key, final V value) {
+        if (!gate.tryEnterWrite()) {
+            return resultForState(gate.getState());
         }
+        final SegmentResult<Void> result;
+        final boolean shouldScheduleMaintenance;
+        try {
+            if (!core.tryPutWithoutWaiting(key, value)) {
+                result = SegmentResult.busy();
+                shouldScheduleMaintenance = false;
+            } else {
+                result = SegmentResult.ok();
+                shouldScheduleMaintenance = true;
+            }
+        } finally {
+            gate.exitWrite();
+        }
+        if (shouldScheduleMaintenance) {
+            scheduleMaintenanceIfNeeded();
+        }
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public SegmentResult<Void> flush() {
+        if (core.getDeltaCacheFileCount() >= core.getSegmentConf()
+                .getMaxNumberOfDeltaCacheFiles()) {
+            return compact();
+        }
+        return maintenanceService.startMaintenance(() -> {
+            final List<Entry<K, V>> entries = core.freezeWriteCacheForFlush();
+            return new SegmentMaintenanceWork(
+                    () -> core.flushFrozenWriteCacheToDeltaFile(entries),
+                    core::applyFrozenWriteCacheAfterFlush);
+        }, this::scheduleMaintenanceIfNeeded);
+    }
+
+    private void scheduleMaintenanceIfNeeded() {
+        if (gate.getState() != SegmentState.READY) {
+            return;
+        }
+        final SegmentMaintenanceDecision decision = maintenancePolicy
+                .evaluateAfterWrite(this);
+        if (decision.shouldCompact()) {
+            compact();
+            return;
+        }
+        if (decision.shouldFlush()) {
+            flush();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getNumberOfKeysInWriteCache() {
+        return core.getNumberOfKeysInWriteCache();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long getNumberOfKeysInCache() {
+        return core.getNumberOfKeysInCache();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long getNumberOfKeysInSegmentCache() {
+        return core.getNumberOfKeysInSegmentCache();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getNumberOfDeltaCacheFiles() {
+        return core.getDeltaCacheFileCount();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public SegmentResult<V> get(final K key) {
+        if (!gate.tryEnterRead()) {
+            return resultForState(gate.getState());
+        }
+        try {
+            return SegmentResult.ok(core.get(key));
+        } finally {
+            gate.exitRead();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public SegmentId getId() {
+        return core.getId();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public SegmentState getState() {
+        return gate.getState();
+    }
+
+    /**
+     * Starts closing the segment in the maintenance thread.
+     */
+    @Override
+    public SegmentResult<Void> close() {
+        if (!gate.tryEnterCloseAndDrain()) {
+            return resultForState(gate.getState());
+        }
+        final List<Entry<K, V>> entries = core.freezeWriteCacheForFlush();
+        try {
+            maintenanceExecutor.execute(() -> runClose(entries));
+        } catch (final RuntimeException e) {
+            failUnlessClosed();
+            return SegmentResult.error();
+        }
+        return SegmentResult.ok();
+    }
+
+    private void runClose(final List<Entry<K, V>> entries) {
+        try {
+            if (!entries.isEmpty()) {
+                core.flushFrozenWriteCacheToDeltaFile(entries);
+                core.applyFrozenWriteCacheAfterFlush();
+            }
+            core.close();
+            if (!gate.finishCloseToClosed()) {
+                gate.fail();
+            }
+        } catch (final RuntimeException e) {
+            gate.fail();
+        } finally {
+            if (directoryLocking != null) {
+                directoryLocking.unlock();
+            }
+        }
+    }
+
+    /**
+     * Maps the current state to a SegmentResult with no value.
+     *
+     * @param state segment state
+     * @param <T> result value type
+     * @return mapped result
+     */
+    private static <T> SegmentResult<T> resultForState(
+            final SegmentState state) {
+        if (state == SegmentState.CLOSED) {
+            return SegmentResult.closed();
+        }
+        if (state == SegmentState.ERROR) {
+            return SegmentResult.error();
+        }
+        return SegmentResult.busy();
+    }
+
+    /**
+     * Marks the segment ERROR unless it is already CLOSED.
+     */
+    private void failUnlessClosed() {
+        if (gate.getState() != SegmentState.CLOSED) {
+            gate.fail();
+        }
+    }
+
+    private void onMaintenanceFailure(final Throwable failure) {
+        logger.error("Segment '{}' maintenance failed.", core.getId(), failure);
     }
 
 }

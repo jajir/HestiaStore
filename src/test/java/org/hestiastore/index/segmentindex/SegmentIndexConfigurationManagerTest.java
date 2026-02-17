@@ -40,12 +40,11 @@ class SegmentIndexConfigurationManagerTest {
             .withValueTypeDescriptor(TD_STRING)//
             .withName("test_index")//
             .withContextLoggingEnabled(false)//
-            .withThreadSafe(false)//
             .withMaxNumberOfKeysInSegmentCache(11)//
-            .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22) //
+            .withMaxNumberOfKeysInSegmentWriteCache(5)//
             .withMaxNumberOfKeysInSegmentChunk(33)//
+            .withMaxNumberOfDeltaCacheFiles(7)//
             .withMaxNumberOfKeysInSegment(44)//
-            .withMaxNumberOfKeysInCache(55)//
             .withMaxNumberOfSegmentsInCache(66)//
             .withDiskIoBufferSizeInBytes(1024)//
             .withBloomFilterIndexSizeInBytes(77)//
@@ -120,24 +119,6 @@ class SegmentIndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_thread_safe_is_null() {
-        final IndexConfiguration<Long, String> config = IndexConfiguration
-                .<Long, String>builder()//
-                .withKeyClass(Long.class)//
-                .withValueClass(String.class)//
-                .withName("test_index")//
-                .withKeyTypeDescriptor(TD_LONG)//
-                .withValueTypeDescriptor(TD_STRING)//
-                .build();
-
-        final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
-
-        assertEquals("Property 'isThreadSafe' must not be null.",
-                ex.getMessage());
-    }
-
-    @Test
     void test_save_log_enabled_missing() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
@@ -146,54 +127,12 @@ class SegmentIndexConfigurationManagerTest {
                 .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
                 () -> manager.save(config));
 
         assertEquals("Property 'isContextLoggingEnabled' must not be null.",
-                ex.getMessage());
-    }
-
-    @Test
-    void test_save_maxNumberOfKeysInCache_is_null() {
-        final IndexConfiguration<Long, String> config = IndexConfiguration
-                .<Long, String>builder()//
-                .withKeyClass(Long.class)//
-                .withValueClass(String.class)//
-                .withName("test_index")//
-                .withKeyTypeDescriptor(TD_LONG)//
-                .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
-                .withContextLoggingEnabled(true)//
-                .build();
-
-        final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
-
-        assertEquals("Property 'MaxNumberOfKeysInCache' must not be null.",
-                ex.getMessage());
-    }
-
-    @Test
-    void test_save_maxNumberOfKeysInCache_is_less_than_3() {
-        final IndexConfiguration<Long, String> config = IndexConfiguration
-                .<Long, String>builder()//
-                .withKeyClass(Long.class)//
-                .withValueClass(String.class)//
-                .withName("test_index")//
-                .withKeyTypeDescriptor(TD_LONG)//
-                .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
-                .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInCache(2)//
-                .build();
-
-        final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
-
-        assertEquals("Max number of keys in cache must be at least 3.",
                 ex.getMessage());
     }
 
@@ -206,9 +145,7 @@ class SegmentIndexConfigurationManagerTest {
                 .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInCache(3)//
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -227,9 +164,7 @@ class SegmentIndexConfigurationManagerTest {
                 .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(3)//
                 .build();
 
@@ -249,9 +184,7 @@ class SegmentIndexConfigurationManagerTest {
                 .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(4)//
                 .build();
 
@@ -270,9 +203,7 @@ class SegmentIndexConfigurationManagerTest {
                 .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInCache(3)//
                 .withMaxNumberOfKeysInSegment(4)//
                 .withMaxNumberOfSegmentsInCache(1)//
                 .build();
@@ -284,76 +215,6 @@ class SegmentIndexConfigurationManagerTest {
     }
 
     @Test
-    void test_save_maxNumberOfKeysInSegmentCacheDuringFlushing_is_null() {
-        final IndexConfiguration<Long, String> config = IndexConfiguration
-                .<Long, String>builder()//
-                .withKeyClass(Long.class) //
-                .withValueClass(String.class)//
-                .withName("test_index")//
-                .withKeyTypeDescriptor(TD_LONG)//
-                .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
-                .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInCache(3)//
-                .withMaxNumberOfKeysInSegment(4)//
-                .withMaxNumberOfSegmentsInCache(3)//
-                .build();
-
-        final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
-        assertEquals("Property 'MaxNumberOfKeysInSegmentCacheDuringFlushing'"
-                + " must not be null.", ex.getMessage());
-    }
-
-    @Test
-    void test_save_maxNumberOfKeysInSegmentCacheDuringFlushing_is_less_than_3() {
-        final IndexConfiguration<Long, String> config = IndexConfiguration
-                .<Long, String>builder()//
-                .withKeyClass(Long.class) //
-                .withValueClass(String.class)//
-                .withName("test_index")//
-                .withKeyTypeDescriptor(TD_LONG)//
-                .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
-                .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInCache(3)//
-                .withMaxNumberOfKeysInSegment(4)//
-                .withMaxNumberOfSegmentsInCache(3)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(2) //
-                .build();
-
-        final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
-        assertEquals("Max number of keys in segment cache during"
-                + " flushing must be at least 3.", ex.getMessage());
-    }
-
-    @Test
-    void test_save_maxNumberOfKeysInSegmentCacheDuringFlushing_is_lower_than_maxNumberOfKeysInSegmentCache() {
-        final IndexConfiguration<Long, String> config = IndexConfiguration
-                .<Long, String>builder()//
-                .withKeyClass(Long.class) //
-                .withValueClass(String.class)//
-                .withName("test_index")//
-                .withKeyTypeDescriptor(TD_LONG)//
-                .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
-                .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInCache(3)//
-                .withMaxNumberOfKeysInSegment(4)//
-                .withMaxNumberOfSegmentsInCache(3)//
-                .withMaxNumberOfKeysInSegmentCache(11)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(5) //
-                .build();
-
-        final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
-        assertEquals("Max number of keys in segment cache during "
-                + "flushing must be greater than max number of "
-                + "keys in segment cache.", ex.getMessage());
-    }
-
-    @Test
     void test_save_disk_reading_cache_size_in_not_1024() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
@@ -362,14 +223,12 @@ class SegmentIndexConfigurationManagerTest {
                 .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInSegmentCache(11)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22) //
+                .withMaxNumberOfKeysInSegmentWriteCache(5)//
                 .withMaxNumberOfKeysInSegmentChunk(33)//
+                .withMaxNumberOfDeltaCacheFiles(7)//
                 .withMaxNumberOfKeysInSegment(44)//
                 .withMaxNumberOfSegmentsInCache(66)//
-                .withMaxNumberOfKeysInCache(1000)
                 .withDiskIoBufferSizeInBytes(1024)//
                 .withBloomFilterIndexSizeInBytes(77)//
                 .withBloomFilterNumberOfHashFunctions(88)//
@@ -395,14 +254,12 @@ class SegmentIndexConfigurationManagerTest {
                 .withName("test_index")//
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInSegmentCache(11)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22) //
+                .withMaxNumberOfKeysInSegmentWriteCache(5)//
                 .withMaxNumberOfKeysInSegmentChunk(33)//
+                .withMaxNumberOfDeltaCacheFiles(7)//
                 .withMaxNumberOfKeysInSegment(44)//
                 .withMaxNumberOfSegmentsInCache(66)//
-                .withMaxNumberOfKeysInCache(1000)//
                 .withDiskIoBufferSizeInBytes(0)//
                 .withBloomFilterIndexSizeInBytes(77)//
                 .withBloomFilterNumberOfHashFunctions(88)//
@@ -465,6 +322,9 @@ class SegmentIndexConfigurationManagerTest {
                 withDefaults.getDecodingChunkFilters().get(0).getClass());
         assertEquals(ChunkFilterCrc32Validation.class,
                 withDefaults.getDecodingChunkFilters().get(1).getClass());
+        assertEquals(IndexConfigurationContract.INDEX_WORKER_THREAD_COUNT,
+                withDefaults.getIndexWorkerThreadCount(),
+                "Number of threads should be defaulted");
     }
 
     @Test
@@ -489,7 +349,6 @@ class SegmentIndexConfigurationManagerTest {
         assertEquals(TD_STRING, ret.getValueTypeDescriptor());
         assertEquals("test_index", ret.getIndexName());
         assertEquals(11, ret.getMaxNumberOfKeysInSegmentCache());
-        assertEquals(22, ret.getMaxNumberOfKeysInSegmentCacheDuringFlushing());
         assertEquals(33, ret.getMaxNumberOfKeysInSegmentChunk());
         assertEquals(44, ret.getMaxNumberOfKeysInSegment());
         assertEquals(66, ret.getMaxNumberOfSegmentsInCache());
@@ -497,7 +356,6 @@ class SegmentIndexConfigurationManagerTest {
         assertEquals(77, ret.getBloomFilterIndexSizeInBytes());
         assertEquals(88, ret.getBloomFilterNumberOfHashFunctions());
         assertFalse(ret.isContextLoggingEnabled());
-        assertFalse(ret.isThreadSafe());
     }
 
     @Test
@@ -565,10 +423,10 @@ class SegmentIndexConfigurationManagerTest {
     }
 
     @Test
-    void test_mergeWithStored_isThreadSafe() {
+    void test_mergeWithStored_numberOfThreads() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withThreadSafe(true)//
+                .withIndexWorkerThreadCount(4)//
                 .build();
 
         when(storage.load()).thenReturn(CONFIG);
@@ -577,7 +435,39 @@ class SegmentIndexConfigurationManagerTest {
         verify(storage, Mockito.times(1)).save(any());
         assertNotNull(ret);
 
-        assertEquals(true, ret.isThreadSafe());
+        assertEquals(4, ret.getIndexWorkerThreadCount());
+    }
+
+    @Test
+    void test_mergeWithStored_numberOfIoThreads() {
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
+                .withNumberOfIoThreads(3)//
+                .build();
+
+        when(storage.load()).thenReturn(CONFIG);
+        final IndexConfiguration<Long, String> ret = manager
+                .mergeWithStored(config);
+        verify(storage, Mockito.times(1)).save(any());
+        assertNotNull(ret);
+
+        assertEquals(3, ret.getNumberOfIoThreads());
+    }
+
+    @Test
+    void test_mergeWithStored_numberOfRegistryLifecycleThreads() {
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
+                .withNumberOfRegistryLifecycleThreads(4)//
+                .build();
+
+        when(storage.load()).thenReturn(CONFIG);
+        final IndexConfiguration<Long, String> ret = manager
+                .mergeWithStored(config);
+        verify(storage, Mockito.times(1)).save(any());
+        assertNotNull(ret);
+
+        assertEquals(4, ret.getNumberOfRegistryLifecycleThreads());
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -799,13 +689,10 @@ class SegmentIndexConfigurationManagerTest {
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withName("base_index")//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInSegmentCache(11)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(22)//
+                .withMaxNumberOfKeysInSegmentWriteCache(5)//
                 .withMaxNumberOfKeysInSegmentChunk(33)//
                 .withMaxNumberOfKeysInSegment(44)//
-                .withMaxNumberOfKeysInCache(55)//
                 .withMaxNumberOfSegmentsInCache(66)//
                 .withDiskIoBufferSizeInBytes(1024)//
                 .withBloomFilterIndexSizeInBytes(77)//

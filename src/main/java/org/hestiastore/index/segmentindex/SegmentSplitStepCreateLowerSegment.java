@@ -1,0 +1,21 @@
+package org.hestiastore.index.segmentindex;
+
+import org.hestiastore.index.Filter;
+import org.hestiastore.index.Vldtn;
+
+final class SegmentSplitStepCreateLowerSegment<K, V>
+        implements Filter<SegmentSplitContext<K, V>, SegmentSplitState<K, V>> {
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean filter(final SegmentSplitContext<K, V> ctx,
+            final SegmentSplitState<K, V> state) {
+        Vldtn.requireNonNull(ctx, "ctx");
+        Vldtn.requireNonNull(state, "state");
+        Vldtn.requireNonNull(ctx.getSegment(), "segment");
+        Vldtn.requireNonNull(ctx.getLowerSegmentId(), "lowerSegmentId");
+        Vldtn.requireNonNull(ctx.getWriterTxFactory(), "writerTxFactory");
+        state.setLowerSegmentId(ctx.getLowerSegmentId());
+        return true;
+    }
+}

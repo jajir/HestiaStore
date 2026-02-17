@@ -1,11 +1,11 @@
 package org.coroptis.index.it;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 
 import java.util.List;
 import java.util.Random;
 
-import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -16,6 +16,7 @@ import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.segment.SegmentMaintenancePolicy;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,18 +40,18 @@ public class IntegerationNumberOfKeysIT {
     void test_after_force_compact() {
         final Segment<String, Long> segment = getCommonBuilder();
         writeData(segment);
-        segment.forceCompact();
+        segment.compact();
 
         assertEquals(NUMBER_OF_TESTING_ENTRIES, segment.getNumberOfKeys());
-        segment.close();
+        closeAndAwait(segment);
     }
 
     @Test
     void test_after_closing() {
         Segment<String, Long> segment = getCommonBuilder();
         writeData(segment);
-        segment.forceCompact();
-        segment.close();
+        segment.compact();
+        closeAndAwait(segment);
         segment = getCommonBuilder();
 
         assertEquals(NUMBER_OF_TESTING_ENTRIES, segment.getNumberOfKeys());
@@ -61,19 +62,18 @@ public class IntegerationNumberOfKeysIT {
         Segment<String, Long> segment = getCommonBuilder();
         writeData(segment);
         assertEquals(NUMBER_OF_TESTING_ENTRIES, segment.getNumberOfKeys());
-        segment.close();
+        closeAndAwait(segment);
     }
 
     private Segment<String, Long> getCommonBuilder() {
-        return Segment.<String, Long>builder()//
-                .withDirectory(directory)//
+        return Segment.<String, Long>builder(
+                directory)//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(TYPE_DESCRIPTOR_STRING)//
                 .withValueTypeDescriptor(TYPE_DESCRIPTOR_LONG)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withMaxNumberOfKeysInSegmentChunk(100)//
                 .withBloomFilterIndexSizeInBytes(0)// disable bloom filter
-                .withMaxNumberOfKeysInSegmentCache(1000)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(100_000)//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterMagicNumberWriting(), //
                                 new ChunkFilterCrc32Writing(), //
@@ -84,16 +84,14 @@ public class IntegerationNumberOfKeysIT {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build();
+                .build().getValue();
     }
 
     private void writeData(final Segment<String, Long> segment) {
-        try (EntryWriter<String, Long> entryWriter = segment
-                .openDeltaCacheWriter()) {
-            for (int i = 0; i < NUMBER_OF_TESTING_ENTRIES; i++) {
-                entryWriter.write(wrap(i), RANDOM.nextLong());
-            }
+        for (int i = 0; i < NUMBER_OF_TESTING_ENTRIES; i++) {
+            segment.put(wrap(i), RANDOM.nextLong());
         }
+        segment.flush();
     }
 
     /*
