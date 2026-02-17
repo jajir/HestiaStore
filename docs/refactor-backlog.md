@@ -224,7 +224,7 @@
         - `mvn -pl management-agent,monitoring-console,monitoring-prometheus test`
         - `./scripts/verify-release-artifacts.sh`
 
-[ ] 78.9 Rollout stages with explicit quality gates (Risk: HIGH)
+[x] 78.9 Rollout stages with explicit quality gates (Risk: HIGH)
     - Stage A: core snapshot API only; no external exporters.
     - Stage B: monitoring bridge with Prometheus scrape + docs.
     - Stage C: node agent endpoints (read-only first, then mutating).
@@ -237,6 +237,24 @@
     - Acceptance:
       - Each stage releasable independently.
       - Rollback procedure documented and tested.
+    - Delivered:
+      - Added staged rollout quality-gate documentation:
+        `docs/development/rollout-quality-gates.md`.
+      - Added rollback runbook with stage-specific rollback procedure:
+        `docs/development/rollout-rollback-runbook.md`.
+      - Added executable gate runner:
+        `scripts/verify-rollout-gates.sh`.
+      - Extended console failure-mode tests in
+        `MonitoringConsoleServerTest` to cover:
+        - node down (`UNAVAILABLE`),
+        - partial responses (state ok, metrics 500),
+        - timeout behavior.
+      - Updated release docs to include rollout gate execution:
+        `docs/development/release.md`.
+      - Added docs navigation entries in `mkdocs.yml` and
+        `docs/development/index.md`.
+      - Verified stage gates end-to-end:
+        `./scripts/verify-rollout-gates.sh` (Stages A-D all passing).
 
 ### Medium
 

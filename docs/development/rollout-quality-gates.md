@@ -1,0 +1,54 @@
+# Rollout Stages and Quality Gates
+
+This document defines releasable stages for the monitoring/management rollout.
+
+## Stage A: Core metrics snapshot only
+
+- Scope: `index` module, immutable snapshot API, no external exporters.
+- Required gates:
+  - Concurrency correctness test: `IntegrationSegmentIndexMetricsSnapshotConcurrencyTest`
+  - Snapshot contract tests pass in `index`.
+  - Perf budget: no more than +3% overhead for get/put baseline in internal
+    benchmark profile.
+
+## Stage B: Monitoring bridge (Prometheus/Micrometer)
+
+- Scope: `monitoring-api`, `monitoring-micrometer`, `monitoring-prometheus`.
+- Required gates:
+  - Prometheus scrape contract test:
+    `HestiaStorePrometheusExporterTest`.
+  - Metric naming/tag compatibility stays stable (`hestiastore_*`, `index` tag).
+  - Perf budget: exporter disabled path adds effectively zero overhead in core.
+
+## Stage C: Node management agent
+
+- Scope: `management-api`, `management-agent`.
+- Required gates:
+  - API behavior tests: `ManagementAgentServerTest`.
+  - Security tests: `ManagementAgentServerSecurityTest`.
+  - Audit trail coverage for all mutating endpoints.
+  - Failure mode checks for unauthorized/forbidden/rate-limited requests.
+
+## Stage D: Central console
+
+- Scope: `monitoring-console`.
+- Required gates:
+  - Multi-node dashboard tests (`MonitoringConsoleServerTest`).
+  - Action lifecycle tests (`PENDING -> SUCCESS|FAILED`).
+  - Failure mode tests: node down, partial response, timeout.
+
+## Gate execution command
+
+Run all stage gates:
+
+```bash
+./scripts/verify-rollout-gates.sh
+```
+
+## Release and rollback readiness
+
+- Each stage is releasable independently.
+- If a stage fails in production, rollback can stop at previous stage without
+  breaking core index operation.
+- Detailed rollback steps are in:
+  [Rollout Rollback Runbook](rollout-rollback-runbook.md).

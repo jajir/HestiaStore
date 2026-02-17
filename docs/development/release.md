@@ -84,6 +84,7 @@ mvn -N install
 mvn -pl index,monitoring-api,monitoring-micrometer,monitoring-prometheus,management-api,management-agent,monitoring-console -DskipTests package
 mvn -pl management-agent,monitoring-console,monitoring-prometheus test
 ./scripts/verify-release-artifacts.sh
+./scripts/verify-rollout-gates.sh
 ```
 
 ### 1. 🏷️ Checkout the `main` branch

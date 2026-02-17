@@ -12,4 +12,6 @@ This page links development-focused documentation.
 - [Multi-Module Migration](multi-module-migration.md)
 - [Compatibility Matrix](compatibility-matrix.md)
 - [Upgrade Notes (Multi-Module)](upgrade-notes-multimodule.md)
+- [Rollout Quality Gates](rollout-quality-gates.md)
+- [Rollout Rollback Runbook](rollout-rollback-runbook.md)
 - [Refactor Backlog](../refactor-backlog.md)
