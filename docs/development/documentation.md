@@ -8,6 +8,12 @@ Documentation is available in the following locations:
 
 Following text is about HestiaStore.org site documentation.
 
+## Refactor backlog
+
+The project-wide refactor backlog lives in `docs/refactor-backlog.md`. Use it
+for planned refactors and refactor-related defects, and keep items in the
+defined status sections.
+
 ## How to make changes to HestiaStore.org
 
 HestiaStore.org site documentation is served from the main project branch `gh-pages`. Publishing a new site version involves generating HTML from Markdown and pushing it to `gh-pages`.

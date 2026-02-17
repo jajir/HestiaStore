@@ -1,0 +1,28 @@
+@startuml registry-seq02
+title Registry get (cache hit, Entry LOADING) waits for READY
+
+participant "Client Thread" as client
+participant "Registry" as registry
+participant "Cache" as cache
+participant "Entry(13)" as entry13
+
+
+client -> registry ++ : get(13)
+
+alt Registry is not READY
+    registry --> client : according to the state of registry\nreturn corresponding response
+else Registry is READY
+    registry -> cache ++: get(13)
+    cache -> entry13 ++: waitWhileLoading(accessCx++)
+    entry13 -> entry13 : state = LOADING => wait()
+    note over entry13
+    Only waiters of key 13 are blocked.
+    Other keys continue.
+    end note
+    entry13 -> entry13 : state = READY => return segment
+    entry13 --> cache --: Entry Segment 13
+    cache --> registry --: Entry Segment 13
+    registry --> client --: Entry Segment 13
+end
+
+@enduml

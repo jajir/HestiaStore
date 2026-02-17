@@ -9,7 +9,7 @@ public final class ScarceIndexBuilder<K> {
     private static final int DEFAULT_DISK_IO_BUFFER_SIZE = 4 * 1024;
 
     private TypeDescriptor<K> keyTypeDescriptor;
-    private Directory directory;
+    private Directory directoryFacade;
     private String fileName;
     private int diskIoBufferSize = DEFAULT_DISK_IO_BUFFER_SIZE;
 
@@ -24,8 +24,10 @@ public final class ScarceIndexBuilder<K> {
         return this;
     }
 
-    public ScarceIndexBuilder<K> withDirectory(final Directory directory) {
-        this.directory = Vldtn.requireNonNull(directory, "directory");
+    public ScarceIndexBuilder<K> withDirectory(
+            final Directory directoryFacade) {
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
         return this;
     }
 
@@ -41,8 +43,8 @@ public final class ScarceIndexBuilder<K> {
     }
 
     public ScarceSegmentIndex<K> build() {
-        return new ScarceSegmentIndex<K>(directory, fileName, keyTypeDescriptor,
-                diskIoBufferSize);
+        return new ScarceSegmentIndex<K>(directoryFacade, fileName,
+                keyTypeDescriptor, diskIoBufferSize);
     }
 
 }

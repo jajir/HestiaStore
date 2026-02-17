@@ -2,8 +2,10 @@ package org.hestiastore.index.properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.directory.MemDirectory;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +22,8 @@ class DirectoryPropertyStoreTest {
 
     @Test
     void transaction_persists_changes() {
-        final PropertyStoreimpl store = new PropertyStoreimpl(directory,
+        final PropertyStoreimpl store = new PropertyStoreimpl(
+                directory,
                 FILE_NAME, false);
 
         final PropertyTransaction tx = store.beginTransaction();
@@ -29,29 +32,38 @@ class DirectoryPropertyStoreTest {
         tx.close();
 
         // Reload to ensure values are persisted on disk
-        final PropertyStoreimpl reloaded = new PropertyStoreimpl(directory,
+        final PropertyStoreimpl reloaded = new PropertyStoreimpl(
+                directory,
                 FILE_NAME, true);
         final PropertyView reloadedView = reloaded.snapshot();
         assertEquals(7, reloadedView.getInt("alpha"));
         assertEquals(42L, reloadedView.getLong("beta"));
         assertEquals(true, reloadedView.getBoolean("gamma"));
+        final String fileContent = new String(
+                directory.getFileBytes(FILE_NAME).getData(),
+                StandardCharsets.UTF_8);
+        assertTrue(fileContent.contains(
+                "Numeric format: underscore (_) is thousands separator; dot (.) is decimal separator."));
     }
 
     @Test
     void transaction_persists_changes_on_close() {
-        final PropertyStoreimpl store = new PropertyStoreimpl(directory,
+        final PropertyStoreimpl store = new PropertyStoreimpl(
+                directory,
                 FILE_NAME, false);
         final PropertyTransaction tx = store.beginTransaction();
         tx.openPropertyWriter().setInt("alpha", 9);
         tx.close();
-        final PropertyStoreimpl reloaded = new PropertyStoreimpl(directory,
+        final PropertyStoreimpl reloaded = new PropertyStoreimpl(
+                directory,
                 FILE_NAME, true);
         assertEquals(9, reloaded.snapshot().getInt("alpha"));
     }
 
     @Test
     void getters_return_zero_when_missing() {
-        final PropertyStoreimpl store = new PropertyStoreimpl(directory,
+        final PropertyStoreimpl store = new PropertyStoreimpl(
+                directory,
                 FILE_NAME, false);
         final PropertyView view = store.snapshot();
         assertEquals(0, view.getInt("missing-int"));
@@ -62,7 +74,8 @@ class DirectoryPropertyStoreTest {
 
     @Test
     void snapshot_returns_read_only_copy() {
-        final PropertyStoreimpl store = new PropertyStoreimpl(directory,
+        final PropertyStoreimpl store = new PropertyStoreimpl(
+                directory,
                 FILE_NAME, false);
         final PropertyTransaction tx = store.beginTransaction();
         tx.openPropertyWriter().setInt("foo", 99).setBoolean("bar", true);

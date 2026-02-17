@@ -8,6 +8,17 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileReader;
 import org.hestiastore.index.directory.MemFileReader;
 
+/**
+ * Type descriptor for {@link CompositeValue} that encodes and decodes a fixed
+ * sequence of element types.
+ *
+ * <p>
+ * Elements are serialized by delegating to each element type descriptor in
+ * order. Comparison follows the same order and returns the first non-zero
+ * result, mirroring lexicographic ordering. A tombstone value is composed from
+ * the element tombstones.
+ * </p>
+ */
 public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
 
     private final VarLengthReader<CompositeValue> varLengthReader = new VarLengthReader<>(
@@ -53,8 +64,6 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
      * Compare elements one by one in order, and return the result of the first
      * non-zero comparison.
      * 
-     * @param a required first object to compare
-     * @param b required second object to compare
      * @return result of object comparison
      * @throws IndexException Throw an IndexException if the sizes of the two
      *                        CompositeValue instances differ.

@@ -1,7 +1,5 @@
 package org.hestiastore.index.segment;
 
-import java.util.Objects;
-
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilter;
 import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
@@ -19,39 +17,45 @@ public final class SegmentDataSupplier<K, V> {
 
     private final SegmentFiles<K, V> segmentFiles;
     private final SegmentConf segmentConf;
-    private final SegmentPropertiesManager segmentPropertiesManager;
-
+    /**
+     * Creates a supplier for segment-related data structures.
+     *
+     * @param segmentFiles segment file access wrapper
+     * @param segmentConf segment configuration
+     */
     public SegmentDataSupplier(final SegmentFiles<K, V> segmentFiles,
-            final SegmentConf segmentConf,
-            final SegmentPropertiesManager segmentPropertiesManager) {
+            final SegmentConf segmentConf) {
         this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
         this.segmentConf = Vldtn.requireNonNull(segmentConf, "segmentConf");
-        this.segmentPropertiesManager = Objects
-                .requireNonNull(segmentPropertiesManager);
     }
 
-    public SegmentDeltaCache<K, V> getSegmentDeltaCache() {
-        return new SegmentDeltaCache<>(segmentFiles.getKeyTypeDescriptor(),
-                segmentFiles, segmentPropertiesManager);
-    }
-
+    /**
+     * Creates a new Bloom filter instance for the segment.
+     *
+     * @return Bloom filter instance
+     */
     public BloomFilter<K> getBloomFilter() {
-        return BloomFilter.<K>builder()
+        final var builder = BloomFilter.<K>builder()
                 .withBloomFilterFileName(segmentFiles.getBloomFilterFileName())
                 .withConvertorToBytes(segmentFiles.getKeyTypeDescriptor()
                         .getConvertorToBytes())
                 .withDirectory(segmentFiles.getDirectory())
+                .withRelatedObjectName(segmentFiles.getSegmentIdName())
+                .withDiskIoBufferSize(segmentConf.getDiskIoBufferSize())
                 .withIndexSizeInBytes(
                         segmentConf.getBloomFilterIndexSizeInBytes())
                 .withNumberOfHashFunctions(
                         segmentConf.getBloomFilterNumberOfHashFunctions())
                 .withProbabilityOfFalsePositive(
-                        segmentConf.getBloomFilterProbabilityOfFalsePositive())
-                .withRelatedObjectName(segmentFiles.getSegmentIdName())
-                .withDiskIoBufferSize(segmentConf.getDiskIoBufferSize())
-                .build();
+                        segmentConf.getBloomFilterProbabilityOfFalsePositive());
+        return builder.build();
     }
 
+    /**
+     * Creates a new scarce index instance for the segment.
+     *
+     * @return scarce index instance
+     */
     public ScarceSegmentIndex<K> getScarceIndex() {
         return ScarceSegmentIndex.<K>builder()//
                 .withDirectory(segmentFiles.getDirectory())//

@@ -11,6 +11,7 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -43,7 +44,9 @@ class IntegrationSegmentIndexConsistencyTest extends AbstractSegmentIndexTest {
         for (int i = 0; i < 100; i++) {
             writeEntries(index, makeList(i));
             index.flush();
-            verifyIndexData(index, makeList(i));
+            awaitMaintenanceIdle(index);
+            verifyIndexData(index, makeList(i),
+                    SegmentIteratorIsolation.FULL_ISOLATION);
         }
     }
 
@@ -64,7 +67,8 @@ class IntegrationSegmentIndexConsistencyTest extends AbstractSegmentIndexTest {
                 int cx = acx.incrementAndGet();
                 writeEntries(index, makeList(cx));
                 logger.debug("{} {}", cx, entry);
-                verifyIndexData(index, makeList(cx));
+                verifyIndexData(index, makeList(cx),
+                        SegmentIteratorIsolation.FULL_ISOLATION);
             });
         }
     }
@@ -74,6 +78,7 @@ class IntegrationSegmentIndexConsistencyTest extends AbstractSegmentIndexTest {
         final SegmentIndex<Integer, Integer> index = makeIndex();
         writeEntries(index, makeList(888));
         index.flush();
+        awaitMaintenanceIdle(index);
         for (int i = 0; i < NUMBER_OF_TEST_ENTRIES; i++) {
             assertNull(index.get(i * 2 + 1));
         }
@@ -86,11 +91,9 @@ class IntegrationSegmentIndexConsistencyTest extends AbstractSegmentIndexTest {
                 .withValueClass(Integer.class)//
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tdi) //
-                .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(10) //
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(12)//
+                .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentChunk(2) //
-                .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(0) //
                 .withBloomFilterNumberOfHashFunctions(4) //
                 .withContextLoggingEnabled(false) //

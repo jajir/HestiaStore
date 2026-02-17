@@ -11,7 +11,14 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 
-public class MergeDeltaCacheWithIndexIterator<K, V>
+/**
+ * Merges the on-disk index iterator with the in-memory delta cache view.
+ * Prefers delta cache entries for duplicate keys and skips tombstones.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
+class MergeDeltaCacheWithIndexIterator<K, V>
         extends AbstractCloseableResource implements EntryIterator<K, V> {
 
     private final EntryIterator<K, V> mainIterator;
@@ -24,6 +31,14 @@ public class MergeDeltaCacheWithIndexIterator<K, V>
     private Entry<K, V> mainCurrent;
     private Entry<K, V> deltaCurrent;
 
+    /**
+     * Creates a merged iterator over index data and delta cache entries.
+     *
+     * @param mainIterator iterator over the index file
+     * @param keyTypeDescriptor key type descriptor used for ordering
+     * @param valueTypeDescriptor value type descriptor (for tombstones)
+     * @param sortedDeltaCache delta cache entries sorted by key
+     */
     public MergeDeltaCacheWithIndexIterator(
             final EntryIterator<K, V> mainIterator,
             final TypeDescriptor<K> keyTypeDescriptor,
@@ -45,11 +60,21 @@ public class MergeDeltaCacheWithIndexIterator<K, V>
         advance();
     }
 
+    /**
+     * Returns whether another merged entry is available.
+     *
+     * @return true when another entry exists
+     */
     @Override
     public boolean hasNext() {
         return next != null;
     }
 
+    /**
+     * Returns the next merged entry, skipping tombstones.
+     *
+     * @return next entry in key order
+     */
     @Override
     public Entry<K, V> next() {
         if (next == null) {
@@ -60,6 +85,9 @@ public class MergeDeltaCacheWithIndexIterator<K, V>
         return result;
     }
 
+    /**
+     * Advances to the next non-tombstone candidate across both sources.
+     */
     private void advance() {
         next = null;
         // Is there aany data to examine?
@@ -96,6 +124,11 @@ public class MergeDeltaCacheWithIndexIterator<K, V>
         }
     }
 
+    /**
+     * Reads the next entry from the index iterator.
+     *
+     * @return next index entry or null if exhausted
+     */
     private Entry<K, V> readNextPairFromMain() {
         if (mainIterator.hasNext()) {
             return mainIterator.next();
@@ -104,6 +137,11 @@ public class MergeDeltaCacheWithIndexIterator<K, V>
         }
     }
 
+    /**
+     * Reads the next entry from the delta cache iterator.
+     *
+     * @return next delta entry or null if exhausted
+     */
     private Entry<K, V> readNextPairFromCache() {
         if (deltaCacheIterator.hasNext()) {
             return deltaCacheIterator.next();
@@ -112,6 +150,9 @@ public class MergeDeltaCacheWithIndexIterator<K, V>
         }
     }
 
+    /**
+     * Closes the underlying index iterator.
+     */
     @Override
     protected void doClose() {
         mainIterator.close();

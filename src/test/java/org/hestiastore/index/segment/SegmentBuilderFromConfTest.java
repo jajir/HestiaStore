@@ -21,36 +21,34 @@ public class SegmentBuilderFromConfTest {
     private static final TypeDescriptor<Integer> KEY_TYPE_DESCRIPTOR = new TypeDescriptorInteger();
 
     @Test
-    void test_verify_that_given_segment_conf_is_used() {
-        SegmentConf conf = new SegmentConf(1000, // maxNumberOfKeysInSegmentDeltaCache
-                2000, // maxNumberOfKeysInDeltaCacheDuringWriting
-                50, // maxNumberOfKeysInIndexPage
-                3, // bloomFilterNumberOfHashFunctions
-                1024, // bloomFilterIndexSizeInBytes
-                0.01, // bloomFilterProbabilityOfFalsePositive
-                1024, // diskIoBufferSize
-                List.of(new ChunkFilterMagicNumberWriting()), //
-                List.of(new ChunkFilterMagicNumberValidation())//
-        );
+    void test_verify_that_builder_configuration_is_used() {
         final SegmentBuilder<Integer, String> builder = Segment
-                .<Integer, String>builder()//
-                .withDirectory(DIRECTORY)//
+                .<Integer, String>builder(
+                        DIRECTORY)//
                 .withId(SEGMENT_ID)//
                 .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)//
-                .withSegmentConf(conf)//
+                .withMaxNumberOfKeysInSegmentWriteCache(500)//
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(1000)//
+                .withMaxNumberOfKeysInSegmentCache(5000)//
+                .withMaxNumberOfKeysInSegmentChunk(50)//
+                .withBloomFilterNumberOfHashFunctions(3)//
+                .withBloomFilterIndexSizeInBytes(1024)//
+                .withBloomFilterProbabilityOfFalsePositive(0.01)//
+                .withDiskIoBufferSize(1024)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
+                .withEncodingChunkFilters(
+                        List.of(new ChunkFilterMagicNumberWriting()))//
+                .withDecodingChunkFilters(
+                        List.of(new ChunkFilterMagicNumberValidation()))//
         ;
-        SegmentImpl<Integer, String> seg = builder.build();
-        SegmentConf ret = seg.getSegmentConf();
-        assertEquals(1024, ret.getDiskIoBufferSize());
-
-        assertEquals(1, ret.getEncodingChunkFilters().size());
-        assertEquals(1, ret.getDecodingChunkFilters().size());
-
-        assertEquals(ChunkFilterMagicNumberWriting.class,
-                ret.getEncodingChunkFilters().get(0).getClass());
-        assertEquals(ChunkFilterMagicNumberValidation.class,
-                ret.getDecodingChunkFilters().get(0).getClass());
+        Segment<Integer, String> seg = builder.build().getValue();
+        assertEquals(SegmentResultStatus.OK, seg.put(1, "A").getStatus());
+        assertEquals(SegmentResultStatus.OK, seg.flush().getStatus());
+        final SegmentResult<String> result = seg.get(1);
+        assertEquals(SegmentResultStatus.OK, result.getStatus());
+        assertEquals("A", result.getValue());
+        seg.close();
     }
 
 }

@@ -51,6 +51,33 @@ public interface Directory {
     void renameFile(String currentFileName, String newFileName);
 
     /**
+     * Opens a subdirectory for use, creating it if it does not exist.
+     *
+     * @param directoryName required subdirectory name
+     * @return directory instance for the subdirectory
+     * Throws IndexException when the directory cannot be created or is a file.
+     */
+    Directory openSubDirectory(String directoryName);
+
+    /**
+     * Creates a subdirectory in this directory.
+     *
+     * @param directoryName required subdirectory name
+     * @return true if created, false when it already exists
+     * Throws IndexException when the directory cannot be created or is a file.
+     */
+    boolean mkdir(String directoryName);
+
+    /**
+     * Removes an empty subdirectory in this directory.
+     *
+     * @param directoryName required subdirectory name
+     * @return true if removed, false when it does not exist
+     * Throws IndexException when the directory is not empty or is a file.
+     */
+    boolean rmdir(String directoryName);
+
+    /**
      * Get file lock. If given file already exist, it means that file is locked
      * and returned object will be in state lock.
      * 

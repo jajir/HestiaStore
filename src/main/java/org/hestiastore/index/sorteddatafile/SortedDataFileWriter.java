@@ -57,6 +57,11 @@ public class SortedDataFileWriter<K, V> extends AbstractCloseableResource
         position = 0;
     }
 
+    /**
+     * Creates a diff-key writer for the configured key type.
+     *
+     * @return diff-key writer instance
+     */
     private DiffKeyWriter<K> makeDiffKeyWriter() {
         return new DiffKeyWriter<>(keyConvertorToBytes, keyComparator);
     }
@@ -110,6 +115,9 @@ public class SortedDataFileWriter<K, V> extends AbstractCloseableResource
         position = position + diffKey.length + writenBytesInValue;
     }
 
+    /**
+     * Closes the underlying file writer.
+     */
     @Override
     protected void doClose() {
         fileWriter.close();

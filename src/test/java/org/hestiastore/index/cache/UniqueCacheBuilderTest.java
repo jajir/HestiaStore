@@ -1,8 +1,10 @@
 package org.hestiastore.index.cache;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import java.util.Comparator;
@@ -77,12 +79,24 @@ class UniqueCacheBuilderTest {
     }
 
     @Test
-    void test_build_missing_dataFile_throws_NPE() {
+    void test_build_missing_dataFile_throws() {
         final Comparator<Integer> cmp = Integer::compareTo;
-        assertThrows(NullPointerException.class, () -> UniqueCache.<Integer, String>builder()
-                .withKeyComparator(cmp)
-                // intentionally not setting data file
-                .build());
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> UniqueCache.<Integer, String>builder()
+                        .withKeyComparator(cmp)
+                        // intentionally not setting data file
+                        .build());
+        assertEquals("Property 'sdf' must not be null.", e.getMessage());
+    }
+
+    @Test
+    void test_buildEmpty_with_empty_dataFile_returns_empty_cache() {
+        final UniqueCache<Integer, String> cache = UniqueCache
+                .<Integer, String>builder()
+                .withKeyComparator(Integer::compareTo)
+                .buildEmpty();
+
+        assertEquals(0, cache.size());
     }
 
     @Test
@@ -121,5 +135,73 @@ class UniqueCacheBuilderTest {
                         .withInitialCapacity(-10));
         assertEquals("Property 'initialCapacity' must be greater than 0",
                 e.getMessage());
+    }
+
+    @Test
+    void test_build_with_threadSafe_true_returns_thread_safe_cache() {
+        final List<Entry<Integer, String>> data = List.of(
+                Entry.of(1, "a"), Entry.of(2, "b"));
+        final EntryIteratorWithCurrent<Integer, String> iterator = new EntryIteratorList<>(
+                data);
+        when(sdf.openIterator()).thenReturn(iterator);
+
+        final UniqueCache<Integer, String> cache = UniqueCache
+                .<Integer, String>builder()
+                .withKeyComparator(Integer::compareTo)
+                .withDataFile(sdf)
+                .withThreadSafe(true)
+                .build();
+
+        assertTrue(cache.isThreadSafe());
+    }
+
+    @Test
+    void test_build_with_threadSafe_false_returns_plain_cache() {
+        final List<Entry<Integer, String>> data = List.of(Entry.of(1, "a"));
+        final EntryIteratorWithCurrent<Integer, String> iterator = new EntryIteratorList<>(
+                data);
+        when(sdf.openIterator()).thenReturn(iterator);
+
+        final UniqueCache<Integer, String> cache = UniqueCache
+                .<Integer, String>builder()
+                .withKeyComparator(Integer::compareTo)
+                .withDataFile(sdf)
+                .withThreadSafe(false)
+                .build();
+
+        assertFalse(cache.isThreadSafe());
+    }
+
+    @Test
+    void test_buildEmpty_without_dataFile_returns_empty_cache() {
+        final UniqueCache<Integer, String> cache = UniqueCache
+                .<Integer, String>builder()
+                .withKeyComparator(Integer::compareTo)
+                .withInitialCapacity(8)
+                .buildEmpty();
+
+        assertEquals(0, cache.size());
+    }
+
+    @Test
+    void test_buildEmpty_threadSafe_false_returns_plain_cache() {
+        final UniqueCache<Integer, String> cache = UniqueCache
+                .<Integer, String>builder()
+                .withKeyComparator(Integer::compareTo)
+                .withThreadSafe(false)
+                .buildEmpty();
+
+        assertFalse(cache.isThreadSafe());
+    }
+
+    @Test
+    void test_buildEmpty_threadSafe_true_returns_thread_safe_cache() {
+        final UniqueCache<Integer, String> cache = UniqueCache
+                .<Integer, String>builder()
+                .withKeyComparator(Integer::compareTo)
+                .withThreadSafe(true)
+                .buildEmpty();
+
+        assertTrue(cache.isThreadSafe());
     }
 }

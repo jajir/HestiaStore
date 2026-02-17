@@ -1,13 +1,13 @@
 package org.hestiastore.index.segment;
 
 import static org.hestiastore.index.segment.AbstractSegmentTest.verifySegmentData;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hestiastore.index.AbstractDataTest.verifyNumberOfFiles;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 
 import java.util.List;
 import java.util.stream.IntStream;
 
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -17,13 +17,15 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class IntegrationSegmentWriteConsistencyTest {
 
     private static final TypeDescriptorShortString TDS = new TypeDescriptorShortString();
     private static final TypeDescriptorInteger TDI = new TypeDescriptorInteger();
-
+    private static final SegmentId SEGMENT_ID_1 = SegmentId.of(27);
     private final List<String> values = List.of("aaa", "bbb", "ccc", "ddd",
             "eee", "fff");
     private final List<Entry<Integer, String>> data = IntStream
@@ -33,39 +35,81 @@ class IntegrationSegmentWriteConsistencyTest {
             .range(0, values.size() - 1)
             .mapToObj(i -> Entry.of(i, values.get(i + 1))).toList();
 
-    /**
-     * Test that updated data are correctly stored into index.
-     * 
-     * @
-     */
+    private Directory directory;
+    private Segment<Integer, String> segment;
+
+    @BeforeEach
+    void setup() {
+        directory = new MemDirectory();
+        segment = makeSegment(directory, SEGMENT_ID_1);
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (segment != null) {
+            closeAndAwait(segment);
+        }
+        segment = null;
+        directory = null;
+    }
+
+    @Test
+    void write_then_flush_reads_back() {
+        data.forEach(entry -> segment.put(entry.getKey(), entry.getValue()));
+        segment.flush();
+
+        verifySegmentData(segment, data);
+        verifyNumberOfFiles(directory, 2);
+    }
+
+    @Test
+    void write_without_flush_reads_from_cache() {
+        data.forEach(entry -> segment.put(entry.getKey(), entry.getValue()));
+
+        verifySegmentData(segment, data);
+        // no data are flushed to disk
+        verifyNumberOfFiles(directory, 1);
+    }
+
+    @Test
+    void write_close_reopen_reads_back() {
+        data.forEach(entry -> segment.put(entry.getKey(), entry.getValue()));
+        segment.flush();
+        closeAndAwait(segment);
+
+        final Segment<Integer, String> reopened = makeSegment(directory,
+                SEGMENT_ID_1);
+        verifySegmentData(reopened, data);
+        closeAndAwait(reopened);
+        verifyNumberOfFiles(directory, 2);
+    }
+
     @Test
     void test_writing_updated_values() {
-        final Directory directory = new MemDirectory();
-        final SegmentId id = SegmentId.of(27);
-        final Segment<Integer, String> seg1 = makeSegment(directory, id);
-        try (EntryWriter<Integer, String> writer = seg1.openDeltaCacheWriter()) {
-            data.forEach(writer::write);
-        }
-        verifySegmentData(seg1, data);
-        seg1.close();
+        data.forEach(entry -> segment.put(entry.getKey(), entry.getValue()));
+        segment.flush();
+        verifySegmentData(segment, data);
+        closeAndAwait(segment);
 
-        final Segment<Integer, String> seg2 = makeSegment(directory, id);
-        try (EntryWriter<Integer, String> writer = seg2.openDeltaCacheWriter()) {
-            updatedData.forEach(writer::write);
-        }
-        verifySegmentData(seg2, updatedData);
-        seg2.close();
-        assertEquals(4, directory.getFileNames().count());
+        final Segment<Integer, String> segment2 = makeSegment(directory,
+                SEGMENT_ID_1);
+        updatedData.forEach(
+                entry -> segment2.put(entry.getKey(), entry.getValue()));
+        segment2.flush();
+        verifySegmentData(segment2, updatedData);
+        closeAndAwait(segment2);
+        verifyNumberOfFiles(directory, 3);
     }
 
     private Segment<Integer, String> makeSegment(final Directory directory,
             final SegmentId id) {
-        return Segment.<Integer, String>builder().withDirectory(directory)//
+        return Segment.<Integer, String>builder(
+                directory)//
                 .withId(id)//
                 .withKeyTypeDescriptor(TDI)//
                 .withValueTypeDescriptor(TDS)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
-                .withMaxNumberOfKeysInSegmentCache(3)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterMagicNumberWriting(), //
@@ -77,7 +121,7 @@ class IntegrationSegmentWriteConsistencyTest {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build();
+                .build().getValue();
     }
 
 }

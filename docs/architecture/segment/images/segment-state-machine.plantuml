@@ -1,0 +1,23 @@
+@startuml Segment State Machine
+title Segment State Machine
+state READY
+state FREEZE
+state MAINTENANCE_RUNNING
+state CLOSED
+state ERROR
+
+[*] --> FREEZE : open
+FREEZE --> MAINTENANCE_RUNNING : maintenance thread\nstarts flush/compact
+FREEZE --> READY : swap complete\nor EXCLUSIVE_ACCESS closed\nSegment Initialization
+FREEZE --> CLOSED : close completes
+READY --> FREEZE : start flush()/compact()\nor openIterator(EXCLUSIVE_ACCESS)/\nclose()
+MAINTENANCE_RUNNING --> FREEZE : IO done\nswap starts
+
+ERROR -[hidden]-> READY
+
+note right of ERROR
+  Any state can transition to ERROR
+  on index or IO failure.
+end note
+
+@enduml

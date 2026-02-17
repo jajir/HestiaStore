@@ -6,7 +6,14 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.slf4j.MDC;
 
-public class EntryIteratorLoggingContext<K, V> extends AbstractCloseableResource
+/**
+ * Entry iterator decorator that sets the {@code index.name} MDC key while
+ * delegating iteration calls.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
+class EntryIteratorLoggingContext<K, V> extends AbstractCloseableResource
         implements EntryIterator<K, V> {
 
     private final EntryIterator<K, V> entryIterator;
@@ -18,6 +25,7 @@ public class EntryIteratorLoggingContext<K, V> extends AbstractCloseableResource
         this.indexConf = Vldtn.requireNonNull(indexConf, "indexConf");
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean hasNext() {
         setContext();
@@ -28,6 +36,7 @@ public class EntryIteratorLoggingContext<K, V> extends AbstractCloseableResource
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public Entry<K, V> next() {
         setContext();

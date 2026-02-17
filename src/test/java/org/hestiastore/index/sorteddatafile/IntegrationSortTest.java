@@ -8,9 +8,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-import org.hestiastore.index.FileNameUtil;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIteratorWithCurrent;
+import org.hestiastore.index.FileNameUtil;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -41,7 +41,8 @@ class IntegrationSortTest extends AbstractSegmentTest {
     void setUp() {
         dir = new MemDirectory();
         unsorted = UnsortedDataFile.<String, Integer>builder()
-                .withDirectory(dir)//
+                .withDirectory(
+                        dir)//
                 .withFileName(UNSORTED_FILE_NAME)//
                 .withValueWriter(tdi.getTypeWriter())//
                 .withValueReader(tdi.getTypeReader())//
@@ -49,7 +50,9 @@ class IntegrationSortTest extends AbstractSegmentTest {
                 .withKeyReader(tds.getTypeReader())//
                 .build();
 
-        sdf = new SortedDataFile<>(dir, SORTED_FILE_NAME, tds, tdi, 1024);
+        sdf = SortedDataFile.fromDirectory(
+                dir,
+                SORTED_FILE_NAME, tds, tdi, 1024);
 
         sorter = new DataFileSorter<>(unsorted, sdf,
                 (k, v1, v2) -> v1 > v2 ? v1 : v2, tds, 2);

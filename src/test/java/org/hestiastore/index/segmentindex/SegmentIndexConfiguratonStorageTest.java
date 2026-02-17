@@ -37,13 +37,15 @@ class SegmentIndexConfiguratonStorageTest {
 
     private IndexConfiguratonStorage<String, Long> storage;
 
-    private static final int MAX_KEYS_IN_READ_CACHE = 87979;
     private static final int MAX_KEYS_IN_SEGMENT_CACHE = 5000;
-    private static final int MAX_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING = 5777;
+    private static final int MAX_KEYS_IN_SEGMENT_WRITE_CACHE = 2500;
     private static final int MAX_INDEX_PAGE = 256;
-    private static final int MAX_KEYS_CACHE = 10000;
+    private static final int MAX_DELTA_CACHE_FILES = 12;
     private static final int MAX_KEYS_SEGMENT = 20000;
     private static final int MAX_SEGMENTS_CACHE = 8;
+    private static final int INDEX_WORKER_THREAD_COUNT = 2;
+    private static final int NUMBER_OF_IO_THREADS = 2;
+    private static final int NUMBER_OF_REGISTRY_LIFECYCLE_THREADS = 4;
     private static final String INDX_NAME = "specialIndex01";
     private static final int BLOOM_FILTER_HASH = 3;
     private static final int BLOOM_FILTER_INDEX_BYTES = 2048;
@@ -58,22 +60,25 @@ class SegmentIndexConfiguratonStorageTest {
                 .withValueClass(Long.class)//
                 .withKeyTypeDescriptor(TD_STRING)//
                 .withValueTypeDescriptor(TD_LONG)//
-                .withMaxNumberOfKeysInReadCache(MAX_KEYS_IN_READ_CACHE)//
                 .withMaxNumberOfKeysInSegmentCache(MAX_KEYS_IN_SEGMENT_CACHE)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(
-                        MAX_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING)//
+                .withMaxNumberOfKeysInSegmentWriteCache(
+                        MAX_KEYS_IN_SEGMENT_WRITE_CACHE)//
                 .withMaxNumberOfKeysInSegmentChunk(256)//
-                .withMaxNumberOfKeysInCache(10000)//
+                .withMaxNumberOfDeltaCacheFiles(MAX_DELTA_CACHE_FILES)//
                 .withMaxNumberOfKeysInSegment(20000)//
                 .withMaxNumberOfSegmentsInCache(8)//
+                .withIndexWorkerThreadCount(INDEX_WORKER_THREAD_COUNT)//
+                .withNumberOfIoThreads(NUMBER_OF_IO_THREADS)//
+                .withNumberOfRegistryLifecycleThreads(
+                        NUMBER_OF_REGISTRY_LIFECYCLE_THREADS)//
                 .withName(INDX_NAME)//
                 .withBloomFilterNumberOfHashFunctions(3)//
                 .withBloomFilterIndexSizeInBytes(2048)//
                 .withBloomFilterProbabilityOfFalsePositive(
                         BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE)//
                 .withDiskIoBufferSizeInBytes(4096)//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
+                .withSegmentMaintenanceAutoEnabled(true)//
                 .build();
         storage.save(config);
         logConfigurationFile();
@@ -83,16 +88,19 @@ class SegmentIndexConfiguratonStorageTest {
         assertEquals(Long.class, ret.getValueClass());
         assertEquals(TD_STRING, ret.getKeyTypeDescriptor());
         assertEquals(TD_LONG, ret.getValueTypeDescriptor());
-        assertEquals(MAX_KEYS_IN_READ_CACHE,
-                ret.getMaxNumberOfKeysInReadCache());
         assertEquals((int) MAX_KEYS_IN_SEGMENT_CACHE,
                 ret.getMaxNumberOfKeysInSegmentCache());
-        assertEquals((int) MAX_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING,
-                ret.getMaxNumberOfKeysInSegmentCacheDuringFlushing());
+        assertEquals((int) MAX_KEYS_IN_SEGMENT_WRITE_CACHE,
+                ret.getMaxNumberOfKeysInSegmentWriteCache());
         assertEquals(MAX_INDEX_PAGE, ret.getMaxNumberOfKeysInSegmentChunk());
-        assertEquals(MAX_KEYS_CACHE, ret.getMaxNumberOfKeysInCache());
+        assertEquals(MAX_DELTA_CACHE_FILES,
+                ret.getMaxNumberOfDeltaCacheFiles());
         assertEquals(MAX_KEYS_SEGMENT, ret.getMaxNumberOfKeysInSegment());
         assertEquals(MAX_SEGMENTS_CACHE, ret.getMaxNumberOfSegmentsInCache());
+        assertEquals(INDEX_WORKER_THREAD_COUNT, ret.getIndexWorkerThreadCount());
+        assertEquals(NUMBER_OF_IO_THREADS, ret.getNumberOfIoThreads());
+        assertEquals(NUMBER_OF_REGISTRY_LIFECYCLE_THREADS,
+                ret.getNumberOfRegistryLifecycleThreads());
         assertEquals(INDX_NAME, ret.getIndexName());
         assertEquals(BLOOM_FILTER_HASH,
                 ret.getBloomFilterNumberOfHashFunctions());
@@ -101,8 +109,8 @@ class SegmentIndexConfiguratonStorageTest {
         assertEquals(BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE,
                 ret.getBloomFilterProbabilityOfFalsePositive());
         assertEquals(DISK_IO_BUFFER, ret.getDiskIoBufferSize());
-        assertTrue(ret.isThreadSafe());
         assertTrue(ret.isContextLoggingEnabled());
+        assertTrue(ret.isSegmentMaintenanceAutoEnabled());
     }
 
     @Test
@@ -114,12 +122,11 @@ class SegmentIndexConfiguratonStorageTest {
                 .withKeyTypeDescriptor(TD_STRING)//
                 .withValueTypeDescriptor(TD_LONG)//
                 .withName(INDX_NAME)//
-                .withMaxNumberOfKeysInReadCache(MAX_KEYS_IN_READ_CACHE)//
                 .withMaxNumberOfKeysInSegmentCache(MAX_KEYS_IN_SEGMENT_CACHE)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(
-                        MAX_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING)//
+                .withMaxNumberOfKeysInSegmentWriteCache(
+                        MAX_KEYS_IN_SEGMENT_WRITE_CACHE)//
                 .withMaxNumberOfKeysInSegmentChunk(MAX_INDEX_PAGE)//
-                .withMaxNumberOfKeysInCache(MAX_KEYS_CACHE)//
+                .withMaxNumberOfDeltaCacheFiles(MAX_DELTA_CACHE_FILES)//
                 .withMaxNumberOfKeysInSegment(MAX_KEYS_SEGMENT)//
                 .withMaxNumberOfSegmentsInCache(MAX_SEGMENTS_CACHE)//
                 .withBloomFilterNumberOfHashFunctions(BLOOM_FILTER_HASH)//
@@ -127,7 +134,6 @@ class SegmentIndexConfiguratonStorageTest {
                 .withBloomFilterProbabilityOfFalsePositive(
                         BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE)//
                 .withDiskIoBufferSizeInBytes(DISK_IO_BUFFER)//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
                 .withEncodingFilterClasses(//
                         List.of(ChunkFilterCrc32Writing.class, //
@@ -169,19 +175,17 @@ class SegmentIndexConfiguratonStorageTest {
                 .withValueClass(Long.class)//
                 .withKeyTypeDescriptor(TD_STRING)//
                 .withValueTypeDescriptor(TD_LONG)//
-                .withMaxNumberOfKeysInReadCache(MAX_KEYS_IN_READ_CACHE)//
                 .withMaxNumberOfKeysInSegmentCache(MAX_KEYS_IN_SEGMENT_CACHE)//
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(
-                        MAX_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING)//
+                .withMaxNumberOfKeysInSegmentWriteCache(
+                        MAX_KEYS_IN_SEGMENT_WRITE_CACHE)//
                 .withMaxNumberOfKeysInSegmentChunk(256)//
-                .withMaxNumberOfKeysInCache(10000)//
+                .withMaxNumberOfDeltaCacheFiles(MAX_DELTA_CACHE_FILES)//
                 .withMaxNumberOfKeysInSegment(20000)//
                 .withMaxNumberOfSegmentsInCache(8)//
                 .withName(INDX_NAME)//
                 .withBloomFilterNumberOfHashFunctions(3)//
                 .withBloomFilterIndexSizeInBytes(2048)//
                 .withDiskIoBufferSizeInBytes(4096)//
-                .withThreadSafe(true)//
                 .withContextLoggingEnabled(true)//
                 .build();
         storage.save(config);
@@ -194,10 +198,11 @@ class SegmentIndexConfiguratonStorageTest {
         assertEquals(TD_LONG, ret.getValueTypeDescriptor());
         assertEquals((int) MAX_KEYS_IN_SEGMENT_CACHE,
                 ret.getMaxNumberOfKeysInSegmentCache());
-        assertEquals((int) MAX_KEYS_IN_SEGMENT_CACHE_DURING_FLUSHING,
-                ret.getMaxNumberOfKeysInSegmentCacheDuringFlushing());
+        assertEquals((int) MAX_KEYS_IN_SEGMENT_WRITE_CACHE,
+                ret.getMaxNumberOfKeysInSegmentWriteCache());
         assertEquals(MAX_INDEX_PAGE, ret.getMaxNumberOfKeysInSegmentChunk());
-        assertEquals(MAX_KEYS_CACHE, ret.getMaxNumberOfKeysInCache());
+        assertEquals(MAX_DELTA_CACHE_FILES,
+                ret.getMaxNumberOfDeltaCacheFiles());
         assertEquals(MAX_KEYS_SEGMENT, ret.getMaxNumberOfKeysInSegment());
         assertEquals(MAX_SEGMENTS_CACHE, ret.getMaxNumberOfSegmentsInCache());
         assertEquals(INDX_NAME, ret.getIndexName());
@@ -212,7 +217,6 @@ class SegmentIndexConfiguratonStorageTest {
         assertEquals(BloomFilterBuilder.DEFAULT_PROBABILITY_OF_FALSE_POSITIVE,
                 ret.getBloomFilterProbabilityOfFalsePositive());
         assertEquals(DISK_IO_BUFFER, ret.getDiskIoBufferSize());
-        assertTrue(ret.isThreadSafe());
         assertTrue(ret.isContextLoggingEnabled());
     }
 
@@ -221,14 +225,16 @@ class SegmentIndexConfiguratonStorageTest {
         final Exception e = assertThrows(IndexException.class,
                 () -> storage.load());
 
-        assertEquals("File index-configuration.properties does not "
-                + "exist in directory MemDirectory{}", e.getMessage());
+        assertTrue(e.getMessage().startsWith(
+                "File manifest.txt does not exist in directory"),
+                e.getMessage());
     }
 
     @BeforeEach
     void setup() {
         directory = new MemDirectory();
-        storage = new IndexConfiguratonStorage<>(directory);
+        storage = new IndexConfiguratonStorage<>(
+                directory);
     }
 
     @AfterEach
@@ -240,7 +246,7 @@ class SegmentIndexConfiguratonStorageTest {
     private void logConfigurationFile() {
         if (directory instanceof MemDirectory) {
             final MemDirectory memDirectory = (MemDirectory) directory;
-            final String fileName = "index-configuration.properties";
+            final String fileName = "manifest.txt";
             if (memDirectory.isFileExists(fileName)) {
                 final String content = new String(
                         memDirectory.getFileBytes(fileName).getData(),

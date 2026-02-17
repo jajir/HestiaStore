@@ -36,7 +36,8 @@ public class SingleChunkEntryIteratorTest {
     Chunk makeChunkFromEntryList(final List<Entry<Integer, String>> entryList) {
         final SortedDataFile<Integer, String> sortedDataFile = SortedDataFile
                 .<Integer, String>builder() //
-                .withDirectory(directory) //
+                .withDirectory(
+                        directory) //
                 .withFileName(FILE_NAME)//
                 .withKeyTypeDescriptor(TestData.TYPE_DESCRIPTOR_INTEGER) //
                 .withValueTypeDescriptor(TestData.TYPE_DESCRIPTOR_STRING) //

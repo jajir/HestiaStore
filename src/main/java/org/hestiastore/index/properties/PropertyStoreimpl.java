@@ -15,29 +15,38 @@ import org.hestiastore.index.directory.FileReader;
 import org.hestiastore.index.directory.FileWriter;
 
 /**
- * {@link PropertyStore} backed by the {@link Directory} abstraction. It loads
- * all properties into memory and persists changes atomically through explicit
- * transactions.
+ * {@link PropertyStore} backed by the {@link Directory} abstraction. It
+ * loads all properties into memory and persists changes atomically through
+ * explicit transactions.
  */
 public final class PropertyStoreimpl implements PropertyStore {
 
-    private final Directory directory;
+    private static final String PROPERTIES_HEADER_COMMENT = "HestiaStore metadata. Numeric format: underscore (_) is thousands separator; dot (.) is decimal separator.";
+
+    private final Directory directoryFacade;
     private final String fileName;
     private final Properties properties = new Properties();
     private final PropertyConverters converters = new PropertyConverters();
 
-    public PropertyStoreimpl(final Directory directory, final String fileName,
-            final boolean force) {
-        this.directory = Vldtn.requireNonNull(directory, "directory");
+    public PropertyStoreimpl(final Directory directoryFacade,
+            final String fileName, final boolean force) {
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
         this.fileName = Vldtn.requireNonNull(fileName, "fileName");
         loadIfPresent(force);
     }
 
+    public static PropertyStoreimpl fromDirectory(
+            final Directory directoryFacade,
+            final String fileName, final boolean force) {
+        return new PropertyStoreimpl(directoryFacade, fileName, force);
+    }
+
     private void loadIfPresent(final boolean force) {
-        if (!directory.isFileExists(fileName)) {
+        if (!directoryFacade.isFileExists(fileName)) {
             if (force) {
                 throw new IndexException("File " + fileName
-                        + " does not exist in directory " + directory);
+                        + " does not exist in directory " + directoryFacade);
             }
             return;
         }
@@ -50,7 +59,7 @@ public final class PropertyStoreimpl implements PropertyStore {
     }
 
     private byte[] readEntireFile() {
-        try (FileReader reader = directory.getFileReader(fileName)) {
+        try (FileReader reader = directoryFacade.getFileReader(fileName)) {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
             final byte[] buffer = new byte[256];
             int read = reader.read(buffer);
@@ -70,6 +79,11 @@ public final class PropertyStoreimpl implements PropertyStore {
     }
 
     @Override
+    public PropertyMutationSession openMutationSession() {
+        return new PropertyMutationSession(beginTransaction());
+    }
+
+    @Override
     public PropertyView snapshot() {
         synchronized (properties) {
             final Map<String, String> copy = new HashMap<>();
@@ -82,7 +96,7 @@ public final class PropertyStoreimpl implements PropertyStore {
 
     void writeToDisk(final Properties propsToWrite) {
         final byte[] bytes = convertToBytes(propsToWrite);
-        try (FileWriter writer = directory.getFileWriter(fileName,
+        try (FileWriter writer = directoryFacade.getFileWriter(fileName,
                 Access.OVERWRITE)) {
             writer.write(bytes);
         }
@@ -91,7 +105,7 @@ public final class PropertyStoreimpl implements PropertyStore {
     private byte[] convertToBytes(final Properties propertiesToConvert) {
         try {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            propertiesToConvert.store(baos, "Property file");
+            propertiesToConvert.store(baos, PROPERTIES_HEADER_COMMENT);
             return baos.toByteArray();
         } catch (IOException e) {
             throw new IndexException(e.getMessage(), e);

@@ -7,22 +7,37 @@ import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFileWriterTx;
 import org.hestiastore.index.scarceindex.ScarceIndexWriterTx;
 
+/**
+ * Transaction that rebuilds the full segment index and metadata.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 public class SegmentFullWriterTx<K, V>
         extends GuardedWriteTransaction<EntryWriter<K, V>>
         implements WriteTransaction<K, V> {
 
     private final SegmentPropertiesManager segmentPropertiesManager;
     private final int maxNumberOfKeysInIndexPage;
-    private final SegmentDataProvider<K, V> segmentDataProvider;
+    private final SegmentResources<K, V> segmentDataProvider;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
     private final ChunkEntryFileWriterTx<K, V> chunkPairFileWriterTx;
     private final ScarceIndexWriterTx<K> scarceIndexWriterTx;
     private SegmentFullWriter<K, V> segmentFullWriter;
 
+    /**
+     * Creates a full writer transaction for the given segment files.
+     *
+     * @param segmentFiles segment file access wrapper
+     * @param propertiesManager properties manager for stats updates
+     * @param maxNumberOfKeysInIndexPage keys per index page
+     * @param dataProvider segment resources provider
+     * @param deltaCacheController delta cache controller
+     */
     SegmentFullWriterTx(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager propertiesManager,
             final int maxNumberOfKeysInIndexPage,
-            final SegmentDataProvider<K, V> dataProvider,
+            final SegmentResources<K, V> dataProvider,
             final SegmentDeltaCacheController<K, V> deltaCacheController) {
         this.segmentPropertiesManager = Vldtn.requireNonNull(propertiesManager,
                 "segmentPropertiesManager");
@@ -35,6 +50,11 @@ public class SegmentFullWriterTx<K, V>
         this.scarceIndexWriterTx = segmentFiles.getScarceIndex().openWriterTx();
     }
 
+    /**
+     * Opens the writer used to stream entries into the rebuilt segment.
+     *
+     * @return entry writer for the transaction
+     */
     @Override
     protected EntryWriter<K, V> doOpen() {
         final EntryWriter<K, Integer> scarceWriter = scarceIndexWriterTx.open();
@@ -44,16 +64,20 @@ public class SegmentFullWriterTx<K, V>
         return segmentFullWriter;
     }
 
+    /**
+     * Commits the rebuilt segment files and updates metadata.
+     *
+     * @param writer entry writer used during the transaction
+     */
     @Override
     protected void doCommit(final EntryWriter<K, V> writer) {
         scarceIndexWriterTx.commit();
         chunkPairFileWriterTx.commit();
-        deltaCacheController.clear();
+        segmentFullWriter.commitBloomFilter();
+        deltaCacheController.clearPreservingWriteCache();
 
-        segmentPropertiesManager.setNumberOfKeysInCache(0);
-        segmentPropertiesManager
-                .setNumberOfKeysInIndex(segmentFullWriter.getNumberKeys());
-        segmentPropertiesManager.setNumberOfKeysInScarceIndex(
+        segmentPropertiesManager.setKeyCounters(0,
+                segmentFullWriter.getNumberKeys(),
                 segmentFullWriter.getNumberKeysInScarceIndex());
     }
 }

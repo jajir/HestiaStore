@@ -29,8 +29,9 @@ public class IntegrationChunkStoreFileTest {
     @BeforeEach
     void setUp() {
         directory = new MemDirectory();
-        chunkStoreFile = new ChunkStoreFile(directory, FILE_NAME,
-                DATABLOCK_SIZE,
+        chunkStoreFile = new ChunkStoreFile(
+                directory,
+                FILE_NAME, DATABLOCK_SIZE,
                 List.of(new ChunkFilterMagicNumberWriting(),
                         new ChunkFilterCrc32Writing(),
                         new ChunkFilterDoNothing()),

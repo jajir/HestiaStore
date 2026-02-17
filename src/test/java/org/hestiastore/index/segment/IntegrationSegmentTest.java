@@ -1,9 +1,6 @@
 package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -14,7 +11,6 @@ import java.util.stream.Stream;
 
 import org.hestiastore.index.AbstractDataTest;
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -24,6 +20,7 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.directory.Directory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -31,15 +28,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class IntegrationSegmentTest extends AbstractSegmentTest {
 
-    private static final SegmentId SEGMENT_37_ID = SegmentId.of(37);
-
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
 
     private final List<Entry<Integer, String>> testDataSet = Arrays.asList(
-            Entry.of(2, "a"), Entry.of(5, "d"), Entry.of(10, "i"), Entry.of(8, "g"),
-            Entry.of(7, "f"), Entry.of(3, "b"), Entry.of(4, "c"), Entry.of(6, "e"),
-            Entry.of(9, "h"));
+            Entry.of(2, "a"), Entry.of(5, "d"), Entry.of(10, "i"),
+            Entry.of(8, "g"), Entry.of(7, "f"), Entry.of(3, "b"),
+            Entry.of(4, "c"), Entry.of(6, "e"), Entry.of(9, "h"));
     private final List<Entry<Integer, String>> sortedTestDataSet = testDataSet
             .stream().sorted((entry1, entry2) -> {
                 return entry1.getKey() - entry2.getKey();
@@ -53,7 +48,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
             final int expectedNumberKeysInScarceIndex,
             int expectedNumberOfFiles) {
 
-        seg.forceCompact();
+        assertEquals(SegmentResultStatus.OK, seg.compact().getStatus());
         verifyCacheFiles(directory);
 
         verifySegmentData(seg, Arrays.asList());
@@ -69,8 +64,8 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         ));
 
         /*
-         * Number of file's is constantly 0, because of forceCompact method
-         * doesn't run, because there are no canges in delta files.
+         * Number of file's is constantly 0, because of compact method doesn't
+         * run, because there are no canges in delta files.
          */
         assertEquals(4, numberOfFilesInDirectory(directory));
 
@@ -96,13 +91,13 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         /**
          * It's always 4 or 5 because only one or zero delta files could exists.
          */
-        if (numberOfFilesInDirectoryP(directory) != 4
-                && numberOfFilesInDirectoryP(directory) != 5) {
+        if (numberOfFilesInDirectory(directory) != 3
+                && numberOfFilesInDirectory(directory) != 4) {
             fail("Invalid number of files "
-                    + numberOfFilesInDirectoryP(directory));
+                    + numberOfFilesInDirectory(directory));
         }
 
-        seg.forceCompact();
+        assertEquals(SegmentResultStatus.OK, seg.compact().getStatus());
         assertEquals(9, seg.getStats().getNumberOfKeys());
         assertEquals(expectedNumberKeysInScarceIndex,
                 seg.getStats().getNumberOfKeysInScarceIndex());
@@ -126,12 +121,11 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
 
         verifyTestDataSet(seg);
 
-        assertEquals(expectedNumberOfFiles,
-                numberOfFilesInDirectoryP(directory));
+        verifyNumberOfFiles(directory, expectedNumberOfFiles);
 
-        seg.forceCompact();
+        assertEquals(SegmentResultStatus.OK, seg.compact().getStatus());
 
-        assertEquals(4, numberOfFilesInDirectoryP(directory));
+        verifyNumberOfFiles(directory, 4);
         verifyTestDataSet(seg);
         assertEquals(9, seg.getStats().getNumberOfKeys());
         assertEquals(expectedNumberKeysInScarceIndex,
@@ -152,69 +146,18 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
 
     }
 
-    @ParameterizedTest
-    @MethodSource("segmentProvider")
-    void test_split(final TypeDescriptorInteger tdi,
-            final TypeDescriptorShortString tds, final Directory directory,
-            final Segment<Integer, String> seg,
-            final int expectedNumberKeysInScarceIndex,
-            final int expectedNumberOfFiles) {
-
-        writeEntries(seg, Arrays.asList(Entry.of(2, "e"), Entry.of(3, "e"),
-                Entry.of(4, "e")));
-        writeEntries(seg, Arrays.asList(Entry.of(2, "a"), Entry.of(3, "b"),
-                Entry.of(4, "c"), Entry.of(5, "d")));
-
-        final SegmentId segId = SegmentId.of(3);
-        final SegmentSplitter<Integer, String> splitter = seg
-                .getSegmentSplitter();
-        final SegmentSplitterPolicy<Integer, String> policy = seg
-                .getSegmentSplitterPolicy();
-        final SegmentSplitterPlan<Integer, String> plan = SegmentSplitterPlan
-                .fromPolicy(policy);
-        final SegmentSplitterResult<Integer, String> result = splitter
-                .split(segId, plan);
-        final Segment<Integer, String> smaller = result.getSegment();
-        assertEquals(2, result.getMinKey());
-        assertEquals(3, result.getMaxKey());
-
-        verifySegmentData(seg, Arrays.asList(//
-                Entry.of(4, "c"), //
-                Entry.of(5, "d") //
-        ));
-
-        verifySegmentData(smaller, Arrays.asList(//
-                Entry.of(2, "a"), //
-                Entry.of(3, "b") //
-        ));
-
-        verifySegmentSearch(seg, Arrays.asList(//
-                Entry.of(2, null), //
-                Entry.of(3, null), //
-                Entry.of(4, "c"), //
-                Entry.of(5, "d") //
-        ));
-
-        verifySegmentSearch(smaller, Arrays.asList(//
-                Entry.of(2, "a"), //
-                Entry.of(3, "b"), //
-                Entry.of(4, null), //
-                Entry.of(5, null) //
-        ));
-
-        assertEquals(8, numberOfFilesInDirectoryP(directory));
-    }
-
     @Test
     void test_duplicities() {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
-        final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
-                .withDirectory(directory)//
+        final Segment<Integer, String> seg = Segment
+                .<Integer, String>builder(
+                        directory)//
                 .withId(id)//
                 .withKeyTypeDescriptor(tdi)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withValueTypeDescriptor(tds)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterMagicNumberWriting(), //
                                 new ChunkFilterCrc32Writing(), //
@@ -225,7 +168,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build();
+                .build().getValue();
 
         writeEntries(seg, Arrays.asList(//
                 Entry.of(2, "a"), //
@@ -261,12 +204,14 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
     void test_write_unordered() {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
-        final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
-                .withDirectory(directory)//
+        final Segment<Integer, String> seg = Segment
+                .<Integer, String>builder(
+                        directory)//
                 .withId(id)//
                 .withKeyTypeDescriptor(tdi)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withValueTypeDescriptor(tds)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterMagicNumberWriting(), //
                                 new ChunkFilterCrc32Writing(), //
@@ -277,7 +222,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build();
+                .build().getValue();
 
         writeEntries(seg, Arrays.asList(//
                 Entry.of(5, "d"), //
@@ -313,11 +258,13 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
     void test_write_unordered_tombstone() {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
-        final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
-                .withDirectory(directory)//
+        final Segment<Integer, String> seg = Segment
+                .<Integer, String>builder(
+                        directory)//
                 .withId(id)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterMagicNumberWriting(), //
                                 new ChunkFilterCrc32Writing(), //
@@ -328,7 +275,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build();
+                .build().getValue();
 
         writeEntries(seg, Arrays.asList(//
                 Entry.of(5, "d"), //
@@ -390,10 +337,13 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
     void test_write_delete_operations() {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
-        final Segment<Integer, String> seg = Segment.<Integer, String>builder()
-                .withDirectory(directory).withId(id).withKeyTypeDescriptor(tdi)
+        final Segment<Integer, String> seg = Segment
+                .<Integer, String>builder(
+                        directory)
+                .withId(id).withKeyTypeDescriptor(tdi)
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withValueTypeDescriptor(tds)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterMagicNumberWriting(), //
                                 new ChunkFilterCrc32Writing(), //
@@ -404,7 +354,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build();
+                .build().getValue();
 
         writeEntries(seg, Arrays.asList(//
                 Entry.of(2, "a"), //
@@ -437,107 +387,41 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
     }
 
     @Test
-    void test_split_just_tombstones() {
+    void test_write_to_unloaded_segment() {
         final Directory directory = new MemDirectory();
-        final SegmentId id = SegmentId.of(27);
-        final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
-                .withDirectory(directory)//
-                .withId(id)//
-                .withMaxNumberOfKeysInSegmentCache(13)//
+        final Directory asyncDirectory = directory;
+        final SegmentId segmentId = SegmentId.of(27);
+
+        final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
+                asyncDirectory, segmentId);
+        segmentPropertiesManager.setVersion(1L);
+
+        final Segment<Integer, String> seg = Segment
+                .<Integer, String>builder(
+                        directory)//
+                .withId(segmentId)//
+                .withMaxNumberOfKeysInSegmentWriteCache(64)//
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(128)//
+                .withMaxNumberOfKeysInSegmentCache(256)//
                 .withMaxNumberOfKeysInSegmentChunk(3)//
                 .withKeyTypeDescriptor(tdi)//
+                .withBloomFilterNumberOfHashFunctions(2)//
                 .withBloomFilterIndexSizeInBytes(0)//
+                .withBloomFilterProbabilityOfFalsePositive(0.01)//
                 .withValueTypeDescriptor(tds)//
-                .withEncodingChunkFilters(//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
+                .withDiskIoBufferSize(1024)//
+                .withEncodingChunkFilters(
                         List.of(new ChunkFilterMagicNumberWriting(), //
                                 new ChunkFilterCrc32Writing(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .withDecodingChunkFilters(//
+                .withDecodingChunkFilters(
                         List.of(new ChunkFilterMagicNumberValidation(), //
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build();
-
-        writeEntries(seg, Arrays.asList(//
-                Entry.of(25, "d"), //
-                Entry.of(15, "d"), //
-                Entry.of(1, TypeDescriptorShortString.TOMBSTONE_VALUE), //
-                Entry.of(2, TypeDescriptorShortString.TOMBSTONE_VALUE), //
-                Entry.of(3, TypeDescriptorShortString.TOMBSTONE_VALUE), //
-                Entry.of(4, TypeDescriptorShortString.TOMBSTONE_VALUE), //
-                Entry.of(5, TypeDescriptorShortString.TOMBSTONE_VALUE), //
-                Entry.of(6, TypeDescriptorShortString.TOMBSTONE_VALUE), //
-                Entry.of(7, TypeDescriptorShortString.TOMBSTONE_VALUE), //
-                Entry.of(8, TypeDescriptorShortString.TOMBSTONE_VALUE), //
-                Entry.of(9, TypeDescriptorShortString.TOMBSTONE_VALUE)//
-        ));
-        final SegmentSplitterPolicy<Integer, String> segSplitPolicy = seg
-                .getSegmentSplitterPolicy();
-        assertTrue(segSplitPolicy.shouldBeCompactedBeforeSplitting(10));
-
-        final SegmentSplitter<Integer, String> segmentSplitter = seg
-                .getSegmentSplitter();
-        /**
-         * Verify that split is not possible
-         */
-        final SegmentSplitterPlan<Integer, String> plan2 = SegmentSplitterPlan
-                .fromPolicy(segSplitPolicy);
-        final Exception err = assertThrows(IllegalStateException.class,
-                () -> segmentSplitter.split(SEGMENT_37_ID, plan2));
-        assertEquals("Splitting failed. Number of keys is too low.",
-                err.getMessage());
-    }
-
-    @Test
-    void test_write_to_unloaded_segment() {
-        final Directory directory = new MemDirectory();
-        final SegmentId segmentId = SegmentId.of(27);
-
-        SegmentConf segmentConf = new SegmentConf(13, 17, 3, 2, 0, 0.01, 1024,
-                List.of(), List.of());
-
-        final SegmentPropertiesManager segmentPropertiesManager = new SegmentPropertiesManager(
-                directory, segmentId);
-
-        final SegmentFiles<Integer, String> segmentFiles = new SegmentFiles<>(
-                directory, segmentId, tdi, tds, 1024, //
-                List.of(new ChunkFilterMagicNumberWriting(), //
-                        new ChunkFilterCrc32Writing(), //
-                        new ChunkFilterDoNothing()//
-                ), //
-                List.of(new ChunkFilterMagicNumberValidation(), //
-                        new ChunkFilterCrc32Validation(), //
-                        new ChunkFilterDoNothing()//
-                )//
-        );
-
-        final SegmentDataSupplier<Integer, String> segmentDataSupplier = new SegmentDataSupplier<>(
-                segmentFiles, segmentConf, segmentPropertiesManager);
-
-        final SegmentDataFactory<Integer, String> segmentDataFactory = new SegmentDataFactoryImpl<>(
-                segmentDataSupplier);
-
-        final SegmentDataProviderSimple<Integer, String> dataProvider = new SegmentDataProviderSimple<>(
-                segmentDataFactory);
-
-        final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
-                .withDirectory(directory)//
-                .withId(segmentId)//
-                .withSegmentDataProvider(dataProvider)//
-                .withSegmentConf(segmentConf)//
-                .withSegmentFiles(segmentFiles)//
-                .withSegmentPropertiesManager(segmentPropertiesManager)//
-                .withSegmentDataProvider(dataProvider)//
-                .withMaxNumberOfKeysInSegmentCache(13)//
-                .withMaxNumberOfKeysInSegmentChunk(3)//
-                .withKeyTypeDescriptor(tdi)//
-                .withBloomFilterIndexSizeInBytes(0)//
-                .withValueTypeDescriptor(tds)//
-                .build();
-
-        assertFalse(dataProvider.isLoaded());
+                .build().getValue();
 
         writeEntries(seg, Arrays.asList(//
                 Entry.of(11, "aaa"), //
@@ -554,11 +438,6 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 Entry.of(22, "aal"), //
                 Entry.of(9, TypeDescriptorShortString.TOMBSTONE_VALUE)//
         ));
-        /**
-         * Writing to segment which doesn't require compaction doesn't load
-         * segment data.
-         */
-        assertFalse(dataProvider.isLoaded());
 
         verifySegmentSearch(seg, Arrays.asList(// s
                 Entry.of(9, null), //
@@ -567,18 +446,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 Entry.of(14, "aad"), //
                 Entry.of(15, "aae") //
         ));
-
-        /**
-         * SegmentIndex search should lead to load segment data.
-         */
-        assertTrue(dataProvider.isLoaded());
-
-        /**
-         * Force unloading segment data
-         */
-        dataProvider.invalidate();
-
-        assertFalse(dataProvider.isLoaded());
+        seg.close();
     }
 
     /**
@@ -596,15 +464,17 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
      * @
      */
     @Test
-    void test_write_unordered_tombstone_with_forceCompact() {
+    void test_write_unordered_tombstone_with_compact() {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
-        final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
-                .withDirectory(directory)//
+        final Segment<Integer, String> seg = Segment
+                .<Integer, String>builder(
+                        directory)//
                 .withId(id)//
                 .withKeyTypeDescriptor(tdi)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withValueTypeDescriptor(tds)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterMagicNumberWriting(), //
                                 new ChunkFilterCrc32Writing(), //
@@ -615,7 +485,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build();
+                .build().getValue();
 
         writeEntries(seg, Arrays.asList(//
                 Entry.of(5, "d"), //
@@ -627,7 +497,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                 Entry.of(5, "ddd"), //
                 Entry.of(5, TypeDescriptorShortString.TOMBSTONE_VALUE)//
         ));
-        seg.forceCompact();
+        assertEquals(SegmentResultStatus.OK, seg.compact().getStatus());
 
         assertEquals(3, seg.getStats().getNumberOfKeys());
         assertEquals(0, seg.getStats().getNumberOfKeysInDeltaCache());
@@ -662,15 +532,16 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
     void test_search_on_disk() {
         final Directory directory = new MemDirectory();
         final SegmentId id = SegmentId.of(27);
-        final Segment<Integer, String> seg = Segment.<Integer, String>builder()//
-                .withDirectory(directory)//
+        final Segment<Integer, String> seg = Segment
+                .<Integer, String>builder(
+                        directory)//
                 .withId(id)//
                 .withKeyTypeDescriptor(tdi)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withMaxNumberOfKeysInSegmentChunk(3)//
-                .withMaxNumberOfKeysInSegmentCache(5)//
                 .withDiskIoBufferSize(3 * 1024)//
                 .withValueTypeDescriptor(tds)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .withEncodingChunkFilters(//
                         List.of(new ChunkFilterMagicNumberWriting(), //
                                 new ChunkFilterCrc32Writing(), //
@@ -681,21 +552,25 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build();
+                .build().getValue();
 
         final List<Entry<Integer, String>> entries = new ArrayList<>();
-        try (EntryWriter<Integer, String> writer = seg.openDeltaCacheWriter()) {
-            for (int i = 0; i < 1000; i++) {
-                final Entry<Integer, String> p = Entry.of(i, "Ahoj");
-                writer.write(p);
-                entries.add(p);
-            }
+        for (int i = 0; i < 1000; i++) {
+            final Entry<Integer, String> p = Entry.of(i, "Ahoj");
+            assertEquals(SegmentResultStatus.OK,
+                    seg.put(p.getKey(), p.getValue()).getStatus());
+            entries.add(p);
         }
-        seg.forceCompact();
+        assertEquals(SegmentResultStatus.OK, seg.flush().getStatus());
+        assertEquals(SegmentResultStatus.OK, seg.compact().getStatus());
 
         AbstractDataTest.verifyIteratorData(entries, seg.openIterator());
         for (int i = 0; i < 1000; i++) {
-            assertEquals("Ahoj", seg.get(i), "Invalid value for key " + i);
+            final SegmentResult<String> result = seg.get(i);
+            assertEquals(SegmentResultStatus.OK, result.getStatus(),
+                    "Invalid result status for key " + i);
+            assertEquals("Ahoj", result.getValue(),
+                    "Invalid value for key " + i);
         }
     }
 
@@ -714,35 +589,41 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         final SegmentId id3 = SegmentId.of(17);
         final TypeDescriptorShortString tds = new TypeDescriptorShortString();
         final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
-        return Stream.of(arguments(tdi, tds, dir1,
-                Segment.<Integer, String>builder()//
-                        .withDirectory(dir1)//
-                        .withId(id1)//
-                        .withKeyTypeDescriptor(tdi)//
-                        .withValueTypeDescriptor(tds)//
-                        .withMaxNumberOfKeysInSegmentCache(10) //
-                        .withMaxNumberOfKeysInSegmentChunk(10)//
-                        .withBloomFilterIndexSizeInBytes(0)// .withBloomFilterProbabilityOfFalsePositive(0.01D)//
-                        .withDiskIoBufferSize(1 * 1024) //
-                        .withEncodingChunkFilters(//
-                                List.of(new ChunkFilterMagicNumberWriting(), //
-                                        new ChunkFilterCrc32Writing(), //
-                                        new ChunkFilterDoNothing()//
-                                ))//
-                        .withDecodingChunkFilters(//
-                                List.of(new ChunkFilterMagicNumberValidation(), //
-                                        new ChunkFilterCrc32Validation(), //
-                                        new ChunkFilterDoNothing()//
-                                ))//
-                        .build(), //
+        final int smallCacheSize = 1024;
+        final int smallWriteCache = 256;
+        return Stream.of(arguments(tdi, tds, dir1, Segment
+                .<Integer, String>builder(
+                        dir1)//
+                .withId(id1)//
+                .withKeyTypeDescriptor(tdi)//
+                .withValueTypeDescriptor(tds)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
+                .withMaxNumberOfKeysInSegmentCache(smallCacheSize)//
+                .withMaxNumberOfKeysInSegmentWriteCache(smallWriteCache)//
+                .withMaxNumberOfKeysInSegmentChunk(10)//
+                .withBloomFilterIndexSizeInBytes(0)// .withBloomFilterProbabilityOfFalsePositive(0.01D)//
+                .withDiskIoBufferSize(1 * 1024) //
+                .withEncodingChunkFilters(//
+                        List.of(new ChunkFilterMagicNumberWriting(), //
+                                new ChunkFilterCrc32Writing(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
+                .withDecodingChunkFilters(//
+                        List.of(new ChunkFilterMagicNumberValidation(), //
+                                new ChunkFilterCrc32Validation(), //
+                                new ChunkFilterDoNothing()//
+                        ))//
+                .build().getValue(), //
                 1, // expectedNumberKeysInScarceIndex,
                 10 // expectedNumberOfFile
-        ), arguments(tdi, tds, dir2, Segment.<Integer, String>builder()//
-                .withDirectory(dir2)//
+        ), arguments(tdi, tds, dir2, Segment.<Integer, String>builder(
+                dir2)//
                 .withId(id2)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//
-                .withMaxNumberOfKeysInSegmentCache(3)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
+                .withMaxNumberOfKeysInSegmentCache(smallCacheSize)//
+                .withMaxNumberOfKeysInSegmentWriteCache(smallWriteCache)//
                 .withMaxNumberOfKeysInSegmentChunk(1)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)//
@@ -757,15 +638,17 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build(), //
+                .build().getValue(), //
                 9, // expectedNumberKeysInScarceIndex
-                5// expectedNumberOfFile
-        ), arguments(tdi, tds, dir3, Segment.<Integer, String>builder()//
-                .withDirectory(dir3)//
+                10// expectedNumberOfFile
+        ), arguments(tdi, tds, dir3, Segment.<Integer, String>builder(
+                dir3)//
                 .withId(id3)//
                 .withKeyTypeDescriptor(tdi)//
                 .withValueTypeDescriptor(tds)//
-                .withMaxNumberOfKeysInSegmentCache(5)//
+                .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
+                .withMaxNumberOfKeysInSegmentCache(smallCacheSize)//
+                .withMaxNumberOfKeysInSegmentWriteCache(smallWriteCache)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withBloomFilterIndexSizeInBytes(0)//
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)//
@@ -780,9 +663,9 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                                 new ChunkFilterCrc32Validation(), //
                                 new ChunkFilterDoNothing()//
                         ))//
-                .build(), //
+                .build().getValue(), //
                 5, // expectedNumberKeysInScarceIndex
-                7 // expectedNumberOfFile
+                10 // expectedNumberOfFile
         ));
     }
 

@@ -25,7 +25,9 @@ public class IntegrationDataBlockFileTest {
     @BeforeEach
     void setUp() {
         directory = new MemDirectory();
-        dataBlockFile = new DataBlockFile(directory, FILE_NAME, BLOCK_SIZE);
+        dataBlockFile = new DataBlockFile(
+                directory,
+                FILE_NAME, BLOCK_SIZE);
     }
 
     @AfterEach

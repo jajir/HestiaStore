@@ -24,7 +24,7 @@ import org.hestiastore.index.chunkstore.CellPosition;
  * @param <K> key type
  * @param <V> value type
  */
-public class SegmentFullWriter<K, V> extends AbstractCloseableResource
+class SegmentFullWriter<K, V> extends AbstractCloseableResource
         implements EntryWriter<K, V> {
 
     private final int maxNumberOfKeysInIndexPage;
@@ -37,8 +37,16 @@ public class SegmentFullWriter<K, V> extends AbstractCloseableResource
     private final BloomFilterWriter<K> bloomFilterWriter;
     private Entry<K, V> lastPair = null;
 
+    /**
+     * Creates a writer that rebuilds the full segment content.
+     *
+     * @param maxNumberOfKeysInIndexPage keys per index page for scarce index
+     * @param segmentCacheDataProvider provider for Bloom filter writer
+     * @param chunkPairFileWriter writer for the main index file
+     * @param scarceWriter writer for the scarce index
+     */
     SegmentFullWriter(final int maxNumberOfKeysInIndexPage,
-            final SegmentDataProvider<K, V> segmentCacheDataProvider,
+            final SegmentResources<K, V> segmentCacheDataProvider,
             final ChunkEntryFileWriter<K, V> chunkPairFileWriter,
             final EntryWriter<K, Integer> scarceWriter) {
         this.maxNumberOfKeysInIndexPage = Vldtn.requireNonNull(
@@ -48,13 +56,17 @@ public class SegmentFullWriter<K, V> extends AbstractCloseableResource
                 "indexWriter");
         Vldtn.requireNonNull(segmentCacheDataProvider,
                 "segmentCacheDataProvider");
-        segmentCacheDataProvider.invalidate();
         bloomFilterWriterTx = segmentCacheDataProvider.getBloomFilter()
                 .openWriteTx();
         bloomFilterWriter = Vldtn.requireNonNull(bloomFilterWriterTx.open(),
                 "bloomFilterWriter");
     }
 
+    /**
+     * Writes an entry into the index and Bloom filter, updating sparse index.
+     *
+     * @param entry entry to write
+     */
     @Override
     public void write(final Entry<K, V> entry) {
         Vldtn.requireNonNull(entry, "entry");
@@ -73,6 +85,9 @@ public class SegmentFullWriter<K, V> extends AbstractCloseableResource
         }
     }
 
+    /**
+     * Flushes a sparse index entry for the most recent key if available.
+     */
     private void flush() {
         if (lastPair == null) {
             return;
@@ -83,6 +98,9 @@ public class SegmentFullWriter<K, V> extends AbstractCloseableResource
         lastPair = null;
     }
 
+    /**
+     * Flushes pending sparse entries and closes underlying writers.
+     */
     @Override
     protected void doClose() {
         flush();
@@ -90,13 +108,29 @@ public class SegmentFullWriter<K, V> extends AbstractCloseableResource
         scarceWriter.close();
         indexWriter.close();
         bloomFilterWriter.close();
+    }
+
+    /**
+     * Commits the Bloom filter writer transaction.
+     */
+    void commitBloomFilter() {
         bloomFilterWriterTx.commit();
     }
 
+    /**
+     * Returns the number of keys written to the main index.
+     *
+     * @return number of keys written
+     */
     public long getNumberKeys() {
         return keyCounter.get();
     }
 
+    /**
+     * Returns the number of keys written to the scarce index.
+     *
+     * @return number of scarce index keys
+     */
     public long getNumberKeysInScarceIndex() {
         return scarceIndexKeyCounter.get();
     }

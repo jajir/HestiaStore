@@ -23,7 +23,7 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
  * @author honza
  *
  */
-public class DataTypeDescriptorRegistry {
+class DataTypeDescriptorRegistry {
 
     private static final String CLAZZ = "clazz";
     private static final Map<Class<?>, String> descriptors = new HashMap<>();
@@ -38,21 +38,42 @@ public class DataTypeDescriptorRegistry {
         addTypeDescriptor(NullValue.class, new TypeDescriptorNull());
     }
 
-    public static final <T> void addTypeDescriptor(final Class<T> clazz,
+    /**
+     * Registers a type descriptor instance for the provided class.
+     *
+     * @param <T>            type being registered
+     * @param clazz          class that maps to the descriptor
+     * @param typeDescriptor descriptor instance
+     */
+    static <T> void addTypeDescriptor(final Class<T> clazz,
             final TypeDescriptor<T> typeDescriptor) {
         Vldtn.requireNonNull(clazz, CLAZZ);
         Vldtn.requireNonNull(typeDescriptor, "typeDescriptor");
         descriptors.put(clazz, typeDescriptor.getClass().getName());
     }
 
-    public static final <T> void addTypeDescriptor(final Class<T> clazz,
+    /**
+     * Registers a type descriptor class name for the provided class.
+     *
+     * @param <T>            type being registered
+     * @param clazz          class that maps to the descriptor
+     * @param typeDescriptor descriptor class name
+     */
+    static <T> void addTypeDescriptor(final Class<T> clazz,
             final String typeDescriptor) {
         Vldtn.requireNonNull(clazz, CLAZZ);
         Vldtn.requireNonNull(typeDescriptor, "typeDescriptor");
         descriptors.put(clazz, typeDescriptor);
     }
 
-    public static final <T> String getTypeDescriptor(final Class<T> clazz) {
+    /**
+     * Returns the registered descriptor class name for the provided class.
+     *
+     * @param <T>   type being looked up
+     * @param clazz class that maps to the descriptor
+     * @return descriptor class name
+     */
+    static <T> String getTypeDescriptor(final Class<T> clazz) {
         Vldtn.requireNonNull(clazz, CLAZZ);
         final String typeDescriptor = descriptors.get(clazz);
         if (typeDescriptor == null) {
@@ -64,8 +85,15 @@ public class DataTypeDescriptorRegistry {
 
     }
 
+    /**
+     * Creates a descriptor instance from the provided class name.
+     *
+     * @param <N>       type represented by the descriptor
+     * @param className descriptor class name
+     * @return instantiated type descriptor
+     */
     @SuppressWarnings("unchecked")
-    public static <N> TypeDescriptor<N> makeInstance(String className) {
+    static <N> TypeDescriptor<N> makeInstance(String className) {
         Vldtn.requireNonNull(className, "className");
         try {
             // Load class by name

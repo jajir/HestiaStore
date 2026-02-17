@@ -13,7 +13,7 @@ public final class BloomFilterWriterTx<K>
 
     private static final String TEMP_FILE_EXTENSION = ".tmp";
 
-    private final Directory directory;
+    private final Directory directoryFacade;
     private final String bloomFilterFileName;
     private final ConvertorToBytes<K> convertorToBytes;
     private final int numberOfHashFunctions;
@@ -21,12 +21,13 @@ public final class BloomFilterWriterTx<K>
     private final int diskIoBufferSize;
     private final BloomFilter<K> bloomFilter;
 
-    BloomFilterWriterTx(final Directory directory,
+    BloomFilterWriterTx(final Directory directoryFacade,
             final String bloomFilterFileName,
             final ConvertorToBytes<K> convertorToBytes,
             final int numberOfHashFunctions, final int indexSizeInBytes,
             final int diskIoBufferSize, final BloomFilter<K> bloomFilter) {
-        this.directory = Vldtn.requireNonNull(directory, "directory");
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
         this.bloomFilterFileName = Vldtn.requireNonNull(bloomFilterFileName,
                 "bloomFilterFileName");
         this.convertorToBytes = Vldtn.requireNonNull(convertorToBytes,
@@ -41,13 +42,13 @@ public final class BloomFilterWriterTx<K>
     protected BloomFilterWriter<K> doOpen() {
         final Hash hash = new Hash(new BitArray(indexSizeInBytes),
                 numberOfHashFunctions);
-        return new BloomFilterWriter<>(convertorToBytes, hash, directory,
+        return new BloomFilterWriter<>(convertorToBytes, hash, directoryFacade,
                 getTempFileName(), diskIoBufferSize);
     }
 
     @Override
     protected void doCommit(final BloomFilterWriter<K> writer) {
-        directory.renameFile(getTempFileName(), bloomFilterFileName);
+        directoryFacade.renameFile(getTempFileName(), bloomFilterFileName);
         bloomFilter.setNewHash(writer.getHashSnapshot());
     }
 

@@ -9,6 +9,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -25,7 +26,8 @@ class BloomFilterBuilderTest {
     @Test
     void test_basic_functionality() {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
-                .withDirectory(directory)//
+                .withDirectory(
+                        directory)//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(TDS.getConvertorToBytes())//
                 .withNumberOfKeys(10001L)//
@@ -42,7 +44,8 @@ class BloomFilterBuilderTest {
     @Test
     void test_with_indexSizeInBytes_withNumberOfHashFunctions() {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
-                .withDirectory(directory)//
+                .withDirectory(
+                        directory)//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(TDS.getConvertorToBytes())//
                 .withIndexSizeInBytes(1024)//
@@ -57,7 +60,8 @@ class BloomFilterBuilderTest {
     @Test
     void test_with_indexSizeInBytes_is_zero() {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
-                .withDirectory(directory)//
+                .withDirectory(
+                        directory)//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(TDS.getConvertorToBytes())//
                 .withIndexSizeInBytes(0)//
@@ -72,7 +76,8 @@ class BloomFilterBuilderTest {
     @Test
     void test_with_indexSizeInBytes_is_zero_numberOfHashFunctions_null() {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
-                .withDirectory(directory)//
+                .withDirectory(
+                        directory)//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(TDS.getConvertorToBytes())//
                 .withIndexSizeInBytes(0)//
@@ -84,14 +89,16 @@ class BloomFilterBuilderTest {
     }
 
     @Test
-    void test_with_probabilityOfFalsePositive_is_null_() {
+    void test_with_probabilityOfFalsePositive_is_unset() {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
-                .withDirectory(directory)//
+                .withDirectory(
+                        directory)//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(TDS.getConvertorToBytes())//
                 .withIndexSizeInBytes(1024)//
                 .withNumberOfHashFunctions(2)//
-                .withProbabilityOfFalsePositive(null)//
+                .withProbabilityOfFalsePositive(
+                        BloomFilterBuilder.UNSET_PROBABILITY_OF_FALSE_POSITIVE)//
                 .withRelatedObjectName(OBJECT_NAME)//
                 .build();
         assertNotNull(bf);
@@ -100,9 +107,61 @@ class BloomFilterBuilderTest {
     }
 
     @Test
+    void test_with_unset_values_returns_null_filter() {
+        try (BloomFilter<String> bf = BloomFilter.<String>builder()//
+                .withDirectory(
+                        directory)//
+                .withBloomFilterFileName(FILE_NAME)//
+                .withConvertorToBytes(TDS.getConvertorToBytes())//
+                .withNumberOfKeys(BloomFilterBuilder.UNSET_NUMBER_OF_KEYS)//
+                .withIndexSizeInBytes(
+                        BloomFilterBuilder.UNSET_INDEX_SIZE_IN_BYTES)//
+                .withNumberOfHashFunctions(
+                        BloomFilterBuilder.UNSET_NUMBER_OF_HASH_FUNCTIONS)//
+                .withProbabilityOfFalsePositive(
+                        BloomFilterBuilder.UNSET_PROBABILITY_OF_FALSE_POSITIVE)//
+                .withRelatedObjectName(OBJECT_NAME)//
+                .build()) {
+            assertNotNull(bf);
+            assertTrue(bf instanceof BloomFilterNull,
+                    "Expected null-object BloomFilter when sizing is absent");
+        }
+    }
+
+    @Test
+    void test_with_unset_probability_uses_default() {
+        try (BloomFilter<String> unset = BloomFilter.<String>builder()//
+                .withDirectory(
+                        directory)//
+                .withBloomFilterFileName(FILE_NAME)//
+                .withConvertorToBytes(TDS.getConvertorToBytes())//
+                .withNumberOfKeys(10001L)//
+                .withProbabilityOfFalsePositive(
+                        BloomFilterBuilder.UNSET_PROBABILITY_OF_FALSE_POSITIVE)//
+                .withRelatedObjectName(OBJECT_NAME)//
+                .build();
+                BloomFilter<String> defaults = BloomFilter.<String>builder()//
+                        .withDirectory(
+                                directory)//
+                        .withBloomFilterFileName(FILE_NAME + ".defaults")//
+                        .withConvertorToBytes(TDS.getConvertorToBytes())//
+                        .withNumberOfKeys(10001L)//
+                        .withProbabilityOfFalsePositive(
+                                BloomFilterBuilder.DEFAULT_PROBABILITY_OF_FALSE_POSITIVE)//
+                        .withRelatedObjectName(OBJECT_NAME)//
+                        .build()) {
+            assertEquals(defaults.getIndexSizeInBytes(),
+                    unset.getIndexSizeInBytes());
+            assertEquals(defaults.getNumberOfHashFunctions(),
+                    unset.getNumberOfHashFunctions());
+        }
+    }
+
+    @Test
     void test_without_numberOfHashFunctions() {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
-                .withDirectory(directory)//
+                .withDirectory(
+                        directory)//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(TDS.getConvertorToBytes())//
                 .withNumberOfKeys(1000001L)//
@@ -118,7 +177,8 @@ class BloomFilterBuilderTest {
     @Test
     void test_without_numberOfHashFunctions_indexSizeInBytes() {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
-                .withDirectory(directory)//
+                .withDirectory(
+                        directory)//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(TDS.getConvertorToBytes())//
                 .withNumberOfKeys(1000001L)//
@@ -133,7 +193,8 @@ class BloomFilterBuilderTest {
     @Test
     void test_without_indexSizeInBytes() {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
-                .withDirectory(directory)//
+                .withDirectory(
+                        directory)//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(TDS.getConvertorToBytes())//
                 .withNumberOfKeys(1000001L)//
@@ -149,7 +210,8 @@ class BloomFilterBuilderTest {
     @Test
     void test_missing_numberOfKeys() {
         final BloomFilter<String> filter = BloomFilter.<String>builder()//
-                .withDirectory(directory)//
+                .withDirectory(
+                        directory)//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(TDS.getConvertorToBytes())//
                 .withProbabilityOfFalsePositive(0.0001)//
@@ -166,7 +228,8 @@ class BloomFilterBuilderTest {
         final BloomFilterBuilder<String> builder = BloomFilter.<String>builder()//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withConvertorToBytes(TDS.getConvertorToBytes())//
-                .withDirectory(directory)//
+                .withDirectory(
+                        directory)//
                 .withIndexSizeInBytes(0)//
                 .withNumberOfHashFunctions(0)//
         ;
@@ -180,7 +243,8 @@ class BloomFilterBuilderTest {
     @Test
     void test_missing_conventorToBytes() {
         final BloomFilterBuilder<String> builder = BloomFilter.<String>builder()//
-                .withDirectory(directory)//
+                .withDirectory(
+                        directory)//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withProbabilityOfFalsePositive(0.0001)//
                 .withNumberOfHashFunctions(2)//
@@ -196,7 +260,8 @@ class BloomFilterBuilderTest {
     @Test
     void test_missing_bloomFilterName() {
         final BloomFilterBuilder<String> builder = BloomFilter.<String>builder()//
-                .withDirectory(directory)//
+                .withDirectory(
+                        directory)//
                 .withProbabilityOfFalsePositive(0.0001)//
                 .withNumberOfHashFunctions(2)//
         ;
@@ -219,7 +284,8 @@ class BloomFilterBuilderTest {
                 () -> builder.build());
 
         assertNotNull(e);
-        assertEquals("Property 'directory' must not be null.", e.getMessage());
+        assertEquals("Property 'directoryFacade' must not be null.",
+                e.getMessage());
     }
 
     @Test
@@ -261,9 +327,10 @@ class BloomFilterBuilderTest {
     }
 
     private BloomFilter<String> makeFilter(
-            final Double probabilityOfFalsePositive) {
+            final double probabilityOfFalsePositive) {
         return BloomFilter.<String>builder()//
-                .withDirectory(directory)//
+                .withDirectory(
+                        directory)//
                 .withConvertorToBytes(TDS.getConvertorToBytes())//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withProbabilityOfFalsePositive(probabilityOfFalsePositive)//

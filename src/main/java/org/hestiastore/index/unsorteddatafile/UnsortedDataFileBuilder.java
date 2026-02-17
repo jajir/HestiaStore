@@ -16,7 +16,7 @@ public class UnsortedDataFileBuilder<K, V> {
 
     private static final int DEFAULT_DISK_IO_BUFFER_SIZE = 4 * 1024;
 
-    private Directory directory;
+    private Directory directoryFacade;
     private String fileName;
     private TypeWriter<K> keyWriter;
     private TypeWriter<V> valueWriter;
@@ -24,15 +24,10 @@ public class UnsortedDataFileBuilder<K, V> {
     private TypeReader<V> valueReader;
     private int diskIoBufferSize = DEFAULT_DISK_IO_BUFFER_SIZE;
 
-    /**
-     * Sets the directory that will host the data file.
-     *
-     * @param directory backing directory
-     * @return this builder for method chaining
-     */
     public UnsortedDataFileBuilder<K, V> withDirectory(
-            final Directory directory) {
-        this.directory = Vldtn.requireNonNull(directory, "directory");
+            final Directory directoryFacade) {
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
         return this;
     }
 
@@ -114,7 +109,10 @@ public class UnsortedDataFileBuilder<K, V> {
      * @return configured data file instance
      */
     public UnsortedDataFile<K, V> build() {
-        return new UnsortedDataFileImpl<>(directory, fileName, keyWriter,
+        if (directoryFacade == null) {
+            throw new IllegalStateException("Directory must be provided");
+        }
+        return new UnsortedDataFileImpl<>(directoryFacade, fileName, keyWriter,
                 valueWriter, keyReader, valueReader, diskIoBufferSize);
     }
 

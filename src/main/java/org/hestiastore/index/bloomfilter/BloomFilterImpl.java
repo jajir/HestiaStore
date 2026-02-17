@@ -18,7 +18,7 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final Directory directory;
+    private final Directory directoryFacade;
 
     private final String bloomFilterFileName;
 
@@ -36,11 +36,13 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
 
     private final int diskIoBufferSize;
 
-    BloomFilterImpl(final Directory directory, final String bloomFilterFileName,
+    BloomFilterImpl(final Directory directoryFacade,
+            final String bloomFilterFileName,
             final int numberOfHashFunctions, final int indexSizeInBytes,
             final ConvertorToBytes<K> convertorToBytes,
             final String relatedObjectName, final int diskIoBufferSize) {
-        this.directory = Vldtn.requireNonNull(directory, "diskIoBufferSize");
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
         this.bloomFilterFileName = Vldtn.requireNonNull(bloomFilterFileName,
                 "bloomFilterFileName");
         this.convertorToBytes = Vldtn.requireNonNull(convertorToBytes,
@@ -55,28 +57,13 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
             throw new IllegalArgumentException(
                     "Number of hash function cant be '0'");
         }
-        if (isExists() && indexSizeInBytes > 0) {
-            try (FileReader reader = directory
-                    .getFileReader(bloomFilterFileName, diskIoBufferSize)) {
-                final byte[] data = new byte[indexSizeInBytes];
-                final int readed = reader.read(data);
-                if (indexSizeInBytes != readed) {
-                    throw new IllegalStateException(String.format(
-                            "Bloom filter data from file '%s' wasn't loaded,"
-                                    + " index expected size is '%s' but '%s' was loaded",
-                            bloomFilterFileName, indexSizeInBytes, readed));
-                }
-                hash = new Hash(new BitArray(data), numberOfHashFunctions);
-            }
-        } else {
-            hash = null;
-        }
+        hash = loadHashIfPresent();
         logger.debug("Opening bloom filter for '{}'", relatedObjectName);
     }
 
     @Override
     public BloomFilterWriterTx<K> openWriteTx() {
-        return new BloomFilterWriterTx<>(directory, bloomFilterFileName,
+        return new BloomFilterWriterTx<>(directoryFacade, bloomFilterFileName,
                 convertorToBytes, numberOfHashFunctions, indexSizeInBytes,
                 diskIoBufferSize, this);
     }
@@ -88,7 +75,30 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
     }
 
     private boolean isExists() {
-        return directory.isFileExists(bloomFilterFileName);
+        return directoryFacade.isFileExists(bloomFilterFileName);
+    }
+
+    private Hash loadHashIfPresent() {
+        if (!isExists() || indexSizeInBytes <= 0) {
+            return null;
+        }
+        try (FileReader reader = directoryFacade.getFileReader(
+                bloomFilterFileName, diskIoBufferSize)) {
+            final byte[] data = new byte[indexSizeInBytes];
+            final int readed = reader.read(data);
+            if (indexSizeInBytes != readed) {
+                throw new IllegalStateException(String.format(
+                        "Bloom filter data from file '%s' wasn't loaded,"
+                                + " index expected size is '%s' but '%s' was loaded",
+                        bloomFilterFileName, indexSizeInBytes, readed));
+            }
+            return new Hash(new BitArray(data), numberOfHashFunctions);
+        } catch (final RuntimeException e) {
+            if (!isExists()) {
+                return null;
+            }
+            throw e;
+        }
     }
 
     @Override

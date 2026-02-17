@@ -34,11 +34,9 @@ class IntegrationIteratorTest extends AbstractSegmentIndexTest {
                 .withValueClass(Integer.class)//
                 .withKeyTypeDescriptor(tds) //
                 .withValueTypeDescriptor(tdi) //
-                .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentCache(100) //
-                .withMaxNumberOfKeysInSegmentCacheDuringFlushing(200)//
+                .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentChunk(1000) //
-                .withMaxNumberOfKeysInCache(3) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
                 .withContextLoggingEnabled(false) //
@@ -80,7 +78,8 @@ class IntegrationIteratorTest extends AbstractSegmentIndexTest {
 
         verifyIndexData(index, Arrays.asList(//
                 Entry.of("a", 20), //
-                Entry.of("c", 40) //
+                Entry.of("c", 40), //
+                Entry.of("e", 28) //
         ));
     }
 
@@ -96,11 +95,12 @@ class IntegrationIteratorTest extends AbstractSegmentIndexTest {
                 Entry.of("g", 13) //
         ));
 
-        // verify that added value is not in iterator
+        // verify that added value is in iterator
         verifyIndexData(index, Arrays.asList(//
                 Entry.of("a", 20), //
                 Entry.of("b", 30), //
-                Entry.of("c", 40)//
+                Entry.of("c", 40), //
+                Entry.of("g", 13) //
         ));
     }
 

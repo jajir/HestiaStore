@@ -9,6 +9,7 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.UniqueCache;
+import org.hestiastore.index.cache.UniqueCacheBuilder;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.unsorteddatafile.UnsortedDataFile;
 
@@ -38,6 +39,15 @@ public class DataFileSorter<K, V> {
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final int maxNumberOfKeysInMemory;
 
+    /**
+     * Creates a sorter that converts an unsorted file into a sorted one.
+     *
+     * @param unsortedDataFile source unsorted data file
+     * @param sortedDataFile target sorted data file
+     * @param merger merger for duplicate keys
+     * @param keyTypeDescriptor key type descriptor for ordering
+     * @param maxNumberOfKeysInMemory max keys buffered per chunk
+     */
     public DataFileSorter(final UnsortedDataFile<K, V> unsortedDataFile,
             final SortedDataFile<K, V> sortedDataFile,
             final Merger<K, V> merger,
@@ -53,6 +63,9 @@ public class DataFileSorter<K, V> {
         this.maxNumberOfKeysInMemory = maxNumberOfKeysInMemory;
     }
 
+    /**
+     * Performs a full external sort and writes the sorted file.
+     */
     public void sort() {
         /*
          * 1. Split data to chunks, record number of chunks 2. run merging
@@ -68,9 +81,19 @@ public class DataFileSorter<K, V> {
         }
     }
 
+    /**
+     * Splits the unsorted file into sorted chunk files.
+     *
+     * @return number of chunk files created
+     */
     private int splitToChunks() {
-        final UniqueCache<K, V> cache = new UniqueCache<>(
-                keyTypeDescriptor.getComparator(), maxNumberOfKeysInMemory);
+        final UniqueCacheBuilder<K, V> cacheBuilder = UniqueCache
+                .<K, V>builder()
+                .withKeyComparator(keyTypeDescriptor.getComparator());
+        if (maxNumberOfKeysInMemory > 0) {
+            cacheBuilder.withInitialCapacity(maxNumberOfKeysInMemory);
+        }
+        final UniqueCache<K, V> cache = cacheBuilder.buildEmpty();
         int chunkCount = 0;
         try (EntryIterator<K, V> iterator = unsortedDataFile.openIterator()) {
             while (iterator.hasNext()) {
@@ -90,6 +113,13 @@ public class DataFileSorter<K, V> {
         return chunkCount;
     }
 
+    /**
+     * Writes a sorted cache chunk to a temporary chunk file.
+     *
+     * @param cache sorted cache contents
+     * @param round current sort round
+     * @param chunkCount chunk index
+     */
     private void writeChunkToFile(final UniqueCache<K, V> cache,
             final int round, final int chunkCount) {
         final SortedDataFile<K, V> chunkFile = getChunkFile(round, chunkCount);
@@ -98,6 +128,13 @@ public class DataFileSorter<K, V> {
         });
     }
 
+    /**
+     * Returns the chunk file for the given round and index.
+     *
+     * @param round sort round
+     * @param chunkCount chunk index
+     * @return chunk file accessor
+     */
     private SortedDataFile<K, V> getChunkFile(final int round,
             final int chunkCount) {
         final String prefix = MERGING_FILES_PREFIX
@@ -107,6 +144,13 @@ public class DataFileSorter<K, V> {
         return targetSortedDataFile.withFileName(fileName);
     }
 
+    /**
+     * Merges chunk files for the given round into the next round.
+     *
+     * @param round current round
+     * @param chunkCount number of chunks in the round
+     * @return number of chunks in the next round
+     */
     private int mergeChunks(final int round, final int chunkCount) {
         if (chunkCount < MERGING_FILE_CAP) {
             // last round
@@ -126,6 +170,14 @@ public class DataFileSorter<K, V> {
 
     }
 
+    /**
+     * Merges a range of chunk files into a target file.
+     *
+     * @param round current round
+     * @param fromFileIndex inclusive start index
+     * @param toFileIndex exclusive end index
+     * @param targetFile target sorted file
+     */
     private void mergeIndexFiles(final int round, final int fromFileIndex,
             final int toFileIndex, SortedDataFile<K, V> targetFile) {
         final List<EntryIteratorWithCurrent<K, V>> chunkFiles = new ArrayList<>(
@@ -139,6 +191,12 @@ public class DataFileSorter<K, V> {
         }
     }
 
+    /**
+     * Merges sorted entries from chunk files into a target file.
+     *
+     * @param chunkFiles iterators over chunk files
+     * @param targetFile output file
+     */
     private void mergeFiles(
             final List<EntryIteratorWithCurrent<K, V>> chunkFiles,
             SortedDataFile<K, V> targetFile) {

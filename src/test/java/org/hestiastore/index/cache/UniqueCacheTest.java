@@ -7,6 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.hestiastore.index.Entry;
 import org.junit.jupiter.api.AfterEach;
@@ -19,7 +23,10 @@ class UniqueCacheTest {
 
     @BeforeEach
     void setup() {
-        cache = new UniqueCache<>((i1, i2) -> i1 - i2, 100);
+        cache = UniqueCache.<Integer, String>builder()
+                .withKeyComparator((i1, i2) -> i1 - i2)
+                .withInitialCapacity(100)
+                .buildEmpty();
     }
 
     @AfterEach
@@ -92,9 +99,32 @@ class UniqueCacheTest {
     @Test
     void test_constructor_null_comparator_throws() {
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> new UniqueCache<Integer, String>(null, 100));
+                () -> UniqueCache.<Integer, String>builder()
+                        .withKeyComparator(null)
+                        .buildEmpty());
         assertEquals("Property 'keyComparator' must not be null.",
                 e.getMessage());
+    }
+
+    @Test
+    void test_put_with_null_entry_throws() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> cache.put(null));
+        assertEquals("Property 'entry' must not be null.", e.getMessage());
+    }
+
+    @Test
+    void test_put_with_null_key_throws() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> cache.put(Entry.of(null, "value")));
+        assertEquals("Property 'entry.key' must not be null.", e.getMessage());
+    }
+
+    @Test
+    void test_put_with_null_value_throws() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> cache.put(Entry.of(1, null)));
+        assertEquals("Property 'entry.value' must not be null.", e.getMessage());
     }
 
     @Test
@@ -123,6 +153,68 @@ class UniqueCacheTest {
         cache.clear();
         assertTrue(cache.isEmpty());
         assertEquals(0, cache.size());
+    }
+
+    @Test
+    void test_snapshotAndClear_returnsSnapshotAndEmptiesCache() {
+        cache.put(Entry.of(1, "a"));
+        cache.put(Entry.of(2, "b"));
+        cache.put(Entry.of(3, "c"));
+
+        final List<Entry<Integer, String>> snapshot = cache.snapshotAndClear();
+
+        assertEquals(3, snapshot.size());
+        assertTrue(snapshot.contains(Entry.of(1, "a")));
+        assertTrue(snapshot.contains(Entry.of(2, "b")));
+        assertTrue(snapshot.contains(Entry.of(3, "c")));
+        assertTrue(cache.isEmpty());
+    }
+
+    @Test
+    void test_threadSafe_cache_handles_concurrent_updates() throws Exception {
+        final UniqueCache<Integer, String> threadSafe = UniqueCache
+                .<Integer, String>builder()
+                .withKeyComparator(Integer::compareTo)
+                .withInitialCapacity(16)
+                .withThreadSafe(true)
+                .buildEmpty();
+        final int threads = 6;
+        final int perThread = 200;
+        final ExecutorService executor = Executors.newFixedThreadPool(threads);
+        final CountDownLatch ready = new CountDownLatch(threads);
+        final CountDownLatch start = new CountDownLatch(1);
+        final CountDownLatch done = new CountDownLatch(threads);
+
+        try {
+            for (int t = 0; t < threads; t++) {
+                final int workerId = t;
+                executor.execute(() -> {
+                    ready.countDown();
+                    try {
+                        start.await();
+                        final int base = workerId * perThread;
+                        for (int i = 0; i < perThread; i++) {
+                            threadSafe.put(
+                                    Entry.of(base + i, "v" + i));
+                        }
+                    } catch (final InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    } finally {
+                        done.countDown();
+                    }
+                });
+            }
+
+            assertTrue(ready.await(5, TimeUnit.SECONDS),
+                    "Workers did not start in time");
+            start.countDown();
+            assertTrue(done.await(10, TimeUnit.SECONDS),
+                    "Workers did not finish in time");
+        } finally {
+            executor.shutdownNow();
+        }
+
+        assertEquals(threads * perThread, threadSafe.size());
     }
 
 }

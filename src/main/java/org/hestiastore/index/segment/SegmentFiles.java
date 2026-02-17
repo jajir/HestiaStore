@@ -1,6 +1,7 @@
 package org.hestiastore.index.segment;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFile;
@@ -13,25 +14,25 @@ import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 
 /**
- * Accessor and factory for all files that belong to a single segment
- * (cache, index, scarce index, bloom filter, properties).
+ * Accessor and factory for all files that belong to a single segment (delta
+ * cache files, index, scarce index, bloom filter, properties).
  *
- * <p>Provides file names, typed file handles and common configuration used
- * across these files.</p>
+ * <p>
+ * Provides file names, typed file handles and common configuration used across
+ * these files.
+ * </p>
  *
  * @param <K> key type stored in the segment
  * @param <V> value type stored in the segment
  */
 public final class SegmentFiles<K, V> {
 
-    private static final String INDEX_FILE_NAME_EXTENSION = ".index";
-    private static final String SCARCE_FILE_NAME_EXTENSION = ".scarce";
     static final String CACHE_FILE_NAME_EXTENSION = ".cache";
-    private static final String BOOM_FILTER_FILE_NAME_EXTENSION = ".bloom-filter";
-    private static final String PROPERTIES_FILENAME_EXTENSION = ".properties";
 
-    private final Directory directory;
+    private final Directory directoryFacade;
+    private volatile long activeVersion;
     private final SegmentId id;
+    private final SegmentDirectoryLayout layout;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final int diskIoBufferSize;
@@ -39,24 +40,56 @@ public final class SegmentFiles<K, V> {
     private final List<ChunkFilter> decodingChunkFilters;
 
     /**
-     * Create accessor for segment files.
+     * Create accessor for segment files stored in a single segment directory.
      *
-     * @param directory directory implementation used for I/O
-     * @param id unique segment identifier
-     * @param keyTypeDescriptor descriptor for key serialization and comparison
-     * @param valueTypeDescriptor descriptor for value serialization
-     * @param diskIoBufferSize buffer size in bytes for on-disk operations
+     * @param directoryFacade      directory facade used for I/O
+     * @param id                   unique segment identifier
+     * @param keyTypeDescriptor    descriptor for key serialization and
+     *                             comparison
+     * @param valueTypeDescriptor  descriptor for value serialization
+     * @param diskIoBufferSize     buffer size in bytes for on-disk operations
+     * @param encodingChunkFilters filters applied when writing chunks
+     * @param decodingChunkFilters filters applied when reading chunks
+     * @param activeVersion        active on-disk version
+     */
+    public SegmentFiles(final Directory directoryFacade,
+            final SegmentId id, final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final int diskIoBufferSize,
+            final List<ChunkFilter> encodingChunkFilters,
+            final List<ChunkFilter> decodingChunkFilters,
+            final long activeVersion) {
+        this(directoryFacade, new SegmentDirectoryLayout(id), activeVersion,
+                keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize,
+                encodingChunkFilters, decodingChunkFilters);
+    }
+
+    /**
+     * Create accessor for segment files with explicit layout.
+     *
+     * @param directoryFacade      directory facade used for I/O
+     * @param layout               segment file naming layout
+     * @param activeVersion        active on-disk version
+     * @param keyTypeDescriptor    descriptor for key serialization and
+     *                             comparison
+     * @param valueTypeDescriptor  descriptor for value serialization
+     * @param diskIoBufferSize     buffer size in bytes for on-disk operations
      * @param encodingChunkFilters filters applied when writing chunks
      * @param decodingChunkFilters filters applied when reading chunks
      */
-    public SegmentFiles(final Directory directory, final SegmentId id,
+    public SegmentFiles(final Directory directoryFacade,
+            final SegmentDirectoryLayout layout,
+            final long activeVersion,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final int diskIoBufferSize,
             final List<ChunkFilter> encodingChunkFilters,
             final List<ChunkFilter> decodingChunkFilters) {
-        this.directory = Vldtn.requireNonNull(directory, "directory");
-        this.id = Vldtn.requireNonNull(id, "segmentId");
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
+        this.activeVersion = activeVersion;
+        this.layout = Vldtn.requireNonNull(layout, "segmentLayout");
+        this.id = Vldtn.requireNonNull(layout.getSegmentId(), "segmentId");
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
                 "keyTypeDescriptor");
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
@@ -69,21 +102,12 @@ public final class SegmentFiles<K, V> {
     }
 
     /**
-     * File name for the main cache data file of this segment.
-     *
-     * @return cache file name
-     */
-    String getCacheFileName() {
-        return id.getName() + CACHE_FILE_NAME_EXTENSION;
-    }
-
-    /**
      * File name for the scarce index file.
      *
      * @return scarce index file name
      */
     String getScarceFileName() {
-        return id.getName() + SCARCE_FILE_NAME_EXTENSION;
+        return layout.getScarceFileName(activeVersion);
     }
 
     /**
@@ -92,7 +116,7 @@ public final class SegmentFiles<K, V> {
      * @return bloom filter file name
      */
     String getBloomFilterFileName() {
-        return id.getName() + BOOM_FILTER_FILE_NAME_EXTENSION;
+        return layout.getBloomFilterFileName(activeVersion);
     }
 
     /**
@@ -101,7 +125,7 @@ public final class SegmentFiles<K, V> {
      * @return index file name
      */
     String getIndexFileName() {
-        return id.getName() + INDEX_FILE_NAME_EXTENSION;
+        return layout.getIndexFileName(activeVersion);
     }
 
     /**
@@ -110,22 +134,7 @@ public final class SegmentFiles<K, V> {
      * @return properties file name
      */
     String getPropertiesFilename() {
-        return id.getName() + PROPERTIES_FILENAME_EXTENSION;
-    }
-
-    /**
-     * Open a typed handle for the main cache data file.
-     *
-     * @return sorted data file for this segment's cache
-     */
-    SortedDataFile<K, V> getCacheDataFile() {
-        return SortedDataFile.<K, V>builder() //
-                .withDirectory(directory) //
-                .withFileName(getCacheFileName())//
-                .withKeyTypeDescriptor(keyTypeDescriptor) //
-                .withValueTypeDescriptor(valueTypeDescriptor) //
-                .withDiskIoBufferSize(diskIoBufferSize)//
-                .build();
+        return layout.getPropertiesFileName();
     }
 
     /**
@@ -135,13 +144,24 @@ public final class SegmentFiles<K, V> {
      * @return sorted data file handle
      */
     SortedDataFile<K, V> getDeltaCacheSortedDataFile(final String fileName) {
-        return SortedDataFile.<K, V>builder() //
-                .withDirectory(directory) //
-                .withFileName(fileName)//
-                .withKeyTypeDescriptor(keyTypeDescriptor) //
-                .withValueTypeDescriptor(valueTypeDescriptor) //
-                .withDiskIoBufferSize(diskIoBufferSize)//
-                .build();
+        return SortedDataFile.fromDirectory(directoryFacade, fileName,
+                keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize);
+    }
+
+    /**
+     * Open a chunk-entry handle for a delta cache data file by name.
+     *
+     * @param fileName target file name
+     * @return chunk-entry file handle
+     */
+    ChunkEntryFile<K, V> getDeltaCacheChunkEntryFile(final String fileName) {
+        final ChunkStoreFile chunkStoreFile = new ChunkStoreFile(
+                directoryFacade, fileName,
+                DataBlockSize.ofDataBlockSize(diskIoBufferSize),
+                encodingChunkFilters, decodingChunkFilters);
+        return new ChunkEntryFile<>(chunkStoreFile, keyTypeDescriptor,
+                valueTypeDescriptor,
+                DataBlockSize.ofDataBlockSize(diskIoBufferSize));
     }
 
     /**
@@ -151,7 +171,7 @@ public final class SegmentFiles<K, V> {
      */
     ScarceSegmentIndex<K> getScarceIndex() {
         return ScarceSegmentIndex.<K>builder()//
-                .withDirectory(getDirectory())//
+                .withDirectory(directoryFacade)//
                 .withFileName(getScarceFileName())//
                 .withKeyTypeDescriptor(getKeyTypeDescriptor())//
                 .withDiskIoBufferSize(diskIoBufferSize) //
@@ -164,8 +184,8 @@ public final class SegmentFiles<K, V> {
      * @return chunk-entry file for the index
      */
     ChunkEntryFile<K, V> getIndexFile() {
-        final ChunkStoreFile chunkStoreFile = new ChunkStoreFile(getDirectory(),
-                getIndexFileName(),
+        final ChunkStoreFile chunkStoreFile = new ChunkStoreFile(
+                directoryFacade, getIndexFileName(),
                 DataBlockSize.ofDataBlockSize(diskIoBufferSize),
                 encodingChunkFilters, decodingChunkFilters);
         return new ChunkEntryFile<>(chunkStoreFile, keyTypeDescriptor,
@@ -174,12 +194,26 @@ public final class SegmentFiles<K, V> {
     }
 
     /**
-     * Directory used by this segment.
+     * Returns the directory backing this segment.
      *
-     * @return directory
+     * @return directory facade
      */
     Directory getDirectory() {
-        return directory;
+        return directoryFacade;
+    }
+
+    long getActiveVersion() {
+        return activeVersion;
+    }
+
+    void switchActiveVersion(final long version) {
+        this.activeVersion = version;
+    }
+
+    SegmentFiles<K, V> copyWithVersion(final long version) {
+        return new SegmentFiles<>(directoryFacade, layout, version,
+                keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize,
+                encodingChunkFilters, decodingChunkFilters);
     }
 
     /**
@@ -244,10 +278,10 @@ public final class SegmentFiles<K, V> {
      * @throws IllegalStateException if the file could not be deleted
      */
     void deleteFile(final String fileName) {
-        if (!directory.deleteFile(fileName)) {
+        if (!directoryFacade.deleteFile(fileName)) {
             throw new IllegalStateException(String.format(
                     "Unable to delete file '%s' in directory '%s'", fileName,
-                    directory));
+                    directoryFacade));
         }
     }
 
@@ -257,7 +291,24 @@ public final class SegmentFiles<K, V> {
      * @param fileName file to delete if present
      */
     void optionallyDeleteFile(final String fileName) {
-        directory.deleteFile(fileName);
+        directoryFacade.deleteFile(fileName);
     }
+
+    /**
+     * Removes all files that belong to this segment.
+     */
+    public void deleteAllFiles() {
+        try (Stream<String> files = directoryFacade.getFileNames()) {
+            files.filter(this::isSegmentManagedFile)
+                    .forEach(this::optionallyDeleteFile);
+        }
+    }
+
+    private boolean isSegmentManagedFile(final String fileName) {
+        return fileName.equals(getPropertiesFilename())
+                || fileName.equals(layout.getLockFileName())
+                || fileName.startsWith("v");
+    }
+
 
 }
