@@ -66,7 +66,7 @@
       - Added metrics contract docs:
         `docs/architecture/segmentindex/metrics-snapshot.md`.
 
-[ ] 78.3 Build monitoring bridge layer (Micrometer/Prometheus) (Risk: HIGH)
+[x] 78.3 Build monitoring bridge layer (Micrometer/Prometheus) (Risk: HIGH)
     - Implement monitoring adapters:
       - `org.hestiastore.monitoring.api.*`
       - `org.hestiastore.monitoring.micrometer.*`
@@ -79,6 +79,16 @@
     - Acceptance:
       - Prometheus scrape returns expected metrics and labels.
       - Zero adapter overhead when monitoring package is not used.
+    - Delivered:
+      - Introduced dedicated modules:
+        `monitoring-api`, `monitoring-micrometer`, `monitoring-prometheus`.
+      - Added `HestiaStoreMicrometerBinder` in
+        `org.hestiastore.monitoring.micrometer.*`.
+      - Added `HestiaStorePrometheusExporter` in
+        `org.hestiastore.monitoring.prometheus.*`.
+      - Added Prometheus scrape test:
+        `HestiaStorePrometheusExporterTest` (checks names and `index` label).
+      - Kept core `index` module free of Micrometer/Prometheus dependencies.
 
 [ ] 78.4 Add management API contracts and versioning (Risk: HIGH)
     - Create `org.hestiastore.management.api.*` DTOs:
