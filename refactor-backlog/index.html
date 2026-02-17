@@ -1,0 +1,3714 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+        <meta name="author" content="Jan Jirout">
+      
+      
+        <link rel="canonical" href="https://jajir.github.io/HestiaStore/refactor-backlog/">
+      
+      
+        <link rel="prev" href="../development/profiler-stacktrace/">
+      
+      
+        <link rel="next" href="../development/release/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../images/favicon.ico">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Refactor Backlog - HestiaStore</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#refactor-backlog" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="HestiaStore" class="md-header__button md-logo" aria-label="HestiaStore" data-md-component="logo">
+      
+  <img src="../images/logo-square.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            HestiaStore
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Refactor Backlog
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jajir/HestiaStore" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jajir/HestiaStore
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../why-hestiastore/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Why HestiaStore
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../how-to-use/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../configuration/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Configuration
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../CHANGELOG/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Community
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="HestiaStore" class="md-nav__button md-logo" aria-label="HestiaStore" data-md-component="logo">
+      
+  <img src="../images/logo-square.png" alt="logo">
+
+    </a>
+    HestiaStore
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jajir/HestiaStore" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jajir/HestiaStore
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../why-hestiastore/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Why HestiaStore
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Why HestiaStore
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../why-hestiastore/alternatives/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Alternatives
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmarks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../why-hestiastore/out-write/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Write test
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../why-hestiastore/out-read/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Read test
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../why-hestiastore/out-sequential/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sequential read test
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SECURITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../why-hestiastore/quality/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quality & Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../how-to-use/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to-use/install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Install
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to-use/quick-start/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to-use/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://javadoc.io/doc/org.hestiastore.index/core" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../configuration/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Configuration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/data-types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../architecture/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../architecture/general/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    General
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    General
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/general/datablock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Block Format
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/general/filters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filters & Integrity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/general/chain-of-filters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chain of Filters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/general/concurrency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Access Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/general/recovery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Consistency & Recovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/general/limits/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Limitations & Trade-offs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/general/glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Glossary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../architecture/segmentindex/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SegmentIndex
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    SegmentIndex
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/segmentindex/write-path/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Write Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/segmentindex/read-path/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/segmentindex/caching/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Caching Strategy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/segmentindex/cache-lru/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cache LRU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/segmentindex/performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance Model & Sizing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/segmentindex/segment-index-concurrency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment Index Concurrency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../architecture/segment/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Segment
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/segment/segment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment Design
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/segment/on-disk-layout/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    On-Disk Layout & File Names
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/segment/arch-index/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sparse Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/segment/segment-concurrency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment Concurrency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../architecture/registry/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registry
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Registry
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/registry/registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Community
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Community
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../development/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6_2" id="__nav_6_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/guides/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/segment-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/profiler-stacktrace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JVM Profiling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Refactor Backlog
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Refactor Backlog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#active" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Active
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#planned" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Planned
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Planned">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#high" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        High
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#medium" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Medium
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Medium">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#low" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Low
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#other-refactors-non-oom" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Other refactors (non-OOM)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#testingquality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing/Quality
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ready" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ready
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deferred-segment-scope-do-not-touch-now" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deferred (segment scope, do not touch now)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#maintenance-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Maintenance tasks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#done-archive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Done (Archive)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/release/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CONTRIBUTING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#active" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Active
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#planned" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Planned
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Planned">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#high" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        High
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#medium" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Medium
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Medium">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#low" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Low
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#other-refactors-non-oom" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Other refactors (non-OOM)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#testingquality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing/Quality
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ready" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ready
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deferred-segment-scope-do-not-touch-now" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deferred (segment scope, do not touch now)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#maintenance-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Maintenance tasks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#done-archive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Done (Archive)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href=".." class="md-path__link">
+        
+  <span class="md-ellipsis">
+    Home
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../CHANGELOG/" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Community
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../development/" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Development
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="refactor-backlog">Refactor backlog</h1>
+<h2 id="active">Active</h2>
+<p>[ ] 59.1 Concurrency: remove lock-order inversion in core ops (Risk: HIGH)
+    - <code>SegmentIndexCore.get/put</code>: avoid holding key-map read lock while calling
+      <code>SegmentRegistry.getSegment</code> or touching segments.
+    - Use key-map snapshot + version re-check on retry/BUSY paths.
+    - Tests: <code>IntegrationSegmentIndexConcurrencyTest</code> + new split/put stress.</p>
+<h2 id="planned">Planned</h2>
+<h3 id="high">High</h3>
+<p>[ ] 78 Monitoring/Management platform rollout (Risk: HIGH)
+    - Goal: evolve from in-process counters to multi-JVM monitoring and control
+      without forcing Micrometer/Prometheus dependencies into core.
+    - Delivery model: phase-gated rollout where each phase is releasable and
+      backward compatible.
+    - Constraints:
+      - Core package must not depend on Micrometer, Prometheus, servlet stacks,
+        or UI classes.
+      - Runtime control endpoints must be explicit allowlist operations only
+        (no generic "execute command" style endpoint).
+      - All mutating management operations must be auditable.</p>
+<p>[ ] 78.1 Define source/module boundaries and package contracts (Risk: HIGH)
+    - Target logical modules/packages:
+      - <code>org.hestiastore.index.*</code> (core)
+      - <code>org.hestiastore.monitoring.*</code> (metrics model + exporter adapters)
+      - <code>org.hestiastore.management.api.*</code> (shared DTOs/contracts)
+      - <code>org.hestiastore.management.agent.*</code> (node-local REST API in index JVM)
+      - <code>org.hestiastore.console.*</code> (web UI / control plane)
+    - Start in single-module codebase with strict package boundaries to keep
+      later physical split low risk.
+    - Add architecture doc with allowed dependency direction:
+      <code>core &lt;- monitoring &lt;- management.agent &lt;- console</code> and
+      <code>management.api</code> shared by agent/console.
+    - Acceptance:
+      - No core imports from monitoring/agent/console packages.
+      - Checkstyle/ArchUnit (or similar) rule blocks forbidden imports.</p>
+<p>[ ] 78.2 Add stable core metrics snapshot API (Risk: HIGH)
+    - Introduce immutable public snapshot types in core for index/segment
+      metrics (e.g. op counters, bloom stats, segment counts, state).
+    - Add <code>SegmentIndex.metricsSnapshot()</code> (or equivalent read-only API).
+    - Keep existing behavior intact while wiring current counters into snapshot.
+    - Make counters thread-safe (<code>LongAdder</code>/<code>AtomicLong</code>) where currently not.
+    - Define compatibility policy:
+      - new fields may be added,
+      - existing field names/semantics cannot silently change.
+    - Acceptance:
+      - Unit/integration tests for snapshot consistency under concurrent load.
+      - Docs page with metric field definitions and semantics.</p>
+<p>[ ] 78.3 Build monitoring bridge layer (Micrometer/Prometheus/JMX) (Risk: HIGH)
+    - Implement monitoring adapters in <code>org.hestiastore.monitoring.*</code>:
+      - Micrometer binder reading from core snapshot API.
+      - Prometheus exposition support (via Micrometer registry or direct bridge).
+      - Optional JMX MBean exporter mapped from the same snapshot model.
+    - Ensure adapters can be created/removed without restarting index
+      (where runtime allows).
+    - Define metric naming/tag conventions (<code>hestiastore_*</code>, stable tag set).
+    - Acceptance:
+      - Prometheus scrape returns expected metrics and labels.
+      - Zero adapter overhead when monitoring package is not used.</p>
+<p>[ ] 78.4 Add management API contracts and versioning (Risk: HIGH)
+    - Create <code>org.hestiastore.management.api.*</code> DTOs:
+      - <code>NodeStateResponse</code>, <code>MetricsResponse</code>, <code>ActionRequest/Response</code>,
+        <code>ConfigPatchRequest</code>, <code>ErrorResponse</code>.
+    - Version endpoints from start (<code>/api/v1/...</code>) and define deprecation rules.
+    - Include idempotency and safety semantics for actions:
+      - <code>flush</code>, <code>compact</code>, selected config patch operations.
+    - Acceptance:
+      - OpenAPI (or equivalent) published with examples.
+      - Contract tests verify backward-compatible serialization.</p>
+<p>[ ] 78.5 Implement node-local management agent (Risk: HIGH)
+    - Add lightweight REST server integration for index JVM process:
+      - <code>GET /api/v1/state</code>
+      - <code>GET /api/v1/metrics</code>
+      - <code>POST /api/v1/actions/flush</code>
+      - <code>POST /api/v1/actions/compact</code>
+      - <code>PATCH /api/v1/config</code> (allowlist runtime-safe keys only)
+    - Include health and readiness endpoints for deployment integration.
+    - Add per-request audit logging for mutating endpoints.
+    - Acceptance:
+      - End-to-end test: invoke actions and verify effect on index state.
+      - Negative tests for forbidden config keys and invalid state transitions.</p>
+<p>[ ] 78.6 Implement central console web application (Risk: HIGH)
+    - Build <code>org.hestiastore.console.*</code> with capabilities:
+      - register/manage multiple index JVM nodes,
+      - poll agent APIs and display key read/write/latency/segment metrics,
+      - trigger safe operations (flush/compact) with confirmation UX,
+      - show recent audit/event log entries.
+    - Keep UI read-first: write controls separated and permission-gated.
+    - Define minimal dashboard first; defer advanced analytics to later items.
+    - Acceptance:
+      - Multi-node dashboard works for at least 3 registered nodes.
+      - Action execution shows pending/success/failure lifecycle.</p>
+<p>[ ] 78.7 Secure transport, authz, and audit trail (Risk: HIGH)
+    - Agent &lt;-&gt; console transport:
+      - enforce TLS (prefer mTLS in production profiles),
+      - token- or cert-based authn,
+      - role-based authz (<code>read</code>, <code>operate</code>, <code>admin</code>).
+    - Add immutable audit records for mutating calls:
+      actor, target node, endpoint, payload digest, result, timestamp.
+    - Add rate limits and retry/backoff policy for control operations.
+    - Acceptance:
+      - Security integration tests for unauthorized/forbidden scenarios.
+      - Audit log verification tests for all mutating endpoints.</p>
+<p>[ ] 78.8 Packaging, release strategy, and migration path (Risk: HIGH)
+    - Release artifacts initially from same repo:
+      - <code>hestiastore</code> (core)
+      - <code>hestiastore-monitoring</code> (bridges/exporters)
+      - <code>hestiastore-management-agent</code>
+      - <code>hestiastore-console</code>
+    - Keep aligned versions per release line (for example <code>0.2.x</code> for all).
+    - Document migration from single-module to multi-module build:
+      move packages with no API break using prior boundary rules from 78.1.
+    - Acceptance:
+      - Build produces separate jars and integration tests across artifacts pass.
+      - Release docs include compatibility matrix and upgrade notes.</p>
+<p>[ ] 78.9 Rollout stages with explicit quality gates (Risk: HIGH)
+    - Stage A: core snapshot API only; no external exporters.
+    - Stage B: monitoring bridge with Prometheus scrape + docs.
+    - Stage C: node agent endpoints (read-only first, then mutating).
+    - Stage D: console UI for multi-node visibility, then controlled actions.
+    - Required gates per stage:
+      - load/perf regression budget defined and met,
+      - concurrency tests for stats correctness,
+      - failure-mode tests (node down, timeout, partial responses),
+      - operational docs/runbook updated.
+    - Acceptance:
+      - Each stage releasable independently.
+      - Rollback procedure documented and tested.</p>
+<h3 id="medium">Medium</h3>
+<p>[ ] 54 Dedicated executor for index async ops (Risk: MEDIUM)
+    - Use a dedicated, bounded executor for <code>SegmentIndexImpl.runAsyncTracked</code>
+      (no common pool).
+    - Define rejection policy: map saturation to BUSY/error with clear message.
+    - Ensure close waits for in‑flight async work or cancels safely.
+    - Tests: saturation/backpressure, close ordering, no caller‑thread IO.</p>
+<p>[ ] 55 Replace busy spin loops with retry + jitter (Risk: MEDIUM)
+    - Replace <code>Thread.onSpinWait</code>/busy loops in split iterator open and other
+      retry paths with <code>IndexRetryPolicy</code> + jitter.
+    - Make timeouts explicit and surface <code>IndexException</code> with operation name.
+    - Tests: BUSY retry exits on READY, timeout path, interrupt handling.</p>
+<p>[ ] 56 Key‑to‑segment map read contention reduction (Risk: MEDIUM)
+    - Evaluate snapshot‑based reads or <code>StampedLock</code> for high‑read workloads.
+    - Keep version validation semantics intact for split/extend paths.
+    - Tests: concurrent get/put under splits, no missing mappings, no deadlocks.</p>
+<p>[ ] 57 Streaming iterators without full materialization (Risk: MEDIUM)
+    - Replace list materialization in <code>getStream</code>/FULL_ISOLATION with streaming
+      merge iterators over write/delta caches and segment files.
+    - Ensure iterator close releases resources and does not leak locks.
+    - Tests: large data set memory profile, iterator isolation correctness.</p>
+<p>[ ] 5 Stop materializing merged cache lists on read (Risk: MEDIUM)
+    - Problem: <code>SegmentReadPath.openIterator</code> calls <code>getAsSortedList</code>, building
+      full merged lists for each iterator.
+    - Fix: provide streaming merge iterator over delta/write caches without
+      full list materialization.
+    - Options:
+      - Option A (recommended): switch <code>UniqueCache</code> to <code>TreeMap</code> /
+        <code>ConcurrentSkipListMap</code>, add a sorted iterator API, and merge cache
+        iterators (write/frozen/delta) with <code>MergedEntryIterator</code> in the
+        FULL_ISOLATION path.
+      - Option B: keep <code>HashMap</code> / <code>ConcurrentHashMap</code> for get/put and maintain
+        a sorted key index (<code>TreeSet</code> / <code>ConcurrentSkipListSet</code>) for iteration;
+        expose a sorted iterator over keys + map values and merge like Option A.
+[ ] 6 Stream compaction without full cache snapshot (Risk: MEDIUM)
+    - Problem: compaction snapshots the full cache list in memory.
+    - Fix: stream from iterators or chunk snapshot to bounded buffers.
+[ ] 7 Stream split without full cache snapshot (Risk: MEDIUM)
+    - Problem: split uses FULL_ISOLATION iterator backed by full list snapshot.
+    - Fix: use streaming iterator or chunked splitting to cap memory.
+[ ] 8 Avoid full materialization in <code>IndexInternalConcurrent.getStream</code> (Risk: MEDIUM)
+    - Problem: method loads all entries into a list before returning a stream.
+    - Fix: return a streaming spliterator tied to iterator close.
+[ ] 9 Add eviction for heavy segment resources (Risk: MEDIUM)
+    - Problem: <code>SegmentResourcesImpl</code> caches bloom/scarce forever.
+    - Fix: tie resource lifetime to segment eviction or add per-resource LRU;
+      ensure invalidate/close releases memory.</p>
+<h4 id="low">Low</h4>
+<p>[ ] 10 Allow cache shrink after peaks (Risk: LOW)
+    - Problem: <code>UniqueCache.clear()</code> keeps underlying <code>HashMap</code> capacity.
+    - Fix: rebuild map on clear when size exceeds a threshold; add tests.</p>
+<h3 id="other-refactors-non-oom">Other refactors (non-OOM)</h3>
+<p>[ ] 13 Implement a real registry lock (Risk: MEDIUM)
+    - Add an explicit lock around registry mutations + file ops.
+    - Replace/rename <code>executeWithRegistryLock</code> to actually serialize callers.
+    - Add tests for split/compact interleaving and segment visibility.
+[ ] 14 Replace common-pool async with dedicated executor + backpressure (Risk: MEDIUM)
+    - Add/configure a dedicated executor for async API calls.
+    - Track in-flight tasks and wait on close; add queue/backpressure limits.
+    - Add tests for saturation, cancellation, and close ordering.
+[ ] 15 Define <code>IndexAsyncAdapter.close()</code> behavior (Risk: MEDIUM)
+    - Decide on wait vs non-blocking close and document it.
+    - Add tests that match the chosen contract.
+[ ] 16 Replace busy-spin loops with retry+backoff+timeout (Risk: MEDIUM)
+    - Use <code>IndexRetryPolicy</code> in <code>SegmentsIterator</code> and split iterator open.
+    - Add interrupt handling and timeout paths with clear error messaging.
+    - Add tests for BUSY loops and timeout behavior.
+[ ] 17 Stop returning <code>null</code> on CLOSED in <code>SegmentIndexImpl.get</code> (Risk: MEDIUM)
+    - Decide API surface (exception vs status/Optional).
+    - Update callers and docs to distinguish "missing" vs "closed".
+    - Add tests for CLOSED/ERROR paths.
+[ ] 19 Propagate MDC context to async ops and stream consumption (Risk: LOW)
+    - Capture MDC context on submit and reapply in async tasks.
+    - Wrap stream/iterator consumption with MDC scope; clear on close.
+    - Add tests asserting <code>index.name</code> appears in async logs.
+[ ] 41 Unify async execution for segment index (Risk: MEDIUM)
+    - Route <code>SegmentIndexImpl.runAsyncTracked</code> and <code>IndexAsyncAdapter.runAsyncTracked</code>
+      through a shared, dedicated executor (no common pool).
+    - Decide whether to keep both async layers or make one delegate to the other.
+    - Align async close behavior and document rejection/backpressure outcomes.
+[ ] 42 Revisit <code>SegmentAsyncExecutor</code> rejection policy (Risk: MEDIUM)
+    - Ensure maintenance IO never runs on caller threads.
+    - Choose <code>AbortPolicy</code> + BUSY/error mapping or custom handler.
+    - Update docs and metrics if behavior changes.
+[ ] 43 Replace registry close polling with completion signal (Risk: MEDIUM)
+    - Add a close completion handle or signal in <code>Segment</code>.
+    - Update <code>SegmentRegistry.closeSegmentIfNeeded</code> to wait on completion rather
+      than polling <code>getState()</code>.
+    - Ensure close-from-maintenance thread does not deadlock.
+[ ] 44 Normalize split close/eviction flow (Risk: MEDIUM)
+    - Centralize segment close/eviction in <code>SegmentRegistry</code>.
+    - Remove direct <code>segment.close()</code> calls from split coordinator.
+    - Ensure split outcome updates mapping, eviction, and close are ordered.
+[ ] 45 Replace spin-wait in <code>SegmentConcurrencyGate.awaitNoInFlight</code> (Risk: LOW)
+    - Use <code>wait/notify</code> or <code>ManagedBlocker</code> with timeout.
+    - Preserve FREEZE semantics and early exit on state change.
+    - Add tests for drain behavior under load.
+[ ] 46 Align iterator isolation naming and semantics (Risk: LOW)
+    - Choose between <code>FAIL_FAST</code>/<code>FULL_ISOLATION</code> and the legacy
+      <code>INTERRUPT_FAST</code>/<code>STOP_FAST</code> terminology.
+    - Update docs, comments, and any mapping code consistently.
+[ ] 47 Consolidate BUSY/CLOSED retry loops (Risk: LOW)
+    - Extract shared retry helper for segmentindex operations.
+    - Replace ad-hoc loops in <code>SegmentRegistry</code>, <code>SegmentSplitCoordinator</code>,
+      and <code>SegmentIndexImpl</code>.
+    - Keep backoff/timeout semantics and error messages consistent.</p>
+<h3 id="testingquality">Testing/Quality</h3>
+<p>[ ] 48 Test executor saturation and backpressure paths (Risk: MEDIUM)
+    - Add tests for <code>SegmentAsyncExecutor</code> queue saturation and rejection handling.
+    - Add tests for <code>SplitAsyncExecutor</code> rejection and in-flight cleanup.
+    - Verify maintenance IO never runs on caller threads.
+[ ] 49 Test close path interactions (Risk: MEDIUM)
+    - Close while segment is <code>MAINTENANCE_RUNNING</code> and ensure backoff/timeout works.
+    - Close during async operations should fail fast with clear error.
+    - Assert no deadlock when waiting for segment READY/CLOSED.
+[ ] 50 Test split failure cleanup (Risk: MEDIUM)
+    - Force exceptions in split steps and assert <code>splitsInFlight</code> clears.
+    - Validate directory swap and key-to-segment map remain consistent.
+    - Ensure resources/locks are released on failure.
+[ ] 51 Test maintenance failure transitions (Risk: MEDIUM)
+    - Inject failures in maintenance IO and publish phases.
+    - Assert segment moves to <code>ERROR</code> and callers see ERROR status.
+    - Verify rejection handling does not leave the segment in FREEZE.</p>
+<h2 id="ready">Ready</h2>
+<ul>
+<li>(move items here when they are scoped and ready to execute)</li>
+</ul>
+<h2 id="deferred-segment-scope-do-not-touch-now">Deferred (segment scope, do not touch now)</h2>
+<h2 id="maintenance-tasks">Maintenance tasks</h2>
+<p>[ ] M37 Audit <code>segment</code> package for unused or test-only code (Risk: LOW)
+    - Limit class, method and variables visiblity
+    - Identify unused classes/methods/fields.
+    - Remove code only referenced by tests or move test helpers into test scope.
+    - Ensure public API docs and tests remain consistent after cleanup.
+[ ] M38 Review <code>segment</code> package for test and Javadoc coverage (Risk: LOW)
+    - Ensure each class has a JUnit test or document why coverage is excluded.
+    - Ensure each public class/method has Javadoc; add missing docs.
+[ ] M39 Audit <code>segmentindex</code> package for unused or test-only code (Risk: LOW)
+    - Limit class, method and variables visiblity
+    - Identify unused classes/methods/fields.
+    - Remove code only referenced by tests or move test helpers into test scope.
+    - Ensure public API docs and tests remain consistent after cleanup.
+[ ] M40 Review <code>segmentindex</code> package for test and Javadoc coverage (Risk: LOW)
+    - Ensure each class has a JUnit test or document why coverage is excluded.
+    - Ensure each public class/method has Javadoc; add missing docs.
+[ ] M41 Audit <code>segmentregistry</code> package for unused or test-only code (Risk: LOW)
+    - Limit class, method and variables visiblity
+    - Identify unused classes/methods/fields.
+    - Remove code only referenced by tests or move test helpers into test scope.
+    - Ensure public API docs and tests remain consistent after cleanup.
+[ ] M42 Review <code>segmentregistry</code> package for test and Javadoc coverage (Risk: LOW)
+    - Ensure each class has a JUnit test or document why coverage is excluded.
+    - Ensure each public class/method has Javadoc; add missing docs.
+    - See <code>docs/development/segmentregistry-audit.md</code> for audit notes.</p>
+<h2 id="done-archive">Done (Archive)</h2>
+<ul>
+<li>(keep completed items here; do not delete)</li>
+</ul>
+<p>[x] 61.1 Wire <code>SegmentHandler</code> into key-to-segment map usage (Risk: HIGH)
+    - Replace direct segment references in key-to-segment map paths with
+      <code>SegmentHandler</code> usage.
+    - Ensure handlers are used consistently for segment access in index flows.</p>
+<p>[x] 61.2 Refactor split algorithm around handler locks (Risk: HIGH)
+    - When a segment is eligible for split: acquire handler lock, re-check
+      eligibility under lock, then either unlock or proceed with split.
+    - Split apply ordering: update map on disk first, then in-memory map,
+      then close old segment, delete files, and finally unlock.
+    - Ensure failures unlock the handler and clean up temporary segments.
+    - Update <code>docs/architecture/registry/registry.md</code> to reflect handler-based locking.</p>
+<p>[x] 61.3 Simplify <code>SegmentHandler</code> lock API (Risk: MEDIUM)
+    - Keep internal handler state as <code>READY</code>/<code>LOCKED</code>.
+    - <code>lock()</code> returns <code>SegmentHandlerLockStatus</code> with <code>OK</code> or <code>BUSY</code>.
+    - Replace token-based lock/unlock usage across registry + split flows.
+    - Update handler-related tests to match the new API.</p>
+<p>[x] 60 Move registry implementation to <code>segmentregistry</code> package (Risk: MEDIUM)
+    - Move <code>SegmentRegistryImpl</code>, <code>SegmentRegystryState</code>, <code>SegmentRegistryCache</code>,
+      <code>SegmentRegistryState</code>, and <code>SegmentRegistryResult</code>
+      to <code>org.hestiastore.index.segmentregistry</code>.
+    - Update imports/usages in <code>segmentindex</code> and tests.
+    - Keep public API surface the same; verify no package-private access leaks.</p>
+<p>[x] M41 Audit <code>segmentregistry</code> package for unused or test-only code (Risk: LOW)
+    - Limit class, method and variables visiblity
+    - Identify unused classes/methods/fields.
+    - Remove code only referenced by tests or move test helpers into test scope.
+    - Ensure public API docs and tests remain consistent after cleanup.
+[x] M42 Review <code>segmentregistry</code> package for test and Javadoc coverage (Risk: LOW)
+    - Ensure each class has a JUnit test or document why coverage is excluded.
+    - Ensure each public class/method has Javadoc; add missing docs.</p>
+<p>[x] 59 Introduce <code>SegmentHandler</code> lock gate in segmentindex (Risk: HIGH)
+    - Add <code>SegmentHandler</code> with <code>getSegment()</code> returning <code>SegmentHandlerResult</code>:
+      <code>OK</code> (segment), <code>LOCKED</code>, and handler states <code>READY</code>/<code>LOCKED</code>.
+    - <code>lock()</code> returns a privileged handle/token that allows access to the
+      underlying segment while handler state is <code>LOCKED</code>.
+    - <code>getSegment()</code> must return <code>LOCKED</code> while locked for all non-privileged
+      callers (no segment exposure during lock).
+    - Wire split flow to lock via handler before opening <code>FULL_ISOLATION</code>
+      iterator, then unlock after apply/cleanup.
+    - Add tests: <code>LOCKED</code> is returned during lock; lock holder can operate;
+      unlock restores <code>OK</code>.</p>
+<p>[x] 59.2 Concurrency: reduce redundant key-map read locks (Risk: MEDIUM)
+    - Make <code>KeyToSegmentMapSynchronizedAdapter.snapshot()</code> lock-free
+      (volatile snapshot + AtomicLong version).
+    - Keep read locks only for map-only operations; do not wrap segment calls.
+    - Tests: snapshot consistency + existing <code>KeyToSegmentMapTest</code>.</p>
+<p>[x] 59.3 Concurrency: limit registry FREEZE to split apply (Risk: MEDIUM)
+    - Remove <code>FreezeGuard</code> usage from <code>SegmentRegistryImpl.getSegment</code> create/
+      eviction path; keep cache lock for LRU safety.
+    - Reserve registry <code>FREEZE</code> for split apply only.
+    - Tests: split + eviction concurrency (<code>SegmentRegistryCacheTest</code>,
+      <code>SegmentSplitCoordinatorConcurrencyTest</code>, integration stress).</p>
+<p>[x] 52 Remove automatic compaction from <code>segmentindex</code> (Risk: MEDIUM)
+    - Drop pre-split compaction in <code>SegmentSplitCoordinator</code> and remove
+      <code>SegmentSplitterPolicy.shouldBeCompactedBeforeSplitting</code> + related retry
+      logic.
+    - Simplify split planning to use estimated key counts directly (remove
+      compaction/tombstone hints from <code>SegmentSplitterPolicy</code> or replace with a
+      minimal estimate helper).
+    - Keep <code>SegmentIndex.compact</code> / <code>compactAndWait</code> as the only
+      segmentindex-triggered compaction entry point; update Javadocs to reflect
+      compaction being handled inside the segment package otherwise.
+    - Update tests that construct <code>SegmentSplitterPolicy</code> and add coverage that
+      split does not call <code>Segment.compact</code> while user-invoked compaction still
+      does.</p>
+<p>[x] 1 everiwhere rename maxNumberOfKeysInSegmentWriteCacheDuringFlush to maxNumberOfKeysInSegmentWriteCacheDuringMaintenance including all configurations setter getter all all posssible usages.
+[x] 2 Wnen write cache reach size as maxNumberOfKeysInSegmentWriteCacheDuringMaintenance than response to put with BUSY.
+[x] 3 UniqueCache should not use read/write reentrant lock. It's property of concurrent hash map.
+[x] 4 Enforce <code>maxNumberOfSegmentsInCache</code> in <code>SegmentRegistry</code> (Risk: MEDIUM)
+    - Problem: segments are cached unbounded; memory grows as segments grow.
+    - Fix: implement LRU or size-bounded cache; evict + close segments and
+      invalidate resources on eviction.
+[x] 18 Provide index-level FULL_ISOLATION streaming (Risk: MEDIUM)
+    - Add overload or option to request FULL_ISOLATION on index iterators.
+    - Implement iterator that holds exclusivity across segments safely.
+    - Add tests for long-running scans during maintenance.
+[x] 23 Refactor <code>Segment.close()</code> to async fire-and-forget with READY-only entry (Risk: MEDIUM)
+    - Change <code>Segment</code> to drop <code>CloseableResource</code> and return
+      <code>SegmentResult&lt;Void&gt;</code> from <code>close()</code>.
+    - Close starts only in <code>READY</code>: transition to <code>FREEZE</code>, drain, optionally
+      flush write cache, then run close work on maintenance thread.
+    - Completion marks <code>CLOSED</code>, releases locks/resources, and stops admissions.
+    - Move close-state tracking into segment index (avoid <code>Segment.wasClosed()</code>).
+    - Update state machine/gate/docs/tests to match the new close lifecycle.
+[x] 24 Add integration test: in-memory segment lock prevents double-open (Risk: LOW)
+    - Create an integration test that opens a segment in a directory and
+      asserts a second open in the same directory fails (lock enforcement).
+[x] 25 Simplify <code>Segment.flush()</code>/<code>compact()</code> to return status only (Risk: MEDIUM)
+    - Remove <code>CompletionStage</code> return values from <code>flush()</code> and <code>compact()</code>.
+    - Operation completion is observable when segment state returns to <code>READY</code>.
+    - Update callers, docs, and tests that wait on completion stages.
+[x] 25 Create directory API and layout helpers (Risk: HIGH)
+    - Add <code>Directory.openSubDirectory(String)</code> + <code>AsyncDirectory.openSubDirectory(String)</code>
+      and lifecycle helpers <code>Directory.mkdir(String)</code> / <code>Directory.rmdir(String)</code>.
+    - Implement in <code>FsDirectory</code>, <code>AsyncDirectoryAdapter</code>, and in-memory
+      <code>MemDirectory</code> equivalents; define semantics for non-empty rmdir.
+    - Add <code>SegmentDirectoryLayout</code> (or similar) that builds names for:
+      index, scarce, bloom, delta, properties, and lock files.
+    - Add tests for directory creation and layout mapping.</p>
+<p>[x] 26 Introduce segment-rooted <code>SegmentFiles</code> (Risk: HIGH)
+    - Add a <code>SegmentFiles</code> constructor that accepts a segment root
+      <code>AsyncDirectory</code> (instead of a flat base directory + id).
+    - Keep legacy flat layout working (auto-detect existing files, or flag in
+      <code>SegmentBuilder</code>).
+    - Update <code>SegmentBuilder</code> to create/use the segment root directory.
+    - Add tests that both layouts open the same data correctly.</p>
+<p>[x] 27 Add per-segment <code>.lock</code> file (Risk: MEDIUM)
+    - Add <code>segment.lock</code> (or <code>.lock</code>) inside the segment directory.
+    - Acquire lock on segment open; release on close. Fail fast on lock held.
+    - Add stale-lock recovery policy (manual delete or metadata timestamp).
+    - Add tests for lock contention and cleanup.</p>
+<p>[x] 28 Shared properties file structure (Risk: MEDIUM)
+    - Introduce a common property schema used by segment + segmentindex
+      packages (e.g. <code>IndexPropertiesSchema</code>).
+    - Store schema version and required keys; add migration helpers.
+    - Update <code>SegmentPropertiesManager</code> and <code>IndexConfiguratonStorage</code>
+      to use the shared schema.</p>
+<p>[x] 29 Compact flow for directory layout (publish protocol) (Risk: HIGH)
+    - IO phase (<code>MAINTENANCE_RUNNING</code>):
+      - Create a new directory, e.g. <code>segment-00001.next/</code> or versioned
+        <code>segment-00001/v2/</code>.
+      - Write new index/scarce/bloom/cache files there.
+      - Write properties with state <code>PREPARED</code> + metadata.
+    - Publish phase (short <code>FREEZE</code>):
+      - Mark new directory as <code>ACTIVE</code> in properties (or update a pointer
+        file <code>segment-00001.active</code>).
+      - Reload <code>SegmentFiles</code>/<code>SegmentResources</code> to the new root.
+      - Bump version and return to <code>READY</code>.
+    - Cleanup:
+      - Delete old directory only after publish and resource reload.
+      - Add startup recovery for <code>PREPARED</code> without <code>ACTIVE</code>.
+    - Align with items 11/12 (atomic swaps + map updates).</p>
+<p>[x] 30 Split + replace updates (Risk: HIGH)
+    - Update split/rename logic to use directory swaps or pointer updates.
+    - Ensure registry + <code>segmentindex</code> metadata remain consistent.
+    - Add tests for crash recovery and partial swaps.
+[x] 31 Segment layout uses versioned file names in a single directory (Risk: HIGH)
+    - Name index/scarce/bloom/delta as <code>vNN-*</code> (for example <code>v01-index.sst</code>,
+      <code>v01-scarce.sst</code>, <code>v01-bloom-filter.bin</code>, <code>v01-delta-0000.cache</code>).
+    - Store the active version and counters in <code>manifest.txt</code> (no <code>.active</code>
+      pointer).
+    - Use zero-padded 2-digit versions and 4-digit delta ids.
+[x] 32 Builder/files treat the provided directory as the segment home (Risk: HIGH)
+    - Require <code>Segment.builder(AsyncDirectory)</code> for construction.
+    - Lock + properties live inside the segment directory.
+    - Resolve active version from properties or detected index files.
+[x] 33 Compaction/flush publish is memory-only (Risk: HIGH)
+    - IO phase writes versioned files and property updates.
+    - Publish swaps in-memory version/resources and bumps iterator version.
+    - Cleanup old version files asynchronously.
+[x] 34 Registry/tests align with single-directory versioning (Risk: MEDIUM)
+    - Registry passes segment directories; no active-directory switching.
+    - Update tests to accept versioned names and per-segment directories.
+[x] 35 Remove unused close monitor in <code>SegmentConcurrencyGate</code> (Risk: LOW)
+    - Remove <code>closeMonitor</code> and <code>signalCloseMonitor</code> since nothing waits on it.
+    - Keep drain behavior in <code>awaitNoInFlight()</code> unchanged.
+[x] 36 Consolidate in-flight read/write counters in <code>SegmentConcurrencyGate</code> (Risk: LOW)
+    - Replace <code>inFlightReads</code>/<code>inFlightWrites</code> with a single counter.
+    - Keep admission rules and drain behavior unchanged.
+    - Update any stats or tests that rely on read/write split (if introduced).
+[x] 11 Remove <code>segmentState</code> from segment properties schema (Risk: MEDIUM)
+    - Remove <code>SegmentKeys.SEGMENT_STATE</code> from <code>IndexPropertiesSchema</code>.
+    - Update <code>SegmentPropertiesManager</code> to drop <code>getState</code>/<code>setState</code> usage.
+    - Decide migration behavior for existing properties files.
+[x] 12 Add <code>getMaxNumberOfDeltaCacheFiles()</code> to <code>Segment</code> (Risk: LOW)
+    - Implement in <code>SegmentImpl</code>.
+    - Update any callers/tests that need the accessor.
+[x] 13 Add <code>maxNumberOfDeltaCacheFiles</code> to <code>IndexConfiguration</code> + builder (Risk: MEDIUM)
+    - Add config property, validation, defaults, and persistence.
+    - Plumb through <code>SegmentBuilder</code>/<code>SegmentConf</code> as needed.
+[x] 14 Wire delta cache file cap into <code>SegmentMaintenancePolicyThreshold</code> (Risk: MEDIUM)
+    - Add the max file count to policy constructor/state.
+    - Pass the value from configuration.
+[x] 15 Enforce delta cache file cap in policy (Risk: MEDIUM)
+    - In <code>SegmentMaintenancePolicyThreshold</code> (~line 44), trigger maintenance
+      when delta cache file count exceeds the cap.
+[x] 16 Enforce segment lock test on open (Risk: MEDIUM)
+    - Add a test that opening a segment with an existing <code>.lock</code> fails.
+    - Cover both in-memory and filesystem-backed directories.
+[x] 17 Document locked-directory behavior in <code>SegmentBuilder</code> (Risk: LOW)
+    - Clarify how builder reacts when the segment directory is already locked.
+[x] 18 Acquire segment lock before <code>prepareBuildContext()</code> (Risk: MEDIUM)
+[x] 19 Add <code>SegmentRegistryResult</code> + status + adapters (Risk: MEDIUM)
+    - Define result/status types and adapters to/from <code>SegmentResult</code>.
+    - Unit tests only; no wiring.
+[x] 20 Add registry state enum + gate (Risk: MEDIUM)
+    - Define <code>SegmentRegistryState</code> and a small gate/state holder.
+    - Unit tests only; no integration.
+[x] 21 Introduce <code>SegmentRegistry</code> interface + <code>SegmentRegistryImpl</code> (Risk: MEDIUM)
+    - Keep interface minimal and keep <code>SegmentResult</code> returns for now.
+    - Rename existing class to impl and update call sites in same step.
+[x] 22 Add <code>SegmentRegistrySyncAdapter</code> with BUSY retry (Risk: MEDIUM)
+    - Wrap <code>SegmentRegistry</code> and retry BUSY (use <code>IndexRetryPolicy</code>).
+[x] 23 Wire state gate into impl (Risk: HIGH)
+    - BUSY only from registry state; FREEZE only around map changes.
+    - Keep <code>SegmentResult</code> API to avoid broad changes.
+[x] 24 Switch registry API to <code>SegmentRegistryResult</code> (Risk: HIGH)
+    - Introduce <code>SegmentRegistryLegacyAdapter</code> to keep old callers working.
+    - Migrate call sites/tests, then remove legacy adapter.
+[x] 53.1 Split “apply” DTO (Risk: LOW)
+    - Introduce a small DTO for split apply (oldId, lowerId, upperId,
+      min/max keys, status).
+    - Unit tests for DTO invariants.
+[x] 53.2 Split worker extraction (Risk: MEDIUM)
+    - Refactor split execution to: open FULL_ISOLATION iterator, run split on
+      maintenance executor, return DTO without touching registry or map.
+    - Ensure iterator is closed in all paths.
+    - Unit tests for result wiring.
+[x] 53.3 Registry apply entry point (Risk: MEDIUM)
+    - Add registry apply method that (a) FREEZE, (b) update cache
+      (remove old, add new ids), (c) exit FREEZE.
+    - Keep key‑map lock separate.
+    - Unit tests for cache mutation under FREEZE.
+[x] 53.4 Key‑map persistence (Risk: MEDIUM)
+    - Update key‑to‑segment map using its own lock/adapter.
+    - Persist map file after in‑memory registry apply.
+    - Tests that map persistence order is enforced.
+[x] 53.5 Old segment deletion (Risk: MEDIUM)
+    - Delete old segment directory only after map persistence and after
+      iterator/segment locks are released.
+    - Tests that deletion never happens before map persistence.
+[x] 53.6 Lock order contract (Risk: LOW)
+    - Enforce lock order (segment → registry → map; release map → registry
+      → segment) and document in code.
+    - Add a small test or assertion helper to catch order violations.
+[x] 53.7 Split concurrency scenarios (Risk: HIGH)
+    - Tests:
+      - split does not run under registry FREEZE (short window)
+      - split returns BUSY on lock conflict and retries safely
+      - concurrent get/put during split never sees missing segment mapping
+[x] 58.1 Split: keep split IO outside registry freeze (Risk: HIGH)
+    - <code>SegmentSplitCoordinator.split(...)</code>: ensure all IO (iterator open, writes)
+      happens before any registry <code>FREEZE</code>.
+    - <code>SegmentSplitStepOpenIterator</code>: keep <code>FULL_ISOLATION</code> acquisition once per split.
+    - <code>SegmentSplitCoordinator.hasLiveEntries(...)</code>: now uses <code>FAIL_FAST</code> to
+      avoid a second <code>FULL_ISOLATION</code> lock.
+    - Tests may fail if ordering assumptions change; fix after step 58.4.
+[x] 58.2 Split: invert lock order for apply phase (Risk: HIGH)
+    - <code>SegmentSplitCoordinator.applySplitPlan(...)</code>: remove outer
+      <code>keyToSegmentMap.withWriteLock(...)</code>.
+    - <code>SegmentRegistryImpl.applySplitPlan(...)</code>: acquire registry freeze first,
+      then call <code>onApplied</code> which acquires key-map write lock.
+    - Update lock-order enforcement flags to match registry -&gt; key-map.
+[x] 58.3 Split: propagate lock-order flags into key-map adapter (Risk: MEDIUM)
+    - <code>KeyToSegmentMapSynchronizedAdapter</code>: set/clear <code>keyMapLockHeld</code> around
+      write-lock acquisition when enforcement is enabled.
+    - Ensure registry checks validate <code>registryLockHeld</code> before key-map lock.
+[x] 58.4 Split: finalize apply/cleanup ordering (Risk: MEDIUM)
+    - Ensure apply evicts old segment instance and closes it via
+      <code>SegmentRegistryImpl.closeSegmentInstance(...)</code>.
+    - Keep key-map flush outside registry freeze:
+      <code>keyToSegmentMap.optionalyFlush()</code> only after apply OK.
+    - Delete old segment files only after apply succeeds and locks released.
+[x] 58.5 Split: test alignment (Risk: MEDIUM)
+    - Add/update tests to assert no directory swap in split flow.
+    - Add tests for enforced lock order (registry -&gt; key-map).
+    - Add tests for split failure cleanup of new segments.
+[x] 63 SegmentIdAllocator in segmentregistry (Risk: MEDIUM)
+    - Add <code>SegmentIdAllocator</code> interface and directory-backed implementation.
+    - Scan <code>AsyncDirectory.getFileNamesAsync()</code> for segment directories named
+      <code>segment-00001</code> (prefix <code>segment-</code> + 5 digits) and initialize next id
+      to max+1 (or 1 when none found).
+    - Allocate ids with thread-safe counter.</p>
+<p>[x] 64 Include directories in <code>Directory.getFileNames()</code> (Risk: LOW)
+    - Ensure <code>Directory.getFileNames()</code> returns subdirectory names as well.
+    - Update <code>MemDirectory</code> to include subdirectory names in its stream.
+    - Verify no tests rely on file-only behavior.</p>
+<p>[x] 65 Remove id allocation from key-to-segment map (Risk: MEDIUM)
+    - Remove <code>nextSegmentId</code> and <code>findNewSegmentId()</code> from <code>KeyToSegmentMap</code>
+      and its synchronized adapter.
+    - Remove updates to <code>nextSegmentId</code> in <code>tryExtendMaxKey</code>/<code>updateMaxKey</code>.</p>
+<p>[x] 66 Wire allocator into registry + index (Risk: MEDIUM)
+    - Update <code>SegmentRegistryImpl</code> to use <code>SegmentIdAllocator</code> instead of
+      supplier.
+    - Update <code>SegmentIndexImpl</code> wiring and split coordinator to use registry
+      allocation only.
+    - Update tests to stub allocator or use directory-backed allocator.</p>
+<p>[x] 67 Tests + docs for allocator move (Risk: LOW)
+    - Add allocator tests (empty dir, max id, thread-safety).
+    - Update <code>docs/architecture/registry/registry.md</code> to reflect registry allocator.</p>
+<p>[x] 62 Add <code>SegmentRegistryBuilder</code> modeled after <code>Segment.builder(...)</code> (Risk: MEDIUM)
+    - Add <code>SegmentRegistryBuilder</code> in <code>segmentregistry</code> with required inputs
+      (directory, type descriptors, config, maintenance executor).
+    - Provide optional setters for <code>SegmentIdAllocator</code> and <code>SegmentFactory</code>.
+    - Add static factory <code>SegmentRegistry.builder(...)</code> (or on impl) to return builder.
+    - Move default wiring (factory + allocator creation) into builder.
+    - Keep <code>SegmentRegistryImpl</code> constructor with full DI for tests.
+    - Update <code>SegmentIndexImpl</code> (and other callers) to use the builder.
+    - Add unit tests for missing required fields and default wiring.</p>
+<p>[x] 68 Align split apply with registry FREEZE + lock-order enforcement (Risk: MEDIUM)
+    - Expose registry FREEZE in <code>SegmentRegistryAccess</code> (or equivalent) so
+      split apply can run under FREEZE while holding handler + key-map locks.
+    - While FREEZE is active, set <code>hestiastore.registryLockHeld=true</code> so
+      key-map lock order enforcement can be enabled safely.
+    - Wrap key-map apply + cache eviction inside the FREEZE window.</p>
+<p>[x] 69 Separate cache eviction from file deletion in split apply (Risk: MEDIUM)
+    - Add registry operation to evict a specific segment from cache while the
+      handler lock is held (no file deletion).
+    - After apply: evict old segment under handler+FREEZE, release iterator,
+      unlock handler, then delete old segment files via registry helper.
+    - Keep <code>deleteSegment</code> behavior for general callers unchanged.</p>
+<p>[x] 70 Apply-failure should mark registry ERROR (Risk: LOW)
+    - When split apply fails mid-update, set registry gate to ERROR and
+      surface the failure (avoid silent BUSY loops).
+    - Add tests for apply-failure transitions.</p>
+<p>[x] 71 SegmentRegistry: expose NOT_FOUND for missing segments (Risk: LOW)
+    - Add <code>NOT_FOUND</code> to <code>SegmentRegistryResultStatus</code> + factory method.
+    - Return NOT_FOUND when <code>getSegment</code> targets a missing directory.
+    - Keep <code>createSegment</code> creating new segments even when others exist.
+    - Tests: missing-segment lookup, status plumbing.</p>
+<p>[x] 72 SegmentRegistryBuilder: configure only via <code>with*</code> methods (Risk: LOW)
+    - Remove constructor parameters from <code>SegmentRegistryBuilder</code>.
+    - Ensure all required inputs are set via <code>with...</code> methods.
+    - Update call sites and tests to use the builder setters.</p>
+<p>[x] 73 SegmentRegistry handler-backed cache (Risk: MEDIUM)
+    - Make <code>SegmentRegistryCache</code> store <code>SegmentHandler</code> per <code>SegmentId</code>
+      (segment + lock state as one entry).
+    - Keep <code>SegmentRegistry.getSegment</code> returning <code>SegmentRegistryResult</code>
+      to signal registry state; map LOCKED to BUSY.
+    - Add internal accessors for handler-only flows (split/evict) without
+      exposing handler in the public registry API.
+    - Update eviction logic to skip LOCKED handlers and keep cache/handler
+      in sync.
+    - Tests: locked entry not evicted, handler/segment consistency, BUSY
+      returned when handler locked.</p>
+<p>[x] 74 RegistryAccess: lock via <code>SegmentHandler</code> (Risk: MEDIUM)
+    - Add internal accessor that returns the <code>SegmentHandler</code> for a
+      <code>segmentId</code> + expected segment instance (BUSY/ERROR when mismatch).
+    - Remove <code>lockSegmentHandler</code>/<code>unlockSegmentHandler</code> from
+      <code>SegmentRegistryLocking</code> and <code>SegmentRegistryAccess</code>.
+    - Update <code>SegmentRegistryAccessAdapter</code> to expose handler instead of
+      lock/unlock methods.</p>
+<p>[x] 75 Split flow: use handler lock directly (Risk: MEDIUM)
+    - In <code>SegmentSplitCoordinator</code>, acquire handler via registry access and
+      call <code>handler.lock()</code>/<code>handler.unlock()</code> directly.
+    - Keep BUSY mapping when handler is locked.
+    - Ensure eviction path still validates handler instance + state.</p>
+<p>[x] 76 Tests + cleanup for handler locking (Risk: LOW)
+    - Update tests that currently call registry lock/unlock to use handler
+      locking instead.
+    - Remove unused lock methods from <code>SegmentRegistryImpl</code>.
+    - Verify eviction skips locked handlers and BUSY is returned when locked.</p>
+<p>[x] 77 SegmentRegistry target-state rollout from <code>docs/architecture/registry/registry.md</code> (Risk: HIGH)
+    - Goal: make implementation fully match the documented registry model
+      (state gate + per-key <code>Entry</code> state machine + single-flight load +
+      bounded cache eviction + unload semantics).
+    - Global rule: every step in 77.x must preserve behavioral parity with
+      <code>docs/architecture/registry/registry.md</code>. If behavior must change, update
+      <code>registry.md</code> and diagrams first in the same PR before code changes.
+    - Hard constraints:
+      - no global lock in <code>get</code> hot path
+      - unrelated keys must not block each other
+      - per-key wait only on the same <code>Entry</code>
+      - <code>LOADING</code> waits, <code>UNLOADING</code> maps to <code>BUSY</code>
+      - load/open failures are exception-driven
+    - Exit criteria:
+      - behavior parity with <code>docs/architecture/registry/registry.md</code> and
+        <code>docs/architecture/images/registry-seq*.plantuml</code>
+      - all new/updated tests green
+      - no flakiness in repeated concurrency runs</p>
+<p>[x] 77.1 Freeze target contract and remove ambiguity (Risk: HIGH)
+    - Pin <code>docs/architecture/registry/registry.md</code> + diagrams as source of truth.
+    - Explicitly list non-negotiable runtime rules in code comments/Javadocs:
+      - state gate mapping: <code>READY</code> normal, <code>FREEZE</code> -&gt; <code>BUSY</code>,
+        <code>CLOSED</code> -&gt; <code>CLOSED</code>, <code>ERROR</code> -&gt; <code>ERROR</code>
+      - cache state mapping: <code>LOADING</code> wait, <code>UNLOADING</code> -&gt; <code>BUSY</code>
+      - failed unload leaves <code>UNLOADING</code> (documented behavior)
+    - Acceptance:
+      - no contradictory comments/Javadocs in <code>segmentregistry</code> package
+      - docs and code contracts use same method names</p>
+<p>[x] 77.2 Implement/align per-key <code>Entry</code> API contract (Risk: HIGH)
+    - Ensure <code>SegmentRegistryCache.Entry</code> exposes and follows:
+      - <code>tryStartLoad()</code>
+      - <code>waitWhileLoading(currentAccessCx)</code>
+      - <code>finishLoad(value)</code>
+      - <code>fail(exception)</code>
+      - <code>tryStartUnload()</code>
+      - <code>finishUnload()</code>
+      - <code>getEvictionOrder()</code>
+    - Ensure lock/condition is strictly per-entry (no cross-key monitor).
+    - Acceptance:
+      - transitions only: <code>MISSING-&gt;LOADING-&gt;READY-&gt;UNLOADING-&gt;MISSING</code>
+      - invalid transitions return fast/fail predictably</p>
+<p>[x] 77.3 Align <code>get(key)</code> miss path to single-flight semantics (Risk: HIGH)
+    - Use <code>putIfAbsent</code> race semantics correctly:
+      - winner: <code>entryInMap == null</code> then load
+      - loser: wait on the existing entry from map
+    - Ensure wait target is the entry stored in map, not a local temporary.
+    - Ensure load failure path calls <code>fail(exception)</code>, wakes waiters, and
+      removes the expected entry from map.
+    - Acceptance:
+      - exactly one loader execution per key under high contention
+      - all losers observe winner result or propagated exception</p>
+<p>[x] 77.4 Align <code>get(key)</code> hit path semantics (Risk: HIGH)
+    - READY: immediate return + recency update.
+    - LOADING: block only on same entry until READY/failure.
+    - UNLOADING: do not wait; return BUSY to caller.
+    - Acceptance:
+      - no waiting on keys in <code>UNLOADING</code>
+      - no blocking between unrelated keys</p>
+<p>[x] 77.5 Implement bounded eviction flow per docs (Risk: HIGH)
+    - Keep capacity enforcement in cache layer.
+    - Candidate selection:
+      - LRU by <code>accessCx</code>
+      - exclude requested key in <code>removeLastRecentUsedSegment(exceptSegmentId)</code>
+      - only READY candidates can move to UNLOADING
+    - Start close asynchronously, remove only after close success.
+    - Acceptance:
+      - eviction never unloads <code>exceptSegmentId</code>
+      - failed <code>tryStartUnload</code> retries candidate selection without global stall</p>
+<p>[x] 77.6 Lifecycle executor behavior and failure handling (Risk: HIGH)
+    - Verify load/open and close/unload execution contexts follow design:
+      - load for seq03 scenario in caller thread
+      - close/unload on lifecycle executor thread
+    - Define exact reaction to close failure:
+      - keep entry <code>UNLOADING</code>
+      - subsequent <code>get</code> returns BUSY
+      - do not remove cache entry
+    - Acceptance:
+      - no caller-thread close IO
+      - failed close path is deterministic and test-covered</p>
+<p>[x] 77.7 Registry gate lifecycle alignment (Risk: MEDIUM)
+    - Ensure startup: <code>FREEZE -&gt; READY</code>.
+    - Ensure close flow: <code>READY -&gt; FREEZE -&gt; CLOSED</code>.
+    - Ensure idempotent close and terminal ERROR semantics.
+    - Acceptance:
+      - gate transitions are atomic and race-safe under concurrent calls
+      - status mapping is consistent for all operations</p>
+<p>[x] 77.8 API/status cleanup to match exception-driven load policy (Risk: MEDIUM)
+    - Preserve <code>SegmentRegistryAccess</code> for status-oriented flows.
+    - Keep load/open failure as propagated runtime exception from registry
+      load paths (per docs).
+    - Remove or deprecate status branches that conflict with this policy.
+    - Acceptance:
+      - no mixed behavior where same failure is sometimes status, sometimes throw</p>
+<p>[x] 77.9 Unit tests for Entry/cache state machine (Risk: HIGH)
+    - Extend <code>SegmentRegistryCacheTest</code> with deterministic tests:
+      - single-flight: same key, many threads -&gt; loader called once
+      - wait-on-loading: loser threads block and then return same value
+      - load failure wakeup: all waiters receive same failure
+      - unloading maps to BUSY (no waiting)
+      - eviction excludes <code>exceptSegmentId</code>
+      - close failure leaves <code>UNLOADING</code>
+    - Use <code>CountDownLatch</code>/<code>CyclicBarrier</code> to force races.
+    - Add <code>@Timeout</code> to every concurrency-sensitive test.</p>
+<p>[x] 77.10 Registry-level behavior tests (Risk: HIGH)
+    - Update/add tests in:
+      - <code>SegmentRegistryImplTest</code>
+      - <code>SegmentRegistryStateMachineTest</code>
+      - <code>SegmentRegistryAccessImplTest</code>
+    - Verify:
+      - gate mapping (<code>FREEZE/BUSY</code>, <code>CLOSED/CLOSED</code>, <code>ERROR/ERROR</code>)
+      - startup transition (<code>FREEZE-&gt;READY</code>)
+      - <code>getSegment</code> behavior across READY/LOADING/UNLOADING
+      - exception propagation on load/open failure</p>
+<p>[x] 77.11 High-concurrency integration verification (Risk: HIGH)
+    - Extend/execute:
+      - <code>IntegrationSegmentIndexConcurrencyTest</code>
+      - <code>SegmentIndexImplConcurrencyTest</code>
+      - <code>SegmentSplitCoordinatorConcurrencyTest</code>
+    - Add focused registry stress tests (new class):
+      - many threads on same key (single-flight proof)
+      - many threads on different keys (independence proof)
+      - eviction + concurrent gets + split coordinator interaction
+    - Run repeated stress cycles to catch flakes.
+    - Completed:
+      - Added and executed
+        <code>src/test/java/org/hestiastore/index/segmentindex/SegmentRegistryConcurrencyStressTest.java</code>.
+      - Passed:
+        <code>mvn -q -Dtest=IntegrationSegmentIndexConcurrencyTest,SegmentIndexImplConcurrencyTest,SegmentSplitCoordinatorConcurrencyTest,SegmentRegistryConcurrencyStressTest test</code>
+      - Flake gate passed: 20/20 repeated runs with 0 failures.</p>
+<p>[x] 77.12 Quality gates and release checklist (Risk: HIGH)
+    - Mandatory local gates before merge:
+      - targeted unit tests:
+        <code>mvn -q -Dtest=SegmentRegistryCacheTest,SegmentRegistryImplTest,SegmentRegistryStateMachineTest test</code>
+      - concurrency/integration tests:
+        <code>mvn -q -Dtest=IntegrationSegmentIndexConcurrencyTest,SegmentIndexImplConcurrencyTest,SegmentSplitCoordinatorConcurrencyTest test</code>
+      - full verification:
+        <code>mvn verify</code>
+    - Flake gate:
+      - rerun concurrency suite N times (recommended N=20) and require 0 flakes.
+    - Code quality gate:
+      - no TODO/FIXME left in touched files
+      - Javadocs reflect final behavior
+      - diagrams and <code>registry.md</code> updated if behavior changed
+    - Completed:
+      - Passed targeted unit tests:
+        <code>mvn -q -Dtest=SegmentRegistryCacheTest,SegmentRegistryImplTest,SegmentRegistryStateMachineTest test</code>
+      - Passed concurrency/integration tests:
+        <code>mvn -q -Dtest=IntegrationSegmentIndexConcurrencyTest,SegmentIndexImplConcurrencyTest,SegmentSplitCoordinatorConcurrencyTest,SegmentRegistryConcurrencyStressTest test</code>
+      - Passed full verification:
+        <code>mvn verify</code>
+      - <code>TODO/FIXME</code> scan on touched files: none found.</p>
+<p>[x] 77.13 Rollout and fallback plan (Risk: MEDIUM)
+    - Deliver in small PRs matching 77.1-77.12 order.
+    - After each PR:
+      - run targeted regression suite
+      - update <code>docs/architecture/registry/registry.md</code> if contract changed
+    - Keep a temporary feature flag only if needed for safe migration.
+    - Remove fallback/compatibility code when final parity is reached.
+    - Completed:
+      - Work delivered incrementally following 77.1 -&gt; 77.12 sequence.
+      - Regression suites executed after key steps and before final merge gate.
+      - No temporary feature flag required for this rollout.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

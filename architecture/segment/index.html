@@ -13,25 +13,25 @@
         <link rel="canonical" href="https://jajir.github.io/HestiaStore/architecture/segment/">
       
       
-        <link rel="prev" href="../arch-index/">
+        <link rel="prev" href="../segmentindex/segment-index-concurrency/">
       
       
-        <link rel="next" href="../datablock/">
+        <link rel="next" href="segment/">
       
       
         
       
       
       <link rel="icon" href="../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
     
     
       
-        <title>Segments & Compaction - HestiaStore</title>
+        <title>Overview - HestiaStore</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.618322db.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#segment-implementation" class="md-skip">
+        <a href="#segment-architecture" class="md-skip">
           Skip to content
         </a>
       
@@ -113,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Segments & Compaction
+              Overview
             
           </span>
         </div>
@@ -1114,10 +1114,6 @@
       
         
       
-        
-      
-        
-      
     
     
     
@@ -1179,12 +1175,20 @@
                 
   
   
-    
-  
   
   
     
     
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
       
         
       
@@ -1206,21 +1210,24 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" checked>
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_2" >
         
           
-          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="">
-            
+          <div class="md-nav__link md-nav__container">
+            <a href="../general/" class="md-nav__link ">
+              
   
   
   <span class="md-ellipsis">
     
   
-    Core Building Blocks
+    General
   
 
     
@@ -1228,183 +1235,27 @@
   
   
 
-            <span class="md-nav__icon md-icon"></span>
-          </label>
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_2" id="__nav_5_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5_2">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Core Building Blocks
+    General
   
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
               
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../arch-index/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Sparse Index
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-    
-  
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Segments & Compaction
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Segments & Compaction
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#segment-putget-and-iterate-consistency" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        🔄 Segment put/get and iterate consistency
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="🔄 Segment put/get and iterate consistency">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#case-1-read-data" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Case 1 - Read data
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#case-2-change-data" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Case 2 - Change data
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#caching-of-segment-data" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        🗄️ Caching of segment data
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#writing-to-segment" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ✍️ Writing to segment
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
-    </li>
-  
-
-              
             
               
                 
@@ -1413,7 +1264,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../datablock/" class="md-nav__link">
+      <a href="../general/datablock/" class="md-nav__link">
         
   
   
@@ -1441,7 +1292,35 @@
   
   
     <li class="md-nav__item">
-      <a href="../chain-of-filters/" class="md-nav__link">
+      <a href="../general/filters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filters & Integrity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../general/chain-of-filters/" class="md-nav__link">
         
   
   
@@ -1462,77 +1341,6 @@
 
               
             
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-          
-          
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-        
-        
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Data Flow
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_3">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Data Flow
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
               
                 
   
@@ -1540,14 +1348,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../write-path/" class="md-nav__link">
+      <a href="../general/concurrency/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Write Path
+    Access Model
   
 
     
@@ -1568,106 +1376,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../read-path/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Read Path
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-          
-          
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-        
-        
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_4" >
-        
-          
-          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Reliability
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_4">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Reliability
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../recovery/" class="md-nav__link">
+      <a href="../general/recovery/" class="md-nav__link">
         
   
   
@@ -1695,360 +1404,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../filters/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Filters & Integrity
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-          
-          
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-        
-        
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Performance
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_5">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Performance
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../caching/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Caching Strategy
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../performance/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Performance Model & Sizing
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-          
-          
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-        
-        
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_6" >
-        
-          
-          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Concurrency
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_6">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Concurrency
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../concurrency/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Access Model
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-          
-          
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-        
-        
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_7" >
-        
-          
-          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Reference
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_7">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Reference
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../on-disk-layout/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    On-Disk Layout & File Names
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../limits/" class="md-nav__link">
+      <a href="../general/limits/" class="md-nav__link">
         
   
   
@@ -2076,7 +1432,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../glossary/" class="md-nav__link">
+      <a href="../general/glossary/" class="md-nav__link">
         
   
   
@@ -2105,6 +1461,576 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../segmentindex/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SegmentIndex
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_3" id="__nav_5_3_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    SegmentIndex
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../segmentindex/write-path/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Write Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../segmentindex/read-path/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../segmentindex/caching/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Caching Strategy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../segmentindex/cache-lru/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cache LRU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../segmentindex/performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance Model & Sizing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../segmentindex/segment-index-concurrency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment Index Concurrency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="./" class="md-nav__link md-nav__link--active">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link md-nav__link--active" for="__nav_5_4" id="__nav_5_4_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Segment
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="segment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment Design
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="on-disk-layout/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    On-Disk Layout & File Names
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="arch-index/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sparse Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="segment-concurrency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment Concurrency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../registry/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registry
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_5" id="__nav_5_5_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Registry
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../registry/registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2120,10 +2046,6 @@
   
     
     
-      
-        
-      
-        
       
         
       
@@ -2216,6 +2138,233 @@
   
   
   
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../development/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6_2" id="__nav_6_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/guides/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/segment-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JVM Profiling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../refactor-backlog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Refactor Backlog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
       <a href="../../development/release/" class="md-nav__link">
         
@@ -2294,90 +2443,6 @@
 
               
             
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/documentation/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Development Docs
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/guides/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Guides
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    JVM Profiling
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
           </ul>
         </nav>
       
@@ -2412,49 +2477,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#segment-putget-and-iterate-consistency" class="md-nav__link">
+  <a href="#what-a-segment-contains" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🔄 Segment put/get and iterate consistency
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="🔄 Segment put/get and iterate consistency">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#case-1-read-data" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Case 1 - Read data
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#case-2-change-data" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Case 2 - Change data
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#caching-of-segment-data" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        🗄️ Caching of segment data
+        What a Segment Contains
       
     </span>
   </a>
@@ -2462,10 +2488,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#writing-to-segment" class="md-nav__link">
+  <a href="#core-segment-structures" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ✍️ Writing to segment
+        Core Segment Structures
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#topics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Topics
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#diagrams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Diagrams
       
     </span>
   </a>
@@ -2533,10 +2581,10 @@
     
     
       <li class="md-path__item">
-        <a href="../arch-index/" class="md-path__link">
+        <a href="./" class="md-path__link">
           
   <span class="md-ellipsis">
-    Core Building Blocks
+    Segment
   </span>
 
         </a>
@@ -2558,54 +2606,38 @@
   
 
 
-<h1 id="segment-implementation">🧱 Segment implementation</h1>
-<p>Segment is core part of index. It represents one string sorted table file with:</p>
+<h1 id="segment-architecture">🧱 Segment Architecture</h1>
+<p>This is the central place for segment-specific internals.</p>
+<h2 id="what-a-segment-contains">What a Segment Contains</h2>
 <ul>
-<li>Partial consistency - iterator stop working or return consistent data</li>
-<li>Support Writing changes into delta files</li>
-<li>Bloom filter for faster evaluating if key is in index</li>
-<li>Scarce index for faster searching for data in main index</li>
+<li>Main SST file: <code>vNN-index.sst</code></li>
+<li>Sparse (scarce) index: <code>vNN-scarce.sst</code></li>
+<li>Bloom filter: <code>vNN-bloom-filter.bin</code></li>
+<li>Manifest: <code>manifest.txt</code></li>
+<li>Lock file: <code>.lock</code></li>
+<li>Delta cache files: <code>vNN-delta-NNNN.cache</code></li>
 </ul>
-<h2 id="segment-putget-and-iterate-consistency">🔄 Segment put/get and iterate consistency</h2>
-<p>operations like write and get should be always consistent. What is written is read. Iteration behave differently. better than provide old data it stop providing any data.</p>
-<p>Let's have a followin key value entries in main index:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>&lt;a, 20 &gt;
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>&lt;b, 30 &gt;
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>&lt;c, 40 &gt;
-</code></pre></div>
-<p>In segment cache are following entries:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>&lt;a, 25&gt;
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>&lt;e, 28&gt;
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>&lt;b, tombstone&gt;
-</code></pre></div>
-<p>When user will iterate throught segment data, there will be followin cases:</p>
-<h3 id="case-1-read-data">Case 1 - Read data</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>iterator.read() --&gt; &lt;a, 25&gt;
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>iterator.read() --&gt; &lt;c, 40&gt;
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>iterator.read() --&gt; &lt;e, 28&gt;
-</code></pre></div>
-<h3 id="case-2-change-data">Case 2 - Change data</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>iterator.read() --&gt; &lt;a, 25&gt;
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>segment.write(c, 10)
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>iterator.read() --&gt; null
-</code></pre></div>
-<p>Any segment write operation will break segment iterator. It's easier way to secure segment consistency.  </p>
-<h2 id="caching-of-segment-data">🗄️ Caching of segment data</h2>
-<p>In segment following object are cached:</p>
+<h2 id="core-segment-structures">Core Segment Structures</h2>
 <ul>
-<li>SegmentDeltaCache - contains changed key value entry from segment</li>
-<li>BloomFilter - bloom filter data</li>
-<li>ScarceIndex - scarce index data</li>
+<li><strong>Delta cache</strong>: in-memory and on-disk overlay for recent updates.</li>
+<li><strong>Bloom filter</strong>: fast negative lookup guard before on-disk scans.</li>
+<li><strong>Sparse/scarce index</strong>: maps sampled keys to chunk positions in main SST.</li>
 </ul>
-<p>There are few classes that provide lazy loading of segment data a flexibility to cache segment data. Segment data are managed by following classes: </p>
-<p><img alt="Sequence of call when cached data are required" src="../../images/segment-cache-class1.png" /></p>
-<p>Object <code>SegmentData</code> could contains objects <code>SegmentDeltaCache</code>, <code>BloomFilter</code> and <code>ScarceIndex</code>. All of them are lazy loaded by <code>SegmentDataSupplier</code>. For closer class description look at source code.</p>
-<p>The following image shows that <code>SegmentDatafactory</code> can be referenced from <code>SegmentDataProviderSimple</code>, which is the simplest implementation that merely holds segment data from the factory. The class <code>SegmentDataProviderFromMainCache</code> interacts with the main index cache where the segment data is stored. Data may be evicted from the cache without any notification.</p>
-<p><img alt="Cache related object relations" src="../../images/segment-cache-class2.png" /></p>
-<h2 id="writing-to-segment">✍️ Writing to segment</h2>
-<p>Opening segment writer immediatelly close all segment readers. When writing operation add key that is in index but is not in cache this value will not returned updated. </p>
-<p>Putting new entry into segment is here:</p>
-<p><img alt="Segment writing sequence diagram" src="../../images/segment-writing-seq.png" /></p>
+<h2 id="topics">Topics</h2>
+<ul>
+<li><a href="segment/">Segment Design</a> — segment behavior and implementation notes.</li>
+<li><a href="on-disk-layout/">On-Disk Layout &amp; File Names</a> — naming, directory
+  examples, and transactional file writes.</li>
+<li><a href="arch-index/">Sparse Index</a> — sparse/scarce index structure and lookup
+  role.</li>
+<li><a href="segment-concurrency/">Segment Concurrency</a> — state machine and
+  operation gating.</li>
+</ul>
+<h2 id="diagrams">Diagrams</h2>
+<ul>
+<li><a href="images/segment-state-machine.plantuml">Segment state machine source</a></li>
+<li><a href="images/segment-writing-seq.txt">Segment write sequence source</a></li>
+</ul>
 
 
 
@@ -2655,10 +2687,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>

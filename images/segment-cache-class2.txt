@@ -5,15 +5,6 @@ set separator none
 
 package "com.coroptis.index.segment" <<Frame>> {
   interface SegmentData
-  class SegmentDataFactory
-  class SegmentDataProviderSimple
+  class SegmentDataProviderLazyLoaded
 }
-SegmentDataFactory --> SegmentData
-SegmentDataProviderSimple --> SegmentDataFactory
-
-package "com.coroptis.index.sst" <<Frame>> {
-  class SegmentDataProviderFromMainCache
-}
-
-SegmentDataProviderFromMainCache --> SegmentDataFactory
 @enduml

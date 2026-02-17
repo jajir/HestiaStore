@@ -1,0 +1,1689 @@
+74283:
+2026-01-13 10:15:30
+Full thread dump OpenJDK 64-Bit Server VM (21.0.7 mixed mode):
+
+Threads class SMR info:
+_java_thread_list=0x0000000c4dfaea00, length=67, elements={
+0x0000000c46cc4000, 0x0000000c46cc5c00, 0x0000000c46cc6300, 0x0000000c46cc6a00,
+0x0000000c46cc7100, 0x0000000c46cc7800, 0x0000000c471c5000, 0x0000000c471c5800,
+0x0000000c42e48700, 0x0000000c42e48e00, 0x0000000c42e4aa00, 0x0000000c42e4b100,
+0x0000000c42e4b800, 0x0000000c42904000, 0x0000000c427fc000, 0x0000000c427fc700,
+0x0000000c427fce00, 0x0000000c427fd500, 0x0000000c427fdc00, 0x0000000c427fe300,
+0x0000000c427fea00, 0x0000000c427ff100, 0x0000000c427ff800, 0x0000000c42074000,
+0x0000000c42074700, 0x0000000c42074e00, 0x0000000c42075500, 0x0000000c42075c00,
+0x0000000c42076300, 0x0000000c42076a00, 0x0000000c42077100, 0x0000000c42077800,
+0x0000000c42078000, 0x0000000c42078700, 0x0000000c41d1f800, 0x0000000c41ff4000,
+0x0000000c41711c00, 0x0000000c41713100, 0x0000000c41713800, 0x0000000c41180700,
+0x0000000c41180e00, 0x0000000c41181500, 0x0000000c41181c00, 0x0000000c41182300,
+0x0000000c41182a00, 0x0000000c41183100, 0x0000000c41183800, 0x0000000c411ac000,
+0x0000000c41a75c00, 0x0000000c41b40700, 0x0000000c40970000, 0x0000000c40970700,
+0x0000000c40970e00, 0x0000000c40971500, 0x0000000c40971c00, 0x0000000c40972300,
+0x0000000c40972a00, 0x0000000c40973800, 0x0000000c40ac0000, 0x0000000c40ac0e00,
+0x0000000c40ac1500, 0x0000000c40950700, 0x0000000c4063e300, 0x0000000c4063f800,
+0x0000000c4046c000, 0x0000000c40051c00, 0x0000000c3fd35500
+}
+
+"main" #1 [5635] prio=5 os_prio=31 cpu=494.59ms elapsed=294.94s tid=0x0000000c46cc4000 nid=5635 waiting on condition  [0x000000016f246000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561e00000> (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)
+	at java.util.concurrent.locks.LockSupport.parkNanos(java.base@21.0.7/LockSupport.java:269)
+	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.awaitNanos(java.base@21.0.7/AbstractQueuedSynchronizer.java:1763)
+	at java.util.concurrent.LinkedBlockingQueue.poll(java.base@21.0.7/LinkedBlockingQueue.java:460)
+	at java.util.concurrent.ExecutorCompletionService.poll(java.base@21.0.7/ExecutorCompletionService.java:211)
+	at org.openjdk.jmh.runner.BenchmarkHandler.runIteration(BenchmarkHandler.java:354)
+	at org.openjdk.jmh.runner.BaseRunner.runBenchmark(BaseRunner.java:283)
+	at org.openjdk.jmh.runner.BaseRunner.runBenchmark(BaseRunner.java:233)
+	at org.openjdk.jmh.runner.BaseRunner.doSingle(BaseRunner.java:138)
+	at org.openjdk.jmh.runner.BaseRunner.runBenchmarksForked(BaseRunner.java:75)
+	at org.openjdk.jmh.runner.ForkedRunner.run(ForkedRunner.java:72)
+	at org.openjdk.jmh.runner.ForkedMain.main(ForkedMain.java:86)
+
+   Locked ownable synchronizers:
+	- None
+
+"Reference Handler" #9 [29187] daemon prio=10 os_prio=31 cpu=1.46ms elapsed=294.93s tid=0x0000000c46cc5c00 nid=29187 waiting on condition  [0x00000001703be000]
+   java.lang.Thread.State: RUNNABLE
+	at java.lang.ref.Reference.waitForReferencePendingList(java.base@21.0.7/Native Method)
+	at java.lang.ref.Reference.processPendingReferences(java.base@21.0.7/Reference.java:246)
+	at java.lang.ref.Reference$ReferenceHandler.run(java.base@21.0.7/Reference.java:208)
+
+   Locked ownable synchronizers:
+	- None
+
+"Finalizer" #10 [28675] daemon prio=8 os_prio=31 cpu=0.06ms elapsed=294.93s tid=0x0000000c46cc6300 nid=28675 in Object.wait()  [0x00000001705ca000]
+   java.lang.Thread.State: WAITING (on object monitor)
+	at java.lang.Object.wait0(java.base@21.0.7/Native Method)
+	- waiting on <0x00000004d50ae250> (a java.lang.ref.NativeReferenceQueue$Lock)
+	at java.lang.Object.wait(java.base@21.0.7/Object.java:366)
+	at java.lang.Object.wait(java.base@21.0.7/Object.java:339)
+	at java.lang.ref.NativeReferenceQueue.await(java.base@21.0.7/NativeReferenceQueue.java:48)
+	at java.lang.ref.ReferenceQueue.remove0(java.base@21.0.7/ReferenceQueue.java:158)
+	at java.lang.ref.NativeReferenceQueue.remove(java.base@21.0.7/NativeReferenceQueue.java:89)
+	- locked <0x00000004d50ae250> (a java.lang.ref.NativeReferenceQueue$Lock)
+	at java.lang.ref.Finalizer$FinalizerThread.run(java.base@21.0.7/Finalizer.java:173)
+
+   Locked ownable synchronizers:
+	- None
+
+"Signal Dispatcher" #11 [28419] daemon prio=9 os_prio=31 cpu=0.21ms elapsed=294.93s tid=0x0000000c46cc6a00 nid=28419 waiting on condition  [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+   Locked ownable synchronizers:
+	- None
+
+"Service Thread" #12 [24323] daemon prio=9 os_prio=31 cpu=44.36ms elapsed=294.93s tid=0x0000000c46cc7100 nid=24323 runnable  [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+   Locked ownable synchronizers:
+	- None
+
+"Monitor Deflation Thread" #13 [24579] daemon prio=9 os_prio=31 cpu=9.90ms elapsed=294.93s tid=0x0000000c46cc7800 nid=24579 runnable  [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+   Locked ownable synchronizers:
+	- None
+
+"C2 CompilerThread0" #14 [25091] daemon prio=9 os_prio=31 cpu=1672.96ms elapsed=294.93s tid=0x0000000c471c5000 nid=25091 waiting on condition  [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+   No compile task
+
+   Locked ownable synchronizers:
+	- None
+
+"C1 CompilerThread0" #17 [25347] daemon prio=9 os_prio=31 cpu=590.27ms elapsed=294.93s tid=0x0000000c471c5800 nid=25347 waiting on condition  [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+   No compile task
+
+   Locked ownable synchronizers:
+	- None
+
+"Common-Cleaner" #18 [25603] daemon prio=8 os_prio=31 cpu=2.28ms elapsed=294.89s tid=0x0000000c42e48700 nid=25603 waiting on condition  [0x0000000171212000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x00000004d50b6aa0> (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)
+	at java.util.concurrent.locks.LockSupport.parkNanos(java.base@21.0.7/LockSupport.java:269)
+	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(java.base@21.0.7/AbstractQueuedSynchronizer.java:1852)
+	at java.lang.ref.ReferenceQueue.await(java.base@21.0.7/ReferenceQueue.java:71)
+	at java.lang.ref.ReferenceQueue.remove0(java.base@21.0.7/ReferenceQueue.java:143)
+	at java.lang.ref.ReferenceQueue.remove(java.base@21.0.7/ReferenceQueue.java:218)
+	at jdk.internal.ref.CleanerImpl.run(java.base@21.0.7/CleanerImpl.java:140)
+	at java.lang.Thread.runWith(java.base@21.0.7/Unknown Source)
+	at java.lang.Thread.run(java.base@21.0.7/Unknown Source)
+	at jdk.internal.misc.InnocuousThread.run(java.base@21.0.7/InnocuousThread.java:186)
+
+   Locked ownable synchronizers:
+	- None
+
+"YJPAgent-WebServer" #19 [27395] daemon prio=10 os_prio=31 cpu=393.75ms elapsed=294.88s tid=0x0000000c42e48e00 nid=27395 runnable  [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+   Locked ownable synchronizers:
+	- None
+
+"YJPAgent-TaskExecutor" #20 [27139] daemon prio=10 os_prio=31 cpu=5.56ms elapsed=294.87s tid=0x0000000c42e4aa00 nid=27139 runnable  [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+   Locked ownable synchronizers:
+	- None
+
+"YJPAgent-Telemetry" #21 [26627] daemon prio=10 os_prio=31 cpu=220.28ms elapsed=294.87s tid=0x0000000c42e4b100 nid=26627 in Object.wait()  [0x0000000171836000]
+   java.lang.Thread.State: TIMED_WAITING (on object monitor)
+	at java.lang.Object.wait0(java.base@21.0.7/Native Method)
+	- waiting on <no object reference available>
+	at java.lang.Object.wait(java.base@21.0.7/Object.java:366)
+	at com.yourkit.runtime.TelemetryThread.run(a:518)
+	- locked <0x00000004f24cc210> (a java.lang.Object)
+	at com.yourkit.runtime.Core.runTelemetryThread(a:198)
+
+   Locked ownable synchronizers:
+	- None
+
+"YJPAgent-ThreadProfiling" #22 [32771] daemon prio=10 os_prio=31 cpu=30.87ms elapsed=294.87s tid=0x0000000c42e4b800 nid=32771 runnable  [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+   Locked ownable synchronizers:
+	- None
+
+"Notification Thread" #23 [33027] daemon prio=9 os_prio=31 cpu=122.65ms elapsed=294.87s tid=0x0000000c42904000 nid=33027 runnable  [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+   Locked ownable synchronizers:
+	- None
+
+"org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write-jmh-worker-1" #26 [42499] daemon prio=5 os_prio=31 cpu=13120.31ms elapsed=294.59s tid=0x0000000c427fc000 nid=42499 waiting on condition  [0x0000000172065000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561e9d4b0> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:221)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1864)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.CompletableFuture.waitingGet(java.base@21.0.7/CompletableFuture.java:1898)
+	at java.util.concurrent.CompletableFuture.join(java.base@21.0.7/CompletableFuture.java:2117)
+	at org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write(TestHestiaStoreParallelWrite.java:54)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_thrpt_jmhStub(TestHestiaStoreParallelWrite_write_jmhTest.java:145)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_Throughput(TestHestiaStoreParallelWrite_write_jmhTest.java:84)
+	at java.lang.invoke.DirectMethodHandle$Holder.invokeSpecial(java.base@21.0.7/DirectMethodHandle$Holder)
+	at java.lang.invoke.LambdaForm$MH/0x00000070002a2c00.invoke(java.base@21.0.7/LambdaForm$MH)
+	at java.lang.invoke.LambdaForm$MH/0x0000007000117400.invokeExact_MT(java.base@21.0.7/LambdaForm$MH)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invokeImpl(java.base@21.0.7/DirectMethodHandleAccessor.java:155)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(java.base@21.0.7/DirectMethodHandleAccessor.java:103)
+	at java.lang.reflect.Method.invoke(java.base@21.0.7/Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@21.0.7/Executors.java:572)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1144)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- <0x00000004d50aecd8> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+
+"org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write-jmh-worker-2" #27 [33795] daemon prio=5 os_prio=31 cpu=13116.96ms elapsed=294.59s tid=0x0000000c427fc700 nid=33795 waiting on condition  [0x0000000172271000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561fd7e10> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:221)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1864)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.CompletableFuture.waitingGet(java.base@21.0.7/CompletableFuture.java:1898)
+	at java.util.concurrent.CompletableFuture.join(java.base@21.0.7/CompletableFuture.java:2117)
+	at org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write(TestHestiaStoreParallelWrite.java:54)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_thrpt_jmhStub(TestHestiaStoreParallelWrite_write_jmhTest.java:145)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_Throughput(TestHestiaStoreParallelWrite_write_jmhTest.java:84)
+	at java.lang.invoke.DirectMethodHandle$Holder.invokeSpecial(java.base@21.0.7/DirectMethodHandle$Holder)
+	at java.lang.invoke.LambdaForm$MH/0x00000070002a2c00.invoke(java.base@21.0.7/LambdaForm$MH)
+	at java.lang.invoke.LambdaForm$MH/0x0000007000117400.invokeExact_MT(java.base@21.0.7/LambdaForm$MH)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invokeImpl(java.base@21.0.7/DirectMethodHandleAccessor.java:155)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(java.base@21.0.7/DirectMethodHandleAccessor.java:103)
+	at java.lang.reflect.Method.invoke(java.base@21.0.7/Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@21.0.7/Executors.java:572)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1144)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- <0x00000004d50aa270> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+
+"org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write-jmh-worker-3" #28 [41987] daemon prio=5 os_prio=31 cpu=13102.08ms elapsed=294.59s tid=0x0000000c427fce00 nid=41987 waiting on condition  [0x000000017247d000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561c9d4b0> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:221)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1864)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.CompletableFuture.waitingGet(java.base@21.0.7/CompletableFuture.java:1898)
+	at java.util.concurrent.CompletableFuture.join(java.base@21.0.7/CompletableFuture.java:2117)
+	at org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write(TestHestiaStoreParallelWrite.java:54)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_thrpt_jmhStub(TestHestiaStoreParallelWrite_write_jmhTest.java:145)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_Throughput(TestHestiaStoreParallelWrite_write_jmhTest.java:84)
+	at java.lang.invoke.DirectMethodHandle$Holder.invokeSpecial(java.base@21.0.7/DirectMethodHandle$Holder)
+	at java.lang.invoke.LambdaForm$MH/0x00000070002a2c00.invoke(java.base@21.0.7/LambdaForm$MH)
+	at java.lang.invoke.LambdaForm$MH/0x0000007000117400.invokeExact_MT(java.base@21.0.7/LambdaForm$MH)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invokeImpl(java.base@21.0.7/DirectMethodHandleAccessor.java:155)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(java.base@21.0.7/DirectMethodHandleAccessor.java:103)
+	at java.lang.reflect.Method.invoke(java.base@21.0.7/Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@21.0.7/Executors.java:572)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1144)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- <0x00000004d50bac70> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+
+"org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write-jmh-worker-4" #29 [41731] daemon prio=5 os_prio=31 cpu=13441.47ms elapsed=294.59s tid=0x0000000c427fd500 nid=41731 waiting on condition  [0x0000000172689000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561dd7e10> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:221)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1864)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.CompletableFuture.waitingGet(java.base@21.0.7/CompletableFuture.java:1898)
+	at java.util.concurrent.CompletableFuture.join(java.base@21.0.7/CompletableFuture.java:2117)
+	at org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write(TestHestiaStoreParallelWrite.java:54)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_thrpt_jmhStub(TestHestiaStoreParallelWrite_write_jmhTest.java:145)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_Throughput(TestHestiaStoreParallelWrite_write_jmhTest.java:84)
+	at java.lang.invoke.DirectMethodHandle$Holder.invokeSpecial(java.base@21.0.7/DirectMethodHandle$Holder)
+	at java.lang.invoke.LambdaForm$MH/0x00000070002a2c00.invoke(java.base@21.0.7/LambdaForm$MH)
+	at java.lang.invoke.LambdaForm$MH/0x0000007000117400.invokeExact_MT(java.base@21.0.7/LambdaForm$MH)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invokeImpl(java.base@21.0.7/DirectMethodHandleAccessor.java:155)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(java.base@21.0.7/DirectMethodHandleAccessor.java:103)
+	at java.lang.reflect.Method.invoke(java.base@21.0.7/Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@21.0.7/Executors.java:572)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1144)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- <0x00000004d50be960> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+
+"org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write-jmh-worker-5" #30 [41219] daemon prio=5 os_prio=31 cpu=13212.16ms elapsed=294.58s tid=0x0000000c427fdc00 nid=41219 waiting on condition  [0x0000000172895000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561c00000> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:221)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1864)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.CompletableFuture.waitingGet(java.base@21.0.7/CompletableFuture.java:1898)
+	at java.util.concurrent.CompletableFuture.join(java.base@21.0.7/CompletableFuture.java:2117)
+	at org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write(TestHestiaStoreParallelWrite.java:54)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_thrpt_jmhStub(TestHestiaStoreParallelWrite_write_jmhTest.java:145)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_Throughput(TestHestiaStoreParallelWrite_write_jmhTest.java:84)
+	at java.lang.invoke.DirectMethodHandle$Holder.invokeSpecial(java.base@21.0.7/DirectMethodHandle$Holder)
+	at java.lang.invoke.LambdaForm$MH/0x00000070002a2c00.invoke(java.base@21.0.7/LambdaForm$MH)
+	at java.lang.invoke.LambdaForm$MH/0x0000007000117400.invokeExact_MT(java.base@21.0.7/LambdaForm$MH)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invokeImpl(java.base@21.0.7/DirectMethodHandleAccessor.java:155)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(java.base@21.0.7/DirectMethodHandleAccessor.java:103)
+	at java.lang.reflect.Method.invoke(java.base@21.0.7/Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@21.0.7/Executors.java:572)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1144)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- <0x00000004d50b7060> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+
+"org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write-jmh-worker-6" #31 [34307] daemon prio=5 os_prio=31 cpu=13544.12ms elapsed=294.58s tid=0x0000000c427fe300 nid=34307 waiting on condition  [0x0000000172aa1000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561f3a960> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:221)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1864)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.CompletableFuture.waitingGet(java.base@21.0.7/CompletableFuture.java:1898)
+	at java.util.concurrent.CompletableFuture.join(java.base@21.0.7/CompletableFuture.java:2117)
+	at org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write(TestHestiaStoreParallelWrite.java:54)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_thrpt_jmhStub(TestHestiaStoreParallelWrite_write_jmhTest.java:145)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_Throughput(TestHestiaStoreParallelWrite_write_jmhTest.java:84)
+	at java.lang.invoke.DirectMethodHandle$Holder.invokeSpecial(java.base@21.0.7/DirectMethodHandle$Holder)
+	at java.lang.invoke.LambdaForm$MH/0x00000070002a2c00.invoke(java.base@21.0.7/LambdaForm$MH)
+	at java.lang.invoke.LambdaForm$MH/0x0000007000117400.invokeExact_MT(java.base@21.0.7/LambdaForm$MH)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invokeImpl(java.base@21.0.7/DirectMethodHandleAccessor.java:155)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(java.base@21.0.7/DirectMethodHandleAccessor.java:103)
+	at java.lang.reflect.Method.invoke(java.base@21.0.7/Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@21.0.7/Executors.java:572)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1144)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- <0x00000004d50f58c8> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+
+"org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write-jmh-worker-7" #32 [40451] daemon prio=5 os_prio=31 cpu=13364.23ms elapsed=294.58s tid=0x0000000c427fea00 nid=40451 waiting on condition  [0x0000000172cad000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561e00298> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:221)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1864)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.CompletableFuture.waitingGet(java.base@21.0.7/CompletableFuture.java:1898)
+	at java.util.concurrent.CompletableFuture.join(java.base@21.0.7/CompletableFuture.java:2117)
+	at org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write(TestHestiaStoreParallelWrite.java:54)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_thrpt_jmhStub(TestHestiaStoreParallelWrite_write_jmhTest.java:145)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_Throughput(TestHestiaStoreParallelWrite_write_jmhTest.java:84)
+	at java.lang.invoke.DirectMethodHandle$Holder.invokeSpecial(java.base@21.0.7/DirectMethodHandle$Holder)
+	at java.lang.invoke.LambdaForm$MH/0x00000070002a2c00.invoke(java.base@21.0.7/LambdaForm$MH)
+	at java.lang.invoke.LambdaForm$MH/0x0000007000117400.invokeExact_MT(java.base@21.0.7/LambdaForm$MH)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invokeImpl(java.base@21.0.7/DirectMethodHandleAccessor.java:155)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(java.base@21.0.7/DirectMethodHandleAccessor.java:103)
+	at java.lang.reflect.Method.invoke(java.base@21.0.7/Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@21.0.7/Executors.java:572)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1144)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- <0x00000004d50aa598> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+
+"org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write-jmh-worker-8" #33 [34819] daemon prio=5 os_prio=31 cpu=13128.53ms elapsed=294.58s tid=0x0000000c427ff100 nid=34819 waiting on condition  [0x0000000172eb9000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561d3a960> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:221)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1864)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.CompletableFuture.waitingGet(java.base@21.0.7/CompletableFuture.java:1898)
+	at java.util.concurrent.CompletableFuture.join(java.base@21.0.7/CompletableFuture.java:2117)
+	at org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write(TestHestiaStoreParallelWrite.java:54)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_thrpt_jmhStub(TestHestiaStoreParallelWrite_write_jmhTest.java:145)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_Throughput(TestHestiaStoreParallelWrite_write_jmhTest.java:84)
+	at java.lang.invoke.DirectMethodHandle$Holder.invokeSpecial(java.base@21.0.7/DirectMethodHandle$Holder)
+	at java.lang.invoke.LambdaForm$MH/0x00000070002a2c00.invoke(java.base@21.0.7/LambdaForm$MH)
+	at java.lang.invoke.LambdaForm$MH/0x0000007000117400.invokeExact_MT(java.base@21.0.7/LambdaForm$MH)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invokeImpl(java.base@21.0.7/DirectMethodHandleAccessor.java:155)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(java.base@21.0.7/DirectMethodHandleAccessor.java:103)
+	at java.lang.reflect.Method.invoke(java.base@21.0.7/Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@21.0.7/Executors.java:572)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1144)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- <0x00000004d50b7388> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+
+"org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write-jmh-worker-9" #34 [40195] daemon prio=5 os_prio=31 cpu=13614.39ms elapsed=294.58s tid=0x0000000c427ff800 nid=40195 waiting on condition  [0x00000001730c5000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561e003c0> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:221)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1864)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.CompletableFuture.waitingGet(java.base@21.0.7/CompletableFuture.java:1898)
+	at java.util.concurrent.CompletableFuture.join(java.base@21.0.7/CompletableFuture.java:2117)
+	at org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write(TestHestiaStoreParallelWrite.java:54)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_thrpt_jmhStub(TestHestiaStoreParallelWrite_write_jmhTest.java:145)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_Throughput(TestHestiaStoreParallelWrite_write_jmhTest.java:84)
+	at java.lang.invoke.DirectMethodHandle$Holder.invokeSpecial(java.base@21.0.7/DirectMethodHandle$Holder)
+	at java.lang.invoke.LambdaForm$MH/0x00000070002a2c00.invoke(java.base@21.0.7/LambdaForm$MH)
+	at java.lang.invoke.LambdaForm$MH/0x0000007000117400.invokeExact_MT(java.base@21.0.7/LambdaForm$MH)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invokeImpl(java.base@21.0.7/DirectMethodHandleAccessor.java:155)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(java.base@21.0.7/DirectMethodHandleAccessor.java:103)
+	at java.lang.reflect.Method.invoke(java.base@21.0.7/Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@21.0.7/Executors.java:572)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1144)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- <0x00000004d50fbfe0> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+
+"org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write-jmh-worker-10" #35 [39683] daemon prio=5 os_prio=31 cpu=13051.75ms elapsed=294.58s tid=0x0000000c42074000 nid=39683 waiting on condition  [0x00000001732d1000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561e9d5d8> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:221)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1864)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.CompletableFuture.waitingGet(java.base@21.0.7/CompletableFuture.java:1898)
+	at java.util.concurrent.CompletableFuture.join(java.base@21.0.7/CompletableFuture.java:2117)
+	at org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write(TestHestiaStoreParallelWrite.java:54)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_thrpt_jmhStub(TestHestiaStoreParallelWrite_write_jmhTest.java:145)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_Throughput(TestHestiaStoreParallelWrite_write_jmhTest.java:84)
+	at java.lang.invoke.DirectMethodHandle$Holder.invokeSpecial(java.base@21.0.7/DirectMethodHandle$Holder)
+	at java.lang.invoke.LambdaForm$MH/0x00000070002a2c00.invoke(java.base@21.0.7/LambdaForm$MH)
+	at java.lang.invoke.LambdaForm$MH/0x0000007000117400.invokeExact_MT(java.base@21.0.7/LambdaForm$MH)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invokeImpl(java.base@21.0.7/DirectMethodHandleAccessor.java:155)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(java.base@21.0.7/DirectMethodHandleAccessor.java:103)
+	at java.lang.reflect.Method.invoke(java.base@21.0.7/Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@21.0.7/Executors.java:572)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1144)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- <0x00000004d521e3c8> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+
+"org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write-jmh-worker-11" #36 [39427] daemon prio=5 os_prio=31 cpu=13211.09ms elapsed=294.58s tid=0x0000000c42074700 nid=39427 waiting on condition  [0x00000001734dd000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561f3aba0> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:221)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1864)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.CompletableFuture.waitingGet(java.base@21.0.7/CompletableFuture.java:1898)
+	at java.util.concurrent.CompletableFuture.join(java.base@21.0.7/CompletableFuture.java:2117)
+	at org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write(TestHestiaStoreParallelWrite.java:54)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_thrpt_jmhStub(TestHestiaStoreParallelWrite_write_jmhTest.java:145)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_Throughput(TestHestiaStoreParallelWrite_write_jmhTest.java:84)
+	at java.lang.invoke.DirectMethodHandle$Holder.invokeSpecial(java.base@21.0.7/DirectMethodHandle$Holder)
+	at java.lang.invoke.LambdaForm$MH/0x00000070002a2c00.invoke(java.base@21.0.7/LambdaForm$MH)
+	at java.lang.invoke.LambdaForm$MH/0x0000007000117400.invokeExact_MT(java.base@21.0.7/LambdaForm$MH)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invokeImpl(java.base@21.0.7/DirectMethodHandleAccessor.java:155)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(java.base@21.0.7/DirectMethodHandleAccessor.java:103)
+	at java.lang.reflect.Method.invoke(java.base@21.0.7/Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@21.0.7/Executors.java:572)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1144)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- <0x00000004d501ea50> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+
+"org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write-jmh-worker-12" #37 [38915] daemon prio=5 os_prio=31 cpu=13385.01ms elapsed=294.58s tid=0x0000000c42074e00 nid=38915 waiting on condition  [0x00000001736e9000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561c00128> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:221)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1864)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.CompletableFuture.waitingGet(java.base@21.0.7/CompletableFuture.java:1898)
+	at java.util.concurrent.CompletableFuture.join(java.base@21.0.7/CompletableFuture.java:2117)
+	at org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write(TestHestiaStoreParallelWrite.java:54)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_thrpt_jmhStub(TestHestiaStoreParallelWrite_write_jmhTest.java:145)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_Throughput(TestHestiaStoreParallelWrite_write_jmhTest.java:84)
+	at java.lang.invoke.DirectMethodHandle$Holder.invokeSpecial(java.base@21.0.7/DirectMethodHandle$Holder)
+	at java.lang.invoke.LambdaForm$MH/0x00000070002a2c00.invoke(java.base@21.0.7/LambdaForm$MH)
+	at java.lang.invoke.LambdaForm$MH/0x0000007000117400.invokeExact_MT(java.base@21.0.7/LambdaForm$MH)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invokeImpl(java.base@21.0.7/DirectMethodHandleAccessor.java:155)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(java.base@21.0.7/DirectMethodHandleAccessor.java:103)
+	at java.lang.reflect.Method.invoke(java.base@21.0.7/Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@21.0.7/Executors.java:572)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1144)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- <0x00000004d50bb290> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+
+"org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write-jmh-worker-13" #38 [35843] daemon prio=5 os_prio=31 cpu=13164.54ms elapsed=294.58s tid=0x0000000c42075500 nid=35843 waiting on condition  [0x00000001738f5000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561dd7f38> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:221)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1864)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.CompletableFuture.waitingGet(java.base@21.0.7/CompletableFuture.java:1898)
+	at java.util.concurrent.CompletableFuture.join(java.base@21.0.7/CompletableFuture.java:2117)
+	at org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write(TestHestiaStoreParallelWrite.java:54)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_thrpt_jmhStub(TestHestiaStoreParallelWrite_write_jmhTest.java:145)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_Throughput(TestHestiaStoreParallelWrite_write_jmhTest.java:84)
+	at java.lang.invoke.DirectMethodHandle$Holder.invokeSpecial(java.base@21.0.7/DirectMethodHandle$Holder)
+	at java.lang.invoke.LambdaForm$MH/0x00000070002a2c00.invoke(java.base@21.0.7/LambdaForm$MH)
+	at java.lang.invoke.LambdaForm$MH/0x0000007000117400.invokeExact_MT(java.base@21.0.7/LambdaForm$MH)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invokeImpl(java.base@21.0.7/DirectMethodHandleAccessor.java:155)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(java.base@21.0.7/DirectMethodHandleAccessor.java:103)
+	at java.lang.reflect.Method.invoke(java.base@21.0.7/Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@21.0.7/Executors.java:572)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1144)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- <0x00000004d50bb8a8> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+
+"org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write-jmh-worker-14" #39 [36099] daemon prio=5 os_prio=31 cpu=13244.92ms elapsed=294.58s tid=0x0000000c42075c00 nid=36099 waiting on condition  [0x0000000173b01000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561e9d700> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:221)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1864)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.CompletableFuture.waitingGet(java.base@21.0.7/CompletableFuture.java:1898)
+	at java.util.concurrent.CompletableFuture.join(java.base@21.0.7/CompletableFuture.java:2117)
+	at org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write(TestHestiaStoreParallelWrite.java:54)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_thrpt_jmhStub(TestHestiaStoreParallelWrite_write_jmhTest.java:145)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_Throughput(TestHestiaStoreParallelWrite_write_jmhTest.java:84)
+	at java.lang.invoke.DirectMethodHandle$Holder.invokeSpecial(java.base@21.0.7/DirectMethodHandle$Holder)
+	at java.lang.invoke.LambdaForm$MH/0x00000070002a2c00.invoke(java.base@21.0.7/LambdaForm$MH)
+	at java.lang.invoke.LambdaForm$MH/0x0000007000117400.invokeExact_MT(java.base@21.0.7/LambdaForm$MH)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invokeImpl(java.base@21.0.7/DirectMethodHandleAccessor.java:155)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(java.base@21.0.7/DirectMethodHandleAccessor.java:103)
+	at java.lang.reflect.Method.invoke(java.base@21.0.7/Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@21.0.7/Executors.java:572)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1144)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- <0x00000004d50bec88> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+
+"org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write-jmh-worker-15" #40 [38403] daemon prio=5 os_prio=31 cpu=13320.90ms elapsed=294.58s tid=0x0000000c42076300 nid=38403 waiting on condition  [0x0000000173d0d000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561e004e8> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:221)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1864)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.CompletableFuture.waitingGet(java.base@21.0.7/CompletableFuture.java:1898)
+	at java.util.concurrent.CompletableFuture.join(java.base@21.0.7/CompletableFuture.java:2117)
+	at org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write(TestHestiaStoreParallelWrite.java:54)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_thrpt_jmhStub(TestHestiaStoreParallelWrite_write_jmhTest.java:145)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_Throughput(TestHestiaStoreParallelWrite_write_jmhTest.java:84)
+	at java.lang.invoke.DirectMethodHandle$Holder.invokeSpecial(java.base@21.0.7/DirectMethodHandle$Holder)
+	at java.lang.invoke.LambdaForm$MH/0x00000070002a2c00.invoke(java.base@21.0.7/LambdaForm$MH)
+	at java.lang.invoke.LambdaForm$MH/0x0000007000117400.invokeExact_MT(java.base@21.0.7/LambdaForm$MH)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invokeImpl(java.base@21.0.7/DirectMethodHandleAccessor.java:155)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(java.base@21.0.7/DirectMethodHandleAccessor.java:103)
+	at java.lang.reflect.Method.invoke(java.base@21.0.7/Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@21.0.7/Executors.java:572)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1144)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- <0x00000004d50bbe88> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+
+"org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write-jmh-worker-16" #41 [36611] daemon prio=5 os_prio=31 cpu=13163.70ms elapsed=294.58s tid=0x0000000c42076a00 nid=36611 waiting on condition  [0x0000000173f19000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561f3acc8> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:221)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1864)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.CompletableFuture.waitingGet(java.base@21.0.7/CompletableFuture.java:1898)
+	at java.util.concurrent.CompletableFuture.join(java.base@21.0.7/CompletableFuture.java:2117)
+	at org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write(TestHestiaStoreParallelWrite.java:54)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_thrpt_jmhStub(TestHestiaStoreParallelWrite_write_jmhTest.java:145)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_Throughput(TestHestiaStoreParallelWrite_write_jmhTest.java:84)
+	at java.lang.invoke.DirectMethodHandle$Holder.invokeSpecial(java.base@21.0.7/DirectMethodHandle$Holder)
+	at java.lang.invoke.LambdaForm$MH/0x00000070002a2c00.invoke(java.base@21.0.7/LambdaForm$MH)
+	at java.lang.invoke.LambdaForm$MH/0x0000007000117400.invokeExact_MT(java.base@21.0.7/LambdaForm$MH)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invokeImpl(java.base@21.0.7/DirectMethodHandleAccessor.java:155)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(java.base@21.0.7/DirectMethodHandleAccessor.java:103)
+	at java.lang.reflect.Method.invoke(java.base@21.0.7/Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@21.0.7/Executors.java:572)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1144)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- <0x00000004d50befb0> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+
+"org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write-jmh-worker-17" #42 [37635] daemon prio=5 os_prio=31 cpu=13295.23ms elapsed=294.58s tid=0x0000000c42077100 nid=37635 waiting on condition  [0x0000000174125000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561c9d5d8> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:221)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1864)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.CompletableFuture.waitingGet(java.base@21.0.7/CompletableFuture.java:1898)
+	at java.util.concurrent.CompletableFuture.join(java.base@21.0.7/CompletableFuture.java:2117)
+	at org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write(TestHestiaStoreParallelWrite.java:54)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_thrpt_jmhStub(TestHestiaStoreParallelWrite_write_jmhTest.java:145)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_Throughput(TestHestiaStoreParallelWrite_write_jmhTest.java:84)
+	at java.lang.invoke.DirectMethodHandle$Holder.invokeSpecial(java.base@21.0.7/DirectMethodHandle$Holder)
+	at java.lang.invoke.LambdaForm$MH/0x00000070002a2c00.invoke(java.base@21.0.7/LambdaForm$MH)
+	at java.lang.invoke.LambdaForm$MH/0x0000007000117400.invokeExact_MT(java.base@21.0.7/LambdaForm$MH)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invokeImpl(java.base@21.0.7/DirectMethodHandleAccessor.java:155)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(java.base@21.0.7/DirectMethodHandleAccessor.java:103)
+	at java.lang.reflect.Method.invoke(java.base@21.0.7/Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@21.0.7/Executors.java:572)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1144)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- <0x00000004d50bc1b0> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+
+"org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write-jmh-worker-18" #43 [36867] daemon prio=5 os_prio=31 cpu=13247.13ms elapsed=294.58s tid=0x0000000c42077800 nid=36867 waiting on condition  [0x0000000174331000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561fd7f38> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:221)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1864)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.CompletableFuture.waitingGet(java.base@21.0.7/CompletableFuture.java:1898)
+	at java.util.concurrent.CompletableFuture.join(java.base@21.0.7/CompletableFuture.java:2117)
+	at org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write(TestHestiaStoreParallelWrite.java:54)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_thrpt_jmhStub(TestHestiaStoreParallelWrite_write_jmhTest.java:145)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_Throughput(TestHestiaStoreParallelWrite_write_jmhTest.java:84)
+	at java.lang.invoke.DirectMethodHandle$Holder.invokeSpecial(java.base@21.0.7/DirectMethodHandle$Holder)
+	at java.lang.invoke.LambdaForm$MH/0x00000070002a2c00.invoke(java.base@21.0.7/LambdaForm$MH)
+	at java.lang.invoke.LambdaForm$MH/0x0000007000117400.invokeExact_MT(java.base@21.0.7/LambdaForm$MH)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invokeImpl(java.base@21.0.7/DirectMethodHandleAccessor.java:155)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(java.base@21.0.7/DirectMethodHandleAccessor.java:103)
+	at java.lang.reflect.Method.invoke(java.base@21.0.7/Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@21.0.7/Executors.java:572)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1144)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- <0x00000004d50bc6d8> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+
+"org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write-jmh-worker-19" #44 [43523] daemon prio=5 os_prio=31 cpu=13280.31ms elapsed=294.58s tid=0x0000000c42078000 nid=43523 waiting on condition  [0x000000017453d000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561d3aa88> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:221)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1864)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.CompletableFuture.waitingGet(java.base@21.0.7/CompletableFuture.java:1898)
+	at java.util.concurrent.CompletableFuture.join(java.base@21.0.7/CompletableFuture.java:2117)
+	at org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write(TestHestiaStoreParallelWrite.java:54)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_thrpt_jmhStub(TestHestiaStoreParallelWrite_write_jmhTest.java:145)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_Throughput(TestHestiaStoreParallelWrite_write_jmhTest.java:84)
+	at java.lang.invoke.DirectMethodHandle$Holder.invokeSpecial(java.base@21.0.7/DirectMethodHandle$Holder)
+	at java.lang.invoke.LambdaForm$MH/0x00000070002a2c00.invoke(java.base@21.0.7/LambdaForm$MH)
+	at java.lang.invoke.LambdaForm$MH/0x0000007000117400.invokeExact_MT(java.base@21.0.7/LambdaForm$MH)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invokeImpl(java.base@21.0.7/DirectMethodHandleAccessor.java:155)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(java.base@21.0.7/DirectMethodHandleAccessor.java:103)
+	at java.lang.reflect.Method.invoke(java.base@21.0.7/Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@21.0.7/Executors.java:572)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1144)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- <0x00000004d50bf2d8> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+
+"org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write-jmh-worker-20" #45 [44035] daemon prio=5 os_prio=31 cpu=13237.27ms elapsed=294.58s tid=0x0000000c42078700 nid=44035 waiting on condition  [0x0000000174749000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561c00250> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:221)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1864)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.CompletableFuture.waitingGet(java.base@21.0.7/CompletableFuture.java:1898)
+	at java.util.concurrent.CompletableFuture.join(java.base@21.0.7/CompletableFuture.java:2117)
+	at org.hestiastore.index.benchmark.plainload.TestHestiaStoreParallelWrite.write(TestHestiaStoreParallelWrite.java:54)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_thrpt_jmhStub(TestHestiaStoreParallelWrite_write_jmhTest.java:145)
+	at org.hestiastore.index.benchmark.plainload.jmh_generated.TestHestiaStoreParallelWrite_write_jmhTest.write_Throughput(TestHestiaStoreParallelWrite_write_jmhTest.java:84)
+	at java.lang.invoke.DirectMethodHandle$Holder.invokeSpecial(java.base@21.0.7/DirectMethodHandle$Holder)
+	at java.lang.invoke.LambdaForm$MH/0x00000070002a2c00.invoke(java.base@21.0.7/LambdaForm$MH)
+	at java.lang.invoke.LambdaForm$MH/0x0000007000117400.invokeExact_MT(java.base@21.0.7/LambdaForm$MH)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invokeImpl(java.base@21.0.7/DirectMethodHandleAccessor.java:155)
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(java.base@21.0.7/DirectMethodHandleAccessor.java:103)
+	at java.lang.reflect.Method.invoke(java.base@21.0.7/Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.Executors$RunnableAdapter.call(java.base@21.0.7/Executors.java:572)
+	at java.util.concurrent.FutureTask.run(java.base@21.0.7/FutureTask.java:317)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1144)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- <0x00000004d50bc8c0> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+
+"YJPAgent-WebWorker" #55 [62979] daemon prio=10 os_prio=31 cpu=14.22ms elapsed=294.51s tid=0x0000000c41d1f800 nid=62979 runnable  [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+   Locked ownable synchronizers:
+	- None
+
+"YJPAgent-WebWorker" #56 [47107] daemon prio=10 os_prio=31 cpu=16.46ms elapsed=294.51s tid=0x0000000c41ff4000 nid=47107 runnable  [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+   Locked ownable synchronizers:
+	- None
+
+"diskIoPool-1" #59 [61955] daemon prio=5 os_prio=31 cpu=221.34ms elapsed=294.16s tid=0x0000000c41711c00 nid=61955 waiting on condition  [0x0000000175fda000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x00000004d56012a0> (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:371)
+	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(java.base@21.0.7/AbstractQueuedSynchronizer.java:519)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(java.base@21.0.7/AbstractQueuedSynchronizer.java:1712)
+	at java.util.concurrent.LinkedBlockingQueue.take(java.base@21.0.7/LinkedBlockingQueue.java:435)
+	at java.util.concurrent.ThreadPoolExecutor.getTask(java.base@21.0.7/ThreadPoolExecutor.java:1070)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1130)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- None
+
+"diskIoPool-2" #60 [47363] daemon prio=5 os_prio=31 cpu=225.88ms elapsed=294.14s tid=0x0000000c41713100 nid=47363 runnable  [0x00000001761e5000]
+   java.lang.Thread.State: RUNNABLE
+	at sun.nio.ch.UnixFileDispatcherImpl.$$YJP$$write0(java.base@21.0.7/Native Method)
+	at sun.nio.ch.UnixFileDispatcherImpl.write0(java.base@21.0.7/UnixFileDispatcherImpl.java)
+	at sun.nio.ch.UnixFileDispatcherImpl.write(java.base@21.0.7/UnixFileDispatcherImpl.java:65)
+	at sun.nio.ch.IOUtil.writeFromNativeBuffer(java.base@21.0.7/IOUtil.java:137)
+	at sun.nio.ch.IOUtil.write(java.base@21.0.7/IOUtil.java:102)
+	at sun.nio.ch.IOUtil.write(java.base@21.0.7/IOUtil.java:72)
+	at sun.nio.ch.FileChannelImpl.write(java.base@21.0.7/FileChannelImpl.java:300)
+	- locked <0x0000000561c02628> (a java.lang.Object)
+	at sun.nio.ch.ChannelOutputStream.writeFully(java.base@21.0.7/ChannelOutputStream.java:68)
+	at sun.nio.ch.ChannelOutputStream.write(java.base@21.0.7/ChannelOutputStream.java:105)
+	- locked <0x0000000561c024f8> (a sun.nio.ch.ChannelOutputStream)
+	at java.io.BufferedOutputStream.implWrite(java.base@21.0.7/BufferedOutputStream.java:217)
+	at java.io.BufferedOutputStream.write(java.base@21.0.7/BufferedOutputStream.java:200)
+	at java.io.FilterOutputStream.write(java.base@21.0.7/FilterOutputStream.java:110)
+	at org.hestiastore.index.directory.FsFileWriterStream.write(FsFileWriterStream.java:69)
+	at org.hestiastore.index.directory.async.AsyncFileWriterAdapter.lambda$writeAsync$1(AsyncFileWriterAdapter.java:33)
+	at org.hestiastore.index.directory.async.AsyncFileWriterAdapter$$Lambda/0x000000700026e6e8.run(Unknown Source)
+	at org.hestiastore.index.directory.async.AsyncFileWriterAdapter.lambda$run$0(AsyncFileWriterAdapter.java:43)
+	at org.hestiastore.index.directory.async.AsyncFileWriterAdapter$$Lambda/0x000000700026e900.get(Unknown Source)
+	at org.hestiastore.index.directory.async.AsyncFileWriterAdapter.lambda$supply$0(AsyncFileWriterAdapter.java:58)
+	at org.hestiastore.index.directory.async.AsyncFileWriterAdapter$$Lambda/0x000000700026eb18.get(Unknown Source)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.run(java.base@21.0.7/CompletableFuture.java:1768)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1144)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- <0x00000004d560a9f8> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+	- <0x0000000561c027b0> (a java.util.concurrent.locks.ReentrantLock$NonfairSync)
+
+"diskIoPool-3" #61 [61443] daemon prio=5 os_prio=31 cpu=228.01ms elapsed=294.13s tid=0x0000000c41713800 nid=61443 waiting on condition  [0x00000001763f2000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x00000004d56012a0> (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:371)
+	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(java.base@21.0.7/AbstractQueuedSynchronizer.java:519)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(java.base@21.0.7/AbstractQueuedSynchronizer.java:1712)
+	at java.util.concurrent.LinkedBlockingQueue.take(java.base@21.0.7/LinkedBlockingQueue.java:435)
+	at java.util.concurrent.ThreadPoolExecutor.getTask(java.base@21.0.7/ThreadPoolExecutor.java:1070)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1130)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- None
+
+"ForkJoinPool.commonPool-worker-3" #62 [60931] daemon prio=5 os_prio=31 cpu=14342.14ms elapsed=294.11s tid=0x0000000c41180700 nid=60931 waiting on condition  [0x00000001765fd000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561dd8060> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.parkNanos(java.base@21.0.7/LockSupport.java:269)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1866)
+	at java.util.concurrent.ForkJoinPool.compensatedBlock(java.base@21.0.7/ForkJoinPool.java:3740)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3723)
+	at java.util.concurrent.CompletableFuture.timedGet(java.base@21.0.7/CompletableFuture.java:1939)
+	at java.util.concurrent.CompletableFuture.get(java.base@21.0.7/CompletableFuture.java:2095)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator$SplitHandle.awaitCompletion(SegmentAsyncSplitCoordinator.java:162)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator.awaitCompletionIfInFlight(SegmentAsyncSplitCoordinator.java:57)
+	at org.hestiastore.index.segmentindex.SegmentMaintenanceCoordinator.awaitSplitCompletionIfInFlight(SegmentMaintenanceCoordinator.java:83)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.awaitSplitCompletionForKey(SegmentIndexImpl.java:486)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.retryWhileBusyWithSplitWait(SegmentIndexImpl.java:429)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.put(SegmentIndexImpl.java:92)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.put(IndexAsyncAdapter.java:32)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$putAsync$0(IndexAsyncAdapter.java:38)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000273dc8.get(Unknown Source)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$runAsyncTracked$0(IndexAsyncAdapter.java:121)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000279f68.get(Unknown Source)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.run(java.base@21.0.7/CompletableFuture.java:1768)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.exec(java.base@21.0.7/CompletableFuture.java:1760)
+	at java.util.concurrent.ForkJoinTask.doExec(java.base@21.0.7/ForkJoinTask.java:387)
+	at java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(java.base@21.0.7/ForkJoinPool.java:1312)
+	at java.util.concurrent.ForkJoinPool.scan(java.base@21.0.7/ForkJoinPool.java:1843)
+	at java.util.concurrent.ForkJoinPool.runWorker(java.base@21.0.7/ForkJoinPool.java:1808)
+	at java.util.concurrent.ForkJoinWorkerThread.run(java.base@21.0.7/ForkJoinWorkerThread.java:188)
+
+   Locked ownable synchronizers:
+	- None
+
+"ForkJoinPool.commonPool-worker-1" #63 [60675] daemon prio=5 os_prio=31 cpu=17429.58ms elapsed=294.11s tid=0x0000000c41180e00 nid=60675 waiting on condition  [0x0000000176809000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561e9d848> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.parkNanos(java.base@21.0.7/LockSupport.java:269)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1866)
+	at java.util.concurrent.ForkJoinPool.compensatedBlock(java.base@21.0.7/ForkJoinPool.java:3740)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3723)
+	at java.util.concurrent.CompletableFuture.timedGet(java.base@21.0.7/CompletableFuture.java:1939)
+	at java.util.concurrent.CompletableFuture.get(java.base@21.0.7/CompletableFuture.java:2095)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator$SplitHandle.awaitCompletion(SegmentAsyncSplitCoordinator.java:162)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator.awaitCompletionIfInFlight(SegmentAsyncSplitCoordinator.java:57)
+	at org.hestiastore.index.segmentindex.SegmentMaintenanceCoordinator.awaitSplitCompletionIfInFlight(SegmentMaintenanceCoordinator.java:83)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.awaitSplitCompletionForKey(SegmentIndexImpl.java:486)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.retryWhileBusyWithSplitWait(SegmentIndexImpl.java:429)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.put(SegmentIndexImpl.java:92)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.put(IndexAsyncAdapter.java:32)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$putAsync$0(IndexAsyncAdapter.java:38)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000273dc8.get(Unknown Source)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$runAsyncTracked$0(IndexAsyncAdapter.java:121)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000279f68.get(Unknown Source)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.run(java.base@21.0.7/CompletableFuture.java:1768)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.exec(java.base@21.0.7/CompletableFuture.java:1760)
+	at java.util.concurrent.ForkJoinTask.doExec(java.base@21.0.7/ForkJoinTask.java:387)
+	at java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(java.base@21.0.7/ForkJoinPool.java:1312)
+	at java.util.concurrent.ForkJoinPool.scan(java.base@21.0.7/ForkJoinPool.java:1843)
+	at java.util.concurrent.ForkJoinPool.runWorker(java.base@21.0.7/ForkJoinPool.java:1808)
+	at java.util.concurrent.ForkJoinWorkerThread.run(java.base@21.0.7/ForkJoinWorkerThread.java:188)
+
+   Locked ownable synchronizers:
+	- None
+
+"ForkJoinPool.commonPool-worker-7" #68 [48387] daemon prio=5 os_prio=31 cpu=14292.87ms elapsed=294.11s tid=0x0000000c41181500 nid=48387 waiting on condition  [0x0000000176a15000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561e00630> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.parkNanos(java.base@21.0.7/LockSupport.java:269)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1866)
+	at java.util.concurrent.ForkJoinPool.compensatedBlock(java.base@21.0.7/ForkJoinPool.java:3740)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3723)
+	at java.util.concurrent.CompletableFuture.timedGet(java.base@21.0.7/CompletableFuture.java:1939)
+	at java.util.concurrent.CompletableFuture.get(java.base@21.0.7/CompletableFuture.java:2095)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator$SplitHandle.awaitCompletion(SegmentAsyncSplitCoordinator.java:162)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator.awaitCompletionIfInFlight(SegmentAsyncSplitCoordinator.java:57)
+	at org.hestiastore.index.segmentindex.SegmentMaintenanceCoordinator.awaitSplitCompletionIfInFlight(SegmentMaintenanceCoordinator.java:83)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.awaitSplitCompletionForKey(SegmentIndexImpl.java:486)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.retryWhileBusyWithSplitWait(SegmentIndexImpl.java:429)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.put(SegmentIndexImpl.java:92)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.put(IndexAsyncAdapter.java:32)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$putAsync$0(IndexAsyncAdapter.java:38)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000273dc8.get(Unknown Source)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$runAsyncTracked$0(IndexAsyncAdapter.java:121)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000279f68.get(Unknown Source)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.run(java.base@21.0.7/CompletableFuture.java:1768)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.exec(java.base@21.0.7/CompletableFuture.java:1760)
+	at java.util.concurrent.ForkJoinTask.doExec(java.base@21.0.7/ForkJoinTask.java:387)
+	at java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(java.base@21.0.7/ForkJoinPool.java:1312)
+	at java.util.concurrent.ForkJoinPool.scan(java.base@21.0.7/ForkJoinPool.java:1843)
+	at java.util.concurrent.ForkJoinPool.runWorker(java.base@21.0.7/ForkJoinPool.java:1808)
+	at java.util.concurrent.ForkJoinWorkerThread.run(java.base@21.0.7/ForkJoinWorkerThread.java:188)
+
+   Locked ownable synchronizers:
+	- None
+
+"ForkJoinPool.commonPool-worker-4" #67 [60163] daemon prio=5 os_prio=31 cpu=22909.39ms elapsed=294.11s tid=0x0000000c41181c00 nid=60163 waiting on condition  [0x0000000176c21000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561d3abb0> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.parkNanos(java.base@21.0.7/LockSupport.java:269)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1866)
+	at java.util.concurrent.ForkJoinPool.compensatedBlock(java.base@21.0.7/ForkJoinPool.java:3740)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3723)
+	at java.util.concurrent.CompletableFuture.timedGet(java.base@21.0.7/CompletableFuture.java:1939)
+	at java.util.concurrent.CompletableFuture.get(java.base@21.0.7/CompletableFuture.java:2095)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator$SplitHandle.awaitCompletion(SegmentAsyncSplitCoordinator.java:162)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator.awaitCompletionIfInFlight(SegmentAsyncSplitCoordinator.java:57)
+	at org.hestiastore.index.segmentindex.SegmentMaintenanceCoordinator.awaitSplitCompletionIfInFlight(SegmentMaintenanceCoordinator.java:83)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.awaitSplitCompletionForKey(SegmentIndexImpl.java:486)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.retryWhileBusyWithSplitWait(SegmentIndexImpl.java:429)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.put(SegmentIndexImpl.java:92)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.put(IndexAsyncAdapter.java:32)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$putAsync$0(IndexAsyncAdapter.java:38)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000273dc8.get(Unknown Source)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$runAsyncTracked$0(IndexAsyncAdapter.java:121)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000279f68.get(Unknown Source)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.run(java.base@21.0.7/CompletableFuture.java:1768)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.exec(java.base@21.0.7/CompletableFuture.java:1760)
+	at java.util.concurrent.ForkJoinTask.doExec(java.base@21.0.7/ForkJoinTask.java:387)
+	at java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(java.base@21.0.7/ForkJoinPool.java:1312)
+	at java.util.concurrent.ForkJoinPool.scan(java.base@21.0.7/ForkJoinPool.java:1843)
+	at java.util.concurrent.ForkJoinPool.runWorker(java.base@21.0.7/ForkJoinPool.java:1808)
+	at java.util.concurrent.ForkJoinWorkerThread.run(java.base@21.0.7/ForkJoinWorkerThread.java:188)
+
+   Locked ownable synchronizers:
+	- None
+
+"ForkJoinPool.commonPool-worker-2" #64 [48643] daemon prio=5 os_prio=31 cpu=20456.58ms elapsed=294.11s tid=0x0000000c41182300 nid=48643 waiting on condition  [0x0000000176e2d000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561f3ae10> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.parkNanos(java.base@21.0.7/LockSupport.java:269)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1866)
+	at java.util.concurrent.ForkJoinPool.compensatedBlock(java.base@21.0.7/ForkJoinPool.java:3740)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3723)
+	at java.util.concurrent.CompletableFuture.timedGet(java.base@21.0.7/CompletableFuture.java:1939)
+	at java.util.concurrent.CompletableFuture.get(java.base@21.0.7/CompletableFuture.java:2095)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator$SplitHandle.awaitCompletion(SegmentAsyncSplitCoordinator.java:162)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator.awaitCompletionIfInFlight(SegmentAsyncSplitCoordinator.java:57)
+	at org.hestiastore.index.segmentindex.SegmentMaintenanceCoordinator.awaitSplitCompletionIfInFlight(SegmentMaintenanceCoordinator.java:83)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.awaitSplitCompletionForKey(SegmentIndexImpl.java:486)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.retryWhileBusyWithSplitWait(SegmentIndexImpl.java:429)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.put(SegmentIndexImpl.java:92)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.put(IndexAsyncAdapter.java:32)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$putAsync$0(IndexAsyncAdapter.java:38)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000273dc8.get(Unknown Source)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$runAsyncTracked$0(IndexAsyncAdapter.java:121)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000279f68.get(Unknown Source)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.run(java.base@21.0.7/CompletableFuture.java:1768)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.exec(java.base@21.0.7/CompletableFuture.java:1760)
+	at java.util.concurrent.ForkJoinTask.doExec(java.base@21.0.7/ForkJoinTask.java:387)
+	at java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(java.base@21.0.7/ForkJoinPool.java:1312)
+	at java.util.concurrent.ForkJoinPool.scan(java.base@21.0.7/ForkJoinPool.java:1843)
+	at java.util.concurrent.ForkJoinPool.runWorker(java.base@21.0.7/ForkJoinPool.java:1808)
+	at java.util.concurrent.ForkJoinWorkerThread.run(java.base@21.0.7/ForkJoinWorkerThread.java:188)
+
+   Locked ownable synchronizers:
+	- None
+
+"ForkJoinPool.commonPool-worker-5" #65 [48899] daemon prio=5 os_prio=31 cpu=20875.77ms elapsed=294.11s tid=0x0000000c41182a00 nid=48899 waiting on condition  [0x0000000177039000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561c9d700> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.parkNanos(java.base@21.0.7/LockSupport.java:269)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1866)
+	at java.util.concurrent.ForkJoinPool.compensatedBlock(java.base@21.0.7/ForkJoinPool.java:3740)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3723)
+	at java.util.concurrent.CompletableFuture.timedGet(java.base@21.0.7/CompletableFuture.java:1939)
+	at java.util.concurrent.CompletableFuture.get(java.base@21.0.7/CompletableFuture.java:2095)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator$SplitHandle.awaitCompletion(SegmentAsyncSplitCoordinator.java:162)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator.awaitCompletionIfInFlight(SegmentAsyncSplitCoordinator.java:57)
+	at org.hestiastore.index.segmentindex.SegmentMaintenanceCoordinator.awaitSplitCompletionIfInFlight(SegmentMaintenanceCoordinator.java:83)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.awaitSplitCompletionForKey(SegmentIndexImpl.java:486)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.retryWhileBusyWithSplitWait(SegmentIndexImpl.java:429)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.put(SegmentIndexImpl.java:92)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.put(IndexAsyncAdapter.java:32)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$putAsync$0(IndexAsyncAdapter.java:38)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000273dc8.get(Unknown Source)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$runAsyncTracked$0(IndexAsyncAdapter.java:121)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000279f68.get(Unknown Source)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.run(java.base@21.0.7/CompletableFuture.java:1768)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.exec(java.base@21.0.7/CompletableFuture.java:1760)
+	at java.util.concurrent.ForkJoinTask.doExec(java.base@21.0.7/ForkJoinTask.java:387)
+	at java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(java.base@21.0.7/ForkJoinPool.java:1312)
+	at java.util.concurrent.ForkJoinPool.scan(java.base@21.0.7/ForkJoinPool.java:1843)
+	at java.util.concurrent.ForkJoinPool.runWorker(java.base@21.0.7/ForkJoinPool.java:1808)
+	at java.util.concurrent.ForkJoinWorkerThread.run(java.base@21.0.7/ForkJoinWorkerThread.java:188)
+
+   Locked ownable synchronizers:
+	- None
+
+"ForkJoinPool.commonPool-worker-6" #66 [59139] daemon prio=5 os_prio=31 cpu=17249.94ms elapsed=294.11s tid=0x0000000c41183100 nid=59139 waiting on condition  [0x0000000177245000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561c00378> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.parkNanos(java.base@21.0.7/LockSupport.java:269)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1866)
+	at java.util.concurrent.ForkJoinPool.compensatedBlock(java.base@21.0.7/ForkJoinPool.java:3740)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3723)
+	at java.util.concurrent.CompletableFuture.timedGet(java.base@21.0.7/CompletableFuture.java:1939)
+	at java.util.concurrent.CompletableFuture.get(java.base@21.0.7/CompletableFuture.java:2095)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator$SplitHandle.awaitCompletion(SegmentAsyncSplitCoordinator.java:162)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator.awaitCompletionIfInFlight(SegmentAsyncSplitCoordinator.java:57)
+	at org.hestiastore.index.segmentindex.SegmentMaintenanceCoordinator.awaitSplitCompletionIfInFlight(SegmentMaintenanceCoordinator.java:83)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.awaitSplitCompletionForKey(SegmentIndexImpl.java:486)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.retryWhileBusyWithSplitWait(SegmentIndexImpl.java:429)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.put(SegmentIndexImpl.java:92)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.put(IndexAsyncAdapter.java:32)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$putAsync$0(IndexAsyncAdapter.java:38)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000273dc8.get(Unknown Source)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$runAsyncTracked$0(IndexAsyncAdapter.java:121)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000279f68.get(Unknown Source)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.run(java.base@21.0.7/CompletableFuture.java:1768)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.exec(java.base@21.0.7/CompletableFuture.java:1760)
+	at java.util.concurrent.ForkJoinTask.doExec(java.base@21.0.7/ForkJoinTask.java:387)
+	at java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(java.base@21.0.7/ForkJoinPool.java:1312)
+	at java.util.concurrent.ForkJoinPool.scan(java.base@21.0.7/ForkJoinPool.java:1843)
+	at java.util.concurrent.ForkJoinPool.runWorker(java.base@21.0.7/ForkJoinPool.java:1808)
+	at java.util.concurrent.ForkJoinWorkerThread.run(java.base@21.0.7/ForkJoinWorkerThread.java:188)
+
+   Locked ownable synchronizers:
+	- None
+
+"ForkJoinPool.commonPool-worker-8" #69 [49411] daemon prio=5 os_prio=31 cpu=5808.21ms elapsed=294.11s tid=0x0000000c41183800 nid=49411 waiting on condition  [0x0000000177451000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561fd8060> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.parkNanos(java.base@21.0.7/LockSupport.java:269)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1866)
+	at java.util.concurrent.ForkJoinPool.compensatedBlock(java.base@21.0.7/ForkJoinPool.java:3740)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3723)
+	at java.util.concurrent.CompletableFuture.timedGet(java.base@21.0.7/CompletableFuture.java:1939)
+	at java.util.concurrent.CompletableFuture.get(java.base@21.0.7/CompletableFuture.java:2095)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator$SplitHandle.awaitCompletion(SegmentAsyncSplitCoordinator.java:162)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator.awaitCompletionIfInFlight(SegmentAsyncSplitCoordinator.java:57)
+	at org.hestiastore.index.segmentindex.SegmentMaintenanceCoordinator.awaitSplitCompletionIfInFlight(SegmentMaintenanceCoordinator.java:83)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.awaitSplitCompletionForKey(SegmentIndexImpl.java:486)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.retryWhileBusyWithSplitWait(SegmentIndexImpl.java:429)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.put(SegmentIndexImpl.java:92)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.put(IndexAsyncAdapter.java:32)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$putAsync$0(IndexAsyncAdapter.java:38)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000273dc8.get(Unknown Source)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$runAsyncTracked$0(IndexAsyncAdapter.java:121)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000279f68.get(Unknown Source)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.run(java.base@21.0.7/CompletableFuture.java:1768)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.exec(java.base@21.0.7/CompletableFuture.java:1760)
+	at java.util.concurrent.ForkJoinTask.doExec(java.base@21.0.7/ForkJoinTask.java:387)
+	at java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(java.base@21.0.7/ForkJoinPool.java:1312)
+	at java.util.concurrent.ForkJoinPool.scan(java.base@21.0.7/ForkJoinPool.java:1843)
+	at java.util.concurrent.ForkJoinPool.runWorker(java.base@21.0.7/ForkJoinPool.java:1808)
+	at java.util.concurrent.ForkJoinWorkerThread.run(java.base@21.0.7/ForkJoinWorkerThread.java:188)
+
+   Locked ownable synchronizers:
+	- None
+
+"ForkJoinPool.commonPool-worker-9" #70 [58883] daemon prio=5 os_prio=31 cpu=3933.86ms elapsed=294.11s tid=0x0000000c411ac000 nid=58883 waiting on condition  [0x000000017765e000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x00000004d50473b8> (a java.util.concurrent.ForkJoinPool)
+	at java.util.concurrent.locks.LockSupport.parkUntil(java.base@21.0.7/LockSupport.java:449)
+	at java.util.concurrent.ForkJoinPool.awaitWork(java.base@21.0.7/ForkJoinPool.java:1891)
+	at java.util.concurrent.ForkJoinPool.runWorker(java.base@21.0.7/ForkJoinPool.java:1809)
+	at java.util.concurrent.ForkJoinWorkerThread.run(java.base@21.0.7/ForkJoinWorkerThread.java:188)
+
+   Locked ownable synchronizers:
+	- None
+
+"index-maintenance-1" #80 [50963] daemon prio=5 os_prio=31 cpu=12317.47ms elapsed=289.64s tid=0x0000000c41a75c00 nid=50963 waiting on condition  [0x0000000171e5a000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x00000004d56b6ee8> (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:371)
+	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(java.base@21.0.7/AbstractQueuedSynchronizer.java:519)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(java.base@21.0.7/AbstractQueuedSynchronizer.java:1712)
+	at java.util.concurrent.ArrayBlockingQueue.take(java.base@21.0.7/ArrayBlockingQueue.java:420)
+	at java.util.concurrent.ThreadPoolExecutor.getTask(java.base@21.0.7/ThreadPoolExecutor.java:1070)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1130)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- None
+
+"ForkJoinPool.commonPool-worker-10" #81 [57603] daemon prio=5 os_prio=31 cpu=7903.97ms elapsed=289.64s tid=0x0000000c41b40700 nid=57603 waiting on condition  [0x0000000177869000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561d3ac60> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.parkNanos(java.base@21.0.7/LockSupport.java:269)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1866)
+	at java.util.concurrent.ForkJoinPool.compensatedBlock(java.base@21.0.7/ForkJoinPool.java:3740)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3723)
+	at java.util.concurrent.CompletableFuture.timedGet(java.base@21.0.7/CompletableFuture.java:1939)
+	at java.util.concurrent.CompletableFuture.get(java.base@21.0.7/CompletableFuture.java:2095)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator$SplitHandle.awaitCompletion(SegmentAsyncSplitCoordinator.java:162)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator.awaitCompletionIfInFlight(SegmentAsyncSplitCoordinator.java:57)
+	at org.hestiastore.index.segmentindex.SegmentMaintenanceCoordinator.awaitSplitCompletionIfInFlight(SegmentMaintenanceCoordinator.java:83)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.awaitSplitCompletionForKey(SegmentIndexImpl.java:486)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.retryWhileBusyWithSplitWait(SegmentIndexImpl.java:429)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.put(SegmentIndexImpl.java:92)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.put(IndexAsyncAdapter.java:32)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$putAsync$0(IndexAsyncAdapter.java:38)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000273dc8.get(Unknown Source)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$runAsyncTracked$0(IndexAsyncAdapter.java:121)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000279f68.get(Unknown Source)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.run(java.base@21.0.7/CompletableFuture.java:1768)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.exec(java.base@21.0.7/CompletableFuture.java:1760)
+	at java.util.concurrent.ForkJoinTask.doExec(java.base@21.0.7/ForkJoinTask.java:387)
+	at java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(java.base@21.0.7/ForkJoinPool.java:1312)
+	at java.util.concurrent.ForkJoinPool.scan(java.base@21.0.7/ForkJoinPool.java:1843)
+	at java.util.concurrent.ForkJoinPool.runWorker(java.base@21.0.7/ForkJoinPool.java:1808)
+	at java.util.concurrent.ForkJoinWorkerThread.run(java.base@21.0.7/ForkJoinWorkerThread.java:188)
+
+   Locked ownable synchronizers:
+	- None
+
+"ForkJoinPool.commonPool-worker-11" #82 [51459] daemon prio=5 os_prio=31 cpu=10471.88ms elapsed=289.64s tid=0x0000000c40970000 nid=51459 waiting on condition  [0x0000000177a75000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561c00410> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.parkNanos(java.base@21.0.7/LockSupport.java:269)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1866)
+	at java.util.concurrent.ForkJoinPool.compensatedBlock(java.base@21.0.7/ForkJoinPool.java:3740)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3723)
+	at java.util.concurrent.CompletableFuture.timedGet(java.base@21.0.7/CompletableFuture.java:1939)
+	at java.util.concurrent.CompletableFuture.get(java.base@21.0.7/CompletableFuture.java:2095)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator$SplitHandle.awaitCompletion(SegmentAsyncSplitCoordinator.java:162)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator.awaitCompletionIfInFlight(SegmentAsyncSplitCoordinator.java:57)
+	at org.hestiastore.index.segmentindex.SegmentMaintenanceCoordinator.awaitSplitCompletionIfInFlight(SegmentMaintenanceCoordinator.java:83)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.awaitSplitCompletionForKey(SegmentIndexImpl.java:486)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.retryWhileBusyWithSplitWait(SegmentIndexImpl.java:429)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.put(SegmentIndexImpl.java:92)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.put(IndexAsyncAdapter.java:32)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$putAsync$0(IndexAsyncAdapter.java:38)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000273dc8.get(Unknown Source)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$runAsyncTracked$0(IndexAsyncAdapter.java:121)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000279f68.get(Unknown Source)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.run(java.base@21.0.7/CompletableFuture.java:1768)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.exec(java.base@21.0.7/CompletableFuture.java:1760)
+	at java.util.concurrent.ForkJoinTask.doExec(java.base@21.0.7/ForkJoinTask.java:387)
+	at java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(java.base@21.0.7/ForkJoinPool.java:1312)
+	at java.util.concurrent.ForkJoinPool.scan(java.base@21.0.7/ForkJoinPool.java:1843)
+	at java.util.concurrent.ForkJoinPool.runWorker(java.base@21.0.7/ForkJoinPool.java:1808)
+	at java.util.concurrent.ForkJoinWorkerThread.run(java.base@21.0.7/ForkJoinWorkerThread.java:188)
+
+   Locked ownable synchronizers:
+	- None
+
+"ForkJoinPool.commonPool-worker-12" #83 [51971] daemon prio=5 os_prio=31 cpu=63.29ms elapsed=289.64s tid=0x0000000c40970700 nid=51971 waiting on condition  [0x0000000177c81000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561dd80f8> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.parkNanos(java.base@21.0.7/LockSupport.java:269)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1866)
+	at java.util.concurrent.ForkJoinPool.compensatedBlock(java.base@21.0.7/ForkJoinPool.java:3740)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3723)
+	at java.util.concurrent.CompletableFuture.timedGet(java.base@21.0.7/CompletableFuture.java:1939)
+	at java.util.concurrent.CompletableFuture.get(java.base@21.0.7/CompletableFuture.java:2095)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator$SplitHandle.awaitCompletion(SegmentAsyncSplitCoordinator.java:162)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator.awaitCompletionIfInFlight(SegmentAsyncSplitCoordinator.java:57)
+	at org.hestiastore.index.segmentindex.SegmentMaintenanceCoordinator.awaitSplitCompletionIfInFlight(SegmentMaintenanceCoordinator.java:83)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.awaitSplitCompletionForKey(SegmentIndexImpl.java:486)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.retryWhileBusyWithSplitWait(SegmentIndexImpl.java:429)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.put(SegmentIndexImpl.java:92)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.put(IndexAsyncAdapter.java:32)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$putAsync$0(IndexAsyncAdapter.java:38)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000273dc8.get(Unknown Source)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$runAsyncTracked$0(IndexAsyncAdapter.java:121)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000279f68.get(Unknown Source)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.run(java.base@21.0.7/CompletableFuture.java:1768)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.exec(java.base@21.0.7/CompletableFuture.java:1760)
+	at java.util.concurrent.ForkJoinTask.doExec(java.base@21.0.7/ForkJoinTask.java:387)
+	at java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(java.base@21.0.7/ForkJoinPool.java:1312)
+	at java.util.concurrent.ForkJoinPool.scan(java.base@21.0.7/ForkJoinPool.java:1843)
+	at java.util.concurrent.ForkJoinPool.runWorker(java.base@21.0.7/ForkJoinPool.java:1808)
+	at java.util.concurrent.ForkJoinWorkerThread.run(java.base@21.0.7/ForkJoinWorkerThread.java:188)
+
+   Locked ownable synchronizers:
+	- None
+
+"ForkJoinPool.commonPool-worker-13" #84 [52227] daemon prio=5 os_prio=31 cpu=8575.36ms elapsed=289.64s tid=0x0000000c40970e00 nid=52227 waiting on condition  [0x0000000177e8d000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561c9d798> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.parkNanos(java.base@21.0.7/LockSupport.java:269)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1866)
+	at java.util.concurrent.ForkJoinPool.compensatedBlock(java.base@21.0.7/ForkJoinPool.java:3740)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3723)
+	at java.util.concurrent.CompletableFuture.timedGet(java.base@21.0.7/CompletableFuture.java:1939)
+	at java.util.concurrent.CompletableFuture.get(java.base@21.0.7/CompletableFuture.java:2095)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator$SplitHandle.awaitCompletion(SegmentAsyncSplitCoordinator.java:162)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator.awaitCompletionIfInFlight(SegmentAsyncSplitCoordinator.java:57)
+	at org.hestiastore.index.segmentindex.SegmentMaintenanceCoordinator.awaitSplitCompletionIfInFlight(SegmentMaintenanceCoordinator.java:83)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.awaitSplitCompletionForKey(SegmentIndexImpl.java:486)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.retryWhileBusyWithSplitWait(SegmentIndexImpl.java:429)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.put(SegmentIndexImpl.java:92)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.put(IndexAsyncAdapter.java:32)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$putAsync$0(IndexAsyncAdapter.java:38)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000273dc8.get(Unknown Source)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$runAsyncTracked$0(IndexAsyncAdapter.java:121)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000279f68.get(Unknown Source)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.run(java.base@21.0.7/CompletableFuture.java:1768)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.exec(java.base@21.0.7/CompletableFuture.java:1760)
+	at java.util.concurrent.ForkJoinTask.doExec(java.base@21.0.7/ForkJoinTask.java:387)
+	at java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(java.base@21.0.7/ForkJoinPool.java:1312)
+	at java.util.concurrent.ForkJoinPool.scan(java.base@21.0.7/ForkJoinPool.java:1843)
+	at java.util.concurrent.ForkJoinPool.runWorker(java.base@21.0.7/ForkJoinPool.java:1808)
+	at java.util.concurrent.ForkJoinWorkerThread.run(java.base@21.0.7/ForkJoinWorkerThread.java:188)
+
+   Locked ownable synchronizers:
+	- None
+
+"ForkJoinPool.commonPool-worker-14" #85 [52739] daemon prio=5 os_prio=31 cpu=16266.09ms elapsed=289.64s tid=0x0000000c40971500 nid=52739 waiting on condition  [0x0000000178099000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561e9d8e0> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.parkNanos(java.base@21.0.7/LockSupport.java:269)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1866)
+	at java.util.concurrent.ForkJoinPool.compensatedBlock(java.base@21.0.7/ForkJoinPool.java:3740)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3723)
+	at java.util.concurrent.CompletableFuture.timedGet(java.base@21.0.7/CompletableFuture.java:1939)
+	at java.util.concurrent.CompletableFuture.get(java.base@21.0.7/CompletableFuture.java:2095)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator$SplitHandle.awaitCompletion(SegmentAsyncSplitCoordinator.java:162)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator.awaitCompletionIfInFlight(SegmentAsyncSplitCoordinator.java:57)
+	at org.hestiastore.index.segmentindex.SegmentMaintenanceCoordinator.awaitSplitCompletionIfInFlight(SegmentMaintenanceCoordinator.java:83)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.awaitSplitCompletionForKey(SegmentIndexImpl.java:486)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.retryWhileBusyWithSplitWait(SegmentIndexImpl.java:429)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.put(SegmentIndexImpl.java:92)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.put(IndexAsyncAdapter.java:32)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$putAsync$0(IndexAsyncAdapter.java:38)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000273dc8.get(Unknown Source)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$runAsyncTracked$0(IndexAsyncAdapter.java:121)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000279f68.get(Unknown Source)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.run(java.base@21.0.7/CompletableFuture.java:1768)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.exec(java.base@21.0.7/CompletableFuture.java:1760)
+	at java.util.concurrent.ForkJoinTask.doExec(java.base@21.0.7/ForkJoinTask.java:387)
+	at java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(java.base@21.0.7/ForkJoinPool.java:1312)
+	at java.util.concurrent.ForkJoinPool.scan(java.base@21.0.7/ForkJoinPool.java:1843)
+	at java.util.concurrent.ForkJoinPool.runWorker(java.base@21.0.7/ForkJoinPool.java:1808)
+	at java.util.concurrent.ForkJoinWorkerThread.run(java.base@21.0.7/ForkJoinWorkerThread.java:188)
+
+   Locked ownable synchronizers:
+	- None
+
+"ForkJoinPool.commonPool-worker-15" #86 [56835] daemon prio=5 os_prio=31 cpu=22885.59ms elapsed=289.64s tid=0x0000000c40971c00 nid=56835 waiting on condition  [0x00000001782a5000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561d3acf8> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.parkNanos(java.base@21.0.7/LockSupport.java:269)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1866)
+	at java.util.concurrent.ForkJoinPool.compensatedBlock(java.base@21.0.7/ForkJoinPool.java:3740)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3723)
+	at java.util.concurrent.CompletableFuture.timedGet(java.base@21.0.7/CompletableFuture.java:1939)
+	at java.util.concurrent.CompletableFuture.get(java.base@21.0.7/CompletableFuture.java:2095)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator$SplitHandle.awaitCompletion(SegmentAsyncSplitCoordinator.java:162)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator.awaitCompletionIfInFlight(SegmentAsyncSplitCoordinator.java:57)
+	at org.hestiastore.index.segmentindex.SegmentMaintenanceCoordinator.awaitSplitCompletionIfInFlight(SegmentMaintenanceCoordinator.java:83)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.awaitSplitCompletionForKey(SegmentIndexImpl.java:486)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.retryWhileBusyWithSplitWait(SegmentIndexImpl.java:429)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.put(SegmentIndexImpl.java:92)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.put(IndexAsyncAdapter.java:32)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$putAsync$0(IndexAsyncAdapter.java:38)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000273dc8.get(Unknown Source)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$runAsyncTracked$0(IndexAsyncAdapter.java:121)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000279f68.get(Unknown Source)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.run(java.base@21.0.7/CompletableFuture.java:1768)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.exec(java.base@21.0.7/CompletableFuture.java:1760)
+	at java.util.concurrent.ForkJoinTask.doExec(java.base@21.0.7/ForkJoinTask.java:387)
+	at java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(java.base@21.0.7/ForkJoinPool.java:1312)
+	at java.util.concurrent.ForkJoinPool.scan(java.base@21.0.7/ForkJoinPool.java:1843)
+	at java.util.concurrent.ForkJoinPool.runWorker(java.base@21.0.7/ForkJoinPool.java:1808)
+	at java.util.concurrent.ForkJoinWorkerThread.run(java.base@21.0.7/ForkJoinWorkerThread.java:188)
+
+   Locked ownable synchronizers:
+	- None
+
+"ForkJoinPool.commonPool-worker-16" #87 [56323] daemon prio=5 os_prio=31 cpu=3222.28ms elapsed=289.64s tid=0x0000000c40972300 nid=56323 waiting on condition  [0x00000001784b1000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561f3aec0> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.parkNanos(java.base@21.0.7/LockSupport.java:269)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1866)
+	at java.util.concurrent.ForkJoinPool.compensatedBlock(java.base@21.0.7/ForkJoinPool.java:3740)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3723)
+	at java.util.concurrent.CompletableFuture.timedGet(java.base@21.0.7/CompletableFuture.java:1939)
+	at java.util.concurrent.CompletableFuture.get(java.base@21.0.7/CompletableFuture.java:2095)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator$SplitHandle.awaitCompletion(SegmentAsyncSplitCoordinator.java:162)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator.awaitCompletionIfInFlight(SegmentAsyncSplitCoordinator.java:57)
+	at org.hestiastore.index.segmentindex.SegmentMaintenanceCoordinator.awaitSplitCompletionIfInFlight(SegmentMaintenanceCoordinator.java:83)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.awaitSplitCompletionForKey(SegmentIndexImpl.java:486)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.retryWhileBusyWithSplitWait(SegmentIndexImpl.java:429)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.put(SegmentIndexImpl.java:92)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.put(IndexAsyncAdapter.java:32)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$putAsync$0(IndexAsyncAdapter.java:38)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000273dc8.get(Unknown Source)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$runAsyncTracked$0(IndexAsyncAdapter.java:121)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000279f68.get(Unknown Source)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.run(java.base@21.0.7/CompletableFuture.java:1768)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.exec(java.base@21.0.7/CompletableFuture.java:1760)
+	at java.util.concurrent.ForkJoinTask.doExec(java.base@21.0.7/ForkJoinTask.java:387)
+	at java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(java.base@21.0.7/ForkJoinPool.java:1312)
+	at java.util.concurrent.ForkJoinPool.scan(java.base@21.0.7/ForkJoinPool.java:1843)
+	at java.util.concurrent.ForkJoinPool.runWorker(java.base@21.0.7/ForkJoinPool.java:1808)
+	at java.util.concurrent.ForkJoinWorkerThread.run(java.base@21.0.7/ForkJoinWorkerThread.java:188)
+
+   Locked ownable synchronizers:
+	- None
+
+"ForkJoinPool.commonPool-worker-17" #88 [55811] daemon prio=5 os_prio=31 cpu=3322.54ms elapsed=289.64s tid=0x0000000c40972a00 nid=55811 waiting on condition  [0x00000001786bd000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561d3ad90> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.parkNanos(java.base@21.0.7/LockSupport.java:269)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1866)
+	at java.util.concurrent.ForkJoinPool.compensatedBlock(java.base@21.0.7/ForkJoinPool.java:3740)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3723)
+	at java.util.concurrent.CompletableFuture.timedGet(java.base@21.0.7/CompletableFuture.java:1939)
+	at java.util.concurrent.CompletableFuture.get(java.base@21.0.7/CompletableFuture.java:2095)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator$SplitHandle.awaitCompletion(SegmentAsyncSplitCoordinator.java:162)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator.awaitCompletionIfInFlight(SegmentAsyncSplitCoordinator.java:57)
+	at org.hestiastore.index.segmentindex.SegmentMaintenanceCoordinator.awaitSplitCompletionIfInFlight(SegmentMaintenanceCoordinator.java:83)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.awaitSplitCompletionForKey(SegmentIndexImpl.java:486)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.retryWhileBusyWithSplitWait(SegmentIndexImpl.java:429)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.put(SegmentIndexImpl.java:92)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.put(IndexAsyncAdapter.java:32)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$putAsync$0(IndexAsyncAdapter.java:38)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000273dc8.get(Unknown Source)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$runAsyncTracked$0(IndexAsyncAdapter.java:121)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000279f68.get(Unknown Source)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.run(java.base@21.0.7/CompletableFuture.java:1768)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.exec(java.base@21.0.7/CompletableFuture.java:1760)
+	at java.util.concurrent.ForkJoinTask.doExec(java.base@21.0.7/ForkJoinTask.java:387)
+	at java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(java.base@21.0.7/ForkJoinPool.java:1312)
+	at java.util.concurrent.ForkJoinPool.scan(java.base@21.0.7/ForkJoinPool.java:1843)
+	at java.util.concurrent.ForkJoinPool.runWorker(java.base@21.0.7/ForkJoinPool.java:1808)
+	at java.util.concurrent.ForkJoinWorkerThread.run(java.base@21.0.7/ForkJoinWorkerThread.java:188)
+
+   Locked ownable synchronizers:
+	- None
+
+"ForkJoinPool.commonPool-worker-18" #89 [55555] daemon prio=5 os_prio=31 cpu=17739.78ms elapsed=289.64s tid=0x0000000c40973800 nid=55555 waiting on condition  [0x00000001788c9000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561fd80f8> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.parkNanos(java.base@21.0.7/LockSupport.java:269)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1866)
+	at java.util.concurrent.ForkJoinPool.compensatedBlock(java.base@21.0.7/ForkJoinPool.java:3740)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3723)
+	at java.util.concurrent.CompletableFuture.timedGet(java.base@21.0.7/CompletableFuture.java:1939)
+	at java.util.concurrent.CompletableFuture.get(java.base@21.0.7/CompletableFuture.java:2095)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator$SplitHandle.awaitCompletion(SegmentAsyncSplitCoordinator.java:162)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator.awaitCompletionIfInFlight(SegmentAsyncSplitCoordinator.java:57)
+	at org.hestiastore.index.segmentindex.SegmentMaintenanceCoordinator.awaitSplitCompletionIfInFlight(SegmentMaintenanceCoordinator.java:83)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.awaitSplitCompletionForKey(SegmentIndexImpl.java:486)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.retryWhileBusyWithSplitWait(SegmentIndexImpl.java:429)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.put(SegmentIndexImpl.java:92)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.put(IndexAsyncAdapter.java:32)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$putAsync$0(IndexAsyncAdapter.java:38)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000273dc8.get(Unknown Source)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$runAsyncTracked$0(IndexAsyncAdapter.java:121)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000279f68.get(Unknown Source)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.run(java.base@21.0.7/CompletableFuture.java:1768)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.exec(java.base@21.0.7/CompletableFuture.java:1760)
+	at java.util.concurrent.ForkJoinTask.doExec(java.base@21.0.7/ForkJoinTask.java:387)
+	at java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(java.base@21.0.7/ForkJoinPool.java:1312)
+	at java.util.concurrent.ForkJoinPool.scan(java.base@21.0.7/ForkJoinPool.java:1843)
+	at java.util.concurrent.ForkJoinPool.runWorker(java.base@21.0.7/ForkJoinPool.java:1808)
+	at java.util.concurrent.ForkJoinWorkerThread.run(java.base@21.0.7/ForkJoinWorkerThread.java:188)
+
+   Locked ownable synchronizers:
+	- None
+
+"ForkJoinPool.commonPool-worker-19" #90 [55043] daemon prio=5 os_prio=31 cpu=20002.32ms elapsed=289.64s tid=0x0000000c40ac0000 nid=55043 waiting on condition  [0x0000000178ad5000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561e9d978> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.parkNanos(java.base@21.0.7/LockSupport.java:269)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1866)
+	at java.util.concurrent.ForkJoinPool.compensatedBlock(java.base@21.0.7/ForkJoinPool.java:3740)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3723)
+	at java.util.concurrent.CompletableFuture.timedGet(java.base@21.0.7/CompletableFuture.java:1939)
+	at java.util.concurrent.CompletableFuture.get(java.base@21.0.7/CompletableFuture.java:2095)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator$SplitHandle.awaitCompletion(SegmentAsyncSplitCoordinator.java:162)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator.awaitCompletionIfInFlight(SegmentAsyncSplitCoordinator.java:57)
+	at org.hestiastore.index.segmentindex.SegmentMaintenanceCoordinator.awaitSplitCompletionIfInFlight(SegmentMaintenanceCoordinator.java:83)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.awaitSplitCompletionForKey(SegmentIndexImpl.java:486)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.retryWhileBusyWithSplitWait(SegmentIndexImpl.java:429)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.put(SegmentIndexImpl.java:92)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.put(IndexAsyncAdapter.java:32)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$putAsync$0(IndexAsyncAdapter.java:38)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000273dc8.get(Unknown Source)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$runAsyncTracked$0(IndexAsyncAdapter.java:121)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000279f68.get(Unknown Source)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.run(java.base@21.0.7/CompletableFuture.java:1768)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.exec(java.base@21.0.7/CompletableFuture.java:1760)
+	at java.util.concurrent.ForkJoinTask.doExec(java.base@21.0.7/ForkJoinTask.java:387)
+	at java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(java.base@21.0.7/ForkJoinPool.java:1312)
+	at java.util.concurrent.ForkJoinPool.scan(java.base@21.0.7/ForkJoinPool.java:1843)
+	at java.util.concurrent.ForkJoinPool.runWorker(java.base@21.0.7/ForkJoinPool.java:1808)
+	at java.util.concurrent.ForkJoinWorkerThread.run(java.base@21.0.7/ForkJoinWorkerThread.java:188)
+
+   Locked ownable synchronizers:
+	- None
+
+"ForkJoinPool.commonPool-worker-20" #91 [54787] daemon prio=5 os_prio=31 cpu=1738.47ms elapsed=289.64s tid=0x0000000c40ac0e00 nid=54787 waiting on condition  [0x0000000178ce1000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561f3af58> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.parkNanos(java.base@21.0.7/LockSupport.java:269)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1866)
+	at java.util.concurrent.ForkJoinPool.compensatedBlock(java.base@21.0.7/ForkJoinPool.java:3740)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3723)
+	at java.util.concurrent.CompletableFuture.timedGet(java.base@21.0.7/CompletableFuture.java:1939)
+	at java.util.concurrent.CompletableFuture.get(java.base@21.0.7/CompletableFuture.java:2095)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator$SplitHandle.awaitCompletion(SegmentAsyncSplitCoordinator.java:162)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator.awaitCompletionIfInFlight(SegmentAsyncSplitCoordinator.java:57)
+	at org.hestiastore.index.segmentindex.SegmentMaintenanceCoordinator.awaitSplitCompletionIfInFlight(SegmentMaintenanceCoordinator.java:83)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.awaitSplitCompletionForKey(SegmentIndexImpl.java:486)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.retryWhileBusyWithSplitWait(SegmentIndexImpl.java:429)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.put(SegmentIndexImpl.java:92)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.put(IndexAsyncAdapter.java:32)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$putAsync$0(IndexAsyncAdapter.java:38)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000273dc8.get(Unknown Source)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$runAsyncTracked$0(IndexAsyncAdapter.java:121)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000279f68.get(Unknown Source)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.run(java.base@21.0.7/CompletableFuture.java:1768)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.exec(java.base@21.0.7/CompletableFuture.java:1760)
+	at java.util.concurrent.ForkJoinTask.doExec(java.base@21.0.7/ForkJoinTask.java:387)
+	at java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(java.base@21.0.7/ForkJoinPool.java:1312)
+	at java.util.concurrent.ForkJoinPool.scan(java.base@21.0.7/ForkJoinPool.java:1843)
+	at java.util.concurrent.ForkJoinPool.runWorker(java.base@21.0.7/ForkJoinPool.java:1808)
+	at java.util.concurrent.ForkJoinWorkerThread.run(java.base@21.0.7/ForkJoinWorkerThread.java:188)
+
+   Locked ownable synchronizers:
+	- None
+
+"ForkJoinPool.commonPool-worker-21" #92 [54275] daemon prio=5 os_prio=31 cpu=10988.72ms elapsed=289.64s tid=0x0000000c40ac1500 nid=54275 waiting on condition  [0x0000000178eed000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x0000000561e006e0> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.parkNanos(java.base@21.0.7/LockSupport.java:269)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1866)
+	at java.util.concurrent.ForkJoinPool.compensatedBlock(java.base@21.0.7/ForkJoinPool.java:3740)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3723)
+	at java.util.concurrent.CompletableFuture.timedGet(java.base@21.0.7/CompletableFuture.java:1939)
+	at java.util.concurrent.CompletableFuture.get(java.base@21.0.7/CompletableFuture.java:2095)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator$SplitHandle.awaitCompletion(SegmentAsyncSplitCoordinator.java:162)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator.awaitCompletionIfInFlight(SegmentAsyncSplitCoordinator.java:57)
+	at org.hestiastore.index.segmentindex.SegmentMaintenanceCoordinator.awaitSplitCompletionIfInFlight(SegmentMaintenanceCoordinator.java:83)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.awaitSplitCompletionForKey(SegmentIndexImpl.java:486)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.retryWhileBusyWithSplitWait(SegmentIndexImpl.java:429)
+	at org.hestiastore.index.segmentindex.SegmentIndexImpl.put(SegmentIndexImpl.java:92)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.put(IndexAsyncAdapter.java:32)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$putAsync$0(IndexAsyncAdapter.java:38)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000273dc8.get(Unknown Source)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter.lambda$runAsyncTracked$0(IndexAsyncAdapter.java:121)
+	at org.hestiastore.index.segmentindex.IndexAsyncAdapter$$Lambda/0x0000007000279f68.get(Unknown Source)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.run(java.base@21.0.7/CompletableFuture.java:1768)
+	at java.util.concurrent.CompletableFuture$AsyncSupply.exec(java.base@21.0.7/CompletableFuture.java:1760)
+	at java.util.concurrent.ForkJoinTask.doExec(java.base@21.0.7/ForkJoinTask.java:387)
+	at java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(java.base@21.0.7/ForkJoinPool.java:1312)
+	at java.util.concurrent.ForkJoinPool.scan(java.base@21.0.7/ForkJoinPool.java:1843)
+	at java.util.concurrent.ForkJoinPool.runWorker(java.base@21.0.7/ForkJoinPool.java:1808)
+	at java.util.concurrent.ForkJoinWorkerThread.run(java.base@21.0.7/ForkJoinWorkerThread.java:188)
+
+   Locked ownable synchronizers:
+	- None
+
+"YJPAgent-CpuSampler" #94 [65539] daemon prio=10 os_prio=31 cpu=1312.06ms elapsed=288.25s tid=0x0000000c40950700 nid=65539 runnable  [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+   Locked ownable synchronizers:
+	- None
+
+"index-maintenance-2" #110 [85779] daemon prio=5 os_prio=31 cpu=11244.28ms elapsed=270.23s tid=0x0000000c4063e300 nid=85779 waiting on condition  [0x00000001790fa000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x00000004d56b6ee8> (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:371)
+	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(java.base@21.0.7/AbstractQueuedSynchronizer.java:519)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(java.base@21.0.7/AbstractQueuedSynchronizer.java:1712)
+	at java.util.concurrent.ArrayBlockingQueue.take(java.base@21.0.7/ArrayBlockingQueue.java:420)
+	at java.util.concurrent.ThreadPoolExecutor.getTask(java.base@21.0.7/ThreadPoolExecutor.java:1070)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1130)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- None
+
+"index-maintenance-3" #111 [85507] daemon prio=5 os_prio=31 cpu=10958.53ms elapsed=270.23s tid=0x0000000c4063f800 nid=85507 waiting on condition  [0x0000000179512000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x00000004d56b6ee8> (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:371)
+	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(java.base@21.0.7/AbstractQueuedSynchronizer.java:519)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(java.base@21.0.7/AbstractQueuedSynchronizer.java:1712)
+	at java.util.concurrent.ArrayBlockingQueue.take(java.base@21.0.7/ArrayBlockingQueue.java:420)
+	at java.util.concurrent.ThreadPoolExecutor.getTask(java.base@21.0.7/ThreadPoolExecutor.java:1070)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1130)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- None
+
+"index-maintenance-4" #124 [83207] daemon prio=5 os_prio=31 cpu=10510.43ms elapsed=242.94s tid=0x0000000c4046c000 nid=83207 waiting on condition  [0x000000017971e000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x00000004d56b6ee8> (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:371)
+	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(java.base@21.0.7/AbstractQueuedSynchronizer.java:519)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(java.base@21.0.7/AbstractQueuedSynchronizer.java:1712)
+	at java.util.concurrent.ArrayBlockingQueue.take(java.base@21.0.7/ArrayBlockingQueue.java:420)
+	at java.util.concurrent.ThreadPoolExecutor.getTask(java.base@21.0.7/ThreadPoolExecutor.java:1070)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1130)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- None
+
+"index-maintenance-5" #129 [82707] daemon prio=5 os_prio=31 cpu=10229.38ms elapsed=235.38s tid=0x0000000c40051c00 nid=82707 waiting on condition  [0x0000000179929000]
+   java.lang.Thread.State: WAITING (parking)
+	at jdk.internal.misc.Unsafe.park(java.base@21.0.7/Native Method)
+	- parking to wait for  <0x00000005c98f2b48> (a java.util.concurrent.CompletableFuture$Signaller)
+	at java.util.concurrent.locks.LockSupport.park(java.base@21.0.7/LockSupport.java:221)
+	at java.util.concurrent.CompletableFuture$Signaller.block(java.base@21.0.7/CompletableFuture.java:1864)
+	at java.util.concurrent.ForkJoinPool.unmanagedBlock(java.base@21.0.7/ForkJoinPool.java:3780)
+	at java.util.concurrent.ForkJoinPool.managedBlock(java.base@21.0.7/ForkJoinPool.java:3725)
+	at java.util.concurrent.CompletableFuture.waitingGet(java.base@21.0.7/CompletableFuture.java:1898)
+	at java.util.concurrent.CompletableFuture.join(java.base@21.0.7/CompletableFuture.java:2117)
+	at org.hestiastore.index.directory.async.AsyncFileWriterBlockingAdapter.write(AsyncFileWriterBlockingAdapter.java:25)
+	at org.hestiastore.index.datablockfile.DataBlockWriterImpl.write(DataBlockWriterImpl.java:39)
+	at org.hestiastore.index.chunkstore.CellStoreWriterCursor.write(CellStoreWriterCursor.java:55)
+	at org.hestiastore.index.chunkstore.CellStoreWriterImpl.write(CellStoreWriterImpl.java:33)
+	at org.hestiastore.index.chunkstore.ChunkStoreWriterImpl.write(ChunkStoreWriterImpl.java:56)
+	at org.hestiastore.index.chunkentryfile.ChunkEntryFileWriter.flush(ChunkEntryFileWriter.java:62)
+	at org.hestiastore.index.segment.SegmentFullWriter.flush(SegmentFullWriter.java:79)
+	at org.hestiastore.index.segment.SegmentFullWriter.write(SegmentFullWriter.java:71)
+	at org.hestiastore.index.segmentindex.SegmentSplitStepFillLowerUntilTarget.filter(SegmentSplitStepFillLowerUntilTarget.java:28)
+	at org.hestiastore.index.segmentindex.SegmentSplitStepFillLowerUntilTarget.filter(SegmentSplitStepFillLowerUntilTarget.java:9)
+	at org.hestiastore.index.AbstractChainOfFilters.filter(AbstractChainOfFilters.java:41)
+	at org.hestiastore.index.segmentindex.SegmentSplitPipeline.runKeepingIterator(SegmentSplitPipeline.java:39)
+	at org.hestiastore.index.segmentindex.SegmentSplitter.splitWithIterator(SegmentSplitter.java:83)
+	at org.hestiastore.index.segmentindex.SegmentSplitCoordinator.split(SegmentSplitCoordinator.java:105)
+	at org.hestiastore.index.segmentindex.SegmentSplitCoordinator.optionallySplit(SegmentSplitCoordinator.java:82)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator.lambda$scheduleSplit$0(SegmentAsyncSplitCoordinator.java:110)
+	at org.hestiastore.index.segmentindex.SegmentAsyncSplitCoordinator$$Lambda/0x0000007000283b30.run(Unknown Source)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(java.base@21.0.7/ThreadPoolExecutor.java:1144)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(java.base@21.0.7/ThreadPoolExecutor.java:642)
+	at java.lang.Thread.runWith(java.base@21.0.7/Thread.java:1596)
+	at java.lang.Thread.run(java.base@21.0.7/Thread.java:1583)
+
+   Locked ownable synchronizers:
+	- <0x00000004d6c7c3c0> (a java.util.concurrent.ThreadPoolExecutor$Worker)
+
+"Attach Listener" #220 [123911] daemon prio=9 os_prio=31 cpu=2.92ms elapsed=22.49s tid=0x0000000c3fd35500 nid=123911 waiting on condition  [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+   Locked ownable synchronizers:
+	- None
+
+"G1 Refine#2" os_prio=31 cpu=15.85ms elapsed=26.89s tid=0x0000000c3e903000 nid=91399 runnable  
+
+"G1 Refine#1" os_prio=31 cpu=137.57ms elapsed=118.19s tid=0x0000000c3e91e400 nid=87563 runnable  
+
+"G1 Conc#1" os_prio=31 cpu=19315.92ms elapsed=294.30s tid=0x0000000c41b46400 nid=46855 runnable  
+
+"GC Thread#8" os_prio=31 cpu=8048.62ms elapsed=294.58s tid=0x0000000c41c05000 nid=63491 runnable  
+
+"GC Thread#7" os_prio=31 cpu=8123.26ms elapsed=294.58s tid=0x0000000c41c04c00 nid=45827 runnable  
+
+"GC Thread#6" os_prio=31 cpu=8049.22ms elapsed=294.58s tid=0x0000000c41c04800 nid=63747 runnable  
+
+"GC Thread#5" os_prio=31 cpu=8024.16ms elapsed=294.58s tid=0x0000000c41c04000 nid=64003 runnable  
+
+"GC Thread#4" os_prio=31 cpu=8064.25ms elapsed=294.58s tid=0x0000000c42073800 nid=64515 runnable  
+
+"GC Thread#3" os_prio=31 cpu=8188.19ms elapsed=294.58s tid=0x0000000c42073000 nid=44803 runnable  
+
+"GC Thread#2" os_prio=31 cpu=7977.58ms elapsed=294.58s tid=0x0000000c42072800 nid=64771 runnable  
+
+"GC Thread#1" os_prio=31 cpu=8079.62ms elapsed=294.58s tid=0x0000000c42072000 nid=44291 runnable  
+
+"VM Thread" os_prio=31 cpu=13237.56ms elapsed=294.94s tid=0x0000000c4335dc00 nid=18179 runnable  
+
+"VM Periodic Task Thread" os_prio=31 cpu=52.02ms elapsed=294.94s tid=0x0000000c46d64a80 nid=20995 waiting on condition  
+
+"G1 Service" os_prio=31 cpu=223.99ms elapsed=294.94s tid=0x0000000c4335c800 nid=16643 runnable  
+
+"G1 Refine#0" os_prio=31 cpu=4011.21ms elapsed=294.94s tid=0x0000000c4335c000 nid=13571 runnable  
+
+"G1 Conc#0" os_prio=31 cpu=19259.65ms elapsed=294.94s tid=0x0000000101589720 nid=13315 runnable  
+
+"G1 Main Marker" os_prio=31 cpu=7.29ms elapsed=294.94s tid=0x0000000101588f20 nid=12803 runnable  
+
+"GC Thread#0" os_prio=31 cpu=8063.87ms elapsed=294.94s tid=0x0000000101588b20 nid=12291 runnable  
+
+JNI global refs: 26, weak refs: 0
+
