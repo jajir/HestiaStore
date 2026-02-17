@@ -6,7 +6,7 @@ to centralize segment internals in one place.
 ## Sections
 
 - [General](general/index.md) — cross-cutting format, integrity, recovery,
-  limits, and glossary.
+  limits, package boundaries, and glossary.
 - [SegmentIndex](segmentindex/index.md) — top-level index orchestration:
   read/write paths, caching, performance, and index concurrency.
 - [Segment](segment/index.md) — central place for segment internals:

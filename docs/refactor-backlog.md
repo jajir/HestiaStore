@@ -24,7 +24,7 @@
         (no generic "execute command" style endpoint).
       - All mutating management operations must be auditable.
 
-[ ] 78.1 Define source/module boundaries and package contracts (Risk: HIGH)
+[x] 78.1 Define source/module boundaries and package contracts (Risk: HIGH)
     - Target logical modules/packages:
       - `org.hestiastore.index.*` (core)
       - `org.hestiastore.monitoring.*` (metrics model + exporter adapters)
@@ -39,8 +39,11 @@
     - Acceptance:
       - No core imports from monitoring/agent/console packages.
       - Checkstyle/ArchUnit (or similar) rule blocks forbidden imports.
+    - Delivered:
+      - Added architecture page: `docs/architecture/general/package-boundaries.md`.
+      - Added automated guard: `PackageDependencyBoundaryTest`.
 
-[ ] 78.2 Add stable core metrics snapshot API (Risk: HIGH)
+[x] 78.2 Add stable core metrics snapshot API (Risk: HIGH)
     - Introduce immutable public snapshot types in core for index/segment
       metrics (e.g. op counters, bloom stats, segment counts, state).
     - Add `SegmentIndex.metricsSnapshot()` (or equivalent read-only API).
@@ -52,6 +55,14 @@
     - Acceptance:
       - Unit/integration tests for snapshot consistency under concurrent load.
       - Docs page with metric field definitions and semantics.
+    - Delivered:
+      - Added immutable `SegmentIndexMetricsSnapshot` and
+        `SegmentIndex.metricsSnapshot()`.
+      - Wired snapshot delegation through SegmentIndex adapters.
+      - Added concurrent consistency test:
+        `IntegrationSegmentIndexMetricsSnapshotConcurrencyTest`.
+      - Added metrics contract docs:
+        `docs/architecture/segmentindex/metrics-snapshot.md`.
 
 [ ] 78.3 Build monitoring bridge layer (Micrometer/Prometheus/JMX) (Risk: HIGH)
     - Implement monitoring adapters in `org.hestiastore.monitoring.*`:

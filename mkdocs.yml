@@ -37,6 +37,7 @@ nav:
             - Chain of Filters: architecture/general/chain-of-filters.md
             - Access Model: architecture/general/concurrency.md
             - Consistency & Recovery: architecture/general/recovery.md
+            - Package Boundaries: architecture/general/package-boundaries.md
             - Limitations & Trade-offs: architecture/general/limits.md
             - Glossary: architecture/general/glossary.md
         - SegmentIndex:
@@ -46,6 +47,7 @@ nav:
             - Caching Strategy: architecture/segmentindex/caching.md
             - Cache LRU: architecture/segmentindex/cache-lru.md
             - Performance Model & Sizing: architecture/segmentindex/performance.md
+            - Metrics Snapshot: architecture/segmentindex/metrics-snapshot.md
             - Segment Index Concurrency: architecture/segmentindex/segment-index-concurrency.md
         - Segment:
             - Overview: architecture/segment/index.md
