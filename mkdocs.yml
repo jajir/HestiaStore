@@ -37,6 +37,7 @@ nav:
             - Chain of Filters: architecture/general/chain-of-filters.md
             - Access Model: architecture/general/concurrency.md
             - Consistency & Recovery: architecture/general/recovery.md
+            - Monitoring Bridge: architecture/general/monitoring-bridge.md
             - Package Boundaries: architecture/general/package-boundaries.md
             - Limitations & Trade-offs: architecture/general/limits.md
             - Glossary: architecture/general/glossary.md

@@ -10,6 +10,7 @@ component only).
 - [Chain of Filters](chain-of-filters.md) — shared filter-chain helper.
 - [Concurrency Model](concurrency.md) — index-wide synchronization model.
 - [Consistency & Recovery](recovery.md) — crash-safety and recovery model.
+- [Monitoring Bridge](monitoring-bridge.md) — optional telemetry modules.
 - [Package Boundaries](package-boundaries.md) — package dependency contracts.
 - [Limitations & Trade-offs](limits.md) — current constraints and risks.
 - [Glossary](glossary.md) — shared terminology.
