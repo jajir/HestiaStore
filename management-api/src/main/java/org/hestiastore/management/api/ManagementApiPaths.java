@@ -6,9 +6,14 @@ package org.hestiastore.management.api;
 public final class ManagementApiPaths {
 
     /**
+     * Current API version segment.
+     */
+    public static final String VERSION = "v1";
+
+    /**
      * API version prefix.
      */
-    public static final String BASE = "/api/v1";
+    public static final String BASE = "/api/" + VERSION;
 
     /**
      * Endpoint exposing node lifecycle state.

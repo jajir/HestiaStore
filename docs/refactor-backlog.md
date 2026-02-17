@@ -90,7 +90,7 @@
         `HestiaStorePrometheusExporterTest` (checks names and `index` label).
       - Kept core `index` module free of Micrometer/Prometheus dependencies.
 
-[ ] 78.4 Add management API contracts and versioning (Risk: HIGH)
+[x] 78.4 Add management API contracts and versioning (Risk: HIGH)
     - Create `org.hestiastore.management.api.*` DTOs:
       - `NodeStateResponse`, `MetricsResponse`, `ActionRequest/Response`,
         `ConfigPatchRequest`, `ErrorResponse`.
@@ -100,6 +100,16 @@
     - Acceptance:
       - OpenAPI (or equivalent) published with examples.
       - Contract tests verify backward-compatible serialization.
+    - Delivered:
+      - Added shared DTO/contracts in `management-api` module:
+        `NodeStateResponse`, `MetricsResponse`, `ActionRequest`,
+        `ActionResponse`, `ConfigPatchRequest`, `ErrorResponse`.
+      - Added versioned path contract constants in `ManagementApiPaths`
+        (`/api/v1/...`).
+      - Added compatibility contract tests:
+        `ManagementApiContractCompatibilityTest`.
+      - Added API contract documentation with example payloads:
+        `docs/architecture/general/management-api.md`.
 
 [ ] 78.5 Implement node-local management agent (Risk: HIGH)
     - Add lightweight REST server integration for index JVM process:

@@ -38,6 +38,7 @@ nav:
             - Access Model: architecture/general/concurrency.md
             - Consistency & Recovery: architecture/general/recovery.md
             - Monitoring Bridge: architecture/general/monitoring-bridge.md
+            - Management API: architecture/general/management-api.md
             - Package Boundaries: architecture/general/package-boundaries.md
             - Limitations & Trade-offs: architecture/general/limits.md
             - Glossary: architecture/general/glossary.md
