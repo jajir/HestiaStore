@@ -27,7 +27,9 @@
 [x] 78.1 Define source/module boundaries and package contracts (Risk: HIGH)
     - Target logical modules/packages:
       - `org.hestiastore.index.*` (core)
-      - `org.hestiastore.monitoring.*` (metrics model + exporter adapters)
+      - `org.hestiastore.monitoring.api.*` (metrics contracts/shared abstractions)
+      - `org.hestiastore.monitoring.micrometer.*` (Micrometer bridge)
+      - `org.hestiastore.monitoring.prometheus.*` (Prometheus bridge)
       - `org.hestiastore.management.api.*` (shared DTOs/contracts)
       - `org.hestiastore.management.agent.*` (node-local REST API in index JVM)
       - `org.hestiastore.console.*` (web UI / control plane)
@@ -64,11 +66,13 @@
       - Added metrics contract docs:
         `docs/architecture/segmentindex/metrics-snapshot.md`.
 
-[ ] 78.3 Build monitoring bridge layer (Micrometer/Prometheus/JMX) (Risk: HIGH)
-    - Implement monitoring adapters in `org.hestiastore.monitoring.*`:
+[ ] 78.3 Build monitoring bridge layer (Micrometer/Prometheus) (Risk: HIGH)
+    - Implement monitoring adapters:
+      - `org.hestiastore.monitoring.api.*`
+      - `org.hestiastore.monitoring.micrometer.*`
+      - `org.hestiastore.monitoring.prometheus.*`
       - Micrometer binder reading from core snapshot API.
       - Prometheus exposition support (via Micrometer registry or direct bridge).
-      - Optional JMX MBean exporter mapped from the same snapshot model.
     - Ensure adapters can be created/removed without restarting index
       (where runtime allows).
     - Define metric naming/tag conventions (`hestiastore_*`, stable tag set).
@@ -126,10 +130,13 @@
 
 [ ] 78.8 Packaging, release strategy, and migration path (Risk: HIGH)
     - Release artifacts initially from same repo:
-      - `hestiastore` (core)
-      - `hestiastore-monitoring` (bridges/exporters)
-      - `hestiastore-management-agent`
-      - `hestiastore-console`
+      - `index` (core)
+      - `monitoring-api`
+      - `monitoring-micrometer`
+      - `monitoring-prometheus`
+      - `management-api`
+      - `management-agent`
+      - `monitoring-console`
     - Keep aligned versions per release line (for example `0.2.x` for all).
     - Document migration from single-module to multi-module build:
       move packages with no API break using prior boundary rules from 78.1.
