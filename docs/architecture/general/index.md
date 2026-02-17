@@ -11,6 +11,7 @@ component only).
 - [Concurrency Model](concurrency.md) — index-wide synchronization model.
 - [Consistency & Recovery](recovery.md) — crash-safety and recovery model.
 - [Monitoring Bridge](monitoring-bridge.md) — optional telemetry modules.
+- [Management API](management-api.md) — versioned control/metrics contracts.
 - [Package Boundaries](package-boundaries.md) — package dependency contracts.
 - [Limitations & Trade-offs](limits.md) — current constraints and risks.
 - [Glossary](glossary.md) — shared terminology.
