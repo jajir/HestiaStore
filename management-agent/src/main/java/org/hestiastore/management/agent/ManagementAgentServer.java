@@ -7,9 +7,12 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
@@ -44,6 +47,9 @@ public final class ManagementAgentServer implements AutoCloseable {
     private final SegmentIndex<?, ?> index;
     private final String indexName;
     private final Set<String> runtimeConfigAllowlist;
+    private final ManagementAgentSecurityPolicy securityPolicy;
+    private final FixedWindowRateLimiter mutatingRateLimiter;
+    private final ConcurrentLinkedDeque<AuditRecord> auditTrail = new ConcurrentLinkedDeque<>();
     private final ObjectMapper objectMapper = new ObjectMapper()
             .registerModule(new JavaTimeModule());
     private final HttpServer server;
@@ -61,6 +67,26 @@ public final class ManagementAgentServer implements AutoCloseable {
     public ManagementAgentServer(final String bindAddress, final int bindPort,
             final SegmentIndex<?, ?> index, final String indexName,
             final Set<String> runtimeConfigAllowlist) throws IOException {
+        this(bindAddress, bindPort, index, indexName, runtimeConfigAllowlist,
+                ManagementAgentSecurityPolicy.permissive());
+    }
+
+    /**
+     * Creates a management agent server.
+     *
+     * @param bindAddress            host to bind
+     * @param bindPort               port to bind (0 means random free port)
+     * @param index                  index instance exposed by this agent
+     * @param indexName              logical index name returned in responses
+     * @param runtimeConfigAllowlist keys accepted by PATCH /config
+     * @param securityPolicy         authn/authz/rate-limit policy
+     * @throws IOException when HTTP server cannot be created
+     */
+    public ManagementAgentServer(final String bindAddress, final int bindPort,
+            final SegmentIndex<?, ?> index, final String indexName,
+            final Set<String> runtimeConfigAllowlist,
+            final ManagementAgentSecurityPolicy securityPolicy)
+            throws IOException {
         this.index = Objects.requireNonNull(index, "index");
         this.indexName = Objects.requireNonNull(indexName, "indexName").trim();
         if (this.indexName.isEmpty()) {
@@ -69,6 +95,10 @@ public final class ManagementAgentServer implements AutoCloseable {
         this.runtimeConfigAllowlist = Set.copyOf(
                 Objects.requireNonNull(runtimeConfigAllowlist,
                         "runtimeConfigAllowlist"));
+        this.securityPolicy = Objects.requireNonNull(securityPolicy,
+                "securityPolicy");
+        this.mutatingRateLimiter = new FixedWindowRateLimiter(
+                securityPolicy.maxMutatingRequestsPerMinute());
         this.server = HttpServer.create(
                 new InetSocketAddress(
                         Objects.requireNonNull(bindAddress, "bindAddress"),
@@ -91,6 +121,15 @@ public final class ManagementAgentServer implements AutoCloseable {
      */
     public int getPort() {
         return server.getAddress().getPort();
+    }
+
+    /**
+     * Returns immutable snapshot of mutating endpoint audit records.
+     *
+     * @return audit snapshot
+     */
+    public List<AuditRecord> auditTrailSnapshot() {
+        return List.copyOf(new ArrayList<>(auditTrail));
     }
 
     /** {@inheritDoc} */
@@ -134,6 +173,10 @@ public final class ManagementAgentServer implements AutoCloseable {
             writeMethodNotAllowed(exchange);
             return;
         }
+        if (!authorize(exchange, AgentRole.READ, false,
+                ManagementApiPaths.STATE, "")) {
+            return;
+        }
         final SegmentIndexState state = index.getState();
         final NodeStateResponse response = new NodeStateResponse(indexName,
                 state.name(), state == SegmentIndexState.READY, Instant.now());
@@ -143,6 +186,10 @@ public final class ManagementAgentServer implements AutoCloseable {
     private void handleMetrics(final HttpExchange exchange) throws IOException {
         if (!METHOD_GET.equals(exchange.getRequestMethod())) {
             writeMethodNotAllowed(exchange);
+            return;
+        }
+        if (!authorize(exchange, AgentRole.READ, false,
+                ManagementApiPaths.METRICS, "")) {
             return;
         }
         final SegmentIndexMetricsSnapshot snapshot = index.metricsSnapshot();
@@ -168,6 +215,9 @@ public final class ManagementAgentServer implements AutoCloseable {
         final String body = readBody(exchange);
         if (!METHOD_PATCH.equals(exchange.getRequestMethod())) {
             writeMethodNotAllowed(exchange);
+            return;
+        }
+        if (!authorize(exchange, AgentRole.ADMIN, true, endpoint, body)) {
             return;
         }
         if (!isReady()) {
@@ -208,12 +258,18 @@ public final class ManagementAgentServer implements AutoCloseable {
             writeMethodNotAllowed(exchange);
             return;
         }
+        if (!authorize(exchange, AgentRole.READ, false, "/health", "")) {
+            return;
+        }
         writeJson(exchange, 200, "{\"status\":\"UP\"}");
     }
 
     private void handleReady(final HttpExchange exchange) throws IOException {
         if (!METHOD_GET.equals(exchange.getRequestMethod())) {
             writeMethodNotAllowed(exchange);
+            return;
+        }
+        if (!authorize(exchange, AgentRole.READ, false, "/ready", "")) {
             return;
         }
         if (isReady()) {
@@ -230,6 +286,9 @@ public final class ManagementAgentServer implements AutoCloseable {
         final String body = readBody(exchange);
         if (!METHOD_POST.equals(exchange.getRequestMethod())) {
             writeMethodNotAllowed(exchange);
+            return;
+        }
+        if (!authorize(exchange, AgentRole.OPERATE, true, endpoint, body)) {
             return;
         }
         final ActionRequest request;
@@ -311,9 +370,99 @@ public final class ManagementAgentServer implements AutoCloseable {
         final String actor = exchange.getRemoteAddress() == null ? "unknown"
                 : exchange.getRemoteAddress().toString();
         final String digest = sha256Hex(requestBody);
+        auditTrail.addFirst(new AuditRecord(actor, endpoint, digest, outcome,
+                statusCode, Instant.now()));
         logger.info(
                 "audit endpoint={} actor={} status={} outcome={} digest={} timestamp={}",
                 endpoint, actor, statusCode, outcome, digest, Instant.now());
+    }
+
+    private boolean authorize(final HttpExchange exchange,
+            final AgentRole requiredRole, final boolean mutating,
+            final String endpoint, final String requestBody) throws IOException {
+        if (securityPolicy.requireTls() && !isSecureTransport(exchange)) {
+            writeError(exchange, 400, "TLS_REQUIRED",
+                    "HTTPS transport is required.", "");
+            if (mutating) {
+                audit(exchange, endpoint, requestBody, 400, "REJECTED_TLS");
+            }
+            return false;
+        }
+
+        final AgentRole actualRole;
+        final String actor;
+        if (securityPolicy.tokenRoles().isEmpty()) {
+            actualRole = AgentRole.ADMIN;
+            actor = "anonymous";
+        } else {
+            final String token = readToken(exchange);
+            if (token == null) {
+                writeError(exchange, 401, "UNAUTHORIZED",
+                        "Authentication token is required.", "");
+                if (mutating) {
+                    audit(exchange, endpoint, requestBody, 401,
+                            "REJECTED_UNAUTHORIZED");
+                }
+                return false;
+            }
+            actualRole = securityPolicy.tokenRoles().get(token);
+            if (actualRole == null) {
+                writeError(exchange, 401, "UNAUTHORIZED",
+                        "Authentication token is invalid.", "");
+                if (mutating) {
+                    audit(exchange, endpoint, requestBody, 401,
+                            "REJECTED_UNAUTHORIZED");
+                }
+                return false;
+            }
+            actor = token;
+        }
+        if (!actualRole.allows(requiredRole)) {
+            writeError(exchange, 403, "FORBIDDEN",
+                    "Insufficient privileges for endpoint.", "");
+            if (mutating) {
+                audit(exchange, endpoint, requestBody, 403, "REJECTED_FORBIDDEN");
+            }
+            return false;
+        }
+        if (mutating && !mutatingRateLimiter.tryAcquire(actor + ":" + endpoint)) {
+            writeError(exchange, 429, "RATE_LIMITED",
+                    "Mutating request rate limit exceeded.", "");
+            audit(exchange, endpoint, requestBody, 429, "REJECTED_RATE_LIMIT");
+            return false;
+        }
+        return true;
+    }
+
+    private boolean isSecureTransport(final HttpExchange exchange) {
+        final String forwardedProto = exchange.getRequestHeaders()
+                .getFirst("X-Forwarded-Proto");
+        if (forwardedProto != null && "https".equalsIgnoreCase(forwardedProto)) {
+            return true;
+        }
+        return exchange instanceof com.sun.net.httpserver.HttpsExchange;
+    }
+
+    private String readToken(final HttpExchange exchange) {
+        final String auth = exchange.getRequestHeaders().getFirst("Authorization");
+        if (auth != null && auth.startsWith("Bearer ")) {
+            final String token = auth.substring("Bearer ".length()).trim();
+            return token.isEmpty() ? null : token;
+        }
+        final String legacyHeader = exchange.getRequestHeaders()
+                .getFirst("X-Hestia-Agent-Token");
+        if (legacyHeader == null || legacyHeader.isBlank()) {
+            return null;
+        }
+        return legacyHeader.trim();
+    }
+
+    private void writeError(final HttpExchange exchange, final int statusCode,
+            final String code, final String message, final String requestId)
+            throws IOException {
+        final ErrorResponse error = new ErrorResponse(code, message, requestId,
+                Instant.now());
+        writeJson(exchange, statusCode, error);
     }
 
     private String sha256Hex(final String payload) {
@@ -330,5 +479,19 @@ public final class ManagementAgentServer implements AutoCloseable {
     @FunctionalInterface
     private interface Handler {
         void handle(HttpExchange exchange) throws Exception;
+    }
+
+    /**
+     * Immutable mutating-endpoint audit record.
+     *
+     * @param actor      caller token/identity
+     * @param endpoint   endpoint path
+     * @param digest     SHA-256 request digest
+     * @param result     audit result label
+     * @param statusCode HTTP status code
+     * @param timestamp  record timestamp
+     */
+    public record AuditRecord(String actor, String endpoint, String digest,
+            String result, int statusCode, Instant timestamp) {
     }
 }

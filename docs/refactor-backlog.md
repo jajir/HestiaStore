@@ -159,7 +159,7 @@
         - action lifecycle transitions (PENDING -> SUCCESS/FAILED),
         - write-endpoint access control.
 
-[ ] 78.7 Secure transport, authz, and audit trail (Risk: HIGH)
+[x] 78.7 Secure transport, authz, and audit trail (Risk: HIGH)
     - Agent <-> console transport:
       - enforce TLS (prefer mTLS in production profiles),
       - token- or cert-based authn,
@@ -170,8 +170,27 @@
     - Acceptance:
       - Security integration tests for unauthorized/forbidden scenarios.
       - Audit log verification tests for all mutating endpoints.
+    - Delivered:
+      - Added agent security policy and role model:
+        `ManagementAgentSecurityPolicy` + `AgentRole` (`READ`, `OPERATE`,
+        `ADMIN`).
+      - Enforced token authn + role-based authz in `ManagementAgentServer`
+        for all endpoints (read vs mutating vs admin config patch).
+      - Added optional TLS-only enforcement mode in `ManagementAgentServer`
+        and HTTPS-only node registration mode in `MonitoringConsoleServer`.
+      - Added per-actor mutating endpoint rate limiter in agent (`429` on
+        exceed) via `FixedWindowRateLimiter`.
+      - Added immutable in-memory audit trail records for mutating calls in
+        agent (`auditTrailSnapshot`) with actor, endpoint, payload digest,
+        result, status code and timestamp.
+      - Added console retry/backoff policy for mutating control operations and
+        per-node bearer-token forwarding for agent calls.
+      - Added security integration tests:
+        `ManagementAgentServerSecurityTest` verifies unauthorized/forbidden
+        flows, role permissions, rate limiting, and audit coverage for all
+        mutating endpoints.
 
-[ ] 78.8 Packaging, release strategy, and migration path (Risk: HIGH)
+[x] 78.8 Packaging, release strategy, and migration path (Risk: HIGH)
     - Release artifacts initially from same repo:
       - `index` (core)
       - `monitoring-api`
@@ -186,6 +205,24 @@
     - Acceptance:
       - Build produces separate jars and integration tests across artifacts pass.
       - Release docs include compatibility matrix and upgrade notes.
+    - Delivered:
+      - Added multi-module migration documentation:
+        `docs/development/multi-module-migration.md`.
+      - Added release compatibility matrix:
+        `docs/development/compatibility-matrix.md`.
+      - Added multi-module upgrade notes:
+        `docs/development/upgrade-notes-multimodule.md`.
+      - Updated release process docs with module verification commands and
+        corrected artifact coordinates:
+        `docs/development/release.md`.
+      - Added artifact verification helper script:
+        `scripts/verify-release-artifacts.sh`.
+      - Added documentation navigation entries in `mkdocs.yml` and
+        `docs/development/index.md`.
+      - Verified packaging and cross-module tests:
+        - `mvn -pl index,monitoring-api,monitoring-micrometer,monitoring-prometheus,management-api,management-agent,monitoring-console -DskipTests package`
+        - `mvn -pl management-agent,monitoring-console,monitoring-prometheus test`
+        - `./scripts/verify-release-artifacts.sh`
 
 [ ] 78.9 Rollout stages with explicit quality gates (Risk: HIGH)
     - Stage A: core snapshot API only; no external exporters.

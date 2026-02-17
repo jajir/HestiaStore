@@ -60,6 +60,8 @@ public final class MonitoringConsoleServer implements AutoCloseable {
     private final ExecutorService actionExecutor = Executors
             .newFixedThreadPool(2);
     private final String writeToken;
+    private final boolean requireTlsToNodes;
+    private final int actionRetryAttempts;
 
     /**
      * Creates a monitoring console server.
@@ -71,7 +73,29 @@ public final class MonitoringConsoleServer implements AutoCloseable {
      */
     public MonitoringConsoleServer(final String bindAddress, final int bindPort,
             final String writeToken) throws IOException {
+        this(bindAddress, bindPort, writeToken, false, 3);
+    }
+
+    /**
+     * Creates a monitoring console server.
+     *
+     * @param bindAddress        host/IP bind address
+     * @param bindPort           bind port, 0 for random free port
+     * @param writeToken         optional write token, empty means writes are open
+     * @param requireTlsToNodes  true to accept only https node URLs
+     * @param actionRetryAttempts attempts for mutating action calls
+     * @throws IOException when server creation fails
+     */
+    public MonitoringConsoleServer(final String bindAddress, final int bindPort,
+            final String writeToken, final boolean requireTlsToNodes,
+            final int actionRetryAttempts) throws IOException {
         this.writeToken = writeToken == null ? "" : writeToken.trim();
+        this.requireTlsToNodes = requireTlsToNodes;
+        if (actionRetryAttempts <= 0) {
+            throw new IllegalArgumentException(
+                    "actionRetryAttempts must be > 0");
+        }
+        this.actionRetryAttempts = actionRetryAttempts;
         this.server = HttpServer.create(
                 new InetSocketAddress(
                         Objects.requireNonNull(bindAddress, "bindAddress"),
@@ -165,7 +189,7 @@ public final class MonitoringConsoleServer implements AutoCloseable {
                     NodeRegistrationRequest.class);
             final RegisteredNode node = new RegisteredNode(request.nodeId(),
                     request.nodeName(), normalizeBaseUrl(request.baseUrl()),
-                    Instant.now());
+                    normalizeOptional(request.agentToken()), Instant.now());
             nodes.put(node.nodeId(), node);
             addEvent("NODE_REGISTERED", node.nodeId(),
                     "Registered node " + node.nodeName());
@@ -286,20 +310,52 @@ public final class MonitoringConsoleServer implements AutoCloseable {
                 ? ManagementApiPaths.ACTION_FLUSH
                 : ManagementApiPaths.ACTION_COMPACT;
         final ActionRequest payload = new ActionRequest(requestId);
-        final HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(node.baseUrl() + path))
-                .timeout(Duration.ofSeconds(5))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers
-                        .ofString(objectMapper.writeValueAsString(payload)))
-                .build();
-        final HttpResponse<String> response = httpClient.send(request,
-                HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() >= 200 && response.statusCode() < 300) {
-            return objectMapper.readValue(response.body(), ActionResponse.class);
+        IOException ioFailure = null;
+        IllegalStateException statusFailure = null;
+        for (int attempt = 1; attempt <= actionRetryAttempts; attempt++) {
+            final HttpRequest.Builder builder = HttpRequest.newBuilder()
+                    .uri(URI.create(node.baseUrl() + path))
+                    .timeout(Duration.ofSeconds(5))
+                    .header("Content-Type", "application/json");
+            if (!node.agentToken().isEmpty()) {
+                builder.header("Authorization",
+                        "Bearer " + node.agentToken());
+            }
+            final HttpRequest request = builder
+                    .POST(HttpRequest.BodyPublishers
+                            .ofString(objectMapper.writeValueAsString(payload)))
+                    .build();
+            final HttpResponse<String> response;
+            try {
+                response = httpClient.send(request,
+                        HttpResponse.BodyHandlers.ofString());
+            } catch (final IOException e) {
+                ioFailure = e;
+                if (attempt < actionRetryAttempts) {
+                    backoff(attempt);
+                    continue;
+                }
+                throw e;
+            }
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                return objectMapper.readValue(response.body(),
+                        ActionResponse.class);
+            }
+            statusFailure = new IllegalStateException(
+                    "Agent returned status " + response.statusCode());
+            if (response.statusCode() >= 500 && attempt < actionRetryAttempts) {
+                backoff(attempt);
+                continue;
+            }
+            throw statusFailure;
         }
-        throw new IllegalStateException("Agent returned status "
-                + response.statusCode());
+        if (ioFailure != null) {
+            throw ioFailure;
+        }
+        if (statusFailure != null) {
+            throw statusFailure;
+        }
+        throw new IllegalStateException("Action invocation failed");
     }
 
     private void handleActionStatus(final HttpExchange exchange)
@@ -337,9 +393,9 @@ public final class MonitoringConsoleServer implements AutoCloseable {
         final long startedNanos = System.nanoTime();
         try {
             final HttpResponse<String> stateRaw = sendGet(node.baseUrl()
-                    + ManagementApiPaths.STATE);
+                    + ManagementApiPaths.STATE, node.agentToken());
             final HttpResponse<String> metricsRaw = sendGet(node.baseUrl()
-                    + ManagementApiPaths.METRICS);
+                    + ManagementApiPaths.METRICS, node.agentToken());
             if (stateRaw.statusCode() != 200 || metricsRaw.statusCode() != 200) {
                 return unavailable(node, "Unexpected status state="
                         + stateRaw.statusCode() + " metrics="
@@ -371,10 +427,14 @@ public final class MonitoringConsoleServer implements AutoCloseable {
                 Instant.now(), error == null ? "" : error);
     }
 
-    private HttpResponse<String> sendGet(final String url)
+    private HttpResponse<String> sendGet(final String url, final String token)
             throws IOException, InterruptedException {
-        final HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url))
-                .timeout(Duration.ofSeconds(3)).GET().build();
+        final HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create(url)).timeout(Duration.ofSeconds(3));
+        if (token != null && !token.isBlank()) {
+            builder.header("Authorization", "Bearer " + token.trim());
+        }
+        final HttpRequest request = builder.GET().build();
         return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
@@ -396,10 +456,26 @@ public final class MonitoringConsoleServer implements AutoCloseable {
         if (!value.startsWith("http://") && !value.startsWith("https://")) {
             throw new IllegalArgumentException("baseUrl must use http(s)");
         }
+        if (requireTlsToNodes && !value.startsWith("https://")) {
+            throw new IllegalArgumentException(
+                    "baseUrl must use https when TLS is required");
+        }
         if (value.endsWith("/")) {
             return value.substring(0, value.length() - 1);
         }
         return value;
+    }
+
+    private String normalizeOptional(final String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.trim();
+    }
+
+    private void backoff(final int attempt) throws InterruptedException {
+        final long millis = Math.min(400L, 50L << (attempt - 1));
+        Thread.sleep(millis);
     }
 
     private boolean requireWriteAccess(final HttpExchange exchange)
@@ -476,7 +552,7 @@ public final class MonitoringConsoleServer implements AutoCloseable {
      * @param baseUrl  node agent base URL
      */
     public record NodeRegistrationRequest(String nodeId, String nodeName,
-            String baseUrl) {
+            String baseUrl, String agentToken) {
         /**
          * Validation constructor.
          */
@@ -484,6 +560,7 @@ public final class MonitoringConsoleServer implements AutoCloseable {
             nodeId = normalize(nodeId, "nodeId");
             nodeName = normalize(nodeName, "nodeName");
             baseUrl = normalize(baseUrl, "baseUrl");
+            agentToken = agentToken == null ? "" : agentToken.trim();
         }
     }
 
@@ -496,7 +573,7 @@ public final class MonitoringConsoleServer implements AutoCloseable {
      * @param registeredAt registration timestamp
      */
     public record RegisteredNode(String nodeId, String nodeName, String baseUrl,
-            Instant registeredAt) {
+            String agentToken, Instant registeredAt) {
         /**
          * Validation constructor.
          */
@@ -504,6 +581,7 @@ public final class MonitoringConsoleServer implements AutoCloseable {
             nodeId = normalize(nodeId, "nodeId");
             nodeName = normalize(nodeName, "nodeName");
             baseUrl = normalize(baseUrl, "baseUrl");
+            agentToken = agentToken == null ? "" : agentToken.trim();
             registeredAt = Objects.requireNonNull(registeredAt, "registeredAt");
         }
     }

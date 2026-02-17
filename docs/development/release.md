@@ -75,6 +75,17 @@ You must have an account with a verified namespace `org.hestiastore` at [central
 
 Perform the following steps to create a new release:
 
+### 0. ✅ Verify module artifacts and tests
+
+Before tagging, run:
+
+```bash
+mvn -N install
+mvn -pl index,monitoring-api,monitoring-micrometer,monitoring-prometheus,management-api,management-agent,monitoring-console -DskipTests package
+mvn -pl management-agent,monitoring-console,monitoring-prometheus test
+./scripts/verify-release-artifacts.sh
+```
+
 ### 1. 🏷️ Checkout the `main` branch
 
 ```bash
@@ -127,14 +138,32 @@ Release to maven central:
 ```xml
 <dependencies>
   <dependency>
-    <groupId>org.hestiastore.index</groupId>
-    <artifactId>core</artifactId>
+    <groupId>org.hestiastore</groupId>
+    <artifactId>index</artifactId>
     <version>0.0.3</version> <!-- Replace with the actual version -->
   </dependency>
 </dependencies>
 ```
 
 ````
+
+## Multi-module release artifacts
+
+Each release publishes aligned versions of:
+
+- `org.hestiastore:index`
+- `org.hestiastore:monitoring-api`
+- `org.hestiastore:monitoring-micrometer`
+- `org.hestiastore:monitoring-prometheus`
+- `org.hestiastore:management-api`
+- `org.hestiastore:management-agent`
+- `org.hestiastore:monitoring-console`
+
+Compatibility and staged upgrade guidance:
+
+- [Compatibility Matrix](compatibility-matrix.md)
+- [Multi-Module Migration](multi-module-migration.md)
+- [Upgrade Notes (Multi-Module)](upgrade-notes-multimodule.md)
 
 ### 7. 🎉 Celebrate
 
