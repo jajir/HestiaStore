@@ -12,6 +12,134 @@
 
 ### High
 
+[ ] 78 Monitoring/Management platform rollout (Risk: HIGH)
+    - Goal: evolve from in-process counters to multi-JVM monitoring and control
+      without forcing Micrometer/Prometheus dependencies into core.
+    - Delivery model: phase-gated rollout where each phase is releasable and
+      backward compatible.
+    - Constraints:
+      - Core package must not depend on Micrometer, Prometheus, servlet stacks,
+        or UI classes.
+      - Runtime control endpoints must be explicit allowlist operations only
+        (no generic "execute command" style endpoint).
+      - All mutating management operations must be auditable.
+
+[ ] 78.1 Define source/module boundaries and package contracts (Risk: HIGH)
+    - Target logical modules/packages:
+      - `org.hestiastore.index.*` (core)
+      - `org.hestiastore.monitoring.*` (metrics model + exporter adapters)
+      - `org.hestiastore.management.api.*` (shared DTOs/contracts)
+      - `org.hestiastore.management.agent.*` (node-local REST API in index JVM)
+      - `org.hestiastore.console.*` (web UI / control plane)
+    - Start in single-module codebase with strict package boundaries to keep
+      later physical split low risk.
+    - Add architecture doc with allowed dependency direction:
+      `core <- monitoring <- management.agent <- console` and
+      `management.api` shared by agent/console.
+    - Acceptance:
+      - No core imports from monitoring/agent/console packages.
+      - Checkstyle/ArchUnit (or similar) rule blocks forbidden imports.
+
+[ ] 78.2 Add stable core metrics snapshot API (Risk: HIGH)
+    - Introduce immutable public snapshot types in core for index/segment
+      metrics (e.g. op counters, bloom stats, segment counts, state).
+    - Add `SegmentIndex.metricsSnapshot()` (or equivalent read-only API).
+    - Keep existing behavior intact while wiring current counters into snapshot.
+    - Make counters thread-safe (`LongAdder`/`AtomicLong`) where currently not.
+    - Define compatibility policy:
+      - new fields may be added,
+      - existing field names/semantics cannot silently change.
+    - Acceptance:
+      - Unit/integration tests for snapshot consistency under concurrent load.
+      - Docs page with metric field definitions and semantics.
+
+[ ] 78.3 Build monitoring bridge layer (Micrometer/Prometheus/JMX) (Risk: HIGH)
+    - Implement monitoring adapters in `org.hestiastore.monitoring.*`:
+      - Micrometer binder reading from core snapshot API.
+      - Prometheus exposition support (via Micrometer registry or direct bridge).
+      - Optional JMX MBean exporter mapped from the same snapshot model.
+    - Ensure adapters can be created/removed without restarting index
+      (where runtime allows).
+    - Define metric naming/tag conventions (`hestiastore_*`, stable tag set).
+    - Acceptance:
+      - Prometheus scrape returns expected metrics and labels.
+      - Zero adapter overhead when monitoring package is not used.
+
+[ ] 78.4 Add management API contracts and versioning (Risk: HIGH)
+    - Create `org.hestiastore.management.api.*` DTOs:
+      - `NodeStateResponse`, `MetricsResponse`, `ActionRequest/Response`,
+        `ConfigPatchRequest`, `ErrorResponse`.
+    - Version endpoints from start (`/api/v1/...`) and define deprecation rules.
+    - Include idempotency and safety semantics for actions:
+      - `flush`, `compact`, selected config patch operations.
+    - Acceptance:
+      - OpenAPI (or equivalent) published with examples.
+      - Contract tests verify backward-compatible serialization.
+
+[ ] 78.5 Implement node-local management agent (Risk: HIGH)
+    - Add lightweight REST server integration for index JVM process:
+      - `GET /api/v1/state`
+      - `GET /api/v1/metrics`
+      - `POST /api/v1/actions/flush`
+      - `POST /api/v1/actions/compact`
+      - `PATCH /api/v1/config` (allowlist runtime-safe keys only)
+    - Include health and readiness endpoints for deployment integration.
+    - Add per-request audit logging for mutating endpoints.
+    - Acceptance:
+      - End-to-end test: invoke actions and verify effect on index state.
+      - Negative tests for forbidden config keys and invalid state transitions.
+
+[ ] 78.6 Implement central console web application (Risk: HIGH)
+    - Build `org.hestiastore.console.*` with capabilities:
+      - register/manage multiple index JVM nodes,
+      - poll agent APIs and display key read/write/latency/segment metrics,
+      - trigger safe operations (flush/compact) with confirmation UX,
+      - show recent audit/event log entries.
+    - Keep UI read-first: write controls separated and permission-gated.
+    - Define minimal dashboard first; defer advanced analytics to later items.
+    - Acceptance:
+      - Multi-node dashboard works for at least 3 registered nodes.
+      - Action execution shows pending/success/failure lifecycle.
+
+[ ] 78.7 Secure transport, authz, and audit trail (Risk: HIGH)
+    - Agent <-> console transport:
+      - enforce TLS (prefer mTLS in production profiles),
+      - token- or cert-based authn,
+      - role-based authz (`read`, `operate`, `admin`).
+    - Add immutable audit records for mutating calls:
+      actor, target node, endpoint, payload digest, result, timestamp.
+    - Add rate limits and retry/backoff policy for control operations.
+    - Acceptance:
+      - Security integration tests for unauthorized/forbidden scenarios.
+      - Audit log verification tests for all mutating endpoints.
+
+[ ] 78.8 Packaging, release strategy, and migration path (Risk: HIGH)
+    - Release artifacts initially from same repo:
+      - `hestiastore` (core)
+      - `hestiastore-monitoring` (bridges/exporters)
+      - `hestiastore-management-agent`
+      - `hestiastore-console`
+    - Keep aligned versions per release line (for example `0.2.x` for all).
+    - Document migration from single-module to multi-module build:
+      move packages with no API break using prior boundary rules from 78.1.
+    - Acceptance:
+      - Build produces separate jars and integration tests across artifacts pass.
+      - Release docs include compatibility matrix and upgrade notes.
+
+[ ] 78.9 Rollout stages with explicit quality gates (Risk: HIGH)
+    - Stage A: core snapshot API only; no external exporters.
+    - Stage B: monitoring bridge with Prometheus scrape + docs.
+    - Stage C: node agent endpoints (read-only first, then mutating).
+    - Stage D: console UI for multi-node visibility, then controlled actions.
+    - Required gates per stage:
+      - load/perf regression budget defined and met,
+      - concurrency tests for stats correctness,
+      - failure-mode tests (node down, timeout, partial responses),
+      - operational docs/runbook updated.
+    - Acceptance:
+      - Each stage releasable independently.
+      - Rollback procedure documented and tested.
+
 ### Medium
 
 [ ] 54 Dedicated executor for index async ops (Risk: MEDIUM)

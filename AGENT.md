@@ -11,6 +11,7 @@
 - Unit tests are in `src/test/java` and follow the same package layout.
 - Integration tests live in `src/integration-test/java` (Failsafe picks up `*IT` classes).
 - Documentation for architecture, operations, and usage is under `docs/` (served via `mkdocs.yml`); build outputs land in `target/`.
+- In parent pom keep library with version in importmanagement to be sure that we have sema version is all sub-modules.
 
 ## Build, Test, and Development Commands
 
