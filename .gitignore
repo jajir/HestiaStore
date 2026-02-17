@@ -11,6 +11,7 @@ buildNumber.properties
 .project
 .DS_Store
 .settings.json
+.venv
 *~
 *.dot
 pok.png

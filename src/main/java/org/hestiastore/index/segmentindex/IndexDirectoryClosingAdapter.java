@@ -119,6 +119,12 @@ final class IndexDirectoryClosingAdapter<K, V>
 
     /** {@inheritDoc} */
     @Override
+    public SegmentIndexMetricsSnapshot metricsSnapshot() {
+        return index.metricsSnapshot();
+    }
+
+    /** {@inheritDoc} */
+    @Override
     protected void doClose() {
         RuntimeException failure = null;
         try {

@@ -127,6 +127,12 @@ class IndexAsyncAdapter<K, V> extends AbstractCloseableResource
 
     /** {@inheritDoc} */
     @Override
+    public SegmentIndexMetricsSnapshot metricsSnapshot() {
+        return index.metricsSnapshot();
+    }
+
+    /** {@inheritDoc} */
+    @Override
     protected void doClose() {
         if (Boolean.TRUE.equals(inAsyncOperation.get())) {
             throw new IllegalStateException(

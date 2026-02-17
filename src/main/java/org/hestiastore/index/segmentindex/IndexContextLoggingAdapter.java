@@ -254,6 +254,17 @@ class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         }
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public SegmentIndexMetricsSnapshot metricsSnapshot() {
+        setContext();
+        try {
+            return index.metricsSnapshot();
+        } finally {
+            clearContext();
+        }
+    }
+
     /**
      * Closes the wrapped index while maintaining the {@code index.name} MDC
      * context.
