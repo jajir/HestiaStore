@@ -73,6 +73,9 @@ nav:
             - Guides: development/guides.md
             - Segment API: development/segment-api.md
             - JVM Profiling: development/profiler-stacktrace.md
+            - Multi-Module Migration: development/multi-module-migration.md
+            - Compatibility Matrix: development/compatibility-matrix.md
+            - Upgrade Notes: development/upgrade-notes-multimodule.md
             - Refactor Backlog: refactor-backlog.md
         - Release Process: development/release.md
         - Contributing: CONTRIBUTING.md
