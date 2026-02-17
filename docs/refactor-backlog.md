@@ -111,7 +111,7 @@
       - Added API contract documentation with example payloads:
         `docs/architecture/general/management-api.md`.
 
-[ ] 78.5 Implement node-local management agent (Risk: HIGH)
+[x] 78.5 Implement node-local management agent (Risk: HIGH)
     - Add lightweight REST server integration for index JVM process:
       - `GET /api/v1/state`
       - `GET /api/v1/metrics`
@@ -123,8 +123,17 @@
     - Acceptance:
       - End-to-end test: invoke actions and verify effect on index state.
       - Negative tests for forbidden config keys and invalid state transitions.
+    - Delivered:
+      - Implemented `ManagementAgentServer` in `management-agent` module with
+        versioned management endpoints, plus `/health` and `/ready`.
+      - Added allowlist enforcement for `PATCH /api/v1/config`.
+      - Added per-request audit log entries for mutating endpoints including
+        actor, endpoint, status, outcome and payload digest (SHA-256).
+      - Added tests in `ManagementAgentServerTest` for:
+        state/metrics reads, `flush`, `compact`, forbidden config key, invalid
+        state transition after close, and readiness transitions.
 
-[ ] 78.6 Implement central console web application (Risk: HIGH)
+[x] 78.6 Implement central console web application (Risk: HIGH)
     - Build `org.hestiastore.console.*` with capabilities:
       - register/manage multiple index JVM nodes,
       - poll agent APIs and display key read/write/latency/segment metrics,
@@ -135,6 +144,20 @@
     - Acceptance:
       - Multi-node dashboard works for at least 3 registered nodes.
       - Action execution shows pending/success/failure lifecycle.
+    - Delivered:
+      - Added `MonitoringConsoleServer` in `monitoring-console` module.
+      - Implemented APIs for:
+        - node registration/list/removal (`/console/v1/nodes`),
+        - aggregated dashboard polling (`/console/v1/dashboard`),
+        - action submit/status (`/console/v1/actions/flush`,
+          `/console/v1/actions/compact`, `/console/v1/actions/{id}`),
+        - recent event timeline (`/console/v1/events`).
+      - Added write-token gate (`X-Hestia-Console-Token`) for mutating
+        endpoints and explicit action confirmation requirement.
+      - Added integration tests in `MonitoringConsoleServerTest` verifying:
+        - 3-node dashboard polling,
+        - action lifecycle transitions (PENDING -> SUCCESS/FAILED),
+        - write-endpoint access control.
 
 [ ] 78.7 Secure transport, authz, and audit trail (Risk: HIGH)
     - Agent <-> console transport:
