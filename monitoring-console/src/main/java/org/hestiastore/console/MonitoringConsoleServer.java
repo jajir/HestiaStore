@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.LongAdder;
 
 import org.hestiastore.management.api.ActionRequest;
 import org.hestiastore.management.api.ActionResponse;
@@ -55,6 +56,7 @@ public final class MonitoringConsoleServer implements AutoCloseable {
             .connectTimeout(Duration.ofSeconds(2)).build();
     private final ConcurrentMap<String, RegisteredNode> nodes = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, ConsoleActionStatusResponse> actions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, LongAdder> actionRequestCounters = new ConcurrentHashMap<>();
     private final Deque<ConsoleEvent> events = new ConcurrentLinkedDeque<>();
     private final ExecutorService actionExecutor = Executors
             .newFixedThreadPool(2);
@@ -243,6 +245,10 @@ public final class MonitoringConsoleServer implements AutoCloseable {
                 actionId, node.nodeId(), actionType.name(), "PENDING", "",
                 now, now);
         actions.put(actionId, pending);
+        actionRequestCounters
+                .computeIfAbsent(actionCounterKey(node.nodeId(), actionType),
+                        ignored -> new LongAdder())
+                .increment();
         addEvent("ACTION_PENDING", node.nodeId(),
                 actionType.name() + " requestId=" + request.requestId());
         CompletableFuture.runAsync(() -> executeAction(node, actionType, request,
@@ -390,6 +396,12 @@ public final class MonitoringConsoleServer implements AutoCloseable {
                     stateRaw.body(), NodeStateResponse.class);
             final MetricsResponse metrics = objectMapper.readValue(
                     metricsRaw.body(), MetricsResponse.class);
+            final long compactRequestCount = Math.max(
+                    metrics.compactRequestCount(),
+                    getActionRequestCount(node.nodeId(), ActionType.COMPACT));
+            final long flushRequestCount = Math.max(
+                    metrics.flushRequestCount(),
+                    getActionRequestCount(node.nodeId(), ActionType.FLUSH));
             return new NodeDashboardEntry(node.nodeId(), node.nodeName(),
                     node.baseUrl(), true, state.state(), state.ready(),
                     metrics.getOperationCount(), metrics.putOperationCount(),
@@ -411,8 +423,8 @@ public final class MonitoringConsoleServer implements AutoCloseable {
                     metrics.totalSegmentCacheKeys(),
                     metrics.totalWriteCacheKeys(),
                     metrics.totalDeltaCacheFiles(),
-                    metrics.compactRequestCount(),
-                    metrics.flushRequestCount(),
+                    compactRequestCount,
+                    flushRequestCount,
                     metrics.splitScheduleCount(),
                     metrics.splitInFlightCount(),
                     metrics.maintenanceQueueSize(),
@@ -462,6 +474,18 @@ public final class MonitoringConsoleServer implements AutoCloseable {
                 0L, 0L, 0L, 0L, 0L,
                 Duration.ofNanos(System.nanoTime() - startedNanos).toMillis(),
                 Instant.now(), error == null ? "" : error);
+    }
+
+    private long getActionRequestCount(final String nodeId,
+            final ActionType actionType) {
+        final LongAdder counter = actionRequestCounters
+                .get(actionCounterKey(nodeId, actionType));
+        return counter == null ? 0L : counter.sum();
+    }
+
+    private String actionCounterKey(final String nodeId,
+            final ActionType actionType) {
+        return nodeId + ":" + actionType.name();
     }
 
     private HttpResponse<String> sendGet(final String url, final String token)

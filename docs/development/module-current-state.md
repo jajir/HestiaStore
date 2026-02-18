@@ -1,10 +1,10 @@
-# Module Target State
+# Module Current State
 
-This document defines the intended naming and package alignment for Maven subprojects.
+This document defines the current naming and package alignment for Maven subprojects.
 
-## Target layout
+## Current layout
 
-| Domain | Target module directory | Target artifactId | Target package root |
+| Domain | Current module directory | Current artifactId | Current package root |
 |---|---|---|---|
 | Parent build | `.` (repository root) | `hestiastore-parent` | N/A (parent POM only) |
 | Index core | `engine` | `engine` | `org.hestiastore.index.core` |

@@ -65,16 +65,34 @@ public class MonitoringConsoleWebController {
     @GetMapping("/nodes/{nodeId}")
     public String nodeDetail(@PathVariable("nodeId") final String nodeId,
             final Model model) {
-        final List<ConsoleBackendClient.NodeRow> nodes = backendClient
-                .fetchDashboard();
-        final Optional<ConsoleBackendClient.NodeRow> node = nodes.stream()
-                .filter(n -> n.nodeId().equals(nodeId)).findFirst();
+        model.addAttribute("refreshMillis", properties.refreshMillis());
+        final Optional<ConsoleBackendClient.NodeRow> node = findNode(nodeId);
         if (node.isEmpty()) {
             model.addAttribute("missingNodeId", nodeId);
             return "node-detail";
         }
         model.addAttribute("node", node.get());
         return "node-detail";
+    }
+
+    /**
+     * Node details live fragment.
+     *
+     * @param nodeId node id
+     * @param model  thymeleaf model
+     * @return fragment name
+     */
+    @GetMapping("/fragments/nodes/{nodeId}/live")
+    public String nodeDetailLive(@PathVariable("nodeId") final String nodeId,
+            final Model model) {
+        model.addAttribute("refreshMillis", properties.refreshMillis());
+        final Optional<ConsoleBackendClient.NodeRow> node = findNode(nodeId);
+        if (node.isEmpty()) {
+            model.addAttribute("missingNodeId", nodeId);
+        } else {
+            model.addAttribute("node", node.get());
+        }
+        return "fragments/node-detail-live :: nodeLive";
     }
 
     /**
@@ -252,6 +270,14 @@ public class MonitoringConsoleWebController {
         model.addAttribute("statCacheFillRatio", cacheFillRatio);
         model.addAttribute("statAvgLatency", Math.round(avgLatency.orElse(0D)));
         model.addAttribute("statMaxLatency", maxLatency);
+    }
+
+    private Optional<ConsoleBackendClient.NodeRow> findNode(
+            final String nodeId) {
+        final List<ConsoleBackendClient.NodeRow> nodes = backendClient
+                .fetchDashboard();
+        return nodes.stream().filter(n -> n.nodeId().equals(nodeId))
+                .findFirst();
     }
 
     /**

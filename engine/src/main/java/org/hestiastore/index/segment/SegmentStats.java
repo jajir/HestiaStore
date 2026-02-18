@@ -13,6 +13,8 @@ public class SegmentStats {
     private final long numberOfKeysInDeltaCache;
     private final long numberOfKeysInIndex;
     private final long numberOfKeysInScarceIndex;
+    private final long compactRequestCount;
+    private final long flushRequestCount;
 
     /**
      * Creates a snapshot of segment key statistics.
@@ -24,9 +26,28 @@ public class SegmentStats {
     public SegmentStats(final long numberOfKeysInDeltaCache,
             final long numberOfKeysInSegment,
             final long numberOfKeysInScarceIndex) {
+        this(numberOfKeysInDeltaCache, numberOfKeysInSegment,
+                numberOfKeysInScarceIndex, 0L, 0L);
+    }
+
+    /**
+     * Creates a snapshot of segment key and maintenance statistics.
+     *
+     * @param numberOfKeysInDeltaCache number of keys in delta cache
+     * @param numberOfKeysInSegment number of keys in the main index
+     * @param numberOfKeysInScarceIndex number of keys in the scarce index
+     * @param compactRequestCount compaction request count
+     * @param flushRequestCount flush request count
+     */
+    public SegmentStats(final long numberOfKeysInDeltaCache,
+            final long numberOfKeysInSegment,
+            final long numberOfKeysInScarceIndex,
+            final long compactRequestCount, final long flushRequestCount) {
         this.numberOfKeysInDeltaCache = numberOfKeysInDeltaCache;
         this.numberOfKeysInIndex = numberOfKeysInSegment;
         this.numberOfKeysInScarceIndex = numberOfKeysInScarceIndex;
+        this.compactRequestCount = compactRequestCount;
+        this.flushRequestCount = flushRequestCount;
     }
 
     /**
@@ -63,5 +84,23 @@ public class SegmentStats {
      */
     public long getNumberOfKeysInScarceIndex() {
         return numberOfKeysInScarceIndex;
+    }
+
+    /**
+     * Returns the number of compaction requests.
+     *
+     * @return compaction request count
+     */
+    public long getCompactRequestCount() {
+        return compactRequestCount;
+    }
+
+    /**
+     * Returns the number of flush requests.
+     *
+     * @return flush request count
+     */
+    public long getFlushRequestCount() {
+        return flushRequestCount;
     }
 }

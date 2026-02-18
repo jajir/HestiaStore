@@ -207,7 +207,7 @@
       - Release docs include compatibility matrix and upgrade notes.
     - Delivered:
       - Added module target-state documentation:
-        `docs/development/module-target-state.md`.
+        `docs/development/module-current-state.md`.
       - Added release compatibility matrix:
         `docs/development/compatibility-matrix.md`.
       - Added multi-module upgrade notes:
