@@ -2,6 +2,7 @@ package org.hestiastore.index.segment;
 
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.hestiastore.index.Entry;
@@ -27,6 +28,8 @@ class SegmentImpl<K, V> implements Segment<K, V> {
     private final SegmentMaintenancePolicy<K, V> maintenancePolicy;
     private final Executor maintenanceExecutor;
     private final SegmentDirectoryLocking directoryLocking;
+    private final LongAdder compactRequestCx = new LongAdder();
+    private final LongAdder flushRequestCx = new LongAdder();
 
     /**
      * Creates a segment implementation with the given core and executor.
@@ -75,7 +78,11 @@ class SegmentImpl<K, V> implements Segment<K, V> {
      */
     @Override
     public SegmentStats getStats() {
-        return core.getStats();
+        final SegmentStats coreStats = core.getStats();
+        return new SegmentStats(coreStats.getNumberOfKeysInDeltaCache(),
+                coreStats.getNumberOfKeysInSegment(),
+                coreStats.getNumberOfKeysInScarceIndex(),
+                compactRequestCx.sum(), flushRequestCx.sum());
     }
 
     /**
@@ -152,6 +159,7 @@ class SegmentImpl<K, V> implements Segment<K, V> {
      */
     @Override
     public SegmentResult<Void> compact() {
+        compactRequestCx.increment();
         final AtomicReference<SegmentCompacter.CompactionPlan<K, V>> planRef = new AtomicReference<>();
         return maintenanceService.startMaintenance(() -> {
             final SegmentCompacter.CompactionPlan<K, V> plan = segmentCompacter
@@ -198,6 +206,7 @@ class SegmentImpl<K, V> implements Segment<K, V> {
      */
     @Override
     public SegmentResult<Void> flush() {
+        flushRequestCx.increment();
         if (core.getDeltaCacheFileCount() >= core.getSegmentConf()
                 .getMaxNumberOfDeltaCacheFiles()) {
             return compact();

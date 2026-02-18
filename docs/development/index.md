@@ -9,7 +9,7 @@ This page links development-focused documentation.
 - [Segment API](segment-api.md)
 - [JVM Profiling](profiler-stacktrace.md)
 - [Release Process](release.md)
-- [Module Target State](module-target-state.md)
+- [Module Current State](module-current-state.md)
 - [Compatibility Matrix](compatibility-matrix.md)
 - [Upgrade Notes (Multi-Module)](upgrade-notes-multimodule.md)
 - [Rollout Quality Gates](rollout-quality-gates.md)

@@ -19,6 +19,7 @@ import org.hestiastore.index.directory.FileLock;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
+import org.hestiastore.index.segment.SegmentStats;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentregistry.SegmentFactory;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -418,7 +419,10 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 segmentRuntime.totalSegmentCacheKeys,
                 segmentRuntime.totalWriteCacheKeys,
                 segmentRuntime.totalDeltaCacheFiles,
-                stats.getCompactRequestCx(), stats.getFlushRequestCx(),
+                Math.max(stats.getCompactRequestCx(),
+                        segmentRuntime.compactRequestCount),
+                Math.max(stats.getFlushRequestCx(),
+                        segmentRuntime.flushRequestCount),
                 maintenanceCoordinator.splitScheduledCount(),
                 maintenanceCoordinator.splitInFlightCount(),
                 segmentAsyncExecutor.getQueueSize(),
@@ -696,6 +700,11 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     segment.getNumberOfKeysInWriteCache());
             aggregate.totalDeltaCacheFiles += Math.max(0,
                     segment.getNumberOfDeltaCacheFiles());
+            final SegmentStats segmentStats = segment.getStats();
+            aggregate.compactRequestCount += Math.max(0L,
+                    segmentStats.getCompactRequestCount());
+            aggregate.flushRequestCount += Math.max(0L,
+                    segmentStats.getFlushRequestCount());
             aggregate.bloomFilterRequestCount += Math.max(0L,
                     segment.getBloomFilterRequestCount());
             aggregate.bloomFilterRefusedCount += Math.max(0L,
@@ -719,6 +728,8 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         private long totalSegmentCacheKeys;
         private long totalWriteCacheKeys;
         private long totalDeltaCacheFiles;
+        private long compactRequestCount;
+        private long flushRequestCount;
         private long bloomFilterRequestCount;
         private long bloomFilterRefusedCount;
         private long bloomFilterPositiveCount;

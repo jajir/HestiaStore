@@ -448,6 +448,20 @@ public class ConsoleBackendClient {
             return format4Significant(splitRateValue) + " " + splitRateUnit;
         }
 
+        /**
+         * Average delta cache files per segment.
+         *
+         * @return average delta files/segment as compact decimal
+         */
+        public String averageDeltaCacheFilesPerSegmentDisplay() {
+            if (segmentCount <= 0) {
+                return "0";
+            }
+            final double average = ((double) totalDeltaCacheFiles)
+                    / ((double) segmentCount);
+            return format4Significant(average);
+        }
+
         private static String formatBytes(final long bytes) {
             if (bytes <= 0L) {
                 return "0 B";

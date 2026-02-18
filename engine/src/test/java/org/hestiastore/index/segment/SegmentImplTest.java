@@ -166,8 +166,16 @@ class SegmentImplTest {
     @Test
     void getStats_and_getNumberOfKeys_delegate() {
         when(segmentPropertiesManager.getSegmentStats()).thenReturn(stats);
+        when(stats.getNumberOfKeysInDeltaCache()).thenReturn(3L);
+        when(stats.getNumberOfKeysInSegment()).thenReturn(4L);
+        when(stats.getNumberOfKeysInScarceIndex()).thenReturn(2L);
         when(stats.getNumberOfKeys()).thenReturn(7L);
-        assertSame(stats, subject.getStats());
+        final SegmentStats snapshot = subject.getStats();
+        assertEquals(3L, snapshot.getNumberOfKeysInDeltaCache());
+        assertEquals(4L, snapshot.getNumberOfKeysInSegment());
+        assertEquals(2L, snapshot.getNumberOfKeysInScarceIndex());
+        assertEquals(0L, snapshot.getCompactRequestCount());
+        assertEquals(0L, snapshot.getFlushRequestCount());
         assertEquals(7L, subject.getNumberOfKeys());
     }
 
