@@ -11,13 +11,14 @@
     <name>HestiaStore Parent</name>
 
     <modules>
-        <module>index</module>
+        <module>engine</module>
         <module>monitoring-api</module>
         <module>monitoring-micrometer</module>
         <module>monitoring-prometheus</module>
         <module>management-api</module>
         <module>management-agent</module>
         <module>monitoring-console</module>
+        <module>monitoring-console-web</module>
     </modules>
 
     <properties>

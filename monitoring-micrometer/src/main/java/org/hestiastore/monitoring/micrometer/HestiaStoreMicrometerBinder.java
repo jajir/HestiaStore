@@ -52,6 +52,40 @@ public final class HestiaStoreMicrometerBinder implements MeterBinder {
                 .description("Total number of delete operations")
                 .tag("index", indexName).register(registry);
 
+        FunctionCounter.builder(HestiaStoreMetricNames.REGISTRY_CACHE_HIT_TOTAL,
+                index, i -> i.metricsSnapshot().getRegistryCacheHitCount())
+                .description("Total number of segment registry cache hits")
+                .tag("index", indexName).register(registry);
+
+        FunctionCounter.builder(HestiaStoreMetricNames.REGISTRY_CACHE_MISS_TOTAL,
+                index, i -> i.metricsSnapshot().getRegistryCacheMissCount())
+                .description("Total number of segment registry cache misses")
+                .tag("index", indexName).register(registry);
+
+        FunctionCounter.builder(HestiaStoreMetricNames.REGISTRY_CACHE_LOAD_TOTAL,
+                index, i -> i.metricsSnapshot().getRegistryCacheLoadCount())
+                .description("Total number of segment registry cache loads")
+                .tag("index", indexName).register(registry);
+
+        FunctionCounter
+                .builder(HestiaStoreMetricNames.REGISTRY_CACHE_EVICTION_TOTAL,
+                        index,
+                        i -> i.metricsSnapshot()
+                                .getRegistryCacheEvictionCount())
+                .description(
+                        "Total number of segment registry cache evictions")
+                .tag("index", indexName).register(registry);
+
+        Gauge.builder(HestiaStoreMetricNames.REGISTRY_CACHE_SIZE, index,
+                i -> i.metricsSnapshot().getRegistryCacheSize())
+                .description("Current segment registry cache size")
+                .tag("index", indexName).register(registry);
+
+        Gauge.builder(HestiaStoreMetricNames.REGISTRY_CACHE_LIMIT, index,
+                i -> i.metricsSnapshot().getRegistryCacheLimit())
+                .description("Configured segment registry cache size limit")
+                .tag("index", indexName).register(registry);
+
         Gauge.builder(HestiaStoreMetricNames.INDEX_UP, index,
                 i -> isReady(i.getState()) ? 1D : 0D)
                 .description("1 when index state is READY, else 0")

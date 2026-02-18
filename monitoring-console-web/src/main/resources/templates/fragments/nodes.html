@@ -1,0 +1,71 @@
+<div id="nodesContainer" xmlns:th="http://www.thymeleaf.org" th:fragment="nodesTable">
+  <div class="table-wrap">
+    <table>
+      <thead>
+      <tr>
+        <th>Node</th>
+        <th>Endpoint</th>
+        <th>State</th>
+        <th>Total</th>
+        <th>Get</th>
+        <th>Put</th>
+        <th>Delete</th>
+        <th>Cache</th>
+        <th>Hits</th>
+        <th>Misses</th>
+        <th>Hit Ratio</th>
+        <th>Latency</th>
+        <th>Captured</th>
+        <th>Actions</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:if="${#lists.isEmpty(nodes)}">
+        <td colspan="14" class="small" style="padding:16px; text-align:center;">No nodes registered.</td>
+      </tr>
+      <tr th:each="n : ${nodes}">
+        <td>
+          <div style="font-weight:600;"><a style="color:inherit;" th:href="@{'/nodes/' + ${n.nodeId}}" th:text="${n.nodeName}">index-1</a></div>
+          <div class="mono" th:text="${n.nodeId}">node-1</div>
+        </td>
+        <td><div class="mono" th:text="${n.baseUrl}">http://127.0.0.1:8085</div></td>
+        <td>
+          <span th:if="${n.reachable and n.ready}" class="status-pill status-ok">READY</span>
+          <span th:if="${n.reachable and !n.ready}" class="status-pill status-warn" th:text="${n.state}">BUSY</span>
+          <span th:if="${!n.reachable}" class="status-pill status-bad">UNAVAILABLE</span>
+          <div th:if="${!n.error.isEmpty()}" style="margin-top:6px; color:#c54b3b; font-size:12px;" th:text="${n.error}">error detail</div>
+        </td>
+        <td style="font-weight:600;" th:text="${n.totalOps}">0</td>
+        <td th:text="${n.getOps}">0</td>
+        <td th:text="${n.putOps}">0</td>
+        <td th:text="${n.deleteOps}">0</td>
+        <td><span th:text="${n.cacheSize}">0</span>/<span th:text="${n.cacheLimit}">0</span></td>
+        <td th:text="${n.cacheHitCount}">0</td>
+        <td th:text="${n.cacheMissCount}">0</td>
+        <td><span th:text="${T(java.lang.Math).round(n.cacheHitRatio * 1000.0) / 10.0}">0.0</span>%</td>
+        <td><span th:text="${n.latencyMs}">0</span> ms</td>
+        <td class="small" th:text="${n.capturedAt}">2026-02-18T00:00:00Z</td>
+        <td>
+          <div class="btn-row">
+            <a class="btn plain" th:href="@{'/nodes/' + ${n.nodeId}}">Details</a>
+            <form action="/actions/flush" method="post"
+                  hx-post="/actions/flush" hx-target="#flash"
+                  hx-swap="innerHTML">
+              <input type="hidden" name="nodeId" th:value="${n.nodeId}">
+              <input type="hidden" name="returnTo" value="dashboard">
+              <button class="btn" type="submit">Flush</button>
+            </form>
+            <form action="/actions/compact" method="post"
+                  hx-post="/actions/compact" hx-target="#flash"
+                  hx-swap="innerHTML">
+              <input type="hidden" name="nodeId" th:value="${n.nodeId}">
+              <input type="hidden" name="returnTo" value="dashboard">
+              <button class="btn alt" type="submit">Compact</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

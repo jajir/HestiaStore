@@ -42,7 +42,10 @@ This document defines releasable stages for the monitoring/management rollout.
 Run all stage gates:
 
 ```bash
-./scripts/verify-rollout-gates.sh
+mvn -pl index test -Dtest=IntegrationSegmentIndexMetricsSnapshotConcurrencyTest
+mvn -pl monitoring-prometheus test -Dtest=HestiaStorePrometheusExporterTest
+mvn -pl management-agent test -Dtest=ManagementAgentServerTest,ManagementAgentServerSecurityTest
+mvn -pl monitoring-console test -Dtest=MonitoringConsoleServerTest
 ```
 
 ## Release and rollback readiness

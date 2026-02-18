@@ -13,6 +13,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.MemoryUsage;
 
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
@@ -193,10 +197,81 @@ public final class ManagementAgentServer implements AutoCloseable {
             return;
         }
         final SegmentIndexMetricsSnapshot snapshot = index.metricsSnapshot();
+        final MemoryMXBean memoryMxBean = ManagementFactory.getMemoryMXBean();
+        final MemoryUsage heap = memoryMxBean.getHeapMemoryUsage();
+        final MemoryUsage nonHeap = memoryMxBean.getNonHeapMemoryUsage();
+        long gcCount = 0L;
+        long gcTimeMillis = 0L;
+        for (final GarbageCollectorMXBean gcMxBean : ManagementFactory
+                .getGarbageCollectorMXBeans()) {
+            if (gcMxBean.getCollectionCount() > 0) {
+                gcCount += gcMxBean.getCollectionCount();
+            }
+            if (gcMxBean.getCollectionTime() > 0) {
+                gcTimeMillis += gcMxBean.getCollectionTime();
+            }
+        }
         final MetricsResponse response = new MetricsResponse(indexName,
                 snapshot.getState().name(), snapshot.getGetOperationCount(),
                 snapshot.getPutOperationCount(),
-                snapshot.getDeleteOperationCount(), Instant.now());
+                snapshot.getDeleteOperationCount(),
+                snapshot.getRegistryCacheHitCount(),
+                snapshot.getRegistryCacheMissCount(),
+                snapshot.getRegistryCacheLoadCount(),
+                snapshot.getRegistryCacheEvictionCount(),
+                snapshot.getRegistryCacheSize(),
+                snapshot.getRegistryCacheLimit(),
+                snapshot.getSegmentCacheKeyLimitPerSegment(),
+                snapshot.getMaxNumberOfKeysInSegmentWriteCache(),
+                snapshot.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(),
+                snapshot.getSegmentCount(),
+                snapshot.getSegmentReadyCount(),
+                snapshot.getSegmentMaintenanceCount(),
+                snapshot.getSegmentErrorCount(),
+                snapshot.getSegmentClosedCount(),
+                snapshot.getSegmentBusyCount(),
+                snapshot.getTotalSegmentKeys(),
+                snapshot.getTotalSegmentCacheKeys(),
+                snapshot.getTotalWriteCacheKeys(),
+                snapshot.getTotalDeltaCacheFiles(),
+                snapshot.getCompactRequestCount(),
+                snapshot.getFlushRequestCount(),
+                snapshot.getSplitScheduleCount(),
+                snapshot.getSplitInFlightCount(),
+                snapshot.getMaintenanceQueueSize(),
+                snapshot.getMaintenanceQueueCapacity(),
+                snapshot.getSplitQueueSize(),
+                snapshot.getSplitQueueCapacity(),
+                snapshot.getReadLatencyP50Micros(),
+                snapshot.getReadLatencyP95Micros(),
+                snapshot.getReadLatencyP99Micros(),
+                snapshot.getWriteLatencyP50Micros(),
+                snapshot.getWriteLatencyP95Micros(),
+                snapshot.getWriteLatencyP99Micros(),
+                snapshot.getBloomFilterHashFunctions(),
+                snapshot.getBloomFilterIndexSizeInBytes(),
+                snapshot.getBloomFilterProbabilityOfFalsePositive(),
+                snapshot.getBloomFilterRequestCount(),
+                snapshot.getBloomFilterRefusedCount(),
+                snapshot.getBloomFilterPositiveCount(),
+                snapshot.getBloomFilterFalsePositiveCount(),
+                Math.max(0L, heap.getUsed()), Math.max(0L, heap.getCommitted()),
+                Math.max(0L, nonHeap.getUsed()), gcCount, gcTimeMillis,
+                Instant.now());
+        logger.debug(
+                "Metrics snapshot index={} state={} segments={} ops(get={},put={},delete={}) cache(hit={},miss={},load={},evict={},size={},limit={}) jvm(heapUsed={},nonHeapUsed={},gcCount={},gcTimeMs={})",
+                indexName, snapshot.getState().name(),
+                snapshot.getSegmentCount(),
+                snapshot.getGetOperationCount(),
+                snapshot.getPutOperationCount(),
+                snapshot.getDeleteOperationCount(),
+                snapshot.getRegistryCacheHitCount(),
+                snapshot.getRegistryCacheMissCount(),
+                snapshot.getRegistryCacheLoadCount(),
+                snapshot.getRegistryCacheEvictionCount(),
+                snapshot.getRegistryCacheSize(),
+                snapshot.getRegistryCacheLimit(), Math.max(0L, heap.getUsed()),
+                Math.max(0L, nonHeap.getUsed()), gcCount, gcTimeMillis);
         writeJson(exchange, 200, response);
     }
 

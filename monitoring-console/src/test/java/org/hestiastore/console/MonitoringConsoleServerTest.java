@@ -173,7 +173,7 @@ class MonitoringConsoleServerTest {
         });
         timeout.createContext("/api/v1/metrics", exchange -> {
             final byte[] ok = """
-                    {"indexName":"timeout","state":"READY","getOperationCount":1,"putOperationCount":1,"deleteOperationCount":0,"capturedAt":"2026-01-01T00:00:00Z"}
+                    {"indexName":"timeout","state":"READY","getOperationCount":1,"putOperationCount":1,"deleteOperationCount":0,"registryCacheHitCount":1,"registryCacheMissCount":1,"registryCacheLoadCount":1,"registryCacheEvictionCount":0,"registryCacheSize":1,"registryCacheLimit":4,"capturedAt":"2026-01-01T00:00:00Z"}
                     """.getBytes();
             exchange.sendResponseHeaders(200, ok.length);
             exchange.getResponseBody().write(ok);

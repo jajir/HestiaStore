@@ -28,6 +28,7 @@ nav:
         - Overview: configuration/index.md
         - Data Types: configuration/data-types.md
         - Logging: configuration/logging.md
+        - Monitoring Console: configuration/monitoring-console.md
     - Architecture:
         - Overview: architecture/index.md
         - General:
@@ -73,7 +74,7 @@ nav:
             - Guides: development/guides.md
             - Segment API: development/segment-api.md
             - JVM Profiling: development/profiler-stacktrace.md
-            - Multi-Module Migration: development/multi-module-migration.md
+            - Module Target State: development/module-target-state.md
             - Compatibility Matrix: development/compatibility-matrix.md
             - Upgrade Notes: development/upgrade-notes-multimodule.md
             - Rollout Quality Gates: development/rollout-quality-gates.md

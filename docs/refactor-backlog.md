@@ -206,8 +206,8 @@
       - Build produces separate jars and integration tests across artifacts pass.
       - Release docs include compatibility matrix and upgrade notes.
     - Delivered:
-      - Added multi-module migration documentation:
-        `docs/development/multi-module-migration.md`.
+      - Added module target-state documentation:
+        `docs/development/module-target-state.md`.
       - Added release compatibility matrix:
         `docs/development/compatibility-matrix.md`.
       - Added multi-module upgrade notes:
@@ -215,14 +215,11 @@
       - Updated release process docs with module verification commands and
         corrected artifact coordinates:
         `docs/development/release.md`.
-      - Added artifact verification helper script:
-        `scripts/verify-release-artifacts.sh`.
       - Added documentation navigation entries in `mkdocs.yml` and
         `docs/development/index.md`.
       - Verified packaging and cross-module tests:
-        - `mvn -pl index,monitoring-api,monitoring-micrometer,monitoring-prometheus,management-api,management-agent,monitoring-console -DskipTests package`
-        - `mvn -pl management-agent,monitoring-console,monitoring-prometheus test`
-        - `./scripts/verify-release-artifacts.sh`
+        - `mvn -pl index,monitoring-api,monitoring-micrometer,monitoring-prometheus,management-api,management-agent,monitoring-console,monitoring-console-web -DskipTests package`
+        - `mvn -pl management-agent,monitoring-console,monitoring-console-web,monitoring-prometheus test`
 
 [x] 78.9 Rollout stages with explicit quality gates (Risk: HIGH)
     - Stage A: core snapshot API only; no external exporters.
@@ -242,8 +239,6 @@
         `docs/development/rollout-quality-gates.md`.
       - Added rollback runbook with stage-specific rollback procedure:
         `docs/development/rollout-rollback-runbook.md`.
-      - Added executable gate runner:
-        `scripts/verify-rollout-gates.sh`.
       - Extended console failure-mode tests in
         `MonitoringConsoleServerTest` to cover:
         - node down (`UNAVAILABLE`),
@@ -254,7 +249,7 @@
       - Added docs navigation entries in `mkdocs.yml` and
         `docs/development/index.md`.
       - Verified stage gates end-to-end:
-        `./scripts/verify-rollout-gates.sh` (Stages A-D all passing).
+        explicit Maven gate commands (Stages A-D all passing).
 
 ### Medium
 

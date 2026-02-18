@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Node Detail - HestiaStore Console</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<main class="container py-4">
+  <a class="btn btn-outline-secondary btn-sm mb-3" href="/">Back to dashboard</a>
+
+  
+
+  <div>
+    <h3 class="mb-1">index-1</h3>
+    <div class="text-secondary mb-3">node-1</div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-md-4"><div class="card"><div class="card-body"><div class="text-secondary small">Segments</div><div class="h4 mb-0">1</div></div></div></div>
+      <div class="col-md-4"><div class="card"><div class="card-body"><div class="text-secondary small">Segment Cache Keys</div><div class="h4 mb-0">69</div></div></div></div>
+      <div class="col-md-4"><div class="card"><div class="card-body"><div class="text-secondary small">Write Cache Keys</div><div class="h4 mb-0">69</div></div></div></div>
+      <div class="col-md-4"><div class="card"><div class="card-body"><div class="text-secondary small">Heap Used</div><div class="h4 mb-0">41963224</div></div></div></div>
+      <div class="col-md-4"><div class="card"><div class="card-body"><div class="text-secondary small">GC Count</div><div class="h4 mb-0">5</div></div></div></div>
+      <div class="col-md-4"><div class="card"><div class="card-body"><div class="text-secondary small">GC Time (ms)</div><div class="h4 mb-0">47</div></div></div></div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header">Segment Runtime</div>
+      <div class="card-body">
+        <div>Ready: <span>1</span></div>
+        <div>Maintenance: <span>0</span></div>
+        <div>Error: <span>0</span></div>
+        <div>Closed: <span>0</span></div>
+        <div>Busy Snapshot: <span>0</span></div>
+        <div>Total Keys: <span>0</span></div>
+        <div>Delta Cache Files: <span>0</span></div>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header">Compaction / Split / Flush</div>
+      <div class="card-body">
+        <div>Compaction Requests: <span>0</span></div>
+        <div>Flush Requests: <span>0</span></div>
+        <div>Split Schedules: <span>0</span></div>
+        <div>Splits In Flight: <span>0</span></div>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header">Queues</div>
+      <div class="card-body">
+        <div>Maintenance Queue: <span>0</span>/<span>640</span></div>
+        <div>Split Queue: <span>0</span>/<span>640</span></div>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header">Latency Percentiles (microseconds)</div>
+      <div class="card-body">
+        <div>Read p50/p95/p99: <span>15</span> / <span>39</span> / <span>174</span></div>
+        <div>Write p50/p95/p99: <span>151</span> / <span>540</span> / <span>1959</span></div>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header">Cache / Bloom</div>
+      <div class="card-body">
+        <div>Registry Cache Hits/Misses: <span>235</span> / <span>1</span></div>
+        <div>Registry Cache Load/Evict: <span>1</span> / <span>0</span></div>
+        <div>Registry Cache Size: <span>1</span>/<span>10</span></div>
+        <div>Bloom Hash Functions: <span>2</span></div>
+        <div>Bloom Index Size (bytes): <span>0</span></div>
+        <div>Bloom False Positive Probability: <span>0.01</span></div>
+      </div>
+    </div>
+  </div>
+</main>
+</body>
+</html>

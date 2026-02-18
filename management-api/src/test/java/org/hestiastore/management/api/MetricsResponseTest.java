@@ -19,6 +19,12 @@ class MetricsResponseTest {
         assertEquals(1L, response.getOperationCount());
         assertEquals(2L, response.putOperationCount());
         assertEquals(3L, response.deleteOperationCount());
+        assertEquals(0L, response.registryCacheHitCount());
+        assertEquals(0L, response.registryCacheMissCount());
+        assertEquals(0L, response.registryCacheLoadCount());
+        assertEquals(0L, response.registryCacheEvictionCount());
+        assertEquals(0, response.registryCacheSize());
+        assertEquals(0, response.registryCacheLimit());
         assertEquals(now, response.capturedAt());
     }
 

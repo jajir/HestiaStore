@@ -1,0 +1,52 @@
+@startuml monitoring-components
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+node "JVM A (Index Node)" as JVM_NODE_1 {
+  package "app process" {
+    [index.jar] as INDEX1
+    [management-agent.jar] as AGENT1
+    [management-api.jar] as MAPI1
+  }
+  INDEX1 -down- AGENT1 : in-process API calls
+  AGENT1 -down- MAPI1 : DTO contracts
+}
+
+node "JVM B (Index Node)" as JVM_NODE_2 {
+  package "app process" {
+    [index.jar] as INDEX2
+    [management-agent.jar] as AGENT2
+    [management-api.jar] as MAPI2
+  }
+  INDEX2 -down- AGENT2
+  AGENT2 -down- MAPI2
+}
+
+node "JVM C (Monitoring Console Backend)" as JVM_CONSOLE {
+  package "console process" {
+    [monitoring-console.jar] as CONSOLE
+    [management-api.jar] as MAPI3
+  }
+  CONSOLE -down- MAPI3
+}
+
+node "JVM D (Monitoring Console Web UI)" as JVM_WEB {
+  package "spring mvc process" {
+    [monitoring-console-web.jar] as WEB
+  }
+}
+
+cloud "HTTP/JSON" as HTTP
+WEB --> CONSOLE : /console/v1/*
+CONSOLE --> HTTP
+HTTP --> AGENT1 : /api/v1/state\n/api/v1/metrics\n/api/v1/actions/*
+HTTP --> AGENT2 : /api/v1/state\n/api/v1/metrics\n/api/v1/actions/*
+
+node "JVM E (Optional Monitoring)" as JVM_MON {
+  [monitoring-prometheus.jar] as PROM
+}
+PROM ..> INDEX1 : scrape/export metrics (optional)
+PROM ..> INDEX2 : scrape/export metrics (optional)
+
+@enduml

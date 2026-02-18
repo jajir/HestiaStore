@@ -95,6 +95,12 @@ class ManagementAgentServerTest {
         assertEquals("READY", metrics.state());
         assertTrue(metrics.putOperationCount() >= 1L);
         assertTrue(metrics.getOperationCount() >= 1L);
+        assertTrue(metrics.registryCacheHitCount() >= 0L);
+        assertTrue(metrics.registryCacheMissCount() >= 0L);
+        assertTrue(metrics.registryCacheLoadCount() >= 0L);
+        assertTrue(metrics.registryCacheEvictionCount() >= 0L);
+        assertTrue(metrics.registryCacheSize() >= 0);
+        assertTrue(metrics.registryCacheLimit() >= 0);
     }
 
     @Test

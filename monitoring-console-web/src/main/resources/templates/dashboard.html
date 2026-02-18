@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HestiaStore Console Web</title>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+    :root {
+      --bg-a: #ecf3ef;
+      --bg-b: #d8e9df;
+      --panel: rgba(255, 255, 255, 0.84);
+      --text: #143226;
+      --muted: #4b6e5d;
+      --ok: #0f9d6b;
+      --warn: #d48a12;
+      --bad: #c54b3b;
+      --accent: #0d8f81;
+      --accent-2: #d6613b;
+      --shadow: 0 18px 38px rgba(20, 50, 38, 0.14);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Space Grotesk", "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 10% 10%, rgba(214, 97, 59, 0.22), transparent 35%),
+        radial-gradient(circle at 85% 20%, rgba(13, 143, 129, 0.30), transparent 35%),
+        linear-gradient(135deg, var(--bg-a), var(--bg-b));
+      min-height: 100vh;
+    }
+
+    .shell {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 26px 20px 32px;
+      animation: rise 480ms ease-out;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: 1.2fr .8fr;
+      margin-bottom: 16px;
+    }
+    .card {
+      border-radius: 18px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,.66);
+    }
+    .hero-main { padding: 20px; }
+    .logo-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-wrap img {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      border: 1px solid rgba(20,50,38,.12);
+      background: #fff;
+    }
+    .hero-meta {
+      margin-top: 16px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      background: rgba(255,255,255,.7);
+      color: var(--muted);
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .token-card { padding: 18px; }
+    .token-card h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+    }
+    .small {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .mono {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .stats {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(6, 1fr);
+      margin-bottom: 16px;
+    }
+    .stat-card { padding: 16px; }
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    .stat-value {
+      margin-top: 8px;
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .layout {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: 1.45fr .55fr;
+    }
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(20,50,38,.10);
+    }
+    .panel-head h3 {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      max-width: 100%;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(20,50,38,.08);
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    th {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .status-pill {
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 12px;
+    }
+    .status-ok { background: rgba(15,157,107,.18); color: var(--ok); }
+    .status-warn { background: rgba(212,138,18,.18); color: var(--warn); }
+    .status-bad { background: rgba(197,75,59,.18); color: var(--bad); }
+
+    .btn-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .btn {
+      border: 0;
+      border-radius: 10px;
+      font: inherit;
+      padding: 8px 10px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent), #0a6c61);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .btn.alt {
+      background: linear-gradient(135deg, var(--accent-2), #a7462a);
+    }
+    .btn.ghost {
+      background: rgba(255,255,255,.78);
+      color: var(--text);
+      border: 1px solid rgba(20,50,38,.12);
+    }
+    .btn.plain {
+      background: rgba(255,255,255,.62);
+      color: var(--text);
+      border: 1px solid rgba(20,50,38,.10);
+    }
+
+    .side {
+      display: grid;
+      gap: 16px;
+    }
+    .block { padding: 16px; }
+    .block h3 { margin: 0 0 10px; font-size: 16px; }
+    .form-grid {
+      display: grid;
+      gap: 8px;
+    }
+    input {
+      border: 1px solid rgba(20,50,38,.12);
+      border-radius: 10px;
+      background: rgba(255,255,255,.92);
+      color: var(--text);
+      font: inherit;
+      padding: 10px 12px;
+    }
+
+    .stream {
+      max-height: 340px;
+      overflow: auto;
+      padding: 12px;
+    }
+    .event {
+      border-left: 3px solid rgba(13,143,129,.45);
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      background: rgba(255,255,255,.62);
+      border-radius: 8px;
+    }
+    .event-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .event-body {
+      margin-top: 4px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 1220px) {
+      .stats { grid-template-columns: repeat(3, 1fr); }
+      .layout { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 880px) {
+      .hero { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+  <section class="hero">
+    <article class="card hero-main">
+      <div class="logo-wrap">
+        <img src="/images/hestiastore-logo.png" alt="HestiaStore logo">
+        <h1 style="margin:0;font-size:30px;letter-spacing:-0.02em;">HestiaStore Console</h1>
+      </div>
+      <div class="hero-meta">
+        <span class="pill"><span class="dot"></span>Live polling every <span th:text="${refreshMillis}">2000</span> ms</span>
+        <span class="pill"><span class="dot"></span>Backend: <span class="mono" th:text="${backendUrl}"></span></span>
+        <span class="pill"><span class="dot"></span>Nodes: <span th:text="${statNodes}">0</span></span>
+      </div>
+    </article>
+    <aside class="card token-card">
+      <h3>Status</h3>
+      <div id="flash"
+           th:replace="~{fragments/flash :: flash}">
+      </div>
+      <p class="small">Actions and registration use the configured console write token.</p>
+      <p class="mono" style="margin:0;">API: /console/v1/*</p>
+    </aside>
+  </section>
+
+  <section class="stats">
+    <div class="card stat-card"><div class="stat-label">Nodes</div><div class="stat-value" th:text="${statNodes}">0</div></div>
+    <div class="card stat-card"><div class="stat-label">Reachable</div><div class="stat-value" th:text="${statReachable}">0</div></div>
+    <div class="card stat-card"><div class="stat-label">Read Ops</div><div class="stat-value" th:text="${statGetOps}">0</div></div>
+    <div class="card stat-card"><div class="stat-label">Write Ops</div><div class="stat-value" th:text="${statWriteOps}">0</div></div>
+    <div class="card stat-card"><div class="stat-label">Cache Hit Ratio</div><div class="stat-value"><span th:text="${statCacheHitRatio}">0</span>%</div></div>
+    <div class="card stat-card"><div class="stat-label">Cache Fill</div><div class="stat-value"><span th:text="${statCacheFillRatio}">0</span>%</div></div>
+  </section>
+
+  <section class="layout">
+    <article class="card">
+      <header class="panel-head">
+        <h3>Nodes Dashboard</h3>
+        <span class="mono">live</span>
+      </header>
+      <div id="nodesContainer"
+           th:replace="~{fragments/nodes :: nodesTable}"
+           th:attr="hx-get='/fragments/nodes',hx-trigger='load, every ' + ${refreshMillis} + 'ms',hx-swap='outerHTML'"></div>
+    </article>
+
+    <section class="side">
+      <article class="card block">
+        <h3>Register Node</h3>
+        <form class="form-grid" action="/nodes/register" method="post"
+              hx-post="/nodes/register" hx-target="#flash" hx-swap="innerHTML">
+          <input name="nodeId" placeholder="node-1" required>
+          <input name="nodeName" placeholder="index-1" required>
+          <input name="baseUrl" placeholder="http://127.0.0.1:9001" required>
+          <input name="agentToken" placeholder="agent token (optional)">
+          <button class="btn" type="submit">Register</button>
+        </form>
+      </article>
+
+      <article class="card">
+        <header class="panel-head"><h3>Recent Actions</h3></header>
+        <div id="actionsContainer"
+             th:replace="~{fragments/actions :: actionsList}"
+             th:attr="hx-get='/fragments/actions',hx-trigger='load, every ' + ${refreshMillis} + 'ms',hx-swap='outerHTML'"></div>
+      </article>
+
+      <article class="card">
+        <header class="panel-head"><h3>Event Timeline</h3></header>
+        <div id="eventsContainer"
+             th:replace="~{fragments/events :: eventsList}"
+             th:attr="hx-get='/fragments/events',hx-trigger='load, every ' + ${refreshMillis} + 'ms',hx-swap='outerHTML'"></div>
+      </article>
+    </section>
+  </section>
+</div>
+</body>
+</html>
