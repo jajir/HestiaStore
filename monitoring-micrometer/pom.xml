@@ -15,7 +15,7 @@
     <dependencies>
         <dependency>
             <groupId>org.hestiastore</groupId>
-            <artifactId>index</artifactId>
+            <artifactId>engine</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

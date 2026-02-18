@@ -1,0 +1,9 @@
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="flash">
+  <div th:if="${message != null and !message.isEmpty()}" class="event" style="margin:0;">
+    <div class="event-body">
+      <span th:if="${level == 'ok'}" class="status-pill status-ok">OK</span>
+      <span th:if="${level != 'ok'}" class="status-pill status-bad">ERROR</span>
+      <span th:text="${message}">message</span>
+    </div>
+  </div>
+</div>

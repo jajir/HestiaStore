@@ -18,6 +18,7 @@ All runtime modules are released with the same version number (for example
 | `management-api` | none | Shared DTO contracts for agent and console. |
 | `management-agent` | `index`, `management-api` | Node-local management endpoints. |
 | `monitoring-console` | `management-api`, `management-agent` (remote HTTP) | Multi-node monitoring/control plane. |
+| `monitoring-console-web` | `monitoring-console` (remote HTTP) | Spring MVC/Thymeleaf operator UI. |
 
 ## Runtime compatibility rule
 

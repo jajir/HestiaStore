@@ -7,17 +7,17 @@ multi-module distribution.
 
 - Build moved to a parent multi-module Maven project.
 - Monitoring and management integrations are now separate artifacts.
-- Core `index` remains free of Micrometer/Prometheus/console dependencies.
+- Core `engine` remains free of Micrometer/Prometheus/console dependencies.
 
 ## Artifact mapping
 
 - Old usage: one runtime jar with mixed concerns.
 - New usage:
-  - core only: `org.hestiastore:index`
+  - core only: `org.hestiastore:engine`
   - metrics bridge: add `monitoring-api` + `monitoring-micrometer` and/or
     `monitoring-prometheus`
   - management control plane: add `management-agent` and optionally
-    `monitoring-console`
+    `monitoring-console` / `monitoring-console-web`
 
 ## Breaking-change expectation
 
@@ -29,7 +29,7 @@ multi-module distribution.
 
 1. Upgrade dependency coordinates to new module artifacts.
 1. Keep versions aligned for all HestiaStore modules.
-1. Deploy `management-agent` next to index JVM if control endpoints are needed.
+1. Deploy `management-agent` next to engine JVM if control endpoints are needed.
 1. Register nodes in `monitoring-console` and validate dashboard/action paths.
 1. Enable auth/TLS policy and rate limits before production rollout.
 

@@ -1,0 +1,17 @@
+<div id="eventsContainer" xmlns:th="http://www.thymeleaf.org" th:fragment="eventsList">
+  <div class="stream">
+    <div class="event" th:if="${#lists.isEmpty(events)}">
+      <div class="event-body small">No events yet.</div>
+    </div>
+    <div class="event" th:each="e : ${events}">
+      <div class="event-top">
+        <span th:text="${e.type}">ACTION_SUCCESS</span>
+        <span th:text="${e.at}">now</span>
+      </div>
+      <div class="event-body">
+        <span class="mono" th:text="${e.nodeId}">node-1</span>
+        <span th:text="${' - ' + e.detail}">- detail</span>
+      </div>
+    </div>
+  </div>
+</div>

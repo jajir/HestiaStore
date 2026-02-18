@@ -51,7 +51,10 @@ Rollback is stage-local. Do not roll back `index` unless stage A itself fails.
 After rollback deployment, run:
 
 ```bash
-./scripts/verify-rollout-gates.sh
+mvn -pl index test -Dtest=IntegrationSegmentIndexMetricsSnapshotConcurrencyTest
+mvn -pl monitoring-prometheus test -Dtest=HestiaStorePrometheusExporterTest
+mvn -pl management-agent test -Dtest=ManagementAgentServerTest,ManagementAgentServerSecurityTest
+mvn -pl monitoring-console test -Dtest=MonitoringConsoleServerTest
 ```
 
 ## Incident notes template

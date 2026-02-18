@@ -1,0 +1,20 @@
+<div id="actionsContainer" xmlns:th="http://www.thymeleaf.org" th:fragment="actionsList">
+  <div class="stream">
+    <div class="event" th:if="${#lists.isEmpty(actions)}">
+      <div class="event-body small">No actions yet.</div>
+    </div>
+    <div class="event" th:each="a : ${actions}">
+      <div class="event-top">
+        <span th:text="${a.action}">FLUSH</span>
+        <span th:text="${a.updatedAt}">now</span>
+      </div>
+      <div class="event-body">
+        <span th:if="${a.status == 'SUCCESS'}" class="status-pill status-ok" th:text="${a.status}">SUCCESS</span>
+        <span th:if="${a.status == 'FAILED'}" class="status-pill status-bad" th:text="${a.status}">FAILED</span>
+        <span th:if="${a.status != 'SUCCESS' and a.status != 'FAILED'}" class="status-pill status-warn" th:text="${a.status}">PENDING</span>
+        <span class="mono" th:text="${a.nodeId}">node-1</span>
+        <span th:if="${a.message != null and !a.message.isEmpty()}" th:text="${' - ' + a.message}"></span>
+      </div>
+    </div>
+  </div>
+</div>

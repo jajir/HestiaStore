@@ -7,7 +7,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -127,8 +126,6 @@ public final class MonitoringConsoleServer implements AutoCloseable {
     }
 
     private void registerRoutes() {
-        server.createContext("/console", exchange -> safeHandle(exchange,
-                this::handleConsoleRoot));
         server.createContext("/console/v1/nodes", exchange -> safeHandle(
                 exchange, this::handleNodes));
         server.createContext("/console/v1/dashboard",
@@ -157,25 +154,6 @@ public final class MonitoringConsoleServer implements AutoCloseable {
             writeError(exchange, 500, "INTERNAL_ERROR",
                     "Unexpected console failure.", "");
         }
-    }
-
-    private void handleConsoleRoot(final HttpExchange exchange)
-            throws IOException {
-        if (!METHOD_GET.equals(exchange.getRequestMethod())) {
-            writeMethodNotAllowed(exchange);
-            return;
-        }
-        writeHtml(exchange, 200, """
-                <!doctype html>
-                <html>
-                <head><meta charset="utf-8"><title>HestiaStore Console</title></head>
-                <body>
-                <h1>HestiaStore Monitoring Console</h1>
-                <p>Use <code>/console/v1/dashboard</code> for node snapshots.</p>
-                <p>Write operations are served under <code>/console/v1/actions/*</code>.</p>
-                </body>
-                </html>
-                """);
     }
 
     private void handleNodes(final HttpExchange exchange) throws IOException {
@@ -365,6 +343,13 @@ public final class MonitoringConsoleServer implements AutoCloseable {
             return;
         }
         final String path = exchange.getRequestURI().getPath();
+        if ("/console/v1/actions".equals(path)) {
+            final List<ConsoleActionStatusResponse> all = actions.values().stream()
+                    .sorted((a, b) -> b.updatedAt().compareTo(a.updatedAt()))
+                    .toList();
+            writeJson(exchange, 200, all);
+            return;
+        }
         if (!path.startsWith("/console/v1/actions/")
                 || path.length() <= "/console/v1/actions/".length()) {
             writeError(exchange, 404, "ACTION_NOT_FOUND",
@@ -409,6 +394,48 @@ public final class MonitoringConsoleServer implements AutoCloseable {
                     node.baseUrl(), true, state.state(), state.ready(),
                     metrics.getOperationCount(), metrics.putOperationCount(),
                     metrics.deleteOperationCount(),
+                    metrics.registryCacheHitCount(),
+                    metrics.registryCacheMissCount(),
+                    metrics.registryCacheLoadCount(),
+                    metrics.registryCacheEvictionCount(),
+                    metrics.registryCacheSize(),
+                    metrics.registryCacheLimit(),
+                    metrics.segmentCacheKeyLimitPerSegment(),
+                    metrics.maxNumberOfKeysInSegmentWriteCache(),
+                    metrics.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance(),
+                    metrics.segmentCount(), metrics.segmentReadyCount(),
+                    metrics.segmentMaintenanceCount(),
+                    metrics.segmentErrorCount(),
+                    metrics.segmentClosedCount(), metrics.segmentBusyCount(),
+                    metrics.totalSegmentKeys(),
+                    metrics.totalSegmentCacheKeys(),
+                    metrics.totalWriteCacheKeys(),
+                    metrics.totalDeltaCacheFiles(),
+                    metrics.compactRequestCount(),
+                    metrics.flushRequestCount(),
+                    metrics.splitScheduleCount(),
+                    metrics.splitInFlightCount(),
+                    metrics.maintenanceQueueSize(),
+                    metrics.maintenanceQueueCapacity(),
+                    metrics.splitQueueSize(),
+                    metrics.splitQueueCapacity(),
+                    metrics.readLatencyP50Micros(),
+                    metrics.readLatencyP95Micros(),
+                    metrics.readLatencyP99Micros(),
+                    metrics.writeLatencyP50Micros(),
+                    metrics.writeLatencyP95Micros(),
+                    metrics.writeLatencyP99Micros(),
+                    metrics.bloomFilterHashFunctions(),
+                    metrics.bloomFilterIndexSizeInBytes(),
+                    metrics.bloomFilterProbabilityOfFalsePositive(),
+                    metrics.bloomFilterRequestCount(),
+                    metrics.bloomFilterRefusedCount(),
+                    metrics.bloomFilterPositiveCount(),
+                    metrics.bloomFilterFalsePositiveCount(),
+                    metrics.jvmHeapUsedBytes(),
+                    metrics.jvmHeapCommittedBytes(),
+                    metrics.jvmNonHeapUsedBytes(),
+                    metrics.jvmGcCount(), metrics.jvmGcTimeMillis(),
                     Duration.ofNanos(System.nanoTime() - startedNanos)
                             .toMillis(),
                     Instant.now(), "");
@@ -422,7 +449,17 @@ public final class MonitoringConsoleServer implements AutoCloseable {
     private NodeDashboardEntry unavailable(final RegisteredNode node,
             final String error, final long startedNanos) {
         return new NodeDashboardEntry(node.nodeId(), node.nodeName(),
-                node.baseUrl(), false, "UNAVAILABLE", false, 0L, 0L, 0L,
+                node.baseUrl(), false, "UNAVAILABLE", false,
+                0L, 0L, 0L,
+                0L, 0L, 0L, 0L,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0L, 0L, 0L, 0L,
+                0L, 0L, 0L,
+                0, 0, 0, 0, 0,
+                0L, 0L, 0L, 0L, 0L, 0L,
+                0, 0, 0D,
+                0L, 0L, 0L, 0L,
+                0L, 0L, 0L, 0L, 0L,
                 Duration.ofNanos(System.nanoTime() - startedNanos).toMillis(),
                 Instant.now(), error == null ? "" : error);
     }
@@ -531,19 +568,6 @@ public final class MonitoringConsoleServer implements AutoCloseable {
         }
     }
 
-    private void writeHtml(final HttpExchange exchange, final int statusCode,
-            final String html) throws IOException {
-        final byte[] bytes = html.getBytes(StandardCharsets.UTF_8);
-        exchange.getResponseHeaders().set("Content-Type",
-                "text/html; charset=utf-8");
-        exchange.sendResponseHeaders(statusCode, bytes.length);
-        try (OutputStream output = exchange.getResponseBody()) {
-            output.write(bytes);
-        } finally {
-            exchange.close();
-        }
-    }
-
     /**
      * Request payload for registering node entries.
      *
@@ -598,6 +622,51 @@ public final class MonitoringConsoleServer implements AutoCloseable {
      * @param getOperationCount    get operation count
      * @param putOperationCount    put operation count
      * @param deleteOperationCount delete operation count
+     * @param registryCacheHitCount registry cache hit count
+     * @param registryCacheMissCount registry cache miss count
+     * @param registryCacheLoadCount registry cache load count
+     * @param registryCacheEvictionCount registry cache eviction count
+     * @param registryCacheSize registry cache size
+     * @param registryCacheLimit registry cache size limit
+     * @param segmentCacheKeyLimitPerSegment max cache keys per segment
+     * @param maxNumberOfKeysInSegmentWriteCache max keys in segment write cache
+     * @param maxNumberOfKeysInSegmentWriteCacheDuringMaintenance max keys in segment write cache during maintenance
+     * @param segmentCount segment count
+     * @param segmentReadyCount number of READY segments
+     * @param segmentMaintenanceCount number of maintenance-state segments
+     * @param segmentErrorCount number of ERROR segments
+     * @param segmentClosedCount number of CLOSED segments
+     * @param segmentBusyCount number of unavailable segment snapshots
+     * @param totalSegmentKeys total keys across segments
+     * @param totalSegmentCacheKeys total keys buffered in segment caches
+     * @param totalWriteCacheKeys total keys buffered in write caches
+     * @param totalDeltaCacheFiles total delta cache file count
+     * @param compactRequestCount compaction request count
+     * @param flushRequestCount flush request count
+     * @param splitScheduleCount split scheduling count
+     * @param splitInFlightCount split in-flight count
+     * @param maintenanceQueueSize maintenance queue size
+     * @param maintenanceQueueCapacity maintenance queue capacity
+     * @param splitQueueSize split queue size
+     * @param splitQueueCapacity split queue capacity
+     * @param readLatencyP50Micros read latency p50 in microseconds
+     * @param readLatencyP95Micros read latency p95 in microseconds
+     * @param readLatencyP99Micros read latency p99 in microseconds
+     * @param writeLatencyP50Micros write latency p50 in microseconds
+     * @param writeLatencyP95Micros write latency p95 in microseconds
+     * @param writeLatencyP99Micros write latency p99 in microseconds
+     * @param bloomFilterHashFunctions bloom filter hash function count
+     * @param bloomFilterIndexSizeInBytes bloom filter size in bytes
+     * @param bloomFilterProbabilityOfFalsePositive bloom filter FP probability
+     * @param bloomFilterRequestCount bloom filter request count
+     * @param bloomFilterRefusedCount bloom filter refused count
+     * @param bloomFilterPositiveCount bloom filter positive response count
+     * @param bloomFilterFalsePositiveCount bloom filter false-positive count
+     * @param jvmHeapUsedBytes JVM heap used bytes
+     * @param jvmHeapCommittedBytes JVM heap committed bytes
+     * @param jvmNonHeapUsedBytes JVM non-heap used bytes
+     * @param jvmGcCount JVM GC count
+     * @param jvmGcTimeMillis JVM GC time in milliseconds
      * @param pollLatencyMillis    end-to-end poll latency
      * @param capturedAt           snapshot timestamp
      * @param error                optional poll error detail
@@ -605,8 +674,32 @@ public final class MonitoringConsoleServer implements AutoCloseable {
     public record NodeDashboardEntry(String nodeId, String nodeName,
             String baseUrl, boolean reachable, String state, boolean ready,
             long getOperationCount, long putOperationCount,
-            long deleteOperationCount, long pollLatencyMillis,
-            Instant capturedAt, String error) {
+            long deleteOperationCount, long registryCacheHitCount,
+            long registryCacheMissCount, long registryCacheLoadCount,
+            long registryCacheEvictionCount, int registryCacheSize,
+            int registryCacheLimit, int segmentCacheKeyLimitPerSegment,
+            int maxNumberOfKeysInSegmentWriteCache,
+            int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+            int segmentCount, int segmentReadyCount,
+            int segmentMaintenanceCount, int segmentErrorCount,
+            int segmentClosedCount, int segmentBusyCount, long totalSegmentKeys,
+            long totalSegmentCacheKeys, long totalWriteCacheKeys,
+            long totalDeltaCacheFiles, long compactRequestCount,
+            long flushRequestCount, long splitScheduleCount,
+            int splitInFlightCount, int maintenanceQueueSize,
+            int maintenanceQueueCapacity, int splitQueueSize,
+            int splitQueueCapacity, long readLatencyP50Micros,
+            long readLatencyP95Micros, long readLatencyP99Micros,
+            long writeLatencyP50Micros, long writeLatencyP95Micros,
+            long writeLatencyP99Micros, int bloomFilterHashFunctions,
+            int bloomFilterIndexSizeInBytes,
+            double bloomFilterProbabilityOfFalsePositive,
+            long bloomFilterRequestCount, long bloomFilterRefusedCount,
+            long bloomFilterPositiveCount,
+            long bloomFilterFalsePositiveCount,
+            long jvmHeapUsedBytes, long jvmHeapCommittedBytes,
+            long jvmNonHeapUsedBytes, long jvmGcCount, long jvmGcTimeMillis,
+            long pollLatencyMillis, Instant capturedAt, String error) {
         /**
          * Validation constructor.
          */
@@ -616,7 +709,40 @@ public final class MonitoringConsoleServer implements AutoCloseable {
             baseUrl = normalize(baseUrl, "baseUrl");
             state = normalize(state, "state");
             if (getOperationCount < 0 || putOperationCount < 0
-                    || deleteOperationCount < 0 || pollLatencyMillis < 0) {
+                    || deleteOperationCount < 0
+                    || registryCacheHitCount < 0
+                    || registryCacheMissCount < 0
+                    || registryCacheLoadCount < 0
+                    || registryCacheEvictionCount < 0
+                    || registryCacheSize < 0 || registryCacheLimit < 0
+                    || segmentCacheKeyLimitPerSegment < 0
+                    || maxNumberOfKeysInSegmentWriteCache < 0
+                    || maxNumberOfKeysInSegmentWriteCacheDuringMaintenance < 0
+                    || segmentCount < 0 || segmentReadyCount < 0
+                    || segmentMaintenanceCount < 0 || segmentErrorCount < 0
+                    || segmentClosedCount < 0 || segmentBusyCount < 0
+                    || totalSegmentKeys < 0 || totalSegmentCacheKeys < 0
+                    || totalWriteCacheKeys < 0 || totalDeltaCacheFiles < 0
+                    || compactRequestCount < 0 || flushRequestCount < 0
+                    || splitScheduleCount < 0 || splitInFlightCount < 0
+                    || maintenanceQueueSize < 0
+                    || maintenanceQueueCapacity < 0 || splitQueueSize < 0
+                    || splitQueueCapacity < 0 || readLatencyP50Micros < 0
+                    || readLatencyP95Micros < 0 || readLatencyP99Micros < 0
+                    || writeLatencyP50Micros < 0
+                    || writeLatencyP95Micros < 0
+                    || writeLatencyP99Micros < 0
+                    || bloomFilterHashFunctions < 0
+                    || bloomFilterIndexSizeInBytes < 0
+                    || bloomFilterProbabilityOfFalsePositive < 0
+                    || bloomFilterRequestCount < 0
+                    || bloomFilterRefusedCount < 0
+                    || bloomFilterPositiveCount < 0
+                    || bloomFilterFalsePositiveCount < 0
+                    || jvmHeapUsedBytes < 0 || jvmHeapCommittedBytes < 0
+                    || jvmNonHeapUsedBytes < 0 || jvmGcCount < 0
+                    || jvmGcTimeMillis < 0
+                    || pollLatencyMillis < 0) {
                 throw new IllegalArgumentException("counts/latency must be >=0");
             }
             capturedAt = Objects.requireNonNull(capturedAt, "capturedAt");

@@ -1,0 +1,9 @@
+server:
+  port: 8090
+
+hestia:
+  console:
+    web:
+      backend-base-url: http://127.0.0.1:8085
+      write-token: ""
+      refresh-millis: 2500

@@ -81,10 +81,11 @@ Before tagging, run:
 
 ```bash
 mvn -N install
-mvn -pl index,monitoring-api,monitoring-micrometer,monitoring-prometheus,management-api,management-agent,monitoring-console -DskipTests package
-mvn -pl management-agent,monitoring-console,monitoring-prometheus test
-./scripts/verify-release-artifacts.sh
-./scripts/verify-rollout-gates.sh
+mvn -pl engine,monitoring-api,monitoring-micrometer,monitoring-prometheus,management-api,management-agent,monitoring-console,monitoring-console-web -DskipTests package
+mvn -pl management-agent,monitoring-console,monitoring-console-web,monitoring-prometheus test
+mvn -pl engine test -Dtest=IntegrationSegmentIndexMetricsSnapshotConcurrencyTest
+mvn -pl monitoring-prometheus test -Dtest=HestiaStorePrometheusExporterTest
+mvn -pl monitoring-console test -Dtest=MonitoringConsoleServerTest
 ```
 
 ### 1. 🏷️ Checkout the `main` branch
@@ -140,7 +141,7 @@ Release to maven central:
 <dependencies>
   <dependency>
     <groupId>org.hestiastore</groupId>
-    <artifactId>index</artifactId>
+    <artifactId>engine</artifactId>
     <version>0.0.3</version> <!-- Replace with the actual version -->
   </dependency>
 </dependencies>
@@ -152,18 +153,18 @@ Release to maven central:
 
 Each release publishes aligned versions of:
 
-- `org.hestiastore:index`
+- `org.hestiastore:engine`
 - `org.hestiastore:monitoring-api`
 - `org.hestiastore:monitoring-micrometer`
 - `org.hestiastore:monitoring-prometheus`
 - `org.hestiastore:management-api`
 - `org.hestiastore:management-agent`
 - `org.hestiastore:monitoring-console`
+- `org.hestiastore:monitoring-console-web`
 
 Compatibility and staged upgrade guidance:
 
 - [Compatibility Matrix](compatibility-matrix.md)
-- [Multi-Module Migration](multi-module-migration.md)
 - [Upgrade Notes (Multi-Module)](upgrade-notes-multimodule.md)
 
 ### 7. 🎉 Celebrate
