@@ -29,6 +29,7 @@ public final class SegmentRegistryBuilder<K, V> {
     private IndexConfiguration<K, V> conf;
     private ExecutorService maintenanceExecutor;
     private ExecutorService lifecycleExecutor;
+    private Runnable compactionRequestListener = () -> {};
 
     SegmentRegistryBuilder() {
     }
@@ -111,6 +112,19 @@ public final class SegmentRegistryBuilder<K, V> {
     }
 
     /**
+     * Sets callback invoked when a segment accepts a compaction request.
+     *
+     * @param listener compaction callback
+     * @return this builder
+     */
+    public SegmentRegistryBuilder<K, V> withCompactionRequestListener(
+            final Runnable listener) {
+        this.compactionRequestListener = Vldtn.requireNonNull(listener,
+                "compactionRequestListener");
+        return this;
+    }
+
+    /**
      * Builds a registry with the configured defaults and overrides.
      *
      * @return registry instance
@@ -142,7 +156,8 @@ public final class SegmentRegistryBuilder<K, V> {
                 IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS);
         final SegmentFactory<K, V> resolvedFactory = new SegmentFactory<>(
                 resolvedDirectory, resolvedKeyDescriptor,
-                resolvedValueDescriptor, resolvedConf, resolvedExecutor);
+                resolvedValueDescriptor, resolvedConf, resolvedExecutor,
+                compactionRequestListener);
         final SegmentIdAllocator resolvedAllocator = new DirectorySegmentIdAllocator(
                 resolvedDirectory);
         final SegmentRegistryFileSystem resolvedFileSystem = new SegmentRegistryFileSystem(

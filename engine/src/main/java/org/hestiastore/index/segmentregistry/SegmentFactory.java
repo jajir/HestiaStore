@@ -26,6 +26,7 @@ public final class SegmentFactory<K, V> {
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final IndexConfiguration<K, V> conf;
     private final ExecutorService maintenanceExecutor;
+    private final Runnable compactionRequestListener;
 
     /**
      * Creates a factory for building segments with shared configuration.
@@ -41,6 +42,27 @@ public final class SegmentFactory<K, V> {
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
             final ExecutorService maintenanceExecutor) {
+        this(directoryFacade, keyTypeDescriptor, valueTypeDescriptor, conf,
+                maintenanceExecutor, () -> {});
+    }
+
+    /**
+     * Creates a factory for building segments with shared configuration.
+     *
+     * @param directoryFacade    base directory for segment storage
+     * @param keyTypeDescriptor  key type descriptor
+     * @param valueTypeDescriptor value type descriptor
+     * @param conf               index configuration
+     * @param maintenanceExecutor executor for segment maintenance tasks
+     * @param compactionRequestListener callback invoked when segment compaction
+     *                                  is accepted
+     */
+    public SegmentFactory(final Directory directoryFacade,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final IndexConfiguration<K, V> conf,
+            final ExecutorService maintenanceExecutor,
+            final Runnable compactionRequestListener) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
@@ -50,6 +72,9 @@ public final class SegmentFactory<K, V> {
         this.conf = Vldtn.requireNonNull(conf, "conf");
         this.maintenanceExecutor = Vldtn.requireNonNull(maintenanceExecutor,
                 "maintenanceExecutor");
+        this.compactionRequestListener = Vldtn
+                .requireNonNull(compactionRequestListener,
+                        "compactionRequestListener");
     }
 
     /**
@@ -86,6 +111,7 @@ public final class SegmentFactory<K, V> {
                 .withKeyTypeDescriptor(keyTypeDescriptor)//
                 .withMaintenanceExecutor(maintenanceExecutor)//
                 .withMaintenancePolicy(maintenancePolicy)//
+                .withCompactionRequestListener(compactionRequestListener)//
                 .withMaxNumberOfKeysInSegmentWriteCache(
                         conf.getMaxNumberOfKeysInSegmentWriteCache().intValue())//
                 .withMaxNumberOfKeysInSegmentCache(

@@ -110,6 +110,8 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         .withKeyTypeDescriptor(keyTypeDescriptor)
                         .withValueTypeDescriptor(valueTypeDescriptor)
                         .withConfiguration(conf)
+                        .withCompactionRequestListener(
+                                stats::incCompactRequestCx)
                         .withMaintenanceExecutor(
                                 segmentAsyncExecutor.getExecutor())
                         .withLifecycleExecutor(registryLifecycleExecutor)
@@ -488,7 +490,6 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     private void compactSegment(final SegmentId segmentId,
             final boolean waitForCompletion) {
-        stats.incCompactRequestCx();
         final long startNanos = retryPolicy.startNanos();
         while (true) {
             final IndexResult<Segment<K, V>> result = core.compact(segmentId);

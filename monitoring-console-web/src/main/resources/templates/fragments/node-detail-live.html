@@ -176,6 +176,8 @@
                         <div class="line"><span>Bloom False Positive Probability</span><strong class="value-config"
                                 th:text="${node.formatCompactDecimal(idx.bloomFilterProbabilityOfFalsePositive)}">0</strong>
                         </div>
+                        <div class="line"><span>Measured False Positive Probability</span><strong class="value-runtime"
+                                th:text="${idx.bloomMeasuredFalsePositiveProbabilityDisplay}">0</strong></div>
                     </article>
                 </section>
             </div>

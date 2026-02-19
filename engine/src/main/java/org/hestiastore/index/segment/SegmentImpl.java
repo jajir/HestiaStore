@@ -26,6 +26,7 @@ class SegmentImpl<K, V> implements Segment<K, V> {
     private final SegmentMaintenancePolicy<K, V> maintenancePolicy;
     private final Executor maintenanceExecutor;
     private final SegmentDirectoryLocking directoryLocking;
+    private final Runnable compactionRequestListener;
     private final LongAdder compactRequestCx = new LongAdder();
     private final LongAdder flushRequestCx = new LongAdder();
 
@@ -59,6 +60,16 @@ class SegmentImpl<K, V> implements Segment<K, V> {
             final Executor maintenanceExecutor,
             final SegmentMaintenancePolicy<K, V> maintenancePolicy,
             final SegmentDirectoryLocking directoryLocking) {
+        this(core, segmentCompacter, maintenanceExecutor, maintenancePolicy,
+                directoryLocking, () -> {});
+    }
+
+    SegmentImpl(final SegmentCore<K, V> core,
+            final SegmentCompacter<K, V> segmentCompacter,
+            final Executor maintenanceExecutor,
+            final SegmentMaintenancePolicy<K, V> maintenancePolicy,
+            final SegmentDirectoryLocking directoryLocking,
+            final Runnable compactionRequestListener) {
         this.core = Vldtn.requireNonNull(core, "core");
         this.segmentCompacter = Vldtn.requireNonNull(segmentCompacter,
                 "segmentCompacter");
@@ -69,6 +80,9 @@ class SegmentImpl<K, V> implements Segment<K, V> {
         this.maintenanceService = new SegmentMaintenanceService(gate,
                 this.maintenanceExecutor, this::onMaintenanceFailure);
         this.directoryLocking = directoryLocking;
+        this.compactionRequestListener = Vldtn
+                .requireNonNull(compactionRequestListener,
+                        "compactionRequestListener");
     }
 
     /**
@@ -157,9 +171,8 @@ class SegmentImpl<K, V> implements Segment<K, V> {
      */
     @Override
     public SegmentResult<Void> compact() {
-        compactRequestCx.increment();
         final AtomicReference<SegmentCompacter.CompactionPlan<K, V>> planRef = new AtomicReference<>();
-        return maintenanceService.startMaintenance(() -> {
+        final SegmentResult<Void> result = maintenanceService.startMaintenance(() -> {
             final SegmentCompacter.CompactionPlan<K, V> plan = segmentCompacter
                     .prepareCompactionPlan(core);
             planRef.set(plan);
@@ -170,6 +183,11 @@ class SegmentImpl<K, V> implements Segment<K, V> {
             segmentCompacter.scheduleCleanup(planRef.get(), maintenanceExecutor);
             scheduleMaintenanceIfNeeded();
         });
+        if (result.getStatus() == SegmentResultStatus.OK) {
+            compactRequestCx.increment();
+            compactionRequestListener.run();
+        }
+        return result;
     }
 
     /**
