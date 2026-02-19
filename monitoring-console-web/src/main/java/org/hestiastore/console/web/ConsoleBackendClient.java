@@ -8,6 +8,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.Duration;
@@ -353,6 +354,13 @@ public class ConsoleBackendClient {
                             .toMillis(),
                     asInstantText(report.path("capturedAt")), "");
             return new NodeDetails(nodeRow, indexRows);
+        } catch (final HttpTimeoutException e) {
+            logger.info("Node poll timed out: {}", node.nodeId());
+            addEvent(new EventRow(Instant.now().toString(), "NODE_POLL_FAILED",
+                    node.nodeId(), e.getMessage() == null ? "poll failed"
+                            : e.getMessage()));
+            return new NodeDetails(
+                    unavailable(node, e.getMessage(), startedNanos), List.of());
         } catch (final Exception e) {
             logger.warn("Node poll failed: {}", node.nodeId(), e);
             addEvent(new EventRow(Instant.now().toString(), "NODE_POLL_FAILED",
@@ -1230,6 +1238,35 @@ public class ConsoleBackendClient {
          */
         public String splitRateDisplay() {
             return format4Significant(splitRateValue) + " " + splitRateUnit;
+        }
+
+        /**
+         * Measured Bloom false-positive probability from runtime counters.
+         *
+         * This is computed as falsePositives / (falsePositives + refusedByBloom),
+         * where refusedByBloom corresponds to Bloom negatives.
+         *
+         * @return measured false-positive probability in range [0..1]
+         */
+        public double bloomMeasuredFalsePositiveProbability() {
+            final long falsePositives = Math.max(0L,
+                    bloomFilterFalsePositiveCount);
+            final long negatives = Math.max(0L, bloomFilterRefusedCount);
+            final long checkedAbsent = falsePositives + negatives;
+            if (checkedAbsent <= 0L) {
+                return 0D;
+            }
+            return ((double) falsePositives) / ((double) checkedAbsent);
+        }
+
+        /**
+         * Display for measured Bloom false-positive probability.
+         *
+         * @return value in percent form with two decimals, e.g. "1.23%"
+         */
+        public String bloomMeasuredFalsePositiveProbabilityDisplay() {
+            final double probability = bloomMeasuredFalsePositiveProbability();
+            return formatDecimal(probability * 100D, 2, 2) + "%";
         }
 
         private static String format4Significant(final double value) {

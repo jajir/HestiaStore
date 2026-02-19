@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.function.Supplier;
+
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
@@ -58,5 +60,89 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             assertTrue(snapshot.getBloomFilterFalsePositiveCount() >= 0L);
             assertEquals(SegmentIndexState.READY, snapshot.getState());
         }
+    }
+
+    @Test
+    void compactRequestCount_remains_monotonic_across_split() {
+        final Directory directory = new MemDirectory();
+        final TypeDescriptorInteger keyDescriptor = new TypeDescriptorInteger();
+        final TypeDescriptorShortString valueDescriptor = new TypeDescriptorShortString();
+        final IndexConfiguration<Integer, String> conf = IndexConfiguration
+                .<Integer, String>builder()//
+                .withKeyClass(Integer.class)//
+                .withValueClass(String.class)//
+                .withKeyTypeDescriptor(keyDescriptor) //
+                .withValueTypeDescriptor(valueDescriptor) //
+                .withMaxNumberOfKeysInSegmentCache(5) //
+                .withMaxNumberOfKeysInSegmentWriteCache(64) //
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(128) //
+                .withMaxNumberOfKeysInSegment(20) //
+                .withMaxNumberOfKeysInSegmentChunk(4) //
+                .withMaxNumberOfDeltaCacheFiles(1) //
+                .withBloomFilterIndexSizeInBytes(1024 * 128) //
+                .withBloomFilterNumberOfHashFunctions(3) //
+                .withSegmentMaintenanceAutoEnabled(true) //
+                .withContextLoggingEnabled(false) //
+                .withName("metrics_compaction_monotonicity_test") //
+                .build();
+
+        try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
+                conf)) {
+            for (int i = 0; i < 10; i++) {
+                index.put(i, "base-" + i);
+            }
+            for (int i = 0; i < 120; i++) {
+                final int key = i % 10;
+                index.put(key, "v-" + i);
+            }
+
+            awaitIdle(index);
+            final SegmentIndexMetricsSnapshot beforeSplit = index
+                    .metricsSnapshot();
+            assertTrue(beforeSplit.getCompactRequestCount() > 0L);
+
+            for (int i = 10; i < 30; i++) {
+                index.put(i, "new-" + i);
+            }
+
+            awaitCondition(
+                    () -> index.metricsSnapshot().getSegmentCount() > 1,
+                    10_000L);
+            awaitIdle(index);
+
+            final SegmentIndexMetricsSnapshot afterSplit = index
+                    .metricsSnapshot();
+            assertTrue(
+                    afterSplit.getCompactRequestCount() >= beforeSplit
+                            .getCompactRequestCount());
+        }
+    }
+
+    private static void awaitIdle(final SegmentIndex<Integer, String> index) {
+        awaitCondition(() -> {
+            final SegmentIndexMetricsSnapshot snapshot = index
+                    .metricsSnapshot();
+            return snapshot.getSplitInFlightCount() == 0
+                    && snapshot.getMaintenanceQueueSize() == 0
+                    && snapshot.getSplitQueueSize() == 0;
+        }, 10_000L);
+    }
+
+    private static void awaitCondition(final Supplier<Boolean> condition,
+            final long timeoutMillis) {
+        final long deadline = System.nanoTime() + timeoutMillis * 1_000_000L;
+        while (System.nanoTime() < deadline) {
+            if (condition.get()) {
+                return;
+            }
+            try {
+                Thread.sleep(20L);
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new AssertionError("Interrupted while waiting", e);
+            }
+        }
+        assertTrue(condition.get(),
+                "Condition not reached within " + timeoutMillis + " ms.");
     }
 }
