@@ -94,17 +94,20 @@ class SegmentCoreTest {
     }
 
     @Test
-    void openIteratorFromSnapshot_reads_snapshot_entries() throws Exception {
+    void openIteratorFromCompactionSnapshot_reads_snapshot_entries()
+            throws Exception {
         final List<Entry<Integer, String>> snapshot = List.of(Entry.of(2, "b"));
         when(segmentFiles.getIndexFile()).thenReturn(indexFile);
         when(segmentFiles.getKeyTypeDescriptor()).thenReturn(keyDescriptor);
         when(segmentFiles.getValueTypeDescriptor()).thenReturn(valueDescriptor);
+        when(segmentCache.compactionSnapshotIterator())
+                .thenReturn(snapshot.iterator());
         when(indexFile.openIterator())
                 .thenReturn(new SimpleEntryIteratorWithCurrent<>(List
                         .of(Entry.of(1, "a"), Entry.of(3, "c")).iterator()));
 
         try (EntryIterator<Integer, String> iterator = core
-                .openIteratorFromSnapshot(snapshot)) {
+                .openIteratorFromCompactionSnapshot()) {
             assertTrue(iterator.hasNext());
             assertEquals(Entry.of(1, "a"), iterator.next());
             assertTrue(iterator.hasNext());

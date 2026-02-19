@@ -1,6 +1,7 @@
 package org.hestiastore.index.segment;
 
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 
 import org.hestiastore.index.Entry;
@@ -94,18 +95,16 @@ final class SegmentCore<K, V> {
     }
 
     /**
-     * Opens an iterator over the index and a provided snapshot list.
+     * Opens an iterator over the index and stable compaction snapshot.
      *
-     * @param snapshotEntries sorted snapshot entries
      * @return iterator over the merged snapshot view
      */
-    EntryIterator<K, V> openIteratorFromSnapshot(
-            final List<Entry<K, V>> snapshotEntries) {
-        Vldtn.requireNonNull(snapshotEntries, "snapshotEntries");
+    EntryIterator<K, V> openIteratorFromCompactionSnapshot() {
         return new MergeDeltaCacheWithIndexIterator<>(
                 segmentFiles.getIndexFile().openIterator(),
                 segmentFiles.getKeyTypeDescriptor(),
-                segmentFiles.getValueTypeDescriptor(), snapshotEntries);
+                segmentFiles.getValueTypeDescriptor(),
+                segmentCache.compactionSnapshotIterator());
     }
 
     /**
@@ -151,11 +150,11 @@ final class SegmentCore<K, V> {
      * Flushes the write cache into the delta cache if there are entries.
      */
     void flush() {
-        final List<Entry<K, V>> entries = freezeWriteCacheForFlush();
-        if (entries.isEmpty()) {
+        freezeWriteCacheForFlush();
+        if (!segmentCache.hasFrozenWriteCache()) {
             return;
         }
-        flushFrozenWriteCacheToDeltaFile(entries);
+        flushFrozenWriteCacheToDeltaFile();
         applyFrozenWriteCacheAfterFlush();
     }
 
@@ -280,19 +279,17 @@ final class SegmentCore<K, V> {
 
     /**
      * Freezes the write cache into a flushable snapshot.
-     *
-     * @return frozen write cache entries
      */
-    List<Entry<K, V>> freezeWriteCacheForFlush() {
-        return writePath.freezeWriteCacheForFlush();
+    void freezeWriteCacheForFlush() {
+        writePath.freezeWriteCacheForFlush();
     }
 
     /**
      * Writes the frozen snapshot to delta cache files.
-     *
-     * @param entries frozen write cache entries
      */
-    void flushFrozenWriteCacheToDeltaFile(final List<Entry<K, V>> entries) {
+    void flushFrozenWriteCacheToDeltaFile() {
+        final Iterator<Entry<K, V>> entries = segmentCache
+                .frozenWriteCacheIterator();
         maintenancePath.flushFrozenWriteCacheToDeltaFile(entries);
     }
 

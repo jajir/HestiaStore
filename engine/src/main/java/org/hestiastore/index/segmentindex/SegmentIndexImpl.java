@@ -63,7 +63,9 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf) {
         Vldtn.requireNonNull(directoryFacade, "directoryFacade");
-        setIndexState(new IndexStateOpening<>(directoryFacade));
+        final IndexStateOpening<K, V> openingState = new IndexStateOpening<>(
+                directoryFacade);
+        setIndexState(openingState);
         setSegmentIndexState(SegmentIndexState.OPENING);
         try {
             this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
@@ -132,6 +134,11 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     conf.getIndexBusyTimeoutMillis());
             getIndexState().onReady(this);
             setSegmentIndexState(SegmentIndexState.READY);
+            if (openingState.wasStaleLockRecovered()) {
+                logger.warn(
+                        "Recovered stale index lock. Running consistency check.");
+                checkAndRepairConsistency();
+            }
         } catch (final RuntimeException e) {
             failWithError(e);
             throw e;

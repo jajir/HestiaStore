@@ -1,6 +1,6 @@
 package org.hestiastore.index.segment;
 
-import java.util.List;
+import java.util.Iterator;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryWriter;
@@ -59,14 +59,17 @@ final class SegmentMaintenancePath<K, V> {
     /**
      * Flushes a frozen write-cache snapshot into the delta cache file.
      *
-     * @param entries frozen write-cache entries
+     * @param entries iterator over frozen write-cache entries
      */
-    void flushFrozenWriteCacheToDeltaFile(final List<Entry<K, V>> entries) {
-        if (entries == null || entries.isEmpty()) {
+    void flushFrozenWriteCacheToDeltaFile(
+            final Iterator<Entry<K, V>> entries) {
+        if (entries == null || !entries.hasNext()) {
             return;
         }
         try (EntryWriter<K, V> writer = openDeltaCacheWriter()) {
-            entries.forEach(writer::write);
+            while (entries.hasNext()) {
+                writer.write(entries.next());
+            }
         }
     }
 

@@ -105,21 +105,17 @@ class SegmentLifecycleMaintenanceTest {
     }
 
     @Test
-    void loadSegment_allows_reopen_when_segment_directory_locking_is_disabled() {
+    void loadSegment_blocks_reopen_when_segment_directory_locking_is_enabled() {
         try (Fixture fixture = new Fixture()) {
             final SegmentId segmentId = SegmentId.of(4);
             fixture.createSegmentDirectory(segmentId);
             fixture.gate.finishFreezeToReady();
             final Segment<Integer, String> loaded = fixture.maintenance
                     .loadSegment(segmentId);
-            Segment<Integer, String> reopened = null;
             try {
-                reopened = fixture.maintenance.loadSegment(segmentId);
-                assertNotNull(reopened);
+                assertThrows(SegmentBusyException.class,
+                        () -> fixture.maintenance.loadSegment(segmentId));
             } finally {
-                if (reopened != null) {
-                    fixture.maintenance.closeSegmentIfNeeded(reopened);
-                }
                 fixture.maintenance.closeSegmentIfNeeded(loaded);
             }
         }

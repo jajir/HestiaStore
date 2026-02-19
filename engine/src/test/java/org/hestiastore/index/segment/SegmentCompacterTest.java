@@ -1,13 +1,10 @@
 package org.hestiastore.index.segment;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
-
-import org.hestiastore.index.Entry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -45,28 +42,18 @@ class SegmentCompacterTest {
     }
 
     @Test
-    void prepareCompaction_snapshots_cache() {
-        final List<Entry<Integer, String>> snapshot = List
-                .of(Entry.of(1, "a"));
-        when(segment.snapshotCacheEntries()).thenReturn(snapshot);
+    void prepareCompaction_freezes_without_snapshot_materialization() {
         when(segment.getId()).thenReturn(SegmentId.of(1));
 
-        final List<Entry<Integer, String>> result = sc
-                .prepareCompaction(segment);
-
-        assertEquals(snapshot, result);
+        sc.prepareCompaction(segment);
         verify(segment).resetSegmentIndexSearcher();
         verify(segment).freezeWriteCacheForFlush();
-        verify(segment).snapshotCacheEntries();
+        verify(segment, never()).snapshotCacheEntries();
     }
 
     @Test
     void publishCompaction_switches_active_version_and_bumps_version() {
         when(segment.getId()).thenReturn(SegmentId.of(1));
-        final List<Entry<Integer, String>> snapshot = List
-                .of(Entry.of(1, "a"), Entry.of(2, "b"));
-        when(segment.freezeWriteCacheForFlush()).thenReturn(snapshot);
-        when(segment.snapshotCacheEntries()).thenReturn(snapshot);
         when(files.getActiveVersion()).thenReturn(1L);
         when(segment.getSegmentFiles()).thenReturn(files);
 

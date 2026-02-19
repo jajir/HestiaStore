@@ -1,6 +1,6 @@
 package org.hestiastore.monitoring.prometheus;
 
-import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.hestiastore.index.monitoring.MonitoredIndex;
 import org.hestiastore.monitoring.micrometer.HestiaStoreMicrometerBinder;
 
 import io.micrometer.prometheusmetrics.PrometheusConfig;
@@ -17,27 +17,24 @@ public final class HestiaStorePrometheusExporter {
     /**
      * Creates Prometheus registry and binds HestiaStore metrics.
      *
-     * @param index source index
-     * @param indexName index tag value
+     * @param monitoredIndex monitored index source
      * @return registry ready for scraping
      */
     public static PrometheusMeterRegistry createRegistry(
-            final SegmentIndex<?, ?> index, final String indexName) {
+            final MonitoredIndex monitoredIndex) {
         final PrometheusMeterRegistry registry = new PrometheusMeterRegistry(
                 PrometheusConfig.DEFAULT);
-        new HestiaStoreMicrometerBinder(index, indexName).bindTo(registry);
+        new HestiaStoreMicrometerBinder(monitoredIndex).bindTo(registry);
         return registry;
     }
 
     /**
      * Creates a scrape payload for provided index.
      *
-     * @param index source index
-     * @param indexName index tag value
+     * @param monitoredIndex monitored index source
      * @return prometheus text exposition
      */
-    public static String scrape(final SegmentIndex<?, ?> index,
-            final String indexName) {
-        return createRegistry(index, indexName).scrape();
+    public static String scrape(final MonitoredIndex monitoredIndex) {
+        return createRegistry(monitoredIndex).scrape();
     }
 }

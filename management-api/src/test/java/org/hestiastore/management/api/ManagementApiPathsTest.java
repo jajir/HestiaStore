@@ -8,9 +8,7 @@ class ManagementApiPathsTest {
 
     @Test
     void allPathsUseV1Prefix() {
-        assertTrue(ManagementApiPaths.STATE.startsWith(ManagementApiPaths.BASE));
-        assertTrue(
-                ManagementApiPaths.METRICS.startsWith(ManagementApiPaths.BASE));
+        assertTrue(ManagementApiPaths.REPORT.startsWith(ManagementApiPaths.BASE));
         assertTrue(ManagementApiPaths.ACTION_FLUSH
                 .startsWith(ManagementApiPaths.BASE));
         assertTrue(ManagementApiPaths.ACTION_COMPACT

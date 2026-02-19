@@ -92,7 +92,8 @@
 
 [x] 78.4 Add management API contracts and versioning (Risk: HIGH)
     - Create `org.hestiastore.management.api.*` DTOs:
-      - `NodeStateResponse`, `MetricsResponse`, `ActionRequest/Response`,
+      - `NodeReportResponse` (`JvmMetricsResponse` + per-index sections),
+        `ActionRequest/Response`,
         `ConfigPatchRequest`, `ErrorResponse`.
     - Version endpoints from start (`/api/v1/...`) and define deprecation rules.
     - Include idempotency and safety semantics for actions:
@@ -102,8 +103,9 @@
       - Contract tests verify backward-compatible serialization.
     - Delivered:
       - Added shared DTO/contracts in `management-api` module:
-        `NodeStateResponse`, `MetricsResponse`, `ActionRequest`,
-        `ActionResponse`, `ConfigPatchRequest`, `ErrorResponse`.
+        `NodeReportResponse`, `IndexReportResponse`, `JvmMetricsResponse`,
+        `ActionRequest`, `ActionResponse`, `ConfigPatchRequest`,
+        `ErrorResponse`.
       - Added versioned path contract constants in `ManagementApiPaths`
         (`/api/v1/...`).
       - Added compatibility contract tests:
@@ -113,8 +115,7 @@
 
 [x] 78.5 Implement node-local management agent (Risk: HIGH)
     - Add lightweight REST server integration for index JVM process:
-      - `GET /api/v1/state`
-      - `GET /api/v1/metrics`
+      - `GET /api/v1/report`
       - `POST /api/v1/actions/flush`
       - `POST /api/v1/actions/compact`
       - `PATCH /api/v1/config` (allowlist runtime-safe keys only)
@@ -126,11 +127,15 @@
     - Delivered:
       - Implemented `ManagementAgentServer` in `management-agent` module with
         versioned management endpoints, plus `/health` and `/ready`.
+      - `ManagementAgentServer` now supports M:N mapping between one agent and
+        multiple indexes via `addIndex`/`removeIndex`.
+      - `GET /api/v1/report` returns one node-wide JVM section and per-index
+        metrics sections.
       - Added allowlist enforcement for `PATCH /api/v1/config`.
       - Added per-request audit log entries for mutating endpoints including
         actor, endpoint, status, outcome and payload digest (SHA-256).
       - Added tests in `ManagementAgentServerTest` for:
-        state/metrics reads, `flush`, `compact`, forbidden config key, invalid
+        report reads, targeted/all-index actions, forbidden config key, invalid
         state transition after close, and readiness transitions.
 
 [x] 78.6 Implement central console web application (Risk: HIGH)

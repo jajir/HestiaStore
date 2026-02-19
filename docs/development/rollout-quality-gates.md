@@ -4,10 +4,10 @@ This document defines releasable stages for the monitoring/management rollout.
 
 ## Stage A: Core metrics snapshot only
 
-- Scope: `index` module, immutable snapshot API, no external exporters.
+- Scope: `engine` module, immutable snapshot API, no external exporters.
 - Required gates:
   - Concurrency correctness test: `IntegrationSegmentIndexMetricsSnapshotConcurrencyTest`
-  - Snapshot contract tests pass in `index`.
+  - Snapshot contract tests pass in `engine`.
   - Perf budget: no more than +3% overhead for get/put baseline in internal
     benchmark profile.
 
@@ -29,23 +29,23 @@ This document defines releasable stages for the monitoring/management rollout.
   - Audit trail coverage for all mutating endpoints.
   - Failure mode checks for unauthorized/forbidden/rate-limited requests.
 
-## Stage D: Central console
+## Stage D: Direct web console
 
-- Scope: `monitoring-console`.
+- Scope: `monitoring-console-web` in direct mode (`/api/v1/*` to nodes).
 - Required gates:
-  - Multi-node dashboard tests (`MonitoringConsoleServerTest`).
-  - Action lifecycle tests (`PENDING -> SUCCESS|FAILED`).
-  - Failure mode tests: node down, partial response, timeout.
+  - Node dashboard render for reachable/unreachable nodes.
+  - Action flow tests: flush/compact actions and user feedback.
+  - Failure mode tests: node down, timeout, auth failure.
 
 ## Gate execution command
 
 Run all stage gates:
 
 ```bash
-mvn -pl index test -Dtest=IntegrationSegmentIndexMetricsSnapshotConcurrencyTest
+mvn -pl engine test -Dtest=IntegrationSegmentIndexMetricsSnapshotConcurrencyTest
 mvn -pl monitoring-prometheus test -Dtest=HestiaStorePrometheusExporterTest
 mvn -pl management-agent test -Dtest=ManagementAgentServerTest,ManagementAgentServerSecurityTest
-mvn -pl monitoring-console test -Dtest=MonitoringConsoleServerTest
+mvn -pl monitoring-console-web test
 ```
 
 ## Release and rollback readiness

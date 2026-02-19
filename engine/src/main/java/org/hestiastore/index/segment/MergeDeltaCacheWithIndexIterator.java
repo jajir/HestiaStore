@@ -44,16 +44,33 @@ class MergeDeltaCacheWithIndexIterator<K, V>
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final List<Entry<K, V>> sortedDeltaCache) {
+        this(mainIterator, keyTypeDescriptor, valueTypeDescriptor,
+                Vldtn.requireNonNull(sortedDeltaCache, "sortedDeltaCache")
+                        .iterator());
+    }
 
+    /**
+     * Creates a merged iterator over index data and delta cache entries.
+     *
+     * @param mainIterator iterator over the index file
+     * @param keyTypeDescriptor key type descriptor used for ordering
+     * @param valueTypeDescriptor value type descriptor (for tombstones)
+     * @param sortedDeltaCacheIterator iterator over delta cache entries sorted
+     *        by key
+     */
+    public MergeDeltaCacheWithIndexIterator(
+            final EntryIterator<K, V> mainIterator,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final Iterator<Entry<K, V>> sortedDeltaCacheIterator) {
         this.mainIterator = Vldtn.requireNonNull(mainIterator, "mainIterator");
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
         this.keyComparator = Vldtn
                 .requireNonNull(keyTypeDescriptor, "keyTypeDescriptor")
                 .getComparator();
-        Vldtn.requireNonNull(sortedDeltaCache, "sortedDeltaCache");
-
-        this.deltaCacheIterator = sortedDeltaCache.iterator();
+        this.deltaCacheIterator = Vldtn.requireNonNull(sortedDeltaCacheIterator,
+                "sortedDeltaCacheIterator");
         this.mainCurrent = readNextPairFromMain();
         this.deltaCurrent = readNextPairFromCache();
 

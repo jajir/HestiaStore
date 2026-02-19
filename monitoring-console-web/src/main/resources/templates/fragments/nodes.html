@@ -35,15 +35,15 @@
           <span th:if="${!n.reachable}" class="status-pill status-bad">UNAVAILABLE</span>
           <div th:if="${!n.error.isEmpty()}" style="margin-top:6px; color:#c54b3b; font-size:12px;" th:text="${n.error}">error detail</div>
         </td>
-        <td style="font-weight:600;" th:text="${n.totalOps}">0</td>
-        <td th:text="${n.getOps}">0</td>
-        <td th:text="${n.putOps}">0</td>
-        <td th:text="${n.deleteOps}">0</td>
-        <td><span th:text="${n.cacheSize}">0</span>/<span th:text="${n.cacheLimit}">0</span></td>
-        <td th:text="${n.cacheHitCount}">0</td>
-        <td th:text="${n.cacheMissCount}">0</td>
-        <td><span th:text="${T(java.lang.Math).round(n.cacheHitRatio * 1000.0) / 10.0}">0.0</span>%</td>
-        <td><span th:text="${n.latencyMs}">0</span> ms</td>
+        <td style="font-weight:600;" th:text="${n.formatWholeNumber(n.totalOps)}">0</td>
+        <td th:text="${n.formatWholeNumber(n.getOps)}">0</td>
+        <td th:text="${n.formatWholeNumber(n.putOps)}">0</td>
+        <td th:text="${n.formatWholeNumber(n.deleteOps)}">0</td>
+        <td><span th:text="${n.formatWholeNumber(n.cacheSize)}">0</span>/<span th:text="${n.formatWholeNumber(n.cacheLimit)}">0</span></td>
+        <td th:text="${n.formatWholeNumber(n.cacheHitCount)}">0</td>
+        <td th:text="${n.formatWholeNumber(n.cacheMissCount)}">0</td>
+        <td><span th:text="${n.cacheHitRatioPercentDisplay}">0.0</span>%</td>
+        <td><span th:text="${n.formatWholeNumber(n.latencyMs)}">0</span> ms</td>
         <td class="small" th:text="${n.capturedAt}">2026-02-18T00:00:00Z</td>
         <td>
           <div class="btn-row">

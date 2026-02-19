@@ -8,8 +8,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
-
 import org.hestiastore.index.Entry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,13 +64,10 @@ class SegmentWritePathTest {
     }
 
     @Test
-    void freezeWriteCacheForFlush_returns_snapshot_without_version_change() {
-        final List<Entry<Integer, String>> entries = List
-                .of(Entry.of(1, "a"));
-        when(segmentCache.freezeWriteCache()).thenReturn(entries);
+    void freezeWriteCacheForFlush_invokes_cache_without_version_change() {
+        subject.freezeWriteCacheForFlush();
 
-        assertEquals(entries, subject.freezeWriteCacheForFlush());
-
+        verify(segmentCache).freezeWriteCache();
         verify(versionController, never()).changeVersion();
     }
 

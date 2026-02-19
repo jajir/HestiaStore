@@ -1,23 +1,34 @@
 package org.hestiastore.management.agent;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.MemoryUsage;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.lang.management.GarbageCollectorMXBean;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
-import java.lang.management.MemoryUsage;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
+import org.hestiastore.index.monitoring.MonitoredIndex;
+import org.hestiastore.index.monitoring.MonitoredIndexProvider;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
@@ -27,9 +38,10 @@ import org.hestiastore.management.api.ActionStatus;
 import org.hestiastore.management.api.ActionType;
 import org.hestiastore.management.api.ConfigPatchRequest;
 import org.hestiastore.management.api.ErrorResponse;
+import org.hestiastore.management.api.IndexReportResponse;
+import org.hestiastore.management.api.JvmMetricsResponse;
 import org.hestiastore.management.api.ManagementApiPaths;
-import org.hestiastore.management.api.MetricsResponse;
-import org.hestiastore.management.api.NodeStateResponse;
+import org.hestiastore.management.api.NodeReportResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,15 +53,17 @@ import com.sun.net.httpserver.HttpServer;
 /**
  * Lightweight node-local HTTP management agent.
  */
-public final class ManagementAgentServer implements AutoCloseable {
+public final class ManagementAgentServer
+        implements AutoCloseable, MonitoredIndexProvider {
 
     private static final String METHOD_GET = "GET";
     private static final String METHOD_POST = "POST";
     private static final String METHOD_PATCH = "PATCH";
+    private static final int MAX_AUDIT_RECORDS = 10_000;
+    private static final int MAX_REQUEST_BODY_BYTES = 1_048_576;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final SegmentIndex<?, ?> index;
-    private final String indexName;
+    private final ConcurrentMap<String, SegmentIndex<?, ?>> indexes = new ConcurrentHashMap<>();
     private final Set<String> runtimeConfigAllowlist;
     private final ManagementAgentSecurityPolicy securityPolicy;
     private final FixedWindowRateLimiter mutatingRateLimiter;
@@ -57,6 +71,7 @@ public final class ManagementAgentServer implements AutoCloseable {
     private final ObjectMapper objectMapper = new ObjectMapper()
             .registerModule(new JavaTimeModule());
     private final HttpServer server;
+    private final ExecutorService requestExecutor;
 
     /**
      * Creates a management agent server.
@@ -71,8 +86,9 @@ public final class ManagementAgentServer implements AutoCloseable {
     public ManagementAgentServer(final String bindAddress, final int bindPort,
             final SegmentIndex<?, ?> index, final String indexName,
             final Set<String> runtimeConfigAllowlist) throws IOException {
-        this(bindAddress, bindPort, index, indexName, runtimeConfigAllowlist,
+        this(bindAddress, bindPort, runtimeConfigAllowlist,
                 ManagementAgentSecurityPolicy.permissive());
+        addIndex(indexName, index);
     }
 
     /**
@@ -91,11 +107,37 @@ public final class ManagementAgentServer implements AutoCloseable {
             final Set<String> runtimeConfigAllowlist,
             final ManagementAgentSecurityPolicy securityPolicy)
             throws IOException {
-        this.index = Objects.requireNonNull(index, "index");
-        this.indexName = Objects.requireNonNull(indexName, "indexName").trim();
-        if (this.indexName.isEmpty()) {
-            throw new IllegalArgumentException("indexName must not be blank");
-        }
+        this(bindAddress, bindPort, runtimeConfigAllowlist, securityPolicy);
+        addIndex(indexName, index);
+    }
+
+    /**
+     * Creates a management agent server without initial indexes.
+     *
+     * @param bindAddress            host to bind
+     * @param bindPort               port to bind (0 means random free port)
+     * @param runtimeConfigAllowlist keys accepted by PATCH /config
+     * @throws IOException when HTTP server cannot be created
+     */
+    public ManagementAgentServer(final String bindAddress, final int bindPort,
+            final Set<String> runtimeConfigAllowlist) throws IOException {
+        this(bindAddress, bindPort, runtimeConfigAllowlist,
+                ManagementAgentSecurityPolicy.permissive());
+    }
+
+    /**
+     * Creates a management agent server without initial indexes.
+     *
+     * @param bindAddress            host to bind
+     * @param bindPort               port to bind (0 means random free port)
+     * @param runtimeConfigAllowlist keys accepted by PATCH /config
+     * @param securityPolicy         authn/authz/rate-limit policy
+     * @throws IOException when HTTP server cannot be created
+     */
+    public ManagementAgentServer(final String bindAddress, final int bindPort,
+            final Set<String> runtimeConfigAllowlist,
+            final ManagementAgentSecurityPolicy securityPolicy)
+            throws IOException {
         this.runtimeConfigAllowlist = Set.copyOf(
                 Objects.requireNonNull(runtimeConfigAllowlist,
                         "runtimeConfigAllowlist"));
@@ -108,6 +150,16 @@ public final class ManagementAgentServer implements AutoCloseable {
                         Objects.requireNonNull(bindAddress, "bindAddress"),
                         bindPort),
                 0);
+        final int workers = Math.max(2,
+                Math.min(16, Runtime.getRuntime().availableProcessors() * 2));
+        final AtomicInteger threadCounter = new AtomicInteger(1);
+        this.requestExecutor = Executors.newFixedThreadPool(workers, runnable -> {
+            final Thread thread = new Thread(runnable,
+                    "management-agent-http-" + threadCounter.getAndIncrement());
+            thread.setDaemon(false);
+            return thread;
+        });
+        this.server.setExecutor(requestExecutor);
         registerRoutes();
     }
 
@@ -128,6 +180,37 @@ public final class ManagementAgentServer implements AutoCloseable {
     }
 
     /**
+     * Registers or replaces monitored index by name.
+     *
+     * @param indexName logical index name
+     * @param index     live index instance
+     */
+    public void addIndex(final String indexName, final SegmentIndex<?, ?> index) {
+        indexes.put(normalize(indexName, "indexName"),
+                Objects.requireNonNull(index, "index"));
+    }
+
+    /**
+     * Removes monitored index registration by name.
+     *
+     * @param indexName logical index name
+     * @return true when entry was removed
+     */
+    public boolean removeIndex(final String indexName) {
+        return indexes.remove(normalize(indexName, "indexName")) != null;
+    }
+
+    /**
+     * Returns names of currently monitored indexes.
+     *
+     * @return sorted index names
+     */
+    public List<String> monitoredIndexNames() {
+        return activeIndexesSnapshot().stream().map(RegisteredIndex::indexName)
+                .toList();
+    }
+
+    /**
      * Returns immutable snapshot of mutating endpoint audit records.
      *
      * @return audit snapshot
@@ -138,15 +221,25 @@ public final class ManagementAgentServer implements AutoCloseable {
 
     /** {@inheritDoc} */
     @Override
+    public List<? extends MonitoredIndex> monitoredIndexes() {
+        return List.copyOf(activeIndexesSnapshot());
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public void close() {
         server.stop(0);
+        requestExecutor.shutdownNow();
+        try {
+            requestExecutor.awaitTermination(2, TimeUnit.SECONDS);
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     private void registerRoutes() {
-        server.createContext(ManagementApiPaths.STATE,
-                exchange -> safeHandle(exchange, this::handleState));
-        server.createContext(ManagementApiPaths.METRICS,
-                exchange -> safeHandle(exchange, this::handleMetrics));
+        server.createContext(ManagementApiPaths.REPORT,
+                exchange -> safeHandle(exchange, this::handleReport));
         server.createContext(ManagementApiPaths.ACTION_FLUSH,
                 exchange -> safeHandle(exchange, this::handleFlush));
         server.createContext(ManagementApiPaths.ACTION_COMPACT,
@@ -172,31 +265,254 @@ public final class ManagementAgentServer implements AutoCloseable {
         }
     }
 
-    private void handleState(final HttpExchange exchange) throws IOException {
+    private void handleReport(final HttpExchange exchange) throws IOException {
         if (!METHOD_GET.equals(exchange.getRequestMethod())) {
             writeMethodNotAllowed(exchange);
             return;
         }
         if (!authorize(exchange, AgentRole.READ, false,
-                ManagementApiPaths.STATE, "")) {
+                ManagementApiPaths.REPORT, "")) {
             return;
         }
-        final SegmentIndexState state = index.getState();
-        final NodeStateResponse response = new NodeStateResponse(indexName,
-                state.name(), state == SegmentIndexState.READY, Instant.now());
+        final Instant capturedAt = Instant.now();
+        final List<IndexReportResponse> indexSections = activeIndexesSnapshot()
+                .stream().map(this::toIndexReport).toList();
+        final NodeReportResponse response = new NodeReportResponse(
+                readJvmMetrics(), indexSections, capturedAt);
         writeJson(exchange, 200, response);
     }
 
-    private void handleMetrics(final HttpExchange exchange) throws IOException {
+    private void handleFlush(final HttpExchange exchange) throws IOException {
+        handleMutatingAction(exchange, ActionType.FLUSH,
+                registered -> registered.index().flushAndWait());
+    }
+
+    private void handleCompact(final HttpExchange exchange) throws IOException {
+        handleMutatingAction(exchange, ActionType.COMPACT,
+                registered -> registered.index().compactAndWait());
+    }
+
+    private void handleConfig(final HttpExchange exchange) throws IOException {
+        final String endpoint = ManagementApiPaths.CONFIG;
+        if (!METHOD_PATCH.equals(exchange.getRequestMethod())) {
+            writeMethodNotAllowed(exchange);
+            return;
+        }
+        final String body;
+        try {
+            body = readBody(exchange);
+        } catch (final RequestBodyTooLargeException e) {
+            writeError(exchange, 413, "REQUEST_TOO_LARGE", e.getMessage(), "");
+            audit(exchange, endpoint, "", 413, "REJECTED_TOO_LARGE");
+            return;
+        }
+        if (!authorize(exchange, AgentRole.ADMIN, true, endpoint, body)) {
+            return;
+        }
+        final ConfigPatchRequest request;
+        try {
+            request = objectMapper.readValue(body, ConfigPatchRequest.class);
+        } catch (final RuntimeException e) {
+            final ErrorResponse error = new ErrorResponse("INVALID_REQUEST",
+                    "Invalid JSON payload.", "", Instant.now());
+            writeJson(exchange, 400, error);
+            audit(exchange, endpoint, body, 400, "FAILED");
+            return;
+        }
+        for (final String key : request.values().keySet()) {
+            if (!runtimeConfigAllowlist.contains(key)) {
+                final ErrorResponse error = new ErrorResponse(
+                        "CONFIG_KEY_NOT_ALLOWED",
+                        "Config key '" + key + "' is not allowed.", "",
+                        Instant.now());
+                writeJson(exchange, 400, error);
+                audit(exchange, endpoint, body, 400, "REJECTED");
+                return;
+            }
+        }
+        final List<RegisteredIndex> targets = activeIndexesSnapshot();
+        if (targets.isEmpty()) {
+            final ErrorResponse error = new ErrorResponse("INVALID_STATE",
+                    "No monitored indexes available.", "", Instant.now());
+            writeJson(exchange, 409, error);
+            audit(exchange, endpoint, body, 409, "REJECTED");
+            return;
+        }
+        final List<String> notReady = notReadyIndexes(targets);
+        if (!notReady.isEmpty()) {
+            final ErrorResponse error = new ErrorResponse("INVALID_STATE",
+                    "Indexes are not in READY state: "
+                            + String.join(",", notReady),
+                    "", Instant.now());
+            writeJson(exchange, 409, error);
+            audit(exchange, endpoint, body, 409, "REJECTED");
+            return;
+        }
+        writeNoContent(exchange);
+        audit(exchange, endpoint, body, 204,
+                request.dryRun() ? "DRY_RUN" : "APPLIED");
+    }
+
+    private void handleHealth(final HttpExchange exchange) throws IOException {
         if (!METHOD_GET.equals(exchange.getRequestMethod())) {
             writeMethodNotAllowed(exchange);
             return;
         }
-        if (!authorize(exchange, AgentRole.READ, false,
-                ManagementApiPaths.METRICS, "")) {
+        if (!authorize(exchange, AgentRole.READ, false, "/health", "")) {
             return;
         }
-        final SegmentIndexMetricsSnapshot snapshot = index.metricsSnapshot();
+        writeJson(exchange, 200, "{\"status\":\"UP\"}");
+    }
+
+    private void handleReady(final HttpExchange exchange) throws IOException {
+        if (!METHOD_GET.equals(exchange.getRequestMethod())) {
+            writeMethodNotAllowed(exchange);
+            return;
+        }
+        if (!authorize(exchange, AgentRole.READ, false, "/ready", "")) {
+            return;
+        }
+        final List<RegisteredIndex> active = activeIndexesSnapshot();
+        if (!active.isEmpty() && notReadyIndexes(active).isEmpty()) {
+            writeJson(exchange, 200, "{\"status\":\"READY\"}");
+        } else {
+            writeJson(exchange, 503, "{\"status\":\"NOT_READY\"}");
+        }
+    }
+
+    private void handleMutatingAction(final HttpExchange exchange,
+            final ActionType action, final IndexOperation operation)
+            throws IOException {
+        final String endpoint = exchange.getRequestURI().getPath();
+        if (!METHOD_POST.equals(exchange.getRequestMethod())) {
+            writeMethodNotAllowed(exchange);
+            return;
+        }
+        final String body;
+        try {
+            body = readBody(exchange);
+        } catch (final RequestBodyTooLargeException e) {
+            writeError(exchange, 413, "REQUEST_TOO_LARGE", e.getMessage(), "");
+            audit(exchange, endpoint, "", 413, "REJECTED_TOO_LARGE");
+            return;
+        }
+        if (!authorize(exchange, AgentRole.OPERATE, true, endpoint, body)) {
+            return;
+        }
+        final ActionRequest request;
+        try {
+            request = objectMapper.readValue(body, ActionRequest.class);
+        } catch (final RuntimeException e) {
+            final ErrorResponse error = new ErrorResponse("INVALID_REQUEST",
+                    "Invalid JSON payload.", "", Instant.now());
+            writeJson(exchange, 400, error);
+            audit(exchange, endpoint, body, 400, "FAILED");
+            return;
+        }
+        final List<RegisteredIndex> targets;
+        try {
+            targets = resolveActionTargets(request);
+        } catch (final IllegalStateException e) {
+            final ErrorResponse error = new ErrorResponse("INDEX_NOT_FOUND",
+                    e.getMessage(), request.requestId(), Instant.now());
+            writeJson(exchange, 404, error);
+            audit(exchange, endpoint, body, 404, "REJECTED");
+            return;
+        }
+        if (targets.isEmpty()) {
+            final ErrorResponse error = new ErrorResponse("INVALID_STATE",
+                    "No monitored indexes available.", request.requestId(),
+                    Instant.now());
+            writeJson(exchange, 409, error);
+            audit(exchange, endpoint, body, 409, "REJECTED");
+            return;
+        }
+        final List<String> notReady = notReadyIndexes(targets);
+        if (!notReady.isEmpty()) {
+            final ErrorResponse error = new ErrorResponse("INVALID_STATE",
+                    "Indexes are not in READY state: "
+                            + String.join(",", notReady),
+                    request.requestId(), Instant.now());
+            writeJson(exchange, 409, error);
+            audit(exchange, endpoint, body, 409, "REJECTED");
+            return;
+        }
+        try {
+            for (final RegisteredIndex target : targets) {
+                operation.run(target);
+            }
+            final ActionResponse response = new ActionResponse(
+                    request.requestId(), action, ActionStatus.COMPLETED,
+                    "Applied to " + targets.size() + " index(es).",
+                    Instant.now());
+            writeJson(exchange, 200, response);
+            audit(exchange, endpoint, body, 200, "COMPLETED");
+        } catch (final RuntimeException e) {
+            final ActionResponse response = new ActionResponse(
+                    request.requestId(), action, ActionStatus.FAILED,
+                    e.getMessage(), Instant.now());
+            writeJson(exchange, 500, response);
+            audit(exchange, endpoint, body, 500, "FAILED");
+        }
+    }
+
+    private List<RegisteredIndex> resolveActionTargets(
+            final ActionRequest request) {
+        final List<RegisteredIndex> active = activeIndexesSnapshot();
+        if (request.indexName() == null) {
+            return active;
+        }
+        return active.stream().filter(i -> i.indexName().equals(request.indexName()))
+                .findFirst().map(List::of).orElseThrow(() ->
+                        new IllegalStateException("Unknown index: "
+                                + request.indexName()));
+    }
+
+    private List<RegisteredIndex> activeIndexesSnapshot() {
+        final List<RegisteredIndex> active = new ArrayList<>();
+        for (final java.util.Map.Entry<String, SegmentIndex<?, ?>> entry : indexes
+                .entrySet()) {
+            final String name = entry.getKey();
+            final SegmentIndex<?, ?> index = entry.getValue();
+            if (isClosed(name, index)) {
+                indexes.remove(name, index);
+                continue;
+            }
+            active.add(new RegisteredIndex(name, index));
+        }
+        active.sort(Comparator.comparing(RegisteredIndex::indexName));
+        return List.copyOf(active);
+    }
+
+    private boolean isClosed(final String indexName,
+            final SegmentIndex<?, ?> index) {
+        try {
+            if (index.wasClosed()) {
+                logger.info("Removing closed index from reporting: {}",
+                        indexName);
+                return true;
+            }
+            final SegmentIndexState state = index.getState();
+            if (state == SegmentIndexState.CLOSED) {
+                logger.info("Removing CLOSED index from reporting: {}",
+                        indexName);
+                return true;
+            }
+            return false;
+        } catch (final RuntimeException e) {
+            logger.warn("Removing index after state read failure: {}",
+                    indexName, e);
+            return true;
+        }
+    }
+
+    private List<String> notReadyIndexes(final List<RegisteredIndex> targets) {
+        return targets.stream().filter(target -> !target.ready())
+                .map(RegisteredIndex::indexName)
+                .collect(Collectors.toList());
+    }
+
+    private JvmMetricsResponse readJvmMetrics() {
         final MemoryMXBean memoryMxBean = ManagementFactory.getMemoryMXBean();
         final MemoryUsage heap = memoryMxBean.getHeapMemoryUsage();
         final MemoryUsage nonHeap = memoryMxBean.getNonHeapMemoryUsage();
@@ -211,8 +527,18 @@ public final class ManagementAgentServer implements AutoCloseable {
                 gcTimeMillis += gcMxBean.getCollectionTime();
             }
         }
-        final MetricsResponse response = new MetricsResponse(indexName,
-                snapshot.getState().name(), snapshot.getGetOperationCount(),
+        return new JvmMetricsResponse(Math.max(0L, heap.getUsed()),
+                Math.max(0L, heap.getCommitted()),
+                Math.max(0L, Runtime.getRuntime().maxMemory()),
+                Math.max(0L, nonHeap.getUsed()), gcCount, gcTimeMillis);
+    }
+
+    private IndexReportResponse toIndexReport(final RegisteredIndex monitored) {
+        final SegmentIndexMetricsSnapshot snapshot = monitored.metricsSnapshot();
+        final SegmentIndexState state = monitored.state();
+        return new IndexReportResponse(monitored.indexName(), state.name(),
+                state == SegmentIndexState.READY,
+                snapshot.getGetOperationCount(),
                 snapshot.getPutOperationCount(),
                 snapshot.getDeleteOperationCount(),
                 snapshot.getRegistryCacheHitCount(),
@@ -254,154 +580,7 @@ public final class ManagementAgentServer implements AutoCloseable {
                 snapshot.getBloomFilterRequestCount(),
                 snapshot.getBloomFilterRefusedCount(),
                 snapshot.getBloomFilterPositiveCount(),
-                snapshot.getBloomFilterFalsePositiveCount(),
-                Math.max(0L, heap.getUsed()), Math.max(0L, heap.getCommitted()),
-                Math.max(0L, nonHeap.getUsed()), gcCount, gcTimeMillis,
-                Instant.now());
-        logger.debug(
-                "Metrics snapshot index={} state={} segments={} ops(get={},put={},delete={}) cache(hit={},miss={},load={},evict={},size={},limit={}) jvm(heapUsed={},nonHeapUsed={},gcCount={},gcTimeMs={})",
-                indexName, snapshot.getState().name(),
-                snapshot.getSegmentCount(),
-                snapshot.getGetOperationCount(),
-                snapshot.getPutOperationCount(),
-                snapshot.getDeleteOperationCount(),
-                snapshot.getRegistryCacheHitCount(),
-                snapshot.getRegistryCacheMissCount(),
-                snapshot.getRegistryCacheLoadCount(),
-                snapshot.getRegistryCacheEvictionCount(),
-                snapshot.getRegistryCacheSize(),
-                snapshot.getRegistryCacheLimit(), Math.max(0L, heap.getUsed()),
-                Math.max(0L, nonHeap.getUsed()), gcCount, gcTimeMillis);
-        writeJson(exchange, 200, response);
-    }
-
-    private void handleFlush(final HttpExchange exchange) throws IOException {
-        handleMutatingAction(exchange, ActionType.FLUSH,
-                () -> index.flushAndWait());
-    }
-
-    private void handleCompact(final HttpExchange exchange) throws IOException {
-        handleMutatingAction(exchange, ActionType.COMPACT,
-                () -> index.compactAndWait());
-    }
-
-    private void handleConfig(final HttpExchange exchange) throws IOException {
-        final String endpoint = ManagementApiPaths.CONFIG;
-        final String body = readBody(exchange);
-        if (!METHOD_PATCH.equals(exchange.getRequestMethod())) {
-            writeMethodNotAllowed(exchange);
-            return;
-        }
-        if (!authorize(exchange, AgentRole.ADMIN, true, endpoint, body)) {
-            return;
-        }
-        if (!isReady()) {
-            final ErrorResponse error = new ErrorResponse("INVALID_STATE",
-                    "Index is not in READY state.", "", Instant.now());
-            writeJson(exchange, 409, error);
-            audit(exchange, endpoint, body, 409, "REJECTED");
-            return;
-        }
-        final ConfigPatchRequest request;
-        try {
-            request = objectMapper.readValue(body, ConfigPatchRequest.class);
-        } catch (final RuntimeException e) {
-            final ErrorResponse error = new ErrorResponse("INVALID_REQUEST",
-                    "Invalid JSON payload.", "", Instant.now());
-            writeJson(exchange, 400, error);
-            audit(exchange, endpoint, body, 400, "FAILED");
-            return;
-        }
-        for (final String key : request.values().keySet()) {
-            if (!runtimeConfigAllowlist.contains(key)) {
-                final ErrorResponse error = new ErrorResponse(
-                        "CONFIG_KEY_NOT_ALLOWED",
-                        "Config key '" + key + "' is not allowed.", "",
-                        Instant.now());
-                writeJson(exchange, 400, error);
-                audit(exchange, endpoint, body, 400, "REJECTED");
-                return;
-            }
-        }
-        writeNoContent(exchange);
-        audit(exchange, endpoint, body, 204,
-                request.dryRun() ? "DRY_RUN" : "APPLIED");
-    }
-
-    private void handleHealth(final HttpExchange exchange) throws IOException {
-        if (!METHOD_GET.equals(exchange.getRequestMethod())) {
-            writeMethodNotAllowed(exchange);
-            return;
-        }
-        if (!authorize(exchange, AgentRole.READ, false, "/health", "")) {
-            return;
-        }
-        writeJson(exchange, 200, "{\"status\":\"UP\"}");
-    }
-
-    private void handleReady(final HttpExchange exchange) throws IOException {
-        if (!METHOD_GET.equals(exchange.getRequestMethod())) {
-            writeMethodNotAllowed(exchange);
-            return;
-        }
-        if (!authorize(exchange, AgentRole.READ, false, "/ready", "")) {
-            return;
-        }
-        if (isReady()) {
-            writeJson(exchange, 200, "{\"status\":\"READY\"}");
-        } else {
-            writeJson(exchange, 503, "{\"status\":\"NOT_READY\"}");
-        }
-    }
-
-    private void handleMutatingAction(final HttpExchange exchange,
-            final ActionType action, final Runnable operation)
-            throws IOException {
-        final String endpoint = exchange.getRequestURI().getPath();
-        final String body = readBody(exchange);
-        if (!METHOD_POST.equals(exchange.getRequestMethod())) {
-            writeMethodNotAllowed(exchange);
-            return;
-        }
-        if (!authorize(exchange, AgentRole.OPERATE, true, endpoint, body)) {
-            return;
-        }
-        final ActionRequest request;
-        try {
-            request = objectMapper.readValue(body, ActionRequest.class);
-        } catch (final RuntimeException e) {
-            final ErrorResponse error = new ErrorResponse("INVALID_REQUEST",
-                    "Invalid JSON payload.", "", Instant.now());
-            writeJson(exchange, 400, error);
-            audit(exchange, endpoint, body, 400, "FAILED");
-            return;
-        }
-        if (!isReady()) {
-            final ErrorResponse error = new ErrorResponse("INVALID_STATE",
-                    "Index is not in READY state.", request.requestId(),
-                    Instant.now());
-            writeJson(exchange, 409, error);
-            audit(exchange, endpoint, body, 409, "REJECTED");
-            return;
-        }
-        try {
-            operation.run();
-            final ActionResponse response = new ActionResponse(
-                    request.requestId(), action, ActionStatus.COMPLETED, "",
-                    Instant.now());
-            writeJson(exchange, 200, response);
-            audit(exchange, endpoint, body, 200, "COMPLETED");
-        } catch (final RuntimeException e) {
-            final ActionResponse response = new ActionResponse(
-                    request.requestId(), action, ActionStatus.FAILED,
-                    e.getMessage(), Instant.now());
-            writeJson(exchange, 500, response);
-            audit(exchange, endpoint, body, 500, "FAILED");
-        }
-    }
-
-    private boolean isReady() {
-        return index.getState() == SegmentIndexState.READY;
+                snapshot.getBloomFilterFalsePositiveCount());
     }
 
     private void writeMethodNotAllowed(final HttpExchange exchange)
@@ -412,8 +591,22 @@ public final class ManagementAgentServer implements AutoCloseable {
     }
 
     private String readBody(final HttpExchange exchange) throws IOException {
-        final byte[] bytes = exchange.getRequestBody().readAllBytes();
-        return new String(bytes, StandardCharsets.UTF_8);
+        final byte[] buffer = new byte[8_192];
+        int total = 0;
+        try (InputStream input = exchange.getRequestBody()) {
+            int read;
+            final java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
+            while ((read = input.read(buffer)) != -1) {
+                total += read;
+                if (total > MAX_REQUEST_BODY_BYTES) {
+                    throw new RequestBodyTooLargeException(
+                            "Request body exceeds " + MAX_REQUEST_BODY_BYTES
+                                    + " bytes.");
+                }
+                output.write(buffer, 0, read);
+            }
+            return output.toString(StandardCharsets.UTF_8);
+        }
     }
 
     private void writeNoContent(final HttpExchange exchange) throws IOException {
@@ -447,6 +640,9 @@ public final class ManagementAgentServer implements AutoCloseable {
         final String digest = sha256Hex(requestBody);
         auditTrail.addFirst(new AuditRecord(actor, endpoint, digest, outcome,
                 statusCode, Instant.now()));
+        while (auditTrail.size() > MAX_AUDIT_RECORDS) {
+            auditTrail.pollLast();
+        }
         logger.info(
                 "audit endpoint={} actor={} status={} outcome={} digest={} timestamp={}",
                 endpoint, actor, statusCode, outcome, digest, Instant.now());
@@ -496,7 +692,8 @@ public final class ManagementAgentServer implements AutoCloseable {
             writeError(exchange, 403, "FORBIDDEN",
                     "Insufficient privileges for endpoint.", "");
             if (mutating) {
-                audit(exchange, endpoint, requestBody, 403, "REJECTED_FORBIDDEN");
+                audit(exchange, endpoint, requestBody, 403,
+                        "REJECTED_FORBIDDEN");
             }
             return false;
         }
@@ -551,9 +748,45 @@ public final class ManagementAgentServer implements AutoCloseable {
         }
     }
 
+    private static String normalize(final String value, final String name) {
+        final String normalized = Objects.requireNonNull(value, name).trim();
+        if (normalized.isEmpty()) {
+            throw new IllegalArgumentException(name + " must not be blank");
+        }
+        return normalized;
+    }
+
     @FunctionalInterface
     private interface Handler {
         void handle(HttpExchange exchange) throws Exception;
+    }
+
+    @FunctionalInterface
+    private interface IndexOperation {
+        void run(RegisteredIndex index);
+    }
+
+    private static final class RequestBodyTooLargeException
+            extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+        private RequestBodyTooLargeException(final String message) {
+            super(message);
+        }
+    }
+
+    private record RegisteredIndex(String indexName, SegmentIndex<?, ?> index)
+            implements MonitoredIndex {
+
+        @Override
+        public SegmentIndexState state() {
+            return index.getState();
+        }
+
+        @Override
+        public SegmentIndexMetricsSnapshot metricsSnapshot() {
+            return index.metricsSnapshot();
+        }
     }
 
     /**

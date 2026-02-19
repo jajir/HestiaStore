@@ -61,7 +61,7 @@ final class SegmentReadPath<K, V> {
                 segmentFiles.getIndexFile().openIterator(),
                 segmentFiles.getKeyTypeDescriptor(),
                 segmentFiles.getValueTypeDescriptor(),
-                segmentCache.getAsSortedList());
+                segmentCache.mergedIterator());
         if (isolation == SegmentIteratorIsolation.FULL_ISOLATION) {
             return mergedEntryIterator;
         }

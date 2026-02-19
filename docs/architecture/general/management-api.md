@@ -18,34 +18,42 @@ Management contracts are versioned under `/api/v1` and defined in the
 
 ## Endpoints
 
-- `GET /api/v1/state`
-- `GET /api/v1/metrics`
+- `GET /api/v1/report`
 - `POST /api/v1/actions/flush`
 - `POST /api/v1/actions/compact`
 - `PATCH /api/v1/config`
 
 ## Example payloads
 
-`GET /api/v1/state` response:
+`GET /api/v1/report` response:
 
 ```json
 {
-  "indexName": "orders",
-  "state": "READY",
-  "ready": true,
-  "capturedAt": "2026-02-17T18:00:00Z"
-}
-```
-
-`GET /api/v1/metrics` response:
-
-```json
-{
-  "indexName": "orders",
-  "state": "READY",
-  "getOperationCount": 12345,
-  "putOperationCount": 6789,
-  "deleteOperationCount": 120,
+  "jvm": {
+    "heapUsedBytes": 104857600,
+    "heapCommittedBytes": 268435456,
+    "nonHeapUsedBytes": 52428800,
+    "gcCount": 42,
+    "gcTimeMillis": 917
+  },
+  "indexes": [
+    {
+      "indexName": "orders",
+      "state": "READY",
+      "ready": true,
+      "getOperationCount": 12345,
+      "putOperationCount": 6789,
+      "deleteOperationCount": 120
+    },
+    {
+      "indexName": "customers",
+      "state": "READY",
+      "ready": true,
+      "getOperationCount": 501,
+      "putOperationCount": 77,
+      "deleteOperationCount": 3
+    }
+  ],
   "capturedAt": "2026-02-17T18:00:00Z"
 }
 ```
@@ -54,9 +62,13 @@ Management contracts are versioned under `/api/v1` and defined in the
 
 ```json
 {
-  "requestId": "req-20260217-001"
+  "requestId": "req-20260217-001",
+  "indexName": "orders"
 }
 ```
+
+`indexName` is optional. If omitted, action is applied to all indexes currently
+registered in `ManagementAgentServer`.
 
 `POST /api/v1/actions/flush` response:
 
@@ -64,7 +76,7 @@ Management contracts are versioned under `/api/v1` and defined in the
 {
   "requestId": "req-20260217-001",
   "action": "FLUSH",
-  "status": "ACCEPTED",
+  "status": "COMPLETED",
   "message": "",
   "capturedAt": "2026-02-17T18:00:01Z"
 }

@@ -132,7 +132,7 @@
     .layout {
       display: grid;
       gap: 16px;
-      grid-template-columns: 1.45fr .55fr;
+      grid-template-columns: 1fr;
     }
     .panel-head {
       display: flex;
@@ -214,10 +214,6 @@
       border: 1px solid rgba(20,50,38,.10);
     }
 
-    .side {
-      display: grid;
-      gap: 16px;
-    }
     .block { padding: 16px; }
     .block h3 { margin: 0 0 10px; font-size: 16px; }
     .form-grid {
@@ -259,7 +255,6 @@
 
     @media (max-width: 1220px) {
       .stats { grid-template-columns: repeat(3, 1fr); }
-      .layout { grid-template-columns: 1fr; }
     }
     @media (max-width: 880px) {
       .hero { grid-template-columns: 1fr; }
@@ -276,9 +271,9 @@
         <h1 style="margin:0;font-size:30px;letter-spacing:-0.02em;">HestiaStore Console</h1>
       </div>
       <div class="hero-meta">
-        <span class="pill"><span class="dot"></span>Live polling every <span th:text="${refreshMillis}">2000</span> ms</span>
-        <span class="pill"><span class="dot"></span>Backend: <span class="mono" th:text="${backendUrl}"></span></span>
-        <span class="pill"><span class="dot"></span>Nodes: <span th:text="${statNodes}">0</span></span>
+        <span class="pill"><span class="dot"></span>Live polling every <span th:text="${refreshMillisDisplay}">2,000</span> ms</span>
+        <span class="pill"><span class="dot"></span>Direct nodes: <span th:text="${statNodesDisplay}">0</span></span>
+        <span class="pill"><span class="dot"></span>Nodes: <span th:text="${statNodesDisplay}">0</span></span>
       </div>
     </article>
     <aside class="card token-card">
@@ -286,18 +281,21 @@
       <div id="flash"
            th:replace="~{fragments/flash :: flash}">
       </div>
-      <p class="small">Actions and registration use the configured console write token.</p>
-      <p class="mono" style="margin:0;">API: /console/v1/*</p>
+      <p class="small">Actions are sent directly to configured node management endpoints.</p>
+      <p class="mono" style="margin:0;">API: /api/v1/*</p>
+      <div class="mono" style="margin-top:8px;">
+        <div th:each="n : ${nodeEndpoints}" th:text="${n.nodeId + ' -> ' + n.baseUrl}">node-1 -> http://127.0.0.1:9001</div>
+      </div>
     </aside>
   </section>
 
   <section class="stats">
-    <div class="card stat-card"><div class="stat-label">Nodes</div><div class="stat-value" th:text="${statNodes}">0</div></div>
-    <div class="card stat-card"><div class="stat-label">Reachable</div><div class="stat-value" th:text="${statReachable}">0</div></div>
-    <div class="card stat-card"><div class="stat-label">Read Ops</div><div class="stat-value" th:text="${statGetOps}">0</div></div>
-    <div class="card stat-card"><div class="stat-label">Write Ops</div><div class="stat-value" th:text="${statWriteOps}">0</div></div>
-    <div class="card stat-card"><div class="stat-label">Cache Hit Ratio</div><div class="stat-value"><span th:text="${statCacheHitRatio}">0</span>%</div></div>
-    <div class="card stat-card"><div class="stat-label">Cache Fill</div><div class="stat-value"><span th:text="${statCacheFillRatio}">0</span>%</div></div>
+    <div class="card stat-card"><div class="stat-label">Nodes</div><div class="stat-value" th:text="${statNodesDisplay}">0</div></div>
+    <div class="card stat-card"><div class="stat-label">Reachable</div><div class="stat-value" th:text="${statReachableDisplay}">0</div></div>
+    <div class="card stat-card"><div class="stat-label">Read Ops</div><div class="stat-value" th:text="${statGetOpsDisplay}">0</div></div>
+    <div class="card stat-card"><div class="stat-label">Write Ops</div><div class="stat-value" th:text="${statWriteOpsDisplay}">0</div></div>
+    <div class="card stat-card"><div class="stat-label">Cache Hit Ratio</div><div class="stat-value"><span th:text="${statCacheHitRatioDisplay}">0</span>%</div></div>
+    <div class="card stat-card"><div class="stat-label">Cache Fill</div><div class="stat-value"><span th:text="${statCacheFillRatioDisplay}">0</span>%</div></div>
   </section>
 
   <section class="layout">
@@ -310,34 +308,6 @@
            th:replace="~{fragments/nodes :: nodesTable}"
            th:attr="hx-get='/fragments/nodes',hx-trigger='load, every ' + ${refreshMillis} + 'ms',hx-swap='outerHTML'"></div>
     </article>
-
-    <section class="side">
-      <article class="card block">
-        <h3>Register Node</h3>
-        <form class="form-grid" action="/nodes/register" method="post"
-              hx-post="/nodes/register" hx-target="#flash" hx-swap="innerHTML">
-          <input name="nodeId" placeholder="node-1" required>
-          <input name="nodeName" placeholder="index-1" required>
-          <input name="baseUrl" placeholder="http://127.0.0.1:9001" required>
-          <input name="agentToken" placeholder="agent token (optional)">
-          <button class="btn" type="submit">Register</button>
-        </form>
-      </article>
-
-      <article class="card">
-        <header class="panel-head"><h3>Recent Actions</h3></header>
-        <div id="actionsContainer"
-             th:replace="~{fragments/actions :: actionsList}"
-             th:attr="hx-get='/fragments/actions',hx-trigger='load, every ' + ${refreshMillis} + 'ms',hx-swap='outerHTML'"></div>
-      </article>
-
-      <article class="card">
-        <header class="panel-head"><h3>Event Timeline</h3></header>
-        <div id="eventsContainer"
-             th:replace="~{fragments/events :: eventsList}"
-             th:attr="hx-get='/fragments/events',hx-trigger='load, every ' + ${refreshMillis} + 'ms',hx-swap='outerHTML'"></div>
-      </article>
-    </section>
   </section>
 </div>
 </body>

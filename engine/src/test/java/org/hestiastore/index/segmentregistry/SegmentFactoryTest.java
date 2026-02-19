@@ -2,6 +2,8 @@ package org.hestiastore.index.segmentregistry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
@@ -13,6 +15,7 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentBuildResult;
 import org.hestiastore.index.segment.SegmentBuildStatus;
+import org.hestiastore.index.segment.SegmentDirectoryLayout;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentTestHelper;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
@@ -45,6 +48,37 @@ class SegmentFactoryTest {
                 maintenanceExecutor.close();
             }
         }
+    }
+
+    @Test
+    void buildSegment_enablesDirectoryLockingForRegistrySegments() {
+        final IndexConfiguration<Integer, String> conf = newConfiguration();
+        final Directory directory = new MemDirectory();
+        final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
+                1, "segment-maintenance-test");
+        final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
+                directory, new TypeDescriptorInteger(),
+                new TypeDescriptorShortString(), conf,
+                maintenanceExecutor.getExecutor());
+        final SegmentId segmentId = SegmentId.of(7);
+        final String lockFileName = new SegmentDirectoryLayout(segmentId)
+                .getLockFileName();
+        final Directory segmentDirectory = directory
+                .openSubDirectory(segmentId.getName());
+
+        final SegmentBuildResult<Segment<Integer, String>> buildResult = factory
+                .buildSegment(segmentId);
+        final Segment<Integer, String> segment = buildResult.getValue();
+        try {
+            assertEquals(SegmentBuildStatus.OK, buildResult.getStatus());
+            assertTrue(segmentDirectory.isFileExists(lockFileName));
+        } finally {
+            SegmentTestHelper.closeAndAwait(segment);
+            if (!maintenanceExecutor.wasClosed()) {
+                maintenanceExecutor.close();
+            }
+        }
+        assertFalse(segmentDirectory.isFileExists(lockFileName));
     }
 
     private static IndexConfiguration<Integer, String> newConfiguration() {

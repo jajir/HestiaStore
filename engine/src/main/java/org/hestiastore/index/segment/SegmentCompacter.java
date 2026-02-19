@@ -1,10 +1,8 @@
 package org.hestiastore.index.segment;
 
-import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.stream.Stream;
 
-import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.Vldtn;
@@ -40,11 +38,11 @@ final class SegmentCompacter<K, V> {
     CompactionPlan<K, V> prepareCompactionPlan(
             final SegmentCore<K, V> segment) {
         Vldtn.requireNonNull(segment, "segment");
-        final List<Entry<K, V>> snapshotEntries = prepareCompaction(segment);
+        prepareCompaction(segment);
         final long currentVersion = Math.max(0,
                 segment.getSegmentFiles().getActiveVersion());
         final long nextVersion = currentVersion + 1;
-        return new CompactionPlan<>(segment, snapshotEntries, currentVersion,
+        return new CompactionPlan<>(segment, currentVersion,
                 nextVersion);
     }
 
@@ -52,25 +50,21 @@ final class SegmentCompacter<K, V> {
      * Captures a stable snapshot for compaction while the segment is frozen.
      *
      * @param segment segment core
-     * @return sorted snapshot entries
      */
-    public List<Entry<K, V>> prepareCompaction(final SegmentCore<K, V> segment) {
+    public void prepareCompaction(final SegmentCore<K, V> segment) {
         Vldtn.requireNonNull(segment, "segment");
         logger.debug("Start of compacting '{}'", segment.getId());
         segment.resetSegmentIndexSearcher();
         segment.freezeWriteCacheForFlush();
-        return segment.snapshotCacheEntries();
     }
 
     void writeCompaction(final SegmentCore<K, V> segment,
-            final List<Entry<K, V>> snapshotEntries,
             final SegmentFullWriterTx<K, V> writerTx) {
         Vldtn.requireNonNull(segment, "segment");
-        Vldtn.requireNonNull(snapshotEntries, "snapshotEntries");
         Vldtn.requireNonNull(writerTx, "writerTx");
         try (EntryWriter<K, V> writer = writerTx.open();
                 EntryIterator<K, V> iterator = segment
-                        .openIteratorFromSnapshot(snapshotEntries)) {
+                        .openIteratorFromCompactionSnapshot()) {
             while (iterator.hasNext()) {
                 writer.write(iterator.next());
             }
@@ -83,7 +77,7 @@ final class SegmentCompacter<K, V> {
         if (writerTx == null) {
             writerTx = prepareVersionSwitch(plan);
         }
-        writeCompaction(plan.segment, plan.snapshotEntries, writerTx);
+        writeCompaction(plan.segment, writerTx);
         writerTx.commit();
         finalizeVersionSwitch(plan);
     }
@@ -188,17 +182,14 @@ final class SegmentCompacter<K, V> {
 
     static final class CompactionPlan<K, V> {
         private final SegmentCore<K, V> segment;
-        private final List<Entry<K, V>> snapshotEntries;
         private final long previousVersion;
         private final long nextVersion;
         private SegmentFullWriterTx<K, V> writerTx;
 
         private CompactionPlan(final SegmentCore<K, V> segment,
-                final List<Entry<K, V>> snapshotEntries,
                 final long previousVersion,
                 final long nextVersion) {
             this.segment = segment;
-            this.snapshotEntries = snapshotEntries;
             this.previousVersion = previousVersion;
             this.nextVersion = nextVersion;
         }

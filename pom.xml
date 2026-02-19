@@ -17,7 +17,6 @@
         <module>monitoring-prometheus</module>
         <module>management-api</module>
         <module>management-agent</module>
-        <module>monitoring-console</module>
         <module>monitoring-console-web</module>
     </modules>
 
@@ -33,6 +32,7 @@
         <mockito.version>5.20.0</mockito.version>
         <jacoco.version>0.8.14</jacoco.version>
         <micrometer.version>1.15.5</micrometer.version>
+        <dependency-check.skip>false</dependency-check.skip>
     </properties>
 
     <dependencyManagement>

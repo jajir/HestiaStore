@@ -1,254 +1,305 @@
 <!doctype html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
+
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Node Detail - HestiaStore Console</title>
-  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Node Detail - HestiaStore Console</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
-    :root {
-      --bg-a: #ecf3ef;
-      --bg-b: #d8e9df;
-      --panel: rgba(255, 255, 255, 0.84);
-      --text: #143226;
-      --muted: #4b6e5d;
-      --ok: #0f9d6b;
-      --warn: #d48a12;
-      --bad: #c54b3b;
-      --accent: #0d8f81;
-      --shadow: 0 18px 38px rgba(20, 50, 38, 0.14);
-    }
+        :root {
+            --bg-a: #ecf3ef;
+            --bg-b: #d8e9df;
+            --panel: rgba(255, 255, 255, 0.84);
+            --text: #143226;
+            --muted: #4b6e5d;
+            --ok: #0f9d6b;
+            --warn: #d48a12;
+            --bad: #c54b3b;
+            --accent: #0d8f81;
+            --shadow: 0 18px 38px rgba(20, 50, 38, 0.14);
+        }
 
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: "Space Grotesk", "Segoe UI", sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(circle at 10% 10%, rgba(214, 97, 59, 0.22), transparent 35%),
-        radial-gradient(circle at 85% 20%, rgba(13, 143, 129, 0.30), transparent 35%),
-        linear-gradient(135deg, var(--bg-a), var(--bg-b));
-      min-height: 100vh;
-    }
+        * {
+            box-sizing: border-box;
+        }
 
-    .shell {
-      max-width: 1320px;
-      margin: 0 auto;
-      padding: 26px 20px 32px;
-    }
-    .card {
-      border-radius: 18px;
-      background: var(--panel);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255,255,255,.66);
-    }
-    .top {
-      padding: 16px;
-      margin-bottom: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-    }
-    .logo-wrap {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .logo-wrap img {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      border: 1px solid rgba(20,50,38,.12);
-      background: #fff;
-    }
-    .mono {
-      font-family: "IBM Plex Mono", ui-monospace, monospace;
-      font-size: 12px;
-      color: var(--muted);
-    }
-    .btn {
-      border: 0;
-      border-radius: 10px;
-      font: inherit;
-      padding: 8px 12px;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text);
-      background: rgba(255,255,255,.78);
-      border: 1px solid rgba(20,50,38,.12);
-      font-size: 13px;
-      font-weight: 600;
-    }
-    .btn.alt {
-      color: #fff;
-      background: linear-gradient(135deg, #d6613b, #a7462a);
-      border: 0;
-    }
-    .btn.pri {
-      color: #fff;
-      background: linear-gradient(135deg, var(--accent), #0a6c61);
-      border: 0;
-    }
-    .btn-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
+        body {
+            margin: 0;
+            font-family: "Space Grotesk", "Segoe UI", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at 10% 10%, rgba(214, 97, 59, 0.22), transparent 35%),
+                radial-gradient(circle at 85% 20%, rgba(13, 143, 129, 0.30), transparent 35%),
+                linear-gradient(135deg, var(--bg-a), var(--bg-b));
+            min-height: 100vh;
+        }
 
-    .kpis {
-      display: grid;
-      gap: 10px;
-      grid-template-columns: repeat(6, 1fr);
-      margin-bottom: 16px;
-    }
-    .kpi {
-      padding: 14px 16px;
-    }
-    .kpi-label {
-      font-size: 12px;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: .05em;
-    }
-    .kpi-value {
-      margin-top: 8px;
-      font-size: 24px;
-      font-weight: 700;
-    }
+        .shell {
+            max-width: 1320px;
+            margin: 0 auto;
+            padding: 26px 20px 32px;
+        }
 
-    .grid {
-      display: grid;
-      gap: 16px;
-      grid-template-columns: repeat(2, 1fr);
-    }
-    .section {
-      padding: 14px 16px;
-    }
-    .section h3 {
-      margin: 0 0 8px;
-      font-size: 16px;
-    }
-    .line {
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      padding: 5px 0;
-      border-bottom: 1px solid rgba(20,50,38,.08);
-      font-size: 14px;
-    }
-    .value-runtime {
-      color: var(--text);
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .value-runtime::before {
-      content: "";
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--ok);
-      box-shadow: 0 0 0 0 rgba(15,157,107,.5);
-      animation: pulse 1.5s infinite;
-    }
-    .value-config {
-      color: var(--muted);
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .value-config::before {
-      content: "🔒";
-      font-size: 12px;
-      line-height: 1;
-    }
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(15,157,107,.45); }
-      70% { box-shadow: 0 0 0 7px rgba(15,157,107,0); }
-      100% { box-shadow: 0 0 0 0 rgba(15,157,107,0); }
-    }
-    .legend {
-      padding: 14px 16px;
-      margin-top: 16px;
-      font-size: 13px;
-      color: var(--muted);
-    }
-    .legend h3 {
-      margin: 0 0 10px;
-      color: var(--text);
-      font-size: 15px;
-    }
-    .legend p {
-      margin: 6px 0;
-    }
+        .card {
+            border-radius: 18px;
+            background: var(--panel);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, .66);
+        }
 
-    .warn {
-      padding: 14px 16px;
-      color: #b65d00;
-      margin-bottom: 16px;
-    }
+        .top {
+            padding: 16px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
 
-    @media (max-width: 1220px) {
-      .kpis { grid-template-columns: repeat(3, 1fr); }
-      .grid { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 760px) {
-      .kpis { grid-template-columns: repeat(2, 1fr); }
-      .top { flex-direction: column; align-items: flex-start; }
-    }
-  </style>
+        .logo-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-wrap img {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid rgba(20, 50, 38, .12);
+            background: #fff;
+        }
+
+        .mono {
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .btn {
+            border: 0;
+            border-radius: 10px;
+            font: inherit;
+            padding: 8px 12px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text);
+            background: rgba(255, 255, 255, .78);
+            border: 1px solid rgba(20, 50, 38, .12);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .btn.alt {
+            color: #fff;
+            background: linear-gradient(135deg, #d6613b, #a7462a);
+            border: 0;
+        }
+
+        .btn.pri {
+            color: #fff;
+            background: linear-gradient(135deg, var(--accent), #0a6c61);
+            border: 0;
+        }
+
+        .btn-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .kpis {
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(7, 1fr);
+            margin-bottom: 16px;
+        }
+
+        .kpi {
+            padding: 14px 16px;
+        }
+
+        .kpi-label {
+            font-size: 12px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+
+        .kpi-value {
+            margin-top: 8px;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .grid {
+            display: grid;
+            gap: 16px;
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .section {
+            padding: 14px 16px;
+        }
+
+        .section h3 {
+            margin: 0 0 8px;
+            font-size: 16px;
+        }
+
+        .line {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(20, 50, 38, .08);
+            font-size: 14px;
+        }
+
+        .value-runtime {
+            color: var(--text);
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .value-runtime::before {
+            content: "";
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--ok);
+            box-shadow: 0 0 0 0 rgba(15, 157, 107, .5);
+            animation: pulse 1.5s infinite;
+        }
+
+        .value-config {
+            color: var(--muted);
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .value-config::before {
+            content: "🔒";
+            font-size: 12px;
+            line-height: 1;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(15, 157, 107, .45);
+            }
+
+            70% {
+                box-shadow: 0 0 0 7px rgba(15, 157, 107, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(15, 157, 107, 0);
+            }
+        }
+
+        .legend {
+            padding: 14px 16px;
+            margin-top: 16px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .legend h3 {
+            margin: 0 0 10px;
+            color: var(--text);
+            font-size: 15px;
+        }
+
+        .legend p {
+            margin: 6px 0;
+        }
+
+        .warn {
+            padding: 14px 16px;
+            color: #b65d00;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 1220px) {
+            .kpis {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .kpis {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .top {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
 </head>
+
 <body>
-<main class="shell">
-  <div class="card top">
-    <div class="logo-wrap">
-      <img src="/images/hestiastore-logo.png" alt="HestiaStore logo">
-      <div>
-        <div style="font-size:24px; font-weight:700; line-height:1;">HestiaStore Console</div>
-        <div class="mono" th:if="${node != null}" th:text="${node.nodeName + ' / ' + node.nodeId}">index-1 / node-1</div>
-      </div>
-    </div>
-    <div class="btn-row">
-      <div th:if="${node != null}" class="btn-row">
-        <form action="/actions/flush" method="post" hx-post="/actions/flush"
-              hx-target="#flash" hx-swap="innerHTML">
-          <input type="hidden" name="nodeId" th:value="${node.nodeId}">
-          <input type="hidden" name="returnTo" value="node">
-          <button class="btn pri" type="submit">Flush</button>
-        </form>
-        <form action="/actions/compact" method="post"
-              hx-post="/actions/compact" hx-target="#flash"
-              hx-swap="innerHTML">
-          <input type="hidden" name="nodeId" th:value="${node.nodeId}">
-          <input type="hidden" name="returnTo" value="node">
-          <button class="btn alt" type="submit">Compact</button>
-        </form>
-      </div>
-      <a class="btn" href="/">Back to dashboard</a>
-    </div>
-  </div>
+    <main class="shell">
+        <div class="card top">
+            <div class="logo-wrap">
+                <img src="/images/hestiastore-logo.png" alt="HestiaStore logo">
+                <div>
+                    <div style="font-size:24px; font-weight:700; line-height:1;">HestiaStore Console</div>
+                    <div class="mono" th:if="${node != null}" th:text="${node.nodeName + ' / ' + node.nodeId}">index-1 /
+                        node-1</div>
+                    <div class="mono" th:if="${node != null}"
+                        th:text="${'index names: ' + (#strings.isEmpty(node.indexName) ? node.nodeName : node.indexName)}">
+                        index name: index-1</div>
+                </div>
+            </div>
+            <div class="btn-row">
+                <div th:if="${node != null}" class="btn-row">
+                    <form action="/actions/flush" method="post" hx-post="/actions/flush" hx-target="#flash"
+                        hx-swap="innerHTML">
+                        <input type="hidden" name="nodeId" th:value="${node.nodeId}">
+                        <input type="hidden" name="returnTo" value="node">
+                        <button class="btn pri" type="submit">Flush</button>
+                    </form>
+                    <form action="/actions/compact" method="post" hx-post="/actions/compact" hx-target="#flash"
+                        hx-swap="innerHTML">
+                        <input type="hidden" name="nodeId" th:value="${node.nodeId}">
+                        <input type="hidden" name="returnTo" value="node">
+                        <button class="btn alt" type="submit">Compact</button>
+                    </form>
+                </div>
+                <a class="btn" href="/">Back to dashboard</a>
+            </div>
+        </div>
 
-  <div id="flash" th:replace="~{fragments/flash :: flash}">
-    <div class="card legend">Status messages.</div>
-  </div>
+        <div id="flash" th:replace="~{fragments/flash :: flash}">
+            <div class="card legend">Status messages.</div>
+        </div>
 
-  <div th:if="${node == null}" class="card warn">
-    Node not found: <span th:text="${missingNodeId}">node</span>
-  </div>
+        <div th:if="${node == null}" class="card warn">
+            Node not found: <span th:text="${missingNodeId}">node</span>
+        </div>
 
-  <div th:if="${node != null}"
-       th:replace="~{fragments/node-detail-live :: nodeLive}">
-  </div>
-</main>
+        <div th:if="${node != null}" th:replace="~{fragments/node-detail-live :: nodeLive}">
+        </div>
+    </main>
 </body>
+
 </html>
