@@ -71,7 +71,7 @@ class ManagementAgentServerSecurityTest {
     @Test
     void unauthorizedAndForbiddenAreRejected() throws Exception {
         final HttpResponse<String> unauthorized = send("GET",
-                ManagementApiPaths.STATE, null, null);
+                ManagementApiPaths.REPORT, null, null);
         assertEquals(401, unauthorized.statusCode());
 
         final HttpResponse<String> forbidden = send("POST",

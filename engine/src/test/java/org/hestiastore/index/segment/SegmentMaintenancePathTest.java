@@ -43,7 +43,8 @@ class SegmentMaintenancePathTest {
 
     @Test
     void flushFrozenWriteCacheToDeltaFile_noop_on_empty_list() {
-        subject.flushFrozenWriteCacheToDeltaFile(List.of());
+        subject.flushFrozenWriteCacheToDeltaFile(List.<Entry<Integer, String>>of()
+                .iterator());
 
         verify(deltaCacheController, never()).openWriter();
     }
@@ -54,7 +55,7 @@ class SegmentMaintenancePathTest {
         final List<Entry<Integer, String>> entries = List.of(
                 Entry.of(1, "a"), Entry.of(2, "b"));
 
-        subject.flushFrozenWriteCacheToDeltaFile(entries);
+        subject.flushFrozenWriteCacheToDeltaFile(entries.iterator());
 
         verify(deltaCacheController).openWriter();
         verify(deltaCacheWriter).write(entries.get(0));

@@ -16,14 +16,9 @@ public final class ManagementApiPaths {
     public static final String BASE = "/api/" + VERSION;
 
     /**
-     * Endpoint exposing node lifecycle state.
+     * Endpoint exposing node report with JVM section and per-index sections.
      */
-    public static final String STATE = BASE + "/state";
-
-    /**
-     * Endpoint exposing metric snapshot.
-     */
-    public static final String METRICS = BASE + "/metrics";
+    public static final String REPORT = BASE + "/report";
 
     /**
      * Endpoint for flush action requests.

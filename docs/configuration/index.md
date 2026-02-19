@@ -23,7 +23,7 @@ IndexConfiguration<Integer, Integer> conf = IndexConfiguration
 SegmentIndex<Integer, Integer> index = SegmentIndex.<Integer, Integer>create(directory, conf);
 ```
 
-For console-side configuration and startup, see:
+For node management API and direct web console startup, see:
 [Monitoring Console Configuration](monitoring-console.md).
 
 Now let's look at particular parameters.

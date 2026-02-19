@@ -1,7 +1,9 @@
 package org.hestiastore.index.segment;
 
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -162,7 +164,9 @@ final class SegmentCache<K, V> {
      */
     public int sizeWithoutTombstones() {
         int count = 0;
-        for (final Entry<K, V> entry : getAsSortedList()) {
+        final Iterator<Entry<K, V>> iterator = mergedIterator();
+        while (iterator.hasNext()) {
+            final Entry<K, V> entry = iterator.next();
             if (!valueTypeDescriptor.isTombstone(entry.getValue())) {
                 count++;
             }
@@ -209,20 +213,68 @@ final class SegmentCache<K, V> {
     }
 
     /**
+     * Returns a sorted iterator over the merged cache view.
+     *
+     * @return iterator over delta + frozen + write caches
+     */
+    Iterator<Entry<K, V>> mergedIterator() {
+        return iteratorForCaches(deltaCache, frozenWriteCache, writeCache);
+    }
+
+    /**
+     * Returns a sorted iterator over the stable compaction snapshot view.
+     *
+     * @return iterator over delta + frozen caches
+     */
+    Iterator<Entry<K, V>> compactionSnapshotIterator() {
+        return iteratorForCaches(deltaCache, frozenWriteCache, null);
+    }
+
+    /**
+     * Returns a sorted iterator over the frozen write cache.
+     *
+     * @return iterator over frozen write cache entries
+     */
+    Iterator<Entry<K, V>> frozenWriteCacheIterator() {
+        if (frozenWriteCache == null || frozenWriteCache.isEmpty()) {
+            return List.<Entry<K, V>>of().iterator();
+        }
+        final Iterator<K> keys = frozenWriteCache.getSortedKeyIterator();
+        return new Iterator<>() {
+            @Override
+            public boolean hasNext() {
+                return keys.hasNext();
+            }
+
+            @Override
+            public Entry<K, V> next() {
+                if (!keys.hasNext()) {
+                    throw new NoSuchElementException("No next element.");
+                }
+                final K key = keys.next();
+                final V value = frozenWriteCache.get(key);
+                if (value == null) {
+                    return next();
+                }
+                return Entry.of(key, value);
+            }
+        };
+    }
+
+    /**
      * Freezes the current write cache into a snapshot for flushing.
      *
      * @return sorted snapshot entries, possibly empty
      */
-    List<Entry<K, V>> freezeWriteCache() {
+    void freezeWriteCache() {
         if (frozenWriteCache != null && !frozenWriteCache.isEmpty()) {
-            return frozenWriteCache.getAsSortedList();
+            return;
         }
         if (writeCache.isEmpty()) {
-            return List.of();
+            return;
         }
         frozenWriteCache = writeCache;
         writeCache = buildWriteCache();
-        return frozenWriteCache.getAsSortedList();
     }
 
     /**
@@ -244,7 +296,8 @@ final class SegmentCache<K, V> {
             signalCapacityAvailable();
             return;
         }
-        addAll(deltaCache, frozenWriteCache.getAsList());
+        frozenWriteCache.forEachEntry(
+                (key, value) -> deltaCache.put(Entry.of(key, value)));
         frozenWriteCache.clear();
         frozenWriteCache = null;
         signalCapacityAvailable();
@@ -340,6 +393,119 @@ final class SegmentCache<K, V> {
         }
         addAll(merged, writeCache.getAsList());
         return merged;
+    }
+
+    private Iterator<Entry<K, V>> iteratorForCaches(
+            final UniqueCache<K, V> delta,
+            final UniqueCache<K, V> frozen,
+            final UniqueCache<K, V> write) {
+        final SourceCursor<K> deltaCursor = new SourceCursor<>(
+                delta == null ? List.<K>of().iterator()
+                        : delta.getSortedKeyIterator());
+        final SourceCursor<K> frozenCursor = new SourceCursor<>(
+                frozen == null ? List.<K>of().iterator()
+                        : frozen.getSortedKeyIterator());
+        final SourceCursor<K> writeCursor = new SourceCursor<>(
+                write == null ? List.<K>of().iterator()
+                        : write.getSortedKeyIterator());
+        return new Iterator<>() {
+            private Entry<K, V> next = advance();
+
+            @Override
+            public boolean hasNext() {
+                return next != null;
+            }
+
+            @Override
+            public Entry<K, V> next() {
+                if (next == null) {
+                    throw new NoSuchElementException("No next element.");
+                }
+                final Entry<K, V> out = next;
+                next = advance();
+                return out;
+            }
+
+            private Entry<K, V> advance() {
+                while (deltaCursor.hasCurrent() || frozenCursor.hasCurrent()
+                        || writeCursor.hasCurrent()) {
+                    final K minKey = minKey(deltaCursor.current(),
+                            frozenCursor.current(), writeCursor.current());
+                    if (minKey == null) {
+                        return null;
+                    }
+                    consumeIfEquals(deltaCursor, minKey);
+                    consumeIfEquals(frozenCursor, minKey);
+                    consumeIfEquals(writeCursor, minKey);
+
+                    final V value = resolveValue(minKey, write, frozen, delta);
+                    if (value == null) {
+                        continue;
+                    }
+                    return Entry.of(minKey, value);
+                }
+                return null;
+            }
+        };
+    }
+
+    private void consumeIfEquals(final SourceCursor<K> cursor, final K key) {
+        if (cursor.hasCurrent() && keyComparator.compare(cursor.current(), key) == 0) {
+            cursor.advance();
+        }
+    }
+
+    private K minKey(final K a, final K b, final K c) {
+        K min = a;
+        if (b != null && (min == null || keyComparator.compare(b, min) < 0)) {
+            min = b;
+        }
+        if (c != null && (min == null || keyComparator.compare(c, min) < 0)) {
+            min = c;
+        }
+        return min;
+    }
+
+    private V resolveValue(final K key, final UniqueCache<K, V> write,
+            final UniqueCache<K, V> frozen, final UniqueCache<K, V> delta) {
+        if (write != null) {
+            final V value = write.get(key);
+            if (value != null) {
+                return value;
+            }
+        }
+        if (frozen != null) {
+            final V value = frozen.get(key);
+            if (value != null) {
+                return value;
+            }
+        }
+        if (delta != null) {
+            return delta.get(key);
+        }
+        return null;
+    }
+
+    private static final class SourceCursor<K> {
+        private final Iterator<K> iterator;
+        private K current;
+
+        private SourceCursor(final Iterator<K> iterator) {
+            this.iterator = iterator;
+            this.current = iterator.hasNext() ? iterator.next() : null;
+        }
+
+        private boolean hasCurrent() {
+            return current != null;
+        }
+
+        private K current() {
+            return current;
+        }
+
+        private void advance() {
+            current = iterator.hasNext() ? iterator.next() : null;
+        }
     }
 
     /**

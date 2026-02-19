@@ -11,7 +11,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -49,9 +48,11 @@ public class MonitoringConsoleWebController {
     @GetMapping("/")
     public String dashboard(final Model model) {
         fillModel(model);
-        model.addAttribute("backendUrl", properties.backendBaseUrl());
+        model.addAttribute("nodeEndpoints", properties.nodes());
         model.addAttribute("refreshMillis", properties.refreshMillis());
-        model.addAttribute("nodeForm", new RegisterNodeForm("", "", "", ""));
+        model.addAttribute("refreshMillisDisplay",
+                ConsoleBackendClient.NodeRow
+                        .formatWholeNumberValue(properties.refreshMillis()));
         return "dashboard";
     }
 
@@ -66,12 +67,15 @@ public class MonitoringConsoleWebController {
     public String nodeDetail(@PathVariable("nodeId") final String nodeId,
             final Model model) {
         model.addAttribute("refreshMillis", properties.refreshMillis());
-        final Optional<ConsoleBackendClient.NodeRow> node = findNode(nodeId);
-        if (node.isEmpty()) {
+        final Optional<ConsoleBackendClient.NodeDetails> nodeDetails = backendClient
+                .fetchNodeDetails(nodeId);
+        if (nodeDetails.isEmpty()) {
             model.addAttribute("missingNodeId", nodeId);
             return "node-detail";
         }
-        model.addAttribute("node", node.get());
+        model.addAttribute("nodeDetail", nodeDetails.get());
+        model.addAttribute("node", nodeDetails.get().node());
+        model.addAttribute("indexSections", nodeDetails.get().indexes());
         return "node-detail";
     }
 
@@ -86,11 +90,14 @@ public class MonitoringConsoleWebController {
     public String nodeDetailLive(@PathVariable("nodeId") final String nodeId,
             final Model model) {
         model.addAttribute("refreshMillis", properties.refreshMillis());
-        final Optional<ConsoleBackendClient.NodeRow> node = findNode(nodeId);
-        if (node.isEmpty()) {
+        final Optional<ConsoleBackendClient.NodeDetails> nodeDetails = backendClient
+                .fetchNodeDetails(nodeId);
+        if (nodeDetails.isEmpty()) {
             model.addAttribute("missingNodeId", nodeId);
         } else {
-            model.addAttribute("node", node.get());
+            model.addAttribute("nodeDetail", nodeDetails.get());
+            model.addAttribute("node", nodeDetails.get().node());
+            model.addAttribute("indexSections", nodeDetails.get().indexes());
         }
         return "fragments/node-detail-live :: nodeLive";
     }
@@ -129,48 +136,6 @@ public class MonitoringConsoleWebController {
     public String events(final Model model) {
         model.addAttribute("events", backendClient.fetchEvents());
         return "fragments/events :: eventsList";
-    }
-
-    /**
-     * Node registration form submit.
-     *
-     * @param form  registration form
-     * @param model thymeleaf model
-     * @return flash fragment
-     */
-    @PostMapping("/nodes/register")
-    public String registerNode(@ModelAttribute final RegisterNodeForm form,
-            @RequestHeader(value = "HX-Request",
-                    required = false) final String hxRequest,
-            final Model model, final RedirectAttributes redirectAttributes) {
-        final boolean htmx = hxRequest != null && !hxRequest.isBlank();
-        try {
-            backendClient.registerNode(form.nodeId().trim(),
-                    form.nodeName().trim(), form.baseUrl().trim(),
-                    form.agentToken().trim());
-            if (htmx) {
-                model.addAttribute("message",
-                        "Node registered: " + form.nodeId());
-                model.addAttribute("level", "ok");
-            } else {
-                redirectAttributes.addFlashAttribute("message",
-                        "Node registered: " + form.nodeId());
-                redirectAttributes.addFlashAttribute("level", "ok");
-                return "redirect:/";
-            }
-        } catch (final Exception e) {
-            if (htmx) {
-                model.addAttribute("message",
-                        "Register failed: " + e.getMessage());
-                model.addAttribute("level", "bad");
-            } else {
-                redirectAttributes.addFlashAttribute("message",
-                        "Register failed: " + e.getMessage());
-                redirectAttributes.addFlashAttribute("level", "bad");
-                return "redirect:/";
-            }
-        }
-        return "fragments/flash :: flash";
     }
 
     /**
@@ -260,35 +225,30 @@ public class MonitoringConsoleWebController {
                 : Math.round((cacheSize * 100D) / cacheLimit);
         model.addAttribute("nodes", nodes);
         model.addAttribute("statNodes", nodes.size());
+        model.addAttribute("statNodesDisplay",
+                ConsoleBackendClient.NodeRow.formatWholeNumberValue(
+                        nodes.size()));
         model.addAttribute("statReachable", reachable);
+        model.addAttribute("statReachableDisplay",
+                ConsoleBackendClient.NodeRow.formatWholeNumberValue(reachable));
         model.addAttribute("statUnreachable", unreachable);
         model.addAttribute("statGetOps", getOps);
+        model.addAttribute("statGetOpsDisplay",
+                ConsoleBackendClient.NodeRow.formatWholeNumberValue(getOps));
         model.addAttribute("statWriteOps", writeOps);
+        model.addAttribute("statWriteOpsDisplay",
+                ConsoleBackendClient.NodeRow.formatWholeNumberValue(writeOps));
         model.addAttribute("statCacheHits", cacheHits);
         model.addAttribute("statCacheMisses", cacheMisses);
         model.addAttribute("statCacheHitRatio", cacheHitRatio);
+        model.addAttribute("statCacheHitRatioDisplay",
+                ConsoleBackendClient.NodeRow
+                        .formatWholeNumberValue(cacheHitRatio));
         model.addAttribute("statCacheFillRatio", cacheFillRatio);
+        model.addAttribute("statCacheFillRatioDisplay",
+                ConsoleBackendClient.NodeRow
+                        .formatWholeNumberValue(cacheFillRatio));
         model.addAttribute("statAvgLatency", Math.round(avgLatency.orElse(0D)));
         model.addAttribute("statMaxLatency", maxLatency);
-    }
-
-    private Optional<ConsoleBackendClient.NodeRow> findNode(
-            final String nodeId) {
-        final List<ConsoleBackendClient.NodeRow> nodes = backendClient
-                .fetchDashboard();
-        return nodes.stream().filter(n -> n.nodeId().equals(nodeId))
-                .findFirst();
-    }
-
-    /**
-     * Node registration form model.
-     *
-     * @param nodeId     node id
-     * @param nodeName   node name
-     * @param baseUrl    base URL
-     * @param agentToken optional agent token
-     */
-    public record RegisterNodeForm(String nodeId, String nodeName, String baseUrl,
-            String agentToken) {
     }
 }

@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -22,6 +23,7 @@ class IndexStateOpeningTest {
 
     @Test
     void locksFileOnConstruction() {
+        when(directory.isFileExists(".lock")).thenReturn(false);
         when(directory.getLock(".lock")).thenReturn(fileLock);
         when(fileLock.isLocked()).thenReturn(false);
 
@@ -32,10 +34,23 @@ class IndexStateOpeningTest {
 
     @Test
     void throwsWhenDirectoryAlreadyLocked() {
+        when(directory.isFileExists(".lock")).thenReturn(true);
         when(directory.getLock(".lock")).thenReturn(fileLock);
         when(fileLock.isLocked()).thenReturn(true);
 
         assertThrows(IllegalStateException.class,
                 () -> new IndexStateOpening<>(directory));
+    }
+
+    @Test
+    void marksRecoveredStaleLock() {
+        when(directory.isFileExists(".lock")).thenReturn(true);
+        when(directory.getLock(".lock")).thenReturn(fileLock);
+        when(fileLock.isLocked()).thenReturn(false);
+
+        final IndexStateOpening<Object, Object> state = new IndexStateOpening<>(
+                directory);
+
+        assertTrue(state.wasStaleLockRecovered());
     }
 }

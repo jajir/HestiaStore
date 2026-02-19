@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.EntryIteratorWithLock;
@@ -70,6 +71,8 @@ class SegmentReadPathTest {
         when(segmentFiles.getDirectory()).thenReturn(asyncDirectory);
         when(asyncDirectory.isFileExists("segment.index")).thenReturn(false);
         when(segmentCache.getAsSortedList()).thenReturn(List.of());
+        when(segmentCache.mergedIterator())
+                .thenReturn(List.<Entry<Integer, String>>of().iterator());
         when(chunkEntryFile.openIterator()).thenReturn(baseIterator);
         when(baseIterator.hasNext()).thenReturn(false);
         subject = new SegmentReadPath<>(segmentFiles, conf, segmentResources,

@@ -26,7 +26,9 @@ class HestiaStoreMicrometerBinderTest {
         when(index.getState()).thenAnswer(inv -> snapshotRef.get().getState());
 
         final SimpleMeterRegistry registry = new SimpleMeterRegistry();
-        new HestiaStoreMicrometerBinder(index, "orders").bindTo(registry);
+        new HestiaStoreMicrometerBinder(
+                new MicrometerSegmentIndexSource("orders", index))
+                        .bindTo(registry);
 
         assertEquals(1D,
                 registry.get("hestiastore_ops_get_total").tag("index", "orders")

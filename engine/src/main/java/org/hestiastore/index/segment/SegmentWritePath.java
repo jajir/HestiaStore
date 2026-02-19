@@ -1,7 +1,5 @@
 package org.hestiastore.index.segment;
 
-import java.util.List;
-
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
 
@@ -72,8 +70,8 @@ final class SegmentWritePath<K, V> {
      *
      * @return snapshot entries in sorted order
      */
-    List<Entry<K, V>> freezeWriteCacheForFlush() {
-        return segmentCache.freezeWriteCache();
+    void freezeWriteCacheForFlush() {
+        segmentCache.freezeWriteCache();
     }
 
     /**

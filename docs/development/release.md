@@ -81,11 +81,10 @@ Before tagging, run:
 
 ```bash
 mvn -N install
-mvn -pl engine,monitoring-api,monitoring-micrometer,monitoring-prometheus,management-api,management-agent,monitoring-console,monitoring-console-web -DskipTests package
-mvn -pl management-agent,monitoring-console,monitoring-console-web,monitoring-prometheus test
+mvn -pl engine,monitoring-api,monitoring-micrometer,monitoring-prometheus,management-api,management-agent,monitoring-console-web -DskipTests package
+mvn -pl management-agent,monitoring-console-web,monitoring-prometheus test
 mvn -pl engine test -Dtest=IntegrationSegmentIndexMetricsSnapshotConcurrencyTest
 mvn -pl monitoring-prometheus test -Dtest=HestiaStorePrometheusExporterTest
-mvn -pl monitoring-console test -Dtest=MonitoringConsoleServerTest
 ```
 
 ### 1. 🏷️ Checkout the `main` branch
@@ -159,7 +158,6 @@ Each release publishes aligned versions of:
 - `org.hestiastore:monitoring-prometheus`
 - `org.hestiastore:management-api`
 - `org.hestiastore:management-agent`
-- `org.hestiastore:monitoring-console`
 - `org.hestiastore:monitoring-console-web`
 
 Compatibility and staged upgrade guidance:

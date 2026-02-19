@@ -14,8 +14,9 @@ class ManagementApiContractCompatibilityTest {
 
     @Test
     void actionRequestRecordComponentsRemainStable() {
-        assertRecordComponents(ActionRequest.class, List.of("requestId"),
-                List.of(String.class));
+        assertRecordComponents(ActionRequest.class,
+                List.of("requestId", "indexName"),
+                List.of(String.class, String.class));
     }
 
     @Test
@@ -28,9 +29,19 @@ class ManagementApiContractCompatibilityTest {
     }
 
     @Test
-    void metricsResponseRecordComponentsRemainStable() {
-        assertRecordComponents(MetricsResponse.class,
-                List.of("indexName", "state", "getOperationCount",
+    void jvmMetricsRecordComponentsRemainStable() {
+        assertRecordComponents(JvmMetricsResponse.class,
+                List.of("heapUsedBytes", "heapCommittedBytes",
+                        "heapMaxBytes", "nonHeapUsedBytes", "gcCount",
+                        "gcTimeMillis"),
+                List.of(long.class, long.class, long.class, long.class,
+                        long.class, long.class));
+    }
+
+    @Test
+    void indexReportRecordComponentsRemainStable() {
+        assertRecordComponents(IndexReportResponse.class,
+                List.of("indexName", "state", "ready", "getOperationCount",
                         "putOperationCount", "deleteOperationCount",
                         "registryCacheHitCount", "registryCacheMissCount",
                         "registryCacheLoadCount",
@@ -39,51 +50,43 @@ class ManagementApiContractCompatibilityTest {
                         "segmentCacheKeyLimitPerSegment",
                         "maxNumberOfKeysInSegmentWriteCache",
                         "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance",
-                        "segmentCount",
-                        "segmentReadyCount", "segmentMaintenanceCount",
-                        "segmentErrorCount", "segmentClosedCount",
-                        "segmentBusyCount", "totalSegmentKeys",
-                        "totalSegmentCacheKeys", "totalWriteCacheKeys",
-                        "totalDeltaCacheFiles", "compactRequestCount",
-                        "flushRequestCount", "splitScheduleCount",
-                        "splitInFlightCount", "maintenanceQueueSize",
-                        "maintenanceQueueCapacity", "splitQueueSize",
-                        "splitQueueCapacity", "readLatencyP50Micros",
-                        "readLatencyP95Micros", "readLatencyP99Micros",
-                        "writeLatencyP50Micros", "writeLatencyP95Micros",
-                        "writeLatencyP99Micros", "bloomFilterHashFunctions",
+                        "segmentCount", "segmentReadyCount",
+                        "segmentMaintenanceCount", "segmentErrorCount",
+                        "segmentClosedCount", "segmentBusyCount",
+                        "totalSegmentKeys", "totalSegmentCacheKeys",
+                        "totalWriteCacheKeys", "totalDeltaCacheFiles",
+                        "compactRequestCount", "flushRequestCount",
+                        "splitScheduleCount", "splitInFlightCount",
+                        "maintenanceQueueSize", "maintenanceQueueCapacity",
+                        "splitQueueSize", "splitQueueCapacity",
+                        "readLatencyP50Micros", "readLatencyP95Micros",
+                        "readLatencyP99Micros", "writeLatencyP50Micros",
+                        "writeLatencyP95Micros", "writeLatencyP99Micros",
+                        "bloomFilterHashFunctions",
                         "bloomFilterIndexSizeInBytes",
                         "bloomFilterProbabilityOfFalsePositive",
                         "bloomFilterRequestCount",
                         "bloomFilterRefusedCount",
                         "bloomFilterPositiveCount",
-                        "bloomFilterFalsePositiveCount",
-                        "jvmHeapUsedBytes", "jvmHeapCommittedBytes",
-                        "jvmNonHeapUsedBytes", "jvmGcCount",
-                        "jvmGcTimeMillis",
-                        "capturedAt"),
-                List.of(String.class, String.class, long.class, long.class,
+                        "bloomFilterFalsePositiveCount"),
+                List.of(String.class, String.class, boolean.class, long.class,
                         long.class, long.class, long.class, long.class,
-                        long.class, int.class, int.class, int.class,
+                        long.class, long.class, int.class, int.class,
                         int.class, int.class, int.class, int.class, int.class,
-                        int.class, int.class,
-                        int.class,
-                        long.class, long.class, long.class, long.class,
-                        long.class, long.class, long.class, int.class,
                         int.class, int.class, int.class, int.class, long.class,
                         long.class, long.class, long.class, long.class,
+                        long.class, long.class, int.class, int.class,
+                        int.class, int.class, int.class, long.class,
+                        long.class, long.class, long.class, long.class,
                         long.class, int.class, int.class, double.class,
-                        long.class, long.class, long.class, long.class,
-                        long.class, long.class, long.class, long.class,
-                        long.class, Instant.class));
+                        long.class, long.class, long.class, long.class));
     }
 
     @Test
-    void nodeStateResponseRecordComponentsRemainStable() {
-        assertRecordComponents(NodeStateResponse.class,
-                List.of("indexName", "state", "ready", "capturedAt"),
-                List.of(String.class, String.class, boolean.class,
-                        Instant.class));
+    void nodeReportRecordComponentsRemainStable() {
+        assertRecordComponents(NodeReportResponse.class,
+                List.of("jvm", "indexes", "capturedAt"),
+                List.of(JvmMetricsResponse.class, List.class, Instant.class));
     }
 
     @Test

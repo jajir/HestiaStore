@@ -1,7 +1,8 @@
 package org.hestiastore.index.directory.async;
 
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.AbstractCloseableResource;
@@ -13,169 +14,137 @@ import org.hestiastore.index.directory.FileReaderSeekable;
 import org.hestiastore.index.directory.FileWriter;
 
 /**
- * Synchronous {@link Directory} view over {@link AsyncDirectory}.
- * <p>
- * Each operation delegates to the async directory and blocks until completion.
- * This is a compatibility adapter for callers that want a synchronous API while
- * still routing filesystem work through the async directory's bounded executor.
- * </p>
+ * Synchronous {@link Directory} view that dispatches all work to a supplied
+ * executor and blocks for completion.
  */
 public final class AsyncDirectoryBlockingAdapter extends AbstractCloseableResource
         implements Directory {
 
-    private final AsyncDirectory delegate;
-    private final boolean closeDelegateOnClose;
+    private final Directory delegate;
+    private final ExecutorService executor;
 
-    public static AsyncDirectoryBlockingAdapter wrap(final Directory directory,
-            final int numberOfIoThreads) {
-        return new AsyncDirectoryBlockingAdapter(
-                AsyncDirectoryAdapter.wrap(directory, numberOfIoThreads), true);
-    }
-
-    public static AsyncDirectoryBlockingAdapter wrap(final Directory directory,
+    public AsyncDirectoryBlockingAdapter(final Directory delegate,
             final ExecutorService executor) {
-        return wrap(directory, executor, true);
-    }
-
-    public static AsyncDirectoryBlockingAdapter wrap(final Directory directory,
-            final ExecutorService executor,
-            final boolean shutdownExecutorOnClose) {
-        return new AsyncDirectoryBlockingAdapter(new AsyncDirectoryAdapter(
-                Vldtn.requireNonNull(directory, "directory"),
-                Vldtn.requireNonNull(executor, "executor"),
-                shutdownExecutorOnClose), true);
-    }
-
-    public static AsyncDirectoryBlockingAdapter wrap(final Directory directory) {
-        return wrap(directory, 1);
-    }
-
-    public static AsyncDirectoryBlockingAdapter wrap(
-            final AsyncDirectory asyncDirectory) {
-        return new AsyncDirectoryBlockingAdapter(asyncDirectory, false);
-    }
-
-    public AsyncDirectoryBlockingAdapter(final AsyncDirectory delegate,
-            final boolean closeDelegateOnClose) {
         this.delegate = Vldtn.requireNonNull(delegate, "delegate");
-        this.closeDelegateOnClose = closeDelegateOnClose;
-    }
-
-    /**
-     * Returns the wrapped async directory delegate.
-     *
-     * @return wrapped async directory
-     */
-    public AsyncDirectory getAsyncDirectoryDelegate() {
-        return delegate;
+        this.executor = Vldtn.requireNonNull(executor, "executor");
     }
 
     @Override
     public FileReader getFileReader(final String fileName) {
-        final AsyncFileReader reader = await(delegate.getFileReaderAsync(
-                Vldtn.requireNonNull(fileName, "fileName")));
+        final AsyncFileReader reader = call(() -> new AsyncFileReaderAdapter(
+                delegate.getFileReader(Vldtn.requireNonNull(fileName, "fileName")),
+                executor));
         return new AsyncFileReaderBlockingAdapter(reader);
     }
 
     @Override
     public FileReader getFileReader(final String fileName,
             final int bufferSize) {
-        final AsyncFileReader reader = await(delegate.getFileReaderAsync(
-                Vldtn.requireNonNull(fileName, "fileName"), bufferSize));
+        final AsyncFileReader reader = call(() -> new AsyncFileReaderAdapter(
+                delegate.getFileReader(Vldtn.requireNonNull(fileName, "fileName"),
+                        bufferSize),
+                executor));
         return new AsyncFileReaderBlockingAdapter(reader);
     }
 
     @Override
     public FileReaderSeekable getFileReaderSeekable(final String fileName) {
-        final AsyncFileReaderSeekable reader = await(
-                delegate.getFileReaderSeekableAsync(
-                        Vldtn.requireNonNull(fileName, "fileName")));
+        final AsyncFileReaderSeekable reader = call(
+                () -> new AsyncFileReaderSeekableAdapter(
+                        delegate.getFileReaderSeekable(
+                                Vldtn.requireNonNull(fileName, "fileName")),
+                        executor));
         return new AsyncFileReaderSeekableBlockingAdapter(reader);
     }
 
     @Override
     public boolean isFileExists(final String fileName) {
-        return await(delegate.isFileExistsAsync(
-                Vldtn.requireNonNull(fileName, "fileName"))).booleanValue();
+        return call(() -> Boolean.valueOf(
+                delegate.isFileExists(Vldtn.requireNonNull(fileName, "fileName"))))
+                        .booleanValue();
     }
 
     @Override
     public FileWriter getFileWriter(final String fileName,
             final Access access) {
-        final AsyncFileWriter writer = await(delegate.getFileWriterAsync(
-                Vldtn.requireNonNull(fileName, "fileName"),
-                Vldtn.requireNonNull(access, "access")));
+        final AsyncFileWriter writer = call(() -> new AsyncFileWriterAdapter(
+                delegate.getFileWriter(Vldtn.requireNonNull(fileName, "fileName"),
+                        Vldtn.requireNonNull(access, "access")),
+                executor));
         return new AsyncFileWriterBlockingAdapter(writer);
     }
 
     @Override
     public FileWriter getFileWriter(final String fileName, final Access access,
             final int bufferSize) {
-        final AsyncFileWriter writer = await(delegate.getFileWriterAsync(
-                Vldtn.requireNonNull(fileName, "fileName"),
-                Vldtn.requireNonNull(access, "access"), bufferSize));
+        final AsyncFileWriter writer = call(() -> new AsyncFileWriterAdapter(
+                delegate.getFileWriter(Vldtn.requireNonNull(fileName, "fileName"),
+                        Vldtn.requireNonNull(access, "access"), bufferSize),
+                executor));
         return new AsyncFileWriterBlockingAdapter(writer);
     }
 
     @Override
     public boolean deleteFile(final String fileName) {
-        return await(delegate.deleteFileAsync(
-                Vldtn.requireNonNull(fileName, "fileName"))).booleanValue();
+        return call(() -> Boolean.valueOf(
+                delegate.deleteFile(Vldtn.requireNonNull(fileName, "fileName"))))
+                        .booleanValue();
     }
 
     @Override
     public Stream<String> getFileNames() {
-        return await(delegate.getFileNamesAsync());
+        return call(delegate::getFileNames);
     }
 
     @Override
     public void renameFile(final String currentFileName,
             final String newFileName) {
-        await(delegate.renameFileAsync(
+        run(() -> delegate.renameFile(
                 Vldtn.requireNonNull(currentFileName, "currentFileName"),
                 Vldtn.requireNonNull(newFileName, "newFileName")));
     }
 
     @Override
     public Directory openSubDirectory(final String directoryName) {
-        final AsyncDirectory subDirectory = await(delegate.openSubDirectory(
+        final Directory subDirectory = call(() -> delegate.openSubDirectory(
                 Vldtn.requireNonNull(directoryName, "directoryName")));
-        return new AsyncDirectoryBlockingAdapter(subDirectory, true);
+        return new AsyncDirectoryBlockingAdapter(subDirectory, executor);
     }
 
     @Override
     public boolean mkdir(final String directoryName) {
-        final String requiredDirectoryName = Vldtn.requireNonNull(directoryName,
-                "directoryName");
-        final boolean existed;
-        try (Stream<String> fileNames = await(delegate.getFileNamesAsync())) {
-            existed = fileNames.anyMatch(requiredDirectoryName::equals);
-        }
-        await(delegate.openSubDirectory(requiredDirectoryName)).close();
-        return !existed;
+        return call(() -> Boolean.valueOf(
+                delegate.mkdir(Vldtn.requireNonNull(directoryName, "directoryName"))))
+                        .booleanValue();
     }
 
     @Override
     public boolean rmdir(final String directoryName) {
-        return await(delegate.rmdir(
-                Vldtn.requireNonNull(directoryName, "directoryName")))
+        return call(() -> Boolean.valueOf(
+                delegate.rmdir(Vldtn.requireNonNull(directoryName, "directoryName"))))
                         .booleanValue();
     }
 
     @Override
     public FileLock getLock(final String fileName) {
-        return await(delegate.getLockAsync(
-                Vldtn.requireNonNull(fileName, "fileName")));
+        return call(() -> delegate.getLock(Vldtn.requireNonNull(fileName,
+                "fileName")));
     }
 
     @Override
     protected void doClose() {
-        if (closeDelegateOnClose) {
-            delegate.close();
-        }
+        // Executor lifecycle is owned by caller.
     }
 
-    private static <T> T await(final CompletionStage<T> stage) {
-        return Vldtn.requireNonNull(stage, "stage").toCompletableFuture().join();
+    private <T> T call(final Supplier<T> supplier) {
+        return CompletableFuture
+                .supplyAsync(Vldtn.requireNonNull(supplier, "supplier"),
+                        executor)
+                .join();
+    }
+
+    private void run(final Runnable runnable) {
+        CompletableFuture.runAsync(Vldtn.requireNonNull(runnable, "runnable"),
+                executor).join();
     }
 }

@@ -20,8 +20,8 @@ class HestiaStorePrometheusExporterTest {
                         SegmentIndexState.READY));
         Mockito.when(index.getState()).thenReturn(SegmentIndexState.READY);
 
-        final String scrape = HestiaStorePrometheusExporter.scrape(index,
-                "orders");
+        final String scrape = HestiaStorePrometheusExporter.scrape(
+                new PrometheusSegmentIndexSource("orders", index));
 
         assertTrue(scrape.contains("hestiastore_ops_get_total"));
         assertTrue(scrape.contains("hestiastore_ops_put_total"));

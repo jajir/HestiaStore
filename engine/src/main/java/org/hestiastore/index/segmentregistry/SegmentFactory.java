@@ -82,7 +82,7 @@ public final class SegmentFactory<K, V> {
                         : SegmentMaintenancePolicy.none();
         return Segment.<K, V>builder(segmentDirectory)//
                 .withId(segmentId)//
-                .withDirectoryLockingEnabled(false)//
+                .withDirectoryLockingEnabled(true)//
                 .withKeyTypeDescriptor(keyTypeDescriptor)//
                 .withMaintenanceExecutor(maintenanceExecutor)//
                 .withMaintenancePolicy(maintenancePolicy)//

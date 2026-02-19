@@ -33,8 +33,9 @@ class AsyncDirectoryBlockingAdapterTest {
 
     @Test
     void round_trip_with_mem_directory() {
-        final AsyncDirectoryBlockingAdapter directory = AsyncDirectoryBlockingAdapter
-                .wrap(new MemDirectory(), 2);
+        executor = Executors.newFixedThreadPool(2);
+        final AsyncDirectoryBlockingAdapter directory = new AsyncDirectoryBlockingAdapter(
+                new MemDirectory(), executor);
         try {
             final FileWriter writer = directory.getFileWriter("f");
             writer.write("hi".getBytes(StandardCharsets.ISO_8859_1));
@@ -52,8 +53,9 @@ class AsyncDirectoryBlockingAdapterTest {
 
     @Test
     void mkdir_and_rmdir_are_supported() {
-        final AsyncDirectoryBlockingAdapter directory = AsyncDirectoryBlockingAdapter
-                .wrap(new MemDirectory(), 1);
+        executor = Executors.newSingleThreadExecutor();
+        final AsyncDirectoryBlockingAdapter directory = new AsyncDirectoryBlockingAdapter(
+                new MemDirectory(), executor);
         try {
             assertTrue(directory.mkdir("child"));
             assertFalse(directory.mkdir("child"));
@@ -72,10 +74,8 @@ class AsyncDirectoryBlockingAdapterTest {
             return t;
         });
         final RecordingDirectory recordingDirectory = new RecordingDirectory();
-        final AsyncDirectory asyncDirectory = new AsyncDirectoryAdapter(
-                recordingDirectory, executor, false);
-        final AsyncDirectoryBlockingAdapter directory = AsyncDirectoryBlockingAdapter
-                .wrap(asyncDirectory);
+        final AsyncDirectoryBlockingAdapter directory = new AsyncDirectoryBlockingAdapter(
+                recordingDirectory, executor);
 
         final FileWriter writer = directory.getFileWriter("f");
         writer.write((byte) 1);
@@ -83,6 +83,22 @@ class AsyncDirectoryBlockingAdapterTest {
 
         assertTrue(recordingDirectory.lastWriteThreadName.get()
                 .startsWith("io-thread"));
+    }
+
+    @Test
+    void close_does_not_shutdown_executor() {
+        executor = Executors.newSingleThreadExecutor();
+        final RecordingDirectory first = new RecordingDirectory();
+        final AsyncDirectoryBlockingAdapter firstAdapter = new AsyncDirectoryBlockingAdapter(
+                first, executor);
+        try {
+            final FileWriter firstWriter = firstAdapter.getFileWriter("a");
+            firstWriter.write((byte) 1);
+            firstWriter.close();
+        } finally {
+            firstAdapter.close();
+        }
+        assertFalse(executor.isShutdown());
     }
 
     private static final class RecordingDirectory implements Directory {

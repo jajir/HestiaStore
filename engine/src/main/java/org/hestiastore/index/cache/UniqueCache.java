@@ -2,11 +2,13 @@ package org.hestiastore.index.cache;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
@@ -135,6 +137,37 @@ public class UniqueCache<K, V> {
      */
     public List<Entry<K, V>> getAsList() {
         return snapshotEntries();
+    }
+
+    /**
+     * Returns an iterator over a sorted snapshot of keys.
+     *
+     * @return iterator over keys sorted by the configured comparator
+     */
+    public Iterator<K> getSortedKeyIterator() {
+        if (map.isEmpty()) {
+            return List.<K>of().iterator();
+        }
+        final List<K> keys = new ArrayList<>(map.keySet());
+        if (keys.size() > 1) {
+            keys.sort(keyComparator);
+        }
+        return keys.iterator();
+    }
+
+    /**
+     * Iterates over a snapshot of the cache entries as key/value pairs.
+     *
+     * @param consumer consumer for each key/value pair
+     */
+    public void forEachEntry(final BiConsumer<K, V> consumer) {
+        Vldtn.requireNonNull(consumer, "consumer");
+        if (map.isEmpty()) {
+            return;
+        }
+        for (final Map.Entry<K, V> entry : map.entrySet()) {
+            consumer.accept(entry.getKey(), entry.getValue());
+        }
     }
 
     /**

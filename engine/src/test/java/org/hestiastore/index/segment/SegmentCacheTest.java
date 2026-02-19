@@ -139,7 +139,7 @@ class SegmentCacheTest {
                 DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_MAINTENANCE,
                 DEFAULT_MAX_SEGMENT_CACHE);
 
-        assertEquals(List.of(), cache.freezeWriteCache());
+        cache.freezeWriteCache();
         cache.mergeFrozenWriteCacheToDeltaCache();
 
         assertFalse(cache.hasFrozenWriteCache());
@@ -156,9 +156,7 @@ class SegmentCacheTest {
         cache.putToWriteCache(Entry.of(2, "B"));
         cache.putToWriteCache(Entry.of(1, "A"));
 
-        assertEquals(
-                List.of(Entry.of(1, "A"), Entry.of(2, "B")),
-                cache.freezeWriteCache());
+        cache.freezeWriteCache();
 
         assertEquals(0, cache.getNumberOfKeysInWriteCache());
         assertTrue(cache.hasFrozenWriteCache());
@@ -179,15 +177,11 @@ class SegmentCacheTest {
         cache.putToWriteCache(Entry.of(1, "A"));
         cache.putToWriteCache(Entry.of(2, "B"));
 
-        assertEquals(
-                List.of(Entry.of(1, "A"), Entry.of(2, "B")),
-                cache.freezeWriteCache());
+        cache.freezeWriteCache();
 
         cache.putToWriteCache(Entry.of(3, "C"));
 
-        assertEquals(
-                List.of(Entry.of(1, "A"), Entry.of(2, "B")),
-                cache.freezeWriteCache());
+        cache.freezeWriteCache();
         assertEquals(1, cache.getNumberOfKeysInWriteCache());
         assertEquals(
                 List.of(Entry.of(1, "A"), Entry.of(2, "B"),

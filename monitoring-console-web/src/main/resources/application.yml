@@ -4,6 +4,9 @@ server:
 hestia:
   console:
     web:
-      backend-base-url: http://127.0.0.1:8085
-      write-token: ""
+      nodes:
+        - node-id: node-1
+          node-name: index-1
+          base-url: http://127.0.0.1:9001
+          agent-token: ""
       refresh-millis: 2500

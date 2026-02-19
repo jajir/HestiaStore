@@ -236,11 +236,13 @@
 					</execution>
 				</executions>
 				<configuration>
+					<skip>${dependency-check.skip}</skip>
 					<formats>
 						<format>HTML</format>
 						<format>JSON</format>
 					</formats>
 					<failBuildOnCVSS>7</failBuildOnCVSS> <!-- Fail build on vulnerabilities above this CVSS score -->
+					<failOnError>false</failOnError>
 					<nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
 				</configuration>
         	</plugin>

@@ -1,11 +1,9 @@
 package org.hestiastore.index.segment;
 
-import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.slf4j.Logger;
@@ -212,9 +210,9 @@ class SegmentImpl<K, V> implements Segment<K, V> {
             return compact();
         }
         return maintenanceService.startMaintenance(() -> {
-            final List<Entry<K, V>> entries = core.freezeWriteCacheForFlush();
+            core.freezeWriteCacheForFlush();
             return new SegmentMaintenanceWork(
-                    () -> core.flushFrozenWriteCacheToDeltaFile(entries),
+                    core::flushFrozenWriteCacheToDeltaFile,
                     core::applyFrozenWriteCacheAfterFlush);
         }, this::scheduleMaintenanceIfNeeded);
     }
@@ -325,9 +323,9 @@ class SegmentImpl<K, V> implements Segment<K, V> {
         if (!gate.tryEnterCloseAndDrain()) {
             return resultForState(gate.getState());
         }
-        final List<Entry<K, V>> entries = core.freezeWriteCacheForFlush();
+        core.freezeWriteCacheForFlush();
         try {
-            maintenanceExecutor.execute(() -> runClose(entries));
+            maintenanceExecutor.execute(this::runClose);
         } catch (final RuntimeException e) {
             failUnlessClosed();
             return SegmentResult.error();
@@ -335,12 +333,10 @@ class SegmentImpl<K, V> implements Segment<K, V> {
         return SegmentResult.ok();
     }
 
-    private void runClose(final List<Entry<K, V>> entries) {
+    private void runClose() {
         try {
-            if (!entries.isEmpty()) {
-                core.flushFrozenWriteCacheToDeltaFile(entries);
-                core.applyFrozenWriteCacheAfterFlush();
-            }
+            core.flushFrozenWriteCacheToDeltaFile();
+            core.applyFrozenWriteCacheAfterFlush();
             core.close();
             if (!gate.finishCloseToClosed()) {
                 gate.fail();

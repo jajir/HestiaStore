@@ -19,11 +19,19 @@ final class IndexDirectoryClosingAdapter<K, V>
 
     private final SegmentIndex<K, V> index;
     private final Directory directory;
+    private final CloseableResource onClose;
 
     IndexDirectoryClosingAdapter(final SegmentIndex<K, V> index,
             final Directory directory) {
+        this(index, directory, null);
+    }
+
+    IndexDirectoryClosingAdapter(final SegmentIndex<K, V> index,
+            final Directory directory,
+            final CloseableResource onClose) {
         this.index = Vldtn.requireNonNull(index, "index");
         this.directory = Vldtn.requireNonNull(directory, "directory");
+        this.onClose = onClose;
     }
 
     /** {@inheritDoc} */
@@ -141,6 +149,17 @@ final class IndexDirectoryClosingAdapter<K, V>
                 failure = e;
             } else {
                 failure.addSuppressed(e);
+            }
+        }
+        if (onClose != null) {
+            try {
+                onClose.close();
+            } catch (final RuntimeException e) {
+                if (failure == null) {
+                    failure = e;
+                } else {
+                    failure.addSuppressed(e);
+                }
             }
         }
         if (failure != null) {

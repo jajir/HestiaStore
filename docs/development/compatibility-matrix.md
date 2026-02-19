@@ -11,21 +11,20 @@ All runtime modules are released with the same version number (for example
 
 | Module | Required same-version modules | Notes |
 |---|---|---|
-| `index` | none | Core runtime without monitoring dependencies. |
-| `monitoring-api` | `index` | Shared names/contracts for monitoring adapters. |
-| `monitoring-micrometer` | `index`, `monitoring-api` | Micrometer bridge from core snapshots. |
-| `monitoring-prometheus` | `index`, `monitoring-api`, `monitoring-micrometer` (or direct use) | Prometheus scrape support. |
-| `management-api` | none | Shared DTO contracts for agent and console. |
-| `management-agent` | `index`, `management-api` | Node-local management endpoints. |
-| `monitoring-console` | `management-api`, `management-agent` (remote HTTP) | Multi-node monitoring/control plane. |
-| `monitoring-console-web` | `monitoring-console` (remote HTTP) | Spring MVC/Thymeleaf operator UI. |
+| `engine` | none | Core runtime without monitoring dependencies. |
+| `monitoring-api` | `engine` | Shared names/contracts for monitoring adapters. |
+| `monitoring-micrometer` | `engine`, `monitoring-api` | Micrometer bridge from core snapshots. |
+| `monitoring-prometheus` | `engine`, `monitoring-api`, `monitoring-micrometer` (or direct use) | Prometheus scrape support. |
+| `management-api` | none | Shared DTO contracts for agent and web console direct mode. |
+| `management-agent` | `engine`, `management-api` | Node-local management endpoints. |
+| `monitoring-console-web` | `management-api`, `management-agent` (remote HTTP) | Spring MVC/Thymeleaf operator UI (direct node mode). |
 
 ## Runtime compatibility rule
 
 - Supported: all modules on the same version.
 - Not guaranteed: mixing different minor versions across modules.
 - Forbidden for production: older `management-api` with newer
-  `management-agent`/`monitoring-console` if contract tests fail.
+  `management-agent` if contract tests fail.
 
 ## Upgrade notes summary
 
@@ -33,8 +32,7 @@ All runtime modules are released with the same version number (for example
 1. If staged rollout is required:
    - upgrade `management-api` first,
    - then `management-agent`,
-   - then `monitoring-console`.
+   - then `monitoring-console-web`.
 1. Validate endpoints and scrapes after upgrade:
-   - agent `/api/v1/state`, `/api/v1/metrics`,
-   - console `/console/v1/dashboard`,
+   - agent `/api/v1/report`,
    - Prometheus scrape output.

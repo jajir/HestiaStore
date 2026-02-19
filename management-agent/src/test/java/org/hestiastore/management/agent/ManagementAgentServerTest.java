@@ -1,6 +1,7 @@
 package org.hestiastore.management.agent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -8,6 +9,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -21,8 +24,7 @@ import org.hestiastore.management.api.ActionStatus;
 import org.hestiastore.management.api.ActionType;
 import org.hestiastore.management.api.ErrorResponse;
 import org.hestiastore.management.api.ManagementApiPaths;
-import org.hestiastore.management.api.MetricsResponse;
-import org.hestiastore.management.api.NodeStateResponse;
+import org.hestiastore.management.api.NodeReportResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,9 +34,10 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 class ManagementAgentServerTest {
 
-    private static final String INDEX_NAME = "agent-test-index";
+    private static final String INDEX_1 = "agent-test-index-1";
+    private static final String INDEX_2 = "agent-test-index-2";
 
-    private SegmentIndex<Integer, String> index;
+    private final List<SegmentIndex<Integer, String>> indexes = new ArrayList<>();
     private ManagementAgentServer server;
     private HttpClient client;
     private ObjectMapper objectMapper;
@@ -42,21 +45,16 @@ class ManagementAgentServerTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        final Directory directory = new MemDirectory();
-        final IndexConfiguration<Integer, String> conf = IndexConfiguration
-                .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(new TypeDescriptorInteger()) //
-                .withValueTypeDescriptor(new TypeDescriptorShortString()) //
-                .withBloomFilterIndexSizeInBytes(0) //
-                .withContextLoggingEnabled(false) //
-                .withName(INDEX_NAME) //
-                .build();
-        index = SegmentIndex.create(directory, conf);
-        server = new ManagementAgentServer("127.0.0.1", 0, index, INDEX_NAME,
+        final SegmentIndex<Integer, String> index1 = createIndex(INDEX_1);
+        final SegmentIndex<Integer, String> index2 = createIndex(INDEX_2);
+        indexes.add(index1);
+        indexes.add(index2);
+
+        server = new ManagementAgentServer("127.0.0.1", 0, index1, INDEX_1,
                 Set.of("indexBusyTimeoutMillis"));
+        server.addIndex(INDEX_2, index2);
         server.start();
+
         client = HttpClient.newHttpClient();
         objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
         baseUrl = "http://127.0.0.1:" + server.getPort();
@@ -67,67 +65,80 @@ class ManagementAgentServerTest {
         if (server != null) {
             server.close();
         }
-        if (index != null && !index.wasClosed()) {
-            index.close();
+        for (final SegmentIndex<Integer, String> index : indexes) {
+            if (index != null && !index.wasClosed()) {
+                index.close();
+            }
         }
     }
 
     @Test
-    void stateAndMetricsEndpointsReturnPayloads() throws Exception {
-        index.put(1, "A");
-        assertEquals("A", index.get(1));
+    void reportEndpointReturnsJvmAndPerIndexSections() throws Exception {
+        indexes.get(0).put(1, "A");
+        indexes.get(1).put(2, "B");
 
-        final HttpResponse<String> stateResp = send("GET",
-                ManagementApiPaths.STATE, null);
-        assertEquals(200, stateResp.statusCode());
-        final NodeStateResponse state = objectMapper.readValue(stateResp.body(),
-                NodeStateResponse.class);
-        assertEquals(INDEX_NAME, state.indexName());
-        assertEquals("READY", state.state());
-        assertTrue(state.ready());
+        final HttpResponse<String> reportResp = send("GET",
+                ManagementApiPaths.REPORT, null);
+        assertEquals(200, reportResp.statusCode());
 
-        final HttpResponse<String> metricsResp = send("GET",
-                ManagementApiPaths.METRICS, null);
-        assertEquals(200, metricsResp.statusCode());
-        final MetricsResponse metrics = objectMapper
-                .readValue(metricsResp.body(), MetricsResponse.class);
-        assertEquals(INDEX_NAME, metrics.indexName());
-        assertEquals("READY", metrics.state());
-        assertTrue(metrics.putOperationCount() >= 1L);
-        assertTrue(metrics.getOperationCount() >= 1L);
-        assertTrue(metrics.registryCacheHitCount() >= 0L);
-        assertTrue(metrics.registryCacheMissCount() >= 0L);
-        assertTrue(metrics.registryCacheLoadCount() >= 0L);
-        assertTrue(metrics.registryCacheEvictionCount() >= 0L);
-        assertTrue(metrics.registryCacheSize() >= 0);
-        assertTrue(metrics.registryCacheLimit() >= 0);
+        final NodeReportResponse report = objectMapper.readValue(
+                reportResp.body(), NodeReportResponse.class);
+        assertEquals(2, report.indexes().size());
+        assertTrue(report.indexes().stream()
+                .anyMatch(idx -> idx.indexName().equals(INDEX_1)));
+        assertTrue(report.indexes().stream()
+                .anyMatch(idx -> idx.indexName().equals(INDEX_2)));
+        assertTrue(report.jvm().heapUsedBytes() >= 0L);
+        assertTrue(report.jvm().heapMaxBytes() >= 0L);
+        assertTrue(report.jvm().gcCount() >= 0L);
     }
 
     @Test
-    void flushActionReturnsCompleted() throws Exception {
-        index.put(1, "A");
+    void flushActionRunsOnAllIndexes() throws Exception {
+        indexes.get(0).put(1, "A");
+        indexes.get(1).put(2, "B");
+
         final HttpResponse<String> response = send("POST",
                 ManagementApiPaths.ACTION_FLUSH, "{\"requestId\":\"req-1\"}");
         assertEquals(200, response.statusCode());
+
         final ActionResponse payload = objectMapper.readValue(response.body(),
                 ActionResponse.class);
         assertEquals("req-1", payload.requestId());
         assertEquals(ActionType.FLUSH, payload.action());
         assertEquals(ActionStatus.COMPLETED, payload.status());
+        assertTrue(payload.message().contains("2"));
     }
 
     @Test
-    void compactActionReturnsCompleted() throws Exception {
-        index.put(1, "A");
+    void compactActionCanTargetOneIndexByName() throws Exception {
+        indexes.get(0).put(1, "A");
+        indexes.get(1).put(2, "B");
+
         final HttpResponse<String> response = send("POST",
                 ManagementApiPaths.ACTION_COMPACT,
-                "{\"requestId\":\"req-compact\"}");
+                "{\"requestId\":\"req-compact\",\"indexName\":\""
+                        + INDEX_2 + "\"}");
         assertEquals(200, response.statusCode());
+
         final ActionResponse payload = objectMapper.readValue(response.body(),
                 ActionResponse.class);
         assertEquals("req-compact", payload.requestId());
         assertEquals(ActionType.COMPACT, payload.action());
         assertEquals(ActionStatus.COMPLETED, payload.status());
+        assertTrue(payload.message().contains("1"));
+    }
+
+    @Test
+    void targetedActionReturnsNotFoundForUnknownIndex() throws Exception {
+        final HttpResponse<String> response = send("POST",
+                ManagementApiPaths.ACTION_FLUSH,
+                "{\"requestId\":\"req-unknown\",\"indexName\":\"missing\"}");
+        assertEquals(404, response.statusCode());
+        final ErrorResponse payload = objectMapper.readValue(response.body(),
+                ErrorResponse.class);
+        assertEquals("INDEX_NOT_FOUND", payload.code());
+        assertEquals("req-unknown", payload.requestId());
     }
 
     @Test
@@ -142,16 +153,61 @@ class ManagementAgentServerTest {
     }
 
     @Test
-    void mutatingActionRejectsWhenIndexIsClosed() throws Exception {
-        index.close();
-        final HttpResponse<String> response = send("POST",
-                ManagementApiPaths.ACTION_COMPACT,
-                "{\"requestId\":\"req-close\"}");
-        assertEquals(409, response.statusCode());
+    void configPatchRejectsOversizedBody() throws Exception {
+        final String oversized = "x".repeat(1_100_000);
+        final HttpResponse<String> response = send("PATCH",
+                ManagementApiPaths.CONFIG, oversized);
+        assertEquals(413, response.statusCode());
         final ErrorResponse payload = objectMapper.readValue(response.body(),
                 ErrorResponse.class);
-        assertEquals("INVALID_STATE", payload.code());
-        assertEquals("req-close", payload.requestId());
+        assertEquals("REQUEST_TOO_LARGE", payload.code());
+    }
+
+    @Test
+    void actionRejectsOversizedBody() throws Exception {
+        final String oversized = "x".repeat(1_100_000);
+        final HttpResponse<String> response = send("POST",
+                ManagementApiPaths.ACTION_FLUSH, oversized);
+        assertEquals(413, response.statusCode());
+        final ErrorResponse payload = objectMapper.readValue(response.body(),
+                ErrorResponse.class);
+        assertEquals("REQUEST_TOO_LARGE", payload.code());
+    }
+
+    @Test
+    void closedIndexIsAutomaticallyRemovedFromReport() throws Exception {
+        indexes.get(1).close();
+
+        final HttpResponse<String> reportResp = send("GET",
+                ManagementApiPaths.REPORT, null);
+        assertEquals(200, reportResp.statusCode());
+
+        final NodeReportResponse report = objectMapper.readValue(
+                reportResp.body(), NodeReportResponse.class);
+        assertEquals(1, report.indexes().size());
+        assertEquals(INDEX_1, report.indexes().get(0).indexName());
+    }
+
+    @Test
+    void addAndRemoveIndexAffectsReport() throws Exception {
+        assertTrue(server.removeIndex(INDEX_2));
+
+        HttpResponse<String> reportResp = send("GET", ManagementApiPaths.REPORT,
+                null);
+        NodeReportResponse report = objectMapper.readValue(reportResp.body(),
+                NodeReportResponse.class);
+        assertEquals(1, report.indexes().size());
+
+        final SegmentIndex<Integer, String> extra = createIndex("extra-index");
+        indexes.add(extra);
+        server.addIndex("extra-index", extra);
+
+        reportResp = send("GET", ManagementApiPaths.REPORT, null);
+        report = objectMapper.readValue(reportResp.body(),
+                NodeReportResponse.class);
+        assertEquals(2, report.indexes().size());
+        assertTrue(report.indexes().stream()
+                .anyMatch(idx -> idx.indexName().equals("extra-index")));
     }
 
     @Test
@@ -164,10 +220,27 @@ class ManagementAgentServerTest {
         assertEquals(200, ready.statusCode());
         assertTrue(ready.body().contains("\"READY\""));
 
-        index.close();
+        indexes.get(0).close();
+        indexes.get(1).close();
         final HttpResponse<String> notReady = send("GET", "/ready", null);
         assertEquals(503, notReady.statusCode());
         assertTrue(notReady.body().contains("\"NOT_READY\""));
+    }
+
+    private SegmentIndex<Integer, String> createIndex(final String name)
+            throws IOException {
+        final Directory directory = new MemDirectory();
+        final IndexConfiguration<Integer, String> conf = IndexConfiguration
+                .<Integer, String>builder()//
+                .withKeyClass(Integer.class)//
+                .withValueClass(String.class)//
+                .withKeyTypeDescriptor(new TypeDescriptorInteger()) //
+                .withValueTypeDescriptor(new TypeDescriptorShortString()) //
+                .withBloomFilterIndexSizeInBytes(0) //
+                .withContextLoggingEnabled(false) //
+                .withName(name) //
+                .build();
+        return SegmentIndex.create(directory, conf);
     }
 
     private HttpResponse<String> send(final String method, final String path,

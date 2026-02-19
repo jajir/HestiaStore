@@ -15,11 +15,17 @@ public final class IndexStateOpening<K, V> implements IndexState<K, V> {
     private static final String LOCK_FILE_NAME = ".lock";
 
     private final FileLock fileLock;
+    private final boolean staleLockRecovered;
 
     IndexStateOpening(final Directory directoryFacade) {
-        this.fileLock = Vldtn.requireNonNull(directoryFacade, "directoryFacade")
-                .getLock(LOCK_FILE_NAME);
-        if (fileLock.isLocked()) {
+        final Directory nonNullDirectory = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
+        final boolean lockFilePresent = nonNullDirectory
+                .isFileExists(LOCK_FILE_NAME);
+        this.fileLock = nonNullDirectory.getLock(LOCK_FILE_NAME);
+        final boolean lockHeld = fileLock.isLocked();
+        this.staleLockRecovered = lockFilePresent && !lockHeld;
+        if (lockHeld) {
             throw new IllegalStateException(
                     "Index directory is already locked.");
         }
@@ -58,5 +64,9 @@ public final class IndexStateOpening<K, V> implements IndexState<K, V> {
 
     FileLock getFileLock() {
         return fileLock;
+    }
+
+    boolean wasStaleLockRecovered() {
+        return staleLockRecovered;
     }
 }
