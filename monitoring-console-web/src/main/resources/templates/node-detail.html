@@ -227,6 +227,118 @@
             margin: 6px 0;
         }
 
+        .cfg-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .cfg-toolbar label {
+            font-size: 13px;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .cfg-toolbar select {
+            min-width: 220px;
+            border-radius: 10px;
+            border: 1px solid rgba(20, 50, 38, .22);
+            padding: 7px 10px;
+            font: inherit;
+            color: var(--text);
+            background: rgba(255, 255, 255, .9);
+        }
+
+        .cfg-badges {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .cfg-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--muted);
+            padding: 4px 9px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .7);
+            border: 1px solid rgba(20, 50, 38, .12);
+        }
+
+        .cfg-table-wrap {
+            overflow: auto;
+            border-radius: 12px;
+            border: 1px solid rgba(20, 50, 38, .12);
+        }
+
+        .cfg-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+            font-size: 14px;
+        }
+
+        .cfg-table thead th {
+            text-align: left;
+            font-size: 12px;
+            color: var(--muted);
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            padding: 10px;
+            border-bottom: 1px solid rgba(20, 50, 38, .12);
+            background: rgba(255, 255, 255, .7);
+        }
+
+        .cfg-table tbody td {
+            padding: 10px;
+            border-bottom: 1px solid rgba(20, 50, 38, .08);
+            vertical-align: middle;
+        }
+
+        .cfg-table tbody tr.row-pending {
+            background: rgba(212, 138, 18, 0.10);
+        }
+
+        .cfg-input {
+            width: 100%;
+            min-width: 160px;
+            border-radius: 8px;
+            border: 1px solid rgba(20, 50, 38, .22);
+            padding: 6px 8px;
+            font: inherit;
+            color: var(--text);
+            background: rgba(255, 255, 255, .96);
+        }
+
+        .cfg-input:disabled {
+            background: rgba(255, 255, 255, .5);
+            color: #708779;
+        }
+
+        .pending-pill {
+            display: none;
+        }
+
+        .status-neutral {
+            background: rgba(75, 110, 93, .16);
+            color: #2a4638;
+        }
+
+        .warn-inline {
+            padding: 12px;
+            border-radius: 12px;
+            background: rgba(212, 138, 18, .16);
+            color: #7a4d00;
+            border: 1px solid rgba(212, 138, 18, .22);
+            font-size: 13px;
+        }
+
         .warn {
             padding: 14px 16px;
             color: #b65d00;
@@ -299,7 +411,154 @@
 
         <div th:if="${node != null}" th:replace="~{fragments/node-detail-live :: nodeLive}">
         </div>
+
+        <article class="card section" th:if="${node != null}" style="margin-top:16px;">
+            <h3>Runtime Configuration</h3>
+            <form method="get" th:action="@{'/nodes/' + ${node.nodeId}}" class="cfg-toolbar">
+                <label for="indexNameSelect">Index</label>
+                <select id="indexNameSelect" name="indexName" onchange="this.form.submit()">
+                    <option th:each="idxName : ${indexNames}" th:value="${idxName}"
+                        th:selected="${idxName == selectedIndexName}" th:text="${idxName}">orders</option>
+                </select>
+                <button type="submit" class="btn">Refresh</button>
+            </form>
+
+            <div class="warn-inline" th:if="${runtimeConfigUnavailable}">
+                Runtime configuration is currently unavailable for this node/index.
+            </div>
+
+            <form id="runtime-config-form" method="post" th:if="${runtimeConfigRows != null and !#lists.isEmpty(runtimeConfigRows)}"
+                th:action="@{'/nodes/' + ${node.nodeId} + '/runtime-config'}">
+                <input type="hidden" name="indexName" th:value="${selectedIndexName}">
+                <div class="cfg-badges">
+                    <span class="cfg-badge">Changed vs Original:
+                        <strong th:text="${node.formatWholeNumber(runtimeConfigChangedCount)}">0</strong>
+                    </span>
+                    <span class="cfg-badge">Pending edits:
+                        <strong id="runtimeConfigPendingCount">0</strong>
+                    </span>
+                    <span class="cfg-badge" th:if="${runtimeConfigView != null}">
+                        Revision:
+                        <strong th:text="${node.formatWholeNumber(runtimeConfigView.revision)}">0</strong>
+                    </span>
+                </div>
+
+                <div class="cfg-table-wrap">
+                    <table class="cfg-table">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Original</th>
+                                <th>Current</th>
+                                <th>New value</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="row : ${runtimeConfigRows}">
+                                <td class="mono" th:text="${row.key}">maxNumberOfSegmentsInCache</td>
+                                <td th:text="${row.originalDisplay()}">128</td>
+                                <td th:text="${row.currentDisplay()}">256</td>
+                                <td>
+                                    <input th:if="${row.editable}" class="cfg-input" type="number" step="1"
+                                        th:name="${'value.' + row.key}" th:value="${row.inputValue()}"
+                                        th:attr="data-current=${row.inputValue()}">
+                                    <input th:unless="${row.editable}" class="cfg-input" type="text" disabled
+                                        th:value="${row.currentDisplay()}">
+                                </td>
+                                <td>
+                                    <span class="status-pill status-warn pending-pill">Pending</span>
+                                    <span th:if="${row.overridden}" class="status-pill status-ok">Overridden</span>
+                                    <span th:unless="${row.overridden}" class="status-pill status-neutral">Unchanged</span>
+                                </td>
+                                <td>
+                                    <button th:if="${row.editable}" class="btn" type="button"
+                                        th:attr="data-reset-row=${row.key}">Cancel</button>
+                                    <span th:unless="${row.editable}" class="mono">Read only</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="btn-row" style="margin-top:12px;">
+                    <button class="btn" type="submit" name="operation" value="validate">Validate</button>
+                    <button class="btn pri" type="submit" name="operation" value="apply">Apply changes</button>
+                    <button class="btn" type="button" id="discardConfigEdits">Discard local edits</button>
+                </div>
+            </form>
+        </article>
     </main>
+    <script>
+        (function () {
+            const form = document.getElementById("runtime-config-form");
+            if (!form) {
+                return;
+            }
+            const inputs = Array.from(form.querySelectorAll(".cfg-input[data-current]"));
+            const pendingCountEl = document.getElementById("runtimeConfigPendingCount");
+            const discardAll = document.getElementById("discardConfigEdits");
+            const resetButtons = Array.from(form.querySelectorAll("[data-reset-row]"));
+
+            function refreshPendingState() {
+                let pending = 0;
+                for (const input of inputs) {
+                    const current = (input.dataset.current || "").trim();
+                    const value = (input.value || "").trim();
+                    const row = input.closest("tr");
+                    const pendingPill = row ? row.querySelector(".pending-pill") : null;
+                    const isPending = value !== current;
+                    if (row) {
+                        row.classList.toggle("row-pending", isPending);
+                    }
+                    if (pendingPill) {
+                        pendingPill.style.display = isPending ? "inline-flex" : "none";
+                    }
+                    if (isPending) {
+                        pending++;
+                    }
+                }
+                if (pendingCountEl) {
+                    pendingCountEl.textContent = String(pending);
+                }
+            }
+
+            function findInputByKey(key) {
+                return form.querySelector('[name="value.' + key + '"]');
+            }
+
+            for (const input of inputs) {
+                input.addEventListener("input", refreshPendingState);
+            }
+
+            for (const button of resetButtons) {
+                button.addEventListener("click", function () {
+                    const key = this.getAttribute("data-reset-row");
+                    if (!key) {
+                        return;
+                    }
+                    const input = findInputByKey(key);
+                    if (!input) {
+                        return;
+                    }
+                    input.value = input.dataset.current || "";
+                    refreshPendingState();
+                });
+            }
+
+            if (discardAll) {
+                discardAll.addEventListener("click", function () {
+                    for (const input of inputs) {
+                        input.value = input.dataset.current || "";
+                    }
+                    refreshPendingState();
+                });
+            }
+
+            refreshPendingState();
+        })();
+    </script>
 </body>
 
 </html>
